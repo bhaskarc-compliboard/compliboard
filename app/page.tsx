@@ -138,12 +138,12 @@ export default function Home() {
   }
 
   const chips = [
-    "What permits do I need to open a hazmat warehouse in Oregon?",
-    "What food safety certifications does my restaurant need?",
-    "OSHA requirements for a small manufacturing facility",
-    "How do I legally dispose of hazardous waste?",
-    "What do I need for ISO 9001 certification?",
-    "Ask anything about compliance, regulations, or HR policy",
+    "Ask anything about compliance, regulations or HR",
+    "What permits do I need to operate my facility?",
+    "How do I stay compliant with waste disposal rules?",
+    "What safety training is required for my employees?",
+    "How do I prepare for a regulatory inspection?",
+    "What do I need for a quality certification?",
   ]
 
   const doneCount = Object.values(checked).filter(Boolean).length
@@ -168,13 +168,16 @@ export default function Home() {
           />
         </div>
 
-        <div className="flex flex-wrap gap-2 mb-5">
-          {chips.map((chip) => (
-            <button key={chip} onClick={() => setQuestion(chip)}
-              className="text-xs px-3 py-1.5 rounded-full border border-gray-200 text-gray-500 hover:border-green-500 hover:text-green-700 transition-colors">
-              {chip}
-            </button>
-          ))}
+        <div className="mb-5">
+          <p className="text-xs text-gray-400 mb-2 uppercase tracking-wide font-medium">Examples</p>
+          <div className="flex flex-wrap gap-2">
+            {chips.map((chip) => (
+              <button key={chip} onClick={() => setQuestion(chip)}
+                className="text-xs px-3 py-1.5 rounded-full border border-gray-200 text-gray-500 hover:border-green-500 hover:text-green-700 transition-colors">
+                {chip}
+              </button>
+            ))}
+          </div>
         </div>
 
         <button onClick={handleSubmit} disabled={loading}
