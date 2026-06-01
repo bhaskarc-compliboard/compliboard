@@ -3,13 +3,70 @@
 import { useState } from 'react'
 
 const STATUS_MESSAGES: Record<string, string[]> = {
-  hazmat: ["Reading your company profile...","Searching EPA hazmat regulations...","Checking OSHA requirements...","Reading DOT guidelines...","Sorting must-do from good-to-have...","Building your checklist..."],
-  food: ["Reading your company profile...","Searching FDA food safety regulations...","Checking state health requirements...","Reading FSMA guidelines...","Sorting must-do from good-to-have...","Building your checklist..."],
-  waste: ["Reading your company profile...","Searching EPA waste regulations...","Checking state environmental rules...","Reading RCRA guidelines...","Sorting must-do from good-to-have...","Building your checklist..."],
-  shipping: ["Reading your company profile...","Searching DOT transport regulations...","Checking PHMSA requirements...","Reading 49 CFR guidelines...","Sorting must-do from good-to-have...","Building your checklist..."],
-  hr: ["Reading your company profile...","Checking employment law...","Reading FLSA and FMLA guidelines...","Reviewing state labor regulations...","Sorting must-do from good-to-have...","Building your checklist..."],
-  iso: ["Reading your company profile...","Searching certification requirements...","Checking ISO standards...","Reading audit guidelines...","Sorting must-do from good-to-have...","Building your checklist..."],
-  default: ["Reading your company profile...","Searching federal regulations...","Checking state requirements...","Reading relevant guidelines...","Sorting must-do from good-to-have...","Building your checklist..."]
+  hazmat: [
+    "Reading your company profile...",
+    "Searching EPA federal regulations...",
+    "Checking OSHA requirements...",
+    "Reading DOT guidelines...",
+    "Checking state and county regulations...",
+    "Checking for recent regulation changes...",
+    "Sorting must-do from good-to-have...",
+    "Building your checklist..."
+  ],
+  food: [
+    "Reading your company profile...",
+    "Searching FDA food safety regulations...",
+    "Checking state health department requirements...",
+    "Reviewing local county health codes...",
+    "Checking for recent regulation changes...",
+    "Sorting must-do from good-to-have...",
+    "Building your checklist..."
+  ],
+  waste: [
+    "Reading your company profile...",
+    "Searching EPA waste disposal regulations...",
+    "Checking state environmental agency rules...",
+    "Checking state and county regulations...",
+    "Checking for recent regulation changes...",
+    "Sorting must-do from good-to-have...",
+    "Building your checklist..."
+  ],
+  shipping: [
+    "Reading your company profile...",
+    "Searching DOT transport regulations...",
+    "Checking PHMSA requirements...",
+    "Checking state transport regulations...",
+    "Checking for recent regulation changes...",
+    "Sorting must-do from good-to-have...",
+    "Building your checklist..."
+  ],
+  hr: [
+    "Reading your company profile...",
+    "Checking federal employment law...",
+    "Reading FLSA and FMLA guidelines...",
+    "Checking state labor regulations...",
+    "Checking for recent regulation changes...",
+    "Sorting must-do from good-to-have...",
+    "Building your checklist..."
+  ],
+  iso: [
+    "Reading your company profile...",
+    "Searching certification requirements...",
+    "Checking ISO standards...",
+    "Reading audit preparation guidelines...",
+    "Checking for recent regulation changes...",
+    "Sorting must-do from good-to-have...",
+    "Building your checklist..."
+  ],
+  default: [
+    "Reading your company profile...",
+    "Searching federal regulations...",
+    "Checking state and county regulations...",
+    "Reading relevant agency guidelines...",
+    "Checking for recent regulation changes...",
+    "Sorting must-do from good-to-have...",
+    "Building your checklist..."
+  ]
 }
 
 function getStatusMessages(question: string): string[] {
@@ -56,7 +113,7 @@ export default function Home() {
     setChecked({})
     setCompletedSteps([])
     const messages = getStatusMessages(question)
-    const delays = [0, 800, 1800, 2800, 3600, 4400]
+    const delays = [0, 700, 1400, 2100, 2800, 3500, 4200, 4900]
     messages.forEach((msg, i) => {
       setTimeout(() => {
         setCurrentStatus(msg)
@@ -81,11 +138,12 @@ export default function Home() {
   }
 
   const chips = [
-    "What permits do I need for HF storage in Oregon?",
+    "What permits do I need to open a hazmat warehouse in Oregon?",
+    "What food safety certifications does my restaurant need?",
+    "OSHA requirements for a small manufacturing facility",
     "How do I legally dispose of hazardous waste?",
-    "Shipping requirements for hazmat by road",
-    "Help me prepare for ISO 9001 certification",
-    "What OSHA training do my employees need?",
+    "What do I need for ISO 9001 certification?",
+    "Ask anything about compliance, regulations, or HR policy",
   ]
 
   const doneCount = Object.values(checked).filter(Boolean).length
