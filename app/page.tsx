@@ -28,6 +28,7 @@ interface ChecklistItem {
   description: string
   required_by?: string
   recommended_by?: string
+  source_url?: string
 }
 
 interface ChecklistData {
@@ -145,7 +146,7 @@ export default function Home() {
             <h2 className="text-base font-semibold text-gray-900 mb-1">{data.title}</h2>
 
             {totalMust > 0 && (
-              <div className="mb-2 flex items-center gap-2">
+              <div className="mb-4 flex items-center gap-2">
                 <div className="flex-1 bg-gray-100 rounded-full h-1.5">
                   <div
                     className="bg-green-500 h-1.5 rounded-full transition-all"
@@ -173,7 +174,16 @@ export default function Home() {
                       <p className="text-sm font-semibold text-gray-900">{item.name}</p>
                       <p className="text-sm text-gray-500 mt-0.5">{item.description}</p>
                       {item.required_by && (
-                        <p className="text-xs text-gray-400 mt-1">Required by: {item.required_by}</p>
+                        <div className="flex items-center gap-1 mt-1 flex-wrap">
+                          <p className="text-xs text-gray-400">Required by: {item.required_by}</p>
+                          {item.source_url && (
+                            <a href={item.source_url} target="_blank" rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="text-xs text-green-600 hover:text-green-800 underline ml-1">
+                              ↗ View source
+                            </a>
+                          )}
+                        </div>
                       )}
                     </div>
                   </div>
@@ -199,7 +209,16 @@ export default function Home() {
                         <p className="text-sm font-semibold text-gray-900">{item.name}</p>
                         <p className="text-sm text-gray-500 mt-0.5">{item.description}</p>
                         {item.recommended_by && (
-                          <p className="text-xs text-gray-400 mt-1">Recommended by: {item.recommended_by}</p>
+                          <div className="flex items-center gap-1 mt-1 flex-wrap">
+                            <p className="text-xs text-gray-400">Recommended by: {item.recommended_by}</p>
+                            {item.source_url && (
+                              <a href={item.source_url} target="_blank" rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="text-xs text-blue-500 hover:text-blue-700 underline ml-1">
+                                ↗ View source
+                              </a>
+                            )}
+                          </div>
                         )}
                       </div>
                     </div>
