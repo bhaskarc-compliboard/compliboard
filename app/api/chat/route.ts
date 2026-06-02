@@ -5,14 +5,7 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
-export async function POST(request: NextRequest) {
-  try {
-    const { question } = await request.json();
-
-    const message = await anthropic.messages.create({
-      model: "claude-sonnet-4-5",
-      max_tokens: 4096,
-      system: `You are CompliBoard, a compliance assistant for small businesses in the United States.
+const SYSTEM_PROMPT = `You are CompliBoard, a compliance assistant for small businesses in the United States.
 
 You must respond ONLY with a valid JSON object. No other text. No markdown. No backticks. Just raw JSON.
 
@@ -66,11 +59,92 @@ Important rules:
 - For cost_note include realistic cost ranges or timeframes where helpful
 - safety_alert should only appear for genuinely dangerous situations involving chemicals, hazmat, explosives, or immediate safety risks
 - Only answer compliance, regulatory, HR policy, or benefits questions
-- Keep all language simple and plain English — your users are small business owners not lawyers`,
+- Keep all language simple and plain English — your users are small business owners not lawyers
+- When analysing an uploaded document, focus on what the document reveals about the user's compliance situation. Identify gaps, risks, corrective actions needed, and deadlines if visible.`;
+
+export async function POST(request: NextRequest) {
+  try {
+    const contentType = request.headers.get('content-type') || '';
+
+    let question = '';
+    let fileData: string | null = null;
+    let fileType: string | null = null;
+    let fileName: string | null = null;
+
+    if (contentType.includes('multipart/form-data')) {
+      const formData = await request.formData();
+      question = formData.get('question') as string || '';
+      const file = formData.get('file') as File | null;
+
+      if (file) {
+        fileType = file.type;
+        fileName = file.name;
+        const buffer = await file.arrayBuffer();
+        fileData = Buffer.from(buffer).toString('base64');
+      }
+    } else {
+      const body = await request.json();
+      question = body.question || '';
+    }
+
+    const userQuestion = question.trim() ||
+      (fileData ? 'Analyse this document and give me a compliance checklist. Identify any gaps, risks, or corrective actions needed.' : '');
+
+    if (!userQuestion && !fileData) {
+      return NextResponse.json({ error: 'No question or file provided' }, { status: 400 });
+    }
+
+    let messageContent: Anthropic.MessageParam['content'];
+
+    if (fileData && fileType) {
+      const isImage = fileType.startsWith('image/');
+      const isPDF = fileType === 'application/pdf';
+
+      if (isImage) {
+        messageContent = [
+          {
+            type: 'image',
+            source: {
+              type: 'base64',
+              media_type: fileType as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp',
+              data: fileData,
+            },
+          },
+          {
+            type: 'text',
+            text: `File name: ${fileName}\n\nUser question: ${userQuestion}`,
+          },
+        ];
+      } else if (isPDF) {
+        messageContent = [
+          {
+            type: 'document',
+            source: {
+              type: 'base64',
+              media_type: 'application/pdf',
+              data: fileData,
+            },
+          },
+          {
+            type: 'text',
+            text: `File name: ${fileName}\n\nUser question: ${userQuestion}`,
+          },
+        ] as Anthropic.MessageParam['content'];
+      } else {
+        messageContent = `File name: ${fileName}\n\nUser question: ${userQuestion}`;
+      }
+    } else {
+      messageContent = userQuestion;
+    }
+
+    const message = await anthropic.messages.create({
+      model: "claude-sonnet-4-5",
+      max_tokens: 4096,
+      system: SYSTEM_PROMPT,
       messages: [
         {
           role: "user",
-          content: question,
+          content: messageContent,
         },
       ],
     });

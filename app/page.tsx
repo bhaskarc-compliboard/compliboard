@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 const STATUS_MESSAGES: Record<string, string[]> = {
   hazmat: [
@@ -133,6 +133,8 @@ export default function Home() {
   const [chipVisible, setChipVisible] = useState(true)
   const [whyNotOpen, setWhyNotOpen] = useState(false)
   const [askedQuestion, setAskedQuestion] = useState('')
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -153,8 +155,18 @@ export default function Home() {
     window.print()
   }
 
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0] || null
+    setUploadedFile(file)
+  }
+
+  function removeFile() {
+    setUploadedFile(null)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
   async function handleSubmit() {
-    if (!question.trim()) return
+    if (!question.trim() && !uploadedFile) return
     setLoading(true)
     setData(null)
     setChecked({})
@@ -170,11 +182,24 @@ export default function Home() {
       }, delays[i])
     })
     try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question }),
-      })
+      let res
+
+      if (uploadedFile) {
+        const formData = new FormData()
+        formData.append('file', uploadedFile)
+        formData.append('question', question)
+        res = await fetch('/api/chat', {
+          method: 'POST',
+          body: formData,
+        })
+      } else {
+        res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question }),
+        })
+      }
+
       const json = await res.json()
       setData(json.data)
     } catch (error) {
@@ -255,6 +280,46 @@ export default function Home() {
             />
           </div>
 
+          <div className="no-print mb-4">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,image/*"
+              onChange={handleFileChange}
+              className="hidden"
+              id="file-upload"
+            />
+            {!uploadedFile ? (
+              <label
+                htmlFor="file-upload"
+                className="flex items-center gap-2 w-full border border-dashed border-gray-300 rounded-xl px-4 py-3 cursor-pointer hover:border-green-500 hover:bg-green-50 transition-colors">
+                <span className="text-gray-400 text-lg">📎</span>
+                <div>
+                  <p className="text-sm text-gray-500">Attach a file <span className="text-gray-400">(optional)</span></p>
+                  <p className="text-xs text-gray-400">PDF or image — audit reports, inspection findings, drum labels, SDS sheets</p>
+                </div>
+              </label>
+            ) : (
+              <div className="flex items-center gap-3 w-full border border-green-300 bg-green-50 rounded-xl px-4 py-3">
+                <span className="text-green-600 text-lg">📄</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-green-800 truncate">{uploadedFile.name}</p>
+                  <p className="text-xs text-green-600">Ready to analyse — ask any question about this file below</p>
+                </div>
+                <button
+                  onClick={removeFile}
+                  className="text-gray-400 hover:text-red-500 transition-colors text-lg leading-none flex-shrink-0">
+                  ×
+                </button>
+              </div>
+            )}
+            {uploadedFile && (
+              <p className="text-xs text-gray-400 mt-2 pl-1">
+                💡 Try asking: &quot;What corrective actions do I need?&quot; or &quot;Am I missing anything?&quot; or &quot;What are my biggest risks?&quot;
+              </p>
+            )}
+          </div>
+
           <div className="no-print mb-5 flex items-center gap-3">
             <p className="text-xs text-gray-400 uppercase tracking-wide font-medium whitespace-nowrap">Example</p>
             <button
@@ -266,9 +331,9 @@ export default function Home() {
           </div>
 
           <div className="no-print">
-            <button onClick={handleSubmit} disabled={loading}
+            <button onClick={handleSubmit} disabled={loading || (!question.trim() && !uploadedFile)}
               className="bg-green-700 text-white px-6 py-3 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50">
-              {loading ? 'Working...' : 'Get my compliance checklist →'}
+              {loading ? 'Working...' : uploadedFile ? 'Analyse my document →' : 'Get my compliance checklist →'}
             </button>
           </div>
 
