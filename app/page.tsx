@@ -80,18 +80,36 @@ function getStatusMessages(question: string): string[] {
   return STATUS_MESSAGES.default
 }
 
+interface Provider {
+  name: string
+  type: string
+  coverage: string
+  note: string
+}
+
 interface ChecklistItem {
   name: string
   description: string
+  why?: string
   required_by?: string
   recommended_by?: string
   source_url?: string
+  cost_note?: string
+  providers?: Provider[]
+}
+
+interface WhyNot {
+  question: string
+  answer: string
 }
 
 interface ChecklistData {
   title: string
+  safety_alert?: string
   must_do: ChecklistItem[]
   good_to_have: ChecklistItem[]
+  why_not?: WhyNot[]
+  follow_up_questions?: string[]
 }
 
 const EXAMPLE_QUESTIONS = [
@@ -112,6 +130,7 @@ export default function Home() {
   const [checked, setChecked] = useState<Record<string, boolean>>({})
   const [chipIndex, setChipIndex] = useState(0)
   const [chipVisible, setChipVisible] = useState(true)
+  const [whyNotOpen, setWhyNotOpen] = useState(false)
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -134,6 +153,7 @@ export default function Home() {
     setData(null)
     setChecked({})
     setCompletedSteps([])
+    setWhyNotOpen(false)
     const messages = getStatusMessages(question)
     const delays = [0, 700, 1400, 2100, 2800, 3500, 4200, 4900]
     messages.forEach((msg, i) => {
@@ -185,12 +205,8 @@ export default function Home() {
           <p className="text-xs text-gray-400 uppercase tracking-wide font-medium whitespace-nowrap">Example</p>
           <button
             onClick={() => setQuestion(EXAMPLE_QUESTIONS[chipIndex])}
-            style={{
-              opacity: chipVisible ? 1 : 0,
-              transition: 'opacity 0.4s ease',
-            }}
-            className="text-xs px-3 py-1.5 rounded-full border border-gray-200 text-gray-500 hover:border-green-500 hover:text-green-700 transition-colors text-left"
-          >
+            style={{ opacity: chipVisible ? 1 : 0, transition: 'opacity 0.4s ease' }}
+            className="text-xs px-3 py-1.5 rounded-full border border-gray-200 text-gray-500 hover:border-green-500 hover:text-green-700 transition-colors text-left">
             {EXAMPLE_QUESTIONS[chipIndex]}
           </button>
         </div>
@@ -219,6 +235,17 @@ export default function Home() {
 
         {data && !loading && (
           <div className="mt-8">
+
+            {data.safety_alert && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
+                <span className="text-red-500 text-lg flex-shrink-0">⚠️</span>
+                <div>
+                  <p className="text-sm font-semibold text-red-700 mb-1">Safety first</p>
+                  <p className="text-sm text-red-600">{data.safety_alert}</p>
+                </div>
+              </div>
+            )}
+
             <h2 className="text-base font-semibold text-gray-900 mb-1">{data.title}</h2>
 
             {totalMust > 0 && (
@@ -249,6 +276,12 @@ export default function Home() {
                     <div className="flex-1">
                       <p className="text-sm font-semibold text-gray-900">{item.name}</p>
                       <p className="text-sm text-gray-500 mt-0.5">{item.description}</p>
+                      {item.why && (
+                        <p className="text-xs text-gray-400 mt-1 italic">{item.why}</p>
+                      )}
+                      {item.cost_note && (
+                        <p className="text-xs text-amber-600 mt-1">💰 {item.cost_note}</p>
+                      )}
                       {item.required_by && (
                         <div className="flex items-center gap-1 mt-1 flex-wrap">
                           <p className="text-xs text-gray-400">Required by: {item.required_by}</p>
@@ -259,6 +292,20 @@ export default function Home() {
                               ↗ View source
                             </a>
                           )}
+                        </div>
+                      )}
+                      {item.providers && item.providers.length > 0 && (
+                        <div className="mt-2 pt-2 border-t border-gray-100">
+                          <p className="text-xs text-gray-400 mb-1">Who to call:</p>
+                          <div className="space-y-1">
+                            {item.providers.map((p, j) => (
+                              <div key={j} className="flex items-center gap-2">
+                                <span className="text-xs">{p.coverage === 'local' ? '📍' : p.coverage === 'regional' ? '🗺️' : '🇺🇸'}</span>
+                                <span className="text-xs font-medium text-gray-700">{p.name}</span>
+                                <span className="text-xs text-gray-400">— {p.note}</span>
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       )}
                     </div>
@@ -284,6 +331,9 @@ export default function Home() {
                       <div className="flex-1">
                         <p className="text-sm font-semibold text-gray-900">{item.name}</p>
                         <p className="text-sm text-gray-500 mt-0.5">{item.description}</p>
+                        {item.why && (
+                          <p className="text-xs text-gray-400 mt-1 italic">{item.why}</p>
+                        )}
                         {item.recommended_by && (
                           <div className="flex items-center gap-1 mt-1 flex-wrap">
                             <p className="text-xs text-gray-400">Recommended by: {item.recommended_by}</p>
@@ -298,6 +348,43 @@ export default function Home() {
                         )}
                       </div>
                     </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {data.why_not && data.why_not.length > 0 && (
+              <div className="mt-8">
+                <button
+                  onClick={() => setWhyNotOpen(!whyNotOpen)}
+                  className="flex items-center gap-2 w-full">
+                  <span className="text-xs font-bold uppercase tracking-widest text-gray-500">❓ Common Questions</span>
+                  <div className="flex-1 h-px bg-gray-100"></div>
+                  <span className="text-xs text-gray-400">{whyNotOpen ? '▲' : '▼'}</span>
+                </button>
+                {whyNotOpen && (
+                  <div className="mt-3 space-y-3">
+                    {data.why_not.map((item, i) => (
+                      <div key={i} className="p-3 bg-gray-50 rounded-xl border border-gray-100">
+                        <p className="text-sm font-semibold text-gray-700 mb-1">{item.question}</p>
+                        <p className="text-sm text-gray-500">{item.answer}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {data.follow_up_questions && data.follow_up_questions.length > 0 && (
+              <div className="mt-6">
+                <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-2">Refine your answer</p>
+                <div className="space-y-2">
+                  {data.follow_up_questions.map((q, i) => (
+                    <button key={i}
+                      onClick={() => setQuestion(q)}
+                      className="block w-full text-left text-xs px-3 py-2 rounded-lg border border-gray-200 text-gray-500 hover:border-green-500 hover:text-green-700 transition-colors">
+                      → {q}
+                    </button>
                   ))}
                 </div>
               </div>
