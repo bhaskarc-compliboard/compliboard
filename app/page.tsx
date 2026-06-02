@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 const STATUS_MESSAGES: Record<string, string[]> = {
   hazmat: [
@@ -94,6 +94,15 @@ interface ChecklistData {
   good_to_have: ChecklistItem[]
 }
 
+const EXAMPLE_QUESTIONS = [
+  "Ask anything about compliance, regulations or HR",
+  "What permits do I need to operate my facility?",
+  "How do I stay compliant with waste disposal rules?",
+  "What safety training is required for my employees?",
+  "How do I prepare for a regulatory inspection?",
+  "What do I need for a quality certification?",
+]
+
 export default function Home() {
   const [question, setQuestion] = useState('')
   const [data, setData] = useState<ChecklistData | null>(null)
@@ -101,6 +110,19 @@ export default function Home() {
   const [currentStatus, setCurrentStatus] = useState('')
   const [completedSteps, setCompletedSteps] = useState<string[]>([])
   const [checked, setChecked] = useState<Record<string, boolean>>({})
+  const [chipIndex, setChipIndex] = useState(0)
+  const [chipVisible, setChipVisible] = useState(true)
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setChipVisible(false)
+      setTimeout(() => {
+        setChipIndex(prev => (prev + 1) % EXAMPLE_QUESTIONS.length)
+        setChipVisible(true)
+      }, 400)
+    }, 3000)
+    return () => clearInterval(interval)
+  }, [])
 
   function toggleCheck(key: string) {
     setChecked(prev => ({ ...prev, [key]: !prev[key] }))
@@ -137,15 +159,6 @@ export default function Home() {
     }
   }
 
-  const chips = [
-    "Ask anything about compliance, regulations or HR",
-    "What permits do I need to operate my facility?",
-    "How do I stay compliant with waste disposal rules?",
-    "What safety training is required for my employees?",
-    "How do I prepare for a regulatory inspection?",
-    "What do I need for a quality certification?",
-  ]
-
   const doneCount = Object.values(checked).filter(Boolean).length
   const totalMust = data?.must_do?.length || 0
 
@@ -168,16 +181,18 @@ export default function Home() {
           />
         </div>
 
-        <div className="mb-5">
-          <p className="text-xs text-gray-400 mb-2 uppercase tracking-wide font-medium">Examples</p>
-          <div className="flex flex-wrap gap-2">
-            {chips.map((chip) => (
-              <button key={chip} onClick={() => setQuestion(chip)}
-                className="text-xs px-3 py-1.5 rounded-full border border-gray-200 text-gray-500 hover:border-green-500 hover:text-green-700 transition-colors">
-                {chip}
-              </button>
-            ))}
-          </div>
+        <div className="mb-5 flex items-center gap-3">
+          <p className="text-xs text-gray-400 uppercase tracking-wide font-medium whitespace-nowrap">Example</p>
+          <button
+            onClick={() => setQuestion(EXAMPLE_QUESTIONS[chipIndex])}
+            style={{
+              opacity: chipVisible ? 1 : 0,
+              transition: 'opacity 0.4s ease',
+            }}
+            className="text-xs px-3 py-1.5 rounded-full border border-gray-200 text-gray-500 hover:border-green-500 hover:text-green-700 transition-colors text-left"
+          >
+            {EXAMPLE_QUESTIONS[chipIndex]}
+          </button>
         </div>
 
         <button onClick={handleSubmit} disabled={loading}
