@@ -123,6 +123,7 @@ const EXAMPLE_QUESTIONS = [
 
 export default function Home() {
   const [question, setQuestion] = useState('')
+  const [companyName, setCompanyName] = useState('')
   const [data, setData] = useState<ChecklistData | null>(null)
   const [loading, setLoading] = useState(false)
   const [currentStatus, setCurrentStatus] = useState('')
@@ -131,6 +132,7 @@ export default function Home() {
   const [chipIndex, setChipIndex] = useState(0)
   const [chipVisible, setChipVisible] = useState(true)
   const [whyNotOpen, setWhyNotOpen] = useState(false)
+  const [askedQuestion, setAskedQuestion] = useState('')
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -147,6 +149,10 @@ export default function Home() {
     setChecked(prev => ({ ...prev, [key]: !prev[key] }))
   }
 
+  function handlePrint() {
+    window.print()
+  }
+
   async function handleSubmit() {
     if (!question.trim()) return
     setLoading(true)
@@ -154,6 +160,7 @@ export default function Home() {
     setChecked({})
     setCompletedSteps([])
     setWhyNotOpen(false)
+    setAskedQuestion(question)
     const messages = getStatusMessages(question)
     const delays = [0, 700, 1400, 2100, 2800, 3500, 4200, 4900]
     messages.forEach((msg, i) => {
@@ -183,220 +190,271 @@ export default function Home() {
   const totalMust = data?.must_do?.length || 0
 
   return (
-    <main className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 w-full max-w-2xl p-8">
+    <>
+      <style>{`
+        @media print {
+          .no-print { display: none !important; }
+          .print-only { display: block !important; }
+          body { background: white !important; }
+          main { padding: 0 !important; }
+          .print-container {
+            box-shadow: none !important;
+            border: none !important;
+            border-radius: 0 !important;
+            max-width: 100% !important;
+            padding: 20px !important;
+          }
+          .print-header {
+            display: flex !important;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 2px solid #166534;
+            padding-bottom: 12px;
+            margin-bottom: 16px;
+          }
+        }
+        .print-only { display: none; }
+      `}</style>
 
-        <div className="mb-8">
-          <h1 className="text-2xl font-semibold text-gray-900 mb-2">CompliBoard</h1>
-          <p className="text-gray-500 text-sm">Ask any compliance question in plain English</p>
-        </div>
+      <main className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="print-container bg-white rounded-2xl shadow-sm border border-gray-200 w-full max-w-2xl p-8">
 
-        <div className="mb-3">
-          <textarea
-            className="w-full border border-gray-200 rounded-xl p-4 text-sm text-gray-800 resize-none focus:outline-none focus:border-green-500 bg-gray-50"
-            rows={4}
-            placeholder="e.g. What permits do I need to open a hazmat warehouse in Texas?"
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-          />
-        </div>
-
-        <div className="mb-5 flex items-center gap-3">
-          <p className="text-xs text-gray-400 uppercase tracking-wide font-medium whitespace-nowrap">Example</p>
-          <button
-            onClick={() => setQuestion(EXAMPLE_QUESTIONS[chipIndex])}
-            style={{ opacity: chipVisible ? 1 : 0, transition: 'opacity 0.4s ease' }}
-            className="text-xs px-3 py-1.5 rounded-full border border-gray-200 text-gray-500 hover:border-green-500 hover:text-green-700 transition-colors text-left">
-            {EXAMPLE_QUESTIONS[chipIndex]}
-          </button>
-        </div>
-
-        <button onClick={handleSubmit} disabled={loading}
-          className="bg-green-700 text-white px-6 py-3 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50">
-          {loading ? 'Working...' : 'Get my compliance checklist →'}
-        </button>
-
-        {loading && (
-          <div className="mt-6 p-5 bg-gray-50 rounded-xl border border-gray-200">
-            <div className="space-y-2">
-              {completedSteps.map((step) => (
-                <div key={step} className="flex items-center gap-2 text-sm text-gray-400">
-                  <span className="text-green-500">✓</span>{step}
-                </div>
-              ))}
-              {currentStatus && (
-                <div className="flex items-center gap-2 text-sm text-gray-700 font-medium">
-                  <span className="animate-spin inline-block">⟳</span>{currentStatus}
-                </div>
+          <div className="print-only print-header">
+            <div>
+              <h1 style={{fontSize:'20px', fontWeight:'bold', color:'#166534'}}>CompliBoard</h1>
+              <p style={{fontSize:'12px', color:'#6b7280'}}>Compliance Report</p>
+              {companyName && (
+                <p style={{fontSize:'13px', fontWeight:'600', color:'#111827', marginTop:'4px'}}>{companyName}</p>
               )}
             </div>
+            <div style={{textAlign:'right', fontSize:'11px', color:'#6b7280'}}>
+              <p>Generated: {new Date().toLocaleDateString()}</p>
+              <p style={{marginTop:'4px', fontStyle:'italic', maxWidth:'300px'}}>{askedQuestion}</p>
+            </div>
           </div>
-        )}
 
-        {data && !loading && (
-          <div className="mt-8">
+          <div className="no-print mb-8">
+            <h1 className="text-2xl font-semibold text-gray-900 mb-2">CompliBoard</h1>
+            <p className="text-gray-500 text-sm">Ask any compliance question in plain English</p>
+          </div>
 
-            {data.safety_alert && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
-                <span className="text-red-500 text-lg flex-shrink-0">⚠️</span>
-                <div>
-                  <p className="text-sm font-semibold text-red-700 mb-1">Safety first</p>
-                  <p className="text-sm text-red-600">{data.safety_alert}</p>
-                </div>
-              </div>
-            )}
+          <div className="no-print mb-3">
+            <input
+              type="text"
+              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-green-500 bg-gray-50 mb-2"
+              placeholder="Your company name (optional — appears on PDF)"
+              value={companyName}
+              onChange={(e) => setCompanyName(e.target.value)}
+            />
+            <textarea
+              className="w-full border border-gray-200 rounded-xl p-4 text-sm text-gray-800 resize-none focus:outline-none focus:border-green-500 bg-gray-50"
+              rows={4}
+              placeholder="e.g. What permits do I need to open a hazmat warehouse in Texas?"
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+            />
+          </div>
 
-            <h2 className="text-base font-semibold text-gray-900 mb-1">{data.title}</h2>
+          <div className="no-print mb-5 flex items-center gap-3">
+            <p className="text-xs text-gray-400 uppercase tracking-wide font-medium whitespace-nowrap">Example</p>
+            <button
+              onClick={() => setQuestion(EXAMPLE_QUESTIONS[chipIndex])}
+              style={{ opacity: chipVisible ? 1 : 0, transition: 'opacity 0.4s ease' }}
+              className="text-xs px-3 py-1.5 rounded-full border border-gray-200 text-gray-500 hover:border-green-500 hover:text-green-700 transition-colors text-left">
+              {EXAMPLE_QUESTIONS[chipIndex]}
+            </button>
+          </div>
 
-            {totalMust > 0 && (
-              <div className="mb-4 flex items-center gap-2">
-                <div className="flex-1 bg-gray-100 rounded-full h-1.5">
-                  <div
-                    className="bg-green-500 h-1.5 rounded-full transition-all"
-                    style={{ width: `${(doneCount / totalMust) * 100}%` }}
-                  />
-                </div>
-                <span className="text-xs text-gray-400">{doneCount} of {totalMust} done</span>
-              </div>
-            )}
+          <div className="no-print">
+            <button onClick={handleSubmit} disabled={loading}
+              className="bg-green-700 text-white px-6 py-3 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50">
+              {loading ? 'Working...' : 'Get my compliance checklist →'}
+            </button>
+          </div>
 
-            <div className="mt-6">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-xs font-bold uppercase tracking-widest text-green-700">✅ Must Do</span>
-                <div className="flex-1 h-px bg-green-100"></div>
-              </div>
-              <div className="space-y-3">
-                {data.must_do?.map((item, i) => (
-                  <div key={i}
-                    onClick={() => toggleCheck(`must-${i}`)}
-                    className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${checked[`must-${i}`] ? 'opacity-50 bg-gray-50 border-gray-100' : 'bg-white border-gray-200 hover:border-green-300'}`}>
-                    <div className={`mt-0.5 w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${checked[`must-${i}`] ? 'bg-green-500 border-green-500' : 'border-gray-300'}`}>
-                      {checked[`must-${i}`] && <span className="text-white text-xs">✓</span>}
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-semibold text-gray-900">{item.name}</p>
-                      <p className="text-sm text-gray-500 mt-0.5">{item.description}</p>
-                      {item.why && (
-                        <p className="text-xs text-gray-400 mt-1 italic">{item.why}</p>
-                      )}
-                      {item.cost_note && (
-                        <p className="text-xs text-amber-600 mt-1">💰 {item.cost_note}</p>
-                      )}
-                      {item.required_by && (
-                        <div className="flex items-center gap-1 mt-1 flex-wrap">
-                          <p className="text-xs text-gray-400">Required by: {item.required_by}</p>
-                          {item.source_url && (
-                            <a href={item.source_url} target="_blank" rel="noopener noreferrer"
-                              onClick={(e) => e.stopPropagation()}
-                              className="text-xs text-green-600 hover:text-green-800 underline ml-1">
-                              ↗ View source
-                            </a>
-                          )}
-                        </div>
-                      )}
-                      {item.providers && item.providers.length > 0 && (
-                        <div className="mt-2 pt-2 border-t border-gray-100">
-                          <p className="text-xs text-gray-400 mb-1">Who to call:</p>
-                          <div className="space-y-1">
-                            {item.providers.map((p, j) => (
-                              <div key={j} className="flex items-center gap-2">
-                                <span className="text-xs">{p.coverage === 'local' ? '📍' : p.coverage === 'regional' ? '🗺️' : '🇺🇸'}</span>
-                                <span className="text-xs font-medium text-gray-700">{p.name}</span>
-                                <span className="text-xs text-gray-400">— {p.note}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
+          {loading && (
+            <div className="no-print mt-6 p-5 bg-gray-50 rounded-xl border border-gray-200">
+              <div className="space-y-2">
+                {completedSteps.map((step) => (
+                  <div key={step} className="flex items-center gap-2 text-sm text-gray-400">
+                    <span className="text-green-500">✓</span>{step}
                   </div>
                 ))}
+                {currentStatus && (
+                  <div className="flex items-center gap-2 text-sm text-gray-700 font-medium">
+                    <span className="animate-spin inline-block">⟳</span>{currentStatus}
+                  </div>
+                )}
               </div>
             </div>
+          )}
 
-            {data.good_to_have?.length > 0 && (
-              <div className="mt-8">
+          {data && !loading && (
+            <div className="mt-8">
+
+              {data.safety_alert && (
+                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
+                  <span className="text-red-500 text-lg flex-shrink-0">⚠️</span>
+                  <div>
+                    <p className="text-sm font-semibold text-red-700 mb-1">Safety first</p>
+                    <p className="text-sm text-red-600">{data.safety_alert}</p>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-start justify-between gap-4 mb-1">
+                <h2 className="text-base font-semibold text-gray-900">{data.title}</h2>
+                <button
+                  onClick={handlePrint}
+                  className="no-print flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:border-green-500 hover:text-green-700 transition-colors whitespace-nowrap flex-shrink-0">
+                  ⬇ Download PDF
+                </button>
+              </div>
+
+              {totalMust > 0 && (
+                <div className="no-print mb-4 flex items-center gap-2">
+                  <div className="flex-1 bg-gray-100 rounded-full h-1.5">
+                    <div
+                      className="bg-green-500 h-1.5 rounded-full transition-all"
+                      style={{ width: `${(doneCount / totalMust) * 100}%` }}
+                    />
+                  </div>
+                  <span className="text-xs text-gray-400">{doneCount} of {totalMust} done</span>
+                </div>
+              )}
+
+              <div className="mt-6">
                 <div className="flex items-center gap-2 mb-3">
-                  <span className="text-xs font-bold uppercase tracking-widest text-blue-600">💡 Good to Have</span>
-                  <div className="flex-1 h-px bg-blue-100"></div>
+                  <span className="text-xs font-bold uppercase tracking-widest text-green-700">✅ Must Do</span>
+                  <div className="flex-1 h-px bg-green-100"></div>
                 </div>
                 <div className="space-y-3">
-                  {data.good_to_have?.map((item, i) => (
+                  {data.must_do?.map((item, i) => (
                     <div key={i}
-                      onClick={() => toggleCheck(`nice-${i}`)}
-                      className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${checked[`nice-${i}`] ? 'opacity-50 bg-gray-50 border-gray-100' : 'bg-gray-50 border-gray-200 hover:border-blue-300'}`}>
-                      <div className={`mt-0.5 w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${checked[`nice-${i}`] ? 'bg-blue-500 border-blue-500' : 'border-gray-300'}`}>
-                        {checked[`nice-${i}`] && <span className="text-white text-xs">✓</span>}
+                      onClick={() => toggleCheck(`must-${i}`)}
+                      className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${checked[`must-${i}`] ? 'opacity-50 bg-gray-50 border-gray-100' : 'bg-white border-gray-200 hover:border-green-300'}`}>
+                      <div className={`mt-0.5 w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${checked[`must-${i}`] ? 'bg-green-500 border-green-500' : 'border-gray-300'}`}>
+                        {checked[`must-${i}`] && <span className="text-white text-xs">✓</span>}
                       </div>
                       <div className="flex-1">
                         <p className="text-sm font-semibold text-gray-900">{item.name}</p>
                         <p className="text-sm text-gray-500 mt-0.5">{item.description}</p>
-                        {item.why && (
-                          <p className="text-xs text-gray-400 mt-1 italic">{item.why}</p>
-                        )}
-                        {item.recommended_by && (
+                        {item.why && <p className="text-xs text-gray-400 mt-1 italic">{item.why}</p>}
+                        {item.cost_note && <p className="text-xs text-amber-600 mt-1">💰 {item.cost_note}</p>}
+                        {item.required_by && (
                           <div className="flex items-center gap-1 mt-1 flex-wrap">
-                            <p className="text-xs text-gray-400">Recommended by: {item.recommended_by}</p>
+                            <p className="text-xs text-gray-400">Required by: {item.required_by}</p>
                             {item.source_url && (
                               <a href={item.source_url} target="_blank" rel="noopener noreferrer"
                                 onClick={(e) => e.stopPropagation()}
-                                className="text-xs text-blue-500 hover:text-blue-700 underline ml-1">
+                                className="no-print text-xs text-green-600 hover:text-green-800 underline ml-1">
                                 ↗ View source
                               </a>
                             )}
                           </div>
                         )}
+                        {item.providers && item.providers.length > 0 && (
+                          <div className="mt-2 pt-2 border-t border-gray-100">
+                            <p className="text-xs text-gray-400 mb-1">Who to call:</p>
+                            <div className="space-y-1">
+                              {item.providers.map((p, j) => (
+                                <div key={j} className="flex items-center gap-2">
+                                  <span className="text-xs">{p.coverage === 'local' ? '📍' : p.coverage === 'regional' ? '🗺️' : '🇺🇸'}</span>
+                                  <span className="text-xs font-medium text-gray-700">{p.name}</span>
+                                  <span className="text-xs text-gray-400">— {p.note}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
-            )}
 
-            {data.why_not && data.why_not.length > 0 && (
-              <div className="mt-8">
-                <button
-                  onClick={() => setWhyNotOpen(!whyNotOpen)}
-                  className="flex items-center gap-2 w-full">
-                  <span className="text-xs font-bold uppercase tracking-widest text-gray-500">❓ Common Questions</span>
-                  <div className="flex-1 h-px bg-gray-100"></div>
-                  <span className="text-xs text-gray-400">{whyNotOpen ? '▲' : '▼'}</span>
-                </button>
-                {whyNotOpen && (
-                  <div className="mt-3 space-y-3">
-                    {data.why_not.map((item, i) => (
-                      <div key={i} className="p-3 bg-gray-50 rounded-xl border border-gray-100">
-                        <p className="text-sm font-semibold text-gray-700 mb-1">{item.question}</p>
-                        <p className="text-sm text-gray-500">{item.answer}</p>
+              {data.good_to_have?.length > 0 && (
+                <div className="mt-8">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-xs font-bold uppercase tracking-widest text-blue-600">💡 Good to Have</span>
+                    <div className="flex-1 h-px bg-blue-100"></div>
+                  </div>
+                  <div className="space-y-3">
+                    {data.good_to_have?.map((item, i) => (
+                      <div key={i}
+                        onClick={() => toggleCheck(`nice-${i}`)}
+                        className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${checked[`nice-${i}`] ? 'opacity-50 bg-gray-50 border-gray-100' : 'bg-gray-50 border-gray-200 hover:border-blue-300'}`}>
+                        <div className={`mt-0.5 w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${checked[`nice-${i}`] ? 'bg-blue-500 border-blue-500' : 'border-gray-300'}`}>
+                          {checked[`nice-${i}`] && <span className="text-white text-xs">✓</span>}
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-semibold text-gray-900">{item.name}</p>
+                          <p className="text-sm text-gray-500 mt-0.5">{item.description}</p>
+                          {item.why && <p className="text-xs text-gray-400 mt-1 italic">{item.why}</p>}
+                          {item.recommended_by && (
+                            <div className="flex items-center gap-1 mt-1 flex-wrap">
+                              <p className="text-xs text-gray-400">Recommended by: {item.recommended_by}</p>
+                              {item.source_url && (
+                                <a href={item.source_url} target="_blank" rel="noopener noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="no-print text-xs text-blue-500 hover:text-blue-700 underline ml-1">
+                                  ↗ View source
+                                </a>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
-                )}
-              </div>
-            )}
-
-            {data.follow_up_questions && data.follow_up_questions.length > 0 && (
-              <div className="mt-6">
-                <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-2">Refine your answer</p>
-                <div className="space-y-2">
-                  {data.follow_up_questions.map((q, i) => (
-                    <button key={i}
-                      onClick={() => setQuestion(q)}
-                      className="block w-full text-left text-xs px-3 py-2 rounded-lg border border-gray-200 text-gray-500 hover:border-green-500 hover:text-green-700 transition-colors">
-                      → {q}
-                    </button>
-                  ))}
                 </div>
-              </div>
-            )}
+              )}
 
-            <p className="text-xs text-gray-400 mt-6 pt-4 border-t border-gray-100">
-              This checklist is for informational purposes only and is not legal advice. Always verify requirements with the relevant agencies.
-            </p>
-          </div>
-        )}
+              {data.why_not && data.why_not.length > 0 && (
+                <div className="no-print mt-8">
+                  <button
+                    onClick={() => setWhyNotOpen(!whyNotOpen)}
+                    className="flex items-center gap-2 w-full">
+                    <span className="text-xs font-bold uppercase tracking-widest text-gray-500">❓ Common Questions</span>
+                    <div className="flex-1 h-px bg-gray-100"></div>
+                    <span className="text-xs text-gray-400">{whyNotOpen ? '▲' : '▼'}</span>
+                  </button>
+                  {whyNotOpen && (
+                    <div className="mt-3 space-y-3">
+                      {data.why_not.map((item, i) => (
+                        <div key={i} className="p-3 bg-gray-50 rounded-xl border border-gray-100">
+                          <p className="text-sm font-semibold text-gray-700 mb-1">{item.question}</p>
+                          <p className="text-sm text-gray-500">{item.answer}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
-      </div>
-    </main>
+              {data.follow_up_questions && data.follow_up_questions.length > 0 && (
+                <div className="no-print mt-6">
+                  <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-2">Refine your answer</p>
+                  <div className="space-y-2">
+                    {data.follow_up_questions.map((q, i) => (
+                      <button key={i}
+                        onClick={() => setQuestion(q)}
+                        className="block w-full text-left text-xs px-3 py-2 rounded-lg border border-gray-200 text-gray-500 hover:border-green-500 hover:text-green-700 transition-colors">
+                        → {q}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <p className="text-xs text-gray-400 mt-6 pt-4 border-t border-gray-100">
+                This checklist is for informational purposes only and is not legal advice. Always verify requirements with the relevant agencies.
+              </p>
+            </div>
+          )}
+
+        </div>
+      </main>
+    </>
   )
 }
