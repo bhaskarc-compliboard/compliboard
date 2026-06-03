@@ -125,7 +125,7 @@ export default function RootLayout({
           </div>
           <div className="flex items-center gap-3">
             {user && companyName && (
-              <span className="text-xs text-gray-500 hidden sm:block border border-gray-200 rounded-lg px-2.5 py-1">
+              <span className="text-sm font-semibold text-green-600 hidden sm:block">
                 {companyName}
               </span>
             )}

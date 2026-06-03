@@ -1,8 +1,7 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
-import { useRouter } from 'next/navigation'
 
 const STATUS_MESSAGES: Record<string, string[]> = {
   hazmat: [
@@ -123,10 +122,8 @@ const EXAMPLE_QUESTIONS = [
   "What do I need for a quality certification?",
 ]
 
-export default function Home() {
+export default function CompliancePage() {
   const supabase = createClient()
-  const router = useRouter()
-  const [checking, setChecking] = useState(true)
   const [question, setQuestion] = useState('')
   const [companyName, setCompanyName] = useState('')
   const [data, setData] = useState<ChecklistData | null>(null)
@@ -142,15 +139,23 @@ export default function Home() {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    async function checkAuth() {
+    async function loadCompanyName() {
       const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        router.push('/dashboard')
-      } else {
-        setChecking(false)
-      }
+      if (!user) return
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('company_id')
+        .eq('id', user.id)
+        .single()
+      if (!profile?.company_id) return
+      const { data: company } = await supabase
+        .from('companies')
+        .select('name')
+        .eq('id', profile.company_id)
+        .single()
+      if (company?.name) setCompanyName(company.name)
     }
-    checkAuth()
+    loadCompanyName()
   }, [])
 
   useEffect(() => {
@@ -229,14 +234,6 @@ export default function Home() {
   const doneCount = Object.values(checked).filter(Boolean).length
   const totalMust = data?.must_do?.length || 0
 
-  if (checking) {
-    return (
-      <main className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-sm text-gray-400">Loading...</div>
-      </main>
-    )
-  }
-
   return (
     <>
       <style>{`
@@ -248,7 +245,6 @@ export default function Home() {
           .print-container {
             box-shadow: none !important;
             border: none !important;
-            border-radius: 0 !important;
             max-width: 100% !important;
             padding: 20px !important;
           }
@@ -264,8 +260,8 @@ export default function Home() {
         .print-only { display: none; }
       `}</style>
 
-      <main className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="print-container bg-white rounded-2xl shadow-sm border border-gray-200 w-full max-w-2xl p-8">
+      <main className="min-h-screen bg-gray-50">
+        <div className="print-container max-w-3xl mx-auto px-6 py-8">
 
           <div className="print-only print-header">
             <div>
@@ -281,21 +277,14 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="no-print mb-8">
-            <h1 className="text-2xl font-semibold text-gray-900 mb-2">CompliBoard</h1>
-            <p className="text-gray-500 text-sm">Ask any compliance question in plain English</p>
+          <div className="no-print mb-6">
+            <h1 className="text-xl font-semibold text-gray-900 mb-1">Compliance Checklist</h1>
+            <p className="text-gray-400 text-sm">Ask any compliance question in plain English</p>
           </div>
 
           <div className="no-print mb-3">
-            <input
-              type="text"
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-green-500 bg-gray-50 mb-2"
-              placeholder="Your company name (optional — appears on PDF)"
-              value={companyName}
-              onChange={(e) => setCompanyName(e.target.value)}
-            />
             <textarea
-              className="w-full border border-gray-200 rounded-xl p-4 text-sm text-gray-800 resize-none focus:outline-none focus:border-green-500 bg-gray-50"
+              className="w-full border border-gray-200 rounded-xl p-4 text-sm text-gray-800 resize-none focus:outline-none focus:border-green-500 bg-white shadow-sm"
               rows={4}
               placeholder="e.g. What permits do I need to open a hazmat warehouse in Texas?"
               value={question}
@@ -315,7 +304,7 @@ export default function Home() {
             {!uploadedFile ? (
               <label
                 htmlFor="file-upload"
-                className="flex items-center gap-2 w-full border border-dashed border-gray-300 rounded-xl px-4 py-3 cursor-pointer hover:border-green-500 hover:bg-green-50 transition-colors">
+                className="flex items-center gap-2 w-full border border-dashed border-gray-300 rounded-xl px-4 py-3 cursor-pointer hover:border-green-500 hover:bg-green-50 transition-colors bg-white">
                 <span className="text-gray-400 text-lg">📎</span>
                 <div>
                   <p className="text-sm text-gray-500">Attach a file <span className="text-gray-400">(optional)</span></p>
@@ -329,8 +318,7 @@ export default function Home() {
                   <p className="text-sm font-medium text-green-800 truncate">{uploadedFile.name}</p>
                   <p className="text-xs text-green-600">Ready to analyse — ask any question about this file below</p>
                 </div>
-                <button
-                  onClick={removeFile}
+                <button onClick={removeFile}
                   className="text-gray-400 hover:text-red-500 transition-colors text-lg leading-none flex-shrink-0">
                   ×
                 </button>
@@ -348,20 +336,24 @@ export default function Home() {
             <button
               onClick={() => setQuestion(EXAMPLE_QUESTIONS[chipIndex])}
               style={{ opacity: chipVisible ? 1 : 0, transition: 'opacity 0.4s ease' }}
-              className="text-xs px-3 py-1.5 rounded-full border border-gray-200 text-gray-500 hover:border-green-500 hover:text-green-700 transition-colors text-left">
+              className="text-xs px-3 py-1.5 rounded-full border border-gray-200 text-gray-500 hover:border-green-500 hover:text-green-700 transition-colors text-left bg-white">
               {EXAMPLE_QUESTIONS[chipIndex]}
             </button>
           </div>
 
-          <div className="no-print">
+          <div className="no-print flex items-center gap-3">
             <button onClick={handleSubmit} disabled={loading || (!question.trim() && !uploadedFile)}
               className="bg-green-700 text-white px-6 py-3 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50">
               {loading ? 'Working...' : uploadedFile ? 'Analyse my document →' : 'Get my compliance checklist →'}
             </button>
+            <a href="/dashboard"
+              className="text-sm text-gray-400 hover:text-gray-600 transition-colors">
+              ← Back to dashboard
+            </a>
           </div>
 
           {loading && (
-            <div className="no-print mt-6 p-5 bg-gray-50 rounded-xl border border-gray-200">
+            <div className="no-print mt-6 p-5 bg-white rounded-xl border border-gray-200 shadow-sm">
               <div className="space-y-2">
                 {completedSteps.map((step) => (
                   <div key={step} className="flex items-center gap-2 text-sm text-gray-400">
@@ -390,8 +382,7 @@ export default function Home() {
               )}
               <div className="flex items-start justify-between gap-4 mb-1">
                 <h2 className="text-base font-semibold text-gray-900">{data.title}</h2>
-                <button
-                  onClick={handlePrint}
+                <button onClick={handlePrint}
                   className="no-print flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:border-green-500 hover:text-green-700 transition-colors whitespace-nowrap flex-shrink-0">
                   ⬇ Download PDF
                 </button>
@@ -413,7 +404,7 @@ export default function Home() {
                 <div className="space-y-3">
                   {data.must_do?.map((item, i) => (
                     <div key={i} onClick={() => toggleCheck(`must-${i}`)}
-                      className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${checked[`must-${i}`] ? 'opacity-50 bg-gray-50 border-gray-100' : 'bg-white border-gray-200 hover:border-green-300'}`}>
+                      className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${checked[`must-${i}`] ? 'opacity-50 bg-gray-50 border-gray-100' : 'bg-white border-gray-200 hover:border-green-300 shadow-sm'}`}>
                       <div className={`mt-0.5 w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${checked[`must-${i}`] ? 'bg-green-500 border-green-500' : 'border-gray-300'}`}>
                         {checked[`must-${i}`] && <span className="text-white text-xs">✓</span>}
                       </div>
@@ -462,7 +453,7 @@ export default function Home() {
                   <div className="space-y-3">
                     {data.good_to_have?.map((item, i) => (
                       <div key={i} onClick={() => toggleCheck(`nice-${i}`)}
-                        className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${checked[`nice-${i}`] ? 'opacity-50 bg-gray-50 border-gray-100' : 'bg-gray-50 border-gray-200 hover:border-blue-300'}`}>
+                        className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${checked[`nice-${i}`] ? 'opacity-50 bg-gray-50 border-gray-100' : 'bg-white border-gray-200 hover:border-blue-300 shadow-sm'}`}>
                         <div className={`mt-0.5 w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${checked[`nice-${i}`] ? 'bg-blue-500 border-blue-500' : 'border-gray-300'}`}>
                           {checked[`nice-${i}`] && <span className="text-white text-xs">✓</span>}
                         </div>
@@ -499,7 +490,7 @@ export default function Home() {
                   {whyNotOpen && (
                     <div className="mt-3 space-y-3">
                       {data.why_not.map((item, i) => (
-                        <div key={i} className="p-3 bg-gray-50 rounded-xl border border-gray-100">
+                        <div key={i} className="p-4 bg-white rounded-xl border border-gray-100 shadow-sm">
                           <p className="text-sm font-semibold text-gray-700 mb-1">{item.question}</p>
                           <p className="text-sm text-gray-500">{item.answer}</p>
                         </div>
@@ -514,7 +505,7 @@ export default function Home() {
                   <div className="space-y-2">
                     {data.follow_up_questions.map((q, i) => (
                       <button key={i} onClick={() => setQuestion(q)}
-                        className="block w-full text-left text-xs px-3 py-2 rounded-lg border border-gray-200 text-gray-500 hover:border-green-500 hover:text-green-700 transition-colors">
+                        className="block w-full text-left text-xs px-3 py-2 rounded-lg border border-gray-200 text-gray-500 hover:border-green-500 hover:text-green-700 transition-colors bg-white">
                         → {q}
                       </button>
                     ))}
