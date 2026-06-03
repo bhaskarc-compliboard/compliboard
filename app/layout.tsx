@@ -148,10 +148,16 @@ export default function RootLayout({
                 Log out
               </button>
             ) : (
-              <a href="/login"
-                className="text-sm px-3 py-1.5 rounded-lg bg-green-700 text-white hover:bg-green-800 transition-colors">
-                Log in
-              </a>
+              <>
+                <a href="/login"
+                  className="text-sm px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:border-green-500 hover:text-green-700 transition-colors">
+                  Log in
+                </a>
+                <a href="/signup"
+                  className="text-sm px-3 py-1.5 rounded-lg bg-green-700 text-white hover:bg-green-800 transition-colors">
+                  Get started
+                </a>
+              </>
             )}
           </div>
         </header>
