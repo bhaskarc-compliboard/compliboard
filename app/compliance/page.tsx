@@ -90,6 +90,7 @@ interface Provider {
 }
 
 interface ChecklistItem {
+  id?: string
   name: string
   description: string
   why?: string
@@ -98,6 +99,7 @@ interface ChecklistItem {
   source_url?: string
   cost_note?: string
   providers?: Provider[]
+  completed?: boolean
 }
 
 interface WhyNot {
@@ -114,6 +116,15 @@ interface ChecklistData {
   follow_up_questions?: string[]
 }
 
+interface SavedChecklist {
+  id: string
+  question: string
+  title: string
+  created_at: string
+  must_do_count: number
+  completed_count: number
+}
+
 const EXAMPLE_QUESTIONS = [
   "Ask anything about compliance, regulations or HR",
   "What permits do I need to operate my facility?",
@@ -127,7 +138,11 @@ export default function CompliancePage() {
   const supabase = createClient()
   const [question, setQuestion] = useState('')
   const [companyName, setCompanyName] = useState('')
+  const [companyId, setCompanyId] = useState<string | null>(null)
+  const [userId, setUserId] = useState<string | null>(null)
   const [data, setData] = useState<ChecklistData | null>(null)
+  const [currentChecklistId, setCurrentChecklistId] = useState<string | null>(null)
+  const [savedChecklists, setSavedChecklists] = useState<SavedChecklist[]>([])
   const [loading, setLoading] = useState(false)
   const [currentStatus, setCurrentStatus] = useState('')
   const [completedSteps, setCompletedSteps] = useState<string[]>([])
@@ -137,18 +152,21 @@ export default function CompliancePage() {
   const [whyNotOpen, setWhyNotOpen] = useState(false)
   const [askedQuestion, setAskedQuestion] = useState('')
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
+  const [showSaved, setShowSaved] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    async function loadCompanyName() {
+    async function loadProfile() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
+      setUserId(user.id)
       const { data: profile } = await supabase
         .from('profiles')
         .select('company_id')
         .eq('id', user.id)
         .single()
       if (!profile?.company_id) return
+      setCompanyId(profile.company_id)
       const { data: company } = await supabase
         .from('companies')
         .select('name')
@@ -156,22 +174,166 @@ export default function CompliancePage() {
         .single()
       if (company?.name) setCompanyName(company.name)
     }
-    loadCompanyName()
+    loadProfile()
+    loadSavedChecklists()
   }, [])
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setChipVisible(false)
-      setTimeout(() => {
-        setChipIndex(prev => (prev + 1) % EXAMPLE_QUESTIONS.length)
-        setChipVisible(true)
-      }, 400)
-    }, 3000)
-    return () => clearInterval(interval)
-  }, [])
+  async function loadSavedChecklists() {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    const { data: checklists } = await supabase
+      .from('checklists')
+      .select('id, question, title, created_at')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(10)
+    if (!checklists) return
 
-  function toggleCheck(key: string) {
-    setChecked(prev => ({ ...prev, [key]: !prev[key] }))
+    const withCounts = await Promise.all(checklists.map(async (c) => {
+      const { count: total } = await supabase
+        .from('checklist_items')
+        .select('*', { count: 'exact', head: true })
+        .eq('checklist_id', c.id)
+        .eq('category', 'must_do')
+      const { count: completed } = await supabase
+        .from('checklist_items')
+        .select('*', { count: 'exact', head: true })
+        .eq('checklist_id', c.id)
+        .eq('category', 'must_do')
+        .eq('completed', true)
+      return {
+        ...c,
+        must_do_count: total || 0,
+        completed_count: completed || 0,
+      }
+    }))
+    setSavedChecklists(withCounts)
+  }
+
+  async function saveChecklist(question: string, data: ChecklistData) {
+    if (!userId || !companyId) return null
+    const { data: checklist, error } = await supabase
+      .from('checklists')
+      .insert({
+        company_id: companyId,
+        user_id: userId,
+        question,
+        title: data.title,
+        safety_alert: data.safety_alert || null,
+      })
+      .select()
+      .single()
+    if (error || !checklist) return null
+
+    const items = [
+      ...data.must_do.map((item, i) => ({
+        checklist_id: checklist.id,
+        category: 'must_do',
+        name: item.name,
+        description: item.description || '',
+        why: item.why || null,
+        required_by: item.required_by || null,
+        source_url: item.source_url || null,
+        cost_note: item.cost_note || null,
+        providers: item.providers || [],
+        sort_order: i,
+        completed: false,
+      })),
+      ...data.good_to_have.map((item, i) => ({
+        checklist_id: checklist.id,
+        category: 'good_to_have',
+        name: item.name,
+        description: item.description || '',
+        why: item.why || null,
+        recommended_by: item.recommended_by || null,
+        source_url: item.source_url || null,
+        sort_order: i,
+        completed: false,
+      })),
+    ]
+
+    await supabase.from('checklist_items').insert(items)
+    return checklist.id
+  }
+
+  async function loadChecklist(checklistId: string) {
+    const { data: checklist } = await supabase
+      .from('checklists')
+      .select('*')
+      .eq('id', checklistId)
+      .single()
+    if (!checklist) return
+
+    const { data: items } = await supabase
+      .from('checklist_items')
+      .select('*')
+      .eq('checklist_id', checklistId)
+      .order('sort_order')
+    if (!items) return
+
+    const mustDo = items.filter(i => i.category === 'must_do')
+    const goodToHave = items.filter(i => i.category === 'good_to_have')
+
+    const checkState: Record<string, boolean> = {}
+    mustDo.forEach((item, i) => { checkState[`must-${i}`] = item.completed })
+    goodToHave.forEach((item, i) => { checkState[`nice-${i}`] = item.completed })
+
+    setData({
+      title: checklist.title,
+      safety_alert: checklist.safety_alert,
+      must_do: mustDo.map(i => ({
+        id: i.id,
+        name: i.name,
+        description: i.description,
+        why: i.why,
+        required_by: i.required_by,
+        source_url: i.source_url,
+        cost_note: i.cost_note,
+        providers: i.providers,
+      })),
+      good_to_have: goodToHave.map(i => ({
+        id: i.id,
+        name: i.name,
+        description: i.description,
+        why: i.why,
+        recommended_by: i.recommended_by,
+        source_url: i.source_url,
+      })),
+    })
+    setChecked(checkState)
+    setAskedQuestion(checklist.question)
+    setQuestion(checklist.question)
+    setCurrentChecklistId(checklistId)
+    setShowSaved(false)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  async function toggleCheck(key: string, itemIndex: number, category: 'must_do' | 'good_to_have') {
+    const newChecked = !checked[key]
+    setChecked(prev => ({ ...prev, [key]: newChecked }))
+
+    if (!currentChecklistId || !data) return
+    const items = category === 'must_do' ? data.must_do : data.good_to_have
+    const item = items[itemIndex]
+    if (!item?.id) return
+
+    await supabase
+      .from('checklist_items')
+      .update({
+        completed: newChecked,
+        completed_at: newChecked ? new Date().toISOString() : null,
+      })
+      .eq('id', item.id)
+  }
+
+  async function deleteChecklist(checklistId: string) {
+    await supabase.from('checklists').delete().eq('id', checklistId)
+    setSavedChecklists(prev => prev.filter(c => c.id !== checklistId))
+    if (currentChecklistId === checklistId) {
+      setData(null)
+      setCurrentChecklistId(null)
+      setChecked({})
+    }
   }
 
   function handlePrint() {
@@ -188,6 +350,17 @@ export default function CompliancePage() {
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setChipVisible(false)
+      setTimeout(() => {
+        setChipIndex(prev => (prev + 1) % EXAMPLE_QUESTIONS.length)
+        setChipVisible(true)
+      }, 400)
+    }, 3000)
+    return () => clearInterval(interval)
+  }, [])
+
   async function handleSubmit() {
     if (!question.trim() && !uploadedFile) return
     setLoading(true)
@@ -196,6 +369,7 @@ export default function CompliancePage() {
     setCompletedSteps([])
     setWhyNotOpen(false)
     setAskedQuestion(question)
+    setCurrentChecklistId(null)
     const messages = getStatusMessages(question)
     const delays = [0, 700, 1400, 2100, 2800, 3500, 4200, 4900]
     messages.forEach((msg, i) => {
@@ -220,6 +394,38 @@ export default function CompliancePage() {
       }
       const json = await res.json()
       setData(json.data)
+
+      if (json.data && userId) {
+        const checklistId = await saveChecklist(question, json.data)
+        if (checklistId) {
+          setCurrentChecklistId(checklistId)
+          const items = json.data.must_do || []
+          const { data: savedItems } = await supabase
+            .from('checklist_items')
+            .select('id')
+            .eq('checklist_id', checklistId)
+            .eq('category', 'must_do')
+            .order('sort_order')
+          if (savedItems) {
+            const updatedMustDo = json.data.must_do.map((item: ChecklistItem, i: number) => ({
+              ...item,
+              id: savedItems[i]?.id,
+            }))
+            const { data: savedGoodItems } = await supabase
+              .from('checklist_items')
+              .select('id')
+              .eq('checklist_id', checklistId)
+              .eq('category', 'good_to_have')
+              .order('sort_order')
+            const updatedGoodToHave = json.data.good_to_have.map((item: ChecklistItem, i: number) => ({
+              ...item,
+              id: savedGoodItems?.[i]?.id,
+            }))
+            setData({ ...json.data, must_do: updatedMustDo, good_to_have: updatedGoodToHave })
+          }
+          await loadSavedChecklists()
+        }
+      }
     } catch (error) {
       console.error(error)
     } finally {
@@ -257,9 +463,7 @@ export default function CompliancePage() {
           <div>
             <h1 style={{fontSize:'20px', fontWeight:'bold', color:'#166534'}}>CompliBoard</h1>
             <p style={{fontSize:'12px', color:'#6b7280'}}>Compliance Report</p>
-            {companyName && (
-              <p style={{fontSize:'13px', fontWeight:'600', color:'#111827', marginTop:'4px'}}>{companyName}</p>
-            )}
+            {companyName && <p style={{fontSize:'13px', fontWeight:'600', color:'#111827', marginTop:'4px'}}>{companyName}</p>}
           </div>
           <div style={{textAlign:'right', fontSize:'11px', color:'#6b7280'}}>
             <p>Generated: {new Date().toLocaleDateString()}</p>
@@ -267,10 +471,47 @@ export default function CompliancePage() {
           </div>
         </div>
 
-        <div className="no-print mb-6">
-          <h1 className="text-xl font-semibold text-gray-900 mb-1">Compliance Checklist</h1>
-          <p className="text-sm text-gray-400">Ask any compliance question in plain English</p>
+        <div className="no-print mb-6 flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-semibold text-gray-900 mb-1">Compliance Checklist</h1>
+            <p className="text-sm text-gray-400">Ask any compliance question in plain English</p>
+          </div>
+          {savedChecklists.length > 0 && (
+            <button
+              onClick={() => setShowSaved(!showSaved)}
+              className="flex items-center gap-2 text-sm px-3 py-2 rounded-xl border border-gray-200 text-gray-600 hover:border-green-500 hover:text-green-700 transition-colors">
+              📋 {showSaved ? 'Hide saved' : `Saved (${savedChecklists.length})`}
+            </button>
+          )}
         </div>
+
+        {showSaved && savedChecklists.length > 0 && (
+          <div className="no-print mb-6 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className="px-4 py-3 border-b border-gray-100">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Saved Checklists</p>
+            </div>
+            <div className="divide-y divide-gray-50">
+              {savedChecklists.map((c) => (
+                <div key={c.id} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors">
+                  <div className="flex-1 min-w-0 cursor-pointer" onClick={() => loadChecklist(c.id)}>
+                    <p className="text-sm font-medium text-gray-900 truncate">{c.title}</p>
+                    <div className="flex items-center gap-3 mt-0.5">
+                      <p className="text-xs text-gray-400">{new Date(c.created_at).toLocaleDateString()}</p>
+                      {c.must_do_count > 0 && (
+                        <p className="text-xs text-green-600">{c.completed_count}/{c.must_do_count} done</p>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => deleteChecklist(c.id)}
+                    className="text-gray-300 hover:text-red-400 transition-colors text-lg leading-none flex-shrink-0">
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="no-print mb-3">
           <textarea
@@ -359,10 +600,17 @@ export default function CompliancePage() {
             )}
             <div className="flex items-start justify-between gap-4 mb-1">
               <h2 className="text-base font-semibold text-gray-900">{data.title}</h2>
-              <button onClick={handlePrint}
-                className="no-print flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:border-green-500 hover:text-green-700 transition-colors whitespace-nowrap flex-shrink-0">
-                ⬇ Download PDF
-              </button>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {currentChecklistId && (
+                  <span className="text-xs text-green-600 flex items-center gap-1">
+                    ✓ Saved
+                  </span>
+                )}
+                <button onClick={handlePrint}
+                  className="no-print flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:border-green-500 hover:text-green-700 transition-colors whitespace-nowrap">
+                  ⬇ Download PDF
+                </button>
+              </div>
             </div>
             {totalMust > 0 && (
               <div className="no-print mb-4 flex items-center gap-2">
@@ -380,7 +628,7 @@ export default function CompliancePage() {
               </div>
               <div className="space-y-3">
                 {data.must_do?.map((item, i) => (
-                  <div key={i} onClick={() => toggleCheck(`must-${i}`)}
+                  <div key={i} onClick={() => toggleCheck(`must-${i}`, i, 'must_do')}
                     className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${checked[`must-${i}`] ? 'opacity-50 bg-gray-50 border-gray-100' : 'bg-white border-gray-200 hover:border-green-300 shadow-sm'}`}>
                     <div className={`mt-0.5 w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${checked[`must-${i}`] ? 'bg-green-500 border-green-500' : 'border-gray-300'}`}>
                       {checked[`must-${i}`] && <span className="text-white text-xs">✓</span>}
@@ -429,7 +677,7 @@ export default function CompliancePage() {
                 </div>
                 <div className="space-y-3">
                   {data.good_to_have?.map((item, i) => (
-                    <div key={i} onClick={() => toggleCheck(`nice-${i}`)}
+                    <div key={i} onClick={() => toggleCheck(`nice-${i}`, i, 'good_to_have')}
                       className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${checked[`nice-${i}`] ? 'opacity-50 bg-gray-50 border-gray-100' : 'bg-white border-gray-200 hover:border-blue-300 shadow-sm'}`}>
                       <div className={`mt-0.5 w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${checked[`nice-${i}`] ? 'bg-blue-500 border-blue-500' : 'border-gray-300'}`}>
                         {checked[`nice-${i}`] && <span className="text-white text-xs">✓</span>}
