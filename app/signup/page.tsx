@@ -56,38 +56,25 @@ export default function SignupPage() {
     setLoading(true)
     setError('')
     try {
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-      })
-      if (authError) throw authError
-      if (!authData.user) throw new Error('Signup failed')
-
-      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
-      if (signInError) throw signInError
-
-      const { data: companyData, error: companyError } = await supabase
-        .from('companies')
-        .insert({
-          name: companyName,
+      const res = await fetch('/api/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          password,
+          companyName,
           industry,
           state,
           county,
           city,
-          employee_count: employeeCount,
-        })
-        .select()
-        .single()
-      if (companyError) throw companyError
+          employeeCount,
+        }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error || 'Signup failed')
 
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert({
-          id: authData.user.id,
-          company_id: companyData.id,
-          full_name: '',
-        })
-      if (profileError) throw profileError
+      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
+      if (signInError) throw signInError
 
       router.push('/')
       router.refresh()

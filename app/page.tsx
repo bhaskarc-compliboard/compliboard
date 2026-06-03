@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { createClient } from '@/lib/supabase'
 
 const STATUS_MESSAGES: Record<string, string[]> = {
   hazmat: [
@@ -112,6 +113,13 @@ interface ChecklistData {
   follow_up_questions?: string[]
 }
 
+interface CompanyProfile {
+  name: string
+  industry?: string
+  state?: string
+  city?: string
+}
+
 const EXAMPLE_QUESTIONS = [
   "Ask anything about compliance, regulations or HR",
   "What permits do I need to operate my facility?",
@@ -122,8 +130,11 @@ const EXAMPLE_QUESTIONS = [
 ]
 
 export default function Home() {
+  const supabase = createClient()
   const [question, setQuestion] = useState('')
   const [companyName, setCompanyName] = useState('')
+  const [profile, setProfile] = useState<CompanyProfile | null>(null)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [data, setData] = useState<ChecklistData | null>(null)
   const [loading, setLoading] = useState(false)
   const [currentStatus, setCurrentStatus] = useState('')
@@ -135,6 +146,30 @@ export default function Home() {
   const [askedQuestion, setAskedQuestion] = useState('')
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    async function loadProfile() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      setIsLoggedIn(true)
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('company_id')
+        .eq('id', user.id)
+        .single()
+      if (!profileData?.company_id) return
+      const { data: company } = await supabase
+        .from('companies')
+        .select('name, industry, state, city')
+        .eq('id', profileData.company_id)
+        .single()
+      if (company) {
+        setProfile(company)
+        setCompanyName(company.name)
+      }
+    }
+    loadProfile()
+  }, [])
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -183,7 +218,6 @@ export default function Home() {
     })
     try {
       let res
-
       if (uploadedFile) {
         const formData = new FormData()
         formData.append('file', uploadedFile)
@@ -199,7 +233,6 @@ export default function Home() {
           body: JSON.stringify({ question }),
         })
       }
-
       const json = await res.json()
       setData(json.data)
     } catch (error) {
@@ -258,19 +291,39 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="no-print mb-8">
+          <div className="no-print mb-6">
             <h1 className="text-2xl font-semibold text-gray-900 mb-2">CompliBoard</h1>
             <p className="text-gray-500 text-sm">Ask any compliance question in plain English</p>
           </div>
 
+          {isLoggedIn && profile ? (
+            <div className="no-print mb-4 bg-green-50 border border-green-200 rounded-xl px-4 py-3 flex items-center justify-between">
+              <div>
+                <p className="text-xs text-green-600 font-medium mb-0.5">This checklist is for</p>
+                <p className="text-sm font-semibold text-green-900">{profile.name}</p>
+                <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                  {profile.industry && <span className="text-xs text-green-700">{profile.industry}</span>}
+                  {profile.industry && profile.state && <span className="text-xs text-green-400">·</span>}
+                  {profile.state && <span className="text-xs text-green-700">{profile.state}</span>}
+                  {profile.state && profile.city && <span className="text-xs text-green-400">·</span>}
+                  {profile.city && <span className="text-xs text-green-700">{profile.city}</span>}
+                </div>
+              </div>
+              
+            </div>
+          ) : (
+            <div className="no-print mb-3">
+              <input
+                type="text"
+                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-green-500 bg-gray-50 mb-2"
+                placeholder="Your company name (optional — appears on PDF)"
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+              />
+            </div>
+          )}
+
           <div className="no-print mb-3">
-            <input
-              type="text"
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-green-500 bg-gray-50 mb-2"
-              placeholder="Your company name (optional — appears on PDF)"
-              value={companyName}
-              onChange={(e) => setCompanyName(e.target.value)}
-            />
             <textarea
               className="w-full border border-gray-200 rounded-xl p-4 text-sm text-gray-800 resize-none focus:outline-none focus:border-green-500 bg-gray-50"
               rows={4}
