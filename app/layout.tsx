@@ -1,8 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { createClient } from '@/lib/supabase'
+import { useRouter } from 'next/navigation'
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -19,12 +21,47 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const router = useRouter()
+  const supabase = createClient()
+
   const [showFeedback, setShowFeedback] = useState(false)
   const [showReferral, setShowReferral] = useState(false)
   const [feedbackMessage, setFeedbackMessage] = useState('')
   const [feedbackSent, setFeedbackSent] = useState(false)
   const [feedbackLoading, setFeedbackLoading] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [user, setUser] = useState<{email?: string} | null>(null)
+  const [companyName, setCompanyName] = useState('')
+
+  useEffect(() => {
+    async function getUser() {
+      const { data: { user } } = await supabase.auth.getUser()
+      setUser(user)
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('company_id')
+          .eq('id', user.id)
+          .single()
+        if (profile?.company_id) {
+          const { data: company } = await supabase
+            .from('companies')
+            .select('name')
+            .eq('id', profile.company_id)
+            .single()
+          if (company) setCompanyName(company.name)
+        }
+      }
+    }
+    getUser()
+  }, [])
+
+  async function handleLogout() {
+    await supabase.auth.signOut()
+    setUser(null)
+    setCompanyName('')
+    router.push('/login')
+  }
 
   async function sendFeedback() {
     if (!feedbackMessage.trim()) return
@@ -56,20 +93,13 @@ export default function RootLayout({
 
   function shareEmail() {
     const subject = encodeURIComponent('You need to see this compliance tool')
-    const body = encodeURIComponent(`Hi,
-
-I have been using CompliBoard to handle compliance questions for our facility and it has saved me hours.
-
-You ask a question in plain English and it gives you a complete checklist with sources in under a minute.
-
-Worth checking out: https://compliboard.com`)
-    window.open(`mailto:?subject=${subject}&body=${body}`)
+    const body = encodeURIComponent('Hi, I have been using CompliBoard for compliance questions. Worth checking out: https://compliboard.com')
+    window.open('mailto:?subject=' + subject + '&body=' + body)
   }
 
   function shareLinkedIn() {
     const url = encodeURIComponent('https://compliboard.com')
-    const summary = encodeURIComponent('Just started using CompliBoard for compliance questions — it gives you a complete checklist with sources instantly.')
-    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${url}&summary=${summary}`, '_blank')
+    window.open('https://www.linkedin.com/sharing/share-offsite/?url=' + url, '_blank')
   }
 
   return (
@@ -85,6 +115,11 @@ Worth checking out: https://compliboard.com`)
             <span className="text-xs text-gray-400 hidden sm:block">— Compliance made simple</span>
           </div>
           <div className="flex items-center gap-3">
+            {user && companyName && (
+              <span className="text-xs text-gray-500 hidden sm:block border border-gray-200 rounded-lg px-2.5 py-1">
+                {companyName}
+              </span>
+            )}
             <button
               onClick={() => { setShowReferral(true); setShowFeedback(false) }}
               className="text-sm text-gray-500 hover:text-green-700 transition-colors flex items-center gap-1.5">
@@ -97,12 +132,23 @@ Worth checking out: https://compliboard.com`)
               <span>💬</span>
               <span>Feedback</span>
             </button>
+            {user ? (
+              <button
+                onClick={handleLogout}
+                className="text-sm px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:border-red-400 hover:text-red-600 transition-colors">
+                Log out
+              </button>
+            ) : (
+              <a href="/login"
+                className="text-sm px-3 py-1.5 rounded-lg bg-green-700 text-white hover:bg-green-800 transition-colors">
+                Log in
+              </a>
+            )}
           </div>
         </header>
 
         {children}
 
-        {/* Feedback Modal */}
         {showFeedback && (
           <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 p-4"
             onClick={(e) => { if (e.target === e.currentTarget) setShowFeedback(false) }}>
@@ -110,7 +156,7 @@ Worth checking out: https://compliboard.com`)
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-base font-semibold text-gray-900">Send us feedback</h3>
                 <button onClick={() => setShowFeedback(false)}
-                  className="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
+                  className="text-gray-400 hover:text-gray-600 text-xl leading-none">x</button>
               </div>
               {feedbackSent ? (
                 <div className="text-center py-6">
@@ -150,7 +196,6 @@ Worth checking out: https://compliboard.com`)
           </div>
         )}
 
-        {/* Referral Modal */}
         {showReferral && (
           <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 p-4"
             onClick={(e) => { if (e.target === e.currentTarget) setShowReferral(false) }}>
@@ -158,12 +203,11 @@ Worth checking out: https://compliboard.com`)
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-base font-semibold text-gray-900">Refer a friend</h3>
                 <button onClick={() => setShowReferral(false)}
-                  className="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
+                  className="text-gray-400 hover:text-gray-600 text-xl leading-none">x</button>
               </div>
               <p className="text-sm text-gray-500 mb-5">
                 Know someone who struggles with compliance? Share CompliBoard with them.
               </p>
-
               <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-xl border border-gray-200 mb-4">
                 <span className="text-sm text-gray-600 flex-1">compliboard.com</span>
                 <button
@@ -172,7 +216,6 @@ Worth checking out: https://compliboard.com`)
                   {copied ? '✓ Copied' : '📋 Copy link'}
                 </button>
               </div>
-
               <div className="space-y-2">
                 <button
                   onClick={shareEmail}
@@ -193,7 +236,6 @@ Worth checking out: https://compliboard.com`)
                   </div>
                 </button>
               </div>
-
               <button
                 onClick={() => setShowReferral(false)}
                 className="w-full mt-4 py-2 text-sm text-gray-400 hover:text-gray-600 transition-colors">
