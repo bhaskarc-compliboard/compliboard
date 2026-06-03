@@ -63,11 +63,8 @@ export default function SignupPage() {
       if (authError) throw authError
       if (!authData.user) throw new Error('Signup failed')
 
-      const { data: authSession } = await supabase.auth.getSession()
-      if (!authSession.session) {
-        const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
-        if (signInError) throw signInError
-      }
+      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
+      if (signInError) throw signInError
 
       const { data: companyData, error: companyError } = await supabase
         .from('companies')
@@ -93,6 +90,7 @@ export default function SignupPage() {
       if (profileError) throw profileError
 
       router.push('/')
+      router.refresh()
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
     } finally {

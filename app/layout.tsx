@@ -33,33 +33,42 @@ export default function RootLayout({
   const [user, setUser] = useState<{email?: string} | null>(null)
   const [companyName, setCompanyName] = useState('')
 
-  useEffect(() => {
-    async function getUser() {
-      const { data: { user } } = await supabase.auth.getUser()
-      setUser(user)
-      if (user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('company_id')
-          .eq('id', user.id)
-          .single()
-        if (profile?.company_id) {
-          const { data: company } = await supabase
-            .from('companies')
-            .select('name')
-            .eq('id', profile.company_id)
-            .single()
-          if (company) setCompanyName(company.name)
-        }
-      }
+  async function loadCompany(userId: string) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('company_id')
+      .eq('id', userId)
+      .single()
+    if (profile?.company_id) {
+      const { data: company } = await supabase
+        .from('companies')
+        .select('name')
+        .eq('id', profile.company_id)
+        .single()
+      if (company) setCompanyName(company.name)
     }
-    getUser()
+  }
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null)
+      if (session?.user) loadCompany(session.user.id)
+    })
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+      if (session?.user) {
+        loadCompany(session.user.id)
+      } else {
+        setCompanyName('')
+      }
+    })
+
+    return () => subscription.unsubscribe()
   }, [])
 
   async function handleLogout() {
     await supabase.auth.signOut()
-    setUser(null)
-    setCompanyName('')
     router.push('/login')
   }
 
