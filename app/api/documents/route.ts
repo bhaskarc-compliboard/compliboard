@@ -9,7 +9,7 @@ const supabaseAdmin = createClient(
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { company_id, user_id, name, file_url, file_type, file_size, category, is_recurring, recurrence_period } = body
+    const { company_id, user_id, name, file_url, file_type, file_size, category, is_recurring, recurrence_period, regulation_tags } = body
 
     const { error } = await supabaseAdmin
       .from('documents')
@@ -23,6 +23,7 @@ export async function POST(request: NextRequest) {
         category,
         is_recurring,
         recurrence_period,
+        regulation_tags: regulation_tags || [],
       })
 
     if (error) throw error
