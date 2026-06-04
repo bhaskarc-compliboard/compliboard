@@ -13,7 +13,7 @@ const NAV_ITEMS = [
   { icon: '📋', label: 'Compliance Checklist', href: '/compliance' },
   { icon: '👥', label: 'HR Help', href: '/hr', soon: true },
   { icon: '📁', label: 'My Files', href: '/documents' },
-  { icon: '📅', label: 'Calendar', href: '/calendar', soon: true },
+  { icon: '📅', label: 'Calendar', href: '/calendar' },
   { icon: '⚙️', label: 'My Account', href: '/account', soon: true },
 ]
 

@@ -37,7 +37,6 @@ const MODULES = [
     title: 'Calendar',
     description: 'Track all your compliance deadlines and recurring dates',
     href: '/calendar',
-    soon: true,
   },
   {
     icon: '⚙️',
