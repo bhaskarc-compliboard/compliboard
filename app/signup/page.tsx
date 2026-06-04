@@ -5,18 +5,18 @@ import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 
 const INDUSTRIES = [
-  'Chemical Manufacturing',
-  'Food & Beverage',
-  'Cannabis',
-  'Construction',
-  'Restaurant',
-  'Manufacturing',
-  'Transportation',
-  'Healthcare',
-  'Other',
+  { label: 'Chemical Manufacturing', value: 'chemical-manufacturing' },
+  { label: 'Food & Beverage Manufacturing', value: 'food-beverage-manufacturing' },
+  { label: 'Restaurant / Food Service', value: 'restaurant' },
+  { label: 'Cannabis', value: 'cannabis' },
+  { label: 'Auto Body / Dry Cleaners', value: 'auto-body-dry-cleaners' },
+  { label: 'Wood Products / Sawmills', value: 'wood-products-sawmills' },
+  { label: 'Construction', value: 'construction' },
+  { label: 'Healthcare', value: 'healthcare' },
+  { label: 'Other', value: 'other' },
 ]
 
-const EMPLOYEE_COUNTS = ['1-25', '26-75', '76-200']
+const EMPLOYEE_COUNTS = ['1-25', '26-75', '76-200', '200+']
 
 const US_STATES = [
   'Alabama','Alaska','Arizona','Arkansas','California','Colorado','Connecticut',
@@ -45,7 +45,7 @@ export default function SignupPage() {
   const [error, setError] = useState('')
 
   async function handleSignup() {
-    if (!email || !password || !companyName || !industry || !state || !city || !employeeCount) {
+    if (!email || !password || !companyName || !industry || !state || !city || !county || !employeeCount) {
       setError('Please fill in all required fields')
       return
     }
@@ -109,7 +109,7 @@ export default function SignupPage() {
               value={industry}
               onChange={(e) => setIndustry(e.target.value)}>
               <option value="">Select your industry</option>
-              {INDUSTRIES.map(i => <option key={i} value={i}>{i}</option>)}
+              {INDUSTRIES.map(i => <option key={i.value} value={i.value}>{i.label}</option>)}
             </select>
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -145,7 +145,7 @@ export default function SignupPage() {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">County</label>
+              <label className="block text-xs font-medium text-gray-600 mb-1">County <span className="text-red-400">*</span></label>
               <input type="text"
                 className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-green-500 bg-gray-50"
                 placeholder="Multnomah"
