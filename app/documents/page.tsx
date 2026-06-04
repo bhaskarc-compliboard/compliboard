@@ -104,6 +104,8 @@ export default function DocumentsPage() {
   const [showUpload, setShowUpload] = useState(false)
   const [selectedRegulation, setSelectedRegulation] = useState<RegulationTemplate | null>(null)
   const [selectedCategory, setSelectedCategory] = useState('all')
+  const [aboutOpen, setAboutOpen] = useState(false)
+  const [preAssignedTag, setPreAssignedTag] = useState<string | null>(null)
 
   const [file, setFile] = useState<File | null>(null)
   const [category, setCategory] = useState('')
@@ -187,9 +189,10 @@ export default function DocumentsPage() {
     if (f && f.name.match(/\.(xlsx|xls|csv)$/i)) setCategory('compliance-schedule')
   }
 
-  function getAutoTags(cat: string, fileName: string): string[] {
+  function getAutoTags(cat: string, fileName: string, extraTag?: string | null): string[] {
     const tags: string[] = []
     const name = fileName.toLowerCase()
+    if (extraTag) tags.push(extraTag)
     if (cat === 'sds-sheets' || name.includes('sds') || name.includes('safety data')) {
       tags.push('OSHA HazCom', 'EPA Tier II')
     }
@@ -243,7 +246,7 @@ export default function DocumentsPage() {
         .upload(filePath, file)
       if (uploadErr) throw uploadErr
 
-      const autoTags = getAutoTags(finalCategory, file.name)
+      const autoTags = getAutoTags(finalCategory, file.name, preAssignedTag)
 
       const dbRes = await fetch('/api/documents', {
         method: 'POST',
@@ -272,6 +275,7 @@ export default function DocumentsPage() {
       setCustomCategory('')
       setIsRecurring(false)
       setShowUpload(false)
+      setPreAssignedTag(null)
       if (fileInputRef.current) fileInputRef.current.value = ''
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : 'Upload failed')
@@ -308,10 +312,11 @@ export default function DocumentsPage() {
     if (data?.signedUrl) window.open(data.signedUrl, '_blank')
   }
 
-  function handleUploadClick() {
+  function handleUploadClick(tag?: string) {
     setActiveTab('uploaded')
     setShowUpload(true)
     setSelectedRegulation(null)
+    setPreAssignedTag(tag || null)
   }
 
   const docCategories = Array.from(new Set(documents.map(d => d.category))).sort()
@@ -335,7 +340,7 @@ export default function DocumentsPage() {
             <p className="text-sm text-gray-400">Your compliance files, checklists, and regulation folders</p>
           </div>
           <button
-            onClick={handleUploadClick}
+            onClick={() => handleUploadClick()}
             className="flex items-center gap-2 bg-green-700 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors">
             + Upload file
           </button>
@@ -436,8 +441,14 @@ export default function DocumentsPage() {
                 {showUpload && (
                   <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-6">
                     <div className="flex items-center justify-between mb-4">
-                      <h2 className="text-sm font-semibold text-gray-900">Upload a file</h2>
-                      <button onClick={() => setShowUpload(false)} className="text-gray-400 hover:text-gray-600 text-lg">×</button>
+                      <div>
+                        <h2 className="text-sm font-semibold text-gray-900">Upload a file</h2>
+                        {preAssignedTag && (
+                          <p className="text-xs text-green-600 mt-0.5">Will be tagged to {preAssignedTag}</p>
+                        )}
+                      </div>
+                      <button onClick={() => { setShowUpload(false); setPreAssignedTag(null) }}
+                        className="text-gray-400 hover:text-gray-600 text-lg">×</button>
                     </div>
                     <div className="space-y-4">
                       <div>
@@ -584,7 +595,7 @@ export default function DocumentsPage() {
               <div>
                 {selectedRegulation ? (
                   <div>
-                    <button onClick={() => setSelectedRegulation(null)}
+                    <button onClick={() => { setSelectedRegulation(null); setAboutOpen(false) }}
                       className="flex items-center gap-1 text-sm text-gray-400 hover:text-green-700 transition-colors mb-4">
                       ← Back to all regulations
                     </button>
@@ -596,29 +607,40 @@ export default function DocumentsPage() {
                         </div>
                         <span className="text-2xl">📂</span>
                       </div>
-                      <div className="space-y-4">
-                        <div className="p-4 bg-gray-50 rounded-xl border-l-4 border-l-gray-300">
-                          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">What it covers</p>
-                          <p className="text-sm text-gray-700">{selectedRegulation.what_it_covers}</p>
+
+                      {/* Collapsible about section */}
+                      <button
+                        onClick={() => setAboutOpen(!aboutOpen)}
+                        className="flex items-center gap-2 w-full text-left mb-4 group">
+                        <span className="text-xs font-medium text-gray-500 group-hover:text-green-700 transition-colors">
+                          About this regulation
+                        </span>
+                        <span className="text-xs text-gray-400">{aboutOpen ? '▲' : '▼'}</span>
+                      </button>
+
+                      {aboutOpen && (
+                        <div className="space-y-3 mb-4">
+                          <div className="p-4 bg-gray-50 rounded-xl border-l-4 border-l-gray-300">
+                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">What it covers</p>
+                            <p className="text-sm text-gray-700">{selectedRegulation.what_it_covers}</p>
+                          </div>
+                          <div className="p-4 bg-gray-50 rounded-xl border-l-4 border-l-green-400">
+                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Documents that belong here</p>
+                            <p className="text-sm text-gray-700">{selectedRegulation.documents_that_belong}</p>
+                          </div>
+                          <div className="p-4 bg-amber-50 rounded-xl border-l-4 border-l-amber-400">
+                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Renewal &amp; reporting</p>
+                            <p className="text-sm text-gray-700">{selectedRegulation.renewal_schedule}</p>
+                          </div>
                         </div>
-                        <div className="p-4 bg-gray-50 rounded-xl border-l-4 border-l-green-400">
-                          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Documents that belong here</p>
-                          <p className="text-sm text-gray-700">{selectedRegulation.documents_that_belong}</p>
-                        </div>
-                        <div className="p-4 bg-amber-50 rounded-xl border-l-4 border-l-amber-400">
-                          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Renewal &amp; reporting</p>
-                          <p className="text-sm text-gray-700">{selectedRegulation.renewal_schedule}</p>
-                        </div>
-                      </div>
-                      <div className="mt-6 pt-4 border-t border-gray-100">
+                      )}
+
+                      <div className="pt-4 border-t border-gray-100">
                         <p className="text-xs text-gray-400 mb-3">Files tagged to this regulation</p>
                         {documents.filter(d => d.regulation_tags?.includes(selectedRegulation.folder_name)).length === 0 ? (
                           <div className="text-center py-6">
-                            <p className="text-sm text-gray-400 mb-3">No files tagged to this regulation yet</p>
-                            <button onClick={handleUploadClick}
-                              className="text-xs px-4 py-2 rounded-lg bg-green-700 text-white hover:bg-green-800 transition-colors">
-                              Upload a file
-                            </button>
+                            <p className="text-sm text-gray-400 mb-2">No files tagged to this regulation yet</p>
+                            <p className="text-xs text-gray-400">Use the <span className="font-medium text-gray-500">+ Upload file</span> button above to add files — they will be tagged to this folder automatically</p>
                           </div>
                         ) : (
                           <div className="space-y-2">
@@ -654,7 +676,7 @@ export default function DocumentsPage() {
                           {regulations.map((reg) => {
                             const fileCount = documents.filter(d => d.regulation_tags?.includes(reg.folder_name)).length
                             return (
-                              <button key={reg.id} onClick={() => setSelectedRegulation(reg)}
+                              <button key={reg.id} onClick={() => { setSelectedRegulation(reg); setAboutOpen(false) }}
                                 className="flex items-start gap-4 p-4 bg-white rounded-xl border border-gray-200 shadow-sm hover:border-green-400 hover:shadow-md transition-all text-left w-full">
                                 <span className="text-2xl flex-shrink-0">📂</span>
                                 <div className="flex-1 min-w-0">
