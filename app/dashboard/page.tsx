@@ -31,7 +31,6 @@ const MODULES = [
     title: 'My Files',
     description: 'View and manage your uploaded compliance documents',
     href: '/documents',
-    soon: true,
   },
   {
     icon: '📅',
@@ -45,7 +44,6 @@ const MODULES = [
     title: 'Upload',
     description: 'Add files, reports, or your existing compliance schedule',
     href: '/upload',
-    soon: true,
   },
   {
     icon: '⚙️',
