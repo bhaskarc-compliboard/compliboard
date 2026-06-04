@@ -29,7 +29,7 @@ const MODULES = [
   {
     icon: '📁',
     title: 'My Files',
-    description: 'View and manage your uploaded compliance documents',
+    description: 'Upload, view and manage your compliance documents and checklists',
     href: '/documents',
   },
   {
@@ -38,12 +38,6 @@ const MODULES = [
     description: 'Track all your compliance deadlines and recurring dates',
     href: '/calendar',
     soon: true,
-  },
-  {
-    icon: '📤',
-    title: 'Upload',
-    description: 'Add files, reports, or your existing compliance schedule',
-    href: '/upload',
   },
   {
     icon: '⚙️',

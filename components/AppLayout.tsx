@@ -14,7 +14,6 @@ const NAV_ITEMS = [
   { icon: '👥', label: 'HR Help', href: '/hr', soon: true },
   { icon: '📁', label: 'My Files', href: '/documents' },
   { icon: '📅', label: 'Calendar', href: '/calendar', soon: true },
-  { icon: '📤', label: 'Upload', href: '/upload' },
   { icon: '⚙️', label: 'My Account', href: '/account', soon: true },
 ]
 
