@@ -24,7 +24,6 @@ const MODULES = [
     title: 'HR Help',
     description: 'Get answers to HR and policy questions from your company handbook',
     href: '/hr',
-    soon: true,
   },
   {
     icon: '📁',
