@@ -658,7 +658,7 @@ export default function DocumentsPage() {
                                 className="flex items-start gap-4 p-4 bg-white rounded-xl border border-gray-200 shadow-sm hover:border-green-400 hover:shadow-md transition-all text-left w-full">
                                 <span className="text-2xl flex-shrink-0">📂</span>
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-semibold text-gray-900">{reg.regulation_name}</p>
+                                  <p className="text-sm font-medium text-gray-700">{reg.regulation_name}</p>
                                   <p className="text-xs text-gray-400 mt-0.5 line-clamp-2">{reg.what_it_covers.substring(0, 80)}...</p>
                                   <div className="flex items-center gap-2 mt-2">
                                     <span className={`text-xs px-2 py-0.5 rounded-full ${fileCount > 0 ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'}`}>
