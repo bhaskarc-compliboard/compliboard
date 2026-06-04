@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import AppLayout from '@/components/AppLayout'
 
@@ -154,6 +155,7 @@ export default function CompliancePage() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [showSaved, setShowSaved] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const searchParams = useSearchParams()
 
   useEffect(() => {
     async function loadProfile() {
@@ -177,6 +179,11 @@ export default function CompliancePage() {
     loadProfile()
     loadSavedChecklists()
   }, [])
+
+  useEffect(() => {
+    const id = searchParams.get("id")
+    if (id) loadChecklist(id)
+  }, [searchParams])
 
   async function loadSavedChecklists() {
     const { data: { user } } = await supabase.auth.getUser()

@@ -408,7 +408,7 @@ export default function DocumentsPage() {
                               </div>
                             </div>
                             <div className="flex items-center gap-2 flex-shrink-0">
-                              <button onClick={() => router.push('/compliance')}
+                              <button onClick={() => router.push(`/compliance?id=${c.id}`)}
                                 className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:border-green-500 hover:text-green-700 transition-colors">
                                 Open
                               </button>
