@@ -47,6 +47,7 @@ export default function CalendarPage() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [showAddForm, setShowAddForm] = useState(false)
   const [view, setView] = useState<'calendar' | 'list'>('calendar')
+  const [addTab, setAddTab] = useState<'manual' | 'import'>('manual')
 
   const [newTitle, setNewTitle] = useState('')
   const [newDate, setNewDate] = useState('')
@@ -56,6 +57,10 @@ export default function CalendarPage() {
   const [newRecurrencePeriod, setNewRecurrencePeriod] = useState('annually')
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
+
+  const [importFile, setImportFile] = useState<File | null>(null)
+  const [importing, setImporting] = useState(false)
+  const [importSuccess, setImportSuccess] = useState(0)
 
   useEffect(() => {
     async function loadData() {
@@ -112,6 +117,57 @@ export default function CalendarPage() {
       setSaveError(err instanceof Error ? err.message : 'Failed to save')
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function handleImport() {
+    if (!importFile || !userId || !companyId) return
+    setImporting(true)
+    setImportSuccess(0)
+    try {
+      const formData = new FormData()
+      formData.append('file', importFile)
+      formData.append('question', 'Extract all compliance deadlines from this document. For each deadline return it as a must_do item with name and description. Return standard JSON format.')
+      const res = await fetch('/api/chat', { method: 'POST', body: formData })
+      const json = await res.json()
+      if (json.data?.must_do) {
+        const due = new Date(today)
+        due.setFullYear(due.getFullYear() + 1)
+        const dueDateStr = due.toISOString().split('T')[0]
+        let count = 0
+        for (const item of json.data.must_do.slice(0, 20)) {
+          const calRes = await fetch('/api/calendar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              company_id: companyId,
+              user_id: userId,
+              title: item.name,
+              description: item.description || null,
+              due_date: dueDateStr,
+              category: 'Imported',
+              is_recurring: true,
+              recurrence_period: 'annually',
+            }),
+          })
+          const calJson = await calRes.json()
+          if (calJson.data) {
+            setEvents(prev => [...prev, calJson.data].sort((a, b) => a.due_date.localeCompare(b.due_date)))
+            count++
+          }
+        }
+        setImportSuccess(count)
+        setImportFile(null)
+        setTimeout(() => {
+          setShowAddForm(false)
+          setImportSuccess(0)
+          setAddTab('manual')
+        }, 3000)
+      }
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setImporting(false)
     }
   }
 
@@ -212,69 +268,108 @@ export default function CalendarPage() {
 
         {showAddForm && (
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-6">
-            <h2 className="text-sm font-semibold text-gray-900 mb-4">Add a deadline</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Title <span className="text-red-400">*</span></label>
-                <input type="text"
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-green-500 bg-gray-50"
-                  placeholder="e.g. Annual OSHA inspection"
-                  value={newTitle}
-                  onChange={(e) => setNewTitle(e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Due date <span className="text-red-400">*</span></label>
-                <input type="date"
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-green-500 bg-gray-50"
-                  value={newDate || selectedDate || ''}
-                  onChange={(e) => setNewDate(e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Category</label>
-                <select
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-green-500 bg-gray-50"
-                  value={newCategory}
-                  onChange={(e) => setNewCategory(e.target.value)}>
-                  <option value="">Select category</option>
-                  {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
-                <input type="text"
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-green-500 bg-gray-50"
-                  placeholder="Optional notes"
-                  value={newDescription}
-                  onChange={(e) => setNewDescription(e.target.value)}
-                />
-              </div>
+            <div className="flex items-center gap-1 mb-5 border-b border-gray-100 pb-4">
+              <button onClick={() => setAddTab('manual')}
+                className={`text-sm px-3 py-1.5 rounded-lg font-medium transition-colors ${addTab === 'manual' ? 'bg-green-700 text-white' : 'text-gray-500 hover:text-gray-700'}`}>
+                Add manually
+              </button>
+              <button onClick={() => setAddTab('import')}
+                className={`text-sm px-3 py-1.5 rounded-lg font-medium transition-colors ${addTab === 'import' ? 'bg-green-700 text-white' : 'text-gray-500 hover:text-gray-700'}`}>
+                Import from file
+              </button>
             </div>
-            <div className="mt-4 flex items-center gap-4">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <div onClick={() => setNewRecurring(!newRecurring)}
-                  className={`w-9 h-5 rounded-full transition-colors relative ${newRecurring ? 'bg-green-600' : 'bg-gray-200'}`}>
-                  <div className={`w-3.5 h-3.5 bg-white rounded-full absolute top-0.5 transition-all ${newRecurring ? 'left-4.5' : 'left-0.5'}`} />
+
+            {addTab === 'manual' && (
+              <div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Title <span className="text-red-400">*</span></label>
+                    <input type="text"
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-green-500 bg-gray-50"
+                      placeholder="e.g. Annual OSHA inspection"
+                      value={newTitle}
+                      onChange={(e) => setNewTitle(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Due date <span className="text-red-400">*</span></label>
+                    <input type="date"
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-green-500 bg-gray-50"
+                      value={newDate || selectedDate || ''}
+                      onChange={(e) => setNewDate(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Category</label>
+                    <select
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-green-500 bg-gray-50"
+                      value={newCategory}
+                      onChange={(e) => setNewCategory(e.target.value)}>
+                      <option value="">Select category</option>
+                      {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
+                    <input type="text"
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-green-500 bg-gray-50"
+                      placeholder="Optional notes"
+                      value={newDescription}
+                      onChange={(e) => setNewDescription(e.target.value)}
+                    />
+                  </div>
                 </div>
-                <span className="text-sm text-gray-600">Recurring</span>
-              </label>
-              {newRecurring && (
-                <select
-                  className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none bg-gray-50"
-                  value={newRecurrencePeriod}
-                  onChange={(e) => setNewRecurrencePeriod(e.target.value)}>
-                  <option value="monthly">Monthly</option>
-                  <option value="quarterly">Quarterly</option>
-                  <option value="annually">Annually</option>
-                </select>
-              )}
-            </div>
-            {saveError && <p className="text-sm text-red-600 mt-3">{saveError}</p>}
-            <button onClick={handleAddEvent} disabled={saving}
-              className="mt-4 bg-green-700 text-white px-6 py-2.5 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50">
-              {saving ? 'Saving...' : 'Save deadline →'}
-            </button>
+                <div className="mt-4 flex items-center gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <div onClick={() => setNewRecurring(!newRecurring)}
+                      className={`w-9 h-5 rounded-full transition-colors relative cursor-pointer ${newRecurring ? 'bg-green-600' : 'bg-gray-200'}`}>
+                      <div className={`w-3.5 h-3.5 bg-white rounded-full absolute top-0.5 transition-all ${newRecurring ? 'left-4' : 'left-0.5'}`} />
+                    </div>
+                    <span className="text-sm text-gray-600">Recurring</span>
+                  </label>
+                  {newRecurring && (
+                    <select
+                      className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none bg-gray-50"
+                      value={newRecurrencePeriod}
+                      onChange={(e) => setNewRecurrencePeriod(e.target.value)}>
+                      <option value="monthly">Monthly</option>
+                      <option value="quarterly">Quarterly</option>
+                      <option value="annually">Annually</option>
+                    </select>
+                  )}
+                </div>
+                {saveError && <p className="text-sm text-red-600 mt-3">{saveError}</p>}
+                <button onClick={handleAddEvent} disabled={saving}
+                  className="mt-4 bg-green-700 text-white px-6 py-2.5 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50">
+                  {saving ? 'Saving...' : 'Save deadline →'}
+                </button>
+              </div>
+            )}
+
+            {addTab === 'import' && (
+              <div>
+                <p className="text-sm text-gray-500 mb-4">Upload your existing compliance schedule — Excel, CSV, or PDF. We will extract all deadlines and add them to your calendar automatically.</p>
+                <label htmlFor="import-file"
+                  className={`flex items-center gap-3 w-full border-2 border-dashed rounded-xl px-4 py-4 cursor-pointer transition-colors ${importFile ? 'border-green-300 bg-green-50' : 'border-gray-300 hover:border-green-500 hover:bg-green-50'}`}>
+                  <span className="text-2xl">{importFile ? '📊' : '📎'}</span>
+                  <div>
+                    <p className="text-sm font-medium text-gray-700">{importFile ? importFile.name : 'Click to select file'}</p>
+                    <p className="text-xs text-gray-400">Excel, CSV, or PDF</p>
+                  </div>
+                  <input id="import-file" type="file" accept=".xlsx,.xls,.csv,.pdf" className="hidden"
+                    onChange={(e) => setImportFile(e.target.files?.[0] || null)} />
+                </label>
+                {importSuccess > 0 && (
+                  <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-xl">
+                    <p className="text-sm text-green-700 font-medium">✓ Added {importSuccess} deadlines to your calendar</p>
+                  </div>
+                )}
+                <button onClick={handleImport} disabled={!importFile || importing}
+                  className="mt-4 bg-green-700 text-white px-6 py-2.5 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50">
+                  {importing ? 'Extracting deadlines...' : 'Import deadlines →'}
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -288,16 +383,12 @@ export default function CalendarPage() {
               <button onClick={() => {
                 if (currentMonth === 0) { setCurrentMonth(11); setCurrentYear(y => y - 1) }
                 else setCurrentMonth(m => m - 1)
-              }} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors text-gray-600">
-                ←
-              </button>
+              }} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors text-gray-600">←</button>
               <h2 className="text-sm font-semibold text-gray-900">{MONTHS[currentMonth]} {currentYear}</h2>
               <button onClick={() => {
                 if (currentMonth === 11) { setCurrentMonth(0); setCurrentYear(y => y + 1) }
                 else setCurrentMonth(m => m + 1)
-              }} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors text-gray-600">
-                →
-              </button>
+              }} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors text-gray-600">→</button>
             </div>
             <div className="grid grid-cols-7 border-b border-gray-100">
               {DAYS.map(d => (
@@ -316,7 +407,7 @@ export default function CalendarPage() {
                 const isSelected = selectedDate === dateStr
                 return (
                   <div key={day}
-                    onClick={() => { setSelectedDate(dateStr); setNewDate(dateStr); setShowAddForm(true) }}
+                    onClick={() => { setSelectedDate(dateStr); setNewDate(dateStr); setShowAddForm(true); setAddTab('manual') }}
                     className={`h-20 border-b border-r border-gray-50 p-1.5 cursor-pointer hover:bg-gray-50 transition-colors ${isSelected ? 'bg-green-50' : ''}`}>
                     <p className={`text-xs font-medium w-6 h-6 flex items-center justify-center rounded-full mb-1 ${isToday ? 'bg-green-700 text-white' : 'text-gray-700'}`}>
                       {day}
