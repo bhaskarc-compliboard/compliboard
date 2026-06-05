@@ -356,6 +356,7 @@ function CompliancePageInner() {
     })
     setChecked(checkState)
     setExpandedSteps(restoredSteps)
+    setStepsCache(restoredSteps)
     setAskedQuestion(checklist.question)
     setQuestion(checklist.question)
     setCurrentChecklistId(checklistId)
@@ -706,11 +707,11 @@ Return the same JSON format as a normal checklist but only the must_do array.`
         {data && !loading && (
           <div className="mt-8">
             {data.safety_alert && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
-                <span className="text-red-500 text-lg flex-shrink-0">⚠️</span>
+              <div className="mb-6 p-4 bg-amber-50 border-l-4 border-l-amber-500 border border-amber-100 rounded-xl flex items-start gap-3">
+                <span className="text-amber-500 text-lg flex-shrink-0">⚠️</span>
                 <div>
-                  <p className="text-sm font-semibold text-red-700 mb-1">Safety first</p>
-                  <p className="text-sm text-red-600">{data.safety_alert}</p>
+                  <p className="text-sm font-semibold text-amber-700 mb-1">Safety note</p>
+                  <p className="text-sm text-amber-700">{data.safety_alert}</p>
                 </div>
               </div>
             )}
@@ -751,7 +752,7 @@ Return the same JSON format as a normal checklist but only the must_do array.`
                   const isLoadingSteps = loadingSteps[key]
 
                   return (
-                    <div key={i} className={`rounded-xl border transition-all ${isChecked ? 'opacity-60 bg-gray-50 border-gray-100' : 'bg-white border-gray-200 shadow-sm'}`}>
+                    <div key={i} className={`rounded-xl border transition-all ${isChecked ? 'opacity-60 bg-gray-50 border-gray-100' : i % 2 === 0 ? 'bg-white border-gray-200 shadow-sm' : 'bg-gray-50 border-gray-200 shadow-sm'}`}>
                       {/* Main item row */}
                       <div className="flex items-start gap-3 p-4">
                         <button
@@ -873,7 +874,7 @@ Return the same JSON format as a normal checklist but only the must_do array.`
                     const isChecked = checked[key]
                     const isDetailOpen = expandedDetails[key]
                     return (
-                      <div key={i} className={`rounded-xl border transition-all ${isChecked ? 'opacity-60 bg-gray-50 border-gray-100' : 'bg-white border-gray-200 shadow-sm'}`}>
+                      <div key={i} className={`rounded-xl border transition-all ${isChecked ? 'opacity-60 bg-gray-50 border-gray-100' : i % 2 === 0 ? 'bg-white border-gray-200 shadow-sm' : 'bg-gray-50 border-gray-200 shadow-sm'}`}>
                         <div className="flex items-start gap-3 p-4">
                           <button
                             onClick={() => toggleCheck(key, item.id)}
