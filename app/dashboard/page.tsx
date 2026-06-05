@@ -108,20 +108,11 @@ export default function Dashboard() {
           {MODULES.map((module) => (
             <div
               key={module.href}
-              onClick={() => !module.soon && router.push(module.href)}
-              className={`group bg-white rounded-xl border border-gray-200 p-6 shadow-sm transition-all ${
-                module.soon
-                  ? 'opacity-50 cursor-default'
-                  : 'cursor-pointer hover:border-green-400 hover:shadow-md'
-              }`}>
+              onClick={() => router.push(module.href)}
+              className="group bg-white rounded-xl border border-gray-200 p-6 shadow-sm transition-all cursor-pointer hover:border-green-400 hover:shadow-md">
               <div className="text-3xl mb-3">{module.icon}</div>
               <div className="flex items-center gap-2 mb-2">
                 <h2 className="text-sm font-semibold text-gray-900">{module.title}</h2>
-                {module.soon && (
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-400 font-medium">
-                    Soon
-                  </span>
-                )}
               </div>
               <p className="text-xs text-gray-500 leading-relaxed">{module.description}</p>
             </div>
