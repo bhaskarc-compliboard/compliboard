@@ -90,22 +90,25 @@ interface Provider {
   note: string
 }
 
+interface Step {
+  title: string
+  detail: string
+  link: string
+}
+
 interface ChecklistItem {
   id?: string
   name: string
   description: string
   why?: string
-  required_by?: string
-  recommended_by?: string
   source_url?: string
   cost_note?: string
   providers?: Provider[]
+  steps?: Step[]
   completed?: boolean
-}
-
-interface WhyNot {
-  question: string
-  answer: string
+  // legacy fields
+  required_by?: string
+  recommended_by?: string
 }
 
 interface ChecklistData {
@@ -113,7 +116,6 @@ interface ChecklistData {
   safety_alert?: string
   must_do: ChecklistItem[]
   good_to_have: ChecklistItem[]
-  why_not?: WhyNot[]
   follow_up_questions?: string[]
 }
 
@@ -150,10 +152,14 @@ function CompliancePageInner() {
   const [checked, setChecked] = useState<Record<string, boolean>>({})
   const [chipIndex, setChipIndex] = useState(0)
   const [chipVisible, setChipVisible] = useState(true)
-  const [whyNotOpen, setWhyNotOpen] = useState(false)
   const [askedQuestion, setAskedQuestion] = useState('')
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [showSaved, setShowSaved] = useState(false)
+  const [expandedDetails, setExpandedDetails] = useState<Record<string, boolean>>({})
+  const [expandedSteps, setExpandedSteps] = useState<Record<string, ChecklistItem[] | null | undefined>>({})
+  const [stepsCache, setStepsCache] = useState<Record<string, ChecklistItem[]>>({})
+  const [loadingSteps, setLoadingSteps] = useState<Record<string, boolean>>({})
+  const [followUpQuestion, setFollowUpQuestion] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const searchParams = useSearchParams()
 
@@ -202,17 +208,15 @@ function CompliancePageInner() {
         .select('*', { count: 'exact', head: true })
         .eq('checklist_id', c.id)
         .eq('category', 'must_do')
+        .is('parent_item_index', null)
       const { count: completed } = await supabase
         .from('checklist_items')
         .select('*', { count: 'exact', head: true })
         .eq('checklist_id', c.id)
         .eq('category', 'must_do')
+        .is('parent_item_index', null)
         .eq('completed', true)
-      return {
-        ...c,
-        must_do_count: total || 0,
-        completed_count: completed || 0,
-      }
+      return { ...c, must_do_count: total || 0, completed_count: completed || 0 }
     }))
     setSavedChecklists(withCounts)
   }
@@ -239,12 +243,12 @@ function CompliancePageInner() {
         name: item.name,
         description: item.description || '',
         why: item.why || null,
-        required_by: item.required_by || null,
         source_url: item.source_url || null,
         cost_note: item.cost_note || null,
         providers: item.providers || [],
         sort_order: i,
         completed: false,
+        parent_item_index: null,
       })),
       ...data.good_to_have.map((item, i) => ({
         checklist_id: checklist.id,
@@ -252,15 +256,39 @@ function CompliancePageInner() {
         name: item.name,
         description: item.description || '',
         why: item.why || null,
-        recommended_by: item.recommended_by || null,
         source_url: item.source_url || null,
         sort_order: i,
         completed: false,
+        parent_item_index: null,
       })),
     ]
 
     await supabase.from('checklist_items').insert(items)
     return checklist.id
+  }
+
+  async function saveSubItems(checklistId: string, parentIndex: number, subItems: ChecklistItem[]) {
+    // Delete existing sub-items for this parent
+    await supabase
+      .from('checklist_items')
+      .delete()
+      .eq('checklist_id', checklistId)
+      .eq('parent_item_index', parentIndex)
+
+    const items = subItems.map((item, i) => ({
+      checklist_id: checklistId,
+      category: 'must_do',
+      name: item.name,
+      description: item.description || '',
+      why: item.why || null,
+      source_url: item.source_url || null,
+      cost_note: item.cost_note || null,
+      sort_order: i,
+      completed: false,
+      parent_item_index: parentIndex,
+    }))
+
+    await supabase.from('checklist_items').insert(items)
   }
 
   async function loadChecklist(checklistId: string) {
@@ -278,12 +306,33 @@ function CompliancePageInner() {
       .order('sort_order')
     if (!items) return
 
-    const mustDo = items.filter(i => i.category === 'must_do')
-    const goodToHave = items.filter(i => i.category === 'good_to_have')
+    const mustDo = items.filter(i => i.category === 'must_do' && i.parent_item_index === null)
+    const goodToHave = items.filter(i => i.category === 'good_to_have' && i.parent_item_index === null)
+    const subItems = items.filter(i => i.parent_item_index !== null)
 
     const checkState: Record<string, boolean> = {}
     mustDo.forEach((item, i) => { checkState[`must-${i}`] = item.completed })
     goodToHave.forEach((item, i) => { checkState[`nice-${i}`] = item.completed })
+    subItems.forEach((item) => {
+      checkState[`sub-${item.parent_item_index}-${item.sort_order}`] = item.completed
+    })
+
+    // Restore expanded steps
+    const restoredSteps: Record<string, ChecklistItem[] | null> = {}
+    mustDo.forEach((_, i) => {
+      const children = subItems.filter(s => s.parent_item_index === i)
+      if (children.length > 0) {
+        restoredSteps[`must-${i}`] = children.map(s => ({
+          id: s.id,
+          name: s.name,
+          description: s.description,
+          why: s.why,
+          source_url: s.source_url,
+          cost_note: s.cost_note,
+          completed: s.completed,
+        }))
+      }
+    })
 
     setData({
       title: checklist.title,
@@ -293,7 +342,6 @@ function CompliancePageInner() {
         name: i.name,
         description: i.description,
         why: i.why,
-        required_by: i.required_by,
         source_url: i.source_url,
         cost_note: i.cost_note,
         providers: i.providers,
@@ -303,11 +351,11 @@ function CompliancePageInner() {
         name: i.name,
         description: i.description,
         why: i.why,
-        recommended_by: i.recommended_by,
         source_url: i.source_url,
       })),
     })
     setChecked(checkState)
+    setExpandedSteps(restoredSteps)
     setAskedQuestion(checklist.question)
     setQuestion(checklist.question)
     setCurrentChecklistId(checklistId)
@@ -315,22 +363,85 @@ function CompliancePageInner() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  async function toggleCheck(key: string, itemIndex: number, category: 'must_do' | 'good_to_have') {
+  async function toggleCheck(key: string, itemId?: string) {
     const newChecked = !checked[key]
     setChecked(prev => ({ ...prev, [key]: newChecked }))
-
-    if (!currentChecklistId || !data) return
-    const items = category === 'must_do' ? data.must_do : data.good_to_have
-    const item = items[itemIndex]
-    if (!item?.id) return
-
+    if (!itemId) return
     await supabase
       .from('checklist_items')
       .update({
         completed: newChecked,
         completed_at: newChecked ? new Date().toISOString() : null,
       })
-      .eq('id', item.id)
+      .eq('id', itemId)
+  }
+
+  async function handleGetSteps(itemIndex: number, itemName: string) {
+    const key = `must-${itemIndex}`
+
+    // Toggle off if visible — hide but keep in cache
+    if (expandedSteps[key] && expandedSteps[key] !== null) {
+      setExpandedSteps(prev => ({ ...prev, [key]: null }))
+      return
+    }
+
+    // Restore from cache if previously loaded
+    if (stepsCache[key]) {
+      setExpandedSteps(prev => ({ ...prev, [key]: stepsCache[key] }))
+      return
+    }
+
+    setLoadingSteps(prev => ({ ...prev, [key]: true }))
+
+    try {
+      const otherItems = data?.must_do
+        ?.filter((_, idx) => idx !== itemIndex)
+        ?.map((item, idx) => `- ${item.name}`)
+        ?.join('\n') || ''
+
+      const prompt = `The user has this compliance checklist item: "${itemName}"
+
+Context: This is item #${itemIndex + 1} from a compliance checklist about: ${askedQuestion}
+
+The main checklist already covers these other items separately — do NOT overlap with them:
+${otherItems}
+
+Give me a step-by-step sub-checklist for exactly how to complete THIS ONE ITEM ONLY.
+3 to 6 concrete actionable steps. Each step must be something they can actually DO — a form to fill, a website to visit, a phone call to make, a document to prepare.
+Stay focused only on completing "${itemName}". Do not include steps that belong to the other items listed above.
+Return the same JSON format as a normal checklist but only the must_do array.`
+
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: prompt }),
+      })
+      const json = await res.json()
+      const subItems: ChecklistItem[] = json.data?.must_do || []
+
+      setExpandedSteps(prev => ({ ...prev, [key]: subItems }))
+      setStepsCache(prev => ({ ...prev, [key]: subItems }))
+
+      // Save to database if we have a checklist ID
+      if (currentChecklistId && subItems.length > 0) {
+        await saveSubItems(currentChecklistId, itemIndex, subItems)
+        // Update IDs
+        const { data: saved } = await supabase
+          .from('checklist_items')
+          .select('id, sort_order')
+          .eq('checklist_id', currentChecklistId)
+          .eq('parent_item_index', itemIndex)
+          .order('sort_order')
+        if (saved) {
+          const withIds = subItems.map((item, i) => ({ ...item, id: saved[i]?.id }))
+          setExpandedSteps(prev => ({ ...prev, [key]: withIds }))
+        }
+      }
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setLoadingSteps(prev => ({ ...prev, [key]: false }))
+    }
   }
 
   async function deleteChecklist(checklistId: string) {
@@ -340,16 +451,14 @@ function CompliancePageInner() {
       setData(null)
       setCurrentChecklistId(null)
       setChecked({})
+      setExpandedSteps({})
     }
   }
 
-  function handlePrint() {
-    window.print()
-  }
+  function handlePrint() { window.print() }
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0] || null
-    setUploadedFile(file)
+    setUploadedFile(e.target.files?.[0] || null)
   }
 
   function removeFile() {
@@ -368,16 +477,18 @@ function CompliancePageInner() {
     return () => clearInterval(interval)
   }, [])
 
-  async function handleSubmit() {
-    if (!question.trim() && !uploadedFile) return
+  async function handleSubmit(customQuestion?: string) {
+    const q = customQuestion || question
+    if (!q.trim() && !uploadedFile) return
     setLoading(true)
     setData(null)
     setChecked({})
     setCompletedSteps([])
-    setWhyNotOpen(false)
-    setAskedQuestion(question)
+    setExpandedSteps({})
+    setExpandedDetails({})
+    setAskedQuestion(q)
     setCurrentChecklistId(null)
-    const messages = getStatusMessages(question)
+    const messages = getStatusMessages(q)
     const delays = [0, 700, 1400, 2100, 2800, 3500, 4200, 4900]
     messages.forEach((msg, i) => {
       setTimeout(() => {
@@ -390,43 +501,42 @@ function CompliancePageInner() {
       if (uploadedFile) {
         const formData = new FormData()
         formData.append('file', uploadedFile)
-        formData.append('question', question)
+        formData.append('question', q)
         res = await fetch('/api/chat', { method: 'POST', body: formData })
       } else {
         res = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ question }),
+          body: JSON.stringify({ question: q }),
         })
       }
       const json = await res.json()
       setData(json.data)
 
       if (json.data && userId) {
-        const checklistId = await saveChecklist(question, json.data)
+        const checklistId = await saveChecklist(q, json.data)
         if (checklistId) {
           setCurrentChecklistId(checklistId)
-          const items = json.data.must_do || []
           const { data: savedItems } = await supabase
             .from('checklist_items')
             .select('id')
             .eq('checklist_id', checklistId)
             .eq('category', 'must_do')
+            .is('parent_item_index', null)
             .order('sort_order')
           if (savedItems) {
             const updatedMustDo = json.data.must_do.map((item: ChecklistItem, i: number) => ({
-              ...item,
-              id: savedItems[i]?.id,
+              ...item, id: savedItems[i]?.id,
             }))
             const { data: savedGoodItems } = await supabase
               .from('checklist_items')
               .select('id')
               .eq('checklist_id', checklistId)
               .eq('category', 'good_to_have')
+              .is('parent_item_index', null)
               .order('sort_order')
             const updatedGoodToHave = json.data.good_to_have.map((item: ChecklistItem, i: number) => ({
-              ...item,
-              id: savedGoodItems?.[i]?.id,
+              ...item, id: savedGoodItems?.[i]?.id,
             }))
             setData({ ...json.data, must_do: updatedMustDo, good_to_have: updatedGoodToHave })
           }
@@ -442,7 +552,16 @@ function CompliancePageInner() {
     }
   }
 
-  const doneCount = Object.values(checked).filter(Boolean).length
+  async function handleFollowUp() {
+    if (!followUpQuestion.trim()) return
+    setFollowUpQuestion('')
+    await handleSubmit(followUpQuestion)
+  }
+
+  const mustDoneCount = Object.entries(checked).filter(([k, v]) => k.startsWith('must-') && !k.startsWith('must-') === false && v && !k.includes('-') === false).filter(([k, v]) => {
+    const parts = k.split('-')
+    return parts[0] === 'must' && parts.length === 2 && v
+  }).length
   const totalMust = data?.must_do?.length || 0
 
   return (
@@ -460,6 +579,7 @@ function CompliancePageInner() {
             padding-bottom: 12px;
             margin-bottom: 16px;
           }
+          .sub-checklist { display: block !important; }
         }
         .print-only { display: none; }
       `}</style>
@@ -484,8 +604,7 @@ function CompliancePageInner() {
             <p className="text-sm text-gray-400">Ask any compliance question in plain English</p>
           </div>
           {savedChecklists.length > 0 && (
-            <button
-              onClick={() => setShowSaved(!showSaved)}
+            <button onClick={() => setShowSaved(!showSaved)}
               className="flex items-center gap-2 text-sm px-3 py-2 rounded-xl border border-gray-200 text-gray-600 hover:border-green-500 hover:text-green-700 transition-colors">
               📋 {showSaved ? 'Hide saved' : `Saved (${savedChecklists.length})`}
             </button>
@@ -509,11 +628,8 @@ function CompliancePageInner() {
                       )}
                     </div>
                   </div>
-                  <button
-                    onClick={() => deleteChecklist(c.id)}
-                    className="text-gray-300 hover:text-red-400 transition-colors text-lg leading-none flex-shrink-0">
-                    ×
-                  </button>
+                  <button onClick={() => deleteChecklist(c.id)}
+                    className="text-gray-300 hover:text-red-400 transition-colors text-lg leading-none flex-shrink-0">×</button>
                 </div>
               ))}
             </div>
@@ -547,23 +663,16 @@ function CompliancePageInner() {
               <span className="text-green-600 text-lg">📄</span>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-green-800 truncate">{uploadedFile.name}</p>
-                <p className="text-xs text-green-600">Ready to analyse — ask any question about this file below</p>
+                <p className="text-xs text-green-600">Ready to analyse</p>
               </div>
-              <button onClick={removeFile}
-                className="text-gray-400 hover:text-red-500 transition-colors text-lg leading-none flex-shrink-0">×</button>
+              <button onClick={removeFile} className="text-gray-400 hover:text-red-500 text-lg">×</button>
             </div>
-          )}
-          {uploadedFile && (
-            <p className="text-xs text-gray-400 mt-2 pl-1">
-              💡 Try asking: &quot;What corrective actions do I need?&quot; or &quot;Am I missing anything?&quot; or &quot;What are my biggest risks?&quot;
-            </p>
           )}
         </div>
 
         <div className="no-print mb-5 flex items-center gap-3">
           <p className="text-xs text-gray-400 uppercase tracking-wide font-medium whitespace-nowrap">Example</p>
-          <button
-            onClick={() => setQuestion(EXAMPLE_QUESTIONS[chipIndex])}
+          <button onClick={() => setQuestion(EXAMPLE_QUESTIONS[chipIndex])}
             style={{ opacity: chipVisible ? 1 : 0, transition: 'opacity 0.4s ease' }}
             className="text-xs px-3 py-1.5 rounded-full border border-gray-200 text-gray-500 hover:border-green-500 hover:text-green-700 transition-colors text-left bg-white">
             {EXAMPLE_QUESTIONS[chipIndex]}
@@ -571,7 +680,7 @@ function CompliancePageInner() {
         </div>
 
         <div className="no-print">
-          <button onClick={handleSubmit} disabled={loading || (!question.trim() && !uploadedFile)}
+          <button onClick={() => handleSubmit()} disabled={loading || (!question.trim() && !uploadedFile)}
             className="bg-green-700 text-white px-6 py-3 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50">
             {loading ? 'Working...' : uploadedFile ? 'Analyse my document →' : 'Get my compliance checklist →'}
           </button>
@@ -605,77 +714,153 @@ function CompliancePageInner() {
                 </div>
               </div>
             )}
-            <div className="flex items-start justify-between gap-4 mb-1">
+
+            <div className="flex items-start justify-between gap-4 mb-4">
               <h2 className="text-base font-semibold text-gray-900">{data.title}</h2>
               <div className="flex items-center gap-2 flex-shrink-0">
-                {currentChecklistId && (
-                  <span className="text-xs text-green-600 flex items-center gap-1">
-                    ✓ Saved
-                  </span>
-                )}
+                {currentChecklistId && <span className="text-xs text-green-600">✓ Saved</span>}
                 <button onClick={handlePrint}
                   className="no-print flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:border-green-500 hover:text-green-700 transition-colors whitespace-nowrap">
                   ⬇ Download PDF
                 </button>
               </div>
             </div>
+
             {totalMust > 0 && (
-              <div className="no-print mb-4 flex items-center gap-2">
+              <div className="no-print mb-6 flex items-center gap-2">
                 <div className="flex-1 bg-gray-100 rounded-full h-1.5">
                   <div className="bg-green-500 h-1.5 rounded-full transition-all"
-                    style={{ width: `${(doneCount / totalMust) * 100}%` }} />
+                    style={{ width: `${(mustDoneCount / totalMust) * 100}%` }} />
                 </div>
-                <span className="text-xs text-gray-400">{doneCount} of {totalMust} done</span>
+                <span className="text-xs text-gray-400">{mustDoneCount} of {totalMust} done</span>
               </div>
             )}
-            <div className="mt-6">
+
+            {/* MUST DO */}
+            <div>
               <div className="flex items-center gap-2 mb-3">
                 <span className="text-xs font-bold uppercase tracking-widest text-green-700">✅ Must Do</span>
                 <div className="flex-1 h-px bg-green-100"></div>
               </div>
               <div className="space-y-3">
-                {data.must_do?.map((item, i) => (
-                  <div key={i} onClick={() => toggleCheck(`must-${i}`, i, 'must_do')}
-                    className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${checked[`must-${i}`] ? 'opacity-50 bg-gray-50 border-gray-100' : 'bg-white border-gray-200 hover:border-green-300 shadow-sm'}`}>
-                    <div className={`mt-0.5 w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${checked[`must-${i}`] ? 'bg-green-500 border-green-500' : 'border-gray-300'}`}>
-                      {checked[`must-${i}`] && <span className="text-white text-xs">✓</span>}
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-semibold text-gray-900">{item.name}</p>
-                      <p className="text-sm text-gray-500 mt-0.5">{item.description}</p>
-                      {item.why && <p className="text-xs text-gray-400 mt-1 italic">{item.why}</p>}
-                      {item.cost_note && <p className="text-xs text-amber-600 mt-1">💰 {item.cost_note}</p>}
-                      {item.required_by && (
-                        <div className="flex items-center gap-1 mt-1 flex-wrap">
-                          <p className="text-xs text-gray-400">Required by: {item.required_by}</p>
-                          {item.source_url && (
-                            <a href={item.source_url} target="_blank" rel="noopener noreferrer"
-                              onClick={(e) => e.stopPropagation()}
-                              className="no-print text-xs text-green-600 hover:text-green-800 underline ml-1">
-                              ↗ View source
-                            </a>
+                {data.must_do?.map((item, i) => {
+                  const key = `must-${i}`
+                  const isChecked = checked[key]
+                  const isDetailOpen = expandedDetails[key]
+                  const subItems = expandedSteps[key]
+                  const isLoadingSteps = loadingSteps[key]
+
+                  return (
+                    <div key={i} className={`rounded-xl border transition-all ${isChecked ? 'opacity-60 bg-gray-50 border-gray-100' : 'bg-white border-gray-200 shadow-sm'}`}>
+                      {/* Main item row */}
+                      <div className="flex items-start gap-3 p-4">
+                        <button
+                          onClick={() => toggleCheck(key, item.id)}
+                          className={`mt-0.5 w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${isChecked ? 'bg-green-500 border-green-500' : 'border-gray-300 hover:border-green-400'}`}>
+                          {isChecked && <span className="text-white text-xs">✓</span>}
+                        </button>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="text-sm font-semibold text-gray-900">
+                              <span className="text-gray-400 font-normal mr-1">{i + 1}.</span>
+                              {item.name}
+                            </p>
+                            <button
+                              onClick={() => handleGetSteps(i, item.name)}
+                              disabled={isLoadingSteps}
+                              className="no-print flex-shrink-0 text-xs px-2.5 py-1 rounded-lg border border-green-200 text-green-700 hover:bg-green-50 transition-colors disabled:opacity-50 whitespace-nowrap">
+                              {isLoadingSteps ? '...' : subItems ? '↑ Hide steps' : 'Give me the steps →'}
+                            </button>
+                          </div>
+                          <p className="text-sm text-gray-600 mt-1">{item.description}
+                            {item.source_url && (
+                              <a href={item.source_url} target="_blank" rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="no-print text-xs text-green-600 hover:text-green-800 underline ml-1.5">
+                                ↗ Source
+                              </a>
+                            )}
+                          </p>
+
+                          {/* Expandable detail */}
+                          <button
+                            onClick={() => setExpandedDetails(prev => ({ ...prev, [key]: !prev[key] }))}
+                            className="no-print mt-2 text-xs text-gray-400 hover:text-gray-600 transition-colors">
+                            {isDetailOpen ? '▲ Less detail' : '▼ More detail'}
+                          </button>
+
+                          {isDetailOpen && (
+                            <div className="mt-3 space-y-2 pt-3 border-t border-gray-100">
+                              {item.why && (
+                                <p className="text-sm text-gray-600">{item.why}</p>
+                              )}
+                              {item.cost_note && (
+                                <p className="text-xs text-amber-600 font-medium">💰 {item.cost_note}</p>
+                              )}
+                              {item.providers && item.providers.length > 0 && (
+                                <div>
+                                  <p className="text-xs text-gray-400 mb-1">Who to call:</p>
+                                  <div className="space-y-1">
+                                    {item.providers.map((p, j) => (
+                                      <div key={j} className="flex items-center gap-2">
+                                        <span className="text-xs">{p.coverage === 'local' ? '📍' : p.coverage === 'regional' ? '🗺️' : '🇺🇸'}</span>
+                                        <span className="text-xs font-medium text-gray-700">{p.name}</span>
+                                        <span className="text-xs text-gray-400">— {p.note}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Sub-steps accordion */}
+                      {(subItems || isLoadingSteps) && (
+                        <div className="sub-checklist border-t border-gray-100 bg-gray-50 rounded-b-xl px-4 py-3">
+                          {isLoadingSteps ? (
+                            <p className="text-xs text-gray-400 animate-pulse">Getting steps...</p>
+                          ) : subItems && subItems.length > 0 && (
+                            <div className="space-y-2">
+                              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Steps to complete this</p>
+                              {subItems.map((sub, j) => {
+                                const subKey = `sub-${i}-${j}`
+                                const subChecked = checked[subKey]
+                                return (
+                                  <div key={j} className={`flex items-start gap-2.5 p-2.5 rounded-lg border transition-all ${subChecked ? 'opacity-50 bg-white border-gray-100' : 'bg-white border-gray-200'}`}>
+                                    <button
+                                      onClick={() => toggleCheck(subKey, sub.id)}
+                                      className={`mt-0.5 w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${subChecked ? 'bg-green-500 border-green-500' : 'border-gray-300 hover:border-green-400'}`}>
+                                      {subChecked && <span className="text-white text-[9px]">✓</span>}
+                                    </button>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-xs font-medium text-gray-800">
+                                        <span className="text-gray-400 mr-1">{i + 1}.{j + 1}</span>
+                                        {sub.name}
+                                      </p>
+                                      <p className="text-xs text-gray-500 mt-0.5">{sub.description}</p>
+                                      {sub.source_url && (
+                                        <a href={sub.source_url} target="_blank" rel="noopener noreferrer"
+                                          className="text-xs text-green-600 hover:text-green-800 underline mt-0.5 inline-block">
+                                          ↗ {sub.source_url.replace('https://', '').split('/')[0]}
+                                        </a>
+                                      )}
+                                    </div>
+                                  </div>
+                                )
+                              })}
+                            </div>
                           )}
                         </div>
                       )}
-                      {item.providers && item.providers.length > 0 && (
-                        <div className="mt-2 pt-2 border-t border-gray-100">
-                          <p className="text-xs text-gray-400 mb-1">Who to call:</p>
-                          <div className="space-y-1">
-                            {item.providers.map((p, j) => (
-                              <div key={j} className="flex items-center gap-2">
-                                <span className="text-xs">{p.coverage === 'local' ? '📍' : p.coverage === 'regional' ? '🗺️' : '🇺🇸'}</span>
-                                <span className="text-xs font-medium text-gray-700">{p.name}</span>
-                                <span className="text-xs text-gray-400">— {p.note}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
+
+            {/* GOOD TO HAVE */}
             {data.good_to_have?.length > 0 && (
               <div className="mt-8">
                 <div className="flex items-center gap-2 mb-3">
@@ -683,67 +868,82 @@ function CompliancePageInner() {
                   <div className="flex-1 h-px bg-blue-100"></div>
                 </div>
                 <div className="space-y-3">
-                  {data.good_to_have?.map((item, i) => (
-                    <div key={i} onClick={() => toggleCheck(`nice-${i}`, i, 'good_to_have')}
-                      className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${checked[`nice-${i}`] ? 'opacity-50 bg-gray-50 border-gray-100' : 'bg-white border-gray-200 hover:border-blue-300 shadow-sm'}`}>
-                      <div className={`mt-0.5 w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${checked[`nice-${i}`] ? 'bg-blue-500 border-blue-500' : 'border-gray-300'}`}>
-                        {checked[`nice-${i}`] && <span className="text-white text-xs">✓</span>}
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-semibold text-gray-900">{item.name}</p>
-                        <p className="text-sm text-gray-500 mt-0.5">{item.description}</p>
-                        {item.why && <p className="text-xs text-gray-400 mt-1 italic">{item.why}</p>}
-                        {item.recommended_by && (
-                          <div className="flex items-center gap-1 mt-1 flex-wrap">
-                            <p className="text-xs text-gray-400">Recommended by: {item.recommended_by}</p>
-                            {item.source_url && (
-                              <a href={item.source_url} target="_blank" rel="noopener noreferrer"
-                                onClick={(e) => e.stopPropagation()}
-                                className="no-print text-xs text-blue-500 hover:text-blue-700 underline ml-1">
-                                ↗ View source
-                              </a>
+                  {data.good_to_have?.map((item, i) => {
+                    const key = `nice-${i}`
+                    const isChecked = checked[key]
+                    const isDetailOpen = expandedDetails[key]
+                    return (
+                      <div key={i} className={`rounded-xl border transition-all ${isChecked ? 'opacity-60 bg-gray-50 border-gray-100' : 'bg-white border-gray-200 shadow-sm'}`}>
+                        <div className="flex items-start gap-3 p-4">
+                          <button
+                            onClick={() => toggleCheck(key, item.id)}
+                            className={`mt-0.5 w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${isChecked ? 'bg-blue-500 border-blue-500' : 'border-gray-300 hover:border-blue-400'}`}>
+                            {isChecked && <span className="text-white text-xs">✓</span>}
+                          </button>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-gray-900">
+                              <span className="text-gray-400 font-normal mr-1">{i + 1}.</span>
+                              {item.name}
+                            </p>
+                            <p className="text-sm text-gray-600 mt-1">{item.description}
+                              {item.source_url && (
+                                <a href={item.source_url} target="_blank" rel="noopener noreferrer"
+                                  className="no-print text-xs text-green-600 hover:text-green-800 underline ml-1.5">
+                                  ↗ Source
+                                </a>
+                              )}
+                            </p>
+                            {(item.why || item.cost_note) && (
+                              <button
+                                onClick={() => setExpandedDetails(prev => ({ ...prev, [key]: !prev[key] }))}
+                                className="no-print mt-2 text-xs text-gray-400 hover:text-gray-600 transition-colors">
+                                {isDetailOpen ? '▲ Less detail' : '▼ More detail'}
+                              </button>
+                            )}
+                            {isDetailOpen && (
+                              <div className="mt-3 space-y-2 pt-3 border-t border-gray-100">
+                                {item.why && <p className="text-sm text-gray-600">{item.why}</p>}
+                                {item.cost_note && <p className="text-xs text-amber-600 font-medium">💰 {item.cost_note}</p>}
+                              </div>
                             )}
                           </div>
-                        )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
             )}
-            {data.why_not && data.why_not.length > 0 && (
-              <div className="no-print mt-8">
-                <button onClick={() => setWhyNotOpen(!whyNotOpen)}
-                  className="flex items-center gap-2 w-full">
-                  <span className="text-xs font-bold uppercase tracking-widest text-gray-500">❓ Common Questions</span>
-                  <div className="flex-1 h-px bg-gray-100"></div>
-                  <span className="text-xs text-gray-400">{whyNotOpen ? '▲' : '▼'}</span>
+
+            {/* FOLLOW UP */}
+            <div className="no-print mt-8 pt-6 border-t border-gray-100">
+              <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-2">Ask a follow-up question</p>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  className="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-green-500 bg-white"
+                  placeholder="e.g. Tell me more about item #3, or ask anything else..."
+                  value={followUpQuestion}
+                  onChange={(e) => setFollowUpQuestion(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') handleFollowUp() }}
+                />
+                <button onClick={handleFollowUp} disabled={!followUpQuestion.trim()}
+                  className="px-4 py-2.5 rounded-xl bg-green-700 text-white text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50">
+                  Ask →
                 </button>
-                {whyNotOpen && (
-                  <div className="mt-3 space-y-3">
-                    {data.why_not.map((item, i) => (
-                      <div key={i} className="p-4 bg-white rounded-xl border border-gray-100 shadow-sm">
-                        <p className="text-sm font-semibold text-gray-700 mb-1">{item.question}</p>
-                        <p className="text-sm text-gray-500">{item.answer}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
-            )}
-            {data.follow_up_questions && data.follow_up_questions.length > 0 && (
-              <div className="no-print mt-6">
-                <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-2">Refine your answer</p>
-                <div className="space-y-2">
+              {data.follow_up_questions && data.follow_up_questions.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-2">
                   {data.follow_up_questions.map((q, i) => (
-                    <button key={i} onClick={() => setQuestion(q)}
-                      className="block w-full text-left text-xs px-3 py-2 rounded-lg border border-gray-200 text-gray-500 hover:border-green-500 hover:text-green-700 transition-colors bg-white">
+                    <button key={i} onClick={() => setFollowUpQuestion(q)}
+                      className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:border-green-500 hover:text-green-700 transition-colors bg-white">
                       → {q}
                     </button>
                   ))}
                 </div>
-              </div>
-            )}
+              )}
+            </div>
+
             <p className="text-xs text-gray-400 mt-6 pt-4 border-t border-gray-100">
               This checklist is for informational purposes only and is not legal advice. Always verify requirements with the relevant agencies.
             </p>

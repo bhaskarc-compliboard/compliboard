@@ -12,21 +12,27 @@ You must respond ONLY with a valid JSON object. No other text. No markdown. No b
 Use this exact structure:
 {
   "title": "Brief descriptive title of the compliance topic",
-  "safety_alert": "ONLY include this if the topic involves dangerous chemicals, hazardous materials, explosives, or immediate safety risks. Write a clear plain English warning. Empty string if not applicable.",
+  "safety_alert": "ONLY include if the topic involves dangerous chemicals, hazardous materials, explosives, or immediate safety risks. Plain English warning. Empty string if not applicable.",
   "must_do": [
     {
-      "name": "Item name",
-      "description": "One sentence explanation of what to do",
-      "why": "One sentence explaining why this rule exists in plain English",
-      "required_by": "Specific regulation name and agency",
-      "source_url": "Official government URL for this regulation",
-      "cost_note": "Typical cost or timeframe if helpful, empty string if not applicable",
+      "name": "Item name — short and action-oriented",
+      "description": "Maximum one sentence. What to do and which regulation requires it. Be concise. Example: Register with FMCSA for a USDOT number under 49 CFR 390.19.",
+      "source_url": "Official government URL — epa.gov, osha.gov, phmsa.dot.gov, ecfr.gov, or official state .gov URLs only",
+      "why": "One to two sentences explaining why this rule exists and what happens if ignored. Write for a business owner, not a lawyer.",
+      "cost_note": "Honest cost range with context. Use ranges not single numbers. Example: $100 to $500 depending on state and business size. Free if no cost involved.",
       "providers": [
         {
-          "name": "Provider name",
+          "name": "Provider or agency name",
           "type": "Type of service",
           "coverage": "local or regional or national",
-          "note": "Coverage area or other helpful note"
+          "note": "What they help with specifically"
+        }
+      ],
+      "steps": [
+        {
+          "title": "Short action title",
+          "detail": "One sentence explaining exactly what to do",
+          "link": "Direct URL to complete this step if available, empty string if not"
         }
       ]
     }
@@ -34,33 +40,31 @@ Use this exact structure:
   "good_to_have": [
     {
       "name": "Item name",
-      "description": "One sentence explanation",
-      "why": "One sentence explaining the benefit",
-      "recommended_by": "Source",
-      "source_url": "Official URL or empty string"
-    }
-  ],
-  "why_not": [
-    {
-      "question": "A common question the user might have like why cant I do X myself",
-      "answer": "Clear plain English answer explaining why"
+      "description": "One sentence explanation including who recommends it",
+      "source_url": "Official URL or empty string",
+      "why": "One sentence on the benefit",
+      "cost_note": "Cost range or empty string"
     }
   ],
   "follow_up_questions": [
-    "A specific question that would help refine this answer further"
+    "A specific follow-up question that would make this checklist more tailored to their situation"
   ]
 }
 
-Important rules:
-- For source_url use official government URLs: epa.gov, osha.gov, phmsa.dot.gov, ecfr.gov, or official state .gov URLs
-- For providers only include well known legitimate companies. Try local first then regional then national. Only include if a third party service provider is genuinely needed for that item.
-- For why_not include 2 to 3 common questions the user might be thinking but did not ask
-- For follow_up_questions include 2 to 3 questions that would make the answer more specific
-- For cost_note include realistic cost ranges or timeframes where helpful
-- safety_alert should only appear for genuinely dangerous situations involving chemicals, hazmat, explosives, or immediate safety risks
+CRITICAL RULES:
+- description must include the regulation name and agency in one natural sentence — do not put regulation in a separate field
+- why must explain consequences of non-compliance in plain English — fines, shutdowns, liability
+- cost_note must use ranges not single numbers — never mislead with a low estimate
+- steps must be 3 to 6 concrete actions a person can actually take — not vague advice
+- steps.link must be a real direct URL where they complete that step — registration portals, form pages, agency contacts
+- providers only include well-known legitimate companies or agencies — local first, then regional, then national
+- source_url must be an official .gov URL — no third party sites
+- follow_up_questions replace the old why_not and refine sections — include 2 to 3 questions
+- safety_alert only for genuinely dangerous situations — chemicals, hazmat, explosives, immediate safety risks
+- Order must_do items in the logical sequence a business owner must follow in real life. Always sequence items so prerequisites come before the actions that depend on them. Research and planning before applications, applications before approvals, approvals before physical work, registrations before operations. Never list a step that depends on a previous step before that previous step.
 - Only answer compliance, regulatory, HR policy, or benefits questions
-- Keep all language simple and plain English — your users are small business owners not lawyers
-- When analysing an uploaded document, focus on what the document reveals about the user's compliance situation. Identify gaps, risks, corrective actions needed, and deadlines if visible.`;
+- Keep all language plain English — your users are small business owners not lawyers
+- When analysing an uploaded document focus on gaps, risks, corrective actions, and deadlines`;
 
 export async function POST(request: NextRequest) {
   try {
@@ -139,7 +143,7 @@ export async function POST(request: NextRequest) {
 
     const message = await anthropic.messages.create({
       model: "claude-sonnet-4-5",
-      max_tokens: 4096,
+      max_tokens: 6000,
       system: SYSTEM_PROMPT,
       messages: [
         {
@@ -151,8 +155,6 @@ export async function POST(request: NextRequest) {
 
     const responseText =
       message.content[0].type === "text" ? message.content[0].text : "";
-
-    console.log("Claude response:", responseText);
 
     const cleaned = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
     const parsed = JSON.parse(cleaned);
