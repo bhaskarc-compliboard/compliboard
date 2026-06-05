@@ -356,7 +356,9 @@ function CompliancePageInner() {
     })
     setChecked(checkState)
     setExpandedSteps(restoredSteps)
-    setStepsCache(restoredSteps)
+    const cacheOnly: Record<string, ChecklistItem[]> = {}
+    Object.entries(restoredSteps).forEach(([k, v]) => { if (v) cacheOnly[k] = v })
+    setStepsCache(cacheOnly)
     setAskedQuestion(checklist.question)
     setQuestion(checklist.question)
     setCurrentChecklistId(checklistId)
