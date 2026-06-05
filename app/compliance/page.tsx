@@ -650,8 +650,8 @@ Return the same JSON format as a normal checklist but only the must_do array.`
         </div>
 
         <div className="no-print mb-4">
-          <input ref={fileInputRef} type="file" accept=".pdf,image/*"
-            onChange={handleFileChange} className="hidden" id="file-upload" accept=".pdf,.xlsx,.xls,.csv,.doc,.docx,image/*" />
+          <input ref={fileInputRef} type="file" accept=".pdf,.xlsx,.xls,.csv,.doc,.docx,image/*"
+            onChange={handleFileChange} className="hidden" id="file-upload" />
           {!uploadedFile ? (
             <label htmlFor="file-upload"
               className="flex items-center gap-2 w-full border border-dashed border-gray-300 rounded-xl px-4 py-3 cursor-pointer hover:border-green-500 hover:bg-green-50 transition-colors bg-white">
