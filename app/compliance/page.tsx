@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import AppLayout from '@/components/AppLayout'
@@ -135,7 +135,7 @@ const EXAMPLE_QUESTIONS = [
   "What do I need for a quality certification?",
 ]
 
-export default function CompliancePage() {
+function CompliancePageInner() {
   const supabase = createClient()
   const [question, setQuestion] = useState('')
   const [companyName, setCompanyName] = useState('')
@@ -751,5 +751,13 @@ export default function CompliancePage() {
         )}
       </div>
     </AppLayout>
+  )
+}
+
+export default function CompliancePage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center h-64"><p className="text-sm text-gray-400">Loading...</p></div>}>
+      <CompliancePageInner />
+    </Suspense>
   )
 }
