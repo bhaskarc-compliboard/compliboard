@@ -14,7 +14,7 @@ const NAV_ITEMS = [
   { icon: '👥', label: 'HR Help', href: '/hr' },
   { icon: '📁', label: 'Company Documents', href: '/documents' },
   { icon: '📅', label: 'Calendar', href: '/calendar' },
-  { icon: '⚙️', label: 'My Account', href: '/account' },
+  { icon: '⚙️', label: 'My Account', href: '/account', soon: false },
 ]
 
 export default function AppLayout({ children, title }: AppLayoutProps) {
