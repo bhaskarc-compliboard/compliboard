@@ -9,7 +9,7 @@ const supabaseAdmin = createClient(
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { company_id, user_id, name, file_url, file_type, file_size, category, is_recurring, recurrence_period, regulation_tags } = body
+    const { company_id, user_id, name, file_url, file_type, file_size, folder_id, is_recurring, recurrence_period } = body
 
     const { error } = await supabaseAdmin
       .from('documents')
@@ -20,10 +20,9 @@ export async function POST(request: NextRequest) {
         file_url,
         file_type,
         file_size,
-        category,
+        folder_id: folder_id || null,
         is_recurring,
         recurrence_period,
-        regulation_tags: regulation_tags || [],
       })
 
     if (error) throw error
@@ -41,19 +40,50 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const user_id = searchParams.get('user_id')
+    const folder_id = searchParams.get('folder_id')
     if (!user_id) return NextResponse.json({ error: 'Missing user_id' }, { status: 400 })
 
-    const { data, error } = await supabaseAdmin
+    let query = supabaseAdmin
       .from('documents')
       .select('*')
       .eq('user_id', user_id)
       .order('uploaded_at', { ascending: false })
 
+    if (folder_id) {
+      if (folder_id === 'unfiled') {
+        query = query.is('folder_id', null)
+      } else {
+        query = query.eq('folder_id', folder_id)
+      }
+    }
+
+    const { data, error } = await query
     if (error) throw error
     return NextResponse.json({ data })
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to fetch documents' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const body = await request.json()
+    const { id, folder_id } = body
+    if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
+
+    const { error } = await supabaseAdmin
+      .from('documents')
+      .update({ folder_id: folder_id || null })
+      .eq('id', id)
+
+    if (error) throw error
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Failed to move document' },
       { status: 500 }
     )
   }
