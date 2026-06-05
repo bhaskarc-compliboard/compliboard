@@ -27,7 +27,7 @@ const MODULES = [
   },
   {
     icon: '📁',
-    title: 'My Files',
+    title: 'Company Documents',
     description: 'Upload, view and manage your compliance documents and checklists',
     href: '/documents',
   },
@@ -42,7 +42,6 @@ const MODULES = [
     title: 'My Account',
     description: 'Manage your profile, billing, and account settings',
     href: '/account',
-    soon: true,
   },
 ]
 
