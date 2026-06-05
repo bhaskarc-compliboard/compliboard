@@ -643,7 +643,7 @@ Return the same JSON format as a normal checklist but only the must_do array.`
           <textarea
             className="w-full border border-gray-200 rounded-xl p-4 text-sm text-gray-800 resize-none focus:outline-none focus:border-green-500 bg-white shadow-sm"
             rows={4}
-            placeholder="e.g. What permits do I need to open a hazmat warehouse in Texas?"
+            placeholder="Describe your situation in detail for the best results. Include your industry, state, what you are trying to do, and any specific chemicals or products involved. Example: I run a 50-person chemical warehouse in Oregon storing HF acid and want to add a new storage area."
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
           />
@@ -651,14 +651,14 @@ Return the same JSON format as a normal checklist but only the must_do array.`
 
         <div className="no-print mb-4">
           <input ref={fileInputRef} type="file" accept=".pdf,image/*"
-            onChange={handleFileChange} className="hidden" id="file-upload" />
+            onChange={handleFileChange} className="hidden" id="file-upload" accept=".pdf,.xlsx,.xls,.csv,.doc,.docx,image/*" />
           {!uploadedFile ? (
             <label htmlFor="file-upload"
               className="flex items-center gap-2 w-full border border-dashed border-gray-300 rounded-xl px-4 py-3 cursor-pointer hover:border-green-500 hover:bg-green-50 transition-colors bg-white">
               <span className="text-gray-400 text-lg">📎</span>
               <div>
                 <p className="text-sm text-gray-500">Attach a file <span className="text-gray-400">(optional)</span></p>
-                <p className="text-xs text-gray-400">PDF or image — audit reports, inspection findings, drum labels, SDS sheets</p>
+                <p className="text-xs text-gray-400">PDF, images, Excel, Word, or CSV — audit reports, inspection findings, SDS sheets</p>
               </div>
             </label>
           ) : (
@@ -673,14 +673,7 @@ Return the same JSON format as a normal checklist but only the must_do array.`
           )}
         </div>
 
-        <div className="no-print mb-5 flex items-center gap-3">
-          <p className="text-xs text-gray-400 uppercase tracking-wide font-medium whitespace-nowrap">Example</p>
-          <button onClick={() => setQuestion(EXAMPLE_QUESTIONS[chipIndex])}
-            style={{ opacity: chipVisible ? 1 : 0, transition: 'opacity 0.4s ease' }}
-            className="text-xs px-3 py-1.5 rounded-full border border-gray-200 text-gray-500 hover:border-green-500 hover:text-green-700 transition-colors text-left bg-white">
-            {EXAMPLE_QUESTIONS[chipIndex]}
-          </button>
-        </div>
+
 
         <div className="no-print">
           <button onClick={() => handleSubmit()} disabled={loading || (!question.trim() && !uploadedFile)}
@@ -710,7 +703,7 @@ Return the same JSON format as a normal checklist but only the must_do array.`
           <div className="mt-8">
             {data.safety_alert && (
               <div className="mb-6 p-4 bg-amber-50 border-l-4 border-l-amber-500 border border-amber-100 rounded-xl flex items-start gap-3">
-                <span className="text-amber-500 text-lg flex-shrink-0">⚠️</span>
+                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-amber-500 text-white text-xs flex items-center justify-center font-bold">!</span>
                 <div>
                   <p className="text-sm font-semibold text-amber-700 mb-1">Safety note</p>
                   <p className="text-sm text-amber-700">{data.safety_alert}</p>
