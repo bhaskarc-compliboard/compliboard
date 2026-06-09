@@ -90,12 +90,6 @@ interface Provider {
   note: string
 }
 
-interface Step {
-  title: string
-  detail: string
-  link: string
-}
-
 interface ChecklistItem {
   id?: string
   name: string
@@ -104,11 +98,13 @@ interface ChecklistItem {
   source_url?: string
   cost_note?: string
   providers?: Provider[]
-  steps?: Step[]
   completed?: boolean
-  // legacy fields
-  required_by?: string
-  recommended_by?: string
+  time_estimate?: string
+  what_you_need?: string
+  is_determination?: boolean
+  clarifying_questions?: string[]
+  agency_name?: string
+  search_hint?: string
 }
 
 interface ChecklistData {
@@ -159,8 +155,6 @@ function CompliancePageInner() {
   const [expandedSteps, setExpandedSteps] = useState<Record<string, ChecklistItem[] | null | undefined>>({})
   const [stepsCache, setStepsCache] = useState<Record<string, ChecklistItem[]>>({})
   const [loadingSteps, setLoadingSteps] = useState<Record<string, boolean>>({})
-  const [stepsQueue, setStepsQueue] = useState<number[]>([])
-  const [processingQueue, setProcessingQueue] = useState(false)
   const queueRef = React.useRef<number[]>([])
   const processingRef = React.useRef(false)
   const dataRef = React.useRef<ChecklistData | null>(null)
@@ -169,6 +163,12 @@ function CompliancePageInner() {
   const [mode, setMode] = useState<'checklist' | 'research'>('checklist')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const searchParams = useSearchParams()
+
+  // Determination helper state
+  const [determinationAnswers, setDeterminationAnswers] = useState<Record<string, string[]>>({})
+  const [determinationResults, setDeterminationResults] = useState<Record<string, string>>({})
+  const [loadingDetermination, setLoadingDetermination] = useState<Record<string, boolean>>({})
+  const [showDetermination, setShowDetermination] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
     async function loadProfile() {
@@ -275,7 +275,6 @@ function CompliancePageInner() {
   }
 
   async function saveSubItems(checklistId: string, parentIndex: number, subItems: ChecklistItem[]) {
-    // Delete existing sub-items for this parent
     await supabase
       .from('checklist_items')
       .delete()
@@ -290,6 +289,10 @@ function CompliancePageInner() {
       why: item.why || null,
       source_url: item.source_url || null,
       cost_note: item.cost_note || null,
+      time_estimate: item.time_estimate || null,
+      what_you_need: item.what_you_need || null,
+      is_determination: item.is_determination || false,
+      clarifying_questions: item.clarifying_questions || [],
       sort_order: i,
       completed: false,
       parent_item_index: parentIndex,
@@ -324,7 +327,6 @@ function CompliancePageInner() {
       checkState[`sub-${item.parent_item_index}-${item.sort_order}`] = item.completed
     })
 
-    // Restore expanded steps
     const restoredSteps: Record<string, ChecklistItem[] | null> = {}
     mustDo.forEach((_, i) => {
       const children = subItems.filter(s => s.parent_item_index === i)
@@ -336,6 +338,10 @@ function CompliancePageInner() {
           why: s.why,
           source_url: s.source_url,
           cost_note: s.cost_note,
+          time_estimate: s.time_estimate,
+          what_you_need: s.what_you_need,
+          is_determination: s.is_determination,
+          clarifying_questions: s.clarifying_questions || [],
           completed: s.completed,
         }))
       }
@@ -390,27 +396,19 @@ function CompliancePageInner() {
 
   async function handleGetSteps(itemIndex: number) {
     const key = `must-${itemIndex}`
-
-    // Toggle off if visible
     if (expandedSteps[key] && expandedSteps[key] !== null) {
       setExpandedSteps(prev => ({ ...prev, [key]: null }))
       return
     }
-
-    // Restore from cache instantly
     if (stepsCache[key]) {
       setExpandedSteps(prev => ({ ...prev, [key]: stepsCache[key] }))
       return
     }
-
-    // Prioritize this item in the queue
     prioritizeItem(itemIndex)
     if (!processingRef.current && data) {
       processQueue(queueRef.current, data, currentChecklistId)
     }
   }
-
-  // Steps are now loaded via background queue
 
   async function processQueue(queue: number[], checklistData: ChecklistData, checklistId: string | null) {
     if (processingRef.current) return
@@ -427,7 +425,6 @@ function CompliancePageInner() {
       }
 
       setLoadingSteps(prev => ({ ...prev, [key]: true }))
-      console.log('Loading steps for:', key)
 
       try {
         const item = checklistData.must_do[itemIndex]
@@ -438,17 +435,19 @@ function CompliancePageInner() {
           .map((it) => '- ' + it.name)
           .join(', ')
 
+        const prompt = `Main checklist item: "${item.name}"
+Description: "${item.description}"
+This is item ${itemIndex + 1} from a compliance checklist.
+Other items already covered — do NOT overlap: ${otherItems}
 
-        const prompt = `The user has this compliance checklist item: "${item.name}"
-Context: This is item #${itemIndex + 1} from a compliance checklist.
-The main checklist already covers these other items — do NOT overlap: ${otherItems}
-Give me 3 to 6 concrete actionable steps to complete THIS ONE ITEM ONLY.
-Return JSON with only the must_do array.`
+Generate 3 to 6 specific micro-steps to complete this one item only.
+Every step must include a direct deep link (not homepage), time estimate, cost, and what to prepare.
+Flag any step that requires the user to determine or choose something as is_determination true with 1-2 clarifying questions.`
 
         const res = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ question: prompt }),
+          body: JSON.stringify({ question: prompt, mode: 'substeps' }),
         })
         const json = await res.json()
         const subItems: ChecklistItem[] = json.data?.must_do || []
@@ -483,6 +482,38 @@ Return JSON with only the must_do array.`
     queueRef.current = [itemIndex, ...queueRef.current.filter(i => i !== itemIndex)]
   }
 
+  async function handleDeterminationSubmit(itemIndex: number, subIndex: number, sub: ChecklistItem) {
+    const key = `det-${itemIndex}-${subIndex}`
+    const answers = determinationAnswers[key] || []
+    if (answers.some(a => !a.trim())) return
+
+    setLoadingDetermination(prev => ({ ...prev, [key]: true }))
+
+    try {
+      const questions = sub.clarifying_questions || []
+      const qaText = questions.map((q, i) => `Q: ${q}\nA: ${answers[i] || ''}`).join('\n')
+
+      const prompt = `A business owner is completing this compliance step: "${sub.name}"
+Context: ${sub.description}
+
+They answered these clarifying questions:
+${qaText}
+
+Give them a specific direct answer — exactly what they need to do, which specific option applies to them, and the direct link to do it. Be concrete and decisive. 2-3 sentences maximum.`
+
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: prompt, mode: 'research' }),
+      })
+      const json = await res.json()
+      setDeterminationResults(prev => ({ ...prev, [key]: json.research || '' }))
+    } catch (err) {
+      console.error('Determination error:', err)
+    } finally {
+      setLoadingDetermination(prev => ({ ...prev, [key]: false }))
+    }
+  }
 
   async function deleteChecklist(checklistId: string) {
     await supabase.from('checklists').delete().eq('id', checklistId)
@@ -529,8 +560,10 @@ Return JSON with only the must_do array.`
     setCompletedSteps([])
     setExpandedSteps({})
     setExpandedDetails({})
+    setDeterminationAnswers({})
+    setDeterminationResults({})
+    setShowDetermination({})
     setAskedQuestion(q)
-    setMode(currentMode as 'checklist' | 'research')
     setCurrentChecklistId(null)
     const messages = getStatusMessages(q)
     const delays = [0, 700, 1400, 2100, 2800, 3500, 4200, 4900]
@@ -592,7 +625,6 @@ Return JSON with only the must_do array.`
         }
       }
 
-      // Start background loading queue for all items
       if (json.data?.must_do?.length > 0) {
         const allIndices = json.data.must_do.map((_: ChecklistItem, i: number) => i)
         queueRef.current = [...allIndices]
@@ -614,7 +646,7 @@ Return JSON with only the must_do array.`
     await handleSubmit(followUpQuestion)
   }
 
-  const mustDoneCount = Object.entries(checked).filter(([k, v]) => k.startsWith('must-') && !k.startsWith('must-') === false && v && !k.includes('-') === false).filter(([k, v]) => {
+  const mustDoneCount = Object.entries(checked).filter(([k, v]) => {
     const parts = k.split('-')
     return parts[0] === 'must' && parts.length === 2 && v
   }).length
@@ -720,8 +752,6 @@ Return JSON with only the must_do array.`
           )}
         </div>
 
-
-
         <div className="no-print flex items-center gap-3">
           <button onClick={() => handleSubmit('checklist')} disabled={loading || (!question.trim() && !uploadedFile)}
             className="bg-green-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50">
@@ -815,7 +845,6 @@ Return JSON with only the must_do array.`
               </div>
             )}
 
-            {/* MUST DO */}
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <span className="text-xs font-bold uppercase tracking-widest text-green-700">✅ Must Do</span>
@@ -831,7 +860,6 @@ Return JSON with only the must_do array.`
 
                   return (
                     <div key={i} className={`rounded-xl border transition-all ${isChecked ? 'opacity-60 bg-gray-50 border-gray-100' : 'bg-white border-gray-200'}`}>
-                      {/* Main item row */}
                       <div className="flex items-start gap-3 p-5">
                         <button
                           onClick={() => toggleCheck(key, item.id)}
@@ -872,7 +900,6 @@ Return JSON with only the must_do array.`
                             )}
                           </p>
 
-                          {/* Expandable detail */}
                           <button
                             onClick={() => setExpandedDetails(prev => ({ ...prev, [key]: !prev[key] }))}
                             className="no-print mt-2 text-xs text-gray-400 hover:text-gray-600 transition-colors">
@@ -906,7 +933,6 @@ Return JSON with only the must_do array.`
                         </div>
                       </div>
 
-                      {/* Sub-steps accordion */}
                       {(subItems || isLoadingSteps) && (
                         <div className="sub-checklist border-t border-gray-100 bg-gray-50 rounded-b-xl px-4 py-4 ml-8 border-l-2 border-l-green-200">
                           {isLoadingSteps ? (
@@ -917,25 +943,108 @@ Return JSON with only the must_do array.`
                               {subItems.map((sub, j) => {
                                 const subKey = `sub-${i}-${j}`
                                 const subChecked = checked[subKey]
+                                const detKey = `det-${i}-${j}`
+                                const isDetOpen = showDetermination[detKey]
+                                const detResult = determinationResults[detKey]
+                                const isDetLoading = loadingDetermination[detKey]
+
                                 return (
-                                  <div key={j} className={`flex items-start gap-2.5 py-2 transition-all ${subChecked ? 'opacity-50' : ''}`}>
-                                    <button
-                                      onClick={() => toggleCheck(subKey, sub.id)}
-                                      className={`mt-0.5 w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${subChecked ? 'bg-green-500 border-green-500' : 'border-gray-300 hover:border-green-400'}`}>
-                                      {subChecked && <span className="text-white text-[9px]">✓</span>}
-                                    </button>
-                                    <div className="flex-1 min-w-0">
-                                      <p className="text-xs font-medium text-gray-800">
-                                        <span className="text-green-600 font-semibold mr-1">{i + 1}.{j + 1}</span>
-                                        {sub.name}
-                                      </p>
-                                      <p className="text-xs text-gray-500 mt-0.5">{sub.description}</p>
-                                      {sub.source_url && (
-                                        <a href={sub.source_url} target="_blank" rel="noopener noreferrer"
-                                          className="text-xs text-green-600 hover:text-green-800 underline mt-0.5 inline-block">
-                                          ↗ {sub.source_url.replace('https://', '').split('/')[0]}
-                                        </a>
-                                      )}
+                                  <div key={j} className={`py-2 transition-all ${subChecked ? 'opacity-50' : ''}`}>
+                                    <div className="flex items-start gap-2.5">
+                                      <button
+                                        onClick={() => toggleCheck(subKey, sub.id)}
+                                        className={`mt-0.5 w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${subChecked ? 'bg-green-500 border-green-500' : 'border-gray-300 hover:border-green-400'}`}>
+                                        {subChecked && <span className="text-white text-[9px]">✓</span>}
+                                      </button>
+                                      <div className="flex-1 min-w-0">
+                                        <p className="text-xs font-medium text-gray-800">
+                                          <span className="text-green-600 font-semibold mr-1">{i + 1}.{j + 1}</span>
+                                          {sub.name}
+                                        </p>
+                                        <p className="text-xs text-gray-500 mt-0.5">{sub.description}</p>
+
+                                        {/* Rich fields */}
+                                        <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1">
+                                          {sub.time_estimate && (
+                                            <span className="text-xs text-gray-400">⏱ {sub.time_estimate}</span>
+                                          )}
+                                          {sub.cost_note && (
+                                            <span className="text-xs text-amber-600">💰 {sub.cost_note}</span>
+                                          )}
+                                          {sub.what_you_need && (
+                                            <span className="text-xs text-gray-400">📋 {sub.what_you_need}</span>
+                                          )}
+                                        </div>
+
+                                        {sub.agency_name && (
+                                          <p className="text-xs text-gray-500 mt-1">🏛 {sub.agency_name}</p>
+                                        )}
+                                        {sub.search_hint && (
+                                          <a
+                                            href={"https://www.google.com/search?q=" + encodeURIComponent(sub.search_hint)}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-xs text-green-600 hover:text-green-800 underline mt-0.5 inline-block">
+                                            Find this
+                                          </a>
+                                        )}
+
+                                        {/* Determination helper */}
+                                        {sub.is_determination && !detResult && (
+                                          <div className="mt-2">
+                                            <button
+                                              onClick={() => setShowDetermination(prev => ({ ...prev, [detKey]: !prev[detKey] }))}
+                                              className="text-xs text-green-700 hover:text-green-800 font-medium">
+                                              Help me figure this out →
+                                            </button>
+
+                                            {isDetOpen && (
+                                              <div className="mt-2 p-3 bg-white rounded-lg border border-green-100 space-y-2">
+                                                {(sub.clarifying_questions || []).map((q, qi) => (
+                                                  <div key={qi}>
+                                                    <p className="text-xs text-gray-600 mb-1">{q}</p>
+                                                    <input
+                                                      type="text"
+                                                      className="w-full text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-green-500"
+                                                      placeholder="Your answer..."
+                                                      value={determinationAnswers[detKey]?.[qi] || ''}
+                                                      onChange={(e) => {
+                                                        const newAnswers = [...(determinationAnswers[detKey] || [])]
+                                                        newAnswers[qi] = e.target.value
+                                                        setDeterminationAnswers(prev => ({ ...prev, [detKey]: newAnswers }))
+                                                      }}
+                                                    />
+                                                  </div>
+                                                ))}
+                                                <button
+                                                  onClick={() => handleDeterminationSubmit(i, j, sub)}
+                                                  disabled={isDetLoading}
+                                                  className="text-xs bg-green-700 text-white px-3 py-1.5 rounded-lg hover:bg-green-800 transition-colors disabled:opacity-50">
+                                                  {isDetLoading ? '⟳ Working...' : 'Get my answer →'}
+                                                </button>
+                                              </div>
+                                            )}
+                                          </div>
+                                        )}
+
+                                        {/* Determination result */}
+                                        {detResult && (
+                                          <div className="mt-2 bg-green-50 border border-green-100 border-l-4 border-l-green-500 rounded-xl p-4 overflow-hidden">
+                                            <div className="flex items-center gap-1.5 mb-2">
+                                              <span className="w-4 h-4 rounded-full bg-green-500 text-white text-[9px] flex items-center justify-center font-bold flex-shrink-0">✓</span>
+                                              <p className="text-xs font-semibold text-green-700">CompliBoard Answer</p>
+                                            </div>
+                                            {detResult.split('\n').map((line: string, li: number) => {
+                                              if (!line.trim()) return null
+                                              const html = line
+                                                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                                                .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-green-700 underline break-all">$1</a>')
+                                                .replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-green-700 underline break-all">$1</a>')
+                                              return <p key={li} className="text-xs text-gray-700 leading-relaxed mb-1 break-words" dangerouslySetInnerHTML={{__html: html}} />
+                                            })}
+                                          </div>
+                                        )}
+                                      </div>
                                     </div>
                                   </div>
                                 )
@@ -950,7 +1059,6 @@ Return JSON with only the must_do array.`
               </div>
             </div>
 
-            {/* GOOD TO HAVE */}
             {data.good_to_have?.length > 0 && (
               <div className="mt-8">
                 <div className="flex items-center gap-2 mb-3">
@@ -1004,8 +1112,6 @@ Return JSON with only the must_do array.`
                 </div>
               </div>
             )}
-
-
 
             <p className="text-xs text-gray-400 mt-6 pt-4 border-t border-gray-100">
               This checklist is for informational purposes only and is not legal advice. Always verify requirements with the relevant agencies.
