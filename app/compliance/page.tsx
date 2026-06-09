@@ -357,6 +357,8 @@ function CompliancePageInner() {
       })),
     })
     setChecked(checkState)
+    setResearchData(null)
+    setMode('checklist')
     setExpandedSteps(restoredSteps)
     const cacheOnly: Record<string, ChecklistItem[]> = {}
     Object.entries(restoredSteps).forEach(([k, v]) => { if (v) cacheOnly[k] = v })
@@ -489,6 +491,7 @@ Return the same JSON format as a normal checklist but only the must_do array.`
     setLoading(true)
     setData(null)
     setResearchData(null)
+    setMode(currentMode as 'checklist' | 'research')
     setChecked({})
     setCompletedSteps([])
     setExpandedSteps({})
