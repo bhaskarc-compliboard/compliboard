@@ -160,6 +160,8 @@ function CompliancePageInner() {
   const [stepsCache, setStepsCache] = useState<Record<string, ChecklistItem[]>>({})
   const [loadingSteps, setLoadingSteps] = useState<Record<string, boolean>>({})
   const [followUpQuestion, setFollowUpQuestion] = useState('')
+  const [researchData, setResearchData] = useState<string | null>(null)
+  const [mode, setMode] = useState<'checklist' | 'research'>('checklist')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const searchParams = useSearchParams()
 
@@ -480,16 +482,19 @@ Return the same JSON format as a normal checklist but only the must_do array.`
     return () => clearInterval(interval)
   }, [])
 
-  async function handleSubmit(customQuestion?: string) {
+  async function handleSubmit(submitMode?: string, customQuestion?: string) {
     const q = customQuestion || question
+    const currentMode = (submitMode === 'research' || submitMode === 'checklist') ? submitMode : 'checklist'
     if (!q.trim() && !uploadedFile) return
     setLoading(true)
     setData(null)
+    setResearchData(null)
     setChecked({})
     setCompletedSteps([])
     setExpandedSteps({})
     setExpandedDetails({})
     setAskedQuestion(q)
+    setMode(currentMode as 'checklist' | 'research')
     setCurrentChecklistId(null)
     const messages = getStatusMessages(q)
     const delays = [0, 700, 1400, 2100, 2800, 3500, 4200, 4900]
@@ -510,13 +515,17 @@ Return the same JSON format as a normal checklist but only the must_do array.`
         res = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ question: q }),
+          body: JSON.stringify({ question: q, mode: currentMode }),
         })
       }
       const json = await res.json()
-      setData(json.data)
+      if (currentMode === 'research') {
+        setResearchData(json.research || json.data?.title || 'No results')
+      } else {
+        setData(json.data)
+      }
 
-      if (json.data && userId) {
+      if (json.data && userId && currentMode === 'checklist') {
         const checklistId = await saveChecklist(q, json.data)
         if (checklistId) {
           setCurrentChecklistId(checklistId)
@@ -641,7 +650,7 @@ Return the same JSON format as a normal checklist but only the must_do array.`
 
         <div className="no-print mb-3">
           <textarea
-            className="w-full border border-gray-200 rounded-xl p-4 text-sm text-gray-800 resize-none focus:outline-none focus:border-green-500 bg-white shadow-sm"
+            className="w-full border border-gray-200 rounded-xl p-4 text-sm text-gray-800 resize-none focus:outline-none focus:border-green-500 bg-white"
             rows={4}
             placeholder="Describe your situation in detail for the best results. Include your industry, state, what you are trying to do, and any specific chemicals or products involved. Example: I run a 50-person chemical warehouse in Oregon storing HF acid and want to add a new storage area."
             value={question}
@@ -654,32 +663,32 @@ Return the same JSON format as a normal checklist but only the must_do array.`
             onChange={handleFileChange} className="hidden" id="file-upload" />
           {!uploadedFile ? (
             <label htmlFor="file-upload"
-              className="flex items-center gap-2 w-full border border-dashed border-gray-300 rounded-xl px-4 py-3 cursor-pointer hover:border-green-500 hover:bg-green-50 transition-colors bg-white">
-              <span className="text-gray-400 text-lg">📎</span>
-              <div>
-                <p className="text-sm text-gray-500">Attach a file <span className="text-gray-400">(optional)</span></p>
-                <p className="text-xs text-gray-400">PDF, images, Excel, Word, or CSV — audit reports, inspection findings, SDS sheets</p>
-              </div>
+              className="flex items-center gap-1.5 cursor-pointer text-sm text-gray-400 hover:text-green-700 transition-colors">
+              <span>📎</span>
+              <span>Attach a file — upload a permit, SDS sheet, or any document and ask a question about it</span>
             </label>
           ) : (
-            <div className="flex items-center gap-3 w-full border border-green-300 bg-green-50 rounded-xl px-4 py-3">
-              <span className="text-green-600 text-lg">📄</span>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-green-800 truncate">{uploadedFile.name}</p>
-                <p className="text-xs text-green-600">Ready to analyse</p>
-              </div>
-              <button onClick={removeFile} className="text-gray-400 hover:text-red-500 text-lg">×</button>
+            <div className="flex items-center gap-2">
+              <span className="text-green-600">📄</span>
+              <span className="text-sm text-green-700 truncate">{uploadedFile.name}</span>
+              <button onClick={removeFile} className="text-gray-400 hover:text-red-500 text-sm ml-1">× remove</button>
             </div>
           )}
         </div>
 
 
 
-        <div className="no-print">
-          <button onClick={() => handleSubmit()} disabled={loading || (!question.trim() && !uploadedFile)}
+        <div className="no-print flex items-center gap-3">
+          <button onClick={() => handleSubmit('checklist')} disabled={loading || (!question.trim() && !uploadedFile)}
             className="bg-green-700 text-white px-6 py-3 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50">
             {loading ? 'Working...' : uploadedFile ? 'Analyse my document →' : 'Get my compliance checklist →'}
           </button>
+          {!uploadedFile && (
+            <button onClick={() => handleSubmit('research')} disabled={loading || !question.trim()}
+              className="border border-gray-200 text-gray-600 px-6 py-3 rounded-xl text-sm font-medium hover:border-green-500 hover:text-green-700 transition-colors disabled:opacity-50">
+              Research this topic →
+            </button>
+          )}
         </div>
 
         {loading && (
@@ -699,8 +708,38 @@ Return the same JSON format as a normal checklist but only the must_do array.`
           </div>
         )}
 
+        {researchData && !loading && mode === 'research' && (
+          <div className="mt-10 pt-8 border-t border-gray-100">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-base font-semibold text-gray-900">{askedQuestion}</h2>
+            </div>
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <div className="text-sm text-gray-700 leading-relaxed space-y-4">
+                {researchData.split('\n').map((line, i) => {
+                  if (line.startsWith('## ')) return (
+                    <p key={i} className="text-xs font-bold uppercase tracking-widest text-green-700 mt-6 mb-1">{line.replace('## ', '')}</p>
+                  )
+                  if (line.startsWith('• ') || line.startsWith('- ')) return (
+                    <p key={i} className="flex gap-2 text-gray-600"><span className="text-green-500 flex-shrink-0">•</span><span dangerouslySetInnerHTML={{__html: line.replace(/^[•\-] /, '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}} /></p>
+                  )
+                  if (line.trim() === '') return <div key={i} className="h-1" />
+                  return <p key={i} className="text-gray-700" dangerouslySetInnerHTML={{__html: line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}} />
+                })}
+              </div>
+            </div>
+            <div className="mt-4 flex items-center gap-3">
+              <button
+                onClick={() => handleSubmit('checklist')}
+                className="flex items-center gap-2 text-sm px-4 py-2.5 rounded-xl bg-green-700 text-white hover:bg-green-800 transition-colors">
+                Turn this into a checklist →
+              </button>
+              <p className="text-xs text-gray-400">Get actionable steps based on this research</p>
+            </div>
+          </div>
+        )}
+
         {data && !loading && (
-          <div className="mt-8">
+          <div className="mt-10 pt-8 border-t border-gray-100">
             {data.safety_alert && (
               <div className="mb-6 p-4 bg-amber-50 border-l-4 border-l-amber-500 border border-amber-100 rounded-xl flex items-start gap-3">
                 <span className="flex-shrink-0 w-5 h-5 rounded-full bg-amber-500 text-white text-xs flex items-center justify-center font-bold">!</span>

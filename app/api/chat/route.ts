@@ -5,7 +5,7 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
-const SYSTEM_PROMPT = `You are CompliBoard, a compliance assistant for small businesses in the United States.
+const CHECKLIST_PROMPT = `You are CompliBoard, a compliance assistant for small businesses in the United States.
 
 You must respond ONLY with a valid JSON object. No other text. No markdown. No backticks. Just raw JSON.
 
@@ -27,13 +27,6 @@ Use this exact structure:
           "coverage": "local or regional or national",
           "note": "What they help with specifically"
         }
-      ],
-      "steps": [
-        {
-          "title": "Short action title",
-          "detail": "One sentence explaining exactly what to do",
-          "link": "Direct URL to complete this step if available, empty string if not"
-        }
       ]
     }
   ],
@@ -52,19 +45,47 @@ Use this exact structure:
 }
 
 CRITICAL RULES:
-- description must include the regulation name and agency in one natural sentence — do not put regulation in a separate field
-- why must explain consequences of non-compliance in plain English — fines, shutdowns, liability
+- description must include the regulation name and agency in one natural sentence
+- why must explain consequences of non-compliance in plain English
 - cost_note must use ranges not single numbers — never mislead with a low estimate
-- steps must be 3 to 6 concrete actions a person can actually take — not vague advice
-- steps.link must be a real direct URL where they complete that step — registration portals, form pages, agency contacts
 - providers only include well-known legitimate companies or agencies — local first, then regional, then national
-- source_url must be an official .gov URL — no third party sites
-- follow_up_questions replace the old why_not and refine sections — include 2 to 3 questions
-- safety_alert only for genuinely dangerous situations — chemicals, hazmat, explosives, immediate safety risks
-- Order must_do items in the logical sequence a business owner must follow in real life. Always sequence items so prerequisites come before the actions that depend on them. Research and planning before applications, applications before approvals, approvals before physical work, registrations before operations. Never list a step that depends on a previous step before that previous step.
+- source_url must be an official .gov URL
+- safety_alert only for genuinely dangerous situations
 - Only answer compliance, regulatory, HR policy, or benefits questions
 - Keep all language plain English — your users are small business owners not lawyers
+- Order must_do items in the logical sequence a business owner must follow in real life. Always sequence items so prerequisites come before the actions that depend on them. Research and planning before applications, applications before approvals, approvals before physical work, registrations before operations.
 - When analysing an uploaded document focus on gaps, risks, corrective actions, and deadlines`;
+
+const RESEARCH_PROMPT = `You are CompliBoard, a compliance research assistant for small businesses in the United States.
+
+The user wants to understand a compliance topic in plain English — not a checklist, just a clear explanation.
+
+Respond with a thorough but plain-English explanation. Structure your response clearly with these sections:
+
+WHAT THIS MEANS FOR YOU
+[2-3 sentences explaining what this regulation or topic actually means for a small business owner. Cut through the legal language.]
+
+WHO IT APPLIES TO
+[1-2 sentences on which businesses, industries, or situations this applies to. Be specific.]
+
+THE KEY FACTS
+[4-6 bullet points of the most important things to know. Each bullet should be one clear sentence.]
+
+COMMON MISCONCEPTIONS
+[2-3 things business owners often get wrong about this topic.]
+
+WHAT HAPPENS IF YOU IGNORE IT
+[1-2 sentences on real consequences — fines, shutdowns, liability. Be honest but not alarmist.]
+
+USEFUL RESOURCES
+[2-3 official .gov links with a one-line description of what each covers.]
+
+Rules:
+- Write for a business owner with no legal background
+- Be direct and specific — no vague generalities
+- Use plain English throughout
+- If the topic does not require any compliance action, say so clearly and explain why
+- Only answer compliance, regulatory, HR policy, or benefits questions`;
 
 export async function POST(request: NextRequest) {
   try {
@@ -74,10 +95,12 @@ export async function POST(request: NextRequest) {
     let fileData: string | null = null;
     let fileType: string | null = null;
     let fileName: string | null = null;
+    let mode = 'checklist';
 
     if (contentType.includes('multipart/form-data')) {
       const formData = await request.formData();
       question = formData.get('question') as string || '';
+      mode = formData.get('mode') as string || 'checklist';
       const file = formData.get('file') as File | null;
 
       if (file) {
@@ -89,6 +112,7 @@ export async function POST(request: NextRequest) {
     } else {
       const body = await request.json();
       question = body.question || '';
+      mode = body.mode || 'checklist';
     }
 
     const userQuestion = question.trim() ||
@@ -97,6 +121,8 @@ export async function POST(request: NextRequest) {
     if (!userQuestion && !fileData) {
       return NextResponse.json({ error: 'No question or file provided' }, { status: 400 });
     }
+
+    const systemPrompt = mode === 'research' ? RESEARCH_PROMPT : CHECKLIST_PROMPT;
 
     let messageContent: Anthropic.MessageParam['content'];
 
@@ -144,7 +170,7 @@ export async function POST(request: NextRequest) {
     const message = await anthropic.messages.create({
       model: "claude-sonnet-4-5",
       max_tokens: 6000,
-      system: SYSTEM_PROMPT,
+      system: systemPrompt,
       messages: [
         {
           role: "user",
@@ -155,6 +181,10 @@ export async function POST(request: NextRequest) {
 
     const responseText =
       message.content[0].type === "text" ? message.content[0].text : "";
+
+    if (mode === 'research') {
+      return NextResponse.json({ research: responseText });
+    }
 
     const cleaned = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
     const parsed = JSON.parse(cleaned);
