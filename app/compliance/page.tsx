@@ -738,7 +738,7 @@ Return the same JSON format as a normal checklist but only the must_do array.`
                 <span className="text-xs font-bold uppercase tracking-widest text-green-700">✅ Must Do</span>
                 <div className="flex-1 h-px bg-green-100"></div>
               </div>
-              <div className="space-y-3">
+              <div className="space-y-5">
                 {data.must_do?.map((item, i) => {
                   const key = `must-${i}`
                   const isChecked = checked[key]
@@ -747,9 +747,9 @@ Return the same JSON format as a normal checklist but only the must_do array.`
                   const isLoadingSteps = loadingSteps[key]
 
                   return (
-                    <div key={i} className={`rounded-xl border transition-all ${isChecked ? 'opacity-60 bg-gray-50 border-gray-100' : i % 2 === 0 ? 'bg-white border-gray-200 shadow-sm' : 'bg-gray-50 border-gray-200 shadow-sm'}`}>
+                    <div key={i} className={`rounded-xl border transition-all ${isChecked ? 'opacity-60 bg-gray-50 border-gray-100' : 'bg-white border-gray-200'}`}>
                       {/* Main item row */}
-                      <div className="flex items-start gap-3 p-4">
+                      <div className="flex items-start gap-3 p-5">
                         <button
                           onClick={() => toggleCheck(key, item.id)}
                           className={`mt-0.5 w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${isChecked ? 'bg-green-500 border-green-500' : 'border-gray-300 hover:border-green-400'}`}>
@@ -814,17 +814,17 @@ Return the same JSON format as a normal checklist but only the must_do array.`
 
                       {/* Sub-steps accordion */}
                       {(subItems || isLoadingSteps) && (
-                        <div className="sub-checklist border-t border-gray-100 bg-gray-50 rounded-b-xl px-4 py-3">
+                        <div className="sub-checklist border-t border-gray-100 bg-gray-50 rounded-b-xl px-4 py-4 ml-8 border-l-2 border-l-green-200">
                           {isLoadingSteps ? (
                             <p className="text-xs text-gray-400 animate-pulse">Getting steps...</p>
                           ) : subItems && subItems.length > 0 && (
-                            <div className="space-y-2">
-                              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Steps to complete this</p>
+                            <div className="space-y-3">
+                              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Steps to complete this</p>
                               {subItems.map((sub, j) => {
                                 const subKey = `sub-${i}-${j}`
                                 const subChecked = checked[subKey]
                                 return (
-                                  <div key={j} className={`flex items-start gap-2.5 p-2.5 rounded-lg border transition-all ${subChecked ? 'opacity-50 bg-white border-gray-100' : 'bg-white border-gray-200'}`}>
+                                  <div key={j} className={`flex items-start gap-2.5 py-2 transition-all ${subChecked ? 'opacity-50' : ''}`}>
                                     <button
                                       onClick={() => toggleCheck(subKey, sub.id)}
                                       className={`mt-0.5 w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${subChecked ? 'bg-green-500 border-green-500' : 'border-gray-300 hover:border-green-400'}`}>
@@ -832,7 +832,7 @@ Return the same JSON format as a normal checklist but only the must_do array.`
                                     </button>
                                     <div className="flex-1 min-w-0">
                                       <p className="text-xs font-medium text-gray-800">
-                                        <span className="text-gray-400 mr-1">{i + 1}.{j + 1}</span>
+                                        <span className="text-green-600 font-semibold mr-1">{i + 1}.{j + 1}</span>
                                         {sub.name}
                                       </p>
                                       <p className="text-xs text-gray-500 mt-0.5">{sub.description}</p>
@@ -863,14 +863,14 @@ Return the same JSON format as a normal checklist but only the must_do array.`
                   <span className="text-xs font-bold uppercase tracking-widest text-blue-600">💡 Good to Have</span>
                   <div className="flex-1 h-px bg-blue-100"></div>
                 </div>
-                <div className="space-y-3">
+                <div className="space-y-5">
                   {data.good_to_have?.map((item, i) => {
                     const key = `nice-${i}`
                     const isChecked = checked[key]
                     const isDetailOpen = expandedDetails[key]
                     return (
-                      <div key={i} className={`rounded-xl border transition-all ${isChecked ? 'opacity-60 bg-gray-50 border-gray-100' : i % 2 === 0 ? 'bg-white border-gray-200 shadow-sm' : 'bg-gray-50 border-gray-200 shadow-sm'}`}>
-                        <div className="flex items-start gap-3 p-4">
+                      <div key={i} className={`rounded-xl border transition-all ${isChecked ? 'opacity-60 bg-gray-50 border-gray-100' : 'bg-white border-gray-200'}`}>
+                        <div className="flex items-start gap-3 p-5">
                           <button
                             onClick={() => toggleCheck(key, item.id)}
                             className={`mt-0.5 w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${isChecked ? 'bg-blue-500 border-blue-500' : 'border-gray-300 hover:border-blue-400'}`}>
@@ -911,34 +911,7 @@ Return the same JSON format as a normal checklist but only the must_do array.`
               </div>
             )}
 
-            {/* FOLLOW UP */}
-            <div className="no-print mt-8 pt-6 border-t border-gray-100">
-              <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-2">Ask a follow-up question</p>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  className="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-green-500 bg-white"
-                  placeholder="e.g. Tell me more about item #3, or ask anything else..."
-                  value={followUpQuestion}
-                  onChange={(e) => setFollowUpQuestion(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') handleFollowUp() }}
-                />
-                <button onClick={handleFollowUp} disabled={!followUpQuestion.trim()}
-                  className="px-4 py-2.5 rounded-xl bg-green-700 text-white text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50">
-                  Ask →
-                </button>
-              </div>
-              {data.follow_up_questions && data.follow_up_questions.length > 0 && (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {data.follow_up_questions.map((q, i) => (
-                    <button key={i} onClick={() => setFollowUpQuestion(q)}
-                      className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:border-green-500 hover:text-green-700 transition-colors bg-white">
-                      → {q}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+
 
             <p className="text-xs text-gray-400 mt-6 pt-4 border-t border-gray-100">
               This checklist is for informational purposes only and is not legal advice. Always verify requirements with the relevant agencies.
