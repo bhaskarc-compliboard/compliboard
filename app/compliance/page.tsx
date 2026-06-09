@@ -852,8 +852,14 @@ Return JSON with only the must_do array.`
                               </button>
                             ) : isLoadingSteps ? (
                               <span className="no-print flex-shrink-0 text-xs text-gray-400 flex items-center gap-1">
-                                <span className="animate-spin inline-block">⟳</span> Generating steps...
+                                <span className="animate-spin inline-block">⟳</span> Generating micro-steps...
                               </span>
+                            ) : stepsCache[key] ? (
+                              <button
+                                onClick={() => handleGetSteps(i)}
+                                className="no-print flex-shrink-0 text-xs px-2.5 py-1 rounded-lg border border-green-200 text-green-700 hover:bg-green-50 transition-colors whitespace-nowrap">
+                                ↓ Show steps
+                              </button>
                             ) : null}
                           </div>
                           <p className="text-sm text-gray-600 mt-1">{item.description}
@@ -904,7 +910,7 @@ Return JSON with only the must_do array.`
                       {(subItems || isLoadingSteps) && (
                         <div className="sub-checklist border-t border-gray-100 bg-gray-50 rounded-b-xl px-4 py-4 ml-8 border-l-2 border-l-green-200">
                           {isLoadingSteps ? (
-                            <p className="text-xs text-gray-400 animate-pulse">Getting steps...</p>
+                            <p className="text-xs text-gray-400 animate-pulse">⟳ Generating micro-steps to complete this item...</p>
                           ) : subItems && subItems.length > 0 && (
                             <div className="space-y-3">
                               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Steps to complete this</p>
