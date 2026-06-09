@@ -680,12 +680,12 @@ Return the same JSON format as a normal checklist but only the must_do array.`
 
         <div className="no-print flex items-center gap-3">
           <button onClick={() => handleSubmit('checklist')} disabled={loading || (!question.trim() && !uploadedFile)}
-            className="bg-green-700 text-white px-6 py-3 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50">
+            className="bg-green-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50">
             {loading ? 'Working...' : uploadedFile ? 'Analyse my document →' : 'Get my compliance checklist →'}
           </button>
           {!uploadedFile && (
             <button onClick={() => handleSubmit('research')} disabled={loading || !question.trim()}
-              className="border border-gray-200 text-gray-600 px-6 py-3 rounded-xl text-sm font-medium hover:border-green-500 hover:text-green-700 transition-colors disabled:opacity-50">
+              className="border border-gray-200 text-gray-600 px-5 py-2.5 rounded-xl text-sm font-medium hover:border-green-500 hover:text-green-700 transition-colors disabled:opacity-50">
               Research this topic →
             </button>
           )}
@@ -716,8 +716,8 @@ Return the same JSON format as a normal checklist but only the must_do array.`
             <div className="bg-white rounded-xl border border-gray-200 p-6">
               <div className="text-sm text-gray-700 leading-relaxed space-y-4">
                 {researchData.split('\n').map((line, i) => {
-                  if (line.startsWith('## ')) return (
-                    <p key={i} className="text-xs font-bold uppercase tracking-widest text-green-700 mt-6 mb-1">{line.replace('## ', '')}</p>
+                  if (line.startsWith('## ') || line.startsWith('# ')) return (
+                    <p key={i} className="text-xs font-bold uppercase tracking-widest text-green-700 mt-6 mb-1">{line.replace('## ', '').replace('# ', '')}</p>
                   )
                   if (line.startsWith('• ') || line.startsWith('- ')) return (
                     <p key={i} className="flex gap-2 text-gray-600"><span className="text-green-500 flex-shrink-0">•</span><span dangerouslySetInnerHTML={{__html: line.replace(/^[•\-] /, '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}} /></p>
@@ -730,7 +730,7 @@ Return the same JSON format as a normal checklist but only the must_do array.`
             <div className="mt-4 flex items-center gap-3">
               <button
                 onClick={() => handleSubmit('checklist')}
-                className="flex items-center gap-2 text-sm px-4 py-2.5 rounded-xl bg-green-700 text-white hover:bg-green-800 transition-colors">
+                className="flex items-center gap-2 text-sm px-4 py-2.5 rounded-xl border border-green-600 bg-green-700 text-white hover:bg-green-800 transition-colors">
                 Turn this into a checklist →
               </button>
               <p className="text-xs text-gray-400">Get actionable steps based on this research</p>
