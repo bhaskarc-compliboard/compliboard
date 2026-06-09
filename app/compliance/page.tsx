@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, Suspense } from 'react'
+import React, { useState, useEffect, useRef, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import AppLayout from '@/components/AppLayout'
@@ -159,6 +159,11 @@ function CompliancePageInner() {
   const [expandedSteps, setExpandedSteps] = useState<Record<string, ChecklistItem[] | null | undefined>>({})
   const [stepsCache, setStepsCache] = useState<Record<string, ChecklistItem[]>>({})
   const [loadingSteps, setLoadingSteps] = useState<Record<string, boolean>>({})
+  const [stepsQueue, setStepsQueue] = useState<number[]>([])
+  const [processingQueue, setProcessingQueue] = useState(false)
+  const queueRef = React.useRef<number[]>([])
+  const processingRef = React.useRef(false)
+  const dataRef = React.useRef<ChecklistData | null>(null)
   const [followUpQuestion, setFollowUpQuestion] = useState('')
   const [researchData, setResearchData] = useState<string | null>(null)
   const [mode, setMode] = useState<'checklist' | 'research'>('checklist')
@@ -383,73 +388,101 @@ function CompliancePageInner() {
       .eq('id', itemId)
   }
 
-  async function handleGetSteps(itemIndex: number, itemName: string) {
+  async function handleGetSteps(itemIndex: number) {
     const key = `must-${itemIndex}`
 
-    // Toggle off if visible — hide but keep in cache
+    // Toggle off if visible
     if (expandedSteps[key] && expandedSteps[key] !== null) {
       setExpandedSteps(prev => ({ ...prev, [key]: null }))
       return
     }
 
-    // Restore from cache if previously loaded
+    // Restore from cache instantly
     if (stepsCache[key]) {
       setExpandedSteps(prev => ({ ...prev, [key]: stepsCache[key] }))
       return
     }
 
-    setLoadingSteps(prev => ({ ...prev, [key]: true }))
-
-    try {
-      const otherItems = data?.must_do
-        ?.filter((_, idx) => idx !== itemIndex)
-        ?.map((item, idx) => `- ${item.name}`)
-        ?.join('\n') || ''
-
-      const prompt = `The user has this compliance checklist item: "${itemName}"
-
-Context: This is item #${itemIndex + 1} from a compliance checklist about: ${askedQuestion}
-
-The main checklist already covers these other items separately — do NOT overlap with them:
-${otherItems}
-
-Give me a step-by-step sub-checklist for exactly how to complete THIS ONE ITEM ONLY.
-3 to 6 concrete actionable steps. Each step must be something they can actually DO — a form to fill, a website to visit, a phone call to make, a document to prepare.
-Stay focused only on completing "${itemName}". Do not include steps that belong to the other items listed above.
-Return the same JSON format as a normal checklist but only the must_do array.`
-
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: prompt }),
-      })
-      const json = await res.json()
-      const subItems: ChecklistItem[] = json.data?.must_do || []
-
-      setExpandedSteps(prev => ({ ...prev, [key]: subItems }))
-      setStepsCache(prev => ({ ...prev, [key]: subItems }))
-
-      // Save to database if we have a checklist ID
-      if (currentChecklistId && subItems.length > 0) {
-        await saveSubItems(currentChecklistId, itemIndex, subItems)
-        // Update IDs
-        const { data: saved } = await supabase
-          .from('checklist_items')
-          .select('id, sort_order')
-          .eq('checklist_id', currentChecklistId)
-          .eq('parent_item_index', itemIndex)
-          .order('sort_order')
-        if (saved) {
-          const withIds = subItems.map((item, i) => ({ ...item, id: saved[i]?.id }))
-          setExpandedSteps(prev => ({ ...prev, [key]: withIds }))
-        }
-      }
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setLoadingSteps(prev => ({ ...prev, [key]: false }))
+    // Prioritize this item in the queue
+    prioritizeItem(itemIndex)
+    if (!processingRef.current && data) {
+      processQueue(queueRef.current, data, currentChecklistId)
     }
   }
+
+  // Steps are now loaded via background queue
+
+  async function processQueue(queue: number[], checklistData: ChecklistData, checklistId: string | null) {
+    if (processingRef.current) return
+    processingRef.current = true
+
+    while (queueRef.current.length > 0) {
+      const itemIndex = queueRef.current.shift()!
+      const key = `must-${itemIndex}`
+
+      const cached = stepsCache[key]
+      if (cached) {
+        setExpandedSteps(prev => ({ ...prev, [key]: cached }))
+        continue
+      }
+
+      setLoadingSteps(prev => ({ ...prev, [key]: true }))
+      console.log('Loading steps for:', key)
+
+      try {
+        const item = checklistData.must_do[itemIndex]
+        if (!item) continue
+
+        const otherItems = checklistData.must_do
+          .filter((_, idx) => idx !== itemIndex)
+          .map((it) => '- ' + it.name)
+          .join(', ')
+
+
+        const prompt = `The user has this compliance checklist item: "${item.name}"
+Context: This is item #${itemIndex + 1} from a compliance checklist.
+The main checklist already covers these other items — do NOT overlap: ${otherItems}
+Give me 3 to 6 concrete actionable steps to complete THIS ONE ITEM ONLY.
+Return JSON with only the must_do array.`
+
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question: prompt }),
+        })
+        const json = await res.json()
+        const subItems: ChecklistItem[] = json.data?.must_do || []
+
+        setExpandedSteps(prev => ({ ...prev, [key]: subItems }))
+        setStepsCache(prev => ({ ...prev, [key]: subItems }))
+
+        if (checklistId && subItems.length > 0) {
+          await saveSubItems(checklistId, itemIndex, subItems)
+          const { data: saved } = await supabase
+            .from('checklist_items')
+            .select('id, sort_order')
+            .eq('checklist_id', checklistId)
+            .eq('parent_item_index', itemIndex)
+            .order('sort_order')
+          if (saved) {
+            const withIds = subItems.map((it, i) => ({ ...it, id: saved[i]?.id }))
+            setExpandedSteps(prev => ({ ...prev, [key]: withIds }))
+            setStepsCache(prev => ({ ...prev, [key]: withIds }))
+          }
+        }
+      } catch (err) {
+        console.error('Queue error:', err)
+      } finally {
+        setLoadingSteps(prev => ({ ...prev, [key]: false }))
+      }
+    }
+    processingRef.current = false
+  }
+
+  function prioritizeItem(itemIndex: number) {
+    queueRef.current = [itemIndex, ...queueRef.current.filter(i => i !== itemIndex)]
+  }
+
 
   async function deleteChecklist(checklistId: string) {
     await supabase.from('checklists').delete().eq('id', checklistId)
@@ -557,6 +590,14 @@ Return the same JSON format as a normal checklist but only the must_do array.`
           }
           await loadSavedChecklists()
         }
+      }
+
+      // Start background loading queue for all items
+      if (json.data?.must_do?.length > 0) {
+        const allIndices = json.data.must_do.map((_: ChecklistItem, i: number) => i)
+        queueRef.current = [...allIndices]
+        dataRef.current = json.data
+        setTimeout(() => processQueue(allIndices, json.data, currentChecklistId), 500)
       }
     } catch (error) {
       console.error(error)
@@ -803,12 +844,17 @@ Return the same JSON format as a normal checklist but only the must_do array.`
                               <span className="text-gray-400 font-normal mr-1">{i + 1}.</span>
                               {item.name}
                             </p>
-                            <button
-                              onClick={() => handleGetSteps(i, item.name)}
-                              disabled={isLoadingSteps}
-                              className="no-print flex-shrink-0 text-xs px-2.5 py-1 rounded-lg border border-green-200 text-green-700 hover:bg-green-50 transition-colors disabled:opacity-50 whitespace-nowrap">
-                              {isLoadingSteps ? '...' : subItems ? '↑ Hide steps' : 'Give me the steps →'}
-                            </button>
+                            {subItems ? (
+                              <button
+                                onClick={() => handleGetSteps(i)}
+                                className="no-print flex-shrink-0 text-xs px-2.5 py-1 rounded-lg border border-gray-200 text-gray-400 hover:border-gray-300 transition-colors whitespace-nowrap">
+                                ↑ Hide steps
+                              </button>
+                            ) : isLoadingSteps ? (
+                              <span className="no-print flex-shrink-0 text-xs text-gray-400 flex items-center gap-1">
+                                <span className="animate-spin inline-block">⟳</span> Generating steps...
+                              </span>
+                            ) : null}
                           </div>
                           <p className="text-sm text-gray-600 mt-1">{item.description}
                             {item.source_url && (
