@@ -509,6 +509,17 @@ export default function CalendarPage() {
         </p>
 
       </div>
-    </AppLayout>
+    
+        <div className="mt-16 pt-8 border-t border-gray-100 max-w-3xl mx-auto px-6">
+          <div className="flex items-start gap-3">
+            <span className="text-2xl flex-shrink-0">📅</span>
+            <div>
+              <p className="text-sm font-semibold text-gray-700 mb-1">Did you know?</p>
+              <p className="text-sm text-gray-500 leading-relaxed">CompliBoard can read your compliance documents and automatically populate your calendar with renewal dates and inspection deadlines. Upload your permits, licenses, and inspection reports in Company Files and CompliBoard will extract the dates and add them here automatically. You never miss a renewal again.</p>
+            </div>
+          </div>
+        </div>
+
+      </AppLayout>
   )
 }

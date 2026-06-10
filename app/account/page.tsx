@@ -430,6 +430,17 @@ export default function AccountPage() {
         )}
 
       </div>
-    </AppLayout>
+    
+        <div className="mt-16 pt-8 border-t border-gray-100 max-w-3xl mx-auto px-6">
+          <div className="flex items-start gap-3">
+            <span className="text-2xl flex-shrink-0">⚙️</span>
+            <div>
+              <p className="text-sm font-semibold text-gray-700 mb-1">Did you know?</p>
+              <p className="text-sm text-gray-500 leading-relaxed">The more detail you add to your company profile — industry, state, county, employee count, and chemicals handled — the more accurate and specific your compliance checklists become. CompliBoard uses your profile to filter regulations that actually apply to your business and skip everything that does not.</p>
+            </div>
+          </div>
+        </div>
+
+      </AppLayout>
   )
 }

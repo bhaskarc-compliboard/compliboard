@@ -1116,8 +1116,19 @@ Give them a specific direct answer — exactly what they need to do, which speci
             <p className="text-xs text-gray-400 mt-6 pt-4 border-t border-gray-100">
               This checklist is for informational purposes only and is not legal advice. Always verify requirements with the relevant agencies.
             </p>
+
           </div>
         )}
+
+        <div className="mt-24 pt-10 border-t border-gray-100">
+          <div className="flex items-start gap-3">
+            <span className="text-2xl flex-shrink-0">📋</span>
+            <div>
+              <p className="text-sm font-semibold text-gray-700 mb-1">Did you know?</p>
+              <p className="text-sm text-gray-500 leading-relaxed">CompliBoard generates detailed micro-steps for every compliance item — including time estimates, costs, and exactly what you need to prepare. For steps that require a decision, CompliBoard asks you two quick questions and tells you exactly what applies to your situation. Ask any compliance question in plain English and get a complete guided path from question to done.</p>
+            </div>
+          </div>
+        </div>
       </div>
     </AppLayout>
   )

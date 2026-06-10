@@ -837,6 +837,17 @@ export default function DocumentsPage() {
                   )
                 )}
 
+                {/* CompliBoard capability banner */}
+                <div className="mt-16 pt-8 border-t border-gray-100">
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl flex-shrink-0">📂</span>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-700 mb-1">Did you know?</p>
+                      <p className="text-sm text-gray-500 leading-relaxed">Upload your compliance documents once. CompliBoard reads them, extracts renewal dates, and adds them to your calendar automatically. Every month, CompliBoard checks if your documents are still current and alerts you 30 days before anything expires. You never miss a deadline again.</p>
+                    </div>
+                  </div>
+                </div>
+
               </div>
             )}
           </>
