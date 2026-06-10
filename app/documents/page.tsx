@@ -824,7 +824,7 @@ export default function DocumentsPage() {
                       const isExpanded = expandedAuditId === audit.id
                       const result = audit.result_json
                       return (
-                        <div key={audit.id} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                        <div key={audit.id} className="bg-gray-50 rounded-xl border border-gray-200 overflow-hidden">
                           <div className="px-5 py-4 flex items-center gap-4 cursor-pointer hover:bg-gray-50 transition-colors" onClick={() => setExpandedAuditId(isExpanded ? null : audit.id)}>
                             <span className="text-2xl flex-shrink-0">📁</span>
                             <div className="flex-1 min-w-0">
