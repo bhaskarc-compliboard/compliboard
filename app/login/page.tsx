@@ -86,6 +86,9 @@ export default function LoginPage() {
             Don&apos;t have an account?{' '}
             <a href="/signup" className="text-green-700 hover:text-green-800 font-medium">Sign up free</a>
           </p>
+          <p className="text-center">
+            <a href="/forgot-password" className="text-sm text-gray-400 hover:text-green-700 transition-colors">Forgot password?</a>
+          </p>
 
         </div>
       </div>
