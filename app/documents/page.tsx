@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
 import AppLayout from '@/components/AppLayout'
 import { useRouter } from 'next/navigation'
+import { INDUSTRY_FOLDERS } from '@/lib/folderTemplates'
 
 interface Document {
   id: string
@@ -33,11 +34,30 @@ interface SavedChecklist {
   completed_count?: number
 }
 
+interface FolderGroup {
+  label: string
+  industry: string
+  folders: Folder[]
+}
+
 const RECURRENCE_OPTIONS = [
   { value: 'monthly', label: 'Monthly' },
   { value: 'quarterly', label: 'Quarterly' },
   { value: 'annually', label: 'Annually' },
 ]
+
+const INDUSTRY_LABELS: Record<string, string> = {
+  'chemical-manufacturing': 'Chemical Manufacturing',
+  'food-beverage-manufacturing': 'Food & Beverage Manufacturing',
+  'restaurant': 'Restaurant / Food Service',
+  'cannabis': 'Cannabis',
+  'auto-body-dry-cleaners': 'Auto Body / Dry Cleaners',
+  'wood-products-sawmills': 'Wood Products / Sawmills',
+  'construction': 'Construction',
+  'healthcare': 'Healthcare',
+  'hospice': 'Hospice',
+  'other': 'Other',
+}
 
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return bytes + ' B'
@@ -59,6 +79,35 @@ function getChecklistStatus(completed: number, total: number): { dot: string; la
   return { dot: 'bg-amber-400', label: 'In progress' }
 }
 
+function groupFoldersByIndustry(folders: Folder[], primaryIndustry: string): FolderGroup[] {
+  const assigned = new Set<string>()
+  const groups: FolderGroup[] = []
+
+  // Build ordered industry list — primary industry first
+  const industryOrder = [primaryIndustry, ...Object.keys(INDUSTRY_FOLDERS).filter(k => k !== primaryIndustry && k !== 'other')]
+
+  for (const industry of industryOrder) {
+    const industryFolderNames = INDUSTRY_FOLDERS[industry] || []
+    const matched = folders.filter(f => industryFolderNames.includes(f.name) && !assigned.has(f.id))
+    if (matched.length > 0) {
+      matched.forEach(f => assigned.add(f.id))
+      groups.push({
+        label: INDUSTRY_LABELS[industry] || industry,
+        industry,
+        folders: matched,
+      })
+    }
+  }
+
+  // Any remaining unmatched folders go to "Other Folders"
+  const unassigned = folders.filter(f => !assigned.has(f.id))
+  if (unassigned.length > 0) {
+    groups.push({ label: 'Other Folders', industry: 'other', folders: unassigned })
+  }
+
+  return groups
+}
+
 export default function DocumentsPage() {
   const supabase = createClient()
   const router = useRouter()
@@ -71,6 +120,7 @@ export default function DocumentsPage() {
   const [loading, setLoading] = useState(true)
   const [userId, setUserId] = useState<string | null>(null)
   const [companyId, setCompanyId] = useState<string | null>(null)
+  const [primaryIndustry, setPrimaryIndustry] = useState<string>('other')
   const [deleting, setDeleting] = useState<string | null>(null)
 
   // Folder navigation
@@ -113,6 +163,14 @@ export default function DocumentsPage() {
       if (profile?.company_id) {
         setCompanyId(profile.company_id)
         await loadFolders(profile.company_id)
+
+        // Load primary industry
+        const { data: company } = await supabase
+          .from('companies')
+          .select('industry')
+          .eq('id', profile.company_id)
+          .single()
+        if (company?.industry) setPrimaryIndustry(company.industry)
       }
 
       await loadDocuments(user.id, null)
@@ -350,10 +408,78 @@ export default function DocumentsPage() {
     ? documents.filter(d => d.folder_id === currentFolderId)
     : documents.filter(d => d.folder_id === null)
 
+  // Grouped folders — only at root level
+  const folderGroups: FolderGroup[] = !currentFolderId
+    ? groupFoldersByIndustry(currentFolders, primaryIndustry)
+    : []
+
   const tabs = [
     { key: 'checklists', label: 'Checklists', count: checklists.length },
     { key: 'files', label: 'Company Files', count: folders.length },
   ] as const
+
+  function renderFolder(folder: Folder) {
+    return (
+      <div key={folder.id} className={`group border border-gray-200 hover:border-green-400 transition-all ${viewMode === 'grid' ? 'bg-gray-50 rounded-xl' : 'bg-gray-50 rounded-xl'}`}>
+        {renamingId === folder.id ? (
+          <div className="p-3 flex items-center gap-2">
+            <input
+              type="text"
+              autoFocus
+              className="flex-1 border border-gray-200 rounded-lg px-2 py-1 text-sm focus:outline-none focus:border-green-500"
+              value={renameValue}
+              onChange={(e) => setRenameValue(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleRenameFolder(folder.id); if (e.key === 'Escape') setRenamingId(null) }}
+            />
+            <button onClick={() => handleRenameFolder(folder.id)}
+              className="text-xs px-2 py-1 rounded bg-green-700 text-white">✓</button>
+            <button onClick={() => setRenamingId(null)}
+              className="text-gray-400 hover:text-gray-600">×</button>
+          </div>
+        ) : (
+          <div>
+            {viewMode === 'grid' ? (
+              <div>
+                <button
+                  onClick={() => navigateToFolder(folder)}
+                  className="w-full p-4 text-left flex items-center gap-3">
+                  <span className="text-2xl">📁</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-700 truncate">{folder.name}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {documents.filter(d => d.folder_id === folder.id).length} files
+                    </p>
+                  </div>
+                </button>
+                <div className="px-4 pb-3 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button onClick={() => { setRenamingId(folder.id); setRenameValue(folder.name) }}
+                    className="text-xs text-gray-400 hover:text-green-700 transition-colors">Rename</button>
+                  <span className="text-gray-200">·</span>
+                  <button onClick={() => handleDeleteFolder(folder.id, folder.name)}
+                    className="text-xs text-gray-400 hover:text-red-500 transition-colors">Delete</button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3 px-4 py-2.5">
+                <span className="text-base">📁</span>
+                <button onClick={() => navigateToFolder(folder)} className="flex-1 text-left">
+                  <p className="text-sm font-medium text-gray-700">{folder.name}</p>
+                </button>
+                <span className="text-xs text-gray-400 mr-2">{documents.filter(d => d.folder_id === folder.id).length} files</span>
+                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button onClick={() => { setRenamingId(folder.id); setRenameValue(folder.name) }}
+                    className="text-xs text-gray-400 hover:text-green-700 transition-colors">Rename</button>
+                  <span className="text-gray-200">·</span>
+                  <button onClick={() => handleDeleteFolder(folder.id, folder.name)}
+                    className="text-xs text-gray-400 hover:text-red-500 transition-colors">Delete</button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    )
+  }
 
   return (
     <AppLayout title="Company Documents">
@@ -533,33 +659,33 @@ export default function DocumentsPage() {
 
                 {/* Breadcrumb + view toggle */}
                 <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-1 flex-wrap">
-                  <button
-                    onClick={() => navigateToFolder(null)}
-                    className={`text-sm transition-colors ${currentFolderId === null ? 'text-gray-900 font-medium' : 'text-gray-400 hover:text-green-700'}`}>
-                    All Files
-                  </button>
-                  {breadcrumb.map((f, i) => (
-                    <span key={f.id} className="flex items-center gap-1">
-                      <span className="text-gray-300 text-xs">›</span>
-                      <button
-                        onClick={() => navigateToFolder(f)}
-                        className={`text-sm transition-colors ${i === breadcrumb.length - 1 ? 'text-gray-900 font-medium' : 'text-gray-400 hover:text-green-700'}`}>
-                        {f.name}
-                      </button>
-                    </span>
-                  ))}
-                </div>
-                <div className="flex items-center gap-1 border border-gray-200 rounded-lg p-0.5">
-                  <button onClick={() => setViewMode('grid')}
-                    className={`px-2 py-1 rounded text-xs transition-colors ${viewMode === 'grid' ? 'bg-white shadow-sm text-gray-700' : 'text-gray-400 hover:text-gray-600'}`}>
-                    Grid
-                  </button>
-                  <button onClick={() => setViewMode('list')}
-                    className={`px-2 py-1 rounded text-xs transition-colors ${viewMode === 'list' ? 'bg-white shadow-sm text-gray-700' : 'text-gray-400 hover:text-gray-600'}`}>
-                    List
-                  </button>
-                </div>
+                  <div className="flex items-center gap-1 flex-wrap">
+                    <button
+                      onClick={() => navigateToFolder(null)}
+                      className={`text-sm transition-colors ${currentFolderId === null ? 'text-gray-900 font-medium' : 'text-gray-400 hover:text-green-700'}`}>
+                      All Files
+                    </button>
+                    {breadcrumb.map((f, i) => (
+                      <span key={f.id} className="flex items-center gap-1">
+                        <span className="text-gray-300 text-xs">›</span>
+                        <button
+                          onClick={() => navigateToFolder(f)}
+                          className={`text-sm transition-colors ${i === breadcrumb.length - 1 ? 'text-gray-900 font-medium' : 'text-gray-400 hover:text-green-700'}`}>
+                          {f.name}
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-1 border border-gray-200 rounded-lg p-0.5">
+                    <button onClick={() => setViewMode('grid')}
+                      className={`px-2 py-1 rounded text-xs transition-colors ${viewMode === 'grid' ? 'bg-white shadow-sm text-gray-700' : 'text-gray-400 hover:text-gray-600'}`}>
+                      Grid
+                    </button>
+                    <button onClick={() => setViewMode('list')}
+                      className={`px-2 py-1 rounded text-xs transition-colors ${viewMode === 'list' ? 'bg-white shadow-sm text-gray-700' : 'text-gray-400 hover:text-gray-600'}`}>
+                      List
+                    </button>
+                  </div>
                 </div>
 
                 {/* New folder input */}
@@ -587,76 +713,34 @@ export default function DocumentsPage() {
                   </div>
                 )}
 
-                {/* Folders grid */}
-                {currentFolders.length > 0 && (
-                  <div>
-                  {currentFolderId && <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2">Folders</p>}
-                  <div className={viewMode === 'grid' ? 'grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4' : 'space-y-1 mb-4'}>
-                    {currentFolders.map(folder => (
-                      <div key={folder.id} className={`group border border-gray-200 hover:border-green-400 transition-all ${viewMode === 'grid' ? 'bg-gray-50 rounded-xl' : 'bg-gray-50 rounded-xl'}`}>
-                        {renamingId === folder.id ? (
-                          <div className="p-3 flex items-center gap-2">
-                            <input
-                              type="text"
-                              autoFocus
-                              className="flex-1 border border-gray-200 rounded-lg px-2 py-1 text-sm focus:outline-none focus:border-green-500"
-                              value={renameValue}
-                              onChange={(e) => setRenameValue(e.target.value)}
-                              onKeyDown={(e) => { if (e.key === 'Enter') handleRenameFolder(folder.id); if (e.key === 'Escape') setRenamingId(null) }}
-                            />
-                            <button onClick={() => handleRenameFolder(folder.id)}
-                              className="text-xs px-2 py-1 rounded bg-green-700 text-white">✓</button>
-                            <button onClick={() => setRenamingId(null)}
-                              className="text-gray-400 hover:text-gray-600">×</button>
-                          </div>
-                        ) : (
-                          <div>
-                            {viewMode === 'grid' ? (
-                              <div>
-                                <button
-                                  onClick={() => navigateToFolder(folder)}
-                                  className="w-full p-4 text-left flex items-center gap-3">
-                                  <span className="text-2xl">📁</span>
-                                  <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium text-gray-700 truncate">{folder.name}</p>
-                                    <p className="text-xs text-gray-400 mt-0.5">
-                                      {documents.filter(d => d.folder_id === folder.id).length} files
-                                    </p>
-                                  </div>
-                                </button>
-                                <div className="px-4 pb-3 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <button onClick={() => { setRenamingId(folder.id); setRenameValue(folder.name) }}
-                                    className="text-xs text-gray-400 hover:text-green-700 transition-colors">Rename</button>
-                                  <span className="text-gray-200">·</span>
-                                  <button onClick={() => handleDeleteFolder(folder.id, folder.name)}
-                                    className="text-xs text-gray-400 hover:text-red-500 transition-colors">Delete</button>
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="flex items-center gap-3 px-4 py-2.5">
-                                <span className="text-base">📁</span>
-                                <button onClick={() => navigateToFolder(folder)} className="flex-1 text-left">
-                                  <p className="text-sm font-medium text-gray-700">{folder.name}</p>
-                                </button>
-                                <span className="text-xs text-gray-400 mr-2">{documents.filter(d => d.folder_id === folder.id).length} files</span>
-                                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <button onClick={() => { setRenamingId(folder.id); setRenameValue(folder.name) }}
-                                    className="text-xs text-gray-400 hover:text-green-700 transition-colors">Rename</button>
-                                  <span className="text-gray-200">·</span>
-                                  <button onClick={() => handleDeleteFolder(folder.id, folder.name)}
-                                    className="text-xs text-gray-400 hover:text-red-500 transition-colors">Delete</button>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        )}
+                {/* GROUPED FOLDERS — root level */}
+                {!currentFolderId && currentFolders.length > 0 && (
+                  <div className="space-y-6 mb-4">
+                    {folderGroups.map((group, gi) => (
+                      <div key={group.industry + gi}>
+                        <div className="flex items-center gap-3 mb-2">
+                          <p className="text-xs font-bold uppercase tracking-widest text-gray-400">{group.label}</p>
+                          <div className="flex-1 h-px bg-gray-100"></div>
+                        </div>
+                        <div className={viewMode === 'grid' ? 'grid grid-cols-2 sm:grid-cols-3 gap-3' : 'space-y-1'}>
+                          {group.folders.map(folder => renderFolder(folder))}
+                        </div>
                       </div>
                     ))}
                   </div>
+                )}
+
+                {/* FLAT FOLDERS — inside a subfolder */}
+                {currentFolderId && currentFolders.length > 0 && (
+                  <div>
+                    <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2">Folders</p>
+                    <div className={viewMode === 'grid' ? 'grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4' : 'space-y-1 mb-4'}>
+                      {currentFolders.map(folder => renderFolder(folder))}
+                    </div>
                   </div>
                 )}
 
-                {/* Add folder button — max 2 levels */}
+                {/* Add folder buttons */}
                 {breadcrumb.length < 2 && (
                   <div className="flex items-center gap-4 mb-4">
                     <button
