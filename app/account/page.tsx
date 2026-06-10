@@ -14,6 +14,7 @@ const INDUSTRIES = [
   { label: 'Wood Products / Sawmills', value: 'wood-products-sawmills' },
   { label: 'Construction', value: 'construction' },
   { label: 'Healthcare', value: 'healthcare' },
+  { label: 'Hospice', value: 'hospice' },
   { label: 'Other', value: 'other' },
 ]
 
@@ -38,6 +39,8 @@ export default function AccountPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
+  const [addingFolders, setAddingFolders] = useState(false)
+  const [folderSuccess, setFolderSuccess] = useState('')
   const [saveError, setSaveError] = useState('')
   const [activeSection, setActiveSection] = useState<'profile' | 'password' | 'billing' | 'cancel'>('profile')
 
@@ -85,6 +88,33 @@ export default function AccountPage() {
     }
     loadAccount()
   }, [])
+
+  async function handleAddIndustryFolders() {
+    if (!industry) return
+    setAddingFolders(true)
+    setFolderSuccess('')
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/folders/industry', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token || ''}`,
+        },
+        body: JSON.stringify({ industry }),
+      })
+      const json = await res.json()
+      if (json.added === 0) {
+        setFolderSuccess('All folders for this industry already exist.')
+      } else {
+        setFolderSuccess(`Added ${json.added} new folder${json.added === 1 ? '' : 's'} for ${json.industryLabel}.`)
+      }
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setAddingFolders(false)
+    }
+  }
 
   async function handleSaveProfile() {
     if (!userId) return
@@ -279,6 +309,17 @@ export default function AccountPage() {
                 className="w-full bg-green-700 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50">
                 {saving ? 'Saving...' : 'Save changes'}
               </button>
+
+              <div className="pt-4 border-t border-gray-100">
+                <p className="text-xs text-gray-500 mb-2">Add compliance folders for an additional industry to your Company Documents.</p>
+                {folderSuccess && (
+                  <p className="text-xs text-green-700 mb-2">{folderSuccess}</p>
+                )}
+                <button onClick={handleAddIndustryFolders} disabled={addingFolders || !industry}
+                  className="w-full border border-green-600 text-green-700 py-2.5 rounded-xl text-sm font-medium hover:bg-green-50 transition-colors disabled:opacity-50">
+                  {addingFolders ? 'Adding folders...' : '+ Add industry folders for selected industry'}
+                </button>
+              </div>
             </div>
           </div>
         )}

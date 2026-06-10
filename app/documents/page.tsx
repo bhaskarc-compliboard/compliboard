@@ -87,6 +87,10 @@ export default function DocumentsPage() {
 
   // Folder management
   const [showNewFolder, setShowNewFolder] = useState(false)
+  const [addingFolders, setAddingFolders] = useState(false)
+  const [folderSuccess, setFolderSuccess] = useState('')
+  const [showIndustryPicker, setShowIndustryPicker] = useState(false)
+  const [selectedIndustry, setSelectedIndustry] = useState('')
   const [newFolderName, setNewFolderName] = useState('')
   const [creatingFolder, setCreatingFolder] = useState(false)
   const [renamingId, setRenamingId] = useState<string | null>(null)
@@ -222,6 +226,36 @@ export default function DocumentsPage() {
       setUploadError(err instanceof Error ? err.message : 'Upload failed')
     } finally {
       setUploading(false)
+    }
+  }
+
+  async function handleAddIndustryFolders() {
+    if (!selectedIndustry) return
+    setAddingFolders(true)
+    setFolderSuccess('')
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/folders/industry', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token || ''}`,
+        },
+        body: JSON.stringify({ industry: selectedIndustry }),
+      })
+      const json = await res.json()
+      if (json.added === 0) {
+        setFolderSuccess('All folders for this industry already exist.')
+      } else {
+        setFolderSuccess(`Added ${json.added} new folder${json.added === 1 ? '' : 's'}.`)
+        if (companyId) loadFolders(companyId)
+      }
+      setShowIndustryPicker(false)
+      setSelectedIndustry('')
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setAddingFolders(false)
     }
   }
 
@@ -624,11 +658,55 @@ export default function DocumentsPage() {
 
                 {/* Add folder button — max 2 levels */}
                 {breadcrumb.length < 2 && (
-                  <button
-                    onClick={() => { setShowNewFolder(true); setShowUpload(false) }}
-                    className="flex items-center gap-2 text-xs text-gray-400 hover:text-green-700 transition-colors mb-4 px-1">
-                    <span>＋</span> New folder
-                  </button>
+                  <div className="flex items-center gap-4 mb-4">
+                    <button
+                      onClick={() => { setShowNewFolder(true); setShowUpload(false) }}
+                      className="flex items-center gap-2 text-xs text-gray-400 hover:text-green-700 transition-colors px-1">
+                      <span>＋</span> New folder
+                    </button>
+                    <button
+                      onClick={() => { setShowIndustryPicker(!showIndustryPicker); setFolderSuccess('') }}
+                      className="flex items-center gap-2 text-xs text-gray-400 hover:text-green-700 transition-colors px-1">
+                      <span>＋</span> Add industry folders
+                    </button>
+                  </div>
+                )}
+
+                {/* Industry folder picker */}
+                {showIndustryPicker && (
+                  <div className="mb-4 p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
+                    <p className="text-xs font-medium text-gray-600 mb-2">Select an industry to add its compliance folders:</p>
+                    <div className="flex items-center gap-2">
+                      <select
+                        className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-800 focus:outline-none focus:border-green-500 bg-gray-50"
+                        value={selectedIndustry}
+                        onChange={(e) => setSelectedIndustry(e.target.value)}>
+                        <option value="">Select industry...</option>
+                        <option value="chemical-manufacturing">Chemical Manufacturing</option>
+                        <option value="food-beverage-manufacturing">Food & Beverage Manufacturing</option>
+                        <option value="restaurant">Restaurant / Food Service</option>
+                        <option value="cannabis">Cannabis</option>
+                        <option value="auto-body-dry-cleaners">Auto Body / Dry Cleaners</option>
+                        <option value="wood-products-sawmills">Wood Products / Sawmills</option>
+                        <option value="construction">Construction</option>
+                        <option value="healthcare">Healthcare</option>
+                        <option value="hospice">Hospice</option>
+                        <option value="other">Other</option>
+                      </select>
+                      <button
+                        onClick={handleAddIndustryFolders}
+                        disabled={addingFolders || !selectedIndustry}
+                        className="bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50">
+                        {addingFolders ? 'Adding...' : 'Add folders'}
+                      </button>
+                      <button
+                        onClick={() => { setShowIndustryPicker(false); setSelectedIndustry('') }}
+                        className="text-gray-400 hover:text-gray-600 text-sm px-2">
+                        Cancel
+                      </button>
+                    </div>
+                    {folderSuccess && <p className="text-xs text-green-700 mt-2">{folderSuccess}</p>}
+                  </div>
                 )}
 
                 {/* Files list */}
