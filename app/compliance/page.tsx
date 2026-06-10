@@ -275,30 +275,17 @@ function CompliancePageInner() {
   }
 
   async function saveSubItems(checklistId: string, parentIndex: number, subItems: ChecklistItem[]) {
-    await supabase
-      .from('checklist_items')
-      .delete()
-      .eq('checklist_id', checklistId)
-      .eq('parent_item_index', parentIndex)
-
-    const items = subItems.map((item, i) => ({
-      checklist_id: checklistId,
-      category: 'must_do',
-      name: item.name,
-      description: item.description || '',
-      why: item.why || null,
-      source_url: item.source_url || null,
-      cost_note: item.cost_note || null,
-      time_estimate: item.time_estimate || null,
-      what_you_need: item.what_you_need || null,
-      is_determination: item.is_determination || false,
-      clarifying_questions: item.clarifying_questions || [],
-      sort_order: i,
-      completed: false,
-      parent_item_index: parentIndex,
-    }))
-
-    await supabase.from('checklist_items').insert(items)
+    const res = await fetch('/api/substeps', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        checklist_id: checklistId,
+        parent_item_index: parentIndex,
+        items: subItems,
+      }),
+    })
+    const json = await res.json()
+    return json.data || []
   }
 
   async function loadChecklist(checklistId: string) {
@@ -329,7 +316,7 @@ function CompliancePageInner() {
 
     const restoredSteps: Record<string, ChecklistItem[] | null> = {}
     mustDo.forEach((_, i) => {
-      const children = subItems.filter(s => s.parent_item_index === i)
+      const children = subItems.filter(s => Number(s.parent_item_index) === i)
       if (children.length > 0) {
         restoredSteps[`must-${i}`] = children.map(s => ({
           id: s.id,
@@ -342,6 +329,8 @@ function CompliancePageInner() {
           what_you_need: s.what_you_need,
           is_determination: s.is_determination,
           clarifying_questions: s.clarifying_questions || [],
+          agency_name: s.agency_name,
+          search_hint: s.search_hint,
           completed: s.completed,
         }))
       }
@@ -370,10 +359,13 @@ function CompliancePageInner() {
     setChecked(checkState)
     setResearchData(null)
     setMode('checklist')
-    setExpandedSteps(restoredSteps)
     const cacheOnly: Record<string, ChecklistItem[]> = {}
     Object.entries(restoredSteps).forEach(([k, v]) => { if (v) cacheOnly[k] = v })
+    console.log('restoredSteps keys:', Object.keys(restoredSteps))
+    console.log('subItems count:', subItems.length)
+    console.log('cacheOnly keys:', Object.keys(cacheOnly))
     setStepsCache(cacheOnly)
+    setExpandedSteps(cacheOnly)
     setAskedQuestion(checklist.question)
     setQuestion(checklist.question)
     setCurrentChecklistId(checklistId)
@@ -456,15 +448,9 @@ Flag any step that requires the user to determine or choose something as is_dete
         setStepsCache(prev => ({ ...prev, [key]: subItems }))
 
         if (checklistId && subItems.length > 0) {
-          await saveSubItems(checklistId, itemIndex, subItems)
-          const { data: saved } = await supabase
-            .from('checklist_items')
-            .select('id, sort_order')
-            .eq('checklist_id', checklistId)
-            .eq('parent_item_index', itemIndex)
-            .order('sort_order')
-          if (saved) {
-            const withIds = subItems.map((it, i) => ({ ...it, id: saved[i]?.id }))
+          const saved = await saveSubItems(checklistId, itemIndex, subItems)
+          if (saved && saved.length > 0) {
+            const withIds = subItems.map((it: ChecklistItem, i: number) => ({ ...it, id: saved[i]?.id }))
             setExpandedSteps(prev => ({ ...prev, [key]: withIds }))
             setStepsCache(prev => ({ ...prev, [key]: withIds }))
           }
@@ -622,14 +608,14 @@ Give them a specific direct answer — exactly what they need to do, which speci
             setData({ ...json.data, must_do: updatedMustDo, good_to_have: updatedGoodToHave })
           }
           await loadSavedChecklists()
-        }
-      }
 
-      if (json.data?.must_do?.length > 0) {
-        const allIndices = json.data.must_do.map((_: ChecklistItem, i: number) => i)
-        queueRef.current = [...allIndices]
-        dataRef.current = json.data
-        setTimeout(() => processQueue(allIndices, json.data, currentChecklistId), 500)
+          if (json.data?.must_do?.length > 0) {
+            const allIndices = json.data.must_do.map((_: ChecklistItem, i: number) => i)
+            queueRef.current = [...allIndices]
+            dataRef.current = json.data
+            setTimeout(() => processQueue(allIndices, json.data, checklistId), 500)
+          }
+        }
       }
     } catch (error) {
       console.error(error)
