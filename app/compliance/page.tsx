@@ -169,6 +169,7 @@ function CompliancePageInner() {
   const [determinationResults, setDeterminationResults] = useState<Record<string, string>>({})
   const [loadingDetermination, setLoadingDetermination] = useState<Record<string, boolean>>({})
   const [showDetermination, setShowDetermination] = useState<Record<string, boolean>>({})
+  const [showStepsBanner, setShowStepsBanner] = useState(false)
 
   useEffect(() => {
     async function loadProfile() {
@@ -405,6 +406,7 @@ function CompliancePageInner() {
   async function processQueue(queue: number[], checklistData: ChecklistData, checklistId: string | null) {
     if (processingRef.current) return
     processingRef.current = true
+    setShowStepsBanner(true)
 
     while (queueRef.current.length > 0) {
       const itemIndex = queueRef.current.shift()!
@@ -444,14 +446,12 @@ Flag any step that requires the user to determine or choose something as is_dete
         const json = await res.json()
         const subItems: ChecklistItem[] = json.data?.must_do || []
 
-        setExpandedSteps(prev => ({ ...prev, [key]: subItems }))
         setStepsCache(prev => ({ ...prev, [key]: subItems }))
 
         if (checklistId && subItems.length > 0) {
           const saved = await saveSubItems(checklistId, itemIndex, subItems)
           if (saved && saved.length > 0) {
             const withIds = subItems.map((it: ChecklistItem, i: number) => ({ ...it, id: saved[i]?.id }))
-            setExpandedSteps(prev => ({ ...prev, [key]: withIds }))
             setStepsCache(prev => ({ ...prev, [key]: withIds }))
           }
         }
@@ -462,6 +462,7 @@ Flag any step that requires the user to determine or choose something as is_dete
       }
     }
     processingRef.current = false
+    setShowStepsBanner(false)
   }
 
   function prioritizeItem(itemIndex: number) {
@@ -549,6 +550,8 @@ Give them a specific direct answer — exactly what they need to do, which speci
     setDeterminationAnswers({})
     setDeterminationResults({})
     setShowDetermination({})
+    setStepsCache({})
+    setExpandedSteps({})
     setAskedQuestion(q)
     setCurrentChecklistId(null)
     const messages = getStatusMessages(q)
@@ -831,6 +834,13 @@ Give them a specific direct answer — exactly what they need to do, which speci
               </div>
             )}
 
+            {showStepsBanner && (
+              <div className="no-print mb-5 px-4 py-3 bg-blue-50 border border-blue-100 rounded-xl flex items-center gap-3">
+                <span className="animate-spin inline-block text-blue-400 flex-shrink-0">⟳</span>
+                <p className="text-xs text-blue-700">Your checklist is ready. We are building detailed micro-steps for each item — each takes about 25 seconds. Review your main steps while we work.</p>
+              </div>
+            )}
+
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <span className="text-xs font-bold uppercase tracking-widest text-green-700">✅ Must Do</span>
@@ -874,6 +884,10 @@ Give them a specific direct answer — exactly what they need to do, which speci
                                 className="no-print flex-shrink-0 text-xs px-2.5 py-1 rounded-lg border border-green-200 text-green-700 hover:bg-green-50 transition-colors whitespace-nowrap">
                                 ↓ Show steps
                               </button>
+                            ) : queueRef.current.includes(i) || processingRef.current ? (
+                              <span className="no-print flex-shrink-0 text-xs text-gray-300 flex items-center gap-1">
+                                ⏳ Steps loading...
+                              </span>
                             ) : null}
                           </div>
                           <p className="text-sm text-gray-600 mt-1">{item.description}
