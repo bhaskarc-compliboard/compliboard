@@ -7,6 +7,7 @@ import { useRouter, usePathname } from 'next/navigation'
 interface AppLayoutProps {
   children: React.ReactNode
   title?: string
+  didYouKnow?: { icon: string; text: string }
 }
 
 const NAV_ITEMS = [
@@ -17,7 +18,7 @@ const NAV_ITEMS = [
   { icon: '⚙️', label: 'My Account', href: '/account', soon: false },
 ]
 
-export default function AppLayout({ children, title }: AppLayoutProps) {
+export default function AppLayout({ children, title, didYouKnow }: AppLayoutProps) {
   const router = useRouter()
   const pathname = usePathname()
   const supabase = createClient()
@@ -215,6 +216,19 @@ export default function AppLayout({ children, title }: AppLayoutProps) {
           <div className="flex-1">
             {children}
           </div>
+
+          {/* Did you know */}
+          {didYouKnow && (
+            <div className="px-6 py-8 border-t border-gray-100 mt-8">
+              <div className="max-w-4xl mx-auto flex items-start gap-3">
+                <span className="text-2xl flex-shrink-0">{didYouKnow.icon}</span>
+                <div>
+                  <p className="text-sm font-semibold text-gray-700 mb-1">Did you know?</p>
+                  <p className="text-sm text-gray-500 leading-relaxed">{didYouKnow.text}</p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Footer */}
           <footer className="border-t border-gray-100 px-6 py-4 bg-white">

@@ -642,7 +642,7 @@ Give them a specific direct answer — exactly what they need to do, which speci
   const totalMust = data?.must_do?.length || 0
 
   return (
-    <AppLayout title="Compliance Checklist">
+    <AppLayout title="Compliance Checklist" didYouKnow={{ icon: '📋', text: 'CompliBoard generates detailed micro-steps for every compliance item — including time estimates, costs, and exactly what you need to prepare. For steps that require a decision, CompliBoard asks you two quick questions and tells you exactly what applies to your situation. Ask any compliance question in plain English and get a complete guided path from question to done.' }}>
       <style>{`
         @media print {
           .no-print { display: none !important; }
@@ -1120,15 +1120,6 @@ Give them a specific direct answer — exactly what they need to do, which speci
           </div>
         )}
 
-        <div className="mt-24 pt-10 border-t border-gray-100">
-          <div className="flex items-start gap-3">
-            <span className="text-2xl flex-shrink-0">📋</span>
-            <div>
-              <p className="text-sm font-semibold text-gray-700 mb-1">Did you know?</p>
-              <p className="text-sm text-gray-500 leading-relaxed">CompliBoard generates detailed micro-steps for every compliance item — including time estimates, costs, and exactly what you need to prepare. For steps that require a decision, CompliBoard asks you two quick questions and tells you exactly what applies to your situation. Ask any compliance question in plain English and get a complete guided path from question to done.</p>
-            </div>
-          </div>
-        </div>
       </div>
     </AppLayout>
   )

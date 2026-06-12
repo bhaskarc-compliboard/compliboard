@@ -594,7 +594,7 @@ export default function DocumentsPage() {
   }
 
   return (
-    <AppLayout title="Company Documents">
+    <AppLayout title="Company Documents" didYouKnow={activeTab === 'hr' ? { icon: '👥', text: 'Use the HR Help module to generate compliant HR policies for your state. Generated policies are saved directly to your HR Documents folder, ready to customize and share with employees.' } : activeTab === 'log' ? { icon: '🔍', text: 'Audit any compliance folder to get an instant gap report. CompliBoard checks your files against required documents for your industry and tells you exactly what is missing.' } : activeTab === 'checklists' ? { icon: '📋', text: 'Each compliance checklist includes detailed micro-steps with time estimates, costs, and direct links to the agencies you need. Everything in one place.' } : { icon: '📂', text: 'Upload your compliance documents once. CompliBoard reads them, extracts renewal dates, and adds them to your calendar automatically. Every month, CompliBoard checks if your documents are still current and alerts you 30 days before anything expires.' }}>
       <div className="max-w-4xl mx-auto px-6 py-8">
 
         <div className="mb-6 flex items-center justify-between">
@@ -783,15 +783,7 @@ export default function DocumentsPage() {
                   )
                 )}
 
-                <div className="mt-24 pt-10 border-t border-gray-100">
-                  <div className="flex items-start gap-3">
-                    <span className="text-2xl flex-shrink-0">📂</span>
-                    <div>
-                      <p className="text-sm font-semibold text-gray-700 mb-1">Did you know?</p>
-                      <p className="text-sm text-gray-500 leading-relaxed">Upload your compliance documents once. CompliBoard reads them, extracts renewal dates, and adds them to your calendar automatically. Every month, CompliBoard checks if your documents are still current and alerts you 30 days before anything expires. You never miss a deadline again.</p>
-                    </div>
-                  </div>
-                </div>
+
               </div>
             )}
 
@@ -862,15 +854,7 @@ export default function DocumentsPage() {
                   )
                 )}
 
-                <div className="mt-24 pt-10 border-t border-gray-100">
-                  <div className="flex items-start gap-3">
-                    <span className="text-2xl flex-shrink-0">👥</span>
-                    <div>
-                      <p className="text-sm font-semibold text-gray-700 mb-1">Did you know?</p>
-                      <p className="text-sm text-gray-500 leading-relaxed">Use the HR Help module to generate compliant HR policies for your state. Generated policies are saved directly to your HR Documents folder, ready to customize and share with employees.</p>
-                    </div>
-                  </div>
-                </div>
+
               </div>
             )}
 
@@ -989,6 +973,7 @@ export default function DocumentsPage() {
             )}
           </>
         )}
+
       </div>
     </AppLayout>
   )

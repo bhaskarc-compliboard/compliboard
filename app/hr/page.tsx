@@ -183,7 +183,7 @@ export default function HRPage() {
   }
 
   return (
-    <AppLayout title="HR Help">
+    <AppLayout title="HR Help" didYouKnow={{ icon: '👥', text: 'CompliBoard can review your employee handbook, identify policy gaps, and draft missing policies based on your industry and state regulations. Upload your handbook and ask any HR question — CompliBoard keeps your HR documents current without a lawyer.' }}>
       <div className="max-w-3xl mx-auto px-6 py-8">
 
         <div className="mb-6 flex items-center justify-between">
@@ -393,16 +393,6 @@ export default function HRPage() {
         )}
       </div>
     
-        <div className="mt-16 pt-8 border-t border-gray-100 max-w-3xl mx-auto px-6">
-          <div className="flex items-start gap-3">
-            <span className="text-2xl flex-shrink-0">👥</span>
-            <div>
-              <p className="text-sm font-semibold text-gray-700 mb-1">Did you know?</p>
-              <p className="text-sm text-gray-500 leading-relaxed">CompliBoard can review your employee handbook, identify policy gaps, and draft missing policies based on your industry and state regulations. Upload your handbook and ask any HR question — CompliBoard keeps your HR documents current without a lawyer.</p>
-            </div>
-          </div>
-        </div>
-
       </AppLayout>
   )
 }
