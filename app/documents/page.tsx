@@ -115,7 +115,8 @@ export default function DocumentsPage() {
 
   // Upload state
   const [showUpload, setShowUpload] = useState(false)
-  const [file, setFile] = useState<File | null>(null)
+  const [files, setFiles] = useState<File[]>([])
+  const [uploadProgress, setUploadProgress] = useState<string>('')
   const [isRecurring, setIsRecurring] = useState(false)
   const [recurrencePeriod, setRecurrencePeriod] = useState('annually')
   const [uploading, setUploading] = useState(false)
@@ -271,35 +272,40 @@ export default function DocumentsPage() {
   }
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const f = e.target.files?.[0] || null
-    setFile(f)
+    const selected = Array.from(e.target.files || [])
+    setFiles(selected)
     setUploadError('')
   }
 
   async function handleUpload(targetFolderId: string | null) {
-    if (!file || !companyId || !userId) return
+    if (files.length === 0 || !companyId || !userId) return
     setUploading(true)
     setUploadError('')
     try {
-      const fileExt = file.name.split('.').pop()
-      const fileName = `${Date.now()}-${file.name}`
-      const folderPath = targetFolderId || 'unfiled'
-      const filePath = `${companyId}/${folderPath}/${fileName}`
-      const { error: uploadErr } = await supabase.storage.from('company-documents').upload(filePath, file)
-      if (uploadErr) throw uploadErr
-      const dbRes = await fetch('/api/documents', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          company_id: companyId, user_id: userId, name: file.name,
-          file_url: filePath, file_type: file.type || fileExt || 'unknown',
-          file_size: file.size, folder_id: targetFolderId,
-          is_recurring: isRecurring, recurrence_period: isRecurring ? recurrencePeriod : null,
-        }),
-      })
-      if (!dbRes.ok) throw new Error('Failed to save document record')
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i]
+        setUploadProgress(`Uploading ${i + 1} of ${files.length}: ${file.name}`)
+        const fileExt = file.name.split('.').pop()
+        const fileName = `${Date.now()}-${file.name}`
+        const folderPath = targetFolderId || 'unfiled'
+        const filePath = `${companyId}/${folderPath}/${fileName}`
+        const { error: uploadErr } = await supabase.storage.from('company-documents').upload(filePath, file)
+        if (uploadErr) throw uploadErr
+        const dbRes = await fetch('/api/documents', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            company_id: companyId, user_id: userId, name: file.name,
+            file_url: filePath, file_type: file.type || fileExt || 'unknown',
+            file_size: file.size, folder_id: targetFolderId,
+            is_recurring: isRecurring, recurrence_period: isRecurring ? recurrencePeriod : null,
+          }),
+        })
+        if (!dbRes.ok) throw new Error(`Failed to save ${file.name}`)
+      }
       await loadDocuments(userId, targetFolderId)
-      setFile(null)
+      setFiles([])
+      setUploadProgress('')
       setIsRecurring(false)
       setShowUpload(false)
       if (fileInputRef.current) fileInputRef.current.value = ''
@@ -307,6 +313,7 @@ export default function DocumentsPage() {
       setUploadError(err instanceof Error ? err.message : 'Upload failed')
     } finally {
       setUploading(false)
+      setUploadProgress('')
     }
   }
 
@@ -543,30 +550,37 @@ export default function DocumentsPage() {
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-sm font-semibold text-gray-900">Upload a file</h2>
+            <h2 className="text-sm font-semibold text-gray-900">Upload files</h2>
             {folderName && <p className="text-xs text-green-600 mt-0.5">Uploading to: {folderName}</p>}
           </div>
-          <button onClick={() => { setShowUpload(false); setFile(null) }} className="text-gray-400 hover:text-gray-600 text-lg">×</button>
+          <button onClick={() => { setShowUpload(false); setFiles([]) }} className="text-gray-400 hover:text-gray-600 text-lg">×</button>
         </div>
         <div className="space-y-4">
           <div>
-            <input ref={fileInputRef} type="file" accept=".pdf,.xlsx,.xls,.csv,image/*" onChange={handleFileChange} className="hidden" id="file-upload" />
-            {!file ? (
+            <input ref={fileInputRef} type="file" multiple accept=".pdf,.xlsx,.xls,.csv,image/*" onChange={handleFileChange} className="hidden" id="file-upload" />
+            {files.length === 0 ? (
               <label htmlFor="file-upload" className="flex items-center gap-3 w-full border border-dashed border-gray-300 rounded-xl px-4 py-4 cursor-pointer hover:border-green-500 hover:bg-green-50 transition-colors">
                 <span className="text-2xl">📎</span>
                 <div>
-                  <p className="text-sm text-gray-600">Click to select a file</p>
-                  <p className="text-xs text-gray-400">PDF, images, Excel, or CSV</p>
+                  <p className="text-sm text-gray-600">Click to select files</p>
+                  <p className="text-xs text-gray-400">PDF, images, Excel, or CSV · Select multiple</p>
                 </div>
               </label>
             ) : (
-              <div className="flex items-center gap-3 p-3 bg-green-50 border border-green-200 rounded-xl">
-                <span className="text-xl">{getFileIcon(file.type, file.name)}</span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-green-800 truncate">{file.name}</p>
-                  <p className="text-xs text-green-600">{formatFileSize(file.size)}</p>
-                </div>
-                <button onClick={() => { setFile(null); if (fileInputRef.current) fileInputRef.current.value = '' }} className="text-gray-400 hover:text-red-500 text-lg">×</button>
+              <div className="space-y-2">
+                {files.map((f, i) => (
+                  <div key={i} className="flex items-center gap-3 p-3 bg-green-50 border border-green-200 rounded-xl">
+                    <span className="text-xl">{getFileIcon(f.type, f.name)}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-green-800 truncate">{f.name}</p>
+                      <p className="text-xs text-green-600">{formatFileSize(f.size)}</p>
+                    </div>
+                  </div>
+                ))}
+                <button onClick={() => { setFiles([]); if (fileInputRef.current) fileInputRef.current.value = '' }}
+                  className="text-xs text-gray-400 hover:text-red-500 transition-colors">
+                  Clear all
+                </button>
               </div>
             )}
           </div>
@@ -584,9 +598,10 @@ export default function DocumentsPage() {
             </div>
           </div>
           {uploadError && <p className="text-sm text-red-600">{uploadError}</p>}
-          <button onClick={() => handleUpload(targetFolderId)} disabled={!file || uploading}
+          {uploadProgress && <p className="text-sm text-green-700">{uploadProgress}</p>}
+          <button onClick={() => handleUpload(targetFolderId)} disabled={files.length === 0 || uploading}
             className="w-full bg-green-700 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50">
-            {uploading ? 'Uploading...' : 'Upload file →'}
+            {uploading ? uploadProgress || 'Uploading...' : `Upload ${files.length > 1 ? files.length + ' files' : 'file'} →`}
           </button>
         </div>
       </div>
