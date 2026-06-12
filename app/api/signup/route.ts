@@ -7,11 +7,24 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
+const HR_FOLDERS = [
+  'Employee Handbook',
+  'HR Policies',
+  'Offer Letters & Templates',
+  'Training Records',
+  'Employee Records',
+]
+
+const COMPLIANCE_LOG_FOLDERS = [
+  'Folder Gap Reports',
+  'Document Reviews',
+  'Monthly Summaries',
+]
+
 export async function POST(request: NextRequest) {
   try {
     const { email, password, companyName, industry, state, county, city, employeeCount } = await request.json()
 
-    // Create auth user
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
@@ -20,43 +33,46 @@ export async function POST(request: NextRequest) {
     if (authError) throw authError
     if (!authData.user) throw new Error('Signup failed')
 
-    // Create company
     const { data: companyData, error: companyError } = await supabaseAdmin
       .from('companies')
-      .insert({
-        name: companyName,
-        industry,
-        state,
-        county,
-        city,
-        employee_count: employeeCount,
-      })
+      .insert({ name: companyName, industry, state, county, city, employee_count: employeeCount })
       .select()
       .single()
     if (companyError) throw companyError
 
-    // Create profile
     const { error: profileError } = await supabaseAdmin
       .from('profiles')
-      .insert({
-        id: authData.user.id,
-        company_id: companyData.id,
-        full_name: '',
-      })
+      .insert({ id: authData.user.id, company_id: companyData.id, full_name: '' })
     if (profileError) throw profileError
 
-    // Create pre-populated folders based on industry
-    const folders = getFolders(industry)
-    const folderInserts = folders.map((name, index) => ({
-      company_id: companyData.id,
-      name,
-      parent_id: null,
-      sort_order: index,
-    }))
+    const complianceFolders = getFolders(industry)
+    const allFolderInserts = [
+      ...complianceFolders.map((name, i) => ({
+        company_id: companyData.id,
+        name,
+        parent_id: null,
+        sort_order: i,
+        section: 'files',
+      })),
+      ...HR_FOLDERS.map((name, i) => ({
+        company_id: companyData.id,
+        name,
+        parent_id: null,
+        sort_order: i,
+        section: 'hr',
+      })),
+      ...COMPLIANCE_LOG_FOLDERS.map((name, i) => ({
+        company_id: companyData.id,
+        name,
+        parent_id: null,
+        sort_order: i,
+        section: 'log',
+      })),
+    ]
 
     const { error: folderError } = await supabaseAdmin
       .from('company_folders')
-      .insert(folderInserts)
+      .insert(allFolderInserts)
     if (folderError) throw folderError
 
     return NextResponse.json({ success: true })

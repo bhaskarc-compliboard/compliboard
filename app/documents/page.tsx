@@ -23,6 +23,7 @@ interface Folder {
   name: string
   parent_id: string | null
   sort_order: number
+  section: string
 }
 
 interface SavedChecklist {
@@ -32,12 +33,6 @@ interface SavedChecklist {
   created_at: string
   must_do_count?: number
   completed_count?: number
-}
-
-interface FolderGroup {
-  label: string
-  industry: string
-  folders: Folder[]
 }
 
 interface AuditResult {
@@ -96,31 +91,12 @@ function getChecklistStatus(completed: number, total: number): { dot: string; la
   return { dot: 'bg-amber-400', label: 'In progress' }
 }
 
-function groupFoldersByIndustry(folders: Folder[], primaryIndustry: string): FolderGroup[] {
-  const assigned = new Set<string>()
-  const groups: FolderGroup[] = []
-  const industryOrder = [primaryIndustry, ...Object.keys(INDUSTRY_FOLDERS).filter(k => k !== primaryIndustry && k !== 'other')]
-  for (const industry of industryOrder) {
-    const industryFolderNames = INDUSTRY_FOLDERS[industry] || []
-    const matched = folders.filter(f => industryFolderNames.includes(f.name) && !assigned.has(f.id))
-    if (matched.length > 0) {
-      matched.forEach(f => assigned.add(f.id))
-      groups.push({ label: INDUSTRY_LABELS[industry] || industry, industry, folders: matched })
-    }
-  }
-  const unassigned = folders.filter(f => !assigned.has(f.id))
-  if (unassigned.length > 0) {
-    groups.push({ label: 'Other Folders', industry: 'other', folders: unassigned })
-  }
-  return groups
-}
-
 export default function DocumentsPage() {
   const supabase = createClient()
   const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const [activeTab, setActiveTab] = useState<'checklists' | 'files' | 'audits'>('checklists')
+  const [activeTab, setActiveTab] = useState<'checklists' | 'files' | 'hr' | 'log'>('checklists')
   const [documents, setDocuments] = useState<Document[]>([])
   const [folders, setFolders] = useState<Folder[]>([])
   const [checklists, setChecklists] = useState<SavedChecklist[]>([])
@@ -131,9 +107,11 @@ export default function DocumentsPage() {
   const [primaryIndustry, setPrimaryIndustry] = useState<string>('other')
   const [deleting, setDeleting] = useState<string | null>(null)
 
-  // Folder navigation
+  // Folder navigation — separate state for files vs hr tabs
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null)
   const [breadcrumb, setBreadcrumb] = useState<Folder[]>([])
+  const [hrCurrentFolderId, setHrCurrentFolderId] = useState<string | null>(null)
+  const [hrBreadcrumb, setHrBreadcrumb] = useState<Folder[]>([])
 
   // Upload state
   const [showUpload, setShowUpload] = useState(false)
@@ -235,30 +213,20 @@ export default function DocumentsPage() {
     if (!companyId || !userId) return
     setAuditingFolderId(folder.id)
     try {
-      // Get all files in this folder and sub-folders
       const subFolderIds = folders.filter(f => f.parent_id === folder.id).map(f => f.id)
       const allFolderIds = [folder.id, ...subFolderIds]
       const allFiles = documents.filter(d => d.folder_id && allFolderIds.includes(d.folder_id))
       const fileNames = allFiles.map(f => f.name)
-
       const { data: { session } } = await supabase.auth.getSession()
       const res = await fetch('/api/audit', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.access_token || ''}`,
-        },
-        body: JSON.stringify({
-          folder_id: folder.id,
-          folder_name: folder.name,
-          industry: primaryIndustry,
-          file_names: fileNames,
-        }),
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token || ''}` },
+        body: JSON.stringify({ folder_id: folder.id, folder_name: folder.name, industry: primaryIndustry, file_names: fileNames }),
       })
       const json = await res.json()
       if (json.data) {
         setAudits(prev => [json.data, ...prev.filter(a => a.folder_id !== folder.id)])
-        setActiveTab('audits')
+        setActiveTab('log')
         setExpandedAuditId(json.data.id)
       }
     } catch (err) {
@@ -285,20 +253,37 @@ export default function DocumentsPage() {
     }
   }
 
+  async function navigateToHrFolder(folder: Folder | null) {
+    if (!userId) return
+    if (folder === null) {
+      setHrCurrentFolderId(null)
+      setHrBreadcrumb([])
+      await loadDocuments(userId, null)
+    } else {
+      setHrCurrentFolderId(folder.id)
+      setHrBreadcrumb(prev => {
+        const existing = prev.findIndex(f => f.id === folder.id)
+        if (existing >= 0) return prev.slice(0, existing + 1)
+        return [...prev, folder]
+      })
+      await loadDocuments(userId, folder.id)
+    }
+  }
+
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0] || null
     setFile(f)
     setUploadError('')
   }
 
-  async function handleUpload() {
+  async function handleUpload(targetFolderId: string | null) {
     if (!file || !companyId || !userId) return
     setUploading(true)
     setUploadError('')
     try {
       const fileExt = file.name.split('.').pop()
       const fileName = `${Date.now()}-${file.name}`
-      const folderPath = currentFolderId || 'unfiled'
+      const folderPath = targetFolderId || 'unfiled'
       const filePath = `${companyId}/${folderPath}/${fileName}`
       const { error: uploadErr } = await supabase.storage.from('company-documents').upload(filePath, file)
       if (uploadErr) throw uploadErr
@@ -308,12 +293,12 @@ export default function DocumentsPage() {
         body: JSON.stringify({
           company_id: companyId, user_id: userId, name: file.name,
           file_url: filePath, file_type: file.type || fileExt || 'unknown',
-          file_size: file.size, folder_id: currentFolderId,
+          file_size: file.size, folder_id: targetFolderId,
           is_recurring: isRecurring, recurrence_period: isRecurring ? recurrencePeriod : null,
         }),
       })
       if (!dbRes.ok) throw new Error('Failed to save document record')
-      await loadDocuments(userId, currentFolderId)
+      await loadDocuments(userId, targetFolderId)
       setFile(null)
       setIsRecurring(false)
       setShowUpload(false)
@@ -334,7 +319,7 @@ export default function DocumentsPage() {
       const res = await fetch('/api/folders/industry', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token || ''}` },
-        body: JSON.stringify({ industry: selectedIndustry }),
+        body: JSON.stringify({ industry: selectedIndustry, parent_id: currentFolderId }),
       })
       const json = await res.json()
       if (json.added === 0) {
@@ -352,7 +337,7 @@ export default function DocumentsPage() {
     }
   }
 
-  async function handleCreateFolder() {
+  async function handleCreateFolder(section: string, parentId: string | null) {
     if (!newFolderName.trim() || !companyId) return
     setCreatingFolder(true)
     setFolderError('')
@@ -360,7 +345,13 @@ export default function DocumentsPage() {
       const res = await fetch('/api/folders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ company_id: companyId, name: newFolderName.trim(), parent_id: currentFolderId, sort_order: folders.filter(f => f.parent_id === currentFolderId).length }),
+        body: JSON.stringify({
+          company_id: companyId,
+          name: newFolderName.trim(),
+          parent_id: parentId,
+          sort_order: folders.filter(f => f.parent_id === parentId).length,
+          section,
+        }),
       })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error)
@@ -423,20 +414,28 @@ export default function DocumentsPage() {
     if (data?.signedUrl) window.open(data.signedUrl, '_blank')
   }
 
-  const currentFolders = folders.filter(f => f.parent_id === currentFolderId)
-  const currentFiles = currentFolderId ? documents.filter(d => d.folder_id === currentFolderId) : documents.filter(d => d.folder_id === null)
-  const folderGroups: FolderGroup[] = !currentFolderId ? groupFoldersByIndustry(currentFolders, primaryIndustry) : []
+  // Filtered folders by section
+  const fileFolders = folders.filter(f => f.section === 'files')
+  const hrFolders = folders.filter(f => f.section === 'hr')
+
+  const currentFileFolders = fileFolders.filter(f => f.parent_id === currentFolderId)
+  const currentHrFolders = hrFolders.filter(f => f.parent_id === hrCurrentFolderId)
+  const currentFiles = currentFolderId ? documents.filter(d => d.folder_id === currentFolderId) : documents.filter(d => {
+    const filesFolderIds = fileFolders.map(f => f.id)
+    return d.folder_id === null || !filesFolderIds.includes(d.folder_id || '')
+  })
+  const currentHrFiles = hrCurrentFolderId ? documents.filter(d => d.folder_id === hrCurrentFolderId) : []
 
   const tabs = [
     { key: 'checklists', label: 'Checklists', count: checklists.length },
-    { key: 'files', label: 'Company Files', count: folders.length },
-    { key: 'audits', label: 'CB Audit Reports', count: audits.length },
+    { key: 'files', label: 'Company Files', count: fileFolders.filter(f => f.parent_id === null).length },
+    { key: 'hr', label: 'HR Documents', count: hrFolders.filter(f => f.parent_id === null).length },
+    { key: 'log', label: 'Compliance Log', count: audits.length },
   ] as const
 
-  function renderFolder(folder: Folder) {
+  function renderFolder(folder: Folder, onNavigate: (f: Folder) => void, onAudit?: (f: Folder) => void) {
     const isAuditing = auditingFolderId === folder.id
     const latestAudit = audits.find(a => a.folder_id === folder.id)
-    const isRootFolder = folder.parent_id === null
 
     return (
       <div key={folder.id} className={`group border border-gray-200 hover:border-green-400 transition-all ${viewMode === 'grid' ? 'bg-gray-50 rounded-xl' : 'bg-gray-50 rounded-xl'}`}>
@@ -455,7 +454,7 @@ export default function DocumentsPage() {
           <div>
             {viewMode === 'grid' ? (
               <div>
-                <button onClick={() => navigateToFolder(folder)} className="w-full p-4 text-left flex items-center gap-3">
+                <button onClick={() => onNavigate(folder)} className="w-full p-4 text-left flex items-center gap-3">
                   <span className="text-2xl">📁</span>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-700 truncate">{folder.name}</p>
@@ -465,16 +464,16 @@ export default function DocumentsPage() {
                 <div className="px-4 pb-3 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button onClick={() => { setRenamingId(folder.id); setRenameValue(folder.name) }}
                     className="text-xs text-gray-400 hover:text-green-700 transition-colors">Rename</button>
-                  <span className="text-gray-200">·</span>
-                  {isRootFolder && (
+                  {onAudit && (
                     <>
-                      <button onClick={() => handleRunAudit(folder)} disabled={isAuditing}
+                      <span className="text-gray-200">·</span>
+                      <button onClick={() => onAudit(folder)} disabled={isAuditing}
                         className="text-xs text-gray-400 hover:text-green-700 transition-colors disabled:opacity-50">
                         {isAuditing ? '⟳ Auditing...' : latestAudit ? 'Re-audit' : 'Audit'}
                       </button>
-                      <span className="text-gray-200">·</span>
                     </>
                   )}
+                  <span className="text-gray-200">·</span>
                   <button onClick={() => handleDeleteFolder(folder.id, folder.name)}
                     className="text-xs text-gray-400 hover:text-red-500 transition-colors">Delete</button>
                 </div>
@@ -482,23 +481,23 @@ export default function DocumentsPage() {
             ) : (
               <div className="flex items-center gap-3 px-4 py-2.5">
                 <span className="text-base">📁</span>
-                <button onClick={() => navigateToFolder(folder)} className="flex-1 text-left">
+                <button onClick={() => onNavigate(folder)} className="flex-1 text-left">
                   <p className="text-sm font-medium text-gray-700">{folder.name}</p>
                 </button>
                 <span className="text-xs text-gray-400 mr-2">{documents.filter(d => d.folder_id === folder.id).length} files</span>
                 <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button onClick={() => { setRenamingId(folder.id); setRenameValue(folder.name) }}
                     className="text-xs text-gray-400 hover:text-green-700 transition-colors">Rename</button>
-                  <span className="text-gray-200">·</span>
-                  {isRootFolder && (
+                  {onAudit && (
                     <>
-                      <button onClick={() => handleRunAudit(folder)} disabled={isAuditing}
+                      <span className="text-gray-200">·</span>
+                      <button onClick={() => onAudit(folder)} disabled={isAuditing}
                         className="text-xs text-gray-400 hover:text-green-700 transition-colors disabled:opacity-50">
                         {isAuditing ? '⟳ Auditing...' : latestAudit ? 'Re-audit' : 'Audit'}
                       </button>
-                      <span className="text-gray-200">·</span>
                     </>
                   )}
+                  <span className="text-gray-200">·</span>
                   <button onClick={() => handleDeleteFolder(folder.id, folder.name)}
                     className="text-xs text-gray-400 hover:text-red-500 transition-colors">Delete</button>
                 </div>
@@ -510,6 +509,90 @@ export default function DocumentsPage() {
     )
   }
 
+  function renderFileList(files: Document[]) {
+    return (
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="divide-y divide-gray-50">
+          {files.map((doc) => (
+            <div key={doc.id} className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition-colors">
+              <span className="text-2xl flex-shrink-0">{getFileIcon(doc.file_type, doc.name)}</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-900 truncate">{doc.name}</p>
+                <div className="flex items-center gap-4 mt-1">
+                  <span className="text-xs text-gray-400">{formatFileSize(doc.file_size)}</span>
+                  <span className="text-xs text-gray-400">{new Date(doc.uploaded_at).toLocaleDateString()}</span>
+                  {doc.is_recurring && <span className="text-xs text-green-600">🔄 {doc.recurrence_period}</span>}
+                </div>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <button onClick={() => handleDownload(doc)} className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:border-green-500 hover:text-green-700 transition-colors">Download</button>
+                <button onClick={() => handleDeleteDoc(doc)} disabled={deleting === doc.id} className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-400 hover:border-red-400 hover:text-red-500 transition-colors disabled:opacity-50">{deleting === doc.id ? '...' : 'Delete'}</button>
+              </div>
+            </div>
+          ))}
+        </div>
+        <p className="text-xs text-gray-400 text-center py-3 border-t border-gray-50">
+          {files.length} file{files.length !== 1 ? 's' : ''} · Stored securely and only accessible by your account
+        </p>
+      </div>
+    )
+  }
+
+  function renderUploadPanel(targetFolderId: string | null, folderName?: string) {
+    return (
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-sm font-semibold text-gray-900">Upload a file</h2>
+            {folderName && <p className="text-xs text-green-600 mt-0.5">Uploading to: {folderName}</p>}
+          </div>
+          <button onClick={() => { setShowUpload(false); setFile(null) }} className="text-gray-400 hover:text-gray-600 text-lg">×</button>
+        </div>
+        <div className="space-y-4">
+          <div>
+            <input ref={fileInputRef} type="file" accept=".pdf,.xlsx,.xls,.csv,image/*" onChange={handleFileChange} className="hidden" id="file-upload" />
+            {!file ? (
+              <label htmlFor="file-upload" className="flex items-center gap-3 w-full border border-dashed border-gray-300 rounded-xl px-4 py-4 cursor-pointer hover:border-green-500 hover:bg-green-50 transition-colors">
+                <span className="text-2xl">📎</span>
+                <div>
+                  <p className="text-sm text-gray-600">Click to select a file</p>
+                  <p className="text-xs text-gray-400">PDF, images, Excel, or CSV</p>
+                </div>
+              </label>
+            ) : (
+              <div className="flex items-center gap-3 p-3 bg-green-50 border border-green-200 rounded-xl">
+                <span className="text-xl">{getFileIcon(file.type, file.name)}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-green-800 truncate">{file.name}</p>
+                  <p className="text-xs text-green-600">{formatFileSize(file.size)}</p>
+                </div>
+                <button onClick={() => { setFile(null); if (fileInputRef.current) fileInputRef.current.value = '' }} className="text-gray-400 hover:text-red-500 text-lg">×</button>
+              </div>
+            )}
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Recurring</label>
+            <div className="flex items-center gap-3">
+              <div onClick={() => setIsRecurring(!isRecurring)} className={`w-10 h-6 rounded-full cursor-pointer transition-colors relative ${isRecurring ? 'bg-green-600' : 'bg-gray-200'}`}>
+                <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-all ${isRecurring ? 'left-5' : 'left-1'}`} />
+              </div>
+              {isRecurring && (
+                <select className="border border-gray-200 rounded-lg px-2 py-1 text-xs text-gray-800 focus:outline-none bg-gray-50" value={recurrencePeriod} onChange={(e) => setRecurrencePeriod(e.target.value)}>
+                  {RECURRENCE_OPTIONS.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+                </select>
+              )}
+            </div>
+          </div>
+          {uploadError && <p className="text-sm text-red-600">{uploadError}</p>}
+          <button onClick={() => handleUpload(targetFolderId)} disabled={!file || uploading}
+            className="w-full bg-green-700 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50">
+            {uploading ? 'Uploading...' : 'Upload file →'}
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <AppLayout title="Company Documents">
       <div className="max-w-4xl mx-auto px-6 py-8">
@@ -517,9 +600,9 @@ export default function DocumentsPage() {
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h1 className="text-xl font-semibold text-gray-900 mb-1">Company Documents</h1>
-            <p className="text-sm text-gray-400">Your compliance files and saved checklists</p>
+            <p className="text-sm text-gray-400">Your compliance files, HR documents, and saved checklists</p>
           </div>
-          {activeTab === 'files' && (
+          {(activeTab === 'files' || activeTab === 'hr') && (
             <button onClick={() => { setShowUpload(!showUpload); setShowNewFolder(false) }}
               className="flex items-center gap-2 bg-green-700 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors">
               + Upload file
@@ -607,61 +690,10 @@ export default function DocumentsPage() {
               </div>
             )}
 
-            {/* FILES TAB */}
+            {/* COMPANY FILES TAB */}
             {activeTab === 'files' && (
               <div>
-                {showUpload && (
-                  <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <h2 className="text-sm font-semibold text-gray-900">Upload a file</h2>
-                        {currentFolderId && <p className="text-xs text-green-600 mt-0.5">Uploading to: {folders.find(f => f.id === currentFolderId)?.name}</p>}
-                      </div>
-                      <button onClick={() => { setShowUpload(false); setFile(null) }} className="text-gray-400 hover:text-gray-600 text-lg">×</button>
-                    </div>
-                    <div className="space-y-4">
-                      <div>
-                        <input ref={fileInputRef} type="file" accept=".pdf,.xlsx,.xls,.csv,image/*" onChange={handleFileChange} className="hidden" id="file-upload" />
-                        {!file ? (
-                          <label htmlFor="file-upload" className="flex items-center gap-3 w-full border border-dashed border-gray-300 rounded-xl px-4 py-4 cursor-pointer hover:border-green-500 hover:bg-green-50 transition-colors">
-                            <span className="text-2xl">📎</span>
-                            <div>
-                              <p className="text-sm text-gray-600">Click to select a file</p>
-                              <p className="text-xs text-gray-400">PDF, images, Excel, or CSV</p>
-                            </div>
-                          </label>
-                        ) : (
-                          <div className="flex items-center gap-3 p-3 bg-green-50 border border-green-200 rounded-xl">
-                            <span className="text-xl">{getFileIcon(file.type, file.name)}</span>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-green-800 truncate">{file.name}</p>
-                              <p className="text-xs text-green-600">{formatFileSize(file.size)}</p>
-                            </div>
-                            <button onClick={() => { setFile(null); if (fileInputRef.current) fileInputRef.current.value = '' }} className="text-gray-400 hover:text-red-500 text-lg">×</button>
-                          </div>
-                        )}
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">Recurring</label>
-                        <div className="flex items-center gap-3">
-                          <div onClick={() => setIsRecurring(!isRecurring)} className={`w-10 h-6 rounded-full cursor-pointer transition-colors relative ${isRecurring ? 'bg-green-600' : 'bg-gray-200'}`}>
-                            <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-all ${isRecurring ? 'left-5' : 'left-1'}`} />
-                          </div>
-                          {isRecurring && (
-                            <select className="border border-gray-200 rounded-lg px-2 py-1 text-xs text-gray-800 focus:outline-none bg-gray-50" value={recurrencePeriod} onChange={(e) => setRecurrencePeriod(e.target.value)}>
-                              {RECURRENCE_OPTIONS.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-                            </select>
-                          )}
-                        </div>
-                      </div>
-                      {uploadError && <p className="text-sm text-red-600">{uploadError}</p>}
-                      <button onClick={handleUpload} disabled={!file || uploading}
-                        className="w-full bg-green-700 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50">
-                        {uploading ? 'Uploading...' : 'Upload file →'}
-                      </button>
-                    </div>
-                  </div>
-                )}
+                {showUpload && renderUploadPanel(currentFolderId, folders.find(f => f.id === currentFolderId)?.name)}
 
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-1 flex-wrap">
@@ -685,38 +717,19 @@ export default function DocumentsPage() {
                       <span className="text-lg">📁</span>
                       <input type="text" autoFocus className="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-green-500" placeholder="Folder name" value={newFolderName}
                         onChange={(e) => setNewFolderName(e.target.value)}
-                        onKeyDown={(e) => { if (e.key === 'Enter') handleCreateFolder(); if (e.key === 'Escape') setShowNewFolder(false) }}
+                        onKeyDown={(e) => { if (e.key === 'Enter') handleCreateFolder('files', currentFolderId); if (e.key === 'Escape') setShowNewFolder(false) }}
                       />
-                      <button onClick={handleCreateFolder} disabled={creatingFolder || !newFolderName.trim()} className="text-xs px-3 py-1.5 rounded-lg bg-green-700 text-white hover:bg-green-800 transition-colors disabled:opacity-50">{creatingFolder ? '...' : 'Create'}</button>
+                      <button onClick={() => handleCreateFolder('files', currentFolderId)} disabled={creatingFolder || !newFolderName.trim()} className="text-xs px-3 py-1.5 rounded-lg bg-green-700 text-white hover:bg-green-800 transition-colors disabled:opacity-50">{creatingFolder ? '...' : 'Create'}</button>
                       <button onClick={() => { setShowNewFolder(false); setNewFolderName('') }} className="text-gray-400 hover:text-gray-600 text-lg">×</button>
                     </div>
                     {folderError && <p className="text-xs text-red-600 mt-2 pl-7">{folderError}</p>}
                   </div>
                 )}
 
-                {/* GROUPED FOLDERS — root level */}
-                {!currentFolderId && currentFolders.length > 0 && (
-                  <div className="space-y-6 mb-4">
-                    {folderGroups.map((group, gi) => (
-                      <div key={group.industry + gi}>
-                        <div className="flex items-center gap-3 mb-2">
-                          <p className="text-xs font-bold uppercase tracking-widest text-gray-400">{group.label}</p>
-                          <div className="flex-1 h-px bg-gray-100"></div>
-                        </div>
-                        <div className={viewMode === 'grid' ? 'grid grid-cols-2 sm:grid-cols-3 gap-3' : 'space-y-1'}>
-                          {group.folders.map(folder => renderFolder(folder))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* FLAT FOLDERS — inside a subfolder */}
-                {currentFolderId && currentFolders.length > 0 && (
-                  <div>
-                    <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2">Folders</p>
-                    <div className={viewMode === 'grid' ? 'grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4' : 'space-y-1 mb-4'}>
-                      {currentFolders.map(folder => renderFolder(folder))}
+                {currentFileFolders.length > 0 && (
+                  <div className="mb-4">
+                    <div className={viewMode === 'grid' ? 'grid grid-cols-2 sm:grid-cols-3 gap-3' : 'space-y-1'}>
+                      {currentFileFolders.map(folder => renderFolder(folder, navigateToFolder, handleRunAudit))}
                     </div>
                   </div>
                 )}
@@ -756,35 +769,10 @@ export default function DocumentsPage() {
                   </div>
                 )}
 
-                {currentFiles.length > 0 && currentFolders.length > 0 && currentFolderId && (
+                {currentFiles.length > 0 && currentFileFolders.length > 0 && currentFolderId && (
                   <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2 mt-2">Files</p>
                 )}
-                {currentFiles.length > 0 ? (
-                  <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                    <div className="divide-y divide-gray-50">
-                      {currentFiles.map((doc) => (
-                        <div key={doc.id} className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition-colors">
-                          <span className="text-2xl flex-shrink-0">{getFileIcon(doc.file_type, doc.name)}</span>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-900 truncate">{doc.name}</p>
-                            <div className="flex items-center gap-4 mt-1">
-                              <span className="text-xs text-gray-400">{formatFileSize(doc.file_size)}</span>
-                              <span className="text-xs text-gray-400">{new Date(doc.uploaded_at).toLocaleDateString()}</span>
-                              {doc.is_recurring && <span className="text-xs text-green-600">🔄 {doc.recurrence_period}</span>}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2 flex-shrink-0">
-                            <button onClick={() => handleDownload(doc)} className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:border-green-500 hover:text-green-700 transition-colors">Download</button>
-                            <button onClick={() => handleDeleteDoc(doc)} disabled={deleting === doc.id} className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-400 hover:border-red-400 hover:text-red-500 transition-colors disabled:opacity-50">{deleting === doc.id ? '...' : 'Delete'}</button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <p className="text-xs text-gray-400 text-center py-3 border-t border-gray-50">
-                      {currentFiles.length} file{currentFiles.length !== 1 ? 's' : ''} · Stored securely and only accessible by your account
-                    </p>
-                  </div>
-                ) : (
+                {currentFiles.length > 0 ? renderFileList(currentFiles) : (
                   currentFolderId && (
                     <div className="text-center py-8">
                       <p className="text-sm text-gray-400">No files in this folder yet</p>
@@ -805,8 +793,87 @@ export default function DocumentsPage() {
               </div>
             )}
 
-            {/* CB AUDIT REPORTS TAB */}
-            {activeTab === 'audits' && (
+            {/* HR DOCUMENTS TAB */}
+            {activeTab === 'hr' && (
+              <div>
+                {showUpload && renderUploadPanel(hrCurrentFolderId, hrFolders.find(f => f.id === hrCurrentFolderId)?.name)}
+
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-1 flex-wrap">
+                    <button onClick={() => navigateToHrFolder(null)} className={`text-sm transition-colors ${hrCurrentFolderId === null ? 'text-gray-900 font-medium' : 'text-gray-400 hover:text-green-700'}`}>All HR Documents</button>
+                    {hrBreadcrumb.map((f, i) => (
+                      <span key={f.id} className="flex items-center gap-1">
+                        <span className="text-gray-300 text-xs">›</span>
+                        <button onClick={() => navigateToHrFolder(f)} className={`text-sm transition-colors ${i === hrBreadcrumb.length - 1 ? 'text-gray-900 font-medium' : 'text-gray-400 hover:text-green-700'}`}>{f.name}</button>
+                      </span>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-1 border border-gray-200 rounded-lg p-0.5">
+                    <button onClick={() => setViewMode('grid')} className={`px-2 py-1 rounded text-xs transition-colors ${viewMode === 'grid' ? 'bg-white shadow-sm text-gray-700' : 'text-gray-400 hover:text-gray-600'}`}>Grid</button>
+                    <button onClick={() => setViewMode('list')} className={`px-2 py-1 rounded text-xs transition-colors ${viewMode === 'list' ? 'bg-white shadow-sm text-gray-700' : 'text-gray-400 hover:text-gray-600'}`}>List</button>
+                  </div>
+                </div>
+
+                {showNewFolder && (
+                  <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-4">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">📁</span>
+                      <input type="text" autoFocus className="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-green-500" placeholder="Folder name" value={newFolderName}
+                        onChange={(e) => setNewFolderName(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') handleCreateFolder('hr', hrCurrentFolderId); if (e.key === 'Escape') setShowNewFolder(false) }}
+                      />
+                      <button onClick={() => handleCreateFolder('hr', hrCurrentFolderId)} disabled={creatingFolder || !newFolderName.trim()} className="text-xs px-3 py-1.5 rounded-lg bg-green-700 text-white hover:bg-green-800 transition-colors disabled:opacity-50">{creatingFolder ? '...' : 'Create'}</button>
+                      <button onClick={() => { setShowNewFolder(false); setNewFolderName('') }} className="text-gray-400 hover:text-gray-600 text-lg">×</button>
+                    </div>
+                    {folderError && <p className="text-xs text-red-600 mt-2 pl-7">{folderError}</p>}
+                  </div>
+                )}
+
+                {currentHrFolders.length > 0 && (
+                  <div className="mb-4">
+                    <div className={viewMode === 'grid' ? 'grid grid-cols-2 sm:grid-cols-3 gap-3' : 'space-y-1'}>
+                      {currentHrFolders.map(folder => renderFolder(folder, navigateToHrFolder))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-4 mb-4">
+                  <button onClick={() => { setShowNewFolder(true); setShowUpload(false) }} className="flex items-center gap-2 text-xs text-gray-400 hover:text-green-700 transition-colors px-1">
+                    <span>＋</span> New folder
+                  </button>
+                </div>
+
+                {currentHrFiles.length > 0 ? renderFileList(currentHrFiles) : (
+                  hrCurrentFolderId ? (
+                    <div className="text-center py-8">
+                      <p className="text-sm text-gray-400">No files in this folder yet</p>
+                      <p className="text-xs text-gray-400 mt-1">Use the Upload button to add files here</p>
+                    </div>
+                  ) : (
+                    currentHrFolders.length === 0 && (
+                      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-12 text-center">
+                        <p className="text-4xl mb-4">👥</p>
+                        <p className="text-base font-medium text-gray-700 mb-1">HR Documents</p>
+                        <p className="text-sm text-gray-400">Store employee handbooks, HR policies, offer letters, and training records here.</p>
+                      </div>
+                    )
+                  )
+                )}
+
+                <div className="mt-24 pt-10 border-t border-gray-100">
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl flex-shrink-0">👥</span>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-700 mb-1">Did you know?</p>
+                      <p className="text-sm text-gray-500 leading-relaxed">Use the HR Help module to generate compliant HR policies for your state. Generated policies are saved directly to your HR Documents folder, ready to customize and share with employees.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* COMPLIANCE LOG TAB */}
+            {activeTab === 'log' && (
               <div>
                 {audits.length === 0 ? (
                   <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-12 text-center">
@@ -820,6 +887,9 @@ export default function DocumentsPage() {
                   </div>
                 ) : (
                   <div className="space-y-4">
+                    <div className="mb-2">
+                      <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Folder Gap Reports</p>
+                    </div>
                     {audits.map((audit) => {
                       const isExpanded = expandedAuditId === audit.id
                       const result = audit.result_json

@@ -22,12 +22,11 @@ const INDUSTRY_LABELS: Record<string, string> = {
 
 export async function POST(request: NextRequest) {
   try {
-    const { industry } = await request.json()
+    const { industry, parent_id } = await request.json()
     if (!industry) {
       return NextResponse.json({ error: 'Industry required' }, { status: 400 })
     }
 
-    // Get user from auth header
     const authHeader = request.headers.get('authorization') || ''
     const token = authHeader.replace('Bearer ', '')
     const { data: { user }, error: authError } = await supabase.auth.getUser(token)
@@ -35,7 +34,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get company_id
     const { data: profile } = await supabase
       .from('profiles')
       .select('company_id')
@@ -47,37 +45,47 @@ export async function POST(request: NextRequest) {
 
     const companyId = profile.company_id
 
-    // Get existing folder names
-    const { data: existing } = await supabase
+    // Check existing folders at this level (root or inside a division)
+    const existingQuery = supabase
       .from('company_folders')
       .select('name')
       .eq('company_id', companyId)
-      .is('parent_id', null)
 
+    if (parent_id) {
+      existingQuery.eq('parent_id', parent_id)
+    } else {
+      existingQuery.is('parent_id', null)
+    }
+
+    const { data: existing } = await existingQuery
     const existingNames = new Set((existing || []).map(f => f.name))
 
-    // Get folders for this industry
     const folders = getFolders(industry)
-
-    // Only add folders that don't already exist
     const toAdd = folders.filter(name => !existingNames.has(name))
 
     if (toAdd.length > 0) {
-      const { data: existingAll } = await supabase
+      const sortQuery = supabase
         .from('company_folders')
         .select('sort_order')
         .eq('company_id', companyId)
-        .is('parent_id', null)
         .order('sort_order', { ascending: false })
         .limit(1)
 
+      if (parent_id) {
+        sortQuery.eq('parent_id', parent_id)
+      } else {
+        sortQuery.is('parent_id', null)
+      }
+
+      const { data: existingAll } = await sortQuery
       const startOrder = existingAll?.[0]?.sort_order + 1 || existing?.length || 0
 
       const inserts = toAdd.map((name, i) => ({
         company_id: companyId,
         name,
-        parent_id: null,
+        parent_id: parent_id || null,
         sort_order: startOrder + i,
+        section: 'files',
       }))
 
       await supabase.from('company_folders').insert(inserts)
