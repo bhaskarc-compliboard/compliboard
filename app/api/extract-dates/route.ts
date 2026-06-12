@@ -1,13 +1,9 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import * as XLSX from 'xlsx'
+import mammoth from 'mammoth'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
 
 const EXTRACT_PROMPT = `You are a compliance document analyzer. Extract any important dates from this document.
 
@@ -38,7 +34,7 @@ Use this structure:
 If the document mentions annual renewals or recurring inspections, set is_recurring to true and recurrence_period to "annually".
 If no dates are found, return: { "dates_found": [] }
 Only include dates that are in the future or within the last 30 days.
-Maximum 5 dates per document.`
+Maximum 10 dates per document.`
 
 export async function POST(request: NextRequest) {
   try {
@@ -51,13 +47,17 @@ export async function POST(request: NextRequest) {
     }
 
     const fileType = file.type
+    const fileName2 = file.name.toLowerCase()
     const buffer = await file.arrayBuffer()
     const base64 = Buffer.from(buffer).toString('base64')
 
-    let messageContent: Anthropic.MessageParam['content']
-
     const isImage = fileType.startsWith('image/')
-    const isPDF = fileType === 'application/pdf'
+    const isPDF = fileType === 'application/pdf' || fileName2.endsWith('.pdf')
+    const isExcel = fileType.includes('spreadsheet') || fileType.includes('excel') || fileName2.endsWith('.xlsx') || fileName2.endsWith('.xls')
+    const isCSV = fileType === 'text/csv' || fileName2.endsWith('.csv')
+    const isWord = fileType.includes('wordprocessingml') || fileType.includes('msword') || fileName2.endsWith('.docx') || fileName2.endsWith('.doc')
+
+    let messageContent: Anthropic.MessageParam['content']
 
     if (isPDF) {
       messageContent = [
@@ -79,8 +79,35 @@ export async function POST(request: NextRequest) {
         },
         { type: 'text', text: `File name: ${fileName}\n\nExtract all important compliance dates from this document.` },
       ]
+    } else if (isExcel) {
+      // Convert Excel to text using xlsx library
+      const nodeBuffer = Buffer.from(buffer)
+      const workbook = XLSX.read(nodeBuffer, { type: 'buffer', cellDates: true })
+      let textContent = `File name: ${fileName}\n\n`
+      for (const sheetName of workbook.SheetNames) {
+        const sheet = workbook.Sheets[sheetName]
+        const csv = XLSX.utils.sheet_to_csv(sheet)
+        textContent += `Sheet: ${sheetName}\n${csv}\n\n`
+      }
+      messageContent = [
+        { type: 'text', text: `${textContent}\n\nExtract all important compliance dates from this spreadsheet.` },
+      ]
+    } else if (isCSV) {
+      // CSV is plain text — read directly
+      const text = new TextDecoder().decode(buffer)
+      messageContent = [
+        { type: 'text', text: `File name: ${fileName}\n\n${text}\n\nExtract all important compliance dates from this spreadsheet.` },
+      ]
+    } else if (isWord) {
+      // Convert Word doc to plain text using mammoth
+      const nodeBuffer = Buffer.from(buffer)
+      const result = await mammoth.extractRawText({ buffer: nodeBuffer })
+      const text = result.value
+      messageContent = [
+        { type: 'text', text: `File name: ${fileName}\n\n${text}\n\nExtract all important compliance dates from this document.` },
+      ]
     } else {
-      // For Excel/CSV we can't send binary to Claude — skip date extraction
+      // Unsupported file type
       return NextResponse.json({ dates_found: [] })
     }
 

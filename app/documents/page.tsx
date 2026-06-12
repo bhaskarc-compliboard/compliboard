@@ -121,6 +121,10 @@ export default function DocumentsPage() {
   const [recurrencePeriod, setRecurrencePeriod] = useState('annually')
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState('')
+  const [pendingDates, setPendingDates] = useState<{title: string; date: string; description: string; is_recurring: boolean; recurrence_period: string | null}[]>([])
+  const [selectedDates, setSelectedDates] = useState<Set<number>>(new Set())
+  const [addingToCalendar, setAddingToCalendar] = useState(false)
+  const [calendarSuccess, setCalendarSuccess] = useState('')
 
   // Folder management
   const [showNewFolder, setShowNewFolder] = useState(false)
@@ -304,11 +308,32 @@ export default function DocumentsPage() {
         if (!dbRes.ok) throw new Error(`Failed to save ${file.name}`)
       }
       await loadDocuments(userId, targetFolderId)
+      
+      // Save reference before clearing state
+      const uploadedFiles = [...files]
       setFiles([])
       setUploadProgress('')
       setIsRecurring(false)
       setShowUpload(false)
       if (fileInputRef.current) fileInputRef.current.value = ''
+
+      // Auto extract dates from the last uploaded file (PDF, image, Excel, CSV, Word)
+      const lastFile = uploadedFiles[uploadedFiles.length - 1]
+      if (lastFile) {
+        try {
+          const fd = new FormData()
+          fd.append('file', lastFile)
+          fd.append('file_name', lastFile.name)
+          const dateRes = await fetch('/api/extract-dates', { method: 'POST', body: fd })
+          const dateJson = await dateRes.json()
+          if (dateJson.dates_found && dateJson.dates_found.length > 0) {
+            setPendingDates(dateJson.dates_found)
+            setSelectedDates(new Set(dateJson.dates_found.map((_: any, i: number) => i)))
+          }
+        } catch (err) {
+          console.error('Date extraction error:', err)
+        }
+      }
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : 'Upload failed')
     } finally {
@@ -422,6 +447,40 @@ export default function DocumentsPage() {
   }
 
   // Filtered folders by section
+  async function handleAddToCalendar() {
+    if (!companyId || !userId) return
+    setAddingToCalendar(true)
+    try {
+      const toAdd = pendingDates.filter((_, i) => selectedDates.has(i))
+      for (const d of toAdd) {
+        await fetch('/api/calendar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            company_id: companyId,
+            user_id: userId,
+            title: d.title,
+            description: d.description,
+            due_date: d.date,
+            category: 'compliance',
+            is_recurring: d.is_recurring,
+            recurrence_period: d.recurrence_period,
+          }),
+        })
+      }
+      setCalendarSuccess(`Added ${toAdd.length} date${toAdd.length !== 1 ? 's' : ''} to your calendar.`)
+      setTimeout(() => {
+        setPendingDates([])
+        setSelectedDates(new Set())
+        setCalendarSuccess('')
+      }, 3000)
+    } catch (err) {
+      console.error('Calendar error:', err)
+    } finally {
+      setAddingToCalendar(false)
+    }
+  }
+
   const fileFolders = folders.filter(f => f.section === 'files')
   const hrFolders = folders.filter(f => f.section === 'hr')
 
@@ -989,6 +1048,54 @@ export default function DocumentsPage() {
           </>
         )}
 
+
+        {/* Date extraction confirmation card */}
+        {pendingDates.length > 0 && (
+          <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 w-full max-w-lg z-50 px-4">
+            <div className="bg-white rounded-2xl border border-green-200 shadow-xl p-5">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">📅 Dates found in your document</p>
+                  <p className="text-xs text-gray-400 mt-0.5">Select which dates to add to your compliance calendar</p>
+                </div>
+                <button onClick={() => { setPendingDates([]); setSelectedDates(new Set()) }} className="text-gray-400 hover:text-gray-600 text-lg">×</button>
+              </div>
+              <div className="space-y-2 mb-4">
+                {pendingDates.map((d, i) => (
+                  <div key={i} onClick={() => {
+                    const next = new Set(selectedDates)
+                    if (next.has(i)) next.delete(i)
+                    else next.add(i)
+                    setSelectedDates(next)
+                  }} className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${selectedDates.has(i) ? 'border-green-400 bg-green-50' : 'border-gray-200 bg-gray-50'}`}>
+                    <div className={`w-4 h-4 rounded border flex-shrink-0 mt-0.5 flex items-center justify-center ${selectedDates.has(i) ? 'bg-green-600 border-green-600' : 'border-gray-300'}`}>
+                      {selectedDates.has(i) && <span className="text-white text-xs">✓</span>}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-800">{d.title}</p>
+                      <p className="text-xs text-green-700 font-medium">{new Date(d.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">{d.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {calendarSuccess ? (
+                <p className="text-sm text-green-700 font-medium text-center py-2">✅ {calendarSuccess}</p>
+              ) : (
+                <div className="flex gap-2">
+                  <button onClick={handleAddToCalendar} disabled={selectedDates.size === 0 || addingToCalendar}
+                    className="flex-1 bg-green-700 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50">
+                    {addingToCalendar ? 'Adding...' : `Add ${selectedDates.size} date${selectedDates.size !== 1 ? 's' : ''} to calendar →`}
+                  </button>
+                  <button onClick={() => { setPendingDates([]); setSelectedDates(new Set()) }}
+                    className="px-4 py-2.5 rounded-xl text-sm text-gray-500 border border-gray-200 hover:border-gray-300 transition-colors">
+                    Skip
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </AppLayout>
   )
