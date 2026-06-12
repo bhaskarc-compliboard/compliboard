@@ -697,7 +697,7 @@ export default function DocumentsPage() {
 
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-1 flex-wrap">
-                    <button onClick={() => navigateToFolder(null)} className={`text-sm transition-colors ${currentFolderId === null ? 'text-gray-900 font-medium' : 'text-gray-400 hover:text-green-700'}`}>All Files</button>
+                    <button onClick={() => navigateToFolder(null)} className={`text-sm transition-colors ${currentFolderId === null ? 'text-gray-900 font-medium' : 'text-gray-400 hover:text-green-700'}`}>Divisions</button>
                     {breadcrumb.map((f, i) => (
                       <span key={f.id} className="flex items-center gap-1">
                         <span className="text-gray-300 text-xs">›</span>
@@ -737,11 +737,13 @@ export default function DocumentsPage() {
                 {breadcrumb.length < 2 && (
                   <div className="flex items-center gap-4 mb-4">
                     <button onClick={() => { setShowNewFolder(true); setShowUpload(false) }} className="flex items-center gap-2 text-xs text-gray-400 hover:text-green-700 transition-colors px-1">
-                      <span>＋</span> New folder
+                      <span>＋</span> {currentFolderId === null ? 'New division' : 'New folder'}
                     </button>
-                    <button onClick={() => { setShowIndustryPicker(!showIndustryPicker); setFolderSuccess('') }} className="flex items-center gap-2 text-xs text-gray-400 hover:text-green-700 transition-colors px-1">
-                      <span>＋</span> Add industry folders
-                    </button>
+                    {currentFolderId !== null && (
+                      <button onClick={() => { setShowIndustryPicker(!showIndustryPicker); setFolderSuccess('') }} className="flex items-center gap-2 text-xs text-gray-400 hover:text-green-700 transition-colors px-1">
+                        <span>＋</span> Add industry folders
+                      </button>
+                    )}
                   </div>
                 )}
 
