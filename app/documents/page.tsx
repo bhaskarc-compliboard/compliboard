@@ -571,10 +571,10 @@ export default function DocumentsPage() {
   const currentHrFiles = hrCurrentFolderId ? documents.filter(d => d.folder_id === hrCurrentFolderId) : []
 
   const tabs = [
-    { key: 'checklists', label: 'Checklists', count: checklists.length },
-    { key: 'files', label: 'Company Files', count: fileFolders.filter(f => f.parent_id === null).length },
-    { key: 'hr', label: 'HR Documents', count: hrFolders.filter(f => f.parent_id === null).length },
-    { key: 'log', label: 'Compliance Log', count: audits.length + documentReviews.length },
+    { key: 'checklists', label: 'Checklists' },
+    { key: 'files', label: 'Company Files' },
+    { key: 'hr', label: 'HR Documents' },
+    { key: 'log', label: 'Compliance Log' },
   ] as const
 
   function renderFolder(folder: Folder, onNavigate: (f: Folder) => void, onAudit?: (f: Folder) => void) {
@@ -788,11 +788,6 @@ export default function DocumentsPage() {
             <button key={tab.key} onClick={() => setActiveTab(tab.key)}
               className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors mr-2 ${activeTab === tab.key ? 'border-green-600 text-green-700' : 'border-transparent text-gray-400 hover:text-gray-600'}`}>
               {tab.label}
-              {tab.count > 0 && (
-                <span className={`text-xs px-1.5 py-0.5 rounded-full ${activeTab === tab.key ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                  {tab.count}
-                </span>
-              )}
             </button>
           ))}
         </div>
