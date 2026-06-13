@@ -121,6 +121,8 @@ export default function DocumentsPage() {
   const [recurrencePeriod, setRecurrencePeriod] = useState('annually')
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState('')
+  const [extractDates, setExtractDates] = useState(true)
+  const [extractingDates, setExtractingDates] = useState<string | null>(null)
   const [pendingDates, setPendingDates] = useState<{title: string; date: string; description: string; is_recurring: boolean; recurrence_period: string | null}[]>([])
   const [selectedDates, setSelectedDates] = useState<Set<number>>(new Set())
   const [addingToCalendar, setAddingToCalendar] = useState(false)
@@ -317,21 +319,23 @@ export default function DocumentsPage() {
       setShowUpload(false)
       if (fileInputRef.current) fileInputRef.current.value = ''
 
-      // Auto extract dates from the last uploaded file (PDF, image, Excel, CSV, Word)
-      const lastFile = uploadedFiles[uploadedFiles.length - 1]
-      if (lastFile) {
-        try {
-          const fd = new FormData()
-          fd.append('file', lastFile)
-          fd.append('file_name', lastFile.name)
-          const dateRes = await fetch('/api/extract-dates', { method: 'POST', body: fd })
-          const dateJson = await dateRes.json()
-          if (dateJson.dates_found && dateJson.dates_found.length > 0) {
-            setPendingDates(dateJson.dates_found)
-            setSelectedDates(new Set(dateJson.dates_found.map((_: any, i: number) => i)))
+      // Extract dates if user opted in
+      if (extractDates) {
+        const lastFile = uploadedFiles[uploadedFiles.length - 1]
+        if (lastFile) {
+          try {
+            const fd = new FormData()
+            fd.append('file', lastFile)
+            fd.append('file_name', lastFile.name)
+            const dateRes = await fetch('/api/extract-dates', { method: 'POST', body: fd })
+            const dateJson = await dateRes.json()
+            if (dateJson.dates_found && dateJson.dates_found.length > 0) {
+              setPendingDates(dateJson.dates_found)
+              setSelectedDates(new Set(dateJson.dates_found.map((_: any, i: number) => i)))
+            }
+          } catch (err) {
+            console.error('Date extraction error:', err)
           }
-        } catch (err) {
-          console.error('Date extraction error:', err)
         }
       }
     } catch (err) {
@@ -481,6 +485,33 @@ export default function DocumentsPage() {
     }
   }
 
+  async function handleExtractDates(doc: Document) {
+    if (!companyId || !userId) return
+    setExtractingDates(doc.id)
+    try {
+      const { data } = await supabase.storage.from('company-documents').createSignedUrl(doc.file_url, 60)
+      if (!data?.signedUrl) throw new Error('Could not get file URL')
+      const fileRes = await fetch(data.signedUrl)
+      const blob = await fileRes.blob()
+      const file = new File([blob], doc.name, { type: doc.file_type })
+      const fd = new FormData()
+      fd.append('file', file)
+      fd.append('file_name', doc.name)
+      const dateRes = await fetch('/api/extract-dates', { method: 'POST', body: fd })
+      const dateJson = await dateRes.json()
+      if (dateJson.dates_found && dateJson.dates_found.length > 0) {
+        setPendingDates(dateJson.dates_found)
+        setSelectedDates(new Set(dateJson.dates_found.map((_: any, i: number) => i)))
+      } else {
+        alert('No compliance dates found in this document.')
+      }
+    } catch (err) {
+      console.error('Date extraction error:', err)
+    } finally {
+      setExtractingDates(null)
+    }
+  }
+
   const fileFolders = folders.filter(f => f.section === 'files')
   const hrFolders = folders.filter(f => f.section === 'hr')
 
@@ -591,6 +622,10 @@ export default function DocumentsPage() {
                 </div>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
+                <button onClick={() => handleExtractDates(doc)} disabled={extractingDates === doc.id}
+                  className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:border-green-500 hover:text-green-700 transition-colors disabled:opacity-50">
+                  {extractingDates === doc.id ? '⟳ Extracting...' : '📅 Extract dates'}
+                </button>
                 <button onClick={() => handleDownload(doc)} className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:border-green-500 hover:text-green-700 transition-colors">Download</button>
                 <button onClick={() => handleDeleteDoc(doc)} disabled={deleting === doc.id} className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-400 hover:border-red-400 hover:text-red-500 transition-colors disabled:opacity-50">{deleting === doc.id ? '...' : 'Delete'}</button>
               </div>
@@ -616,13 +651,13 @@ export default function DocumentsPage() {
         </div>
         <div className="space-y-4">
           <div>
-            <input ref={fileInputRef} type="file" multiple accept=".pdf,.xlsx,.xls,.csv,image/*" onChange={handleFileChange} className="hidden" id="file-upload" />
+            <input ref={fileInputRef} type="file" multiple accept=".pdf,.xlsx,.xls,.csv,.docx,.doc,.pptx,.ppt,image/*" onChange={handleFileChange} className="hidden" id="file-upload" />
             {files.length === 0 ? (
               <label htmlFor="file-upload" className="flex items-center gap-3 w-full border border-dashed border-gray-300 rounded-xl px-4 py-4 cursor-pointer hover:border-green-500 hover:bg-green-50 transition-colors">
                 <span className="text-2xl">📎</span>
                 <div>
                   <p className="text-sm text-gray-600">Click to select files</p>
-                  <p className="text-xs text-gray-400">PDF, images, Excel, or CSV · Select multiple</p>
+                  <p className="text-xs text-gray-400">PDF, Word, PowerPoint, Excel, CSV, images · Select multiple</p>
                 </div>
               </label>
             ) : (
@@ -655,6 +690,15 @@ export default function DocumentsPage() {
                 </select>
               )}
             </div>
+          </div>
+          <div>
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-medium text-gray-600">Extract compliance dates</label>
+              <div onClick={() => setExtractDates(!extractDates)} className={`w-10 h-6 rounded-full cursor-pointer transition-colors relative ${extractDates ? 'bg-green-600' : 'bg-gray-200'}`}>
+                <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-all ${extractDates ? 'left-5' : 'left-1'}`} />
+              </div>
+            </div>
+            <p className="text-xs text-gray-400 mt-1">Find renewal and expiry dates and add them to your calendar</p>
           </div>
           {uploadError && <p className="text-sm text-red-600">{uploadError}</p>}
           {uploadProgress && <p className="text-sm text-green-700">{uploadProgress}</p>}
