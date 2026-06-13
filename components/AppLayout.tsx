@@ -171,8 +171,8 @@ export default function AppLayout({ children, title, didYouKnow }: AppLayoutProp
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
-          <a href="/dashboard" className="text-base font-semibold text-green-800 hidden lg:block">
-            CompliBoard
+          <a href="/dashboard" className="hidden lg:flex items-center gap-2 pl-3">
+            <span className="text-base font-semibold"><span className="text-green-700">Compli</span><span className="text-orange-600">Board</span></span>
           </a>
           {title && (
             <span className="text-sm text-gray-400 hidden sm:block">/ {title}</span>
