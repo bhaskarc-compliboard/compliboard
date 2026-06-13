@@ -46,6 +46,7 @@ interface FolderAudit {
   id: string
   folder_id: string
   folder_name: string
+  parent_folder_name: string | null
   industry: string
   file_names: string[]
   result_json: AuditResult
