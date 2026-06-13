@@ -123,6 +123,8 @@ export default function DocumentsPage() {
   const [uploadError, setUploadError] = useState('')
   const [extractDates, setExtractDates] = useState(true)
   const [extractingDates, setExtractingDates] = useState<string | null>(null)
+  const [scanningDoc, setScanningDoc] = useState<string | null>(null)
+  const [documentReviews, setDocumentReviews] = useState<any[]>([])
   const [pendingDates, setPendingDates] = useState<{title: string; date: string; description: string; is_recurring: boolean; recurrence_period: string | null}[]>([])
   const [selectedDates, setSelectedDates] = useState<Set<number>>(new Set())
   const [addingToCalendar, setAddingToCalendar] = useState(false)
@@ -161,6 +163,7 @@ export default function DocumentsPage() {
         setCompanyId(profile.company_id)
         await loadFolders(profile.company_id)
         await loadAudits(profile.company_id)
+        await loadDocumentReviews(profile.company_id)
 
         const { data: company } = await supabase
           .from('companies')
@@ -205,6 +208,12 @@ export default function DocumentsPage() {
       return { ...c, must_do_count: total || 0, completed_count: completed || 0 }
     }))
     setChecklists(withCounts)
+  }
+
+  async function loadDocumentReviews(cid: string) {
+    const res = await fetch(`/api/document-review?company_id=${cid}`)
+    const json = await res.json()
+    if (json.data) setDocumentReviews(json.data)
   }
 
   async function loadAudits(cid: string) {
@@ -485,6 +494,44 @@ export default function DocumentsPage() {
     }
   }
 
+  async function handleScanDocument(doc: Document) {
+    if (!companyId || !userId) return
+    setScanningDoc(doc.id)
+    try {
+      const { data: urlData } = await supabase.storage.from('company-documents').createSignedUrl(doc.file_url, 60)
+      if (!urlData?.signedUrl) throw new Error('Could not get file URL')
+      const fileRes = await fetch(urlData.signedUrl)
+      const blob = await fileRes.blob()
+      const file = new File([blob], doc.name, { type: doc.file_type })
+      const fd = new FormData()
+      fd.append('file', file)
+      fd.append('document_id', doc.id)
+      fd.append('document_name', doc.name)
+      fd.append('folder_id', doc.folder_id || '')
+      fd.append('company_id', companyId)
+      fd.append('user_id', userId)
+      fd.append('industry', primaryIndustry)
+      // Get folder and division names
+      const folder = folders.find(f => f.id === doc.folder_id)
+      const division = folder?.parent_id ? folders.find(f => f.id === folder.parent_id) : folder
+      fd.append('folder_name', folder?.name || '')
+      fd.append('division_name', division?.name || '')
+      const res = await fetch('/api/document-review', { method: 'POST', body: fd })
+      const json = await res.json()
+      if (json.data) {
+        setDocumentReviews(prev => [json.data, ...prev.filter(r => r.document_id !== doc.id)])
+        setActiveTab('log')
+      } else {
+        alert('Could not complete review. File type may not be supported.')
+      }
+    } catch (err) {
+      console.error('Scan error:', err)
+      alert('Scan failed. Please try again.')
+    } finally {
+      setScanningDoc(null)
+    }
+  }
+
   async function handleExtractDates(doc: Document) {
     if (!companyId || !userId) return
     setExtractingDates(doc.id)
@@ -622,9 +669,16 @@ export default function DocumentsPage() {
                 </div>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
+                {documentReviews.find(r => r.document_id === doc.id) && (
+                  <span className="text-xs text-green-600 font-medium">✓ Reviewed</span>
+                )}
                 <button onClick={() => handleExtractDates(doc)} disabled={extractingDates === doc.id}
                   className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:border-green-500 hover:text-green-700 transition-colors disabled:opacity-50">
                   {extractingDates === doc.id ? '⟳ Extracting...' : '📅 Extract dates'}
+                </button>
+                <button onClick={() => handleScanDocument(doc)} disabled={scanningDoc === doc.id}
+                  className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:border-blue-500 hover:text-blue-700 transition-colors disabled:opacity-50">
+                  {scanningDoc === doc.id ? '⟳ Reviewing...' : '🔍 Review'}
                 </button>
                 <button onClick={() => handleDownload(doc)} className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:border-green-500 hover:text-green-700 transition-colors">Download</button>
                 <button onClick={() => handleDeleteDoc(doc)} disabled={deleting === doc.id} className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-400 hover:border-red-400 hover:text-red-500 transition-colors disabled:opacity-50">{deleting === doc.id ? '...' : 'Delete'}</button>
@@ -1079,6 +1133,119 @@ export default function DocumentsPage() {
                                 </button>
                                 <span className="text-gray-200">·</span>
                                 <button onClick={() => handleDeleteAudit(audit.id)} className="text-xs text-gray-400 hover:text-red-500 transition-colors">Delete report</button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+
+                {/* Document Reviews Section */}
+                {documentReviews.length > 0 && (
+                  <div className="mt-8 space-y-4">
+                    <div className="mb-2">
+                      <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Document Reviews</p>
+                    </div>
+                    {documentReviews.map((review) => {
+                      const isExpanded = expandedAuditId === review.id
+                      return (
+                        <div key={review.id} className="bg-gray-50 rounded-xl border border-gray-200 overflow-hidden">
+                          <div className="px-5 py-4 flex items-center gap-4 cursor-pointer hover:bg-gray-50 transition-colors" onClick={() => setExpandedAuditId(isExpanded ? null : review.id)}>
+                            <span className="text-2xl flex-shrink-0">📄</span>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm font-semibold text-gray-900 truncate">{review.document_name}</p>
+                                {review.is_current === true && <span className="text-xs text-green-600 font-medium flex-shrink-0">✓ Current</span>}
+                                {review.is_current === false && <span className="text-xs text-red-500 font-medium flex-shrink-0">⚠ Expired</span>}
+                                {review.expiring_soon && <span className="text-xs text-amber-600 font-medium flex-shrink-0">⏰ Expiring soon</span>}
+                              </div>
+                              <p className="text-xs text-gray-400 mt-0.5">
+                                {review.document_type && `${review.document_type} · `}
+                                {review.division_name && `${review.division_name} · `}
+                                {new Date(review.created_at).toLocaleDateString()}
+                              </p>
+                            </div>
+                            <span className="text-gray-300 text-xs flex-shrink-0">{isExpanded ? '▲' : '▼'}</span>
+                          </div>
+
+                          {isExpanded && (
+                            <div className="border-t border-gray-100 px-5 py-4 space-y-4">
+                              <p className="text-sm text-gray-600 italic">{review.summary}</p>
+
+                              <div className="grid grid-cols-2 gap-3">
+                                {review.issued_by && (
+                                  <div>
+                                    <p className="text-xs font-medium text-gray-400">Issued by</p>
+                                    <p className="text-xs text-gray-700">{review.issued_by}</p>
+                                  </div>
+                                )}
+                                {review.expiry_date && (
+                                  <div>
+                                    <p className="text-xs font-medium text-gray-400">Expires</p>
+                                    <p className={`text-xs font-medium ${review.expiring_soon ? 'text-amber-600' : review.is_current ? 'text-gray-700' : 'text-red-500'}`}>
+                                      {new Date(review.expiry_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                                      {review.days_until_expiry !== null && review.days_until_expiry >= 0 && ` (${review.days_until_expiry} days)`}
+                                    </p>
+                                  </div>
+                                )}
+                                {review.renewal_date && (
+                                  <div>
+                                    <p className="text-xs font-medium text-gray-400">Renewal deadline</p>
+                                    <p className="text-xs text-gray-700">{new Date(review.renewal_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
+                                  </div>
+                                )}
+                                {review.coverage && (
+                                  <div className="col-span-2">
+                                    <p className="text-xs font-medium text-gray-400">Coverage</p>
+                                    <p className="text-xs text-gray-700">{review.coverage}</p>
+                                  </div>
+                                )}
+                              </div>
+
+                              {review.gaps?.length > 0 && (
+                                <div>
+                                  <p className="text-xs font-bold uppercase tracking-widest text-amber-600 mb-2">⚠️ Gaps & Concerns</p>
+                                  <div className="space-y-1">
+                                    {review.gaps.map((gap: string, i: number) => (
+                                      <div key={i} className="flex items-start gap-2">
+                                        <span className="text-xs text-amber-500 mt-0.5 flex-shrink-0">!</span>
+                                        <p className="text-xs text-gray-700">{gap}</p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {review.action_items?.length > 0 && (
+                                <div>
+                                  <p className="text-xs font-bold uppercase tracking-widest text-blue-600 mb-2">📋 Action Items</p>
+                                  <div className="space-y-1">
+                                    {review.action_items.map((item: string, i: number) => (
+                                      <div key={i} className="flex items-start gap-2">
+                                        <span className="text-xs text-blue-500 mt-0.5 flex-shrink-0">→</span>
+                                        <p className="text-xs text-gray-700">{item}</p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              <div className="pt-2 flex items-center gap-3 border-t border-gray-100">
+                                <button onClick={() => {
+                                  const doc = documents.find(d => d.id === review.document_id)
+                                  if (doc) handleScanDocument(doc)
+                                }} disabled={scanningDoc === review.document_id}
+                                  className="text-xs text-green-700 hover:text-green-800 font-medium transition-colors disabled:opacity-50">
+                                  {scanningDoc === review.document_id ? '⟳ Re-scanning...' : '↺ Re-scan document'}
+                                </button>
+                                <span className="text-gray-200">·</span>
+                                <button onClick={async () => {
+                                  if (!confirm('Delete this review?')) return
+                                  await fetch(`/api/document-review?id=${review.id}`, { method: 'DELETE' })
+                                  setDocumentReviews(prev => prev.filter(r => r.id !== review.id))
+                                }} className="text-xs text-gray-400 hover:text-red-500 transition-colors">Delete review</button>
                               </div>
                             </div>
                           )}
