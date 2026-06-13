@@ -98,6 +98,7 @@ export default function DocumentsPage() {
 
   const [activeTab, setActiveTab] = useState<'checklists' | 'files' | 'hr' | 'log'>('checklists')
   const [documents, setDocuments] = useState<Document[]>([])
+  const [allDocuments, setAllDocuments] = useState<Document[]>([])
   const [folders, setFolders] = useState<Folder[]>([])
   const [checklists, setChecklists] = useState<SavedChecklist[]>([])
   const [audits, setAudits] = useState<FolderAudit[]>([])
@@ -174,6 +175,7 @@ export default function DocumentsPage() {
       }
 
       await loadDocuments(user.id, null)
+        await loadAllDocuments(user.id)
       await loadChecklists(user.id)
       setLoading(false)
     }
@@ -184,6 +186,12 @@ export default function DocumentsPage() {
     const res = await fetch(`/api/folders?company_id=${cid}`)
     const json = await res.json()
     if (json.data) setFolders(json.data)
+  }
+
+  async function loadAllDocuments(uid: string) {
+    const res = await fetch(`/api/documents?user_id=${uid}`)
+    const json = await res.json()
+    if (json.data) setAllDocuments(json.data)
   }
 
   async function loadDocuments(uid: string, folderId: string | null) {
@@ -234,10 +242,11 @@ export default function DocumentsPage() {
       const allFiles = documents.filter(d => d.folder_id && allFolderIds.includes(d.folder_id))
       const fileNames = allFiles.map(f => f.name)
       const { data: { session } } = await supabase.auth.getSession()
+      const parentFolder = folder.parent_id ? folders.find(f => f.id === folder.parent_id) : null
       const res = await fetch('/api/audit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token || ''}` },
-        body: JSON.stringify({ folder_id: folder.id, folder_name: folder.name, industry: primaryIndustry, file_names: fileNames }),
+        body: JSON.stringify({ folder_id: folder.id, folder_name: folder.name, parent_folder_name: parentFolder?.name || null, industry: primaryIndustry, file_names: fileNames }),
       })
       const json = await res.json()
       if (json.data) {
@@ -319,6 +328,7 @@ export default function DocumentsPage() {
         if (!dbRes.ok) throw new Error(`Failed to save ${file.name}`)
       }
       await loadDocuments(userId, targetFolderId)
+      await loadAllDocuments(userId)
       
       // Save reference before clearing state
       const uploadedFiles = [...files]
@@ -435,6 +445,7 @@ export default function DocumentsPage() {
     try {
       await fetch(`/api/documents?id=${doc.id}&file_url=${encodeURIComponent(doc.file_url)}`, { method: 'DELETE' })
       setDocuments(prev => prev.filter(d => d.id !== doc.id))
+      setAllDocuments(prev => prev.filter(d => d.id !== doc.id))
     } catch (error) { console.error(error) }
     finally { setDeleting(null) }
   }
@@ -602,7 +613,7 @@ export default function DocumentsPage() {
                   <span className="text-2xl">📁</span>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-700 truncate">{folder.name}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">{documents.filter(d => d.folder_id === folder.id).length} files</p>
+                    <p className="text-xs text-gray-400 mt-0.5">{allDocuments.filter(d => d.folder_id === folder.id).length} files</p>
                   </div>
                 </button>
                 <div className="px-4 pb-3 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -628,7 +639,7 @@ export default function DocumentsPage() {
                 <button onClick={() => onNavigate(folder)} className="flex-1 text-left">
                   <p className="text-sm font-medium text-gray-700">{folder.name}</p>
                 </button>
-                <span className="text-xs text-gray-400 mr-2">{documents.filter(d => d.folder_id === folder.id).length} files</span>
+                <span className="text-xs text-gray-400 mr-2">{allDocuments.filter(d => d.folder_id === folder.id).length} files</span>
                 <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button onClick={() => { setRenamingId(folder.id); setRenameValue(folder.name) }}
                     className="text-xs text-gray-400 hover:text-green-700 transition-colors">Rename</button>
@@ -1048,7 +1059,11 @@ export default function DocumentsPage() {
                           <div className="px-5 py-4 flex items-center gap-4 cursor-pointer hover:bg-gray-50 transition-colors" onClick={() => setExpandedAuditId(isExpanded ? null : audit.id)}>
                             <span className="text-2xl flex-shrink-0">📁</span>
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-semibold text-gray-900">{audit.folder_name}</p>
+                              <p className="text-sm font-semibold text-gray-900">
+                                {audit.parent_folder_name ? (
+                                  <span>{audit.parent_folder_name} <span className="text-gray-400 font-normal">→</span> {audit.folder_name}</span>
+                                ) : audit.folder_name}
+                              </p>
                               <p className="text-xs text-gray-400 mt-0.5">{new Date(audit.created_at).toLocaleDateString()} · {INDUSTRY_LABELS[audit.industry] || audit.industry}</p>
                             </div>
                             <div className="flex items-center gap-3 flex-shrink-0">

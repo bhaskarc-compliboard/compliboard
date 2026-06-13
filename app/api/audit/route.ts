@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { folder_id, folder_name, industry, file_names } = await request.json()
+    const { folder_id, folder_name, parent_folder_name, industry, file_names } = await request.json()
     if (!folder_id || !folder_name || !industry) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
@@ -78,7 +78,8 @@ export async function POST(request: NextRequest) {
       ? file_names.join('\n')
       : 'No files uploaded yet'
 
-    const prompt = `Folder name: ${folder_name}
+    const prompt = `Division: ${parent_folder_name || 'N/A'}
+Folder name: ${folder_name}
 Industry: ${industry}
 Files in this folder:
 ${fileList}
@@ -104,6 +105,7 @@ Audit this folder and identify what is present, what may need updating, and what
         user_id: user.id,
         folder_id,
         folder_name,
+        parent_folder_name: parent_folder_name || null,
         industry,
         file_names: file_names || [],
         result_json: result,
