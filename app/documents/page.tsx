@@ -574,7 +574,7 @@ export default function DocumentsPage() {
     { key: 'checklists', label: 'Checklists', count: checklists.length },
     { key: 'files', label: 'Company Files', count: fileFolders.filter(f => f.parent_id === null).length },
     { key: 'hr', label: 'HR Documents', count: hrFolders.filter(f => f.parent_id === null).length },
-    { key: 'log', label: 'Compliance Log', count: audits.length },
+    { key: 'log', label: 'Compliance Log', count: audits.length + documentReviews.length },
   ] as const
 
   function renderFolder(folder: Folder, onNavigate: (f: Folder) => void, onAudit?: (f: Folder) => void) {
@@ -1033,11 +1033,11 @@ export default function DocumentsPage() {
             {/* COMPLIANCE LOG TAB */}
             {activeTab === 'log' && (
               <div>
-                {audits.length === 0 ? (
+                {audits.length === 0 && documentReviews.length === 0 ? (
                   <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-12 text-center">
                     <p className="text-4xl mb-4">🔍</p>
-                    <p className="text-base font-medium text-gray-700 mb-1">No audit reports yet</p>
-                    <p className="text-sm text-gray-400 mb-6">Go to Company Files, hover over any folder, and click Audit to generate a gap report</p>
+                    <p className="text-base font-medium text-gray-700 mb-1">No compliance reports yet</p>
+                    <p className="text-sm text-gray-400 mb-6">Go to Company Files, click Review on any file, or hover over a folder and click Audit</p>
                     <button onClick={() => setActiveTab('files')}
                       className="inline-flex items-center gap-2 bg-green-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors">
                       Go to Company Files
