@@ -243,16 +243,6 @@ export default function CalendarPage() {
             <p className="text-sm text-gray-400">Track all your compliance deadlines and recurring dates</p>
           </div>
           <div className="flex items-center gap-2">
-            <div className="flex rounded-xl border border-gray-200 overflow-hidden">
-              <button onClick={() => setView('calendar')}
-                className={`px-3 py-1.5 text-xs font-medium transition-colors ${view === 'calendar' ? 'bg-green-700 text-white' : 'text-gray-600 hover:bg-gray-50'}`}>
-                Calendar
-              </button>
-              <button onClick={() => setView('list')}
-                className={`px-3 py-1.5 text-xs font-medium transition-colors ${view === 'list' ? 'bg-green-700 text-white' : 'text-gray-600 hover:bg-gray-50'}`}>
-                List
-              </button>
-            </div>
             <button onClick={() => { setShowImport(!showImport); setShowAddForm(false) }}
               className="flex items-center gap-2 border border-gray-200 text-gray-600 px-4 py-2 rounded-xl text-sm font-medium hover:border-green-500 hover:text-green-700 transition-colors">
               {showImport ? '× Cancel' : '📂 Import from file'}
@@ -262,6 +252,17 @@ export default function CalendarPage() {
               {showAddForm ? '× Cancel' : '+ Add deadline'}
             </button>
           </div>
+        </div>
+
+        <div className="flex items-center gap-1 mb-4">
+          <button onClick={() => setView('calendar')}
+            className={`px-4 py-2 text-sm font-medium rounded-xl transition-colors ${view === 'calendar' ? 'bg-gray-100 text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}>
+            Calendar
+          </button>
+          <button onClick={() => setView('list')}
+            className={`px-4 py-2 text-sm font-medium rounded-xl transition-colors ${view === 'list' ? 'bg-gray-100 text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}>
+            List
+          </button>
         </div>
 
         {(overdueEvents.length > 0 || upcomingEvents.length > 0) && (
