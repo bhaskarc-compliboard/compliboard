@@ -674,11 +674,11 @@ export default function DocumentsPage() {
                 )}
                 <button onClick={() => handleExtractDates(doc)} disabled={extractingDates === doc.id}
                   className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:border-green-500 hover:text-green-700 transition-colors disabled:opacity-50">
-                  {extractingDates === doc.id ? '⟳ Extracting...' : '📅 Extract dates'}
+                  {extractingDates === doc.id ? 'Extracting...' : 'Extract dates'}
                 </button>
                 <button onClick={() => handleScanDocument(doc)} disabled={scanningDoc === doc.id}
                   className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:border-blue-500 hover:text-blue-700 transition-colors disabled:opacity-50">
-                  {scanningDoc === doc.id ? '⟳ Reviewing...' : '🔍 Review'}
+                  {scanningDoc === doc.id ? 'Reviewing...' : 'Review'}
                 </button>
                 <button onClick={() => handleDownload(doc)} className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:border-green-500 hover:text-green-700 transition-colors">Download</button>
                 <button onClick={() => handleDeleteDoc(doc)} disabled={deleting === doc.id} className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-400 hover:border-red-400 hover:text-red-500 transition-colors disabled:opacity-50">{deleting === doc.id ? '...' : 'Delete'}</button>
@@ -695,15 +695,15 @@ export default function DocumentsPage() {
 
   function renderUploadPanel(targetFolderId: string | null, folderName?: string) {
     return (
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
+      <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
             <h2 className="text-sm font-semibold text-gray-900">Upload files</h2>
-            {folderName && <p className="text-xs text-green-600 mt-0.5">Uploading to: {folderName}</p>}
+            {folderName && <span className="text-xs text-green-600">→ {folderName}</span>}
           </div>
-          <button onClick={() => { setShowUpload(false); setFiles([]) }} className="text-gray-400 hover:text-gray-600 text-lg">×</button>
+          <button onClick={() => { setShowUpload(false); setFiles([]) }} className="text-gray-400 hover:text-gray-600 text-lg leading-none">×</button>
         </div>
-        <div className="space-y-4">
+        <div className="space-y-3">
           <div>
             <input ref={fileInputRef} type="file" multiple accept=".pdf,.xlsx,.xls,.csv,.docx,.doc,.pptx,.ppt,image/*" onChange={handleFileChange} className="hidden" id="file-upload" />
             {files.length === 0 ? (
@@ -732,27 +732,24 @@ export default function DocumentsPage() {
               </div>
             )}
           </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Recurring</label>
-            <div className="flex items-center gap-3">
-              <div onClick={() => setIsRecurring(!isRecurring)} className={`w-10 h-6 rounded-full cursor-pointer transition-colors relative ${isRecurring ? 'bg-green-600' : 'bg-gray-200'}`}>
-                <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-all ${isRecurring ? 'left-5' : 'left-1'}`} />
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2">
+              <div onClick={() => setIsRecurring(!isRecurring)} className={`w-8 h-5 rounded-full cursor-pointer transition-colors relative flex-shrink-0 ${isRecurring ? 'bg-green-600' : 'bg-gray-200'}`}>
+                <div className={`w-3 h-3 bg-white rounded-full absolute top-1 transition-all ${isRecurring ? 'left-4' : 'left-1'}`} />
               </div>
+              <label className="text-xs text-gray-600 cursor-pointer" onClick={() => setIsRecurring(!isRecurring)}>Recurring</label>
               {isRecurring && (
                 <select className="border border-gray-200 rounded-lg px-2 py-1 text-xs text-gray-800 focus:outline-none bg-gray-50" value={recurrencePeriod} onChange={(e) => setRecurrencePeriod(e.target.value)}>
                   {RECURRENCE_OPTIONS.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
                 </select>
               )}
             </div>
-          </div>
-          <div>
-            <div className="flex items-center justify-between">
-              <label className="block text-xs font-medium text-gray-600">Extract compliance dates</label>
-              <div onClick={() => setExtractDates(!extractDates)} className={`w-10 h-6 rounded-full cursor-pointer transition-colors relative ${extractDates ? 'bg-green-600' : 'bg-gray-200'}`}>
-                <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-all ${extractDates ? 'left-5' : 'left-1'}`} />
+            <div className="flex items-center gap-2">
+              <div onClick={() => setExtractDates(!extractDates)} className={`w-8 h-5 rounded-full cursor-pointer transition-colors relative flex-shrink-0 ${extractDates ? 'bg-green-600' : 'bg-gray-200'}`}>
+                <div className={`w-3 h-3 bg-white rounded-full absolute top-1 transition-all ${extractDates ? 'left-4' : 'left-1'}`} />
               </div>
+              <label className="text-xs text-gray-600 cursor-pointer" onClick={() => setExtractDates(!extractDates)}>Extract dates</label>
             </div>
-            <p className="text-xs text-gray-400 mt-1">Find renewal and expiry dates and add them to your calendar</p>
           </div>
           {uploadError && <p className="text-sm text-red-600">{uploadError}</p>}
           {uploadProgress && <p className="text-sm text-green-700">{uploadProgress}</p>}
@@ -879,7 +876,7 @@ export default function DocumentsPage() {
                 </div>
 
                 {showNewFolder && (
-                  <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-4">
+                  <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4">
                     <div className="flex items-center gap-2">
                       <span className="text-lg">📁</span>
                       <input type="text" autoFocus className="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-green-500" placeholder="Folder name" value={newFolderName}
@@ -976,7 +973,7 @@ export default function DocumentsPage() {
                 </div>
 
                 {showNewFolder && (
-                  <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-4">
+                  <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4">
                     <div className="flex items-center gap-2">
                       <span className="text-lg">📁</span>
                       <input type="text" autoFocus className="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-green-500" placeholder="Folder name" value={newFolderName}
