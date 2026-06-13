@@ -2,6 +2,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { NextRequest, NextResponse } from 'next/server'
 import * as XLSX from 'xlsx'
 import mammoth from 'mammoth'
+import officeParser from 'officeparser'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
 
@@ -56,6 +57,7 @@ export async function POST(request: NextRequest) {
     const isExcel = fileType.includes('spreadsheet') || fileType.includes('excel') || fileName2.endsWith('.xlsx') || fileName2.endsWith('.xls')
     const isCSV = fileType === 'text/csv' || fileName2.endsWith('.csv')
     const isWord = fileType.includes('wordprocessingml') || fileType.includes('msword') || fileName2.endsWith('.docx') || fileName2.endsWith('.doc')
+    const isPowerPoint = fileType.includes('presentationml') || fileType.includes('powerpoint') || fileName2.endsWith('.pptx') || fileName2.endsWith('.ppt')
 
     let messageContent: Anthropic.MessageParam['content']
 
@@ -99,12 +101,23 @@ export async function POST(request: NextRequest) {
         { type: 'text', text: `File name: ${fileName}\n\n${text}\n\nExtract all important compliance dates from this spreadsheet.` },
       ]
     } else if (isWord) {
-      // Convert Word doc to plain text using mammoth
+      // Convert Word doc to HTML using mammoth (preserves table structure)
       const nodeBuffer = Buffer.from(buffer)
-      const result = await mammoth.extractRawText({ buffer: nodeBuffer })
+      const result = await mammoth.convertToHtml({ buffer: nodeBuffer })
       const text = result.value
       messageContent = [
         { type: 'text', text: `File name: ${fileName}\n\n${text}\n\nExtract all important compliance dates from this document.` },
+      ]
+    } else if (isPowerPoint) {
+      // Convert PowerPoint to text using officeparser
+      const nodeBuffer = Buffer.from(buffer)
+      const text = await new Promise<string>((resolve, reject) => {
+        officeParser.parseOfficeAsync(nodeBuffer, { outputErrorToConsole: false })
+          .then((data: string) => resolve(data))
+          .catch((err: Error) => reject(err))
+      })
+      messageContent = [
+        { type: 'text', text: `File name: ${fileName}\n\n${text}\n\nExtract all important compliance dates from this presentation.` },
       ]
     } else {
       // Unsupported file type
