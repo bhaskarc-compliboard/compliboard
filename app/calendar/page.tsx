@@ -47,7 +47,6 @@ export default function CalendarPage() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [showAddForm, setShowAddForm] = useState(false)
   const [view, setView] = useState<'calendar' | 'list'>('calendar')
-  const [addTab, setAddTab] = useState<'manual' | 'import'>('manual')
 
   const [newTitle, setNewTitle] = useState('')
   const [newDate, setNewDate] = useState('')
@@ -57,10 +56,13 @@ export default function CalendarPage() {
   const [newRecurrencePeriod, setNewRecurrencePeriod] = useState('annually')
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
-
   const [importFile, setImportFile] = useState<File | null>(null)
   const [importing, setImporting] = useState(false)
-  const [importSuccess, setImportSuccess] = useState(0)
+  const [showImport, setShowImport] = useState(false)
+  const [pendingDates, setPendingDates] = useState<{title: string; date: string; description: string; is_recurring: boolean; recurrence_period: string | null}[]>([])
+  const [selectedDates, setSelectedDates] = useState<Set<number>>(new Set())
+  const [addingToCalendar, setAddingToCalendar] = useState(false)
+  const [calendarSuccess, setCalendarSuccess] = useState('')
 
   useEffect(() => {
     async function loadData() {
@@ -123,51 +125,60 @@ export default function CalendarPage() {
   async function handleImport() {
     if (!importFile || !userId || !companyId) return
     setImporting(true)
-    setImportSuccess(0)
     try {
-      const formData = new FormData()
-      formData.append('file', importFile)
-      formData.append('question', 'Extract all compliance deadlines from this document. For each deadline return it as a must_do item with name and description. Return standard JSON format.')
-      const res = await fetch('/api/chat', { method: 'POST', body: formData })
+      const fd = new FormData()
+      fd.append('file', importFile)
+      fd.append('file_name', importFile.name)
+      const res = await fetch('/api/extract-dates', { method: 'POST', body: fd })
       const json = await res.json()
-      if (json.data?.must_do) {
-        const due = new Date(today)
-        due.setFullYear(due.getFullYear() + 1)
-        const dueDateStr = due.toISOString().split('T')[0]
-        let count = 0
-        for (const item of json.data.must_do.slice(0, 20)) {
-          const calRes = await fetch('/api/calendar', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              company_id: companyId,
-              user_id: userId,
-              title: item.name,
-              description: item.description || null,
-              due_date: dueDateStr,
-              category: 'Imported',
-              is_recurring: true,
-              recurrence_period: 'annually',
-            }),
-          })
-          const calJson = await calRes.json()
-          if (calJson.data) {
-            setEvents(prev => [...prev, calJson.data].sort((a, b) => a.due_date.localeCompare(b.due_date)))
-            count++
-          }
-        }
-        setImportSuccess(count)
+      if (json.dates_found && json.dates_found.length > 0) {
+        setPendingDates(json.dates_found)
+        setSelectedDates(new Set(json.dates_found.map((_: any, i: number) => i)))
+        setShowImport(false)
         setImportFile(null)
-        setTimeout(() => {
-          setShowAddForm(false)
-          setImportSuccess(0)
-          setAddTab('manual')
-        }, 3000)
+      } else {
+        alert('No compliance dates found in this file. Make sure it contains deadline or expiry dates.')
       }
     } catch (err) {
-      console.error(err)
+      console.error('Import error:', err)
     } finally {
       setImporting(false)
+    }
+  }
+
+  async function handleAddToCalendar() {
+    if (!companyId || !userId) return
+    setAddingToCalendar(true)
+    try {
+      const toAdd = pendingDates.filter((_, i) => selectedDates.has(i))
+      for (const d of toAdd) {
+        const res = await fetch('/api/calendar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            company_id: companyId,
+            user_id: userId,
+            title: d.title,
+            description: d.description,
+            due_date: d.date,
+            category: 'compliance',
+            is_recurring: d.is_recurring,
+            recurrence_period: d.recurrence_period,
+          }),
+        })
+        const json = await res.json()
+        if (json.data) setEvents(prev => [...prev, json.data].sort((a, b) => a.due_date.localeCompare(b.due_date)))
+      }
+      setCalendarSuccess(`Added ${toAdd.length} date${toAdd.length !== 1 ? 's' : ''} to your calendar.`)
+      setTimeout(() => {
+        setPendingDates([])
+        setSelectedDates(new Set())
+        setCalendarSuccess('')
+      }, 3000)
+    } catch (err) {
+      console.error('Calendar error:', err)
+    } finally {
+      setAddingToCalendar(false)
     }
   }
 
@@ -223,7 +234,7 @@ export default function CalendarPage() {
   })
 
   return (
-    <AppLayout title="Compliance Calendar" didYouKnow={{ icon: '📅', text: 'CompliBoard can read your compliance documents and automatically populate your calendar with renewal dates and inspection deadlines. Upload your permits, licenses, and inspection reports in Company Files and CompliBoard will extract the dates and add them here automatically. You never miss a renewal again.' }}>
+    <AppLayout title="Compliance Calendar" didYouKnow={{ icon: '📅', text: 'Upload your permits, licenses, and inspection reports in Company Files, click Extract dates, and CompliBoard will find all renewal and expiry dates and add them to your calendar automatically. You never miss a deadline again.' }}>
       <div className="max-w-5xl mx-auto px-6 py-8">
 
         <div className="mb-6 flex items-center justify-between flex-wrap gap-3">
@@ -242,7 +253,11 @@ export default function CalendarPage() {
                 List
               </button>
             </div>
-            <button onClick={() => { setShowAddForm(!showAddForm); setSelectedDate(null) }}
+            <button onClick={() => { setShowImport(!showImport); setShowAddForm(false) }}
+              className="flex items-center gap-2 border border-gray-200 text-gray-600 px-4 py-2 rounded-xl text-sm font-medium hover:border-green-500 hover:text-green-700 transition-colors">
+              {showImport ? '× Cancel' : '📂 Import from file'}
+            </button>
+            <button onClick={() => { setShowAddForm(!showAddForm); setShowImport(false); setSelectedDate(null) }}
               className="flex items-center gap-2 bg-green-700 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors">
               {showAddForm ? '× Cancel' : '+ Add deadline'}
             </button>
@@ -266,110 +281,91 @@ export default function CalendarPage() {
           </div>
         )}
 
+        {showImport && (
+          <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6">
+            <h2 className="text-sm font-semibold text-gray-900 mb-1">Import compliance deadlines</h2>
+            <p className="text-xs text-gray-400 mb-4">Upload your existing deadline spreadsheet or document. CompliBoard will find all dates and let you choose which ones to add.</p>
+            <label htmlFor="import-file"
+              className={`flex items-center gap-3 w-full border border-dashed rounded-xl px-4 py-4 cursor-pointer transition-colors mb-4 ${importFile ? 'border-green-300 bg-green-50' : 'border-gray-300 hover:border-green-500 hover:bg-green-50'}`}>
+              <span className="text-2xl">{importFile ? '📊' : '📎'}</span>
+              <div>
+                <p className="text-sm font-medium text-gray-700">{importFile ? importFile.name : 'Click to select file'}</p>
+                <p className="text-xs text-gray-400">Excel, CSV, PDF, Word, or PowerPoint</p>
+              </div>
+              <input id="import-file" type="file" accept=".xlsx,.xls,.csv,.pdf,.docx,.doc,.pptx,.ppt" className="hidden"
+                onChange={(e) => setImportFile(e.target.files?.[0] || null)} />
+            </label>
+            <button onClick={handleImport} disabled={!importFile || importing}
+              className="bg-green-700 text-white px-6 py-2.5 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50">
+              {importing ? 'Extracting dates...' : 'Extract dates →'}
+            </button>
+          </div>
+        )}
+
         {showAddForm && (
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-6">
-            <div className="flex items-center gap-1 mb-5 border-b border-gray-100 pb-4">
-              <button onClick={() => setAddTab('manual')}
-                className={`text-sm px-3 py-1.5 rounded-lg font-medium transition-colors ${addTab === 'manual' ? 'bg-green-700 text-white' : 'text-gray-500 hover:text-gray-700'}`}>
-                Add manually
-              </button>
-              <button onClick={() => setAddTab('import')}
-                className={`text-sm px-3 py-1.5 rounded-lg font-medium transition-colors ${addTab === 'import' ? 'bg-green-700 text-white' : 'text-gray-500 hover:text-gray-700'}`}>
-                Import from file
-              </button>
+          <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Title <span className="text-red-400">*</span></label>
+                <input type="text"
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-green-500 bg-gray-50"
+                  placeholder="e.g. Annual OSHA inspection"
+                  value={newTitle}
+                  onChange={(e) => setNewTitle(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Due date <span className="text-red-400">*</span></label>
+                <input type="date"
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-green-500 bg-gray-50"
+                  value={newDate || selectedDate || ''}
+                  onChange={(e) => setNewDate(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Category</label>
+                <select
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-green-500 bg-gray-50"
+                  value={newCategory}
+                  onChange={(e) => setNewCategory(e.target.value)}>
+                  <option value="">Select category</option>
+                  {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
+                <input type="text"
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-green-500 bg-gray-50"
+                  placeholder="Optional notes"
+                  value={newDescription}
+                  onChange={(e) => setNewDescription(e.target.value)}
+                />
+              </div>
             </div>
-
-            {addTab === 'manual' && (
-              <div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Title <span className="text-red-400">*</span></label>
-                    <input type="text"
-                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-green-500 bg-gray-50"
-                      placeholder="e.g. Annual OSHA inspection"
-                      value={newTitle}
-                      onChange={(e) => setNewTitle(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Due date <span className="text-red-400">*</span></label>
-                    <input type="date"
-                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-green-500 bg-gray-50"
-                      value={newDate || selectedDate || ''}
-                      onChange={(e) => setNewDate(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Category</label>
-                    <select
-                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-green-500 bg-gray-50"
-                      value={newCategory}
-                      onChange={(e) => setNewCategory(e.target.value)}>
-                      <option value="">Select category</option>
-                      {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
-                    <input type="text"
-                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-green-500 bg-gray-50"
-                      placeholder="Optional notes"
-                      value={newDescription}
-                      onChange={(e) => setNewDescription(e.target.value)}
-                    />
-                  </div>
+            <div className="mt-4 flex items-center gap-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <div onClick={() => setNewRecurring(!newRecurring)}
+                  className={`w-9 h-5 rounded-full transition-colors relative cursor-pointer ${newRecurring ? 'bg-green-600' : 'bg-gray-200'}`}>
+                  <div className={`w-3.5 h-3.5 bg-white rounded-full absolute top-0.5 transition-all ${newRecurring ? 'left-4' : 'left-0.5'}`} />
                 </div>
-                <div className="mt-4 flex items-center gap-4">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <div onClick={() => setNewRecurring(!newRecurring)}
-                      className={`w-9 h-5 rounded-full transition-colors relative cursor-pointer ${newRecurring ? 'bg-green-600' : 'bg-gray-200'}`}>
-                      <div className={`w-3.5 h-3.5 bg-white rounded-full absolute top-0.5 transition-all ${newRecurring ? 'left-4' : 'left-0.5'}`} />
-                    </div>
-                    <span className="text-sm text-gray-600">Recurring</span>
-                  </label>
-                  {newRecurring && (
-                    <select
-                      className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none bg-gray-50"
-                      value={newRecurrencePeriod}
-                      onChange={(e) => setNewRecurrencePeriod(e.target.value)}>
-                      <option value="monthly">Monthly</option>
-                      <option value="quarterly">Quarterly</option>
-                      <option value="annually">Annually</option>
-                    </select>
-                  )}
-                </div>
-                {saveError && <p className="text-sm text-red-600 mt-3">{saveError}</p>}
-                <button onClick={handleAddEvent} disabled={saving}
-                  className="mt-4 bg-green-700 text-white px-6 py-2.5 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50">
-                  {saving ? 'Saving...' : 'Save deadline →'}
-                </button>
-              </div>
-            )}
-
-            {addTab === 'import' && (
-              <div>
-                <p className="text-sm text-gray-500 mb-4">Upload your existing compliance schedule — Excel, CSV, or PDF. We will extract all deadlines and add them to your calendar automatically.</p>
-                <label htmlFor="import-file"
-                  className={`flex items-center gap-3 w-full border-2 border-dashed rounded-xl px-4 py-4 cursor-pointer transition-colors ${importFile ? 'border-green-300 bg-green-50' : 'border-gray-300 hover:border-green-500 hover:bg-green-50'}`}>
-                  <span className="text-2xl">{importFile ? '📊' : '📎'}</span>
-                  <div>
-                    <p className="text-sm font-medium text-gray-700">{importFile ? importFile.name : 'Click to select file'}</p>
-                    <p className="text-xs text-gray-400">Excel, CSV, or PDF</p>
-                  </div>
-                  <input id="import-file" type="file" accept=".xlsx,.xls,.csv,.pdf" className="hidden"
-                    onChange={(e) => setImportFile(e.target.files?.[0] || null)} />
-                </label>
-                {importSuccess > 0 && (
-                  <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-xl">
-                    <p className="text-sm text-green-700 font-medium">✓ Added {importSuccess} deadlines to your calendar</p>
-                  </div>
-                )}
-                <button onClick={handleImport} disabled={!importFile || importing}
-                  className="mt-4 bg-green-700 text-white px-6 py-2.5 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50">
-                  {importing ? 'Extracting deadlines...' : 'Import deadlines →'}
-                </button>
-              </div>
-            )}
+                <span className="text-sm text-gray-600">Recurring</span>
+              </label>
+              {newRecurring && (
+                <select
+                  className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none bg-gray-50"
+                  value={newRecurrencePeriod}
+                  onChange={(e) => setNewRecurrencePeriod(e.target.value)}>
+                  <option value="monthly">Monthly</option>
+                  <option value="quarterly">Quarterly</option>
+                  <option value="annually">Annually</option>
+                </select>
+              )}
+            </div>
+            {saveError && <p className="text-sm text-red-600 mt-3">{saveError}</p>}
+            <button onClick={handleAddEvent} disabled={saving}
+              className="mt-4 bg-green-700 text-white px-6 py-2.5 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50">
+              {saving ? 'Saving...' : 'Save deadline →'}
+            </button>
           </div>
         )}
 
@@ -378,7 +374,7 @@ export default function CalendarPage() {
             <p className="text-sm text-gray-400">Loading your calendar...</p>
           </div>
         ) : view === 'calendar' ? (
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
               <button onClick={() => {
                 if (currentMonth === 0) { setCurrentMonth(11); setCurrentYear(y => y - 1) }
@@ -407,7 +403,7 @@ export default function CalendarPage() {
                 const isSelected = selectedDate === dateStr
                 return (
                   <div key={day}
-                    onClick={() => { setSelectedDate(dateStr); setNewDate(dateStr); setShowAddForm(true); setAddTab('manual') }}
+                    onClick={() => { setSelectedDate(dateStr); setNewDate(dateStr); setShowAddForm(true) }}
                     className={`h-20 border-b border-r border-gray-50 p-1.5 cursor-pointer hover:bg-gray-50 transition-colors ${isSelected ? 'bg-green-50' : ''}`}>
                     <p className={`text-xs font-medium w-6 h-6 flex items-center justify-center rounded-full mb-1 ${isToday ? 'bg-green-700 text-white' : 'text-gray-700'}`}>
                       {day}
@@ -453,15 +449,15 @@ export default function CalendarPage() {
             )}
           </div>
         ) : (
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
             {events.length === 0 ? (
               <div className="p-12 text-center">
                 <p className="text-4xl mb-4">📅</p>
                 <p className="text-base font-medium text-gray-700 mb-1">No deadlines yet</p>
-                <p className="text-sm text-gray-400 mb-6">Add your first compliance deadline to get started</p>
+                <p className="text-sm text-gray-400 mb-4">Upload compliance documents in Company Files and click Extract dates to populate your calendar automatically.</p>
                 <button onClick={() => setShowAddForm(true)}
                   className="inline-flex items-center gap-2 bg-green-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors">
-                  Add a deadline
+                  Add a deadline manually
                 </button>
               </div>
             ) : (
@@ -504,12 +500,55 @@ export default function CalendarPage() {
           </div>
         )}
 
-        <p className="text-xs text-gray-400 text-center mt-4">
-          Automated reminders: monthly summary on the 1st · 7-day alerts before deadlines
-        </p>
+
+        {pendingDates.length > 0 && (
+          <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 w-full max-w-lg z-50 px-4">
+            <div className="bg-white rounded-2xl border border-green-200 shadow-xl p-5">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">📅 Dates found in your file</p>
+                  <p className="text-xs text-gray-400 mt-0.5">Select which dates to add to your calendar</p>
+                </div>
+                <button onClick={() => { setPendingDates([]); setSelectedDates(new Set()) }} className="text-gray-400 hover:text-gray-600 text-lg">×</button>
+              </div>
+              <div className="space-y-2 mb-4">
+                {pendingDates.map((d, i) => (
+                  <div key={i} onClick={() => {
+                    const next = new Set(selectedDates)
+                    if (next.has(i)) next.delete(i)
+                    else next.add(i)
+                    setSelectedDates(next)
+                  }} className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${selectedDates.has(i) ? 'border-green-400 bg-green-50' : 'border-gray-200 bg-gray-50'}`}>
+                    <div className={`w-4 h-4 rounded border flex-shrink-0 mt-0.5 flex items-center justify-center ${selectedDates.has(i) ? 'bg-green-600 border-green-600' : 'border-gray-300'}`}>
+                      {selectedDates.has(i) && <span className="text-white text-xs">✓</span>}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-800">{d.title}</p>
+                      <p className="text-xs text-green-700 font-medium">{new Date(d.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">{d.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {calendarSuccess ? (
+                <p className="text-sm text-green-700 font-medium text-center py-2">✅ {calendarSuccess}</p>
+              ) : (
+                <div className="flex gap-2">
+                  <button onClick={handleAddToCalendar} disabled={selectedDates.size === 0 || addingToCalendar}
+                    className="flex-1 bg-green-700 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50">
+                    {addingToCalendar ? 'Adding...' : `Add ${selectedDates.size} date${selectedDates.size !== 1 ? 's' : ''} to calendar →`}
+                  </button>
+                  <button onClick={() => { setPendingDates([]); setSelectedDates(new Set()) }}
+                    className="px-4 py-2.5 rounded-xl text-sm text-gray-500 border border-gray-200 hover:border-gray-300 transition-colors">
+                    Skip
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
       </div>
-    
-      </AppLayout>
+    </AppLayout>
   )
 }
