@@ -111,11 +111,8 @@ export async function POST(request: NextRequest) {
     } else if (isPowerPoint) {
       // Convert PowerPoint to text using officeparser
       const nodeBuffer = Buffer.from(buffer)
-      const text = await new Promise<string>((resolve, reject) => {
-        officeParser.parseOfficeAsync(nodeBuffer, { outputErrorToConsole: false })
-          .then((data: string) => resolve(data))
-          .catch((err: Error) => reject(err))
-      })
+      const ast = await (officeParser as any).parseOffice(nodeBuffer)
+      const text = ast.toText()
       messageContent = [
         { type: 'text', text: `File name: ${fileName}\n\n${text}\n\nExtract all important compliance dates from this presentation.` },
       ]
