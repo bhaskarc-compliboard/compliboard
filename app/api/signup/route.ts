@@ -36,7 +36,7 @@ const COMPLIANCE_LOG_FOLDERS = [
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password, companyName, industry, state, county, city, employeeCount } = await request.json()
+    const { email, password, companyName, industry, state, county, city, employeeCount, websiteUrl, scanResult } = await request.json()
 
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
 
     const { data: companyData, error: companyError } = await supabaseAdmin
       .from('companies')
-      .insert({ name: companyName, industry, state, county, city, employee_count: employeeCount })
+      .insert({ name: companyName, industry, state, county, city, employee_count: employeeCount, website_url: websiteUrl || null, scan_result: scanResult || null })
       .select()
       .single()
     if (companyError) throw companyError

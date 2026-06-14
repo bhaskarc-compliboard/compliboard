@@ -614,7 +614,7 @@ export default function DocumentsPage() {
                   <span className="text-2xl">📁</span>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-700 truncate">{folder.name}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">{allDocuments.filter(d => d.folder_id === folder.id).length} files</p>
+                    {allDocuments.filter(d => d.folder_id === folder.id).length > 0 && <p className="text-xs text-gray-400 mt-0.5">{allDocuments.filter(d => d.folder_id === folder.id).length} files</p>}
                   </div>
                 </button>
                 <div className="px-4 pb-3 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
