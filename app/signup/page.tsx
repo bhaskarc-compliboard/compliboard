@@ -16,8 +16,6 @@ const INDUSTRIES = [
   { label: 'Other', value: 'other' },
 ]
 
-const EMPLOYEE_COUNTS = ['1-25', '26-75', '76-200', '200+']
-
 const US_STATES = [
   'Alabama','Alaska','Arizona','Arkansas','California','Colorado','Connecticut',
   'Delaware','Florida','Georgia','Hawaii','Idaho','Illinois','Indiana','Iowa',
@@ -86,10 +84,9 @@ export default function SignupPage() {
   const [password, setPassword] = useState('')
   const [companyName, setCompanyName] = useState('')
   const [industry, setIndustry] = useState('')
+  const [businessDescription, setBusinessDescription] = useState('')
   const [state, setState] = useState('')
-  const [county, setCounty] = useState('')
   const [city, setCity] = useState('')
-  const [employeeCount, setEmployeeCount] = useState('')
   const [website, setWebsite] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -104,10 +101,9 @@ export default function SignupPage() {
   const [confirmedCerts, setConfirmedCerts] = useState<string[]>([])
   const [operations, setOperations] = useState<Record<string, boolean | null>>({})
 
-  // Trigger scan on tab-out from website field
   async function handleWebsiteBlur() {
     if (!website || website.trim().length < 4) return
-    if (scanning || scanData) return // don't re-scan
+    if (scanning || scanData) return
     setScanning(true)
     try {
       const res = await fetch('/api/scan-website', {
@@ -120,12 +116,11 @@ export default function SignupPage() {
         const data = json.data as ScanData
         scanResultRef.current = data
         setScanData(data)
-        // Pre-fill certs and operations
         setConfirmedCerts(data.certifications || [])
         setOperations(data.operations || {})
       }
     } catch {
-      // Scan failed silently — no popup, signup unaffected
+      // Silent failure
     } finally {
       setScanning(false)
     }
@@ -142,7 +137,7 @@ export default function SignupPage() {
   }
 
   async function handleSignup() {
-    if (!email || !password || !companyName || !industry || !state || !city || !county || !employeeCount) {
+    if (!email || !password || !companyName || !industry || !state || !city) {
       setError('Please fill in all required fields')
       return
     }
@@ -158,7 +153,17 @@ export default function SignupPage() {
         ...currentScanData,
         certifications: confirmedCerts,
         operations: { ...currentScanData.operations, ...operations },
-      } : null
+        custom_industry: industry === 'other' && businessDescription ? businessDescription : null,
+      } : (industry === 'other' && businessDescription ? {
+        certifications: [],
+        chemicals: [],
+        customers: [],
+        multiple_locations: false,
+        city: null,
+        state: null,
+        operations: {},
+        custom_industry: businessDescription,
+      } : null)
 
       const res = await fetch('/api/signup', {
         method: 'POST',
@@ -169,9 +174,9 @@ export default function SignupPage() {
           companyName,
           industry,
           state,
-          county,
+          county: '',
           city,
-          employeeCount,
+          employeeCount: '',
           websiteUrl: website || null,
           scanResult,
         }),
@@ -182,7 +187,6 @@ export default function SignupPage() {
       const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
       if (signInError) throw signInError
 
-      // Show pop-up if scan succeeded, otherwise go straight to dashboard
       if (currentScanData && (confirmedCerts.length > 0 || INDUSTRY_QUESTIONS[industry]?.length > 0)) {
         setShowPopup(true)
         setLoading(false)
@@ -215,7 +219,6 @@ export default function SignupPage() {
               <p className="text-sm text-gray-500">Help us tailor CompliBoard to your business. Takes 30 seconds.</p>
             </div>
 
-            {/* Section 1 — Certifications */}
             {confirmedCerts.length > 0 && (
               <div className="mb-6">
                 <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">
@@ -238,7 +241,6 @@ export default function SignupPage() {
               </div>
             )}
 
-            {/* Section 2 — Industry questions */}
             {industryQuestions.length > 0 && (
               <div className="mb-6">
                 {confirmedCerts.length > 0 && <div className="border-t border-gray-100 mb-6" />}
@@ -294,123 +296,86 @@ export default function SignupPage() {
           <h1 className="text-2xl font-semibold text-gray-900 mb-1">Create your account</h1>
           <p className="text-gray-500 text-sm">Set up CompliBoard for your business</p>
         </div>
-        <div className="space-y-4">
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Company name <span className="text-red-400">*</span></label>
+
+        <div className="space-y-3">
+
+          <input type="text"
+            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-green-500 bg-gray-50"
+            placeholder="Company name *"
+            value={companyName}
+            onChange={(e) => setCompanyName(e.target.value)}
+          />
+
+          <div className="relative">
+            <input type="text"
+              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-green-500 bg-gray-50 pr-10"
+              placeholder="Website — highly recommended for a personalised setup"
+              value={website}
+              onChange={(e) => setWebsite(e.target.value)}
+              onBlur={handleWebsiteBlur}
+            />
+            {scanning && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                <div className="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
+              </div>
+            )}
+            {!scanning && scanData && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 text-green-600 text-sm">✓</div>
+            )}
+          </div>
+          {!scanning && scanData && (
+            <p className="text-xs text-green-700 -mt-1 px-1">
+              Website scanned — we&apos;ll personalise your setup based on what we found
+            </p>
+          )}
+
+          <select
+            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-green-500 bg-gray-50"
+            value={industry}
+            onChange={(e) => setIndustry(e.target.value)}>
+            <option value="">Select your industry *</option>
+            {INDUSTRIES.map(i => <option key={i.value} value={i.value}>{i.label}</option>)}
+          </select>
+
+          {industry === 'other' && (
             <input type="text"
               className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-green-500 bg-gray-50"
-              placeholder="Acme Chemical Co."
-              value={companyName}
-              onChange={(e) => setCompanyName(e.target.value)}
+              placeholder="What does your business do, or what industry are you in?"
+              value={businessDescription}
+              onChange={(e) => setBusinessDescription(e.target.value)}
+              autoFocus
+            />
+          )}
+
+          <div className="grid grid-cols-2 gap-3">
+            <select
+              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-green-500 bg-gray-50"
+              value={state}
+              onChange={(e) => setState(e.target.value)}>
+              <option value="">Select state *</option>
+              {US_STATES.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+            <input type="text"
+              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-green-500 bg-gray-50"
+              placeholder="City *"
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
             />
           </div>
 
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
-              Website
-              <span className="text-gray-400 font-normal ml-1">(optional — helps us personalise your setup)</span>
-            </label>
-            <div className="relative">
-              <input type="text"
-                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-green-500 bg-gray-50 pr-10"
-                placeholder="https://yourcompany.com"
-                value={website}
-                onChange={(e) => setWebsite(e.target.value)}
-                onBlur={handleWebsiteBlur}
-              />
-              {scanning && (
-                <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                  <div className="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
-                </div>
-              )}
-              {!scanning && scanData && (
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-green-600 text-sm">✓</div>
-              )}
-            </div>
-            {!scanning && scanData && (
-              <p className="text-xs text-green-700 mt-1">
-                Website scanned — we&apos;ll personalise your setup based on what we found
-              </p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Industry <span className="text-red-400">*</span></label>
-            <select
+          <div className="pt-2 border-t border-gray-100 space-y-3">
+            <input type="email"
               className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-green-500 bg-gray-50"
-              value={industry}
-              onChange={(e) => setIndustry(e.target.value)}>
-              <option value="">Select your industry</option>
-              {INDUSTRIES.map(i => <option key={i.value} value={i.value}>{i.label}</option>)}
-            </select>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">State <span className="text-red-400">*</span></label>
-              <select
-                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-green-500 bg-gray-50"
-                value={state}
-                onChange={(e) => setState(e.target.value)}>
-                <option value="">Select state</option>
-                {US_STATES.map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Number of employees <span className="text-red-400">*</span></label>
-              <select
-                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-green-500 bg-gray-50"
-                value={employeeCount}
-                onChange={(e) => setEmployeeCount(e.target.value)}>
-                <option value="">Select range</option>
-                {EMPLOYEE_COUNTS.map(e => <option key={e} value={e}>{e}</option>)}
-              </select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">City <span className="text-red-400">*</span></label>
-              <input type="text"
-                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-green-500 bg-gray-50"
-                placeholder="Portland"
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">County <span className="text-red-400">*</span></label>
-              <input type="text"
-                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-green-500 bg-gray-50"
-                placeholder="Multnomah"
-                value={county}
-                onChange={(e) => setCounty(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className="pt-2 border-t border-gray-100">
-            <p className="text-xs font-medium text-gray-500 mb-3 uppercase tracking-wide">Login details</p>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Email <span className="text-red-400">*</span></label>
-                <input type="email"
-                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-green-500 bg-gray-50"
-                  placeholder="you@company.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Password <span className="text-red-400">*</span></label>
-                <input type="password"
-                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-green-500 bg-gray-50"
-                  placeholder="At least 6 characters"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
-            </div>
+              placeholder="Email *"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+            <input type="password"
+              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-green-500 bg-gray-50"
+              placeholder="Password (min. 6 characters) *"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
           </div>
 
           {error && (
@@ -425,10 +390,12 @@ export default function SignupPage() {
             className="w-full bg-green-700 text-white py-3 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50">
             {loading ? 'Creating your account...' : 'Create account →'}
           </button>
+
           <p className="text-center text-sm text-gray-500">
             Already have an account?{' '}
             <a href="/login" className="text-green-700 hover:text-green-800 font-medium">Log in</a>
           </p>
+
         </div>
       </div>
     </main>
