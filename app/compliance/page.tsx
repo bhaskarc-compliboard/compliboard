@@ -139,6 +139,7 @@ function CompliancePageInner() {
   const [companyName, setCompanyName] = useState('')
   const [companyId, setCompanyId] = useState<string | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
+  const [scanResult, setScanResult] = useState<Record<string, unknown> | null>(null)
   const [data, setData] = useState<ChecklistData | null>(null)
   const [currentChecklistId, setCurrentChecklistId] = useState<string | null>(null)
   const [savedChecklists, setSavedChecklists] = useState<SavedChecklist[]>([])
@@ -185,10 +186,11 @@ function CompliancePageInner() {
       setCompanyId(profile.company_id)
       const { data: company } = await supabase
         .from('companies')
-        .select('name')
+        .select('name, scan_result')
         .eq('id', profile.company_id)
         .single()
       if (company?.name) setCompanyName(company.name)
+      if (company?.scan_result) setScanResult(company.scan_result)
     }
     loadProfile()
     loadSavedChecklists()
@@ -573,7 +575,7 @@ Give them a specific direct answer — exactly what they need to do, which speci
         res = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ question: q, mode: currentMode }),
+          body: JSON.stringify({ question: q, mode: currentMode, scanResult }),
         })
       }
       const json = await res.json()
