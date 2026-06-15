@@ -60,7 +60,7 @@ export default function HRPage() {
       const res = await fetch(`/api/documents?user_id=${user.id}`)
       const json = await res.json()
       if (json.data) {
-        const hbs = json.data.filter((d: Handbook & {category: string}) => d.category === 'hr-handbooks')
+        const hbs = json.data.filter((d: Handbook & {category: string}) => d.file_url && d.file_url.includes('hr-handbooks'))
         setHandbooks(hbs)
       }
       setLoading(false)
@@ -98,7 +98,7 @@ export default function HRPage() {
       const docsRes = await fetch(`/api/documents?user_id=${userId}`)
       const docsJson = await docsRes.json()
       if (docsJson.data) {
-        setHandbooks(docsJson.data.filter((d: Handbook & {category: string}) => d.category === 'hr-handbooks'))
+        setHandbooks(docsJson.data.filter((d: Handbook & {category: string}) => d.file_url && d.file_url.includes('hr-handbooks')))
       }
       setNewFile(null)
       setShowUpload(false)
@@ -216,6 +216,11 @@ export default function HRPage() {
                     <p className="text-sm text-gray-700 truncate">{h.name}</p>
                     <p className="text-xs text-gray-400">{new Date(h.uploaded_at).toLocaleDateString()}</p>
                   </div>
+                  <button onClick={async () => {
+                    if (!confirm('Delete this handbook?')) return
+                    await fetch('/api/documents?id=' + h.id + '&file_url=' + encodeURIComponent(h.file_url), { method: 'DELETE' })
+                    setHandbooks(prev => prev.filter(x => x.id !== h.id))
+                  }} className="text-gray-300 hover:text-red-400 transition-colors text-lg leading-none flex-shrink-0">×</button>
                 </div>
               ))}
             </div>
@@ -252,14 +257,38 @@ export default function HRPage() {
             <p className="text-sm text-gray-400">Loading...</p>
           </div>
         ) : handbooks.length === 0 ? (
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-12 text-center">
-            <p className="text-4xl mb-4">📋</p>
-            <p className="text-base font-medium text-gray-700 mb-1">No HR handbook uploaded yet</p>
-            <p className="text-sm text-gray-400 mb-6">Upload your company HR handbook to get started.</p>
-            <button onClick={() => { setShowManage(true); setShowUpload(true) }}
-              className="inline-flex items-center gap-2 bg-green-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors">
-              Upload handbook
-            </button>
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-8">
+            <div className="text-center mb-6">
+              <p className="text-4xl mb-4">📋</p>
+              <p className="text-base font-medium text-gray-700 mb-1">No HR handbook uploaded yet</p>
+              <p className="text-sm text-gray-400">Upload your company HR handbook to get started.</p>
+            </div>
+            <input ref={fileInputRef} type="file" accept=".pdf,image/*" className="hidden" id="handbook-upload-empty"
+              onChange={(e) => setNewFile(e.target.files?.[0] || null)} />
+            {!newFile ? (
+              <label htmlFor="handbook-upload-empty"
+                className="flex items-center gap-3 w-full border-2 border-dashed border-gray-300 rounded-xl px-4 py-4 cursor-pointer hover:border-green-500 hover:bg-green-50 transition-colors">
+                <span className="text-xl">📎</span>
+                <div>
+                  <p className="text-sm text-gray-600 font-medium">Click to select your HR handbook</p>
+                  <p className="text-xs text-gray-400">PDF files supported</p>
+                </div>
+              </label>
+            ) : (
+              <div className="flex items-center gap-3 p-3 bg-green-50 border border-green-200 rounded-xl mb-3">
+                <span>📋</span>
+                <p className="text-sm font-medium text-green-800 flex-1 truncate">{newFile.name}</p>
+                <button onClick={() => { setNewFile(null); if (fileInputRef.current) fileInputRef.current.value = '' }}
+                  className="text-gray-400 hover:text-red-500 text-lg">×</button>
+              </div>
+            )}
+            {uploadError && <p className="text-sm text-red-600 mt-2">{uploadError}</p>}
+            {newFile && (
+              <button onClick={handleUploadHandbook} disabled={uploadingHandbook}
+                className="mt-3 w-full bg-green-700 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50">
+                {uploadingHandbook ? 'Uploading...' : 'Upload handbook →'}
+              </button>
+            )}
           </div>
         ) : (
           <div>

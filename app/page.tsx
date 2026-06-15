@@ -1,108 +1,37 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
-import { createClient } from '@/lib/supabase'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
-const STATUS_MESSAGES: Record<string, string[]> = {
-  hazmat: [
-    "Reading your company profile...",
-    "Searching EPA federal regulations...",
-    "Checking OSHA requirements...",
-    "Reading DOT guidelines...",
-    "Checking state and county regulations...",
-    "Checking for recent regulation changes...",
-    "Sorting must-do from good-to-have...",
-    "Building your checklist..."
-  ],
-  food: [
-    "Reading your company profile...",
-    "Searching FDA food safety regulations...",
-    "Checking state health department requirements...",
-    "Reviewing local county health codes...",
-    "Checking for recent regulation changes...",
-    "Sorting must-do from good-to-have...",
-    "Building your checklist..."
-  ],
-  waste: [
-    "Reading your company profile...",
-    "Searching EPA waste disposal regulations...",
-    "Checking state environmental agency rules...",
-    "Checking state and county regulations...",
-    "Checking for recent regulation changes...",
-    "Sorting must-do from good-to-have...",
-    "Building your checklist..."
-  ],
-  shipping: [
-    "Reading your company profile...",
-    "Searching DOT transport regulations...",
-    "Checking PHMSA requirements...",
-    "Checking state transport regulations...",
-    "Checking for recent regulation changes...",
-    "Sorting must-do from good-to-have...",
-    "Building your checklist..."
-  ],
-  hr: [
-    "Reading your company profile...",
-    "Checking federal employment law...",
-    "Reading FLSA and FMLA guidelines...",
-    "Checking state labor regulations...",
-    "Checking for recent regulation changes...",
-    "Sorting must-do from good-to-have...",
-    "Building your checklist..."
-  ],
-  iso: [
-    "Reading your company profile...",
-    "Searching certification requirements...",
-    "Checking ISO standards...",
-    "Reading audit preparation guidelines...",
-    "Checking for recent regulation changes...",
-    "Sorting must-do from good-to-have...",
-    "Building your checklist..."
-  ],
-  default: [
-    "Reading your company profile...",
-    "Searching federal regulations...",
-    "Checking state and county regulations...",
-    "Reading relevant agency guidelines...",
-    "Checking for recent regulation changes...",
-    "Sorting must-do from good-to-have...",
-    "Building your checklist..."
-  ]
-}
+const STATUS_MESSAGES = [
+  "Reading your question...",
+  "Searching federal regulations...",
+  "Checking state requirements...",
+  "Reading agency guidelines...",
+  "Checking for recent changes...",
+  "Sorting must-do from good-to-have...",
+  "Building your checklist...",
+]
 
-function getStatusMessages(question: string): string[] {
-  const q = question.toLowerCase()
-  if (q.match(/hazmat|chemical|hf|acid|solvent|flammable|warehouse/)) return STATUS_MESSAGES.hazmat
-  if (q.match(/food|restaurant|kitchen|catering|beverage|fda/)) return STATUS_MESSAGES.food
-  if (q.match(/waste|disposal|manifest|generator|rcra/)) return STATUS_MESSAGES.waste
-  if (q.match(/shipping|transport|carrier|freight|dot|placard/)) return STATUS_MESSAGES.shipping
-  if (q.match(/employee|hr|handbook|leave|termination|fmla/)) return STATUS_MESSAGES.hr
-  if (q.match(/iso|certification|audit|sqf|haccp/)) return STATUS_MESSAGES.iso
-  return STATUS_MESSAGES.default
-}
-
-interface Provider {
-  name: string
-  type: string
-  coverage: string
-  note: string
-}
+const FEATURE_CARDS = [
+  { icon: "📋", text: "Exact steps — form numbers, phone numbers, what to prepare" },
+  { icon: "💰", text: "Honest cost ranges for every step — no surprises" },
+  { icon: "⏱", text: "Time estimates — plan your week around compliance" },
+  { icon: "📞", text: "Who to call, what to say, and where to go" },
+]
 
 interface ChecklistItem {
+  id?: string
   name: string
   description: string
   why?: string
-  required_by?: string
-  recommended_by?: string
   source_url?: string
   cost_note?: string
-  providers?: Provider[]
-}
-
-interface WhyNot {
-  question: string
-  answer: string
+  time_estimate?: string
+  what_you_need?: string
+  agency_name?: string
+  search_hint?: string
+  is_determination?: boolean
 }
 
 interface ChecklistData {
@@ -110,424 +39,554 @@ interface ChecklistData {
   safety_alert?: string
   must_do: ChecklistItem[]
   good_to_have: ChecklistItem[]
-  why_not?: WhyNot[]
-  follow_up_questions?: string[]
 }
 
-const EXAMPLE_QUESTIONS = [
-  "Ask anything about compliance, regulations or HR",
-  "What permits do I need to operate my facility?",
-  "How do I stay compliant with waste disposal rules?",
-  "What safety training is required for my employees?",
-  "How do I prepare for a regulatory inspection?",
-  "What do I need for a quality certification?",
-]
-
-export default function Home() {
-  const supabase = createClient()
+export default function HomePage() {
   const router = useRouter()
-  const [checking, setChecking] = useState(true)
   const [question, setQuestion] = useState('')
-  const [companyName, setCompanyName] = useState('')
-  const [data, setData] = useState<ChecklistData | null>(null)
   const [loading, setLoading] = useState(false)
+  const [loadingSteps, setLoadingSteps] = useState(false)
   const [currentStatus, setCurrentStatus] = useState('')
   const [completedSteps, setCompletedSteps] = useState<string[]>([])
-  const [checked, setChecked] = useState<Record<string, boolean>>({})
-  const [chipIndex, setChipIndex] = useState(0)
-  const [chipVisible, setChipVisible] = useState(true)
-  const [whyNotOpen, setWhyNotOpen] = useState(false)
-  const [askedQuestion, setAskedQuestion] = useState('')
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [visibleCards, setVisibleCards] = useState<number[]>([])
+  const [checklist, setChecklist] = useState<ChecklistData | null>(null)
+  const [microSteps, setMicroSteps] = useState<ChecklistItem[]>([])
+  const [panelOpen, setPanelOpen] = useState(false)
+  const [questionCount, setQuestionCount] = useState(0)
+  const [limitReached, setLimitReached] = useState(false)
 
   useEffect(() => {
-    async function checkAuth() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        router.push('/dashboard')
-      } else {
-        setChecking(false)
-      }
-    }
-    checkAuth()
+    const count = parseInt(localStorage.getItem('cb_demo_count') || '0')
+    setQuestionCount(count)
+    if (count >= 3) setLimitReached(true)
   }, [])
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setChipVisible(false)
-      setTimeout(() => {
-        setChipIndex(prev => (prev + 1) % EXAMPLE_QUESTIONS.length)
-        setChipVisible(true)
-      }, 400)
-    }, 3000)
-    return () => clearInterval(interval)
-  }, [])
+  async function handleDemo() {
+    if (!question.trim()) return
+    if (limitReached) { router.push('/signup'); return }
 
-  function toggleCheck(key: string) {
-    setChecked(prev => ({ ...prev, [key]: !prev[key] }))
-  }
+    const newCount = questionCount + 1
+    localStorage.setItem('cb_demo_count', String(newCount))
+    setQuestionCount(newCount)
+    if (newCount >= 3) setLimitReached(true)
 
-  function handlePrint() {
-    window.print()
-  }
-
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0] || null
-    setUploadedFile(file)
-  }
-
-  function removeFile() {
-    setUploadedFile(null)
-    if (fileInputRef.current) fileInputRef.current.value = ''
-  }
-
-  async function handleSubmit() {
-    if (!question.trim() && !uploadedFile) return
     setLoading(true)
-    setData(null)
-    setChecked({})
+    setChecklist(null)
+    setMicroSteps([])
     setCompletedSteps([])
-    setWhyNotOpen(false)
-    setAskedQuestion(question)
-    const messages = getStatusMessages(question)
-    const delays = [0, 700, 1400, 2100, 2800, 3500, 4200, 4900]
-    messages.forEach((msg, i) => {
+    setVisibleCards([])
+    setPanelOpen(false)
+
+    // Status messages
+    const delays = [0, 700, 1400, 2100, 2800, 3500, 4200]
+    STATUS_MESSAGES.forEach((msg, i) => {
       setTimeout(() => {
         setCurrentStatus(msg)
-        if (i > 0) setCompletedSteps(prev => [...prev, messages[i - 1]])
+        if (i > 0) setCompletedSteps(prev => [...prev, STATUS_MESSAGES[i - 1]])
       }, delays[i])
     })
+
+    // Feature cards fade in during wait
+    FEATURE_CARDS.forEach((_, i) => {
+      setTimeout(() => {
+        setVisibleCards(prev => [...prev, i])
+      }, 8000 + i * 4000)
+    })
+
     try {
-      let res
-      if (uploadedFile) {
-        const formData = new FormData()
-        formData.append('file', uploadedFile)
-        formData.append('question', question)
-        res = await fetch('/api/chat', {
-          method: 'POST',
-          body: formData,
-        })
-      } else {
-        res = await fetch('/api/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ question }),
-        })
-      }
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question, mode: 'checklist' }),
+      })
       const json = await res.json()
-      setData(json.data)
-    } catch (error) {
-      console.error(error)
-    } finally {
+      if (json.data) {
+        setChecklist(json.data)
+        setLoading(false)
+        setCurrentStatus('')
+        setCompletedSteps([])
+        setVisibleCards([])
+        setPanelOpen(true)
+
+        // Now fetch micro-steps for item 1 only
+        if (json.data.must_do?.length > 0) {
+          setLoadingSteps(true)
+          const item = json.data.must_do[0]
+          const otherItems = json.data.must_do
+            .slice(1)
+            .map((it: ChecklistItem) => '- ' + it.name)
+            .join(', ')
+
+          const stepsPrompt = `Main checklist item: "${item.name}"
+Description: "${item.description}"
+This is item 1 from a compliance checklist.
+Other items already covered — do NOT overlap: ${otherItems}
+
+Generate 3 to 4 specific micro-steps to complete this one item only.
+Every step must include a direct deep link, time estimate, cost, and what to prepare.`
+
+          try {
+            const stepsRes = await fetch('/api/chat', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ question: stepsPrompt, mode: 'substeps' }),
+            })
+            const stepsJson = await stepsRes.json()
+            if (stepsJson.data?.must_do) {
+              setMicroSteps(stepsJson.data.must_do)
+            }
+          } catch (err) {
+            console.error('Steps error:', err)
+          } finally {
+            setLoadingSteps(false)
+          }
+        }
+      }
+    } catch (err) {
+      console.error(err)
       setLoading(false)
       setCurrentStatus('')
-      setCompletedSteps([])
     }
   }
 
-  const doneCount = Object.values(checked).filter(Boolean).length
-  const totalMust = data?.must_do?.length || 0
-
-  if (checking) {
-    return (
-      <main className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-sm text-gray-400">Loading...</div>
-      </main>
-    )
-  }
+  const remainingQuestions = 3 - questionCount
 
   return (
-    <>
-      <style>{`
-        @media print {
-          .no-print { display: none !important; }
-          .print-only { display: block !important; }
-          body { background: white !important; }
-          main { padding: 0 !important; }
-          .print-container {
-            box-shadow: none !important;
-            border: none !important;
-            border-radius: 0 !important;
-            max-width: 100% !important;
-            padding: 20px !important;
-          }
-          .print-header {
-            display: flex !important;
-            justify-content: space-between;
-            align-items: flex-start;
-            border-bottom: 2px solid #166534;
-            padding-bottom: 12px;
-            margin-bottom: 16px;
-          }
-        }
-        .print-only { display: none; }
-      `}</style>
+    <div className="min-h-screen bg-white font-sans">
 
-      <main className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="print-container bg-white rounded-2xl shadow-sm border border-gray-200 w-full max-w-2xl p-8">
-
-          <div className="print-only print-header">
-            <div>
-              <h1 style={{fontSize:'20px', fontWeight:'bold', color:'#166534'}}>CompliBoard</h1>
-              <p style={{fontSize:'12px', color:'#6b7280'}}>Compliance Report</p>
-              {companyName && (
-                <p style={{fontSize:'13px', fontWeight:'600', color:'#111827', marginTop:'4px'}}>{companyName}</p>
-              )}
-            </div>
-            <div style={{textAlign:'right', fontSize:'11px', color:'#6b7280'}}>
-              <p>Generated: {new Date().toLocaleDateString()}</p>
-              <p style={{marginTop:'4px', fontStyle:'italic', maxWidth:'300px'}}>{askedQuestion}</p>
-            </div>
+      {/* Nav */}
+      <nav className="fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-100">
+        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+          <a href="/" className="text-xl font-semibold tracking-tight">
+            <span className="text-green-700">Compli</span><span className="text-orange-600">Board</span>
+          </a>
+          <div className="flex items-center gap-4">
+            <a href="/login" className="text-sm text-gray-500 hover:text-gray-900 transition-colors">Sign in</a>
+            <a href="/signup" className="bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-xl hover:bg-green-800 transition-colors">
+              Start free trial →
+            </a>
           </div>
+        </div>
+      </nav>
 
-          <div className="no-print mb-8">
-            <h1 className="text-2xl font-semibold text-gray-900 mb-2">CompliBoard</h1>
-            <p className="text-gray-500 text-sm">Ask any compliance question in plain English</p>
-          </div>
-
-          <div className="no-print mb-3">
-            <input
-              type="text"
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-green-500 bg-gray-50 mb-2"
-              placeholder="Your company name (optional — appears on PDF)"
-              value={companyName}
-              onChange={(e) => setCompanyName(e.target.value)}
-            />
-            <textarea
-              className="w-full border border-gray-200 rounded-xl p-4 text-sm text-gray-800 resize-none focus:outline-none focus:border-green-500 bg-gray-50"
-              rows={4}
-              placeholder="e.g. What permits do I need to open a hazmat warehouse in Texas?"
-              value={question}
-              onChange={(e) => setQuestion(e.target.value)}
-            />
-          </div>
-
-          <div className="no-print mb-4">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".pdf,image/*"
-              onChange={handleFileChange}
-              className="hidden"
-              id="file-upload"
-            />
-            {!uploadedFile ? (
-              <label
-                htmlFor="file-upload"
-                className="flex items-center gap-2 w-full border border-dashed border-gray-300 rounded-xl px-4 py-3 cursor-pointer hover:border-green-500 hover:bg-green-50 transition-colors">
-                <span className="text-gray-400 text-lg">📎</span>
-                <div>
-                  <p className="text-sm text-gray-500">Attach a file <span className="text-gray-400">(optional)</span></p>
-                  <p className="text-xs text-gray-400">PDF or image — audit reports, inspection findings, drum labels, SDS sheets</p>
-                </div>
-              </label>
-            ) : (
-              <div className="flex items-center gap-3 w-full border border-green-300 bg-green-50 rounded-xl px-4 py-3">
-                <span className="text-green-600 text-lg">📄</span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-green-800 truncate">{uploadedFile.name}</p>
-                  <p className="text-xs text-green-600">Ready to analyse — ask any question about this file below</p>
-                </div>
-                <button
-                  onClick={removeFile}
-                  className="text-gray-400 hover:text-red-500 transition-colors text-lg leading-none flex-shrink-0">
-                  ×
-                </button>
+      {/* Slide-out panel */}
+      <div
+        className="fixed inset-0 bg-black/20 z-40 transition-opacity duration-300"
+        style={{ opacity: panelOpen ? 1 : 0, pointerEvents: panelOpen ? 'auto' : 'none' }}
+        onClick={() => setPanelOpen(false)}
+      />
+      <div
+        className="fixed right-0 top-0 bottom-0 w-full max-w-2xl bg-white z-50 shadow-2xl flex flex-col transition-transform duration-300 ease-out"
+        style={{ transform: panelOpen ? 'translateX(0)' : 'translateX(100%)' }}
+      >
+        {checklist && (
+          <>
+            <div className="flex items-center justify-between px-8 py-5 border-b border-gray-100">
+              <div>
+                <p className="text-base font-semibold text-gray-900">{checklist.title}</p>
+                <p className="text-xs text-gray-400 mt-0.5">{checklist.must_do?.length} compliance items found</p>
               </div>
-            )}
-            {uploadedFile && (
-              <p className="text-xs text-gray-400 mt-2 pl-1">
-                💡 Try asking: &quot;What corrective actions do I need?&quot; or &quot;Am I missing anything?&quot; or &quot;What are my biggest risks?&quot;
-              </p>
-            )}
-          </div>
-
-          <div className="no-print mb-5 flex items-center gap-3">
-            <p className="text-xs text-gray-400 uppercase tracking-wide font-medium whitespace-nowrap">Example</p>
-            <button
-              onClick={() => setQuestion(EXAMPLE_QUESTIONS[chipIndex])}
-              style={{ opacity: chipVisible ? 1 : 0, transition: 'opacity 0.4s ease' }}
-              className="text-xs px-3 py-1.5 rounded-full border border-gray-200 text-gray-500 hover:border-green-500 hover:text-green-700 transition-colors text-left">
-              {EXAMPLE_QUESTIONS[chipIndex]}
-            </button>
-          </div>
-
-          <div className="no-print">
-            <button onClick={handleSubmit} disabled={loading || (!question.trim() && !uploadedFile)}
-              className="bg-green-700 text-white px-6 py-3 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50">
-              {loading ? 'Working...' : uploadedFile ? 'Analyse my document →' : 'Get my compliance checklist →'}
-            </button>
-          </div>
-
-          {loading && (
-            <div className="no-print mt-6 p-5 bg-gray-50 rounded-xl border border-gray-200">
-              <div className="space-y-2">
-                {completedSteps.map((step) => (
-                  <div key={step} className="flex items-center gap-2 text-sm text-gray-400">
-                    <span className="text-green-500">✓</span>{step}
-                  </div>
-                ))}
-                {currentStatus && (
-                  <div className="flex items-center gap-2 text-sm text-gray-700 font-medium">
-                    <span className="animate-spin inline-block">⟳</span>{currentStatus}
-                  </div>
-                )}
-              </div>
+              <button onClick={() => setPanelOpen(false)} className="text-gray-400 hover:text-gray-600 text-2xl leading-none w-8 h-8 flex items-center justify-center">×</button>
             </div>
-          )}
 
-          {data && !loading && (
-            <div className="mt-8">
-              {data.safety_alert && (
-                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
-                  <span className="text-red-500 text-lg flex-shrink-0">⚠️</span>
-                  <div>
-                    <p className="text-sm font-semibold text-red-700 mb-1">Safety first</p>
-                    <p className="text-sm text-red-600">{data.safety_alert}</p>
-                  </div>
+            <div className="flex-1 overflow-y-auto px-8 py-6">
+              {checklist.safety_alert && (
+                <div className="mb-5 p-4 bg-amber-50 border-l-4 border-amber-500 rounded-xl">
+                  <p className="text-xs font-semibold text-amber-700 mb-1">⚠ Safety note</p>
+                  <p className="text-xs text-amber-700">{checklist.safety_alert}</p>
                 </div>
               )}
-              <div className="flex items-start justify-between gap-4 mb-1">
-                <h2 className="text-base font-semibold text-gray-900">{data.title}</h2>
-                <button
-                  onClick={handlePrint}
-                  className="no-print flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:border-green-500 hover:text-green-700 transition-colors whitespace-nowrap flex-shrink-0">
-                  ⬇ Download PDF
-                </button>
-              </div>
-              {totalMust > 0 && (
-                <div className="no-print mb-4 flex items-center gap-2">
-                  <div className="flex-1 bg-gray-100 rounded-full h-1.5">
-                    <div className="bg-green-500 h-1.5 rounded-full transition-all"
-                      style={{ width: `${(doneCount / totalMust) * 100}%` }} />
-                  </div>
-                  <span className="text-xs text-gray-400">{doneCount} of {totalMust} done</span>
-                </div>
-              )}
-              <div className="mt-6">
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="text-xs font-bold uppercase tracking-widest text-green-700">✅ Must Do</span>
-                  <div className="flex-1 h-px bg-green-100"></div>
-                </div>
-                <div className="space-y-3">
-                  {data.must_do?.map((item, i) => (
-                    <div key={i} onClick={() => toggleCheck(`must-${i}`)}
-                      className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${checked[`must-${i}`] ? 'opacity-50 bg-gray-50 border-gray-100' : 'bg-white border-gray-200 hover:border-green-300'}`}>
-                      <div className={`mt-0.5 w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${checked[`must-${i}`] ? 'bg-green-500 border-green-500' : 'border-gray-300'}`}>
-                        {checked[`must-${i}`] && <span className="text-white text-xs">✓</span>}
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-semibold text-gray-900">{item.name}</p>
-                        <p className="text-sm text-gray-500 mt-0.5">{item.description}</p>
-                        {item.why && <p className="text-xs text-gray-400 mt-1 italic">{item.why}</p>}
-                        {item.cost_note && <p className="text-xs text-amber-600 mt-1">💰 {item.cost_note}</p>}
-                        {item.required_by && (
-                          <div className="flex items-center gap-1 mt-1 flex-wrap">
-                            <p className="text-xs text-gray-400">Required by: {item.required_by}</p>
-                            {item.source_url && (
-                              <a href={item.source_url} target="_blank" rel="noopener noreferrer"
-                                onClick={(e) => e.stopPropagation()}
-                                className="no-print text-xs text-green-600 hover:text-green-800 underline ml-1">
-                                ↗ View source
-                              </a>
-                            )}
-                          </div>
+
+              <p className="text-xs font-bold uppercase tracking-widest text-green-700 mb-4">✅ Must Do</p>
+              <div className="space-y-4">
+                {checklist.must_do?.map((item, i) => (
+                  <div key={i} className="border border-gray-200 rounded-xl overflow-hidden">
+                    <div className="p-5">
+                      <p className="text-sm font-semibold text-gray-900 mb-2">
+                        <span className="text-gray-400 font-normal mr-1">{i + 1}.</span>
+                        {item.name}
+                      </p>
+                      <p className="text-sm text-gray-600 leading-relaxed mb-3">{item.description}</p>
+                      <div className="flex flex-wrap gap-3">
+                        {item.cost_note && (
+                          <span className="text-xs text-amber-600">💰 {item.cost_note}</span>
                         )}
-                        {item.providers && item.providers.length > 0 && (
-                          <div className="mt-2 pt-2 border-t border-gray-100">
-                            <p className="text-xs text-gray-400 mb-1">Who to call:</p>
-                            <div className="space-y-1">
-                              {item.providers.map((p, j) => (
-                                <div key={j} className="flex items-center gap-2">
-                                  <span className="text-xs">{p.coverage === 'local' ? '📍' : p.coverage === 'regional' ? '🗺️' : '🇺🇸'}</span>
-                                  <span className="text-xs font-medium text-gray-700">{p.name}</span>
-                                  <span className="text-xs text-gray-400">— {p.note}</span>
+                        {item.source_url && (
+                          <a href={item.source_url} target="_blank" rel="noopener noreferrer"
+                            className="text-xs text-green-600 hover:text-green-800 underline">
+                            ↗ Official source
+                          </a>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Micro-steps for item 1 only */}
+                    {i === 0 && (
+                      <div className="border-t border-gray-100 bg-gray-50 px-5 py-4">
+                        {loadingSteps ? (
+                          <div className="flex items-center gap-2">
+                            <span className="animate-spin text-green-600 text-sm">⟳</span>
+                            <p className="text-xs text-gray-500">Generating detailed steps...</p>
+                          </div>
+                        ) : microSteps.length > 0 ? (
+                          <div>
+                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Steps to complete this</p>
+                            <div className="space-y-3">
+                              {microSteps.map((step, j) => (
+                                <div key={j} className="flex items-start gap-3">
+                                  <span className="text-xs font-bold text-green-600 mt-0.5 flex-shrink-0">1.{j + 1}</span>
+                                  <div className="flex-1">
+                                    <p className="text-xs font-medium text-gray-800 mb-0.5">{step.name}</p>
+                                    <p className="text-xs text-gray-500 leading-relaxed mb-1">{step.description}</p>
+                                    <div className="flex flex-wrap gap-3 mt-1">
+                                      {step.time_estimate && <span className="text-xs text-gray-400">⏱ {step.time_estimate}</span>}
+                                      {step.cost_note && <span className="text-xs text-amber-600">💰 {step.cost_note}</span>}
+                                      {step.what_you_need && <span className="text-xs text-gray-400">📋 {step.what_you_need}</span>}
+                                    </div>
+                                    {step.agency_name && <p className="text-xs text-gray-500 mt-1">🏛 {step.agency_name}</p>}
+                                  </div>
                                 </div>
                               ))}
                             </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              {data.good_to_have?.length > 0 && (
-                <div className="mt-8">
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="text-xs font-bold uppercase tracking-widest text-blue-600">💡 Good to Have</span>
-                    <div className="flex-1 h-px bg-blue-100"></div>
-                  </div>
-                  <div className="space-y-3">
-                    {data.good_to_have?.map((item, i) => (
-                      <div key={i} onClick={() => toggleCheck(`nice-${i}`)}
-                        className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${checked[`nice-${i}`] ? 'opacity-50 bg-gray-50 border-gray-100' : 'bg-gray-50 border-gray-200 hover:border-blue-300'}`}>
-                        <div className={`mt-0.5 w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${checked[`nice-${i}`] ? 'bg-blue-500 border-blue-500' : 'border-gray-300'}`}>
-                          {checked[`nice-${i}`] && <span className="text-white text-xs">✓</span>}
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-sm font-semibold text-gray-900">{item.name}</p>
-                          <p className="text-sm text-gray-500 mt-0.5">{item.description}</p>
-                          {item.why && <p className="text-xs text-gray-400 mt-1 italic">{item.why}</p>}
-                          {item.recommended_by && (
-                            <div className="flex items-center gap-1 mt-1 flex-wrap">
-                              <p className="text-xs text-gray-400">Recommended by: {item.recommended_by}</p>
-                              {item.source_url && (
-                                <a href={item.source_url} target="_blank" rel="noopener noreferrer"
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="no-print text-xs text-blue-500 hover:text-blue-700 underline ml-1">
-                                  ↗ View source
-                                </a>
-                              )}
+                            <div className="mt-4 pt-3 border-t border-gray-200">
+                              <p className="text-xs text-gray-400">Full access includes detailed steps for every item →</p>
                             </div>
-                          )}
-                        </div>
+                          </div>
+                        ) : null}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {checklist.good_to_have?.length > 0 && (
+                <div className="mt-8">
+                  <p className="text-xs font-bold uppercase tracking-widest text-blue-600 mb-4">💡 Good to Have</p>
+                  <div className="space-y-3">
+                    {checklist.good_to_have?.map((item, i) => (
+                      <div key={i} className="border border-gray-100 rounded-xl p-5 bg-gray-50">
+                        <p className="text-sm font-semibold text-gray-900 mb-1">{item.name}</p>
+                        <p className="text-sm text-gray-500">{item.description}</p>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
-              {data.why_not && data.why_not.length > 0 && (
-                <div className="no-print mt-8">
-                  <button onClick={() => setWhyNotOpen(!whyNotOpen)}
-                    className="flex items-center gap-2 w-full">
-                    <span className="text-xs font-bold uppercase tracking-widest text-gray-500">❓ Common Questions</span>
-                    <div className="flex-1 h-px bg-gray-100"></div>
-                    <span className="text-xs text-gray-400">{whyNotOpen ? '▲' : '▼'}</span>
-                  </button>
-                  {whyNotOpen && (
-                    <div className="mt-3 space-y-3">
-                      {data.why_not.map((item, i) => (
-                        <div key={i} className="p-3 bg-gray-50 rounded-xl border border-gray-100">
-                          <p className="text-sm font-semibold text-gray-700 mb-1">{item.question}</p>
-                          <p className="text-sm text-gray-500">{item.answer}</p>
+            </div>
+
+            {/* Sticky save banner */}
+            <div className="border-t border-gray-100 px-8 py-5 bg-white">
+              <p className="text-xs text-gray-500 mb-3">
+                {limitReached
+                  ? "You've used your 3 free questions. Sign up to keep going and save your checklists."
+                  : `${remainingQuestions} free question${remainingQuestions === 1 ? '' : 's'} remaining — sign up to save this checklist and unlock full access.`
+                }
+              </p>
+              <a href="/signup"
+                className="block w-full bg-green-700 text-white text-sm font-medium py-3 rounded-xl text-center hover:bg-green-800 transition-colors">
+                Save this checklist — 14 days free, no credit card →
+              </a>
+              <p className="text-xs text-gray-400 text-center mt-2">
+                Full access: micro-steps for every item · document storage · deadline tracking
+              </p>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Hero */}
+      <section className="pt-32 pb-24 px-6">
+        <div className="max-w-6xl mx-auto grid grid-cols-2 gap-16 items-center">
+          <div>
+            <p className="text-xs font-semibold text-green-700 uppercase tracking-widest mb-4">Compliance for small business</p>
+            <h1 className="text-5xl font-bold text-gray-900 leading-tight mb-8">
+              Your complete compliance system for small business.
+            </h1>
+            <div className="flex items-center gap-4">
+              <a href="/signup"
+                className="bg-green-700 text-white px-6 py-3 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors">
+                Start your free trial →
+              </a>
+              <p className="text-xs text-gray-400">14 days free · No credit card needed</p>
+            </div>
+          </div>
+          <div className="bg-gray-100 rounded-2xl aspect-video flex items-center justify-center">
+            <p className="text-sm text-gray-400">Product screenshot</p>
+          </div>
+        </div>
+      </section>
+
+      {/* Live demo section */}
+      <section className="py-24 px-6 bg-gray-50">
+        <div className="max-w-3xl mx-auto">
+          <p className="text-xs font-semibold text-green-700 uppercase tracking-widest mb-3 text-center">Try it now — no account needed</p>
+          <h2 className="text-3xl font-bold text-gray-900 text-center mb-10">
+            Ask any compliance question.
+          </h2>
+
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+            <textarea
+              className="w-full border border-gray-200 rounded-xl p-4 text-sm text-gray-800 resize-none focus:outline-none focus:border-green-500 bg-gray-50"
+              rows={3}
+              placeholder="Example: I run a 20-person brewery in Portland Oregon with a taproom and I distribute to local bars. What compliance do I need?"
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleDemo() } }}
+            />
+
+            {loading && (
+              <div className="mt-5 space-y-1.5">
+                {completedSteps.map((step) => (
+                  <div key={step} className="flex items-center gap-2 text-xs text-gray-400">
+                    <span className="text-green-500 flex-shrink-0">✓</span>{step}
+                  </div>
+                ))}
+                {currentStatus && (
+                  <div className="flex items-center gap-2 text-xs text-gray-700 font-medium">
+                    <span className="animate-spin inline-block flex-shrink-0">⟳</span>{currentStatus}
+                  </div>
+                )}
+
+                {visibleCards.length > 0 && (
+                  <div className="mt-5 pt-4 border-t border-gray-100">
+                    <p className="text-xs text-gray-400 mb-3">Here's what you'll see in your checklist:</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {visibleCards.map(i => (
+                        <div key={i} className="flex items-start gap-2.5 p-3 bg-green-50 rounded-xl border border-green-100">
+                          <span className="text-sm flex-shrink-0">{FEATURE_CARDS[i].icon}</span>
+                          <p className="text-xs text-green-800 leading-relaxed">{FEATURE_CARDS[i].text}</p>
                         </div>
                       ))}
                     </div>
-                  )}
-                </div>
-              )}
-              {data.follow_up_questions && data.follow_up_questions.length > 0 && (
-                <div className="no-print mt-6">
-                  <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-2">Refine your answer</p>
-                  <div className="space-y-2">
-                    {data.follow_up_questions.map((q, i) => (
-                      <button key={i} onClick={() => setQuestion(q)}
-                        className="block w-full text-left text-xs px-3 py-2 rounded-lg border border-gray-200 text-gray-500 hover:border-green-500 hover:text-green-700 transition-colors">
-                        → {q}
-                      </button>
-                    ))}
                   </div>
+                )}
+              </div>
+            )}
+
+            <div className="mt-4 flex items-center justify-between">
+              {limitReached ? (
+                <div className="w-full">
+                  <p className="text-xs text-gray-500 mb-2">You've used your 3 free questions.</p>
+                  <a href="/signup"
+                    className="block w-full bg-green-700 text-white text-sm font-medium py-2.5 rounded-xl text-center hover:bg-green-800 transition-colors">
+                    Create your free account to continue →
+                  </a>
                 </div>
+              ) : (
+                <>
+                  <button
+                    onClick={handleDemo}
+                    disabled={loading || !question.trim()}
+                    className="bg-green-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50">
+                    {loading ? 'Building your checklist...' : 'See my compliance checklist →'}
+                  </button>
+                  <p className="text-xs text-gray-400">
+                    {remainingQuestions} free question{remainingQuestions === 1 ? '' : 's'} remaining
+                  </p>
+                </>
               )}
-              <p className="text-xs text-gray-400 mt-6 pt-4 border-t border-gray-100">
-                This checklist is for informational purposes only and is not legal advice. Always verify requirements with the relevant agencies.
-              </p>
             </div>
-          )}
+          </div>
         </div>
-      </main>
-    </>
+      </section>
+
+      {/* Feature 1 — Checklist */}
+      <section className="py-24 px-6">
+        <div className="max-w-6xl mx-auto grid grid-cols-2 gap-16 items-center">
+          <div>
+            <p className="text-xs font-semibold text-green-700 uppercase tracking-widest mb-3">Compliance Checklist</p>
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">Every step. Every agency. Every cost.</h2>
+            <p className="text-gray-500 mb-6 leading-relaxed">Ask any compliance question in plain English. Get a complete checklist with exact micro-steps — form numbers, phone numbers, time estimates, and honest cost ranges.</p>
+            <ul className="space-y-3">
+              {[
+                "Specific micro-steps for every compliance item",
+                "Direct links to official government sources",
+                "Honest cost ranges — no surprises",
+                "Logical sequence — prerequisites before actions",
+              ].map((point, i) => (
+                <li key={i} className="flex items-start gap-2 text-sm text-gray-600">
+                  <span className="text-green-500 mt-0.5 flex-shrink-0">✓</span>{point}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="bg-gray-100 rounded-2xl aspect-video flex items-center justify-center">
+            <p className="text-sm text-gray-400">Screenshot — Compliance Checklist</p>
+          </div>
+        </div>
+      </section>
+
+      {/* Feature 2 — Document scanning */}
+      <section className="py-24 px-6 bg-gray-50">
+        <div className="max-w-6xl mx-auto grid grid-cols-2 gap-16 items-center">
+          <div className="bg-gray-100 rounded-2xl aspect-video flex items-center justify-center">
+            <p className="text-sm text-gray-400">Screenshot — Document Review</p>
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-green-700 uppercase tracking-widest mb-3">Document Intelligence</p>
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">Upload once. We find the gaps.</h2>
+            <p className="text-gray-500 mb-6 leading-relaxed">Upload your permits, licenses, and compliance documents. CompliBoard reads them, identifies what's missing, flags what's expiring, and tells you exactly what action to take.</p>
+            <ul className="space-y-3">
+              {[
+                "Automatic gap analysis against your industry requirements",
+                "Expiry date extraction and calendar alerts",
+                "Document review with action items",
+                "Secure storage — only accessible by your account",
+              ].map((point, i) => (
+                <li key={i} className="flex items-start gap-2 text-sm text-gray-600">
+                  <span className="text-green-500 mt-0.5 flex-shrink-0">✓</span>{point}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      {/* Feature 3 — Deadlines */}
+      <section className="py-24 px-6">
+        <div className="max-w-6xl mx-auto grid grid-cols-2 gap-16 items-center">
+          <div>
+            <p className="text-xs font-semibold text-green-700 uppercase tracking-widest mb-3">Deadline Tracking</p>
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">Never miss a renewal. Never pay a late fee.</h2>
+            <p className="text-gray-500 mb-6 leading-relaxed">CompliBoard extracts compliance deadlines from your documents automatically and adds them to your calendar. Get alerted before anything expires.</p>
+            <ul className="space-y-3">
+              {[
+                "Automatic date extraction from any document",
+                "Compliance calendar with upcoming deadlines",
+                "Monthly email summaries of what's coming due",
+                "Recurring deadline tracking for annual renewals",
+              ].map((point, i) => (
+                <li key={i} className="flex items-start gap-2 text-sm text-gray-600">
+                  <span className="text-green-500 mt-0.5 flex-shrink-0">✓</span>{point}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="bg-gray-100 rounded-2xl aspect-video flex items-center justify-center">
+            <p className="text-sm text-gray-400">Screenshot — Compliance Calendar</p>
+          </div>
+        </div>
+      </section>
+
+      {/* Feature 4 — Onboarding scan */}
+      <section className="py-24 px-6 bg-gray-50">
+        <div className="max-w-6xl mx-auto grid grid-cols-2 gap-16 items-center">
+          <div className="bg-gray-100 rounded-2xl aspect-video flex items-center justify-center">
+            <p className="text-sm text-gray-400">Screenshot — Website Scan</p>
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-green-700 uppercase tracking-widest mb-3">Smart Onboarding</p>
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">CompliBoard knows your business from day one.</h2>
+            <p className="text-gray-500 mb-6 leading-relaxed">Enter your website when you sign up. CompliBoard reads it, identifies your chemicals, certifications, and operations, and personalises every answer to your specific business.</p>
+            <ul className="space-y-3">
+              {[
+                "Automatic business profile from your website",
+                "Industry-specific compliance folders built instantly",
+                "Personalised answers based on your actual operations",
+                "Certifications pre-confirmed — no manual setup",
+              ].map((point, i) => (
+                <li key={i} className="flex items-start gap-2 text-sm text-gray-600">
+                  <span className="text-green-500 mt-0.5 flex-shrink-0">✓</span>{point}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      {/* Industries */}
+      <section className="py-24 px-6">
+        <div className="max-w-6xl mx-auto text-center">
+          <p className="text-xs font-semibold text-green-700 uppercase tracking-widest mb-3">Industries</p>
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">Built for small business across every industry</h2>
+          <p className="text-gray-500 mb-12 max-w-xl mx-auto text-sm">CompliBoard adapts to your industry automatically. You get the exact compliance requirements for your business — not a generic template.</p>
+          <div className="grid grid-cols-4 gap-4">
+            {[
+              { icon: "⚗️", label: "Chemical Manufacturing" },
+              { icon: "🍺", label: "Brewery & Bar" },
+              { icon: "🍽️", label: "Restaurant & Food Service" },
+              { icon: "🌿", label: "Cannabis" },
+              { icon: "🚗", label: "Auto Body & Dry Cleaners" },
+              { icon: "🌲", label: "Wood Products & Sawmills" },
+              { icon: "🏗️", label: "Construction" },
+              { icon: "🏥", label: "Healthcare & Hospice" },
+            ].map((industry, i) => (
+              <div key={i} className="bg-gray-50 rounded-xl p-5 text-center border border-gray-100 hover:border-green-200 hover:bg-green-50 transition-colors cursor-default">
+                <p className="text-2xl mb-2">{industry.icon}</p>
+                <p className="text-xs font-medium text-gray-700">{industry.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing */}
+      <section className="py-24 px-6 bg-gray-50">
+        <div className="max-w-lg mx-auto text-center">
+          <p className="text-xs font-semibold text-green-700 uppercase tracking-widest mb-3">Pricing</p>
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">Simple, honest pricing.</h2>
+          <p className="text-gray-500 mb-10 text-sm">No hidden fees. No per-user charges. One price for your whole business.</p>
+
+          <div className="bg-white rounded-2xl border border-gray-200 p-8 shadow-sm">
+            <div className="mb-6">
+              <p className="text-xs font-semibold text-green-700 uppercase tracking-widest mb-2">Early Adopter</p>
+              <div className="flex items-end justify-center gap-1 mb-1">
+                <span className="text-5xl font-bold text-gray-900">$29</span>
+                <span className="text-gray-400 mb-2">/month</span>
+              </div>
+              <p className="text-xs text-green-700 font-medium">Locked forever for the first 100 customers</p>
+            </div>
+
+            <ul className="space-y-3 mb-8 text-left">
+              {[
+                "Unlimited compliance checklists",
+                "Document storage and gap analysis",
+                "Deadline tracking and calendar alerts",
+                "Monthly regulation change alerts",
+                "HR document templates",
+                "Smart onboarding from your website",
+              ].map((feature, i) => (
+                <li key={i} className="flex items-center gap-2 text-sm text-gray-600">
+                  <span className="text-green-500 flex-shrink-0">✓</span>{feature}
+                </li>
+              ))}
+            </ul>
+
+            <a href="/signup"
+              className="block w-full bg-green-700 text-white py-3 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors text-center">
+              Start your 14-day free trial →
+            </a>
+            <p className="text-xs text-gray-400 mt-3">No credit card needed. Cancel anytime.</p>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer CTA */}
+      <section className="py-24 px-6 bg-green-700">
+        <div className="max-w-3xl mx-auto text-center">
+          <h2 className="text-3xl font-bold text-white mb-4">Stop guessing. Start knowing.</h2>
+          <p className="text-green-100 mb-8 text-sm">Join small businesses across Oregon and Washington who use CompliBoard to stay compliant — without the stress.</p>
+          <a href="/signup"
+            className="inline-block bg-white text-green-700 px-8 py-3 rounded-xl text-sm font-semibold hover:bg-green-50 transition-colors">
+            Start your free trial — no credit card needed →
+          </a>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="py-8 px-6 border-t border-gray-100">
+        <div className="max-w-6xl mx-auto flex items-center justify-between">
+          <p className="text-sm font-semibold">
+            <span className="text-green-700">Compli</span><span className="text-orange-600">Board</span>
+          </p>
+          <div className="flex items-center gap-6">
+            <a href="/login" className="text-xs text-gray-400 hover:text-gray-600">Sign in</a>
+            <a href="/signup" className="text-xs text-gray-400 hover:text-gray-600">Create account</a>
+          </div>
+          <p className="text-xs text-gray-400">© 2026 CompliBoard. All rights reserved.</p>
+        </div>
+      </footer>
+
+    </div>
   )
 }
