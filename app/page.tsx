@@ -63,7 +63,7 @@ export default function HomePage() {
 
   async function handleDemo() {
     if (!question.trim()) return
-    if (limitReached) { router.push('/signup'); return }
+    if (limitReached) return
 
     const newCount = questionCount + 1
     localStorage.setItem('cb_demo_count', String(newCount))
@@ -295,13 +295,13 @@ Every step must include a direct deep link, time estimate, cost, and what to pre
       </div>
 
       {/* Hero */}
-      <section className="pt-24 pb-24 px-6" style={{background: "radial-gradient(ellipse at left center, #dcfce7 0%, #ffffff 45%, #f0fdf4 100%)"}}>
+      <section className="pt-20 pb-20 px-6" style={{background: "linear-gradient(to right, #dcfce7 0%, #ffffff 50%, #f0fdf4 100%)"}}>
         <div className="max-w-6xl mx-auto grid grid-cols-2 gap-16 items-center">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900 leading-tight mb-4">
+            <h1 className="text-3xl font-bold text-gray-900 leading-tight mb-4">
               Your compliance assistant for small and medium businesses.
             </h1>
-            <p className="text-lg text-gray-500 mb-8 max-w-lg leading-relaxed">
+            <p className="text-base text-gray-500 mb-6 max-w-lg leading-relaxed">
               CompliBoard helps you manage compliance requirements, documents, HR policies, and deadlines — all in one place.
             </p>
             <div className="flex items-center gap-4">
@@ -389,31 +389,53 @@ Every step must include a direct deep link, time estimate, cost, and what to pre
                 <p className="text-xs text-gray-500 mt-0.5">Register with City of Portland Revenue Division under Portland City Code 7.02.</p>
               </div>
 
-              {/* Item 3 — collapsed, slightly faded */}
-              <div className="border border-gray-100 rounded-xl p-3 opacity-60">
-                <p className="text-xs font-semibold text-gray-700">
-                  <span className="text-gray-400 font-normal mr-1">3.</span>
-                  Register for USDOT Number and Operating Authority
-                </p>
-              </div>
+
             </div>
           </div>
         </div>
       </section>
 
       {/* Live demo section */}
-      <section className="py-24 px-6 bg-gray-50">
-        <div className="max-w-3xl mx-auto">
-          <p className="text-xs font-semibold text-green-700 uppercase tracking-widest mb-3 text-center">Try it now — no account needed</p>
-          <h2 className="text-3xl font-bold text-gray-900 text-center mb-10">
-            Ask any compliance question.
-          </h2>
+      <section className="py-24 px-6" style={{background: '#f5f5f4'}}>
+        <div className="max-w-6xl mx-auto grid grid-cols-2 gap-16 items-start">
 
+          {/* Left — what it does */}
+          <div className="pt-4">
+            <p className="text-xs font-semibold text-green-700 uppercase tracking-widest mb-4">Try it free — no account needed</p>
+            <h2 className="text-3xl font-bold text-gray-900 mb-6 leading-tight">
+              See CompliBoard in action.
+            </h2>
+            <p className="text-gray-500 leading-relaxed mb-4">
+              Ask any compliance question. Get a complete checklist with every step you need to take — exact costs, time estimates, and direct links to official sources.
+            </p>
+            <p className="text-gray-500 leading-relaxed mb-8">
+              Or research any topic to understand what a regulation means for your business before diving into the steps.
+            </p>
+            <p className="text-xs text-gray-400">3 free questions · No signup required</p>
+          </div>
+
+          {/* Right — question box */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+
+            {/* Example chips */}
+            <div className="flex flex-col gap-2 mb-4">
+              <p className="text-xs text-gray-400 mb-1">Try an example:</p>
+              {[
+                "I run a restaurant in Portland Oregon with 15 employees. What permits do I need?",
+                "I have delivery drivers transporting hazardous materials. What are my DOT requirements?",
+              ].map((example, i) => (
+                <button key={i}
+                  onClick={() => setQuestion(example)}
+                  className="text-left text-xs text-green-700 bg-green-50 border border-green-100 rounded-xl px-3 py-2 hover:bg-green-100 transition-colors">
+                  {example}
+                </button>
+              ))}
+            </div>
+
             <textarea
               className="w-full border border-gray-200 rounded-xl p-4 text-sm text-gray-800 resize-none focus:outline-none focus:border-green-500 bg-gray-50"
               rows={3}
-              placeholder="Example: I run a 20-person brewery in Portland Oregon with a taproom and I distribute to local bars. What compliance do I need?"
+              placeholder="Or type your own question..."
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleDemo() } }}
@@ -432,23 +454,10 @@ Every step must include a direct deep link, time estimate, cost, and what to pre
                   </div>
                 )}
 
-                {visibleCards.length > 0 && (
-                  <div className="mt-5 pt-4 border-t border-gray-100">
-                    <p className="text-xs text-gray-400 mb-3">Here's what you'll see in your checklist:</p>
-                    <div className="grid grid-cols-2 gap-2">
-                      {visibleCards.map(i => (
-                        <div key={i} className="flex items-start gap-2.5 p-3 bg-green-50 rounded-xl border border-green-100">
-                          <span className="text-sm flex-shrink-0">{FEATURE_CARDS[i].icon}</span>
-                          <p className="text-xs text-green-800 leading-relaxed">{FEATURE_CARDS[i].text}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
             )}
 
-            <div className="mt-4 flex items-center justify-between">
+            <div className="mt-4 flex items-center justify-between gap-3">
               {limitReached ? (
                 <div className="w-full">
                   <p className="text-xs text-gray-500 mb-2">You've used your 3 free questions.</p>
@@ -459,13 +468,21 @@ Every step must include a direct deep link, time estimate, cost, and what to pre
                 </div>
               ) : (
                 <>
-                  <button
-                    onClick={handleDemo}
-                    disabled={loading || !question.trim()}
-                    className="bg-green-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50">
-                    {loading ? 'Building your checklist...' : 'See my compliance checklist →'}
-                  </button>
-                  <p className="text-xs text-gray-400">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={handleDemo}
+                      disabled={loading || !question.trim()}
+                      className="bg-green-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50 whitespace-nowrap">
+                      {loading ? 'Working...' : 'Get checklist →'}
+                    </button>
+                    <button
+                      onClick={() => { if (!question.trim() || loading) return; handleDemo() }}
+                      disabled={loading || !question.trim()}
+                      className="border border-gray-200 text-gray-600 px-5 py-2.5 rounded-xl text-sm font-medium hover:border-green-500 hover:text-green-700 transition-colors disabled:opacity-50 whitespace-nowrap">
+                      Research this →
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-400 text-right">
                     {remainingQuestions} free question{remainingQuestions === 1 ? '' : 's'} remaining
                   </p>
                 </>
