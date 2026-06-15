@@ -77,7 +77,6 @@ export default function HomePage() {
     setVisibleCards([])
     setPanelOpen(false)
 
-    // Status messages
     const delays = [0, 700, 1400, 2100, 2800, 3500, 4200]
     STATUS_MESSAGES.forEach((msg, i) => {
       setTimeout(() => {
@@ -86,7 +85,6 @@ export default function HomePage() {
       }, delays[i])
     })
 
-    // Feature cards fade in during wait
     FEATURE_CARDS.forEach((_, i) => {
       setTimeout(() => {
         setVisibleCards(prev => [...prev, i])
@@ -108,7 +106,6 @@ export default function HomePage() {
         setVisibleCards([])
         setPanelOpen(true)
 
-        // Now fetch micro-steps for item 1 only
         if (json.data.must_do?.length > 0) {
           setLoadingSteps(true)
           const item = json.data.must_do[0]
@@ -196,31 +193,22 @@ Every step must include a direct deep link, time estimate, cost, and what to pre
                   <p className="text-xs text-amber-700">{checklist.safety_alert}</p>
                 </div>
               )}
-
               <p className="text-xs font-bold uppercase tracking-widest text-green-700 mb-4">✅ Must Do</p>
               <div className="space-y-4">
                 {checklist.must_do?.map((item, i) => (
                   <div key={i} className="border border-gray-200 rounded-xl overflow-hidden">
                     <div className="p-5">
                       <p className="text-sm font-semibold text-gray-900 mb-2">
-                        <span className="text-gray-400 font-normal mr-1">{i + 1}.</span>
-                        {item.name}
+                        <span className="text-gray-400 font-normal mr-1">{i + 1}.</span>{item.name}
                       </p>
                       <p className="text-sm text-gray-600 leading-relaxed mb-3">{item.description}</p>
                       <div className="flex flex-wrap gap-3">
-                        {item.cost_note && (
-                          <span className="text-xs text-amber-600">💰 {item.cost_note}</span>
-                        )}
+                        {item.cost_note && <span className="text-xs text-amber-600">💰 {item.cost_note}</span>}
                         {item.source_url && (
-                          <a href={item.source_url} target="_blank" rel="noopener noreferrer"
-                            className="text-xs text-green-600 hover:text-green-800 underline">
-                            ↗ Official source
-                          </a>
+                          <a href={item.source_url} target="_blank" rel="noopener noreferrer" className="text-xs text-green-600 hover:text-green-800 underline">↗ Official source</a>
                         )}
                       </div>
                     </div>
-
-                    {/* Micro-steps for item 1 only */}
                     {i === 0 && (
                       <div className="border-t border-gray-100 bg-gray-50 px-5 py-4">
                         {loadingSteps ? (
@@ -258,7 +246,6 @@ Every step must include a direct deep link, time estimate, cost, and what to pre
                   </div>
                 ))}
               </div>
-
               {checklist.good_to_have?.length > 0 && (
                 <div className="mt-8">
                   <p className="text-xs font-bold uppercase tracking-widest text-blue-600 mb-4">💡 Good to Have</p>
@@ -274,7 +261,6 @@ Every step must include a direct deep link, time estimate, cost, and what to pre
               )}
             </div>
 
-            {/* Sticky save banner */}
             <div className="border-t border-gray-100 px-8 py-5 bg-white">
               <p className="text-xs text-gray-500 mb-3">
                 {limitReached
@@ -282,13 +268,10 @@ Every step must include a direct deep link, time estimate, cost, and what to pre
                   : `${remainingQuestions} free question${remainingQuestions === 1 ? '' : 's'} remaining — sign up to save this checklist and unlock full access.`
                 }
               </p>
-              <a href="/signup"
-                className="block w-full bg-green-700 text-white text-sm font-medium py-3 rounded-xl text-center hover:bg-green-800 transition-colors">
+              <a href="/signup" className="block w-full bg-green-700 text-white text-sm font-medium py-3 rounded-xl text-center hover:bg-green-800 transition-colors">
                 Save this checklist — 14 days free, no credit card →
               </a>
-              <p className="text-xs text-gray-400 text-center mt-2">
-                Full access: micro-steps for every item · document storage · deadline tracking
-              </p>
+              <p className="text-xs text-gray-400 text-center mt-2">Full access: micro-steps for every item · document storage · deadline tracking</p>
             </div>
           </>
         )}
@@ -305,92 +288,111 @@ Every step must include a direct deep link, time estimate, cost, and what to pre
               CompliBoard helps you manage compliance requirements, documents, HR policies, and deadlines — all in one place.
             </p>
             <div className="flex items-center gap-4">
-              <a href="/signup"
-                className="bg-green-700 text-white px-6 py-3 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors">
+              <a href="/signup" className="bg-green-700 text-white px-6 py-3 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors">
                 Start your free trial →
               </a>
               <p className="text-xs text-gray-400">14 days free · No credit card needed</p>
             </div>
           </div>
 
-          {/* Coded product mock */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden">
-            {/* Browser bar */}
             <div className="bg-gray-100 px-4 py-2.5 flex items-center gap-2 border-b border-gray-200">
               <div className="w-3 h-3 rounded-full bg-red-400" />
               <div className="w-3 h-3 rounded-full bg-amber-400" />
               <div className="w-3 h-3 rounded-full bg-green-400" />
               <div className="flex-1 mx-3 bg-white rounded-md px-3 py-1 text-xs text-gray-400 border border-gray-200">compliboard.com/compliance</div>
             </div>
-
-            {/* Mock content */}
             <div className="p-5">
-              {/* Safety alert */}
               <div className="mb-4 p-3 bg-amber-50 border-l-4 border-amber-500 rounded-r-xl">
                 <p className="text-xs font-semibold text-amber-700 mb-0.5">⚠ Safety note</p>
                 <p className="text-xs text-amber-700 leading-relaxed">You store hazardous materials on site. These require immediate attention to emergency response planning, proper storage protocols, and employee training under OSHA 29 CFR 1910.1200.</p>
               </div>
-
-              {/* Checklist title */}
               <div className="flex items-center justify-between mb-3">
                 <p className="text-xs font-semibold text-gray-900">Core Compliance — Portland Oregon Warehouse</p>
                 <span className="text-xs text-green-600">✓ Saved</span>
               </div>
-
-              {/* Must do label */}
               <p className="text-xs font-bold uppercase tracking-widest text-green-700 mb-2">✅ Must Do</p>
-
-              {/* Item 1 — expanded with micro-steps */}
               <div className="border border-gray-200 rounded-xl mb-2 overflow-hidden">
                 <div className="p-3">
-                  <p className="text-xs font-semibold text-gray-900 mb-1">
-                    <span className="text-gray-400 font-normal mr-1">1.</span>
-                    Register for Oregon Business Identification Number
-                  </p>
+                  <p className="text-xs font-semibold text-gray-900 mb-1"><span className="text-gray-400 font-normal mr-1">1.</span>Register for Oregon Business Identification Number</p>
                   <p className="text-xs text-gray-500 leading-relaxed">Obtain a BIN from Oregon Department of Revenue under ORS 314.610.</p>
                 </div>
                 <div className="bg-gray-50 border-t border-gray-100 px-3 py-3">
                   <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Steps to complete this</p>
                   <div className="space-y-2">
-                    <div className="flex gap-2">
-                      <span className="text-xs font-bold text-green-600 flex-shrink-0">1.1</span>
-                      <div>
-                        <p className="text-xs font-medium text-gray-800">Determine if you need a BIN</p>
-                        <p className="text-xs text-gray-400 mt-0.5">⏱ 10 min · 💰 Free · 📋 None needed</p>
-                        <p className="text-xs text-gray-400">🏛 Oregon Department of Revenue</p>
+                    {[
+                      {n:"1.1",name:"Determine if you need a BIN",time:"10 min",cost:"Free",agency:"Oregon Dept of Revenue"},
+                      {n:"1.2",name:"Gather required business information",time:"15 min",cost:"Free",agency:"Oregon Dept of Revenue"},
+                      {n:"1.3",name:"Complete Combined Registration online",time:"20-30 min",cost:"Free",agency:"Oregon Business Xpress"},
+                    ].map(s => (
+                      <div key={s.n} className="flex gap-2">
+                        <span className="text-xs font-bold text-green-600 flex-shrink-0">{s.n}</span>
+                        <div>
+                          <p className="text-xs font-medium text-gray-800">{s.name}</p>
+                          <p className="text-xs text-gray-400">⏱ {s.time} · 💰 {s.cost}</p>
+                          <p className="text-xs text-gray-400">🏛 {s.agency}</p>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <span className="text-xs font-bold text-green-600 flex-shrink-0">1.2</span>
-                      <div>
-                        <p className="text-xs font-medium text-gray-800">Gather required business information</p>
-                        <p className="text-xs text-gray-400 mt-0.5">⏱ 15 min · 💰 Free · 📋 EIN, business address</p>
-                        <p className="text-xs text-gray-400">🏛 Oregon Department of Revenue</p>
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <span className="text-xs font-bold text-green-600 flex-shrink-0">1.3</span>
-                      <div>
-                        <p className="text-xs font-medium text-gray-800">Complete Oregon Combined Business Registration</p>
-                        <p className="text-xs text-gray-400 mt-0.5">⏱ 20-30 min · 💰 Free · 📋 All info from step 1.2</p>
-                        <p className="text-xs text-gray-400">🏛 Oregon Business Xpress</p>
-                      </div>
-                    </div>
+                    ))}
                   </div>
                 </div>
               </div>
-
-              {/* Item 2 — collapsed */}
-              <div className="border border-gray-200 rounded-xl mb-2 p-3">
-                <p className="text-xs font-semibold text-gray-900">
-                  <span className="text-gray-400 font-normal mr-1">2.</span>
-                  Obtain Portland Business License
-                </p>
+              <div className="border border-gray-200 rounded-xl p-3">
+                <p className="text-xs font-semibold text-gray-900"><span className="text-gray-400 font-normal mr-1">2.</span>Obtain Portland Business License</p>
                 <p className="text-xs text-gray-500 mt-0.5">Register with City of Portland Revenue Division under Portland City Code 7.02.</p>
               </div>
-
-
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* HOW IT WORKS — clean strip */}
+      <section className="py-16 px-6 bg-white border-y border-gray-100">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-7 gap-0 items-start">
+
+            <div className="flex flex-col items-center text-center px-2">
+              <div className="w-9 h-9 rounded-full bg-green-700 text-white text-sm font-bold flex items-center justify-center mb-3">1</div>
+              <h3 className="text-sm font-semibold text-gray-900 mb-1">Ask any compliance question</h3>
+              <p className="text-xs text-gray-500 leading-relaxed">For any industry, any state.</p>
+            </div>
+
+            <div className="flex justify-center pt-3">
+              <svg width="28" height="14" viewBox="0 0 28 14" fill="none">
+                <path d="M0 7h24M18 1l6 6-6 6" stroke="#d1d5db" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+
+            <div className="flex flex-col items-center text-center px-2">
+              <div className="w-9 h-9 rounded-full bg-green-700 text-white text-sm font-bold flex items-center justify-center mb-3">2</div>
+              <h3 className="text-sm font-semibold text-gray-900 mb-1">We do the research</h3>
+              <p className="text-xs text-gray-500 leading-relaxed">Federal, state, and local regulations — sorted by priority.</p>
+            </div>
+
+            <div className="flex justify-center pt-3">
+              <svg width="28" height="14" viewBox="0 0 28 14" fill="none">
+                <path d="M0 7h24M18 1l6 6-6 6" stroke="#d1d5db" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+
+            <div className="flex flex-col items-center text-center px-2">
+              <div className="w-9 h-9 rounded-full bg-green-700 text-white text-sm font-bold flex items-center justify-center mb-3">3</div>
+              <h3 className="text-sm font-semibold text-gray-900 mb-1">Get your checklist</h3>
+              <p className="text-xs text-gray-500 leading-relaxed">Every item with source links, cost estimates, and progress tracking.</p>
+            </div>
+
+            <div className="flex justify-center pt-3">
+              <svg width="28" height="14" viewBox="0 0 28 14" fill="none">
+                <path d="M0 7h24M18 1l6 6-6 6" stroke="#d1d5db" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+
+            <div className="flex flex-col items-center text-center px-2">
+              <div className="w-9 h-9 rounded-full bg-green-700 text-white text-sm font-bold flex items-center justify-center mb-3">4</div>
+              <h3 className="text-sm font-semibold text-gray-900 mb-1">Detailed micro-steps</h3>
+              <p className="text-xs text-gray-500 leading-relaxed">What to do, form numbers, time, cost estimates, and who to contact.</p>
+            </div>
+
           </div>
         </div>
       </section>
@@ -398,49 +400,33 @@ Every step must include a direct deep link, time estimate, cost, and what to pre
       {/* Live demo section */}
       <section className="py-24 px-6" style={{background: '#f5f5f4'}}>
         <div className="max-w-6xl mx-auto grid grid-cols-2 gap-16 items-start">
-
-          {/* Left — what it does */}
           <div className="pt-4">
             <p className="text-xs font-semibold text-green-700 uppercase tracking-widest mb-4">Try it free — no account needed</p>
-            <h2 className="text-3xl font-bold text-gray-900 mb-6 leading-tight">
-              See CompliBoard in action.
-            </h2>
-            <p className="text-gray-500 leading-relaxed mb-4">
-              Ask any compliance question. Get a complete checklist with every step you need to take — exact costs, time estimates, and direct links to official sources.
-            </p>
-            <p className="text-gray-500 leading-relaxed mb-8">
-              Or research any topic to understand what a regulation means for your business before diving into the steps.
-            </p>
+            <h2 className="text-3xl font-bold text-gray-900 mb-6 leading-tight">See CompliBoard in action.</h2>
+            <p className="text-gray-500 leading-relaxed mb-4">Ask any compliance question. Get a complete checklist with every step you need to take — exact costs, time estimates, and direct links to official sources.</p>
+            <p className="text-gray-500 leading-relaxed mb-8">Or research any topic to understand what a regulation means for your business before diving into the steps.</p>
             <p className="text-xs text-gray-400">3 free questions · No signup required</p>
           </div>
 
-          {/* Right — question box */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-
-            {/* Example chips */}
             <div className="flex flex-col gap-2 mb-4">
               <p className="text-xs text-gray-400 mb-1">Try an example:</p>
               {[
                 "I run a restaurant in Portland Oregon with 15 employees. What permits do I need?",
                 "I have delivery drivers transporting hazardous materials. What are my DOT requirements?",
               ].map((example, i) => (
-                <button key={i}
-                  onClick={() => setQuestion(example)}
+                <button key={i} onClick={() => setQuestion(example)}
                   className="text-left text-xs text-green-700 bg-green-50 border border-green-100 rounded-xl px-3 py-2 hover:bg-green-100 transition-colors">
                   {example}
                 </button>
               ))}
             </div>
-
             <textarea
               className="w-full border border-gray-200 rounded-xl p-4 text-sm text-gray-800 resize-none focus:outline-none focus:border-green-500 bg-gray-50"
-              rows={3}
-              placeholder="Or type your own question..."
-              value={question}
-              onChange={(e) => setQuestion(e.target.value)}
+              rows={3} placeholder="Or type your own question..."
+              value={question} onChange={(e) => setQuestion(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleDemo() } }}
             />
-
             {loading && (
               <div className="mt-5 space-y-1.5">
                 {completedSteps.map((step) => (
@@ -453,145 +439,32 @@ Every step must include a direct deep link, time estimate, cost, and what to pre
                     <span className="animate-spin inline-block flex-shrink-0">⟳</span>{currentStatus}
                   </div>
                 )}
-
               </div>
             )}
-
             <div className="mt-4 flex items-center justify-between gap-3">
               {limitReached ? (
                 <div className="w-full">
                   <p className="text-xs text-gray-500 mb-2">You've used your 3 free questions.</p>
-                  <a href="/signup"
-                    className="block w-full bg-green-700 text-white text-sm font-medium py-2.5 rounded-xl text-center hover:bg-green-800 transition-colors">
+                  <a href="/signup" className="block w-full bg-green-700 text-white text-sm font-medium py-2.5 rounded-xl text-center hover:bg-green-800 transition-colors">
                     Create your free account to continue →
                   </a>
                 </div>
               ) : (
                 <>
                   <div className="flex items-center gap-2">
-                    <button
-                      onClick={handleDemo}
-                      disabled={loading || !question.trim()}
+                    <button onClick={handleDemo} disabled={loading || !question.trim()}
                       className="bg-green-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50 whitespace-nowrap">
                       {loading ? 'Working...' : 'Get checklist →'}
                     </button>
-                    <button
-                      onClick={() => { if (!question.trim() || loading) return; handleDemo() }}
-                      disabled={loading || !question.trim()}
+                    <button onClick={() => { if (!question.trim() || loading) return; handleDemo() }} disabled={loading || !question.trim()}
                       className="border border-gray-200 text-gray-600 px-5 py-2.5 rounded-xl text-sm font-medium hover:border-green-500 hover:text-green-700 transition-colors disabled:opacity-50 whitespace-nowrap">
                       Research this →
                     </button>
                   </div>
-                  <p className="text-xs text-gray-400 text-right">
-                    {remainingQuestions} free question{remainingQuestions === 1 ? '' : 's'} remaining
-                  </p>
+                  <p className="text-xs text-gray-400 text-right">{remainingQuestions} free question{remainingQuestions === 1 ? '' : 's'} remaining</p>
                 </>
               )}
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Feature 1 — Checklist */}
-      <section className="py-24 px-6">
-        <div className="max-w-6xl mx-auto grid grid-cols-2 gap-16 items-center">
-          <div>
-            <p className="text-xs font-semibold text-green-700 uppercase tracking-widest mb-3">Compliance Checklist</p>
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Every step. Every agency. Every cost.</h2>
-            <p className="text-gray-500 mb-6 leading-relaxed">Ask any compliance question in plain English. Get a complete checklist with exact micro-steps — form numbers, phone numbers, time estimates, and honest cost ranges.</p>
-            <ul className="space-y-3">
-              {[
-                "Specific micro-steps for every compliance item",
-                "Direct links to official government sources",
-                "Honest cost ranges — no surprises",
-                "Logical sequence — prerequisites before actions",
-              ].map((point, i) => (
-                <li key={i} className="flex items-start gap-2 text-sm text-gray-600">
-                  <span className="text-green-500 mt-0.5 flex-shrink-0">✓</span>{point}
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div className="bg-gray-100 rounded-2xl aspect-video flex items-center justify-center">
-            <p className="text-sm text-gray-400">Screenshot — Compliance Checklist</p>
-          </div>
-        </div>
-      </section>
-
-      {/* Feature 2 — Document scanning */}
-      <section className="py-24 px-6 bg-gray-50">
-        <div className="max-w-6xl mx-auto grid grid-cols-2 gap-16 items-center">
-          <div className="bg-gray-100 rounded-2xl aspect-video flex items-center justify-center">
-            <p className="text-sm text-gray-400">Screenshot — Document Review</p>
-          </div>
-          <div>
-            <p className="text-xs font-semibold text-green-700 uppercase tracking-widest mb-3">Document Intelligence</p>
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Upload once. We find the gaps.</h2>
-            <p className="text-gray-500 mb-6 leading-relaxed">Upload your permits, licenses, and compliance documents. CompliBoard reads them, identifies what's missing, flags what's expiring, and tells you exactly what action to take.</p>
-            <ul className="space-y-3">
-              {[
-                "Automatic gap analysis against your industry requirements",
-                "Expiry date extraction and calendar alerts",
-                "Document review with action items",
-                "Secure storage — only accessible by your account",
-              ].map((point, i) => (
-                <li key={i} className="flex items-start gap-2 text-sm text-gray-600">
-                  <span className="text-green-500 mt-0.5 flex-shrink-0">✓</span>{point}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </section>
-
-      {/* Feature 3 — Deadlines */}
-      <section className="py-24 px-6">
-        <div className="max-w-6xl mx-auto grid grid-cols-2 gap-16 items-center">
-          <div>
-            <p className="text-xs font-semibold text-green-700 uppercase tracking-widest mb-3">Deadline Tracking</p>
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Never miss a renewal. Never pay a late fee.</h2>
-            <p className="text-gray-500 mb-6 leading-relaxed">CompliBoard extracts compliance deadlines from your documents automatically and adds them to your calendar. Get alerted before anything expires.</p>
-            <ul className="space-y-3">
-              {[
-                "Automatic date extraction from any document",
-                "Compliance calendar with upcoming deadlines",
-                "Monthly email summaries of what's coming due",
-                "Recurring deadline tracking for annual renewals",
-              ].map((point, i) => (
-                <li key={i} className="flex items-start gap-2 text-sm text-gray-600">
-                  <span className="text-green-500 mt-0.5 flex-shrink-0">✓</span>{point}
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div className="bg-gray-100 rounded-2xl aspect-video flex items-center justify-center">
-            <p className="text-sm text-gray-400">Screenshot — Compliance Calendar</p>
-          </div>
-        </div>
-      </section>
-
-      {/* Feature 4 — Onboarding scan */}
-      <section className="py-24 px-6 bg-gray-50">
-        <div className="max-w-6xl mx-auto grid grid-cols-2 gap-16 items-center">
-          <div className="bg-gray-100 rounded-2xl aspect-video flex items-center justify-center">
-            <p className="text-sm text-gray-400">Screenshot — Website Scan</p>
-          </div>
-          <div>
-            <p className="text-xs font-semibold text-green-700 uppercase tracking-widest mb-3">Smart Onboarding</p>
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">CompliBoard knows your business from day one.</h2>
-            <p className="text-gray-500 mb-6 leading-relaxed">Enter your website when you sign up. CompliBoard reads it, identifies your chemicals, certifications, and operations, and personalises every answer to your specific business.</p>
-            <ul className="space-y-3">
-              {[
-                "Automatic business profile from your website",
-                "Industry-specific compliance folders built instantly",
-                "Personalised answers based on your actual operations",
-                "Certifications pre-confirmed — no manual setup",
-              ].map((point, i) => (
-                <li key={i} className="flex items-start gap-2 text-sm text-gray-600">
-                  <span className="text-green-500 mt-0.5 flex-shrink-0">✓</span>{point}
-                </li>
-              ))}
-            </ul>
           </div>
         </div>
       </section>
@@ -628,7 +501,6 @@ Every step must include a direct deep link, time estimate, cost, and what to pre
           <p className="text-xs font-semibold text-green-700 uppercase tracking-widest mb-3">Pricing</p>
           <h2 className="text-3xl font-bold text-gray-900 mb-4">Simple, honest pricing.</h2>
           <p className="text-gray-500 mb-10 text-sm">No hidden fees. No per-user charges. One price for your whole business.</p>
-
           <div className="bg-white rounded-2xl border border-gray-200 p-8 shadow-sm">
             <div className="mb-6">
               <p className="text-xs font-semibold text-green-700 uppercase tracking-widest mb-2">Early Adopter</p>
@@ -638,7 +510,6 @@ Every step must include a direct deep link, time estimate, cost, and what to pre
               </div>
               <p className="text-xs text-green-700 font-medium">Locked forever for the first 100 customers</p>
             </div>
-
             <ul className="space-y-3 mb-8 text-left">
               {[
                 "Unlimited compliance checklists",
@@ -653,9 +524,7 @@ Every step must include a direct deep link, time estimate, cost, and what to pre
                 </li>
               ))}
             </ul>
-
-            <a href="/signup"
-              className="block w-full bg-green-700 text-white py-3 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors text-center">
+            <a href="/signup" className="block w-full bg-green-700 text-white py-3 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors text-center">
               Start your 14-day free trial →
             </a>
             <p className="text-xs text-gray-400 mt-3">No credit card needed. Cancel anytime.</p>
@@ -668,8 +537,7 @@ Every step must include a direct deep link, time estimate, cost, and what to pre
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-3xl font-bold text-white mb-4">Stop guessing. Start knowing.</h2>
           <p className="text-green-100 mb-8 text-sm">Join small businesses across Oregon and Washington who use CompliBoard to stay compliant — without the stress.</p>
-          <a href="/signup"
-            className="inline-block bg-white text-green-700 px-8 py-3 rounded-xl text-sm font-semibold hover:bg-green-50 transition-colors">
+          <a href="/signup" className="inline-block bg-white text-green-700 px-8 py-3 rounded-xl text-sm font-semibold hover:bg-green-50 transition-colors">
             Start your free trial — no credit card needed →
           </a>
         </div>
