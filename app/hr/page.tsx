@@ -351,7 +351,7 @@ export default function HRPage() {
                     {response.draft_policy && (
                       <div className="bg-white rounded-xl border border-gray-200 border-l-4 border-l-green-500 p-5 shadow-sm">
                         <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">📝 Draft policy suggestion</p>
-                        <p className="text-sm text-gray-700 leading-relaxed mb-4">{response.draft_policy}</p>
+                        <p className="text-sm text-gray-700 leading-relaxed mb-4">{response.draft_policy?.replace(/\*\*(.*?)\*\*/g, "$1").replace(/\*(.*?)\*/g, "$1")}</p>
                         <button
                           onClick={() => downloadDraftPolicy(response.draft_policy!, question)}
                           className="text-sm px-4 py-2 rounded-xl border border-gray-200 text-gray-600 hover:border-green-500 hover:text-green-700 transition-colors">
