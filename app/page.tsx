@@ -295,13 +295,15 @@ Every step must include a direct deep link, time estimate, cost, and what to pre
       </div>
 
       {/* Hero */}
-      <section className="pt-32 pb-24 px-6">
+      <section className="pt-24 pb-24 px-6" style={{background: "radial-gradient(ellipse at left center, #dcfce7 0%, #ffffff 45%, #f0fdf4 100%)"}}>
         <div className="max-w-6xl mx-auto grid grid-cols-2 gap-16 items-center">
           <div>
-            <p className="text-xs font-semibold text-green-700 uppercase tracking-widest mb-4">Compliance for small business</p>
-            <h1 className="text-5xl font-bold text-gray-900 leading-tight mb-8">
-              Your complete compliance system for small business.
+            <h1 className="text-4xl font-bold text-gray-900 leading-tight mb-4">
+              Your compliance assistant for small and medium businesses.
             </h1>
+            <p className="text-lg text-gray-500 mb-8 max-w-lg leading-relaxed">
+              CompliBoard helps you manage compliance requirements, documents, HR policies, and deadlines — all in one place.
+            </p>
             <div className="flex items-center gap-4">
               <a href="/signup"
                 className="bg-green-700 text-white px-6 py-3 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors">
@@ -310,8 +312,91 @@ Every step must include a direct deep link, time estimate, cost, and what to pre
               <p className="text-xs text-gray-400">14 days free · No credit card needed</p>
             </div>
           </div>
-          <div className="bg-gray-100 rounded-2xl aspect-video flex items-center justify-center">
-            <p className="text-sm text-gray-400">Product screenshot</p>
+
+          {/* Coded product mock */}
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden">
+            {/* Browser bar */}
+            <div className="bg-gray-100 px-4 py-2.5 flex items-center gap-2 border-b border-gray-200">
+              <div className="w-3 h-3 rounded-full bg-red-400" />
+              <div className="w-3 h-3 rounded-full bg-amber-400" />
+              <div className="w-3 h-3 rounded-full bg-green-400" />
+              <div className="flex-1 mx-3 bg-white rounded-md px-3 py-1 text-xs text-gray-400 border border-gray-200">compliboard.com/compliance</div>
+            </div>
+
+            {/* Mock content */}
+            <div className="p-5">
+              {/* Safety alert */}
+              <div className="mb-4 p-3 bg-amber-50 border-l-4 border-amber-500 rounded-r-xl">
+                <p className="text-xs font-semibold text-amber-700 mb-0.5">⚠ Safety note</p>
+                <p className="text-xs text-amber-700 leading-relaxed">You store hazardous materials on site. These require immediate attention to emergency response planning, proper storage protocols, and employee training under OSHA 29 CFR 1910.1200.</p>
+              </div>
+
+              {/* Checklist title */}
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs font-semibold text-gray-900">Core Compliance — Portland Oregon Warehouse</p>
+                <span className="text-xs text-green-600">✓ Saved</span>
+              </div>
+
+              {/* Must do label */}
+              <p className="text-xs font-bold uppercase tracking-widest text-green-700 mb-2">✅ Must Do</p>
+
+              {/* Item 1 — expanded with micro-steps */}
+              <div className="border border-gray-200 rounded-xl mb-2 overflow-hidden">
+                <div className="p-3">
+                  <p className="text-xs font-semibold text-gray-900 mb-1">
+                    <span className="text-gray-400 font-normal mr-1">1.</span>
+                    Register for Oregon Business Identification Number
+                  </p>
+                  <p className="text-xs text-gray-500 leading-relaxed">Obtain a BIN from Oregon Department of Revenue under ORS 314.610.</p>
+                </div>
+                <div className="bg-gray-50 border-t border-gray-100 px-3 py-3">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Steps to complete this</p>
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <span className="text-xs font-bold text-green-600 flex-shrink-0">1.1</span>
+                      <div>
+                        <p className="text-xs font-medium text-gray-800">Determine if you need a BIN</p>
+                        <p className="text-xs text-gray-400 mt-0.5">⏱ 10 min · 💰 Free · 📋 None needed</p>
+                        <p className="text-xs text-gray-400">🏛 Oregon Department of Revenue</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <span className="text-xs font-bold text-green-600 flex-shrink-0">1.2</span>
+                      <div>
+                        <p className="text-xs font-medium text-gray-800">Gather required business information</p>
+                        <p className="text-xs text-gray-400 mt-0.5">⏱ 15 min · 💰 Free · 📋 EIN, business address</p>
+                        <p className="text-xs text-gray-400">🏛 Oregon Department of Revenue</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <span className="text-xs font-bold text-green-600 flex-shrink-0">1.3</span>
+                      <div>
+                        <p className="text-xs font-medium text-gray-800">Complete Oregon Combined Business Registration</p>
+                        <p className="text-xs text-gray-400 mt-0.5">⏱ 20-30 min · 💰 Free · 📋 All info from step 1.2</p>
+                        <p className="text-xs text-gray-400">🏛 Oregon Business Xpress</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Item 2 — collapsed */}
+              <div className="border border-gray-200 rounded-xl mb-2 p-3">
+                <p className="text-xs font-semibold text-gray-900">
+                  <span className="text-gray-400 font-normal mr-1">2.</span>
+                  Obtain Portland Business License
+                </p>
+                <p className="text-xs text-gray-500 mt-0.5">Register with City of Portland Revenue Division under Portland City Code 7.02.</p>
+              </div>
+
+              {/* Item 3 — collapsed, slightly faded */}
+              <div className="border border-gray-100 rounded-xl p-3 opacity-60">
+                <p className="text-xs font-semibold text-gray-700">
+                  <span className="text-gray-400 font-normal mr-1">3.</span>
+                  Register for USDOT Number and Operating Authority
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
