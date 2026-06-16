@@ -473,7 +473,7 @@ Every step must include a direct deep link, time estimate, cost, and what to pre
       <section className="bg-white pt-24 px-6 pb-0">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-10">
-            <p className="text-3xl font-bold text-green-700">Document Intelligence</p>
+            <p className="text-3xl font-bold text-green-700">Document Audit</p>
           </div>
           <div className="grid grid-cols-5 gap-0 items-start pb-10 border-b border-gray-100">
             <div className="flex flex-col items-center text-center px-2">
@@ -748,7 +748,7 @@ Every step must include a direct deep link, time estimate, cost, and what to pre
       <section className="bg-white pt-24 px-6 pb-0">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-10">
-            <p className="text-3xl font-bold text-green-700">Your HR Policy Assistant</p>
+            <p className="text-3xl font-bold text-green-700">HR Policy Assistant</p>
           </div>
           <div className="grid grid-cols-7 gap-0 items-start pb-10 border-b border-gray-100">
             <div className="flex flex-col items-center text-center px-2">
@@ -868,7 +868,7 @@ Every step must include a direct deep link, time estimate, cost, and what to pre
 
             {/* Left — Pricing */}
             <div className="bg-white rounded-2xl p-8 shadow-lg">
-              <p className="text-xs font-semibold text-green-700 uppercase tracking-widest mb-6">Simple, honest pricing</p>
+
 
               <div className="mb-6">
                 <div className="flex items-end gap-2 mb-1">
