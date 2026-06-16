@@ -854,31 +854,7 @@ Every step must include a direct deep link, time estimate, cost, and what to pre
         </div>
       </section>
 
-      {/* Industries */}
-      <section className="py-24 px-6">
-        <div className="max-w-6xl mx-auto text-center">
-          <p className="text-xs font-semibold text-green-700 uppercase tracking-widest mb-3">Industries</p>
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">Built for small business across every industry</h2>
-          <p className="text-gray-500 mb-12 max-w-xl mx-auto text-sm">CompliBoard adapts to your industry automatically. You get the exact compliance requirements for your business — not a generic template.</p>
-          <div className="grid grid-cols-4 gap-4">
-            {[
-              { icon: "⚗️", label: "Chemical Manufacturing" },
-              { icon: "🍺", label: "Brewery & Bar" },
-              { icon: "🍽️", label: "Restaurant & Food Service" },
-              { icon: "🌿", label: "Cannabis" },
-              { icon: "🚗", label: "Auto Body & Dry Cleaners" },
-              { icon: "🌲", label: "Wood Products & Sawmills" },
-              { icon: "🏗️", label: "Construction" },
-              { icon: "🏥", label: "Healthcare & Hospice" },
-            ].map((industry, i) => (
-              <div key={i} className="bg-gray-50 rounded-xl p-5 text-center border border-gray-100 hover:border-green-200 hover:bg-green-50 transition-colors cursor-default">
-                <p className="text-2xl mb-2">{industry.icon}</p>
-                <p className="text-xs font-medium text-gray-700">{industry.label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+
 
       {/* WORKSPACE + PRICING — combined closing section */}
       <section className="py-24 px-6 bg-green-700">
