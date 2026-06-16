@@ -589,6 +589,161 @@ Every step must include a direct deep link, time estimate, cost, and what to pre
         </div>
       </section>
 
+      {/* COMPLIANCE CALENDAR SECTION */}
+      <section className="bg-white pt-24 px-6 pb-0">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-10">
+            <p className="text-3xl font-bold text-green-700">Compliance Calendar</p>
+          </div>
+          <div className="grid grid-cols-7 gap-0 items-start pb-10 border-b border-gray-100">
+            <div className="flex flex-col items-center text-center px-2">
+              <div className="w-9 h-9 rounded-full bg-green-700 text-white text-sm font-bold flex items-center justify-center mb-3">1</div>
+              <h3 className="text-sm font-semibold text-gray-900 mb-1">Upload a document or add manually</h3>
+              <p className="text-xs text-gray-500 leading-relaxed">Any permit, license, or compliance document with a deadline.</p>
+            </div>
+            <div className="flex justify-center pt-3">
+              <svg width="28" height="14" viewBox="0 0 28 14" fill="none"><path d="M0 7h24M18 1l6 6-6 6" stroke="#d1d5db" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </div>
+            <div className="flex flex-col items-center text-center px-2">
+              <div className="w-9 h-9 rounded-full bg-green-700 text-white text-sm font-bold flex items-center justify-center mb-3">2</div>
+              <h3 className="text-sm font-semibold text-gray-900 mb-1">Dates extracted automatically</h3>
+              <p className="text-xs text-gray-500 leading-relaxed">CompliBoard reads your document and pulls every renewal and expiry date.</p>
+            </div>
+            <div className="flex justify-center pt-3">
+              <svg width="28" height="14" viewBox="0 0 28 14" fill="none"><path d="M0 7h24M18 1l6 6-6 6" stroke="#d1d5db" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </div>
+            <div className="flex flex-col items-center text-center px-2">
+              <div className="w-9 h-9 rounded-full bg-green-700 text-white text-sm font-bold flex items-center justify-center mb-3">3</div>
+              <h3 className="text-sm font-semibold text-gray-900 mb-1">Added to your calendar</h3>
+              <p className="text-xs text-gray-500 leading-relaxed">Every deadline appears on your compliance calendar automatically.</p>
+            </div>
+            <div className="flex justify-center pt-3">
+              <svg width="28" height="14" viewBox="0 0 28 14" fill="none"><path d="M0 7h24M18 1l6 6-6 6" stroke="#d1d5db" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </div>
+            <div className="flex flex-col items-center text-center px-2">
+              <div className="w-9 h-9 rounded-full bg-green-700 text-white text-sm font-bold flex items-center justify-center mb-3">4</div>
+              <h3 className="text-sm font-semibold text-gray-900 mb-1">Get alerted before every deadline</h3>
+              <p className="text-xs text-gray-500 leading-relaxed">Monthly summaries and alerts before anything expires or comes due.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* COMPLIANCE CALENDAR — headline + mock */}
+      <section className="py-16 px-6" style={{background: '#F0F9FF'}}>
+        <div className="max-w-6xl mx-auto grid grid-cols-2 gap-16 items-start">
+
+          {/* Left */}
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4 leading-tight">Never miss a renewal. Never pay a late fee.</h2>
+            <p className="text-gray-500 mb-6 leading-relaxed">CompliBoard extracts compliance deadlines from your documents automatically and adds them to your calendar. Get alerted before anything expires.</p>
+            <ul className="space-y-3">
+              {[
+                "Automatic date extraction from any document",
+                "Overdue and upcoming deadline alerts",
+                "Add to Google Calendar or Outlook in one click",
+                "Recurring deadline tracking for annual renewals",
+              ].map((point, i) => (
+                <li key={i} className="flex items-start gap-2 text-sm text-gray-600">
+                  <span className="text-green-500 mt-0.5 flex-shrink-0">✓</span>{point}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Right — calendar mock */}
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden">
+
+            {/* Alert banners */}
+            <div className="grid grid-cols-2 gap-3 p-4 border-b border-gray-100">
+              <div className="bg-red-50 border border-red-200 rounded-xl px-3 py-2.5">
+                <p className="text-xs font-semibold text-red-700">⚠️ Overdue</p>
+                <p className="text-xs text-red-600">3 deadlines past due</p>
+              </div>
+              <div className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
+                <p className="text-xs font-semibold text-amber-700">📅 Due in 30 days</p>
+                <p className="text-xs text-amber-600">2 deadlines coming up</p>
+              </div>
+            </div>
+
+            {/* Calendar grid */}
+            <div className="px-4 py-3">
+              {/* Month header */}
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs text-gray-400">←</span>
+                <p className="text-xs font-semibold text-gray-900">July 2026</p>
+                <span className="text-xs text-gray-400">→</span>
+              </div>
+
+              {/* Day headers */}
+              <div className="grid grid-cols-7 mb-1">
+                {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => (
+                  <p key={d} className="text-center text-xs text-gray-400 py-1">{d}</p>
+                ))}
+              </div>
+
+              {/* Calendar days */}
+              <div className="grid grid-cols-7 gap-y-1">
+                {/* Row 1 — empty + 1-4 */}
+                {[null,null,1,2,3,4,5].map((day, i) => (
+                  <div key={i} className="h-10 flex flex-col items-center pt-1">
+                    {day && <p className="text-xs text-gray-600">{day}</p>}
+                  </div>
+                ))}
+                {/* Row 2 — 6-12, with event on 8 */}
+                {[6,7,8,9,10,11,12].map((day) => (
+                  <div key={day} className="h-10 flex flex-col items-center pt-1">
+                    <p className="text-xs text-gray-600 mb-0.5">{day}</p>
+                    {day === 8 && <p className="text-xs bg-green-100 text-green-800 px-1 rounded truncate w-full text-center leading-tight">ISO 9001...</p>}
+                  </div>
+                ))}
+                {/* Row 3 — 13-19, with event on 15 */}
+                {[13,14,15,16,17,18,19].map((day) => (
+                  <div key={day} className="h-10 flex flex-col items-center pt-1">
+                    <p className="text-xs text-gray-600 mb-0.5">{day}</p>
+                    {day === 15 && <p className="text-xs bg-green-100 text-green-800 px-1 rounded truncate w-full text-center leading-tight">OSHA PSM...</p>}
+                  </div>
+                ))}
+                {/* Row 4 — 20-26, with events on 20 and 22 */}
+                {[20,21,22,23,24,25,26].map((day) => (
+                  <div key={day} className="h-10 flex flex-col items-center pt-1">
+                    <p className="text-xs text-gray-600 mb-0.5">{day}</p>
+                    {day === 20 && <p className="text-xs bg-green-100 text-green-800 px-1 rounded truncate w-full text-center leading-tight">DEQ Air...</p>}
+                    {day === 22 && <p className="text-xs bg-green-100 text-green-800 px-1 rounded truncate w-full text-center leading-tight">DOT Haz...</p>}
+                  </div>
+                ))}
+                {/* Row 5 — 27-31 with event on 31 */}
+                {[27,28,29,30,31,null,null].map((day, i) => (
+                  <div key={i} className="h-10 flex flex-col items-center pt-1">
+                    {day && <p className="text-xs text-gray-600 mb-0.5">{day}</p>}
+                    {day === 31 && <p className="text-xs bg-green-100 text-green-800 px-1 rounded truncate w-full text-center leading-tight">EPA RMP...</p>}
+                  </div>
+                ))}
+              </div>
+
+              {/* This month list */}
+              <div className="border-t border-gray-100 mt-3 pt-3">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">This month</p>
+                <div className="space-y-1.5">
+                  {[
+                    { name: "ISO 9001:2015 Surveillance Audit", date: "7/8/2026", days: "Due in 23 days" },
+                    { name: "OSHA Process Safety Management Review", date: "7/15/2026", days: "Due in 30 days" },
+                    { name: "Oregon DEQ Air Quality Permit Renewal", date: "7/20/2026", days: "Due in 35 days" },
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-center gap-3">
+                      <div className="w-3.5 h-3.5 rounded border-2 border-gray-300 flex-shrink-0" />
+                      <p className="text-xs text-gray-700 flex-1 truncate">{item.name}</p>
+                      <span className="text-xs text-amber-600 flex-shrink-0">{item.days}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
       {/* Industries */}
       <section className="py-24 px-6">
         <div className="max-w-6xl mx-auto text-center">
