@@ -469,6 +469,126 @@ Every step must include a direct deep link, time estimate, cost, and what to pre
         </div>
       </section>
 
+      {/* DOCUMENT INTELLIGENCE SECTION */}
+      <section className="bg-white pt-24 px-6 pb-0">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-10">
+            <p className="text-3xl font-bold text-green-700">Document Intelligence</p>
+          </div>
+          <div className="grid grid-cols-5 gap-0 items-start pb-10 border-b border-gray-100">
+            <div className="flex flex-col items-center text-center px-2">
+              <div className="w-9 h-9 rounded-full bg-green-700 text-white text-sm font-bold flex items-center justify-center mb-3">1</div>
+              <h3 className="text-sm font-semibold text-gray-900 mb-1">Upload your documents</h3>
+              <p className="text-xs text-gray-500 leading-relaxed">Permits, licenses, SDS sheets, inspection reports — any compliance file.</p>
+            </div>
+            <div className="flex justify-center pt-3">
+              <svg width="28" height="14" viewBox="0 0 28 14" fill="none"><path d="M0 7h24M18 1l6 6-6 6" stroke="#d1d5db" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </div>
+            <div className="flex flex-col items-center text-center px-2">
+              <div className="w-9 h-9 rounded-full bg-green-700 text-white text-sm font-bold flex items-center justify-center mb-3">2</div>
+              <h3 className="text-sm font-semibold text-gray-900 mb-1">Audit a folder or file</h3>
+              <p className="text-xs text-gray-500 leading-relaxed">CompliBoard reads your documents and checks them against your industry requirements.</p>
+            </div>
+            <div className="flex justify-center pt-3">
+              <svg width="28" height="14" viewBox="0 0 28 14" fill="none"><path d="M0 7h24M18 1l6 6-6 6" stroke="#d1d5db" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </div>
+            <div className="flex flex-col items-center text-center px-2">
+              <div className="w-9 h-9 rounded-full bg-green-700 text-white text-sm font-bold flex items-center justify-center mb-3">3</div>
+              <h3 className="text-sm font-semibold text-gray-900 mb-1">Get your compliance report</h3>
+              <p className="text-xs text-gray-500 leading-relaxed">See exactly what you have, what needs updating, and what is missing.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* DOCUMENT INTELLIGENCE — headline + mock */}
+      <section className="py-16 px-6" style={{background: '#FFFBF0'}}>
+        <div className="max-w-6xl mx-auto grid grid-cols-2 gap-16 items-start">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4 leading-tight">Upload once. Know exactly where you stand.</h2>
+            <p className="text-gray-500 mb-6 leading-relaxed">Upload your compliance documents and CompliBoard audits them against your industry requirements — telling you exactly what you have, what's outdated, and what's missing before an inspector does.</p>
+            <ul className="space-y-3">
+              {[
+                "Instant gap analysis against your industry requirements",
+                "Flags outdated documents before they become violations",
+                "Identifies missing permits, licenses, and safety records",
+                "Stored securely — only accessible by your account",
+              ].map((point, i) => (
+                <li key={i} className="flex items-start gap-2 text-sm text-gray-600">
+                  <span className="text-green-500 mt-0.5 flex-shrink-0">✓</span>{point}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden">
+            <div className="px-4 py-3 border-b border-gray-100">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-semibold text-gray-900">📁 Healthcare › HIPAA Compliance</p>
+                  <p className="text-xs text-gray-400">6 documents · Audited June 15, 2026</p>
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <span className="text-xs text-green-600 font-medium">✅ 3</span>
+                  <span className="text-xs text-amber-500 font-medium">⚠ 1</span>
+                  <span className="text-xs text-red-500 font-medium">✗ 2</span>
+                </div>
+              </div>
+            </div>
+            <div className="px-4 py-3 space-y-3">
+              <p className="text-xs text-gray-500 leading-relaxed filter blur-[3px] select-none">Portland Regional Medical Center HIPAA folder contains most core privacy documentation but is missing critical incident response records.</p>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest text-green-700 mb-1.5">✅ Present</p>
+                <div className="space-y-1">
+                  {[
+                    { name: "HIPAA_Privacy_Policy_v3.pdf", note: "Current — meets 45 CFR 164.520" },
+                    { name: "CMS_Certification_Letter.pdf", note: "Valid through December 2026" },
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-start gap-2 px-2 py-1.5 bg-green-50 border border-green-100 rounded-lg">
+                      <span className="text-green-500 flex-shrink-0 text-xs">✓</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-gray-800 truncate">{item.name}</p>
+                        <p className="text-xs text-gray-400 filter blur-[2px] select-none">{item.note}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest text-amber-600 mb-1.5">⚠ Needs Review</p>
+                <div className="px-2 py-1.5 bg-amber-50 border border-amber-100 rounded-lg flex items-start gap-2">
+                  <span className="text-amber-500 text-xs flex-shrink-0">!</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-gray-800">HIPAA_Risk_Assessment_2023.pdf</p>
+                    <p className="text-xs text-gray-400 filter blur-[2px] select-none">Dated 2023 — annual review required under 45 CFR 164.308</p>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest text-red-500 mb-1.5">✗ Missing</p>
+                <div className="space-y-1">
+                  {[
+                    { name: "Breach Notification Procedures", priority: "HIGH" },
+                    { name: "Workforce HIPAA Training Records", priority: "HIGH" },
+                  ].map((item, i) => (
+                    <div key={i} className="px-2 py-1.5 bg-red-50 border border-red-100 rounded-lg flex items-start gap-2">
+                      <span className="text-red-400 text-xs flex-shrink-0">✗</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs font-medium text-gray-800">{item.name}</p>
+                          <span className="text-xs text-red-500 font-semibold flex-shrink-0">{item.priority}</span>
+                        </div>
+                        <p className="text-xs text-gray-400 filter blur-[2px] select-none">Required under HIPAA Security Rule — liability exposure.</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Industries */}
       <section className="py-24 px-6">
         <div className="max-w-6xl mx-auto text-center">
