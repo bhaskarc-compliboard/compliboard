@@ -744,6 +744,116 @@ Every step must include a direct deep link, time estimate, cost, and what to pre
         </div>
       </section>
 
+      {/* HR SECTION */}
+      <section className="bg-white pt-24 px-6 pb-0">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-10">
+            <p className="text-3xl font-bold text-green-700">Your HR Policy Assistant</p>
+          </div>
+          <div className="grid grid-cols-7 gap-0 items-start pb-10 border-b border-gray-100">
+            <div className="flex flex-col items-center text-center px-2">
+              <div className="w-9 h-9 rounded-full bg-green-700 text-white text-sm font-bold flex items-center justify-center mb-3">1</div>
+              <h3 className="text-sm font-semibold text-gray-900 mb-1">Upload your handbook</h3>
+              <p className="text-xs text-gray-500 leading-relaxed">Your existing employee handbook — any format.</p>
+            </div>
+            <div className="flex justify-center pt-3">
+              <svg width="28" height="14" viewBox="0 0 28 14" fill="none"><path d="M0 7h24M18 1l6 6-6 6" stroke="#d1d5db" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </div>
+            <div className="flex flex-col items-center text-center px-2">
+              <div className="w-9 h-9 rounded-full bg-green-700 text-white text-sm font-bold flex items-center justify-center mb-3">2</div>
+              <h3 className="text-sm font-semibold text-gray-900 mb-1">Ask any HR question</h3>
+              <p className="text-xs text-gray-500 leading-relaxed">Parental leave, sick days, termination process — anything.</p>
+            </div>
+            <div className="flex justify-center pt-3">
+              <svg width="28" height="14" viewBox="0 0 28 14" fill="none"><path d="M0 7h24M18 1l6 6-6 6" stroke="#d1d5db" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </div>
+            <div className="flex flex-col items-center text-center px-2">
+              <div className="w-9 h-9 rounded-full bg-green-700 text-white text-sm font-bold flex items-center justify-center mb-3">3</div>
+              <h3 className="text-sm font-semibold text-gray-900 mb-1">Get the answer, gaps, and a draft policy</h3>
+              <p className="text-xs text-gray-500 leading-relaxed">Know what your handbook says, what's missing, and get a draft fix.</p>
+            </div>
+            <div className="flex justify-center pt-3">
+              <svg width="28" height="14" viewBox="0 0 28 14" fill="none"><path d="M0 7h24M18 1l6 6-6 6" stroke="#d1d5db" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </div>
+            <div className="flex flex-col items-center text-center px-2">
+              <div className="w-9 h-9 rounded-full bg-green-700 text-white text-sm font-bold flex items-center justify-center mb-3">4</div>
+              <h3 className="text-sm font-semibold text-gray-900 mb-1">Audit your handbook — see what's missing</h3>
+              <p className="text-xs text-gray-500 leading-relaxed">Run a full audit against current regulations and close every gap.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* HR — headline + mock */}
+      <section className="py-16 px-6" style={{background: '#F7FEF9'}}>
+        <div className="max-w-6xl mx-auto grid grid-cols-2 gap-16 items-start">
+
+          {/* Left */}
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4 leading-tight">Get answers from your own handbook.</h2>
+            <p className="text-gray-500 mb-6 leading-relaxed">Upload your employee handbook and ask any HR question. CompliBoard tells you what your policy says, flags what's missing, and drafts the language to fix it.</p>
+            <ul className="space-y-3">
+              {[
+                "Answers grounded in your actual handbook",
+                "Policy gap detection against federal and state law",
+                "Draft policy language ready to implement",
+                "Full handbook audit in one click",
+              ].map((point, i) => (
+                <li key={i} className="flex items-start gap-2 text-sm text-gray-600">
+                  <span className="text-green-500 mt-0.5 flex-shrink-0">✓</span>{point}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Right — HR mock */}
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden">
+
+            {/* Question */}
+            <div className="px-5 py-4 border-b border-gray-100">
+              <p className="text-xs text-gray-500 mb-2">Ask a question</p>
+              <p className="text-xs text-gray-800 leading-relaxed bg-gray-50 border border-gray-200 rounded-xl p-3">An employee just told me he needs 12 weeks off to care for an ill parent. What does our handbook say about this and what are we required to provide under FMLA?</p>
+              <div className="mt-3">
+                <span className="bg-green-700 text-white text-xs font-medium px-3 py-1.5 rounded-lg inline-block">Get answer from handbook →</span>
+              </div>
+            </div>
+
+            <div className="px-5 py-4 space-y-3">
+
+              {/* Answer */}
+              <div className="border-l-4 border-gray-300 pl-3 py-1">
+                <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Answer from your handbook</p>
+                <p className="text-xs text-gray-700 leading-relaxed">According to your handbook (Section 7.1), your company offers up to 8 weeks of unpaid leave per calendar year for qualifying family and medical reasons.</p>
+                <p className="text-xs text-gray-400 leading-relaxed filter blur-[2px] select-none mt-1">However, your handbook explicitly states that federal FMLA does not apply to your company because you have 42 employees. Therefore, you are NOT federally required to provide FMLA leave.</p>
+              </div>
+
+              {/* Policy gaps */}
+              <div className="border-l-4 border-amber-500 pl-3 py-1">
+                <p className="text-xs font-semibold text-amber-600 uppercase tracking-wide mb-1">⚠️ Policy gaps detected</p>
+                <div className="space-y-1">
+                  {[
+                    "No policy covering care for parents or other family members",
+                    "No guidance on leave requests that exceed the 8-week maximum",
+                    "No state-specific family leave considerations",
+                  ].map((gap, i) => (
+                    <p key={i} className="text-xs text-gray-400 filter blur-[2px] select-none">• {gap}</p>
+                  ))}
+                </div>
+              </div>
+
+              {/* Draft policy */}
+              <div className="border-l-4 border-green-500 pl-3 py-1">
+                <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">📝 Draft policy suggestion</p>
+                <p className="text-xs text-gray-400 leading-relaxed filter blur-[2px] select-none">Extended Family Care Leave: Employees may request unpaid leave to care for a parent, grandparent, sibling, or other immediate family member with a serious health condition.</p>
+                <p className="text-xs text-green-600 mt-1.5">↓ Download draft policy</p>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </section>
+
       {/* Industries */}
       <section className="py-24 px-6">
         <div className="max-w-6xl mx-auto text-center">
