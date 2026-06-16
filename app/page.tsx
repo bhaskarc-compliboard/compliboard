@@ -880,51 +880,85 @@ Every step must include a direct deep link, time estimate, cost, and what to pre
         </div>
       </section>
 
-      {/* Pricing */}
-      <section className="py-24 px-6 bg-gray-50">
-        <div className="max-w-lg mx-auto text-center">
-          <p className="text-xs font-semibold text-green-700 uppercase tracking-widest mb-3">Pricing</p>
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">Simple, honest pricing.</h2>
-          <p className="text-gray-500 mb-10 text-sm">No hidden fees. No per-user charges. One price for your whole business.</p>
-          <div className="bg-white rounded-2xl border border-gray-200 p-8 shadow-sm">
-            <div className="mb-6">
-              <p className="text-xs font-semibold text-green-700 uppercase tracking-widest mb-2">Early Adopter</p>
-              <div className="flex items-end justify-center gap-1 mb-1">
-                <span className="text-5xl font-bold text-gray-900">$29</span>
-                <span className="text-gray-400 mb-2">/month</span>
-              </div>
-              <p className="text-xs text-green-700 font-medium">Locked forever for the first 100 customers</p>
-            </div>
-            <ul className="space-y-3 mb-8 text-left">
-              {[
-                "Unlimited compliance checklists",
-                "Document storage and gap analysis",
-                "Deadline tracking and calendar alerts",
-                "Monthly regulation change alerts",
-                "HR document templates",
-                "Smart onboarding from your website",
-              ].map((feature, i) => (
-                <li key={i} className="flex items-center gap-2 text-sm text-gray-600">
-                  <span className="text-green-500 flex-shrink-0">✓</span>{feature}
-                </li>
-              ))}
-            </ul>
-            <a href="/signup" className="block w-full bg-green-700 text-white py-3 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors text-center">
-              Start your 14-day free trial →
-            </a>
-            <p className="text-xs text-gray-400 mt-3">No credit card needed. Cancel anytime.</p>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer CTA */}
+      {/* WORKSPACE + PRICING — combined closing section */}
       <section className="py-24 px-6 bg-green-700">
-        <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-3xl font-bold text-white mb-4">Stop guessing. Start knowing.</h2>
-          <p className="text-green-100 mb-8 text-sm">Join small businesses across Oregon and Washington who use CompliBoard to stay compliant — without the stress.</p>
-          <a href="/signup" className="inline-block bg-white text-green-700 px-8 py-3 rounded-xl text-sm font-semibold hover:bg-green-50 transition-colors">
-            Start your free trial — no credit card needed →
-          </a>
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-12">
+            <p className="text-3xl font-bold text-white">Your Complete Compliance Workspace</p>
+            <p className="text-green-100 mt-3 text-sm">Everything your business needs to stay compliant — in one place.</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-12 items-stretch">
+
+            {/* Left — Pricing */}
+            <div className="bg-white rounded-2xl p-8 shadow-lg">
+              <p className="text-xs font-semibold text-green-700 uppercase tracking-widest mb-6">Simple, honest pricing</p>
+
+              <div className="mb-6">
+                <div className="flex items-end gap-2 mb-1">
+                  <span className="text-2xl text-gray-300 line-through font-medium">$49</span>
+                  <span className="text-xs text-gray-400 mb-1">/month</span>
+                </div>
+                <div className="flex items-end gap-1 mb-1">
+                  <span className="text-6xl font-bold text-gray-900">$29</span>
+                  <span className="text-gray-400 mb-2">/month</span>
+                </div>
+                <p className="text-xs text-green-700 font-medium">Early adopter price — locked forever</p>
+              </div>
+
+              <ul className="space-y-3 mb-8">
+                {[
+                  "Unlimited compliance checklists with micro-steps",
+                  "Document storage, audit and gap analysis",
+                  "Deadline tracking and calendar alerts",
+                  "HR handbook questions and policy drafts",
+                  "Monthly regulation change summaries",
+                ].map((feature, i) => (
+                  <li key={i} className="flex items-center gap-2 text-sm text-gray-600">
+                    <span className="text-green-500 flex-shrink-0">✓</span>{feature}
+                  </li>
+                ))}
+              </ul>
+
+              <a href="/signup"
+                className="block w-full bg-green-700 text-white py-3 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors text-center mb-3">
+                Start your 14-day free trial →
+              </a>
+              <p className="text-xs text-gray-400 text-center">No credit card needed · Cancel anytime</p>
+            </div>
+
+            {/* Right — Dashboard mock */}
+            <div className="bg-white rounded-2xl shadow-lg p-6 flex flex-col justify-center">
+              {/* Top row — 3 cards */}
+              <div className="grid grid-cols-3 gap-4 mb-4">
+                {[
+                  { icon: '📋', title: 'Compliance Checklist', desc: 'Ask anything about regulations and get a step-by-step checklist' },
+                  { icon: '👥', title: 'HR Help', desc: 'Get answers to HR and policy questions from your company handbook' },
+                  { icon: '📁', title: 'Company Documents', desc: 'Upload, view and manage your compliance documents and checklists' },
+                ].map((module, i) => (
+                  <div key={i} className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
+                    <p className="text-3xl mb-3">{module.icon}</p>
+                    <p className="text-sm font-semibold text-gray-900 mb-1">{module.title}</p>
+                    <p className="text-xs text-gray-500 leading-relaxed">{module.desc}</p>
+                  </div>
+                ))}
+              </div>
+              {/* Bottom row — 2 cards */}
+              <div className="grid grid-cols-2 gap-4">
+                {[
+                  { icon: '📅', title: 'Calendar', desc: 'Track all your compliance deadlines and recurring dates' },
+                  { icon: '⚙️', title: 'My Account', desc: 'Manage your profile, billing, and account settings' },
+                ].map((module, i) => (
+                  <div key={i} className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
+                    <p className="text-3xl mb-3">{module.icon}</p>
+                    <p className="text-sm font-semibold text-gray-900 mb-1">{module.title}</p>
+                    <p className="text-xs text-gray-500 leading-relaxed">{module.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+          </div>
         </div>
       </section>
 
