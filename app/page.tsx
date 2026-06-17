@@ -296,7 +296,7 @@ Every step must include a direct deep link, time estimate, cost, and what to pre
           </div>
 
           <img
-            src="/Hero1.png"
+            src="/Hero2.png"
             alt="CompliBoard product — compliance checklist, document audit, calendar and HR help"
             className="w-full h-auto rounded-2xl shadow-xl"
           />
