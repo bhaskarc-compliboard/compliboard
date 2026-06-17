@@ -303,54 +303,18 @@ Every step must include a direct deep link, time estimate, cost, and what to pre
         </div>
       </section>
 
-      {/* HOW IT WORKS — clean strip */}
-      <section className="py-16 px-6 bg-white border-y border-gray-100">
+      {/* HOW IT WORKS — image */}
+      <section className="py-16 px-6 bg-gray-50">
         <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-7 gap-0 items-start">
-
-            <div className="flex flex-col items-center text-center px-2">
-              <div className="w-9 h-9 rounded-full bg-green-700 text-white text-sm font-bold flex items-center justify-center mb-3">1</div>
-              <h3 className="text-sm font-semibold text-gray-900 mb-1">Ask any compliance question</h3>
-              <p className="text-xs text-gray-500 leading-relaxed">For any industry, any state.</p>
-            </div>
-
-            <div className="flex justify-center pt-3">
-              <svg width="28" height="14" viewBox="0 0 28 14" fill="none">
-                <path d="M0 7h24M18 1l6 6-6 6" stroke="#d1d5db" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-
-            <div className="flex flex-col items-center text-center px-2">
-              <div className="w-9 h-9 rounded-full bg-green-700 text-white text-sm font-bold flex items-center justify-center mb-3">2</div>
-              <h3 className="text-sm font-semibold text-gray-900 mb-1">We do the research</h3>
-              <p className="text-xs text-gray-500 leading-relaxed">Federal, state, and local regulations — sorted by priority.</p>
-            </div>
-
-            <div className="flex justify-center pt-3">
-              <svg width="28" height="14" viewBox="0 0 28 14" fill="none">
-                <path d="M0 7h24M18 1l6 6-6 6" stroke="#d1d5db" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-
-            <div className="flex flex-col items-center text-center px-2">
-              <div className="w-9 h-9 rounded-full bg-green-700 text-white text-sm font-bold flex items-center justify-center mb-3">3</div>
-              <h3 className="text-sm font-semibold text-gray-900 mb-1">Get your checklist</h3>
-              <p className="text-xs text-gray-500 leading-relaxed">Every item with source links, cost estimates, and progress tracking.</p>
-            </div>
-
-            <div className="flex justify-center pt-3">
-              <svg width="28" height="14" viewBox="0 0 28 14" fill="none">
-                <path d="M0 7h24M18 1l6 6-6 6" stroke="#d1d5db" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-
-            <div className="flex flex-col items-center text-center px-2">
-              <div className="w-9 h-9 rounded-full bg-green-700 text-white text-sm font-bold flex items-center justify-center mb-3">4</div>
-              <h3 className="text-sm font-semibold text-gray-900 mb-1">Detailed micro-steps</h3>
-              <p className="text-xs text-gray-500 leading-relaxed">What to do, form numbers, time, cost estimates, and who to contact.</p>
-            </div>
-
+          <div className="text-center mb-10">
+            <p className="text-xs font-semibold text-green-700 uppercase tracking-widest mb-3">How it works</p>
+            <h2 className="text-3xl font-bold text-gray-900">From a question to a <span className="text-green-700">compliance action plan</span> in minutes.</h2>
           </div>
+          <img
+            src="/How_it_works_2.png"
+            alt="How CompliBoard works — ask a question, get requirements, expand into steps, review checklist"
+            className="w-full h-auto"
+          />
         </div>
       </section>
 
