@@ -311,7 +311,7 @@ Every step must include a direct deep link, time estimate, cost, and what to pre
             <h2 className="text-3xl font-bold text-gray-900">From a question to a <span className="text-green-700">compliance action plan</span> in minutes.</h2>
           </div>
           <img
-            src="/How_it_works_2.png"
+            src="/How_it_works_3.png"
             alt="How CompliBoard works — ask a question, get requirements, expand into steps, review checklist"
             className="w-full h-auto"
           />
