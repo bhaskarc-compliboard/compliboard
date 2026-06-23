@@ -318,16 +318,12 @@ Every step must include a direct deep link, time estimate, cost, and what to pre
         </div>
       </section>
 
-      {/* DOCUMENT AUDIT SECTION */}
+      {/* DOCUMENT REVIEW SECTION */}
       <section className="py-16 px-6" style={{background: '#FFFBF0'}}>
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-10">
-            <p className="text-xs font-semibold text-green-700 uppercase tracking-widest mb-3">Document Audit</p>
-            <h2 className="text-3xl font-bold text-gray-900">See compliance gaps <span className="text-green-700">before an inspector does.</span></h2>
-          </div>
           <img
-            src="/File_Audit_1.png"
-            alt="CompliBoard Document Audit — upload documents, organize by folder, audit, get compliance report"
+            src="/Audit_report_4.png"
+            alt="CompliBoard Document Review — upload documents, audit folder, get compliance gap report"
             className="w-full h-auto"
           />
         </div>
