@@ -1,38 +1,14 @@
-import Anthropic from '@anthropic-ai/sdk'
+import { askAIJson, type AIContent } from '@/lib/ai'
+import { reviewPrompt } from '@/prompts/document-review'
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import mammoth from 'mammoth'
 import officeParser from 'officeparser'
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
-
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
-
-const REVIEW_PROMPT = `You are a compliance document reviewer. Analyze this document and return a structured review.
-
-You must respond ONLY with a valid JSON object. No other text. No markdown. No backticks.
-
-Use this exact structure:
-{
-  "document_type": "Type of document (e.g. Business License, OSHA Permit, SDS Sheet, Inspection Report)",
-  "issued_by": "Name of issuing agency or organization",
-  "issue_date": "YYYY-MM-DD or null if not found",
-  "expiry_date": "YYYY-MM-DD or null if not found",
-  "renewal_date": "YYYY-MM-DD or null if not found",
-  "is_current": true or false (is this document currently valid?),
-  "expiring_soon": true or false (expires within 90 days?),
-  "days_until_expiry": number or null,
-  "coverage": "One sentence describing what this document authorizes or covers",
-  "gaps": ["List of missing items, outdated info, or compliance concerns"],
-  "action_items": ["List of specific actions the company should take"],
-  "summary": "2-3 sentence plain English summary of the document status"
-}
-
-If you cannot determine a field, use null. Be specific and practical in gaps and action_items.
-Today's date is ${new Date().toISOString().split('T')[0]}.`
 
 export async function POST(request: NextRequest) {
   try {
@@ -61,7 +37,7 @@ export async function POST(request: NextRequest) {
     const isWord = fileType.includes('wordprocessingml') || fileType.includes('msword') || fileName.endsWith('.docx') || fileName.endsWith('.doc')
     const isPowerPoint = fileType.includes('presentationml') || fileType.includes('powerpoint') || fileName.endsWith('.pptx') || fileName.endsWith('.ppt')
 
-    let messageContent: Anthropic.MessageParam['content']
+    let messageContent: AIContent
 
     if (isPDF) {
       messageContent = [
@@ -100,16 +76,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unsupported file type for review' }, { status: 400 })
     }
 
-    const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-5',
-      max_tokens: 1500,
-      system: REVIEW_PROMPT,
-      messages: [{ role: 'user', content: messageContent }],
-    })
-
-    const responseText = message.content[0].type === 'text' ? message.content[0].text : ''
-    const cleaned = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
-    const review = JSON.parse(cleaned)
+    const review = await askAIJson(reviewPrompt(), messageContent, { maxTokens: 1500 })
 
     // Save to document_reviews table
     const { data, error } = await supabaseAdmin

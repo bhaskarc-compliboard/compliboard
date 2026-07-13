@@ -1,55 +1,12 @@
 import { createClient } from '@supabase/supabase-js'
-import Anthropic from '@anthropic-ai/sdk'
+import { askAIJson } from '@/lib/ai'
+import { AUDIT_PROMPT } from '@/prompts/audit'
 import { NextRequest, NextResponse } from 'next/server'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
-
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY!,
-})
-
-const AUDIT_PROMPT = `You are CompliBoard, a compliance assistant for small businesses in the United States.
-
-You are auditing a compliance document folder for a business. Based on the folder name, industry, and list of file names provided, generate a gap analysis report.
-
-You must respond ONLY with a valid JSON object. No other text. No markdown. No backticks. Just raw JSON.
-
-Use this exact structure:
-{
-  "summary": "One sentence summary of the audit result",
-  "present": [
-    {
-      "file_name": "exact file name from the list",
-      "note": "one sentence on why this looks good or what it covers"
-    }
-  ],
-  "needs_review": [
-    {
-      "file_name": "exact file name from the list",
-      "note": "one sentence on why this may need updating — old date in name, unclear name, may be outdated"
-    }
-  ],
-  "missing": [
-    {
-      "document": "name of missing document type",
-      "why": "one sentence on why this is typically required for this folder type and industry",
-      "priority": "high or medium"
-    }
-  ]
-}
-
-RULES:
-- Only reference file names that were actually provided in the list
-- For missing items, suggest documents commonly required for this specific folder type and industry
-- Flag files with years older than 3 years as needing review
-- Flag files with vague names like "document1.pdf" or "scan.pdf" as needing review
-- Keep all language plain English — writing for a business owner not a lawyer
-- Missing items should be specific and actionable, not generic
-- Maximum 5 missing items — focus on the most important gaps
-- If the folder looks complete, say so in the summary and keep missing array empty`
 
 export async function POST(request: NextRequest) {
   try {
@@ -86,16 +43,7 @@ ${fileList}
 
 Audit this folder and identify what is present, what may need updating, and what is missing.`
 
-    const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-5',
-      max_tokens: 2000,
-      system: AUDIT_PROMPT,
-      messages: [{ role: 'user', content: prompt }],
-    })
-
-    const responseText = message.content[0].type === 'text' ? message.content[0].text : ''
-    const cleaned = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
-    const result = JSON.parse(cleaned)
+    const result = await askAIJson(AUDIT_PROMPT, prompt, { maxTokens: 2000 })
 
     // Save audit report
     const { data: audit, error: saveError } = await supabase

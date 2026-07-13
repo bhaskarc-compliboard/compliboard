@@ -1,41 +1,9 @@
-import Anthropic from '@anthropic-ai/sdk'
+import { askAIJson, type AIContent } from '@/lib/ai'
+import { EXTRACT_PROMPT } from '@/prompts/extract-dates'
 import { NextRequest, NextResponse } from 'next/server'
 import * as XLSX from 'xlsx'
 import mammoth from 'mammoth'
 import officeParser from 'officeparser'
-
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
-
-const EXTRACT_PROMPT = `You are a compliance document analyzer. Extract any important dates from this document.
-
-Look for:
-- Expiry dates, expiration dates
-- Renewal dates
-- Inspection due dates
-- License validity dates
-- Permit end dates
-- Annual review dates
-- Any compliance deadlines
-
-You must respond ONLY with a valid JSON object. No other text. No markdown. No backticks.
-
-Use this structure:
-{
-  "dates_found": [
-    {
-      "title": "Short descriptive title for the calendar event. Example: Business License Renewal",
-      "date": "YYYY-MM-DD format",
-      "description": "One sentence context about this date from the document",
-      "is_recurring": false,
-      "recurrence_period": null
-    }
-  ]
-}
-
-If the document mentions annual renewals or recurring inspections, set is_recurring to true and recurrence_period to "annually".
-If no dates are found, return: { "dates_found": [] }
-Only include dates that are in the future or within the last 30 days.
-Maximum 10 dates per document.`
 
 export async function POST(request: NextRequest) {
   try {
@@ -59,7 +27,7 @@ export async function POST(request: NextRequest) {
     const isWord = fileType.includes('wordprocessingml') || fileType.includes('msword') || fileName2.endsWith('.docx') || fileName2.endsWith('.doc')
     const isPowerPoint = fileType.includes('presentationml') || fileType.includes('powerpoint') || fileName2.endsWith('.pptx') || fileName2.endsWith('.ppt')
 
-    let messageContent: Anthropic.MessageParam['content']
+    let messageContent: AIContent
 
     if (isPDF) {
       messageContent = [
@@ -121,16 +89,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ dates_found: [] })
     }
 
-    const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-5',
-      max_tokens: 1000,
-      system: EXTRACT_PROMPT,
-      messages: [{ role: 'user', content: messageContent }],
-    })
-
-    const responseText = message.content[0].type === 'text' ? message.content[0].text : ''
-    const cleaned = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
-    const parsed = JSON.parse(cleaned)
+    const parsed = await askAIJson(EXTRACT_PROMPT, messageContent, { maxTokens: 1000 })
 
     return NextResponse.json(parsed)
   } catch (error) {
