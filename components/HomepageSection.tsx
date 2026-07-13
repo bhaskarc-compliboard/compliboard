@@ -29,9 +29,6 @@ export default function HomepageSection({
     <>
       <section className="bg-white pt-24 px-6 pb-0">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-10">
-            <p className="text-3xl font-bold text-green-700">{title}</p>
-          </div>
           {steps && (
             <div className="pb-10 border-b border-gray-100"
               style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 0, alignItems: 'start' }}>
@@ -58,6 +55,7 @@ export default function HomepageSection({
       <section className="py-16 px-6" style={{ background }}>
         <div className="max-w-6xl mx-auto grid grid-cols-2 gap-16 items-start">
           <div>
+            <p className="text-xs font-semibold text-green-700 uppercase tracking-widest mb-3">{title}</p>
             <h2 className="text-2xl font-bold text-gray-900 mb-4 leading-tight">
               {headline}{headlineGreen && <> <span className="text-green-700">{headlineGreen}</span></>}
             </h2>
