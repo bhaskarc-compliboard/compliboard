@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import AppLayout from '@/components/AppLayout'
+import AIDisclaimer from '@/components/AIDisclaimer'
 
 const STATUS_MESSAGES: Record<string, string[]> = {
   hazmat: [
@@ -1115,9 +1116,7 @@ Give them a specific direct answer — exactly what they need to do, which speci
               </div>
             )}
 
-            <p className="text-xs text-gray-400 mt-6 pt-4 border-t border-gray-100">
-              This checklist is for informational purposes only and is not legal advice. Always verify requirements with the relevant agencies.
-            </p>
+            <AIDisclaimer variant="full" className="mt-6" />
 
           </div>
         )}

@@ -149,7 +149,10 @@ export async function GET(request: NextRequest) {
             <div style="margin-top:32px;padding-top:24px;border-top:1px solid #f3f4f6;text-align:center;">
               <a href="https://compliboard.vercel.app/dashboard" style="display:inline-block;background:#166534;color:white;padding:12px 28px;border-radius:10px;text-decoration:none;font-size:14px;font-weight:600;">Open CompliBoard →</a>
             </div>
-            <p style="color:#9ca3af;font-size:11px;text-align:center;margin-top:24px;">
+            <p style="color:#6b7280;font-size:11px;text-align:center;margin-top:24px;line-height:1.5;">
+              AI-generated for information only — not legal or professional advice. Verify before acting.
+            </p>
+            <p style="color:#9ca3af;font-size:11px;text-align:center;margin-top:8px;">
               You are receiving this because you have a CompliBoard account. This summary is sent on the 1st of every month.
             </p>
           </div>

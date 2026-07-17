@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
 import AppLayout from '@/components/AppLayout'
+import AIDisclaimer from '@/components/AIDisclaimer'
 
 interface Handbook {
   id: string
@@ -360,7 +361,7 @@ export default function HRPage() {
                       </div>
                     )}
 
-                    <p className="text-xs text-gray-400 italic">{response.disclaimer}</p>
+                    <AIDisclaimer variant="short" className="mt-1" />
                   </div>
                 )}
               </div>
@@ -411,9 +412,7 @@ export default function HRPage() {
                         </ul>
                       </div>
                     )}
-                    <p className="text-xs text-gray-400 italic">
-                      This audit is based on common HR policy requirements. Always verify with qualified HR counsel.
-                    </p>
+                    <AIDisclaimer variant="short" className="mt-1" />
                   </div>
                 )}
               </div>

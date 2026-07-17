@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
 import AppLayout from '@/components/AppLayout'
+import AIDisclaimer from '@/components/AIDisclaimer'
 import { useRouter } from 'next/navigation'
 import { INDUSTRY_FOLDERS } from '@/lib/folderTemplates'
 
@@ -1142,6 +1143,7 @@ export default function DocumentsPage() {
                                 <span className="text-gray-200">·</span>
                                 <button onClick={() => handleDeleteAudit(audit.id)} className="text-xs text-gray-400 hover:text-red-500 transition-colors">Delete report</button>
                               </div>
+                              <AIDisclaimer variant="short" className="mt-2" />
                             </div>
                           )}
                         </div>
@@ -1255,6 +1257,7 @@ export default function DocumentsPage() {
                                   setDocumentReviews(prev => prev.filter(r => r.id !== review.id))
                                 }} className="text-xs text-gray-400 hover:text-red-500 transition-colors">Delete review</button>
                               </div>
+                              <AIDisclaimer variant="short" className="mt-2" />
                             </div>
                           )}
                         </div>
@@ -1266,7 +1269,6 @@ export default function DocumentsPage() {
             )}
           </>
         )}
-
 
         {/* Date extraction confirmation card */}
         {pendingDates.length > 0 && (
