@@ -12,6 +12,7 @@ interface AppLayoutProps {
 
 const NAV_ITEMS = [
   { icon: '📋', label: 'Compliance Checklist', href: '/compliance' },
+  { icon: '📚', label: 'Requirements', href: '/requirements' },
   { icon: '👥', label: 'HR Help', href: '/hr' },
   { icon: '📁', label: 'Company Documents', href: '/documents' },
   { icon: '📅', label: 'Calendar', href: '/calendar' },
