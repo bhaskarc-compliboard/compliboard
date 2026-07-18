@@ -49,6 +49,10 @@ const STATUS_STYLES: Record<string, { label: string; dot: string; text: string }
 
 type FilterKey = 'all' | 'needs_attention' | 'unconfirmed' | 'satisfied'
 
+function isNeedsAttention(status: string) {
+  return status === 'missing' || status === 'at_risk' || status === 'expiring_soon'
+}
+
 export default function RequirementsPage() {
   const supabase = createClient()
   const [companyName, setCompanyName] = useState('')
@@ -95,12 +99,12 @@ export default function RequirementsPage() {
     load()
   }, [])
 
-  const needsAttention = obligations.filter((o) => o.status === 'missing' || o.status === 'at_risk' || o.status === 'expiring_soon')
+  const needsAttention = obligations.filter((o) => isNeedsAttention(o.status))
   const unconfirmed = obligations.filter((o) => o.status === 'unconfirmed')
   const satisfied = obligations.filter((o) => o.status === 'satisfied')
 
   const filtered = obligations.filter((o) => {
-    if (filter === 'needs_attention') return o.status === 'missing' || o.status === 'at_risk' || o.status === 'expiring_soon'
+    if (filter === 'needs_attention') return isNeedsAttention(o.status)
     if (filter === 'unconfirmed') return o.status === 'unconfirmed'
     if (filter === 'satisfied') return o.status === 'satisfied'
     return true
@@ -121,7 +125,7 @@ export default function RequirementsPage() {
         text: 'This list is matched automatically from a master requirements database for your industry and state. Items marked "Unconfirmed" could not be determined from your profile alone — a website being silent about something is never treated as proof it does not apply. Confirm those in passing as you go, or they will resolve on their own as you upload documents.',
       }}
     >
-      <div className="max-w-3xl mx-auto px-6 py-8">
+      <div className="max-w-6xl mx-auto px-6 py-8">
         <div className="mb-6">
           <h1 className="text-xl font-semibold text-gray-900 mb-1">Requirements</h1>
           <p className="text-sm text-gray-400">
@@ -145,7 +149,7 @@ export default function RequirementsPage() {
           </div>
         ) : (
           <>
-            <div className="mb-6 grid grid-cols-4 gap-3">
+            <div className="mb-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="bg-white rounded-xl border border-gray-200 p-4 text-center">
                 <p className="text-2xl font-semibold text-red-600">{needsAttention.length}</p>
                 <p className="text-xs text-gray-400 mt-1">Need attention</p>
@@ -164,7 +168,7 @@ export default function RequirementsPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2 mb-6 flex-wrap">
+            <div className="flex items-center gap-2 mb-6 flex-wrap sticky top-[57px] z-20 bg-gray-50 py-2 -mx-6 px-6">
               {([
                 ['all', 'All'],
                 ['needs_attention', 'Needs attention'],
@@ -177,7 +181,7 @@ export default function RequirementsPage() {
                   className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
                     filter === key
                       ? 'border-green-600 bg-green-50 text-green-700 font-medium'
-                      : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                      : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'
                   }`}
                 >
                   {label}
@@ -185,80 +189,84 @@ export default function RequirementsPage() {
               ))}
             </div>
 
-            <div className="space-y-8">
-              {Object.entries(grouped).map(([category, items]) => (
-                <div key={category}>
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="text-xs font-bold uppercase tracking-widest text-gray-500">{category}</span>
-                    <div className="flex-1 h-px bg-gray-100" />
-                  </div>
-                  <div className="space-y-3">
-                    {items.map((o) => {
-                      const rt = o.requirement_templates
-                      const isOpen = expanded[o.id]
-                      const statusStyle = STATUS_STYLES[o.status] || STATUS_STYLES.missing
-                      return (
-                        <div key={o.id} className="bg-white rounded-xl border border-gray-200 p-4">
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 flex-wrap mb-1">
-                                <span className={`text-xs px-2 py-0.5 rounded-md border font-medium ${PRIORITY_STYLES[rt?.priority] || PRIORITY_STYLES.standard}`}>
-                                  {rt?.priority || 'standard'}
-                                </span>
-                                <span className="flex items-center gap-1.5">
-                                  <span className={`w-1.5 h-1.5 rounded-full ${statusStyle.dot}`} />
-                                  <span className={`text-xs font-medium ${statusStyle.text}`}>{statusStyle.label}</span>
-                                </span>
+            <div className="space-y-6">
+              {Object.entries(grouped).map(([category, items]) => {
+                const attentionInCategory = items.filter((o) => isNeedsAttention(o.status)).length
+                return (
+                  <div key={category}>
+                    <div className="sticky top-[105px] z-10 bg-gray-50 -mx-6 px-6 py-3 mb-3 border-b-2 border-gray-300 flex items-center gap-3">
+                      <span className="text-sm font-bold uppercase tracking-wide text-gray-900">{category}</span>
+                      <span className="text-xs text-gray-400">{items.length} item{items.length !== 1 ? 's' : ''}</span>
+                      {attentionInCategory > 0 && (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-medium">
+                          {attentionInCategory} need{attentionInCategory === 1 ? 's' : ''} attention
+                        </span>
+                      )}
+                    </div>
+                    <div className="space-y-3">
+                      {items.map((o) => {
+                        const rt = o.requirement_templates
+                        const isOpen = expanded[o.id]
+                        const statusStyle = STATUS_STYLES[o.status] || STATUS_STYLES.missing
+                        return (
+                          <div key={o.id} className="bg-white rounded-xl border border-gray-200 p-4">
+                            <div className="flex items-center gap-2 flex-wrap mb-1">
+                              <span className={`text-xs px-2 py-0.5 rounded-md border font-medium ${PRIORITY_STYLES[rt?.priority] || PRIORITY_STYLES.standard}`}>
+                                {rt?.priority || 'standard'}
+                              </span>
+                              <span className="flex items-center gap-1.5">
+                                <span className={`w-1.5 h-1.5 rounded-full ${statusStyle.dot}`} />
+                                <span className={`text-xs font-medium ${statusStyle.text}`}>{statusStyle.label}</span>
+                              </span>
+                            </div>
+                            <p className="text-sm font-semibold text-gray-900">{rt?.requirement_name}</p>
+                            {rt?.citation && <p className="text-xs text-gray-400 mt-0.5">{rt.citation}</p>}
+                            {rt?.applies === 'conditional' && rt?.trigger_plain && (
+                              <p className="text-xs text-blue-600 mt-1.5 italic">{rt.trigger_plain}</p>
+                            )}
+
+                            <button
+                              onClick={() => setExpanded((prev) => ({ ...prev, [o.id]: !prev[o.id] }))}
+                              className="mt-2 text-xs text-gray-400 hover:text-gray-600 transition-colors"
+                            >
+                              {isOpen ? '▲ Less detail' : '▼ More detail'}
+                            </button>
+
+                            {isOpen && (
+                              <div className="mt-3 space-y-2 pt-3 border-t border-gray-100">
+                                {rt?.cadence && (
+                                  <div>
+                                    <p className="text-xs font-medium text-gray-400">How often</p>
+                                    <p className="text-xs text-gray-700">{rt.cadence}</p>
+                                  </div>
+                                )}
+                                {rt?.evidence_description && (
+                                  <div>
+                                    <p className="text-xs font-medium text-gray-400">What proves this</p>
+                                    <p className="text-xs text-gray-700">{rt.evidence_description}</p>
+                                  </div>
+                                )}
+                                {rt?.fails_if && (
+                                  <div>
+                                    <p className="text-xs font-medium text-gray-400">Fails even if the document exists, if</p>
+                                    <p className="text-xs text-gray-700">{rt.fails_if}</p>
+                                  </div>
+                                )}
+                                {o.notes && (
+                                  <div>
+                                    <p className="text-xs font-medium text-gray-400">Why CompliBoard thinks this</p>
+                                    <p className="text-xs text-gray-700">{o.notes}</p>
+                                  </div>
+                                )}
                               </div>
-                              <p className="text-sm font-semibold text-gray-900">{rt?.requirement_name}</p>
-                              {rt?.citation && <p className="text-xs text-gray-400 mt-0.5">{rt.citation}</p>}
-                              {rt?.applies === 'conditional' && rt?.trigger_plain && (
-                                <p className="text-xs text-blue-600 mt-1.5 italic">{rt.trigger_plain}</p>
-                              )}
-                            </div>
+                            )}
                           </div>
-
-                          <button
-                            onClick={() => setExpanded((prev) => ({ ...prev, [o.id]: !prev[o.id] }))}
-                            className="mt-2 text-xs text-gray-400 hover:text-gray-600 transition-colors"
-                          >
-                            {isOpen ? '▲ Less detail' : '▼ More detail'}
-                          </button>
-
-                          {isOpen && (
-                            <div className="mt-3 space-y-2 pt-3 border-t border-gray-100">
-                              {rt?.cadence && (
-                                <div>
-                                  <p className="text-xs font-medium text-gray-400">How often</p>
-                                  <p className="text-xs text-gray-700">{rt.cadence}</p>
-                                </div>
-                              )}
-                              {rt?.evidence_description && (
-                                <div>
-                                  <p className="text-xs font-medium text-gray-400">What proves this</p>
-                                  <p className="text-xs text-gray-700">{rt.evidence_description}</p>
-                                </div>
-                              )}
-                              {rt?.fails_if && (
-                                <div>
-                                  <p className="text-xs font-medium text-gray-400">Fails even if the document exists, if</p>
-                                  <p className="text-xs text-gray-700">{rt.fails_if}</p>
-                                </div>
-                              )}
-                              {o.notes && (
-                                <div>
-                                  <p className="text-xs font-medium text-gray-400">Why CompliBoard thinks this</p>
-                                  <p className="text-xs text-gray-700">{o.notes}</p>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      )
-                    })}
+                        )
+                      })}
+                    </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
 
             <AIDisclaimer variant="full" className="mt-8" />
