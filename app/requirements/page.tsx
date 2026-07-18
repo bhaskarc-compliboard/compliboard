@@ -32,14 +32,6 @@ interface Obligation {
   requirement_templates: RequirementTemplate
 }
 
-interface Counts {
-  total: number
-  missing: number
-  satisfied: number
-  at_risk: number
-  expiring_soon: number
-}
-
 const PRIORITY_STYLES: Record<string, string> = {
   critical: 'bg-red-50 text-red-700 border-red-200',
   high: 'bg-amber-50 text-amber-700 border-amber-200',
@@ -52,17 +44,19 @@ const STATUS_STYLES: Record<string, { label: string; dot: string; text: string }
   expiring_soon: { label: 'Expiring soon', dot: 'bg-amber-400', text: 'text-amber-600' },
   satisfied: { label: 'Satisfied', dot: 'bg-green-500', text: 'text-green-600' },
   not_applicable: { label: 'Not applicable', dot: 'bg-gray-300', text: 'text-gray-400' },
+  unconfirmed: { label: 'Unconfirmed — may apply', dot: 'bg-blue-400', text: 'text-blue-600' },
 }
+
+type FilterKey = 'all' | 'needs_attention' | 'unconfirmed' | 'satisfied'
 
 export default function RequirementsPage() {
   const supabase = createClient()
   const [companyName, setCompanyName] = useState('')
   const [obligations, setObligations] = useState<Obligation[]>([])
-  const [counts, setCounts] = useState<Counts | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
-  const [filter, setFilter] = useState<'all' | 'missing' | 'satisfied'>('all')
+  const [filter, setFilter] = useState<FilterKey>('all')
 
   useEffect(() => {
     async function load() {
@@ -91,7 +85,6 @@ export default function RequirementsPage() {
           setError(json.error)
         } else {
           setObligations(json.data || [])
-          setCounts(json.counts || null)
         }
       } catch (err) {
         setError('Could not load requirements.')
@@ -102,8 +95,13 @@ export default function RequirementsPage() {
     load()
   }, [])
 
+  const needsAttention = obligations.filter((o) => o.status === 'missing' || o.status === 'at_risk' || o.status === 'expiring_soon')
+  const unconfirmed = obligations.filter((o) => o.status === 'unconfirmed')
+  const satisfied = obligations.filter((o) => o.status === 'satisfied')
+
   const filtered = obligations.filter((o) => {
-    if (filter === 'missing') return o.status === 'missing' || o.status === 'at_risk' || o.status === 'expiring_soon'
+    if (filter === 'needs_attention') return o.status === 'missing' || o.status === 'at_risk' || o.status === 'expiring_soon'
+    if (filter === 'unconfirmed') return o.status === 'unconfirmed'
     if (filter === 'satisfied') return o.status === 'satisfied'
     return true
   })
@@ -120,7 +118,7 @@ export default function RequirementsPage() {
       title="Requirements"
       didYouKnow={{
         icon: '📚',
-        text: 'This list is matched automatically from a master requirements database for your industry and state — nothing here was generated on the spot. As you upload documents, items move from Missing to Satisfied on their own.',
+        text: 'This list is matched automatically from a master requirements database for your industry and state. Items marked "Unconfirmed" could not be determined from your profile alone — a website being silent about something is never treated as proof it does not apply. Confirm those in passing as you go, or they will resolve on their own as you upload documents.',
       }}
     >
       <div className="max-w-3xl mx-auto px-6 py-8">
@@ -147,35 +145,42 @@ export default function RequirementsPage() {
           </div>
         ) : (
           <>
-            {counts && (
-              <div className="mb-6 grid grid-cols-3 gap-3">
-                <div className="bg-white rounded-xl border border-gray-200 p-4 text-center">
-                  <p className="text-2xl font-semibold text-red-600">{counts.missing + counts.at_risk + counts.expiring_soon}</p>
-                  <p className="text-xs text-gray-400 mt-1">Need attention</p>
-                </div>
-                <div className="bg-white rounded-xl border border-gray-200 p-4 text-center">
-                  <p className="text-2xl font-semibold text-green-600">{counts.satisfied}</p>
-                  <p className="text-xs text-gray-400 mt-1">Satisfied</p>
-                </div>
-                <div className="bg-white rounded-xl border border-gray-200 p-4 text-center">
-                  <p className="text-2xl font-semibold text-gray-700">{counts.total}</p>
-                  <p className="text-xs text-gray-400 mt-1">Total requirements</p>
-                </div>
+            <div className="mb-6 grid grid-cols-4 gap-3">
+              <div className="bg-white rounded-xl border border-gray-200 p-4 text-center">
+                <p className="text-2xl font-semibold text-red-600">{needsAttention.length}</p>
+                <p className="text-xs text-gray-400 mt-1">Need attention</p>
               </div>
-            )}
+              <div className="bg-white rounded-xl border border-gray-200 p-4 text-center">
+                <p className="text-2xl font-semibold text-blue-500">{unconfirmed.length}</p>
+                <p className="text-xs text-gray-400 mt-1">Unconfirmed</p>
+              </div>
+              <div className="bg-white rounded-xl border border-gray-200 p-4 text-center">
+                <p className="text-2xl font-semibold text-green-600">{satisfied.length}</p>
+                <p className="text-xs text-gray-400 mt-1">Satisfied</p>
+              </div>
+              <div className="bg-white rounded-xl border border-gray-200 p-4 text-center">
+                <p className="text-2xl font-semibold text-gray-700">{obligations.length}</p>
+                <p className="text-xs text-gray-400 mt-1">Total</p>
+              </div>
+            </div>
 
-            <div className="flex items-center gap-2 mb-6">
-              {(['all', 'missing', 'satisfied'] as const).map((f) => (
+            <div className="flex items-center gap-2 mb-6 flex-wrap">
+              {([
+                ['all', 'All'],
+                ['needs_attention', 'Needs attention'],
+                ['unconfirmed', 'Unconfirmed'],
+                ['satisfied', 'Satisfied'],
+              ] as [FilterKey, string][]).map(([key, label]) => (
                 <button
-                  key={f}
-                  onClick={() => setFilter(f)}
+                  key={key}
+                  onClick={() => setFilter(key)}
                   className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
-                    filter === f
+                    filter === key
                       ? 'border-green-600 bg-green-50 text-green-700 font-medium'
                       : 'border-gray-200 text-gray-500 hover:border-gray-300'
                   }`}
                 >
-                  {f === 'all' ? 'All' : f === 'missing' ? 'Needs attention' : 'Satisfied'}
+                  {label}
                 </button>
               ))}
             </div>
@@ -238,6 +243,12 @@ export default function RequirementsPage() {
                                 <div>
                                   <p className="text-xs font-medium text-gray-400">Fails even if the document exists, if</p>
                                   <p className="text-xs text-gray-700">{rt.fails_if}</p>
+                                </div>
+                              )}
+                              {o.notes && (
+                                <div>
+                                  <p className="text-xs font-medium text-gray-400">Why CompliBoard thinks this</p>
+                                  <p className="text-xs text-gray-700">{o.notes}</p>
                                 </div>
                               )}
                             </div>
