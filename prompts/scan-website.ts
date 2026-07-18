@@ -29,6 +29,7 @@ CRITICAL RULES:
 - For operations fields: true = confirmed on site, false = explicitly not applicable, null = unknown/not mentioned
 - Never guess or infer ownership, gender, ethnicity, or political attributes
 - If the site content is thin, rely more on public directory sources
+- The "state" field MUST be the full state name (e.g. "Oregon"), never an abbreviation (never "OR")
 - Return ONLY valid JSON, no explanation, no markdown, no preamble
 
 Return this exact JSON shape:
