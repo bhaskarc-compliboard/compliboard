@@ -1,20 +1,90 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
+import { askAIJson } from '@/lib/ai'
+import { resolveObligationsPrompt } from '@/prompts/resolve-obligations'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-// POST /api/sync-obligations
-// Body: { company_id: string }
-//
-// Finds every requirement_templates row that applies to this company
-// (same match logic as /api/requirements) and creates one obligations
-// row for each — skipping any that already exist, so this is safe to
-// run more than once. Universal rows and conditional rows both get an
-// obligation; the "does this really apply" judgment for conditional
-// rows happens later (Step 5's self-resolving rows), not here.
+interface TemplateRow {
+  id: string
+  applies: string
+  requirement_name: string
+  trigger_plain: string | null
+}
+
+interface ResolutionResult {
+  id: string
+  decision: 'applies' | 'does_not_apply' | 'unknown'
+  rationale: string
+}
+
+interface ObligationRow {
+  company_id: string
+  entity_id: null
+  requirement_template_id: string
+  status: string
+  resolved_by: string | null
+  resolution_rationale: string | null
+}
+
+const BATCH_SIZE = 40
+
+async function resolveBatch(
+  batch: TemplateRow[],
+  company_id: string,
+  profileContext: string
+): Promise<ObligationRow[]> {
+  const batchInput = batch.map((t) => ({
+    id: t.id,
+    requirement_name: t.requirement_name,
+    trigger_plain: t.trigger_plain,
+  }))
+
+  let results: ResolutionResult[] = []
+  try {
+    results = await askAIJson<ResolutionResult[]>(
+      resolveObligationsPrompt(),
+      `COMPANY PROFILE:\n${profileContext}\n\nREQUIREMENTS TO EVALUATE:\n${JSON.stringify(batchInput, null, 2)}`,
+      { maxTokens: 4000 }
+    )
+  } catch (err) {
+    console.error('Obligation resolution batch failed, defaulting batch to unconfirmed:', err)
+  }
+
+  const resultMap = new Map(results.map((r) => [r.id, r]))
+
+  return batch.map((t) => {
+    const result = resultMap.get(t.id)
+    if (!result) {
+      return {
+        company_id,
+        entity_id: null,
+        requirement_template_id: t.id,
+        status: 'unconfirmed',
+        resolved_by: 'ai_inferred',
+        resolution_rationale: 'No resolution returned — defaulted to unconfirmed for safety.',
+      }
+    }
+    const status =
+      result.decision === 'applies'
+        ? 'missing'
+        : result.decision === 'does_not_apply'
+        ? 'not_applicable'
+        : 'unconfirmed'
+    return {
+      company_id,
+      entity_id: null,
+      requirement_template_id: t.id,
+      status,
+      resolved_by: 'ai_inferred',
+      resolution_rationale: result.rationale || null,
+    }
+  })
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
@@ -38,7 +108,7 @@ export async function POST(request: NextRequest) {
 
     let templateQuery = supabaseAdmin
       .from('requirement_templates')
-      .select('id')
+      .select('id, applies, requirement_name, trigger_plain')
       .eq('industry', company.industry)
 
     templateQuery = state
@@ -60,25 +130,49 @@ export async function POST(request: NextRequest) {
     if (existingError) throw existingError
     const existingIds = new Set((existing || []).map((o) => o.requirement_template_id))
 
-    const toCreate = templates
-      .filter((t) => !existingIds.has(t.id))
-      .map((t) => ({
-        company_id,
-        entity_id: null,
-        requirement_template_id: t.id,
-        status: 'missing',
-      }))
+    const newTemplates = (templates as TemplateRow[]).filter((t) => !existingIds.has(t.id))
+    const universal = newTemplates.filter((t) => t.applies === 'universal')
+    const conditional = newTemplates.filter((t) => t.applies !== 'universal')
 
-    if (toCreate.length > 0) {
-      const { error: insertError } = await supabaseAdmin.from('obligations').insert(toCreate)
+    const universalRows: ObligationRow[] = universal.map((t) => ({
+      company_id,
+      entity_id: null,
+      requirement_template_id: t.id,
+      status: 'missing',
+      resolved_by: null,
+      resolution_rationale: null,
+    }))
+
+    const profileContext = JSON.stringify(company.scan_result || {}, null, 2)
+
+    const batchPromises: Promise<ObligationRow[]>[] = []
+    for (let i = 0; i < conditional.length; i += BATCH_SIZE) {
+      const batch = conditional.slice(i, i + BATCH_SIZE)
+      batchPromises.push(resolveBatch(batch, company_id, profileContext))
+    }
+    const batchResults = await Promise.all(batchPromises)
+    const conditionalRows = batchResults.flat()
+
+    const rowsToInsert: ObligationRow[] = [...universalRows, ...conditionalRows]
+
+    if (rowsToInsert.length > 0) {
+      const { error: insertError } = await supabaseAdmin.from('obligations').insert(rowsToInsert)
       if (insertError) throw insertError
     }
 
-    return NextResponse.json({
-      created: toCreate.length,
-      skipped: templates.length - toCreate.length,
+    const summary = {
+      created: rowsToInsert.length,
+      skipped: templates.length - rowsToInsert.length,
       total: templates.length,
-    })
+      universal: universal.length,
+      conditional_resolved: {
+        missing: conditionalRows.filter((r) => r.status === 'missing').length,
+        not_applicable: conditionalRows.filter((r) => r.status === 'not_applicable').length,
+        unconfirmed: conditionalRows.filter((r) => r.status === 'unconfirmed').length,
+      },
+    }
+
+    return NextResponse.json(summary)
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to sync obligations' },
