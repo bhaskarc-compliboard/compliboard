@@ -8,6 +8,11 @@ export type AIContent = string | any[]
 export interface AskAIOptions {
   maxTokens?: number
   model?: string
+  /** Lower = more consistent/deterministic, higher = more varied.
+   *  Default (unset) uses the API's own default, which favors variety —
+   *  fine for conversational answers, too loose for yes/no judgment calls.
+   *  Pass a low value (e.g. 0.1) for anything deciding a status or fact. */
+  temperature?: number
 }
 
 /**
@@ -30,6 +35,7 @@ export async function askAI(
       max_tokens: maxTokens,
       system: systemPrompt,
       messages: [{ role: 'user', content: content as any }],
+      ...(options.temperature !== undefined ? { temperature: options.temperature } : {}),
     })
     return message.content[0].type === 'text' ? message.content[0].text : ''
   }

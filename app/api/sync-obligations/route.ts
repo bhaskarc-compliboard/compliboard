@@ -48,7 +48,7 @@ async function resolveBatch(
     results = await askAIJson<ResolutionResult[]>(
       resolveObligationsPrompt(),
       `COMPANY PROFILE:\n${profileContext}\n\nREQUIREMENTS TO EVALUATE:\n${JSON.stringify(batchInput, null, 2)}`,
-      { maxTokens: 4000 }
+      { maxTokens: 4000, temperature: 0.1 }
     )
   } catch (err) {
     console.error('Obligation resolution batch failed, defaulting batch to unconfirmed:', err)

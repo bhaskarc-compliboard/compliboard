@@ -11,7 +11,7 @@ async function fetchPageText(url: string): Promise<string> {
   try {
     const res = await fetch(url, {
       headers: { 'User-Agent': 'Mozilla/5.0 (compatible; CompliBoard/1.0)' },
-      signal: AbortSignal.timeout(6000),
+      signal: AbortSignal.timeout(10000),
     })
     if (!res.ok) return ''
     const html = await res.text()
@@ -38,7 +38,7 @@ async function fetchSiteContent(rawUrl: string): Promise<string> {
 
   const pages: string[] = [`[Homepage]\n${home}`]
 
-  // Fetch all subpages in parallel — time-bounded at 8s total
+  // Fetch all subpages in parallel — each page gets up to 10s to respond
   const results = await Promise.allSettled(
     SUBPAGES.map(sub => fetchPageText(`${base}/${sub}`))
   )
@@ -76,6 +76,7 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify({
         model: 'claude-sonnet-4-5',
         max_tokens: 1024,
+        temperature: 0.1, // extraction is a judgment task — consistency matters more than variety here
         tools: [{ type: 'web_search_20250305', name: 'web_search' }],
         messages: [
           {
