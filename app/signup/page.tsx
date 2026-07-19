@@ -1,20 +1,10 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 
-const INDUSTRIES = [
-  { label: 'Chemical Manufacturing', value: 'chemical-manufacturing' },
-  { label: 'Food & Beverage Manufacturing', value: 'food-beverage-manufacturing' },
-  { label: 'Restaurant / Food Service', value: 'restaurant' },
-  { label: 'Cannabis', value: 'cannabis' },
-  { label: 'Auto Body / Dry Cleaners', value: 'auto-body-dry-cleaners' },
-  { label: 'Wood Products / Sawmills', value: 'wood-products-sawmills' },
-  { label: 'Construction', value: 'construction' },
-  { label: 'Healthcare', value: 'healthcare' },
-  { label: 'Other', value: 'other' },
-]
+// Industries now come from the database (/api/industries), not a hardcoded list.
 
 const US_STATES = [
   'Alabama','Alaska','Arizona','Arkansas','California','Colorado','Connecticut',
@@ -84,6 +74,13 @@ export default function SignupPage() {
   const [password, setPassword] = useState('')
   const [companyName, setCompanyName] = useState('')
   const [industry, setIndustry] = useState('')
+  const [industries, setIndustries] = useState<string[]>([])
+  useEffect(() => {
+    fetch('/api/industries')
+      .then((r) => r.json())
+      .then((d) => setIndustries(d.industries || []))
+      .catch(() => setIndustries([]))
+  }, [])
   const [businessDescription, setBusinessDescription] = useState('')
   const [state, setState] = useState('')
   const [city, setCity] = useState('')
@@ -334,7 +331,8 @@ export default function SignupPage() {
             value={industry}
             onChange={(e) => setIndustry(e.target.value)}>
             <option value="">Select your industry *</option>
-            {INDUSTRIES.map(i => <option key={i.value} value={i.value}>{i.label}</option>)}
+            {industries.map(slug => <option key={slug} value={slug}>{slug}</option>)}
+            <option value="other">Don&apos;t see your industry?</option>
           </select>
 
           {industry === 'other' && (
