@@ -27,14 +27,20 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
+    const company_id = searchParams.get('company_id')
     const user_id = searchParams.get('user_id')
-    if (!user_id) return NextResponse.json({ error: 'Missing user_id' }, { status: 400 })
+    if (!company_id && !user_id) return NextResponse.json({ error: 'Missing company_id or user_id' }, { status: 400 })
 
-    const { data, error } = await supabaseAdmin
+    // A compliance calendar is a COMPANY asset — prefer company_id so all users
+    // at a company see the same deadlines. user_id kept for backward compatibility
+    // until the calendar page is migrated to company_id.
+    let query = supabaseAdmin
       .from('calendar_events')
       .select('*')
-      .eq('user_id', user_id)
       .order('due_date', { ascending: true })
+    query = company_id ? query.eq('company_id', company_id) : query.eq('user_id', user_id)
+
+    const { data, error } = await query
 
     if (error) throw error
     return NextResponse.json({ data })
