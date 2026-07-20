@@ -123,9 +123,9 @@ export default function RequirementsPage() {
   }
 
   const STAT_CARDS: { key: FilterKey; label: string; count: number; color: string }[] = [
-    { key: 'needs_attention', label: 'Need attention', count: needsAttention.length, color: 'text-red-600' },
-    { key: 'unconfirmed', label: 'Unconfirmed', count: unconfirmed.length, color: 'text-blue-500' },
-    { key: 'satisfied', label: 'Satisfied', count: satisfied.length, color: 'text-green-600' },
+    { key: 'needs_attention', label: 'Need attention', count: needsAttention.length, color: 'text-gray-700' },
+    { key: 'unconfirmed', label: 'Unconfirmed', count: unconfirmed.length, color: 'text-gray-700' },
+    { key: 'satisfied', label: 'Satisfied', count: satisfied.length, color: 'text-gray-700' },
     { key: 'all', label: 'Total', count: obligations.length, color: 'text-gray-700' },
   ]
 
@@ -142,6 +142,12 @@ export default function RequirementsPage() {
           <h1 className="text-xl font-semibold text-gray-900 mb-1">Requirements</h1>
           <p className="text-sm text-gray-400">
             {companyName ? `Every requirement matched to ${companyName}` : 'Every requirement matched to your business'}
+          </p>
+        </div>
+
+        <div className="mb-6 bg-green-50 border border-green-200 rounded-xl px-5 py-4">
+          <p className="text-sm text-green-900">
+            These are the general requirements that can apply to a business in your industry. Upload your documents and CompliBoard narrows this to your company&apos;s exact list — with live compliance numbers.
           </p>
         </div>
 
