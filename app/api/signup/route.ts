@@ -1,28 +1,14 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
-import { getFolders } from '@/lib/folderTemplates'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-// Division name is derived from the industry slug directly (no hardcoded label map).
-
-const HR_FOLDERS = [
-  'Employee Handbook',
-  'HR Policies',
-  'Offer Letters & Templates',
-  'Training Records',
-  'Employee Records',
-]
-
-const COMPLIANCE_LOG_FOLDERS = [
-  'Folder Gap Reports',
-  'Document Reviews',
-  'Monthly Summaries',
-]
-
+// Signup's only job: create the account and save the company + industry info.
+// No folder or file creation of any kind — structure appears later from what the
+// user actually does (guided demo, uploads, drive connection). Impose nothing.
 export async function POST(request: NextRequest) {
   try {
     const { email, password, companyName, industry, state, county, city, employeeCount, websiteUrl, scanResult } = await request.json()
@@ -46,62 +32,6 @@ export async function POST(request: NextRequest) {
       .from('profiles')
       .insert({ id: authData.user.id, company_id: companyData.id, full_name: '' })
     if (profileError) throw profileError
-
-    // Create the default division folder named after their industry
-    const divisionName = industry || 'General'
-    const { data: divisionFolder, error: divisionError } = await supabaseAdmin
-      .from('company_folders')
-      .insert({
-        company_id: companyData.id,
-        name: divisionName,
-        parent_id: null,
-        sort_order: 0,
-        section: 'files',
-      })
-      .select()
-      .single()
-    if (divisionError) throw divisionError
-
-    // Create compliance folders inside the division
-    const complianceFolders = getFolders(industry)
-    const complianceInserts = complianceFolders.map((name, i) => ({
-      company_id: companyData.id,
-      name,
-      parent_id: divisionFolder.id,
-      sort_order: i,
-      section: 'files',
-    }))
-
-    const { error: complianceError } = await supabaseAdmin
-      .from('company_folders')
-      .insert(complianceInserts)
-    if (complianceError) throw complianceError
-
-    // Create HR folders
-    const hrInserts = HR_FOLDERS.map((name, i) => ({
-      company_id: companyData.id,
-      name,
-      parent_id: null,
-      sort_order: i,
-      section: 'hr',
-    }))
-    const { error: hrError } = await supabaseAdmin
-      .from('company_folders')
-      .insert(hrInserts)
-    if (hrError) throw hrError
-
-    // Create Compliance Log folders
-    const logInserts = COMPLIANCE_LOG_FOLDERS.map((name, i) => ({
-      company_id: companyData.id,
-      name,
-      parent_id: null,
-      sort_order: i,
-      section: 'log',
-    }))
-    const { error: logError } = await supabaseAdmin
-      .from('company_folders')
-      .insert(logInserts)
-    if (logError) throw logError
 
     return NextResponse.json({ success: true })
   } catch (error) {
