@@ -7,18 +7,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-const INDUSTRY_LABELS: Record<string, string> = {
-  'chemical-manufacturing': 'Chemical Manufacturing',
-  'food-beverage-manufacturing': 'Food & Beverage Manufacturing',
-  'restaurant': 'Restaurant / Food Service',
-  'cannabis': 'Cannabis',
-  'auto-body-dry-cleaners': 'Auto Body / Dry Cleaners',
-  'wood-products-sawmills': 'Wood Products / Sawmills',
-  'construction': 'Construction',
-  'healthcare': 'Healthcare',
-  'hospice': 'Hospice',
-  'other': 'Other',
-}
+// industryLabel is the industry slug directly (no hardcoded label map).
 
 export async function POST(request: NextRequest) {
   try {
@@ -93,7 +82,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       added: toAdd.length,
-      industryLabel: INDUSTRY_LABELS[industry] || industry,
+      industryLabel: industry,
     })
   } catch (error) {
     console.error('Add industry folders error:', error)

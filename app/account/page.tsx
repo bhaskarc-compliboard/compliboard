@@ -5,18 +5,7 @@ import { createClient } from '@/lib/supabase'
 import AppLayout from '@/components/AppLayout'
 import { useRouter } from 'next/navigation'
 
-const INDUSTRIES = [
-  { label: 'Chemical Manufacturing', value: 'chemical-manufacturing' },
-  { label: 'Food & Beverage Manufacturing', value: 'food-beverage-manufacturing' },
-  { label: 'Restaurant / Food Service', value: 'restaurant' },
-  { label: 'Cannabis', value: 'cannabis' },
-  { label: 'Auto Body / Dry Cleaners', value: 'auto-body-dry-cleaners' },
-  { label: 'Wood Products / Sawmills', value: 'wood-products-sawmills' },
-  { label: 'Construction', value: 'construction' },
-  { label: 'Healthcare', value: 'healthcare' },
-  { label: 'Hospice', value: 'hospice' },
-  { label: 'Other', value: 'other' },
-]
+// Industries now come from the database (/api/industries), not a hardcoded list.
 
 const EMPLOYEE_COUNTS = ['1-25', '26-75', '76-200', '200+']
 
@@ -48,6 +37,13 @@ export default function AccountPage() {
   const [fullName, setFullName] = useState('')
   const [companyName, setCompanyName] = useState('')
   const [industry, setIndustry] = useState('')
+  const [industries, setIndustries] = useState<string[]>([])
+  useEffect(() => {
+    fetch('/api/industries')
+      .then((r) => r.json())
+      .then((d) => setIndustries(d.industries || []))
+      .catch(() => setIndustries([]))
+  }, [])
   const [state, setState] = useState('')
   const [county, setCounty] = useState('')
   const [city, setCity] = useState('')
@@ -254,7 +250,8 @@ export default function AccountPage() {
                   value={industry}
                   onChange={(e) => setIndustry(e.target.value)}>
                   <option value="">Select your industry</option>
-                  {INDUSTRIES.map(i => <option key={i.value} value={i.value}>{i.label}</option>)}
+                  {industries.map(slug => <option key={slug} value={slug}>{slug}</option>)}
+                  <option value="other">Other</option>
                 </select>
               </div>
               <div className="grid grid-cols-2 gap-3">

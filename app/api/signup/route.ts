@@ -7,18 +7,7 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-const INDUSTRY_LABELS: Record<string, string> = {
-  'chemical-manufacturing': 'Chemical Manufacturing',
-  'food-beverage-manufacturing': 'Food & Beverage Manufacturing',
-  'restaurant': 'Restaurant / Food Service',
-  'cannabis': 'Cannabis',
-  'auto-body-dry-cleaners': 'Auto Body / Dry Cleaners',
-  'wood-products-sawmills': 'Wood Products / Sawmills',
-  'construction': 'Construction',
-  'healthcare': 'Healthcare',
-  'hospice': 'Hospice',
-  'other': 'General',
-}
+// Division name is derived from the industry slug directly (no hardcoded label map).
 
 const HR_FOLDERS = [
   'Employee Handbook',
@@ -59,7 +48,7 @@ export async function POST(request: NextRequest) {
     if (profileError) throw profileError
 
     // Create the default division folder named after their industry
-    const divisionName = INDUSTRY_LABELS[industry] || 'General'
+    const divisionName = industry || 'General'
     const { data: divisionFolder, error: divisionError } = await supabaseAdmin
       .from('company_folders')
       .insert({

@@ -60,18 +60,7 @@ const RECURRENCE_OPTIONS = [
   { value: 'annually', label: 'Annually' },
 ]
 
-const INDUSTRY_LABELS: Record<string, string> = {
-  'chemical-manufacturing': 'Chemical Manufacturing',
-  'food-beverage-manufacturing': 'Food & Beverage Manufacturing',
-  'restaurant': 'Restaurant / Food Service',
-  'cannabis': 'Cannabis',
-  'auto-body-dry-cleaners': 'Auto Body / Dry Cleaners',
-  'wood-products-sawmills': 'Wood Products / Sawmills',
-  'construction': 'Construction',
-  'healthcare': 'Healthcare',
-  'hospice': 'Hospice',
-  'other': 'Other',
-}
+// Audit industry is shown as its slug directly (no hardcoded label map).
 
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return bytes + ' B'
@@ -1066,7 +1055,7 @@ export default function DocumentsPage() {
                                   <span>{audit.parent_folder_name} <span className="text-gray-400 font-normal">→</span> {audit.folder_name}</span>
                                 ) : audit.folder_name}
                               </p>
-                              <p className="text-xs text-gray-400 mt-0.5">{new Date(audit.created_at).toLocaleDateString()} · {INDUSTRY_LABELS[audit.industry] || audit.industry}</p>
+                              <p className="text-xs text-gray-400 mt-0.5">{new Date(audit.created_at).toLocaleDateString()} · {audit.industry}</p>
                             </div>
                             <div className="flex items-center gap-3 flex-shrink-0">
                               {result.present?.length > 0 && <span className="text-xs text-green-600">✅ {result.present.length}</span>}
