@@ -75,9 +75,13 @@ export default function CalendarPage() {
         .eq('id', user.id)
         .single()
       if (profile?.company_id) setCompanyId(profile.company_id)
-      const res = await fetch(`/api/calendar?user_id=${user.id}`)
-      const json = await res.json()
-      if (json.data) setEvents(json.data)
+      // A compliance calendar is a company asset — read by company_id so all
+      // users at a company see the same deadlines (matches the dashboard).
+      if (profile?.company_id) {
+        const res = await fetch(`/api/calendar?company_id=${profile.company_id}`)
+        const json = await res.json()
+        if (json.data) setEvents(json.data)
+      }
       setLoading(false)
     }
     loadData()
