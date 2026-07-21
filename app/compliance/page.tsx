@@ -123,6 +123,8 @@ interface SavedChecklist {
   created_at: string
   must_do_count: number
   completed_count: number
+  research_answer: string | null
+  converted_to_checklist_id: string | null
 }
 
 const EXAMPLE_QUESTIONS = [
@@ -143,6 +145,7 @@ function CompliancePageInner() {
   const [scanResult, setScanResult] = useState<Record<string, unknown> | null>(null)
   const [data, setData] = useState<ChecklistData | null>(null)
   const [currentChecklistId, setCurrentChecklistId] = useState<string | null>(null)
+  const [currentResearchId, setCurrentResearchId] = useState<string | null>(null)
   const [savedChecklists, setSavedChecklists] = useState<SavedChecklist[]>([])
   const [loading, setLoading] = useState(false)
   const [currentStatus, setCurrentStatus] = useState('')
@@ -207,13 +210,17 @@ function CompliancePageInner() {
     if (!user) return
     const { data: checklists } = await supabase
       .from('checklists')
-      .select('id, question, title, created_at')
+      .select('id, question, title, created_at, research_answer, converted_to_checklist_id')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(10)
     if (!checklists) return
 
     const withCounts = await Promise.all(checklists.map(async (c) => {
+      // Research answers have no checklist_items — skip the count queries entirely.
+      if (c.research_answer) {
+        return { ...c, must_do_count: 0, completed_count: 0 }
+      }
       const { count: total } = await supabase
         .from('checklist_items')
         .select('*', { count: 'exact', head: true })
@@ -230,6 +237,33 @@ function CompliancePageInner() {
       return { ...c, must_do_count: total || 0, completed_count: completed || 0 }
     }))
     setSavedChecklists(withCounts)
+  }
+
+  async function saveResearch(question: string, answer: string) {
+    if (!userId || !companyId) return null
+    const { data: research, error } = await supabase
+      .from('checklists')
+      .insert({
+        company_id: companyId,
+        user_id: userId,
+        question,
+        title: question.length > 80 ? question.slice(0, 80) + '…' : question,
+        research_answer: answer,
+      })
+      .select()
+      .single()
+    if (error || !research) return null
+    return research.id
+  }
+
+  function loadResearch(c: SavedChecklist) {
+    setResearchData(c.research_answer)
+    setAskedQuestion(c.question)
+    setQuestion(c.question)
+    setMode('research')
+    setData(null)
+    setCurrentResearchId(c.id)
+    setShowSaved(false)
   }
 
   async function saveChecklist(question: string, data: ChecklistData) {
@@ -582,7 +616,14 @@ Give them a specific direct answer — exactly what they need to do, which speci
       }
       const json = await res.json()
       if (currentMode === 'research') {
-        setResearchData(json.research || json.data?.title || 'No results')
+        const answerText = json.research || json.data?.title || 'No results'
+        setResearchData(answerText)
+        setCurrentResearchId(null)
+        if (userId && answerText !== 'No results') {
+          const researchId = await saveResearch(q, answerText)
+          setCurrentResearchId(researchId)
+          await loadSavedChecklists()
+        }
       } else {
         setData(json.data)
       }
@@ -591,6 +632,18 @@ Give them a specific direct answer — exactly what they need to do, which speci
         const checklistId = await saveChecklist(q, json.data)
         if (checklistId) {
           setCurrentChecklistId(checklistId)
+          if (currentResearchId) {
+            try {
+              await fetch('/api/link-research', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ researchId: currentResearchId, checklistId }),
+              })
+            } catch (linkErr) {
+              console.error('Failed to link research to checklist:', linkErr)
+            }
+            setCurrentResearchId(null)
+          }
           const { data: savedItems } = await supabase
             .from('checklist_items')
             .select('id')
@@ -695,18 +748,22 @@ Give them a specific direct answer — exactly what they need to do, which speci
         {showSaved && savedChecklists.length > 0 && (
           <div className="no-print mb-6 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
             <div className="px-4 py-3 border-b border-gray-100">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Saved Checklists</p>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Saved</p>
             </div>
             <div className="divide-y divide-gray-50">
               {savedChecklists.map((c) => (
                 <div key={c.id} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors">
-                  <div className="flex-1 min-w-0 cursor-pointer" onClick={() => loadChecklist(c.id)}>
+                  <div className="flex-1 min-w-0 cursor-pointer" onClick={() => c.research_answer ? loadResearch(c) : loadChecklist(c.id)}>
                     <p className="text-sm font-medium text-gray-900 truncate">{c.title}</p>
                     <div className="flex items-center gap-3 mt-0.5">
                       <p className="text-xs text-gray-400">{new Date(c.created_at).toLocaleDateString()}</p>
-                      {c.must_do_count > 0 && (
+                      {c.research_answer ? (
+                        <p className="text-xs text-blue-500">
+                          Answered{c.converted_to_checklist_id ? ' · → Checklist created' : ''}
+                        </p>
+                      ) : c.must_do_count > 0 ? (
                         <p className="text-xs text-green-600">{c.completed_count}/{c.must_do_count} done</p>
-                      )}
+                      ) : null}
                     </div>
                   </div>
                   <button onClick={() => deleteChecklist(c.id)}
