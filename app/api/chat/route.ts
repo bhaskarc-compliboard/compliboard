@@ -33,7 +33,11 @@ export async function POST(request: NextRequest) {
     }
 
     const userQuestion = question.trim() ||
-      (fileData ? 'Analyse this document and give me a compliance checklist. Identify any gaps, risks, or corrective actions needed.' : '');
+      (fileData
+        ? (mode === 'research'
+            ? 'Summarize what this document is, what it covers, and flag anything that looks off, expired, or missing.'
+            : 'Analyse this document and give me a compliance checklist. Identify any gaps, risks, or corrective actions needed.')
+        : '');
 
     if (!userQuestion && !fileData) {
       return NextResponse.json({ error: 'No question or file provided' }, { status: 400 });

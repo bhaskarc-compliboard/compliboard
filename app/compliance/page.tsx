@@ -571,6 +571,7 @@ Give them a specific direct answer — exactly what they need to do, which speci
         const formData = new FormData()
         formData.append('file', uploadedFile)
         formData.append('question', q)
+        formData.append('mode', currentMode)
         res = await fetch('/api/chat', { method: 'POST', body: formData })
       } else {
         res = await fetch('/api/chat', {
@@ -645,7 +646,7 @@ Give them a specific direct answer — exactly what they need to do, which speci
   const totalMust = data?.must_do?.length || 0
 
   return (
-    <AppLayout title="Compliance Checklist" didYouKnow={{ icon: '📋', text: 'CompliBoard generates detailed micro-steps for every compliance item — including time estimates, costs, and exactly what you need to prepare. For steps that require a decision, CompliBoard asks you two quick questions and tells you exactly what applies to your situation. Ask any compliance question in plain English and get a complete guided path from question to done.' }}>
+    <AppLayout title="Compliance Workspace" didYouKnow={{ icon: '📋', text: 'CompliBoard generates detailed micro-steps for every compliance item — including time estimates, costs, and exactly what you need to prepare. For steps that require a decision, CompliBoard asks you two quick questions and tells you exactly what applies to your situation. Ask any compliance question in plain English and get a complete guided path from question to done.' }}>
       <style>{`
         @media print {
           .no-print { display: none !important; }
@@ -680,7 +681,7 @@ Give them a specific direct answer — exactly what they need to do, which speci
 
         <div className="no-print mb-6 flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-semibold text-gray-900 mb-1">Compliance Checklist</h1>
+            <h1 className="text-xl font-semibold text-gray-900 mb-1">Compliance Workspace</h1>
             <p className="text-sm text-gray-400">Ask any compliance question in plain English</p>
           </div>
           {savedChecklists.length > 0 && (
@@ -745,16 +746,20 @@ Give them a specific direct answer — exactly what they need to do, which speci
         </div>
 
         <div className="no-print flex items-center gap-3">
-          <button onClick={() => handleSubmit('checklist')} disabled={loading || (!question.trim() && !uploadedFile)}
-            className="bg-green-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50">
-            {loading ? 'Working...' : uploadedFile ? 'Analyse my document →' : 'Get my compliance checklist →'}
-          </button>
           {!uploadedFile && (
             <button onClick={() => handleSubmit('research')} disabled={loading || !question.trim()}
-              className="border border-gray-200 text-gray-600 px-5 py-2.5 rounded-xl text-sm font-medium hover:border-green-500 hover:text-green-700 transition-colors disabled:opacity-50">
-              Research this topic →
+              className="bg-green-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50">
+              {loading ? 'Working...' : 'Research this topic →'}
             </button>
           )}
+          <button
+            onClick={() => handleSubmit(uploadedFile ? 'research' : 'checklist')}
+            disabled={loading || (!question.trim() && !uploadedFile)}
+            className={uploadedFile
+              ? "bg-green-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50"
+              : "border border-gray-200 text-gray-600 px-5 py-2.5 rounded-xl text-sm font-medium hover:border-green-500 hover:text-green-700 transition-colors disabled:opacity-50"}>
+            {loading ? 'Working...' : uploadedFile ? 'Ask about this file →' : 'Get my compliance checklist →'}
+          </button>
         </div>
 
         {loading && (
@@ -797,7 +802,7 @@ Give them a specific direct answer — exactly what they need to do, which speci
               <button
                 onClick={() => handleSubmit('checklist')}
                 className="flex items-center gap-2 text-sm px-4 py-2.5 rounded-xl border border-green-600 bg-green-700 text-white hover:bg-green-800 transition-colors">
-                Turn this into a checklist →
+                Create my action checklist →
               </button>
               <p className="text-xs text-gray-400">Get actionable steps based on this research</p>
             </div>
