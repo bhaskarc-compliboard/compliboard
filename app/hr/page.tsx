@@ -32,13 +32,24 @@ export default function HRPage() {
   const [response, setResponse] = useState<HRResponse | null>(null)
   const [asking, setAsking] = useState(false)
   const [uploadingHandbook, setUploadingHandbook] = useState(false)
-  const [showManage, setShowManage] = useState(false)
   const [showUpload, setShowUpload] = useState(false)
   const [newFile, setNewFile] = useState<File | null>(null)
   const [uploadError, setUploadError] = useState('')
   const [tab, setTab] = useState<'ask' | 'audit'>('ask')
   const [auditing, setAuditing] = useState(false)
-  const [auditResults, setAuditResults] = useState<{missing: string[], present: string[]} | null>(null)
+  const [auditResults, setAuditResults] = useState<{missing: string[], present: string[], draft_policies?: {section: string, draft: string}[]} | null>(null)
+  const [selectedHandbookId, setSelectedHandbookId] = useState<string | null>(null)
+  const [savedAudits, setSavedAudits] = useState<{id: string, handbook_name: string, present: string[], missing: string[], draft_policies: {section: string, draft: string}[], created_at: string}[]>([])
+
+  async function loadSavedAudits(compId: string) {
+    try {
+      const res = await fetch(`/api/hr-audits?company_id=${compId}`)
+      const json = await res.json()
+      setSavedAudits(json.data || [])
+    } catch (err) {
+      console.error('Failed to load saved audits:', err)
+    }
+  }
 
   useEffect(() => {
     async function loadData() {
@@ -52,6 +63,7 @@ export default function HRPage() {
         .single()
       if (!profile?.company_id) { setLoading(false); return }
       setCompanyId(profile.company_id)
+      loadSavedAudits(profile.company_id)
       const { data: company } = await supabase
         .from('companies')
         .select('name')
@@ -103,7 +115,6 @@ export default function HRPage() {
       }
       setNewFile(null)
       setShowUpload(false)
-      setShowManage(false)
       if (fileInputRef.current) fileInputRef.current.value = ''
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : 'Upload failed')
@@ -122,7 +133,7 @@ export default function HRPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           question,
-          file_url: handbooks[0].file_url,
+          handbooks: handbooks.map(h => ({ file_url: h.file_url, name: h.name })),
           company_name: companyName,
           mode: 'ask',
         }),
@@ -145,6 +156,7 @@ export default function HRPage() {
 
   async function handleAudit() {
     if (handbooks.length === 0) return
+    const targetHandbook = handbooks.find(h => h.id === selectedHandbookId) || handbooks[0]
     setAuditing(true)
     setAuditResults(null)
     try {
@@ -152,7 +164,7 @@ export default function HRPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          file_url: handbooks[0].file_url,
+          file_url: targetHandbook.file_url,
           company_name: companyName,
           mode: 'audit',
         }),
@@ -160,6 +172,27 @@ export default function HRPage() {
       const json = await res.json()
       if (!res.ok) throw new Error(json.error)
       setAuditResults(json.data)
+
+      if (companyId && userId) {
+        try {
+          await fetch('/api/hr-audits', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              companyId,
+              userId,
+              handbookName: targetHandbook.name,
+              handbookFileUrl: targetHandbook.file_url,
+              present: json.data.present || [],
+              missing: json.data.missing || [],
+              draftPolicies: json.data.draft_policies || [],
+            }),
+          })
+          await loadSavedAudits(companyId)
+        } catch (saveErr) {
+          console.error('Failed to save audit:', saveErr)
+        }
+      }
     } catch (err) {
       console.error(err)
     } finally {
@@ -185,74 +218,15 @@ export default function HRPage() {
 
   return (
     <AppLayout title="HR Help" didYouKnow={{ icon: '👥', text: 'CompliBoard can review your employee handbook, identify policy gaps, and draft missing policies based on your industry and state regulations. Upload your handbook and ask any HR question — CompliBoard keeps your HR documents current without a lawyer.' }}>
-      <div className="max-w-3xl mx-auto px-6 py-8">
+      <div className="max-w-6xl mx-auto px-6 py-8">
 
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-semibold text-gray-900 mb-1">HR Help</h1>
-            <p className="text-sm text-gray-400">Get answers from your company handbook and identify policy gaps</p>
-          </div>
-          {handbooks.length > 0 && (
-            <button onClick={() => setShowManage(!showManage)}
-              className="text-xs text-gray-400 hover:text-green-700 transition-colors">
-              📋 Manage handbooks ({handbooks.length})
-            </button>
-          )}
+        <div className="mb-12">
+          <h1 className="text-xl font-semibold text-gray-900 mb-1">HR Help</h1>
+          <p className="text-sm text-gray-400">Get answers from your company handbook and identify policy gaps</p>
         </div>
 
-        {showManage && (
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-6">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Your HR Handbooks</p>
-              <button onClick={() => setShowUpload(!showUpload)}
-                className="text-xs text-green-700 hover:text-green-800 font-medium">
-                {showUpload ? '× Cancel' : '+ Add handbook'}
-              </button>
-            </div>
-            <div className="space-y-2 mb-3">
-              {handbooks.map(h => (
-                <div key={h.id} className="flex items-center gap-3 p-2.5 rounded-xl border border-gray-100 bg-gray-50">
-                  <span>📋</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-gray-700 truncate">{h.name}</p>
-                    <p className="text-xs text-gray-400">{new Date(h.uploaded_at).toLocaleDateString()}</p>
-                  </div>
-                  <button onClick={async () => {
-                    if (!confirm('Delete this handbook?')) return
-                    await fetch('/api/documents?id=' + h.id + '&file_url=' + encodeURIComponent(h.file_url), { method: 'DELETE' })
-                    setHandbooks(prev => prev.filter(x => x.id !== h.id))
-                  }} className="text-gray-300 hover:text-red-400 transition-colors text-lg leading-none flex-shrink-0">×</button>
-                </div>
-              ))}
-            </div>
-            {showUpload && (
-              <div className="border-t border-gray-100 pt-3">
-                <input ref={fileInputRef} type="file" accept=".pdf,image/*" className="hidden" id="handbook-upload"
-                  onChange={(e) => setNewFile(e.target.files?.[0] || null)} />
-                {!newFile ? (
-                  <label htmlFor="handbook-upload"
-                    className="flex items-center gap-3 w-full border-2 border-dashed border-gray-300 rounded-xl px-4 py-3 cursor-pointer hover:border-green-500 hover:bg-green-50 transition-colors">
-                    <span>📎</span>
-                    <p className="text-sm text-gray-600">Click to select handbook (PDF)</p>
-                  </label>
-                ) : (
-                  <div className="flex items-center gap-3 p-3 bg-green-50 border border-green-200 rounded-xl">
-                    <span>📋</span>
-                    <p className="text-sm font-medium text-green-800 flex-1 truncate">{newFile.name}</p>
-                    <button onClick={() => { setNewFile(null); if (fileInputRef.current) fileInputRef.current.value = '' }}
-                      className="text-gray-400 hover:text-red-500 text-lg">×</button>
-                  </div>
-                )}
-                {uploadError && <p className="text-sm text-red-600 mt-2">{uploadError}</p>}
-                <button onClick={handleUploadHandbook} disabled={!newFile || uploadingHandbook}
-                  className="mt-3 bg-green-700 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50">
-                  {uploadingHandbook ? 'Uploading...' : 'Upload →'}
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-
+        <div className="flex flex-col md:flex-row gap-16">
+        <div className="flex-1 min-w-0 max-w-3xl">
         {loading ? (
           <div className="flex items-center justify-center h-40">
             <p className="text-sm text-gray-400">Loading...</p>
@@ -308,7 +282,7 @@ export default function HRPage() {
               <div>
                 <div className="mb-4">
                   <textarea
-                    className="w-full border border-gray-200 rounded-xl p-4 text-sm text-gray-800 resize-none focus:outline-none focus:border-green-500 bg-white shadow-sm"
+                    className="w-full border border-gray-200 rounded-xl p-4 text-sm text-gray-800 resize-none focus:outline-none focus:border-green-500 bg-white"
                     rows={3}
                     placeholder="e.g. What is our policy on parental leave? How many sick days do employees get? What is the disciplinary process?"
                     value={question}
@@ -372,6 +346,19 @@ export default function HRPage() {
                 <p className="text-sm text-gray-500 mb-4">
                   Run a full audit of your handbook to see which required policy sections are present and which are missing.
                 </p>
+                {handbooks.length > 1 && (
+                  <div className="mb-4">
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Which handbook?</label>
+                    <select
+                      value={selectedHandbookId || handbooks[0]?.id || ''}
+                      onChange={(e) => setSelectedHandbookId(e.target.value)}
+                      className="border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-800 focus:outline-none focus:border-green-500 bg-white">
+                      {handbooks.map(h => (
+                        <option key={h.id} value={h.id}>{h.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
                 <button onClick={handleAudit} disabled={auditing}
                   className="bg-green-700 text-white px-6 py-3 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50">
                   {auditing ? 'Auditing your handbook...' : 'Run handbook audit →'}
@@ -412,6 +399,21 @@ export default function HRPage() {
                         </ul>
                       </div>
                     )}
+                    {auditResults.draft_policies && auditResults.draft_policies.length > 0 && (
+                      <div className="space-y-3">
+                        {auditResults.draft_policies.map((dp, i) => (
+                          <div key={i} className="bg-white rounded-xl border border-gray-200 border-l-4 border-l-green-500 p-5 shadow-sm">
+                            <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">📝 Draft policy — {dp.section}</p>
+                            <p className="text-sm text-gray-700 leading-relaxed mb-4">{dp.draft?.replace(/\*\*(.*?)\*\*/g, "$1").replace(/\*(.*?)\*/g, "$1")}</p>
+                            <button
+                              onClick={() => downloadDraftPolicy(dp.draft, dp.section)}
+                              className="text-sm px-4 py-2 rounded-xl border border-gray-200 text-gray-600 hover:border-green-500 hover:text-green-700 transition-colors">
+                              ↓ Download draft policy
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                     <AIDisclaimer variant="short" className="mt-1" />
                   </div>
                 )}
@@ -419,6 +421,88 @@ export default function HRPage() {
             )}
           </div>
         )}
+        </div>
+
+        {handbooks.length > 0 && (
+          <div className="w-full md:w-72 flex-shrink-0">
+            <div className="bg-white rounded-xl border border-gray-200 p-4">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Your HR Handbooks</p>
+                <button onClick={() => setShowUpload(!showUpload)}
+                  className="text-xs text-green-700 hover:text-green-800 font-medium">
+                  {showUpload ? '× Cancel' : '+ Add'}
+                </button>
+              </div>
+              <div className="space-y-2 mb-3">
+                {handbooks.map(h => (
+                  <div key={h.id} className="flex items-center gap-3 p-2.5 rounded-xl border border-gray-100 bg-gray-50">
+                    <span>📋</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-gray-700 break-words">{h.name}</p>
+                      <p className="text-xs text-gray-400">{new Date(h.uploaded_at).toLocaleDateString()}</p>
+                    </div>
+                    <button onClick={async () => {
+                      if (!confirm('Delete this handbook?')) return
+                      await fetch('/api/documents?id=' + h.id + '&file_url=' + encodeURIComponent(h.file_url), { method: 'DELETE' })
+                      setHandbooks(prev => prev.filter(x => x.id !== h.id))
+                    }} className="text-gray-300 hover:text-red-400 transition-colors text-lg leading-none flex-shrink-0">×</button>
+                  </div>
+                ))}
+              </div>
+              {showUpload && (
+                <div className="border-t border-gray-100 pt-3">
+                  <input ref={fileInputRef} type="file" accept=".pdf,image/*" className="hidden" id="handbook-upload"
+                    onChange={(e) => setNewFile(e.target.files?.[0] || null)} />
+                  {!newFile ? (
+                    <label htmlFor="handbook-upload"
+                      className="flex items-center gap-3 w-full border-2 border-dashed border-gray-300 rounded-xl px-4 py-3 cursor-pointer hover:border-green-500 hover:bg-green-50 transition-colors">
+                      <span>📎</span>
+                      <p className="text-sm text-gray-600">Click to select handbook (PDF)</p>
+                    </label>
+                  ) : (
+                    <div className="flex items-center gap-3 p-3 bg-green-50 border border-green-200 rounded-xl">
+                      <span>📋</span>
+                      <p className="text-sm font-medium text-green-800 flex-1 truncate">{newFile.name}</p>
+                      <button onClick={() => { setNewFile(null); if (fileInputRef.current) fileInputRef.current.value = '' }}
+                        className="text-gray-400 hover:text-red-500 text-lg">×</button>
+                    </div>
+                  )}
+                  {uploadError && <p className="text-sm text-red-600 mt-2">{uploadError}</p>}
+                  <button onClick={handleUploadHandbook} disabled={!newFile || uploadingHandbook}
+                    className="mt-3 w-full bg-green-700 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50">
+                    {uploadingHandbook ? 'Uploading...' : 'Upload →'}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {savedAudits.length > 0 && (
+              <div className="bg-white rounded-xl border border-gray-200 p-4 mt-4">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Saved Audits</p>
+                <div className="space-y-2">
+                  {savedAudits.map(a => (
+                    <div key={a.id} className="flex items-center gap-3 p-2.5 rounded-xl border border-gray-100 bg-gray-50">
+                      <div className="flex-1 min-w-0 cursor-pointer" onClick={() => {
+                        setAuditResults({ present: a.present, missing: a.missing, draft_policies: a.draft_policies })
+                        setTab('audit')
+                      }}>
+                        <p className="text-sm text-gray-700 break-words">{a.handbook_name}</p>
+                        <p className="text-xs text-gray-400">{new Date(a.created_at).toLocaleDateString()}</p>
+                        <p className="text-xs text-green-600 mt-0.5">{a.present.length} present · {a.missing.length} missing</p>
+                      </div>
+                      <button onClick={async () => {
+                        if (!confirm('Delete this saved audit?')) return
+                        await fetch('/api/hr-audits?id=' + a.id, { method: 'DELETE' })
+                        setSavedAudits(prev => prev.filter(x => x.id !== a.id))
+                      }} className="text-gray-300 hover:text-red-400 transition-colors text-lg leading-none flex-shrink-0">×</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+        </div>
       </div>
     
       </AppLayout>
