@@ -673,6 +673,35 @@ export default function DocumentsPage() {
                   </div>
                 )}
 
+                {currentFolderId === null && currentFileFolders.length === 0 && currentFiles.length === 0 && !showUpload && (
+                  <div>
+                    <div className="flex flex-col md:flex-row gap-6 mb-6">
+                      <button onClick={() => setShowUpload(true)}
+                        className="flex-[1.5] bg-gray-50 border border-dashed border-gray-300 rounded-xl px-7 py-9 text-center hover:border-green-500 hover:bg-green-50 transition-colors">
+                        <p className="text-3xl mb-2">📎</p>
+                        <p className="text-base font-medium text-gray-800">Click to add your first file</p>
+                        <p className="text-sm text-gray-500 mt-1.5 max-w-xs mx-auto">A permit, an SDS, a training record — watch CompliBoard check it in seconds.</p>
+                      </button>
+
+                      <div className="flex-1 bg-green-50 border border-green-200 rounded-xl p-5">
+                        <p className="text-sm font-medium text-green-900 flex items-center gap-2">☁️ Never upload again</p>
+                        <p className="text-xs text-green-800 mt-2 leading-relaxed">Connect your drive and CompliBoard always reads the latest version — no re-uploading, ever.</p>
+                        <div className="flex flex-col gap-2 mt-3">
+                          <button disabled className="text-xs text-center py-2 bg-white border border-green-200 rounded-lg text-green-800 opacity-60 cursor-not-allowed">Connect Google Drive — Soon</button>
+                          <button disabled className="text-xs text-center py-2 bg-white border border-green-200 rounded-lg text-green-800 opacity-60 cursor-not-allowed">Connect OneDrive — Soon</button>
+                        </div>
+                        <p className="text-[11px] text-green-800 opacity-80 mt-3 leading-snug">🔒 Read-only. We never copy or store your files. You choose which folder.</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 p-3 bg-gray-50 border border-gray-200 rounded-lg mb-6">
+                      <span className="text-gray-400">✉️</span>
+                      <p className="text-xs text-gray-500 flex-1">Re-uploading is a pain. Soon you'll be able to just forward an updated file by email and we'll keep it current.</p>
+                      <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wide">Soon</span>
+                    </div>
+                  </div>
+                )}
+
                 {currentFileFolders.length > 0 && (
                   <div className="mb-4">
                     <div className={viewMode === 'grid' ? 'grid grid-cols-2 sm:grid-cols-3 gap-3' : 'space-y-1'}>
