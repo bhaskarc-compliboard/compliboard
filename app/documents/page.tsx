@@ -638,7 +638,7 @@ export default function DocumentsPage() {
                 {showUpload && renderUploadPanel(currentFolderId, folders.find(f => f.id === currentFolderId)?.name)}
 
                 <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-1 flex-wrap">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <button onClick={() => navigateToFolder(null)} className={`text-sm transition-colors ${currentFolderId === null ? 'text-gray-900 font-medium' : 'text-gray-400 hover:text-green-700'}`}>Divisions</button>
                     {breadcrumb.map((f, i) => (
                       <span key={f.id} className="flex items-center gap-1">
@@ -646,6 +646,11 @@ export default function DocumentsPage() {
                         <button onClick={() => navigateToFolder(f)} className={`text-sm transition-colors ${i === breadcrumb.length - 1 ? 'text-gray-900 font-medium' : 'text-gray-400 hover:text-green-700'}`}>{f.name}</button>
                       </span>
                     ))}
+                    {breadcrumb.length < 2 && (
+                      <button onClick={() => { setShowNewFolder(true); setShowUpload(false) }} className="flex items-center gap-1 text-xs text-gray-400 hover:text-green-700 transition-colors px-2 py-1 rounded-lg border border-gray-200 hover:border-green-400 ml-2">
+                        <span>＋</span> {currentFolderId === null ? 'New division' : 'New folder'}
+                      </button>
+                    )}
                   </div>
                   <div className="flex items-center gap-1 border border-gray-200 rounded-lg p-0.5">
                     <button onClick={() => setViewMode('grid')} className={`px-2 py-1 rounded text-xs transition-colors ${viewMode === 'grid' ? 'bg-white shadow-sm text-gray-700' : 'text-gray-400 hover:text-gray-600'}`}>Grid</button>
@@ -673,14 +678,6 @@ export default function DocumentsPage() {
                     <div className={viewMode === 'grid' ? 'grid grid-cols-2 sm:grid-cols-3 gap-3' : 'space-y-1'}>
                       {currentFileFolders.map(folder => renderFolder(folder, navigateToFolder))}
                     </div>
-                  </div>
-                )}
-
-                {breadcrumb.length < 2 && (
-                  <div className="flex items-center gap-4 mb-4">
-                    <button onClick={() => { setShowNewFolder(true); setShowUpload(false) }} className="flex items-center gap-2 text-xs text-gray-400 hover:text-green-700 transition-colors px-1">
-                      <span>＋</span> {currentFolderId === null ? 'New division' : 'New folder'}
-                    </button>
                   </div>
                 )}
 
