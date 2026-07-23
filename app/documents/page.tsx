@@ -424,6 +424,16 @@ export default function DocumentsPage() {
     { key: 'log', label: 'Document Reviews' },
   ] as const
 
+  // Counts files directly in this folder PLUS every file in any folder
+  // nested underneath it, at any depth — a division's count should reflect
+  // everything inside it, not just files sitting at the top level.
+  function countFilesRecursive(folderId: string): number {
+    const direct = allDocuments.filter(d => d.folder_id === folderId).length
+    const childFolders = folders.filter(f => f.parent_id === folderId)
+    const nested = childFolders.reduce((sum, child) => sum + countFilesRecursive(child.id), 0)
+    return direct + nested
+  }
+
   function renderFolder(folder: Folder, onNavigate: (f: Folder) => void, onAudit?: (f: Folder) => void) {
     return (
       <div key={folder.id} className={`group border border-gray-200 hover:border-green-400 transition-all ${viewMode === 'grid' ? 'bg-gray-50 rounded-xl' : 'bg-gray-50 rounded-xl'}`}>
@@ -446,7 +456,7 @@ export default function DocumentsPage() {
                   <span className="text-2xl">📁</span>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-700 truncate">{folder.name}</p>
-                    {allDocuments.filter(d => d.folder_id === folder.id).length > 0 && <p className="text-xs text-gray-400 mt-0.5">{allDocuments.filter(d => d.folder_id === folder.id).length} files</p>}
+                    {countFilesRecursive(folder.id) > 0 && <p className="text-xs text-gray-400 mt-0.5">{countFilesRecursive(folder.id)} files</p>}
                   </div>
                 </button>
                 <div className="px-4 pb-3 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -463,7 +473,7 @@ export default function DocumentsPage() {
                 <button onClick={() => onNavigate(folder)} className="flex-1 text-left">
                   <p className="text-sm font-medium text-gray-700">{folder.name}</p>
                 </button>
-                <span className="text-xs text-gray-400 mr-2">{allDocuments.filter(d => d.folder_id === folder.id).length} files</span>
+                <span className="text-xs text-gray-400 mr-2">{countFilesRecursive(folder.id)} files</span>
                 <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button onClick={() => { setRenamingId(folder.id); setRenameValue(folder.name) }}
                     className="text-xs text-gray-400 hover:text-green-700 transition-colors">Rename</button>
