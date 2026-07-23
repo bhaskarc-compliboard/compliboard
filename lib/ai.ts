@@ -13,6 +13,12 @@ export interface AskAIOptions {
    *  fine for conversational answers, too loose for yes/no judgment calls.
    *  Pass a low value (e.g. 0.1) for anything deciding a status or fact. */
   temperature?: number
+  /** Gives Claude the web_search tool for this call. Claude decides for
+   *  itself whether a given fact is stable (answer from knowledge) or
+   *  time-sensitive/specific (verify live) — no hardcoded trigger list.
+   *  This is a server-side tool: Anthropic runs the search and returns the
+   *  final answer in this same call, no second round-trip needed. */
+  enableWebSearch?: boolean
 }
 
 /**
@@ -36,8 +42,16 @@ export async function askAI(
       system: systemPrompt,
       messages: [{ role: 'user', content: content as any }],
       ...(options.temperature !== undefined ? { temperature: options.temperature } : {}),
-    })
-    return message.content[0].type === 'text' ? message.content[0].text : ''
+      ...(options.enableWebSearch ? { tools: [{ type: 'web_search_20250305', name: 'web_search' }] } : {}),
+    } as any)
+    // With tools enabled, the response can include search/tool-use blocks
+    // before the actual answer — concatenate every text block, in order,
+    // rather than assuming the first block is the answer (that assumption
+    // silently returned '' whenever a tool call came first).
+    return message.content
+      .filter((block: any) => block.type === 'text')
+      .map((block: any) => block.text)
+      .join('\n')
   }
 
   throw new Error(`Unknown AI_PROVIDER: "${provider}". Supported: claude`)
