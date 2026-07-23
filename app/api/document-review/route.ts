@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unsupported file type for review' }, { status: 400 })
     }
 
-    const review = await askAIJson(reviewPrompt(), messageContent, { maxTokens: 1500, enableWebSearch: true })
+    const review = await askAIJson(reviewPrompt(), messageContent, { maxTokens: 6000, enableWebSearch: true })
 
     // Save to document_reviews table
     const { data, error } = await supabaseAdmin
