@@ -147,7 +147,7 @@ export async function POST(request: NextRequest) {
       const classified = await askAIJson(
         auditClassifyPrompt(companyName, industry),
         classifyContent,
-        { maxTokens: 16000, enableWebSearch: true }
+        { maxTokens: 16000, enableWebSearch: true, temperature: 0.1 }
       )
 
       if (classified.type === 'question' || classified.type === 'needs_clarification') {
@@ -176,7 +176,7 @@ export async function POST(request: NextRequest) {
         const generated = await askAIJson(
           auditGenerateStandardPrompt(sourceName),
           [{ type: 'text', text: `Generate the checklist for "${sourceName}" now.` }],
-          { maxTokens: 16000, enableWebSearch: true }
+          { maxTokens: 16000, enableWebSearch: true, temperature: 0.1 }
         )
         lineItems = generated.line_items || []
         const { data: saved, error: saveErr } = await supabaseAdmin
@@ -248,7 +248,7 @@ export async function POST(request: NextRequest) {
       const matched = await askAIJson(
         auditMatchPrompt(),
         [{ type: 'text', text: JSON.stringify(matchInput) }],
-        { maxTokens: 6000 }
+        { maxTokens: 6000, temperature: 0.1 }
       )
       allResults.push(...(matched.results || []))
     }

@@ -12,7 +12,7 @@ interface AppLayoutProps {
 
 const NAV_ITEMS = [
   { icon: '📊', label: 'Dashboard', href: '/dashboard' },
-  { icon: '🛡️', label: 'Audits', href: '/audits', soon: true },
+  { icon: '🛡️', label: 'Audits', href: '/audits' },
   { icon: '📋', label: 'Compliance Workspace', href: '/compliance' },
   { icon: '👥', label: 'HR Workspace', href: '/hr' },
   { icon: '📁', label: 'Company Documents', href: '/documents' },
