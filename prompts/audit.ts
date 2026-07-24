@@ -1,11 +1,13 @@
 /**
  * AUDIT ENGINE PROMPTS
  *
- * Two-step design: (1) classify what the user is actually asking for and
- * extract the checklist, (2) match that checklist against the company's
- * real documents. Kept as two separate calls so matching can be batched
- * (see auditMatchPrompt) — one giant call risks the same token-truncation
- * failure we hit and fixed in document-review.
+ * Split into three prompts so a repeated named-standard audit is fast:
+ * (1) classify — cheap, figures out what the user wants; for a named
+ *     standard it identifies WHICH one but does NOT enumerate requirements
+ *     yet, so the cache can be checked before paying that cost.
+ * (2) generateStandard — the expensive full-enumeration call, only used
+ *     on a genuine cache miss.
+ * (3) match — batched matching against the company's documents.
  */
 
 export function auditClassifyPrompt(companyName: string, industry: string): string {
@@ -14,55 +16,70 @@ export function auditClassifyPrompt(companyName: string, industry: string): stri
 The user typed a free-text request, possibly with a file attached. Figure out what they actually
 want — do not force them into categories, use your judgment the way an expert colleague would.
 
-You have a web_search tool. Use it whenever you need to know what a real external standard
-requires (standards get updated) — skip it for anything you already know cold.
+You have a web_search tool. Use it whenever you need to know what a real external standard is
+CALLED or generally covers (skip it for anything you already know cold) — but do NOT enumerate
+its full requirements here, that happens in a separate step.
 
 There are five possible outcomes:
 
 1. **A plain informational question** ("tell me about ISO 14000", "what does SQF require?") —
-   they want to understand something, not run an audit yet. Answer it directly and well. Do NOT
-   extract line items or treat this as an audit request.
+   answer it directly and well. Do NOT extract line items or treat this as an audit request.
 
-2. **A named standard audit request** ("audit us against ISO 9001", "check our SQF readiness") —
-   no file attached, or the file is not a template. Determine the standard's real requirements
-   (search if needed) and extract them as line items.
+2. **A named standard audit request** ("audit us against ISO 9001") — no file attached, or the
+   file is not a template. Identify the standard's full official name as "source_name" (e.g.
+   "ISO 9001:2015"). Leave line_items as an EMPTY ARRAY — do not enumerate requirements here.
 
 3. **An uploaded template** — a checklist or questionnaire, blank or already filled out from a
-   past cycle (e.g. a buyer's supplier audit form). Extract each line as a requirement. If a line
-   already has an answer/evidence filled in from a prior cycle, capture that in
-   "prior_answer_context" — but this is CONTEXT ONLY, never treat it as still true; the matching
-   step will independently re-verify against the company's current documents.
+   past cycle. Extract EVERY line as a requirement, right now, in this response. If a line already
+   has an answer from a prior cycle, capture it in "prior_answer_context" — context only, never
+   treat it as still true.
 
-4. **An auditor's findings report** — things that were already found wrong (a citation, a
-   non-conformance report). Extract each finding as a remediation item — phrase "requirement" as
-   what needs to be FIXED, not as a question to answer.
+4. **An auditor's findings report** — things already found wrong. Extract each finding as a
+   remediation item, right now, in this response — phrase "requirement" as what needs fixing.
 
-5. **Genuinely ambiguous** — you truly cannot tell what they want and cannot reasonably guess.
-   Ask exactly ONE consolidated question that would resolve it. Never a back-and-forth — one
-   question, with everything you need bundled into it.
+5. **Genuinely ambiguous** — ask exactly ONE consolidated question. Never a back-and-forth.
 
 You must respond ONLY with valid JSON. No markdown, no backticks, no other text.
 
 {
   "type": "question" | "named_standard" | "template" | "findings" | "needs_clarification",
   "answer": "If type is 'question': a clear, well-researched answer. Otherwise null.",
-  "clarifying_question": "If type is 'needs_clarification': the ONE question to ask. Otherwise null.",
-  "source_name": "If type is an audit request: the standard name (e.g. 'ISO 9001:2015'), or a
-    descriptive name for the template/report (e.g. 'Acme Corp Supplier Audit Questionnaire',
-    'OSHA Inspection Findings — March 2026'). Otherwise null.",
+  "clarifying_question": "If type is 'needs_clarification': the ONE question. Otherwise null.",
+  "source_name": "If an audit request: the standard's full name, or a descriptive name for the
+    template/report. Otherwise null.",
   "line_items": [
     {
       "requirement": "The specific requirement or finding, in plain language",
-      "category": "A short grouping label (e.g. 'Training', 'Documentation', 'Safety Equipment')",
-      "prior_answer_context": "If this line already had an answer in a filled template, summarize
-        it here. Otherwise null."
+      "category": "A short grouping label (e.g. 'Training', 'Documentation')",
+      "prior_answer_context": "If this line had a prior answer, summarize it. Otherwise null."
     }
   ]
 }
 
-If type is "question" or "needs_clarification", line_items must be an empty array.
-Be thorough for named standards and templates — do not truncate the list; include every
-requirement or question you find.`
+For type "named_standard", line_items MUST be an empty array — that is handled separately.
+For "template" and "findings", extract thoroughly and completely, right here.`
+}
+
+export function auditGenerateStandardPrompt(standardName: string): string {
+  return `You are CompliBoard's audit assistant. Generate a complete, audit-ready checklist of the
+requirements for "${standardName}".
+
+Use your web_search tool to verify the standard's current structure and requirements — standards
+get revised, and this checklist needs to reflect what's actually current.
+
+Be thorough — do not truncate or summarize. Include every clause/requirement a real auditor would
+actually check against, written in plain business language, not legal or standard-document jargon.
+
+You must respond ONLY with valid JSON. No markdown, no backticks, no other text.
+
+{
+  "line_items": [
+    {
+      "requirement": "The specific requirement, in plain language",
+      "category": "A short grouping label (e.g. 'Document Control', 'Management Review')"
+    }
+  ]
+}`
 }
 
 export function auditMatchPrompt(): string {
