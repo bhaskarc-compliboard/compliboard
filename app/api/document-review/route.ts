@@ -1,9 +1,6 @@
-import { askAIJson, type AIContent } from '@/lib/ai'
-import { reviewPrompt } from '@/prompts/document-review'
+import { reviewDocument } from '@/lib/documentReview'
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
-import mammoth from 'mammoth'
-import officeParser from 'officeparser'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -27,89 +24,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    const fileType = file.type
-    const fileName = file.name.toLowerCase()
     const buffer = await file.arrayBuffer()
-    const base64 = Buffer.from(buffer).toString('base64')
+    const result = await reviewDocument({
+      buffer, fileType: file.type, fileName: file.name,
+      documentId, documentName, folderId, folderName, divisionName, companyId, userId, industry,
+    })
 
-    const isImage = fileType.startsWith('image/')
-    const isPDF = fileType === 'application/pdf' || fileName.endsWith('.pdf')
-    const isWord = fileType.includes('wordprocessingml') || fileType.includes('msword') || fileName.endsWith('.docx') || fileName.endsWith('.doc')
-    const isPowerPoint = fileType.includes('presentationml') || fileType.includes('powerpoint') || fileName.endsWith('.pptx') || fileName.endsWith('.ppt')
-
-    let messageContent: AIContent
-
-    if (isPDF) {
-      messageContent = [
-        {
-          type: 'document',
-          source: { type: 'base64', media_type: 'application/pdf', data: base64 },
-        } as any,
-        { type: 'text', text: `File name: ${documentName}\nFolder: ${folderName}\nDivision: ${divisionName}\nIndustry: ${industry}\n\nReview this compliance document.` },
-      ]
-    } else if (isImage) {
-      messageContent = [
-        {
-          type: 'image',
-          source: {
-            type: 'base64',
-            media_type: fileType as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp',
-            data: base64,
-          },
-        },
-        { type: 'text', text: `File name: ${documentName}\nFolder: ${folderName}\nDivision: ${divisionName}\nIndustry: ${industry}\n\nReview this compliance document.` },
-      ]
-    } else if (isWord) {
-      const nodeBuffer = Buffer.from(buffer)
-      const result = await mammoth.convertToHtml({ buffer: nodeBuffer })
-      messageContent = [
-        { type: 'text', text: `File name: ${documentName}\nFolder: ${folderName}\nDivision: ${divisionName}\nIndustry: ${industry}\n\n${result.value}\n\nReview this compliance document.` },
-      ]
-    } else if (isPowerPoint) {
-      const nodeBuffer = Buffer.from(buffer)
-      const ast = await (officeParser as any).parseOffice(nodeBuffer)
-      const text = ast.toText()
-      messageContent = [
-        { type: 'text', text: `File name: ${documentName}\nFolder: ${folderName}\nDivision: ${divisionName}\nIndustry: ${industry}\n\n${text}\n\nReview this compliance document.` },
-      ]
-    } else {
-      return NextResponse.json({ error: 'Unsupported file type for review' }, { status: 400 })
-    }
-
-    const review = await askAIJson(reviewPrompt(), messageContent, { maxTokens: 6000, enableWebSearch: true })
-
-    // Save to document_reviews table
-    const { data, error } = await supabaseAdmin
-      .from('document_reviews')
-      .insert({
-        company_id: companyId,
-        user_id: userId,
-        document_id: documentId || null,
-        document_name: documentName,
-        folder_id: folderId || null,
-        folder_name: folderName,
-        division_name: divisionName,
-        document_type: review.document_type,
-        issued_by: review.issued_by,
-        issue_date: review.issue_date,
-        expiry_date: review.expiry_date,
-        renewal_date: review.renewal_date,
-        is_current: review.is_current,
-        expiring_soon: review.expiring_soon,
-        days_until_expiry: review.days_until_expiry,
-        coverage: review.coverage,
-        regulation_reference: review.regulation_reference || null,
-        gaps: review.gaps || [],
-        gap_fixes: review.gap_fixes || [],
-        action_items: review.action_items || [],
-        summary: review.summary,
-      })
-      .select()
-      .single()
-
-    if (error) throw error
-
-    return NextResponse.json({ data, review })
+    return NextResponse.json(result)
   } catch (error) {
     console.error('Document review error:', error)
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Review failed' }, { status: 500 })
