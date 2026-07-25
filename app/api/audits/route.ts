@@ -206,14 +206,30 @@ export async function POST(request: NextRequest) {
       .eq('company_id', companyId)
     const { data: existingReviews } = await supabaseAdmin
       .from('document_reviews')
-      .select('document_id, document_name, coverage, summary')
+      .select('id, document_id, document_name, coverage, summary, is_current, expiring_soon, expiry_date')
       .eq('company_id', companyId)
 
     const reviewedIds = new Set((existingReviews || []).map(r => r.document_id).filter(Boolean))
-    const candidates: { document_id: string; document_name: string; description: string }[] = []
+    const candidates: { document_id: string; document_name: string; description: string; review_id: string }[] = []
+
+    function withCurrencyStatus(coverage: string, isCurrent: boolean | null, expiringSoon: boolean | null, expiryDate: string | null): string {
+      const base = coverage || 'No description available.'
+      if (isCurrent === false) {
+        return `EXPIRED / NOT CURRENT (as of ${expiryDate || 'an earlier date'}) — ${base}`
+      }
+      if (expiringSoon) {
+        return `EXPIRING SOON (${expiryDate || 'soon'}) — ${base}`
+      }
+      return base
+    }
 
     for (const r of existingReviews || []) {
-      candidates.push({ document_id: r.document_id, document_name: r.document_name, description: r.coverage || r.summary || '' })
+      candidates.push({
+        document_id: r.document_id,
+        document_name: r.document_name,
+        description: withCurrencyStatus(r.coverage || r.summary || '', r.is_current, r.expiring_soon, r.expiry_date),
+        review_id: r.id,
+      })
     }
 
     for (const doc of docs || []) {
@@ -230,7 +246,12 @@ export async function POST(request: NextRequest) {
           companyId, userId, industry,
         })
         if (newReview) {
-          candidates.push({ document_id: doc.id, document_name: doc.name, description: newReview.coverage || newReview.summary || '' })
+          candidates.push({
+            document_id: doc.id,
+            document_name: doc.name,
+            description: withCurrencyStatus(newReview.coverage || newReview.summary || '', newReview.is_current, newReview.expiring_soon, newReview.expiry_date),
+            review_id: newReview.id,
+          })
         }
       } catch (err) {
         console.error(`Auto-index failed for ${doc.name}, skipping:`, err)
@@ -261,7 +282,10 @@ export async function POST(request: NextRequest) {
         category: li.category || null,
         prior_answer_context: li.prior_answer_context || null,
         status: match?.status || 'needs_info',
-        matched_documents: match?.matched_documents || [],
+        matched_documents: (match?.matched_documents || []).map((md: any) => {
+          const candidate = candidates.find(c => c.document_id === md.document_id)
+          return { ...md, review_id: candidate?.review_id || null }
+        }),
         note: match?.note || 'Could not be matched — treat as needing review.',
         fix: match?.fix || null,
       }

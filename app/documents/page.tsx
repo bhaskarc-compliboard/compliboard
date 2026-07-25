@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
 import { createClient } from '@/lib/supabase'
 import AppLayout from '@/components/AppLayout'
 import AIDisclaimer from '@/components/AIDisclaimer'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 interface Document {
   id: string
@@ -55,8 +55,17 @@ function getChecklistStatus(completed: number, total: number): { dot: string; la
 }
 
 export default function DocumentsPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-sm text-gray-400">Loading...</div>}>
+      <DocumentsPageContent />
+    </Suspense>
+  )
+}
+
+function DocumentsPageContent() {
   const supabase = createClient()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [activeTab, setActiveTab] = useState<'files' | 'log'>('files')
@@ -118,6 +127,14 @@ export default function DocumentsPage() {
         setCompanyId(profile.company_id)
         await loadFolders(profile.company_id)
         await loadDocumentReviews(profile.company_id)
+
+        // If we arrived via a direct link to a specific review (e.g. from an
+        // Audit result), jump straight to it instead of landing on Files.
+        const reviewParam = searchParams.get('review')
+        if (reviewParam) {
+          setActiveTab('log')
+          setExpandedAuditId(reviewParam)
+        }
 
         const { data: company } = await supabase
           .from('companies')

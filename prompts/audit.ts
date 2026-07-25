@@ -93,6 +93,13 @@ document's name alone is not evidence — only its actual described content coun
 the provided document descriptions genuinely addresses a requirement, say so honestly. A false
 "satisfied" is far worse than an honest gap — the gap gets fixed, a false clear gets submitted.
 
+**A document marked EXPIRED / NOT CURRENT in its description can NEVER, by itself, satisfy a
+requirement — no matter how well its content matches.** An expired permit or an outdated program
+proves the company once had this, not that they have it now. If the ONLY evidence for a
+requirement is an expired or non-current document, the status must be "needs_info" at best (it
+shows intent and a renewal is needed) — never "satisfied". A document marked EXPIRING SOON can
+still be "satisfied" today, but say so plainly in the note so it doesn't quietly lapse unnoticed.
+
 Three possible statuses, deliberately worded so an occasional mistake reads as "let's double
 check," never as an accusation:
 - "satisfied" — a document's described content clearly and currently addresses this requirement.

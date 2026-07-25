@@ -11,7 +11,7 @@ interface LineItem {
   category: string | null
   prior_answer_context: string | null
   status: 'satisfied' | 'needs_info' | 'needs_work'
-  matched_documents: { document_id: string; document_name: string }[]
+  matched_documents: { document_id: string; document_name: string; review_id: string | null }[]
   note: string
   fix: string | null
 }
@@ -58,6 +58,14 @@ export default function AuditsPage() {
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({})
   const [rerunning, setRerunning] = useState<string | null>(null)
   const [deleting, setDeleting] = useState<string | null>(null)
+  const [printAfterLoad, setPrintAfterLoad] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (printAfterLoad && result && 'id' in result && result.id === printAfterLoad) {
+      window.print()
+      setPrintAfterLoad(null)
+    }
+  }, [result, printAfterLoad])
 
   useEffect(() => {
     async function loadData() {
@@ -163,8 +171,16 @@ export default function AuditsPage() {
     setOpenCategories(prev => ({ ...prev, [cat]: !prev[cat] }))
   }
 
+  function expandAllCategories(items: LineItem[]) {
+    const all: Record<string, boolean> = {}
+    items.forEach(li => { all[li.category || 'Other'] = true })
+    return all
+  }
+
   function downloadPDF() {
-    window.print()
+    if (!result || !isFullAudit(result)) return
+    setOpenCategories(expandAllCategories(result.line_items))
+    setPrintAfterLoad(result.id)
   }
 
   const grouped = (result && isFullAudit(result))
@@ -204,6 +220,10 @@ export default function AuditsPage() {
                       {new Date(a.created_at).toLocaleDateString()} · {a.readiness_satisfied} satisfied · {a.readiness_needs_info} need a closer look · {a.readiness_needs_work} need work
                     </p>
                   </div>
+                  <button onClick={() => { setResult(a); setOpenCategories(expandAllCategories(a.line_items)); setPrintAfterLoad(a.id) }}
+                    className="no-print text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:border-green-500 hover:text-green-700 transition-colors">
+                    ↓ PDF
+                  </button>
                   <button onClick={() => handleRerun(a)} disabled={rerunning === a.id}
                     className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:border-green-500 hover:text-green-700 transition-colors disabled:opacity-50">
                     {rerunning === a.id ? 'Re-running...' : 'Re-run'}
@@ -335,8 +355,21 @@ export default function AuditsPage() {
                               </div>
                               <p className="text-sm font-medium text-gray-900">{li.requirement}</p>
                               {li.matched_documents.length > 0 && (
-                                <p className="text-xs text-gray-500 mt-1">
-                                  📄 {li.matched_documents.map(d => d.document_name).join(', ')}
+                                <p className="text-xs text-gray-500 mt-1 flex items-center gap-1 flex-wrap">
+                                  📄
+                                  {li.matched_documents.map((d, di) => (
+                                    <span key={d.document_id}>
+                                      {d.review_id ? (
+                                        <a href={`/documents?review=${d.review_id}`} target="_blank" rel="noopener noreferrer"
+                                          className="text-green-700 hover:underline">
+                                          {d.document_name}
+                                        </a>
+                                      ) : (
+                                        <span>{d.document_name}</span>
+                                      )}
+                                      {di < li.matched_documents.length - 1 && ', '}
+                                    </span>
+                                  ))}
                                 </p>
                               )}
                               <p className="text-xs text-gray-500 mt-1.5">{li.note}</p>
