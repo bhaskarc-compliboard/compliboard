@@ -6,6 +6,9 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
+// A handbook audit reads real content and can occasionally run long.
+export const maxDuration = 800
+
 // Saves and lists HR handbook audit results. Runs server-side with the admin
 // key, same pattern as /api/link-research, so it isn't affected by row-level
 // security on this table.

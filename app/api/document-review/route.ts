@@ -7,6 +7,9 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
+// A document review with search enabled can occasionally run long.
+export const maxDuration = 800
+
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()

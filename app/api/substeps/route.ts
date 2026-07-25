@@ -6,6 +6,9 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
+// Checklist generation can run long, especially for a large/complex request.
+export const maxDuration = 800
+
 export async function POST(request: NextRequest) {
   try {
     const { checklist_id, parent_item_index, items } = await request.json()

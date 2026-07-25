@@ -6,6 +6,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import mammoth from 'mammoth'
 import officeParser from 'officeparser'
 
+// Audits can genuinely take several minutes (a full standard's worth of
+// requirements, auto-indexing multiple documents, batched matching). 800s
+// is the highest stable, generally-available ceiling on Vercel Pro/Enterprise
+// without enrolling in the extended-duration beta.
+export const maxDuration = 800
+
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
