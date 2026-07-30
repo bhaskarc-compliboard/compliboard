@@ -1242,7 +1242,9 @@ Give them a specific direct answer — exactly what they need to do, which speci
                       </div>
                     </div>
                     <button onClick={() => deleteChecklist(c.id)}
-                      className="text-gray-300 hover:text-red-400 transition-colors text-lg leading-none flex-shrink-0">×</button>
+                      className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-400 hover:border-red-400 hover:text-red-500 transition-colors">
+                      Delete
+                    </button>
                   </div>
                 ))}
               </div>
