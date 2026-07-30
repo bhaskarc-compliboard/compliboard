@@ -84,6 +84,7 @@ function DocumentsPageContent() {
 
   // Upload state
   const [showUpload, setShowUpload] = useState(false)
+  const [showUploadMenu, setShowUploadMenu] = useState(false)
   const [files, setFiles] = useState<File[]>([])
   const [uploadProgress, setUploadProgress] = useState<string>('')
   const [isRecurring, setIsRecurring] = useState(false)
@@ -625,7 +626,7 @@ function DocumentsPageContent() {
 
   return (
     <AppLayout title="Company Documents" didYouKnow={activeTab === 'log' ? { icon: '🔍', text: 'Every file you review gets a real compliance check — CompliBoard cites the specific regulation it checked against and gives you a fix for anything missing.' } : { icon: '📂', text: 'Upload your compliance documents once. CompliBoard reads them, extracts renewal dates, and adds them to your calendar automatically. Every month, CompliBoard checks if your documents are still current and alerts you 30 days before anything expires.' }}>
-      <div className="max-w-4xl mx-auto px-6 py-8">
+      <div className="max-w-6xl mx-auto px-6 py-8">
 
         <div className="mb-6 flex items-center justify-between">
           <div>
@@ -633,10 +634,29 @@ function DocumentsPageContent() {
             <p className="text-sm text-gray-400">Your compliance files and document reviews</p>
           </div>
           {activeTab === 'files' && (
-            <button onClick={() => { setShowUpload(!showUpload); setShowNewFolder(false) }}
-              className="flex items-center gap-2 bg-green-700 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors">
-              + Upload file
-            </button>
+            <div className="relative">
+              <button onClick={() => setShowUploadMenu(!showUploadMenu)}
+                className="flex items-center gap-2 bg-green-700 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors">
+                + Upload file / Connect drive
+              </button>
+              {showUploadMenu && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setShowUploadMenu(false)} />
+                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden z-20">
+                    <button onClick={() => { setShowUpload(true); setShowNewFolder(false); setShowUploadMenu(false) }}
+                      className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2">
+                      <span>💻</span> From computer
+                    </button>
+                    <div className="w-full text-left px-4 py-3 text-sm text-gray-400 flex items-center gap-2 cursor-not-allowed border-t border-gray-50">
+                      <span>☁️</span> Google Drive — soon
+                    </div>
+                    <div className="w-full text-left px-4 py-3 text-sm text-gray-400 flex items-center gap-2 cursor-not-allowed border-t border-gray-50">
+                      <span>☁️</span> OneDrive — soon
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
           )}
         </div>
 
@@ -700,46 +720,33 @@ function DocumentsPageContent() {
 
                 {currentFolderId === null && (() => {
                   const isEmpty = currentFileFolders.length === 0 && currentFiles.length === 0 && !showUpload
+                  if (!isEmpty) return null
                   return (
                     <div className="mb-6">
-                      <div className={isEmpty ? "flex flex-col md:flex-row gap-6" : ""}>
-                        {isEmpty && (
-                          <button onClick={() => setShowUpload(true)}
-                            className="flex-[1.5] bg-gray-50 border border-dashed border-gray-300 rounded-xl px-7 py-9 text-center hover:border-green-500 hover:bg-green-50 transition-colors">
-                            <p className="text-3xl mb-2">📎</p>
-                            <p className="text-base font-medium text-gray-800">Click to add your first file</p>
-                            <p className="text-sm text-gray-500 mt-1.5 max-w-xs mx-auto">A permit, an SDS, a training record — watch CompliBoard check it in seconds.</p>
-                          </button>
-                        )}
+                      <div className="flex flex-col md:flex-row gap-6">
+                        <button onClick={() => setShowUpload(true)}
+                          className="flex-[1.5] bg-gray-50 border border-dashed border-gray-300 rounded-xl px-7 py-9 text-center hover:border-green-500 hover:bg-green-50 transition-colors">
+                          <p className="text-3xl mb-2">📎</p>
+                          <p className="text-base font-medium text-gray-800">Click to add your first file</p>
+                          <p className="text-sm text-gray-500 mt-1.5 max-w-xs mx-auto">A permit, an SDS, a training record — watch CompliBoard check it in seconds.</p>
+                        </button>
 
-                        {isEmpty ? (
-                          <div className="flex-1 bg-green-50 rounded-xl p-5">
-                            <p className="text-sm font-medium text-green-900 flex items-center gap-2">☁️ Never upload again</p>
-                            <p className="text-xs text-green-800 mt-2 leading-relaxed">Connect your drive and CompliBoard always reads the latest version — no re-uploading, ever.</p>
-                            <div className="flex flex-col gap-2 mt-3">
-                              <button disabled className="text-xs text-center py-2 bg-white border border-green-200 rounded-lg text-green-800 opacity-60 cursor-not-allowed">Connect Google Drive — Soon</button>
-                              <button disabled className="text-xs text-center py-2 bg-white border border-green-200 rounded-lg text-green-800 opacity-60 cursor-not-allowed">Connect OneDrive — Soon</button>
-                            </div>
-                            <p className="text-[11px] text-green-800 opacity-80 mt-3 leading-snug">🔒 Read-only. We never copy or store your files. You choose which folder.</p>
+                        <div className="flex-1 bg-green-50 rounded-xl p-5">
+                          <p className="text-sm font-medium text-green-900 flex items-center gap-2">☁️ Never upload again</p>
+                          <p className="text-xs text-green-800 mt-2 leading-relaxed">Connect your drive and CompliBoard always reads the latest version — no re-uploading, ever.</p>
+                          <div className="flex flex-col gap-2 mt-3">
+                            <button disabled className="text-xs text-center py-2 bg-white border border-green-200 rounded-lg text-green-800 opacity-60 cursor-not-allowed">Connect Google Drive — Soon</button>
+                            <button disabled className="text-xs text-center py-2 bg-white border border-green-200 rounded-lg text-green-800 opacity-60 cursor-not-allowed">Connect OneDrive — Soon</button>
                           </div>
-                        ) : (
-                          <div className="bg-green-50 rounded-xl p-4 flex items-center justify-between gap-4 flex-wrap">
-                            <p className="text-xs text-green-900">☁️ <span className="font-medium">Never upload again</span> — connect your drive and CompliBoard always reads the latest version.</p>
-                            <div className="flex items-center gap-2">
-                              <button disabled className="text-xs px-3 py-1.5 bg-white border border-green-200 rounded-lg text-green-800 opacity-60 cursor-not-allowed">Connect Google Drive — Soon</button>
-                              <button disabled className="text-xs px-3 py-1.5 bg-white border border-green-200 rounded-lg text-green-800 opacity-60 cursor-not-allowed">Connect OneDrive — Soon</button>
-                            </div>
-                          </div>
-                        )}
+                          <p className="text-[11px] text-green-800 opacity-80 mt-3 leading-snug">🔒 Read-only. We never copy or store your files. You choose which folder.</p>
+                        </div>
                       </div>
 
-                      {isEmpty && (
-                        <div className="flex items-center gap-2 p-3 bg-gray-50 border border-gray-200 rounded-lg mt-4">
-                          <span className="text-gray-400">✉️</span>
-                          <p className="text-xs text-gray-500 flex-1">Re-uploading is a pain. Soon you'll be able to just forward an updated file by email and we'll keep it current.</p>
-                          <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wide">Soon</span>
-                        </div>
-                      )}
+                      <div className="flex items-center gap-2 p-3 bg-gray-50 border border-gray-200 rounded-lg mt-4">
+                        <span className="text-gray-400">✉️</span>
+                        <p className="text-xs text-gray-500 flex-1">Re-uploading is a pain. Soon you'll be able to just forward an updated file by email and we'll keep it current.</p>
+                        <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wide">Soon</span>
+                      </div>
                     </div>
                   )
                 })()}
