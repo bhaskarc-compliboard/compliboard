@@ -138,7 +138,8 @@ const EXAMPLE_QUESTIONS = [
 
 function CompliancePageInner() {
   const supabase = createClient()
-  const [question, setQuestion] = useState('')
+  const [askQuestion, setAskQuestion] = useState('')
+  const [createQuestion, setCreateQuestion] = useState('')
   const [companyName, setCompanyName] = useState('')
   const [companyId, setCompanyId] = useState<string | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
@@ -155,7 +156,7 @@ function CompliancePageInner() {
   const [chipVisible, setChipVisible] = useState(true)
   const [askedQuestion, setAskedQuestion] = useState('')
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
-  const [showSaved, setShowSaved] = useState(false)
+  const [tab, setTab] = useState<'ask' | 'create' | 'saved'>('ask')
   const [expandedDetails, setExpandedDetails] = useState<Record<string, boolean>>({})
   const [expandedSteps, setExpandedSteps] = useState<Record<string, ChecklistItem[] | null | undefined>>({})
   const [stepsCache, setStepsCache] = useState<Record<string, ChecklistItem[]>>({})
@@ -259,11 +260,11 @@ function CompliancePageInner() {
   function loadResearch(c: SavedChecklist) {
     setResearchData(c.research_answer)
     setAskedQuestion(c.question)
-    setQuestion(c.question)
+    setAskQuestion(c.question)
     setMode('research')
     setData(null)
     setCurrentResearchId(c.id)
-    setShowSaved(false)
+    setTab('ask')
   }
 
   async function saveChecklist(question: string, data: ChecklistData) {
@@ -405,9 +406,9 @@ function CompliancePageInner() {
     setStepsCache(cacheOnly)
     setExpandedSteps(cacheOnly)
     setAskedQuestion(checklist.question)
-    setQuestion(checklist.question)
+    setCreateQuestion(checklist.question)
     setCurrentChecklistId(checklistId)
-    setShowSaved(false)
+    setTab('create')
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
@@ -573,8 +574,8 @@ Give them a specific direct answer — exactly what they need to do, which speci
   }, [])
 
   async function handleSubmit(submitMode?: string, customQuestion?: string) {
-    const q = customQuestion || question
     const currentMode = (submitMode === 'research' || submitMode === 'checklist') ? submitMode : 'checklist'
+    const q = customQuestion ?? (currentMode === 'checklist' ? createQuestion : askQuestion)
     if (!q.trim() && !uploadedFile) return
     setLoading(true)
     setData(null)
@@ -718,7 +719,7 @@ Give them a specific direct answer — exactly what they need to do, which speci
         .print-only { display: none; }
       `}</style>
 
-      <div className="max-w-3xl mx-auto px-6 py-8">
+      <div className="max-w-6xl mx-auto px-6 py-8">
 
         <div className="print-only print-header">
           <div>
@@ -732,55 +733,36 @@ Give them a specific direct answer — exactly what they need to do, which speci
           </div>
         </div>
 
-        <div className="no-print mb-6 flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-semibold text-gray-900 mb-1">Compliance Workspace</h1>
-            <p className="text-sm text-gray-400">Ask any compliance question in plain English</p>
-          </div>
-          {savedChecklists.length > 0 && (
-            <button onClick={() => setShowSaved(!showSaved)}
-              className="flex items-center gap-2 text-sm px-3 py-2 rounded-xl border border-gray-200 text-gray-600 hover:border-green-500 hover:text-green-700 transition-colors">
-              📋 {showSaved ? 'Hide saved' : `Saved (${savedChecklists.length})`}
-            </button>
-          )}
+        <div className="no-print mb-6">
+          <h1 className="text-xl font-semibold text-gray-900 mb-1">Compliance Workspace</h1>
+          <p className="text-sm text-gray-400">Ask any compliance question in plain English</p>
         </div>
 
-        {showSaved && savedChecklists.length > 0 && (
-          <div className="no-print mb-6 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-            <div className="px-4 py-3 border-b border-gray-100">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Saved</p>
-            </div>
-            <div className="divide-y divide-gray-50">
-              {savedChecklists.map((c) => (
-                <div key={c.id} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors">
-                  <div className="flex-1 min-w-0 cursor-pointer" onClick={() => c.research_answer ? loadResearch(c) : loadChecklist(c.id)}>
-                    <p className="text-sm font-medium text-gray-900 truncate">{c.title}</p>
-                    <div className="flex items-center gap-3 mt-0.5">
-                      <p className="text-xs text-gray-400">{new Date(c.created_at).toLocaleDateString()}</p>
-                      {c.research_answer ? (
-                        <p className="text-xs text-blue-500">
-                          Answered{c.converted_to_checklist_id ? ' · → Checklist created' : ''}
-                        </p>
-                      ) : c.must_do_count > 0 ? (
-                        <p className="text-xs text-green-600">{c.completed_count}/{c.must_do_count} done</p>
-                      ) : null}
-                    </div>
-                  </div>
-                  <button onClick={() => deleteChecklist(c.id)}
-                    className="text-gray-300 hover:text-red-400 transition-colors text-lg leading-none flex-shrink-0">×</button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        <div className="no-print flex items-center gap-6 mb-5 border-b border-gray-200">
+          <button onClick={() => setTab('ask')}
+            className={`text-sm pb-3 font-medium transition-colors border-b-2 -mb-px ${tab === 'ask' ? 'border-green-600 text-green-700' : 'border-transparent text-gray-400 hover:text-gray-600'}`}>
+            Ask a question
+          </button>
+          <button onClick={() => setTab('create')}
+            className={`text-sm pb-3 font-medium transition-colors border-b-2 -mb-px ${tab === 'create' ? 'border-green-600 text-green-700' : 'border-transparent text-gray-400 hover:text-gray-600'}`}>
+            Create action items
+          </button>
+          <button onClick={() => setTab('saved')}
+            className={`text-sm pb-3 font-medium transition-colors border-b-2 -mb-px ${tab === 'saved' ? 'border-green-600 text-green-700' : 'border-transparent text-gray-400 hover:text-gray-600'}`}>
+            Saved{savedChecklists.length > 0 ? ` (${savedChecklists.length})` : ''}
+          </button>
+        </div>
+
+        {tab === 'ask' && (
+        <div>
 
         <div className="no-print mb-3">
           <textarea
             className="w-full border border-gray-200 rounded-xl p-4 text-sm text-gray-800 resize-none focus:outline-none focus:border-green-500 bg-white"
             rows={4}
             placeholder="Describe your situation in detail for the best results. Include your industry, state, what you are trying to do, and any specific chemicals or products involved. Example: I run a 50-person chemical warehouse in Oregon storing HF acid and want to add a new storage area."
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
+            value={askQuestion}
+            onChange={(e) => setAskQuestion(e.target.value)}
           />
         </div>
 
@@ -803,19 +785,11 @@ Give them a specific direct answer — exactly what they need to do, which speci
         </div>
 
         <div className="no-print flex items-center gap-3">
-          {!uploadedFile && (
-            <button onClick={() => handleSubmit('research')} disabled={loading || !question.trim()}
-              className="bg-green-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50">
-              {loading ? 'Working...' : 'Research this topic →'}
-            </button>
-          )}
           <button
-            onClick={() => handleSubmit(uploadedFile ? 'research' : 'checklist')}
-            disabled={loading || (!question.trim() && !uploadedFile)}
-            className={uploadedFile
-              ? "bg-green-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50"
-              : "border border-gray-200 text-gray-600 px-5 py-2.5 rounded-xl text-sm font-medium hover:border-green-500 hover:text-green-700 transition-colors disabled:opacity-50"}>
-            {loading ? 'Working...' : uploadedFile ? 'Ask about this file →' : 'Get my compliance checklist →'}
+            onClick={() => handleSubmit('research', askQuestion)}
+            disabled={loading || (!askQuestion.trim() && !uploadedFile)}
+            className="bg-green-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50">
+            {loading ? 'Working...' : uploadedFile ? 'Ask about this file →' : 'Research this topic →'}
           </button>
         </div>
 
@@ -836,7 +810,7 @@ Give them a specific direct answer — exactly what they need to do, which speci
           </div>
         )}
 
-        {researchData && !loading && mode === 'research' && (
+        {researchData && !loading && (
           <div className="mt-10 pt-8 border-t border-gray-100">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-base font-semibold text-gray-900">{askedQuestion}</h2>
@@ -857,11 +831,53 @@ Give them a specific direct answer — exactly what they need to do, which speci
             </div>
             <div className="mt-4 flex items-center gap-3">
               <button
-                onClick={() => handleSubmit('checklist')}
+                onClick={() => { setCreateQuestion(askQuestion); setTab('create'); handleSubmit('checklist', askQuestion) }}
                 className="flex items-center gap-2 text-sm px-4 py-2.5 rounded-xl border border-green-600 bg-green-700 text-white hover:bg-green-800 transition-colors">
                 Create my action checklist →
               </button>
               <p className="text-xs text-gray-400">Get actionable steps based on this research</p>
+            </div>
+          </div>
+        )}
+
+        </div>
+        )}
+
+        {tab === 'create' && (
+        <div>
+
+        <div className="no-print mb-3">
+          <textarea
+            className="w-full border border-gray-200 rounded-xl p-4 text-sm text-gray-800 resize-none focus:outline-none focus:border-green-500 bg-white"
+            rows={4}
+            placeholder="Describe your situation in detail for the best results. Include your industry, state, what you are trying to do, and any specific chemicals or products involved. Example: I run a 50-person chemical warehouse in Oregon storing HF acid and want to add a new storage area."
+            value={createQuestion}
+            onChange={(e) => setCreateQuestion(e.target.value)}
+          />
+        </div>
+
+        <div className="no-print flex items-center gap-3">
+          <button
+            onClick={() => handleSubmit('checklist', createQuestion)}
+            disabled={loading || !createQuestion.trim()}
+            className="bg-green-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50">
+            {loading ? 'Working...' : 'Get my compliance checklist →'}
+          </button>
+        </div>
+
+        {loading && (
+          <div className="no-print mt-6 p-5 bg-white rounded-xl border border-gray-200 shadow-sm">
+            <div className="space-y-2">
+              {completedSteps.map((step) => (
+                <div key={step} className="flex items-center gap-2 text-sm text-gray-400">
+                  <span className="text-green-500">✓</span>{step}
+                </div>
+              ))}
+              {currentStatus && (
+                <div className="flex items-center gap-2 text-sm text-gray-700 font-medium">
+                  <span className="animate-spin inline-block">⟳</span>{currentStatus}
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -1045,7 +1061,8 @@ Give them a specific direct answer — exactly what they need to do, which speci
                                           <p className="text-xs text-gray-500 mt-1">🏛 {sub.agency_name}</p>
                                         )}
                                         {sub.search_hint && (
-                                          <a
+                                          
+<a
                                             href={"https://www.google.com/search?q=" + encodeURIComponent(sub.search_hint)}
                                             target="_blank"
                                             rel="noopener noreferrer"
@@ -1181,6 +1198,45 @@ Give them a specific direct answer — exactly what they need to do, which speci
             <AIDisclaimer variant="full" className="mt-6" />
 
           </div>
+        )}
+
+        </div>
+        )}
+
+        {tab === 'saved' && (
+        <div>
+          {savedChecklists.length === 0 ? (
+            <div className="bg-white rounded-xl p-12 text-center">
+              <p className="text-4xl mb-4">📋</p>
+              <p className="text-base font-medium text-gray-700 mb-1">Nothing saved yet</p>
+              <p className="text-sm text-gray-400">Research answers and checklists you create will appear here.</p>
+            </div>
+          ) : (
+            <div className="bg-white rounded-xl overflow-hidden">
+              <div className="divide-y divide-gray-50">
+                {savedChecklists.map((c) => (
+                  <div key={c.id} className="flex items-center gap-3 px-5 py-4 hover:bg-gray-50 transition-colors">
+                    <div className="flex-1 min-w-0 cursor-pointer" onClick={() => c.research_answer ? loadResearch(c) : loadChecklist(c.id)}>
+                      <p className="text-sm font-medium text-gray-900 truncate">{c.title}</p>
+                      <div className="flex items-center gap-3 mt-0.5">
+                        <p className="text-xs text-gray-400">{new Date(c.created_at).toLocaleDateString()}</p>
+                        {c.research_answer ? (
+                          <p className="text-xs text-blue-500">
+                            Answered{c.converted_to_checklist_id ? ' · → Checklist created' : ''}
+                          </p>
+                        ) : c.must_do_count > 0 ? (
+                          <p className="text-xs text-green-600">{c.completed_count}/{c.must_do_count} done</p>
+                        ) : null}
+                      </div>
+                    </div>
+                    <button onClick={() => deleteChecklist(c.id)}
+                      className="text-gray-300 hover:text-red-400 transition-colors text-lg leading-none flex-shrink-0">×</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
         )}
 
       </div>
