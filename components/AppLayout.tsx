@@ -220,19 +220,6 @@ export default function AppLayout({ children, title, didYouKnow }: AppLayoutProp
             {children}
           </div>
 
-          {/* Did you know */}
-          {didYouKnow && (
-            <div className="px-6 py-8 border-t border-gray-100 mt-8">
-              <div className="max-w-4xl mx-auto flex items-start gap-3">
-                <span className="text-2xl flex-shrink-0">{didYouKnow.icon}</span>
-                <div>
-                  <p className="text-sm font-semibold text-gray-700 mb-1">Did you know?</p>
-                  <p className="text-sm text-gray-500 leading-relaxed">{didYouKnow.text}</p>
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* Footer */}
           <footer className="border-t border-gray-100 px-6 py-4 bg-white">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-2">

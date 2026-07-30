@@ -735,7 +735,7 @@ Give them a specific direct answer — exactly what they need to do, which speci
 
         <div className="no-print mb-6">
           <h1 className="text-xl font-semibold text-gray-900 mb-1">Compliance Workspace</h1>
-          <p className="text-sm text-gray-400">Ask any compliance question in plain English</p>
+          <p className="text-sm text-gray-400">Research regulations and turn them into action steps</p>
         </div>
 
         <div className="no-print flex items-center gap-6 mb-5 border-b border-gray-200">
@@ -760,7 +760,7 @@ Give them a specific direct answer — exactly what they need to do, which speci
           <textarea
             className="w-full border border-gray-200 rounded-xl p-4 text-sm text-gray-800 resize-none focus:outline-none focus:border-green-500 bg-white"
             rows={4}
-            placeholder="Describe your situation in detail for the best results. Include your industry, state, what you are trying to do, and any specific chemicals or products involved. Example: I run a 50-person chemical warehouse in Oregon storing HF acid and want to add a new storage area."
+            placeholder="e.g. I run a 50-person chemical warehouse in Oregon storing HF acid and want to add a new storage area"
             value={askQuestion}
             onChange={(e) => setAskQuestion(e.target.value)}
           />
@@ -850,7 +850,7 @@ Give them a specific direct answer — exactly what they need to do, which speci
           <textarea
             className="w-full border border-gray-200 rounded-xl p-4 text-sm text-gray-800 resize-none focus:outline-none focus:border-green-500 bg-white"
             rows={4}
-            placeholder="Describe your situation in detail for the best results. Include your industry, state, what you are trying to do, and any specific chemicals or products involved. Example: I run a 50-person chemical warehouse in Oregon storing HF acid and want to add a new storage area."
+            placeholder="e.g. I run a 50-person chemical warehouse in Oregon storing HF acid and want to add a new storage area"
             value={createQuestion}
             onChange={(e) => setCreateQuestion(e.target.value)}
           />
