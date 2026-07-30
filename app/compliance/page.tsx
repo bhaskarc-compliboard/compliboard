@@ -740,15 +740,15 @@ Give them a specific direct answer — exactly what they need to do, which speci
 
         <div className="no-print flex items-center gap-6 mb-5 border-b border-gray-200">
           <button onClick={() => setTab('ask')}
-            className={`text-sm pb-3 font-medium transition-colors border-b-2 -mb-px ${tab === 'ask' ? 'border-green-600 text-green-700' : 'border-transparent text-gray-400 hover:text-gray-600'}`}>
+            className={`text-sm pb-3 font-medium transition-colors border-b-2 -mb-px ${tab === 'ask' ? 'border-green-600 text-green-700' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
             Ask a question
           </button>
           <button onClick={() => setTab('create')}
-            className={`text-sm pb-3 font-medium transition-colors border-b-2 -mb-px ${tab === 'create' ? 'border-green-600 text-green-700' : 'border-transparent text-gray-400 hover:text-gray-600'}`}>
+            className={`text-sm pb-3 font-medium transition-colors border-b-2 -mb-px ${tab === 'create' ? 'border-green-600 text-green-700' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
             Create action items
           </button>
           <button onClick={() => setTab('saved')}
-            className={`text-sm pb-3 font-medium transition-colors border-b-2 -mb-px ${tab === 'saved' ? 'border-green-600 text-green-700' : 'border-transparent text-gray-400 hover:text-gray-600'}`}>
+            className={`text-sm pb-3 font-medium transition-colors border-b-2 -mb-px ${tab === 'saved' ? 'border-green-600 text-green-700' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
             Saved{savedChecklists.length > 0 ? ` (${savedChecklists.length})` : ''}
           </button>
         </div>
@@ -756,14 +756,20 @@ Give them a specific direct answer — exactly what they need to do, which speci
         {tab === 'ask' && (
         <div>
 
-        <div className="no-print mb-3">
+        <div className="no-print mb-3 relative">
           <textarea
             className="w-full border border-gray-200 rounded-xl p-4 text-sm text-gray-800 resize-none focus:outline-none focus:border-green-500 bg-white"
             rows={4}
-            placeholder="e.g. I run a 50-person chemical warehouse in Oregon storing HF acid and want to add a new storage area"
             value={askQuestion}
             onChange={(e) => setAskQuestion(e.target.value)}
           />
+          {!askQuestion && (
+            <div className="absolute inset-0 p-4 pointer-events-none flex flex-col gap-3">
+              <p className="text-sm text-gray-400">e.g. I run a 50-person chemical warehouse in Oregon storing HF acid</p>
+              <p className="text-sm text-gray-400">e.g. I run a hospice agency in Washington with 12 caregivers</p>
+              <p className="text-sm text-gray-400">e.g. I&apos;m opening a second restaurant location in Portland</p>
+            </div>
+          )}
         </div>
 
         <div className="no-print mb-4">
@@ -771,7 +777,7 @@ Give them a specific direct answer — exactly what they need to do, which speci
             onChange={handleFileChange} className="hidden" id="file-upload" />
           {!uploadedFile ? (
             <label htmlFor="file-upload"
-              className="flex items-center gap-1.5 cursor-pointer text-sm text-gray-400 hover:text-green-700 transition-colors">
+              className="flex items-center gap-1.5 cursor-pointer text-sm text-gray-500 hover:text-green-700 transition-colors">
               <span>📎</span>
               <span>Attach a file — upload a permit, SDS sheet, or any document and ask a question about it</span>
             </label>
@@ -787,7 +793,7 @@ Give them a specific direct answer — exactly what they need to do, which speci
         <div className="no-print flex items-center gap-3">
           <button
             onClick={() => handleSubmit('research', askQuestion)}
-            disabled={loading || (!askQuestion.trim() && !uploadedFile)}
+            disabled={loading}
             className="bg-green-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50">
             {loading ? 'Working...' : uploadedFile ? 'Ask about this file →' : 'Research this topic →'}
           </button>
@@ -846,20 +852,26 @@ Give them a specific direct answer — exactly what they need to do, which speci
         {tab === 'create' && (
         <div>
 
-        <div className="no-print mb-3">
+        <div className="no-print mb-3 relative">
           <textarea
             className="w-full border border-gray-200 rounded-xl p-4 text-sm text-gray-800 resize-none focus:outline-none focus:border-green-500 bg-white"
             rows={4}
-            placeholder="e.g. I run a 50-person chemical warehouse in Oregon storing HF acid and want to add a new storage area"
             value={createQuestion}
             onChange={(e) => setCreateQuestion(e.target.value)}
           />
+          {!createQuestion && (
+            <div className="absolute inset-0 p-4 pointer-events-none flex flex-col gap-3">
+              <p className="text-sm text-gray-400">e.g. I run a 50-person chemical warehouse in Oregon storing HF acid</p>
+              <p className="text-sm text-gray-400">e.g. I run a hospice agency in Washington with 12 caregivers</p>
+              <p className="text-sm text-gray-400">e.g. I&apos;m opening a second restaurant location in Portland</p>
+            </div>
+          )}
         </div>
 
         <div className="no-print flex items-center gap-3">
           <button
             onClick={() => handleSubmit('checklist', createQuestion)}
-            disabled={loading || !createQuestion.trim()}
+            disabled={loading}
             className="bg-green-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50">
             {loading ? 'Working...' : 'Get my compliance checklist →'}
           </button>
