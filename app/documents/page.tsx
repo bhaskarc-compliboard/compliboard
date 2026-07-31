@@ -32,26 +32,11 @@ const RECURRENCE_OPTIONS = [
   { value: 'annually', label: 'Annually' },
 ]
 
-// Audit industry is shown as its slug directly (no hardcoded label map).
-
-function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return bytes + ' B'
-  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
-  return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
-}
-
 function getFileIcon(fileType: string, name: string): string {
   if (name.match(/\.(xlsx|xls|csv)$/i)) return '📊'
   if (fileType.includes('pdf') || name.endsWith('.pdf')) return '📄'
   if (fileType.includes('image')) return '🖼️'
   return '📎'
-}
-
-function getChecklistStatus(completed: number, total: number): { dot: string; label: string } {
-  if (total === 0) return { dot: 'bg-gray-300', label: '' }
-  if (completed === 0) return { dot: 'bg-red-400', label: 'Not started' }
-  if (completed === total) return { dot: 'bg-green-500', label: 'Complete' }
-  return { dot: 'bg-amber-400', label: 'In progress' }
 }
 
 export default function DocumentsPage() {
@@ -67,6 +52,7 @@ function DocumentsPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const paneContainerRef = useRef<HTMLDivElement>(null)
 
   const [activeTab, setActiveTab] = useState<'files' | 'log'>('files')
   const [documents, setDocuments] = useState<Document[]>([])
@@ -78,9 +64,13 @@ function DocumentsPageContent() {
   const [primaryIndustry, setPrimaryIndustry] = useState<string>('other')
   const [deleting, setDeleting] = useState<string | null>(null)
 
-  // Folder navigation — separate state for files vs hr tabs
-  const [currentFolderId, setCurrentFolderId] = useState<string | null>(null)
-  const [breadcrumb, setBreadcrumb] = useState<Folder[]>([])
+  // Two-pane folder tree navigation
+  const [selectedFolderId, setSelectedFolderId] = useState<string>('unfiled')
+  const [expandedDivisions, setExpandedDivisions] = useState<Set<string>>(new Set())
+  const [paneWidth, setPaneWidth] = useState(220)
+  const [resizing, setResizing] = useState(false)
+  const [sortField, setSortField] = useState<'name' | 'date'>('name')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
 
   // Upload state
   const [showUpload, setShowUpload] = useState(false)
@@ -101,16 +91,58 @@ function DocumentsPageContent() {
   const [calendarSuccess, setCalendarSuccess] = useState('')
 
   // Folder management
-  const [showNewFolder, setShowNewFolder] = useState(false)
+  const [newFolderParentId, setNewFolderParentId] = useState<string | null | undefined>(undefined)
   const [newFolderName, setNewFolderName] = useState('')
   const [creatingFolder, setCreatingFolder] = useState(false)
   const [renamingId, setRenamingId] = useState<string | null>(null)
   const [renameValue, setRenameValue] = useState('')
   const [folderError, setFolderError] = useState('')
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+
+  // Move file
+  const [movingDocId, setMovingDocId] = useState<string | null>(null)
+  const [moreMenuDocId, setMoreMenuDocId] = useState<string | null>(null)
 
   // Audit state
   const [expandedAuditId, setExpandedAuditId] = useState<string | null>(null)
+
+  // Restore remembered pane width and expanded divisions
+  useEffect(() => {
+    const savedWidth = localStorage.getItem('cb-docs-pane-width')
+    if (savedWidth) setPaneWidth(Number(savedWidth))
+    const savedExpanded = localStorage.getItem('cb-docs-expanded-divisions')
+    if (savedExpanded) {
+      try { setExpandedDivisions(new Set(JSON.parse(savedExpanded))) } catch {}
+    }
+  }, [])
+
+  useEffect(() => {
+    localStorage.setItem('cb-docs-expanded-divisions', JSON.stringify(Array.from(expandedDivisions)))
+  }, [expandedDivisions])
+
+  // Pane resize drag handling
+  useEffect(() => {
+    function onMouseMove(e: MouseEvent) {
+      if (!resizing || !paneContainerRef.current) return
+      const rect = paneContainerRef.current.getBoundingClientRect()
+      const newWidth = Math.min(360, Math.max(160, e.clientX - rect.left))
+      setPaneWidth(newWidth)
+    }
+    function onMouseUp() {
+      setResizing(false)
+    }
+    if (resizing) {
+      window.addEventListener('mousemove', onMouseMove)
+      window.addEventListener('mouseup', onMouseUp)
+    }
+    return () => {
+      window.removeEventListener('mousemove', onMouseMove)
+      window.removeEventListener('mouseup', onMouseUp)
+    }
+  }, [resizing])
+
+  useEffect(() => {
+    if (!resizing) localStorage.setItem('cb-docs-pane-width', String(paneWidth))
+  }, [resizing, paneWidth])
 
   useEffect(() => {
     async function loadData() {
@@ -145,8 +177,8 @@ function DocumentsPageContent() {
         if (company?.industry) setPrimaryIndustry(company.industry)
       }
 
-      await loadDocuments(user.id, null)
-        await loadAllDocuments(user.id)
+      await loadDocuments(user.id, 'unfiled')
+      await loadAllDocuments(user.id)
       setLoading(false)
     }
     loadData()
@@ -164,11 +196,8 @@ function DocumentsPageContent() {
     if (json.data) setAllDocuments(json.data)
   }
 
-  async function loadDocuments(uid: string, folderId: string | null) {
-    const url = folderId
-      ? `/api/documents?user_id=${uid}&folder_id=${folderId}`
-      : `/api/documents?user_id=${uid}`
-    const res = await fetch(url)
+  async function loadDocuments(uid: string, folderId: string) {
+    const res = await fetch(`/api/documents?user_id=${uid}&folder_id=${folderId}`)
     const json = await res.json()
     if (json.data) setDocuments(json.data)
   }
@@ -179,20 +208,27 @@ function DocumentsPageContent() {
     if (json.data) setDocumentReviews(json.data)
   }
 
-  async function navigateToFolder(folder: Folder | null) {
+  async function selectFolder(folderId: string) {
     if (!userId) return
-    if (folder === null) {
-      setCurrentFolderId(null)
-      setBreadcrumb([])
-      await loadDocuments(userId, null)
+    setSelectedFolderId(folderId)
+    await loadDocuments(userId, folderId)
+  }
+
+  function toggleDivision(id: string) {
+    setExpandedDivisions(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  function toggleSort(field: 'name' | 'date') {
+    if (sortField === field) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc')
     } else {
-      setCurrentFolderId(folder.id)
-      setBreadcrumb(prev => {
-        const existing = prev.findIndex(f => f.id === folder.id)
-        if (existing >= 0) return prev.slice(0, existing + 1)
-        return [...prev, folder]
-      })
-      await loadDocuments(userId, folder.id)
+      setSortField(field)
+      setSortDir('asc')
     }
   }
 
@@ -228,9 +264,9 @@ function DocumentsPageContent() {
         })
         if (!dbRes.ok) throw new Error(`Failed to save ${file.name}`)
       }
-      await loadDocuments(userId, targetFolderId)
+      await loadDocuments(userId, selectedFolderId)
       await loadAllDocuments(userId)
-      
+
       // Save reference before clearing state
       const uploadedFiles = [...files]
       setFiles([])
@@ -285,8 +321,9 @@ function DocumentsPageContent() {
       const json = await res.json()
       if (!res.ok) throw new Error(json.error)
       await loadFolders(companyId)
+      if (parentId) setExpandedDivisions(prev => new Set(prev).add(parentId))
       setNewFolderName('')
-      setShowNewFolder(false)
+      setNewFolderParentId(undefined)
     } catch (err) {
       setFolderError(err instanceof Error ? err.message : 'Failed to create folder')
     } finally {
@@ -311,6 +348,7 @@ function DocumentsPageContent() {
     const json = await res.json()
     if (!res.ok) { alert(json.error); return }
     await loadFolders(companyId)
+    if (selectedFolderId === id) await selectFolder('unfiled')
   }
 
   async function handleDeleteDoc(doc: Document) {
@@ -324,12 +362,24 @@ function DocumentsPageContent() {
     finally { setDeleting(null) }
   }
 
+  async function handleMoveDocument(docId: string, targetFolderId: string | null) {
+    await fetch('/api/documents', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: docId, folder_id: targetFolderId }),
+    })
+    setMovingDocId(null)
+    if (userId) {
+      await loadDocuments(userId, selectedFolderId)
+      await loadAllDocuments(userId)
+    }
+  }
+
   async function handleDownload(doc: Document) {
     const { data } = await supabase.storage.from('company-documents').createSignedUrl(doc.file_url, 60)
     if (data?.signedUrl) window.open(data.signedUrl, '_blank')
   }
 
-  // Filtered folders by section
   async function handleAddToCalendar() {
     if (!companyId || !userId) return
     setAddingToCalendar(true)
@@ -381,7 +431,6 @@ function DocumentsPageContent() {
       fd.append('company_id', companyId)
       fd.append('user_id', userId)
       fd.append('industry', primaryIndustry)
-      // Get folder and division names
       const folder = folders.find(f => f.id === doc.folder_id)
       const division = folder?.parent_id ? folders.find(f => f.id === folder.parent_id) : folder
       fd.append('folder_name', folder?.name || '')
@@ -430,22 +479,11 @@ function DocumentsPageContent() {
     }
   }
 
-  const fileFolders = folders.filter(f => f.section === 'files')
-
-  const currentFileFolders = fileFolders.filter(f => f.parent_id === currentFolderId)
-  const currentFiles = currentFolderId ? documents.filter(d => d.folder_id === currentFolderId) : documents.filter(d => {
-    const filesFolderIds = fileFolders.map(f => f.id)
-    return d.folder_id === null || !filesFolderIds.includes(d.folder_id || '')
-  })
-
   const tabs = [
     { key: 'files', label: 'Company Files' },
     { key: 'log', label: 'Document Reviews' },
   ] as const
 
-  // Counts files directly in this folder PLUS every file in any folder
-  // nested underneath it, at any depth — a division's count should reflect
-  // everything inside it, not just files sitting at the top level.
   function countFilesRecursive(folderId: string): number {
     const direct = allDocuments.filter(d => d.folder_id === folderId).length
     const childFolders = folders.filter(f => f.parent_id === folderId)
@@ -453,176 +491,21 @@ function DocumentsPageContent() {
     return direct + nested
   }
 
-  function renderFolder(folder: Folder, onNavigate: (f: Folder) => void, onAudit?: (f: Folder) => void) {
-    return (
-      <div key={folder.id} className={`group border border-gray-200 hover:border-green-400 transition-all ${viewMode === 'grid' ? 'bg-gray-50 rounded-xl' : 'bg-gray-50 rounded-xl'}`}>
-        {renamingId === folder.id ? (
-          <div className="p-3 flex items-center gap-2">
-            <input type="text" autoFocus
-              className="flex-1 border border-gray-200 rounded-lg px-2 py-1 text-sm focus:outline-none focus:border-green-500"
-              value={renameValue}
-              onChange={(e) => setRenameValue(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') handleRenameFolder(folder.id); if (e.key === 'Escape') setRenamingId(null) }}
-            />
-            <button onClick={() => handleRenameFolder(folder.id)} className="text-xs px-2 py-1 rounded bg-green-700 text-white">✓</button>
-            <button onClick={() => setRenamingId(null)} className="text-gray-400 hover:text-gray-600">×</button>
-          </div>
-        ) : (
-          <div>
-            {viewMode === 'grid' ? (
-              <div>
-                <button onClick={() => onNavigate(folder)} className="w-full p-4 text-left flex items-center gap-3">
-                  <span className="text-2xl">📁</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-700 truncate">{folder.name}</p>
-                    {countFilesRecursive(folder.id) > 0 && <p className="text-xs text-gray-400 mt-0.5">{countFilesRecursive(folder.id)} files</p>}
-                  </div>
-                </button>
-                <div className="px-4 pb-3 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button onClick={() => { setRenamingId(folder.id); setRenameValue(folder.name) }}
-                    className="text-xs text-gray-400 hover:text-green-700 transition-colors">Rename</button>
-                  <span className="text-gray-200">·</span>
-                  <button onClick={() => handleDeleteFolder(folder.id, folder.name)}
-                    className="text-xs text-gray-400 hover:text-red-500 transition-colors">Delete</button>
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center gap-3 px-4 py-2.5">
-                <span className="text-base">📁</span>
-                <button onClick={() => onNavigate(folder)} className="flex-1 text-left">
-                  <p className="text-sm font-medium text-gray-700">{folder.name}</p>
-                </button>
-                <span className="text-xs text-gray-400 mr-2">{countFilesRecursive(folder.id)} files</span>
-                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button onClick={() => { setRenamingId(folder.id); setRenameValue(folder.name) }}
-                    className="text-xs text-gray-400 hover:text-green-700 transition-colors">Rename</button>
-                  <span className="text-gray-200">·</span>
-                  <button onClick={() => handleDeleteFolder(folder.id, folder.name)}
-                    className="text-xs text-gray-400 hover:text-red-500 transition-colors">Delete</button>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    )
-  }
+  const unfiledCount = allDocuments.filter(d => d.folder_id === null).length
+  const divisions = folders.filter(f => f.section === 'files' && f.parent_id === null)
+  const selectedFolderName = selectedFolderId === 'unfiled' ? 'Unfiled' : (folders.find(f => f.id === selectedFolderId)?.name || 'Unfiled')
 
-  function renderFileList(files: Document[]) {
-    return (
-      <div className="bg-white rounded-xl overflow-hidden">
-        <div className="divide-y divide-gray-50">
-          {files.map((doc) => (
-            <div key={doc.id} className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition-colors">
-              <span className="text-2xl flex-shrink-0">{getFileIcon(doc.file_type, doc.name)}</span>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">{doc.name}</p>
-                <div className="flex items-center gap-4 mt-1">
-                  <span className="text-xs text-gray-400">{formatFileSize(doc.file_size)}</span>
-                  <span className="text-xs text-gray-400">{new Date(doc.uploaded_at).toLocaleDateString()}</span>
-                  {doc.is_recurring && <span className="text-xs text-green-600">🔄 {doc.recurrence_period}</span>}
-                </div>
-              </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                {(() => {
-                  const review = documentReviews.find(r => r.document_id === doc.id)
-                  if (!review) return null
-                  return (
-                    <button onClick={() => { setActiveTab('log'); setExpandedAuditId(review.id) }}
-                      className="text-xs text-green-600 font-medium hover:text-green-800 hover:underline transition-colors">
-                      ✓ Reviewed {new Date(review.created_at).toLocaleDateString()}
-                    </button>
-                  )
-                })()}
-                <button onClick={() => handleExtractDates(doc)} disabled={extractingDates === doc.id}
-                  className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:border-green-500 hover:text-green-700 transition-colors disabled:opacity-50">
-                  {extractingDates === doc.id ? 'Extracting...' : 'Extract dates'}
-                </button>
-                <button onClick={() => handleScanDocument(doc)} disabled={scanningDoc === doc.id}
-                  className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:border-blue-500 hover:text-blue-700 transition-colors disabled:opacity-50">
-                  {scanningDoc === doc.id ? 'Reviewing...' : 'Review'}
-                </button>
-                <button onClick={() => handleDownload(doc)} className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:border-green-500 hover:text-green-700 transition-colors">Download</button>
-                <button onClick={() => handleDeleteDoc(doc)} disabled={deleting === doc.id} className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-400 hover:border-red-400 hover:text-red-500 transition-colors disabled:opacity-50">{deleting === doc.id ? '...' : 'Delete'}</button>
-              </div>
-            </div>
-          ))}
-        </div>
-        <p className="text-xs text-gray-400 text-center py-3 border-t border-gray-50">
-          {files.length} file{files.length !== 1 ? 's' : ''} · Stored securely and only accessible by your account
-        </p>
-      </div>
-    )
-  }
+  const sortedDocuments = [...documents].sort((a, b) => {
+    const cmp = sortField === 'name'
+      ? a.name.localeCompare(b.name)
+      : new Date(a.uploaded_at).getTime() - new Date(b.uploaded_at).getTime()
+    return sortDir === 'asc' ? cmp : -cmp
+  })
 
-  function renderUploadPanel(targetFolderId: string | null, folderName?: string) {
-    return (
-      <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <h2 className="text-sm font-semibold text-gray-900">Upload files</h2>
-            {folderName && <span className="text-xs text-green-600">→ {folderName}</span>}
-          </div>
-          <button onClick={() => { setShowUpload(false); setFiles([]) }} className="text-gray-400 hover:text-gray-600 text-lg leading-none">×</button>
-        </div>
-        <div className="space-y-3">
-          <div>
-            <input ref={fileInputRef} type="file" multiple accept=".pdf,.xlsx,.xls,.csv,.docx,.doc,.pptx,.ppt,image/*" onChange={handleFileChange} className="hidden" id="file-upload" />
-            {files.length === 0 ? (
-              <label htmlFor="file-upload" className="flex items-center gap-3 w-full border border-dashed border-gray-300 rounded-xl px-4 py-4 cursor-pointer hover:border-green-500 hover:bg-green-50 transition-colors">
-                <span className="text-2xl">📎</span>
-                <div>
-                  <p className="text-sm text-gray-600">Click to select files</p>
-                  <p className="text-xs text-gray-400">PDF, Word, PowerPoint, Excel, CSV, images · Select multiple</p>
-                </div>
-              </label>
-            ) : (
-              <div className="space-y-2">
-                {files.map((f, i) => (
-                  <div key={i} className="flex items-center gap-3 p-3 bg-green-50 border border-green-200 rounded-xl">
-                    <span className="text-xl">{getFileIcon(f.type, f.name)}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-green-800 truncate">{f.name}</p>
-                      <p className="text-xs text-green-600">{formatFileSize(f.size)}</p>
-                    </div>
-                  </div>
-                ))}
-                <button onClick={() => { setFiles([]); if (fileInputRef.current) fileInputRef.current.value = '' }}
-                  className="text-xs text-gray-400 hover:text-red-500 transition-colors">
-                  Clear all
-                </button>
-              </div>
-            )}
-          </div>
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2">
-              <div onClick={() => setIsRecurring(!isRecurring)} className={`w-8 h-5 rounded-full cursor-pointer transition-colors relative flex-shrink-0 ${isRecurring ? 'bg-green-600' : 'bg-gray-200'}`}>
-                <div className={`w-3 h-3 bg-white rounded-full absolute top-1 transition-all ${isRecurring ? 'left-4' : 'left-1'}`} />
-              </div>
-              <label className="text-xs text-gray-600 cursor-pointer" onClick={() => setIsRecurring(!isRecurring)}>Recurring</label>
-              {isRecurring && (
-                <select className="border border-gray-200 rounded-lg px-2 py-1 text-xs text-gray-800 focus:outline-none bg-gray-50" value={recurrencePeriod} onChange={(e) => setRecurrencePeriod(e.target.value)}>
-                  {RECURRENCE_OPTIONS.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-                </select>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              <div onClick={() => setExtractDates(!extractDates)} className={`w-8 h-5 rounded-full cursor-pointer transition-colors relative flex-shrink-0 ${extractDates ? 'bg-green-600' : 'bg-gray-200'}`}>
-                <div className={`w-3 h-3 bg-white rounded-full absolute top-1 transition-all ${extractDates ? 'left-4' : 'left-1'}`} />
-              </div>
-              <label className="text-xs text-gray-600 cursor-pointer" onClick={() => setExtractDates(!extractDates)}>Extract dates</label>
-            </div>
-          </div>
-          {uploadError && <p className="text-sm text-red-600">{uploadError}</p>}
-          {uploadProgress && <p className="text-sm text-green-700">{uploadProgress}</p>}
-          <button onClick={() => handleUpload(targetFolderId)} disabled={files.length === 0 || uploading}
-            className="w-full bg-green-700 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50">
-            {uploading ? uploadProgress || 'Uploading...' : `Upload ${files.length > 1 ? files.length + ' files' : 'file'} →`}
-          </button>
-        </div>
-      </div>
-    )
-  }
+  const moveTargets = [
+    { id: null as string | null, name: 'Unfiled' },
+    ...folders.filter(f => f.section === 'files').map(f => ({ id: f.id as string | null, name: f.name })),
+  ].sort((a, b) => (a.id === null ? -1 : b.id === null ? 1 : a.name.localeCompare(b.name)))
 
   return (
     <AppLayout title="Company Documents" didYouKnow={activeTab === 'log' ? { icon: '🔍', text: 'Every file you review gets a real compliance check — CompliBoard cites the specific regulation it checked against and gives you a fix for anything missing.' } : { icon: '📂', text: 'Upload your compliance documents once. CompliBoard reads them, extracts renewal dates, and adds them to your calendar automatically. Every month, CompliBoard checks if your documents are still current and alerts you 30 days before anything expires.' }}>
@@ -643,7 +526,7 @@ function DocumentsPageContent() {
                 <>
                   <div className="fixed inset-0 z-10" onClick={() => setShowUploadMenu(false)} />
                   <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden z-20">
-                    <button onClick={() => { setShowUpload(true); setShowNewFolder(false); setShowUploadMenu(false) }}
+                    <button onClick={() => { setShowUpload(true); setShowUploadMenu(false) }}
                       className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2">
                       <span>💻</span> From computer
                     </button>
@@ -660,11 +543,10 @@ function DocumentsPageContent() {
           )}
         </div>
 
-        {/* Tabs */}
-        <div className="flex border-b border-gray-200 mb-6">
+        <div className="flex items-center gap-6 mb-6 border-b border-gray-200">
           {tabs.map(tab => (
             <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-              className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors mr-2 ${activeTab === tab.key ? 'border-green-600 text-green-700' : 'border-transparent text-gray-400 hover:text-gray-600'}`}>
+              className={`text-sm pb-3 font-medium transition-colors border-b-2 -mb-px ${activeTab === tab.key ? 'border-green-600 text-green-700' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
               {tab.label}
             </button>
           ))}
@@ -676,102 +558,285 @@ function DocumentsPageContent() {
           </div>
         ) : (
           <>
-            {/* CHECKLISTS TAB */}
-            {/* COMPANY FILES TAB */}
             {activeTab === 'files' && (
-              <div>
-                {showUpload && renderUploadPanel(currentFolderId, folders.find(f => f.id === currentFolderId)?.name)}
+              <div ref={paneContainerRef} className="flex items-start">
 
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <button onClick={() => navigateToFolder(null)} className={`text-sm transition-colors ${currentFolderId === null ? 'text-gray-900 font-medium' : 'text-gray-400 hover:text-green-700'}`}>Divisions</button>
-                    {breadcrumb.map((f, i) => (
-                      <span key={f.id} className="flex items-center gap-1">
-                        <span className="text-gray-300 text-xs">›</span>
-                        <button onClick={() => navigateToFolder(f)} className={`text-sm transition-colors ${i === breadcrumb.length - 1 ? 'text-gray-900 font-medium' : 'text-gray-400 hover:text-green-700'}`}>{f.name}</button>
-                      </span>
-                    ))}
-                    {breadcrumb.length < 2 && (
-                      <button onClick={() => { setShowNewFolder(true); setShowUpload(false) }} className="flex items-center gap-1 text-xs text-gray-400 hover:text-green-700 transition-colors px-2 py-1 rounded-lg border border-gray-200 hover:border-green-400 ml-2">
-                        <span>＋</span> {currentFolderId === null ? 'New division' : 'New folder'}
-                      </button>
-                    )}
+                {/* LEFT PANE — folder tree */}
+                <div style={{ width: paneWidth, flexShrink: 0 }} className="pr-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Folders</p>
+                    <button onClick={() => { setNewFolderParentId(null); setNewFolderName('') }}
+                      className="text-gray-400 hover:text-green-700 transition-colors text-sm leading-none" title="New division">+</button>
                   </div>
-                  <div className="flex items-center gap-1 border border-gray-200 rounded-lg p-0.5">
-                    <button onClick={() => setViewMode('grid')} className={`px-2 py-1 rounded text-xs transition-colors ${viewMode === 'grid' ? 'bg-white shadow-sm text-gray-700' : 'text-gray-400 hover:text-gray-600'}`}>Grid</button>
-                    <button onClick={() => setViewMode('list')} className={`px-2 py-1 rounded text-xs transition-colors ${viewMode === 'list' ? 'bg-white shadow-sm text-gray-700' : 'text-gray-400 hover:text-gray-600'}`}>List</button>
-                  </div>
+
+                  {newFolderParentId === null && (
+                    <div className="mb-2 flex items-center gap-1">
+                      <input type="text" autoFocus
+                        className="flex-1 border border-gray-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-green-500"
+                        placeholder="Division name" value={newFolderName}
+                        onChange={(e) => setNewFolderName(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') handleCreateFolder('files', null); if (e.key === 'Escape') setNewFolderParentId(undefined) }}
+                      />
+                      <button onClick={() => handleCreateFolder('files', null)} disabled={creatingFolder || !newFolderName.trim()}
+                        className="text-xs px-2 py-1 rounded bg-green-700 text-white disabled:opacity-50">✓</button>
+                      <button onClick={() => setNewFolderParentId(undefined)} className="text-gray-400 hover:text-gray-600 text-sm">×</button>
+                    </div>
+                  )}
+                  {folderError && newFolderParentId === null && <p className="text-xs text-red-600 mb-2">{folderError}</p>}
+
+                  <button onClick={() => selectFolder('unfiled')}
+                    className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm transition-colors mb-0.5 ${selectedFolderId === 'unfiled' ? 'bg-green-50 text-green-700 font-medium' : 'text-gray-700 hover:bg-gray-50'}`}>
+                    <span>📄</span>
+                    <span className="flex-1 text-left truncate">Unfiled{unfiledCount > 0 ? ` (${unfiledCount})` : ''}</span>
+                  </button>
+
+                  {divisions.map(div => {
+                    const isExpanded = expandedDivisions.has(div.id)
+                    const subfolders = folders.filter(f => f.parent_id === div.id)
+                    const isSelected = selectedFolderId === div.id
+                    const isRenaming = renamingId === div.id
+                    return (
+                      <div key={div.id} className="group">
+                        {isRenaming ? (
+                          <div className="flex items-center gap-1 px-2 py-1">
+                            <input type="text" autoFocus
+                              className="flex-1 border border-gray-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-green-500"
+                              value={renameValue} onChange={(e) => setRenameValue(e.target.value)}
+                              onKeyDown={(e) => { if (e.key === 'Enter') handleRenameFolder(div.id); if (e.key === 'Escape') setRenamingId(null) }}
+                            />
+                            <button onClick={() => handleRenameFolder(div.id)} className="text-xs px-2 py-1 rounded bg-green-700 text-white">✓</button>
+                            <button onClick={() => setRenamingId(null)} className="text-gray-400 hover:text-gray-600 text-sm">×</button>
+                          </div>
+                        ) : (
+                          <div className={`flex items-center gap-1 px-2 py-1.5 rounded-lg transition-colors ${isSelected ? 'bg-green-50' : 'hover:bg-gray-50'}`}>
+                            <button onClick={() => toggleDivision(div.id)} className="text-gray-300 hover:text-gray-500 text-[10px] w-3 flex-shrink-0">
+                              {isExpanded ? '▾' : '▸'}
+                            </button>
+                            <button onClick={() => selectFolder(div.id)}
+                              className={`flex-1 flex items-center gap-2 text-left text-sm min-w-0 ${isSelected ? 'text-green-700 font-medium' : 'text-gray-700'}`}>
+                              <span>📁</span>
+                              <span className="truncate">{div.name}{countFilesRecursive(div.id) > 0 ? ` (${countFilesRecursive(div.id)})` : ''}</span>
+                            </button>
+                            <button onClick={() => { setNewFolderParentId(div.id); setNewFolderName(''); setExpandedDivisions(prev => new Set(prev).add(div.id)) }}
+                              className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-green-700 transition-opacity text-sm leading-none flex-shrink-0" title="New folder">+</button>
+                          </div>
+                        )}
+
+                        {newFolderParentId === div.id && (
+                          <div className="flex items-center gap-1 pl-6 pr-2 py-1">
+                            <input type="text" autoFocus
+                              className="flex-1 border border-gray-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-green-500"
+                              placeholder="Folder name" value={newFolderName}
+                              onChange={(e) => setNewFolderName(e.target.value)}
+                              onKeyDown={(e) => { if (e.key === 'Enter') handleCreateFolder('files', div.id); if (e.key === 'Escape') setNewFolderParentId(undefined) }}
+                            />
+                            <button onClick={() => handleCreateFolder('files', div.id)} disabled={creatingFolder || !newFolderName.trim()}
+                              className="text-xs px-2 py-1 rounded bg-green-700 text-white disabled:opacity-50">✓</button>
+                            <button onClick={() => setNewFolderParentId(undefined)} className="text-gray-400 hover:text-gray-600 text-sm">×</button>
+                          </div>
+                        )}
+                        {folderError && newFolderParentId === div.id && <p className="text-xs text-red-600 pl-6 mb-1">{folderError}</p>}
+
+                        {isExpanded && subfolders.map(sf => {
+                          const sfSelected = selectedFolderId === sf.id
+                          const sfRenaming = renamingId === sf.id
+                          return (
+                            <div key={sf.id} className="group/sf">
+                              {sfRenaming ? (
+                                <div className="flex items-center gap-1 pl-6 pr-2 py-1">
+                                  <input type="text" autoFocus
+                                    className="flex-1 border border-gray-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-green-500"
+                                    value={renameValue} onChange={(e) => setRenameValue(e.target.value)}
+                                    onKeyDown={(e) => { if (e.key === 'Enter') handleRenameFolder(sf.id); if (e.key === 'Escape') setRenamingId(null) }}
+                                  />
+                                  <button onClick={() => handleRenameFolder(sf.id)} className="text-xs px-2 py-1 rounded bg-green-700 text-white">✓</button>
+                                  <button onClick={() => setRenamingId(null)} className="text-gray-400 hover:text-gray-600 text-sm">×</button>
+                                </div>
+                              ) : (
+                                <div className={`flex items-center gap-1 pl-6 pr-2 py-1.5 rounded-lg transition-colors ${sfSelected ? 'bg-green-50' : 'hover:bg-gray-50'}`}>
+                                  <button onClick={() => selectFolder(sf.id)}
+                                    className={`flex-1 flex items-center gap-2 text-left text-sm min-w-0 ${sfSelected ? 'text-green-700 font-medium' : 'text-gray-600'}`}>
+                                    <span className="truncate">{sf.name}{countFilesRecursive(sf.id) > 0 ? ` (${countFilesRecursive(sf.id)})` : ''}</span>
+                                  </button>
+                                  <div className="opacity-0 group-hover/sf:opacity-100 transition-opacity flex items-center gap-1.5 flex-shrink-0">
+                                    <button onClick={() => { setRenamingId(sf.id); setRenameValue(sf.name) }} className="text-gray-400 hover:text-green-700 text-xs">Rename</button>
+                                    <button onClick={() => handleDeleteFolder(sf.id, sf.name)} className="text-gray-400 hover:text-red-500 text-xs">Delete</button>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )
+                  })}
                 </div>
 
-                {showNewFolder && (
-                  <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg">📁</span>
-                      <input type="text" autoFocus className="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-green-500" placeholder="Folder name" value={newFolderName}
-                        onChange={(e) => setNewFolderName(e.target.value)}
-                        onKeyDown={(e) => { if (e.key === 'Enter') handleCreateFolder('files', currentFolderId); if (e.key === 'Escape') setShowNewFolder(false) }}
-                      />
-                      <button onClick={() => handleCreateFolder('files', currentFolderId)} disabled={creatingFolder || !newFolderName.trim()} className="text-xs px-3 py-1.5 rounded-lg bg-green-700 text-white hover:bg-green-800 transition-colors disabled:opacity-50">{creatingFolder ? '...' : 'Create'}</button>
-                      <button onClick={() => { setShowNewFolder(false); setNewFolderName('') }} className="text-gray-400 hover:text-gray-600 text-lg">×</button>
-                    </div>
-                    {folderError && <p className="text-xs text-red-600 mt-2 pl-7">{folderError}</p>}
-                  </div>
-                )}
+                {/* Resize divider */}
+                <div
+                  onMouseDown={() => setResizing(true)}
+                  className="w-px bg-gray-200 hover:bg-green-400 active:bg-green-500 cursor-col-resize flex-shrink-0 self-stretch"
+                  style={{ minHeight: '200px' }}
+                />
 
-                {currentFolderId === null && (() => {
-                  const isEmpty = currentFileFolders.length === 0 && currentFiles.length === 0 && !showUpload
-                  if (!isEmpty) return null
-                  return (
-                    <div className="mb-6">
-                      <div className="flex flex-col md:flex-row gap-6">
-                        <button onClick={() => setShowUpload(true)}
-                          className="flex-[1.5] bg-gray-50 border border-dashed border-gray-300 rounded-xl px-7 py-9 text-center hover:border-green-500 hover:bg-green-50 transition-colors">
-                          <p className="text-3xl mb-2">📎</p>
-                          <p className="text-base font-medium text-gray-800">Click to add your first file</p>
-                          <p className="text-sm text-gray-500 mt-1.5 max-w-xs mx-auto">A permit, an SDS, a training record — watch CompliBoard check it in seconds.</p>
-                        </button>
-
-                        <div className="flex-1 bg-green-50 rounded-xl p-5">
-                          <p className="text-sm font-medium text-green-900 flex items-center gap-2">☁️ Never upload again</p>
-                          <p className="text-xs text-green-800 mt-2 leading-relaxed">Connect your drive and CompliBoard always reads the latest version — no re-uploading, ever.</p>
-                          <div className="flex flex-col gap-2 mt-3">
-                            <button disabled className="text-xs text-center py-2 bg-white border border-green-200 rounded-lg text-green-800 opacity-60 cursor-not-allowed">Connect Google Drive — Soon</button>
-                            <button disabled className="text-xs text-center py-2 bg-white border border-green-200 rounded-lg text-green-800 opacity-60 cursor-not-allowed">Connect OneDrive — Soon</button>
-                          </div>
-                          <p className="text-[11px] text-green-800 opacity-80 mt-3 leading-snug">🔒 Read-only. We never copy or store your files. You choose which folder.</p>
+                {/* RIGHT PANE — file list */}
+                <div className="flex-1 min-w-0 pl-4">
+                  {showUpload && (
+                    <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <h2 className="text-sm font-semibold text-gray-900">Upload files</h2>
+                          <span className="text-xs text-green-600">→ {selectedFolderName}</span>
                         </div>
+                        <button onClick={() => { setShowUpload(false); setFiles([]) }} className="text-gray-400 hover:text-gray-600 text-lg leading-none">×</button>
                       </div>
-
-                      <div className="flex items-center gap-2 p-3 bg-gray-50 border border-gray-200 rounded-lg mt-4">
-                        <span className="text-gray-400">✉️</span>
-                        <p className="text-xs text-gray-500 flex-1">Re-uploading is a pain. Soon you'll be able to just forward an updated file by email and we'll keep it current.</p>
-                        <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wide">Soon</span>
+                      <div className="space-y-3">
+                        <div>
+                          <input ref={fileInputRef} type="file" multiple accept=".pdf,.xlsx,.xls,.csv,.docx,.doc,.pptx,.ppt,image/*" onChange={handleFileChange} className="hidden" id="file-upload" />
+                          {files.length === 0 ? (
+                            <label htmlFor="file-upload" className="flex items-center gap-3 w-full border border-dashed border-gray-300 rounded-xl px-4 py-4 cursor-pointer hover:border-green-500 hover:bg-green-50 transition-colors">
+                              <span className="text-2xl">📎</span>
+                              <div>
+                                <p className="text-sm text-gray-600">Click to select files</p>
+                                <p className="text-xs text-gray-400">PDF, Word, PowerPoint, Excel, CSV, images · Select multiple</p>
+                              </div>
+                            </label>
+                          ) : (
+                            <div className="space-y-2">
+                              {files.map((f, i) => (
+                                <div key={i} className="flex items-center gap-3 p-3 bg-green-50 border border-green-200 rounded-xl">
+                                  <span className="text-xl">{getFileIcon(f.type, f.name)}</span>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium text-green-800 truncate">{f.name}</p>
+                                  </div>
+                                </div>
+                              ))}
+                              <button onClick={() => { setFiles([]); if (fileInputRef.current) fileInputRef.current.value = '' }}
+                                className="text-xs text-gray-400 hover:text-red-500 transition-colors">
+                                Clear all
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-6">
+                          <div className="flex items-center gap-2">
+                            <div onClick={() => setIsRecurring(!isRecurring)} className={`w-8 h-5 rounded-full cursor-pointer transition-colors relative flex-shrink-0 ${isRecurring ? 'bg-green-600' : 'bg-gray-200'}`}>
+                              <div className={`w-3 h-3 bg-white rounded-full absolute top-1 transition-all ${isRecurring ? 'left-4' : 'left-1'}`} />
+                            </div>
+                            <label className="text-xs text-gray-600 cursor-pointer" onClick={() => setIsRecurring(!isRecurring)}>Recurring</label>
+                            {isRecurring && (
+                              <select className="border border-gray-200 rounded-lg px-2 py-1 text-xs text-gray-800 focus:outline-none bg-gray-50" value={recurrencePeriod} onChange={(e) => setRecurrencePeriod(e.target.value)}>
+                                {RECURRENCE_OPTIONS.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+                              </select>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div onClick={() => setExtractDates(!extractDates)} className={`w-8 h-5 rounded-full cursor-pointer transition-colors relative flex-shrink-0 ${extractDates ? 'bg-green-600' : 'bg-gray-200'}`}>
+                              <div className={`w-3 h-3 bg-white rounded-full absolute top-1 transition-all ${extractDates ? 'left-4' : 'left-1'}`} />
+                            </div>
+                            <label className="text-xs text-gray-600 cursor-pointer" onClick={() => setExtractDates(!extractDates)}>Extract dates</label>
+                          </div>
+                        </div>
+                        {uploadError && <p className="text-sm text-red-600">{uploadError}</p>}
+                        {uploadProgress && <p className="text-sm text-green-700">{uploadProgress}</p>}
+                        <button onClick={() => handleUpload(selectedFolderId === 'unfiled' ? null : selectedFolderId)} disabled={files.length === 0 || uploading}
+                          className="w-full bg-green-700 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50">
+                          {uploading ? uploadProgress || 'Uploading...' : `Upload ${files.length > 1 ? files.length + ' files' : 'file'} →`}
+                        </button>
                       </div>
                     </div>
-                  )
-                })()}
+                  )}
 
-                {currentFileFolders.length > 0 && (
-                  <div className="mb-4">
-                    <div className={viewMode === 'grid' ? 'grid grid-cols-2 sm:grid-cols-3 gap-3' : 'space-y-1'}>
-                      {currentFileFolders.map(folder => renderFolder(folder, navigateToFolder))}
-                    </div>
-                  </div>
-                )}
-
-                {currentFiles.length > 0 && currentFileFolders.length > 0 && currentFolderId && (
-                  <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2 mt-2">Files</p>
-                )}
-                {currentFiles.length > 0 ? renderFileList(currentFiles) : (
-                  currentFolderId && (
-                    <div className="text-center py-8">
-                      <p className="text-sm text-gray-400">No files in this folder yet</p>
+                  {sortedDocuments.length === 0 ? (
+                    <div className="text-center py-12">
+                      <p className="text-sm text-gray-400">No files in {selectedFolderName}</p>
                       <p className="text-xs text-gray-400 mt-1">Use the Upload button to add files here</p>
                     </div>
-                  )
-                )}
+                  ) : (
+                    <div className="bg-white rounded-xl overflow-hidden">
+                      <div className="flex items-center gap-3 px-5 py-2 border-b border-gray-100">
+                        <span className="flex-shrink-0" style={{ width: '28px' }} />
+                        <button onClick={() => toggleSort('name')} className="text-xs font-medium text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0">
+                          Name {sortField === 'name' && (sortDir === 'asc' ? '▲' : '▼')}
+                        </button>
+                        <div className="flex-1" />
+                        <button onClick={() => toggleSort('date')} className="text-xs font-medium text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0 w-20 text-right">
+                          Date {sortField === 'date' && (sortDir === 'asc' ? '▲' : '▼')}
+                        </button>
+                      </div>
+                      <div className="divide-y divide-gray-50">
+                        {sortedDocuments.map((doc) => {
+                          const review = documentReviews.find(r => r.document_id === doc.id)
+                          return (
+                            <div key={doc.id} className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
+                              <span className="text-lg flex-shrink-0">{getFileIcon(doc.file_type, doc.name)}</span>
+                              <p className="text-sm text-gray-900 truncate flex-shrink-0" style={{ maxWidth: '380px' }}>{doc.name}</p>
+                              {doc.is_recurring && <span className="text-xs text-green-600 flex-shrink-0">🔄 {doc.recurrence_period}</span>}
 
+                              <div className="relative flex-shrink-0">
+                                <button onClick={() => setMoreMenuDocId(moreMenuDocId === doc.id ? null : doc.id)}
+                                  className="text-gray-400 hover:text-gray-700 text-xs px-1 leading-none transition-colors">▾</button>
+                                {moreMenuDocId === doc.id && (
+                                  <>
+                                    <div className="fixed inset-0 z-10" onClick={() => setMoreMenuDocId(null)} />
+                                    <div className="absolute left-0 mt-1 w-40 bg-white rounded-xl border border-gray-200 shadow-lg z-20 overflow-hidden">
+                                      <button onClick={() => handleExtractDates(doc)} disabled={extractingDates === doc.id}
+                                        className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50">
+                                        {extractingDates === doc.id ? 'Extracting...' : 'Extract dates'}
+                                      </button>
+                                      <button onClick={() => handleScanDocument(doc)} disabled={scanningDoc === doc.id}
+                                        className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 border-t border-gray-50">
+                                        {scanningDoc === doc.id ? 'Reviewing...' : 'Review'}
+                                      </button>
+                                      <button onClick={() => handleDownload(doc)}
+                                        className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 transition-colors border-t border-gray-50">
+                                        Download
+                                      </button>
+                                      <button onClick={() => { setMoreMenuDocId(null); setMovingDocId(doc.id) }}
+                                        className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 transition-colors border-t border-gray-50">
+                                        Move
+                                      </button>
+                                      <button onClick={() => handleDeleteDoc(doc)} disabled={deleting === doc.id}
+                                        className="w-full text-left px-3 py-2 text-xs text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50 border-t border-gray-50">
+                                        {deleting === doc.id ? 'Deleting...' : 'Delete'}
+                                      </button>
+                                    </div>
+                                  </>
+                                )}
+                                {movingDocId === doc.id && (
+                                  <>
+                                    <div className="fixed inset-0 z-10" onClick={() => setMovingDocId(null)} />
+                                    <div className="absolute left-0 mt-1 w-48 max-h-64 overflow-y-auto bg-white rounded-xl border border-gray-200 shadow-lg z-20">
+                                      {moveTargets.map(t => (
+                                        <button key={t.id ?? 'unfiled'} onClick={() => handleMoveDocument(doc.id, t.id)}
+                                          className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 transition-colors truncate">
+                                          {t.name}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </>
+                                )}
+                              </div>
 
+                              <div className="flex-1" />
+
+                              {review && (
+                                <button onClick={() => { setActiveTab('log'); setExpandedAuditId(review.id) }}
+                                  className="text-xs text-green-600 font-medium hover:text-green-800 hover:underline transition-colors whitespace-nowrap flex-shrink-0">
+                                  ✓ Reviewed {new Date(review.created_at).toLocaleDateString()}
+                                </button>
+                              )}
+                              <span className="text-xs text-gray-400 flex-shrink-0 w-20 text-right">{new Date(doc.uploaded_at).toLocaleDateString()}</span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                      <p className="text-xs text-gray-400 text-center py-3 border-t border-gray-50">
+                        {sortedDocuments.length} file{sortedDocuments.length !== 1 ? 's' : ''} · Stored securely and only accessible by your account
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
@@ -790,7 +855,6 @@ function DocumentsPageContent() {
                   </div>
                 ) : null}
 
-                {/* Document Reviews Section */}
                 {documentReviews.length > 0 && (
                   <div className="mt-8 space-y-4">
                     <div className="mb-2">
@@ -882,7 +946,7 @@ function DocumentsPageContent() {
 
                               <div className="pt-2 flex items-center gap-3 border-t border-gray-100">
                                 <button onClick={() => {
-                                  const doc = documents.find(d => d.id === review.document_id)
+                                  const doc = documents.find(d => d.id === review.document_id) || allDocuments.find(d => d.id === review.document_id)
                                   if (doc) handleScanDocument(doc)
                                 }} disabled={scanningDoc === review.document_id}
                                   className="text-xs text-green-700 hover:text-green-800 font-medium transition-colors disabled:opacity-50">
