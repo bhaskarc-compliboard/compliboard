@@ -104,6 +104,8 @@ function DocumentsPageContent() {
 
   // Audit state
   const [expandedAuditId, setExpandedAuditId] = useState<string | null>(null)
+  const [viewingReviewId, setViewingReviewId] = useState<string | null>(null)
+  const [reviewFilter, setReviewFilter] = useState<'all' | 'expired' | 'expiring' | 'current'>('all')
 
   // Restore remembered pane width and expanded divisions
   useEffect(() => {
@@ -162,11 +164,10 @@ function DocumentsPageContent() {
         await loadDocumentReviews(profile.company_id)
 
         // If we arrived via a direct link to a specific review (e.g. from an
-        // Audit result), jump straight to it instead of landing on Files.
+        // Audit result), open it in the panel instead of navigating away.
         const reviewParam = searchParams.get('review')
         if (reviewParam) {
-          setActiveTab('log')
-          setExpandedAuditId(reviewParam)
+          setViewingReviewId(reviewParam)
         }
 
         const { data: company } = await supabase
@@ -211,6 +212,7 @@ function DocumentsPageContent() {
   async function selectFolder(folderId: string) {
     if (!userId) return
     setSelectedFolderId(folderId)
+    setViewingReviewId(null)
     await loadDocuments(userId, folderId)
   }
 
@@ -439,8 +441,11 @@ function DocumentsPageContent() {
       const json = await res.json()
       if (json.data) {
         setDocumentReviews(prev => [json.data, ...prev.filter(r => r.document_id !== doc.id)])
-        setActiveTab('log')
-        setExpandedAuditId(json.data.id)
+        if (activeTab === 'files') {
+          setViewingReviewId(json.data.id)
+        } else {
+          setExpandedAuditId(json.data.id)
+        }
       } else {
         alert('Could not complete review. File type may not be supported.')
       }
@@ -506,6 +511,113 @@ function DocumentsPageContent() {
     { id: null as string | null, name: 'Unfiled' },
     ...folders.filter(f => f.section === 'files').map(f => ({ id: f.id as string | null, name: f.name })),
   ].sort((a, b) => (a.id === null ? -1 : b.id === null ? 1 : a.name.localeCompare(b.name)))
+
+  const reviewFilterCounts = {
+    all: documentReviews.length,
+    expired: documentReviews.filter(r => r.is_current === false).length,
+    expiring: documentReviews.filter(r => r.expiring_soon).length,
+    current: documentReviews.filter(r => r.is_current === true && !r.expiring_soon).length,
+  }
+
+  const filteredReviews = documentReviews.filter(r => {
+    if (reviewFilter === 'expired') return r.is_current === false
+    if (reviewFilter === 'expiring') return r.expiring_soon
+    if (reviewFilter === 'current') return r.is_current === true && !r.expiring_soon
+    return true
+  })
+
+  const sortedReviews = [...filteredReviews].sort((a, b) => {
+    const urgency = (r: any) => (r.is_current === false ? 0 : r.expiring_soon ? 1 : 2)
+    const ua = urgency(a)
+    const ub = urgency(b)
+    if (ua !== ub) return ua - ub
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  })
+
+  function renderReviewDetail(review: any) {
+    return (
+      <>
+        <p className="text-sm text-gray-600 italic">{review.summary}</p>
+
+        <div className="grid grid-cols-2 gap-3">
+          {review.issued_by && (
+            <div>
+              <p className="text-xs font-medium text-gray-400">Issued by</p>
+              <p className="text-xs text-gray-700">{review.issued_by}</p>
+            </div>
+          )}
+          {review.expiry_date && (
+            <div>
+              <p className="text-xs font-medium text-gray-400">Expires</p>
+              <p className={`text-xs font-medium ${review.expiring_soon ? 'text-amber-600' : review.is_current ? 'text-gray-700' : 'text-red-500'}`}>
+                {new Date(review.expiry_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                {review.days_until_expiry !== null && review.days_until_expiry >= 0 && ` (${review.days_until_expiry} days)`}
+              </p>
+            </div>
+          )}
+          {review.renewal_date && (
+            <div>
+              <p className="text-xs font-medium text-gray-400">Renewal deadline</p>
+              <p className="text-xs text-gray-700">{new Date(review.renewal_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
+            </div>
+          )}
+          {review.coverage && (
+            <div className="col-span-2">
+              <p className="text-xs font-medium text-gray-400">Coverage</p>
+              <p className="text-xs text-gray-700">{review.coverage}</p>
+            </div>
+          )}
+        </div>
+
+        {review.gaps?.length > 0 && (
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest text-amber-600 mb-2">⚠️ Gaps & Concerns</p>
+            <div className="space-y-1">
+              {review.gaps.map((gap: string, i: number) => (
+                <div key={i} className="flex items-start gap-2">
+                  <span className="text-xs text-amber-500 mt-0.5 flex-shrink-0">!</span>
+                  <p className="text-xs text-gray-700">{gap}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {review.action_items?.length > 0 && (
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest text-blue-600 mb-2">📋 Action Items</p>
+            <div className="space-y-1">
+              {review.action_items.map((item: string, i: number) => (
+                <div key={i} className="flex items-start gap-2">
+                  <span className="text-xs text-blue-500 mt-0.5 flex-shrink-0">→</span>
+                  <p className="text-xs text-gray-700">{item}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="pt-2 flex items-center gap-3 border-t border-gray-100">
+          <button onClick={() => {
+            const doc = documents.find(d => d.id === review.document_id) || allDocuments.find(d => d.id === review.document_id)
+            if (doc) handleScanDocument(doc)
+          }} disabled={scanningDoc === review.document_id}
+            className="text-xs text-green-700 hover:text-green-800 font-medium transition-colors disabled:opacity-50">
+            {scanningDoc === review.document_id ? '⟳ Re-scanning...' : '↺ Re-scan document'}
+          </button>
+          <span className="text-gray-200">·</span>
+          <button onClick={async () => {
+            if (!confirm('Delete this review?')) return
+            await fetch(`/api/document-review?id=${review.id}`, { method: 'DELETE' })
+            setDocumentReviews(prev => prev.filter(r => r.id !== review.id))
+            if (viewingReviewId === review.id) setViewingReviewId(null)
+            if (expandedAuditId === review.id) setExpandedAuditId(null)
+          }} className="text-xs text-gray-400 hover:text-red-500 transition-colors">Delete review</button>
+        </div>
+        <AIDisclaimer variant="short" className="mt-2" />
+      </>
+    )
+  }
 
   return (
     <AppLayout title="Company Documents" didYouKnow={activeTab === 'log' ? { icon: '🔍', text: 'Every file you review gets a real compliance check — CompliBoard cites the specific regulation it checked against and gives you a fix for anything missing.' } : { icon: '📂', text: 'Upload your compliance documents once. CompliBoard reads them, extracts renewal dates, and adds them to your calendar automatically. Every month, CompliBoard checks if your documents are still current and alerts you 30 days before anything expires.' }}>
@@ -821,9 +933,9 @@ function DocumentsPageContent() {
                               <div className="flex-1" />
 
                               {review && (
-                                <button onClick={() => { setActiveTab('log'); setExpandedAuditId(review.id) }}
+                                <button onClick={() => setViewingReviewId(review.id)}
                                   className="text-xs text-green-600 font-medium hover:text-green-800 hover:underline transition-colors whitespace-nowrap flex-shrink-0">
-                                  ✓ Reviewed {new Date(review.created_at).toLocaleDateString()}
+                                  ✓ Reviewed — View report
                                 </button>
                               )}
                               <span className="text-xs text-gray-400 flex-shrink-0 w-20 text-right">{new Date(doc.uploaded_at).toLocaleDateString()}</span>
@@ -844,7 +956,7 @@ function DocumentsPageContent() {
             {activeTab === 'log' && (
               <div>
                 {documentReviews.length === 0 ? (
-                  <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-12 text-center">
+                  <div className="bg-white rounded-xl p-12 text-center">
                     <p className="text-4xl mb-4">🔍</p>
                     <p className="text-base font-medium text-gray-700 mb-1">No document reviews yet</p>
                     <p className="text-sm text-gray-400 mb-6">Go to Company Files and click Review on any file</p>
@@ -853,124 +965,90 @@ function DocumentsPageContent() {
                       Go to Company Files
                     </button>
                   </div>
-                ) : null}
-
-                {documentReviews.length > 0 && (
-                  <div className="mt-8 space-y-4">
-                    <div className="mb-2">
-                      <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Document Reviews</p>
+                ) : (
+                  <div>
+                    <div className="flex items-center gap-2 mb-4">
+                      {(['all', 'expired', 'expiring', 'current'] as const).map(f => (
+                        <button key={f} onClick={() => setReviewFilter(f)}
+                          className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${reviewFilter === f ? 'border-green-500 bg-green-50 text-green-700' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>
+                          {f === 'all' ? 'All' : f === 'expired' ? 'Expired' : f === 'expiring' ? 'Expiring soon' : 'Current'} ({reviewFilterCounts[f]})
+                        </button>
+                      ))}
                     </div>
-                    {documentReviews.map((review) => {
-                      const isExpanded = expandedAuditId === review.id
-                      return (
-                        <div key={review.id} className="bg-gray-50 rounded-xl border border-gray-200 overflow-hidden">
-                          <div className="px-5 py-4 flex items-center gap-4 cursor-pointer hover:bg-gray-50 transition-colors" onClick={() => setExpandedAuditId(isExpanded ? null : review.id)}>
-                            <span className="text-2xl flex-shrink-0">📄</span>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <p className="text-sm font-semibold text-gray-900 truncate">{review.document_name}</p>
-                                {review.is_current === true && <span className="text-xs text-green-600 font-medium flex-shrink-0">✓ Current</span>}
-                                {review.is_current === false && <span className="text-xs text-red-500 font-medium flex-shrink-0">⚠ Expired</span>}
-                                {review.expiring_soon && <span className="text-xs text-amber-600 font-medium flex-shrink-0">⏰ Expiring soon</span>}
-                              </div>
-                              <p className="text-xs text-gray-400 mt-0.5">
-                                {review.document_type && `${review.document_type} · `}
-                                {review.division_name && `${review.division_name} · `}
-                                {new Date(review.created_at).toLocaleDateString()}
-                              </p>
-                            </div>
-                            <span className="text-gray-300 text-xs flex-shrink-0">{isExpanded ? '▲' : '▼'}</span>
-                          </div>
 
-                          {isExpanded && (
-                            <div className="border-t border-gray-100 px-5 py-4 space-y-4">
-                              <p className="text-sm text-gray-600 italic">{review.summary}</p>
-
-                              <div className="grid grid-cols-2 gap-3">
-                                {review.issued_by && (
-                                  <div>
-                                    <p className="text-xs font-medium text-gray-400">Issued by</p>
-                                    <p className="text-xs text-gray-700">{review.issued_by}</p>
-                                  </div>
-                                )}
-                                {review.expiry_date && (
-                                  <div>
-                                    <p className="text-xs font-medium text-gray-400">Expires</p>
-                                    <p className={`text-xs font-medium ${review.expiring_soon ? 'text-amber-600' : review.is_current ? 'text-gray-700' : 'text-red-500'}`}>
-                                      {new Date(review.expiry_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-                                      {review.days_until_expiry !== null && review.days_until_expiry >= 0 && ` (${review.days_until_expiry} days)`}
+                    {sortedReviews.length === 0 ? (
+                      <div className="bg-white rounded-xl p-12 text-center">
+                        <p className="text-sm text-gray-400">No reviews match this filter</p>
+                      </div>
+                    ) : (
+                      <div className="bg-white rounded-xl overflow-hidden">
+                        <div className="divide-y divide-gray-50">
+                          {sortedReviews.map((review) => {
+                            const isExpanded = expandedAuditId === review.id
+                            return (
+                              <div key={review.id}>
+                                <div className="px-5 py-4 flex items-center gap-4 cursor-pointer hover:bg-gray-50 transition-colors" onClick={() => setExpandedAuditId(isExpanded ? null : review.id)}>
+                                  <span className="text-2xl flex-shrink-0">📄</span>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2">
+                                      <p className="text-sm font-semibold text-gray-900 truncate">{review.document_name}</p>
+                                      {review.is_current === true && <span className="text-xs text-green-600 font-medium flex-shrink-0">✓ Current</span>}
+                                      {review.is_current === false && <span className="text-xs text-red-500 font-medium flex-shrink-0">⚠ Expired</span>}
+                                      {review.expiring_soon && <span className="text-xs text-amber-600 font-medium flex-shrink-0">⏰ Expiring soon</span>}
+                                    </div>
+                                    <p className="text-xs text-gray-400 mt-0.5">
+                                      {review.document_type && `${review.document_type} · `}
+                                      {review.division_name && `${review.division_name} · `}
+                                      {new Date(review.created_at).toLocaleDateString()}
                                     </p>
                                   </div>
-                                )}
-                                {review.renewal_date && (
-                                  <div>
-                                    <p className="text-xs font-medium text-gray-400">Renewal deadline</p>
-                                    <p className="text-xs text-gray-700">{new Date(review.renewal_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
-                                  </div>
-                                )}
-                                {review.coverage && (
-                                  <div className="col-span-2">
-                                    <p className="text-xs font-medium text-gray-400">Coverage</p>
-                                    <p className="text-xs text-gray-700">{review.coverage}</p>
+                                  <span className="text-gray-300 text-xs flex-shrink-0">{isExpanded ? '▼' : '▶'}</span>
+                                </div>
+
+                                {isExpanded && (
+                                  <div className="border-t border-gray-100 px-5 py-4 space-y-4">
+                                    {renderReviewDetail(review)}
                                   </div>
                                 )}
                               </div>
-
-                              {review.gaps?.length > 0 && (
-                                <div>
-                                  <p className="text-xs font-bold uppercase tracking-widest text-amber-600 mb-2">⚠️ Gaps & Concerns</p>
-                                  <div className="space-y-1">
-                                    {review.gaps.map((gap: string, i: number) => (
-                                      <div key={i} className="flex items-start gap-2">
-                                        <span className="text-xs text-amber-500 mt-0.5 flex-shrink-0">!</span>
-                                        <p className="text-xs text-gray-700">{gap}</p>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-
-                              {review.action_items?.length > 0 && (
-                                <div>
-                                  <p className="text-xs font-bold uppercase tracking-widest text-blue-600 mb-2">📋 Action Items</p>
-                                  <div className="space-y-1">
-                                    {review.action_items.map((item: string, i: number) => (
-                                      <div key={i} className="flex items-start gap-2">
-                                        <span className="text-xs text-blue-500 mt-0.5 flex-shrink-0">→</span>
-                                        <p className="text-xs text-gray-700">{item}</p>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-
-                              <div className="pt-2 flex items-center gap-3 border-t border-gray-100">
-                                <button onClick={() => {
-                                  const doc = documents.find(d => d.id === review.document_id) || allDocuments.find(d => d.id === review.document_id)
-                                  if (doc) handleScanDocument(doc)
-                                }} disabled={scanningDoc === review.document_id}
-                                  className="text-xs text-green-700 hover:text-green-800 font-medium transition-colors disabled:opacity-50">
-                                  {scanningDoc === review.document_id ? '⟳ Re-scanning...' : '↺ Re-scan document'}
-                                </button>
-                                <span className="text-gray-200">·</span>
-                                <button onClick={async () => {
-                                  if (!confirm('Delete this review?')) return
-                                  await fetch(`/api/document-review?id=${review.id}`, { method: 'DELETE' })
-                                  setDocumentReviews(prev => prev.filter(r => r.id !== review.id))
-                                }} className="text-xs text-gray-400 hover:text-red-500 transition-colors">Delete review</button>
-                              </div>
-                              <AIDisclaimer variant="short" className="mt-2" />
-                            </div>
-                          )}
+                            )
+                          })}
                         </div>
-                      )
-                    })}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
             )}
           </>
         )}
+
+        {/* Review slide-in panel — opened from a file row's "View report" link */}
+        {viewingReviewId && (() => {
+          const review = documentReviews.find(r => r.id === viewingReviewId)
+          if (!review) return null
+          return (
+            <>
+              <div className="fixed inset-0 bg-black/10 z-30" onClick={() => setViewingReviewId(null)} />
+              <div className="fixed top-0 right-0 h-full w-full sm:w-[420px] bg-white border-l border-gray-200 shadow-xl z-40 overflow-y-auto p-6">
+                <div className="flex items-start justify-between gap-3 mb-4">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 truncate">{review.document_name}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      {review.is_current === true && <span className="text-xs text-green-600 font-medium">✓ Current</span>}
+                      {review.is_current === false && <span className="text-xs text-red-500 font-medium">⚠ Expired</span>}
+                      {review.expiring_soon && <span className="text-xs text-amber-600 font-medium">⏰ Expiring soon</span>}
+                    </div>
+                  </div>
+                  <button onClick={() => setViewingReviewId(null)} className="text-gray-400 hover:text-gray-600 text-lg leading-none flex-shrink-0">×</button>
+                </div>
+                <div className="space-y-4">
+                  {renderReviewDetail(review)}
+                </div>
+              </div>
+            </>
+          )
+        })()}
 
         {/* Date extraction confirmation card */}
         {pendingDates.length > 0 && (
