@@ -239,7 +239,7 @@ export default function CalendarPage() {
 
   return (
     <AppLayout title="Compliance Calendar" didYouKnow={{ icon: '📅', text: 'Upload your permits, licenses, and inspection reports in Company Files, click Extract dates, and CompliBoard will find all renewal and expiry dates and add them to your calendar automatically. You never miss a deadline again.' }}>
-      <div className="max-w-5xl mx-auto px-6 py-8">
+      <div className="max-w-6xl mx-auto px-6 py-8">
 
         <div className="mb-6 flex items-center justify-between flex-wrap gap-3">
           <div>
@@ -258,13 +258,13 @@ export default function CalendarPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-1 mb-4">
+        <div className="flex items-center gap-6 mb-4 border-b border-gray-200">
           <button onClick={() => setView('calendar')}
-            className={`px-4 py-2 text-sm font-medium rounded-xl transition-colors ${view === 'calendar' ? 'bg-gray-100 text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}>
+            className={`text-sm pb-3 font-medium transition-colors border-b-2 -mb-px ${view === 'calendar' ? 'border-green-600 text-green-700' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
             Calendar
           </button>
           <button onClick={() => setView('list')}
-            className={`px-4 py-2 text-sm font-medium rounded-xl transition-colors ${view === 'list' ? 'bg-gray-100 text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}>
+            className={`text-sm pb-3 font-medium transition-colors border-b-2 -mb-px ${view === 'list' ? 'border-green-600 text-green-700' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
             List
           </button>
         </div>
@@ -379,7 +379,7 @@ export default function CalendarPage() {
             <p className="text-sm text-gray-400">Loading your calendar...</p>
           </div>
         ) : view === 'calendar' ? (
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-xl overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
               <button onClick={() => {
                 if (currentMonth === 0) { setCurrentMonth(11); setCurrentYear(y => y - 1) }
@@ -454,7 +454,7 @@ export default function CalendarPage() {
             )}
           </div>
         ) : (
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-xl overflow-hidden">
             {events.length === 0 ? (
               <div className="p-12 text-center">
                 <p className="text-4xl mb-4">📅</p>
