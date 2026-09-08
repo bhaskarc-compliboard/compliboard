@@ -12,15 +12,14 @@ interface CompanyProfile {
   city?: string
 }
 
-interface Obligation { status: string }
 interface CalEvent { id: string; title: string; due_date: string }
 
 export default function Dashboard() {
   const supabase = createClient()
   const router = useRouter()
   const [profile, setProfile] = useState<CompanyProfile | null>(null)
-  const [obligations, setObligations] = useState<Obligation[]>([])
   const [events, setEvents] = useState<CalEvent[]>([])
+  const [stats, setStats] = useState({ filesReviewed: 0, issuesIdentified: 0, questionsAnswered: 0, checklistsCreated: 0 })
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -38,30 +37,31 @@ export default function Dashboard() {
         if (company) setProfile(company)
 
         try {
-          const oRes = await fetch(`/api/obligations?company_id=${companyId}`)
-          const oJson = await oRes.json()
-          setObligations(oJson.data || [])
-        } catch { setObligations([]) }
-
-        try {
           const cRes = await fetch(`/api/calendar?company_id=${companyId}`)
           const cJson = await cRes.json()
           setEvents(cJson.data || [])
         } catch { setEvents([]) }
+
+        // Real activity metrics — what CompliBoard has done for this company.
+        try {
+          const [reviewsRes, checklistsRes] = await Promise.all([
+            fetch(`/api/document-review?company_id=${companyId}`).then(r => r.json()),
+            supabase.from('checklists').select('research_answer').eq('company_id', companyId),
+          ])
+          const reviews = reviewsRes.data || []
+          const checklists = checklistsRes.data || []
+          setStats({
+            filesReviewed: reviews.length,
+            issuesIdentified: reviews.reduce((sum: number, r: { gaps?: unknown }) => sum + (Array.isArray(r.gaps) ? r.gaps.length : 0), 0),
+            questionsAnswered: checklists.filter(c => c.research_answer).length,
+            checklistsCreated: checklists.filter(c => !c.research_answer).length,
+          })
+        } catch { /* leave stats at zero */ }
       }
       setLoading(false)
     }
     load()
   }, [])
-
-  // Pending until files have been read (no obligations synced yet)
-  const hasData = obligations.length > 0
-  const total = obligations.length
-  const satisfied = obligations.filter(o => o.status === 'satisfied').length
-  const needsAttention = obligations.filter(o => ['missing', 'at_risk', 'expiring_soon'].includes(o.status)).length
-  const expiringSoon = obligations.filter(o => o.status === 'expiring_soon').length
-  const unconfirmed = obligations.filter(o => o.status === 'unconfirmed').length
-  const coverage = total > 0 ? Math.round((satisfied / total) * 100) : 0
 
   // Upcoming deadlines in the next 30 days
   const now = new Date()
@@ -74,13 +74,6 @@ export default function Dashboard() {
     const d = new Date(dateStr)
     return Math.ceil((d.getTime() - new Date(now.toDateString()).getTime()) / (1000 * 60 * 60 * 24))
   }
-
-  const boxes = [
-    { label: 'Coverage', value: hasData ? `${coverage}%` : '—', tone: 'text-gray-700' },
-    { label: 'Needs attention', value: hasData ? needsAttention : '—', tone: 'text-gray-700' },
-    { label: 'Expiring soon', value: hasData ? expiringSoon : '—', tone: 'text-gray-700' },
-    { label: 'Unconfirmed', value: hasData ? unconfirmed : '—', tone: 'text-gray-700' },
-  ]
 
   if (loading) {
     return (
@@ -108,39 +101,27 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Scorecard */}
+        {/* Activity — what CompliBoard has done */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {boxes.map(box => (
+          {[
+            { label: 'Files reviewed', value: stats.filesReviewed },
+            { label: 'Issues identified', value: stats.issuesIdentified },
+            { label: 'Questions answered', value: stats.questionsAnswered },
+            { label: 'Checklists created', value: stats.checklistsCreated },
+          ].map(box => (
             <div key={box.label} className="bg-white rounded-xl px-5 py-4">
               <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-1.5">{box.label}</p>
-              <p className={`text-2xl font-semibold ${hasData ? box.tone : 'text-gray-300'}`}>{box.value}</p>
+              <p className="text-2xl font-semibold text-gray-700">{box.value}</p>
             </div>
           ))}
         </div>
-
-        {/* Pending prompt (only before any files are read) */}
-        {!hasData && (
-          <div className="bg-green-50 border border-green-200 rounded-xl px-6 py-5 mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div>
-              <p className="text-sm font-medium text-green-900">Your numbers are waiting on your documents</p>
-              <p className="text-sm text-green-700 mt-0.5">Add a file and CompliBoard starts scoring your compliance and tracking your deadlines.</p>
-            </div>
-            <button
-              onClick={() => router.push('/documents')}
-              className="whitespace-nowrap bg-green-700 text-white text-sm font-medium px-4 py-2.5 rounded-xl hover:bg-green-800 transition-colors">
-              Add a document
-            </button>
-          </div>
-        )}
 
         {/* Upcoming deadlines */}
         <h2 className="text-lg font-semibold text-orange-600 mb-3">Upcoming — next 30 days</h2>
         <div className="bg-white rounded-xl">
           {upcoming.length === 0 ? (
             <div className="px-6 py-8 text-center">
-              <p className="text-sm text-gray-400">
-                {hasData ? 'No deadlines in the next 30 days.' : 'Deadlines will appear here once we read your documents.'}
-              </p>
+              <p className="text-sm text-gray-400">No deadlines in the next 30 days.</p>
             </div>
           ) : (
             <div className="divide-y divide-gray-100">

@@ -17,7 +17,6 @@ const NAV_ITEMS = [
   { icon: '👥', label: 'HR Workspace', href: '/hr' },
   { icon: '📁', label: 'Company Documents', href: '/documents' },
   { icon: '📅', label: 'Calendar', href: '/calendar' },
-  { icon: '📚', label: 'Requirements', href: '/requirements' },
   { icon: '⚙️', label: 'My Account', href: '/account', soon: false },
 ]
 
