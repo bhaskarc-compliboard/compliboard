@@ -56,7 +56,9 @@ for what each covers. Not all of them are present at any given time; the owner a
   under which it would be reversed. Newest first.
 - **`CompliBoard-Chemical-OR-WA-Vertical-Spec.md`** — the full design: regulatory map,
   data model, runtime pipeline, display, verification, onboarding.
-- **`CompliBoard-Build-Plan-v2.md`** — the phased task list.
+- **`CompliBoard-Build-Plan-v3.md`** — the phased task list.
+- **`CompliBoard-Compliance-Workspace-Design.md`** — the Compliance Workspace module:
+  conversation model, fact capture, and topic lifecycle.
 - **`BIZPULSES-PATTERNS.md`** — conventions carried over from a sibling project, with
   notes on what to copy and what not to.
 
