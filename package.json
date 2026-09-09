@@ -10,6 +10,7 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "db:migrate": "node --env-file=.env.local scripts/db-migrate.js && node --env-file=.env.local scripts/db-types.js",
+    "db:migrate:prod": "node --env-file=.env.local scripts/db-migrate.js --production && node --env-file=.env.local scripts/db-types.js --production",
     "db:types": "node --env-file=.env.local scripts/db-types.js",
     "check": "npm run typecheck && npm run build"
   },
