@@ -1,0 +1,1371 @@
+[
+  {
+    "created_at": "2026-07-24T15:46:07.812745+00:00",
+    "id": "cf659f8b-d6e9-4af3-b49b-c695a19ea686",
+    "line_items": [
+      {
+        "category": "Context of the Organization",
+        "prior_answer_context": null,
+        "requirement": "Identify internal and external issues relevant to the organization's purpose and strategic direction that affect the QMS"
+      },
+      {
+        "category": "Context of the Organization",
+        "prior_answer_context": null,
+        "requirement": "Determine interested parties (stakeholders) relevant to the QMS"
+      },
+      {
+        "category": "Context of the Organization",
+        "prior_answer_context": null,
+        "requirement": "Determine the requirements and expectations of interested parties relevant to the QMS"
+      },
+      {
+        "category": "Context of the Organization",
+        "prior_answer_context": null,
+        "requirement": "Monitor and review information about internal and external issues and interested parties"
+      },
+      {
+        "category": "Context of the Organization",
+        "prior_answer_context": null,
+        "requirement": "Establish and document the scope of the QMS, considering context, interested parties, and products/services"
+      },
+      {
+        "category": "Context of the Organization",
+        "prior_answer_context": null,
+        "requirement": "Justify any exclusions from ISO 9001 requirements within the defined scope"
+      },
+      {
+        "category": "Context of the Organization",
+        "prior_answer_context": null,
+        "requirement": "Establish, implement, maintain, and continually improve the QMS including needed processes and their interactions"
+      },
+      {
+        "category": "Context of the Organization",
+        "prior_answer_context": null,
+        "requirement": "Determine the inputs and expected outputs for QMS processes"
+      },
+      {
+        "category": "Context of the Organization",
+        "prior_answer_context": null,
+        "requirement": "Determine the sequence and interaction of QMS processes"
+      },
+      {
+        "category": "Context of the Organization",
+        "prior_answer_context": null,
+        "requirement": "Determine criteria, methods, and performance indicators needed to ensure effective operation and control of processes"
+      },
+      {
+        "category": "Context of the Organization",
+        "prior_answer_context": null,
+        "requirement": "Determine and provide resources needed for processes"
+      },
+      {
+        "category": "Context of the Organization",
+        "prior_answer_context": null,
+        "requirement": "Assign responsibilities and authorities for processes"
+      },
+      {
+        "category": "Context of the Organization",
+        "prior_answer_context": null,
+        "requirement": "Address risks and opportunities for processes"
+      },
+      {
+        "category": "Context of the Organization",
+        "prior_answer_context": null,
+        "requirement": "Evaluate processes and implement changes needed to ensure processes achieve intended results"
+      },
+      {
+        "category": "Leadership",
+        "prior_answer_context": null,
+        "requirement": "Top management demonstrates leadership and commitment to the QMS by taking accountability for its effectiveness"
+      },
+      {
+        "category": "Leadership",
+        "prior_answer_context": null,
+        "requirement": "Ensure the quality policy and quality objectives are established and compatible with the strategic direction"
+      },
+      {
+        "category": "Leadership",
+        "prior_answer_context": null,
+        "requirement": "Ensure integration of QMS requirements into the organization's business processes"
+      },
+      {
+        "category": "Leadership",
+        "prior_answer_context": null,
+        "requirement": "Promote use of the process approach and risk-based thinking"
+      },
+      {
+        "category": "Leadership",
+        "prior_answer_context": null,
+        "requirement": "Ensure resources needed for the QMS are available"
+      },
+      {
+        "category": "Leadership",
+        "prior_answer_context": null,
+        "requirement": "Communicate the importance of effective quality management and conforming to QMS requirements"
+      },
+      {
+        "category": "Leadership",
+        "prior_answer_context": null,
+        "requirement": "Ensure the QMS achieves its intended results"
+      },
+      {
+        "category": "Leadership",
+        "prior_answer_context": null,
+        "requirement": "Engage, direct, and support persons to contribute to the effectiveness of the QMS"
+      },
+      {
+        "category": "Leadership",
+        "prior_answer_context": null,
+        "requirement": "Promote continual improvement"
+      },
+      {
+        "category": "Leadership",
+        "prior_answer_context": null,
+        "requirement": "Support other relevant management roles to demonstrate leadership in their areas of responsibility"
+      },
+      {
+        "category": "Leadership",
+        "prior_answer_context": null,
+        "requirement": "Demonstrate leadership and commitment with respect to customer focus"
+      },
+      {
+        "category": "Leadership",
+        "prior_answer_context": null,
+        "requirement": "Determine, understand, and consistently meet customer requirements"
+      },
+      {
+        "category": "Leadership",
+        "prior_answer_context": null,
+        "requirement": "Determine and address risks and opportunities that can affect product/service conformity and customer satisfaction"
+      },
+      {
+        "category": "Leadership",
+        "prior_answer_context": null,
+        "requirement": "Maintain focus on enhancing customer satisfaction"
+      },
+      {
+        "category": "Leadership",
+        "prior_answer_context": null,
+        "requirement": "Ensure applicable statutory and regulatory requirements are determined and met"
+      },
+      {
+        "category": "Leadership",
+        "prior_answer_context": null,
+        "requirement": "Establish, implement, and maintain a quality policy appropriate to the organization's purpose and context"
+      },
+      {
+        "category": "Leadership",
+        "prior_answer_context": null,
+        "requirement": "Quality policy provides framework for setting quality objectives"
+      },
+      {
+        "category": "Leadership",
+        "prior_answer_context": null,
+        "requirement": "Quality policy includes commitment to satisfy applicable requirements"
+      },
+      {
+        "category": "Leadership",
+        "prior_answer_context": null,
+        "requirement": "Quality policy includes commitment to continual improvement of the QMS"
+      },
+      {
+        "category": "Leadership",
+        "prior_answer_context": null,
+        "requirement": "Quality policy is available and maintained as documented information"
+      },
+      {
+        "category": "Leadership",
+        "prior_answer_context": null,
+        "requirement": "Quality policy is communicated, understood, and applied within the organization"
+      },
+      {
+        "category": "Leadership",
+        "prior_answer_context": null,
+        "requirement": "Quality policy is available to relevant interested parties as appropriate"
+      },
+      {
+        "category": "Leadership",
+        "prior_answer_context": null,
+        "requirement": "Ensure responsibilities and authorities for relevant roles are assigned, communicated, and understood"
+      },
+      {
+        "category": "Leadership",
+        "prior_answer_context": null,
+        "requirement": "Assign responsibility and authority for ensuring the QMS conforms to ISO 9001 requirements"
+      },
+      {
+        "category": "Leadership",
+        "prior_answer_context": null,
+        "requirement": "Assign responsibility and authority for ensuring processes deliver their intended outputs"
+      },
+      {
+        "category": "Leadership",
+        "prior_answer_context": null,
+        "requirement": "Assign responsibility and authority for reporting on QMS performance and improvement opportunities"
+      },
+      {
+        "category": "Leadership",
+        "prior_answer_context": null,
+        "requirement": "Assign responsibility and authority for ensuring promotion of customer focus throughout the organization"
+      },
+      {
+        "category": "Leadership",
+        "prior_answer_context": null,
+        "requirement": "Assign responsibility and authority for ensuring QMS integrity is maintained when changes are planned and implemented"
+      },
+      {
+        "category": "Planning",
+        "prior_answer_context": null,
+        "requirement": "Determine risks and opportunities that need to be addressed to ensure the QMS achieves intended results"
+      },
+      {
+        "category": "Planning",
+        "prior_answer_context": null,
+        "requirement": "Determine risks and opportunities to prevent or reduce undesired effects"
+      },
+      {
+        "category": "Planning",
+        "prior_answer_context": null,
+        "requirement": "Determine risks and opportunities to achieve continual improvement"
+      },
+      {
+        "category": "Planning",
+        "prior_answer_context": null,
+        "requirement": "Plan actions to address identified risks and opportunities"
+      },
+      {
+        "category": "Planning",
+        "prior_answer_context": null,
+        "requirement": "Plan how to integrate and implement actions to address risks and opportunities into QMS processes"
+      },
+      {
+        "category": "Planning",
+        "prior_answer_context": null,
+        "requirement": "Plan how to evaluate the effectiveness of actions taken to address risks and opportunities"
+      },
+      {
+        "category": "Planning",
+        "prior_answer_context": null,
+        "requirement": "Ensure actions taken to address risks and opportunities are proportionate to potential impact on product/service conformity"
+      },
+      {
+        "category": "Planning",
+        "prior_answer_context": null,
+        "requirement": "Establish quality objectives at relevant functions, levels, and processes"
+      },
+      {
+        "category": "Planning",
+        "prior_answer_context": null,
+        "requirement": "Ensure quality objectives are consistent with the quality policy"
+      },
+      {
+        "category": "Planning",
+        "prior_answer_context": null,
+        "requirement": "Ensure quality objectives are measurable"
+      },
+      {
+        "category": "Planning",
+        "prior_answer_context": null,
+        "requirement": "Ensure quality objectives take into account applicable requirements"
+      },
+      {
+        "category": "Planning",
+        "prior_answer_context": null,
+        "requirement": "Ensure quality objectives are relevant to conformity of products/services and enhancement of customer satisfaction"
+      },
+      {
+        "category": "Planning",
+        "prior_answer_context": null,
+        "requirement": "Ensure quality objectives are monitored"
+      },
+      {
+        "category": "Planning",
+        "prior_answer_context": null,
+        "requirement": "Ensure quality objectives are communicated"
+      },
+      {
+        "category": "Planning",
+        "prior_answer_context": null,
+        "requirement": "Ensure quality objectives are updated as appropriate"
+      },
+      {
+        "category": "Planning",
+        "prior_answer_context": null,
+        "requirement": "Maintain documented information on quality objectives"
+      },
+      {
+        "category": "Planning",
+        "prior_answer_context": null,
+        "requirement": "Plan what will be done to achieve quality objectives"
+      },
+      {
+        "category": "Planning",
+        "prior_answer_context": null,
+        "requirement": "Plan what resources will be required to achieve quality objectives"
+      },
+      {
+        "category": "Planning",
+        "prior_answer_context": null,
+        "requirement": "Plan who will be responsible for achieving quality objectives"
+      },
+      {
+        "category": "Planning",
+        "prior_answer_context": null,
+        "requirement": "Plan when quality objectives will be completed"
+      },
+      {
+        "category": "Planning",
+        "prior_answer_context": null,
+        "requirement": "Plan how results of achieving quality objectives will be evaluated"
+      },
+      {
+        "category": "Planning",
+        "prior_answer_context": null,
+        "requirement": "When changes to the QMS are needed, carry them out in a planned manner"
+      },
+      {
+        "category": "Planning",
+        "prior_answer_context": null,
+        "requirement": "Consider the purpose of changes and their potential consequences when planning QMS changes"
+      },
+      {
+        "category": "Planning",
+        "prior_answer_context": null,
+        "requirement": "Ensure integrity of the QMS is maintained when planning changes"
+      },
+      {
+        "category": "Planning",
+        "prior_answer_context": null,
+        "requirement": "Consider availability of resources when planning QMS changes"
+      },
+      {
+        "category": "Planning",
+        "prior_answer_context": null,
+        "requirement": "Consider allocation or reallocation of responsibilities and authorities when planning QMS changes"
+      },
+      {
+        "category": "Support",
+        "prior_answer_context": null,
+        "requirement": "Determine and provide resources needed for establishment, implementation, maintenance, and continual improvement of the QMS"
+      },
+      {
+        "category": "Support",
+        "prior_answer_context": null,
+        "requirement": "Consider capabilities and constraints on existing internal resources"
+      },
+      {
+        "category": "Support",
+        "prior_answer_context": null,
+        "requirement": "Consider what needs to be obtained from external providers"
+      },
+      {
+        "category": "Support",
+        "prior_answer_context": null,
+        "requirement": "Determine and provide persons necessary for effective implementation of the QMS and operation/control of processes"
+      },
+      {
+        "category": "Support",
+        "prior_answer_context": null,
+        "requirement": "Determine, provide, and maintain the infrastructure necessary for operation of processes and conformity of products/services"
+      },
+      {
+        "category": "Support",
+        "prior_answer_context": null,
+        "requirement": "Determine, provide, and maintain the environment necessary for operation of processes and conformity of products/services"
+      },
+      {
+        "category": "Support",
+        "prior_answer_context": null,
+        "requirement": "Determine and provide resources needed to ensure valid and reliable monitoring and measurement results"
+      },
+      {
+        "category": "Support",
+        "prior_answer_context": null,
+        "requirement": "Ensure monitoring and measurement resources are suitable for the specific type of activities"
+      },
+      {
+        "category": "Support",
+        "prior_answer_context": null,
+        "requirement": "Ensure monitoring and measurement resources are maintained to ensure continuing fitness for purpose"
+      },
+      {
+        "category": "Support",
+        "prior_answer_context": null,
+        "requirement": "Retain documented information as evidence of fitness for purpose of monitoring and measurement resources"
+      },
+      {
+        "category": "Support",
+        "prior_answer_context": null,
+        "requirement": "When measurement traceability is required, ensure measuring equipment is calibrated and/or verified at specified intervals"
+      },
+      {
+        "category": "Support",
+        "prior_answer_context": null,
+        "requirement": "When measurement traceability is required, ensure measuring equipment is identified to determine its status"
+      },
+      {
+        "category": "Support",
+        "prior_answer_context": null,
+        "requirement": "When measurement traceability is required, safeguard measuring equipment from adjustments, damage, or deterioration"
+      },
+      {
+        "category": "Support",
+        "prior_answer_context": null,
+        "requirement": "Retain documented information as evidence of calibration/verification of measuring equipment"
+      },
+      {
+        "category": "Support",
+        "prior_answer_context": null,
+        "requirement": "Determine and provide resources needed to ensure and enhance customer satisfaction (organizational knowledge)"
+      },
+      {
+        "category": "Support",
+        "prior_answer_context": null,
+        "requirement": "Determine knowledge necessary for operation of processes and conformity of products/services"
+      },
+      {
+        "category": "Support",
+        "prior_answer_context": null,
+        "requirement": "Maintain and make organizational knowledge available to the extent necessary"
+      },
+      {
+        "category": "Support",
+        "prior_answer_context": null,
+        "requirement": "When addressing changing needs and trends, consider current knowledge and determine how to acquire additional knowledge"
+      },
+      {
+        "category": "Support",
+        "prior_answer_context": null,
+        "requirement": "Determine competence of persons doing work affecting QMS performance and effectiveness"
+      },
+      {
+        "category": "Support",
+        "prior_answer_context": null,
+        "requirement": "Ensure persons are competent on the basis of appropriate education, training, or experience"
+      },
+      {
+        "category": "Support",
+        "prior_answer_context": null,
+        "requirement": "Take actions to acquire necessary competence and evaluate effectiveness of actions taken"
+      },
+      {
+        "category": "Support",
+        "prior_answer_context": null,
+        "requirement": "Retain documented information as evidence of competence"
+      },
+      {
+        "category": "Support",
+        "prior_answer_context": null,
+        "requirement": "Ensure persons doing work under the organization's control are aware of the quality policy"
+      },
+      {
+        "category": "Support",
+        "prior_answer_context": null,
+        "requirement": "Ensure persons are aware of relevant quality objectives"
+      },
+      {
+        "category": "Support",
+        "prior_answer_context": null,
+        "requirement": "Ensure persons are aware of their contribution to the effectiveness of the QMS, including benefits of improved performance"
+      },
+      {
+        "category": "Support",
+        "prior_answer_context": null,
+        "requirement": "Ensure persons are aware of the implications of not conforming with QMS requirements"
+      },
+      {
+        "category": "Support",
+        "prior_answer_context": null,
+        "requirement": "Determine internal and external communications relevant to the QMS"
+      },
+      {
+        "category": "Support",
+        "prior_answer_context": null,
+        "requirement": "Determine what to communicate regarding the QMS"
+      },
+      {
+        "category": "Support",
+        "prior_answer_context": null,
+        "requirement": "Determine when to communicate QMS-related information"
+      },
+      {
+        "category": "Support",
+        "prior_answer_context": null,
+        "requirement": "Determine with whom to communicate QMS-related information"
+      },
+      {
+        "category": "Support",
+        "prior_answer_context": null,
+        "requirement": "Determine how to communicate QMS-related information"
+      },
+      {
+        "category": "Support",
+        "prior_answer_context": null,
+        "requirement": "Determine who communicates QMS-related information"
+      },
+      {
+        "category": "Support",
+        "prior_answer_context": null,
+        "requirement": "Include in the QMS documented information required by ISO 9001"
+      },
+      {
+        "category": "Support",
+        "prior_answer_context": null,
+        "requirement": "Include in the QMS documented information determined by the organization as necessary for QMS effectiveness"
+      },
+      {
+        "category": "Support",
+        "prior_answer_context": null,
+        "requirement": "Ensure documented information is appropriately identified and described (title, date, author, reference number)"
+      },
+      {
+        "category": "Support",
+        "prior_answer_context": null,
+        "requirement": "Ensure documented information is in appropriate format and media"
+      },
+      {
+        "category": "Support",
+        "prior_answer_context": null,
+        "requirement": "Ensure documented information has been appropriately reviewed and approved for suitability and adequacy"
+      },
+      {
+        "category": "Support",
+        "prior_answer_context": null,
+        "requirement": "Control documented information to ensure it is available and suitable for use where and when needed"
+      },
+      {
+        "category": "Support",
+        "prior_answer_context": null,
+        "requirement": "Control documented information to ensure it is adequately protected (from loss of confidentiality, improper use, or loss of integrity)"
+      },
+      {
+        "category": "Support",
+        "prior_answer_context": null,
+        "requirement": "Address distribution, access, retrieval, and use of documented information"
+      },
+      {
+        "category": "Support",
+        "prior_answer_context": null,
+        "requirement": "Address storage and preservation of documented information, including preservation of legibility"
+      },
+      {
+        "category": "Support",
+        "prior_answer_context": null,
+        "requirement": "Address control of changes to documented information (version control)"
+      },
+      {
+        "category": "Support",
+        "prior_answer_context": null,
+        "requirement": "Address retention and disposition of documented information"
+      },
+      {
+        "category": "Support",
+        "prior_answer_context": null,
+        "requirement": "Control documented information of external origin determined necessary for planning and operation of the QMS"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Plan, implement, and control processes needed to meet product/service requirements"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Implement actions to address risks and opportunities during operational planning"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Determine requirements for products and services"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Establish criteria for processes and acceptance of products and services"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Determine resources needed for conformity of products and services"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Implement control of processes in accordance with criteria"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Determine, maintain, and retain documented information to demonstrate processes are carried out as planned"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Determine, maintain, and retain documented information to demonstrate conformity of products/services to requirements"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Ensure output of planning is suitable for the organization's operations"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Control planned changes and review consequences of unintended changes, taking action to mitigate adverse effects"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Ensure outsourced processes are controlled"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Communicate with customers regarding information on products and services"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Communicate with customers regarding handling enquiries, contracts, or orders including changes"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Communicate with customers regarding obtaining customer feedback, including customer complaints"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Communicate with customers regarding handling or controlling customer property"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Communicate with customers regarding establishing specific requirements for contingency actions when relevant"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Ensure requirements for products and services are defined"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Ensure requirements specified by the customer, including delivery and post-delivery activities, are determined"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Ensure requirements not stated by the customer but necessary for specified or intended use are determined"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Ensure requirements specified by the organization are determined"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Ensure statutory and regulatory requirements applicable to products and services are determined"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Ensure the organization can meet claims for products and services it offers"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Review requirements related to products and services before committing to supply"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Ensure contract or order requirements differing from previously defined are resolved"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Confirm customer requirements before acceptance when customer provides no documented statement"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Retain documented information on results of review of requirements and any new requirements"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Ensure customer requirements are understood and can be met when requirements change"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Ensure relevant documented information is amended when requirements change"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Ensure relevant persons are made aware of changed requirements"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Establish, implement, and maintain a design and development process (when applicable)"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Determine stages and controls for design and development"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Determine review, verification, and validation activities for design and development"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Determine responsibilities and authorities for design and development process"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Determine internal and external resource needs for design and development"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Determine need to control interfaces between persons involved in design and development"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Determine need for customer and user involvement in design and development process"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Determine requirements for subsequent provision of products and services in design and development"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Determine level of control expected by customers and interested parties for design and development"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Retain documented information to demonstrate design and development process is carried out"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Define design and development inputs that are adequate for design and development purposes"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Resolve conflicting design and development input requirements"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Retain documented information on design and development inputs"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Apply design and development controls to ensure results to be achieved are defined"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Conduct reviews to evaluate ability of design results to meet requirements"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Conduct verification activities to ensure outputs meet input requirements"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Conduct validation activities to ensure resulting products/services meet requirements for specified application or intended use"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Take actions on problems determined during design reviews, verification, or validation"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Retain documented information on design and development control activities"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Ensure design and development outputs meet input requirements"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Ensure design and development outputs are adequate for subsequent processes for provision of products/services"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Ensure design and development outputs include or reference monitoring and measuring requirements and acceptance criteria"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Ensure design and development outputs specify characteristics essential for intended purpose and safe/proper provision"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Retain documented information on design and development outputs"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Control design and development changes during or after development of products/services"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Identify, review, and control design and development changes to ensure no adverse impact on conformity to requirements"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Retain documented information on design and development changes, review results, authorization, and actions taken"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Ensure externally provided processes, products, and services conform to requirements"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Determine controls for external provision of products and services"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Determine and apply criteria for evaluation, selection, monitoring, and re-evaluation of external providers"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Retain documented information on external provider evaluation, selection, monitoring, and re-evaluation activities"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Ensure externally provided processes, products, and services do not adversely affect the organization's ability to deliver conforming products/services"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Ensure externally provided processes remain within control of the QMS"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Determine verification or other activities necessary to ensure externally provided products/services meet requirements"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Communicate to external providers the organization's requirements for processes, products, and services to be provided"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Communicate to external providers requirements for approval of products/services, methods, processes, equipment, and release"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Communicate to external providers requirements for competence of persons"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Communicate to external providers the organization's interactions with them and control/monitoring of their performance"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Communicate to external providers verification or validation activities the organization or its customer intends to perform at external provider's premises"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Ensure adequacy of requirements before communicating them to external providers"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Implement production and service provision under controlled conditions"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Ensure availability of documented information defining characteristics of products/services"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Ensure availability of documented information defining activities to be performed and results to be achieved"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Ensure availability and use of suitable monitoring and measuring resources"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Implement monitoring and measurement activities at appropriate stages"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Use suitable infrastructure and environment for operation of processes"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Appoint competent persons, including required qualifications"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Validate and periodically revalidate processes where resulting output cannot be verified by subsequent monitoring or measurement"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Implement actions to prevent human error in production and service provision"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Implement release, delivery, and post-delivery activities"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Use suitable means to identify outputs when necessary to ensure conformity of products and services"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Identify status of outputs with respect to monitoring and measurement requirements throughout production and service provision"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Control unique identification of outputs when traceability is a requirement"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Retain documented information to enable traceability"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Exercise care with property belonging to customers or external providers while it is under the organization's control or being used"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Identify, verify, protect, and safeguard customer or external provider property provided for use or incorporation into products/services"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Report to customer or external provider when their property is lost, damaged, or otherwise found unsuitable for use"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Retain documented information on customer or external provider property issues"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Preserve outputs during production and service provision to the extent necessary to ensure conformity to requirements"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Determine requirements for post-delivery activities associated with products and services"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Determine extent of post-delivery activities considering potential undesired consequences, nature and intended lifetime of products/services, customer requirements, and customer feedback"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Review and control changes for production or service provision to ensure continuing conformity with requirements"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Retain documented information describing results of review of changes, persons authorizing changes, and necessary actions arising from review"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Implement planned arrangements for verification that product/service requirements have been met at appropriate stages"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Ensure product/service release to customer does not proceed until planned arrangements have been satisfactorily completed"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Retain documented information on release of products and services, including evidence of conformity with acceptance criteria and traceability to person(s) authorizing release"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Ensure outputs that do not conform to requirements are identified and controlled to prevent unintended use or delivery"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Take appropriate action based on nature of nonconformity and its effect on conformity of products/services"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Deal with nonconforming outputs by correction, segregation, containment, return, or suspension of provision of products/services"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Deal with nonconforming outputs by informing the customer and obtaining authorization for acceptance under concession"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Verify conformity to requirements when nonconforming outputs are corrected"
+      },
+      {
+        "category": "Operation",
+        "prior_answer_context": null,
+        "requirement": "Retain documented information describing the nonconformity, actions taken, concessions obtained, and authority for decision on action"
+      },
+      {
+        "category": "Performance Evaluation",
+        "prior_answer_context": null,
+        "requirement": "Determine what needs to be monitored and measured in the QMS"
+      },
+      {
+        "category": "Performance Evaluation",
+        "prior_answer_context": null,
+        "requirement": "Determine methods for monitoring, measurement, analysis, and evaluation to ensure valid results"
+      },
+      {
+        "category": "Performance Evaluation",
+        "prior_answer_context": null,
+        "requirement": "Determine when monitoring and measuring shall be performed"
+      },
+      {
+        "category": "Performance Evaluation",
+        "prior_answer_context": null,
+        "requirement": "Determine when results from monitoring and measurement shall be analyzed and evaluated"
+      },
+      {
+        "category": "Performance Evaluation",
+        "prior_answer_context": null,
+        "requirement": "Evaluate QMS performance and effectiveness"
+      },
+      {
+        "category": "Performance Evaluation",
+        "prior_answer_context": null,
+        "requirement": "Retain appropriate documented information as evidence of monitoring and measurement results"
+      },
+      {
+        "category": "Performance Evaluation",
+        "prior_answer_context": null,
+        "requirement": "Monitor customer perceptions of the degree to which their needs and expectations have been fulfilled"
+      },
+      {
+        "category": "Performance Evaluation",
+        "prior_answer_context": null,
+        "requirement": "Determine methods for obtaining, monitoring, and reviewing customer satisfaction information"
+      },
+      {
+        "category": "Performance Evaluation",
+        "prior_answer_context": null,
+        "requirement": "Analyze and evaluate appropriate data and information arising from monitoring and measurement"
+      },
+      {
+        "category": "Performance Evaluation",
+        "prior_answer_context": null,
+        "requirement": "Use analysis and evaluation to determine conformity of products and services"
+      },
+      {
+        "category": "Performance Evaluation",
+        "prior_answer_context": null,
+        "requirement": "Use analysis and evaluation to determine degree of customer satisfaction"
+      },
+      {
+        "category": "Performance Evaluation",
+        "prior_answer_context": null,
+        "requirement": "Use analysis and evaluation to determine performance and effectiveness of the QMS"
+      },
+      {
+        "category": "Performance Evaluation",
+        "prior_answer_context": null,
+        "requirement": "Use analysis and evaluation to determine if planning has been implemented effectively"
+      },
+      {
+        "category": "Performance Evaluation",
+        "prior_answer_context": null,
+        "requirement": "Use analysis and evaluation to determine effectiveness of actions taken to address risks and opportunities"
+      },
+      {
+        "category": "Performance Evaluation",
+        "prior_answer_context": null,
+        "requirement": "Use analysis and evaluation to determine performance of external providers"
+      },
+      {
+        "category": "Performance Evaluation",
+        "prior_answer_context": null,
+        "requirement": "Use analysis and evaluation to determine need for improvements to the QMS"
+      },
+      {
+        "category": "Performance Evaluation",
+        "prior_answer_context": null,
+        "requirement": "Conduct internal audits at planned intervals to provide information on whether the QMS conforms to organization's own requirements and ISO 9001 requirements"
+      },
+      {
+        "category": "Performance Evaluation",
+        "prior_answer_context": null,
+        "requirement": "Conduct internal audits at planned intervals to provide information on whether the QMS is effectively implemented and maintained"
+      },
+      {
+        "category": "Performance Evaluation",
+        "prior_answer_context": null,
+        "requirement": "Plan, establish, implement, and maintain an audit program including frequency, methods, responsibilities, planning requirements, and reporting"
+      },
+      {
+        "category": "Performance Evaluation",
+        "prior_answer_context": null,
+        "requirement": "Define audit criteria and scope for each audit"
+      },
+      {
+        "category": "Performance Evaluation",
+        "prior_answer_context": null,
+        "requirement": "Select auditors and conduct audits to ensure objectivity and impartiality of audit process"
+      },
+      {
+        "category": "Performance Evaluation",
+        "prior_answer_context": null,
+        "requirement": "Ensure audit results are reported to relevant management"
+      },
+      {
+        "category": "Performance Evaluation",
+        "prior_answer_context": null,
+        "requirement": "Take appropriate correction and corrective actions without undue delay"
+      },
+      {
+        "category": "Performance Evaluation",
+        "prior_answer_context": null,
+        "requirement": "Retain documented information as evidence of implementation of audit program and audit results"
+      },
+      {
+        "category": "Performance Evaluation",
+        "prior_answer_context": null,
+        "requirement": "Conduct management reviews of the QMS at planned intervals"
+      },
+      {
+        "category": "Performance Evaluation",
+        "prior_answer_context": null,
+        "requirement": "Ensure management review considers the status of actions from previous management reviews"
+      },
+      {
+        "category": "Performance Evaluation",
+        "prior_answer_context": null,
+        "requirement": "Ensure management review considers changes in external and internal issues relevant to the QMS"
+      },
+      {
+        "category": "Performance Evaluation",
+        "prior_answer_context": null,
+        "requirement": "Ensure management review considers information on QMS performance and effectiveness, including trends in customer satisfaction and feedback"
+      },
+      {
+        "category": "Performance Evaluation",
+        "prior_answer_context": null,
+        "requirement": "Ensure management review considers extent to which quality objectives have been met"
+      },
+      {
+        "category": "Performance Evaluation",
+        "prior_answer_context": null,
+        "requirement": "Ensure management review considers process performance and conformity of products and services"
+      },
+      {
+        "category": "Performance Evaluation",
+        "prior_answer_context": null,
+        "requirement": "Ensure management review considers nonconformities and corrective actions"
+      },
+      {
+        "category": "Performance Evaluation",
+        "prior_answer_context": null,
+        "requirement": "Ensure management review considers monitoring and measurement results"
+      },
+      {
+        "category": "Performance Evaluation",
+        "prior_answer_context": null,
+        "requirement": "Ensure management review considers audit results"
+      },
+      {
+        "category": "Performance Evaluation",
+        "prior_answer_context": null,
+        "requirement": "Ensure management review considers performance of external providers"
+      },
+      {
+        "category": "Performance Evaluation",
+        "prior_answer_context": null,
+        "requirement": "Ensure management review considers adequacy of resources"
+      },
+      {
+        "category": "Performance Evaluation",
+        "prior_answer_context": null,
+        "requirement": "Ensure management review considers effectiveness of actions taken to address risks and opportunities"
+      },
+      {
+        "category": "Performance Evaluation",
+        "prior_answer_context": null,
+        "requirement": "Ensure management review considers opportunities for improvement"
+      },
+      {
+        "category": "Performance Evaluation",
+        "prior_answer_context": null,
+        "requirement": "Ensure management review outputs include decisions and actions related to improvement opportunities"
+      },
+      {
+        "category": "Performance Evaluation",
+        "prior_answer_context": null,
+        "requirement": "Ensure management review outputs include any need for changes to the QMS"
+      },
+      {
+        "category": "Performance Evaluation",
+        "prior_answer_context": null,
+        "requirement": "Ensure management review outputs include resource needs"
+      },
+      {
+        "category": "Performance Evaluation",
+        "prior_answer_context": null,
+        "requirement": "Retain documented information as evidence of results of management reviews"
+      },
+      {
+        "category": "Improvement",
+        "prior_answer_context": null,
+        "requirement": "Determine and select opportunities for improvement and implement necessary actions to meet customer requirements and enhance customer satisfaction"
+      },
+      {
+        "category": "Improvement",
+        "prior_answer_context": null,
+        "requirement": "Improve products and services to meet requirements and address future needs and expectations"
+      },
+      {
+        "category": "Improvement",
+        "prior_answer_context": null,
+        "requirement": "Correct, prevent, or reduce undesired effects"
+      },
+      {
+        "category": "Improvement",
+        "prior_answer_context": null,
+        "requirement": "Improve QMS performance and effectiveness"
+      },
+      {
+        "category": "Improvement",
+        "prior_answer_context": null,
+        "requirement": "React to nonconformities and take action to control and correct them"
+      },
+      {
+        "category": "Improvement",
+        "prior_answer_context": null,
+        "requirement": "Deal with the consequences of nonconformities"
+      },
+      {
+        "category": "Improvement",
+        "prior_answer_context": null,
+        "requirement": "Evaluate the need for action to eliminate causes of nonconformity so that it does not recur or occur elsewhere"
+      },
+      {
+        "category": "Improvement",
+        "prior_answer_context": null,
+        "requirement": "Review and analyze nonconformities"
+      },
+      {
+        "category": "Improvement",
+        "prior_answer_context": null,
+        "requirement": "Determine causes of nonconformities"
+      },
+      {
+        "category": "Improvement",
+        "prior_answer_context": null,
+        "requirement": "Determine if similar nonconformities exist or could potentially occur"
+      },
+      {
+        "category": "Improvement",
+        "prior_answer_context": null,
+        "requirement": "Implement any action needed to eliminate causes of nonconformity"
+      },
+      {
+        "category": "Improvement",
+        "prior_answer_context": null,
+        "requirement": "Review effectiveness of corrective action taken"
+      },
+      {
+        "category": "Improvement",
+        "prior_answer_context": null,
+        "requirement": "Update risks and opportunities determined during planning if necessary"
+      },
+      {
+        "category": "Improvement",
+        "prior_answer_context": null,
+        "requirement": "Make changes to the QMS if necessary"
+      },
+      {
+        "category": "Improvement",
+        "prior_answer_context": null,
+        "requirement": "Ensure corrective actions are appropriate to the effects of the nonconformities encountered"
+      },
+      {
+        "category": "Improvement",
+        "prior_answer_context": null,
+        "requirement": "Retain documented information as evidence of nature of nonconformities, actions taken, and results of corrective action"
+      },
+      {
+        "category": "Improvement",
+        "prior_answer_context": null,
+        "requirement": "Continually improve the suitability, adequacy, and effectiveness of the QMS"
+      },
+      {
+        "category": "Improvement",
+        "prior_answer_context": null,
+        "requirement": "Consider results of analysis and evaluation and outputs of management review to determine if there are needs or opportunities for continual improvement"
+      }
+    ],
+    "source": "ai_generated",
+    "standard_name": "ISO 9001:2015",
+    "updated_at": "2026-07-24T15:46:07.812745+00:00"
+  }
+]

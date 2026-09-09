@@ -1,0 +1,103 @@
+[
+  {
+    "company_id": "07c871c9-1eec-45b5-82c8-782aa3531808",
+    "created_at": "2026-07-21T23:10:58.653622+00:00",
+    "draft_policies": [
+      {
+        "draft": "Cascade Specialty Chemicals is an equal opportunity employer and complies with all applicable federal, state, and local laws prohibiting discrimination. The company does not discriminate on the basis of race, color, religion, sex (including pregnancy, gender identity, and sexual orientation), national origin, age, disability, genetic information, veteran status, or any other characteristic protected by law. This policy applies to all terms and conditions of employment, including recruiting, hiring, placement, promotion, termination, layoff, recall, transfer, leaves of absence, compensation, and training.",
+        "section": "Equal Employment Opportunity (EEO)"
+      },
+      {
+        "draft": "The company prohibits all forms of harassment and discrimination, including sexual harassment, and is committed to maintaining a workplace free from such conduct. Harassment includes unwelcome verbal, physical, or visual conduct based on a protected characteristic that creates an intimidating, hostile, or offensive work environment. Sexual harassment includes unwelcome sexual advances, requests for sexual favors, and other conduct of a sexual nature. Employees who experience or witness harassment should immediately report it to their supervisor, HR, or any member of management. All complaints will be investigated promptly and confidentially. Retaliation against anyone who reports harassment or participates in an investigation is strictly prohibited.",
+        "section": "Anti-harassment and anti-discrimination"
+      },
+      {
+        "draft": "Cascade Specialty Chemicals complies with the Americans with Disabilities Act (ADA) and applicable state laws. The company will provide reasonable accommodations to qualified individuals with disabilities, unless doing so would create an undue hardship. Employees who require accommodation due to a disability should submit a written request to Human Resources describing the limitation and the type of accommodation needed. The company will engage in an interactive process to determine appropriate accommodations. Medical documentation may be requested to support the accommodation request.",
+        "section": "Americans with Disabilities Act (ADA) accommodations"
+      },
+      {
+        "draft": "All employees are expected to conduct themselves professionally and ethically at all times. This includes treating colleagues, customers, vendors, and visitors with respect and courtesy; maintaining honesty and integrity in all business dealings; complying with all company policies and applicable laws; avoiding conflicts of interest; and protecting company property and resources. Employees should not engage in conduct that could harm the company's reputation or business interests. Violations of this code may result in disciplinary action, up to and including termination.",
+        "section": "Code of conduct"
+      },
+      {
+        "draft": "The company maintains the right to discipline employees for violation of company policies, poor performance, or misconduct. Disciplinary action may include verbal warning, written warning, suspension, or termination, depending on the severity of the issue. The company may use progressive discipline when appropriate, but reserves the right to skip steps or proceed directly to termination for serious violations. Common violations include insubordination, theft, falsification of records, workplace violence, harassment, excessive absenteeism, and violation of safety rules. Nothing in this policy alters the at-will nature of employment.",
+        "section": "Disciplinary procedures"
+      },
+      {
+        "draft": "Employees may have access to confidential and proprietary information including trade secrets, customer lists, pricing information, formulas, business strategies, and employee records. Employees must maintain strict confidentiality of such information both during and after employment. Confidential information may not be disclosed to unauthorized persons or used for personal benefit. Employees must safeguard company data, follow information security protocols, and immediately report any suspected data breaches. Violation of this policy may result in disciplinary action, including termination, and potential legal action.",
+        "section": "Confidentiality and data protection"
+      },
+      {
+        "draft": "Employees who have concerns about workplace issues, policy violations, or unlawful conduct are encouraged to report them promptly. Complaints should be directed to your immediate supervisor, Human Resources, or any member of management. If you are uncomfortable reporting to your supervisor, you may bypass them and report to a higher level of management or HR. All complaints will be taken seriously and investigated promptly, thoroughly, and as confidentially as possible. Employees are expected to cooperate fully with investigations. The company will take appropriate corrective action when violations are confirmed.",
+        "section": "Complaint and reporting procedures"
+      },
+      {
+        "draft": "Cascade Specialty Chemicals prohibits retaliation against any employee who in good faith reports a violation of company policy, suspected illegal activity, safety concerns, discrimination, harassment, or other workplace issues, or who participates in an investigation. Retaliation includes any adverse action such as termination, demotion, suspension, threats, harassment, or any other treatment that would discourage a reasonable person from reporting concerns. Employees who believe they have experienced retaliation should report it immediately to Human Resources. Individuals who engage in retaliation will be subject to disciplinary action, up to and including termination.",
+        "section": "Non-retaliation policy"
+      },
+      {
+        "draft": "Regular and punctual attendance is essential to business operations. Employees are expected to report to work as scheduled, on time, and ready to work. If you are unable to report to work or will be late, you must notify your supervisor as far in advance as possible, and no later than the start of your shift. Excessive absenteeism or tardiness, or failure to properly notify the company of an absence, may result in disciplinary action up to and including termination. Employees who are absent for three consecutive days without notification may be considered to have voluntarily resigned.",
+        "section": "Attendance and punctuality"
+      },
+      {
+        "draft": "Employees are classified as either exempt or non-exempt under the Fair Labor Standards Act (FLSA) based on job duties, responsibilities, and salary level. Non-exempt employees are eligible for overtime pay at one and one-half times their regular rate for hours worked over 40 in a workweek. Exempt employees are not eligible for overtime pay. Employee classification is determined by the company based on federal and state wage and hour laws. Questions regarding classification should be directed to Human Resources.",
+        "section": "Employee classification (exempt vs. non-exempt)"
+      },
+      {
+        "draft": "In accordance with Oregon law, non-exempt employees are provided rest breaks and meal periods as follows: a paid 10-minute rest break for every 4-hour work period (or major portion thereof), and an unpaid 30-minute meal period for work periods of six hours or more. Rest breaks should be taken near the middle of each work period and may not be skipped or combined with meal periods. Meal periods must be taken between the third and fifth hour of work. Employees must clock out for meal periods. Employees who work alone or in certain conditions may be entitled to paid meal periods.",
+        "section": "Breaks and meal periods"
+      },
+      {
+        "draft": "The company may conduct periodic performance evaluations to provide employees with feedback on their job performance, recognize achievements, and identify areas for improvement. Performance evaluations are typically conducted annually, but may occur more or less frequently at the company's discretion. Evaluations are not a guarantee of continued employment, salary increases, or promotions. The company maintains its at-will employment relationship regardless of evaluation outcomes. Employees are encouraged to discuss performance expectations and career development with their supervisor at any time.",
+        "section": "Performance evaluations"
+      },
+      {
+        "draft": "Upon separation from employment for any reason, employees must return all company property including keys, access badges, equipment, tools, uniforms, documents, and proprietary information. Final paychecks will be provided in accordance with Oregon law: immediately upon termination if discharged, or within five business days (or on the next regular payday if sooner) if the employee resigns with at least 48 hours' notice. Unused accrued PTO will be paid out according to company policy and state law. Exit interviews may be conducted at the company's discretion. Employees are expected to maintain confidentiality obligations after employment ends.",
+        "section": "Separation and termination procedures"
+      },
+      {
+        "draft": "Company-provided technology and communication systems, including computers, email, internet, phones, and network resources, are provided for business purposes. Limited personal use may be permitted but should not interfere with work duties. Employees have no expectation of privacy when using company systems. The company reserves the right to monitor, access, and review all activity on company systems without notice. Prohibited uses include accessing inappropriate or offensive content, illegal activities, harassment, unauthorized disclosure of confidential information, and excessive personal use. Violations may result in disciplinary action up to and including termination.",
+        "section": "Technology and communication systems use"
+      },
+      {
+        "draft": "Employees are personally responsible for their social media activity. When using social media, employees should be professional and respectful, and must not disclose confidential company information, trade secrets, or proprietary data. Employees may not post content that is discriminatory, harassing, threatening, or damaging to the company, its employees, customers, or business partners. Do not represent that you are speaking on behalf of the company unless authorized to do so. Employees have the right to discuss wages, hours, and working conditions as protected by law. Social media conduct that violates company policy may result in disciplinary action.",
+        "section": "Social media policy"
+      },
+      {
+        "draft": "Cascade Specialty Chemicals is committed to providing a safe workplace free from violence and threats of violence. The company has zero tolerance for violent behavior, threats, intimidation, or possession of weapons on company premises or while conducting company business. Prohibited conduct includes physical altercations, threatening language or gestures, stalking, and any behavior that creates a reasonable fear of harm. Employees must immediately report any threats, violent incidents, or concerning behavior to their supervisor, HR, or security. Reports will be investigated and appropriate action taken. Violations will result in disciplinary action, up to and including termination and possible criminal prosecution.",
+        "section": "Workplace violence prevention"
+      }
+    ],
+    "handbook_file_url": "07c871c9-1eec-45b5-82c8-782aa3531808/hr-handbooks/1784672535053-Employee_Handbook_FINAL_v3.pdf",
+    "handbook_name": "Employee_Handbook_FINAL_v3.pdf",
+    "id": "02238f97-51fc-4b6f-8205-01b276b0994e",
+    "missing": [
+      "Equal Employment Opportunity (EEO)",
+      "Anti-harassment and anti-discrimination",
+      "Americans with Disabilities Act (ADA) accommodations",
+      "Code of conduct",
+      "Disciplinary procedures",
+      "Confidentiality and data protection",
+      "Complaint and reporting procedures",
+      "Non-retaliation policy",
+      "Attendance and punctuality",
+      "Employee classification (exempt vs. non-exempt)",
+      "Breaks and meal periods",
+      "Performance evaluations",
+      "Separation and termination procedures",
+      "Technology and communication systems use",
+      "Social media policy",
+      "Workplace violence prevention"
+    ],
+    "present": [
+      "At-will employment",
+      "Hours and overtime",
+      "Paid time off (PTO)",
+      "Oregon paid sick leave",
+      "Workplace safety",
+      "Drug and alcohol policy",
+      "Family and medical leave (partial)"
+    ],
+    "user_id": "80d7eebb-9858-43b8-8386-8a388f7e7c01"
+  }
+]

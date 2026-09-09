@@ -1,0 +1,2100 @@
+[
+  {
+    "action_items": [
+      "URGENT: Submit renewal application immediately if not already done - deadline was July 2, 2026",
+      "Contact Oregon DEQ to confirm renewal application status and request expedited processing if permit will lapse",
+      "Compile and organize all monitoring records (scrubber pH logs, carbon breakthrough tests) for past 5 years for renewal submission",
+      "Verify that February 15, 2026 annual emission inventory report was submitted to DEQ",
+      "Refile this document in appropriate Environmental Compliance or Air Quality folder",
+      "Establish calendar reminders for 60-day renewal deadline for next permit cycle",
+      "Develop contingency plan in case permit expires before renewal is approved (potential facility shutdown)"
+    ],
+    "company_id": "07c871c9-1eec-45b5-82c8-782aa3531808",
+    "coverage": "This permit authorizes Cascade Specialty Chemicals to operate three emission sources including an acid blending tank with scrubber, solvent drum filling station with carbon adsorption, and a natural gas boiler at their Portland facility.",
+    "created_at": "2026-07-14T22:55:57.778499+00:00",
+    "days_until_expiry": 48,
+    "division_name": "Chemical Manufacturing",
+    "document_id": "e1d3045c-2811-455a-89d4-4366d5fbbec3",
+    "document_name": "Title_V_Air_Quality_Permit.pdf",
+    "document_type": "Air Contaminant Discharge Permit (ACDP)",
+    "expiring_soon": true,
+    "expiry_date": "2026-08-31",
+    "folder_id": "b13a9041-c648-43ec-bfba-0220c231c151",
+    "folder_name": "OSHA Safety",
+    "gap_fixes": [],
+    "gaps": [
+      "Permit expires in 48 days on August 31, 2026",
+      "Renewal application was due July 2, 2026 (60 days prior to expiration) and may be overdue",
+      "No evidence of ongoing monitoring compliance (scrubber pH daily logs, monthly carbon breakthrough testing)",
+      "Document is misfiled in OSHA Safety folder when it should be in Environmental or Air Quality folder",
+      "No indication whether annual emission inventory report was submitted by February 15, 2026 deadline"
+    ],
+    "id": "149590ee-3611-4dce-b95f-6d96f6b96ea3",
+    "is_current": false,
+    "issue_date": "2021-09-01",
+    "issued_by": "Oregon Department of Environmental Quality (DEQ)",
+    "regulation_reference": null,
+    "renewal_date": "2026-07-02",
+    "summary": "This Oregon DEQ Air Contaminant Discharge Permit expires in 48 days on August 31, 2026, and the renewal application was due July 2, 2026. The company must immediately verify the renewal application has been submitted or submit it urgently to avoid potential facility shutdown. Additionally, all required monitoring records must be current and available for the renewal process.",
+    "user_id": "80d7eebb-9858-43b8-8386-8a388f7e7c01"
+  },
+  {
+    "action_items": [
+      "Immediately add a standalone section on Pregnant Workers Fairness Act accommodations, clarifying that pregnancy-related accommodations have no tenure or hours-worked requirement",
+      "Identify and document all states where the company has employees and conduct state-by-state leave law compliance review",
+      "Revise eligibility hours requirement from 1,000 to 1,250 hours (to match FMLA standard) or document alternative business justification",
+      "Add 'care for a parent with a serious health condition' to qualifying leave reasons",
+      "Develop and document medical certification procedures including required content and timeframes",
+      "Add anti-retaliation and non-interference policy language",
+      "Extend health insurance continuation during leave from 4 weeks to 8 weeks to match the leave duration",
+      "Create written interactive process procedures for PWFA and ADA accommodation requests",
+      "Add lactation accommodation policy in compliance with PUMP for Nursing Mothers Act",
+      "Develop training materials for managers on PWFA, ADA, and pregnancy discrimination obligations",
+      "Review and post all required federal and state workplace notices related to leave and accommodations",
+      "Consult with employment law counsel regarding state-specific compliance requirements for company's operating location(s)"
+    ],
+    "company_id": "07c871c9-1eec-45b5-82c8-782aa3531808",
+    "coverage": "This voluntary leave policy provides up to 8 weeks of unpaid family and medical leave for eligible employees at a 42-employee company not covered by federal FMLA.",
+    "created_at": "2026-07-24T15:51:57.035101+00:00",
+    "days_until_expiry": null,
+    "division_name": "",
+    "document_id": "3d27b068-69cd-4032-b70d-f6606a0f724a",
+    "document_name": "Health_Inspection_Report_Mar2026.pdf",
+    "document_type": "Employee Handbook - Family and Medical Leave Policy",
+    "expiring_soon": false,
+    "expiry_date": null,
+    "folder_id": null,
+    "folder_name": "",
+    "gap_fixes": [
+      {
+        "fix": "Add a new section titled 'Pregnancy and Childbirth Accommodations' that states: 'In accordance with the Pregnant Workers Fairness Act, employees and applicants with known limitations related to pregnancy, childbirth, or related medical conditions are entitled to reasonable accommodations unless such accommodations would impose an undue hardship on the company. Accommodations may include modified duties, schedule changes, additional breaks, temporary reassignment, or leave. No minimum service time or hours worked requirement applies. Employees should contact HR to request accommodations.'",
+        "gap": "No reference to the Pregnant Workers Fairness Act (PWFA), which applies to this 42-employee company and has been in effect since June 2023, requiring reasonable accommodations for pregnancy-related limitations with no minimum service or hours requirement"
+      },
+      {
+        "fix": "Revise the Eligibility section to add: 'Note: The eligibility requirements in this section apply to the company's voluntary extended leave policy. Accommodations for pregnancy, childbirth, or related medical conditions under the Pregnant Workers Fairness Act are available to all employees and applicants regardless of length of service or hours worked. See Section [X] for pregnancy accommodation procedures.'",
+        "gap": "Policy requires 12 months service and 1,000 hours worked, but PWFA has no such eligibility requirements for pregnancy accommodations"
+      },
+      {
+        "fix": "Add 'Care for a parent with a serious health condition' to the bulleted list under 'Qualifying Reasons for Leave'",
+        "gap": "Missing coverage for care of parent with serious health condition, which is a common leave category under FMLA and many state laws"
+      },
+      {
+        "fix": "Add a compliance note at the beginning of Section 7.1 stating: 'This policy applies to employees working in [STATE(S)]. Employees should consult with HR regarding additional leave entitlements that may be available under [state name] law.' Then conduct a state-specific legal review to identify and incorporate any mandatory state leave requirements.",
+        "gap": "No mention of which state(s) the company operates in, making it impossible to determine applicable state family leave laws that may mandate coverage for employers under 50 employees"
+      },
+      {
+        "fix": "Add a new subsection titled 'Disability-Related Leave and Accommodations' stating: 'Employees with disabilities as defined by the Americans with Disabilities Act may be entitled to reasonable accommodations, which may include leave beyond the time provided in this policy, unless such accommodation would impose an undue hardship. Pregnancy-related impairments such as gestational diabetes, preeclampsia, or postpartum depression may qualify as disabilities. Contact HR to request disability-related accommodations.'",
+        "gap": "No reference to ADA reasonable accommodation obligations for pregnancy-related disabilities or other disabilities that may require leave beyond the 8-week voluntary policy"
+      },
+      {
+        "fix": "Either revise to 1,250 hours to align with FMLA standard, or select a different threshold (such as 1,040 hours for half-time work) and document the business rationale. Update the Eligibility section with the corrected number.",
+        "gap": "Eligibility threshold of 1,000 hours appears to be based on FMLA (which requires 1,250 hours) but is not accurate to that standard"
+      },
+      {
+        "fix": "Add a new subsection titled 'Medical Certification' that states: 'For leave requests related to a serious health condition, the company may require medical certification from a healthcare provider. The certification should include: (1) the date the condition began; (2) the probable duration of the condition; (3) appropriate medical facts regarding the condition; and (4) a statement that the employee is needed to care for a family member or is unable to perform job functions. Employees must provide certification within 15 calendar days of the request unless not practicable.'",
+        "gap": "No specification of how medical certification will be evaluated or what documentation is required, creating potential for inconsistent application"
+      },
+      {
+        "fix": "Add to the action items: 'Verify state-specific workplace posting requirements for family/medical leave, pregnancy accommodation, and disability rights. Ensure all required notices are posted in locations visible to all employees (break rooms, time clock areas, employee entrance).'",
+        "gap": "Missing notice posting requirements that may be mandated by state law"
+      },
+      {
+        "fix": "Add a new subsection titled 'Protection from Retaliation' that states: 'The company prohibits retaliation, discrimination, or interference against any employee for requesting or taking leave under this policy, for requesting accommodations under the PWFA or ADA, or for exercising any other rights under applicable leave or accommodation laws. Employees who believe they have experienced retaliation should immediately contact HR or [compliance officer].'",
+        "gap": "No anti-retaliation or interference language protecting employees who request or take leave"
+      },
+      {
+        "fix": "Revise the Benefits During Leave section to: 'Employees on approved leave will continue to receive employer-sponsored health insurance coverage for up to 8 weeks at the same terms as if actively working. After 8 weeks, employees are responsible for paying their full premium to maintain coverage under COBRA or a similar continuation option. Employees should contact HR for premium payment arrangements.'",
+        "gap": "Benefits continuation limited to 4 weeks is significantly less protective than FMLA's 12-week guarantee (though company not required to match FMLA, this may create inequity)"
+      },
+      {
+        "fix": "Add a new section titled 'Requesting Accommodations' that states: 'Employees seeking accommodations related to pregnancy, childbirth, related medical conditions, or disabilities should submit a request to HR either orally or in writing. The company will engage in an interactive process to identify effective reasonable accommodations. This process may include discussing the employee's limitations, possible accommodations, and obtaining medical information if needed. Requests will be responded to promptly, typically within 5 business days.'",
+        "gap": "No procedure for interactive process or accommodation requests under PWFA or ADA"
+      },
+      {
+        "fix": "Add a new subsection titled 'Lactation Accommodations' that states: 'Employees who need to express breast milk will be provided reasonable break time and a private location (other than a bathroom) to do so for up to one year following the birth of a child, as required by the PUMP for Nursing Mothers Act. Employees should notify their manager or HR to arrange accommodations.'",
+        "gap": "Missing reference to lactation/breastfeeding accommodations required under federal PUMP Act for employers of any size"
+      }
+    ],
+    "gaps": [
+      "No reference to the Pregnant Workers Fairness Act (PWFA), which applies to this 42-employee company and has been in effect since June 2023, requiring reasonable accommodations for pregnancy-related limitations with no minimum service or hours requirement",
+      "Policy requires 12 months service and 1,000 hours worked, but PWFA has no such eligibility requirements for pregnancy accommodations",
+      "Missing coverage for care of parent with serious health condition, which is a common leave category under FMLA and many state laws",
+      "No mention of which state(s) the company operates in, making it impossible to determine applicable state family leave laws that may mandate coverage for employers under 50 employees",
+      "No reference to ADA reasonable accommodation obligations for pregnancy-related disabilities or other disabilities that may require leave beyond the 8-week voluntary policy",
+      "Eligibility threshold of 1,000 hours appears to be based on FMLA (which requires 1,250 hours) but is not accurate to that standard",
+      "No specification of how medical certification will be evaluated or what documentation is required, creating potential for inconsistent application",
+      "Missing notice posting requirements that may be mandated by state law",
+      "No anti-retaliation or interference language protecting employees who request or take leave",
+      "Benefits continuation limited to 4 weeks is significantly less protective than FMLA's 12-week guarantee (though company not required to match FMLA, this may create inequity)",
+      "No procedure for interactive process or accommodation requests under PWFA or ADA",
+      "Missing reference to lactation/breastfeeding accommodations required under federal PUMP Act for employers of any size"
+    ],
+    "id": "1b487e40-83e5-4efc-a7be-7ff00a1208b2",
+    "is_current": true,
+    "issue_date": "2026-01-01",
+    "issued_by": "Company (employer-created internal policy)",
+    "regulation_reference": "Pregnant Workers Fairness Act (PWFA) - 42 U.S.C. § 2000gg et seq. (applies to employers with 15+ employees, effective June 27, 2023); Americans with Disabilities Act (ADA) - 42 U.S.C. § 12101 et seq. (employers with 15+ employees); Pregnancy Discrimination Act (PDA) - Title VII amendment; state family/medical leave laws (state not specified in document)",
+    "renewal_date": null,
+    "summary": "This voluntary family and medical leave policy was revised in January 2026 for a 42-employee company not covered by federal FMLA. However, the policy has significant compliance gaps: it fails to address the Pregnant Workers Fairness Act (effective June 2023, applies to employers with 15+ employees) which requires pregnancy accommodations with no service requirements, contains no ADA reasonable accommodation procedures, does not specify the state(s) where it applies (critical since many states have leave laws covering smaller employers), and lacks key protections such as anti-retaliation language and lactation accommodation rights. The company must immediately add PWFA and ADA accommodation procedures and conduct a state-specific compliance review.",
+    "user_id": "80d7eebb-9858-43b8-8386-8a388f7e7c01"
+  },
+  {
+    "action_items": [
+      "Immediately verify this is the correct document (file name indicates 'Drug Testing Policy' but content is Family/Medical Leave Policy)",
+      "Correct the eligibility hours requirement from 1,000 to 1,250 hours to match federal FMLA standard",
+      "Add 'care for a parent with a serious health condition' to the list of qualifying reasons",
+      "Identify the specific state(s) where the company operates and review applicable state family/medical leave laws with employment counsel to ensure compliance",
+      "Develop or attach a Leave Request Form and Medical Certification Form for employees to use",
+      "Designate a specific HR contact person for leave administration and add contact information throughout the policy",
+      "Add anti-retaliation language and complaint procedure for employees who believe their leave rights were violated",
+      "Create written designation notice template to provide employees when leave is approved or denied",
+      "Consider extending leave duration to 12 weeks and health insurance continuation to match full leave period to align with FMLA standards",
+      "Clarify interaction between this leave policy and any other paid leave, disability benefits, or state-mandated leave programs",
+      "Add required employee notice and posting language as required by applicable state law",
+      "Strengthen return-to-work language to provide clearer job restoration guarantee or make voluntary nature of policy more prominent",
+      "Implement annual review process to monitor company growth and ensure FMLA compliance if/when headcount reaches 50 employees"
+    ],
+    "company_id": "07c871c9-1eec-45b5-82c8-782aa3531808",
+    "coverage": "Voluntary family and medical leave policy for a 42-employee company offering up to 8 weeks unpaid leave for qualifying family and medical reasons.",
+    "created_at": "2026-07-24T16:08:54.827778+00:00",
+    "days_until_expiry": null,
+    "division_name": "",
+    "document_id": "5e39250b-294e-4d11-bfa9-1db006f82642",
+    "document_name": "Drug_Testing_Policy_Signed.pdf",
+    "document_type": "Employee Handbook Section: Family and Medical Leave Policy",
+    "expiring_soon": false,
+    "expiry_date": null,
+    "folder_id": null,
+    "folder_name": "",
+    "gap_fixes": [
+      {
+        "fix": "Rename file to 'Family_Medical_Leave_Policy_2026.pdf' or similar accurate descriptor; verify correct document was provided",
+        "gap": "File name 'Drug_Testing_Policy_Signed.pdf' does not match actual document content (Family and Medical Leave Policy)"
+      },
+      {
+        "fix": "Change eligibility requirement to read '1,250 hours during the 12-month period immediately preceding the leave' to align with federal standard (even though not required, this prevents employee confusion and is best practice)",
+        "gap": "Hours requirement states '1,000 hours' but federal FMLA standard is 1,250 hours in 12 months"
+      },
+      {
+        "fix": "Add to qualifying reasons: 'Care for a parent with a serious health condition' (this is a standard FMLA qualifying reason)",
+        "gap": "Qualifying reasons list omits 'care for a parent with a serious health condition' (only mentions spouse and child)"
+      },
+      {
+        "fix": "Add to qualifying reasons: 'Qualifying exigency arising from a family member's covered military service' and 'Care for a covered servicemember with a serious injury or illness' if company wishes to offer comparable benefits to FMLA",
+        "gap": "Qualifying reasons omit military family leave provisions (qualifying exigency and military caregiver leave)"
+      },
+      {
+        "fix": "Add statement identifying company's primary state(s) of operation and confirming review of applicable state family leave laws (e.g., California, New York, Washington, Minnesota, etc. have laws covering smaller employers); consult employment counsel in relevant jurisdiction(s)",
+        "gap": "No specific state identified; cannot verify compliance with state-specific family/medical leave laws that may apply to employers under 50 employees"
+      },
+      {
+        "fix": "Consider increasing voluntary leave duration to 12 weeks to match FMLA standard and reduce employee confusion; if 8 weeks is intentional, add clarifying statement: 'This policy provides 8 weeks of leave as a voluntary benefit; the company is not currently subject to federal FMLA requirements'",
+        "gap": "Duration of leave (8 weeks) is less than federal FMLA standard (12 weeks), though company is not FMLA-covered"
+      },
+      {
+        "fix": "Extend employer-paid health insurance continuation to match the full leave period (8 weeks, or 12 if increased); alternatively, clarify cost-sharing arrangement after 4 weeks in writing and provide COBRA information",
+        "gap": "Benefits continuation (4 weeks health insurance) is less than federal FMLA standard (12 weeks), though company is not FMLA-covered"
+      },
+      {
+        "fix": "Strengthen language to: 'Employees will be restored to their same position or an equivalent position with equivalent pay, benefits, and working conditions' unless company specifically intends weaker protection; if so, make disclaimer more prominent",
+        "gap": "Return-to-work provision states 'where possible' and 'reasonable efforts' rather than guaranteed job restoration, weaker than FMLA standard"
+      },
+      {
+        "fix": "Add section: 'Request Process: Employees should submit written leave requests to [HR contact/title] at least 30 days in advance when foreseeable. Include a completed Leave Request Form (available from HR) and any required medical certification'",
+        "gap": "No written application/request process described; only states 'contact direct manager'"
+      },
+      {
+        "fix": "Add provision: 'For leave related to a serious health condition, employees must provide medical certification from a healthcare provider on a form provided by the company. The certification must be submitted within 15 calendar days of the leave request (or as soon as practicable)'",
+        "gap": "No medical certification process or forms specified for documenting serious health conditions"
+      },
+      {
+        "fix": "Add: 'The company will notify employees in writing within 5 business days whether their leave request qualifies under this policy and specify the amount of leave counted against the employee's annual entitlement'",
+        "gap": "No procedure for designation of leave as qualifying family/medical leave"
+      },
+      {
+        "fix": "Add: 'The company prohibits retaliation or discrimination against employees for requesting or taking leave under this policy. Employees who believe their rights have been violated should contact [HR contact/title] immediately'",
+        "gap": "No statement regarding prohibition of retaliation or interference with leave rights"
+      },
+      {
+        "fix": "Add: 'Leave under this policy will run concurrently with any applicable short-term disability or state family leave benefits. Employees may use accrued paid time off during leave or may choose to take leave unpaid'",
+        "gap": "No clarification on whether leave runs concurrently with other paid leave or disability benefits"
+      },
+      {
+        "fix": "Add throughout policy: specific name, title, email, and phone number of HR representative responsible for administering leave requests (e.g., 'Contact Jane Smith, HR Manager, at jsmith@company.com or 555-1234')",
+        "gap": "No employer contact person or HR representative identified for leave administration"
+      },
+      {
+        "fix": "Add: 'The company will post required notices regarding employee leave rights as required by applicable state law. Employees will receive written notice of their rights and responsibilities under this policy upon hire and when requesting leave'",
+        "gap": "No reference to posting requirements or employee notice obligations under any applicable state laws"
+      }
+    ],
+    "gaps": [
+      "File name 'Drug_Testing_Policy_Signed.pdf' does not match actual document content (Family and Medical Leave Policy)",
+      "Hours requirement states '1,000 hours' but federal FMLA standard is 1,250 hours in 12 months",
+      "Qualifying reasons list omits 'care for a parent with a serious health condition' (only mentions spouse and child)",
+      "Qualifying reasons omit military family leave provisions (qualifying exigency and military caregiver leave)",
+      "No specific state identified; cannot verify compliance with state-specific family/medical leave laws that may apply to employers under 50 employees",
+      "Duration of leave (8 weeks) is less than federal FMLA standard (12 weeks), though company is not FMLA-covered",
+      "Benefits continuation (4 weeks health insurance) is less than federal FMLA standard (12 weeks), though company is not FMLA-covered",
+      "Return-to-work provision states 'where possible' and 'reasonable efforts' rather than guaranteed job restoration, weaker than FMLA standard",
+      "No written application/request process described; only states 'contact direct manager'",
+      "No medical certification process or forms specified for documenting serious health conditions",
+      "No procedure for designation of leave as qualifying family/medical leave",
+      "No statement regarding prohibition of retaliation or interference with leave rights",
+      "No clarification on whether leave runs concurrently with other paid leave or disability benefits",
+      "No employer contact person or HR representative identified for leave administration",
+      "No reference to posting requirements or employee notice obligations under any applicable state laws"
+    ],
+    "id": "1efd3819-9cee-4dc4-888d-ea597e869256",
+    "is_current": true,
+    "issue_date": "2026-01-01",
+    "issued_by": "Company (name not specified)",
+    "regulation_reference": "Federal Family and Medical Leave Act (FMLA), 29 U.S.C. § 2601 et seq. and 29 CFR Part 825 (for reference only; company is not covered); state family and medical leave laws (jurisdiction not specified in document)",
+    "renewal_date": null,
+    "summary": "This is a voluntary family and medical leave policy for a 42-employee chemical manufacturing company not subject to federal FMLA (which requires 50+ employees). The policy contains several compliance gaps including an incorrect eligibility requirement (1,000 vs. 1,250 hours), missing qualifying reasons (parent care, military leave), weaker protections than FMLA standards, and no identified state jurisdiction for state-law compliance review. Most critically, the file is mislabeled as a drug testing policy, raising document control concerns.",
+    "user_id": "80d7eebb-9858-43b8-8386-8a388f7e7c01"
+  },
+  {
+    "action_items": [
+      "Immediately determine and document which state(s) the company operates in and verify whether any state PFML program applies",
+      "If operating in CO, CT, DE, MA, ME, MN, NJ, NY, OR, RI, WA, or other PFML states, review state-specific requirements and revise policy to comply with state law",
+      "Expand leave duration from 8 weeks to 12 weeks to align with standard practice and state PFML programs",
+      "Revise health insurance continuation to cover the full leave period, not just 4 weeks",
+      "Add 'care for a parent' to qualifying reasons for leave",
+      "Strengthen job restoration language to guarantee reinstatement except in limited legally-permitted circumstances",
+      "Develop and implement written medical certification form and procedures with specific timelines",
+      "Create and post required workplace notices for family/medical leave rights (both company policy and any applicable state PFML program)",
+      "If in a PFML state, register with the state program, begin premium withholding/contributions, and provide required employee notices",
+      "Add policy language addressing coordination between company leave policy and state PFML benefits",
+      "Train HR and managers on proper leave request procedures, certification requirements, and job protection obligations"
+    ],
+    "company_id": "07c871c9-1eec-45b5-82c8-782aa3531808",
+    "coverage": "Voluntary family and medical leave policy for a 42-employee company exempt from federal FMLA requirements.",
+    "created_at": "2026-07-24T15:49:26.113351+00:00",
+    "days_until_expiry": null,
+    "division_name": "",
+    "document_id": "9ae6ca11-ad3c-4dbc-b1e8-44aa83bc6f70",
+    "document_name": "Subcontractor_COI_ABC_Corp.pdf",
+    "document_type": "Employee Handbook - Family and Medical Leave Policy Section",
+    "expiring_soon": false,
+    "expiry_date": null,
+    "folder_id": null,
+    "folder_name": "",
+    "gap_fixes": [
+      {
+        "fix": "Add a clear statement at the beginning of Section 7.1 identifying the state(s) in which the company operates and explicitly state whether the company is subject to any state Paid Family and Medical Leave (PFML) program. Include a statement such as: 'This company operates in [State]. [State] does/does not have a Paid Family and Medical Leave program that applies to our company.'",
+        "gap": "Policy does not specify company's state location, making it impossible to determine applicable state PFML obligations"
+      },
+      {
+        "fix": "Add 'Care for a parent with a serious health condition' to the list of Qualifying Reasons for Leave. Revise the third bullet to read: 'Care for a spouse, child, or parent with a serious health condition.'",
+        "gap": "Missing care for parent with serious health condition (typically covered under state PFML and would be expected in voluntary policies)"
+      },
+      {
+        "fix": "Add a statement under Eligibility: 'Note: If the company is subject to a state Paid Family and Medical Leave program with different eligibility requirements, those state requirements will apply for state-provided benefits. Employees should contact HR to understand which program applies to their situation.'",
+        "gap": "Eligibility threshold of 1,000 hours may conflict with state PFML programs that have lower or no hour requirements"
+      },
+      {
+        "fix": "Revise Duration of Leave section to state: 'Eligible employees may request up to 12 weeks of unpaid leave per calendar year (or the duration provided under applicable state law, whichever is greater). If the company is subject to a state PFML program, employees may be eligible for additional leave as provided by state law.'",
+        "gap": "8 weeks leave duration is less than the 12 weeks typically provided under state PFML programs in states with active laws"
+      },
+      {
+        "fix": "Revise Benefits During Leave to state: 'Employees on approved leave will continue to receive employer-sponsored health insurance coverage for the duration of their approved leave (or as required by applicable state law). The employee will be responsible for their usual share of premiums during this time.'",
+        "gap": "Health insurance continuation of only 4 weeks falls short of typical state PFML requirements that mandate coverage throughout the full leave period"
+      },
+      {
+        "fix": "Revise Return to Work section to state: 'Employees returning from leave will be reinstated to their original position or to an equivalent position with equivalent pay, benefits, and working conditions, except in limited circumstances permitted by law (such as when the position has been eliminated due to legitimate business reasons unrelated to the leave).'",
+        "gap": "Policy allows conditional job restoration ('where possible') rather than guaranteed restoration, which conflicts with job protection provisions in most state PFML laws"
+      },
+      {
+        "fix": "Add a new subsection titled 'Notice to Employees' stating: 'If the company operates in a state with a Paid Family and Medical Leave program, the company will post required workplace notices and provide individual notice to employees upon hire and when the company becomes aware of a qualifying event, as required by state law.'",
+        "gap": "Missing requirement to inform employees about state PFML programs if applicable (mandatory employer notice requirements exist in most PFML states)"
+      },
+      {
+        "fix": "Add a new subsection titled 'Coordination with State Benefits' stating: 'If the company is subject to a state Paid Family and Medical Leave program, this policy will run concurrently with state-provided leave. Employees may be eligible for wage replacement benefits through the state program while on unpaid leave under this policy. Contact HR for information about applying for state benefits.'",
+        "gap": "No mention of coordination with state PFML benefits if company operates in a state with an active program"
+      },
+      {
+        "fix": "Expand the final paragraph on page 2 to read: 'To request leave, employees should contact their direct manager or HR in writing. For medical leave requests, employees must provide medical certification from a healthcare provider within 15 calendar days of the request (or as soon as practicable). The certification must include the date the condition began, probable duration, and relevant medical facts.'",
+        "gap": "Missing written certification requirements and timelines for medical leave requests"
+      },
+      {
+        "fix": "Add to the Benefits During Leave section: 'Employees may choose to use accrued paid time off during their leave period but are not required to do so, except as permitted by applicable state law. Contact HR to discuss options for coordinating paid leave benefits.'",
+        "gap": "No prohibition on requiring employees to exhaust other paid leave before taking family/medical leave (some states prohibit this)"
+      },
+      {
+        "fix": "Add a new subsection titled 'Workplace Posting' stating: 'The company will post a notice summarizing employee rights under this policy in a conspicuous location accessible to all employees. If required by state law, the company will also post all required state PFML program notices.'",
+        "gap": "No posting requirement mentioned for family/medical leave rights notice"
+      }
+    ],
+    "gaps": [
+      "Policy does not specify company's state location, making it impossible to determine applicable state PFML obligations",
+      "Missing care for parent with serious health condition (typically covered under state PFML and would be expected in voluntary policies)",
+      "Eligibility threshold of 1,000 hours may conflict with state PFML programs that have lower or no hour requirements",
+      "8 weeks leave duration is less than the 12 weeks typically provided under state PFML programs in states with active laws",
+      "Health insurance continuation of only 4 weeks falls short of typical state PFML requirements that mandate coverage throughout the full leave period",
+      "Policy allows conditional job restoration ('where possible') rather than guaranteed restoration, which conflicts with job protection provisions in most state PFML laws",
+      "Missing requirement to inform employees about state PFML programs if applicable (mandatory employer notice requirements exist in most PFML states)",
+      "No mention of coordination with state PFML benefits if company operates in a state with an active program",
+      "Missing written certification requirements and timelines for medical leave requests",
+      "No prohibition on requiring employees to exhaust other paid leave before taking family/medical leave (some states prohibit this)",
+      "No posting requirement mentioned for family/medical leave rights notice"
+    ],
+    "id": "2579791f-5c9c-45e3-8d3c-04772911cee2",
+    "is_current": true,
+    "issue_date": "2026-01-01",
+    "issued_by": "Company (Internal HR Policy)",
+    "regulation_reference": "Federal FMLA (29 U.S.C. § 2601 et seq., 29 CFR Part 825) does not apply to this employer (fewer than 50 employees). State-specific Paid Family and Medical Leave (PFML) laws may apply depending on company location, including programs in CA, CO, CT, DE, MA, ME, MN, NJ, NY, OR, RI, VA, WA and others with varying employer size thresholds.",
+    "renewal_date": null,
+    "summary": "This is a voluntary family and medical leave policy for a 42-employee company that is exempt from federal FMLA. The policy has significant gaps including failure to identify the company's state location (critical for determining state PFML obligations), insufficient leave duration (8 vs. 12 weeks), limited health insurance continuation (4 weeks vs. full leave), conditional rather than guaranteed job restoration, and missing several qualifying reasons and procedural protections. The company must immediately verify its state location and applicable state PFML requirements, then revise the policy to provide at least 12 weeks leave, full-duration health coverage, guaranteed job restoration, and all required notices and certifications.",
+    "user_id": "80d7eebb-9858-43b8-8386-8a388f7e7c01"
+  },
+  {
+    "action_items": [
+      "Halt use of this plan immediately and revise to Revision 3, incorporating all missing 29 CFR 1910.38(c) elements (reporting, critical operations, rescue/medical, and plan contact procedures)",
+      "Appoint and document a replacement Safety Coordinator to fill the vacancy left by T. Whitfield's departure",
+      "Update facility layout, assembly points, and alarm zones to reflect the 2023 warehouse expansion; attach current site map with exit routes and assembly areas",
+      "Conduct a full EAP review and training session with all employees and document attendance per 29 CFR 1910.38(f), then establish annual refresher training schedule",
+      "Designate and document employees authorized to perform critical shutdowns, rescue operations, and first aid, and ensure they receive appropriate training",
+      "Establish a recurring annual review calendar with a responsible party assigned to ensure the plan is reviewed and updated at least every 12 months going forward"
+    ],
+    "company_id": "07c871c9-1eec-45b5-82c8-782aa3531808",
+    "coverage": "This plan establishes evacuation procedures, emergency contacts, and chemical release response protocols for workplace emergencies at Cascade Specialty Chemicals.",
+    "created_at": "2026-07-24T15:55:11.207432+00:00",
+    "days_until_expiry": null,
+    "division_name": "",
+    "document_id": "b49ab205-74e9-4769-b14f-1a5ff4dd7c34",
+    "document_name": "Emergency_Action_Plan_2021.pdf",
+    "document_type": "Emergency Action Plan",
+    "expiring_soon": false,
+    "expiry_date": null,
+    "folder_id": null,
+    "folder_name": "",
+    "gap_fixes": [
+      {
+        "fix": "Immediately update the plan to Revision 3 with an effective date of July 2026 or current month, establish next review date 12 months forward, and implement annual review cycle per 29 CFR 1910.38(f)",
+        "gap": "Plan is severely outdated—effective February 2021 with review due February 2022, now more than 4 years overdue (current date: 2026-07-24)"
+      },
+      {
+        "fix": "Appoint a new Safety Coordinator immediately, update the Emergency Contacts section with the current Safety Coordinator's name and direct phone number, and remove the '[NO LONGER EMPLOYED]' notation",
+        "gap": "Safety Coordinator listed (T. Whitfield) is marked as no longer employed, leaving a critical emergency contact vacant"
+      },
+      {
+        "fix": "Add a 'Reporting Procedures' section specifying: (1) how to activate the alarm (location of pull stations), (2) how to dial 911 or internal emergency number, (3) required information to report (type of emergency, location, injuries), and (4) who to notify internally (Plant Manager and Safety Coordinator)",
+        "gap": "Missing required element: no procedures for reporting a fire or other emergency (29 CFR 1910.38(c)(1))"
+      },
+      {
+        "fix": "Add a 'Critical Operations Shutdown' section identifying: (1) which operations require controlled shutdown (e.g., reactor cooling, chemical transfer systems), (2) which job titles/personnel are authorized to remain, (3) step-by-step shutdown procedures, and (4) maximum time limits before mandatory evacuation",
+        "gap": "Missing required element: no procedures for employees who remain to operate critical plant operations before evacuating (29 CFR 1910.38(c)(3))"
+      },
+      {
+        "fix": "Add a 'Rescue and Medical Response' section stating: (1) designated employees trained in first aid/CPR (list names or titles), (2) location of first aid kits and AED, (3) when rescue is and is not permitted (e.g., 'Do not attempt rescue in IDLH atmospheres without proper PPE and training'), and (4) coordination protocol with emergency responders",
+        "gap": "Missing required element: no procedures for employees performing rescue or medical duties (29 CFR 1910.38(c)(5))"
+      },
+      {
+        "fix": "Add a section titled 'Plan Information Contacts' listing the Plant Manager (R. Delgado) and Safety Coordinator (once appointed) as the designated contacts for employees who need clarification on the plan or their responsibilities under it",
+        "gap": "Missing required element: no name or job title of employees who can be contacted for plan information or duty explanations (29 CFR 1910.38(c)(6))"
+      },
+      {
+        "fix": "Revise the Evacuation Procedure section to reflect current facility layout post-2023 expansion: update assembly point locations, add any new alarm zones created by the expansion, and attach a current site map showing exit routes, assembly points, and alarm coverage areas",
+        "gap": "Evacuation procedures reference outdated facility layout—plan explicitly notes it does not reflect the 2023 warehouse expansion and assembly points/alarm zones have not been updated"
+      },
+      {
+        "fix": "Designate a secondary assembly point (e.g., 'south parking lot' or another safe distance location), document it in the Evacuation Procedure section, and specify conditions under which the alternate site will be used (e.g., if north lot is blocked, downwind of chemical release, or otherwise unsafe)",
+        "gap": "No alternative or secondary assembly point identified if primary (north parking lot) is inaccessible"
+      },
+      {
+        "fix": "Create and attach a facility floor plan showing primary and secondary exit routes for each work area, label exits clearly, and include a table or narrative assigning exit routes by department or work zone (e.g., 'Production area employees use Exits A and B; warehouse employees use Exits C and D')",
+        "gap": "No specific exit route assignments provided as required by 29 CFR 1910.38(c)(2)"
+      },
+      {
+        "fix": "Develop an EAP training record form capturing employee name, date of review, and signature; train all current employees on the updated plan immediately; document initial training for new hires and re-training when the plan changes or employee responsibilities change, per 29 CFR 1910.38(f)(1)-(3)",
+        "gap": "No documentation that the plan has been reviewed with employees as required by 29 CFR 1910.38(f)"
+      }
+    ],
+    "gaps": [
+      "Plan is severely outdated—effective February 2021 with review due February 2022, now more than 4 years overdue (current date: 2026-07-24)",
+      "Safety Coordinator listed (T. Whitfield) is marked as no longer employed, leaving a critical emergency contact vacant",
+      "Missing required element: no procedures for reporting a fire or other emergency (29 CFR 1910.38(c)(1))",
+      "Missing required element: no procedures for employees who remain to operate critical plant operations before evacuating (29 CFR 1910.38(c)(3))",
+      "Missing required element: no procedures for employees performing rescue or medical duties (29 CFR 1910.38(c)(5))",
+      "Missing required element: no name or job title of employees who can be contacted for plan information or duty explanations (29 CFR 1910.38(c)(6))",
+      "Evacuation procedures reference outdated facility layout—plan explicitly notes it does not reflect the 2023 warehouse expansion and assembly points/alarm zones have not been updated",
+      "No alternative or secondary assembly point identified if primary (north parking lot) is inaccessible",
+      "No specific exit route assignments provided as required by 29 CFR 1910.38(c)(2)",
+      "No documentation that the plan has been reviewed with employees as required by 29 CFR 1910.38(f)"
+    ],
+    "id": "30ab4ab5-1938-4bf3-a76a-773a462fdd6b",
+    "is_current": false,
+    "issue_date": "2021-02-01",
+    "issued_by": "Cascade Specialty Chemicals, LLC (internal)",
+    "regulation_reference": "OSHA 29 CFR 1910.38 (Emergency Action Plans)",
+    "renewal_date": "2022-02-01",
+    "summary": "This Emergency Action Plan is non-compliant and unsafe for use. It is over 4 years past its scheduled review date, references an outdated facility layout, lists a Safety Coordinator who no longer works there, and is missing four of the six minimum elements required by 29 CFR 1910.38(c)—specifically reporting procedures, critical operations shutdown, rescue/medical protocols, and plan information contacts. The plan must be completely revised, current personnel and facility information updated, all employees trained on the new version, and an annual review cycle established immediately.",
+    "user_id": "80d7eebb-9858-43b8-8386-8a388f7e7c01"
+  },
+  {
+    "action_items": [
+      "Request complete SDS from supplier including missing Sections 8, 12, and 13 immediately",
+      "Verify calcium gluconate gel is stocked at every location where HF is used or stored and document locations",
+      "Conduct documented HF-specific safety training for all employees who may be exposed, including recognition of delayed symptoms",
+      "Establish medical surveillance program for workers with potential HF exposure",
+      "Create site-specific standard operating procedures referencing this SDS for HF handling, storage, and emergency response",
+      "Schedule SDS review for annual updates given the extreme hazard classification of this material",
+      "Verify emergency shower/eyewash stations are within 10 seconds of all HF use areas and test monthly",
+      "Confirm polyethylene storage containers are in use and incompatible materials (glass, metals, ceramics) are segregated"
+    ],
+    "company_id": "07c871c9-1eec-45b5-82c8-782aa3531808",
+    "coverage": "This SDS provides hazard identification, handling procedures, and emergency response information for 49% hydrofluoric acid used in semiconductor etching and metal pickling operations.",
+    "created_at": "2026-07-14T22:54:47.72234+00:00",
+    "days_until_expiry": null,
+    "division_name": "Chemical Manufacturing",
+    "document_id": "a4153c14-09f6-44ab-adc9-66542ce30a4a",
+    "document_name": "SDS_Hydrofluoric_Acid_49pct.pdf",
+    "document_type": "Safety Data Sheet (SDS)",
+    "expiring_soon": false,
+    "expiry_date": null,
+    "folder_id": "b13a9041-c648-43ec-bfba-0220c231c151",
+    "folder_name": "OSHA Safety",
+    "gap_fixes": [],
+    "gaps": [
+      "SDS is over 2 years old (dated 2024-03-01); OSHA recommends reviewing SDSs every 3 years but best practice is more frequent updates for highly hazardous materials",
+      "Missing Section 8 (Exposure Controls/Personal Protection) which should detail required PPE, engineering controls, and exposure limits - critical for such a dangerous chemical",
+      "Missing Section 12 (Ecological Information) and Section 13 (Disposal Considerations) required by GHS formatting standards",
+      "No documented training records showing workers have been trained on this specific SDS and its extreme hazards",
+      "Document does not specify location or quantity of required calcium gluconate gel at points of use",
+      "No reference to site-specific emergency procedures or medical surveillance requirements for HF exposure"
+    ],
+    "id": "35563407-f278-4af9-979d-50b7b78701bf",
+    "is_current": true,
+    "issue_date": "2024-03-01",
+    "issued_by": "Cascade Specialty Chemicals, LLC",
+    "regulation_reference": null,
+    "renewal_date": null,
+    "summary": "This is a current Safety Data Sheet for highly hazardous 49% hydrofluoric acid, classified as fatal on contact and requiring immediate specialized first aid. The SDS is incomplete, missing the critical Section 8 on exposure controls and PPE requirements, as well as environmental and disposal sections. Given HF's extreme toxicity and unique delayed pain presentation, the company must immediately obtain the complete SDS, verify calcium gluconate gel availability at all use points, and ensure comprehensive worker training and emergency preparedness protocols are in place.",
+    "user_id": "80d7eebb-9858-43b8-8386-8a388f7e7c01"
+  },
+  {
+    "action_items": [
+      "Verify emergency eyewash and safety shower are installed within 10 seconds travel time of all sodium hydroxide handling areas",
+      "Conduct workplace air monitoring at transfer points to confirm ventilation controls keep exposure below 2 mg/m3 ceiling limit",
+      "Document employee training on SDS hazards, PPE requirements (goggles, face shield, neoprene/butyl gloves, chemical apron), and emergency procedures",
+      "Inspect chemical storage areas to confirm sodium hydroxide is properly segregated from incompatible materials (acids, aluminum, zinc, tin)",
+      "Verify availability of specified PPE and emergency neutralization materials (dilute acetic acid) at all handling locations",
+      "Establish procedure to review and update this SDS by November 2028 or when formulation/hazard information changes"
+    ],
+    "company_id": "07c871c9-1eec-45b5-82c8-782aa3531808",
+    "coverage": "This SDS provides hazard communication and safety information for handling 50% Sodium Hydroxide solution (caustic soda), a corrosive Class 8 chemical used in chemical manufacturing operations.",
+    "created_at": "2026-07-14T22:53:59.134669+00:00",
+    "days_until_expiry": null,
+    "division_name": "Chemical Manufacturing",
+    "document_id": "8cf72fc1-118e-4e65-b421-a22f621b01c7",
+    "document_name": "SDS_Sodium_Hydroxide_50pct.pdf",
+    "document_type": "Safety Data Sheet (SDS)",
+    "expiring_soon": false,
+    "expiry_date": null,
+    "folder_id": "b13a9041-c648-43ec-bfba-0220c231c151",
+    "folder_name": "OSHA Safety",
+    "gap_fixes": [],
+    "gaps": [
+      "SDS is 8 months old and approaching the recommended 3-year review cycle, though not yet outdated",
+      "Missing Section 12 (Ecological Information) and Section 13 (Disposal Considerations) which are standard in 16-section SDS format",
+      "No documented training records confirming employees have been trained on this specific SDS",
+      "Emergency eyewash/shower locations and 10-second travel time requirement not verified in facility",
+      "No indication of workplace air monitoring to verify mist levels remain below OSHA PEL of 2 mg/m3",
+      "Storage compatibility verification needed - document requires segregation from acids and metals but no audit trail shown"
+    ],
+    "id": "3705c9a1-13bc-4806-a74f-d547a1029cee",
+    "is_current": true,
+    "issue_date": "2025-11-04",
+    "issued_by": "Cascade Specialty Chemicals, LLC",
+    "regulation_reference": null,
+    "renewal_date": null,
+    "summary": "This Safety Data Sheet for 50% Sodium Hydroxide is current and contains critical safety information for this highly corrosive chemical. The document is compliant with OSHA HazCom requirements and provides proper hazard warnings, exposure limits, and emergency response procedures. However, the company must verify that workplace controls match SDS requirements, including emergency equipment placement, ventilation adequacy, PPE availability, and proper chemical segregation, with documented employee training on all safety procedures.",
+    "user_id": "80d7eebb-9858-43b8-8386-8a388f7e7c01"
+  },
+  {
+    "action_items": [
+      "URGENT: Contact Oregon DEQ immediately to initiate emergency permit renewal and disclose lapsed status",
+      "Halt hazardous waste generation operations pending DEQ guidance on permit reinstatement",
+      "Prepare and submit complete renewal application package including all required supporting documentation",
+      "Verify biennial report (March 1, 2026) was filed; if not, submit immediately via RCRAInfo",
+      "Audit and update all required compliance documentation: RCRA training records, contingency plan, and weekly inspection logs for the past year",
+      "Designate compliance officer to establish calendar alerts for future renewal (90 days prior), biennial reporting (March 1 even years), and annual training deadlines",
+      "Prepare for potential civil penalty assessment and document all corrective actions taken",
+      "Schedule internal compliance audit to verify ongoing adherence to all permit conditions (90-day accumulation limit, training, inspections, waste characterization)"
+    ],
+    "company_id": "07c871c9-1eec-45b5-82c8-782aa3531808",
+    "coverage": "Authorizes Cascade Specialty Chemicals, LLC to operate as a Large Quantity Generator of hazardous waste for specified waste streams (corrosive, ignitable, spent solvents, and lead-bearing waste) at their Portland facility.",
+    "created_at": "2026-07-23T16:25:35.584436+00:00",
+    "days_until_expiry": -555,
+    "division_name": "Chemical Manufacturing",
+    "document_id": "2881d73c-6e42-4934-a641-8cedbfc48860",
+    "document_name": "EPA_Hazardous_Waste_Generator_Permit.pdf",
+    "document_type": "Hazardous Waste Generator Permit — Large Quantity Generator",
+    "expiring_soon": false,
+    "expiry_date": "2025-01-14",
+    "folder_id": "b13a9041-c648-43ec-bfba-0220c231c151",
+    "folder_name": "OSHA Safety",
+    "gap_fixes": [
+      {
+        "fix": "Immediately contact Oregon DEQ to submit a late renewal application with explanation; cease hazardous waste generation operations if advised by DEQ until permit is reinstated; prepare for potential civil penalties and request penalty mitigation based on corrective action taken.",
+        "gap": "Permit expired on January 14, 2025 — facility has been operating without a current permit for 555 days, in violation of OAR 340-100-0002"
+      },
+      {
+        "fix": "File emergency renewal application with Oregon DEQ immediately, including completed application forms, updated facility information, current waste stream data, and a compliance status summary; request expedited processing and document all communication with DEQ.",
+        "gap": "Renewal deadline of October 16, 2024 (90 days prior to expiration) was missed by over 9 months"
+      },
+      {
+        "fix": "Verify with Oregon DEQ whether the March 1, 2026 biennial report was submitted; if not submitted, prepare and file immediately using EPA's RCRAInfo system covering calendar years 2024-2025, and document late submission explanation.",
+        "gap": "No evidence of current biennial hazardous waste report submission (March 1, 2026 report required)"
+      },
+      {
+        "fix": "Compile training records for all hazardous waste personnel showing completion of annual RCRA training within the past 12 months; for any personnel lacking current training, schedule and complete training immediately; maintain training files on-site and submit summary to DEQ with renewal application.",
+        "gap": "Annual RCRA training documentation not attached or referenced (required per 40 CFR 262.17(a)(7))"
+      },
+      {
+        "fix": "Retrieve current written contingency plan; review and update to reflect current facility conditions, emergency contacts, and procedures per 40 CFR 262.17(a)(8); ensure plan includes coordination with local emergency responders; submit updated plan to DEQ with renewal application and distribute to all relevant personnel.",
+        "gap": "Written contingency plan not attached or referenced for current review"
+      },
+      {
+        "fix": "Gather all weekly inspection logs for at least the past 12 months; review for completeness and ensure inspections are documenting container condition, leaks, and proper labeling per 40 CFR 262.17(a)(5); implement corrective measures for any deficiencies noted; maintain logs on-site for DEQ inspection and submit summary documentation with renewal.",
+        "gap": "Weekly inspection logs for container storage areas not attached or referenced"
+      }
+    ],
+    "gaps": [
+      "Permit expired on January 14, 2025 — facility has been operating without a current permit for 555 days, in violation of OAR 340-100-0002",
+      "Renewal deadline of October 16, 2024 (90 days prior to expiration) was missed by over 9 months",
+      "No evidence of current biennial hazardous waste report submission (March 1, 2026 report required)",
+      "Annual RCRA training documentation not attached or referenced (required per 40 CFR 262.17(a)(7))",
+      "Written contingency plan not attached or referenced for current review",
+      "Weekly inspection logs for container storage areas not attached or referenced"
+    ],
+    "id": "387844fd-f045-48ff-a840-b079e63cca45",
+    "is_current": false,
+    "issue_date": "2022-01-15",
+    "issued_by": "Oregon Department of Environmental Quality",
+    "regulation_reference": "40 CFR Part 262 (RCRA Hazardous Waste Generator Standards); OAR 340-100 (Oregon Hazardous Waste Management)",
+    "renewal_date": "2024-10-16",
+    "summary": "This Large Quantity Generator permit for Cascade Specialty Chemicals expired on January 14, 2025 and has been invalid for over 18 months, creating a serious regulatory violation under Oregon and federal RCRA regulations. The facility missed the October 2024 renewal deadline and may be operating unlawfully, risking civil penalties and enforcement action. Immediate contact with Oregon DEQ, emergency renewal application, and comprehensive compliance documentation review are critical to restore permit status and demonstrate good faith corrective action.",
+    "user_id": "80d7eebb-9858-43b8-8386-8a388f7e7c01"
+  },
+  {
+    "action_items": [
+      "Add comprehensive anti-harassment and equal employment opportunity policies immediately",
+      "Incorporate Oregon Family Leave Act provisions as company exceeds 25-employee threshold",
+      "Develop and add detailed safety sections covering hazard communication, PPE requirements, emergency procedures, and chemical exposure protocols specific to chemical manufacturing",
+      "Include ADA reasonable accommodation policy and procedures",
+      "Add employee handbook acknowledgment form requiring signatures from all employees",
+      "Document training requirements for OSHA compliance including frequency and recordkeeping",
+      "Review and update handbook at least annually or when regulations change",
+      "Consult with employment counsel to ensure compliance with Oregon state employment laws"
+    ],
+    "company_id": "07c871c9-1eec-45b5-82c8-782aa3531808",
+    "coverage": "This handbook establishes employment policies including at-will employment, compensation, leave benefits, safety requirements, and drug testing protocols for Cascade Specialty Chemicals employees.",
+    "created_at": "2026-07-14T22:44:20.780335+00:00",
+    "days_until_expiry": null,
+    "division_name": "Chemical Manufacturing",
+    "document_id": "0cb7346e-6b88-448b-b502-b0c628758206",
+    "document_name": "Employee_Handbook_FINAL_v3.pdf",
+    "document_type": "Employee Handbook",
+    "expiring_soon": false,
+    "expiry_date": null,
+    "folder_id": "b13a9041-c648-43ec-bfba-0220c231c151",
+    "folder_name": "OSHA Safety",
+    "gap_fixes": [],
+    "gaps": [
+      "No harassment or discrimination policy documented",
+      "Missing OSHA-specific training requirements and hazard communication procedures expected for chemical manufacturing",
+      "No emergency response or chemical exposure procedures outlined",
+      "Oregon Family Leave Act (OFLA) not addressed despite operating in Oregon with 42 employees (OFLA applies at 25+ employees)",
+      "No personal protective equipment (PPE) requirements specified for chemical handling",
+      "Missing whistleblower protections beyond basic safety reporting",
+      "No accommodation policy for disabilities (ADA compliance)",
+      "Handbook acknowledgment and distribution process not documented"
+    ],
+    "id": "3c342ec4-1eb0-4ae5-9bb2-bbf387bf6632",
+    "is_current": true,
+    "issue_date": "2026-01-01",
+    "issued_by": "Cascade Specialty Chemicals, LLC",
+    "regulation_reference": null,
+    "renewal_date": null,
+    "summary": "This employee handbook is current as of January 2026 but has significant compliance gaps for a chemical manufacturing operation. Critical missing elements include harassment policies, Oregon Family Leave Act coverage, detailed chemical safety procedures, and disability accommodation policies. The company should immediately update the handbook to include comprehensive safety protocols appropriate for chemical manufacturing and ensure full compliance with both federal and Oregon state employment laws.",
+    "user_id": "80d7eebb-9858-43b8-8386-8a388f7e7c01"
+  },
+  {
+    "action_items": [
+      "Immediately update handbook to Version 3 with comprehensive HazCom, PSM (if applicable), and Emergency Action Plan sections before November 20, 2026 deadline",
+      "Develop and document a written Hazard Communication program compliant with OSHA 29 CFR 1910.1200 and GHS Revision 7 by November 20, 2026",
+      "Create or update written Emergency Action Plan per 29 CFR 1910.38 with evacuation routes, assembly points, and emergency procedures",
+      "Conduct workplace hazard assessments to determine which chemicals are present and whether PSM (29 CFR 1910.119) applies to the facility",
+      "If PSM applies, develop written employee participation plan and provide employees access to process safety information and process hazard analyses",
+      "Verify all chemical containers have current GHS-compliant labels; update labels to reflect GHS Revision 7 classifications by November 20, 2026",
+      "Ensure all SDSs are current, accessible (electronically and/or hard copy), and updated to 16-section GHS format",
+      "Provide or update HazCom training for all employees by November 20, 2026, covering GHS Revision 7 label elements, SDS format, and chemical hazards in their work areas",
+      "Document all safety training (HazCom, EAP, PPE, PSM as applicable) with employee signatures, dates, and topics covered",
+      "Establish incident reporting procedures and train employees on immediate reporting requirements for chemical exposures and spills",
+      "Designate a safety coordinator or competent person responsible for HazCom program management, SDS maintenance, and employee training coordination",
+      "Maintain current chemical inventory list and make it accessible to employees",
+      "Review and update employee handbook at minimum every 3 years or whenever regulations change"
+    ],
+    "company_id": "07c871c9-1eec-45b5-82c8-782aa3531808",
+    "coverage": "This handbook governs employment policies and general workplace procedures for employees at Cascade Specialty Chemicals, LLC.",
+    "created_at": "2026-07-24T15:54:15.696973+00:00",
+    "days_until_expiry": null,
+    "division_name": "",
+    "document_id": "14a5c65c-20d7-4d86-b176-f703ebc12c39",
+    "document_name": "Employee_Handbook_v2.pdf",
+    "document_type": "Employee Handbook",
+    "expiring_soon": false,
+    "expiry_date": null,
+    "folder_id": null,
+    "folder_name": "",
+    "gap_fixes": [
+      {
+        "fix": "Add a comprehensive Hazard Communication section that includes: (1) a written HazCom program describing how the company meets labeling, SDS, and training requirements; (2) statement that the program is available to all employees; (3) confirmation of GHS Revision 7 alignment; and (4) date of last program update (must be by November 20, 2026 for substances)",
+        "gap": "No written Hazard Communication (HazCom) program required by OSHA 29 CFR 1910.1200 for chemical manufacturing facilities"
+      },
+      {
+        "fix": "Add policy stating: 'The company maintains current Safety Data Sheets (SDS) for all hazardous chemicals. SDSs are accessible to all employees at [specific location/electronic system]. Employees may request SDS information from [designated person/department] at any time. SDSs are updated as manufacturers provide revised versions.'",
+        "gap": "No reference to Safety Data Sheets (SDS) accessibility or maintenance requirements for hazardous chemicals"
+      },
+      {
+        "fix": "Add training section: 'All employees who work with or may be exposed to hazardous chemicals receive HazCom training at initial assignment and whenever new chemical hazards are introduced. Training covers: GHS label elements and pictograms, how to read and use SDSs, physical and health hazards of chemicals in their work area, protective measures, and emergency procedures. Training records are maintained for the duration of employment.'",
+        "gap": "No employee training requirements for hazard communication, chemical labeling, or GHS-compliant labels"
+      },
+      {
+        "fix": "Add Emergency Action Plan section: 'A written Emergency Action Plan is maintained and available to all employees. The EAP includes: procedures for reporting fires and chemical emergencies; evacuation procedures and routes; assembly points; procedures to account for all employees post-evacuation; designated emergency coordinators; and emergency contact information. Employees receive EAP training at hire and when responsibilities change. Evacuation drills are conducted [specify frequency, e.g., annually].'",
+        "gap": "Missing emergency action plan (EAP) required by OSHA 29 CFR 1910.38 for chemical facilities, including evacuation procedures and emergency reporting"
+      },
+      {
+        "fix": "Add PSM section (if applicable based on chemical inventory): 'If our facility handles highly hazardous chemicals above threshold quantities per 29 CFR 1910.119, the company maintains a Process Safety Management program with 14 required elements including employee participation. Employees have access to process hazard analyses, process safety information, and the right to participate in PSM program development. A written employee participation plan is available at [location]. Employees may contact [PSM coordinator] with questions or to review PSM documentation.'",
+        "gap": "No reference to Process Safety Management (PSM) requirements under 29 CFR 1910.119, including employee participation plan for facilities handling highly hazardous chemicals"
+      },
+      {
+        "fix": "Update handbook to Version 3 with effective date of 2026 or later. Include statement: 'Our Hazard Communication program has been updated to align with OSHA's GHS Revision 7 requirements. Workplace labels, SDS formats, and employee training reflect the updated hazard classifications effective November 20, 2026 for chemical substances.'",
+        "gap": "Handbook is outdated (effective January 2023) and does not reflect updated HazCom compliance deadlines for November 2026 under GHS Revision 7"
+      },
+      {
+        "fix": "Add PPE section: 'The company conducts workplace hazard assessments to determine required Personal Protective Equipment (PPE) for each job role. Employees are provided appropriate PPE at no cost, including [list relevant types: safety glasses, gloves, respirators, chemical-resistant clothing, etc.]. Employees receive training on proper PPE selection, use, maintenance, and limitations before being assigned tasks requiring PPE. Employees must wear required PPE as directed.'",
+        "gap": "No mention of Personal Protective Equipment (PPE) requirements, hazard assessments, or training"
+      },
+      {
+        "fix": "Add to HazCom section: 'The company maintains a current inventory of all hazardous chemicals present in the workplace. All chemical containers have GHS-compliant labels with product identifier, signal word, hazard pictograms, precautionary statements, and supplier information. Secondary containers used by employees are labeled with chemical name and hazards. Employees must not remove or deface labels. Questions about chemical labeling should be directed to [supervisor/safety coordinator].'",
+        "gap": "Missing chemical inventory list or procedures for container labeling in the workplace"
+      },
+      {
+        "fix": "Add Incident Reporting section: 'Employees must immediately report all chemical exposures, spills, releases, near-misses, injuries, or unsafe conditions to their supervisor or [designated contact]. Emergency chemical releases require immediate notification to [emergency coordinator] and activation of emergency response procedures. The company investigates all incidents to prevent recurrence. Employees will not face retaliation for reporting safety concerns or incidents.'",
+        "gap": "No mention of incident reporting procedures for chemical exposures, spills, or releases"
+      },
+      {
+        "fix": "Add Employee Rights section: 'Employees have the right to know about chemical hazards in their workplace. Employees may access: Safety Data Sheets, chemical inventory lists, written Hazard Communication program, Process Safety Management documentation (if applicable), hazard assessment results, and training records. Requests for information should be directed to [safety coordinator/HR]. Trade secret information is protected but does not limit disclosure of essential hazard information to employees or emergency responders.'",
+        "gap": "No reference to employee right-to-know provisions or access to process safety information"
+      },
+      {
+        "fix": "Expand Safety section to include: 'All employees must follow established safety procedures including safe chemical handling practices, lockout/tagout procedures, confined space protocols, and hot work permits as applicable. The facility maintains employee alarm systems to alert workers to emergencies [describe alarm types/signals]. Employees assigned to emergency response roles receive specialized training. Critical operations personnel who remain during evacuations follow documented shutdown procedures. Employees report all hazards, unsafe conditions, and near-misses immediately without fear of retaliation.'",
+        "gap": "Safety section is too vague and does not address specific chemical hazards, emergency response, or employee alarm systems"
+      }
+    ],
+    "gaps": [
+      "No written Hazard Communication (HazCom) program required by OSHA 29 CFR 1910.1200 for chemical manufacturing facilities",
+      "No reference to Safety Data Sheets (SDS) accessibility or maintenance requirements for hazardous chemicals",
+      "No employee training requirements for hazard communication, chemical labeling, or GHS-compliant labels",
+      "Missing emergency action plan (EAP) required by OSHA 29 CFR 1910.38 for chemical facilities, including evacuation procedures and emergency reporting",
+      "No reference to Process Safety Management (PSM) requirements under 29 CFR 1910.119, including employee participation plan for facilities handling highly hazardous chemicals",
+      "Handbook is outdated (effective January 2023) and does not reflect updated HazCom compliance deadlines for November 2026 under GHS Revision 7",
+      "No mention of Personal Protective Equipment (PPE) requirements, hazard assessments, or training",
+      "Missing chemical inventory list or procedures for container labeling in the workplace",
+      "No mention of incident reporting procedures for chemical exposures, spills, or releases",
+      "No reference to employee right-to-know provisions or access to process safety information",
+      "Safety section is too vague and does not address specific chemical hazards, emergency response, or employee alarm systems"
+    ],
+    "id": "50dc8662-069d-46b8-8a4d-3cb88c5390f8",
+    "is_current": false,
+    "issue_date": "2023-01-01",
+    "issued_by": "Cascade Specialty Chemicals, LLC",
+    "regulation_reference": "OSHA 29 CFR 1910.1200 (Hazard Communication Standard), OSHA 29 CFR 1910.119 (Process Safety Management for chemical facilities), OSHA 29 CFR 1910.38 (Emergency Action Plans), and general OSHA workplace safety requirements for chemical manufacturing",
+    "renewal_date": null,
+    "summary": "This employee handbook for a chemical manufacturing company is critically non-compliant with OSHA regulations. It lacks required elements for chemical manufacturers including a written Hazard Communication program, Emergency Action Plan, and Process Safety Management provisions (if applicable). The handbook is outdated (January 2023) and must be revised by November 20, 2026 to reflect GHS Revision 7 requirements for hazard communication, chemical labeling, SDS accessibility, and employee training.",
+    "user_id": "80d7eebb-9858-43b8-8386-8a388f7e7c01"
+  },
+  {
+    "action_items": [
+      "Schedule and complete OSHA 10-Hour General Industry training for Devon Marsh immediately to achieve full compliance",
+      "Enroll Lena Vogt in next available OSHA 10-Hour General Industry training session (overdue by 4+ months since March hire date)",
+      "Establish policy requiring OSHA 10-Hour training completion within 30 days of hire for all general industry employees",
+      "Implement tracking system to monitor training completion status and prevent extended non-compliance periods",
+      "Consider scheduling annual refresher training for all employees to maintain safety awareness"
+    ],
+    "company_id": "07c871c9-1eec-45b5-82c8-782aa3531808",
+    "coverage": "Documents completion of OSHA 10-Hour General Industry safety training for six employees at Cascade Specialty Chemicals, covering workplace safety fundamentals including hazard communication, PPE, electrical safety, and machine guarding.",
+    "created_at": "2026-07-14T22:55:23.585274+00:00",
+    "days_until_expiry": null,
+    "division_name": "Chemical Manufacturing",
+    "document_id": "85a39b1d-8279-438e-8409-582c4fe56fbb",
+    "document_name": "OSHA_10_Training_Roster_2026.pdf",
+    "document_type": "OSHA 10-Hour General Industry Training Roster",
+    "expiring_soon": false,
+    "expiry_date": null,
+    "folder_id": "b13a9041-c648-43ec-bfba-0220c231c151",
+    "folder_name": "OSHA Safety",
+    "gap_fixes": [],
+    "gaps": [
+      "Devon Marsh (CSC-0142) did not complete training due to day 2 absence and remains untrained",
+      "Lena Vogt (CSC-0160) hired in March 2026 has not received required OSHA 10-Hour training",
+      "Two employees (33% of roster) are not currently compliant with OSHA safety training requirements",
+      "No documentation of when makeup training or new employee training is scheduled",
+      "Training roster is from January 2026 but gaps remain unresolved as of July 2026 (6+ months)"
+    ],
+    "id": "54bb3bc7-fab5-4e5e-bec5-c9092b8437d3",
+    "is_current": true,
+    "issue_date": "2026-02-04",
+    "issued_by": "OSHA (Occupational Safety and Health Administration)",
+    "regulation_reference": null,
+    "renewal_date": null,
+    "summary": "This training roster shows 4 of 6 employees successfully completed OSHA 10-Hour General Industry training in January-February 2026. However, two employees remain untrained 5-6 months later: Devon Marsh failed to complete the original course, and Lena Vogt has not been trained since being hired in March 2026. Immediate action is required to bring all employees into compliance with OSHA safety training requirements.",
+    "user_id": "80d7eebb-9858-43b8-8386-8a388f7e7c01"
+  },
+  {
+    "action_items": [
+      "Immediately schedule and complete 8-hour HAZWOPER refresher training for Margaret Chen to restore certification",
+      "Remove Margaret Chen from hazardous waste operations duties until refresher training is completed",
+      "Implement tracking system to alert HR/Safety 60 days before refresher deadlines to prevent future lapses",
+      "Verify Margaret Chen has current medical surveillance clearance per 29 CFR 1910.120(f)",
+      "Document site-specific training and emergency response role for this employee",
+      "Audit all Process Operator HAZWOPER certifications to identify other potential lapses"
+    ],
+    "company_id": "07c871c9-1eec-45b5-82c8-782aa3531808",
+    "coverage": "This certificate authorizes Margaret Chen (Process Operator II) to work with hazardous waste operations and emergency response under 29 CFR 1910.120(e) following completion of 24-hour initial HAZWOPER training.",
+    "created_at": "2026-07-14T22:46:07.559904+00:00",
+    "days_until_expiry": -29,
+    "division_name": "Chemical Manufacturing",
+    "document_id": "79e55ff0-830d-458c-af83-c9dcdaf9be97",
+    "document_name": "HAZWOPER_Training_Certificate_M_Chen.pdf",
+    "document_type": "HAZWOPER Training Certificate",
+    "expiring_soon": true,
+    "expiry_date": "2026-08-12",
+    "folder_id": "b13a9041-c648-43ec-bfba-0220c231c151",
+    "folder_name": "OSHA Safety",
+    "gap_fixes": [],
+    "gaps": [
+      "Certification expired 29 days ago on August 12, 2026",
+      "Required 8-hour annual refresher training was not completed by the August 12, 2026 deadline",
+      "Employee is currently non-compliant and not authorized to perform HAZWOPER-covered work",
+      "No evidence of medical surveillance program participation",
+      "No record of site-specific training or emergency response role assignment"
+    ],
+    "id": "56ad121d-0d04-43d0-8d3e-49b2f95b8097",
+    "is_current": false,
+    "issue_date": "2025-08-12",
+    "issued_by": "Northwest Safety Training Institute",
+    "regulation_reference": null,
+    "renewal_date": "2026-08-12",
+    "summary": "Margaret Chen's HAZWOPER certification expired 29 days ago and is currently invalid. She completed her initial 24-hour training in August 2025, but failed to complete the required 8-hour annual refresher by August 12, 2026. The employee must immediately complete refresher training and be removed from hazardous waste operations until recertified.",
+    "user_id": "80d7eebb-9858-43b8-8386-8a388f7e7c01"
+  },
+  {
+    "action_items": [
+      "Immediately correct the eligibility hours requirement from 1,000 to 1,250 hours, or clearly designate 1,000 hours as a more generous voluntary benefit than federal FMLA",
+      "Add 'parent' to the list of qualifying family members for whom employees may take leave to provide care",
+      "Extend health insurance continuation from 4 weeks to match the full leave period (8-12 weeks) to comply with FMLA standards for continuation of benefits",
+      "Identify the state(s) where the company operates and verify whether state family and medical leave laws apply to employers with 42 employees — many states have lower thresholds than federal FMLA",
+      "Add clear definitions for 'serious health condition,' 'parent,' 'spouse,' and 'child' consistent with FMLA regulations",
+      "Develop and implement a formal written leave request form and process that includes medical certification requirements and timelines",
+      "Create written employee notices documenting rights and responsibilities during leave, including health insurance obligations",
+      "Add provisions for fitness-for-duty certification, premium recovery if employee does not return, and specific intermittent leave rules",
+      "Consider increasing leave duration from 8 weeks to 12 weeks to fully align with federal FMLA standards and provide competitive benefits",
+      "Consult with an employment attorney to ensure the policy complies with all applicable state leave laws and does not create unintended legal obligations",
+      "Add a disclaimer that if the company grows to 50 or more employees, federal FMLA will apply and the policy will be updated accordingly"
+    ],
+    "company_id": "07c871c9-1eec-45b5-82c8-782aa3531808",
+    "coverage": "This policy outlines voluntary unpaid family and medical leave provisions for employees of a 42-employee company that is not subject to federal FMLA requirements.",
+    "created_at": "2026-07-24T15:48:32.362274+00:00",
+    "days_until_expiry": null,
+    "division_name": "",
+    "document_id": "2718d0a0-dd89-4d84-ae71-92c3a6379a36",
+    "document_name": "Spill Prevention Control Plan (SPCC).pdf",
+    "document_type": "Employee Handbook - Family and Medical Leave Policy",
+    "expiring_soon": false,
+    "expiry_date": null,
+    "folder_id": null,
+    "folder_name": "",
+    "gap_fixes": [
+      {
+        "fix": "Change the eligibility requirement to read: 'Employees who have worked for the company for at least 12 months and have completed a minimum of 1,250 hours during the 12-month period prior to the leave' to align with federal FMLA standards, or clearly state the company is establishing a lower threshold as a more generous voluntary benefit.",
+        "gap": "Eligibility hours requirement states 1,000 hours but federal FMLA standard (which the policy attempts to mirror) requires 1,250 hours in the 12-month period"
+      },
+      {
+        "fix": "Revise the qualifying reasons section to include: 'Care for a spouse, child, or parent with a serious health condition' and define 'parent' as 'a biological, adoptive, step, or foster parent, or any other individual who stood in loco parentis to the employee.'",
+        "gap": "Qualifying family members omits 'parent' — policy only lists spouse or child, but federal FMLA covers care for a parent with a serious health condition"
+      },
+      {
+        "fix": "Either increase the leave duration to 12 weeks to match federal FMLA standards, or add clear language: 'While federal FMLA provides 12 weeks for covered employers, our company voluntarily provides 8 weeks of unpaid leave as we are not subject to FMLA requirements.'",
+        "gap": "Duration of leave offers only 8 weeks per year, while federal FMLA provides 12 weeks (though company is not required to match FMLA, the discrepancy should be clearly explained)"
+      },
+      {
+        "fix": "Revise the Benefits During Leave section to state: 'Employees on approved leave will continue to receive employer-sponsored health insurance coverage for the full duration of their approved leave (up to 8 weeks for general leave, or up to 12 weeks if extended), with the employer maintaining the same contribution level as if the employee were actively working.'",
+        "gap": "Health insurance continuation is limited to 4 weeks, but federal FMLA requires continuation for the full duration of leave (up to 12 weeks); this creates a significant gap in employee protections"
+      },
+      {
+        "fix": "Add a definition section: 'A serious health condition means an illness, injury, impairment, or physical or mental condition that involves inpatient care or continuing treatment by a health care provider. Employees requesting medical leave must provide medical certification from a health care provider within 15 calendar days of the leave request.'",
+        "gap": "Policy does not specify the definition of 'serious health condition' or provide medical certification requirements, leaving ambiguity about qualifying conditions"
+      },
+      {
+        "fix": "Add a formal request procedure: 'To request leave, employees must submit a written request to Human Resources using the company's Leave Request Form, with a copy to their direct manager. The request should include the reason for leave, expected duration, and anticipated start date. Medical certification may be required within 15 days of the request for medical-related leave.'",
+        "gap": "No written request procedure is specified — policy only states employees should 'contact their direct manager' without requiring formal documentation or forms"
+      },
+      {
+        "fix": "Add a jurisdiction statement: 'This policy applies to employees working in [State Name]. Employees should be aware that [State Name] may have additional family and medical leave laws that provide greater protections than this policy. Employees will receive the most generous benefits available under federal, state, or company policy. Contact HR to discuss state-specific leave entitlements.'",
+        "gap": "Policy does not identify which state the company operates in or whether state family and medical leave laws apply (many states have laws covering employers with fewer than 50 employees)"
+      },
+      {
+        "fix": "Add a notice provision: 'Upon approval of leave, the company will provide employees with a written notice outlining their rights and responsibilities during leave, including information about health insurance continuation, premium payment requirements, expected return date, and consequences of failing to return from leave.'",
+        "gap": "No reference to employee rights notices required even for voluntary policies (employers offering FMLA-like benefits should provide clear written notices of rights and responsibilities)"
+      },
+      {
+        "fix": "Clarify intermittent leave rules: 'Intermittent or reduced-schedule leave may be taken when medically necessary for an employee's own serious health condition or to care for a family member with a serious health condition, subject to medical certification. For bonding with a newborn or newly placed child, intermittent leave requires mutual agreement between the employee and employer.'",
+        "gap": "Policy does not address intermittent leave eligibility criteria beyond stating 'where operationally feasible' — federal FMLA has specific rules for when intermittent leave is permitted"
+      },
+      {
+        "fix": "Add to the Return to Work section: 'Employees returning from medical leave for their own serious health condition may be required to provide a fitness-for-duty certification from their health care provider before returning to work, certifying their ability to perform the essential functions of their position.'",
+        "gap": "Return-to-work medical certification requirements are not specified for employees returning from medical leave"
+      },
+      {
+        "fix": "Add a premium recovery provision: 'If an employee fails to return from leave (except in cases of continuation, recurrence, or onset of a serious health condition, or other circumstances beyond the employee's control), the company may recover health insurance premiums paid during the leave period. Employees will be notified in writing before any premium recovery action is taken.'",
+        "gap": "Policy does not address what happens if employee fails to return after leave or how to handle premium repayment if employee does not return"
+      }
+    ],
+    "gaps": [
+      "Eligibility hours requirement states 1,000 hours but federal FMLA standard (which the policy attempts to mirror) requires 1,250 hours in the 12-month period",
+      "Qualifying family members omits 'parent' — policy only lists spouse or child, but federal FMLA covers care for a parent with a serious health condition",
+      "Duration of leave offers only 8 weeks per year, while federal FMLA provides 12 weeks (though company is not required to match FMLA, the discrepancy should be clearly explained)",
+      "Health insurance continuation is limited to 4 weeks, but federal FMLA requires continuation for the full duration of leave (up to 12 weeks); this creates a significant gap in employee protections",
+      "Policy does not specify the definition of 'serious health condition' or provide medical certification requirements, leaving ambiguity about qualifying conditions",
+      "No written request procedure is specified — policy only states employees should 'contact their direct manager' without requiring formal documentation or forms",
+      "Policy does not identify which state the company operates in or whether state family and medical leave laws apply (many states have laws covering employers with fewer than 50 employees)",
+      "No reference to employee rights notices required even for voluntary policies (employers offering FMLA-like benefits should provide clear written notices of rights and responsibilities)",
+      "Policy does not address intermittent leave eligibility criteria beyond stating 'where operationally feasible' — federal FMLA has specific rules for when intermittent leave is permitted",
+      "Return-to-work medical certification requirements are not specified for employees returning from medical leave",
+      "Policy does not address what happens if employee fails to return after leave or how to handle premium repayment if employee does not return"
+    ],
+    "id": "600bfe4a-894e-4c8f-ba5c-ba131662eca0",
+    "is_current": false,
+    "issue_date": "2026-01-01",
+    "issued_by": "Company (not specified)",
+    "regulation_reference": "Federal Family and Medical Leave Act (FMLA), 29 U.S.C. § 2601 et seq.; 29 CFR Part 825 (note: federal FMLA does not apply to this employer as it has fewer than 50 employees, but the policy references FMLA standards and may create enforceable obligations; state family and medical leave laws may also apply depending on location)",
+    "renewal_date": null,
+    "summary": "This is a voluntary family and medical leave policy for a 42-employee company not covered by federal FMLA. While the company is not legally required to offer this leave, the policy contains significant gaps and inconsistencies with FMLA standards it appears to reference, including incorrect eligibility hours (1,000 vs. 1,250), missing coverage for parents, inadequate health insurance continuation (4 weeks vs. 12 weeks required under FMLA), and lack of clear definitions and procedures. The policy should either fully align with federal FMLA standards or clearly differentiate itself as a distinct voluntary benefit, and must account for any applicable state laws that may cover smaller employers.",
+    "user_id": "80d7eebb-9858-43b8-8386-8a388f7e7c01"
+  },
+  {
+    "action_items": [
+      "Implement and maintain monthly visual inspection log system for all five fire extinguisher units by facility staff",
+      "Schedule six-year internal maintenance for units #4412 and #4413 before 2028 deadline",
+      "Schedule twelve-year hydrostatic test for CO2-15 unit #2201 before 2030 deadline",
+      "Book next annual inspection with Cascade Fire & Safety Co. for April 2027",
+      "Review storage conditions at loading dock to prevent future equipment failures",
+      "Verify all employees know fire extinguisher locations and have received proper use training per OSHA requirements"
+    ],
+    "company_id": "07c871c9-1eec-45b5-82c8-782aa3531808",
+    "coverage": "Annual inspection and maintenance of five fire extinguisher units across facility locations including drum storage, blend room, electrical room, loading dock, and metal storage areas.",
+    "created_at": "2026-07-14T22:56:16.392339+00:00",
+    "days_until_expiry": 278,
+    "division_name": "Chemical Manufacturing",
+    "document_id": "d5a255e5-cb56-49ef-bca7-6390b8105ceb",
+    "document_name": "scan_0043.pdf",
+    "document_type": "Fire Extinguisher Annual Service Record",
+    "expiring_soon": true,
+    "expiry_date": "2027-04-18",
+    "folder_id": "b13a9041-c648-43ec-bfba-0220c231c151",
+    "folder_name": "OSHA Safety",
+    "gap_fixes": [],
+    "gaps": [
+      "No documentation provided showing monthly visual inspection logs as required by 29 CFR 1910.157(e)(2)",
+      "One unit (ABC-20 #4419) failed hydrostatic testing and required replacement, indicating potential issues with maintenance schedule or storage conditions",
+      "No evidence of employee training records for fire extinguisher use or location awareness",
+      "Missing verification that replacement unit #4419 at loading dock meets same specifications and OSHA requirements"
+    ],
+    "id": "71f779b7-7a64-4193-acde-aa764cc4c1e4",
+    "is_current": true,
+    "issue_date": "2026-04-18",
+    "issued_by": "Cascade Fire & Safety Co.",
+    "regulation_reference": null,
+    "renewal_date": "2027-04-18",
+    "summary": "Fire extinguisher annual inspection completed on April 18, 2026, with four units passing and one unit replaced due to hydrostatic test failure. The service is currently valid but expires in approximately 9 months (April 2027). Facility must implement required monthly visual inspection documentation system and schedule upcoming six-year and twelve-year maintenance milestones for specific units.",
+    "user_id": "80d7eebb-9858-43b8-8386-8a388f7e7c01"
+  },
+  {
+    "action_items": [
+      "Retrieve actual performance data from 2025 (customer complaints, on-time delivery percentage, rework rates, training completion rates) to establish measurable baselines",
+      "Convert each draft idea into a SMART objective (Specific, Measurable, Achievable, Relevant, Time-bound) with quantified targets and completion dates",
+      "Assign a specific owner (individual and department) to each objective with clear accountability for achievement",
+      "Document the monitoring and measurement methodology for each objective, including data sources, frequency, and reporting format",
+      "Add explicit linkage between these objectives and the organization's strategic plan and quality policy as referenced by David",
+      "Define resource requirements (budget, personnel, tools) needed to achieve each objective",
+      "Prepare a communication and deployment plan to ensure all relevant employees understand the objectives and their role",
+      "Obtain formal approval and sign-off from top management before finalizing and distributing the quality objectives",
+      "Schedule the objectives as an agenda item for the next management review meeting per ISO 9001 requirements",
+      "Establish a regular review cadence (monthly or quarterly) to monitor progress and take corrective action as needed"
+    ],
+    "company_id": "07c871c9-1eec-45b5-82c8-782aa3531808",
+    "coverage": "Internal discussion notes outlining potential quality objectives for the organization, not yet formalized or approved.",
+    "created_at": "2026-07-25T16:47:28.836808+00:00",
+    "days_until_expiry": null,
+    "division_name": "",
+    "document_id": "bdaea48b-6646-4c4b-bb01-563f5b0fccf4",
+    "document_name": "Quality_Objectives_Draft.docx",
+    "document_type": "Quality Objectives (Draft Internal Notes)",
+    "expiring_soon": false,
+    "expiry_date": null,
+    "folder_id": null,
+    "folder_name": "",
+    "gap_fixes": [
+      {
+        "fix": "Convert each objective to a SMART format with specific metrics: e.g. 'Reduce customer complaints by 20% from 2025 baseline of X complaints/month to Y complaints/month' and 'Achieve 95% on-time delivery rate' and 'Reduce repackaging rework from X% to below 3%' and 'Achieve 100% completion of mandatory quality training by all production personnel.'",
+        "gap": "Quality objectives are not measurable or quantified with specific targets (e.g. 'reduce customer complaints' lacks a baseline, target percentage, or numeric goal)"
+      },
+      {
+        "fix": "Assign specific target completion dates to each objective, such as quarterly milestones (Q3 2026, Q4 2026) or annual targets (by December 31, 2026), and schedule periodic reviews (monthly or quarterly) to track progress.",
+        "gap": "No timeframes or deadlines established for achieving any of the proposed objectives"
+      },
+      {
+        "fix": "Designate a specific owner for each objective by name and role (e.g. Quality Manager owns customer complaint reduction, Operations Manager owns on-time delivery, Production Supervisor owns rework reduction, HR/Training Coordinator owns training completion) and document this in the formal objectives document.",
+        "gap": "Objectives are not assigned to responsible individuals or departments for ownership and accountability"
+      },
+      {
+        "fix": "Establish and document a monitoring plan that specifies: data sources for each metric, measurement frequency (weekly/monthly), reporting format (dashboard, management review report), and the forum for review (monthly quality meetings, quarterly management review per ISO 9001 Section 9.3).",
+        "gap": "No documented method or process for monitoring, measuring, and reporting progress on objectives"
+      },
+      {
+        "fix": "Add an introductory section to the finalized document that explicitly references the organization's strategic plan and quality policy, and explain how each objective supports specific strategic priorities (e.g. customer satisfaction, operational excellence, employee competence).",
+        "gap": "Objectives are not clearly linked or aligned to the organization's strategic direction or quality policy"
+      },
+      {
+        "fix": "Route the finalized quality objectives document through the formal approval process with signature and date from top management (CEO, General Manager, or Quality Management Representative) before communicating to the organization.",
+        "gap": "Document lacks formal approval or authorization from top management"
+      },
+      {
+        "fix": "For each objective, identify and document required resources such as: budget allocation for training programs, personnel time for complaint analysis, equipment or software for tracking metrics, or process improvement projects needed to reduce rework.",
+        "gap": "Objectives do not specify the resources required to achieve them"
+      },
+      {
+        "fix": "Develop a deployment plan that includes: presentation of objectives at department meetings, posting on quality bulletin boards or intranet, inclusion in new employee orientation, and cascade to individual performance objectives during employee reviews.",
+        "gap": "No communication or deployment plan exists to ensure relevant personnel are aware of and understand the objectives"
+      }
+    ],
+    "gaps": [
+      "Quality objectives are not measurable or quantified with specific targets (e.g. 'reduce customer complaints' lacks a baseline, target percentage, or numeric goal)",
+      "No timeframes or deadlines established for achieving any of the proposed objectives",
+      "Objectives are not assigned to responsible individuals or departments for ownership and accountability",
+      "No documented method or process for monitoring, measuring, and reporting progress on objectives",
+      "Objectives are not clearly linked or aligned to the organization's strategic direction or quality policy",
+      "Document lacks formal approval or authorization from top management",
+      "Objectives do not specify the resources required to achieve them",
+      "No communication or deployment plan exists to ensure relevant personnel are aware of and understand the objectives"
+    ],
+    "id": "72c0f76c-9cb4-4e3d-84e8-5f096e41ef3a",
+    "is_current": false,
+    "issue_date": null,
+    "issued_by": "Cascade Specialty Chemicals (internal draft)",
+    "regulation_reference": "ISO 9001:2015 Quality Management Systems (Section 6.2 - Quality Objectives and Planning to Achieve Them)",
+    "renewal_date": null,
+    "summary": "This is an informal draft of quality objectives for a chemical manufacturer subject to ISO 9001:2015 requirements. The draft fails to meet the standard's requirements for Section 6.2 because the objectives are neither measurable nor assigned, lack timeframes and monitoring processes, and have not been approved by management or linked to strategic direction. Before this document can serve as a compliant quality objectives statement, it must be converted to SMART objectives with quantified targets, assigned owners, defined measurement methods, resource allocation, management approval, and a deployment plan.",
+    "user_id": "80d7eebb-9858-43b8-8386-8a388f7e7c01"
+  },
+  {
+    "action_items": [
+      "Immediately resume daily forklift inspections for Unit #FL-02 and ensure operators complete inspection forms at the beginning of each shift the vehicle is used",
+      "Establish procedure to document when forklifts are not in use (weekends, holidays, planned downtime) to distinguish from missing inspections",
+      "Conduct operator performance evaluations for M. Chen, J. Rivera, and A. Kessler immediately to maintain compliance with the three-year requirement",
+      "Verify completion status of work order WO-3312 (horn repair) and document resolution in maintenance records",
+      "Implement oversight system (weekly supervisor review) to catch gaps in inspection logs before they become chronic",
+      "Audit all other powered industrial trucks to ensure inspection logs are current and complete"
+    ],
+    "company_id": "07c871c9-1eec-45b5-82c8-782aa3531808",
+    "coverage": "Daily inspection log for powered industrial truck Unit #FL-02 (Toyota 8FGU25) as required by OSHA 29 CFR 1910.178(q)(7) for forklift operations.",
+    "created_at": "2026-07-14T22:52:53.102496+00:00",
+    "days_until_expiry": null,
+    "division_name": "Chemical Manufacturing",
+    "document_id": "53223b61-a024-4bdd-a92a-5adf5f381f10",
+    "document_name": "Forklift_Daily_Inspection_Log.pdf",
+    "document_type": "Forklift Inspection Log",
+    "expiring_soon": false,
+    "expiry_date": null,
+    "folder_id": "b13a9041-c648-43ec-bfba-0220c231c151",
+    "folder_name": "OSHA Safety",
+    "gap_fixes": [],
+    "gaps": [
+      "Multiple missing daily inspection entries (June 4, 5, 9) with no documentation of whether the forklift was used or idle on those days",
+      "Inspection log stops abruptly on June 15, 2026 with no entries for the past 29 days (last entry nearly one month old as of July 14, 2026)",
+      "Operator performance evaluations last conducted March 2024, now overdue as OSHA 29 CFR 1910.178(l)(4)(iii) requires evaluations at least once every three years (next evaluation due by March 2027, but already 16 months since last evaluation)",
+      "No documentation of corrective action follow-up for horn issue (WO-3312) reported June 3",
+      "No evidence of preventive maintenance schedule or records beyond reactive repairs"
+    ],
+    "id": "74a727d5-5754-443e-a6a5-28b8a967457c",
+    "is_current": false,
+    "issue_date": "2026-06-01",
+    "issued_by": "Internal Operations (OSHA 29 CFR 1910.178 compliance document)",
+    "regulation_reference": null,
+    "renewal_date": null,
+    "summary": "This forklift inspection log shows critical compliance gaps with OSHA requirements. Daily inspections have not been recorded for nearly one month, creating potential liability if the forklift has been used without documented safety checks. Additionally, operator evaluations are 16 months overdue and must be conducted promptly to maintain the required three-year cycle.",
+    "user_id": "80d7eebb-9858-43b8-8386-8a388f7e7c01"
+  },
+  {
+    "action_items": [
+      "IMMEDIATE: Stop all hazardous waste generation operations until permit is renewed - current operations violate OAR 340-100-0002 and risk civil penalties",
+      "IMMEDIATE: Contact Oregon DEQ to submit emergency renewal application and explain lapsed status",
+      "Compile all required renewal documentation including updated contingency plan, training records, and inspection logs",
+      "Verify all personnel have completed annual RCRA training per 40 CFR 262.17(a)(7) and document completion dates",
+      "Audit all hazardous waste container storage areas and ensure weekly inspection documentation is complete and current",
+      "Confirm biennial hazardous waste report for 2026 was submitted by March 1, 2026 deadline",
+      "Implement calendar system to alert management 120 days before future permit expiration dates",
+      "Review all waste accumulation practices to ensure no hazardous waste has been stored on-site for more than 90 days"
+    ],
+    "company_id": "07c871c9-1eec-45b5-82c8-782aa3531808",
+    "coverage": "Authorizes Cascade Specialty Chemicals, LLC to operate as a Large Quantity Generator (LQG) of hazardous waste including corrosive, ignitable, spent solvents, and lead-bearing wastes at their Portland, Oregon facility.",
+    "created_at": "2026-07-14T22:45:07.075199+00:00",
+    "days_until_expiry": -546,
+    "division_name": "Chemical Manufacturing",
+    "document_id": "2881d73c-6e42-4934-a641-8cedbfc48860",
+    "document_name": "EPA_Hazardous_Waste_Generator_Permit.pdf",
+    "document_type": "Hazardous Waste Generator Permit - Large Quantity Generator",
+    "expiring_soon": false,
+    "expiry_date": "2025-01-14",
+    "folder_id": "b13a9041-c648-43ec-bfba-0220c231c151",
+    "folder_name": "OSHA Safety",
+    "gap_fixes": [],
+    "gaps": [
+      "Permit expired on January 14, 2025 - facility has been operating without valid authorization for 546 days",
+      "Required renewal application was due by October 16, 2024 (90 days prior to expiration) and was not submitted",
+      "No evidence of current RCRA training completion for personnel",
+      "No documentation provided showing weekly container storage area inspections are being performed",
+      "Biennial hazardous waste report due March 1, 2026 - compliance status unknown",
+      "No contingency plan documentation provided to verify it is maintained and current"
+    ],
+    "id": "74cf181c-e798-4430-b595-6715e7e4242a",
+    "is_current": false,
+    "issue_date": "2022-01-15",
+    "issued_by": "Oregon Department of Environmental Quality",
+    "regulation_reference": null,
+    "renewal_date": "2024-10-16",
+    "summary": "This Large Quantity Generator hazardous waste permit for Cascade Specialty Chemicals expired on January 14, 2025 and has been invalid for over 18 months. The facility is currently operating in violation of Oregon environmental regulations, which exposes the company to civil penalties and potential shutdown orders. Immediate action is required to halt operations and submit an emergency renewal application to Oregon DEQ.",
+    "user_id": "80d7eebb-9858-43b8-8386-8a388f7e7c01"
+  },
+  {
+    "action_items": [
+      "Update handbook immediately to Version 3 with 2026 effective date and obtain legal review",
+      "Add comprehensive OSHA safety section covering HazCom/GHS, PPE, respiratory protection, and emergency procedures",
+      "Implement and document chemical-specific safety policies including PSM, LOTO, and confined space protocols",
+      "Expand drug and alcohol policy to include DOT requirements if applicable, random testing, and post-incident procedures",
+      "Add all federally required employment policies including EEO, ADA, FMLA, and harassment prevention",
+      "Require all employees to acknowledge receipt of updated handbook in writing",
+      "Establish annual handbook review schedule with legal and safety compliance teams",
+      "Create supplemental safety manual specifically addressing chemical manufacturing hazards and OSHA requirements"
+    ],
+    "company_id": "07c871c9-1eec-45b5-82c8-782aa3531808",
+    "coverage": "This handbook establishes basic employment policies including at-will status, work hours, PTO, general safety requirements, and drug-free workplace standards for a chemical manufacturing company.",
+    "created_at": "2026-07-14T22:53:18.888406+00:00",
+    "days_until_expiry": null,
+    "division_name": "Chemical Manufacturing",
+    "document_id": "66cb5524-316a-4583-9c82-de8a7ae1f8fb",
+    "document_name": "Employee_Handbook_v2.pdf",
+    "document_type": "Employee Handbook",
+    "expiring_soon": false,
+    "expiry_date": null,
+    "folder_id": "b13a9041-c648-43ec-bfba-0220c231c151",
+    "folder_name": "OSHA Safety",
+    "gap_fixes": [],
+    "gaps": [
+      "Handbook is 3.5 years old (January 2023) and likely outdated given regulatory changes",
+      "Missing critical OSHA-specific safety training requirements for chemical manufacturing operations",
+      "No hazard communication (HazCom) or GHS training policies required for chemical industry",
+      "Missing PPE requirements and respiratory protection program details",
+      "No emergency response procedures or chemical spill protocols",
+      "Lacks process safety management (PSM) requirements if handling highly hazardous chemicals",
+      "No lock-out/tag-out (LOTO) procedures mentioned",
+      "Missing confined space entry protocols common in chemical facilities",
+      "No specific chemical exposure monitoring or medical surveillance programs",
+      "Drug and alcohol policy mentions only pre-employment screening, no random or post-incident testing protocols",
+      "No anti-harassment, discrimination, or workplace violence prevention policies",
+      "Missing FMLA, ADA, and other legally required employment notices",
+      "No disciplinary procedures or safety violation consequences outlined"
+    ],
+    "id": "82eb5ce6-773b-44b5-8afe-712d74d10f84",
+    "is_current": false,
+    "issue_date": "2023-01-01",
+    "issued_by": "Cascade Specialty Chemicals, LLC",
+    "regulation_reference": null,
+    "renewal_date": null,
+    "summary": "This employee handbook is significantly outdated (effective January 2023) and inadequate for a chemical manufacturing facility. It lacks critical OSHA-mandated safety policies including hazard communication, PPE requirements, emergency response procedures, and chemical-specific protocols required in this high-risk industry. The company should immediately update this handbook, add comprehensive safety sections, include all legally required employment policies, and create a separate detailed safety manual to ensure full regulatory compliance.",
+    "user_id": "80d7eebb-9858-43b8-8386-8a388f7e7c01"
+  },
+  {
+    "action_items": [
+      "Add 'care for a parent with a serious health condition' to qualifying leave reasons",
+      "Update eligibility hours requirement from 1,000 to 1,250 hours",
+      "Extend maximum leave duration from 8 weeks to 12 weeks per year",
+      "Extend health insurance continuation from 4 weeks to the full leave period (12 weeks)",
+      "Strengthen job restoration guarantee to match FMLA standard (same or equivalent position)",
+      "Research and document applicable state family/medical leave laws based on company location(s)",
+      "Develop formal written leave request form and medical certification requirements",
+      "Create and post employee notice regarding leave rights and procedures",
+      "Establish written leave designation and tracking procedures with HR"
+    ],
+    "company_id": "07c871c9-1eec-45b5-82c8-782aa3531808",
+    "coverage": "This section establishes a voluntary unpaid family and medical leave policy for a 42-employee company not covered by federal FMLA.",
+    "created_at": "2026-07-24T15:50:01.03733+00:00",
+    "days_until_expiry": null,
+    "division_name": "",
+    "document_id": "d0405234-d9f5-4529-8037-662c6f5eb786",
+    "document_name": "HF_Acid_SDS_2024.pdf",
+    "document_type": "Employee Handbook - Leave Policy Section",
+    "expiring_soon": false,
+    "expiry_date": null,
+    "folder_id": null,
+    "folder_name": "",
+    "gap_fixes": [
+      {
+        "fix": "Add 'Care for a parent with a serious health condition' to the Qualifying Reasons for Leave section to align with federal FMLA standards and best practices.",
+        "gap": "Missing qualifying reason: care for a parent with a serious health condition (federal FMLA includes parents; policy only lists spouse or child)"
+      },
+      {
+        "fix": "Revise the eligibility requirement to state '1,250 hours during the preceding 12 months' to match federal FMLA standards, or clearly note that the company intentionally offers a more generous threshold.",
+        "gap": "Hours requirement (1,000 hours) is lower than federal FMLA standard (1,250 hours in preceding 12 months)"
+      },
+      {
+        "fix": "Increase the leave duration to '12 weeks of unpaid leave per 12-month period' to align with federal FMLA standards and demonstrate competitive benefits.",
+        "gap": "Leave duration (8 weeks) is shorter than federal FMLA standard (12 weeks)"
+      },
+      {
+        "fix": "Extend employer-sponsored health insurance coverage to the full duration of approved leave (up to 12 weeks if leave is extended) to match federal FMLA requirements.",
+        "gap": "Health insurance continuation (4 weeks) is shorter than federal FMLA requirement (entire 12-week leave period)"
+      },
+      {
+        "fix": "Revise Return to Work section to state: 'Employees returning from leave will be reinstated to their original position or to an equivalent position with equivalent pay, benefits, and other terms and conditions of employment.'",
+        "gap": "Job restoration language is weaker than FMLA ('reasonable efforts' vs. guarantee to same or equivalent position)"
+      },
+      {
+        "fix": "Add a section stating: 'Employees should consult HR regarding state or local leave laws that may provide additional protections or paid leave benefits beyond this policy.'",
+        "gap": "No mention of state-specific leave laws that may apply depending on the company's location"
+      },
+      {
+        "fix": "Add detailed procedure: 'Employees must submit a written leave request form to HR (available from [location/system]). For medical leave, employees must provide medical certification from a healthcare provider within 15 calendar days of the request.'",
+        "gap": "No formal written request or certification process specified for leave requests"
+      },
+      {
+        "fix": "Create and post a workplace notice summarizing employee leave rights and the request process in common areas (break rooms, bulletin boards) and include a copy in new hire packets.",
+        "gap": "Missing notice posting requirement informing employees of their leave rights"
+      },
+      {
+        "fix": "Add language: 'HR will provide written notice of leave approval or denial within 5 business days of receiving a complete request. Approved leave will be formally designated in writing and tracked by HR.'",
+        "gap": "No designation process explained for how leave will be formally approved or tracked"
+      }
+    ],
+    "gaps": [
+      "Missing qualifying reason: care for a parent with a serious health condition (federal FMLA includes parents; policy only lists spouse or child)",
+      "Hours requirement (1,000 hours) is lower than federal FMLA standard (1,250 hours in preceding 12 months)",
+      "Leave duration (8 weeks) is shorter than federal FMLA standard (12 weeks)",
+      "Health insurance continuation (4 weeks) is shorter than federal FMLA requirement (entire 12-week leave period)",
+      "Job restoration language is weaker than FMLA ('reasonable efforts' vs. guarantee to same or equivalent position)",
+      "No mention of state-specific leave laws that may apply depending on the company's location",
+      "No formal written request or certification process specified for leave requests",
+      "Missing notice posting requirement informing employees of their leave rights",
+      "No designation process explained for how leave will be formally approved or tracked"
+    ],
+    "id": "85bdc2dc-b4e5-4d7e-94af-b953ee057147",
+    "is_current": true,
+    "issue_date": "2026-01-01",
+    "issued_by": "Company (not specified in document)",
+    "regulation_reference": "Federal Family and Medical Leave Act (FMLA), 29 U.S.C. § 2601 et seq., and applicable state family/medical leave laws. While federal FMLA does not apply to employers under 50 employees, several states have enacted leave laws with lower employee thresholds or broader coverage.",
+    "renewal_date": null,
+    "summary": "This is a voluntary family and medical leave policy for a 42-employee company not covered by federal FMLA. While the company generously offers unpaid leave, the policy has several gaps compared to federal FMLA standards: it excludes care for parents, offers only 8 weeks (vs. 12), provides health coverage for only 4 weeks, and uses weaker job restoration language. The company should strengthen these provisions to align with FMLA best practices and investigate whether state leave laws apply.",
+    "user_id": "80d7eebb-9858-43b8-8386-8a388f7e7c01"
+  },
+  {
+    "action_items": [
+      "Immediately update emergency contact list with current Safety Coordinator information",
+      "Revise entire plan to reflect post-2023 warehouse expansion facility layout",
+      "Update and clearly mark all assembly points and alarm zones on current facility maps",
+      "Conduct comprehensive plan review and update to Revision 3, establish new effective date",
+      "Appoint and train new Safety Coordinator if position remains vacant",
+      "Schedule annual review for compliance with 29 CFR 1910.38 requirements",
+      "Conduct emergency drill using current outdated plan to identify additional gaps, then re-drill after updates",
+      "Add backup contacts for all key emergency response roles"
+    ],
+    "company_id": "07c871c9-1eec-45b5-82c8-782aa3531808",
+    "coverage": "Emergency response procedures including evacuation, chemical spill response, and emergency contacts for a chemical manufacturing facility handling hazardous materials including hydrofluoric acid",
+    "created_at": "2026-07-14T22:44:13.393252+00:00",
+    "days_until_expiry": null,
+    "division_name": "Chemical Manufacturing",
+    "document_id": "7b7be3dc-fe0a-4f21-ba4d-70247d2c19ad",
+    "document_name": "Emergency_Action_Plan_2021.pdf",
+    "document_type": "Emergency Action Plan (OSHA 29 CFR 1910.38)",
+    "expiring_soon": false,
+    "expiry_date": null,
+    "folder_id": "b13a9041-c648-43ec-bfba-0220c231c151",
+    "folder_name": "OSHA Safety",
+    "gap_fixes": [],
+    "gaps": [
+      "Plan is over 4 years outdated - last reviewed February 2022, overdue by approximately 28 months",
+      "Safety Coordinator contact is invalid - T. Whitfield no longer employed",
+      "Facility layout references are obsolete - plan does not reflect 2023 warehouse expansion",
+      "Assembly points have not been updated since 2023 expansion, creating confusion risk during actual emergency",
+      "Alarm zones are outdated and do not match current facility configuration",
+      "No alternate emergency contacts listed if primary contacts are unavailable",
+      "Missing specific procedures for non-chemical emergencies (fire, medical, weather, security)"
+    ],
+    "id": "a719fa39-fb19-4c47-9574-3288cf96cef3",
+    "is_current": false,
+    "issue_date": "2021-02-01",
+    "issued_by": "Cascade Specialty Chemicals, LLC",
+    "regulation_reference": null,
+    "renewal_date": "2022-02-01",
+    "summary": "This Emergency Action Plan is critically outdated and non-compliant. Effective February 2021 with a February 2022 review date, it is now over 4 years old and has not been updated since a major 2023 warehouse expansion. The Safety Coordinator listed is no longer employed, and the plan explicitly states that assembly points and alarm zones do not reflect the current facility layout, creating serious safety risks during an actual emergency.",
+    "user_id": "80d7eebb-9858-43b8-8386-8a388f7e7c01"
+  },
+  {
+    "action_items": [
+      "Schedule immediate respirator fit test for Javier Rivera to restore OSHA compliance",
+      "Prohibit respirator use by this employee until new fit test is completed and passed",
+      "Review and document any physical changes since last fit test that could affect fit",
+      "Verify medical clearance is still current per company respiratory protection program requirements",
+      "Audit other maintenance technicians to identify additional overdue fit tests",
+      "Implement tracking system with 30-day advance alerts for fit test expirations"
+    ],
+    "company_id": "07c871c9-1eec-45b5-82c8-782aa3531808",
+    "coverage": "This document authorizes employee Javier Rivera (CSC-0087) to use a 3M 6000 Series half-facepiece respirator with Multi-Gas/Vapor P100 cartridges based on passing quantitative fit testing under OSHA 29 CFR 1910.134(f).",
+    "created_at": "2026-07-14T22:55:06.908605+00:00",
+    "days_until_expiry": -437,
+    "division_name": "Chemical Manufacturing",
+    "document_id": "f14eccaa-1991-43b2-9d82-2512466b43d4",
+    "document_name": "Respirator_Fit_Test_Record_J_Rivera.pdf",
+    "document_type": "Respirator Fit Test Record",
+    "expiring_soon": false,
+    "expiry_date": "2025-05-03",
+    "folder_id": "b13a9041-c648-43ec-bfba-0220c231c151",
+    "folder_name": "OSHA Safety",
+    "gap_fixes": [],
+    "gaps": [
+      "Document expired on May 3, 2025 and is now 437 days overdue",
+      "Annual fit test requirement has not been met since May 2024",
+      "No documentation of monitoring for physical changes that could affect respirator fit (weight change, facial scarring, dental changes)",
+      "Medical clearance from April 2024 may need reassessment depending on company policy timeframe",
+      "No indication of employee training records or respiratory protection program documentation"
+    ],
+    "id": "ae1082fb-95ed-4670-a0e6-6ff011bb6148",
+    "is_current": false,
+    "issue_date": "2024-05-03",
+    "issued_by": "T. Whitfield, Safety Coordinator (Cascade Occupational Health for medical clearance)",
+    "regulation_reference": null,
+    "renewal_date": "2025-05-03",
+    "summary": "This respirator fit test record for maintenance technician Javier Rivera expired on May 3, 2025 and is now 437 days overdue, placing the company in violation of OSHA 29 CFR 1910.134 requirements. The employee passed the original quantitative fit test with a fit factor of 187, but must be retested immediately and cannot legally use respiratory protection until a new passing test is completed. Immediate action is required to restore compliance and ensure worker safety in chemical manufacturing operations.",
+    "user_id": "80d7eebb-9858-43b8-8386-8a388f7e7c01"
+  },
+  {
+    "action_items": [
+      "URGENT: Contact Pacific Certification Services immediately to schedule overdue Surveillance Audit 2 or confirm suspension status",
+      "If certificate is suspended, halt any quality claims or customer certifications relying on ISO 9001:2015 certification until reinstated",
+      "Schedule Recertification Audit before January 14, 2027 to maintain continuous certification",
+      "Implement internal calendar system with 60-day advance reminders for all future surveillance and recertification audits",
+      "Review customer contracts to determine if suspended ISO certification impacts delivery obligations or contractual compliance"
+    ],
+    "company_id": "07c871c9-1eec-45b5-82c8-782aa3531808",
+    "coverage": "This certificate authorizes Cascade Specialty Chemicals to operate a quality management system for the blending, repackaging, and distribution of industrial acids, caustics, and specialty solvent formulations for semiconductor, metal finishing, and water treatment sectors.",
+    "created_at": "2026-07-14T22:55:40.147872+00:00",
+    "days_until_expiry": 244,
+    "division_name": "Chemical Manufacturing",
+    "document_id": "17b96c3d-1dbe-4710-b691-4c844f077728",
+    "document_name": "ISO_9001_2015_Certificate.pdf",
+    "document_type": "ISO 9001:2015 Quality Management System Certificate",
+    "expiring_soon": false,
+    "expiry_date": "2027-03-14",
+    "folder_id": "b13a9041-c648-43ec-bfba-0220c231c151",
+    "folder_name": "OSHA Safety",
+    "gap_fixes": [],
+    "gaps": [
+      "Surveillance Audit 2 is overdue (was due by March 14, 2026, current date is July 14, 2026)",
+      "Certificate may be suspended due to missed surveillance audit deadline",
+      "No evidence of scheduling or completion of the required Surveillance Audit 2",
+      "Recertification Audit approaching in 6 months (due by January 14, 2027)"
+    ],
+    "id": "b0084f60-cb00-435c-bd6f-c31a2da61f17",
+    "is_current": true,
+    "issue_date": "2024-03-15",
+    "issued_by": "Pacific Certification Services, Inc. (ANAB accredited)",
+    "regulation_reference": null,
+    "renewal_date": "2027-01-14",
+    "summary": "This ISO 9001:2015 certificate is currently PAST its Surveillance Audit 2 deadline (due March 14, 2026, now July 14, 2026) and may already be suspended. The certificate expires March 14, 2027, with recertification audit required by January 14, 2027. Immediate action is required to verify certification status and schedule the overdue surveillance audit to avoid business disruption and potential customer contract violations.",
+    "user_id": "80d7eebb-9858-43b8-8386-8a388f7e7c01"
+  },
+  {
+    "action_items": [
+      "Immediately update and re-issue this program document (recommend annual review cycle)",
+      "Create and maintain a comprehensive hazardous chemical inventory list",
+      "Add detailed employee training section covering initial and ongoing training requirements",
+      "Implement electronic SDS management system accessible to all employees",
+      "Document training records showing all employees have received HazCom training",
+      "Add procedures for contractor coordination and multi-employer worksite communication",
+      "Expand secondary container labeling procedures to fully comply with GHS requirements",
+      "Designate a specific HazCom Program Coordinator with defined responsibilities",
+      "Establish written annual program review and update procedures",
+      "Verify all current SDS are in 16-section GHS format and update procurement procedures"
+    ],
+    "company_id": "07c871c9-1eec-45b5-82c8-782aa3531808",
+    "coverage": "This program establishes procedures for chemical hazard communication including container labeling, SDS maintenance, and employee training per OSHA HazCom Standard.",
+    "created_at": "2026-07-14T22:46:27.894688+00:00",
+    "days_until_expiry": null,
+    "division_name": "Chemical Manufacturing",
+    "document_id": "26f96ba8-2454-405a-ba99-1e4538c6c2ac",
+    "document_name": "Hazard_Communication_Program.pdf",
+    "document_type": "OSHA Hazard Communication Program (HazCom)",
+    "expiring_soon": false,
+    "expiry_date": null,
+    "folder_id": "b13a9041-c648-43ec-bfba-0220c231c151",
+    "folder_name": "OSHA Safety",
+    "gap_fixes": [],
+    "gaps": [
+      "Document is over 7 years old (June 2019) with no evidence of annual review or updates",
+      "Missing required employee training procedures and documentation requirements",
+      "No hazardous chemical inventory list included as required by 29 CFR 1910.1200(e)(1)(i)",
+      "GHS labeling requirements not fully detailed for secondary containers",
+      "No procedures for updating SDS or ensuring they meet current 16-section GHS format",
+      "Missing procedures for informing contractors and visitors about chemical hazards",
+      "No digital/electronic SDS access provisions mentioned",
+      "Lacks detail on how employees will be trained on the HazCom program",
+      "No procedures for handling multi-employer worksites",
+      "Missing designated program coordinator or responsible person beyond approval signature"
+    ],
+    "id": "bd4daf0f-2d34-4001-9bc5-f0c83eb20da5",
+    "is_current": false,
+    "issue_date": "2019-06-01",
+    "issued_by": "Cascade Specialty Chemicals, LLC (internal program per 29 CFR 1910.1200)",
+    "regulation_reference": null,
+    "renewal_date": null,
+    "summary": "This HazCom program is severely outdated (June 2019) and incomplete. While it addresses basic elements like labeling and SDS maintenance, it lacks critical components required by 29 CFR 1910.1200 including a chemical inventory, detailed training procedures, and contractor coordination. The document requires immediate comprehensive revision and the company needs to implement proper training documentation and annual review processes to maintain OSHA compliance.",
+    "user_id": "80d7eebb-9858-43b8-8386-8a388f7e7c01"
+  },
+  {
+    "action_items": [
+      "Immediately draft and add an Equal Employment Opportunity/Anti-Discrimination policy covering all federal and Oregon protected classes",
+      "Create an Oregon Workplace Fairness Act-compliant harassment and discrimination policy with complaint procedures before next handbook distribution",
+      "Add comprehensive Paid Leave Oregon policy section explaining eligibility, benefits, contribution rates (0.6% employee/0.4% employer), and application process",
+      "Add Oregon Family Leave Act (OFLA) policy for employers with 25+ employees, clarifying it does not run concurrently with Paid Leave Oregon as of July 1, 2024",
+      "Correct sick leave language to clarify 40-hour annual usage cap vs. 80-hour total accrual cap with carryover per ORS 653.606",
+      "Develop a written Hazard Communication Program per OSHA 29 CFR 1910.1200 and reference it in the handbook, including SDS location and access procedures",
+      "Add detailed employee training requirements for chemical hazards, SDS use, and GHS labeling; ensure compliance with November 20, 2026 HCS update deadline",
+      "Create formal complaint/reporting procedures section covering safety, discrimination, harassment, and other workplace concerns with multiple reporting channels",
+      "Expand whistleblower protection language to reference specific Oregon (ORS 654.062) and federal (Section 11(c)) statutory protections and complaint filing procedures",
+      "Verify the company is properly registered with Oregon Employment Department for Paid Leave Oregon contributions and confirm quarterly contribution remittance",
+      "Post required Oregon labor law posters including 2025-2026 OFLA poster, Paid Leave Oregon notice, Oregon sick leave notice, and OSHA workplace safety posters",
+      "Schedule handbook review and acknowledgment process with all current employees; obtain signed acknowledgment forms for legal protection"
+    ],
+    "company_id": "07c871c9-1eec-45b5-82c8-782aa3531808",
+    "coverage": "This handbook governs employment policies, benefits, leave, safety procedures, and workplace conduct for all employees of Cascade Specialty Chemicals, LLC.",
+    "created_at": "2026-07-24T15:53:10.659634+00:00",
+    "days_until_expiry": null,
+    "division_name": "",
+    "document_id": "b27063cb-f664-47ea-a5ff-47b4b27ab683",
+    "document_name": "Employee_Handbook_FINAL_v3.pdf",
+    "document_type": "Employee Handbook",
+    "expiring_soon": false,
+    "expiry_date": null,
+    "folder_id": null,
+    "folder_name": "",
+    "gap_fixes": [
+      {
+        "fix": "Add a comprehensive EEO policy section that lists all federally protected classes (race, color, religion, sex, national origin, age, disability, genetic information) and Oregon-specific protected classes (sexual orientation, gender identity, marital status, domestic violence victim status, military service) with a statement that the company provides equal employment opportunities in all employment decisions.",
+        "gap": "No Equal Employment Opportunity (EEO) or anti-discrimination policy statement covering protected classes under federal law (Title VII, ADA, ADEA) or Oregon law (ORS 659A)"
+      },
+      {
+        "fix": "Create a dedicated OWFA-compliant policy section that includes: (1) definitions of prohibited harassment and discrimination; (2) a specific complaint procedure identifying the person/position to report to plus an alternative contact; (3) investigation procedures; (4) non-retaliation assurances; and (5) disciplinary consequences for violations.",
+        "gap": "No written harassment and discrimination policy as required by Oregon Workplace Fairness Act (OWFA) for all Oregon employers"
+      },
+      {
+        "fix": "Add a Paid Leave Oregon section explaining: (1) eligibility (employees earning $1,000+ in the calendar year); (2) up to 12 weeks of paid leave (14 weeks for pregnancy complications); (3) employee payroll contribution of 0.6% and employer contribution of 0.4% of wages up to $184,500 (2026 cap); (4) qualifying reasons (family, medical, safe leave); (5) how to apply through the state program; and (6) job protection after 90 days of employment.",
+        "gap": "Missing Paid Leave Oregon (PFML) policy — mandatory for all Oregon employers effective September 2023, with employee contribution requirement of 0.6% and employer contribution of 0.4% (if 25+ employees)"
+      },
+      {
+        "fix": "Add an OFLA section covering: (1) eligibility (employed 180 days + average 25 hours/week, or 180 days for parental leave regardless of hours); (2) up to 12 weeks of unpaid, job-protected leave; (3) qualifying reasons; (4) notice requirements; (5) how OFLA interacts with Paid Leave Oregon (they do not run concurrently as of July 1, 2024); and (6) health insurance continuation during leave.",
+        "gap": "Missing Oregon Family Leave Act (OFLA) policy — company has 42 employees, which exceeds the 25-employee threshold requiring OFLA coverage"
+      },
+      {
+        "fix": "Revise the sick leave section to clarify: 'Employees accrue 1 hour of protected sick time for every 30 hours worked. Employees may use up to 40 hours of accrued sick time per year. Unused sick time carries over to the following year, and total accrual is capped at 80 hours. Accrual begins on the first day of employment; usage is permitted after 90 days of employment.'",
+        "gap": "Sick leave accrual cap stated as 40 hours per year is incomplete — Oregon law (ORS 653.606) allows employers to cap usage at 40 hours annually but total accrual can reach 80 hours with carryover"
+      },
+      {
+        "fix": "Develop and reference a written Hazard Communication Program that includes: (1) a list of hazardous chemicals present in the workplace; (2) Safety Data Sheets (SDS) access procedures and location; (3) container labeling requirements and procedures; (4) employee training program on chemical hazards; and (5) methods to inform contractors of hazards. Include a statement in the handbook that the full program is available for employee review and identify where it is maintained.",
+        "gap": "No written Hazard Communication Program as required by OSHA 29 CFR 1910.1200 for chemical manufacturing employers with hazardous chemicals"
+      },
+      {
+        "fix": "Add to the Safety section: 'All employees who work with or near hazardous chemicals will receive training on: (1) OSHA Hazard Communication Standard requirements; (2) location and use of Safety Data Sheets (SDS); (3) how to read chemical labels and recognize hazard pictograms, signal words, and precautionary statements; (4) physical and health hazards of chemicals in the work area; and (5) protective measures. Training is provided at hire, when new hazards are introduced, and annually as a refresher. Updated training aligned with OSHA HCS GHS Revision 7 is required by November 20, 2026.'",
+        "gap": "Missing employee training requirements for chemical hazards, Safety Data Sheets (SDS), and labeling under OSHA HazCom standard"
+      },
+      {
+        "fix": "Add a 'Complaint and Reporting Procedures' section that provides: (1) multiple reporting channels (direct supervisor, HR, management, or alternative contact); (2) how to report safety hazards, discrimination, harassment, or other concerns; (3) investigation process and timeline; (4) confidentiality protections to the extent possible; and (5) non-retaliation policy. For safety issues, include both internal reporting and the right to report directly to Oregon OSHA.",
+        "gap": "No complaint/reporting procedure for discrimination, harassment, or safety violations"
+      },
+      {
+        "fix": "Expand the Safety section to include: 'Employees are protected under Oregon law (ORS 654.062) and federal law (OSH Act Section 11(c)) from retaliation for: filing safety complaints with Oregon OSHA or the employer, participating in workplace inspections, requesting access to exposure and injury records, participating in safety committees, or refusing work that poses imminent danger of death or serious harm. Employees who believe they have experienced retaliation may file a complaint with the Oregon Bureau of Labor and Industries Civil Rights Division within one year.'",
+        "gap": "Missing reference to Oregon whistleblower protections under ORS 654.062(5) and federal Section 11(c) protections beyond the general 'right to report hazards without retaliation' language"
+      },
+      {
+        "fix": "In the Paid Leave Oregon section, specify: 'As an employer with 25 or more employees, the company contributes 40% of the 1.0% total contribution rate (0.4% of employee wages up to $184,500 annually). Employees contribute the remaining 60% (0.6%) through payroll deduction. The company remits both contributions quarterly to the Oregon Employment Department.'",
+        "gap": "No information about employer size-based Paid Leave Oregon contribution requirements (company has 42 employees, exceeding the 25-employee threshold for mandatory employer contributions)"
+      }
+    ],
+    "gaps": [
+      "No Equal Employment Opportunity (EEO) or anti-discrimination policy statement covering protected classes under federal law (Title VII, ADA, ADEA) or Oregon law (ORS 659A)",
+      "No written harassment and discrimination policy as required by Oregon Workplace Fairness Act (OWFA) for all Oregon employers",
+      "Missing Paid Leave Oregon (PFML) policy — mandatory for all Oregon employers effective September 2023, with employee contribution requirement of 0.6% and employer contribution of 0.4% (if 25+ employees)",
+      "Missing Oregon Family Leave Act (OFLA) policy — company has 42 employees, which exceeds the 25-employee threshold requiring OFLA coverage",
+      "Sick leave accrual cap stated as 40 hours per year is incomplete — Oregon law (ORS 653.606) allows employers to cap usage at 40 hours annually but total accrual can reach 80 hours with carryover",
+      "No written Hazard Communication Program as required by OSHA 29 CFR 1910.1200 for chemical manufacturing employers with hazardous chemicals",
+      "Missing employee training requirements for chemical hazards, Safety Data Sheets (SDS), and labeling under OSHA HazCom standard",
+      "No complaint/reporting procedure for discrimination, harassment, or safety violations",
+      "Missing reference to Oregon whistleblower protections under ORS 654.062(5) and federal Section 11(c) protections beyond the general 'right to report hazards without retaliation' language",
+      "No information about employer size-based Paid Leave Oregon contribution requirements (company has 42 employees, exceeding the 25-employee threshold for mandatory employer contributions)"
+    ],
+    "id": "c594b8a8-e1de-4e4c-9b47-bb55a9afb628",
+    "is_current": true,
+    "issue_date": "2026-01-01",
+    "issued_by": "Cascade Specialty Chemicals, LLC",
+    "regulation_reference": "Oregon employment law (ORS 654, ORS 653.606, ORS 657B, ORS 659A); Oregon Workplace Fairness Act (OWFA); OSHA 29 CFR 1910.1200 (Hazard Communication Standard); Federal labor law (Title VII, ADA, ADEA, FLSA); and DOT 49 CFR Part 382",
+    "renewal_date": null,
+    "summary": "This is the current employee handbook (Version 3, effective January 2026) for Cascade Specialty Chemicals, a 42-employee chemical manufacturing company in Oregon. While it covers basic employment policies, it has significant compliance gaps: it lacks required Equal Employment Opportunity and anti-discrimination policies mandated by federal law and Oregon's Workplace Fairness Act; omits mandatory Paid Leave Oregon (PFML) and Oregon Family Leave Act (OFLA) policies that apply to employers with 25+ employees; provides incomplete sick leave accrual information; and fails to address OSHA Hazard Communication Standard requirements critical for chemical manufacturing, including a written HazCom program, SDS procedures, and employee chemical safety training (with a November 20, 2026 compliance deadline for updated training). The company should immediately add the missing policies, develop a written Hazard Communication Program, establish formal complaint procedures, and ensure all employees receive compliant chemical safety training.",
+    "user_id": "80d7eebb-9858-43b8-8386-8a388f7e7c01"
+  },
+  {
+    "action_items": [
+      "Immediately revise Family and Medical Leave section to comply with Oregon Family Leave Act (OFLA) - increase to 12 weeks for qualifying reasons",
+      "Add comprehensive anti-harassment and anti-discrimination policy with reporting procedures",
+      "Incorporate chemical-specific safety protocols including PPE requirements, emergency response, and spill containment procedures",
+      "Add OSHA Hazard Communication Standard compliance section detailing SDS access and Right-to-Know training",
+      "Include ADA reasonable accommodation policy and process",
+      "Add Oregon-required lactation accommodation policy for nursing employees",
+      "Create employee handbook acknowledgment form requiring signature from all employees",
+      "Schedule handbook review for January 2027 (annual update recommended for compliance)"
+    ],
+    "company_id": "07c871c9-1eec-45b5-82c8-782aa3531808",
+    "coverage": "This handbook establishes employment policies including at-will employment, compensation, leave benefits, safety requirements, drug testing protocols, and family/medical leave for a 42-employee chemical manufacturing company operating in Oregon.",
+    "created_at": "2026-07-14T22:45:26.463888+00:00",
+    "days_until_expiry": null,
+    "division_name": "Chemical Manufacturing",
+    "document_id": "0cb7346e-6b88-448b-b502-b0c628758206",
+    "document_name": "Employee_Handbook_FINAL_v3.pdf",
+    "document_type": "Employee Handbook",
+    "expiring_soon": false,
+    "expiry_date": null,
+    "folder_id": "b13a9041-c648-43ec-bfba-0220c231c151",
+    "folder_name": "OSHA Safety",
+    "gap_fixes": [],
+    "gaps": [
+      "Missing Oregon Family Leave Act (OFLA) compliance - Oregon law requires employers with 25+ employees to provide up to 12 weeks leave, but handbook only offers 8 weeks subject to management approval",
+      "No harassment and discrimination policy documented",
+      "No emergency response or chemical spill procedures referenced despite chemical manufacturing operations",
+      "Missing personal protective equipment (PPE) requirements for chemical handling",
+      "No workplace violence or security policy",
+      "Missing reasonable accommodation policy for disabilities (ADA compliance)",
+      "No references to OSHA Hazard Communication Standard training requirements",
+      "Lacks lactation accommodation policy required under Oregon law",
+      "No documentation of employee acknowledgment/receipt process"
+    ],
+    "id": "c9791ae9-a50e-4a5b-ab73-191566d86890",
+    "is_current": true,
+    "issue_date": "2026-01-01",
+    "issued_by": "Cascade Specialty Chemicals, LLC",
+    "regulation_reference": null,
+    "renewal_date": null,
+    "summary": "This employee handbook is recently updated (January 2026) and covers basic employment policies, but has significant compliance gaps for a chemical manufacturing employer in Oregon. Most critically, the family leave policy does not comply with Oregon Family Leave Act requirements for employers with 25+ employees, and the handbook lacks essential safety protocols and anti-discrimination policies. The company should immediately address OFLA compliance and add chemical-specific safety requirements before the next review cycle.",
+    "user_id": "80d7eebb-9858-43b8-8386-8a388f7e7c01"
+  },
+  {
+    "action_items": [
+      "URGENT: Contact Oregon DEQ immediately to submit late permit renewal application and address expired status",
+      "Assess current hazardous waste inventory and ensure all accumulated waste is within the 90-day limit; arrange disposal if necessary",
+      "Prepare for potential civil penalties or enforcement action due to operating with expired permit",
+      "Designate and document primary and alternate emergency coordinators with 24-hour contact information",
+      "Compile preparedness and prevention equipment inventory with maintenance records",
+      "Review all hazardous waste containers on-site to ensure accumulation start dates are properly marked",
+      "Develop or update facility closure plan and establish financial assurance mechanism",
+      "Set up automated renewal tracking system to prevent future permit lapses (flag 120 days before expiration)",
+      "Conduct internal compliance audit to verify all RCRA LQG requirements are being met: training records, weekly inspections, contingency plan currency, and biennial reporting"
+    ],
+    "company_id": "20b7dafe-7bda-45e1-b587-15a93dd0fca0",
+    "coverage": "Authorizes Cascade Specialty Chemicals, LLC to operate as a Large Quantity Generator of hazardous waste at their Portland facility for specified waste streams including corrosive, ignitable, spent solvents, and lead-bearing wastes.",
+    "created_at": "2026-07-24T15:27:00.172512+00:00",
+    "days_until_expiry": -557,
+    "division_name": "",
+    "document_id": "4ff195d6-db33-43ce-a0bd-e88f486fc8bd",
+    "document_name": "EPA_Hazardous_Waste_Generator_Permit.pdf",
+    "document_type": "Hazardous Waste Generator Permit — Large Quantity Generator",
+    "expiring_soon": false,
+    "expiry_date": "2025-01-14",
+    "folder_id": null,
+    "folder_name": "",
+    "gap_fixes": [
+      {
+        "fix": "Immediately contact Oregon DEQ Hazardous Waste Program to submit a late renewal application, explain the lapse, and request expedited processing; be prepared for potential enforcement action or civil penalties",
+        "gap": "Permit expired on January 14, 2025 and is currently 557 days past expiration"
+      },
+      {
+        "fix": "Submit complete renewal application package immediately including updated facility information, current waste stream data, personnel training records, and contingency plan; implement calendar reminder system to flag renewal 120 days before next expiration",
+        "gap": "Renewal deadline of October 16, 2024 (90 days prior to expiration) was missed"
+      },
+      {
+        "fix": "Cease hazardous waste generation activities until permit is reinstated, or arrange for immediate off-site disposal of all accumulated wastes within the 90-day limit while renewal is pending; consult Oregon DEQ for interim authorization options",
+        "gap": "Currently operating without a valid permit in violation of OAR 340-100-0002"
+      },
+      {
+        "fix": "Add to permit documentation: name, 24-hour phone number, and alternate emergency coordinator with contact details per 40 CFR 262.34(a)(4); post this information prominently at the facility",
+        "gap": "No emergency coordinator contact information provided as required by contingency plan regulations"
+      },
+      {
+        "fix": "Prepare and attach an equipment inventory listing: internal communications/alarm systems, fire extinguishers/suppression equipment, spill control materials, decontamination equipment, and water for firefighting with testing/maintenance schedules",
+        "gap": "Document does not include required preparedness and prevention equipment documentation per 40 CFR 262.16"
+      },
+      {
+        "fix": "Implement procedure requiring each hazardous waste container to be marked with the date accumulation began using indelible marker; train all personnel on proper labeling and include in weekly inspection checklist",
+        "gap": "Missing accumulation start date labeling requirement per 40 CFR 262.34(a)(2)"
+      },
+      {
+        "fix": "Develop written closure plan detailing procedures for closing container storage areas and decontamination; obtain cost estimate and establish financial assurance mechanism (surety bond, trust fund, or letter of credit) per 40 CFR 262.17(a)(8)",
+        "gap": "No closure plan or financial assurance documentation referenced"
+      }
+    ],
+    "gaps": [
+      "Permit expired on January 14, 2025 and is currently 557 days past expiration",
+      "Renewal deadline of October 16, 2024 (90 days prior to expiration) was missed",
+      "Currently operating without a valid permit in violation of OAR 340-100-0002",
+      "No emergency coordinator contact information provided as required by contingency plan regulations",
+      "Document does not include required preparedness and prevention equipment documentation per 40 CFR 262.16",
+      "Missing accumulation start date labeling requirement per 40 CFR 262.34(a)(2)",
+      "No closure plan or financial assurance documentation referenced"
+    ],
+    "id": "d9e59c5c-3316-4e90-af9e-d27526e2143e",
+    "is_current": false,
+    "issue_date": "2022-01-15",
+    "issued_by": "Oregon Department of Environmental Quality",
+    "regulation_reference": "EPA RCRA 40 CFR Part 262 (Standards Applicable to Generators of Hazardous Waste); Oregon Administrative Rules OAR 340-100",
+    "renewal_date": "2024-10-16",
+    "summary": "This Large Quantity Generator permit for Cascade Specialty Chemicals expired on January 14, 2025 and is currently 557 days overdue, placing the facility in violation of Oregon regulations. The company missed the required renewal deadline of October 16, 2024 and is now operating without valid authorization, which may result in civil penalties. Immediate action is required to submit a late renewal application to Oregon DEQ, verify compliance with all accumulation limits, and address multiple documentation gaps including emergency contacts, equipment inventories, container labeling, and closure planning.",
+    "user_id": "c2ac6e10-e586-453b-b4bd-1fc9038081b6"
+  },
+  {
+    "action_items": [
+      "Immediately update emergency contact list: remove T. Whitfield and add current Safety Coordinator with valid contact information",
+      "Conduct full EAP review and revision to create Revision 3 effective July 2026 with next review date July 2027",
+      "Perform facility walkthrough to update assembly points, evacuation routes, and alarm zones reflecting 2023 warehouse expansion; attach updated facility map",
+      "Designate and document secondary assembly point in case primary location is unsafe or inaccessible",
+      "Add employee accountability procedures detailing headcount methods, visitor tracking, and reporting of missing personnel",
+      "Assign rescue and medical duties to specific trained employees by name and document their responsibilities",
+      "Document critical shutdown procedures and identify authorized personnel who may delay evacuation to secure hazardous operations",
+      "Add emergency reporting procedures specifying how to report fires and emergencies (pull stations, 911, internal notifications)",
+      "Develop and document employee training program with initial and annual EAP training requirements; begin immediate training on updated plan",
+      "Establish annual EAP review schedule with assigned responsibility and documentation protocol to prevent future lapses"
+    ],
+    "company_id": "20b7dafe-7bda-45e1-b587-15a93dd0fca0",
+    "coverage": "Emergency evacuation procedures, chemical release response protocols, and emergency contact information for Cascade Specialty Chemicals facility operations.",
+    "created_at": "2026-07-23T17:57:20.349082+00:00",
+    "days_until_expiry": -1633,
+    "division_name": "",
+    "document_id": "57136e41-8ce8-4b94-842f-b12d55226cd0",
+    "document_name": "Emergency_Action_Plan_2021.pdf",
+    "document_type": "Emergency Action Plan (EAP)",
+    "expiring_soon": false,
+    "expiry_date": "2022-02-01",
+    "folder_id": null,
+    "folder_name": "",
+    "gap_fixes": [
+      {
+        "fix": "Immediately conduct a full EAP review with all relevant personnel, update all sections to reflect current conditions, and establish Revision 3 with effective date of July 2026 and next review date of July 2027. Implement annual review calendar with documented completion dates.",
+        "gap": "Plan expired in February 2022; current date is July 2026 — more than 4 years overdue for review"
+      },
+      {
+        "fix": "Designate current Safety Coordinator by name and direct phone number. If position is vacant, assign emergency coordination duties to another qualified employee (e.g., Operations Manager, Environmental Health & Safety Manager) and update contact list immediately.",
+        "gap": "Safety Coordinator T. Whitfield listed as emergency contact but marked as 'NO LONGER EMPLOYED' — no replacement designated"
+      },
+      {
+        "fix": "Conduct walkthrough of expanded facility, designate new assembly points that accommodate increased building footprint and employee count, update alarm zone map to cover warehouse addition, and attach current facility layout diagram to the EAP showing all assembly areas and evacuation routes.",
+        "gap": "Facility layout references conditions prior to 2023 warehouse expansion; assembly points and alarm zones explicitly noted as not updated"
+      },
+      {
+        "fix": "Designate a secondary assembly point (e.g., south parking lot, adjacent street location, or neighboring facility lot) and document it in the evacuation procedure section with criteria for when to use alternate location (e.g., if north lot is blocked, downwind of chemical release, or otherwise unsafe).",
+        "gap": "No designated alternate assembly point documented in case primary location is compromised"
+      },
+      {
+        "fix": "Add section titled 'Employee Accountability' specifying: (1) supervisors will use current shift roster to conduct headcount at assembly point, (2) report missing or injured personnel immediately to Plant Manager and emergency responders, (3) no one re-enters building until all-clear is given, and (4) method for tracking visitors and contractors during evacuation.",
+        "gap": "Plan does not identify procedures for accounting for all employees after evacuation (29 CFR 1910.38(c)(4) requires procedures to account for employees)"
+      },
+      {
+        "fix": "Designate employees trained in first aid/CPR to provide medical assistance during emergencies. List by name and role (e.g., 'First Aid Responders: J. Martinez (Shift Lead A), K. Patel (Shift Lead B)'). Specify their duties: administer first aid at assembly point, direct EMS to injured personnel, and maintain first aid kit readiness.",
+        "gap": "No rescue and medical duties assigned to specific employees (29 CFR 1910.38(c)(5))"
+      },
+      {
+        "fix": "Add 'Critical Shutdown Procedures' section identifying: (1) which equipment/processes require controlled shutdown (reactors, pressure vessels, hazardous material feeds), (2) authorized personnel by name/role who may delay evacuation to perform shutdown, (3) maximum time allowed for shutdown tasks (e.g., 5 minutes), and (4) requirement to evacuate immediately if conditions deteriorate.",
+        "gap": "No procedures for employees who remain to operate critical plant operations before evacuation (29 CFR 1910.38(c)(3))"
+      },
+      {
+        "fix": "Add 'Emergency Reporting Procedure' section: 'Upon discovering fire, chemical release, or medical emergency: (1) activate nearest pull station alarm or call [designated internal emergency number if applicable], (2) call 911 and provide facility address [insert address], nature of emergency, and location within building, (3) notify Plant Manager at (503) 555-0142.' Post this procedure at all phones.",
+        "gap": "No preferred means of reporting fires and other emergencies specified (29 CFR 1910.38(c)(2))"
+      },
+      {
+        "fix": "Add 'Training Requirements' section: 'All employees will receive EAP training upon hire and annually thereafter, covering evacuation routes, assembly points, alarm signals, and emergency reporting. Supervisors will receive additional training on headcount procedures and emergency coordination. Training records will be maintained by [Safety Coordinator/HR] for OSHA inspection.' Document training with sign-in sheets.",
+        "gap": "Employee training and review documentation requirements not addressed in the plan"
+      }
+    ],
+    "gaps": [
+      "Plan expired in February 2022; current date is July 2026 — more than 4 years overdue for review",
+      "Safety Coordinator T. Whitfield listed as emergency contact but marked as 'NO LONGER EMPLOYED' — no replacement designated",
+      "Facility layout references conditions prior to 2023 warehouse expansion; assembly points and alarm zones explicitly noted as not updated",
+      "No designated alternate assembly point documented in case primary location is compromised",
+      "Plan does not identify procedures for accounting for all employees after evacuation (29 CFR 1910.38(c)(4) requires procedures to account for employees)",
+      "No rescue and medical duties assigned to specific employees (29 CFR 1910.38(c)(5))",
+      "No procedures for employees who remain to operate critical plant operations before evacuation (29 CFR 1910.38(c)(3))",
+      "No preferred means of reporting fires and other emergencies specified (29 CFR 1910.38(c)(2))",
+      "Employee training and review documentation requirements not addressed in the plan"
+    ],
+    "id": "dda6fc14-2ede-4561-930c-7f6d078d4853",
+    "is_current": false,
+    "issue_date": "2021-02-01",
+    "issued_by": "Cascade Specialty Chemicals, LLC",
+    "regulation_reference": "OSHA 29 CFR 1910.38 (Emergency Action Plans)",
+    "renewal_date": "2022-02-01",
+    "summary": "This Emergency Action Plan is severely outdated, having expired over 4 years ago in February 2022 and failing to reflect a 2023 facility expansion. Critical compliance gaps under 29 CFR 1910.38 include an obsolete emergency contact (former employee still listed), outdated facility layout with unrevised assembly points, and missing required elements such as employee accountability procedures, rescue duty assignments, critical shutdown protocols, and emergency reporting procedures. Immediate revision and employee retraining are required to restore OSHA compliance and ensure employee safety.",
+    "user_id": "c2ac6e10-e586-453b-b4bd-1fc9038081b6"
+  },
+  {
+    "action_items": [
+      "Immediately obtain updated GHS-compliant 16-section SDS from sulfuric acid supplier",
+      "Replace all outdated MSDS sheets in workplace and employee training materials",
+      "Audit entire SDS collection to identify other non-GHS compliant sheets",
+      "Retrain employees on new GHS format, pictograms, and hazard classifications",
+      "Update chemical inventory system to reflect current SDS revision dates",
+      "Establish procedure to review and update all SDS sheets at least every 3 years",
+      "Verify emergency response procedures align with current SDS recommendations"
+    ],
+    "company_id": "07c871c9-1eec-45b5-82c8-782aa3531808",
+    "coverage": "This document provides hazard information and safe handling procedures for 93% sulfuric acid (H2SO4), a severely corrosive chemical and confirmed human carcinogen.",
+    "created_at": "2026-07-14T22:53:36.646159+00:00",
+    "days_until_expiry": null,
+    "division_name": "Chemical Manufacturing",
+    "document_id": "b458ac50-1c20-4f57-a7e8-2b0490e62ae7",
+    "document_name": "SDS_Sulfuric_Acid_2019.pdf",
+    "document_type": "Safety Data Sheet (SDS) - Hazardous Chemical",
+    "expiring_soon": false,
+    "expiry_date": null,
+    "folder_id": "b13a9041-c648-43ec-bfba-0220c231c151",
+    "folder_name": "OSHA Safety",
+    "gap_fixes": [],
+    "gaps": [
+      "Uses outdated pre-2015 MSDS format instead of required GHS-compliant 16-section SDS format",
+      "Document is 7 years old (prepared 2019-08-12) and should be updated every 3-5 years per best practices",
+      "Non-compliant with OSHA Hazard Communication Standard 29 CFR 1910.1200(g) which has required GHS format since June 2015",
+      "Missing GHS pictograms, signal words, and standardized hazard statements",
+      "Lacks emergency contact information and supplier details",
+      "Missing detailed first aid measures section",
+      "No disposal considerations or transport information included",
+      "Missing regulatory information and ecological data"
+    ],
+    "id": "de682cf6-feb2-4b3c-bc36-f81542ee805f",
+    "is_current": false,
+    "issue_date": "2019-08-12",
+    "issued_by": "Chemical manufacturer/supplier (CSC)",
+    "regulation_reference": null,
+    "renewal_date": null,
+    "summary": "This sulfuric acid safety sheet is critically non-compliant. It uses the obsolete pre-2015 MSDS format and violates OSHA's Hazard Communication Standard, which has required GHS-compliant 16-section SDS sheets since 2015. The company must immediately obtain and implement current GHS-format safety data sheets for all hazardous chemicals to meet federal workplace safety requirements.",
+    "user_id": "80d7eebb-9858-43b8-8386-8a388f7e7c01"
+  },
+  {
+    "action_items": [
+      "Add explicit reference to ISO 9001:2015 standard in the policy document header or opening paragraph",
+      "Document specific measurable quality objectives or create cross-reference to separate quality objectives document (QO-001)",
+      "Add documentation of last management review date and next scheduled review date",
+      "Expand policy to address organizational context, interested parties, risk-based thinking, and process approach as required by ISO 9001:2015 clauses 4.1, 4.2, 4.4, and 6.1",
+      "Verify that management review meeting minutes document the annual policy review as claimed",
+      "Ensure quality objectives are established, monitored, and reviewed at planned intervals with documented evidence",
+      "Consider adding commitment to safety and environmental responsibility given the hazardous nature of products handled (acids, caustics, solvents)"
+    ],
+    "company_id": "07c871c9-1eec-45b5-82c8-782aa3531808",
+    "coverage": "Establishes the organization's commitment to quality management for blending, repackaging, and distribution of industrial acids, caustics, and specialty solvents.",
+    "created_at": "2026-07-25T16:47:55.72398+00:00",
+    "days_until_expiry": null,
+    "division_name": "",
+    "document_id": "808a714c-284a-46e2-8a8e-b76e4d17385b",
+    "document_name": "Quality_Policy.docx",
+    "document_type": "Quality Policy",
+    "expiring_soon": false,
+    "expiry_date": null,
+    "folder_id": null,
+    "folder_name": "",
+    "gap_fixes": [
+      {
+        "fix": "Add a statement such as: 'Our Quality Management System is established and maintained in accordance with ISO 9001:2015 requirements' immediately after the opening commitment paragraph.",
+        "gap": "Document does not explicitly reference ISO 9001:2015 or any other quality management standard it claims compliance with"
+      },
+      {
+        "fix": "Either add 2-3 specific measurable objectives to this policy (e.g., 'Achieve 98% on-time delivery,' 'Maintain customer complaint rate below 0.5%') or add a reference: 'Specific quality objectives are documented in QO-001 Quality Objectives.'",
+        "gap": "Quality objectives are mentioned as a commitment but no actual objectives are documented or specified"
+      },
+      {
+        "fix": "Add a statement before the approval signature: 'Last Management Review: [Date]. Next scheduled review: [Date]' or reference the management review meeting minutes document number.",
+        "gap": "No documented evidence of the annual management review process or date of last review"
+      },
+      {
+        "fix": "Add a brief statement: 'This policy considers our strategic direction as a regional specialty chemical distributor serving [industries served], operating under [relevant regulatory frameworks such as EPA, OSHA, DOT], and our commitment to environmental stewardship and safety.'",
+        "gap": "Missing context of the organization statement required by ISO 9001:2015 clause 4.1 (understanding the organization and its context)"
+      },
+      {
+        "fix": "Expand the customer reference to include: 'Satisfying the requirements of our interested parties including customers, regulatory agencies, employees, and the communities in which we operate.'",
+        "gap": "No reference to interested parties and their requirements as required by ISO 9001:2015 clause 4.2"
+      },
+      {
+        "fix": "Add a commitment bullet: 'Identifying and addressing risks and opportunities that could affect our ability to deliver conforming products and services and enhance customer satisfaction.'",
+        "gap": "Policy does not mention risk-based thinking or approach to risks and opportunities as required by ISO 9001:2015 clause 6.1"
+      },
+      {
+        "fix": "Add a commitment bullet: 'Managing our quality system as interrelated processes to achieve consistent results and operational efficiency.'",
+        "gap": "No mention of process approach or interaction of QMS processes as required by ISO 9001:2015 clause 4.4"
+      }
+    ],
+    "gaps": [
+      "Document does not explicitly reference ISO 9001:2015 or any other quality management standard it claims compliance with",
+      "Quality objectives are mentioned as a commitment but no actual objectives are documented or specified",
+      "No documented evidence of the annual management review process or date of last review",
+      "Missing context of the organization statement required by ISO 9001:2015 clause 4.1 (understanding the organization and its context)",
+      "No reference to interested parties and their requirements as required by ISO 9001:2015 clause 4.2",
+      "Policy does not mention risk-based thinking or approach to risks and opportunities as required by ISO 9001:2015 clause 6.1",
+      "No mention of process approach or interaction of QMS processes as required by ISO 9001:2015 clause 4.4"
+    ],
+    "id": "ebb6d927-76ed-474c-b085-8345f5ad0029",
+    "is_current": true,
+    "issue_date": "2026-03-01",
+    "issued_by": "Cascade Specialty Chemicals, LLC",
+    "regulation_reference": "ISO 9001:2015 Quality Management Systems - Requirements",
+    "renewal_date": null,
+    "summary": "This is a current Quality Policy for a chemical blending and distribution company, effective March 2026. While it covers basic quality commitments, it lacks several explicit requirements of ISO 9001:2015 including references to the standard itself, organizational context, interested parties, risk-based thinking, and process approach. The policy should be revised to include these elements and cross-reference documented quality objectives and management review records.",
+    "user_id": "80d7eebb-9858-43b8-8386-8a388f7e7c01"
+  },
+  {
+    "action_items": [
+      "Update the Management Review agenda template to include all eight mandatory ISO 9001:2015 clause 9.3.2 input topics (external/internal issues, interested parties, audit results, nonconformities, monitoring results, external provider performance, improvement opportunities, and QMS changes)",
+      "Revise the Management Review minutes template to include a formal 'Management Review Outputs and Decisions' section addressing improvement opportunities, QMS changes, and resource needs per ISO 9001:2015 clause 9.3.3",
+      "Add a CEO approval signature block and distribution list to the minutes template to formalize approval and communication",
+      "Before the May 14, 2026 management review, prepare summary reports for the missing input topics: internal audit results summary, external provider scorecard, and process monitoring KPIs",
+      "Train the Quality Manager on the complete ISO 9001:2015 clause 9.3 requirements to ensure future management reviews capture all mandatory inputs and outputs"
+    ],
+    "company_id": "07c871c9-1eec-45b5-82c8-782aa3531808",
+    "coverage": "Quarterly management review of quality management system performance, customer feedback, process conformity, and resource adequacy for chemical manufacturing operations.",
+    "created_at": "2026-07-25T16:46:56.117282+00:00",
+    "days_until_expiry": null,
+    "division_name": "",
+    "document_id": "92f34766-c662-4ced-bd5d-50be7e178e5a",
+    "document_name": "Management_Review_Minutes_Feb2026.docx",
+    "document_type": "Management Review Meeting Minutes",
+    "expiring_soon": false,
+    "expiry_date": null,
+    "folder_id": null,
+    "folder_name": "",
+    "gap_fixes": [
+      {
+        "fix": "Add a standing agenda item titled 'Changes in External and Internal Issues' that reviews regulatory changes, market conditions, facility changes, organizational changes, and any updates to the company's context since the last review.",
+        "gap": "No documented review of changes in external and internal issues relevant to the quality management system (ISO 9001:2015 clause 9.3.2.a)"
+      },
+      {
+        "fix": "Add a standing agenda item titled 'Interested Parties Review' covering changes in customer requirements, regulatory expectations, employee concerns, community issues, and supplier relationships.",
+        "gap": "No documented review of changes in needs and expectations of interested parties (ISO 9001:2015 clause 9.3.2.b)"
+      },
+      {
+        "fix": "Add a standing agenda item titled 'Internal Audit Results' that summarizes findings, trends, areas of nonconformance, and effectiveness of the audit program since the last management review.",
+        "gap": "No documented review of internal audit results or findings (ISO 9001:2015 clause 9.3.2.c)"
+      },
+      {
+        "fix": "Expand section 4 to include a summary table of all nonconformities (internal and external), their root causes, corrective actions implemented, and verification of effectiveness—not just status of open CAPAs.",
+        "gap": "No documented review of nonconformities and corrective actions taken (ISO 9001:2015 clause 9.3.2.d specifically requires review of nonconformities, not just near-misses)"
+      },
+      {
+        "fix": "Add a standing agenda item titled 'Process Monitoring and Measurement Results' covering process capability data, equipment calibration status, environmental monitoring, yield rates, and any other KPIs beyond the three quality objectives.",
+        "gap": "No documented review of monitoring and measurement results beyond quality objectives (ISO 9001:2015 clause 9.3.2.e)"
+      },
+      {
+        "fix": "Add a standing agenda item titled 'External Provider Performance' that reviews supplier scorecards, raw material quality trends, delivery performance, and any supply chain risks or changes.",
+        "gap": "No documented review of external provider performance or supply chain issues (ISO 9001:2015 clause 9.3.2.f)"
+      },
+      {
+        "fix": "Add a standing agenda item titled 'Improvement Opportunities' that documents employee suggestions, benchmarking insights, process optimization ideas, and innovation initiatives.",
+        "gap": "No documented review of opportunities for improvement (ISO 9001:2015 clause 9.3.2.g)"
+      },
+      {
+        "fix": "Add a standing agenda item titled 'QMS Changes Required' that explicitly evaluates whether the QMS needs updates to procedures, scope, objectives, or structure based on all inputs reviewed.",
+        "gap": "No documented review of need for changes to the quality management system (ISO 9001:2015 clause 9.3.2.h)"
+      },
+      {
+        "fix": "Add a 'Management Review Outputs and Decisions' section at the end of the minutes template that explicitly records decisions and actions on: (a) opportunities for improvement, (b) any need for changes to the QMS, and (c) resource needs.",
+        "gap": "Management review outputs do not explicitly document decisions related to QMS improvement opportunities or resource needs for effectiveness (ISO 9001:2015 clause 9.3.3)"
+      },
+      {
+        "fix": "Add a signature block at the end of the minutes for CEO approval and a distribution list showing who receives the minutes (typically all management review attendees plus other key stakeholders).",
+        "gap": "No formal approval signature or distribution list recorded on the minutes"
+      }
+    ],
+    "gaps": [
+      "No documented review of changes in external and internal issues relevant to the quality management system (ISO 9001:2015 clause 9.3.2.a)",
+      "No documented review of changes in needs and expectations of interested parties (ISO 9001:2015 clause 9.3.2.b)",
+      "No documented review of internal audit results or findings (ISO 9001:2015 clause 9.3.2.c)",
+      "No documented review of nonconformities and corrective actions taken (ISO 9001:2015 clause 9.3.2.d specifically requires review of nonconformities, not just near-misses)",
+      "No documented review of monitoring and measurement results beyond quality objectives (ISO 9001:2015 clause 9.3.2.e)",
+      "No documented review of external provider performance or supply chain issues (ISO 9001:2015 clause 9.3.2.f)",
+      "No documented review of opportunities for improvement (ISO 9001:2015 clause 9.3.2.g)",
+      "No documented review of need for changes to the quality management system (ISO 9001:2015 clause 9.3.2.h)",
+      "Management review outputs do not explicitly document decisions related to QMS improvement opportunities or resource needs for effectiveness (ISO 9001:2015 clause 9.3.3)",
+      "No formal approval signature or distribution list recorded on the minutes"
+    ],
+    "id": "f17be3cc-31d8-47a7-96f2-63724bb273a4",
+    "is_current": true,
+    "issue_date": "2026-02-12",
+    "issued_by": "Cascade Specialty Chemicals, LLC",
+    "regulation_reference": "ISO 9001:2015 clause 9.3 (Management Review)",
+    "renewal_date": "2026-05-14",
+    "summary": "This management review covers some ISO 9001:2015 requirements but is missing five of the eight mandatory input topics (external/internal issues, interested parties, audit results, external provider performance, and improvement opportunities) and does not document the required management review outputs (decisions on improvement, QMS changes, and resources). The company should update its management review template to ensure full compliance with ISO 9001:2015 clause 9.3 before the next scheduled review on May 14, 2026.",
+    "user_id": "80d7eebb-9858-43b8-8386-8a388f7e7c01"
+  },
+  {
+    "action_items": [
+      "Immediately identify all states where the company has employees and research applicable state PFML laws (Washington, New Jersey, Oregon, Colorado, Connecticut, Massachusetts, New York, California, Rhode Island, Delaware, Maine, Minnesota, and DC all have active programs)",
+      "If operating in Washington with 25+ employees: Update policy immediately to comply with RCW Ch. 50A (180-day eligibility, 12-week duration, full health insurance continuation, proper job restoration guarantee) - compliance required as of January 1, 2026",
+      "If operating in New Jersey with 15+ employees: Ensure compliance with expanded NJ Family Leave Act effective January 17, 2026",
+      "Revise eligibility criteria to extend leave to 12 weeks (not 8) to align with standard FMLA framework and most state laws",
+      "Add 'care for parent with serious health condition' and military-related leave reasons to qualifying conditions",
+      "Strengthen job restoration guarantee from 'where possible' to mandatory restoration to same or equivalent position",
+      "Extend health insurance continuation to cover the full leave period (up to 12 weeks minimum) to comply with state requirements",
+      "Develop or adopt standardized medical certification forms (DOL Forms WH-380-E and WH-380-F) and establish 15-day timeframe for submission",
+      "Add anti-retaliation protections and complaint procedures with designated contact person",
+      "Create state-specific leave policy supplements or appendices for any states where employees are located",
+      "Verify and implement any required state PFML payroll tax withholding and remittance obligations",
+      "Post all required state family leave notices and update employee handbook acknowledgment forms",
+      "Train managers and HR staff on state-specific leave requirements and proper certification procedures",
+      "Establish procedure to track whether leave runs concurrently with state PFML benefits and how to coordinate paid/unpaid leave"
+    ],
+    "company_id": "07c871c9-1eec-45b5-82c8-782aa3531808",
+    "coverage": "This voluntary leave policy provides unpaid family and medical leave for eligible employees at a 42-employee company not covered by federal FMLA.",
+    "created_at": "2026-07-24T16:07:45.278683+00:00",
+    "days_until_expiry": null,
+    "division_name": "",
+    "document_id": "7af8c2de-0484-44e4-8c36-676ecbf6956e",
+    "document_name": "OSHA 10 Training Records.pdf",
+    "document_type": "Employee Handbook - Family and Medical Leave Policy",
+    "expiring_soon": false,
+    "expiry_date": null,
+    "folder_id": null,
+    "folder_name": "",
+    "gap_fixes": [
+      {
+        "fix": "Add a clear statement identifying all states where the company has employees and reference the applicable state PFML laws. Example: 'Employees in [State] are also covered by [State] Paid Family and Medical Leave law; see Appendix A for state-specific provisions.'",
+        "gap": "Policy does not specify the company's state location, creating uncertainty about which state PFML laws apply to this 42-employee company"
+      },
+      {
+        "fix": "If operating in Washington: Revise eligibility to state 'Employees in Washington who have been employed for at least 180 days are eligible for job-protected leave under state law. Employees in other locations must have worked 12 months and 1,000 hours.' Ensure compliance with RCW Ch. 50A.",
+        "gap": "Policy may violate Washington state PFML requirements if company operates there (Washington requires job protection for employers with 25+ employees effective January 1, 2026, with 180-day employment requirement and no minimum hours threshold)"
+      },
+      {
+        "fix": "If operating in New Jersey: Add section stating 'Employees in New Jersey are covered by the New Jersey Family Leave Act, which provides up to 12 weeks of job-protected leave. See state-specific supplement for full details.'",
+        "gap": "Policy may violate New Jersey Family Leave Act if company operates there (New Jersey expanded coverage to employers with 15+ employees effective January 17, 2026)"
+      },
+      {
+        "fix": "Revise eligibility section to read: 'Employees are eligible after 12 months and 1,000 hours of service, except in states with different requirements (e.g., Washington requires 180 days with no minimum hours; see state-specific provisions).'",
+        "gap": "Eligibility requirement of 1,000 hours worked is stricter than Washington state's 180-day requirement with no minimum hours threshold"
+      },
+      {
+        "fix": "Change duration to: 'Eligible employees may request up to 12 weeks of unpaid leave per 12-month period. State law may provide additional leave or paid benefits; consult HR for state-specific entitlements.'",
+        "gap": "Duration of 8 weeks is significantly less than the 12 weeks required under Washington PFML, New Jersey FLA, and other state programs where applicable"
+      },
+      {
+        "fix": "Revise to: 'Employees on approved leave will continue to receive employer-sponsored health insurance coverage for the full duration of job-protected leave (up to 12 weeks or as required by state law), with the same terms as if actively working.'",
+        "gap": "Health insurance continuation limited to 4 weeks falls short of requirements in states with PFML job protection (e.g., Washington requires continuation for the full leave period eligible for job restoration)"
+      },
+      {
+        "fix": "Add to qualifying reasons list: '• Care for a parent with a serious health condition'",
+        "gap": "Missing qualifying reason: care for a parent with a serious health condition (federal FMLA standard includes parents; policy only lists spouse or child)"
+      },
+      {
+        "fix": "Add to qualifying reasons list: '• Qualifying exigency arising from a family member's military service • Care for a covered service member with a serious injury or illness (up to 26 weeks in a single 12-month period)'",
+        "gap": "Missing qualifying reason: military exigency leave and military caregiver leave (standard FMLA provisions)"
+      },
+      {
+        "fix": "Replace Return to Work section with: 'Employees returning from leave will be restored to the same position held before leave, or to an equivalent position with equivalent pay, benefits, and other terms and conditions of employment, as required by applicable law.'",
+        "gap": "Job restoration language is too weak - 'where possible' and 'reasonable efforts' do not meet job protection standards; should guarantee same or equivalent position"
+      },
+      {
+        "fix": "Add detailed medical certification section: 'For medical leave, the company may require certification from a healthcare provider using DOL Form WH-380-E (employee's condition) or WH-380-F (family member's condition). Employees have at least 15 calendar days to provide certification. The company will request certification within 5 days of the leave request.'",
+        "gap": "Policy states 'Documentation may be required' but does not specify timeframes, procedures, or use of standardized certification forms"
+      },
+      {
+        "fix": "Add new section 'Employee Protections': 'The company prohibits retaliation, interference, or discrimination against employees who request or take leave under this policy or applicable state law. Employees who believe their rights have been violated should contact [HR Director/Compliance Officer] immediately.'",
+        "gap": "No specification of employee rights during leave, such as prohibition against retaliation or interference"
+      },
+      {
+        "fix": "Add section 'Coordination with Other Benefits': 'In states with Paid Family and Medical Leave programs, employees may be eligible for wage replacement benefits through state programs. This leave runs concurrently with any state-provided leave. Contact HR for information about state benefits, application procedures, and premium contributions.'",
+        "gap": "No information about how leave interacts with state PFML programs, disability insurance, or paid leave benefits where applicable"
+      },
+      {
+        "fix": "Add to policy: 'To request leave or file a complaint regarding leave rights, contact [Name/Title] at [contact information]. Employees may also contact their state labor department or the U.S. Department of Labor, Wage and Hour Division, if they believe their rights have been violated.'",
+        "gap": "No designated contact person or procedure for filing complaints about leave denial or violations"
+      },
+      {
+        "fix": "Add employer compliance note: 'The company will post required state and federal leave notices in compliance with applicable law and will provide individualized notice of rights and responsibilities when leave is requested.'",
+        "gap": "No mention of posting requirements or employee notice obligations under applicable state PFML laws"
+      }
+    ],
+    "gaps": [
+      "Policy does not specify the company's state location, creating uncertainty about which state PFML laws apply to this 42-employee company",
+      "Policy may violate Washington state PFML requirements if company operates there (Washington requires job protection for employers with 25+ employees effective January 1, 2026, with 180-day employment requirement and no minimum hours threshold)",
+      "Policy may violate New Jersey Family Leave Act if company operates there (New Jersey expanded coverage to employers with 15+ employees effective January 17, 2026)",
+      "Eligibility requirement of 1,000 hours worked is stricter than Washington state's 180-day requirement with no minimum hours threshold",
+      "Duration of 8 weeks is significantly less than the 12 weeks required under Washington PFML, New Jersey FLA, and other state programs where applicable",
+      "Health insurance continuation limited to 4 weeks falls short of requirements in states with PFML job protection (e.g., Washington requires continuation for the full leave period eligible for job restoration)",
+      "Missing qualifying reason: care for a parent with a serious health condition (federal FMLA standard includes parents; policy only lists spouse or child)",
+      "Missing qualifying reason: military exigency leave and military caregiver leave (standard FMLA provisions)",
+      "Job restoration language is too weak - 'where possible' and 'reasonable efforts' do not meet job protection standards; should guarantee same or equivalent position",
+      "Policy states 'Documentation may be required' but does not specify timeframes, procedures, or use of standardized certification forms",
+      "No specification of employee rights during leave, such as prohibition against retaliation or interference",
+      "No information about how leave interacts with state PFML programs, disability insurance, or paid leave benefits where applicable",
+      "No designated contact person or procedure for filing complaints about leave denial or violations",
+      "No mention of posting requirements or employee notice obligations under applicable state PFML laws"
+    ],
+    "id": "f494e75b-4823-4ff7-bb6d-4e1ffbf1703a",
+    "is_current": true,
+    "issue_date": "2026-01-01",
+    "issued_by": "Company (internal HR policy document)",
+    "regulation_reference": "Federal FMLA (29 U.S.C. §§ 2601-2654; 29 CFR Part 825) does not apply due to company size below 50 employees; state-specific Paid Family and Medical Leave (PFML) laws may apply depending on jurisdiction (e.g., Washington RCW Ch. 50A requires job protection for employers with 25+ employees as of January 1, 2026; New Jersey expanded coverage to 15+ employees in January 2026; multiple states have active PFML programs with varying thresholds)",
+    "renewal_date": null,
+    "summary": "This voluntary family and medical leave policy for a 42-employee company is well-intentioned but contains serious compliance gaps. While federal FMLA does not apply (requires 50+ employees), multiple states now mandate paid family leave and job protection for employers as small as 15-25 employees as of 2026. The policy's 8-week duration, 1,000-hour eligibility threshold, 4-week insurance continuation, and weak job restoration language likely violate Washington, New Jersey, or other state PFML laws if the company operates in those jurisdictions. Critical fixes include identifying applicable state laws, extending leave to 12 weeks, guaranteeing job restoration, continuing health insurance for the full leave period, adding missing leave reasons (parent care, military), and implementing proper medical certification procedures.",
+    "user_id": "80d7eebb-9858-43b8-8386-8a388f7e7c01"
+  },
+  {
+    "action_items": [
+      "Replace former Safety Coordinator contact information immediately and verify all emergency phone numbers",
+      "Revise plan to Revision 3, incorporate all six required elements per 29 CFR 1910.38(c), and reflect current 2026 facility layout",
+      "Update assembly points, alarm zones, and evacuation routes to account for 2023 warehouse expansion; attach current site map",
+      "Designate and train evacuation wardens and employees authorized to perform critical shutdowns",
+      "Conduct facility-wide mandatory training on revised Emergency Action Plan with documented attendance",
+      "Establish annual plan review schedule with calendar reminders; plan must be reviewed with employees when changed per 29 CFR 1910.38(f)",
+      "Conduct evacuation drill to validate updated assembly points and procedures; document date, participants, observations, and corrective actions"
+    ],
+    "company_id": "20b7dafe-7bda-45e1-b587-15a93dd0fca0",
+    "coverage": "Emergency response procedures for Cascade Specialty Chemicals facility under OSHA workplace emergency requirements",
+    "created_at": "2026-07-23T17:48:33.002492+00:00",
+    "days_until_expiry": null,
+    "division_name": "",
+    "document_id": "57136e41-8ce8-4b94-842f-b12d55226cd0",
+    "document_name": "Emergency_Action_Plan_2021.pdf",
+    "document_type": "Emergency Action Plan",
+    "expiring_soon": false,
+    "expiry_date": null,
+    "folder_id": null,
+    "folder_name": "",
+    "gap_fixes": [
+      {
+        "fix": "Immediately revise plan to Revision 3 with effective date July 2026 and set next review date for July 2027; establish recurring annual calendar reminder",
+        "gap": "Plan is severely outdated—last reviewed February 2022, now more than 4 years overdue for review (current date July 2026)"
+      },
+      {
+        "fix": "Replace T. Whitfield entry with current Safety Coordinator name and contact number; verify all other emergency contacts are current and functional",
+        "gap": "Safety Coordinator contact (T. Whitfield) is no longer employed; emergency contact list is invalid"
+      },
+      {
+        "fix": "Update plan with current facility layout, reassess and document revised assembly points (primary and alternate), update alarm zone coverage for warehouse expansion, and attach current site map showing evacuation routes and assembly points",
+        "gap": "Facility layout referenced is obsolete—does not reflect 2023 warehouse expansion, assembly points and alarm zones not updated"
+      },
+      {
+        "fix": "Add section: 'Emergency Reporting: Dial 911 for fire, medical emergency, or hazardous material release. Pull nearest manual alarm. Notify Plant Manager and Safety Coordinator. For chemical spills also call DEQ Spill Reporting at 1-800-452-0311.'",
+        "gap": "Missing required element: procedures for reporting a fire or other emergency [29 CFR 1910.38(c)(1)]"
+      },
+      {
+        "fix": "Add section describing: (1) full facility evacuation vs. partial/shelter-in-place triggers; (2) primary and secondary exit routes from each work area; (3) exit route map attached as appendix; (4) designation of evacuation wardens by area",
+        "gap": "Missing required element: type of evacuation and exit route assignments [29 CFR 1910.38(c)(2)]"
+      },
+      {
+        "fix": "Add section: 'Critical Operations Shutdown: Designated personnel in [list areas: reactor room, drum filling, distillation] shall shut down [specific equipment] before evacuating. Maximum shutdown time: 3 minutes. If alarm sounds during shutdown, evacuate immediately.'",
+        "gap": "Missing required element: procedures for employees who remain to operate critical plant operations before they evacuate [29 CFR 1910.38(c)(3)]"
+      },
+      {
+        "fix": "Add section: 'Rescue and Medical Response: No employee shall attempt rescue in IDLH atmosphere or HF release. Certified first responders [list names/titles] may render first aid at assembly point. All other rescue to be performed by Fire Department.'",
+        "gap": "Missing required element: procedures for employees performing rescue or medical duties [29 CFR 1910.38(c)(5)]"
+      },
+      {
+        "fix": "Add section: 'Plan Information Contacts: For questions about this plan or your duties under it, contact: Safety Coordinator [name] at [phone/email] or Plant Manager R. Delgado at (503) 555-0142.'",
+        "gap": "Missing required element: name or job title of employees who may be contacted for more information about the plan or explanation of duties [29 CFR 1910.38(c)(6)]"
+      },
+      {
+        "fix": "Designate and train employees to assist in safe and orderly evacuation (evacuation wardens); document training with sign-in sheets, date, topics covered, and trainer name; retain records for OSHA inspection",
+        "gap": "No evidence of employee training on emergency procedures as required by 29 CFR 1910.38(e)"
+      },
+      {
+        "fix": "Conduct mandatory training for all employees on updated plan covering new assembly points, revised evacuation routes, and alarm zones; document attendance with signed acknowledgment forms; repeat when plan changes in future",
+        "gap": "Plan must be reviewed with each employee when the plan changes, per 29 CFR 1910.38(f)—2023 facility changes triggered this requirement but no evidence of review"
+      }
+    ],
+    "gaps": [
+      "Plan is severely outdated—last reviewed February 2022, now more than 4 years overdue for review (current date July 2026)",
+      "Safety Coordinator contact (T. Whitfield) is no longer employed; emergency contact list is invalid",
+      "Facility layout referenced is obsolete—does not reflect 2023 warehouse expansion, assembly points and alarm zones not updated",
+      "Missing required element: procedures for reporting a fire or other emergency [29 CFR 1910.38(c)(1)]",
+      "Missing required element: type of evacuation and exit route assignments [29 CFR 1910.38(c)(2)]",
+      "Missing required element: procedures for employees who remain to operate critical plant operations before they evacuate [29 CFR 1910.38(c)(3)]",
+      "Missing required element: procedures for employees performing rescue or medical duties [29 CFR 1910.38(c)(5)]",
+      "Missing required element: name or job title of employees who may be contacted for more information about the plan or explanation of duties [29 CFR 1910.38(c)(6)]",
+      "No evidence of employee training on emergency procedures as required by 29 CFR 1910.38(e)",
+      "Plan must be reviewed with each employee when the plan changes, per 29 CFR 1910.38(f)—2023 facility changes triggered this requirement but no evidence of review"
+    ],
+    "id": "f64be54d-235d-44d0-a703-d203fe5117fd",
+    "is_current": false,
+    "issue_date": "2021-02-01",
+    "issued_by": "Cascade Specialty Chemicals, LLC",
+    "regulation_reference": "OSHA 29 CFR 1910.38 (Emergency Action Plans)",
+    "renewal_date": "2022-02-01",
+    "summary": "This Emergency Action Plan is non-compliant and dangerously outdated. It is over four years past its scheduled review date (February 2022), contains invalid emergency contacts, references an obsolete facility layout, and is missing four of the six minimum required elements under 29 CFR 1910.38(c). The plan must be immediately revised, all employees retrained, and assembly points updated to reflect the 2023 warehouse expansion.",
+    "user_id": "c2ac6e10-e586-453b-b4bd-1fc9038081b6"
+  },
+  {
+    "action_items": [
+      "Immediately update and re-issue Emergency Action Plan - currently 4+ years overdue",
+      "Designate and document new Safety Coordinator contact information",
+      "Revise facility layout, assembly points, and alarm zones to reflect 2023 warehouse expansion",
+      "Conduct physical walkthrough to verify evacuation routes and spill kit locations are accurate",
+      "Add alternate assembly points and procedures for various emergency scenarios",
+      "Include medical emergency and first aid procedures in updated plan",
+      "Train all employees on updated emergency procedures and document training completion",
+      "Establish annual review schedule with calendar reminders to prevent future lapses"
+    ],
+    "company_id": "07c871c9-1eec-45b5-82c8-782aa3531808",
+    "coverage": "Emergency evacuation procedures, chemical release response protocols, and emergency contact information for a chemical manufacturing facility under OSHA regulations.",
+    "created_at": "2026-07-14T22:45:43.298655+00:00",
+    "days_until_expiry": -1619,
+    "division_name": "Chemical Manufacturing",
+    "document_id": "7b7be3dc-fe0a-4f21-ba4d-70247d2c19ad",
+    "document_name": "Emergency_Action_Plan_2021.pdf",
+    "document_type": "Emergency Action Plan (OSHA 29 CFR 1910.38)",
+    "expiring_soon": false,
+    "expiry_date": "2022-02-01",
+    "folder_id": "b13a9041-c648-43ec-bfba-0220c231c151",
+    "folder_name": "OSHA Safety",
+    "gap_fixes": [],
+    "gaps": [
+      "Plan expired over 4 years ago (last review due February 2022, now July 2026)",
+      "Safety Coordinator contact listed as no longer employed with no replacement designated",
+      "Facility layout references are outdated - plan pre-dates 2023 warehouse expansion",
+      "Assembly points and alarm zones not updated since 2023 facility changes",
+      "No alternate assembly points designated if primary location is inaccessible",
+      "Missing medical emergency procedures and first aid protocols",
+      "No documentation of employee training on current emergency procedures",
+      "Spill kit location may be outdated given facility expansion"
+    ],
+    "id": "fdc6ef1f-05ba-486a-84bb-cf2fecddb528",
+    "is_current": false,
+    "issue_date": "2021-02-01",
+    "issued_by": "Cascade Specialty Chemicals, LLC",
+    "regulation_reference": null,
+    "renewal_date": "2022-02-01",
+    "summary": "This Emergency Action Plan is critically outdated, having expired in February 2022 and not been reviewed for over 4 years. The plan contains obsolete information including a departed Safety Coordinator and facility layout that predates a 2023 warehouse expansion, creating serious safety risks. Immediate update and retraining of all personnel is required to maintain OSHA compliance and ensure employee safety during emergencies.",
+    "user_id": "80d7eebb-9858-43b8-8386-8a388f7e7c01"
+  }
+]
