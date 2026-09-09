@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { createClient } from '@/lib/supabase'
+import { createClient, authHeaders } from '@/lib/supabase'
 import AppLayout from '@/components/AppLayout'
 
 const PRESET_CATEGORIES = [
@@ -92,10 +92,8 @@ export default function UploadPage() {
 
       const dbRes = await fetch('/api/documents', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: await authHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({
-          company_id: companyId,
-          user_id: userId,
           name: file.name,
           file_url: filePath,
           file_type: file.type || fileExt || 'unknown',

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { createClient } from '@/lib/supabase'
+import { createClient, authHeaders } from '@/lib/supabase'
 import AppLayout from '@/components/AppLayout'
 import AIDisclaimer from '@/components/AIDisclaimer'
 
@@ -71,7 +71,7 @@ export default function HRPage() {
         .eq('id', profile.company_id)
         .single()
       if (company) setCompanyName(company.name)
-      const res = await fetch(`/api/documents?user_id=${user.id}`)
+      const res = await fetch('/api/documents', { headers: await authHeaders() })
       const json = await res.json()
       if (json.data) {
         const hbs = json.data.filter((d: Handbook & {category: string}) => d.file_url && d.file_url.includes('hr-handbooks'))
@@ -95,10 +95,8 @@ export default function HRPage() {
       if (uploadError) throw uploadError
       const dbRes = await fetch('/api/documents', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: await authHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({
-          company_id: companyId,
-          user_id: userId,
           name: newFile.name,
           file_url: filePath,
           file_type: newFile.type || 'application/pdf',
@@ -109,7 +107,7 @@ export default function HRPage() {
         }),
       })
       if (!dbRes.ok) throw new Error('Failed to save')
-      const docsRes = await fetch(`/api/documents?user_id=${userId}`)
+      const docsRes = await fetch('/api/documents', { headers: await authHeaders() })
       const docsJson = await docsRes.json()
       if (docsJson.data) {
         setHandbooks(docsJson.data.filter((d: Handbook & {category: string}) => d.file_url && d.file_url.includes('hr-handbooks')))
@@ -436,7 +434,7 @@ export default function HRPage() {
                     </div>
                     <button onClick={async () => {
                       if (!confirm('Delete this handbook?')) return
-                      await fetch('/api/documents?id=' + h.id + '&file_url=' + encodeURIComponent(h.file_url), { method: 'DELETE' })
+                      await fetch('/api/documents?id=' + h.id, { method: 'DELETE', headers: await authHeaders() })
                       setHandbooks(prev => prev.filter(x => x.id !== h.id))
                     }} className="text-gray-300 hover:text-red-400 transition-colors text-lg leading-none flex-shrink-0">×</button>
                   </div>

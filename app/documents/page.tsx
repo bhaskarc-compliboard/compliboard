@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, Suspense } from 'react'
-import { createClient } from '@/lib/supabase'
+import { createClient, authHeaders } from '@/lib/supabase'
 import AppLayout from '@/components/AppLayout'
 import AIDisclaimer from '@/components/AIDisclaimer'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -178,8 +178,8 @@ function DocumentsPageContent() {
         if (company?.industry) setPrimaryIndustry(company.industry)
       }
 
-      await loadDocuments(user.id, 'unfiled')
-      await loadAllDocuments(user.id)
+      await loadDocuments('unfiled')
+      await loadAllDocuments()
       setLoading(false)
     }
     loadData()
@@ -191,14 +191,14 @@ function DocumentsPageContent() {
     if (json.data) setFolders(json.data)
   }
 
-  async function loadAllDocuments(uid: string) {
-    const res = await fetch(`/api/documents?user_id=${uid}`)
+  async function loadAllDocuments() {
+    const res = await fetch('/api/documents', { headers: await authHeaders() })
     const json = await res.json()
     if (json.data) setAllDocuments(json.data)
   }
 
-  async function loadDocuments(uid: string, folderId: string) {
-    const res = await fetch(`/api/documents?user_id=${uid}&folder_id=${folderId}`)
+  async function loadDocuments(folderId: string) {
+    const res = await fetch(`/api/documents?folder_id=${folderId}`, { headers: await authHeaders() })
     const json = await res.json()
     if (json.data) setDocuments(json.data)
   }
@@ -213,7 +213,7 @@ function DocumentsPageContent() {
     if (!userId) return
     setSelectedFolderId(folderId)
     setViewingReviewId(null)
-    await loadDocuments(userId, folderId)
+    await loadDocuments(folderId)
   }
 
   function toggleDivision(id: string) {
@@ -256,9 +256,9 @@ function DocumentsPageContent() {
         if (uploadErr) throw uploadErr
         const dbRes = await fetch('/api/documents', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: await authHeaders({ 'Content-Type': 'application/json' }),
           body: JSON.stringify({
-            company_id: companyId, user_id: userId, name: file.name,
+            name: file.name,
             file_url: filePath, file_type: file.type || fileExt || 'unknown',
             file_size: file.size, folder_id: targetFolderId,
             is_recurring: isRecurring, recurrence_period: isRecurring ? recurrencePeriod : null,
@@ -266,8 +266,8 @@ function DocumentsPageContent() {
         })
         if (!dbRes.ok) throw new Error(`Failed to save ${file.name}`)
       }
-      await loadDocuments(userId, selectedFolderId)
-      await loadAllDocuments(userId)
+      await loadDocuments(selectedFolderId)
+      await loadAllDocuments()
 
       // Save reference before clearing state
       const uploadedFiles = [...files]
@@ -357,7 +357,7 @@ function DocumentsPageContent() {
     if (!confirm(`Delete ${doc.name}?`)) return
     setDeleting(doc.id)
     try {
-      await fetch(`/api/documents?id=${doc.id}&file_url=${encodeURIComponent(doc.file_url)}`, { method: 'DELETE' })
+      await fetch(`/api/documents?id=${doc.id}`, { method: 'DELETE', headers: await authHeaders() })
       setDocuments(prev => prev.filter(d => d.id !== doc.id))
       setAllDocuments(prev => prev.filter(d => d.id !== doc.id))
     } catch (error) { console.error(error) }
@@ -367,13 +367,13 @@ function DocumentsPageContent() {
   async function handleMoveDocument(docId: string, targetFolderId: string | null) {
     await fetch('/api/documents', {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: await authHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ id: docId, folder_id: targetFolderId }),
     })
     setMovingDocId(null)
     if (userId) {
-      await loadDocuments(userId, selectedFolderId)
-      await loadAllDocuments(userId)
+      await loadDocuments(selectedFolderId)
+      await loadAllDocuments()
     }
   }
 
