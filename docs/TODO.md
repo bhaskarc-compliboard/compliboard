@@ -102,17 +102,68 @@ two databases have not drifted.
 
 **`/api/cron/monthly-summary` deleted with it.** A third of the email was built on folder audits, and §0.8 established the route had never run — no `vercel.json`, no cron jobs configured in Vercel at all. Dead code calling dead code. `CRON_SECRET` is removed from `.env.example` too. A monthly summary is still wanted, but it should be written against obligations and evidence — what the company must do and what proves it — not against folder names. That belongs after Phase 4, when obligations are real.
 
-### 0.6 Write policies on every table ⬜ 🔒 **THEN THIS** ⏱ 1 day
-Five tables have RLS on and **zero policies** — `audits`, `company_templates`, `document_reviews`, `hr_audits`, `standard_templates`. RLS with no policy denies everything, which is why those tables are only reachable by service role.
+### 0.6 Write policies on every table ✅ DONE (10 Sep) — migration 004, **applied to production**
 
-- ⬜ SELECT/INSERT/UPDATE/DELETE policies on all 19 tables
-- ⬜ Explicit `WITH CHECK`, not just `USING`
-- ⬜ Fully-qualified column names in predicates
-- ⬜ `GRANT` line for every table
+Every table now has a full set of access rules, and the tenancy rule lives in one named
+place instead of being re-derived in twenty of them.
 
-**Why it matters more after 0.4:** every route now derives identity from the session, but they all still use the service-role key, which ignores RLS entirely. Those application checks are currently the *only* tenant boundary on the database side. Write policies are what makes the database enforce it too, so a future route that forgets the check fails closed instead of leaking.
+- ✅ **`auth_company_id()`** — `SECURITY DEFINER`, `search_path` pinned, returns the
+  caller's `company_id` from `profiles` with definer rights. Every company-scoped policy
+  goes through it. **53 of 58 policies** use it; **0 reference `profiles` directly**, down
+  from 19.
+- ✅ **The five zero-policy tables** — `audits`, `company_templates`, `document_reviews`,
+  `hr_audits` got the full four. `standard_templates` joined the reference tables
+  (readable by any authenticated user, service-role writes only); it was the only one of
+  the three missing its read policy, which is why checking the shared cache forced
+  `/api/audits` onto the service-role key.
+- ✅ **`documents`** — moved from `auth.uid() = user_id` to company scope, matching what
+  its route has done since 9 Sep, and gained the UPDATE policy it never had. 38 rows,
+  0 with a null company, nothing became invisible.
+- ✅ **`obligations`, `obligation_evidence`, `entities`, `corrections`** — were SELECT
+  only, now full. `obligations` has **no DELETE policy on purpose** (§3.2: obligations are
+  never deleted, only marked).
+- ✅ **`obligation_evidence` gained its own `company_id`** — backfilled, `NOT NULL`, FK,
+  index. Without it, scoping meant another subquery into another protected table, which
+  is the coupling this migration removes.
+- ✅ **`companies` INSERT and `profiles` INSERT removed** — neither had a legitimate
+  caller. Both happen in signup under the service role. Allowing a session to do either
+  let anyone manufacture a company, or attach themselves to one by writing their own
+  profile row.
+- ✅ **`anon` revoked on all 18 tables** — 144 privileges to 0. It was denied by policy
+  anyway, but one forgotten policy on a new table and it would have had everything. Now
+  it is refused at the grant, before policies are consulted.
 
-**Note the coupling:** the storage policy reads `profiles`, and `profiles` has its own RLS. If the "view own profile" policy were ever dropped, *all* storage access silently stops for everyone, with no obvious connection to the change. Document this.
+**Verified on production:** 58 policies / 0 via profiles / 53 via the function, no table
+with RLS on and zero policies, anon privileges 0, every row count identical across all 18
+tables, types byte-identical to the staging-generated file.
+
+**Tested on staging with real logins at the browser's own surface** (anon key + user JWT,
+not through the app): 12 tables show only the caller's rows, cross-company writes refused,
+moving a row into another company refused by `WITH CHECK`, reference tables read but not
+write, creating a company refused, and an unauthenticated caller refused outright.
+
+**Not done here, deliberately: no route was converted off the service-role key.** Rules
+first, proven; routes after. See 0.9.
+
+### 0.9 Convert routes off the service-role key ⬜ **NEXT** ⏱ 1–2 days
+Now that 004 makes the database enforce tenancy, most routes no longer need the key that
+bypasses it. The honest remaining justification is two places:
+
+- **`/api/signup`** — no session exists yet, by definition.
+- **`/api/account` DELETE** — calls `auth.admin.deleteUser()`; removing a login is not
+  something a user token can do.
+
+Everything else could run under the caller's own token, which would make the database the
+enforcing layer rather than a second opinion. `/api/obligations` and `/api/account`
+GET/PUT could switch today with no other change.
+
+**Two things to sort out while doing it.** `/api/audits` reads `standard_templates`,
+shared across companies — fine now that it has a read policy, but it is the route most
+entangled with the service role. And the nine browser call sites that read `profiles`
+directly to fetch `company_id` (requirements, audits, calendar, dashboard, hr, compliance,
+documents, upload, AppLayout) should call `auth_company_id()` by RPC instead — that is
+what finishes decoupling the base case, since no policy depends on `profiles` any more but
+those pages still do.
 
 ### 0.7 Housekeeping ⬜ ⏱ 2 hours
 - ⬜ Delete four orphaned storage files under a prefix matching no company
