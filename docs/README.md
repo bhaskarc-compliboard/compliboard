@@ -105,6 +105,14 @@ Git holds the full history of every version. That is what it is for.
 - Generated output. `CURRENT-SCHEMA.md` (a snapshot of the live database) and
   `baseline-outputs/` (frozen AI output kept for comparison) live at the repo root
   because they are produced by tooling, not written by hand.
+- **Data destined for the database.** Anything that will end up as rows lives in
+  `supabase/seed-data/` — `load-chemical-requirements.sql`, and the filled requirement
+  worksheets that `scripts/load-requirements.js` reads. It sits next to the migrations
+  that shape the tables it loads into, and it is not part of the written record: once a
+  worksheet is loaded, the database is the source of truth and the file is only the
+  record of how it got there. The blank worksheet the pass starts from
+  (`REQUIREMENTS-TEMPLATE.xlsx`) stays at the repo root, because it is generated *from*
+  the database rather than destined for it.
 - Rules for how the work is done. Those are in `CLAUDE.md` at the repo root, which is
   read automatically at the start of every session; this folder is the *subject matter*,
   not the working agreement.
