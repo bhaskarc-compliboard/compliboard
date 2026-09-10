@@ -10,13 +10,25 @@
 // query below is filtered by that one company_id, either directly or through a
 // parent row that was itself filtered by it.
 //
+// CONVERTED OFF THE SERVICE-ROLE KEY (§0.9). Every read runs through `authed.db`, under
+// RLS. This route was converted LAST of the readable ones, and deliberately: it reads
+// seven tables, and RLS is a filter rather than a gate, so a policy that is too narrow on
+// any ONE of them returns fewer rows with a perfectly good 200. A partial export looks
+// exactly like a complete one. That is the worst failure mode in the codebase for an
+// endpoint whose whole purpose is completeness.
+//
+// It could not be converted at all until migration 005. `profiles` was scoped
+// `auth.uid() = id`, so the query below — profiles for this company — would have returned
+// ONE row instead of all of them, silently dropping every colleague. 005 made that
+// company-scoped; this route is the reason it exists.
+//
 // Deliberately NOT included: any other company's rows, profiles belonging to people
 // outside this company, anything from the auth schema (passwords, tokens, sessions),
 // and any key or secret. File CONTENTS are not embedded either — see the note on the
 // documents section below.
 
 import { NextRequest, NextResponse } from 'next/server'
-import { requireCompany, supabaseAdmin } from '@/lib/auth'
+import { requireCompany } from '@/lib/auth'
 
 // Turns "Test Alpha Chemical" into "test-alpha-chemical" so it is safe in a filename
 // on every operating system.
@@ -32,10 +44,10 @@ export async function GET(request: NextRequest) {
   try {
     const authed = await requireCompany(request)
     if (!authed.ok) return authed.response
-    const { companyId, userId } = authed.auth
+    const { companyId, userId, db } = authed.auth
 
     // --- The company itself -------------------------------------------------
-    const { data: company } = await supabaseAdmin
+    const { data: company } = await db
       .from('companies')
       .select('*')
       .eq('id', companyId)
@@ -47,7 +59,7 @@ export async function GET(request: NextRequest) {
 
     // --- Everything scoped directly by company_id ---------------------------
     const byCompany = async (table: string) => {
-      const { data } = await supabaseAdmin.from(table).select('*').eq('company_id', companyId)
+      const { data } = await db.from(table).select('*').eq('company_id', companyId)
       return data || []
     }
 
@@ -80,7 +92,7 @@ export async function GET(request: NextRequest) {
     // Profiles: this company's people only. Names and ids, nothing from auth —
     // no email, no password hash, no session token. Those live in a schema this
     // export never reads.
-    const { data: profilesRaw } = await supabaseAdmin
+    const { data: profilesRaw } = await db
       .from('profiles')
       .select('id, company_id, full_name, created_at')
       .eq('company_id', companyId)
@@ -89,13 +101,13 @@ export async function GET(request: NextRequest) {
     // --- Children reached through a parent we already filtered --------------
     const checklistIds = checklists.map((c: { id: string }) => c.id)
     const { data: checklistItemsRaw } = checklistIds.length
-      ? await supabaseAdmin.from('checklist_items').select('*').in('checklist_id', checklistIds)
+      ? await db.from('checklist_items').select('*').in('checklist_id', checklistIds)
       : { data: [] }
     const checklistItems = checklistItemsRaw || []
 
     const obligationIds = obligations.map((o: { id: string }) => o.id)
     const { data: obligationEvidenceRaw } = obligationIds.length
-      ? await supabaseAdmin.from('obligation_evidence').select('*').in('obligation_id', obligationIds)
+      ? await db.from('obligation_evidence').select('*').in('obligation_id', obligationIds)
       : { data: [] }
     const obligationEvidence = obligationEvidenceRaw || []
 
