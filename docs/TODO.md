@@ -220,6 +220,36 @@ The audit should report which documents it could not read, exactly as `/api/hr` 
 that route names the file and the reason and says the answer does not account for it. Same
 treatment here: a `documents_failed` list on the saved audit, surfaced in the UI.
 
+**⚠️ (a) IS NOT THEORETICAL — IT WAS OBSERVED IN A REAL RUN, 10 SEP.**
+A re-run on staging returned `satisfied=2 needs_info=1 needs_work=0`. Entirely plausible
+numbers. They were computed from **one reviewable document out of eight**: only two of that
+company's documents had a real object behind them, one could be read, and the other seven
+were dropped by the `continue` with no error, no log the user sees, and no record on the
+saved audit.
+
+**This is current production behaviour, not a test artifact.** The same code path runs in
+production today. Any cause that makes a download fail — a missing object, a transient
+error, a policy problem — silently removes that document from the basis of the answer, and
+the readiness figure comes out looking exactly as confident as one built on the full set.
+
+A confident readiness number built on a silently truncated document set is **the precise
+failure this product exists to prevent** (`CLAUDE.md` §6, the omniscient status tracker;
+§3.2, readiness computed in code so it cannot be guessed). Computing it correctly from
+wrong input is not a defence. **Weight this accordingly when the audit engine is next
+touched — it is the most consequential item in this section, not a tidy-up.**
+
+**(a2) `matched_documents` can contain entries with no `document_id` at all.**
+The same run produced a `matched_documents` array holding an entry whose `document_id` was
+`None` — the model returned it that way. Harmless right now because nothing consumes that
+array beyond display, but it is on the path to Phase 7.3, which normalises audit output
+into `obligation_evidence`. Anything linking evidence from this array would either break on
+the null or, worse, skip it silently and record less evidence than the audit found.
+
+Both (a) and (a2) are the same underlying problem: **that array is trusted more than it
+deserves.** One is missing entries nobody was told about, the other is malformed entries
+nobody validated. Zod at the AI boundary (§2.6) covers the second; reporting unreadable
+documents covers the first.
+
 **(b) `/api/audits` is the clearest case for the Phase 5 worker. 🔒**
 One request does classify (with web search), generate a full standard on a cache miss,
 review every unreviewed document one at a time, and match every requirement in batches.
