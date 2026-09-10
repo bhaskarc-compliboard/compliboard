@@ -265,6 +265,40 @@ id sets, under the caller's token against the same query run with the service ro
 joined tables checked separately because a blocked join returns the right number of rows
 with empty content.
 
+### 0.8 Follow-ups from the Phase 1 rebuild ⬜
+
+- ⬜ **The loader should reach production without a service-role key in `.env.local`.**
+  `scripts/load-requirements.js` writes through PostgREST, so `--production` needs
+  `SUPABASE_PROD_URL` and `SUPABASE_PROD_SERVICE_ROLE_KEY` — and `CLAUDE.md` §3.8 says
+  both are expected to be **blank**, because a laptop points at staging and a live key
+  sitting in a file on a machine that also runs `npm run dev` is how an ordinary local
+  click reaches production. So loading production today means setting two secrets and
+  remembering to clear them, and "remembering" is the weak part.
+
+  `scripts/db-migrate.js` already has the answer: it reaches production through the
+  **session pooler** using `SUPABASE_PROD_DB_PASSWORD`, which is a credential that has to
+  be present locally anyway to ship a migration at all. The loader should do the same.
+  Neither `psql` nor the `pg` package is installed, so this needs one of them added — a
+  real change, deliberately **not** made in the middle of a production run.
+
+  Until then the loader fails loudly when the variables are missing, names both, says
+  they are meant to be blank, and prints a clear-them reminder on success. That is a
+  guard against forgetting, not a substitute for the fix.
+
+- ⬜ **The requirements screen is empty until Phase 4, and that is expected.**
+  Migration 007 drops `obligations` — 376 rows in production, all of it derived output
+  (188 templates × 2 companies) and all of it carrying the jurisdiction bug: matching was
+  on industry alone, so a Texas company was served Oregon requirements (1.4). Nothing
+  regenerates those rows until the resolution engine exists in **Phase 4.1**.
+
+  So after 007 lands, `/requirements` shows nothing and `/api/obligations` returns an
+  empty list with a 200. **That is the schema being correct and the engine not being
+  built yet — not a regression.** It belongs in `STATUS.md` the moment 1.5 writes it,
+  as: *Requirements — not-yet-rebuilt, awaiting Phase 4.1.* Without that line, the first
+  person to open the page after the rebuild reports a bug that isn't one.
+
+---
+
 ### 0.7 Housekeeping ⬜ ⏱ 2 hours
 - ⬜ Delete four orphaned storage files under a prefix matching no company
 - ⬜ Remove unused deps: `ai`, `@ai-sdk/anthropic`
@@ -413,6 +447,9 @@ The obligation-matching logic matches on industry alone. 90 of 188 rows are Oreg
 
 ### 1.5 `STATUS.md` ⬜ ⏱ 1 hour
 One line per module: working / broken / not-yet-rebuilt / verified-on-date. Prevents "broken and nobody noticed" during a rebuild.
+**First line to write, already earned:** *Requirements — not-yet-rebuilt, awaiting Phase 4.1.*
+Migration 007 dropped the 376 obligations and nothing regenerates them until resolution
+exists, so the screen is empty by design. See §0.8.
 
 ### 1.6 🔒 Multi-facility structure ⚡ ⏱ 1 day
 *Designed with 1.1, applied in 1.3. Numbered last because it was added last, not done last.*

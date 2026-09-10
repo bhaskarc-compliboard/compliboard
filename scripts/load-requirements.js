@@ -42,6 +42,34 @@ if (!file) die("Usage: node scripts/load-requirements.js <file.xlsx> [--apply] [
 if (!existsSync(file)) die(`File not found: ${file}`);
 if (!target.ref) die(`${target.varName} is not set, so the ${target.label} target cannot be resolved.`);
 
+// Checked HERE, before the file is read and before anything is queried, so a missing
+// variable costs a second rather than a full validation pass.
+//
+// SUPABASE_PROD_URL and SUPABASE_PROD_SERVICE_ROLE_KEY are EXPECTED TO BE BLANK in normal
+// operation. CLAUDE.md §3.8: a development machine points at staging, production values
+// live in the hosting platform's own settings, and `.env.example` carries those two names
+// only so that a production key, if written down at all, sits somewhere clearly labelled.
+//
+// So this is not a guard against an attacker. It is a guard against forgetting — either
+// forgetting to set them and losing a validation pass to a late failure, or, far worse,
+// forgetting to clear them afterwards and leaving a production service-role key sitting in
+// a file on a laptop that also runs `npm run dev`.
+if (isProduction && isApply) {
+  const missing = ["SUPABASE_PROD_URL", "SUPABASE_PROD_SERVICE_ROLE_KEY"]
+    .filter((v) => !String(process.env[v] ?? "").trim());
+  if (missing.length) {
+    die(`Cannot load to PRODUCTION: ${missing.join(" and ")} ${missing.length > 1 ? "are" : "is"} not set.\n\n` +
+        `  Both are EXPECTED TO BE BLANK in normal operation — CLAUDE.md §3.8. A laptop points at\n` +
+        `  staging, and production credentials live in the hosting platform's own settings.\n\n` +
+        `  To load production, set both in .env.local for the duration of this one command, then\n` +
+        `  CLEAR THEM AGAIN. Leaving a production service-role key in a file on a machine that also\n` +
+        `  runs \`npm run dev\` is how a local click reaches live customer data.\n\n` +
+        `  Names only, never values, in anything you paste anywhere:\n` +
+        `    SUPABASE_PROD_URL=https://<prod-ref>.supabase.co\n` +
+        `    SUPABASE_PROD_SERVICE_ROLE_KEY=<from the dashboard, Settings -> API>`);
+  }
+}
+
 function die(msg) { console.error(`\n  ${msg}\n`); process.exit(1); }
 
 function query(sql) {
@@ -479,3 +507,16 @@ if (bad.length) die(`LOADED, BUT THE RESULT DOES NOT MATCH THE FILE: ${bad.join(
 
 console.log(`\n  Load complete on ${target.label}. Obligations are NOT regenerated —`);
 console.log("  that is the resolution engine's job (Phase 4) and it does not exist yet.\n");
+
+if (isProduction) {
+  console.log("  " + "=".repeat(72));
+  console.log("  NOW CLEAR THE PRODUCTION CREDENTIALS FROM .env.local:");
+  console.log("");
+  console.log("      SUPABASE_PROD_URL=");
+  console.log("      SUPABASE_PROD_SERVICE_ROLE_KEY=");
+  console.log("");
+  console.log("  They are expected to be blank (CLAUDE.md §3.8). This machine also runs");
+  console.log("  `npm run dev`, which serves routes that delete a company and its files —");
+  console.log("  a live key left in place is how an ordinary local click reaches production.");
+  console.log("  " + "=".repeat(72) + "\n");
+}
