@@ -139,13 +139,68 @@ function sleep(ms) {
   Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
 }
 
+/**
+ * Pull the result rows out of `supabase db query -o json`, whichever shape it used.
+ *
+ * The CLI emits TWO different JSON shapes for the same command, decided by its agent
+ * detection (`--agent auto|yes|no`, CLI 2.117.0):
+ *
+ *   --agent no   ->  a BARE ARRAY:  [{"version":"000"}, …]
+ *   --agent yes  ->  a WRAPPED OBJECT: {"boundary":"…","rows":[…],"warning":"…"}
+ *                    (an envelope marking the contents as untrusted data)
+ *   --agent auto ->  whichever, depending on whether it thinks a program is calling it
+ *
+ * The old parser read `parsed.rows` only. Against the bare array that is `undefined`,
+ * and `(parsed.rows || [])` turned a perfectly good answer into an empty set — so a
+ * production database with three migrations recorded reported zero, and every local
+ * migration looked pending. It did that silently, because nothing had thrown.
+ *
+ * Returns the rows, or null when the payload is NEITHER shape. Null means failure, and
+ * callers must treat it as such: an unrecognised payload is not an empty result.
+ */
+function extractRows(parsed) {
+  if (Array.isArray(parsed)) return parsed;
+  if (parsed && typeof parsed === "object" && Array.isArray(parsed.rows)) return parsed.rows;
+  return null;
+}
+
 function readAppliedVersions() {
   const out = execSync(
     `npx supabase db query --db-url "${dbUrl}" -o json ` +
       `"select version from supabase_migrations.schema_migrations order by version"`,
     { encoding: "utf-8", maxBuffer: 10 * 1024 * 1024, stdio: ["ignore", "pipe", "pipe"] }
   );
-  return new Set((JSON.parse(out).rows || []).map((r) => r.version));
+  const parsed = JSON.parse(out);
+  const rows = extractRows(parsed);
+  if (rows === null) {
+    throw new Error(
+      "Unrecognised payload from `supabase db query -o json` — expected a bare array " +
+      "or an object with a rows array, got keys: " + JSON.stringify(Object.keys(parsed ?? {}))
+    );
+  }
+  return new Set(rows.map((r) => r.version));
+}
+
+/**
+ * How many tables exist in the target's public schema.
+ *
+ * Used only to sanity-check an empty migration history on production. Returns null if
+ * it cannot be determined, which the caller treats as "cannot rule out a contradiction".
+ */
+function publicTableCount() {
+  try {
+    const out = execSync(
+      `npx supabase db query --db-url "${dbUrl}" -o json ` +
+        `"select count(*)::int as n from pg_class c join pg_namespace n on n.oid=c.relnamespace ` +
+        `where n.nspname='public' and c.relkind='r'"`,
+      { encoding: "utf-8", maxBuffer: 10 * 1024 * 1024, stdio: ["ignore", "pipe", "pipe"] }
+    );
+    const rows = extractRows(JSON.parse(out));
+    if (!rows || rows.length === 0) return null;
+    return Number(rows[0].n);
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -180,6 +235,7 @@ const pending = applied.ok
   ? local.filter((f) => !applied.versions.has(f.match(/^\d+/)?.[0] ?? f))
   : local; // only ever shown on a path that has decided an unread history is acceptable
 
+
 // ---------------------------------------------------------------------------
 // 4. Production requires the operator to type the word, every time.
 // ---------------------------------------------------------------------------
@@ -192,6 +248,35 @@ if (isProduction) {
   console.log(`  Staging ref        : ${stagingRef || "(not set)"}   <- NOT the target`);
   console.log(`  Pooler host        : ${target.poolerHost}`);
   console.log("=".repeat(64));
+
+  // An EMPTY history on production is treated exactly like an unreadable one.
+  //
+  // "Zero migrations applied" is only a fact for a genuinely new project. Against a
+  // database that already has tables it is a contradiction, and acting on it means
+  // offering to apply the baseline over live data. The script cannot tell the two apart
+  // on its own, so it refuses and makes the operator say which it is.
+  const historyEmpty = applied.ok && applied.versions.size === 0;
+
+  if (historyEmpty && !isNewProject) {
+    const tables = publicTableCount();
+    console.error("\n  STOPPING: the remote migration history is EMPTY.\n");
+    if (tables === null) {
+      console.error("  Could not determine whether the target database already has tables, so\n" +
+                    "  a contradiction cannot be ruled out.\n");
+    } else if (tables > 0) {
+      console.error(`  This is a contradiction: the history says nothing has ever been applied,\n` +
+                    `  but the target's public schema already contains ${tables} table(s). One of\n` +
+                    `  those two things is wrong, and proceeding would offer to apply the baseline\n` +
+                    `  over a database that already has data.\n`);
+    } else {
+      console.error("  The target's public schema is also empty, which is consistent with a new\n" +
+                    "  project — but say so explicitly rather than letting the script assume it.\n");
+    }
+    console.error("  If this project is genuinely NEW and has never had a migration applied:\n" +
+                  "    npm run db:migrate:prod -- --new-project\n");
+    console.error("  Nothing was applied.\n");
+    process.exit(1);
+  }
 
   // An unreadable history is a STOP on this path, not a warning.
   //
@@ -219,6 +304,14 @@ if (isProduction) {
                 "  Proceeding on the assumption that this project has never had a migration\n" +
                 "  applied. EVERY local migration below will be attempted, including the\n" +
                 "  baseline. If this project already has data, abort now.");
+  } else if (historyEmpty) {
+    const tables = publicTableCount();
+    console.log("\n  --new-project given, and the remote migration history is empty.\n" +
+                "  EVERY local migration below will be attempted, including the baseline.");
+    if (tables !== null && tables > 0) {
+      console.log(`\n  WARNING: the target's public schema already contains ${tables} table(s).\n` +
+                  "  That contradicts an empty history. Abort unless you are certain.");
+    }
   }
 
   console.log(`\n  Migrations about to be applied (${pending.length}):\n`);
