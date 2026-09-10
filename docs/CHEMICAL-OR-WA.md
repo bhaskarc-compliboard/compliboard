@@ -1,7 +1,8 @@
-# CompliBoard — Chemical Manufacturing Vertical: Oregon & Washington
-## Complete Design Specification
+# Chemical Manufacturing Vertical — Oregon & Washington
+**Version:** 1.0 · **Updated:** 9 September 2026
+**Supersedes:** — (first version)
 
-**Version:** 1.0 — design only, nothing built
+**Status: design only. Nothing in this document is built.**
 **Scope:** Chemical manufacturing, blending, repackaging, and distribution in Oregon and Washington
 **Covers:** Regulatory map → requirement library → AI call architecture → runtime behaviour → display → verification → change monitoring
 

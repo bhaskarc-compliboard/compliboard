@@ -1,8 +1,9 @@
-# CompliBoard — Compliance Workspace Design
+# Compliance Workspace Design
+**Version:** 2 · **Updated:** 10 September 2026
+**Supersedes:** version 1 (9 Sep), deleted. Adds §10, signup and industry classification.
 
-**Date:** 9 September 2026
-**Status:** Design agreed. Not built.
-**Related:** `CompliBoard-Decisions-v2.md` · `CompliBoard-Chemical-OR-WA-Vertical-Spec.md` (six-stage runtime, §5) · `CompliBoard-Build-Plan-v3.md`
+**Status: design agreed. Not built.**
+**Related:** `DECISIONS.md` · `CHEMICAL-OR-WA.md` (six-stage runtime, §5) · `BUILD-PLAN.md`
 
 ---
 
@@ -288,3 +289,131 @@ Items 1–4 are quality-affecting and specced before writing.
 3. **Topic summary format** — what is worth keeping once the transcript is gone.
 4. **Concurrent topics** — one open topic at a time, or several? Several means the pollution problem returns across topics.
 5. **Scoped answers reused** — if a user says "common carrier for this shipment" three times, does that become a durable default?
+
+---
+
+## 10. Signup and industry classification
+
+*Added 10 Sep 2026. Supersedes the industry dropdown, which is removed.*
+
+### 10.1 The dropdown is removed
+
+The industry dropdown was built when the assumption was that AI would generate everything on the fly. With a requirement library, it is actively wrong:
+
+**It is circular.** `/api/industries` derives its list from `SELECT DISTINCT industry FROM requirement_templates`. It can only offer verticals already built. A chemical manufacturer signing up when only cannabis is loaded sees "cannabis" — or, with an empty table, sees nothing and cannot complete signup at all.
+
+**It cannot express a gap.** A company describing itself as something not yet built has no way to say so — and that is exactly the signal most worth capturing.
+
+### 10.2 But free text alone is worse
+
+The industry string is now a **match key**, not a label. It decides which requirement library applies.
+
+A chemical *distributor* and a chemical *manufacturer* face materially different obligations. Manufacturing brings TSCA, air permitting, process safety, and TRI into scope; distribution largely does not. Someone who blends and repackages but types "chemical distributor" would receive a wrong requirement set **that looks correct**.
+
+> **Self-description is a compliance judgment the user is not equipped to make.** Same reason we do not ask them their hazardous waste generator category.
+
+### 10.3 The model: ask what they do, then classify
+
+Free text is the **seed**. The website scan is the **evidence**. The classification is an **inference, shown with its basis** — never a silent decision.
+
+Industry is a switch. The master one. Same treatment as every other: `basis` recorded, `resolved_by = ai_inferred`, user-correctable, visible on the profile screen.
+
+The confirmation teaches as well as classifies:
+
+> **You look like chemical manufacturing.** Blending and repackaging counts as manufacturing under most rules even though you don't synthesise anything — that matters, because it brings TSCA and air permitting into scope that pure distribution wouldn't.
+>
+> Sound right?  [Yes]  [No, we only distribute]  [Something else]
+
+That is the product demonstrating expertise on turn one, and it makes the classification correctable in a way a dropdown never was.
+
+### 10.4 Industry is not one value
+
+A chemical company that manufactures, distributes, and runs a fleet is all three. `requirement_templates.industries[]` already anticipates this; the company side must match:
+
+```
+primary_industry
+secondary_activities[]
+```
+
+This is also how the cannabis processor works cleanly — **cannabis by licence, chemical manufacturing by activity.** Both requirement sets apply. Under a dropdown you would pick one and silently lose half their obligations.
+
+### 10.5 Signup asks for very little
+
+**Email · password · website · address.**
+
+**The address is required, not optional.** The website says what they do; the address decides *which body of law reaches them* — state, county, fire authority, and in Washington which regional clean air agency holds air permitting authority. That is the jurisdiction spine and it is not derivable from a website.
+
+Everything else comes from the scan, public records, and later questions.
+
+### 10.6 Do not block signup on the scan
+
+Thirty seconds of spinner immediately after signup is a poor first impression, and the classification is something the user might get wrong anyway — blocking on it reproduces the dropdown problem in a new costume.
+
+**Let them in. Run the scan in the background** (a natural first job for the worker). Surface the result as the first thing they see:
+
+> **We had a look at your website.** Here's what we understand about your business — correct anything wrong.
+
+The confirm screen arrives as a welcome, not a form.
+
+### 10.7 No website is a different evidence path, not a degraded one
+
+A small blender or single-location processor may genuinely have no site. Company name plus address still drives the **public records lookups**, which are keyed on name and address, not on having a website:
+
+- **EPA RCRAInfo** → EPA ID and hazardous waste generator category
+- **EPA ECHO / FRS** → permits, inspections, violation history
+- **FMCSA SAFER** → DOT number, fleet, hazmat authority
+- **OLCC licensee list** → cannabis licence type, endorsements, production tier
+- **Oregon DEQ / WA Ecology** → state permits
+
+Several of the hardest switches arrive free without a website at all.
+
+### 10.8 Three failure modes, three different messages
+
+The wording matters — two of these are the product's problem, not the user's, and should not read as the user failing.
+
+**a) No website, declared at signup.** Ask for the description up front, alongside name and address. Neutral, expected.
+
+**b) Website unreachable — broken link, parked domain, typo.** They *expected* this to work. Offer the correction first, because a typo is more likely than a genuine absence:
+
+> **We couldn't reach yourcompany.com.** Check the address, or tell me what your business does and I'll work from that.
+
+**c) Website reachable but uninformative** — a brochure site reading "quality solutions since 1987":
+
+> **Your site didn't tell us much about your operations.** In a sentence or two — what does your business make or do?
+
+### 10.9 The scan must judge sufficiency, not just extract
+
+A scan returning a company name and nothing else is a *technically successful* scan and a useless one.
+
+**The scan output needs a confidence signal:** did we learn what they actually do, or only that they exist? Below a threshold, ask (§10.8c). Without this, case (c) is indistinguishable from success and the user is silently classified on nothing.
+
+### 10.10 An unbuilt vertical is a lead, not a failure
+
+> "We do powder coating and metal finishing"
+
+Not an error. A **library gap with a real prospect attached.** It writes to `library_candidates`, and the honest response is the coverage strip doing its job at signup:
+
+> We don't have a verified requirement library for metal finishing yet. We can still answer your questions from current regulations — you'll see exactly what's covered and what isn't.
+
+**This turns the signup form into demand research.** After twenty signups you know which vertical to build next from evidence rather than guesswork.
+
+### 10.11 Why asking little works
+
+The value of asking few questions at signup is that the ones you *do* ask arrive later, **in context, with the reason visible**:
+
+> To answer this properly I need to know roughly how much hazardous waste you ship per month. Upload six months of manifests and I'll work it out, or just tell me.
+
+People answer that. They abandon the signup-form version.
+
+### 10.12 Consequences for the build
+
+- ⬜ Remove the industry dropdown and `/api/industries`, or repurpose the route
+- ⬜ Signup collects email, password, website, address only
+- ⬜ Address required; geocode at signup for state, county, city, fire and air authority
+- ⬜ Scan runs as a background job, not inline
+- ⬜ Scan output carries a **sufficiency confidence**, not just extracted fields
+- ⬜ Industry stored as `primary_industry` + `secondary_activities[]`, with `basis` and `resolved_by`
+- ⬜ Classification presented as a teaching confirmation, correctable
+- ⬜ Three distinct fallback messages (§10.8)
+- ⬜ Unmatched industries write to `library_candidates`
+- ⬜ Public-records lookups run on name + address, independent of the website

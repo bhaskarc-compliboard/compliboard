@@ -1,15 +1,15 @@
-# CompliBoard — Decision Record v2
+# Decision Record
+**Version:** 3 · **Updated:** 10 September 2026
+**Supersedes:** version 2 (10 Sep) — §15.7 is marked superseded and §15.8 replaces it:
+document versions now live inside each file, not in its filename. Version 2 superseded
+version 1 (9 Sep), whose content is carried forward except where noted. §15 records the
+decisions of 9–10 September, §16 the state of the security work. Also supersedes
+conflicting statements in earlier planning documents.
 
-**Date:** 10 September 2026
-**Supersedes:** `CompliBoard-Decisions-v1.md`, which has been deleted. Everything in v1 is
-carried forward unchanged except where noted; §15 is new and records the decisions made
-on 9–10 September. Also supersedes conflicting statements in earlier planning documents.
-**Companion documents:**
-- `CompliBoard-Chemical-OR-WA-Vertical-Spec.md` — the full design (regulatory map, data model, runtime, display, verification, onboarding)
-- `CompliBoard-Build-Plan-v3.md` — the phased plan, and why the order is the order
-- `CompliBoard-TODO-v2.md` — the task-level to-do
-- `CompliBoard-Compliance-Workspace-Design.md` — conversation model, fact capture, topic lifecycle
-- `CLAUDE.md` (repo root) — the working rules for sessions
+**Companions:** `CHEMICAL-OR-WA.md` (the full design) · `BUILD-PLAN.md` (the phased plan
+and why the order is the order) · `TODO.md` (the task-level to-do) · `WORKSPACE.md`
+(conversation model, fact capture, topic lifecycle) · `CLAUDE.md` at the repo root (the
+working rules for sessions)
 
 ---
 
@@ -309,9 +309,8 @@ Also caught: the Office of the State Fire Marshal separated from Oregon State Po
 | Document | Verdict |
 |---|---|
 | `CompliBoard-Technical-Due-Diligence.md` | **Keep.** The honest baseline. Pricing ($199 vs $99) and HIPAA-in-UI inconsistencies still need resolving. *(Not currently in `docs/` — add it if it is still wanted, or drop this row.)* |
-| `CompliBoard-Chemical-OR-WA-Vertical-Spec.md` | **Keep.** The master design document. |
-| `CompliBoardChemicalRequirementsMERGEDv2.xlsx` | **Keep.** Richest artifact — 188 rows, the 9-item VERIFY hit list, 26 switches, 18-row fixed-date calendar, and a `Layer` column that already encodes agency ("Oregon OSHA", "Federal DOT"). |
-| `CompliBoardRequirementschemicalmanufacturing.xlsx` | **Keep until migrated.** Complementary, not redundant — normalised `jurisdiction_level` (95 federal / 87 state / 3 county / 3 contractual), `jurisdiction_state` (90 Oregon), `is_determination` (9 yes), `applies` (182 conditional / 6 universal), `source` (174 gpt / 11 claude / 3 gemini). Delete once loaded into the new schema. |
+| `CHEMICAL-OR-WA.md` | **Keep.** The master design document. |
+| `CompliBoardChemicalRequirementsMERGEDv2.xlsx` | **Keep — now the single source for the 188 rows.** Richest artifact: 188 rows, the 9-item VERIFY hit list, 26 switches, 18-row fixed-date calendar, and a `Layer` column that already encodes agency ("Oregon OSHA", "Federal DOT"). The normalised columns from the separate intake file — `jurisdiction_level` (95 federal / 87 state / 3 county / 3 contractual), `jurisdiction_state` (90 Oregon), `is_determination` (9 yes), `applies` (182 conditional / 6 universal), `source` (174 gpt / 11 claude / 3 gemini) — have since been merged into it. |
 | `CompliBoard-Requirements-Module-Definition.md` | **Delete.** Fully absorbed into the Chemical OR/WA spec, which contains everything in it plus the regulatory map, runtime architecture, display, verification, and onboarding. Two overlapping specs will drift. |
 | `CompliBoardRequirementTemplate.xlsx` | **Delete.** 18-column intake template superseded by a schema with ~15 additional fields (`applies_expression`, `scope_rules`, `agency_id`, `citation_url`, `citation_quote`, `produces_switch`, verification and versioning columns). Keeping it invites loading data in the obsolete shape. |
 
@@ -464,23 +463,58 @@ behaviour different. Only the first belongs in a gap-closing session.
 **Reversal condition:** none. If a defect cannot be fixed without a redesign, that is the
 signal to stop and plan the redesign, not to do it inline.
 
-### 15.7 Document versioning: version in the filename, header saying what it supersedes.
+### 15.7 Document versioning ~~in the filename~~ — **SUPERSEDED same day by 15.8**
 
-**Decision:** every substantially updated document gets a version number in its filename
-and a header stating what it supersedes. **The superseded file is deleted**, not archived
-alongside.
+**Original decision (9 Sep):** every substantially updated document gets a version number
+in its filename and a header stating what it supersedes; the superseded file is deleted.
 
-**Reasoning.** Two overlapping to-do lists existed simultaneously on 9 Sep
+**Reasoning at the time.** Two overlapping to-do lists existed simultaneously on 9 Sep
 (`CompliBoard-TODO.md` and `CompliBoard-TODO-v2.md`), and a to-do item was logged into the
 wrong one. `CLAUDE.md` §2 pointed at `CompliBoard-Build-Plan-v2.md` after v3 existed. Both
 are the same failure: a reader cannot tell which document is live, so they read the stale
-one and act on it. Keeping the old file "for reference" guarantees it, because the stale
-copy is indistinguishable from the current one at a glance.
+one and act on it.
 
-Git holds the history. That is what it is for.
+**What was wrong with it.** The diagnosis was right and the remedy was backwards. Deleting
+the superseded file was the correct half and survives into 15.8. Putting the version in the
+*filename* is what caused both incidents in the first place: a version in the name means
+every update renames the file, and every rename breaks every reference to it. Kept, it
+would have guaranteed more of exactly the drift it was written to prevent.
 
-**Reversal condition:** none. If an old version genuinely needs to be readable without git,
-the answer is to fold the relevant part into the current document, not to keep two files.
+Left in place rather than edited away, because a decision record that quietly rewrites its
+own mistakes is worth less than one that shows them.
+
+### 15.8 Document versioning: version **inside** the file, filename stable.
+
+**Decision:** version numbers go inside each document, in a header block. Filenames never
+change. Every document in `docs/` carries:
+
+```
+# <Title>
+**Version:** <n> · **Updated:** <date>
+**Supersedes:** <what changed in this version, or "—">
+```
+
+To update a document: edit in place, raise the version, say what changed. The filename
+stays put. Superseded *content* is replaced, not kept alongside.
+
+Applied 10 Sep: `CompliBoard-Decisions-v2.md` → `DECISIONS.md`,
+`CompliBoard-TODO-v2.md` → `TODO.md`, `CompliBoard-Build-Plan-v3.md` → `BUILD-PLAN.md`,
+`CompliBoard-Chemical-OR-WA-Vertical-Spec.md` → `CHEMICAL-OR-WA.md`,
+`CompliBoard-Compliance-Workspace-Design-v2.md` → `WORKSPACE.md`,
+`BIZPULSES-PATTERNS.md` → `PATTERNS.md`. All renamed with `git mv` so history follows.
+
+**Reasoning.** A reference written once should stay correct forever. Under the old rule,
+every update forced a chase across every other document, `CLAUDE.md`, and code comments —
+and anything missed pointed at a file that either no longer existed or, worse, still did
+and was stale. Two drift incidents in a single day is enough evidence. The version is still
+recorded; it is recorded where updating it costs nothing.
+
+Git holds the full history of every version. That is what it is for.
+
+**Reversal condition:** if a document ever needs two versions live at once — a published
+spec a customer is working against, alongside a draft revision — that is the case
+filenames-with-versions actually solves. Handle it then, for that document only, and say
+so in its header. Do not reintroduce it as a general rule.
 
 ---
 

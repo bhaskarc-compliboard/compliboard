@@ -52,17 +52,22 @@ Four layers, and the third is the important one:
 or a new feature rather than relying on memory of a past session — see `docs/README.md`
 for what each covers. Not all of them are present at any given time; the owner adds them.
 
-- **`CompliBoard-Decisions-v2.md`** — every decision made and why, plus the condition
-  under which it would be reversed. Newest first.
-- **`CompliBoard-Chemical-OR-WA-Vertical-Spec.md`** — the full design: regulatory map,
-  data model, runtime pipeline, display, verification, onboarding.
-- **`CompliBoard-Build-Plan-v3.md`** — the phased task list, and why the order is the order.
-- **`CompliBoard-TODO-v2.md`** — the task-level to-do: what is done, in progress, or not
-  started. The *what next* to the build plan's *why*.
-- **`CompliBoard-Compliance-Workspace-Design.md`** — the Compliance Workspace module:
-  conversation model, fact capture, and topic lifecycle.
-- **`BIZPULSES-PATTERNS.md`** — conventions carried over from a sibling project, with
+- **`DECISIONS.md`** — every decision made and why, plus the condition under which it
+  would be reversed.
+- **`CHEMICAL-OR-WA.md`** — the full design of the first vertical: regulatory map, data
+  model, runtime pipeline, display, verification, onboarding. Design only, not built.
+- **`BUILD-PLAN.md`** — the phased plan, and why the order is the order.
+- **`TODO.md`** — the task-level to-do: what is done, in progress, or not started. The
+  *what next* to the build plan's *why*.
+- **`WORKSPACE.md`** — the Compliance Workspace module: conversation model, fact capture,
+  topic lifecycle, signup and industry classification. Design agreed, not built.
+- **`PATTERNS.md`** — conventions carried over from the sibling Bizpulses project, with
   notes on what to copy and what not to.
+
+**Filenames here are stable and do not carry version numbers.** The version is in each
+file's header block. Updating a document means editing it in place and raising that
+number — never renaming the file, because a rename breaks every reference to it. See
+`docs/README.md` and `DECISIONS.md` §15.8.
 
 At the start of a session or a new feature, **read the relevant sections rather than
 relying on memory of a past session** — chat conversations elsewhere don't carry over.

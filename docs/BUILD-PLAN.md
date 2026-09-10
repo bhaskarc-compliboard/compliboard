@@ -1,10 +1,10 @@
-# CompliBoard — Master Build Plan v3
+# Master Build Plan
+**Version:** 3 · **Updated:** 9 September 2026
+**Supersedes:** versions 1 and 2, both deleted. Revised against the actual codebase rather
+than the due-diligence description — six planned items were wrong and are corrected below,
+marked ⟲.
 
-**Date:** 9 September 2026
-**Supersedes:** Build Plan v1 and v2 — delete both.
-**Revised against the actual codebase**, not the due-diligence description. Six planned items were wrong; they are corrected below and marked ⟲.
-
-**Companions:** `CompliBoard-Decisions-v2.md` · `CompliBoard-Chemical-OR-WA-Vertical-Spec.md` · `BIZPULSES-PATTERNS.md` · `CLAUDE.md`
+**Companions:** `DECISIONS.md` · `CHEMICAL-OR-WA.md` · `PATTERNS.md` · `CLAUDE.md`
 
 **Legend:** ⚡ quality-affecting, discuss first · 🔒 blocking · 🅑 proven in BizPulses · ✚ improvement on BizPulses · ⟲ corrected after reading the code · ⏱ effort
 

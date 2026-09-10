@@ -1,7 +1,13 @@
-# Bizpulses — How This Project Is Actually Built
+# Bizpulses Patterns — How That Project Is Actually Built
+**Version:** 1 · **Updated:** 9 September 2026
+**Supersedes:** — (first version)
 
-A description of the conventions in this repo as of 2026-09-09, derived by reading the code.
-Where a convention doesn't exist, this says so rather than inventing one.
+A description of the conventions in the **Bizpulses** repo as of 2026-09-09, derived by
+reading its code. Carried over here as a reference: what to copy, and what not to. Where a
+convention doesn't exist, this says so rather than inventing one.
+
+**Note:** the "this repo" and "this project" wording throughout refers to Bizpulses, not
+CompliBoard. Bizpulses is TanStack Start; CompliBoard is Next.js. Read accordingly.
 
 Three corrections to assumptions people bring to this codebase:
 

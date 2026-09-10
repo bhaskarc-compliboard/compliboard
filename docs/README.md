@@ -23,54 +23,69 @@ apply" — if you need something a missing document would have told you, ask.
 
 ## What belongs here
 
-### `CompliBoard-Decisions-v2.md`
+Filenames are stable. Versions live **inside** each file, in the header block — see
+[Versioning](#versioning).
+
+### `DECISIONS.md`
 Every decision made and why, plus **the condition under which it would be reversed**.
-Supersedes `CompliBoard-Decisions-v1.md`, which was deleted. That last part is what makes it more than a changelog: a decision recorded
-with its reversal condition can be re-examined when the world changes, instead of being
-treated as permanent because nobody remembers the reasoning.
+That last part is what makes it more than a changelog: a decision recorded with its
+reversal condition can be re-examined when the world changes, instead of being treated as
+permanent because nobody remembers the reasoning.
 
-### `CompliBoard-Build-Plan-v3.md`
-The phased task list — what is being built, in what order, and what is deliberately
-deferred. Consult it before starting work so effort lands on the current phase rather
-than on something scheduled for later or already dropped.
+### `BUILD-PLAN.md`
+The phased plan — what is being built, in what order, and what is deliberately deferred.
+Consult it before starting work so effort lands on the current phase rather than on
+something scheduled for later or already dropped.
 
-### `CompliBoard-TODO-v2.md`
+### `TODO.md`
 The task-level to-do: what is done, what is in progress, what has not been started, phase
 by phase. Where the build plan is the *why* and the ordering, this is the *what next*.
-Supersedes `CompliBoard-TODO.md`, which was deleted — two overlapping to-do lists is the
-drift this folder exists to prevent.
 
-### `CompliBoard-Chemical-OR-WA-Vertical-Spec.md`
+### `CHEMICAL-OR-WA.md`
 The full design of the first vertical: regulatory map, data model, runtime pipeline,
 display, verification, onboarding. The most detailed document here and the one to read
-before touching requirements, obligations, or how results are shown.
+before touching requirements, obligations, or how results are shown. **Design only —
+none of it is built.**
 
-### `CompliBoard-Compliance-Workspace-Design.md`
-The conversation model, fact capture, and topic lifecycle — how a working session with
-the product is structured, how facts get captured from it, and how a topic moves from
-open to settled.
+### `WORKSPACE.md`
+The Compliance Workspace module: conversation model, fact capture, topic lifecycle, and
+signup with industry classification. **Design agreed, not built.**
 
-### `BIZPULSES-PATTERNS.md`
-Conventions carried over from a sibling project, with notes on **what to copy and what
-not to**. The "what not to" half matters as much as the other; it records patterns that
-were tried and found wanting, so they are not adopted again by default.
+### `PATTERNS.md`
+Conventions carried over from the sibling Bizpulses project, with notes on **what to copy
+and what not to**. The "what not to" half matters as much as the other; it records
+patterns that were tried and found wanting, so they are not adopted again by default.
+Note that its "this repo" wording refers to Bizpulses, which is TanStack Start — not
+CompliBoard, which is Next.js.
 
 ## Versioning
 
-Every substantially updated document gets a **version number in its filename** and a
-**header saying what it supersedes**. The superseded file is **deleted**, not kept
-alongside — see `CompliBoard-Decisions-v2.md` §15.7.
+**Version numbers go inside the file, never in the filename.**
 
-The reason is concrete rather than tidy-minded: two overlapping to-do lists existed here
-at once on 9 September, and a finding was written into the wrong one. `CLAUDE.md` pointed
-at a build plan two versions behind. In both cases a reader could not tell which document
-was live, so the stale one got read and acted on. Keeping the old file "for reference"
-guarantees that, because at a glance it looks exactly like the current one.
+Every document carries a header block:
 
-Git holds the history. That is what it is for.
+```
+# <Title>
+**Version:** <n> · **Updated:** <date>
+**Supersedes:** <what changed in this version, or "—">
+```
 
-When a document is versioned, update every reference to it in the same commit —
-`docs/README.md`, `CLAUDE.md` §2, and any companion list in the other documents.
+To update a document: edit it in place, raise the version, say what changed in
+**Supersedes**. The filename does not move.
+
+**Why, concretely.** Versioned filenames were tried and caused two drift incidents in a
+single day. Two to-do lists existed side by side — `CompliBoard-TODO.md` and
+`CompliBoard-TODO-v2.md` — and a finding was written into the wrong one. `CLAUDE.md`
+pointed at `CompliBoard-Build-Plan-v2.md` for a week after v3 existed. Both have the same
+cause: a version in the filename means every update renames the file, and every rename
+breaks every reference to it. The references then have to be chased across every other
+document, `CLAUDE.md`, and the code comments — and any that are missed now point at a file
+that either doesn't exist or, worse, still does and is stale.
+
+A stable filename means a reference written once stays correct forever. The version is
+still recorded; it is just recorded where updating it costs nothing.
+
+Git holds the full history of every version. That is what it is for.
 
 ## What does not belong here
 

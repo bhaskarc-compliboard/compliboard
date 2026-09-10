@@ -1,9 +1,9 @@
-# CompliBoard — Detailed To-Do
+# Detailed To-Do
+**Version:** 2 · **Updated:** 10 September 2026
+**Supersedes:** version 1 (9 Sep). Records Session A progress and adds the HR and
+employment-library sections. Supersedes the phase summaries in `BUILD-PLAN.md` at task
+level — the build plan stays as the *why*, this is the *what next*.
 
-**Version:** v2
-**Date:** 10 September 2026
-**Supersedes:** v1 (9 Sep) — delete it. v2 records Session A progress and adds §HR and §Employment library.
-**Also supersedes:** the phase summaries in `CompliBoard-Build-Plan-v3.md` at task level. The build plan stays as the *why*; this is the *what next*.
 **No fixed demo date.** Built properly, phase by phase, ready when it is ready.
 
 **Legend**
@@ -253,7 +253,7 @@ reaches the caller verbatim as `{"error": "Unexpected end of JSON input"}`.
 
 ## PHASE 3 — Compliance Workspace
 
-See `docs/CompliBoard-Compliance-Workspace-Design.md` for the full design.
+See `docs/WORKSPACE.md` for the full design.
 
 ### 3.1 Follow-up classification ⚡ ⏱ 2 days
 - ⬜ Elaboration → expansion only
@@ -494,7 +494,7 @@ Upload → scan the **whole handbook set** → store **findings as rows** → fi
 
 ## PHASE 8b — Signup and industry classification *(feature work)*
 
-Full design in `CompliBoard-Compliance-Workspace-Design-v2.md` §10.
+Full design in `WORKSPACE.md` §10.
 
 - ⬜ Remove the industry dropdown and `/api/industries` — it is circular, offering only verticals already built
 - ⬜ Signup collects **email, password, website, address** only
