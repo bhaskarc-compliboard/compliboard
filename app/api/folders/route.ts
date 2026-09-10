@@ -1,18 +1,22 @@
 // Folder tree for company documents.
 //
 // Every handler derives the company from the verified session via requireCompany().
-// This route writes with the service-role key, which bypasses RLS, so these checks are
-// its only tenant boundary. It previously took company_id from a query parameter or the
-// request body and never checked a session — so any caller could list, create inside,
+// CONVERTED OFF THE SERVICE-ROLE KEY (§0.9). Every query runs through `authed.db`, which
+// acts as the caller under RLS, so the database enforces tenancy alongside the checks
+// below rather than trusting them. It previously took company_id from a query parameter or
+// the request body and never checked a session — so any caller could list, create inside,
 // rename or delete another company's folders. Reference: app/api/documents/route.ts.
 
 import { NextRequest, NextResponse } from 'next/server'
-import { requireCompany, supabaseAdmin } from '@/lib/auth'
+import { requireCompany } from '@/lib/auth'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 // Loads one folder and confirms it belongs to this company. Returns null otherwise —
 // callers turn that into a 404, never a 403, so folder ids cannot be probed.
-async function ownedFolder(id: string, companyId: string) {
-  const { data } = await supabaseAdmin
+// Takes the client rather than reaching for a module-level one: it carries this request's
+// token and must not be shared between requests.
+async function ownedFolder(db: SupabaseClient, id: string, companyId: string) {
+  const { data } = await db
     .from('company_folders')
     .select('id, company_id, name')
     .eq('id', id)
@@ -25,9 +29,9 @@ export async function GET(request: NextRequest) {
   try {
     const authed = await requireCompany(request)
     if (!authed.ok) return authed.response
-    const { companyId } = authed.auth
+    const { companyId, db } = authed.auth
 
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await db
       .from('company_folders')
       .select('*')
       .eq('company_id', companyId)
@@ -48,7 +52,7 @@ export async function POST(request: NextRequest) {
   try {
     const authed = await requireCompany(request)
     if (!authed.ok) return authed.response
-    const { companyId } = authed.auth
+    const { companyId, db } = authed.auth
 
     const body = await request.json()
     const { name, parent_id, sort_order } = body
@@ -56,11 +60,11 @@ export async function POST(request: NextRequest) {
 
     // A parent folder, if given, must be one of this company's. Without this a folder
     // could be hung inside another company's tree.
-    if (parent_id && !(await ownedFolder(parent_id, companyId))) {
+    if (parent_id && !(await ownedFolder(db, parent_id, companyId))) {
       return NextResponse.json({ error: 'Folder not found' }, { status: 404 })
     }
 
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await db
       .from('company_folders')
       .insert({
         company_id: companyId,
@@ -85,17 +89,17 @@ export async function PATCH(request: NextRequest) {
   try {
     const authed = await requireCompany(request)
     if (!authed.ok) return authed.response
-    const { companyId } = authed.auth
+    const { companyId, db } = authed.auth
 
     const body = await request.json()
     const { id, name } = body
     if (!id || !name) return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
 
-    if (!(await ownedFolder(id, companyId))) {
+    if (!(await ownedFolder(db, id, companyId))) {
       return NextResponse.json({ error: 'Folder not found' }, { status: 404 })
     }
 
-    const { error } = await supabaseAdmin
+    const { error } = await db
       .from('company_folders')
       .update({ name })
       .eq('id', id)
@@ -115,19 +119,19 @@ export async function DELETE(request: NextRequest) {
   try {
     const authed = await requireCompany(request)
     if (!authed.ok) return authed.response
-    const { companyId } = authed.auth
+    const { companyId, db } = authed.auth
 
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
     if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
 
-    if (!(await ownedFolder(id, companyId))) {
+    if (!(await ownedFolder(db, id, companyId))) {
       return NextResponse.json({ error: 'Folder not found' }, { status: 404 })
     }
 
     // Refuse to delete a folder that still holds files. The count is scoped to this
     // company as well — an unscoped count could be satisfied by another company's rows.
-    const { count } = await supabaseAdmin
+    const { count } = await db
       .from('documents')
       .select('*', { count: 'exact', head: true })
       .eq('folder_id', id)
@@ -140,7 +144,7 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    const { count: subCount } = await supabaseAdmin
+    const { count: subCount } = await db
       .from('company_folders')
       .select('*', { count: 'exact', head: true })
       .eq('parent_id', id)
@@ -153,7 +157,7 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    const { error } = await supabaseAdmin
+    const { error } = await db
       .from('company_folders')
       .delete()
       .eq('id', id)
