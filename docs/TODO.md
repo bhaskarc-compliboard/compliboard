@@ -1,10 +1,52 @@
 # Detailed To-Do
-**Version:** 2 · **Updated:** 10 September 2026
-**Supersedes:** version 1 (9 Sep). Records Session A progress and adds the HR and
-employment-library sections. Supersedes the phase summaries in `BUILD-PLAN.md` at task
-level — the build plan stays as the *why*, this is the *what next*.
+**Version:** 3 · **Updated:** 10 September 2026
+**Supersedes:** version 2 (10 Sep). Adds the gate at the top — the three pieces of work
+that must land before the first real customer document. Marks §0.9 complete with the final
+route census, and §0.10 with the silent-document-drop recorded as observed rather than
+theorised. Version 2 superseded version 1 (9 Sep). Supersedes the phase summaries in
+`BUILD-PLAN.md` at task level — the build plan stays as the *why*, this is the *what next*.
 
 **No fixed demo date.** Built properly, phase by phase, ready when it is ready.
+
+---
+
+## ⛔ GATE — THESE LAND BEFORE THE FIRST REAL CUSTOMER DOCUMENT
+
+Three pieces of work are cheap right now and expensive the moment a real customer's
+documents are in the database. Each one is currently an afternoon. After that first upload
+each one costs a maintenance window, a rollback plan, and a conversation with a customer
+about downtime.
+
+**1. Key rotation. Six credentials.**
+Four leaked in a zip on 9 Sep. Both database passwords — production and staging — were
+printed in full to a terminal on 10 Sep while fixing the migration script's error output.
+The script redacts them now; the values are still out. Rotating six credentials against
+test data is a chore. Rotating them while customers are working is an outage.
+
+**2. The `memberships` migration.** `profiles.company_id` is one company per person.
+Moving to a user↔company many-to-many is nearly free today: production has four companies
+with one profile each, so there is nothing to reconcile. It is a prerequisite for user
+management (see the feature item below) *and* for multi-site roll-up views. **`auth_company_id()`
+returns a single `uuid` and 54 policies depend on it** — under memberships it must return a
+set or take an active-company parameter, which rewrites all of them plus the four storage
+policies. That is a large migration whichever day it happens; it is only *risky* once there
+is data.
+
+**3. The Phase 1 schema rebuild.** Enums instead of bare text, versioning columns,
+`industries[]`, the switch hierarchy. Read Phase 1 and count how many items say "painful to
+retrofit" — that phrase is only true once there is data to retrofit around. Today the
+production tables hold test rows we wrote ourselves and can drop.
+
+### Why this gate is written at the top
+
+Because it is easy to state and easy to slip past. Nobody decides to skip it. What happens
+is that a prospect signs, someone wants to try the product this week, one real document goes
+in — and the migration does not become impossible overnight. **It becomes harder gradually,
+which is exactly how work like this gets deferred permanently.** Every week after the first
+upload, the argument for "we'll do it after this next thing" gets slightly better, and it
+never stops getting better.
+
+The trigger is not a date. It is **the first document belonging to someone who is not us.**
 
 **Legend**
 ⚡ quality-affecting — spec before writing · 🔒 blocks later work · ⏱ effort, solo with Claude Code
@@ -48,7 +90,7 @@ Making the ground solid. Nothing here changes what a customer sees.
 - ✅ Applied to production
 
 ### 0.4 🔒 Close the remaining service-role holes ✅ DONE (9 Sep)
-The storage policies do not protect these — the service-role key bypasses RLS entirely.
+The storage policies did not protect these — the service-role key bypasses RLS entirely. *(That was the state on 9 Sep. §0.9 has since converted the routes to run as the caller, so the policies now apply.)*
 
 **Full route map completed 9 Sep.** 21 routes: 17 service-role, 2 session-verified, 9 taking identity from a client parameter. Every one is now closed, deleted, or confirmed safe.
 
@@ -145,62 +187,46 @@ write, creating a company refused, and an unauthenticated caller refused outrigh
 **Not done here, deliberately: no route was converted off the service-role key.** Rules
 first, proven; routes after. See 0.9.
 
-### 0.9 Convert routes off the service-role key ⬜ **NEXT** ⏱ 1–2 days
-Now that 004 makes the database enforce tenancy, most routes no longer need the key that
-bypasses it. The honest remaining justification is two places:
+### 0.9 Convert routes off the service-role key ✅ DONE (10 Sep)
 
-- **`/api/signup`** — no session exists yet, by definition.
-- **`/api/account` DELETE** — calls `auth.admin.deleteUser()`; removing a login is not
-  something a user token can do.
+Migrations 002–005 made the database able to enforce tenancy on its own. This made it do
+so: routes now connect as the person making the request, so the policies apply instead of
+being bypassed. Both layers are load-bearing — application code derives identity from the
+session, and the database enforces it independently. A route that forgets a check now fails
+closed rather than leaking.
 
-Everything else could run under the caller's own token, which would make the database the
-enforcing layer rather than a second opinion. `/api/obligations` and `/api/account`
-GET/PUT could switch today with no other change.
+**Final census — 18 routes.**
 
-**Verification method — this is the part that matters.** Do NOT verify a conversion by
-HTTP status. RLS is a filter, not a gate: a read that is too narrow returns `[]` with a
-200, and a partially-narrowed join returns rows with the joined object silently empty.
-A 200 proves nothing. Every conversion is verified by comparing, per table, the rows
-returned under the caller's token against the same query run with the service role —
-exact id sets, not just counts — plus a check that any joined data is present.
+**On the caller's token (10):** `account/export`, `calendar`, `document-review`,
+`documents`, `folders`, `hr`, `hr-audits`, `link-research`, `obligations`, `substeps`.
 
-Writes are the safe direction: a blocked write errors loudly with `42501`. Reads are where
-the danger is.
+**Holding the admin client (4), each for a reason written into the file:**
 
-**Order — cheapest and loudest failures first:**
-1. ✅ `/api/obligations` — done 10 Sep, the pattern proof
-2. `/api/industries` · 3. `/api/calendar` · 4. `/api/folders`
-5. `/api/link-research`, `/api/substeps` · 6. `/api/documents`
-7. `/api/hr-audits`, `/api/hr` · 8. `/api/account/export`, `/api/audits` — last, most tables
+| Route | Why it keeps the key |
+|---|---|
+| `account` | DELETE calls `auth.admin.deleteUser()`. Removing a login is an admin API, not a table write — no user token performs it at any privilege. GET and PUT are converted; the file holds both clients and says which is used where. |
+| `audits` | One statement: the shared parsed-standard cache insert on a cache miss. That table is reference data with no tenant column and no write policy, deliberately — an INSERT policy would let any authenticated user write into a cache every other company reads. The read beside it *is* converted. |
+| `industries` | Serves the signup page, which is public and has no session by definition. The requirements library is readable `to authenticated`, and 004 revoked anon's grants, so under a caller's token it returns nothing and the dropdown empties — which blocks signup. |
+| `signup` | Creates the auth user, company and profile before any session exists. |
 
-**⚠️ The profiles trap on `/api/account/export`. Decide before converting it.**
-That route reads `profiles` filtered by `company_id`, to list everyone on the account. But
-the SELECT policy on `profiles` is `auth.uid() = id` — a user can see only their own row.
-Under RLS that query silently returns ONE row instead of all of them, and the export looks
-complete while having quietly lost every colleague. No error, no empty result, just less
-data than the customer is owed — from the endpoint whose entire purpose is giving them
-everything we hold.
+**No database at all (4):** `chat`, `extract-dates`, `scan-website`, `feedback`.
 
-Two ways out, and it needs a decision, not a guess: give `profiles` a company-scoped
-SELECT policy so colleagues can see each other (consistent with documents, checklists and
-the calendar, and probably right), or accept that the export covers only the requesting
-user and say so in the file's own `note` field. The same trap applies to `/api/account`
-DELETE, which reads `profiles` by `company_id` to find the logins to remove — but that
-route keeps the service-role key anyway.
+**`reviewDocument`'s fallback is gone.** That shared module used to build its own admin
+client and fall back to it when a caller passed none. Both callers now pass one, so the
+fallback was unreachable code that silently bypassed RLS — the kind that gets picked up
+later by someone who does not know why it was there. The `db` parameter is **required**
+now, so the compiler enforces it and a future caller cannot forget.
 
-**⚠️ `standard_templates` keeps the service-role key for its cache-miss insert.**
-`/api/audits` reads the shared parsed-standard cache and, on a miss, writes the newly
-generated checklist back to it (`app/api/audits/route.ts`, around line 237). That table is
-reference data: `SELECT USING (true)`, no write policy, deliberately. Giving it an INSERT
-policy would let any authenticated user write into the cache every other company reads —
-poisoning shared regulatory content from a normal session. So when that route converts, it
-holds both clients and uses the admin one for that single insert, with a comment saying
-why. A route may keep the key for a named statement; it may not keep it out of habit.
+**The rule this established:** a route may keep the admin client for a *named statement*
+with a comment explaining it. It may not keep it out of habit. Every one of the four above
+names its statement.
 
-**Also still to do:** the nine browser call sites that read `profiles` directly to fetch
-`company_id` (requirements, audits, calendar, dashboard, hr, compliance, documents, upload,
-AppLayout) should call `auth_company_id()` by RPC instead. No policy depends on `profiles`
-any more, but those pages still do — that is what finishes decoupling the base case.
+**Verification standard used throughout** — see `DECISIONS.md` §17.6. Not HTTP status:
+RLS is a filter, not a gate, so a read that is too narrow returns `[]` with a perfectly
+good 200. Every conversion was checked by comparing per-table row counts, and usually exact
+id sets, under the caller's token against the same query run with the service role, with
+joined tables checked separately because a blocked join returns the right number of rows
+with empty content.
 
 ### 0.10 Audit-engine debts, surfaced while converting it ⬜ ⏱ see each
 
@@ -381,7 +407,9 @@ the four storage policies. Plan it as its own migration with its own rehearsal, 
 step inside the user-management feature.
 
 **Prerequisite already done:** migration 005 gives `profiles` a company-scoped SELECT
-policy, which is what makes "list who has access" possible at all.
+policy — **applied to production 10 Sep** — which is what makes "list who has access"
+possible at all. It changes nothing visible today: production has four companies with one
+person each, so nobody has a colleague to see.
 
 ---
 

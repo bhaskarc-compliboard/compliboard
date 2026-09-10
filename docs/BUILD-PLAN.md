@@ -1,6 +1,7 @@
 # Master Build Plan
-**Version:** 3 · **Updated:** 9 September 2026
-**Supersedes:** versions 1 and 2, both deleted. Revised against the actual codebase rather
+**Version:** 3.1 · **Updated:** 10 September 2026
+**Supersedes:** version 3 (9 Sep) — annotated where the service-role assessment has since
+been resolved by migrations 003–005 and the route conversions. Versions 1 and 2 deleted. Revised against the actual codebase rather
 than the due-diligence description — six planned items were wrong and are corrected below,
 marked ⟲.
 
@@ -59,7 +60,7 @@ Confirmed from code: `audits` carries **both** `company_id` and `user_id` — th
 
 Migration 001 enables RLS on all six spine tables, but **only creates SELECT policies.** There are no INSERT, UPDATE, or DELETE policies anywhere.
 
-⟲ **This is why 17 routes use the service-role key.** It was not laziness — with no write policies, service role is the only path open.
+⟲ **This is why 17 routes used the service-role key.** It was not laziness — with no write policies, service role was the only path open. *(Resolved 10 Sep: migrations 003–005 gave every table full policies, and the routes were converted to run as the caller. Ten now do; four keep the key for a named reason. See `TODO.md` §0.9.)*
 
 That reframes the work: adding write policies is not "hardening," it is what makes those routes *able* to stop using the key.
 
@@ -73,7 +74,7 @@ create policy "obligations scoped to own company"
   using (company_id in (select company_id from public.profiles where id = auth.uid()));
 ```
 
-`requirement_templates` and `agencies` are shared reference data — readable by any authenticated user, written only by service role. That is correct and stays.
+`requirement_templates` and `agencies` are shared reference data — readable by any authenticated user, written only by service role. That is correct and stays. *(`standard_templates` joined them on 10 Sep; it was the only one missing its read policy.)*
 
 ## A.5 Column names — ⟲ the spec and the schema disagree
 
@@ -98,7 +99,7 @@ Also already present and useful: `is_determination boolean` (the `produces_switc
 
 **21 routes**, not 17.
 
-- **17 use the service-role key**
+- **17 use the service-role key** *(as of 9 Sep. Now 4 — see `TODO.md` §0.9.)*
 - **2 verify a token:** `folders/industry`, `cron/monthly-summary`  *(as of 9 Sep: every route with company data verifies a token; `folders/industry` has since been deleted as orphaned)*
 - **9 take `company_id` or `user_id` directly from a client parameter:** `account`, `audits`, `calendar`, `document-review`, `documents`, `folders`, `hr-audits`, `obligations`, `requirements`
 
@@ -148,7 +149,7 @@ Every migration opens with a paragraph on *why*. 🅑
 ### 0.5 ⟲🔒 Write policies + GRANTs on the six spine tables ⏱ half day
 Add INSERT/UPDATE/DELETE policies matching the existing SELECT pattern, plus explicit `WITH CHECK`. Add `GRANT SELECT, INSERT, UPDATE, DELETE ON <table> TO authenticated, service_role;` for every table.
 
-**This is what lets routes stop using the service-role key.**
+**This is what lets routes stop using the service-role key.** *(Done 10 Sep — migrations 003–005, then the conversions.)*
 
 ### 0.6 🔒 RLS on the 11 backfilled tables ⏱ 1 day
 Same `profiles.company_id` subquery pattern. Fully-qualified column names.

@@ -1,6 +1,11 @@
 # Decision Record
-**Version:** 3 · **Updated:** 10 September 2026
-**Supersedes:** version 2 (10 Sep) — §15.7 is marked superseded and §15.8 replaces it:
+**Version:** 4 · **Updated:** 10 September 2026
+**Supersedes:** version 3 (10 Sep). Adds §17, the decisions behind the second tenancy
+layer: RLS as an enforcement layer rather than a formality, `auth_company_id()` as the one
+place tenancy lives, the shared-cache carve-out, one user per company for release one with
+the audit-trail cost stated, separating the schema migration from the multi-user feature,
+and the verification standard. §16 updated to reflect that the routes are now converted.
+Version 3 superseded version 2 (10 Sep) — §15.7 is marked superseded and §15.8 replaces it:
 document versions now live inside each file, not in its filename. §13 drops the Technical
 Due Diligence row — that document has been deleted and every finding that mattered is
 carried into this one; a fresh assessment will be made later. Version 2 superseded
@@ -529,13 +534,154 @@ data derives `company_id` from the verified session token; none reads it from a 
 or body. Three orphaned routes were deleted rather than hardened. Two prompt-injection
 paths — `company_name` and `industry` arriving from the request — were closed.
 
-**Not closed, and next:** every route still uses the service-role key, which ignores RLS.
-The application checks are therefore the *only* tenant boundary on the database side. Write
-policies on all 19 tables (§0.6 of the to-do) are what make the database enforce it too, so
-a future route that forgets the check fails closed instead of leaking. Table-level tenancy
-(§0.5) was the prerequisite and is done — migration 003 moved `checklists`,
-`checklist_items` and `calendar_events` to company scope, and retired `folder_audits`.
+**Also closed since this section was first written.** Migration 003 moved `checklists`,
+`checklist_items` and `calendar_events` to company scope and retired `folder_audits`.
+Migration 004 gave every table a full set of policies, centralised the tenancy rule in
+`auth_company_id()`, and revoked the not-logged-in role's grants. Migration 005 let
+colleagues see each other. Then the routes were converted to run **as the caller**, so the
+policies apply rather than being bypassed: ten routes on the caller's token, four holding
+the admin client for a named statement each, four touching no database. All five migrations
+are live in production. §17 records the decisions behind that work.
 
 **Known and recorded, not fixed:** an empty model response becomes a raw 500 through
-`askAIJson`; the monthly-summary cron route has never run because nothing schedules it;
-four orphaned storage files sit under a prefix matching no company.
+`askAIJson`; the monthly-summary route was deleted (it had never run — nothing scheduled
+it); four orphaned storage files sit under a prefix matching no company; and the audit
+engine drops a document from its basis when the download fails, with no error and no
+record — observed live on 10 Sep producing a confident readiness figure from one readable
+document out of eight.
+---
+
+## 17. Decisions of 10 September 2026 — the second tenancy layer
+
+### 17.1 RLS is the second enforcement layer, not a formality.
+
+**Decision:** every table carries a complete set of policies, and routes connect as the
+requesting user so those policies actually apply. Application checks stay; the database
+now enforces the same rule independently.
+
+**Reasoning.** Before this, every route derived `company_id` from the verified session and
+scoped its own queries — correctly, and verifiably so. But all of them connected with the
+service-role key, which ignores RLS entirely. That is *one* layer, and it is a layer made
+of remembering: it holds for exactly as long as every future route, written by anyone, in
+a hurry, remembers to add `.eq('company_id', companyId)` to every query. The failure is
+silent and the reviewer of that future pull request has to notice an absence.
+
+Policies do not need remembering. A route that forgets its filter returns the caller's own
+rows anyway; a route that names another company's row gets nothing back. The check moves
+from something a person must do each time to something the database does every time.
+
+Both layers are kept. The application check produces a clean 404 and never reveals whether
+an id exists; the policy is the backstop when the check is missing or wrong.
+
+**Reversal condition:** if RLS ever measurably costs more than it is worth — a hot path
+where the policy subquery dominates, on a table where the application check is provably
+sufficient. Measure it; do not assume it. No such case exists today.
+
+### 17.2 `auth_company_id()`, SECURITY DEFINER, is where tenancy lives.
+
+**Decision:** one function returns the caller's company, read from `profiles` with definer
+rights. Every company-scoped policy calls it. 54 of 58 policies do.
+
+**Reasoning.** The same subquery — `company_id in (select company_id from profiles where
+id = auth.uid())` — had been written into twenty policies and all four storage policies.
+Every copy read `profiles`, and `profiles` had its own RLS, so all of them silently
+depended on one policy on a different table. Narrowing that one policy would have denied
+everything, everywhere, including every file, with no error naming `profiles`. It would
+have looked like the data had vanished.
+
+Definer rights break that chain: the function reads `profiles` regardless of the policies
+on `profiles`, so tenancy no longer hangs off a rule nobody thinks about when editing it.
+Writing it once also means the rule can be corrected in one place.
+
+`search_path` is pinned — a SECURITY DEFINER function without one is the standard Postgres
+hijack.
+
+**Reversal condition:** the function's signature is the constraint. It returns a single
+`uuid`, so a person belongs to one company. When `memberships` lands it must return a set
+or take an active-company parameter, and 54 policies change with it. That is a planned
+migration, not a reversal — but it is the reason this decision has a cost, and the cost
+grows with the number of policies.
+
+### 17.3 `standard_templates` keeps a privileged write. Named, not habitual.
+
+**Decision:** the shared parsed-standard cache is readable by any authenticated user and
+writable only by the service role. `/api/audits` holds the admin client for that single
+insert, with a comment saying so and saying not to remove it.
+
+**Reasoning.** One parsed copy of OSHA 1910.1200 serves every company — that shared cache
+is the one place where marginal cost falls as customers are added (§1). So the table has no
+tenant column, and there is nothing to scope a write policy *by*. An INSERT policy would
+let any authenticated user write content into a cache every other company reads: poisoned
+regulatory material, from an ordinary session, with no tenant boundary to catch it.
+
+**The general rule this sets:** a route may hold the admin client for a *named statement*
+with a comment explaining why. It may not hold it out of habit. All four remaining
+admin-client routes name their statement.
+
+**Reversal condition:** if the cache ever becomes per-company — different companies wanting
+different parses of the same standard — it gains a tenant column and this carve-out
+disappears with it.
+
+### 17.4 One user per company for release one. Shared logins tolerated.
+
+**Decision:** ship with `profiles.company_id` as it is. A company has one login. Early
+customers who need two people sharing may share one.
+
+**Reasoning.** User management does not exist — there is no way to add a person to an
+existing company or remove one (see the feature item in `TODO.md`). Building it properly
+means the `memberships` migration and a whole invite/remove flow, and that is not what
+stands between here and a first customer.
+
+**The cost, stated so it is not discovered later:** a shared login weakens the audit trail.
+Every write attributes to one person, so "who marked this obligation complete, and when" —
+which is part of what a compliance record *is* — becomes "someone at this company did".
+For a product sold on proving compliance with real evidence, that is a real limitation, not
+a cosmetic one. It is acceptable for early customers who know it; it is not acceptable
+indefinitely, and it should be said out loud during those sales conversations rather than
+discovered during an audit.
+
+**Reversal condition:** the first customer who needs two named people with separate
+accountability. That is not a nice-to-have request — it is the product's core claim.
+
+### 17.5 The schema migration goes early; the multi-user feature ships on its own timeline.
+
+**Decision:** separate the two. Move `profiles.company_id` to `memberships` **before real
+customer data exists**, because that is when it is nearly free. Build and ship the
+invite/list/remove feature whenever it is genuinely next.
+
+**Reasoning.** The migration is cheap now and expensive later — four companies, one profile
+each, nothing to reconcile. The feature is a week of UI, flows and edge cases that is not
+currently the most valuable week available.
+
+**But do not stockpile the feature.** Writing invite and removal flows now and leaving them
+unreleased means code that has never met a real user, ageing against a schema that keeps
+moving. Code written and not released is not tested — it is only compiled. Land the schema;
+build the feature when it is next.
+
+**Reversal condition:** if the `memberships` migration turns out to be harder than expected
+against a live `auth_company_id()`, do it in a maintenance window rather than deferring it
+past the first customer. Deferring is the expensive option, not the safe one.
+
+### 17.6 Verification standard: compare rows against the service role, never HTTP status.
+
+**Decision:** any change to who can see what is verified by comparing per-table row counts —
+and where practical exact id sets — under the caller's token against the same query run
+with the service role. Joined tables are checked separately. Seed enough rows first that a
+subset failure is visible.
+
+**Reasoning.** RLS is a filter, not a gate. A read that is too narrow returns `[]` with a
+perfectly good 200; a partially-blocked join returns the right number of rows with empty
+content inside them. Neither errors. "The route returned 200" and "the route returned the
+right data" are unrelated statements, and only the second one matters.
+
+This was not theoretical. The export route would have silently dropped every colleague from
+a customer's data export — right shape, right status, fewer people — and only a count
+comparison would have caught it. Testing with one row per table would not have caught it
+either, which is why seeding comes first.
+
+Writes are the safe direction: a refused insert errors loudly with `42501`. A refused
+*update* or *delete* changes zero rows and returns success, so those are verified by
+re-reading the row, not by the response.
+
+**Reversal condition:** none. If a cheaper check is proposed, the question to ask is what
+silent narrowing it would catch.

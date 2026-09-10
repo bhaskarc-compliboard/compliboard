@@ -167,16 +167,29 @@ subquery; every data table carries `company_id`, **never `user_id`**.
   ownership check on every row touched, and a destination check on the row being written
   into. A row belonging to another company returns **404, not 403**, so ids cannot be
   probed by watching which error comes back.
-- Every table needs `SELECT`, `INSERT`, `UPDATE`, and `DELETE` policies. Migration 001
-  created SELECT-only policies, which is why writes currently go through the service-role
-  key. Adding the write policies is what lets those routes stop using it.
+- Every table needs `SELECT`, `INSERT`, `UPDATE`, and `DELETE` policies. **Done —
+  migrations 003–005.** All 18 tables carry a full set, the three reference tables
+  (`requirement_templates`, `agencies`, `standard_templates`) are read-only to
+  authenticated callers, and the not-logged-in role holds no grants at all.
+- **Tenancy is expressed through `public.auth_company_id()`**, a `SECURITY DEFINER`
+  function returning the caller's company from `profiles` with definer rights. 54 of 58
+  policies call it. Write new policies through it — never re-derive the subquery, because
+  a copy of it silently depends on `profiles`' own RLS.
 - Explicit `WITH CHECK` on every policy, not just `USING`.
 - Fully-qualified column names in policy predicates.
 - **`GRANT` is not automatic** — every new table needs its own grant line or all reads
   and writes fail with "permission denied," even for service role, even when RLS passes.
   Migration 001 has no GRANT statements; verify before assuming those tables are reachable.
-- The service-role key is permitted only where no user session exists: the worker, the cron
-  route, and signup. Everywhere else it is a bug.
+- **Routes connect as the caller.** `requireCompany()` returns `authed.db`, a client built
+  from the anon key plus the request's own token, so policies apply. It is built per
+  request and must never be hoisted to module scope or cached — it carries one user's
+  token. Ten routes use it.
+- The service-role key is permitted only where no user session exists, or for a **named
+  statement** with a comment explaining it. Today: `signup` (no session yet), `account`
+  DELETE (`auth.admin.deleteUser`), `industries` (serves the pre-login signup page), and
+  one insert in `audits` (the shared standard cache, which has no tenant column). A route
+  may hold it for a named statement; it may not hold it out of habit. The worker, when it
+  exists, will use it for the same reason signup does.
 
 ### 3.7 Database changes
 
