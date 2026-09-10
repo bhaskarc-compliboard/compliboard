@@ -64,6 +64,14 @@ for what each covers. Not all of them are present at any given time; the owner a
 - **`PATTERNS.md`** — conventions carried over from the sibling Bizpulses project, with
   notes on what to copy and what not to.
 
+**Both plans are ordered horizontal first, vertical last.** The numbered phases are
+infrastructure — schema, runtime pipeline, resolution, worker, library, observability. The
+final section (`MODULES` in `TODO.md`, `PART C` in `BUILD-PLAN.md`) is the seven product
+modules, worked one at a time once the ground under them has stopped moving. **Do not start
+module work because it is more visible than schema work** — each module names the phases it
+depends on, and starting early means building it twice. `DECISIONS.md` §18 has the reasoning
+and the one condition under which this ordering is traded.
+
 **Filenames here are stable and do not carry version numbers.** The version is in each
 file's header block. Updating a document means editing it in place and raising that
 number — never renaming the file, because a rename breaks every reference to it. See

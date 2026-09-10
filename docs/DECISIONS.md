@@ -1,6 +1,8 @@
 # Decision Record
-**Version:** 4 · **Updated:** 10 September 2026
-**Supersedes:** version 3 (10 Sep). Adds §17, the decisions behind the second tenancy
+**Version:** 5 · **Updated:** 10 September 2026
+**Supersedes:** version 4 (10 Sep). Adds §18, the decision to order the plan horizontally
+first and vertically last — the phases now hold only infrastructure, and every module moved
+to a final `MODULES` section in `BUILD-PLAN.md` and `TODO.md`. Version 4 added §17, the decisions behind the second tenancy
 layer: RLS as an enforcement layer rather than a formality, `auth_company_id()` as the one
 place tenancy lives, the shared-cache carve-out, one user per company for release one with
 the audit-trail cost stated, separating the schema migration from the multi-user feature,
@@ -685,3 +687,57 @@ re-reading the row, not by the response.
 
 **Reversal condition:** none. If a cheaper check is proposed, the question to ask is what
 silent narrowing it would catch.
+
+---
+
+## 18. The plan is ordered horizontally first, vertically last
+
+**Decision, 10 September 2026: the phases in `BUILD-PLAN.md` and `TODO.md` hold only
+horizontal work — schema, the runtime pipeline, resolution, the worker, library data,
+observability. Every vertical slice moves to a single final section, `MODULES`, worked one
+module at a time: Compliance Workspace, Audits, HR, Documents, Calendar, Dashboard,
+Onboarding and signup.**
+
+**Reasoning.** The plan had one vertical slice sitting inside the horizontal sequence — the
+Compliance Workspace, at Phase 3 — and it was scheduled *ahead of* the determination gate,
+the critic pass, `company_switches` and the resolution engine, all of which are inputs to
+it. A module built while its own foundations are still being poured is a module built
+twice. Screens had the same problem at Phase 8, one step removed: a screens phase is not a
+unit of work, it is seven modules' worth of screens filed together because they are all
+made of pixels.
+
+The second half matters more. **The other six modules had no phase at all.** Their findings
+were real, specific and already written down — the audit engine silently dropping documents
+it cannot read, HR checking a handbook against eleven hardcoded words with no jurisdiction,
+the calendar extracting dates from PDFs instead of reading cadence from obligations — but
+they lived scattered through `TODO.md` as *debts*, filed under whichever gap-closing session
+happened to surface them. A debt is something you might pay. Planned work is something you
+will do. Most of those items are not debts; they are the product.
+
+**The cost is admitted openly: the plan is now longer.** That is the honest shape. The
+phases were short because infrastructure is smaller than product, and the previous ordering
+made the plan look nearly finished by keeping most of the remaining work out of it.
+
+**What stayed a phase.** The employment law library moved *back* into the phases (6c → 6b).
+A library is horizontal: employment obligations are read by the HR module and also belong in
+a chemical manufacturer's obligation list, because they employ people. Same table, tagged
+`domain = employment` (§4 of this record, and the architecture note in M3). Modules are
+views over rows; a body of law is not a module.
+
+**What does not wait for its turn.** M2(a) — the audit engine dropping any document it fails
+to download, silently, then computing readiness correctly from a smaller input — is live in
+production, was observed in a real run on 10 Sep (two satisfied, one needs-info, computed
+from one readable document out of eight), and is half a day. Correctness bugs in shipped
+code are not module work. Being last in the plan is not a licence to leave something wrong.
+
+**Phases are not renumbered.** Phase 3 and Phase 8 are now gaps in `TODO.md`, Phase 7 in
+`BUILD-PLAN.md`. Both documents and this one reference phases by number in dozens of places
+(`7.3`, `2.6`, `5.2`, `6.7`); renumbering would break every reference silently, which is the
+same failure mode §15.8 records for versioned filenames. Two gaps in a sequence is the
+cheaper cost, and the gaps are explained in place.
+
+**Reversal condition.** If a customer commitment requires one module end-to-end before the
+horizontal work is finished, this ordering is what gets traded — deliberately, with the
+rebuild cost stated, and with the affected module's dependencies named. The failure to avoid
+is drifting into module work because it is more visible than schema work, which is exactly
+what a plan with a vertical slice at Phase 3 invited.

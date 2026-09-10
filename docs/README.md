@@ -37,9 +37,20 @@ The phased plan — what is being built, in what order, and what is deliberately
 Consult it before starting work so effort lands on the current phase rather than on
 something scheduled for later or already dropped.
 
+Part B is **horizontal** — schema, runtime, worker, resolution, library, observability —
+and Part C is **vertical**: the seven product modules, built last, once the ground under
+them has stopped moving. That split is the plan's main structural claim; the reasoning is
+written at the head of Part C.
+
 ### `TODO.md`
 The task-level to-do: what is done, what is in progress, what has not been started, phase
 by phase. Where the build plan is the *why* and the ordering, this is the *what next*.
+
+Same two-part shape as the build plan: numbered phases first, then `MODULES` (M1–M7) at
+the end, each module carrying the findings behind it. **Most of the real product work is
+in that final section** — the phases are short because infrastructure is smaller than
+product. Read the ⛔ GATE at the top before planning anything: three pieces of work are
+cheap today and expensive the moment a real customer's documents are in the database.
 
 ### `CHEMICAL-OR-WA.md`
 The full design of the first vertical: regulatory map, data model, runtime pipeline,
@@ -49,7 +60,8 @@ none of it is built.**
 
 ### `WORKSPACE.md`
 The Compliance Workspace module: conversation model, fact capture, topic lifecycle, and
-signup with industry classification. **Design agreed, not built.**
+signup with industry classification. **Design agreed, not built.** Planned as M1 and M7 in
+`TODO.md`'s `MODULES` section, after the phases they depend on.
 
 ### `PATTERNS.md`
 Conventions carried over from the sibling Bizpulses project, with notes on **what to copy

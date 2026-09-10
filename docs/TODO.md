@@ -1,10 +1,15 @@
 # Detailed To-Do
-**Version:** 3 · **Updated:** 10 September 2026
-**Supersedes:** version 2 (10 Sep). Adds the gate at the top — the three pieces of work
-that must land before the first real customer document. Marks §0.9 complete with the final
-route census, and §0.10 with the silent-document-drop recorded as observed rather than
-theorised. Version 2 superseded version 1 (9 Sep). Supersedes the phase summaries in
-`BUILD-PLAN.md` at task level — the build plan stays as the *why*, this is the *what next*.
+**Version:** 4 · **Updated:** 10 September 2026
+**Supersedes:** version 3 (10 Sep). Restructures the phase order: the phases are now
+horizontal only, and everything vertical moved into a new final `MODULES` section — seven
+modules, each with the findings that were previously scattered through the document as
+debts. The Compliance Workspace left Phase 3 (it was the only vertical slice among the
+phases, scheduled ahead of the infrastructure it depends on); Screens left Phase 8 and was
+distributed to the modules that own each screen; the audit-engine findings left §0.10; the
+HR findings left Phase 6b; signup left Phase 8b. The employment law library stayed a phase,
+renumbered 6c → 6b, because a library is horizontal. Version 3 added the gate at the top and
+marked §0.9 complete; version 2 superseded version 1 (9 Sep). Supersedes the phase summaries
+in `BUILD-PLAN.md` at task level — the build plan stays as the *why*, this is the *what next*.
 
 **No fixed demo date.** Built properly, phase by phase, ready when it is ready.
 
@@ -51,6 +56,17 @@ The trigger is not a date. It is **the first document belonging to someone who i
 **Legend**
 ⚡ quality-affecting — spec before writing · 🔒 blocks later work · ⏱ effort, solo with Claude Code
 ✅ done · 🔄 in progress · ⬜ not started
+
+**How this document is ordered.** Phases first — they are **horizontal**, infrastructure that
+every part of the product stands on. Then `MODULES`, at the end — **vertical** slices, one
+feature area at a time, built once the ground under them has stopped moving. The reasoning is
+written out at the head of that section.
+
+**There is no Phase 3 and no Phase 8.** Phase 3 was the Compliance Workspace and Phase 8 was
+Screens; both were vertical and both moved into `MODULES`. The remaining phases are **not**
+renumbered: this document and its companions reference phases by number in dozens of places
+(`7.3`, `2.6`, `5.2`, `6.7`), and renumbering breaks every one of them silently. Two gaps in a
+sequence is the cheaper cost.
 
 ---
 
@@ -227,87 +243,6 @@ good 200. Every conversion was checked by comparing per-table row counts, and us
 id sets, under the caller's token against the same query run with the service role, with
 joined tables checked separately because a blocked join returns the right number of rows
 with empty content.
-
-### 0.10 Audit-engine debts, surfaced while converting it ⬜ ⏱ see each
-
-Four things found while moving `/api/audits` off the service-role key. **None is caused by
-that conversion** — the first predates it and the rest are structural.
-
-**(a) A document that fails to download vanishes from the audit, silently. ⏱ half day**
-The auto-index loop does `if (dlError || !fileData) continue`. Any cause — a storage
-policy, a missing object, a transient network failure, an expired token — drops that
-document from the candidate set with no error, no log the user sees, and no record on the
-saved audit. The matcher is then shown fewer documents, matches fewer requirements, and the
-readiness counts are computed **correctly in code from a smaller input**. Plausible numbers,
-wrong basis. `CLAUDE.md` §3.2 puts readiness in code precisely so it cannot be an AI guess;
-that protection does nothing when the input quietly shrinks.
-
-The audit should report which documents it could not read, exactly as `/api/hr` now does —
-that route names the file and the reason and says the answer does not account for it. Same
-treatment here: a `documents_failed` list on the saved audit, surfaced in the UI.
-
-**⚠️ (a) IS NOT THEORETICAL — IT WAS OBSERVED IN A REAL RUN, 10 SEP.**
-A re-run on staging returned `satisfied=2 needs_info=1 needs_work=0`. Entirely plausible
-numbers. They were computed from **one reviewable document out of eight**: only two of that
-company's documents had a real object behind them, one could be read, and the other seven
-were dropped by the `continue` with no error, no log the user sees, and no record on the
-saved audit.
-
-**This is current production behaviour, not a test artifact.** The same code path runs in
-production today. Any cause that makes a download fail — a missing object, a transient
-error, a policy problem — silently removes that document from the basis of the answer, and
-the readiness figure comes out looking exactly as confident as one built on the full set.
-
-A confident readiness number built on a silently truncated document set is **the precise
-failure this product exists to prevent** (`CLAUDE.md` §6, the omniscient status tracker;
-§3.2, readiness computed in code so it cannot be guessed). Computing it correctly from
-wrong input is not a defence. **Weight this accordingly when the audit engine is next
-touched — it is the most consequential item in this section, not a tidy-up.**
-
-**(a2) `matched_documents` can contain entries with no `document_id` at all.**
-The same run produced a `matched_documents` array holding an entry whose `document_id` was
-`None` — the model returned it that way. Harmless right now because nothing consumes that
-array beyond display, but it is on the path to Phase 7.3, which normalises audit output
-into `obligation_evidence`. Anything linking evidence from this array would either break on
-the null or, worse, skip it silently and record less evidence than the audit found.
-
-Both (a) and (a2) are the same underlying problem: **that array is trusted more than it
-deserves.** One is missing entries nobody was told about, the other is malformed entries
-nobody validated. Zod at the AI boundary (§2.6) covers the second; reporting unreadable
-documents covers the first.
-
-**(b) `/api/audits` is the clearest case for the Phase 5 worker. 🔒**
-One request does classify (with web search), generate a full standard on a cache miss,
-review every unreviewed document one at a time, and match every requirement in batches.
-Minutes, several model calls, unbounded in document count. `maxDuration` is already at 800s
-— the highest stable Vercel ceiling without the extended-duration beta — and was raised once
-already to work around this. Raising it again is the same workaround with a bigger number.
-
-`PATTERNS.md` §5: BizPulses runs its equivalent as a plain always-on Node process, "separate
-from Vercel because classify + N extraction calls + reconcile routinely exceed any
-serverless timeout." Same wall, same answer.
-
-**When it moves, it returns to the service-role key legitimately** — a background job has no
-user session to run as, the same reason `/api/signup` keeps it. The conversion done on 10 Sep
-is superseded at that point, not wrong: it makes the route correct where it currently lives.
-
-**(c) The user gets nothing for the duration of a multi-minute run. ⏱ folded into Phase 5**
-No progress, no partial result, no indication anything is happening. BizPulses writes a
-`progress_message` after classification and after each chunk, and the browser polls the row
-to render it. Phase 5 solves this as a side effect of moving to a job row that can be
-updated mid-flight — **record it now so the worker spec includes it**, rather than
-rediscovering it after the worker ships without it.
-
-**(d) Port BizPulses's atomic `replace_*` pattern. ⏱ with Phase 4**
-DELETE and INSERT inside one transaction, with the ownership guard expressed in SQL, so a
-failed refresh leaves the prior data intact rather than half-written. Wanted for
-`replace_obligations` (Phase 4.2 already calls for exactly this) and for document re-review.
-
-**One difference that must not be ported.** BizPulses always wants the latest data for a
-period and discards what it replaces. CompliBoard often wants the history: obligations are
-marked, never deleted (§3.2), and library rows are versioned rather than edited in place.
-**The transaction mechanism ports; the retention policy does not.** Take the atomicity and
-the in-SQL guard; keep our own rules about what survives.
 
 ### 0.7 Housekeeping ⬜ ⏱ 2 hours
 - ⬜ Delete four orphaned storage files under a prefix matching no company
@@ -528,44 +463,6 @@ reaches the caller verbatim as `{"error": "Unexpected end of JSON input"}`.
 
 ---
 
-## PHASE 3 — Compliance Workspace
-
-See `docs/WORKSPACE.md` for the full design.
-
-### 3.1 Follow-up classification ⚡ ⏱ 2 days
-- ⬜ Elaboration → expansion only
-- ⬜ Refinement → update fact, re-run identification → critic → expansion
-- ⬜ New question → full pipeline
-- ⬜ **Refinement recomputes, never appends**
-
-### 3.2 Fact capture from conversation ⚡ ⏱ 3 days
-- ⬜ Established facts write to `company_switches`; exploration stays in the transcript
-- ⬜ Every capture records `basis` — the actual sentence the user said
-- ⬜ `user_stated` applies immediately; `ai_inferred` confirms before applying
-- ⬜ Confirm when ambiguous
-
-### 3.3 Scoped questions ⚡ ⏱ 1 day
-When a durable fact permits multiple answers, ask the scoped question rather than re-asking the fact. *"You operate your own fleet and also use carriers. For this shipment — which?"* The answer is context, not an overwrite.
-
-### 3.4 Topic lifecycle ⬜ ⏱ 3 days
-- ⬜ Explicit close: summary written, facts extracted, transcript discarded
-- ⬜ Tell the user the real reason — past conversations pollute future answers
-- ⬜ Auto-close on inactivity
-- ⬜ Creating a checklist closes the topic
-- ⬜ Flag stale checklists when a fact changes — **flag, never auto-regenerate**
-
-### 3.5 In-context fact display ⬜ ⏱ 2 days
-Before an answer, show **only the facts this question depends on.** Not a wall.
-
-### 3.6 Dashboard verification section ⬜ ⏱ 2 days
-- ⬜ Three at a time, never more
-- ⬜ Ranked by consequence internally
-- ⬜ **No numbers** until the library is verified
-- ⬜ Empty state is the good state
-- ⬜ Frame as an inbox that gets quiet, not a burn-down
-
----
-
 ## PHASE 4 — Resolution engine
 
 Pure code. No AI. The easiest piece, and the one that most needs tests.
@@ -636,6 +533,24 @@ Dates/fees/thresholds → disputed → critical citations → divergence-table r
 
 ---
 
+## PHASE 6b — Employment law library (Oregon & Washington) *(library #2)*
+
+**Why it is a phase and not a module.** A library is horizontal: employment obligations are
+read by the HR module (M3) *and* belong in a chemical manufacturer's overall obligation list,
+because they employ people. Same table, tagged `domain = employment` — see M3 for that
+argument in full.
+
+**Why second, ahead of cannabis:** it applies to **every** vertical — chemical, cannabis, hospice, brewery. It is the one domain that does not fragment by industry, and it is smaller than chemical.
+
+- ⬜ Agency list: BOLI · Oregon OSHA · Paid Leave Oregon · Oregon Employment Dept · WA L&I · WA PFML · WA ESD + federal DOL, EEOC, FMLA/ADA
+- ⬜ Generate agency by agency, same bounded method as chemical
+- ⬜ **OR/WA divergences are the high-risk rows:** OFLA vs WA leave, Paid Leave Oregon vs WA PFML, state-fund vs private workers' comp, Oregon CAT vs WA B&O, OAR vs WAC citations, minimum-wage tiers
+- ⬜ Employee-count thresholds are the core switch: 10 / 25 / 50 / 100
+- ⬜ Primary-source retrieval, then human verification by fact class
+- ⬜ Tag rows `domain = employment`
+
+---
+
 ## PHASE 7 — Switches and evidence
 
 ### 7.1 Public-records lookups ⬜ ⏱ 4 days
@@ -649,18 +564,6 @@ One AI pass. Every value logs `basis`, confidence, source.
 
 ### 7.4 Evidence expiry in code ⬜ ⏱ half day
 Currently a prompt rule only.
-
----
-
-## PHASE 8 — Screens
-
-- ⬜ Company profile screen — *"here's what we understand, correct anything wrong"* ⏱ 4 days
-- ⬜ Requirements page, grouped by agency ⏱ 4 days
-- ⬜ Coverage strip from `industry_coverage` ⏱ 1 day
-- ⬜ Answer display: object tags `[the case]`, regime tags `[DOT — transport]`, verification badges ⏱ 2 days
-- ⬜ Calendar reads cadence from obligations ⏱ 2 days
-- ⬜ Onboarding: 3 fields → scan → confirm screen → ~7 questions → documents ⏱ 5 days
-- ⬜ Enable numbers — **gated on library verification**
 
 ---
 
@@ -703,11 +606,185 @@ Currently a prompt rule only.
 
 ---
 
-## PHASE 6b — HR module *(feature work — not part of gap-closing)*
+## MODULES — the vertical slices, built last
+
+Everything above this line is **horizontal**: schema, the runtime pipeline, resolution, the
+worker, the library, observability. Each of those cuts across every module in the product.
+Everything below is **vertical**: one module at a time, top to bottom, on ground that has
+stopped moving.
+
+### Why the plan was reordered
+
+The Compliance Workspace used to sit at Phase 3, in the middle of the horizontal work. That
+was wrong in two directions at once.
+
+**It was the only vertical slice among the phases**, which meant it would have been built on
+infrastructure still in motion — the determination gate, the critic pass, `company_switches`,
+the resolution engine and the worker are all *inputs* to the Workspace, and all of them were
+scheduled around it rather than before it. Building a module while its foundations are being
+poured means building it twice.
+
+**And the other six modules had no phase at all.** Their findings are real, specific and
+already written down — the audit engine silently dropping documents, HR checking a handbook
+against eleven hardcoded words, the calendar extracting dates instead of reading cadence —
+but they lived scattered through this document as *debts*, filed under whatever gap-closing
+session happened to surface them. A debt is something you might pay. Planned work is
+something you will do. Most of these are not debts; they are the product.
+
+**This makes the plan longer and more honest: most of the real product work lives in this
+final section.** The phases before it are the ground it stands on, and they are short by
+comparison because infrastructure is smaller than product.
+
+**Each module below states what it depends on.** Those dependencies are horizontal phases,
+and none of them are optional. A module started before its dependency lands is a module that
+gets rebuilt.
+
+**One exception, marked where it appears.** M2(a) — the audit engine silently dropping
+documents it cannot read — is live in production today, is half a day's work, and should not
+wait for its module's turn. Correctness bugs in shipped code are not module work.
+
+---
+### M1 — Compliance Workspace
+
+**Design:** `docs/WORKSPACE.md` — the full spec, already written. Nothing below re-decides it.
+**Depends on:** determination gate (2.2) · critic pass (2.3) · `company_switches` (1.2) ·
+resolution engine (Phase 4). The Workspace is the *surface* over those four; without them it
+is a chat box.
+
+#### M1.1 Follow-up classification ⚡ ⏱ 2 days
+- ⬜ Elaboration → expansion only
+- ⬜ Refinement → update fact, re-run identification → critic → expansion
+- ⬜ New question → full pipeline
+- ⬜ **Refinement recomputes, never appends**
+
+#### M1.2 Fact capture from conversation ⚡ ⏱ 3 days
+- ⬜ Established facts write to `company_switches`; exploration stays in the transcript
+- ⬜ Every capture records `basis` — the actual sentence the user said
+- ⬜ `user_stated` applies immediately; `ai_inferred` confirms before applying
+- ⬜ Confirm when ambiguous
+
+#### M1.3 Scoped questions ⚡ ⏱ 1 day
+When a durable fact permits multiple answers, ask the scoped question rather than re-asking the fact. *"You operate your own fleet and also use carriers. For this shipment — which?"* The answer is context, not an overwrite.
+
+#### M1.4 Topic lifecycle ⬜ ⏱ 3 days
+- ⬜ Explicit close: summary written, facts extracted, transcript discarded
+- ⬜ Tell the user the real reason — past conversations pollute future answers
+- ⬜ Auto-close on inactivity
+- ⬜ Creating a checklist closes the topic
+- ⬜ Flag stale checklists when a fact changes — **flag, never auto-regenerate**
+
+#### M1.5 In-context fact display ⬜ ⏱ 2 days
+Before an answer, show **only the facts this question depends on.** Not a wall.
+
+#### M1.6 Answer display ⬜ ⏱ 2 days
+Object tags `[the case]`, regime tags `[DOT — transport]`, verification badges. *(Was Phase 8 — Screens.)*
+
+---
+### M2 — Audits
+
+**Depends on:** the worker (Phase 5) · `obligation_evidence` normalisation (7.3) · Zod at the
+AI boundary (2.6) · the verified library (Phase 6).
+
+**Readiness is rebuilt on evidence rows, not recomputed per run.** Today every audit
+recomputes from scratch: it re-reviews documents, re-matches requirements, and produces a
+number that has no relationship to the last one. 7.3 normalises audit output into
+`obligation_evidence` so readiness becomes a query over stored rows — which is also what
+makes resolution tracking and a dashboard that can go *down* possible.
+
+**The whole engine moves to the worker.** See (b) below: this is the clearest case in the
+codebase, and moving it returns the route to the service-role key legitimately.
+
+**These findings were surfaced on 10 Sep while moving `/api/audits` off the service-role
+key. None is caused by that conversion** — the first predates it and the rest are structural.
+They were filed as §0.10, a gap-closing debt; they are module work and now live here.
+
+**(a) A document that fails to download vanishes from the audit, silently. ⏱ half day**
+**⚠️ This one does not wait for M2's turn — it is live in production and it is half a day.**
+The auto-index loop does `if (dlError || !fileData) continue`. Any cause — a storage
+policy, a missing object, a transient network failure, an expired token — drops that
+document from the candidate set with no error, no log the user sees, and no record on the
+saved audit. The matcher is then shown fewer documents, matches fewer requirements, and the
+readiness counts are computed **correctly in code from a smaller input**. Plausible numbers,
+wrong basis. `CLAUDE.md` §3.2 puts readiness in code precisely so it cannot be an AI guess;
+that protection does nothing when the input quietly shrinks.
+
+The audit should report which documents it could not read, exactly as `/api/hr` now does —
+that route names the file and the reason and says the answer does not account for it. Same
+treatment here: a `documents_failed` list on the saved audit, surfaced in the UI.
+
+**⚠️ (a) IS NOT THEORETICAL — IT WAS OBSERVED IN A REAL RUN, 10 SEP.**
+A re-run on staging returned `satisfied=2 needs_info=1 needs_work=0`. Entirely plausible
+numbers. They were computed from **one reviewable document out of eight**: only two of that
+company's documents had a real object behind them, one could be read, and the other seven
+were dropped by the `continue` with no error, no log the user sees, and no record on the
+saved audit.
+
+**This is current production behaviour, not a test artifact.** The same code path runs in
+production today. Any cause that makes a download fail — a missing object, a transient
+error, a policy problem — silently removes that document from the basis of the answer, and
+the readiness figure comes out looking exactly as confident as one built on the full set.
+
+A confident readiness number built on a silently truncated document set is **the precise
+failure this product exists to prevent** (`CLAUDE.md` §6, the omniscient status tracker;
+§3.2, readiness computed in code so it cannot be guessed). Computing it correctly from
+wrong input is not a defence. **Weight this accordingly when the audit engine is next
+touched — it is the most consequential item in this section, not a tidy-up.**
+
+**(a2) `matched_documents` can contain entries with no `document_id` at all.**
+The same run produced a `matched_documents` array holding an entry whose `document_id` was
+`None` — the model returned it that way. Harmless right now because nothing consumes that
+array beyond display, but it is on the path to Phase 7.3, which normalises audit output
+into `obligation_evidence`. Anything linking evidence from this array would either break on
+the null or, worse, skip it silently and record less evidence than the audit found.
+
+Both (a) and (a2) are the same underlying problem: **that array is trusted more than it
+deserves.** One is missing entries nobody was told about, the other is malformed entries
+nobody validated. Zod at the AI boundary (§2.6) covers the second; reporting unreadable
+documents covers the first.
+
+**(b) `/api/audits` is the clearest case for the Phase 5 worker. 🔒**
+One request does classify (with web search), generate a full standard on a cache miss,
+review every unreviewed document one at a time, and match every requirement in batches.
+Minutes, several model calls, unbounded in document count. `maxDuration` is already at 800s
+— the highest stable Vercel ceiling without the extended-duration beta — and was raised once
+already to work around this. Raising it again is the same workaround with a bigger number.
+
+`PATTERNS.md` §5: BizPulses runs its equivalent as a plain always-on Node process, "separate
+from Vercel because classify + N extraction calls + reconcile routinely exceed any
+serverless timeout." Same wall, same answer.
+
+**When it moves, it returns to the service-role key legitimately** — a background job has no
+user session to run as, the same reason `/api/signup` keeps it. The conversion done on 10 Sep
+is superseded at that point, not wrong: it makes the route correct where it currently lives.
+
+**(c) The user gets nothing for the duration of a multi-minute run. ⏱ folded into Phase 5**
+No progress, no partial result, no indication anything is happening. BizPulses writes a
+`progress_message` after classification and after each chunk, and the browser polls the row
+to render it. Phase 5 solves this as a side effect of moving to a job row that can be
+updated mid-flight — **record it now so the worker spec includes it**, rather than
+rediscovering it after the worker ships without it.
+
+**(d) Port BizPulses's atomic `replace_*` pattern. ⏱ with Phase 4**
+DELETE and INSERT inside one transaction, with the ownership guard expressed in SQL, so a
+failed refresh leaves the prior data intact rather than half-written. Wanted for
+`replace_obligations` (Phase 4.2 already calls for exactly this) and for document re-review.
+
+**One difference that must not be ported.** BizPulses always wants the latest data for a
+period and discards what it replaces. CompliBoard often wants the history: obligations are
+marked, never deleted (§3.2), and library rows are versioned rather than edited in place.
+**The transaction mechanism ports; the retention policy does not.** Take the atomicity and
+the in-SQL guard; keep our own rules about what survives.
+
+---
+### M3 — HR
+
+**Depends on:** the employment law library (6b) — that is the whole story of this module.
+Everything wrong with HR today is downstream of having no verified requirement rows to check
+a handbook against.
 
 **Findings from reading the code, 10 Sep. Design decided, nothing built.**
 
-### The architecture decision
+#### The architecture decision
 **One requirements table, tagged by domain** — `employment`, `environmental`, `transport`, `fire`, `licensing`. Modules are *views over rows*, not separate systems.
 
 Employment law is an independent **body of law** but not an independent **module**: it is read by HR *and* belongs in a chemical manufacturer's overall obligation list, because they employ people. A separate library would hide it from every vertical.
@@ -718,7 +795,7 @@ Two things only work this way:
 
 **Test for a new domain:** does it need different *columns*, or just different *rows*? Employment needs the same columns. Same table.
 
-### What is wrong with HR today
+#### What is wrong with HR today
 - ⬜ **Audit reads ONE handbook; ask reads ALL of them.** Backwards. SMB reality is one large legacy handbook plus several later amendments, so auditing a single file reports sections "missing" that exist in another document.
 - ⬜ **The "requirements" are eleven hardcoded words in a prompt** — anti-harassment, EEO, FMLA, ADA, and so on. No citations, no jurisdiction, no thresholds. FMLA is federal at 50+; Oregon has **OFLA** (25+, broader) and **Paid Leave Oregon** (nearly all employers). A handbook can pass "FMLA present" and miss both Oregon obligations. **A false green produced by a checklist that doesn't know which state it's in.**
 - ⬜ **Employee count is never consulted**, so the audit cannot know what applies.
@@ -726,7 +803,7 @@ Two things only work this way:
 - ⬜ **Findings are a frozen JSON blob** (`present`/`missing`/`draft_policies` arrays). No per-finding row, no status, no `resolved_by`, no link to the document that closed it. The lifecycle below cannot be built on this shape.
 - ⬜ **Ask and audit do not talk.** A question touching a known non-compliant section should report it; there are no finding rows to look up.
 
-### The intended design
+#### The intended design
 Upload → scan the **whole handbook set** → store **findings as rows** → findings are the durable artifact → questions consult them → a finding stays open until a corrected document actually satisfies it.
 
 - ⬜ Scan once at upload, not per question. Same fix as `obligation_evidence`: compute once, store as rows, query thereafter. Also makes repeat questions consistent.
@@ -735,7 +812,7 @@ Upload → scan the **whole handbook set** → store **findings as rows** → fi
 - ⬜ Report carries a coverage statement: "Reviewed against N employment requirements. X gaps, Y undetermined."
 - ⬜ A user can dismiss a finding ("we're under 25 employees") — that writes back to `company_switches`, not just hiding the row.
 
-### Risk tiers for "here is the fix"
+#### Risk tiers for "here is the fix"
 | Tier | What | Gate |
 |---|---|---|
 | 1 | Missing-section detection | Ship now — an absence is reliably detectable |
@@ -744,34 +821,121 @@ Upload → scan the **whole handbook set** → store **findings as rows** → fi
 
 **Three standing rules:** every finding cites the rule (no citation → no assertion) · never say "you are compliant", only what was checked and found · suggested language is visibly a draft, never a fix to accept.
 
-### Cheap and honest, available now
+#### Cheap and honest, available now
 - ⬜ Audit reads all handbooks
 - ⬜ Drop `draft_policies` / `draft_policy`
 - ⬜ Label the output a **generic completeness check**, not a compliance finding
 
-### Already good in the code
+#### Already good in the code
 - ✅ Conflict handling is in the ask prompt — names which handbook says what, does not silently pick
 - ✅ Ask mode reads all handbooks so an answer in an older document is still found
 - ✅ Four-outcome answer shape with citations *(written 10 Sep, untested)*
 
 ---
+### M4 — Documents
 
-## PHASE 6c — Employment law library (Oregon & Washington) *(library #2)*
+**Depends on:** the worker (Phase 5, job type `index_document` is already 5.2) · the schema
+rebuild (Phase 1) for the versioning columns.
 
-**Why second, ahead of cannabis:** it applies to **every** vertical — chemical, cannabis, hospice, brewery. It is the one domain that does not fragment by industry, and it is smaller than chemical.
+**Findings not yet written up in the detail M2 and M3 have.** What is known:
 
-- ⬜ Agency list: BOLI · Oregon OSHA · Paid Leave Oregon · Oregon Employment Dept · WA L&I · WA PFML · WA ESD + federal DOL, EEOC, FMLA/ADA
-- ⬜ Generate agency by agency, same bounded method as chemical
-- ⬜ **OR/WA divergences are the high-risk rows:** OFLA vs WA leave, Paid Leave Oregon vs WA PFML, state-fund vs private workers' comp, Oregon CAT vs WA B&O, OAR vs WAC citations, minimum-wage tiers
-- ⬜ Employee-count thresholds are the core switch: 10 / 25 / 50 / 100
-- ⬜ Primary-source retrieval, then human verification by fact class
-- ⬜ Tag rows `domain = employment`
+- ⬜ **Review runs inline, per request, and the same document gets reviewed twice.**
+  `lib/documentReview.ts` is called from the manual Review button *and* from the audit
+  engine's auto-index step. It is a multi-second model call with a whole PDF in the
+  payload, sitting in a serverless request. It is 5.2's job — **index once at upload,
+  store the result, query it thereafter.** Same shape as `obligation_evidence` and the HR
+  findings: compute once, store as rows, read many times.
+
+- ⬜ **"What is this document about" is prose, not a key. ⏱ with Phase 1**
+  The review prompt returns `document_type` and `regulation_reference` as free text —
+  *"OSHA 29 CFR 1910.1200 (HazCom)"*, as specific as the model felt like being. Nothing
+  joins that to a requirement row. Evidence matching currently re-reads the document
+  because there is nothing indexed to match *against*. Indexing must produce something
+  joinable — agency, citation, requirement ids — alongside the prose a human reads.
+
+- ⬜ **Nothing records that one document supersedes another. ⏱ with Phase 1**
+  The SMB reality named in M3 is one large legacy document plus a series of later
+  amendments, and that is just as true of permits, SDS sheets and plans as it is of
+  handbooks. Today an expired permit and its renewal are two equal rows; the product has
+  no way to say the second replaced the first. Without it, "is this current?" is answered
+  per file rather than per obligation, and a superseded document can still satisfy a
+  requirement. `supersedes_id` is already in the Phase 1 schema work for library rows —
+  customer documents need the same treatment, and the answer must survive into
+  `obligation_evidence`.
+
+- ⬜ **`app/documents/page.tsx` is 1,103 lines.** Split when the module is worked, not
+  before — a rewrite ahead of the indexing change is a rewrite done twice.
+
+- ⬜ `app/upload/page.tsx:89` calls `getPublicUrl` on a private bucket — already broken,
+  already listed in §0.7. Fix it there, not here.
 
 ---
+### M5 — Calendar
 
-## PHASE 8b — Signup and industry classification *(feature work)*
+**Depends on:** the library (Phase 6, cadence lives on requirement rows) · resolution
+(Phase 4, which says what applies) · `obligation_evidence` (7.3).
 
-Full design in `WORKSPACE.md` §10.
+**The change: cadence comes from obligations, not from date extraction.**
+
+Today `/api/extract-dates` sends a document to the model with a prompt asking it to find
+"expiry dates, renewal dates, inspection due dates… maximum 10 dates per document," and
+writes what comes back into `calendar_events`. The calendar is therefore a list of dates
+somebody's paperwork happened to mention. It cannot know about an annual report that is due
+whether or not any document says so, and it cannot tell a deadline that binds this company
+from a date printed on a form.
+
+A requirement row carries its own cadence, and resolution already determines which rows
+apply. **The calendar becomes a query over obligations** — deterministic, complete, and
+explainable back to a citation. `MERGEDv2` already contains a fixed-date calendar (6.1).
+
+- ⬜ Calendar reads cadence from obligations ⏱ 2 days
+- ⬜ **Extraction survives for exactly one job:** the date the law cannot know — *this*
+  permit's expiry, *this* inspection's result. That is anchored to an artifact and is the
+  mode the model is reliable in (`CLAUDE.md` §3.3). Enumerating a company's deadlines from
+  a document is the unanchored mode.
+- ⬜ Every calendar entry states its basis: the obligation and citation behind it, or the
+  document the date was read from.
+- ⬜ Decide what happens to the entries extraction has already written. They are not
+  wrong, they are unsourced.
+
+---
+### M6 — Dashboard
+
+**Depends on:** `obligation_evidence` (7.3) · the verified library (6.7) · `industry_coverage`.
+
+**Real metrics only once evidence rows exist.** The dashboard today can only climb: there is
+no stored evidence, so nothing can be un-satisfied, and a number that only goes up is not a
+compliance measure — it is a progress bar. Once 7.3 writes evidence as rows, readiness is a
+query, an expiring certificate makes the number **fall**, and the figure means something.
+
+**Until then, no numbers.** `CLAUDE.md` §6 names the omniscient status tracker as an
+anti-pattern and it was removed from this product once already. A percentage computed over
+an unverified library is that anti-pattern wearing a chart.
+
+- ⬜ Readiness computed in code from evidence rows — never AI, never a running total ⏱ 2 days
+- ⬜ **Enable numbers — gated on library verification (6.7).** This is the gate, not a step.
+- ⬜ Requirements page, grouped by agency ⏱ 4 days
+- ⬜ Coverage strip from `industry_coverage` ⏱ 1 day — `OSHA ✓verified · DEQ ✓verified ·
+  Local fire ◐partial · ODA ○not built`. A verified row and a generated row must not look
+  the same.
+
+#### M6.1 Verification section ⬜ ⏱ 2 days
+*(Designed in `WORKSPACE.md`; it lives on the dashboard, so it is planned here.)*
+- ⬜ Three at a time, never more
+- ⬜ Ranked by consequence internally
+- ⬜ **No numbers** until the library is verified
+- ⬜ Empty state is the good state
+- ⬜ Frame as an inbox that gets quiet, not a burn-down
+
+---
+### M7 — Onboarding and signup
+
+**Depends on:** the worker (Phase 5 — the website scan becomes a background job) ·
+`library_candidates` (1.2).
+
+**Full design in `WORKSPACE.md` §10.** This is the first thing a customer ever sees and it
+is currently a dropdown listing only the verticals already built — a signup form that can
+only be completed by someone we have already decided to serve.
 
 - ⬜ Remove the industry dropdown and `/api/industries` — it is circular, offering only verticals already built
 - ⬜ Signup collects **email, password, website, address** only
@@ -782,22 +946,33 @@ Full design in `WORKSPACE.md` §10.
 - ⬜ Classification presented as a **teaching confirmation**, correctable
 - ⬜ Three distinct fallback messages: no website · unreachable · uninformative
 - ⬜ Unmatched industries write to `library_candidates` — signup becomes demand research
+- ⬜ Company profile screen — *"here's what we understand, correct anything wrong"* ⏱ 4 days
+- ⬜ Onboarding: 3 fields → scan → confirm screen → ~7 questions → documents ⏱ 5 days
+
+**Why classification is a teaching confirmation and not a form field.** The confirm screen is
+the first time the product tells the customer what it thinks they are, and the first time
+they can correct it. Getting that wrong is not a UX blemish — jurisdiction is part of the
+match key (`CLAUDE.md` §3.2), so a misclassification serves the wrong body of law silently.
 
 ---
 
 ## Next three sessions
 
-**Session A — close the remaining holes** (0.4, 0.5, 0.6) — 🔄 in progress
-Done: `/api/documents`, `/api/account`, `/api/account/export`, staging as local default.
-Next: commit and test `/api/hr`, then `/api/audits`, `/api/hr-audits`, the unscoped-delete family, delete the three orphaned routes. Then tenancy consistency, then write policies on all 19 tables.
-
-**Rule for this session: gap-closing only.** Feature work is handled when each section is handled. A real defect found while closing a gap (the `.docx` bug) belongs; a redesign does not.
+**Session A — close the remaining holes** (0.4, 0.5, 0.6, 0.9) — ✅ **done, 10 Sep**
+All four landed. Migrations 002–005 are in production, every route derives the company from
+the verified session, ten routes run under RLS on the caller's token, and the four that keep
+the service-role key each carry a named reason. §0.7 housekeeping is what remains of Phase 0.
 
 **Session B — schema rebuild** (1.1–1.4)
 Design, migrate, rebuild staging from zero, rebuild production, jurisdiction in the match key.
+**Do this before the first real customer document** — it is item 3 of the gate at the top.
 
 **Session C — the runtime fixes** (2.1–2.4)
 Agency list, determination gate, critic pass, split identification from expansion. **This is where answer quality changes.**
+
+**Not yet: any module.** Everything in `MODULES` waits on B, C and the phases after them.
+The single exception is M2(a) — the audit engine silently dropping documents it cannot read.
+That is live, it is half a day, and it does not wait.
 
 ---
 

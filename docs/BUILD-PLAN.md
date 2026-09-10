@@ -1,9 +1,16 @@
 # Master Build Plan
-**Version:** 3.1 · **Updated:** 10 September 2026
-**Supersedes:** version 3 (9 Sep) — annotated where the service-role assessment has since
-been resolved by migrations 003–005 and the route conversions. Versions 1 and 2 deleted. Revised against the actual codebase rather
-than the due-diligence description — six planned items were wrong and are corrected below,
-marked ⟲.
+**Version:** 3.2 · **Updated:** 10 September 2026
+**Supersedes:** version 3.1 (10 Sep) — adds `PART C — MODULES`. The phases in Part B are now
+horizontal only; everything vertical moved to the end. Phase 7 (Screens) was dissolved into
+the modules that own each screen, and the Compliance Workspace — which had no phase here at
+all, and sat at Phase 3 in `TODO.md` ahead of its own dependencies — became M1. Version 3.1
+annotated where the service-role assessment had been resolved by migrations 003–005 and the
+route conversions; version 3 (9 Sep) revised the plan against the actual codebase rather than
+the due-diligence description — six planned items were wrong and are corrected below, marked
+⟲. Versions 1 and 2 deleted.
+
+3.2 also replaces the stale `SESSION 1 — start here` list with where the work actually is,
+and drops the schema dump from `STILL NEEDED` — it was done on 9 Sep.
 
 **Companions:** `DECISIONS.md` · `CHEMICAL-OR-WA.md` · `PATTERNS.md` · `CLAUDE.md`
 
@@ -275,15 +282,91 @@ Public-records lookups (EPA RCRAInfo, ECHO, TRI, FMCSA SAFER, DEQ/Ecology, **OLC
 
 ---
 
-## PHASE 7 — Screens
-Registry pattern 🅑 · `note` as a first-class field 🅑 · switches screen · requirements page · coverage strip · answer display upgrades (object and regime tags) · calendar from cadence · onboarding.
-
-CompliBoard already has a design system (`max-w-6xl`, underline tabs, flat cards). BizPulses has none and flags it as debt — **do not copy backwards.**
+## PHASE 8 — Observability
+✚ Error tracking · worker heartbeat · AI cost tracking · rate limiting. BizPulses has none of this and calls it the second-highest-value gap.
 
 ---
 
-## PHASE 8 — Observability
-✚ Error tracking · worker heartbeat · AI cost tracking · rate limiting. BizPulses has none of this and calls it the second-highest-value gap.
+# PART C — MODULES
+
+Everything in Part B is **horizontal**: schema, the runtime pipeline, the worker, resolution,
+library data, observability. Each of those is infrastructure that every part of the product
+stands on. This part is **vertical**: one module at a time, built last, on ground that has
+stopped moving.
+
+**Why the order changed.** Screens used to be Phase 7, sitting inside the horizontal
+sequence, and the Compliance Workspace had no phase in this plan at all — it lived only in
+`WORKSPACE.md` and, in `TODO.md`, at Phase 3, ahead of the determination gate, the critic
+pass, `company_switches` and the resolution engine that are all *inputs* to it. A module
+built while its foundations are being poured is a module built twice. Meanwhile the other
+six modules had no phase either: their findings sat scattered as debts under whichever
+gap-closing session happened to surface them.
+
+**This makes the plan longer and more honest — most of the real product work is in this
+part.** Part B is short by comparison because infrastructure is smaller than product.
+
+**There is no Phase 7 above.** It was Screens, and it moved here, distributed to the modules
+that own each screen. The remaining phases are deliberately not renumbered — this document,
+`TODO.md` and `DECISIONS.md` reference phases by number throughout, and renumbering breaks
+every reference silently.
+
+`TODO.md` carries these at task level, as M1–M7, with the findings behind each. This is the
+*why*; that is the *what next*.
+
+**Design system:** CompliBoard already has one (`max-w-6xl`, underline tabs, flat cards).
+BizPulses has none and flags it as debt — **do not copy backwards.** Registry pattern 🅑 ·
+`note` as a first-class field 🅑 apply across every module below.
+
+## M1 — Compliance Workspace
+The conversation surface. Follow-up classification, fact capture into `company_switches` with
+`basis`, scoped questions, topic lifecycle, in-context fact display, answer display with
+object and regime tags. Full design in `WORKSPACE.md`.
+**Depends on** the determination gate and critic pass (1.2, 1.3), `company_switches` (2.4),
+resolution (Phase 4).
+
+## M2 — Audits
+Readiness rebuilt on `obligation_evidence` rows rather than recomputed per run, and the whole
+engine moved to the worker — it is the clearest case in the codebase for Phase 3.
+⚠️ **One item does not wait for its turn:** the auto-index loop drops any document it cannot
+download, silently, and computes readiness correctly from a smaller input. Observed in a real
+run on 10 Sep — two satisfied, one needs-info, computed from one readable document out of
+eight. Half a day, live in production.
+**Depends on** the worker (Phase 3), Phase 6's normalisation of audit output into
+`obligation_evidence`, Zod at the AI boundary (1.8).
+
+## M3 — HR
+One requirements table tagged by domain, not a separate system. Findings as rows with a
+lifecycle instead of a frozen JSON blob; audit reads the whole handbook set; `draft_policies`
+off until there are verified rows behind it. Today the "requirements" are eleven hardcoded
+words in a prompt with no jurisdiction and no thresholds — a handbook can pass "FMLA present"
+and miss both Oregon obligations.
+**Depends on** the employment law library, which is horizontal and belongs in Part B.
+
+## M4 — Documents
+Index once at upload as a worker job rather than reviewing the same file twice inline; make
+"what this document is about" joinable to requirement rows rather than prose; record what a
+document supersedes.
+**Depends on** the worker (Phase 3), schema versioning (Phase 2).
+
+## M5 — Calendar
+Cadence read from obligations, not extracted from whatever dates a PDF happened to mention.
+Extraction survives only for the date the law cannot know — this permit's expiry — which is
+the anchored mode the model is reliable in.
+**Depends on** library cadence (Phase 5), resolution (Phase 4).
+
+## M6 — Dashboard
+Real metrics only once evidence rows exist. Today the number can only climb, which is a
+progress bar, not a compliance measure. Requirements page grouped by agency, coverage strip
+from `industry_coverage`, the verification section from `WORKSPACE.md` — three at a time,
+empty state is the good state. **Numbers stay off until the library is verified** (Phase 5's human verification pass).
+**Depends on** Phase 6's evidence normalisation, `industry_coverage` (2.4).
+
+## M7 — Onboarding and signup
+Remove the industry dropdown — it is circular, offering only verticals already built. Email,
+password, website and **address**; the scan as a background job; classification presented as a
+teaching confirmation; unmatched industries write to `library_candidates`, so signup doubles
+as demand research. Design in `WORKSPACE.md` §10.
+**Depends on** the worker (Phase 3), `library_candidates` (2.4).
 
 ---
 
@@ -298,23 +381,29 @@ CompliBoard already has a design system (`max-w-6xl`, underline tabs, flat cards
 
 ---
 
-# SESSION 1 — start here
+# WHERE THIS ACTUALLY IS — 10 September 2026
 
-1. Rotate the four leaked keys
-2. `CLAUDE.md` (0.1)
-3. Scripts + `package.json` + `.env.example` (0.2)
-4. Staging project (0.3)
-5. `npm run db:types` → first clean type generation
-6. Schema dump → migration backfill (0.4)
+**Phase 0 is done except housekeeping.** 0.1–0.3 landed 9 Sep. 0.4 was solved differently
+than planned — no Docker, so the baseline was reconstructed from the production catalogs
+(`000_baseline.sql`, 19 tables, structure only). 0.5–0.8 landed as migrations 002–005, all
+applied to production, plus the route conversions: every route now derives the company from
+the verified session, ten run under RLS on the caller's token, and the four that keep the
+service-role key each carry a named reason in the file.
 
-Then Phase 1 for the demo.
+**What is left of Phase 0:** housekeeping (`TODO.md` §0.7), and key rotation — still
+outstanding, now six credentials rather than four, and now item 1 of the gate at the top of
+`TODO.md`.
+
+**Next:** Phase 2 (schema extensions) as the rebuild, then Phase 1 (runtime fixes), because
+the rebuild is cheap only until the first real customer document is in the database. Read the
+gate in `TODO.md` before choosing anything else.
 
 ---
 
 # STILL NEEDED
 
-1. **Schema dump for the 11 un-migrated tables.** The blocker on 0.4.
-2. Pricing: $199 or $99, and the discount floor for a six-account deal
-3. Demo date
-4. Cannabis prospect: processor or not? one license entity or six?
-5. What the other two salespeople are targeting
+1. Pricing: $199 or $99, and the discount floor for a six-account deal
+2. Cannabis prospect: processor or not? one license entity or six?
+3. What the other two salespeople are targeting
+
+**No demo date.** Built properly, phase by phase, ready when it is ready (`TODO.md`).
