@@ -231,6 +231,79 @@ any more, but those pages still do — that is what finishes decoupling the base
 
 ---
 
+## FEATURE — USER MANAGEMENT IS MISSING ENTIRELY 🔒 ⏱ estimate after reading BizPulses
+
+**Not a gap in the security work — a missing feature the security work made visible.**
+
+There is no way to add a person to an existing company, and no way to remove one.
+
+- **Nobody can be added.** The only path that creates a profile is `/api/signup`, and it
+  creates a **new company** every time. A second person cannot be given access to an
+  existing company at all. So the company-scoped visibility built in migrations 003 and
+  004 currently has no users to be scoped *between* — every company has exactly one
+  person, by construction.
+- **Nobody can be removed.** `profiles` has no DELETE policy and no route. The only
+  deletion path is `/api/account` DELETE, which destroys the entire company.
+
+**The consequence, stated plainly:** when an employee leaves, their login keeps working
+indefinitely. They keep full read and write access to every document, audit, permit and
+piece of evidence at that company, and can still delete things. For a product whose value
+is holding a customer's compliance evidence trail, that is a real exposure.
+
+**Policies do not fix this.** Migrations 002–005 make the database enforce that a person
+sees only their own company's data. A departed employee is *still a legitimate member of
+that company* as far as the database is concerned — their profile row still says so. RLS
+is working exactly as designed and the wrong person is inside the boundary. No amount of
+policy work closes it; only a way to revoke membership does.
+
+**Scope**
+
+- Invite a person to an existing company
+- List who has access
+- Remove access
+- **Records created by a removed person must survive.** The compliance record is a company
+  asset (`DECISIONS.md` §1, §14) — removing a person must not remove their document
+  reviews, audits or checklists, or a departure silently deletes evidence.
+- Decide whether roles are needed, or whether everyone at a company is equal
+
+**Port from BizPulses rather than designing fresh.** It already has this. It uses a
+`memberships` table — user ↔ org many-to-many — which is exactly the shape
+`profiles.company_id` cannot express: one profile row means **one company per person**,
+so a consultant serving two customers, or an owner with two entities, has no
+representation at all. `PATTERNS.md` §3 documents the RLS pattern it uses, verbatim:
+
+```sql
+CREATE POLICY "org_isolation" ON inventory_rows
+    FOR ALL USING (
+        EXISTS (SELECT 1 FROM memberships
+                WHERE memberships.org_id = inventory_rows.org_id
+                  AND memberships.user_id = auth.uid())
+    );
+```
+
+Note the differences from what CompliBoard now has, both deliberate on our side and worth
+keeping: we use a `SECURITY DEFINER` helper rather than repeating the subquery (so the
+coupling lives in one place), and we write explicit `WITH CHECK` rather than relying on
+Postgres reusing `USING`. `PATTERNS.md` itself calls the implicit form "correct but
+implicit" and says being explicit documents the intent better. Port the *shape*, keep our
+improvements.
+
+**Migrating to `memberships` is already a prerequisite for multi-site roll-up views**
+(Phase 11+). Same migration, two reasons — do it once.
+
+⚠️ **`auth_company_id()` is the hard part, and it is bigger than it looks.** It returns a
+single `uuid`. Under `memberships` a person can belong to several companies, so it must
+either return a **set** (and every policy becomes `company_id IN (SELECT ...)`) or take an
+**active-company** parameter (and something must carry that choice through every request).
+**53 policies depend on that function.** Changing its signature rewrites all of them, plus
+the four storage policies. Plan it as its own migration with its own rehearsal, not as a
+step inside the user-management feature.
+
+**Prerequisite already done:** migration 005 gives `profiles` a company-scoped SELECT
+policy, which is what makes "list who has access" possible at all.
+
+---
+
 ## PHASE 1 — Schema rebuild
 
 Production data is test data. Rebuild the schema correctly rather than patching it. Everything drops and reloads.
