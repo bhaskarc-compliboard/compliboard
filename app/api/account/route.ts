@@ -7,9 +7,25 @@
 // destroy the entire company: every checklist, document, calendar event, the company
 // record and the login. It was a single unauthenticated request.
 //
-// The service-role key used here bypasses RLS, so these checks are the only thing
-// separating one company from another. See CLAUDE.md §3.6, and app/api/documents/route.ts
-// for the same pattern applied to documents.
+// TWO CLIENTS, AND WHICH IS USED WHERE (§0.9)
+//
+//   authed.db      — the caller's own client, under RLS. Used by GET and PUT. The
+//                    database enforces tenancy alongside the checks here rather than
+//                    taking the route's word for it.
+//
+//   supabaseAdmin  — bypasses RLS. Used by DELETE only, and only because it must:
+//                      * auth.admin.deleteUser() removes logins. No user token can do
+//                        that at any privilege level — it is an admin API, not a table.
+//                      * it deletes rows for EVERY member of the company, and reads
+//                        profiles by company_id to find them. That part would work under
+//                        RLS since migration 005, but the deleteUser calls would not, so
+//                        splitting the handler across two clients would buy nothing and
+//                        make the destructive path harder to read.
+//                      * it removes the company's storage files, then the company row
+//                        itself — and there is deliberately no DELETE policy on companies.
+//
+// A route may hold the admin client for a named reason. This is the reason.
+// See CLAUDE.md §3.6, and app/api/documents/route.ts for the converted pattern.
 
 import { NextRequest, NextResponse } from 'next/server'
 import { requireCompany, supabaseAdmin } from '@/lib/auth'
@@ -22,15 +38,15 @@ export async function GET(request: NextRequest) {
   try {
     const authed = await requireCompany(request)
     if (!authed.ok) return authed.response
-    const { companyId, userId } = authed.auth
+    const { companyId, userId, db } = authed.auth
 
-    const { data: profile } = await supabaseAdmin
+    const { data: profile } = await db
       .from('profiles')
       .select('full_name')
       .eq('id', userId)
       .single()
 
-    const { data: company } = await supabaseAdmin
+    const { data: company } = await db
       .from('companies')
       .select('*')
       .eq('id', companyId)
@@ -54,7 +70,7 @@ export async function PUT(request: NextRequest) {
   try {
     const authed = await requireCompany(request)
     if (!authed.ok) return authed.response
-    const { companyId, userId } = authed.auth
+    const { companyId, userId, db } = authed.auth
 
     const body = await request.json()
     const { full_name, companyName, industry, state, county, city, employeeCount } = body
@@ -63,7 +79,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Company name is required' }, { status: 400 })
     }
 
-    const { error: companyError } = await supabaseAdmin
+    const { error: companyError } = await db
       .from('companies')
       .update({
         name: companyName,
@@ -77,7 +93,7 @@ export async function PUT(request: NextRequest) {
 
     if (companyError) throw companyError
 
-    const { error: profileError } = await supabaseAdmin
+    const { error: profileError } = await db
       .from('profiles')
       .update({ full_name })
       .eq('id', userId)
