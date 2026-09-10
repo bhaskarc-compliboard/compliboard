@@ -268,7 +268,18 @@ with empty content.
 ### 0.7 Housekeeping ⬜ ⏱ 2 hours
 - ⬜ Delete four orphaned storage files under a prefix matching no company
 - ⬜ Remove unused deps: `ai`, `@ai-sdk/anthropic`
-- ⬜ `updated_at` trigger — nine columns exist, nothing advances them
+- ✅ `updated_at` trigger — **written in migration 006**, not yet applied. Five tables
+  carry the column (`agencies`, `entities`, `obligations`, `requirement_templates`,
+  `standard_templates`), not nine — `CURRENT-SCHEMA.md` says nine and is wrong
+- ⬜ **`/api/folders` POST drops `section`.** `app/documents/page.tsx:307` sends it and
+  the route never destructures it (`app/api/folders/route.ts:41`), so every folder made
+  through the UI silently takes the column default `files`. The 20 `hr` and 12 `log`
+  rows in production came from somewhere else. Same class as the HR upload bug below —
+  a field the caller set, discarded with no error
+- ⬜ **`/api/documents` POST drops `category`.** `app/hr/page.tsx:126` sends
+  `category: 'hr-handbooks'`; `documents` has no such column and the route does not
+  destructure it. HR handbook uploads land with no marker of what they are, which is
+  part of why 13 of 38 documents have a null `folder_id`
 - ⬜ Resolve pricing: $199 or $99
 - ⬜ Remove HIPAA as a surfaced audit example
 - ⬜ Fix `app/upload/page.tsx:89` — `getPublicUrl` on a private bucket, already broken

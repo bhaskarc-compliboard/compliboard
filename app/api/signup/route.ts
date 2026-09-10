@@ -6,6 +6,19 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
+// Headcount arrives from a form as a string, or not at all. Anything that is not a
+// whole number — '', undefined, a band like '26-75' from an older client — is NULL,
+// not a guess. Every employment threshold in the library is a number (Oregon sick time
+// at 10, OFLA at 25, FMLA at 50), so a band cannot be resolved and a fabricated number
+// is worse than an admitted gap. DECISIONS.md §21.1.
+function toHeadcount(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isInteger(value) && value >= 0) return value
+  if (typeof value !== 'string') return null
+  const trimmed = value.trim()
+  if (!/^\d+$/.test(trimmed)) return null
+  return Number(trimmed)
+}
+
 // Signup's only job: create the account and save the company + industry info.
 // No folder or file creation of any kind — structure appears later from what the
 // user actually does (guided demo, uploads, drive connection). Impose nothing.
@@ -23,7 +36,20 @@ export async function POST(request: NextRequest) {
 
     const { data: companyData, error: companyError } = await supabaseAdmin
       .from('companies')
-      .insert({ name: companyName, industry, state, county, city, employee_count: employeeCount, website_url: websiteUrl || null, scan_result: scanResult || null })
+      .insert({
+        name: companyName,
+        industry,
+        state,
+        county,
+        city,
+        // Headcount is an integer, never a band (DECISIONS.md §21.1, migration 006).
+        // Signup does not ask for it, so it is genuinely unknown here — write NULL and
+        // mean it. This used to write '' into a text column on every account created,
+        // which is a value nobody chose and no threshold can be resolved against.
+        employee_count: toHeadcount(employeeCount),
+        website_url: websiteUrl || null,
+        scan_result: scanResult || null,
+      })
       .select()
       .single()
     if (companyError) throw companyError

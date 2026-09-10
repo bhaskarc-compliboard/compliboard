@@ -1,6 +1,14 @@
 # Decision Record
-**Version:** 6 · **Updated:** 10 September 2026
-**Supersedes:** version 5 (10 Sep). Adds §19 and §20. **§19 corrects §17.5** — `memberships`
+**Version:** 7 · **Updated:** 10 September 2026
+**Supersedes:** version 6 (10 Sep). Adds §21, the four enum decisions settled before
+migration 006: `employee_count` becomes an integer rather than a band, `layer` becomes
+jurisdiction-only with `contractual` moved to its own `source_type` axis,
+`obligations.status` follows the spec's four states rather than the code's five, and
+`category` becomes a ten-value obligation type holding the shape of the duty and nothing
+else. Two data questions are flagged inside §21.2 and one inside §21.3 — deliberately not
+guessed — all three were answered the same day and §21.2 and §21.3 now carry the answers:
+`jurisdiction_layer` gains `local` and becomes nullable, and `missing` is not a status at all
+but a query over `obligation_evidence`. Version 6 added §19 and §20. **§19 corrects §17.5** — `memberships`
 is not a prerequisite for user management; several people at one company already works on
 `profiles.company_id`, and what is missing is an invite flow. `memberships` answers a
 different question, one person across several companies, and moves to multi-site. §17.4's
@@ -850,3 +858,196 @@ practice — the common case for early customers — simplify the *interface*, n
 The seeded default site exists precisely so the single-site case never has to know it is
 there. If it starts leaking into queries or screens, that is a sign the default is not being
 applied consistently, not that the structure was wrong.
+
+---
+
+## 21. Phase 1 enum decisions — 10 September 2026
+
+Four decisions settled before migration 006. Each replaces a `text` column, or the plan
+for one, with a fixed vocabulary. They are recorded together because they share a reason:
+**a bare `text` column is a promise nobody checks.** The database holds one vocabulary, the
+application code holds another, and the design documents hold a third — that is not a
+hypothetical, it is what §21.3 found. An enum makes the disagreement a compile error and a
+constraint violation instead of a silent sort to the bottom of a list.
+
+### 21.1 `employee_count` becomes an integer, not a band
+
+**Decision: store the actual number. Band at render time if a UI wants bands.**
+
+**Reasoning.** The app offers `1-25 / 26-75 / 76-200 / 200+`. Every one of those straddles a
+statutory threshold:
+
+| Band | What it crosses |
+|---|---|
+| `1-25` | Oregon sick time at **10**, and lands exactly on OFLA at **25** |
+| `26-75` | FMLA at **50** |
+| `76-200` | EEO-1 and WARN at **100** |
+
+**A company stored as `26-75` cannot be resolved for FMLA at all** — the answer is not in
+the data. No amount of downstream logic recovers it, because the information was destroyed
+at write time. Every employment threshold in the library derives from a number; a band is a
+lossy projection of that number chosen for a dropdown's convenience.
+
+Bands are a *display* choice. They can be computed from an integer whenever a screen wants
+one. An integer cannot be computed from a band.
+
+**This travels as one unit and cannot be split** — the column type, `/api/signup` (which
+hardcodes `employeeCount: ''` on every account created), `/api/account` PUT, and the
+`<select>` in `app/account/page.tsx`. Split any of them and signup writes a value the schema
+rejects, which fails account creation outright.
+
+**What is lost in the conversion, stated plainly:** the eight existing companies holding a
+band become `NULL`, because a band cannot be converted into a number without inventing one.
+All ten rows are our own test data (`CB-Test-1`, `ZZ Throwaway Test`); two already held an
+empty string. Nothing real is lost, and doing this after a customer exists would mean asking
+them to re-enter it.
+
+**Reversal condition:** none for the storage decision. If a customer genuinely refuses to
+give a number, the answer is a nullable integer and an `undetermined` switch — not a band.
+
+### 21.2 `layer` is jurisdiction only; `contractual` moves to its own axis
+
+**Decision: `layer` becomes `federal | state | county | city`. A new `source_type` —
+`statutory | contractual` — carries whether a government imposed the duty.**
+
+**Reasoning.** `contractual` was never a jurisdiction level. It answers *who imposed this*,
+not *which government's law reaches here* — a different question on a different axis, folded
+into one column because both felt like "where does this come from". A contractual obligation
+still has a jurisdiction; it is simply not imposed by a legislature. ISO 9001 does not stop
+applying at the Oregon border.
+
+Keeping them in one column makes two things impossible: filtering "everything Oregon
+requires of us" without accidentally including a registrar's contract terms, and filtering
+"everything a customer contract obliges us to" at all.
+
+**The vocabulary, settled 10 September:**
+
+```
+jurisdiction_layer   federal | state | county | city | local     -- NULLABLE
+requirement_source_type   statutory | contractual
+```
+
+Two data questions were raised against the 188 rows and both are now answered.
+
+**`layer` is nullable, because three rows have no jurisdiction at all.** ISO 9001, ISO 14001
+and NACD Responsible Distribution become `source_type = contractual`, and all three carry
+`jurisdiction_state = NULL`. Defaulting them to `federal` would assert that **US federal law
+requires ISO 9001**, which is false and is the kind of false statement this product exists
+not to make. A registrar contract is not territorial. `source_type = contractual` with
+`layer = NULL` reads correctly and is the only combination that does.
+
+**`local` is added, and it is not `city`.** Three rows are `layer = county` while
+`jurisdiction_county` is NULL in all 188 — *fire-code hazardous-material permits*, *chemical
+storage compatibility / segregation*, *emergency lighting / exit sign testing*, all Oregon
+Fire Code. `city` would be wrong: **a rural fire protection district is not a city**, and
+Oregon has many. `local` means *the authority having jurisdiction, resolved per site* — which
+is also the honest answer, because which fire authority applies depends on the address and
+cannot be known from the requirement row.
+
+**That is the same fact that drives §20 and `TODO.md` 1.6.** Two plants of one company can
+sit under different fire authorities, so a `local` row cannot be resolved at company level at
+all — it resolves per site or not at all. The fire code is where multi-facility stops being a
+convenience and becomes a correctness requirement, and it is the first place in the library
+where a company-wide answer is simply wrong.
+
+**006 creates both types and converts neither column**, because the six rows still have to be
+edited. The conversion goes with the data pass.
+
+### 21.3 `obligations.status` follows the spec: four states
+
+**Decision: `satisfied | does_not_apply | undetermined | unknown`. The spec wins over the
+code, because `CLAUDE.md` §3.2 is a safety property and the code is not.**
+
+**Reasoning.** Three vocabularies exist today and no two agree:
+
+| Where | Values |
+|---|---|
+| The data | `missing` 249 · `unconfirmed` 127 |
+| `app/api/obligations/route.ts` | `missing`, `at_risk`, `expiring_soon`, `satisfied`, `not_applicable` |
+| `CLAUDE.md` §3.2 and the design | `unknown`, `does_not_apply` |
+
+`unconfirmed` is **34% of every obligation row** and appears in neither the code nor the
+spec, so it falls through a `|| 9` fallback and sorts silently to the bottom of the
+requirements list. It maps to `undetermined`.
+
+`at_risk` and `expiring_soon` are dropped. They are **derived from evidence expiry, not
+stored states** — computing them from `obligation_evidence.valid_until` gives one answer;
+storing them gives two answers that drift apart the moment a certificate lapses and nothing
+re-runs. `CLAUDE.md` §3.2 requires expired evidence to fail a requirement in code, and a
+stored `at_risk` flag is exactly the stale copy that lets it pass.
+
+`not_applicable` (code) and `does_not_apply` (spec) are the same state. The spec's name
+wins because §3.2 is written in those words: *"`unknown` never resolves to
+`does_not_apply`."*
+
+**The two rank maps in `/api/obligations` change with it, and must be derived from the
+generated enum rather than hand-written**, so that a future rename is a compile error rather
+than a silent re-sort. Hand-written maps are how `unconfirmed` came to sort last without
+anyone noticing.
+
+**`missing` is not a status, and that is why it had no mapping.** It describes an obligation
+that **applies and has no evidence** — which is `satisfied = false`, and that is a **query
+over `obligation_evidence`, not a stored state.** Storing it duplicates a fact the evidence
+table already holds, and a duplicate of a derived fact is a stale copy waiting to happen,
+the same reason `at_risk` and `expiring_soon` are absent. The 249 rows map to `satisfied`
+with no evidence rows behind them; 007 rebuilds them regardless.
+
+**The boundary between `undetermined` and `unknown`, because they sound alike and are not:**
+
+| State | Meaning | What can be done about it |
+|---|---|---|
+| `undetermined` | **We asked and could not resolve it.** The trigger condition is ambiguous, or it needs human judgment | **A dead end.** Nothing the product can ask will settle it — it needs a person |
+| `unknown` | **We lack the input.** A switch the requirement depends on is unset | **A question we can put to the user.** Resolvable by asking, or by a document |
+
+The distinction is operationally the whole point: `unknown` populates the switches screen
+and the in-context asks, and it clears itself as documents arrive. `undetermined` never
+clears on its own and must surface as an open question with a reason attached. Collapsing
+them would either flood the user with questions that have no answer, or bury the ones that
+do. **Neither ever resolves to `does_not_apply`** — `CLAUDE.md` §3.2, absence of evidence
+never produces a clear.
+
+**Guard for 007, recorded because the naming invites the mistake.** Under this mapping a row
+reads `satisfied` while having no evidence at all, so **anything that reads
+`obligations.status` without joining `obligation_evidence` will report a false green** — on
+249 rows today. That is the omniscient status tracker (`CLAUDE.md` §6), and the column name
+is what makes it easy to reach for. Satisfaction is a join, never a column read. Whether the
+state is better named `applies` is a question for 007, when the column is actually converted
+and the resolution engine is written against it.
+
+### 21.4 `category` becomes obligation type: ten values
+
+**Decision:** `permit | written_program | training | recordkeeping | monitoring |
+reporting | physical_control | certification | credential | fees_taxes`
+
+**Reasoning: the current 26 values are three different axes in one column.**
+
+| Axis | Example values | Where it belongs |
+|---|---|---|
+| Subject matter | `Hazardous waste`, `Air emissions`, `Water` | `agency_id` — the regulator already implies the subject |
+| Entity and cadence | the four `Per-` values (`Per-chemical duties`, `Per-person clocks`, …) — 19 rows | `entity_scope` and `cadence_type`, both already separate columns |
+| **Shape of the duty** | `Registrations & permits`, `Written safety programs`, `Certifications` | **This, and only this, is what `category` should hold** |
+
+What kind of thing you must *do* is the one axis that has no other home, and it is the axis
+that determines what evidence satisfies the row.
+
+**Tested against three other verticals before settling.** Cannabis, hospice and brewery fit
+the same ten without forcing. Pre-approval regimes — cannabis label approval, brewery COLA,
+TSCA premanufacture notice — are `permit` in type and `pre_approval` in cadence; the cadence
+column already carries that distinction, so it does not need an eleventh type.
+
+**`credential` is the tenth and is deliberately distinct from `certification`.** A credential
+belongs to a *person* — a CDL hazmat endorsement, first aid/CPR, a cannabis worker permit.
+A certification belongs to an *organisation* — ISO 9001, NACD Responsible Distribution. They
+expire differently, they are evidenced differently, and when one lapses a different set of
+people is affected.
+
+**One category per requirement, and where that is impossible the row is under-decomposed.**
+The silica standard is `training` and `monitoring` and `written_program` and
+`recordkeeping` — which means it is four requirements written as one. Four cadences, four
+evidence types and four ways to fail cannot share one status. **Splitting is the fix, not a
+multi-valued column.** Splitting also lets each piece name its actual enforcing agency,
+which they do not always share.
+
+**Not part of 006: re-categorising and splitting the 188 rows.** That is chemical judgment,
+done against a template by the owner. 006 creates the enum; the data pass follows, and
+`requirement_templates.category` stays `text` until it is done.

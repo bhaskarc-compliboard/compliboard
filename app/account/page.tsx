@@ -7,8 +7,6 @@ import { useRouter } from 'next/navigation'
 
 // Industries now come from the database (/api/industries), not a hardcoded list.
 
-const EMPLOYEE_COUNTS = ['1-25', '26-75', '76-200', '200+']
-
 const US_STATES = [
   'Alabama','Alaska','Arizona','Arkansas','California','Colorado','Connecticut',
   'Delaware','Florida','Georgia','Hawaii','Idaho','Illinois','Indiana','Iowa',
@@ -83,7 +81,9 @@ export default function AccountPage() {
         setState(d.state || '')
         setCounty(d.county || '')
         setCity(d.city || '')
-        setEmployeeCount(d.employee_count || '')
+        // Integer column since migration 006. 0 is a legitimate headcount, so test for
+        // null rather than falsiness — `d.employee_count || ''` would blank a real 0.
+        setEmployeeCount(d.employee_count == null ? '' : String(d.employee_count))
       }
       setLoading(false)
     }
@@ -94,6 +94,10 @@ export default function AccountPage() {
     if (!userId) return
     if (!companyName || !industry || !state || !county || !city || !employeeCount) {
       setSaveError('Please fill in all required fields')
+      return
+    }
+    if (!/^\d+$/.test(employeeCount.trim())) {
+      setSaveError('Number of employees must be a whole number, for example 42.')
       return
     }
     setSaving(true)
@@ -110,7 +114,7 @@ export default function AccountPage() {
           state,
           county,
           city,
-          employeeCount,
+          employeeCount: Number(employeeCount.trim()),
         }),
       })
       if (!res.ok) throw new Error('Failed to save')
@@ -285,13 +289,19 @@ export default function AccountPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Number of employees <span className="text-red-400">*</span></label>
-                  <select
+                  <input
+                    type="number"
+                    min={0}
+                    step={1}
+                    inputMode="numeric"
+                    placeholder="e.g. 42"
                     className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-green-500 bg-gray-50"
                     value={employeeCount}
-                    onChange={(e) => setEmployeeCount(e.target.value)}>
-                    <option value="">Select range</option>
-                    {EMPLOYEE_COUNTS.map(e => <option key={e} value={e}>{e}</option>)}
-                  </select>
+                    onChange={(e) => setEmployeeCount(e.target.value)} />
+                  <p className="mt-1 text-xs text-gray-500">
+                    The exact number, not a range — several rules turn on a specific
+                    headcount (25, 50, 100), so a range cannot answer them.
+                  </p>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">

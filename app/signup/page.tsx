@@ -173,7 +173,9 @@ export default function SignupPage() {
           state,
           county: '',
           city,
-          employeeCount: '',
+          // Not asked at signup. Sent as null rather than '' so the column holds
+          // "not told yet" instead of a value nobody chose (DECISIONS.md §21.1).
+          employeeCount: null,
           websiteUrl: website || null,
           scanResult,
         }),

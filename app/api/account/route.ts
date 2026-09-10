@@ -79,6 +79,22 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Company name is required' }, { status: 400 })
     }
 
+    // Headcount is a whole number or nothing. `undefined`, null and '' all mean "not
+    // told" and store as NULL; anything else that is not a non-negative integer is a
+    // client error and is refused here with a sentence rather than at the database with
+    // a type error. DECISIONS.md §21.1 — every employment threshold in the library is a
+    // number, so a band cannot be resolved and NULL is the honest answer.
+    let headcount: number | null = null
+    if (employeeCount !== undefined && employeeCount !== null && employeeCount !== '') {
+      headcount = Number(employeeCount)
+      if (!Number.isInteger(headcount) || headcount < 0) {
+        return NextResponse.json(
+          { error: 'Number of employees must be a whole number.' },
+          { status: 400 }
+        )
+      }
+    }
+
     const { error: companyError } = await db
       .from('companies')
       .update({
@@ -87,7 +103,10 @@ export async function PUT(request: NextRequest) {
         state,
         county,
         city,
-        employee_count: employeeCount,
+        // Integer, never a band (DECISIONS.md §21.1). Validated above rather than
+        // passed through, because this is now a typed column: a stray '26-75' from an
+        // out-of-date client would be a 400 from Postgres with an opaque message.
+        employee_count: headcount,
       })
       .eq('id', companyId)
 
