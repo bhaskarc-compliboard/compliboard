@@ -20,6 +20,7 @@
 // migration 006 exists is that hand-kept vocabularies had already drifted three ways.
 
 import { readFileSync, existsSync } from "fs";
+import { createClient } from "@supabase/supabase-js";
 import { createInterface } from "readline";
 import { execFileSync } from "child_process";
 import * as XLSX from "xlsx";
@@ -88,7 +89,10 @@ try {
 } catch (e) {
   die(`Could not read the database: ${e.message}`);
 }
-console.log(`  ${Object.keys(vocab).length} vocabularies, ${dbIds.size} rows currently in requirement_templates\n`);
+console.log(`  ${Object.keys(vocab).length} vocabularies, ${dbIds.size} rows currently in requirement_templates`);
+console.log(dbIds.size === 0
+  ? "  The table is empty — SEEDING. The file is the source of truth for ids.\n"
+  : "  The table is populated — RELOADING. Ids are checked against it.\n");
 
 // ---------------------------------------------------------------------------
 // VALIDATION. Everything is collected; nothing short-circuits. A file with eleven
@@ -115,6 +119,10 @@ const enumCol = {
 const REQUIRED = ["requirement_name", "category", "entity_type", "source_type",
                   "citation", "applies", "priority", "status", "generated_by", "industries", "version"];
 const DATE_COLS = ["effective_from", "effective_to", "verified_at", "source_checked_at"];
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+// Empty table = seeding. This is the normal state immediately after migration 007.
+const isSeeding = dbIds.size === 0;
 
 const seenIds = new Map();
 let retiredParents = [], children = [], newRows = [], updates = [];
@@ -157,12 +165,16 @@ for (const [i, r] of rows.entries()) {
   if (has(r, "version") && !/^\d+$/.test(S(r, "version")))
     errors.push(`${at(i)} "${name}": version = "${S(r,'version')}" must be a whole number.`);
 
-  // id: present means it must be a real row; blank means it must be a split child.
+  // id: blank means a row created by a split. Present means it carries an identity
+  // forward — and what that has to satisfy depends on whether the table is already
+  // populated. See the SEEDING vs RELOADING note below.
   const id = S(r, "id");
   if (id) {
+    if (!UUID_RE.test(id)) errors.push(`${at(i)} "${name}": id "${id}" is not a uuid.`);
     if (seenIds.has(id)) errors.push(`${at(i)} "${name}": id ${id} also appears at ${at(seenIds.get(id))}.`);
     else seenIds.set(id, i);
-    if (!dbIds.has(id)) errors.push(`${at(i)} "${name}": id ${id} is not in requirement_templates on ${target.label}. Ids are not invented here.`);
+    if (!isSeeding && !dbIds.has(id))
+      errors.push(`${at(i)} "${name}": id ${id} is not in requirement_templates on ${target.label}. Ids are not invented here.`);
     if (isChild) warnings.push(`${at(i)} "${name}": has both an id and a split_from. Treated as an existing row that records its origin, not as a new row.`);
   } else {
     if (!isChild) errors.push(`${at(i)} "${name}": id is blank and split_from is empty. A new row must say which row it was split from.`);
@@ -204,10 +216,26 @@ for (const i of retiredParents) {
 }
 
 // --- nothing lost ------------------------------------------------------------
-const fileIds = new Set([...seenIds.keys()]);
-for (const id of dbIds)
-  if (!fileIds.has(id))
-    errors.push(`Row ${id} exists in requirement_templates on ${target.label} but appears nowhere in this file. Every existing row must be accounted for — this load replaces the library, so an absent row would be silently dropped.`);
+//
+// SEEDING vs RELOADING. These two checks defend against opposite mistakes and only one
+// of them applies at a time.
+//
+//   The table is EMPTY (seeding, which is the state right after migration 007 rebuilds
+//   it): the FILE is the source of truth. Its ids are the identities being restored, so
+//   there is nothing to check them against and nothing that could have been lost. Both
+//   checks are skipped — running them here would reject all 188 real ids as "invented",
+//   which is exactly backwards.
+//
+//   The table is POPULATED (reloading a live library): the DATABASE is the source of
+//   truth for what exists. An id in the file that is not in the table is a typo or a
+//   fabrication, and a row in the table that is not in the file would be silently
+//   dropped by a load that replaces the library. Both checks apply.
+if (!isSeeding) {
+  const fileIds = new Set([...seenIds.keys()]);
+  for (const id of dbIds)
+    if (!fileIds.has(id))
+      errors.push(`Row ${id} exists in requirement_templates on ${target.label} but appears nowhere in this file. Every existing row must be accounted for — this load replaces the library, so an absent row would be silently dropped.`);
+}
 
 // --- can the target even take this? -----------------------------------------
 const need = ["source_type", "jurisdiction_layer", "generated_by", "scope_rules",
@@ -309,6 +337,145 @@ if (isProduction) {
   if (answer.trim() !== "PRODUCTION") die("Aborted. Nothing was written.");
 }
 
-die("Apply is not implemented yet — it is written with migration 007, against the " +
-    "schema that exists then. Validation and the dry run are complete and are what " +
-    "this file is for today.");
+// ---------------------------------------------------------------------------
+// BUILD THE ROWS
+//
+// One object per sheet row, typed for the column it lands in. Empty cells become NULL,
+// never "" — an empty string in a date column is an error and an empty string in a text
+// column is a value that looks like content and is not.
+// ---------------------------------------------------------------------------
+const nul = (v) => (String(v ?? "").trim() === "" ? null : String(v).trim());
+const arr = (v) => (nul(v) === null ? [] : String(v).split(";").map((s) => s.trim()).filter(Boolean));
+const bool = (v) => ["true", "TRUE", "1", "yes"].includes(String(v ?? "").trim());
+const int = (v) => (nul(v) === null ? null : parseInt(String(v).trim(), 10));
+const json = (v) => { const s = nul(v); if (s === null) return null; try { return JSON.parse(s); } catch { return null; } };
+
+// split_from is a NAME in the sheet and an id in the database. Every parent is itself a
+// row in this file with an id, so the whole mapping resolves from the sheet — no second
+// pass, no lookup against the database, nothing that could resolve to the wrong row.
+const idByName = new Map(rows.filter((r) => S(r, "id")).map((r) => [S(r, "requirement_name"), S(r, "id")]));
+
+const payload = rows.map((r) => {
+  const row = {
+    version:                   int(r.version) ?? 1,
+    supersedes_id:             nul(r.supersedes_id),
+    split_from_id:             has(r, "split_from") ? idByName.get(S(r, "split_from")) ?? null : null,
+    effective_from:            nul(r.effective_from),
+    effective_to:              nul(r.effective_to),
+    requirement_name:          S(r, "requirement_name"),
+    category:                  nul(r.category),
+    entity_type:               S(r, "entity_type"),
+    source_type:               S(r, "source_type"),
+    jurisdiction_layer:        nul(r.jurisdiction_layer),
+    jurisdiction_state:        nul(r.jurisdiction_state),
+    jurisdiction_county:       nul(r.jurisdiction_county),
+    jurisdiction_city:         nul(r.jurisdiction_city),
+    industries:                arr(r.industries),
+    agency_id:                 nul(r.agency_id),
+    secondary_agency_ids:      arr(r.secondary_agency_ids),
+    citation:                  nul(r.citation),
+    citation_url:              nul(r.citation_url),
+    citation_quote:            nul(r.citation_quote),
+    citation_federal_analogue: nul(r.citation_federal_analogue),
+    source_checked_at:         nul(r.source_checked_at),
+    applies:                   S(r, "applies"),
+    applies_expression:        json(r.applies_expression),
+    trigger_condition:         nul(r.trigger_condition),
+    trigger_plain:             nul(r.trigger_plain),
+    scope_rules:               nul(r.scope_rules),
+    produces_switch:           nul(r.produces_switch),
+    is_determination:          bool(r.is_determination),
+    cadence_type:              nul(r.cadence_type),
+    cadence_anchor:            nul(r.cadence_anchor),
+    cadence:                   nul(r.cadence),
+    evidence_description:      nul(r.evidence_description),
+    evidence_types:            arr(r.evidence_types),
+    fails_if:                  nul(r.fails_if),
+    priority:                  S(r, "priority"),
+    status:                    S(r, "status"),
+    verification_note:         nul(r.verification_note),
+    verified_by:               nul(r.verified_by),
+    verified_at:               nul(r.verified_at),
+    generated_by:              S(r, "generated_by"),
+  };
+  // Existing rows keep the id they already had, so anything that ever referenced them
+  // still resolves. New rows get one from the database default.
+  const id = S(r, "id");
+  if (id) row.id = id;
+  return row;
+});
+
+// A child whose parent could not be resolved would silently load with a null lineage.
+// The validator proved every split_from names a row in this file; this proves the
+// resolution actually produced an id.
+const unresolved = rows.filter((r, i) => has(r, "split_from") && !payload[i].split_from_id);
+if (unresolved.length) die(`${unresolved.length} split row(s) did not resolve to a parent id. Nothing was written.`);
+
+// ---------------------------------------------------------------------------
+// WRITE
+//
+// One insert of every row, in a single request, so the database applies it as one
+// statement — all 194 rows or none. That is the whole reason this runs against an empty
+// table rather than upserting row by row: a loop of 194 writes has 194 places to stop
+// halfway, and a half-loaded library looks exactly like a fully loaded one.
+// ---------------------------------------------------------------------------
+const url = isProduction ? process.env.SUPABASE_PROD_URL : process.env.NEXT_PUBLIC_SUPABASE_URL;
+const key = isProduction ? process.env.SUPABASE_PROD_SERVICE_ROLE_KEY : process.env.SUPABASE_SERVICE_ROLE_KEY;
+if (!url || !key) die(`No URL/service-role key for ${target.label}. This writes reference data, which only the service role may do.`);
+if (!url.includes(target.ref)) die(`The ${target.label} URL points at ${url.replace("https://","").split(".")[0]}, not ${target.ref}. Refusing to write to a project the flags did not choose.`);
+
+const db = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+
+const { count: existing } = await db.from("requirement_templates").select("*", { count: "exact", head: true });
+if (existing > 0 && !args.includes("--replace")) {
+  die(`requirement_templates already holds ${existing} rows on ${target.label}.\n` +
+      `  This loads into an empty table. To clear it first, add --replace.\n` +
+      `  Note that --replace is two statements, not one: if the insert fails after the\n` +
+      `  delete, the table is left empty and you re-run — the file on disk is the source.\n` +
+      `  A delete will also be refused outright if any obligation still cites a row\n` +
+      `  (ON DELETE RESTRICT), which is the correct answer: an audit pinned to a library\n` +
+      `  version must stay reproducible.`);
+}
+if (existing > 0) {
+  console.log(`\n  --replace given: clearing ${existing} existing rows…`);
+  const { error } = await db.from("requirement_templates").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+  if (error) die(`Clear failed, nothing was inserted: ${error.message}`);
+}
+
+console.log(`\n  Inserting ${payload.length} rows in one statement…`);
+// defaultToNull: false is load-bearing on a BULK insert. PostgREST normalises an array of
+// objects to the union of their keys and fills anything missing with NULL — so the six
+// split rows, which deliberately omit `id` so the database can mint one, would arrive
+// with id = NULL and violate the primary key. With this flag a missing key uses the
+// column DEFAULT instead, which is gen_random_uuid(). Keys that are explicitly null in
+// the payload are still sent as null; only absent ones are affected.
+const { error: insErr } = await db
+  .from("requirement_templates")
+  .insert(payload, { defaultToNull: false });
+if (insErr) die(`INSERT REFUSED — nothing was written: ${insErr.message}${insErr.details ? "\n  " + insErr.details : ""}`);
+
+// ---------------------------------------------------------------------------
+// PROVE IT LANDED
+// ---------------------------------------------------------------------------
+const after = query(`select
+  (select count(*) from public.requirement_templates)                                  as total,
+  (select count(*) from public.requirement_templates where effective_to is null)       as active,
+  (select count(*) from public.requirement_templates where effective_to is not null)   as retired,
+  (select count(*) from public.requirement_templates where split_from_id is not null)  as children,
+  (select count(*) from public.requirement_templates where category is null)           as no_category`)[0];
+
+console.log("\n  Loaded:");
+console.log(`    ${after.total} rows      (expected ${payload.length})`);
+console.log(`    ${after.active} active`);
+console.log(`    ${after.retired} retired`);
+console.log(`    ${after.children} with a resolved split_from_id`);
+console.log(`    ${after.no_category} with no category`);
+
+const bad = [];
+if (Number(after.total) !== payload.length) bad.push("row count");
+if (Number(after.children) !== children.length) bad.push("split_from_id count");
+if (Number(after.no_category) !== 0) bad.push("a row has no category");
+if (bad.length) die(`LOADED, BUT THE RESULT DOES NOT MATCH THE FILE: ${bad.join("; ")}. Investigate before trusting it.`);
+
+console.log(`\n  Load complete on ${target.label}. Obligations are NOT regenerated —`);
+console.log("  that is the resolution engine's job (Phase 4) and it does not exist yet.\n");

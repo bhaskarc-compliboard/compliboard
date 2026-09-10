@@ -17,35 +17,65 @@ export type Database = {
       agencies: {
         Row: {
           address: string | null
-          agency_type: string
-          created_at: string | null
+          agency_type: string | null
+          contact_email: string | null
+          created_at: string
           id: string
-          jurisdiction: string
+          industries: string[]
+          jurisdiction_city: string | null
+          jurisdiction_county: string | null
+          jurisdiction_level:
+            | Database["public"]["Enums"]["jurisdiction_layer"]
+            | null
+          jurisdiction_state: string | null
           name: string
+          notes: string | null
           phone: string | null
-          updated_at: string | null
+          review_interval: string | null
+          short_name: string | null
+          updated_at: string
           url: string | null
         }
         Insert: {
           address?: string | null
-          agency_type: string
-          created_at?: string | null
+          agency_type?: string | null
+          contact_email?: string | null
+          created_at?: string
           id?: string
-          jurisdiction: string
+          industries?: string[]
+          jurisdiction_city?: string | null
+          jurisdiction_county?: string | null
+          jurisdiction_level?:
+            | Database["public"]["Enums"]["jurisdiction_layer"]
+            | null
+          jurisdiction_state?: string | null
           name: string
+          notes?: string | null
           phone?: string | null
-          updated_at?: string | null
+          review_interval?: string | null
+          short_name?: string | null
+          updated_at?: string
           url?: string | null
         }
         Update: {
           address?: string | null
-          agency_type?: string
-          created_at?: string | null
+          agency_type?: string | null
+          contact_email?: string | null
+          created_at?: string
           id?: string
-          jurisdiction?: string
+          industries?: string[]
+          jurisdiction_city?: string | null
+          jurisdiction_county?: string | null
+          jurisdiction_level?:
+            | Database["public"]["Enums"]["jurisdiction_layer"]
+            | null
+          jurisdiction_state?: string | null
           name?: string
+          notes?: string | null
           phone?: string | null
-          updated_at?: string | null
+          review_interval?: string | null
+          short_name?: string | null
+          updated_at?: string
           url?: string | null
         }
         Relationships: []
@@ -662,33 +692,36 @@ export type Database = {
       entities: {
         Row: {
           company_id: string
-          created_at: string | null
-          details: Json | null
-          entity_type: string
+          created_at: string
+          details: Json
+          entity_type: Database["public"]["Enums"]["entity_scope"]
           id: string
+          is_primary: boolean
           name: string
           parent_entity_id: string | null
-          updated_at: string | null
+          updated_at: string
         }
         Insert: {
           company_id: string
-          created_at?: string | null
-          details?: Json | null
-          entity_type: string
+          created_at?: string
+          details?: Json
+          entity_type: Database["public"]["Enums"]["entity_scope"]
           id?: string
+          is_primary?: boolean
           name: string
           parent_entity_id?: string | null
-          updated_at?: string | null
+          updated_at?: string
         }
         Update: {
           company_id?: string
-          created_at?: string | null
-          details?: Json | null
-          entity_type?: string
+          created_at?: string
+          details?: Json
+          entity_type?: Database["public"]["Enums"]["entity_scope"]
           id?: string
+          is_primary?: boolean
           name?: string
           parent_entity_id?: string | null
-          updated_at?: string | null
+          updated_at?: string
         }
         Relationships: [
           {
@@ -753,28 +786,58 @@ export type Database = {
       }
       obligation_evidence: {
         Row: {
-          added_at: string | null
+          added_at: string
           added_by: string | null
+          assessed_at: string | null
+          assessed_by: string | null
           company_id: string
-          document_id: string
+          contribution: Database["public"]["Enums"]["evidence_contribution"]
+          document_id: string | null
+          entity_id: string | null
           id: string
+          match_confidence: string | null
+          match_rationale: string | null
           obligation_id: string
+          status: string | null
+          superseded_by: string | null
+          valid_from: string | null
+          valid_until: string | null
         }
         Insert: {
-          added_at?: string | null
+          added_at?: string
           added_by?: string | null
+          assessed_at?: string | null
+          assessed_by?: string | null
           company_id: string
-          document_id: string
+          contribution?: Database["public"]["Enums"]["evidence_contribution"]
+          document_id?: string | null
+          entity_id?: string | null
           id?: string
+          match_confidence?: string | null
+          match_rationale?: string | null
           obligation_id: string
+          status?: string | null
+          superseded_by?: string | null
+          valid_from?: string | null
+          valid_until?: string | null
         }
         Update: {
-          added_at?: string | null
+          added_at?: string
           added_by?: string | null
+          assessed_at?: string | null
+          assessed_by?: string | null
           company_id?: string
-          document_id?: string
+          contribution?: Database["public"]["Enums"]["evidence_contribution"]
+          document_id?: string | null
+          entity_id?: string | null
           id?: string
+          match_confidence?: string | null
+          match_rationale?: string | null
           obligation_id?: string
+          status?: string | null
+          superseded_by?: string | null
+          valid_from?: string | null
+          valid_until?: string | null
         }
         Relationships: [
           {
@@ -792,18 +855,35 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "obligation_evidence_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entities"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "obligation_evidence_obligation_id_fkey"
             columns: ["obligation_id"]
             isOneToOne: false
             referencedRelation: "obligations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "obligation_evidence_superseded_by_fkey"
+            columns: ["superseded_by"]
+            isOneToOne: false
+            referencedRelation: "obligation_evidence"
+            referencedColumns: ["id"]
+          },
         ]
       }
       obligations: {
         Row: {
+          applicable_from: string
+          applicable_to: string | null
           company_id: string
-          created_at: string | null
+          created_at: string
+          determined_by: Json
           due_date: string | null
           entity_id: string | null
           id: string
@@ -811,13 +891,16 @@ export type Database = {
           notes: string | null
           requirement_template_id: string
           resolution_rationale: string | null
-          resolved_by: string | null
-          status: string
-          updated_at: string | null
+          resolved_by: string
+          status: Database["public"]["Enums"]["obligation_status"]
+          updated_at: string
         }
         Insert: {
+          applicable_from?: string
+          applicable_to?: string | null
           company_id: string
-          created_at?: string | null
+          created_at?: string
+          determined_by?: Json
           due_date?: string | null
           entity_id?: string | null
           id?: string
@@ -825,13 +908,16 @@ export type Database = {
           notes?: string | null
           requirement_template_id: string
           resolution_rationale?: string | null
-          resolved_by?: string | null
-          status?: string
-          updated_at?: string | null
+          resolved_by?: string
+          status?: Database["public"]["Enums"]["obligation_status"]
+          updated_at?: string
         }
         Update: {
+          applicable_from?: string
+          applicable_to?: string | null
           company_id?: string
-          created_at?: string | null
+          created_at?: string
+          determined_by?: Json
           due_date?: string | null
           entity_id?: string | null
           id?: string
@@ -839,9 +925,9 @@ export type Database = {
           notes?: string | null
           requirement_template_id?: string
           resolution_rationale?: string | null
-          resolved_by?: string | null
-          status?: string
-          updated_at?: string | null
+          resolved_by?: string
+          status?: Database["public"]["Enums"]["obligation_status"]
+          updated_at?: string
         }
         Relationships: [
           {
@@ -898,75 +984,169 @@ export type Database = {
       }
       requirement_templates: {
         Row: {
+          agency_id: string | null
           applies: Database["public"]["Enums"]["applies_mode"]
+          applies_expression: Json | null
           cadence: string | null
+          cadence_anchor: string | null
+          cadence_type: string | null
           category: string | null
           citation: string | null
-          created_at: string | null
+          citation_federal_analogue: string | null
+          citation_quote: string | null
+          citation_url: string | null
+          created_at: string
+          effective_from: string | null
+          effective_to: string | null
           entity_type: Database["public"]["Enums"]["entity_scope"]
           evidence_description: string | null
+          evidence_types: string[]
           fails_if: string | null
+          generated_by: Database["public"]["Enums"]["generated_by"]
           id: string
-          industry: string
-          is_determination: boolean | null
+          industries: string[]
+          is_determination: boolean
+          jurisdiction_city: string | null
           jurisdiction_county: string | null
+          jurisdiction_layer:
+            | Database["public"]["Enums"]["jurisdiction_layer"]
+            | null
           jurisdiction_state: string | null
-          layer: string
-          priority: Database["public"]["Enums"]["requirement_priority"] | null
+          priority: Database["public"]["Enums"]["requirement_priority"]
+          produces_switch: string | null
           requirement_name: string
-          source: string | null
-          status: Database["public"]["Enums"]["verification_status"] | null
+          scope_rules: string | null
+          secondary_agency_ids: string[]
+          source_checked_at: string | null
+          source_type: Database["public"]["Enums"]["requirement_source_type"]
+          split_from_id: string | null
+          status: Database["public"]["Enums"]["verification_status"]
+          supersedes_id: string | null
           trigger_condition: string | null
           trigger_plain: string | null
-          updated_at: string | null
+          updated_at: string
+          verification_note: string | null
+          verified_at: string | null
+          verified_by: string | null
+          version: number
         }
         Insert: {
+          agency_id?: string | null
           applies?: Database["public"]["Enums"]["applies_mode"]
+          applies_expression?: Json | null
           cadence?: string | null
+          cadence_anchor?: string | null
+          cadence_type?: string | null
           category?: string | null
           citation?: string | null
-          created_at?: string | null
+          citation_federal_analogue?: string | null
+          citation_quote?: string | null
+          citation_url?: string | null
+          created_at?: string
+          effective_from?: string | null
+          effective_to?: string | null
           entity_type?: Database["public"]["Enums"]["entity_scope"]
           evidence_description?: string | null
+          evidence_types?: string[]
           fails_if?: string | null
+          generated_by?: Database["public"]["Enums"]["generated_by"]
           id?: string
-          industry: string
-          is_determination?: boolean | null
+          industries?: string[]
+          is_determination?: boolean
+          jurisdiction_city?: string | null
           jurisdiction_county?: string | null
+          jurisdiction_layer?:
+            | Database["public"]["Enums"]["jurisdiction_layer"]
+            | null
           jurisdiction_state?: string | null
-          layer?: string
-          priority?: Database["public"]["Enums"]["requirement_priority"] | null
+          priority?: Database["public"]["Enums"]["requirement_priority"]
+          produces_switch?: string | null
           requirement_name: string
-          source?: string | null
-          status?: Database["public"]["Enums"]["verification_status"] | null
+          scope_rules?: string | null
+          secondary_agency_ids?: string[]
+          source_checked_at?: string | null
+          source_type?: Database["public"]["Enums"]["requirement_source_type"]
+          split_from_id?: string | null
+          status?: Database["public"]["Enums"]["verification_status"]
+          supersedes_id?: string | null
           trigger_condition?: string | null
           trigger_plain?: string | null
-          updated_at?: string | null
+          updated_at?: string
+          verification_note?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+          version?: number
         }
         Update: {
+          agency_id?: string | null
           applies?: Database["public"]["Enums"]["applies_mode"]
+          applies_expression?: Json | null
           cadence?: string | null
+          cadence_anchor?: string | null
+          cadence_type?: string | null
           category?: string | null
           citation?: string | null
-          created_at?: string | null
+          citation_federal_analogue?: string | null
+          citation_quote?: string | null
+          citation_url?: string | null
+          created_at?: string
+          effective_from?: string | null
+          effective_to?: string | null
           entity_type?: Database["public"]["Enums"]["entity_scope"]
           evidence_description?: string | null
+          evidence_types?: string[]
           fails_if?: string | null
+          generated_by?: Database["public"]["Enums"]["generated_by"]
           id?: string
-          industry?: string
-          is_determination?: boolean | null
+          industries?: string[]
+          is_determination?: boolean
+          jurisdiction_city?: string | null
           jurisdiction_county?: string | null
+          jurisdiction_layer?:
+            | Database["public"]["Enums"]["jurisdiction_layer"]
+            | null
           jurisdiction_state?: string | null
-          layer?: string
-          priority?: Database["public"]["Enums"]["requirement_priority"] | null
+          priority?: Database["public"]["Enums"]["requirement_priority"]
+          produces_switch?: string | null
           requirement_name?: string
-          source?: string | null
-          status?: Database["public"]["Enums"]["verification_status"] | null
+          scope_rules?: string | null
+          secondary_agency_ids?: string[]
+          source_checked_at?: string | null
+          source_type?: Database["public"]["Enums"]["requirement_source_type"]
+          split_from_id?: string | null
+          status?: Database["public"]["Enums"]["verification_status"]
+          supersedes_id?: string | null
           trigger_condition?: string | null
           trigger_plain?: string | null
-          updated_at?: string | null
+          updated_at?: string
+          verification_note?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+          version?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "requirement_templates_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "requirement_templates_split_from_id_fkey"
+            columns: ["split_from_id"]
+            isOneToOne: false
+            referencedRelation: "requirement_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "requirement_templates_supersedes_id_fkey"
+            columns: ["supersedes_id"]
+            isOneToOne: false
+            referencedRelation: "requirement_templates"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       standard_templates: {
         Row: {
@@ -1012,7 +1192,13 @@ export type Database = {
         | "equipment"
         | "person"
         | "product"
+      evidence_contribution:
+        | "satisfies"
+        | "partially_satisfies"
+        | "contradicts"
+        | "superseded"
       folder_section: "files" | "hr" | "log"
+      generated_by: "ai" | "manual"
       jurisdiction_layer: "federal" | "state" | "county" | "city" | "local"
       obligation_status:
         | "applies"
@@ -1170,7 +1356,14 @@ export const Constants = {
         "person",
         "product",
       ],
+      evidence_contribution: [
+        "satisfies",
+        "partially_satisfies",
+        "contradicts",
+        "superseded",
+      ],
       folder_section: ["files", "hr", "log"],
+      generated_by: ["ai", "manual"],
       jurisdiction_layer: ["federal", "state", "county", "city", "local"],
       obligation_status: [
         "applies",

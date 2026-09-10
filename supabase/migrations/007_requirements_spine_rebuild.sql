@@ -114,6 +114,31 @@ end $$;
 -- corrections holds 0 rows, so nothing is orphaned in the meantime.
 -- ------------------------------------------------------------
 
+-- ABORT GUARD, and this one is not theoretical.
+--
+-- corrections survives this migration but its two foreign keys point INTO tables that do
+-- not. If any corrections row actually references a requirement_template or an obligation,
+-- that reference dies with the drop and section 8 cannot restore the constraint — it would
+-- fail on a violation AFTER five tables had already been destroyed, which is the worst
+-- possible moment to find out.
+--
+-- Both environments happen to be safe today: every corrections row on staging and
+-- production has null in both columns. "Happens to be safe" is not a plan, so this checks
+-- rather than assumes, and refuses before anything is dropped.
+do $$
+declare
+  n integer;
+begin
+  select count(*) into n from public.corrections
+   where requirement_template_id is not null or obligation_id is not null;
+  if n > 0 then
+    raise exception
+      'MIGRATION 007 ABORTED: % corrections row(s) reference a requirement_template or an obligation. '
+      'Those references cannot survive the rebuild. Decide what happens to them — re-point, null out, '
+      'or delete — and re-run. Nothing has been dropped.', n;
+  end if;
+end $$;
+
 alter table public.corrections drop constraint if exists corrections_obligation_id_fkey;
 alter table public.corrections drop constraint if exists corrections_requirement_template_id_fkey;
 
@@ -606,8 +631,9 @@ create index idx_obligations_template on public.obligations (requirement_templat
 -- entity_id is null for organisation-scoped obligations, and by default Postgres treats
 -- two nulls as different, which would allow unlimited duplicates on exactly the rows most
 -- likely to be duplicated.
-create unique index idx_obligations_one_open nulls not distinct
+create unique index idx_obligations_one_open
   on public.obligations (company_id, entity_id, requirement_template_id)
+  nulls not distinct
   where applicable_to is null;
 
 create index idx_obligation_evidence_company on public.obligation_evidence (company_id);
@@ -685,9 +711,9 @@ begin
     raise exception 'MIGRATION 007: a DELETE policy exists on obligations. They are never deleted, only marked (CLAUDE.md §3.2).';
   end if;
 
-  select string_agg(t, ', ') into missing from unnest(array[
-    'corrections_obligation_id_fkey','corrections_requirement_template_id_fkey']) t
-   where not exists (select 1 from pg_constraint where conname = t);
+  select string_agg(fk.name, ', ') into missing from unnest(array[
+    'corrections_obligation_id_fkey','corrections_requirement_template_id_fkey']) as fk(name)
+   where not exists (select 1 from pg_constraint where conname = fk.name);
   if missing is not null then
     raise exception 'MIGRATION 007: corrections lost foreign key(s): %', missing;
   end if;
