@@ -405,6 +405,7 @@ One line per module: working / broken / not-yet-rebuilt / verified-on-date. Prev
 
 ### 1.6 🔒 Multi-facility structure ⚡ ⏱ 1 day
 *Designed with 1.1, applied in 1.3. Numbered last because it was added last, not done last.*
+**Design:** `CHEMICAL-OR-WA.md` §6.6. **Decision:** `DECISIONS.md` §20.
 
 **One company with facilities in different places is normal in chemical manufacturing, and
 their requirement lists genuinely differ by site** — different OSHA citations, different

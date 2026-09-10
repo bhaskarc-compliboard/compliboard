@@ -800,6 +800,9 @@ feature.
 rebuild (`TODO.md` 1.6, `BUILD-PLAN.md` 2.8). The interface does not — it stays in `MODULES`,
 built only if a customer asks. One account per facility remains the near-term answer.**
 
+**The design lives in `CHEMICAL-OR-WA.md` §6.6**, which is where someone building multi-site
+looks first. This section is the decision and its reasoning; that one is the shape.
+
 **Why the structure now.** One company with facilities in several places is normal in
 chemical manufacturing, and **their requirement lists genuinely differ by site** — different
 OSHA citations, different waste rules, a different air authority. The six-facility cannabis

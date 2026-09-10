@@ -1,6 +1,10 @@
 # Chemical Manufacturing Vertical — Oregon & Washington
-**Version:** 1.0 · **Updated:** 9 September 2026
-**Supersedes:** — (first version)
+**Version:** 1.1 · **Updated:** 10 September 2026
+**Supersedes:** version 1.0 (9 Sep). Expands §6.6 Multi-site: adds the rule that **site is a
+property of data, not of people** — which site you are looking at is a filter, never a
+permission — plus switch scope (company-wide vs per-site), site naming, and what goes into
+the schema now versus what waits for a customer to ask. Nothing else changed; 1.0 remains
+correct as far as it went. Recorded as `DECISIONS.md` §20.
 
 **Status: design only. Nothing in this document is built.**
 **Scope:** Chemical manufacturing, blending, repackaging, and distribution in Oregon and Washington
@@ -799,6 +803,54 @@ The failed test's structure was broadly right — MUST DO / GOOD TO HAVE, steps 
 ## 6.6 Multi-site
 
 With `entity_scope`, a two-plant company gets per-site obligation lists. Site-scoped requirements exist once per site and can have different statuses. Rolled-up company view plus per-site drill-down.
+
+This is not an edge case. One company with plants in several places is normal in chemical manufacturing, and **their requirement lists genuinely differ by site** — different Oregon OSHA citations, different waste rules, a different air authority. A six-facility operator is one business with six sites, not six legal entities.
+
+### ⚡ Site is a property of DATA, not of PEOPLE
+
+**This is the decision in multi-site most likely to go wrong, so it is stated before the screens.**
+
+A permit belongs to a site. A manifest log belongs to a site. A generator category belongs to a site. **A user belongs to the company and sees everything in it.**
+
+*"Which site am I looking at"* is therefore a **filter** — a dropdown, with roll-up as "all sites" — and never a permission.
+
+```
+Showing:  [ All sites ▾ ]                    3 sites · 47 apply · 6 undetermined
+          ├ All sites (roll-up)
+          ├ CompanyA-Hillsboro
+          ├ CompanyA-Albany
+          └ CompanyA-Longview
+```
+
+**The tempting alternative is per-user site access, and it is a trap.** It makes the simple case — one site, one person, which is most early customers — complicated. It turns a dropdown into a permissions system with an inheritance model and an admin screen. And every query then has to resolve *"which sites may this person see"* before it can ask anything useful, which means the permission check reaches into resolution, evidence, documents and the calendar rather than staying in one component.
+
+If a customer later asks that the Hillsboro manager not see Longview's findings, **that is a separate permissions feature**, priced and built as one. It is not something to pre-build for a customer who has not asked.
+
+### Switch scope is the part that has to be right
+
+Every switch is either company-wide or per-site, and getting one wrong is not approximately right — it is wrong at every site but one, in the direction of a confident answer.
+
+| Company-wide | Per-site |
+|---|---|
+| Employee count | Hazardous waste generator category |
+| ISO 9001 certification | Air permit tier / ACDP level |
+| Corporate written programs | Underground storage tanks |
+| DOT operating authority | Local fire jurisdiction |
+| Ownership and entity structure | Tier II reportable quantities |
+
+So `switches` carries a `scope` — `company` or `site` — and `company_switches` carries a nullable site reference. The switches screen (6.4) shows a site-scoped switch once per site, each with its own basis and its own "affects N requirements" count.
+
+### Naming
+
+**Sites carry the name the operator already uses** — `CompanyA-Hillsboro`, never `Site 2` or a generated label. A plant manager thinks *"the Hillsboro plant"*. If the product makes them translate that into an id, it is harder to use than the spreadsheet it replaces.
+
+### Sequencing
+
+The **structure** goes in with the schema rebuild, before real customer data exists: a site row seeded for every company at signup — including single-site customers, so nothing is special-cased later — and a site reference on documents, obligations and evidence. The **interface** on this page waits until a customer asks for it.
+
+One account per facility is the near-term answer and it works. What it costs: company-level documents uploaded once per account and ageing independently, no roll-up view, and a consolidation later that means merging live customer accounts and deciding which copy of a shared document is authoritative.
+
+*(`DECISIONS.md` §20 · `TODO.md` 1.6 · `BUILD-PLAN.md` 2.8.)*
 
 ---
 

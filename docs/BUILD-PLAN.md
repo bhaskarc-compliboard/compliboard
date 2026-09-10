@@ -261,6 +261,8 @@ The obligation-matching logic matches on industry alone. **A live correctness bu
 Needed for cannabis per-SKU pre-approval obligations.
 
 ### 2.8 🔒⚡ Multi-facility structure ⏱ 1 day
+Design in `CHEMICAL-OR-WA.md` §6.6; decision and reasoning in `DECISIONS.md` §20.
+
 One company with sites in different places is normal in chemical manufacturing, and their
 requirement lists genuinely differ by site — different OSHA citations, different waste rules,
 a different air authority. The six-facility cannabis prospect is one business with six sites,
