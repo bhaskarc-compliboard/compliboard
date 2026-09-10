@@ -179,6 +179,7 @@ export type Database = {
           category: string
           checklist_id: string | null
           clarifying_questions: Json | null
+          company_id: string
           completed: boolean | null
           completed_at: string | null
           cost_note: string | null
@@ -204,6 +205,7 @@ export type Database = {
           category: string
           checklist_id?: string | null
           clarifying_questions?: Json | null
+          company_id: string
           completed?: boolean | null
           completed_at?: string | null
           cost_note?: string | null
@@ -229,6 +231,7 @@ export type Database = {
           category?: string
           checklist_id?: string | null
           clarifying_questions?: Json | null
+          company_id?: string
           completed?: boolean | null
           completed_at?: string | null
           cost_note?: string | null
@@ -255,6 +258,13 @@ export type Database = {
             columns: ["checklist_id"]
             isOneToOne: false
             referencedRelation: "checklists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checklist_items_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]
@@ -693,60 +703,6 @@ export type Database = {
             columns: ["parent_entity_id"]
             isOneToOne: false
             referencedRelation: "entities"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      folder_audits: {
-        Row: {
-          company_id: string | null
-          created_at: string | null
-          file_names: string[]
-          folder_id: string | null
-          folder_name: string
-          id: string
-          industry: string
-          parent_folder_name: string | null
-          result_json: Json
-          user_id: string | null
-        }
-        Insert: {
-          company_id?: string | null
-          created_at?: string | null
-          file_names: string[]
-          folder_id?: string | null
-          folder_name: string
-          id?: string
-          industry: string
-          parent_folder_name?: string | null
-          result_json: Json
-          user_id?: string | null
-        }
-        Update: {
-          company_id?: string | null
-          created_at?: string | null
-          file_names?: string[]
-          folder_id?: string | null
-          folder_name?: string
-          id?: string
-          industry?: string
-          parent_folder_name?: string | null
-          result_json?: Json
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "folder_audits_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "folder_audits_folder_id_fkey"
-            columns: ["folder_id"]
-            isOneToOne: false
-            referencedRelation: "company_folders"
             referencedColumns: ["id"]
           },
         ]

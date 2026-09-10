@@ -42,10 +42,12 @@ export async function POST(request: NextRequest) {
       .delete()
       .eq('checklist_id', checklist_id)
       .eq('parent_item_index', parent_item_index)
+      .eq('company_id', companyId)
 
     // Insert new sub-items
     const rows = items.map((item: any, i: number) => ({
       checklist_id,
+      company_id: companyId,
       category: 'must_do',
       name: item.name,
       description: item.description || '',

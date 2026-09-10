@@ -64,7 +64,7 @@ The storage policies do not protect these — the service-role key bypasses RLS 
 - ✅ **`/api/substeps`, `/api/link-research`** — wrote to checklists keyed on a body id. Linking checks **both** ends; checking only the row being updated still allows a link into another company's checklist.
 - ✅ **`/api/obligations`** — returned any company's full compliance position, the most sensitive list in the product, to anyone who knew the id.
 
-**Confirmed safe, left as they are:** `/api/signup` (no session exists yet), `/api/cron/monthly-summary` (`CRON_SECRET`), `/api/industries` (shared library data, no tenant rows), `/api/chat`, `/api/extract-dates`, `/api/scan-website`, `/api/feedback` (no database, no service role).
+**Confirmed safe, left as they are:** `/api/signup` (no session exists yet), `/api/industries` (shared library data, no tenant rows), `/api/chat`, `/api/extract-dates`, `/api/scan-website`, `/api/feedback` (no database, no service role).
 
 **Deleted rather than fixed** — all three orphaned with zero callers:
 `/api/folders/industry`, `/api/requirements`, `/api/sync-obligations`.
@@ -79,15 +79,22 @@ Confirmed before deleting: no `vercel.json`, no cron schedule anywhere in the re
 
 **Acceptance met:** no route derives tenant identity from a client parameter. Every service-role use is either a route with a verified session or a place where no session exists.
 
-### 0.5 Tenancy consistency ⬜ **NEXT** ⏱ 1 day
-Partly done as a side effect of 0.4 — the *routes* now scope by company. The *tables* and their RLS policies still do not, and that is what this item is.
+### 0.5 Tenancy consistency ✅ DONE (10 Sep) — migration 003
+Every data table now scopes by `company_id`, in the column and in the policy.
 
-- ✅ `calendar_events` — the route is company-scoped now (reads, writes and ownership checks). Checked first: all 47 production events already carry a `company_id`, so nothing disappeared. **The RLS policy on the table still reads `auth.uid() = user_id`** and must follow.
-- ⬜ `checklists` and `checklist_items` — still scoped to `user_id`, in the table and in RLS. `checklist_items` reaches tenancy through its parent checklist's `user_id`, which is two hops from the company.
-- ⬜ `folder_audits` — still `user_id`, and its three policies are granted to `public` rather than `authenticated` (harmless today, inconsistent with every other table). Decide whether the feature is retired first; if so this is a delete, not a fix.
-- ⬜ `documents.company_id` is nullable — decide whether to make it NOT NULL. The delete and ownership checks written in 0.4 all fail closed on a null, which is the safe direction, but the column should not permit it.
+- ✅ `calendar_events` — route fixed 9 Sep; **RLS policies replaced 10 Sep**. All four verbs, company-scoped, explicit `WITH CHECK`. No runtime change: nothing reads this table from the browser, so this aligns the database with what the route already enforced and is what lets the route stop using the service-role key.
+- ✅ `checklists` — company-scoped. Gained an **UPDATE policy**, which it never had; that absence is why linking a research answer to a checklist had to go through a service-role route.
+- ✅ `checklist_items` — **gained a real `company_id` column**, backfilled from the parent (235 rows, 0 orphans) and set `NOT NULL` with an FK and index. Policies now scope on its own column instead of subquerying `checklists`. One less table whose RLS has to hold for this table's RLS to work — the same coupling that makes the storage policies fragile.
+- ✅ `folder_audits` — **deleted**, see below.
+- ⬜ `documents.company_id` is still nullable. Every ownership check written in 0.4 fails closed on a null, which is the safe direction, but the column should not permit it. Left for the Phase 1 schema rebuild rather than patched here.
 
-**Acceptance:** every data table scopes by `company_id`, in the column and in the policy. Two people at the same company see the same thing.
+**Colleagues now see each other's checklists.** That is the intent and it matches documents and the calendar — the compliance record is a company asset. It is a visible product change, not just an internal one.
+
+**One hazard fixed in the same change, not after.** `deleteChecklist` in `app/compliance/page.tsx` deleted with `.eq('id', id)` and no ownership filter; `toggleCheck` updated a checklist item the same way. Both were safe *only* because RLS narrowed them to the caller's own rows. Widening the policies to company scope without adding an explicit company filter would have turned "delete my checklist" into "delete any colleague's checklist", reachable from the existing UI. Both now carry `.eq('company_id', companyId)`.
+
+**folder_audits is retired, not deferred.** It inferred compliance from folder *names* — a folder called "DOT" with any file in it read as green. A filename is not evidence, and an expired permit filed in a correctly-named folder scored identically to a current one. That is the false-green failure the product exists to prevent, so it is deleted rather than re-scoped: table, three policies, three foreign keys, generated types, its entry in the account-delete list, and its references here. There was no page, component or nav entry. One production row destroyed — a scan result derived from folder names, not a customer document.
+
+**`/api/cron/monthly-summary` deleted with it.** A third of the email was built on folder audits, and §0.8 established the route had never run — no `vercel.json`, no cron jobs configured in Vercel at all. Dead code calling dead code. `CRON_SECRET` is removed from `.env.example` too. A monthly summary is still wanted, but it should be written against obligations and evidence — what the company must do and what proves it — not against folder names. That belongs after Phase 4, when obligations are real.
 
 ### 0.6 Write policies on every table ⬜ 🔒 **THEN THIS** ⏱ 1 day
 Five tables have RLS on and **zero policies** — `audits`, `company_templates`, `document_reviews`, `hr_audits`, `standard_templates`. RLS with no policy denies everything, which is why those tables are only reachable by service role.
@@ -107,7 +114,6 @@ Five tables have RLS on and **zero policies** — `audits`, `company_templates`,
 - ⬜ `updated_at` trigger — nine columns exist, nothing advances them
 - ⬜ Resolve pricing: $199 or $99
 - ⬜ Remove HIPAA as a surfaced audit example
-- ⬜ Delete `folder_audits` if retired
 - ⬜ Fix `app/upload/page.tsx:89` — `getPublicUrl` on a private bucket, already broken
 - ⬜ Add to docs: baseline exports go in git **only** while data is synthetic
 - ⬜ **Deleting a route breaks `npm run check` until `.next/types` is cleared.** Next.js
@@ -117,22 +123,6 @@ Five tables have RLS on and **zero policies** — `audits`, `company_templates`,
   '../../app/api/<name>/route.js'`. Hit this deleting the three orphans on 9 Sep. Fix is
   `rm -rf .next/types`; the build regenerates it. Worth a line in the check script or a
   `predev`/`prebuild` clean so the next person does not lose ten minutes to it.
-
-### 0.8 The monthly summary has never run ⬜ ⏱ 1 hour
-
-`app/api/cron/monthly-summary/route.ts` exists and is written correctly — it checks
-`CRON_SECRET` before doing anything, and reads companies, profiles, calendar events,
-folders and folder audits to build the summary. Nothing calls it.
-
-Confirmed 9 Sep: there is no `vercel.json` in the repo and **no cron jobs configured in
-Vercel at all** — the Cron Jobs page shows only setup instructions, meaning the list is
-empty. So the route has never fired, and no customer has ever received a monthly summary.
-
-Not a security problem and not part of the route-hardening work. Recorded because a
-feature that silently never runs looks identical to one that runs and finds nothing —
-which is the same class of failure as a dashboard that only ever climbs. Decide whether
-to schedule it or delete it; do not leave it in the third state.
-
 
 ---
 

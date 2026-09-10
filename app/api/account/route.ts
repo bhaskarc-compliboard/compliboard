@@ -203,7 +203,6 @@ export async function DELETE(request: NextRequest) {
       'audits',
       'company_templates',
       'hr_audits',
-      'folder_audits',
       'calendar_events',
       'documents',
       'company_folders',

@@ -533,8 +533,8 @@ paths — `company_name` and `industry` arriving from the request — were close
 The application checks are therefore the *only* tenant boundary on the database side. Write
 policies on all 19 tables (§0.6 of the to-do) are what make the database enforce it too, so
 a future route that forgets the check fails closed instead of leaking. Table-level tenancy
-(§0.5) is the prerequisite: `checklists`, `checklist_items` and `folder_audits` still scope
-by `user_id`.
+(§0.5) was the prerequisite and is done — migration 003 moved `checklists`,
+`checklist_items` and `calendar_events` to company scope, and retired `folder_audits`.
 
 **Known and recorded, not fixed:** an empty model response becomes a raw 500 through
 `askAIJson`; the monthly-summary cron route has never run because nothing schedules it;

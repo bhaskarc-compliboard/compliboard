@@ -51,7 +51,7 @@ v2 was written around BizPulses's memberships model. Wrong for what exists.
 
 ⟲ **This is roughly a week off Phase 2.** v2 assumed these had to be created. They exist, with indexes, and the design intent is right — the migration comment reads *"THE SPINE. What is missing = a query on this table, not an AI guess."*
 
-**Eleven tables have no migration** and exist only in the live database: `companies`, `profiles`, `documents`, `company_folders`, `document_reviews`, `audits`, `hr_audits`, `folder_audits`, `checklists`, `checklist_items`, `standard_templates`, `company_templates`, `calendar_events`.
+**Eleven tables have no migration** and exist only in the live database: `companies`, `profiles`, `documents`, `company_folders`, `document_reviews`, `audits`, `hr_audits`, `folder_audits`, `checklists`, `checklist_items`, `standard_templates`, `company_templates`, `calendar_events`. *(Resolved 9 Sep by `000_baseline.sql`, which captures all of them; `folder_audits` has since been deleted.)*
 
 Confirmed from code: `audits` carries **both** `company_id` and `user_id` — the tenancy inconsistency, in the flesh.
 
@@ -168,7 +168,7 @@ Existing columns are bare `text` with no constraint at all. **Do not retrofit** 
 The columns exist and default to `now()`, but nothing updates them on write. One trigger function applied to every table.
 
 ### 0.11 Housekeeping ⏱ 1 hour
-Delete Build Plan v1 and v2, `CompliBoard-Requirements-Module-Definition.md`, `CompliBoard-Requirement-Template.xlsx` (both the project copy and the one in the repo root). Remove unused `ai` / `@ai-sdk/anthropic` deps. Resolve pricing ($199 vs $99). Remove HIPAA as a surfaced audit example. Remove or document `folder_audits`.
+Delete Build Plan v1 and v2, `CompliBoard-Requirements-Module-Definition.md`, `CompliBoard-Requirement-Template.xlsx` (both the project copy and the one in the repo root). Remove unused `ai` / `@ai-sdk/anthropic` deps. Resolve pricing ($199 vs $99). Remove HIPAA as a surfaced audit example. ~~Remove or document `folder_audits`.~~ Deleted 10 Sep (migration 003) — it inferred compliance from folder names, which is the false-green failure.
 
 ---
 

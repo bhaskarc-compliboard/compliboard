@@ -207,12 +207,17 @@ function CompliancePageInner() {
   }, [searchParams])
 
   async function loadSavedChecklists() {
+    // Company-scoped, not user-scoped: the compliance record belongs to the company,
+    // so colleagues see the same checklists and research answers.
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
+    const { data: profile } = await supabase
+      .from('profiles').select('company_id').eq('id', user.id).single()
+    if (!profile?.company_id) return
     const { data: checklists } = await supabase
       .from('checklists')
       .select('id, question, title, created_at, research_answer, converted_to_checklist_id')
-      .eq('user_id', user.id)
+      .eq('company_id', profile.company_id)
       .order('created_at', { ascending: false })
       .limit(10)
     if (!checklists) return
@@ -285,6 +290,7 @@ function CompliancePageInner() {
     const items = [
       ...data.must_do.map((item, i) => ({
         checklist_id: checklist.id,
+        company_id: companyId,
         category: 'must_do',
         name: item.name,
         description: item.description || '',
@@ -298,6 +304,7 @@ function CompliancePageInner() {
       })),
       ...data.good_to_have.map((item, i) => ({
         checklist_id: checklist.id,
+        company_id: companyId,
         category: 'good_to_have',
         name: item.name,
         description: item.description || '',
@@ -415,7 +422,9 @@ function CompliancePageInner() {
   async function toggleCheck(key: string, itemId?: string) {
     const newChecked = !checked[key]
     setChecked(prev => ({ ...prev, [key]: newChecked }))
-    if (!itemId) return
+    if (!itemId || !companyId) return
+    // Same reasoning as deleteChecklist: `.eq('id')` alone was only ever safe because
+    // RLS restricted this table to the caller's own rows.
     await supabase
       .from('checklist_items')
       .update({
@@ -423,6 +432,7 @@ function CompliancePageInner() {
         completed_at: newChecked ? new Date().toISOString() : null,
       })
       .eq('id', itemId)
+      .eq('company_id', companyId)
   }
 
   async function handleGetSteps(itemIndex: number) {
@@ -541,7 +551,12 @@ Give them a specific direct answer — exactly what they need to do, which speci
   }
 
   async function deleteChecklist(checklistId: string) {
-    await supabase.from('checklists').delete().eq('id', checklistId)
+    if (!companyId) return
+    // The company filter is not belt-and-braces here. Before the policies were widened
+    // to company scope, RLS narrowed DELETE to the caller's own rows and `.eq('id')`
+    // alone was safe. It is not any more: without this, deleting your own checklist and
+    // deleting a colleague's are the same call.
+    await supabase.from('checklists').delete().eq('id', checklistId).eq('company_id', companyId)
     setSavedChecklists(prev => prev.filter(c => c.id !== checklistId))
     if (currentChecklistId === checklistId) {
       setData(null)
