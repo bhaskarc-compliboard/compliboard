@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase'
+import { createClient, authHeaders } from '@/lib/supabase'
 import AppLayout from '@/components/AppLayout'
 
 interface CalendarEvent {
@@ -78,7 +78,7 @@ export default function CalendarPage() {
       // A compliance calendar is a company asset — read by company_id so all
       // users at a company see the same deadlines (matches the dashboard).
       if (profile?.company_id) {
-        const res = await fetch(`/api/calendar?company_id=${profile.company_id}`)
+        const res = await fetch('/api/calendar', { headers: await authHeaders() })
         const json = await res.json()
         if (json.data) setEvents(json.data)
       }
@@ -97,10 +97,8 @@ export default function CalendarPage() {
     try {
       const res = await fetch('/api/calendar', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: await authHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({
-          company_id: companyId,
-          user_id: userId,
           title: newTitle,
           description: newDescription || null,
           due_date: newDate,
@@ -158,10 +156,8 @@ export default function CalendarPage() {
       for (const d of toAdd) {
         const res = await fetch('/api/calendar', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: await authHeaders({ 'Content-Type': 'application/json' }),
           body: JSON.stringify({
-            company_id: companyId,
-            user_id: userId,
             title: d.title,
             description: d.description,
             due_date: d.date,
@@ -199,7 +195,7 @@ export default function CalendarPage() {
   async function deleteEvent(id: string) {
     if (!confirm('Delete this deadline?')) return
     setEvents(prev => prev.filter(e => e.id !== id))
-    await fetch(`/api/calendar?id=${id}`, { method: 'DELETE' })
+    await fetch(`/api/calendar?id=${id}`, { method: 'DELETE', headers: await authHeaders() })
   }
 
   function exportToGoogleCalendar(event: CalendarEvent) {

@@ -1,19 +1,46 @@
-import { createClient } from '@supabase/supabase-js'
-import { NextRequest, NextResponse } from 'next/server'
+// Compliance calendar: deadlines and recurring events.
+//
+// Every handler derives the company from the verified session via requireCompany().
+// This route writes with the service-role key, which bypasses RLS, so these checks are
+// its only tenant boundary. It previously took company_id and user_id from a query
+// parameter or the request body and never checked a session — so any caller could read
+// another company's deadlines, write events into their calendar, or delete any event by
+// id. Reference: app/api/documents/route.ts.
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+import { NextRequest, NextResponse } from 'next/server'
+import { requireCompany, supabaseAdmin } from '@/lib/auth'
+
+// Loads one event and confirms it belongs to this company. Returns null otherwise —
+// callers turn that into a 404, never a 403, so event ids cannot be probed.
+async function ownedEvent(id: string, companyId: string) {
+  const { data } = await supabaseAdmin
+    .from('calendar_events')
+    .select('id, company_id')
+    .eq('id', id)
+    .single()
+  if (!data || data.company_id !== companyId) return null
+  return data
+}
 
 export async function POST(request: NextRequest) {
   try {
+    const authed = await requireCompany(request)
+    if (!authed.ok) return authed.response
+    const { companyId, userId } = authed.auth
+
     const body = await request.json()
-    const { company_id, user_id, title, description, due_date, category, is_recurring, recurrence_period } = body
+    const { title, description, due_date, category, is_recurring, recurrence_period } = body
+    if (!title || !due_date) {
+      return NextResponse.json({ error: 'Missing title or due_date' }, { status: 400 })
+    }
 
     const { data, error } = await supabaseAdmin
       .from('calendar_events')
-      .insert({ company_id, user_id, title, description, due_date, category, is_recurring, recurrence_period })
+      .insert({
+        company_id: companyId,
+        user_id: userId,
+        title, description, due_date, category, is_recurring, recurrence_period,
+      })
       .select()
       .single()
 
@@ -24,23 +51,21 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// A compliance calendar is a COMPANY asset — everyone at the company sees the same
+// deadlines. The user_id parameter is gone along with company_id: it let any caller read
+// any person's calendar, and it also meant two people at one company saw different
+// deadlines, which is not what a compliance calendar is for.
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const company_id = searchParams.get('company_id')
-    const user_id = searchParams.get('user_id')
-    if (!company_id && !user_id) return NextResponse.json({ error: 'Missing company_id or user_id' }, { status: 400 })
+    const authed = await requireCompany(request)
+    if (!authed.ok) return authed.response
+    const { companyId } = authed.auth
 
-    // A compliance calendar is a COMPANY asset — prefer company_id so all users
-    // at a company see the same deadlines. user_id kept for backward compatibility
-    // until the calendar page is migrated to company_id.
-    let query = supabaseAdmin
+    const { data, error } = await supabaseAdmin
       .from('calendar_events')
       .select('*')
+      .eq('company_id', companyId)
       .order('due_date', { ascending: true })
-    query = company_id ? query.eq('company_id', company_id) : query.eq('user_id', user_id)
-
-    const { data, error } = await query
 
     if (error) throw error
     return NextResponse.json({ data })
@@ -51,8 +76,17 @@ export async function GET(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
+    const authed = await requireCompany(request)
+    if (!authed.ok) return authed.response
+    const { companyId } = authed.auth
+
     const body = await request.json()
     const { id, completed } = body
+    if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
+
+    if (!(await ownedEvent(id, companyId))) {
+      return NextResponse.json({ error: 'Event not found' }, { status: 404 })
+    }
 
     const { error } = await supabaseAdmin
       .from('calendar_events')
@@ -61,6 +95,7 @@ export async function PATCH(request: NextRequest) {
         completed_at: completed ? new Date().toISOString() : null,
       })
       .eq('id', id)
+      .eq('company_id', companyId)
 
     if (error) throw error
     return NextResponse.json({ success: true })
@@ -71,14 +106,23 @@ export async function PATCH(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    const authed = await requireCompany(request)
+    if (!authed.ok) return authed.response
+    const { companyId } = authed.auth
+
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
     if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
+
+    if (!(await ownedEvent(id, companyId))) {
+      return NextResponse.json({ error: 'Event not found' }, { status: 404 })
+    }
 
     const { error } = await supabaseAdmin
       .from('calendar_events')
       .delete()
       .eq('id', id)
+      .eq('company_id', companyId)
 
     if (error) throw error
     return NextResponse.json({ success: true })

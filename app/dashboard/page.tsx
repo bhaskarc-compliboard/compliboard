@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase'
+import { createClient, authHeaders } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import AppLayout from '@/components/AppLayout'
 
@@ -37,7 +37,7 @@ export default function Dashboard() {
         if (company) setProfile(company)
 
         try {
-          const cRes = await fetch(`/api/calendar?company_id=${companyId}`)
+          const cRes = await fetch('/api/calendar', { headers: await authHeaders() })
           const cJson = await cRes.json()
           setEvents(cJson.data || [])
         } catch { setEvents([]) }
@@ -45,7 +45,7 @@ export default function Dashboard() {
         // Real activity metrics — what CompliBoard has done for this company.
         try {
           const [reviewsRes, checklistsRes] = await Promise.all([
-            fetch(`/api/document-review?company_id=${companyId}`).then(r => r.json()),
+            fetch('/api/document-review', { headers: await authHeaders() }).then(r => r.json()),
             supabase.from('checklists').select('research_answer').eq('company_id', companyId),
           ])
           const reviews = reviewsRes.data || []

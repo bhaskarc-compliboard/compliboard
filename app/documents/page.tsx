@@ -186,7 +186,7 @@ function DocumentsPageContent() {
   }, [])
 
   async function loadFolders(cid: string) {
-    const res = await fetch(`/api/folders?company_id=${cid}`)
+    const res = await fetch('/api/folders', { headers: await authHeaders() })
     const json = await res.json()
     if (json.data) setFolders(json.data)
   }
@@ -204,7 +204,7 @@ function DocumentsPageContent() {
   }
 
   async function loadDocumentReviews(cid: string) {
-    const res = await fetch(`/api/document-review?company_id=${cid}`)
+    const res = await fetch('/api/document-review', { headers: await authHeaders() })
     const json = await res.json()
     if (json.data) setDocumentReviews(json.data)
   }
@@ -311,9 +311,8 @@ function DocumentsPageContent() {
     try {
       const res = await fetch('/api/folders', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: await authHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({
-          company_id: companyId,
           name: newFolderName.trim(),
           parent_id: parentId,
           sort_order: folders.filter(f => f.parent_id === parentId).length,
@@ -336,7 +335,7 @@ function DocumentsPageContent() {
   async function handleRenameFolder(id: string) {
     if (!renameValue.trim() || !companyId) return
     try {
-      await fetch('/api/folders', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, name: renameValue.trim() }) })
+      await fetch('/api/folders', { method: 'PATCH', headers: await authHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify({ id, name: renameValue.trim() }) })
       await loadFolders(companyId)
       setRenamingId(null)
       setRenameValue('')
@@ -346,7 +345,7 @@ function DocumentsPageContent() {
   async function handleDeleteFolder(id: string, name: string) {
     if (!confirm(`Delete folder "${name}"?`)) return
     if (!companyId) return
-    const res = await fetch(`/api/folders?id=${id}`, { method: 'DELETE' })
+    const res = await fetch(`/api/folders?id=${id}`, { method: 'DELETE', headers: await authHeaders() })
     const json = await res.json()
     if (!res.ok) { alert(json.error); return }
     await loadFolders(companyId)
@@ -390,10 +389,8 @@ function DocumentsPageContent() {
       for (const d of toAdd) {
         await fetch('/api/calendar', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: await authHeaders({ 'Content-Type': 'application/json' }),
           body: JSON.stringify({
-            company_id: companyId,
-            user_id: userId,
             title: d.title,
             description: d.description,
             due_date: d.date,
@@ -430,14 +427,11 @@ function DocumentsPageContent() {
       fd.append('document_id', doc.id)
       fd.append('document_name', doc.name)
       fd.append('folder_id', doc.folder_id || '')
-      fd.append('company_id', companyId)
-      fd.append('user_id', userId)
-      fd.append('industry', primaryIndustry)
       const folder = folders.find(f => f.id === doc.folder_id)
       const division = folder?.parent_id ? folders.find(f => f.id === folder.parent_id) : folder
       fd.append('folder_name', folder?.name || '')
       fd.append('division_name', division?.name || '')
-      const res = await fetch('/api/document-review', { method: 'POST', body: fd })
+      const res = await fetch('/api/document-review', { method: 'POST', body: fd, headers: await authHeaders() })
       const json = await res.json()
       if (json.data) {
         setDocumentReviews(prev => [json.data, ...prev.filter(r => r.document_id !== doc.id)])
@@ -608,7 +602,7 @@ function DocumentsPageContent() {
           <span className="text-gray-200">·</span>
           <button onClick={async () => {
             if (!confirm('Delete this review?')) return
-            await fetch(`/api/document-review?id=${review.id}`, { method: 'DELETE' })
+            await fetch(`/api/document-review?id=${review.id}`, { method: 'DELETE', headers: await authHeaders() })
             setDocumentReviews(prev => prev.filter(r => r.id !== review.id))
             if (viewingReviewId === review.id) setViewingReviewId(null)
             if (expandedAuditId === review.id) setExpandedAuditId(null)
