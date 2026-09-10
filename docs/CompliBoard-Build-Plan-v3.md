@@ -99,10 +99,10 @@ Also already present and useful: `is_determination boolean` (the `produces_switc
 **21 routes**, not 17.
 
 - **17 use the service-role key**
-- **2 verify a token:** `folders/industry`, `cron/monthly-summary`
+- **2 verify a token:** `folders/industry`, `cron/monthly-summary`  *(as of 9 Sep: every route with company data verifies a token; `folders/industry` has since been deleted as orphaned)*
 - **9 take `company_id` or `user_id` directly from a client parameter:** `account`, `audits`, `calendar`, `document-review`, `documents`, `folders`, `hr-audits`, `obligations`, `requirements`
 
-**The reference implementation is `app/api/folders/industry/route.ts`** — bearer token → `supabase.auth.getUser(token)` → look up `profiles.company_id` → use that value. Copy it verbatim.
+**The reference implementation is `app/api/documents/route.ts`, using `requireCompany()` from `lib/auth.ts`** — bearer token → `supabase.auth.getUser(token)` → look up `profiles.company_id` → use that value, plus an ownership check on every row touched and 404 rather than 403. (This was originally `app/api/folders/industry/route.ts`, deleted 9 Sep as orphaned.)
 
 ## A.7 `lib/ai.ts` — better than expected
 
@@ -157,7 +157,7 @@ Same `profiles.company_id` subquery pattern. Fully-qualified column names.
 `audits` carries both `company_id` and `user_id`. `documents` is queried by both depending on the path. Calendar is scoped to `user_id` and must be `company_id` — a compliance calendar is a company asset.
 
 ### 0.8 Auth on the 9 client-parameter routes ⏱ 1–2 days
-Extract the `folders/industry` pattern to `lib/auth.ts`. Derive `company_id` from the verified token, never from a parameter. Then re-examine which of the 21 routes still need to exist at all — reads can go browser-direct under RLS.
+Extract the token-verification pattern to `lib/auth.ts` (done 9 Sep — `requireCompany()`). Derive `company_id` from the verified token, never from a parameter. Then re-examine which of the 21 routes still need to exist at all — reads can go browser-direct under RLS.
 
 ### 0.9 ✚ Postgres ENUMs for new columns ⏱ with each migration
 BizPulses uses `TEXT` + CHECK and names the resulting churn as debt — Postgres cannot add a value to a CHECK, so every addition is a drop-and-recreate restating all prior values.
@@ -232,7 +232,7 @@ Add `status`, `match_confidence`, `match_rationale`, `contribution`, `valid_from
 Only five new tables, not eleven.
 
 ### 2.5 🔒 Jurisdiction in the match key ⏱ half day
-`app/api/sync-obligations/route.ts` matches on industry alone. **A live correctness bug** — a Texas chemical manufacturer is served Oregon requirements.
+The obligation-matching logic matches on industry alone. **A live correctness bug** — a Texas chemical manufacturer is served Oregon requirements. (The route that carried this logic, `app/api/sync-obligations`, was deleted on 9 Sep as orphaned with zero callers. The bug is in the matching rule, not the route, and travels with it into whatever rebuilds it.)
 
 ### 2.6 🅑✚ Derived types from the generated schema ⏱ half day
 `type TableName = keyof Database["public"]["Tables"]` and equivalents. Renaming a table or switch becomes a compile error.

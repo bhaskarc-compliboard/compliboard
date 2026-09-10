@@ -44,7 +44,7 @@ Once the law is known (L1) and the company is known (L2), applicability is arith
 
 ### 2.1 Jurisdiction goes in the match key
 
-Today `sync-obligations` matches `.eq('industry', ...)` alone. 90 of 188 chemical rows are Oregon-specific. A Texas chemical manufacturer is currently served Oregon SoS registration, CR2K, and Oregon OSHA. That is a **confidently wrong requirement** — the dangerous failure direction.
+Today the obligation-matching logic matches `.eq('industry', ...)` alone. (It lived in `app/api/sync-obligations`, deleted 9 Sep as an orphaned route with zero callers; the matching rule is what carries the bug and it is still to be rebuilt.) 90 of 188 chemical rows are Oregon-specific. A Texas chemical manufacturer is currently served Oregon SoS registration, CR2K, and Oregon OSHA. That is a **confidently wrong requirement** — the dangerous failure direction.
 
 Resolution filters on: `federal OR (state AND matching) OR (county AND matching) OR (city AND matching)`.
 

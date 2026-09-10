@@ -34,6 +34,12 @@ The phased task list — what is being built, in what order, and what is deliber
 deferred. Consult it before starting work so effort lands on the current phase rather
 than on something scheduled for later or already dropped.
 
+### `CompliBoard-TODO-v2.md`
+The task-level to-do: what is done, what is in progress, what has not been started, phase
+by phase. Where the build plan is the *why* and the ordering, this is the *what next*.
+Supersedes `CompliBoard-TODO.md`, which was deleted — two overlapping to-do lists is the
+drift this folder exists to prevent.
+
 ### `CompliBoard-Chemical-OR-WA-Vertical-Spec.md`
 The full design of the first vertical: regulatory map, data model, runtime pipeline,
 display, verification, onboarding. The most detailed document here and the one to read

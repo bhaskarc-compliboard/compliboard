@@ -56,7 +56,9 @@ for what each covers. Not all of them are present at any given time; the owner a
   under which it would be reversed. Newest first.
 - **`CompliBoard-Chemical-OR-WA-Vertical-Spec.md`** — the full design: regulatory map,
   data model, runtime pipeline, display, verification, onboarding.
-- **`CompliBoard-Build-Plan-v3.md`** — the phased task list.
+- **`CompliBoard-Build-Plan-v3.md`** — the phased task list, and why the order is the order.
+- **`CompliBoard-TODO-v2.md`** — the task-level to-do: what is done, in progress, or not
+  started. The *what next* to the build plan's *why*.
 - **`CompliBoard-Compliance-Workspace-Design.md`** — the Compliance Workspace module:
   conversation model, fact capture, and topic lifecycle.
 - **`BIZPULSES-PATTERNS.md`** — conventions carried over from a sibling project, with
@@ -154,7 +156,12 @@ Tenancy is `profiles.company_id` — one company per user. A user's company is f
 subquery; every data table carries `company_id`, **never `user_id`**.
 
 - `company_id` is derived from the verified session token, **never from a client parameter.**
-  The reference implementation is `app/api/folders/industry/route.ts` — copy that pattern.
+  The reference implementation is `app/api/documents/route.ts`, using `requireCompany()`
+  from `lib/auth.ts` — copy that pattern. It covers all four methods: reading scoped to
+  the session's company, writing with the session's ids rather than the body's, an
+  ownership check on every row touched, and a destination check on the row being written
+  into. A row belonging to another company returns **404, not 403**, so ids cannot be
+  probed by watching which error comes back.
 - Every table needs `SELECT`, `INSERT`, `UPDATE`, and `DELETE` policies. Migration 001
   created SELECT-only policies, which is why writes currently go through the service-role
   key. Adding the write policies is what lets those routes stop using it.
@@ -193,6 +200,30 @@ subquery; every data table carries `company_id`, **never `user_id`**.
 
 Staging and production are separate Supabase projects. The project ref is an environment
 variable, never hardcoded. **Never test experimental changes against production data.**
+
+**A development machine points at STAGING.** `NEXT_PUBLIC_SUPABASE_URL`,
+`NEXT_PUBLIC_SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY` in a local `.env.local`
+hold staging values. Production values live in the hosting platform's own environment
+settings, under those same variable names, and are not needed on a laptop for the app
+to run.
+
+The reason is not tidiness. `npm run dev` runs the same code as production, including
+routes that delete a company, its files and its logins. Pointed at production, an
+ordinary click in the local UI destroys live customer data with no undo. Assume any
+locally-running server will eventually be clicked in.
+
+`.env.example` carries a `PRODUCTION REFERENCE` block — `SUPABASE_PROD_URL`,
+`SUPABASE_PROD_ANON_KEY`, `SUPABASE_PROD_SERVICE_ROLE_KEY`. **Nothing reads these.**
+They exist so production credentials, if written down at all, sit somewhere clearly
+labelled instead of in the live variables. Leaving them blank is the better default.
+
+The migration scripts are the exception and are separate on purpose: `npm run db:migrate`
+targets staging, `npm run db:migrate:prod` targets production behind a typed confirmation.
+Those read `SUPABASE_PROD_REF` / `SUPABASE_PROD_DB_PASSWORD` / `SUPABASE_PROD_POOLER_HOST`,
+which genuinely do have to be present locally to ship a migration.
+
+**Before asking the owner to test anything locally, confirm which project the dev server
+is pointed at.** A cheap way: the staging company names differ from production's.
 
 ### 3.9 Version control
 

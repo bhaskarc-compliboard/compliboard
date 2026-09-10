@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { createClient } from '@/lib/supabase'
+import { createClient, authHeaders } from '@/lib/supabase'
 import AppLayout from '@/components/AppLayout'
 import AIDisclaimer from '@/components/AIDisclaimer'
 
@@ -316,7 +316,7 @@ function CompliancePageInner() {
   async function saveSubItems(checklistId: string, parentIndex: number, subItems: ChecklistItem[]) {
     const res = await fetch('/api/substeps', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: await authHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({
         checklist_id: checklistId,
         parent_item_index: parentIndex,
@@ -637,7 +637,7 @@ Give them a specific direct answer — exactly what they need to do, which speci
             try {
               await fetch('/api/link-research', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: await authHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({ researchId: currentResearchId, checklistId }),
               })
             } catch (linkErr) {

@@ -7,8 +7,9 @@
 // that by hand in each handler is how one of them ends up trusting a query parameter
 // instead — which is exactly what had happened in app/api/documents/route.ts.
 //
-// The reference implementation this is extracted from is
-// app/api/folders/industry/route.ts (CLAUDE.md §3.6).
+// The worked example of this pattern is app/api/documents/route.ts (CLAUDE.md §3.6):
+// reads scoped to the session's company, writes using the session's ids, an ownership
+// check on every row touched, and 404 rather than 403 so ids cannot be probed.
 
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'

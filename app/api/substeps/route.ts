@@ -1,24 +1,43 @@
-import { createClient } from '@supabase/supabase-js'
-import { NextRequest, NextResponse } from 'next/server'
+// Replaces the sub-steps under one checklist item.
+//
+// The company comes from the verified session via requireCompany(). This route writes
+// with the service-role key, which bypasses RLS, so this check is its only tenant
+// boundary. It previously took checklist_id from the request body and deleted and
+// rewrote that checklist's items with no ownership check at all — any caller could
+// wipe and replace part of any company's checklist.
+// Reference: app/api/documents/route.ts.
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+import { NextRequest, NextResponse } from 'next/server'
+import { requireCompany, supabaseAdmin } from '@/lib/auth'
 
 // Checklist generation can run long, especially for a large/complex request.
 export const maxDuration = 800
 
 export async function POST(request: NextRequest) {
   try {
+    const authed = await requireCompany(request)
+    if (!authed.ok) return authed.response
+    const { companyId } = authed.auth
+
     const { checklist_id, parent_item_index, items } = await request.json()
 
     if (!checklist_id || parent_item_index === undefined || !items) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
+    const { data: checklist } = await supabaseAdmin
+      .from('checklists')
+      .select('id, company_id')
+      .eq('id', checklist_id)
+      .single()
+
+    // 404 rather than 403, so checklist ids cannot be probed.
+    if (!checklist || checklist.company_id !== companyId) {
+      return NextResponse.json({ error: 'Checklist not found' }, { status: 404 })
+    }
+
     // Delete existing sub-items for this parent
-    await supabase
+    await supabaseAdmin
       .from('checklist_items')
       .delete()
       .eq('checklist_id', checklist_id)
@@ -44,7 +63,7 @@ export async function POST(request: NextRequest) {
       parent_item_index,
     }))
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('checklist_items')
       .insert(rows)
       .select('id, sort_order')

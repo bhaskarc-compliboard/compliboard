@@ -1,23 +1,19 @@
-import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
+import { requireCompany, supabaseAdmin } from '@/lib/auth'
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
-
-// GET /api/obligations?company_id=xxx
-// Returns every obligation for this company, joined with its full
-// requirement details — this is the data source for the real
-// "what's missing" screen. Sorted so the most urgent, unresolved
-// items surface first.
+// GET /api/obligations
+// Returns every obligation for the signed-in user's company, joined with its full
+// requirement details — this is the data source for the real "what's missing" screen.
+// Sorted so the most urgent, unresolved items surface first.
+//
+// The company comes from the verified session. The company_id parameter is gone: it let
+// any caller read any company's compliance position, which is the single most sensitive
+// list this product holds. Reference: app/api/documents/route.ts.
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const company_id = searchParams.get('company_id')
-    if (!company_id) {
-      return NextResponse.json({ error: 'Missing company_id' }, { status: 400 })
-    }
+    const authed = await requireCompany(request)
+    if (!authed.ok) return authed.response
+    const company_id = authed.auth.companyId
 
     const { data, error } = await supabaseAdmin
       .from('obligations')

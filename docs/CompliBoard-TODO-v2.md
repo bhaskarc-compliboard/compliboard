@@ -1,7 +1,9 @@
 # CompliBoard — Detailed To-Do
 
-**Date:** 9 September 2026
-**Supersedes:** the phase summaries in `CompliBoard-Build-Plan-v3.md` at task level. The build plan stays as the *why*; this is the *what next*.
+**Version:** v2
+**Date:** 10 September 2026
+**Supersedes:** v1 (9 Sep) — delete it. v2 records Session A progress and adds §HR and §Employment library.
+**Also supersedes:** the phase summaries in `CompliBoard-Build-Plan-v3.md` at task level. The build plan stays as the *why*; this is the *what next*.
 **No fixed demo date.** Built properly, phase by phase, ready when it is ready.
 
 **Legend**
@@ -30,6 +32,14 @@ Making the ground solid. Nothing here changes what a customer sees.
 - ✅ Migration history recorded on both projects
 - ✅ `baseline-outputs/` — 947 rows of AI output preserved before prompt changes
 
+### 0.2b Local development points at staging ✅ DONE (10 Sep)
+- ✅ `.env.local` app keys switched to staging; production keys removed from the laptop
+- ✅ 188 `requirement_templates` loaded into staging (unblocks signup, profile save, obligation matching)
+- ✅ Verified: My Account shows *Test Alpha Chemical*
+- ⬜ Load `standard_templates` (1 row) so audits reuse the cache instead of regenerating
+
+**Why:** the dev server ran for six hours pointed at production while hot-reloading a new, untested DELETE route. Local dev must never be one click from destroying production data.
+
 ### 0.3 Storage security ✅ DONE (9 Sep)
 - ✅ Found: all three storage policies checked only `bucket_id` — any logged-in user could read and delete every file
 - ✅ `002_storage_company_scoping.sql` — four policies, company-prefix scoped
@@ -37,14 +47,21 @@ Making the ground solid. Nothing here changes what a customer sees.
 - ✅ Impact traced module by module before applying — nothing broke
 - ✅ Applied to production
 
-### 0.4 🔒 Close the remaining service-role holes ⬜ NEXT ⏱ 1–2 days
+### 0.4 🔒 Close the remaining service-role holes 🔄 IN PROGRESS ⏱ 1–2 days
 The storage policies do not protect these — the service-role key bypasses RLS entirely.
 
-- ⬜ **`/api/hr`** — takes `file_url` straight from the request body and downloads it with the service role. Currently the remaining way to read another company's file.
-- ⬜ **`/api/audits`** — takes `company_id` from a query parameter, never verifies the session
-- ⬜ Audit the other 15 service-role routes; list every one taking `company_id` or `user_id` from a client parameter
-- ⬜ Apply `requireCompany()` from `lib/auth.ts` to each
-- ⬜ Update client callers to send the bearer token
+**Full route map completed 10 Sep.** 21 routes: 17 service-role, 2 session-verified, 9 taking identity from a client parameter.
+
+- ✅ **`/api/documents`** — all four methods, `requireCompany()`, ownership checks. **Now the reference implementation.**
+- ✅ **`/api/account`** — was the worst: DELETE took `user_id` from the URL with **no authentication** and destroyed the whole company. Now session-derived, confirmation-gated on company name, and deletes storage files (previously orphaned). Tested 5/5 on staging.
+- ✅ **`/api/account/export`** — new. Data portability; customers can take their records before deleting. Tenant-scoped both directions.
+- 🔄 **`/api/hr`** — rewritten, uncommitted, untested. Session-derived, accepts document ids not `file_url`, rejects the whole request if any document fails ownership. Also fixed a real bug: `.docx` files were sent to the model labelled `image/jpeg`, producing confident answers from unreadable input.
+- ⬜ **`/api/audits`** — `company_id` from a query parameter, never verifies the session; DELETE `?id=` with no ownership check
+- ⬜ **`/api/hr-audits`** — `companyId`/`userId` from the body
+- ⬜ **Unscoped-delete family** — `/api/folders`, `/api/calendar`, `/api/document-review`: all `DELETE ?id=<uuid>` → `.delete().eq('id', id)` with no company predicate
+- ⬜ **`/api/substeps`, `/api/link-research`** — write to checklists keyed on a body id, no ownership check
+- ✅ **Deleted rather than fixed** (all orphaned, zero callers): `/api/folders/industry`, `/api/requirements`, `/api/sync-obligations`. Confirmed first: no `vercel.json`, no cron schedule in the repo, no Vercel cron jobs configured at all, marketing site not in this repo, no hardcoded URLs in scripts or docs.
+- ✅ Updated `CLAUDE.md` §3.6 — now names `app/api/documents/route.ts` with `requireCompany()` as the reference, and spells out what makes it one.
 
 **Acceptance:** no route derives tenant identity from a client parameter. Every service-role use is either a route with a verified session or a place where no session exists (worker, cron, signup).
 
@@ -65,6 +82,21 @@ Five tables have RLS on and **zero policies** — `audits`, `company_templates`,
 - ⬜ `GRANT` line for every table
 
 **Note the coupling:** the storage policy reads `profiles`, and `profiles` has its own RLS. If the "view own profile" policy were ever dropped, *all* storage access silently stops for everyone, with no obvious connection to the change. Document this.
+
+### 0.8 The monthly summary has never run ⬜ ⏱ 1 hour
+
+`app/api/cron/monthly-summary/route.ts` exists and is written correctly — it checks
+`CRON_SECRET` before doing anything, and reads companies, profiles, calendar events,
+folders and folder audits to build the summary. Nothing calls it.
+
+Confirmed 9 Sep: there is no `vercel.json` in the repo and **no cron jobs configured in
+Vercel at all** — the Cron Jobs page shows only setup instructions, meaning the list is
+empty. So the route has never fired, and no customer has ever received a monthly summary.
+
+Not a security problem and not part of the route-hardening work. Recorded because a
+feature that silently never runs looks identical to one that runs and finds nothing —
+which is the same class of failure as a dashboard that only ever climbs. Decide whether
+to schedule it or delete it; do not leave it in the third state.
 
 ### 0.7 Housekeeping ⬜ ⏱ 2 hours
 - ⬜ Delete four orphaned storage files under a prefix matching no company
@@ -109,7 +141,7 @@ Production data is test data. Rebuild the schema correctly rather than patching 
 - ⬜ Rebuild production, reload the 188 requirements, recreate test accounts
 
 ### 1.4 🔒 Jurisdiction in the match key ⬜ ⏱ half day
-`sync-obligations` matches on industry alone. 90 of 188 rows are Oregon-specific. **A Texas chemical manufacturer is currently served Oregon requirements** — a live correctness bug, not a scale limit.
+The obligation-matching logic matches on industry alone. 90 of 188 rows are Oregon-specific. (It lived in `app/api/sync-obligations`, deleted 9 Sep as orphaned — the bug is in the matching rule, which still has to be written correctly here.) **A Texas chemical manufacturer is currently served Oregon requirements** — a live correctness bug, not a scale limit.
 
 ### 1.5 `STATUS.md` ⬜ ⏱ 1 hour
 One line per module: working / broken / not-yet-rebuilt / verified-on-date. Prevents "broken and nobody noticed" during a rebuild.
@@ -368,10 +400,95 @@ Currently a prompt rule only.
 
 ---
 
+## PHASE 6b — HR module *(feature work — not part of gap-closing)*
+
+**Findings from reading the code, 10 Sep. Design decided, nothing built.**
+
+### The architecture decision
+**One requirements table, tagged by domain** — `employment`, `environmental`, `transport`, `fire`, `licensing`. Modules are *views over rows*, not separate systems.
+
+Employment law is an independent **body of law** but not an independent **module**: it is read by HR *and* belongs in a chemical manufacturer's overall obligation list, because they employ people. A separate library would hide it from every vertical.
+
+Two things only work this way:
+- **Shared switches.** `employee_count` drives FMLA at 50, OFLA at 25, Oregon sick time at 10 — *and* OSHA recordkeeping thresholds. Determined once, used by both.
+- **One company picture.** "What does this company owe?" must return chemical and employment obligations together.
+
+**Test for a new domain:** does it need different *columns*, or just different *rows*? Employment needs the same columns. Same table.
+
+### What is wrong with HR today
+- ⬜ **Audit reads ONE handbook; ask reads ALL of them.** Backwards. SMB reality is one large legacy handbook plus several later amendments, so auditing a single file reports sections "missing" that exist in another document.
+- ⬜ **The "requirements" are eleven hardcoded words in a prompt** — anti-harassment, EEO, FMLA, ADA, and so on. No citations, no jurisdiction, no thresholds. FMLA is federal at 50+; Oregon has **OFLA** (25+, broader) and **Paid Leave Oregon** (nearly all employers). A handbook can pass "FMLA present" and miss both Oregon obligations. **A false green produced by a checklist that doesn't know which state it's in.**
+- ⬜ **Employee count is never consulted**, so the audit cannot know what applies.
+- ⬜ **`draft_policies` required for EVERY missing section** — the highest-risk tier (suggested legal language) shipping unconditionally with no citation, jurisdiction, or verification. **Turn off until a library exists.** Same for `draft_policy` in ask mode.
+- ⬜ **Findings are a frozen JSON blob** (`present`/`missing`/`draft_policies` arrays). No per-finding row, no status, no `resolved_by`, no link to the document that closed it. The lifecycle below cannot be built on this shape.
+- ⬜ **Ask and audit do not talk.** A question touching a known non-compliant section should report it; there are no finding rows to look up.
+
+### The intended design
+Upload → scan the **whole handbook set** → store **findings as rows** → findings are the durable artifact → questions consult them → a finding stays open until a corrected document actually satisfies it.
+
+- ⬜ Scan once at upload, not per question. Same fix as `obligation_evidence`: compute once, store as rows, query thereafter. Also makes repeat questions consistent.
+- ⬜ A new upload **re-scans affected findings**; a finding closes only if the new document actually satisfies it. Never "a document arrived, assume it's fixed" — that is a false green produced by a file.
+- ⬜ Record **which document closed a finding and when**. That is the evidence trail.
+- ⬜ Report carries a coverage statement: "Reviewed against N employment requirements. X gaps, Y undetermined."
+- ⬜ A user can dismiss a finding ("we're under 25 employees") — that writes back to `company_switches`, not just hiding the row.
+
+### Risk tiers for "here is the fix"
+| Tier | What | Gate |
+|---|---|---|
+| 1 | Missing-section detection | Ship now — an absence is reliably detectable |
+| 2 | Anchored comparison against a verified requirement row | **Needs the employment library** |
+| 3 | Suggested policy language | Verified rows only, always framed as a draft for counsel |
+
+**Three standing rules:** every finding cites the rule (no citation → no assertion) · never say "you are compliant", only what was checked and found · suggested language is visibly a draft, never a fix to accept.
+
+### Cheap and honest, available now
+- ⬜ Audit reads all handbooks
+- ⬜ Drop `draft_policies` / `draft_policy`
+- ⬜ Label the output a **generic completeness check**, not a compliance finding
+
+### Already good in the code
+- ✅ Conflict handling is in the ask prompt — names which handbook says what, does not silently pick
+- ✅ Ask mode reads all handbooks so an answer in an older document is still found
+- ✅ Four-outcome answer shape with citations *(written 10 Sep, untested)*
+
+---
+
+## PHASE 6c — Employment law library (Oregon & Washington) *(library #2)*
+
+**Why second, ahead of cannabis:** it applies to **every** vertical — chemical, cannabis, hospice, brewery. It is the one domain that does not fragment by industry, and it is smaller than chemical.
+
+- ⬜ Agency list: BOLI · Oregon OSHA · Paid Leave Oregon · Oregon Employment Dept · WA L&I · WA PFML · WA ESD + federal DOL, EEOC, FMLA/ADA
+- ⬜ Generate agency by agency, same bounded method as chemical
+- ⬜ **OR/WA divergences are the high-risk rows:** OFLA vs WA leave, Paid Leave Oregon vs WA PFML, state-fund vs private workers' comp, Oregon CAT vs WA B&O, OAR vs WAC citations, minimum-wage tiers
+- ⬜ Employee-count thresholds are the core switch: 10 / 25 / 50 / 100
+- ⬜ Primary-source retrieval, then human verification by fact class
+- ⬜ Tag rows `domain = employment`
+
+---
+
+## PHASE 8b — Signup and industry classification *(feature work)*
+
+Full design in `CompliBoard-Compliance-Workspace-Design-v2.md` §10.
+
+- ⬜ Remove the industry dropdown and `/api/industries` — it is circular, offering only verticals already built
+- ⬜ Signup collects **email, password, website, address** only
+- ⬜ **Address required** — it decides which body of law reaches them; not derivable from a website
+- ⬜ Scan runs as a background job, not inline; do not block signup
+- ⬜ Scan output carries a **sufficiency confidence**, not just extracted fields
+- ⬜ `primary_industry` + `secondary_activities[]`, with `basis` and `resolved_by`
+- ⬜ Classification presented as a **teaching confirmation**, correctable
+- ⬜ Three distinct fallback messages: no website · unreachable · uninformative
+- ⬜ Unmatched industries write to `library_candidates` — signup becomes demand research
+
+---
+
 ## Next three sessions
 
-**Session A — close the remaining holes** (0.4, 0.5, 0.6)
-`/api/hr` and `/api/audits`, then tenancy consistency, then write policies on all 19 tables.
+**Session A — close the remaining holes** (0.4, 0.5, 0.6) — 🔄 in progress
+Done: `/api/documents`, `/api/account`, `/api/account/export`, staging as local default.
+Next: commit and test `/api/hr`, then `/api/audits`, `/api/hr-audits`, the unscoped-delete family, delete the three orphaned routes. Then tenancy consistency, then write policies on all 19 tables.
+
+**Rule for this session: gap-closing only.** Feature work is handled when each section is handled. A real defect found while closing a gap (the `.docx` bug) belongs; a redesign does not.
 
 **Session B — schema rebuild** (1.1–1.4)
 Design, migrate, rebuild staging from zero, rebuild production, jurisdiction in the match key.

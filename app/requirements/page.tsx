@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase'
+import { createClient, authHeaders } from '@/lib/supabase'
 import AppLayout from '@/components/AppLayout'
 import AIDisclaimer from '@/components/AIDisclaimer'
 
@@ -84,7 +84,7 @@ export default function RequirementsPage() {
       if (company?.name) setCompanyName(company.name)
 
       try {
-        const res = await fetch(`/api/obligations?company_id=${profile.company_id}`)
+        const res = await fetch('/api/obligations', { headers: await authHeaders() })
         const json = await res.json()
         if (json.error) {
           setError(json.error)
