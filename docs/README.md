@@ -23,9 +23,9 @@ apply" — if you need something a missing document would have told you, ask.
 
 ## What belongs here
 
-### `CompliBoard-Decisions-v1.md`
+### `CompliBoard-Decisions-v2.md`
 Every decision made and why, plus **the condition under which it would be reversed**.
-Newest first. That last part is what makes it more than a changelog: a decision recorded
+Supersedes `CompliBoard-Decisions-v1.md`, which was deleted. That last part is what makes it more than a changelog: a decision recorded
 with its reversal condition can be re-examined when the world changes, instead of being
 treated as permanent because nobody remembers the reasoning.
 
@@ -54,6 +54,23 @@ open to settled.
 Conventions carried over from a sibling project, with notes on **what to copy and what
 not to**. The "what not to" half matters as much as the other; it records patterns that
 were tried and found wanting, so they are not adopted again by default.
+
+## Versioning
+
+Every substantially updated document gets a **version number in its filename** and a
+**header saying what it supersedes**. The superseded file is **deleted**, not kept
+alongside — see `CompliBoard-Decisions-v2.md` §15.7.
+
+The reason is concrete rather than tidy-minded: two overlapping to-do lists existed here
+at once on 9 September, and a finding was written into the wrong one. `CLAUDE.md` pointed
+at a build plan two versions behind. In both cases a reader could not tell which document
+was live, so the stale one got read and acted on. Keeping the old file "for reference"
+guarantees that, because at a glance it looks exactly like the current one.
+
+Git holds the history. That is what it is for.
+
+When a document is versioned, update every reference to it in the same commit —
+`docs/README.md`, `CLAUDE.md` §2, and any companion list in the other documents.
 
 ## What does not belong here
 

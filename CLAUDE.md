@@ -52,7 +52,7 @@ Four layers, and the third is the important one:
 or a new feature rather than relying on memory of a past session — see `docs/README.md`
 for what each covers. Not all of them are present at any given time; the owner adds them.
 
-- **`CompliBoard-Decisions-v1.md`** — every decision made and why, plus the condition
+- **`CompliBoard-Decisions-v2.md`** — every decision made and why, plus the condition
   under which it would be reversed. Newest first.
 - **`CompliBoard-Chemical-OR-WA-Vertical-Spec.md`** — the full design: regulatory map,
   data model, runtime pipeline, display, verification, onboarding.

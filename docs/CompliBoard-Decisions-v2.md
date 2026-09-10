@@ -1,11 +1,15 @@
-# CompliBoard — Decision Record
+# CompliBoard — Decision Record v2
 
-**Date:** 9 September 2026
-**Status:** Decisions made. Supersedes conflicting statements in earlier planning documents.
+**Date:** 10 September 2026
+**Supersedes:** `CompliBoard-Decisions-v1.md`, which has been deleted. Everything in v1 is
+carried forward unchanged except where noted; §15 is new and records the decisions made
+on 9–10 September. Also supersedes conflicting statements in earlier planning documents.
 **Companion documents:**
 - `CompliBoard-Chemical-OR-WA-Vertical-Spec.md` — the full design (regulatory map, data model, runtime, display, verification, onboarding)
-- `CompliBoard-Technical-Due-Diligence.md` — the honest baseline of what exists today
-- `CompliBoard-Build-Plan-v1.md` — the step-by-step execution list
+- `CompliBoard-Build-Plan-v3.md` — the phased plan, and why the order is the order
+- `CompliBoard-TODO-v2.md` — the task-level to-do
+- `CompliBoard-Compliance-Workspace-Design.md` — conversation model, fact capture, topic lifecycle
+- `CLAUDE.md` (repo root) — the working rules for sessions
 
 ---
 
@@ -304,7 +308,7 @@ Also caught: the Office of the State Fire Marshal separated from Oregon State Po
 
 | Document | Verdict |
 |---|---|
-| `CompliBoard-Technical-Due-Diligence.md` | **Keep.** The honest baseline. Pricing ($199 vs $99) and HIPAA-in-UI inconsistencies still need resolving. |
+| `CompliBoard-Technical-Due-Diligence.md` | **Keep.** The honest baseline. Pricing ($199 vs $99) and HIPAA-in-UI inconsistencies still need resolving. *(Not currently in `docs/` — add it if it is still wanted, or drop this row.)* |
 | `CompliBoard-Chemical-OR-WA-Vertical-Spec.md` | **Keep.** The master design document. |
 | `CompliBoardChemicalRequirementsMERGEDv2.xlsx` | **Keep.** Richest artifact — 188 rows, the 9-item VERIFY hit list, 26 switches, 18-row fixed-date calendar, and a `Layer` column that already encodes agency ("Oregon OSHA", "Federal DOT"). |
 | `CompliBoardRequirementschemicalmanufacturing.xlsx` | **Keep until migrated.** Complementary, not redundant — normalised `jurisdiction_level` (95 federal / 87 state / 3 county / 3 contractual), `jurisdiction_state` (90 Oregon), `is_determination` (9 yes), `applies` (182 conditional / 6 universal), `source` (174 gpt / 11 claude / 3 gemini). Delete once loaded into the new schema. |
@@ -327,3 +331,176 @@ Also caught: the Office of the State Fire Marshal separated from Oregon State Po
 - **Coverage is stated honestly.** "Local fire ◐partial · ODA ○not built" is more credible than any completeness claim.
 - **Scanning is per industry, never per customer.**
 - **One platform, infinite verticals** — marketing is the only layer where verticals diverge.
+
+---
+
+## 15. Decisions of 9–10 September 2026
+
+Made during the session that closed the service-role holes. Each carries the condition
+under which it would be reversed.
+
+### 15.1 Local development points at staging. Production keys stay off the laptop.
+
+**Decision:** `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` and
+`SUPABASE_SERVICE_ROLE_KEY` in a developer's `.env.local` hold **staging** values.
+Production values live in the hosting platform's own environment settings under the same
+names, and are not needed on a laptop for the app to run.
+
+**Reasoning.** `npm run dev` runs the same code as production, including routes that
+delete a company, its files and its logins. Twice in one day a dev server was running
+against production with those routes live in it. Nothing went wrong, which is not the
+same as nothing being wrong. Assume any locally-running server will eventually be clicked
+in. A separate, related reason: a production service-role key sitting in a file on a
+laptop is the thing that ends up in a zip — four keys already leaked that way on 9 Sep.
+
+The migration scripts are deliberately the exception: `npm run db:migrate` targets
+staging, `npm run db:migrate:prod` targets production behind a typed confirmation, and
+those genuinely do need production credentials present locally to ship a migration.
+
+**Reversal condition:** if staging ever stops being a faithful copy of production's
+schema, developing against it starts producing changes that do not apply cleanly. At that
+point fix staging, not the rule. The rule itself reverses only if the destructive routes
+are removed from the app entirely.
+
+### 15.2 Data export before account deletion is a requirement, not a nicety.
+
+**Decision:** `/api/account/export` returns everything a company owns as one JSON file,
+and the delete flow puts it in front of the user before they can proceed.
+
+**Reasoning.** This product's entire value is holding a customer's compliance position —
+what applies to them, what they have proven, what is missing. A customer who cancels and
+finds their record simply gone has been harmed in the specific way the product promised to
+prevent. Portability is also what makes deletion honest: "we delete everything, and here
+is everything first" is a complete offer. Deleting without it is a hostage position, and
+for a product sold on trustworthiness that is a strategic error, not just an unkindness.
+
+The export deliberately describes uploaded files rather than embedding them — hundreds of
+megabytes of PDFs in a JSON file helps nobody — and says so in plain language, including
+that the files must be downloaded separately before deletion because deletion removes them.
+
+**Reversal condition:** none foreseen. If the export ever becomes a vector — a way to pull
+another tenant's data — the fix is to scope it correctly, not to remove it.
+
+### 15.3 Irreversible destructive actions need a typed confirmation, not just a session.
+
+**Decision:** deleting an account requires the exact company name in the request body. A
+valid session is necessary and not sufficient. `npm run db:migrate:prod` requires the
+operator to type `PRODUCTION` in a real terminal, and refuses to run unattended.
+
+**Reasoning.** A session proves who is asking. It does not prove they meant it. The two
+failure modes that matter here — a stray repeated request, and a person clicking through a
+dialog they have stopped reading — are both defeated by having to type something specific
+that cannot be guessed from the UI. The cost is a few seconds on an action taken once in
+the life of an account.
+
+This is why the migration script's TTY check was left in place even after it blocked an
+agent-run migration: the guard doing its job inconveniently is the guard working.
+
+**Reversal condition:** if a confirmation is ever bypassed in practice — copy-pasted from
+a runbook without being read — it has stopped being a decision point and needs replacing
+with something else, not weakening.
+
+### 15.4 Library architecture: ONE requirements table, tagged by domain.
+
+**Decision:** all regulatory requirements live in one table, tagged by domain —
+`employment`, `environmental`, `transport`, `fire`, `licensing`. Modules are **views over
+rows**, not separate systems. HR Help, the compliance calendar and the audit engine read
+the same table with different filters.
+
+**The test for whether a new domain needs its own system: does it need different
+*columns*, or just different *rows*?** If the answer is rows, it is a tag. Employment law
+needs jurisdiction, citation, cadence, applicability and evidence — exactly what chemical
+manufacturing needs. It is rows.
+
+**Reasoning.** The four-layer model in §2 only works if applicability is arithmetic over
+one set of rows. A second requirements table means a second resolution engine, a second
+verification workflow, a second definition of `unknown`, and two places for the safety
+properties to drift apart. The cross-customer cache dies too — the thing that makes
+marginal cost fall as customers are added.
+
+**Reversal condition:** a domain that genuinely needs different columns — a different
+notion of what a requirement *is*, not just different content. Judge it from a real
+attempt to model it, not from the fact that it feels like a different subject.
+
+### 15.5 Employment law is library #2, ahead of cannabis.
+
+**Decision:** the second library is employment law, not cannabis Oregon. This reorders
+§7 (vertical sequencing) — cannabis moves behind it.
+
+**Reasoning.** Employment law applies to **every** vertical and does not fragment by
+industry. A chemical manufacturer, a cannabis processor and a brewery have the same FMLA,
+ADA, EEO, wage-and-hour and handbook obligations, differing by state and headcount, which
+are switches already modelled. So the rows are reusable across the entire customer base
+rather than serving one segment, and it exercises the domain-tagging decision in 15.4 with
+a domain that is genuinely different in subject and identical in shape.
+
+It also fits what exists: the HR module already reads handbooks and audits them against an
+implied set of required policies. That implied set is exactly the library, currently living
+inside a prompt instead of in the database where it can be verified, versioned and cited.
+
+Cannabis remains the wedge for *new customers* — the §8 prospect and the extraction/
+fire-code overlap are unchanged. It is second in the library queue, not deprioritised
+commercially.
+
+**Reversal condition:** a signed cannabis customer who needs OLCC coverage to onboard.
+Revenue in hand beats sequencing on paper.
+
+### 15.6 Working rule: gap-closing and feature work do not mix in one session.
+
+**Decision:** a session that sets out to close a defect closes that defect. A real defect
+found while closing it belongs in the same session; a redesign does not.
+
+**Reasoning.** The route-hardening work of 9 Sep touched twelve routes and four documents.
+Every change was of one kind — derive identity from the session — which is what made it
+reviewable, testable against a single repeated test script, and describable in one commit
+message. The `.docx`-as-JPEG bug was found while fixing `/api/hr` and fixed in the same
+session: it was a live defect in the code being touched. Rewriting the HR answer flow to
+cite sources was *not* done until it was asked for separately, because it changes what the
+product asserts.
+
+The distinction: a defect makes existing behaviour wrong. A redesign makes existing
+behaviour different. Only the first belongs in a gap-closing session.
+
+**Reversal condition:** none. If a defect cannot be fixed without a redesign, that is the
+signal to stop and plan the redesign, not to do it inline.
+
+### 15.7 Document versioning: version in the filename, header saying what it supersedes.
+
+**Decision:** every substantially updated document gets a version number in its filename
+and a header stating what it supersedes. **The superseded file is deleted**, not archived
+alongside.
+
+**Reasoning.** Two overlapping to-do lists existed simultaneously on 9 Sep
+(`CompliBoard-TODO.md` and `CompliBoard-TODO-v2.md`), and a to-do item was logged into the
+wrong one. `CLAUDE.md` §2 pointed at `CompliBoard-Build-Plan-v2.md` after v3 existed. Both
+are the same failure: a reader cannot tell which document is live, so they read the stale
+one and act on it. Keeping the old file "for reference" guarantees it, because the stale
+copy is indistinguishable from the current one at a glance.
+
+Git holds the history. That is what it is for.
+
+**Reversal condition:** none. If an old version genuinely needs to be readable without git,
+the answer is to fold the relevant part into the current document, not to keep two files.
+
+---
+
+## 16. Where the security work stands after 9–10 September
+
+Recorded so the next session does not have to re-derive it.
+
+**Closed.** The storage policies now scope by company prefix (migration 002, applied to
+production 9 Sep after a full rehearsal on staging). Every API route that touches company
+data derives `company_id` from the verified session token; none reads it from a parameter
+or body. Three orphaned routes were deleted rather than hardened. Two prompt-injection
+paths — `company_name` and `industry` arriving from the request — were closed.
+
+**Not closed, and next:** every route still uses the service-role key, which ignores RLS.
+The application checks are therefore the *only* tenant boundary on the database side. Write
+policies on all 19 tables (§0.6 of the to-do) are what make the database enforce it too, so
+a future route that forgets the check fails closed instead of leaking. Table-level tenancy
+(§0.5) is the prerequisite: `checklists`, `checklist_items` and `folder_audits` still scope
+by `user_id`.
+
+**Known and recorded, not fixed:** an empty model response becomes a raw 500 through
+`askAIJson`; the monthly-summary cron route has never run because nothing schedules it;
+four orphaned storage files sit under a prefix matching no company.

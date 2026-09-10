@@ -4,7 +4,7 @@
 **Supersedes:** Build Plan v1 and v2 — delete both.
 **Revised against the actual codebase**, not the due-diligence description. Six planned items were wrong; they are corrected below and marked ⟲.
 
-**Companions:** `CompliBoard-Decisions-v1.md` · `CompliBoard-Chemical-OR-WA-Vertical-Spec.md` · `BIZPULSES-PATTERNS.md` · `CLAUDE.md`
+**Companions:** `CompliBoard-Decisions-v2.md` · `CompliBoard-Chemical-OR-WA-Vertical-Spec.md` · `BIZPULSES-PATTERNS.md` · `CLAUDE.md`
 
 **Legend:** ⚡ quality-affecting, discuss first · 🔒 blocking · 🅑 proven in BizPulses · ✚ improvement on BizPulses · ⟲ corrected after reading the code · ⏱ effort
 

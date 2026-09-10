@@ -2,7 +2,7 @@
 
 **Date:** 9 September 2026
 **Status:** Design agreed. Not built.
-**Related:** `CompliBoard-Decisions-v1.md` · `CompliBoard-Chemical-OR-WA-Vertical-Spec.md` (six-stage runtime, §5) · `CompliBoard-Build-Plan-v3.md`
+**Related:** `CompliBoard-Decisions-v2.md` · `CompliBoard-Chemical-OR-WA-Vertical-Spec.md` (six-stage runtime, §5) · `CompliBoard-Build-Plan-v3.md`
 
 ---
 

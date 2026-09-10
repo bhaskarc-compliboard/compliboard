@@ -47,33 +47,49 @@ Making the ground solid. Nothing here changes what a customer sees.
 - ✅ Impact traced module by module before applying — nothing broke
 - ✅ Applied to production
 
-### 0.4 🔒 Close the remaining service-role holes 🔄 IN PROGRESS ⏱ 1–2 days
+### 0.4 🔒 Close the remaining service-role holes ✅ DONE (9 Sep)
 The storage policies do not protect these — the service-role key bypasses RLS entirely.
 
-**Full route map completed 10 Sep.** 21 routes: 17 service-role, 2 session-verified, 9 taking identity from a client parameter.
+**Full route map completed 9 Sep.** 21 routes: 17 service-role, 2 session-verified, 9 taking identity from a client parameter. Every one is now closed, deleted, or confirmed safe.
 
-- ✅ **`/api/documents`** — all four methods, `requireCompany()`, ownership checks. **Now the reference implementation.**
-- ✅ **`/api/account`** — was the worst: DELETE took `user_id` from the URL with **no authentication** and destroyed the whole company. Now session-derived, confirmation-gated on company name, and deletes storage files (previously orphaned). Tested 5/5 on staging.
-- ✅ **`/api/account/export`** — new. Data portability; customers can take their records before deleting. Tenant-scoped both directions.
-- 🔄 **`/api/hr`** — rewritten, uncommitted, untested. Session-derived, accepts document ids not `file_url`, rejects the whole request if any document fails ownership. Also fixed a real bug: `.docx` files were sent to the model labelled `image/jpeg`, producing confident answers from unreadable input.
-- ⬜ **`/api/audits`** — `company_id` from a query parameter, never verifies the session; DELETE `?id=` with no ownership check
-- ⬜ **`/api/hr-audits`** — `companyId`/`userId` from the body
-- ⬜ **Unscoped-delete family** — `/api/folders`, `/api/calendar`, `/api/document-review`: all `DELETE ?id=<uuid>` → `.delete().eq('id', id)` with no company predicate
-- ⬜ **`/api/substeps`, `/api/link-research`** — write to checklists keyed on a body id, no ownership check
-- ✅ **Deleted rather than fixed** (all orphaned, zero callers): `/api/folders/industry`, `/api/requirements`, `/api/sync-obligations`. Confirmed first: no `vercel.json`, no cron schedule in the repo, no Vercel cron jobs configured at all, marketing site not in this repo, no hardcoded URLs in scripts or docs.
-- ✅ Updated `CLAUDE.md` §3.6 — now names `app/api/documents/route.ts` with `requireCompany()` as the reference, and spells out what makes it one.
+**Fixed — identity now derived from the verified session via `requireCompany()`:**
 
-**Acceptance:** no route derives tenant identity from a client parameter. Every service-role use is either a route with a verified session or a place where no session exists (worker, cron, signup).
+- ✅ **`/api/documents`** — all four methods, ownership checks, destination checks. **Now the reference implementation** (`CLAUDE.md` §3.6).
+- ✅ **`/api/account`** — the worst of them. DELETE took `user_id` from the URL with **no authentication of any kind** and destroyed the whole company: rows across 15 tables, the company record and the login. One request, one guessed id. Now session-derived, gated on typing the company name, and it deletes the storage files too (previously orphaned forever). Tested 5/5 on staging including the real irreversible delete.
+- ✅ **`/api/account/export`** — new. Every row the company owns, one JSON file. Tenant-scoped both directions, verified by searching each export for the other company's ids and name.
+- ✅ **`/api/hr`** — accepts document ids, not `file_url`; rejects the whole request if any id fails ownership. Was the last way to read another company's files after migration 002, because the service role bypasses the storage policies.
+- ✅ **`/api/audits`** — `company_id` from a query parameter and an unscoped DELETE; re-running someone else's audit would have rebuilt it against this company's documents.
+- ✅ **`/api/hr-audits`** — `companyId`/`userId` from the body, and `handbookFileUrl` too, so a saved record could point at another company's file.
+- ✅ **Unscoped-delete family** — `/api/folders`, `/api/calendar`, `/api/document-review`. All were `DELETE ?id=<uuid>` → `.delete().eq('id', id)` with no company predicate. Folders also gained a parent-ownership check and company-scoped "folder not empty" counts.
+- ✅ **`/api/substeps`, `/api/link-research`** — wrote to checklists keyed on a body id. Linking checks **both** ends; checking only the row being updated still allows a link into another company's checklist.
+- ✅ **`/api/obligations`** — returned any company's full compliance position, the most sensitive list in the product, to anyone who knew the id.
 
-### 0.5 Tenancy consistency ⬜ ⏱ 1 day
-- ⬜ `calendar_events` — scoped to `user_id`, must be `company_id`. A compliance calendar is a company asset.
-- ⬜ `checklists` and `checklist_items` — same
-- ⬜ `folder_audits` — same, or remove if the feature is retired
-- ⬜ `documents.company_id` is nullable — decide whether to make it NOT NULL
+**Confirmed safe, left as they are:** `/api/signup` (no session exists yet), `/api/cron/monthly-summary` (`CRON_SECRET`), `/api/industries` (shared library data, no tenant rows), `/api/chat`, `/api/extract-dates`, `/api/scan-website`, `/api/feedback` (no database, no service role).
 
-**Acceptance:** every data table scopes by `company_id`. Two people at the same company see the same thing.
+**Deleted rather than fixed** — all three orphaned with zero callers:
+`/api/folders/industry`, `/api/requirements`, `/api/sync-obligations`.
+Confirmed before deleting: no `vercel.json`, no cron schedule anywhere in the repo, **no cron jobs configured in Vercel at all**, the marketing site is not in this repo, and no script or document holds a hardcoded URL. Hardening three routes nobody calls is worse than deleting them.
+`CLAUDE.md` §3.6 previously named `/api/folders/industry` as the reference to copy — it now names `/api/documents`.
 
-### 0.6 Write policies on every table ⬜ 🔒 ⏱ 1 day
+**Two prompt-injection paths closed along the way.** `company_name` and `industry` were arriving from the request body and going straight into prompts (`/api/hr`, `/api/audits`, `/api/document-review`). All three now read them from the company record. Caller-supplied free text landing inside a prompt is a way to lean on the model's instructions, not just a label.
+
+**One real bug found while closing `/api/hr`:** any non-PDF was base64-encoded and labelled `image/jpeg`. A `.docx` handbook — the format handbooks usually arrive in — was passed to the model as an unreadable picture, and the model answered anyway. Confident output from nothing. Now only PDFs and real image types are sent; anything else is named to the user with the reason.
+
+**Testing.** Every fix was exercised against staging with two real companies and real session tokens, not asserted from reading the code. For each route: no login → 401; own rows → own rows only; another company's id → 404 (never 403, so ids cannot be probed); delete of another company's row → 404 and the row verified intact by service role; write naming another company → landed in the caller's own company.
+
+**Acceptance met:** no route derives tenant identity from a client parameter. Every service-role use is either a route with a verified session or a place where no session exists.
+
+### 0.5 Tenancy consistency ⬜ **NEXT** ⏱ 1 day
+Partly done as a side effect of 0.4 — the *routes* now scope by company. The *tables* and their RLS policies still do not, and that is what this item is.
+
+- ✅ `calendar_events` — the route is company-scoped now (reads, writes and ownership checks). Checked first: all 47 production events already carry a `company_id`, so nothing disappeared. **The RLS policy on the table still reads `auth.uid() = user_id`** and must follow.
+- ⬜ `checklists` and `checklist_items` — still scoped to `user_id`, in the table and in RLS. `checklist_items` reaches tenancy through its parent checklist's `user_id`, which is two hops from the company.
+- ⬜ `folder_audits` — still `user_id`, and its three policies are granted to `public` rather than `authenticated` (harmless today, inconsistent with every other table). Decide whether the feature is retired first; if so this is a delete, not a fix.
+- ⬜ `documents.company_id` is nullable — decide whether to make it NOT NULL. The delete and ownership checks written in 0.4 all fail closed on a null, which is the safe direction, but the column should not permit it.
+
+**Acceptance:** every data table scopes by `company_id`, in the column and in the policy. Two people at the same company see the same thing.
+
+### 0.6 Write policies on every table ⬜ 🔒 **THEN THIS** ⏱ 1 day
 Five tables have RLS on and **zero policies** — `audits`, `company_templates`, `document_reviews`, `hr_audits`, `standard_templates`. RLS with no policy denies everything, which is why those tables are only reachable by service role.
 
 - ⬜ SELECT/INSERT/UPDATE/DELETE policies on all 19 tables
@@ -81,7 +97,26 @@ Five tables have RLS on and **zero policies** — `audits`, `company_templates`,
 - ⬜ Fully-qualified column names in predicates
 - ⬜ `GRANT` line for every table
 
+**Why it matters more after 0.4:** every route now derives identity from the session, but they all still use the service-role key, which ignores RLS entirely. Those application checks are currently the *only* tenant boundary on the database side. Write policies are what makes the database enforce it too, so a future route that forgets the check fails closed instead of leaking.
+
 **Note the coupling:** the storage policy reads `profiles`, and `profiles` has its own RLS. If the "view own profile" policy were ever dropped, *all* storage access silently stops for everyone, with no obvious connection to the change. Document this.
+
+### 0.7 Housekeeping ⬜ ⏱ 2 hours
+- ⬜ Delete four orphaned storage files under a prefix matching no company
+- ⬜ Remove unused deps: `ai`, `@ai-sdk/anthropic`
+- ⬜ `updated_at` trigger — nine columns exist, nothing advances them
+- ⬜ Resolve pricing: $199 or $99
+- ⬜ Remove HIPAA as a surfaced audit example
+- ⬜ Delete `folder_audits` if retired
+- ⬜ Fix `app/upload/page.tsx:89` — `getPublicUrl` on a private bucket, already broken
+- ⬜ Add to docs: baseline exports go in git **only** while data is synthetic
+- ⬜ **Deleting a route breaks `npm run check` until `.next/types` is cleared.** Next.js
+  generates a route validator under `.next/types/` referencing every route file. Delete a
+  route and the stale validator remains, so `tsc --noEmit` — which runs *before* `next
+  build` in `npm run check` — fails with `TS2307: Cannot find module
+  '../../app/api/<name>/route.js'`. Hit this deleting the three orphans on 9 Sep. Fix is
+  `rm -rf .next/types`; the build regenerates it. Worth a line in the check script or a
+  `predev`/`prebuild` clean so the next person does not lose ten minutes to it.
 
 ### 0.8 The monthly summary has never run ⬜ ⏱ 1 hour
 
@@ -98,15 +133,6 @@ feature that silently never runs looks identical to one that runs and finds noth
 which is the same class of failure as a dashboard that only ever climbs. Decide whether
 to schedule it or delete it; do not leave it in the third state.
 
-### 0.7 Housekeeping ⬜ ⏱ 2 hours
-- ⬜ Delete four orphaned storage files under a prefix matching no company
-- ⬜ Remove unused deps: `ai`, `@ai-sdk/anthropic`
-- ⬜ `updated_at` trigger — nine columns exist, nothing advances them
-- ⬜ Resolve pricing: $199 or $99
-- ⬜ Remove HIPAA as a surfaced audit example
-- ⬜ Delete `folder_audits` if retired
-- ⬜ Fix `app/upload/page.tsx:89` — `getPublicUrl` on a private bucket, already broken
-- ⬜ Add to docs: baseline exports go in git **only** while data is synthetic
 
 ---
 
