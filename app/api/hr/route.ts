@@ -1,8 +1,11 @@
 // HR handbook question-answering and auditing.
 //
-// This route reads files out of the company-documents bucket with the service-role
-// key, which bypasses RLS — so migration 002's storage policies do not protect it and
-// these checks are the only tenant boundary it has.
+// CONVERTED OFF THE SERVICE-ROLE KEY (§0.9). Reads and storage downloads both run through
+// `authed.db`, which acts as the caller under RLS. That closes the gap this header used to
+// describe: the storage policies from migration 002 scope the bucket by company prefix,
+// and this route was reaching past them with a key that ignores them. It now runs under
+// them, so a handbook belonging to another company is unreadable at the storage layer as
+// well as refused by the checks below.
 //
 // The previous version took `file_url` (audit mode) and `handbooks[].file_url` (ask
 // mode) straight from the request body and handed them to storage.download(). Any path
@@ -16,7 +19,8 @@
 import { askAIJson } from '@/lib/ai'
 import { hrAskPrompt, hrAuditPrompt } from '@/prompts/hr'
 import { NextRequest, NextResponse } from 'next/server'
-import { requireCompany, supabaseAdmin } from '@/lib/auth'
+import { requireCompany } from '@/lib/auth'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 const BUCKET = 'company-documents'
 
@@ -48,6 +52,7 @@ function extensionOf(path: string): string {
 // Returns a content block, or a described failure. Never returns a block for a format
 // the model cannot actually read.
 async function loadContentBlock(
+  db: SupabaseClient,
   doc: OwnedDocument
 ): Promise<{ block: Record<string, unknown> } | { failure: LoadFailure }> {
   const ext = extensionOf(doc.file_url)
@@ -65,7 +70,7 @@ async function loadContentBlock(
     }
   }
 
-  const { data: fileData, error } = await supabaseAdmin.storage.from(BUCKET).download(doc.file_url)
+  const { data: fileData, error } = await db.storage.from(BUCKET).download(doc.file_url)
   if (error || !fileData) {
     return {
       failure: {
@@ -95,11 +100,11 @@ async function loadContentBlock(
  * what comes back, and an answer built from a silently smaller set of handbooks would
  * look complete while being wrong.
  */
-async function loadOwnedDocuments(ids: string[], companyId: string): Promise<OwnedDocument[] | null> {
+async function loadOwnedDocuments(db: SupabaseClient, ids: string[], companyId: string): Promise<OwnedDocument[] | null> {
   const unique = Array.from(new Set(ids))
   if (unique.length === 0) return null
 
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await db
     .from('documents')
     .select('id, name, file_url, file_type')
     .in('id', unique)
@@ -117,7 +122,7 @@ export async function POST(request: NextRequest) {
   try {
     const authed = await requireCompany(request)
     if (!authed.ok) return authed.response
-    const { companyId } = authed.auth
+    const { companyId, db } = authed.auth
 
     const body = await request.json()
     const { question, document_ids, document_id, mode } = body
@@ -125,7 +130,7 @@ export async function POST(request: NextRequest) {
     // The company name feeds the prompt, so it is read from the database rather than
     // taken from the request. A caller-supplied name is free text arriving inside a
     // prompt — a way to influence the model's instructions, not just a label.
-    const { data: company } = await supabaseAdmin
+    const { data: company } = await db
       .from('companies')
       .select('name')
       .eq('id', companyId)
@@ -140,7 +145,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'No handbooks provided' }, { status: 400 })
       }
 
-      const docs = await loadOwnedDocuments(document_ids, companyId)
+      const docs = await loadOwnedDocuments(db, document_ids, companyId)
       if (!docs) {
         // 404, not 403: a caller should not be able to discover which ids exist by
         // telling apart "does not exist" from "not yours".
@@ -152,7 +157,7 @@ export async function POST(request: NextRequest) {
       const documentsFailed: LoadFailure[] = []
 
       for (const doc of docs) {
-        const result = await loadContentBlock(doc)
+        const result = await loadContentBlock(db, doc)
         if ('failure' in result) {
           documentsFailed.push(result.failure)
           continue
@@ -201,12 +206,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No handbook selected' }, { status: 400 })
     }
 
-    const docs = await loadOwnedDocuments([document_id], companyId)
+    const docs = await loadOwnedDocuments(db, [document_id], companyId)
     if (!docs) {
       return NextResponse.json({ error: 'Handbook not found' }, { status: 404 })
     }
 
-    const result = await loadContentBlock(docs[0])
+    const result = await loadContentBlock(db, docs[0])
     if ('failure' in result) {
       return NextResponse.json({ error: result.failure.message, documents_failed: [result.failure] }, { status: 400 })
     }
