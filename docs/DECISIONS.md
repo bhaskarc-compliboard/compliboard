@@ -1,7 +1,9 @@
 # Decision Record
 **Version:** 3 · **Updated:** 10 September 2026
 **Supersedes:** version 2 (10 Sep) — §15.7 is marked superseded and §15.8 replaces it:
-document versions now live inside each file, not in its filename. Version 2 superseded
+document versions now live inside each file, not in its filename. §13 drops the Technical
+Due Diligence row — that document has been deleted and every finding that mattered is
+carried into this one; a fresh assessment will be made later. Version 2 superseded
 version 1 (9 Sep), whose content is carried forward except where noted. §15 records the
 decisions of 9–10 September, §16 the state of the security work. Also supersedes
 conflicting statements in earlier planning documents.
@@ -308,7 +310,6 @@ Also caught: the Office of the State Fire Marshal separated from Oregon State Po
 
 | Document | Verdict |
 |---|---|
-| `CompliBoard-Technical-Due-Diligence.md` | **Keep.** The honest baseline. Pricing ($199 vs $99) and HIPAA-in-UI inconsistencies still need resolving. *(Not currently in `docs/` — add it if it is still wanted, or drop this row.)* |
 | `CHEMICAL-OR-WA.md` | **Keep.** The master design document. |
 | `CompliBoardChemicalRequirementsMERGEDv2.xlsx` | **Keep — now the single source for the 188 rows.** Richest artifact: 188 rows, the 9-item VERIFY hit list, 26 switches, 18-row fixed-date calendar, and a `Layer` column that already encodes agency ("Oregon OSHA", "Federal DOT"). The normalised columns from the separate intake file — `jurisdiction_level` (95 federal / 87 state / 3 county / 3 contractual), `jurisdiction_state` (90 Oregon), `is_determination` (9 yes), `applies` (182 conditional / 6 universal), `source` (174 gpt / 11 claude / 3 gemini) — have since been merged into it. |
 | `CompliBoard-Requirements-Module-Definition.md` | **Delete.** Fully absorbed into the Chemical OR/WA spec, which contains everything in it plus the regulatory map, runtime architecture, display, verification, and onboarding. Two overlapping specs will drift. |
