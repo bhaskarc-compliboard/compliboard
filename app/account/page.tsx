@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase'
+import { createClient, authHeaders } from '@/lib/supabase'
 import AppLayout from '@/components/AppLayout'
 import { useRouter } from 'next/navigation'
 
@@ -59,6 +59,12 @@ export default function AccountPage() {
   const [showCancelConfirm, setShowCancelConfirm] = useState(false)
   const [cancelConfirmText, setCancelConfirmText] = useState('')
   const [cancelling, setCancelling] = useState(false)
+  const [cancelError, setCancelError] = useState('')
+  // The company name as last saved. The editable field above can be changed without
+  // saving, and the delete confirmation must match what is actually stored.
+  const [savedCompanyName, setSavedCompanyName] = useState('')
+  const [downloading, setDownloading] = useState(false)
+  const [downloadError, setDownloadError] = useState('')
 
   useEffect(() => {
     async function loadAccount() {
@@ -66,12 +72,13 @@ export default function AccountPage() {
       if (!user) { router.push('/login'); return }
       setUserId(user.id)
 
-      const res = await fetch(`/api/account?user_id=${user.id}`)
+      const res = await fetch('/api/account', { headers: await authHeaders() })
       const json = await res.json()
       if (json.data) {
         const d = json.data
         setFullName(d.full_name || '')
         setCompanyName(d.name || '')
+        setSavedCompanyName(d.name || '')
         setIndustry(d.industry || '')
         setState(d.state || '')
         setCounty(d.county || '')
@@ -95,9 +102,8 @@ export default function AccountPage() {
     try {
       const res = await fetch('/api/account', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: await authHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({
-          user_id: userId,
           full_name: fullName,
           companyName,
           industry,
@@ -108,6 +114,7 @@ export default function AccountPage() {
         }),
       })
       if (!res.ok) throw new Error('Failed to save')
+      setSavedCompanyName(companyName)
       setSaveSuccess(true)
       setTimeout(() => setSaveSuccess(false), 3000)
     } catch {
@@ -139,14 +146,54 @@ export default function AccountPage() {
     }
   }
 
-  async function handleCancelAccount() {
-    if (!userId) return
-    setCancelling(true)
+  // Fetches the export with the session token attached, then hands the browser the
+  // resulting file. A plain link cannot be used because the route requires an
+  // Authorization header.
+  async function handleDownloadData() {
+    setDownloading(true)
+    setDownloadError('')
     try {
-      await fetch(`/api/account?user_id=${userId}`, { method: 'DELETE' })
+      const res = await fetch('/api/account/export', { headers: await authHeaders() })
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}))
+        throw new Error(j.error || 'Could not build your export')
+      }
+      const blob = await res.blob()
+      const disposition = res.headers.get('Content-Disposition') || ''
+      const match = disposition.match(/filename="(.+)"/)
+      const filename = match ? match[1] : 'compliboard-export.json'
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      setDownloadError(err instanceof Error ? err.message : 'Could not download your data')
+    } finally {
+      setDownloading(false)
+    }
+  }
+
+  async function handleCancelAccount() {
+    setCancelling(true)
+    setCancelError('')
+    try {
+      const res = await fetch('/api/account', {
+        method: 'DELETE',
+        headers: await authHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ confirmation: cancelConfirmText.trim() }),
+      })
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}))
+        throw new Error(j.error || 'Could not delete your account')
+      }
       await supabase.auth.signOut()
       router.push('/')
-    } catch {
+    } catch (err) {
+      setCancelError(err instanceof Error ? err.message : 'Could not delete your account')
       setCancelling(false)
     }
   }
@@ -350,10 +397,38 @@ export default function AccountPage() {
           <div className="bg-white rounded-xl border border-gray-200 p-6">
             <h2 className="text-sm font-semibold text-gray-900 mb-2">Cancel Account</h2>
             <p className="text-sm text-gray-400 mb-6">Permanently delete your account and all your data</p>
-            <div className="p-4 bg-red-50 border border-red-200 rounded-xl mb-6">
-              <p className="text-sm font-semibold text-red-700 mb-2">⚠️ This cannot be undone</p>
-              <p className="text-sm text-red-600">All your checklists, uploaded files, calendar events, and company data will be permanently deleted.</p>
+            <div className="p-4 bg-red-50 border border-red-200 rounded-xl mb-4">
+              <p className="text-sm font-semibold text-red-700 mb-2">⚠️ This is permanent and cannot be undone</p>
+              <p className="text-sm text-red-600 mb-3">
+                There is no way to restore this account afterwards. We do not keep a copy.
+                Everything below is destroyed for <span className="font-semibold">everyone</span> on
+                your company account, not only for you:
+              </p>
+              <ul className="text-sm text-red-600 space-y-1 list-disc pl-5">
+                <li>Every uploaded file, and the folders holding them</li>
+                <li>Every document review, audit, and HR handbook audit</li>
+                <li>Every checklist and checklist item</li>
+                <li>Every calendar event and deadline reminder</li>
+                <li>Your compliance obligations and the evidence linked to them</li>
+                <li>Your company profile and saved audit templates</li>
+                <li>Every login on this company account, including yours</li>
+              </ul>
             </div>
+
+            <div className="p-4 bg-gray-50 border border-gray-200 rounded-xl mb-6">
+              <p className="text-sm font-semibold text-gray-800 mb-1">Take your records first</p>
+              <p className="text-sm text-gray-600 mb-3">
+                Download everything we hold on your company as a single file. Your uploaded
+                files are not included — save those from Company Documents separately, because
+                deleting the account deletes them too.
+              </p>
+              <button onClick={handleDownloadData} disabled={downloading}
+                className="border border-gray-300 text-gray-700 px-4 py-2 rounded-xl text-sm font-medium hover:bg-white transition-colors disabled:opacity-50">
+                {downloading ? 'Preparing your file…' : 'Download my data'}
+              </button>
+              {downloadError && <p className="text-sm text-red-600 mt-2">{downloadError}</p>}
+            </div>
+
             {!showCancelConfirm ? (
               <button onClick={() => setShowCancelConfirm(true)}
                 className="w-full border border-red-300 text-red-600 py-2.5 rounded-xl text-sm font-medium hover:bg-red-50 transition-colors">
@@ -361,21 +436,25 @@ export default function AccountPage() {
               </button>
             ) : (
               <div className="space-y-3">
-                <p className="text-sm text-gray-700">Type <span className="font-semibold">DELETE</span> to confirm</p>
+                <p className="text-sm text-gray-700">
+                  To confirm, type your company name exactly as it appears on your profile:
+                  {' '}<span className="font-semibold">{savedCompanyName}</span>
+                </p>
                 <input type="text"
                   className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-red-500 bg-gray-50"
-                  placeholder="Type DELETE to confirm"
+                  placeholder="Type your company name to confirm"
                   value={cancelConfirmText}
                   onChange={(e) => setCancelConfirmText(e.target.value)}
                 />
+                {cancelError && <p className="text-sm text-red-600">{cancelError}</p>}
                 <div className="flex gap-2">
                   <button
                     onClick={handleCancelAccount}
-                    disabled={cancelConfirmText !== 'DELETE' || cancelling}
+                    disabled={cancelConfirmText.trim() !== savedCompanyName || !savedCompanyName || cancelling}
                     className="flex-1 bg-red-600 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-red-700 transition-colors disabled:opacity-50">
                     {cancelling ? 'Deleting...' : 'Permanently delete my account'}
                   </button>
-                  <button onClick={() => { setShowCancelConfirm(false); setCancelConfirmText('') }}
+                  <button onClick={() => { setShowCancelConfirm(false); setCancelConfirmText(''); setCancelError('') }}
                     className="px-4 py-2.5 rounded-xl text-sm text-gray-500 border border-gray-200 hover:border-gray-300 transition-colors">
                     Keep my account
                   </button>
