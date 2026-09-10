@@ -1,10 +1,16 @@
-// Every handler here derives company_id and user_id from the verified session token
-// via requireCompany(), never from a query parameter or a request body. This route
-// uses the service-role key, which bypasses RLS, so these checks are the only thing
-// standing between one company's documents and another's — see CLAUDE.md §3.6.
+// Every handler here derives company_id and user_id from the verified session token via
+// requireCompany(), never from a query parameter or a request body.
+//
+// CONVERTED OFF THE SERVICE-ROLE KEY (§0.9). Queries and storage both run through
+// `authed.db`, which acts as the caller under RLS, so the database enforces tenancy
+// alongside the checks below rather than relying on them alone — see CLAUDE.md §3.6.
+//
+// The storage side matters as much as the tables: migration 002 scoped the bucket by
+// company prefix, and this is the route that now actually runs under those policies
+// instead of past them.
 
 import { NextRequest, NextResponse } from 'next/server'
-import { requireCompany, supabaseAdmin } from '@/lib/auth'
+import { requireCompany } from '@/lib/auth'
 
 const BUCKET = 'company-documents'
 
@@ -17,7 +23,7 @@ export async function POST(request: NextRequest) {
   try {
     const authed = await requireCompany(request)
     if (!authed.ok) return authed.response
-    const { companyId, userId } = authed.auth
+    const { companyId, userId, db } = authed.auth
 
     const body = await request.json()
     const { name, file_url, file_type, file_size, folder_id, is_recurring, recurrence_period } = body
@@ -34,7 +40,7 @@ export async function POST(request: NextRequest) {
 
     // A destination folder, if given, must be one of this company's folders.
     if (folder_id) {
-      const { data: folder } = await supabaseAdmin
+      const { data: folder } = await db
         .from('company_folders')
         .select('id')
         .eq('id', folder_id)
@@ -45,7 +51,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const { error } = await supabaseAdmin
+    const { error } = await db
       .from('documents')
       .insert({
         company_id: companyId,
@@ -80,12 +86,12 @@ export async function GET(request: NextRequest) {
   try {
     const authed = await requireCompany(request)
     if (!authed.ok) return authed.response
-    const { companyId } = authed.auth
+    const { companyId, db } = authed.auth
 
     const { searchParams } = new URL(request.url)
     const folder_id = searchParams.get('folder_id')
 
-    let query = supabaseAdmin
+    let query = db
       .from('documents')
       .select('*')
       .eq('company_id', companyId)
@@ -120,7 +126,7 @@ export async function PATCH(request: NextRequest) {
   try {
     const authed = await requireCompany(request)
     if (!authed.ok) return authed.response
-    const { companyId } = authed.auth
+    const { companyId, db } = authed.auth
 
     const body = await request.json()
     const { id, folder_id } = body
@@ -128,7 +134,7 @@ export async function PATCH(request: NextRequest) {
 
     // Source: the document must be ours. 404 rather than 403 so the endpoint cannot
     // be used to probe which document ids exist.
-    const { data: doc } = await supabaseAdmin
+    const { data: doc } = await db
       .from('documents')
       .select('id, company_id')
       .eq('id', id)
@@ -140,7 +146,7 @@ export async function PATCH(request: NextRequest) {
     // Destination: a null folder_id means "unfiled", which is always allowed. Any
     // other value must be one of this company's folders.
     if (folder_id) {
-      const { data: folder } = await supabaseAdmin
+      const { data: folder } = await db
         .from('company_folders')
         .select('id')
         .eq('id', folder_id)
@@ -151,7 +157,7 @@ export async function PATCH(request: NextRequest) {
       }
     }
 
-    const { error } = await supabaseAdmin
+    const { error } = await db
       .from('documents')
       .update({ folder_id: folder_id || null })
       .eq('id', id)
@@ -182,7 +188,7 @@ export async function DELETE(request: NextRequest) {
   try {
     const authed = await requireCompany(request)
     if (!authed.ok) return authed.response
-    const { companyId } = authed.auth
+    const { companyId, db } = authed.auth
 
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
@@ -190,7 +196,7 @@ export async function DELETE(request: NextRequest) {
 
     // Load the row and confirm it is theirs. A row whose company_id is null also
     // fails this comparison, which is the safe direction to fail.
-    const { data: doc } = await supabaseAdmin
+    const { data: doc } = await db
       .from('documents')
       .select('id, company_id, file_url')
       .eq('id', id)
@@ -201,13 +207,13 @@ export async function DELETE(request: NextRequest) {
 
     // The storage path comes from the row we just authorised, not from the URL.
     if (doc.file_url) {
-      const { error: removeError } = await supabaseAdmin.storage
+      const { error: removeError } = await db.storage
         .from(BUCKET)
         .remove([doc.file_url])
       if (removeError) throw removeError
     }
 
-    const { error } = await supabaseAdmin
+    const { error } = await db
       .from('documents')
       .delete()
       .eq('id', id)
