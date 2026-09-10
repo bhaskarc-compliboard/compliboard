@@ -1,14 +1,17 @@
 // Replaces the sub-steps under one checklist item.
 //
-// The company comes from the verified session via requireCompany(). This route writes
-// with the service-role key, which bypasses RLS, so this check is its only tenant
-// boundary. It previously took checklist_id from the request body and deleted and
-// rewrote that checklist's items with no ownership check at all — any caller could
-// wipe and replace part of any company's checklist.
+// CONVERTED OFF THE SERVICE-ROLE KEY (§0.9). Every query runs through `authed.db`, which
+// acts as the caller under RLS. It previously took checklist_id from the request body and
+// deleted and rewrote that checklist's items with no ownership check at all — any caller
+// could wipe and replace part of any company's checklist.
+//
+// The delete-then-insert here is worth a note: under RLS a delete that the policy refuses
+// removes ZERO rows rather than erroring, so the ownership check above it is what makes
+// the refusal explicit. Belt and braces, and the braces are the ones doing the talking.
 // Reference: app/api/documents/route.ts.
 
 import { NextRequest, NextResponse } from 'next/server'
-import { requireCompany, supabaseAdmin } from '@/lib/auth'
+import { requireCompany } from '@/lib/auth'
 
 // Checklist generation can run long, especially for a large/complex request.
 export const maxDuration = 800
@@ -17,7 +20,7 @@ export async function POST(request: NextRequest) {
   try {
     const authed = await requireCompany(request)
     if (!authed.ok) return authed.response
-    const { companyId } = authed.auth
+    const { companyId, db } = authed.auth
 
     const { checklist_id, parent_item_index, items } = await request.json()
 
@@ -25,7 +28,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    const { data: checklist } = await supabaseAdmin
+    const { data: checklist } = await db
       .from('checklists')
       .select('id, company_id')
       .eq('id', checklist_id)
@@ -37,7 +40,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Delete existing sub-items for this parent
-    await supabaseAdmin
+    await db
       .from('checklist_items')
       .delete()
       .eq('checklist_id', checklist_id)
@@ -65,7 +68,7 @@ export async function POST(request: NextRequest) {
       parent_item_index,
     }))
 
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await db
       .from('checklist_items')
       .insert(rows)
       .select('id, sort_order')
