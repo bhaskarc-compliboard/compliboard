@@ -202,6 +202,57 @@ why. A route may keep the key for a named statement; it may not keep it out of h
 AppLayout) should call `auth_company_id()` by RPC instead. No policy depends on `profiles`
 any more, but those pages still do — that is what finishes decoupling the base case.
 
+### 0.10 Audit-engine debts, surfaced while converting it ⬜ ⏱ see each
+
+Four things found while moving `/api/audits` off the service-role key. **None is caused by
+that conversion** — the first predates it and the rest are structural.
+
+**(a) A document that fails to download vanishes from the audit, silently. ⏱ half day**
+The auto-index loop does `if (dlError || !fileData) continue`. Any cause — a storage
+policy, a missing object, a transient network failure, an expired token — drops that
+document from the candidate set with no error, no log the user sees, and no record on the
+saved audit. The matcher is then shown fewer documents, matches fewer requirements, and the
+readiness counts are computed **correctly in code from a smaller input**. Plausible numbers,
+wrong basis. `CLAUDE.md` §3.2 puts readiness in code precisely so it cannot be an AI guess;
+that protection does nothing when the input quietly shrinks.
+
+The audit should report which documents it could not read, exactly as `/api/hr` now does —
+that route names the file and the reason and says the answer does not account for it. Same
+treatment here: a `documents_failed` list on the saved audit, surfaced in the UI.
+
+**(b) `/api/audits` is the clearest case for the Phase 5 worker. 🔒**
+One request does classify (with web search), generate a full standard on a cache miss,
+review every unreviewed document one at a time, and match every requirement in batches.
+Minutes, several model calls, unbounded in document count. `maxDuration` is already at 800s
+— the highest stable Vercel ceiling without the extended-duration beta — and was raised once
+already to work around this. Raising it again is the same workaround with a bigger number.
+
+`PATTERNS.md` §5: BizPulses runs its equivalent as a plain always-on Node process, "separate
+from Vercel because classify + N extraction calls + reconcile routinely exceed any
+serverless timeout." Same wall, same answer.
+
+**When it moves, it returns to the service-role key legitimately** — a background job has no
+user session to run as, the same reason `/api/signup` keeps it. The conversion done on 10 Sep
+is superseded at that point, not wrong: it makes the route correct where it currently lives.
+
+**(c) The user gets nothing for the duration of a multi-minute run. ⏱ folded into Phase 5**
+No progress, no partial result, no indication anything is happening. BizPulses writes a
+`progress_message` after classification and after each chunk, and the browser polls the row
+to render it. Phase 5 solves this as a side effect of moving to a job row that can be
+updated mid-flight — **record it now so the worker spec includes it**, rather than
+rediscovering it after the worker ships without it.
+
+**(d) Port BizPulses's atomic `replace_*` pattern. ⏱ with Phase 4**
+DELETE and INSERT inside one transaction, with the ownership guard expressed in SQL, so a
+failed refresh leaves the prior data intact rather than half-written. Wanted for
+`replace_obligations` (Phase 4.2 already calls for exactly this) and for document re-review.
+
+**One difference that must not be ported.** BizPulses always wants the latest data for a
+period and discards what it replaces. CompliBoard often wants the history: obligations are
+marked, never deleted (§3.2), and library rows are versioned rather than edited in place.
+**The transaction mechanism ports; the retention policy does not.** Take the atomicity and
+the in-SQL guard; keep our own rules about what survives.
+
 ### 0.7 Housekeeping ⬜ ⏱ 2 hours
 - ⬜ Delete four orphaned storage files under a prefix matching no company
 - ⬜ Remove unused deps: `ai`, `@ai-sdk/anthropic`

@@ -1,20 +1,8 @@
 import { askAIJson, type AIContent } from '@/lib/ai'
 import { reviewPrompt } from '@/prompts/document-review'
-import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import mammoth from 'mammoth'
 import officeParser from 'officeparser'
-
-// Fallback client, used only when a caller does not supply one. It bypasses RLS.
-//
-// Callers SHOULD pass `db` — the client acting as the requesting user — so the insert
-// below happens under the database's own rules. The fallback exists so that a caller
-// which has not been converted yet keeps working unchanged rather than being broken by
-// this module changing shape. As of 10 Sep that is app/api/audits/route.ts alone; when
-// that route converts, this fallback and the `db` parameter's optionality should both go.
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
 
 export interface ReviewDocumentInput {
   buffer: ArrayBuffer
@@ -29,11 +17,16 @@ export interface ReviewDocumentInput {
   userId: string
   industry?: string
   /**
-   * The client to write the review with. Pass the caller's own client (`authed.db`) so
-   * the insert runs under RLS. Omitted falls back to the service-role client, which
-   * bypasses RLS — only for callers not yet converted.
+   * The client to write the review with — the caller's own (`authed.db`), so the insert
+   * runs under RLS like everything else in the request.
+   *
+   * Required, deliberately. This used to be optional with a service-role fallback, for
+   * callers not yet converted off that key. Both callers now pass a client, so the
+   * fallback became unreachable code that silently bypassed RLS — exactly the kind that
+   * gets picked up later by someone who does not know why it was there. Making the
+   * parameter required means the compiler enforces it and a future caller cannot forget.
    */
-  db?: SupabaseClient
+  db: SupabaseClient
 }
 
 // Reviews a document's actual content (PDF/image/Word/PowerPoint) and saves the
@@ -41,8 +34,7 @@ export interface ReviewDocumentInput {
 // (app/api/document-review/route.ts) and the audit engine's auto-indexing step —
 // never duplicate this logic in two places.
 export async function reviewDocument(input: ReviewDocumentInput) {
-  // Whichever client the caller supplied, or the service-role fallback.
-  const client = input.db ?? supabaseAdmin
+  const client = input.db
   const { buffer, fileType, fileName, documentId, documentName, folderId, folderName, divisionName, companyId, userId, industry } = input
   const base64 = Buffer.from(buffer).toString('base64')
   const lowerName = fileName.toLowerCase()

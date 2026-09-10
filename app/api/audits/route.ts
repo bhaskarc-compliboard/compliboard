@@ -6,17 +6,40 @@ import { requireCompany, supabaseAdmin } from '@/lib/auth'
 import mammoth from 'mammoth'
 import officeParser from 'officeparser'
 
-// Audits can genuinely take several minutes (a full standard's worth of
-// requirements, auto-indexing multiple documents, batched matching). 800s
-// is the highest stable, generally-available ceiling on Vercel Pro/Enterprise
-// without enrolling in the extended-duration beta.
+// THIS ROUTE IS A POOR FIT FOR SERVERLESS, AND maxDuration IS NOT THE FIX.
+//
+// One request does: classify (with web search), generate a full standard on a cache miss,
+// review every unreviewed document one at a time, then match every requirement in batches.
+// Several minutes, several model calls, unbounded in the number of documents.
+//
+// 800s is already the highest stable ceiling on Vercel without the extended-duration beta,
+// and it was raised once to work around exactly this. Raising it again is not a fix; it is
+// the same workaround with a bigger number.
+//
+// The fix is the background worker in Phase 5. BizPulses hit this identical wall and
+// solved it by moving the work out of the request entirely — PATTERNS.md §5: "It is
+// separate from Vercel because classify + N extraction calls + reconcile routinely exceed
+// any serverless timeout." When this moves there it will use the SERVICE-ROLE KEY again,
+// legitimately and for the same reason /api/signup does: a background job has no user
+// session to run as. The conversion below is superseded at that point, not wrong.
+//
+// UNTIL THEN, a specific hazard. `authed.db` carries the caller's token, pinned at request
+// start with autoRefreshToken:false. A token has a finite life. If one expired mid-run,
+// reads would return empty rather than error, storage downloads would fail — and the
+// `continue` in the auto-index loop below skips a document whose download fails, with no
+// error and no record of the skip. The audit would then finish successfully, with
+// readiness counts computed correctly in code from a document set that had quietly shrunk.
+// Plausible numbers, wrong input. See TODO.md — reporting unreadable documents is recorded
+// as work in its own right, because that `continue` predates this conversion.
 export const maxDuration = 800
 
-// Every handler derives the company from the verified session via requireCompany().
-// This route reads company documents and downloads their files with the service-role
-// key, which bypasses RLS — so these checks are its only tenant boundary. It previously
-// took company_id straight from a query parameter or form field and never checked the
-// session at all. Reference: app/api/documents/route.ts.
+// CONVERTED OFF THE SERVICE-ROLE KEY (§0.9), with ONE deliberate exception marked below.
+// Everything runs through `authed.db`, the caller's own client under RLS — reads, writes
+// and storage downloads alike. The single statement still using the admin client is the
+// shared-standard cache insert, and the comment there explains why it must stay.
+//
+// It previously took company_id straight from a query parameter or form field and never
+// checked the session at all. Reference: app/api/documents/route.ts.
 
 const MATCH_BATCH_SIZE = 40
 
@@ -74,9 +97,9 @@ export async function GET(request: NextRequest) {
   try {
     const authed = await requireCompany(request)
     if (!authed.ok) return authed.response
-    const { companyId } = authed.auth
+    const { companyId, db } = authed.auth
 
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await db
       .from('audits')
       .select('*')
       .eq('company_id', companyId)
@@ -95,13 +118,13 @@ export async function DELETE(request: NextRequest) {
   try {
     const authed = await requireCompany(request)
     if (!authed.ok) return authed.response
-    const { companyId } = authed.auth
+    const { companyId, db } = authed.auth
 
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
     if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
 
-    const { data: audit } = await supabaseAdmin
+    const { data: audit } = await db
       .from('audits')
       .select('id, company_id')
       .eq('id', id)
@@ -112,7 +135,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Audit not found' }, { status: 404 })
     }
 
-    const { error } = await supabaseAdmin
+    const { error } = await db
       .from('audits').delete().eq('id', id).eq('company_id', companyId)
     if (error) throw error
     return NextResponse.json({ success: true })
@@ -125,7 +148,7 @@ export async function POST(request: NextRequest) {
   try {
     const authed = await requireCompany(request)
     if (!authed.ok) return authed.response
-    const { companyId, userId } = authed.auth
+    const { companyId, userId, db } = authed.auth
 
     const formData = await request.formData()
     const rerunAuditId = formData.get('rerun_audit_id') as string | null
@@ -134,7 +157,7 @@ export async function POST(request: NextRequest) {
     // company record rather than accepted from the caller. Free text arriving from a
     // request and landing inside a prompt is a way to influence the model's
     // instructions, not just a label.
-    const { data: company } = await supabaseAdmin
+    const { data: company } = await db
       .from('companies')
       .select('name, industry')
       .eq('id', companyId)
@@ -169,7 +192,7 @@ export async function POST(request: NextRequest) {
       // Re-run: skip classification entirely, reuse the saved checklist,
       // re-match against whatever documents exist right now. Old match
       // results are discarded — this is a fresh, independent snapshot.
-      const { data: priorAudit, error: priorErr } = await supabaseAdmin
+      const { data: priorAudit, error: priorErr } = await db
         .from('audits')
         .select('*')
         .eq('id', rerunAuditId)
@@ -215,7 +238,8 @@ export async function POST(request: NextRequest) {
       // --- Step 2: branch by type — check cache FIRST for named standards, so a
       // cache hit never pays the expensive full-enumeration cost ---
       if (classified.type === 'named_standard') {
-      const { data: cached } = await supabaseAdmin
+      // Read under the caller's token: standard_templates is SELECT USING (true).
+      const { data: cached } = await db
         .from('standard_templates')
         .select('*')
         .ilike('standard_name', sourceName)
@@ -233,6 +257,22 @@ export async function POST(request: NextRequest) {
           { maxTokens: 16000, enableWebSearch: true, temperature: 0.1 }
         )
         lineItems = generated.line_items || []
+        // The shared parsed-standard cache. READ under the caller's token above; WRITE
+        // with the admin client here, and that asymmetry is deliberate — do not "tidy" it
+        // to one client.
+        //
+        // standard_templates is reference data shared by every company: one parsed copy of
+        // OSHA 1910.1200 serves all of them, which is what makes the marginal cost of a new
+        // customer fall (DECISIONS.md §1). It has SELECT USING (true) and no write policy
+        // at all.
+        //
+        // Giving it an INSERT policy would let any authenticated user write into the cache
+        // every other company reads — poisoning shared regulatory content from an ordinary
+        // session, with no tenant boundary to catch it because there is no tenant column.
+        // So the write stays privileged and stays here, one statement, on the cache-miss
+        // path only.
+        //
+        // If you are converting this file further: this is the line that must not move.
         const { data: saved, error: saveErr } = await supabaseAdmin
           .from('standard_templates')
           .insert({ standard_name: sourceName, source: 'ai_generated', line_items: lineItems })
@@ -242,7 +282,7 @@ export async function POST(request: NextRequest) {
         standardTemplateId = saved.id
       }
       } else if (classified.type === 'template') {
-        const { data: saved, error: saveErr } = await supabaseAdmin
+        const { data: saved, error: saveErr } = await db
           .from('company_templates')
           .insert({ company_id: companyId, source_name: sourceName, line_items: lineItems })
           .select()
@@ -254,11 +294,11 @@ export async function POST(request: NextRequest) {
     }
 
     // --- Step 3: auto-index any unreviewed company documents ---
-    const { data: docs } = await supabaseAdmin
+    const { data: docs } = await db
       .from('documents')
       .select('*')
       .eq('company_id', companyId)
-    const { data: existingReviews } = await supabaseAdmin
+    const { data: existingReviews } = await db
       .from('document_reviews')
       .select('id, document_id, document_name, coverage, summary, is_current, expiring_soon, expiry_date')
       .eq('company_id', companyId)
@@ -289,7 +329,7 @@ export async function POST(request: NextRequest) {
     for (const doc of docs || []) {
       if (reviewedIds.has(doc.id)) continue
       try {
-        const { data: fileData, error: dlError } = await supabaseAdmin.storage
+        const { data: fileData, error: dlError } = await db.storage
           .from('company-documents')
           .download(doc.file_url)
         if (dlError || !fileData) continue
@@ -298,6 +338,7 @@ export async function POST(request: NextRequest) {
           buffer, fileType: doc.file_type, fileName: doc.name,
           documentId: doc.id, documentName: doc.name,
           companyId, userId, industry,
+          db, // write the review under RLS, same client as everything else here
         })
         if (newReview) {
           candidates.push({
@@ -350,7 +391,7 @@ export async function POST(request: NextRequest) {
     const readinessNeedsWork = merged.filter(m => m.status === 'needs_work').length
 
     // --- Step 6: save the frozen audit run ---
-    const { data: audit, error: auditErr } = await supabaseAdmin
+    const { data: audit, error: auditErr } = await db
       .from('audits')
       .insert({
         company_id: companyId,
