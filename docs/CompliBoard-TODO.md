@@ -159,6 +159,27 @@ Fresh call, sees only the output, adversarial framing.
 ### 2.6 Zod at the AI boundary ⬜ ⏱ 2 days
 `askAIJson` returns `any` after a `JSON.parse`. A malformed extraction surfaces as a Postgres error rather than a per-field diagnosis.
 
+**Found 9 Sep, live on staging — an empty model response becomes a raw 500.**
+`JSON.parse` at `lib/ai.ts:107` runs unconditionally on whatever came back. The
+truncation guard above it (line 63) only fires on `stop_reason === 'max_tokens'`, so a
+response that is empty for any other reason is never caught: `JSON.parse('')` throws
+`SyntaxError: Unexpected end of JSON input`, which propagates out of the route and
+reaches the caller verbatim as `{"error": "Unexpected end of JSON input"}`.
+
+- **Reproduction:** `POST /api/audits` with a question that classifies as a named
+  standard, so the classify call runs with `enableWebSearch: true` at 16k max tokens.
+  Failed after 37s against staging. Server log:
+  `Audit engine error: SyntaxError: Unexpected end of JSON input`.
+- **Not caused by the identity changes** made to that route the same day — the request
+  got as far as the classify call, so session, company lookup and industry guard all
+  passed. Very likely pre-existing; not proven by testing the prior code.
+- Two things need fixing together: the guard must cover an empty or unparseable body,
+  not only the truncation stop reason; and the failure must not surface as a bare parser
+  string. See 2.7 — this is exactly the case where `error_message` should carry the
+  first 3000 characters of the raw response so a bad extraction is diagnosable from the
+  database days later, and `response_message` should say something an operator can act on.
+- Logged, not investigated, by decision.
+
 ### 2.7 Two error messages ⬜ ⏱ half day
 - ⬜ `response_message` — plain language, always written, success and failure
 - ⬜ `error_message` — technical, with the first 3000 chars of raw model output on parse failures

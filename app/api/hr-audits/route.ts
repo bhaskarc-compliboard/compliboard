@@ -1,37 +1,61 @@
-import { createClient } from '@supabase/supabase-js'
-import { NextRequest, NextResponse } from 'next/server'
+// Saves and lists HR handbook audit results.
+//
+// Every handler derives the company from the verified session via requireCompany().
+// This route writes with the service-role key, which bypasses RLS, so these checks are
+// its only tenant boundary. It previously took companyId and userId from the request
+// body and company_id from a query parameter, and never checked a session — so a caller
+// could write audit rows into any company, read any company's audit history, and delete
+// any row by id. Reference: app/api/documents/route.ts.
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+import { NextRequest, NextResponse } from 'next/server'
+import { requireCompany, supabaseAdmin } from '@/lib/auth'
 
 // A handbook audit reads real content and can occasionally run long.
 export const maxDuration = 800
 
-// Saves and lists HR handbook audit results. Runs server-side with the admin
-// key, same pattern as /api/link-research, so it isn't affected by row-level
-// security on this table.
-
+// POST records the result of an audit against one of this company's handbooks.
+//
+// The caller sends the document id, not a file path or a name. The row is looked up,
+// checked against the session's company, and the stored path and name are taken from
+// it — so a saved audit can never point at a file the company does not own.
 export async function POST(request: NextRequest) {
   try {
-    const { companyId, userId, handbookName, handbookFileUrl, present, missing, draftPolicies } = await request.json()
-    if (!companyId || !userId || !handbookFileUrl) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    const authed = await requireCompany(request)
+    if (!authed.ok) return authed.response
+    const { companyId, userId } = authed.auth
+
+    const body = await request.json()
+    const { documentId, present, missing, draftPolicies } = body
+
+    if (!documentId) {
+      return NextResponse.json({ error: 'Missing documentId' }, { status: 400 })
     }
+
+    const { data: doc } = await supabaseAdmin
+      .from('documents')
+      .select('id, name, file_url, company_id')
+      .eq('id', documentId)
+      .single()
+
+    // 404 rather than 403, so the endpoint cannot be used to discover which ids exist.
+    if (!doc || doc.company_id !== companyId) {
+      return NextResponse.json({ error: 'Handbook not found' }, { status: 404 })
+    }
+
     const { data, error } = await supabaseAdmin
       .from('hr_audits')
       .insert({
         company_id: companyId,
         user_id: userId,
-        handbook_name: handbookName || 'Handbook',
-        handbook_file_url: handbookFileUrl,
+        handbook_name: doc.name || 'Handbook',
+        handbook_file_url: doc.file_url,
         present: present || [],
         missing: missing || [],
         draft_policies: draftPolicies || [],
       })
       .select()
       .single()
+
     if (error) throw error
     return NextResponse.json({ data })
   } catch (error) {
@@ -40,19 +64,20 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// GET lists this company's saved handbook audits. The company_id parameter is gone.
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const companyId = searchParams.get('company_id')
-    if (!companyId) {
-      return NextResponse.json({ error: 'Missing company_id' }, { status: 400 })
-    }
+    const authed = await requireCompany(request)
+    if (!authed.ok) return authed.response
+    const { companyId } = authed.auth
+
     const { data, error } = await supabaseAdmin
       .from('hr_audits')
       .select('*')
       .eq('company_id', companyId)
       .order('created_at', { ascending: false })
       .limit(10)
+
     if (error) throw error
     return NextResponse.json({ data })
   } catch (error) {
@@ -61,14 +86,29 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// DELETE removes one saved audit, after confirming it belongs to the caller's company.
 export async function DELETE(request: NextRequest) {
   try {
+    const authed = await requireCompany(request)
+    if (!authed.ok) return authed.response
+    const { companyId } = authed.auth
+
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
-    if (!id) {
-      return NextResponse.json({ error: 'Missing id' }, { status: 400 })
+    if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
+
+    const { data: audit } = await supabaseAdmin
+      .from('hr_audits')
+      .select('id, company_id')
+      .eq('id', id)
+      .single()
+
+    if (!audit || audit.company_id !== companyId) {
+      return NextResponse.json({ error: 'Audit not found' }, { status: 404 })
     }
-    const { error } = await supabaseAdmin.from('hr_audits').delete().eq('id', id)
+
+    const { error } = await supabaseAdmin
+      .from('hr_audits').delete().eq('id', id).eq('company_id', companyId)
     if (error) throw error
     return NextResponse.json({ success: true })
   } catch (error) {

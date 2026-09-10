@@ -65,9 +65,9 @@ export default function HRPage() {
   const [selectedHandbookId, setSelectedHandbookId] = useState<string | null>(null)
   const [savedAudits, setSavedAudits] = useState<{id: string, handbook_name: string, present: string[], missing: string[], draft_policies: {section: string, draft: string}[], created_at: string}[]>([])
 
-  async function loadSavedAudits(compId: string) {
+  async function loadSavedAudits() {
     try {
-      const res = await fetch(`/api/hr-audits?company_id=${compId}`)
+      const res = await fetch('/api/hr-audits', { headers: await authHeaders() })
       const json = await res.json()
       setSavedAudits(json.data || [])
     } catch (err) {
@@ -87,7 +87,7 @@ export default function HRPage() {
         .single()
       if (!profile?.company_id) { setLoading(false); return }
       setCompanyId(profile.company_id)
-      loadSavedAudits(profile.company_id)
+      loadSavedAudits()
       const { data: company } = await supabase
         .from('companies')
         .select('name')
@@ -200,18 +200,17 @@ export default function HRPage() {
         try {
           await fetch('/api/hr-audits', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: await authHeaders({ 'Content-Type': 'application/json' }),
             body: JSON.stringify({
-              companyId,
-              userId,
-              handbookName: targetHandbook.name,
-              handbookFileUrl: targetHandbook.file_url,
+              // Id only — the server reads the handbook's name and path from the row
+              // after confirming it belongs to this company.
+              documentId: targetHandbook.id,
               present: json.data.present || [],
               missing: json.data.missing || [],
               draftPolicies: json.data.draft_policies || [],
             }),
           })
-          await loadSavedAudits(companyId)
+          await loadSavedAudits()
         } catch (saveErr) {
           console.error('Failed to save audit:', saveErr)
         }
@@ -574,7 +573,7 @@ export default function HRPage() {
                     </div>
                     <button onClick={async () => {
                       if (!confirm('Delete this saved audit?')) return
-                      await fetch('/api/hr-audits?id=' + a.id, { method: 'DELETE' })
+                      await fetch('/api/hr-audits?id=' + a.id, { method: 'DELETE', headers: await authHeaders() })
                       setSavedAudits(prev => prev.filter(x => x.id !== a.id))
                     }} className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-400 hover:border-red-400 hover:text-red-500 transition-colors">
                       Delete

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { createClient } from '@/lib/supabase'
+import { createClient, authHeaders } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import AppLayout from '@/components/AppLayout'
 import AIDisclaimer from '@/components/AIDisclaimer'
@@ -87,14 +87,14 @@ export default function AuditsPage() {
       const { data: company } = await supabase.from('companies').select('name, industry').eq('id', profile.company_id).single()
       if (company) { setCompanyName(company.name); setIndustry(company.industry || '') }
 
-      await loadPastAudits(profile.company_id)
+      await loadPastAudits()
     }
     loadData()
   }, [])
 
-  async function loadPastAudits(compId: string) {
+  async function loadPastAudits() {
     try {
-      const res = await fetch(`/api/audits?company_id=${compId}`)
+      const res = await fetch('/api/audits', { headers: await authHeaders() })
       const json = await res.json()
       setPastAudits(json.data || [])
     } catch (err) {
@@ -121,17 +121,16 @@ export default function AuditsPage() {
       const formData = new FormData()
       formData.append('question', q)
       if (f) formData.append('file', f)
-      formData.append('company_id', companyId)
-      formData.append('user_id', userId)
-      formData.append('company_name', companyName)
-      formData.append('industry', industry)
-
-      const res = await fetch('/api/audits', { method: 'POST', body: formData })
+      // company, user, company name and industry all come from the session and the
+      // company record on the server. Nothing identifying is sent from here.
+      const res = await fetch('/api/audits', {
+        method: 'POST', body: formData, headers: await authHeaders(),
+      })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error || 'Something went wrong')
 
       setResult(json.data)
-      if (isFullAudit(json.data) && companyId) await loadPastAudits(companyId)
+      if (isFullAudit(json.data)) await loadPastAudits()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
     } finally {
@@ -153,16 +152,15 @@ export default function AuditsPage() {
     try {
       const formData = new FormData()
       formData.append('rerun_audit_id', audit.id)
-      formData.append('company_id', companyId)
-      formData.append('user_id', userId)
-      formData.append('industry', industry)
 
-      const res = await fetch('/api/audits', { method: 'POST', body: formData })
+      const res = await fetch('/api/audits', {
+        method: 'POST', body: formData, headers: await authHeaders(),
+      })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error || 'Re-run failed')
 
       setResult(json.data)
-      await loadPastAudits(companyId)
+      await loadPastAudits()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Re-run failed')
     } finally {
@@ -173,7 +171,7 @@ export default function AuditsPage() {
   async function handleDeleteAudit(id: string) {
     if (!confirm('Delete this audit report?')) return
     setDeleting(id)
-    await fetch(`/api/audits?id=${id}`, { method: 'DELETE' })
+    await fetch(`/api/audits?id=${id}`, { method: 'DELETE', headers: await authHeaders() })
     setPastAudits(prev => prev.filter(a => a.id !== id))
     if (result && isFullAudit(result) && result.id === id) setResult(null)
     setDeleting(null)

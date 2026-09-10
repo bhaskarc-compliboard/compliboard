@@ -1,8 +1,8 @@
 import { askAIJson, type AIContent } from '@/lib/ai'
 import { auditClassifyPrompt, auditGenerateStandardPrompt, auditMatchPrompt } from '@/prompts/audit'
 import { reviewDocument } from '@/lib/documentReview'
-import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
+import { requireCompany, supabaseAdmin } from '@/lib/auth'
 import mammoth from 'mammoth'
 import officeParser from 'officeparser'
 
@@ -12,10 +12,11 @@ import officeParser from 'officeparser'
 // without enrolling in the extended-duration beta.
 export const maxDuration = 800
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+// Every handler derives the company from the verified session via requireCompany().
+// This route reads company documents and downloads their files with the service-role
+// key, which bypasses RLS — so these checks are its only tenant boundary. It previously
+// took company_id straight from a query parameter or form field and never checked the
+// session at all. Reference: app/api/documents/route.ts.
 
 const MATCH_BATCH_SIZE = 40
 
@@ -67,11 +68,13 @@ async function fileToContent(file: File, extraText: string): Promise<AIContent> 
   throw new Error('Unsupported file type')
 }
 
+// Lists this company's saved audits. The company_id parameter is gone — it let any
+// caller read any company's audit history.
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const companyId = searchParams.get('company_id')
-    if (!companyId) return NextResponse.json({ error: 'Missing company_id' }, { status: 400 })
+    const authed = await requireCompany(request)
+    if (!authed.ok) return authed.response
+    const { companyId } = authed.auth
 
     const { data, error } = await supabaseAdmin
       .from('audits')
@@ -86,13 +89,31 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// Deletes one audit, after confirming it belongs to the caller's company. Previously
+// any id could be deleted by anyone.
 export async function DELETE(request: NextRequest) {
   try {
+    const authed = await requireCompany(request)
+    if (!authed.ok) return authed.response
+    const { companyId } = authed.auth
+
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
     if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
 
-    const { error } = await supabaseAdmin.from('audits').delete().eq('id', id)
+    const { data: audit } = await supabaseAdmin
+      .from('audits')
+      .select('id, company_id')
+      .eq('id', id)
+      .single()
+
+    // 404 rather than 403, so the endpoint cannot be used to discover which ids exist.
+    if (!audit || audit.company_id !== companyId) {
+      return NextResponse.json({ error: 'Audit not found' }, { status: 404 })
+    }
+
+    const { error } = await supabaseAdmin
+      .from('audits').delete().eq('id', id).eq('company_id', companyId)
     if (error) throw error
     return NextResponse.json({ success: true })
   } catch (error) {
@@ -102,14 +123,40 @@ export async function DELETE(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const authed = await requireCompany(request)
+    if (!authed.ok) return authed.response
+    const { companyId, userId } = authed.auth
+
     const formData = await request.formData()
     const rerunAuditId = formData.get('rerun_audit_id') as string | null
-    const companyId = formData.get('company_id') as string
-    const userId = formData.get('user_id') as string
-    const industry = (formData.get('industry') as string) || ''
 
-    if (!companyId || !userId) {
-      return NextResponse.json({ error: 'Missing company_id or user_id' }, { status: 400 })
+    // company_name and industry feed the classify prompt, so they are read from the
+    // company record rather than accepted from the caller. Free text arriving from a
+    // request and landing inside a prompt is a way to influence the model's
+    // instructions, not just a label.
+    const { data: company } = await supabaseAdmin
+      .from('companies')
+      .select('name, industry')
+      .eq('id', companyId)
+      .single()
+    const companyName = company?.name || ''
+    const industry = (company?.industry || '').trim()
+
+    // Industry is not optional here. It goes into the classify prompt, and classifying
+    // "what does this company have to do" against a blank industry produces an answer
+    // anchored to nothing — the enumerate-from-nothing failure this product exists to
+    // avoid (CLAUDE.md §3.3). Better to stop and say the profile is incomplete than to
+    // return a confident audit built on no industry at all.
+    if (!industry) {
+      return NextResponse.json(
+        {
+          error:
+            'Your company profile is incomplete: no industry is set. An audit is built ' +
+            'from the rules that apply to your industry, so it cannot run without one. ' +
+            'Set your industry in My Account, then try again.',
+        },
+        { status: 400 }
+      )
     }
 
     let lineItems: LineItem[]
@@ -127,7 +174,9 @@ export async function POST(request: NextRequest) {
         .select('*')
         .eq('id', rerunAuditId)
         .single()
-      if (priorErr || !priorAudit) {
+      // Same 404 for "does not exist" and "not yours" — re-running someone else's audit
+      // would have rebuilt it against this company's documents and saved it here.
+      if (priorErr || !priorAudit || priorAudit.company_id !== companyId) {
         return NextResponse.json({ error: 'Could not find the audit to re-run' }, { status: 404 })
       }
       lineItems = (priorAudit.line_items || []).map((li: any) => ({
@@ -142,7 +191,6 @@ export async function POST(request: NextRequest) {
     } else {
       const question = (formData.get('question') as string) || ''
       const file = formData.get('file') as File | null
-      const companyName = (formData.get('company_name') as string) || ''
 
       // --- Step 1: classify + extract ---
       const classifyText = `User request: ${question}`
