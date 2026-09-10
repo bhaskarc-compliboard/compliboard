@@ -755,6 +755,7 @@ export type Database = {
         Row: {
           added_at: string | null
           added_by: string | null
+          company_id: string
           document_id: string
           id: string
           obligation_id: string
@@ -762,6 +763,7 @@ export type Database = {
         Insert: {
           added_at?: string | null
           added_by?: string | null
+          company_id: string
           document_id: string
           id?: string
           obligation_id: string
@@ -769,11 +771,19 @@ export type Database = {
         Update: {
           added_at?: string | null
           added_by?: string | null
+          company_id?: string
           document_id?: string
           id?: string
           obligation_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "obligation_evidence_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "obligation_evidence_document_id_fkey"
             columns: ["document_id"]
@@ -990,7 +1000,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      auth_company_id: { Args: never; Returns: string }
     }
     Enums: {
       [_ in never]: never
