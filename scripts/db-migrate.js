@@ -35,6 +35,12 @@ const MIGRATIONS_DIR = join(__dirname, "../supabase/migrations");
 
 const isProduction = process.argv.includes("--production");
 
+// --new-project is the ONLY way to proceed against production without a readable
+// migration history. It exists for a genuinely fresh project that has never had a
+// migration applied, where there is no history table to read yet. It is not a way
+// past a failed check — see appliedVersions().
+const isNewProject = process.argv.includes("--new-project");
+
 // ---------------------------------------------------------------------------
 // 1. Pick the target. Each branch reads only its own variables.
 // ---------------------------------------------------------------------------
@@ -110,27 +116,69 @@ function localMigrations() {
   }
 }
 
+/**
+ * Strip credentials out of anything before it is printed.
+ *
+ * The connection string is passed to the CLI as a command-line argument, so a failed
+ * command echoes the whole thing back in its error — password included. Printing that
+ * raw put a live production database password on a terminal on 10 Sep. Every path that
+ * surfaces an error from a command built with dbUrl must go through this.
+ */
+function redact(text) {
+  return String(text ?? "")
+    .replace(/(postgresql:\/\/[^:@\s]+:)[^@\s]*(@)/g, "$1<redacted>$2")
+    .replace(new RegExp(escapeForRegex(target.password), "g"), "<redacted>");
+}
+
+function escapeForRegex(literal) {
+  return String(literal ?? "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function sleep(ms) {
+  // Synchronous pause without a dependency. This script is deliberately linear.
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+}
+
+function readAppliedVersions() {
+  const out = execSync(
+    `npx supabase db query --db-url "${dbUrl}" -o json ` +
+      `"select version from supabase_migrations.schema_migrations order by version"`,
+    { encoding: "utf-8", maxBuffer: 10 * 1024 * 1024, stdio: ["ignore", "pipe", "pipe"] }
+  );
+  return new Set((JSON.parse(out).rows || []).map((r) => r.version));
+}
+
+/**
+ * Read the versions already recorded on the remote.
+ *
+ * Returns { ok: true, versions } or { ok: false, error }. The distinction matters:
+ * a FAILED read is not the same as an EMPTY history, and treating them alike is what
+ * produced a production prompt offering to apply the baseline over a live database.
+ * The caller decides what an unreadable history means; this function does not guess.
+ *
+ * Retries once, because a single pooler blip should not need a human.
+ */
 function appliedVersions() {
-  // Returns the versions already recorded remotely. A brand-new project has no
-  // history table at all, which is not an error — it means nothing is applied yet.
   try {
-    const out = execSync(
-      `npx supabase db query --db-url "${dbUrl}" -o json ` +
-        `"select version from supabase_migrations.schema_migrations order by version"`,
-      { encoding: "utf-8", maxBuffer: 10 * 1024 * 1024, stdio: ["ignore", "pipe", "pipe"] }
-    );
-    return new Set((JSON.parse(out).rows || []).map((r) => r.version));
-  } catch {
-    return null; // history table absent, or the check itself failed
+    return { ok: true, versions: readAppliedVersions() };
+  } catch (first) {
+    console.log("  Could not read the remote migration history. Retrying once in 3s…");
+    sleep(3000);
+    try {
+      const versions = readAppliedVersions();
+      console.log("  Retry succeeded.\n");
+      return { ok: true, versions };
+    } catch (second) {
+      return { ok: false, error: second };
+    }
   }
 }
 
 const local = localMigrations();
 const applied = appliedVersions();
-const pending =
-  applied === null
-    ? local
-    : local.filter((f) => !applied.has(f.match(/^\d+/)?.[0] ?? f));
+const pending = applied.ok
+  ? local.filter((f) => !applied.versions.has(f.match(/^\d+/)?.[0] ?? f))
+  : local; // only ever shown on a path that has decided an unread history is acceptable
 
 // ---------------------------------------------------------------------------
 // 4. Production requires the operator to type the word, every time.
@@ -145,10 +193,32 @@ if (isProduction) {
   console.log(`  Pooler host        : ${target.poolerHost}`);
   console.log("=".repeat(64));
 
-  if (applied === null) {
-    console.log("\n  Could not read the remote migration history. Either this project has\n" +
-                "  never had a migration applied, or the check failed. Every local migration\n" +
-                "  is listed below; the Supabase CLI will decide what to apply.");
+  // An unreadable history is a STOP on this path, not a warning.
+  //
+  // The old behaviour listed every local migration as pending and asked the operator to
+  // confirm. On 10 Sep that produced a production prompt offering to apply the baseline
+  // and the spine over a live database — a list the script itself did not trust, shown
+  // to a human as though it did. The operator aborted, correctly. Nobody should be asked
+  // to confirm a list built from a failed check.
+  if (!applied.ok) {
+    if (!isNewProject) {
+      console.error("\n  STOPPING: could not read the remote migration history, and a retry\n" +
+                    "  also failed.\n");
+      console.error("  Without it there is no way to tell which migrations are already applied,\n" +
+                    "  so there is no honest list to show you. This is usually transient — a\n" +
+                    "  pooler blip or a rate limit. Wait a moment and run the command again.\n");
+      console.error("  If this project is genuinely NEW and has never had a migration applied,\n" +
+                    "  there is no history table to read yet. In that case, and only that case:\n" +
+                    "    npm run db:migrate:prod -- --new-project\n");
+      console.error(`  Underlying error: ${redact(applied.error?.message?.split("\n")[0] ?? applied.error)}\n`);
+      console.error("  Nothing was applied.\n");
+      process.exit(1);
+    }
+
+    console.log("\n  --new-project given, and the remote migration history could not be read.\n" +
+                "  Proceeding on the assumption that this project has never had a migration\n" +
+                "  applied. EVERY local migration below will be attempted, including the\n" +
+                "  baseline. If this project already has data, abort now.");
   }
 
   console.log(`\n  Migrations about to be applied (${pending.length}):\n`);
@@ -179,8 +249,23 @@ if (isProduction) {
   console.log("\n  Confirmed. Applying to production…\n");
 } else {
   console.log(`\nTarget project: ${target.ref}   (${target.label})`);
+  if (!applied.ok) {
+    // Staging keeps warn-and-proceed on purpose. It is a testing database; a false
+    // start costs a re-run, and the CLI consults the remote history itself before
+    // applying anything. Production gets the stricter treatment above.
+    console.log("Could not read the remote migration history, even after a retry.");
+    console.log("Listing every local migration; the Supabase CLI will decide what to apply.");
+  }
   console.log(`Migrations pending: ${pending.length}${pending.length ? " — " + pending.join(", ") : ""}`);
   console.log("\nApplying migrations…\n");
 }
 
-execSync(`npx supabase db push --db-url "${dbUrl}"`, { stdio: "inherit" });
+// Wrapped, because an uncaught execSync failure prints the whole failed command —
+// connection string and password included — as part of Node's stack trace.
+try {
+  execSync(`npx supabase db push --db-url "${dbUrl}"`, { stdio: "inherit" });
+} catch (err) {
+  console.error(`\nMigration failed: ${redact(err?.message?.split("\n")[0] ?? err)}`);
+  console.error("Nothing further was applied. Fix the cause and run the command again.\n");
+  process.exit(1);
+}
