@@ -176,7 +176,7 @@ export type Database = {
       checklist_items: {
         Row: {
           agency_name: string | null
-          category: string
+          category: Database["public"]["Enums"]["checklist_item_category"]
           checklist_id: string | null
           clarifying_questions: Json | null
           company_id: string
@@ -202,7 +202,7 @@ export type Database = {
         }
         Insert: {
           agency_name?: string | null
-          category: string
+          category: Database["public"]["Enums"]["checklist_item_category"]
           checklist_id?: string | null
           clarifying_questions?: Json | null
           company_id: string
@@ -228,7 +228,7 @@ export type Database = {
         }
         Update: {
           agency_name?: string | null
-          category?: string
+          category?: Database["public"]["Enums"]["checklist_item_category"]
           checklist_id?: string | null
           clarifying_questions?: Json | null
           company_id?: string
@@ -326,7 +326,7 @@ export type Database = {
           city: string | null
           county: string | null
           created_at: string | null
-          employee_count: string | null
+          employee_count: number | null
           extra_profile: Json | null
           id: string
           industry: string | null
@@ -341,7 +341,7 @@ export type Database = {
           city?: string | null
           county?: string | null
           created_at?: string | null
-          employee_count?: string | null
+          employee_count?: number | null
           extra_profile?: Json | null
           id?: string
           industry?: string | null
@@ -356,7 +356,7 @@ export type Database = {
           city?: string | null
           county?: string | null
           created_at?: string | null
-          employee_count?: string | null
+          employee_count?: number | null
           extra_profile?: Json | null
           id?: string
           industry?: string | null
@@ -375,7 +375,7 @@ export type Database = {
           id: string
           name: string
           parent_id: string | null
-          section: string
+          section: Database["public"]["Enums"]["folder_section"]
           sort_order: number | null
         }
         Insert: {
@@ -384,7 +384,7 @@ export type Database = {
           id?: string
           name: string
           parent_id?: string | null
-          section?: string
+          section?: Database["public"]["Enums"]["folder_section"]
           sort_order?: number | null
         }
         Update: {
@@ -393,7 +393,7 @@ export type Database = {
           id?: string
           name?: string
           parent_id?: string | null
-          section?: string
+          section?: Database["public"]["Enums"]["folder_section"]
           sort_order?: number | null
         }
         Relationships: [
@@ -898,12 +898,12 @@ export type Database = {
       }
       requirement_templates: {
         Row: {
-          applies: string
+          applies: Database["public"]["Enums"]["applies_mode"]
           cadence: string | null
           category: string | null
           citation: string | null
           created_at: string | null
-          entity_type: string
+          entity_type: Database["public"]["Enums"]["entity_scope"]
           evidence_description: string | null
           fails_if: string | null
           id: string
@@ -912,21 +912,21 @@ export type Database = {
           jurisdiction_county: string | null
           jurisdiction_state: string | null
           layer: string
-          priority: string | null
+          priority: Database["public"]["Enums"]["requirement_priority"] | null
           requirement_name: string
           source: string | null
-          status: string | null
+          status: Database["public"]["Enums"]["verification_status"] | null
           trigger_condition: string | null
           trigger_plain: string | null
           updated_at: string | null
         }
         Insert: {
-          applies?: string
+          applies?: Database["public"]["Enums"]["applies_mode"]
           cadence?: string | null
           category?: string | null
           citation?: string | null
           created_at?: string | null
-          entity_type?: string
+          entity_type?: Database["public"]["Enums"]["entity_scope"]
           evidence_description?: string | null
           fails_if?: string | null
           id?: string
@@ -935,21 +935,21 @@ export type Database = {
           jurisdiction_county?: string | null
           jurisdiction_state?: string | null
           layer?: string
-          priority?: string | null
+          priority?: Database["public"]["Enums"]["requirement_priority"] | null
           requirement_name: string
           source?: string | null
-          status?: string | null
+          status?: Database["public"]["Enums"]["verification_status"] | null
           trigger_condition?: string | null
           trigger_plain?: string | null
           updated_at?: string | null
         }
         Update: {
-          applies?: string
+          applies?: Database["public"]["Enums"]["applies_mode"]
           cadence?: string | null
           category?: string | null
           citation?: string | null
           created_at?: string | null
-          entity_type?: string
+          entity_type?: Database["public"]["Enums"]["entity_scope"]
           evidence_description?: string | null
           fails_if?: string | null
           id?: string
@@ -958,10 +958,10 @@ export type Database = {
           jurisdiction_county?: string | null
           jurisdiction_state?: string | null
           layer?: string
-          priority?: string | null
+          priority?: Database["public"]["Enums"]["requirement_priority"] | null
           requirement_name?: string
           source?: string | null
-          status?: string | null
+          status?: Database["public"]["Enums"]["verification_status"] | null
           trigger_condition?: string | null
           trigger_plain?: string | null
           updated_at?: string | null
@@ -1003,7 +1003,36 @@ export type Database = {
       auth_company_id: { Args: never; Returns: string }
     }
     Enums: {
-      [_ in never]: never
+      applies_mode: "conditional" | "universal"
+      checklist_item_category: "must_do" | "good_to_have"
+      entity_scope:
+        | "organization"
+        | "site"
+        | "chemical"
+        | "equipment"
+        | "person"
+        | "product"
+      folder_section: "files" | "hr" | "log"
+      jurisdiction_layer: "federal" | "state" | "county" | "city" | "local"
+      obligation_status:
+        | "applies"
+        | "does_not_apply"
+        | "undetermined"
+        | "unknown"
+      obligation_type:
+        | "permit"
+        | "written_program"
+        | "training"
+        | "recordkeeping"
+        | "monitoring"
+        | "reporting"
+        | "physical_control"
+        | "certification"
+        | "credential"
+        | "fees_taxes"
+      requirement_priority: "critical" | "high" | "standard"
+      requirement_source_type: "statutory" | "contractual"
+      verification_status: "generated" | "disputed" | "verified"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1130,6 +1159,40 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      applies_mode: ["conditional", "universal"],
+      checklist_item_category: ["must_do", "good_to_have"],
+      entity_scope: [
+        "organization",
+        "site",
+        "chemical",
+        "equipment",
+        "person",
+        "product",
+      ],
+      folder_section: ["files", "hr", "log"],
+      jurisdiction_layer: ["federal", "state", "county", "city", "local"],
+      obligation_status: [
+        "applies",
+        "does_not_apply",
+        "undetermined",
+        "unknown",
+      ],
+      obligation_type: [
+        "permit",
+        "written_program",
+        "training",
+        "recordkeeping",
+        "monitoring",
+        "reporting",
+        "physical_control",
+        "certification",
+        "credential",
+        "fees_taxes",
+      ],
+      requirement_priority: ["critical", "high", "standard"],
+      requirement_source_type: ["statutory", "contractual"],
+      verification_status: ["generated", "disputed", "verified"],
+    },
   },
 } as const

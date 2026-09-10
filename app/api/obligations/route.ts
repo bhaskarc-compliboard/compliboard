@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireCompany } from '@/lib/auth'
+import type { Database } from '@/lib/database.types'
 
 // ---------------------------------------------------------------------------
 // SORT ORDER
@@ -14,27 +15,28 @@ import { requireCompany } from '@/lib/auth'
 // does not compile if a value is added, removed or renamed, which turns the next
 // vocabulary change from a silent re-sort into a build failure.
 //
-// *** FOLLOW-UP, TWO LINES, AS SOON AS 006 IS APPLIED ***
-// The two local unions below mirror enums that migration 006 creates. They cannot be
-// imported from `Database['public']['Enums']` yet because lib/database.types.ts is
-// generated from the live database and 006 has not been applied. The moment it is, and
-// `npm run db:types` has run, replace them with:
-//
-//     type ObligationStatus     = Database['public']['Enums']['obligation_status']
-//     type RequirementPriority  = Database['public']['Enums']['requirement_priority']
-//
-// and delete the literal unions. Then a rename in SQL is a compile error here, which is
-// the whole point of DECISIONS.md §21.3.
+// These two types come FROM THE DATABASE, via lib/database.types.ts, which is generated
+// by `npm run db:types` against the live schema. They are not written out here on
+// purpose: a value renamed in SQL now fails this file at compile time instead of
+// quietly re-sorting a customer's requirements list. That is the whole point of
+// DECISIONS.md §21.3, and `Record<ObligationStatus, number>` below is what enforces it —
+// it will not compile if a state is added, removed or renamed.
 // ---------------------------------------------------------------------------
 
-type ObligationStatus = 'satisfied' | 'does_not_apply' | 'undetermined' | 'unknown'
-type RequirementPriority = 'critical' | 'high' | 'standard'
+type ObligationStatus = Database['public']['Enums']['obligation_status']
+type RequirementPriority = Database['public']['Enums']['requirement_priority']
 
-// Worst first: an open question outranks a settled answer.
+// Actionable first, then answerable, then stuck, then closed.
+//
+// NOTE: these four say whether a requirement APPLIES, not whether it has been met —
+// that is a join against obligation_evidence (DECISIONS.md §21.3). So within `applies`
+// this route cannot yet put an unmet obligation above a met one; it has no evidence
+// join. Adding one is TODO 7.3, and it is the reason the state is not called
+// `satisfied`.
 const STATUS_RANK: Record<ObligationStatus, number> = {
-  undetermined: 1,
+  applies: 1,
   unknown: 2,
-  satisfied: 3,
+  undetermined: 3,
   does_not_apply: 4,
 }
 
@@ -45,14 +47,18 @@ const PRIORITY_RANK: Record<RequirementPriority, number> = {
 }
 
 // TRANSITIONAL — delete when migration 007 converts obligations.status to the enum.
-// The column is still `text` and still holds the pre-006 vocabulary, so both values
-// have to keep ranking correctly in the meantime. `unconfirmed` maps to `undetermined`
-// (§21.3) and therefore ranks 1 — which is a fix, not a change: it has been ranking 9
-// and sorting last since the column was written. `missing` keeps the rank it has today;
-// what it maps to in the new vocabulary is flagged in §21.3 and not yet decided.
+// The column is still `text` and still holds the pre-006 vocabulary, so both values have
+// to keep ranking correctly in the meantime. Expressed as the MAPPING from DECISIONS.md
+// §21.3 rather than as numbers, so the two cannot drift apart:
+//
+//   missing     -> applies       (it applies; whether it is met is an evidence join)
+//   unconfirmed -> undetermined  (we asked and could not resolve it)
+//
+// `unconfirmed` is 127 of 376 rows and has been ranking 9 — sorting last — since the
+// column was written, because it appeared in no map. This is the fix.
 const LEGACY_STATUS_RANK: Record<string, number> = {
-  missing: 1,
-  unconfirmed: 1,
+  missing: STATUS_RANK.applies,
+  unconfirmed: STATUS_RANK.undetermined,
 }
 
 // The `?? 9` is a last resort for a value from neither vocabulary. Today nothing reaches

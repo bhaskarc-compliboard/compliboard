@@ -8,7 +8,9 @@ jurisdiction-only with `contractual` moved to its own `source_type` axis,
 else. Two data questions are flagged inside §21.2 and one inside §21.3 — deliberately not
 guessed — all three were answered the same day and §21.2 and §21.3 now carry the answers:
 `jurisdiction_layer` gains `local` and becomes nullable, and `missing` is not a status at all
-but a query over `obligation_evidence`. Version 6 added §19 and §20. **§19 corrects §17.5** — `memberships`
+but a query over `obligation_evidence`. §21.3's `satisfied` state was renamed `applies` the
+same day, before any code used it — the four states answer *does this apply*, not *have I
+done it*. Version 6 added §19 and §20. **§19 corrects §17.5** — `memberships`
 is not a prerequisite for user management; several people at one company already works on
 `profiles.company_id`, and what is missing is an invite flow. `memberships` answers a
 different question, one person across several companies, and moves to multi-site. §17.4's
@@ -955,8 +957,16 @@ edited. The conversion goes with the data pass.
 
 ### 21.3 `obligations.status` follows the spec: four states
 
-**Decision: `satisfied | does_not_apply | undetermined | unknown`. The spec wins over the
+**Decision: `applies | does_not_apply | undetermined | unknown`. The spec wins over the
 code, because `CLAUDE.md` §3.2 is a safety property and the code is not.**
+
+**Renamed from `satisfied` to `applies` the same day, before anything used it.** The four
+states answer **one** question — *does this apply to me?* Naming a state `satisfied`
+answers a different question — *have I done it?* — and mixing the two in one column is
+exactly what produces a false green. Whether an obligation is satisfied is a **join against
+`obligation_evidence`, never a column**, and the original name invited every future reader
+to skip that join. It also fixes the pairing: `applies` / `does_not_apply` is a clean
+opposition, where `satisfied` / `does_not_apply` was two axes wearing one name.
 
 **Reasoning.** Three vocabularies exist today and no two agree:
 
@@ -989,7 +999,7 @@ anyone noticing.
 that **applies and has no evidence** — which is `satisfied = false`, and that is a **query
 over `obligation_evidence`, not a stored state.** Storing it duplicates a fact the evidence
 table already holds, and a duplicate of a derived fact is a stale copy waiting to happen,
-the same reason `at_risk` and `expiring_soon` are absent. The 249 rows map to `satisfied`
+the same reason `at_risk` and `expiring_soon` are absent. The 249 rows map to `applies`
 with no evidence rows behind them; 007 rebuilds them regardless.
 
 **The boundary between `undetermined` and `unknown`, because they sound alike and are not:**
@@ -1006,13 +1016,19 @@ them would either flood the user with questions that have no answer, or bury the
 do. **Neither ever resolves to `does_not_apply`** — `CLAUDE.md` §3.2, absence of evidence
 never produces a clear.
 
-**Guard for 007, recorded because the naming invites the mistake.** Under this mapping a row
-reads `satisfied` while having no evidence at all, so **anything that reads
-`obligations.status` without joining `obligation_evidence` will report a false green** — on
-249 rows today. That is the omniscient status tracker (`CLAUDE.md` §6), and the column name
-is what makes it easy to reach for. Satisfaction is a join, never a column read. Whether the
-state is better named `applies` is a question for 007, when the column is actually converted
-and the resolution engine is written against it.
+**Why the rename was worth doing immediately rather than at 007.** The first draft of this
+decision kept `satisfied`, and the flag against it was that 249 rows would then read
+`satisfied` with no evidence behind them — so anything reading `obligations.status` without
+joining `obligation_evidence` reports a false green. That is the omniscient status tracker
+(`CLAUDE.md` §6) arriving through a column name rather than through a bad answer.
+
+The cost of fixing it was one line in a migration that had not been applied. The cost at 007
+would have been the same line plus every call site written against the old name in between,
+and the cost after a customer sees a screen built on it is a conversation about why a
+requirement said satisfied. **A name that invites a mistake is a defect, and it is cheapest
+in the hour it is written.**
+
+The rule that survives the rename: **satisfaction is a join, never a column read.**
 
 ### 21.4 `category` becomes obligation type: ten values
 

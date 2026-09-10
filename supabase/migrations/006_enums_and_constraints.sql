@@ -58,7 +58,7 @@
 --                                     turns out not to be a status at all: it means
 --                                     "applies, no evidence", which is a QUERY over
 --                                     obligation_evidence rather than a stored value.
---                                     The 249 rows map to `satisfied` with no evidence
+--                                     The 249 rows map to `applies` with no evidence
 --                                     behind them. 007 rebuilds these rows from the
 --                                     resolution engine anyway, so converting the column
 --                                     here would be work 007 redoes.
@@ -174,12 +174,21 @@ begin
   end if;
 
   -- DECISIONS.md §21.3. Four states, from CLAUDE.md §3.2.
-  -- `at_risk` and `expiring_soon` are deliberately absent: they are DERIVED from
-  -- evidence expiry, and a stored copy of a derived value is the stale flag that lets
-  -- an expired certificate keep passing.
+  --
+  -- These four answer ONE question: DOES THIS APPLY TO ME? They do not answer "have I
+  -- done it" — that is a JOIN against obligation_evidence and never a column value.
+  -- The state was called `satisfied` for half a day and renamed before anything used
+  -- it, because the name answered the second question while the column answers the
+  -- first, and a row reading `satisfied` with no evidence behind it is a false green of
+  -- exactly the kind CLAUDE.md §6 names. `applies` / `does_not_apply` is also a clean
+  -- opposition; `satisfied` / `does_not_apply` was two different axes.
+  --
+  -- `at_risk` and `expiring_soon` are deliberately absent for the same reason: they are
+  -- DERIVED from evidence expiry, and a stored copy of a derived value is the stale flag
+  -- that lets an expired certificate keep passing.
   if not exists (select 1 from pg_type where typname = 'obligation_status') then
     create type public.obligation_status as enum
-      ('satisfied', 'does_not_apply', 'undetermined', 'unknown');
+      ('applies', 'does_not_apply', 'undetermined', 'unknown');
   end if;
 
   -- DECISIONS.md §21.4. The SHAPE of the duty — what kind of thing you must do.
