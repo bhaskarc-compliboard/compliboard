@@ -1,15 +1,20 @@
 // AI review of one uploaded document: dates, coverage, gaps, action items.
 //
-// Every handler derives the company from the verified session via requireCompany().
-// This route writes with the service-role key, which bypasses RLS, so these checks are
-// its only tenant boundary. It previously took company_id and user_id from the form and
+// CONVERTED OFF THE SERVICE-ROLE KEY (§0.9). Every query runs through `authed.db`, which
+// acts as the caller under RLS, and that client is passed down into reviewDocument() so
+// the review row is written under RLS too — the insert lives in that shared module, not
+// here, and converting the route without passing the client would have left the one write
+// that matters still bypassing the policies.
+//
+// document_reviews had RLS enabled and NO policies until migration 004, so this route had
+// no choice before then. It previously took company_id and user_id from the form and
 // company_id from a query parameter, and never checked a session — so any caller could
 // read another company's reviews, file a review into their company, or delete any review
 // by id. Reference: app/api/documents/route.ts.
 
 import { reviewDocument } from '@/lib/documentReview'
 import { NextRequest, NextResponse } from 'next/server'
-import { requireCompany, supabaseAdmin } from '@/lib/auth'
+import { requireCompany } from '@/lib/auth'
 
 // A document review with search enabled can occasionally run long.
 export const maxDuration = 800
@@ -18,7 +23,7 @@ export async function POST(request: NextRequest) {
   try {
     const authed = await requireCompany(request)
     if (!authed.ok) return authed.response
-    const { companyId, userId } = authed.auth
+    const { companyId, userId, db } = authed.auth
 
     const formData = await request.formData()
     const file = formData.get('file') as File | null
@@ -35,7 +40,7 @@ export async function POST(request: NextRequest) {
     // If the review is being attached to an existing document, that document must be
     // this company's — otherwise a review row could be hung off someone else's file.
     if (documentId) {
-      const { data: doc } = await supabaseAdmin
+      const { data: doc } = await db
         .from('documents')
         .select('id, company_id')
         .eq('id', documentId)
@@ -47,7 +52,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (folderId) {
-      const { data: folder } = await supabaseAdmin
+      const { data: folder } = await db
         .from('company_folders')
         .select('id, company_id')
         .eq('id', folderId)
@@ -60,7 +65,7 @@ export async function POST(request: NextRequest) {
     // Industry feeds the review prompt, so it is read from the company record rather
     // than accepted from the caller. Free text arriving from a request and landing
     // inside a prompt is a way to influence the model's instructions, not just a label.
-    const { data: company } = await supabaseAdmin
+    const { data: company } = await db
       .from('companies')
       .select('industry')
       .eq('id', companyId)
@@ -72,6 +77,7 @@ export async function POST(request: NextRequest) {
       buffer, fileType: file.type, fileName: file.name,
       documentId, documentName, folderId, folderName, divisionName,
       companyId, userId, industry,
+      db, // write the review under RLS, not with the service-role fallback
     })
 
     return NextResponse.json(result)
@@ -85,9 +91,9 @@ export async function GET(request: NextRequest) {
   try {
     const authed = await requireCompany(request)
     if (!authed.ok) return authed.response
-    const { companyId } = authed.auth
+    const { companyId, db } = authed.auth
 
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await db
       .from('document_reviews')
       .select('*')
       .eq('company_id', companyId)
@@ -104,13 +110,13 @@ export async function DELETE(request: NextRequest) {
   try {
     const authed = await requireCompany(request)
     if (!authed.ok) return authed.response
-    const { companyId } = authed.auth
+    const { companyId, db } = authed.auth
 
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
     if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
 
-    const { data: review } = await supabaseAdmin
+    const { data: review } = await db
       .from('document_reviews')
       .select('id, company_id')
       .eq('id', id)
@@ -120,7 +126,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Review not found' }, { status: 404 })
     }
 
-    const { error } = await supabaseAdmin
+    const { error } = await db
       .from('document_reviews')
       .delete()
       .eq('id', id)
