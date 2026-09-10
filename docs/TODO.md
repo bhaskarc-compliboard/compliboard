@@ -79,8 +79,14 @@ Confirmed before deleting: no `vercel.json`, no cron schedule anywhere in the re
 
 **Acceptance met:** no route derives tenant identity from a client parameter. Every service-role use is either a route with a verified session or a place where no session exists.
 
-### 0.5 Tenancy consistency ✅ DONE (10 Sep) — migration 003
-Every data table now scopes by `company_id`, in the column and in the policy.
+### 0.5 Tenancy consistency ✅ DONE (10 Sep) — migration 003, **applied to production**
+Every data table now scopes by `company_id`, in the column and in the policy. Applied to
+staging, tested with three logins across two companies, then applied to production and
+verified there: 235 checklist items backfilled with zero nulls, twelve company-scoped
+policies and none user-scoped, `folder_audits` gone (18 tables now, was 19), row counts
+unchanged at 11 / 235 / 47, and history recording 000–003. Types regenerated from
+production are byte-identical to the staging-generated file, which is the check that the
+two databases have not drifted.
 
 - ✅ `calendar_events` — route fixed 9 Sep; **RLS policies replaced 10 Sep**. All four verbs, company-scoped, explicit `WITH CHECK`. No runtime change: nothing reads this table from the browser, so this aligns the database with what the route already enforced and is what lets the route stop using the service-role key.
 - ✅ `checklists` — company-scoped. Gained an **UPDATE policy**, which it never had; that absence is why linking a research answer to a checklist had to go through a service-role route.
@@ -116,6 +122,17 @@ Five tables have RLS on and **zero policies** — `audits`, `company_templates`,
 - ⬜ Remove HIPAA as a surfaced audit example
 - ⬜ Fix `app/upload/page.tsx:89` — `getPublicUrl` on a private bucket, already broken
 - ⬜ Add to docs: baseline exports go in git **only** while data is synthetic
+- ⬜ **`supabase db query -o json` returns two different JSON shapes.** Which one depends
+  on the CLI's agent detection (`--agent auto|yes|no`): a bare array `[{...}]` when it
+  thinks a person is calling, a wrapped object `{"boundary":…,"rows":[…],"warning":…}`
+  when it thinks a program is. Anything parsing that output must handle both, and must
+  treat an unrecognised payload as a failure rather than as an empty result. This cost
+  two aborted production migrations on 10 Sep: the parser read only the wrapped form, so
+  in a human terminal it read a full history as empty and reported every migration as
+  pending — silently, because nothing threw. Fixed in `scripts/db-migrate.js`; that is
+  currently the only place in the repo that parses CLI JSON, and any new one has the same
+  trap waiting.
+
 - ⬜ **Deleting a route breaks `npm run check` until `.next/types` is cleared.** Next.js
   generates a route validator under `.next/types/` referencing every route file. Delete a
   route and the stale validator remains, so `tsc --noEmit` — which runs *before* `next
