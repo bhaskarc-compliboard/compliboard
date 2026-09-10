@@ -12,11 +12,34 @@ interface Handbook {
   uploaded_at: string
 }
 
+interface HRCitation {
+  document: string
+  section: string | null
+  quote: string | null
+}
+
+interface HRLoadFailure {
+  id: string
+  name: string
+  reason: 'unsupported_format' | 'download_failed'
+  message: string
+}
+
 interface HRResponse {
+  // 'answered'    — a named handbook covers the question
+  // 'not_covered' — none of them do, and we say so rather than inventing policy
+  coverage?: 'answered' | 'not_covered'
   answer: string
+  citations?: HRCitation[]
+  conflict?: { present: boolean; detail: string | null }
   gaps: string[]
   draft_policy: string | null
   disclaimer: string
+  // Set by the route, not the model: which handbooks were actually read, and which
+  // could not be. A silently missing handbook makes an answer look more complete
+  // than it is, so the failures are shown.
+  documents_read?: { id: string; name: string }[]
+  documents_failed?: HRLoadFailure[]
 }
 
 export default function HRPage() {
@@ -129,11 +152,12 @@ export default function HRPage() {
     try {
       const res = await fetch('/api/hr', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: await authHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({
           question,
-          handbooks: handbooks.map(h => ({ file_url: h.file_url, name: h.name })),
-          company_name: companyName,
+          // Ids only. The server loads each row, checks it belongs to this company,
+          // and reads the storage path from the row — the path is never sent from here.
+          document_ids: handbooks.map(h => h.id),
           mode: 'ask',
         }),
       })
@@ -162,10 +186,9 @@ export default function HRPage() {
     try {
       const res = await fetch('/api/hr', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: await authHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({
-          file_url: targetHandbook.file_url,
-          company_name: companyName,
+          document_id: targetHandbook.id,
           mode: 'audit',
         }),
       })
@@ -290,10 +313,59 @@ export default function HRPage() {
 
             {response && !asking && (
               <div className="mt-6 space-y-4">
-                <div className="bg-white rounded-xl border border-gray-200 border-l-4 border-l-gray-400 p-5 shadow-sm">
-                  <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">Answer from your handbook</p>
-                  <p className="text-sm text-gray-700 leading-relaxed">{response.answer}</p>
-                </div>
+                {response.documents_failed && response.documents_failed.length > 0 && (
+                  <div className="bg-white rounded-xl border border-gray-200 border-l-4 border-l-red-500 p-5 shadow-sm">
+                    <p className="text-xs font-semibold text-red-600 uppercase tracking-wide mb-2">
+                      {response.documents_failed.length === 1 ? 'A handbook could not be read' : 'Some handbooks could not be read'}
+                    </p>
+                    <ul className="space-y-1">
+                      {response.documents_failed.map(f => (
+                        <li key={f.id} className="text-sm text-gray-700 flex items-start gap-2">
+                          <span className="mt-1 flex-shrink-0">•</span>{f.message}
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="text-xs text-gray-500 mt-2">The answer below does not take {response.documents_failed.length === 1 ? 'it' : 'them'} into account.</p>
+                  </div>
+                )}
+
+                {response.coverage === 'not_covered' ? (
+                  <div className="bg-white rounded-xl border border-gray-200 border-l-4 border-l-gray-300 p-5 shadow-sm">
+                    <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">Not covered by your handbooks</p>
+                    <p className="text-sm text-gray-700 leading-relaxed">{response.answer}</p>
+                    {response.documents_read && response.documents_read.length > 0 && (
+                      <p className="text-xs text-gray-500 mt-3">
+                        Checked: {response.documents_read.map(d => d.name).join(', ')}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="bg-white rounded-xl border border-gray-200 border-l-4 border-l-gray-400 p-5 shadow-sm">
+                    <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">Answer from your handbook</p>
+                    <p className="text-sm text-gray-700 leading-relaxed">{response.answer}</p>
+                    {response.citations && response.citations.length > 0 && (
+                      <div className="mt-4 pt-3 border-t border-gray-100">
+                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Source</p>
+                        <ul className="space-y-2">
+                          {response.citations.map((c, i) => (
+                            <li key={i} className="text-sm text-gray-700">
+                              <span className="font-medium">{c.document}</span>
+                              {c.section && <span className="text-gray-500"> — {c.section}</span>}
+                              {c.quote && <p className="text-xs text-gray-500 italic mt-0.5">“{c.quote}”</p>}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {response.conflict?.present && response.conflict.detail && (
+                  <div className="bg-white rounded-xl border border-gray-200 border-l-4 border-l-orange-500 p-5 shadow-sm">
+                    <p className="text-xs font-semibold text-orange-600 uppercase tracking-wide mb-2">⚠️ Your handbooks disagree</p>
+                    <p className="text-sm text-gray-700 leading-relaxed">{response.conflict.detail}</p>
+                  </div>
+                )}
 
                 {response.gaps && response.gaps.length > 0 && (
                   <div className="bg-white rounded-xl border border-gray-200 border-l-4 border-l-amber-500 p-5 shadow-sm">
