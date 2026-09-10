@@ -409,12 +409,44 @@ person each, so nobody has a colleague to see.
 
 ---
 
-## PHASE 1 — Schema rebuild ⏱ ~1.5 weeks
+## PHASE 1 — Schema rebuild 🔄 ⏱ ~1.5 weeks
 
 Production data is test data. Rebuild the schema correctly rather than patching it. Everything drops and reloads.
 
 **This is gate item 2.** Every column below is cheap to add to empty tables and expensive to
 add to a customer's. 1.6 is the clearest case in the phase and the most recent addition.
+
+### Where Phase 1 stands — 11 September 2026
+
+**✅ Done, in production:** 1.1, and the library reloaded onto it.
+
+- **Migration 006** — twelve enum types; six columns converted; `employee_count` from text
+  bands to `integer` (all 10 companies became NULL, intended — §21.1); the `updated_at`
+  trigger on five tables. Applied to production 11 Sep.
+- **Migration 007** — the Requirements spine rebuilt: `agencies`, `requirement_templates`,
+  `entities`, `obligations`, `obligation_evidence` dropped and recreated with the full
+  column set. Applied to production 11 Sep.
+- **The library loaded** — 194 rows, 192 active, 2 retired parents, 6 children with
+  resolved lineage, 188 original ids preserved. The re-categorisation and splitting pass
+  (§21.4) is complete and in production.
+- Production and staging verified **identical across 480 schema objects**.
+
+**⬜ What remains in Phase 1:**
+
+| | | |
+|---|---|---|
+| **1.2** | The six new tables | `switches`, `company_switches`, `industry_coverage`, `library_candidates`, `jobs`, `topics`. None exist yet, and 1.6's switch-scope work lands with them |
+| **1.3** | Rebuild staging from zero | **Still has no command behind it** — see the note below |
+| **1.4** | Jurisdiction in the match key | The columns now exist to do it properly; the matching rule itself is still unwritten |
+| **1.5** | `STATUS.md` | First line already earned, see below |
+| **1.6** | Multi-facility wiring | `entities.is_primary` and `obligation_evidence.entity_id` landed with 007. Still to do: `entity_id` on `documents`, `document_reviews` and `calendar_events`; `scope` on `switches` (needs 1.2); seeding a site at signup; backfilling the 10 existing companies |
+
+**⚠️ 1.3 is the one with nothing behind it.** `scripts/db-migrate.js` is forward-only — it
+runs `supabase db push` and reads the remote history. There is no reset, so *"rebuild
+staging from zero, which proves the migrations are complete"* is a sentence with no command
+under it. The chain 000→007 has never been run end to end against an empty database; it has
+only ever been run incrementally. **That is the difference between believing the migrations
+are complete and knowing it**, and it is worth closing before the chain gets longer.
 
 ### 1.1 🔒 Design the corrected schema ⚡ ⏱ 2 days
 - ⬜ Postgres `ENUM` for every enum-like column, replacing bare `text`
