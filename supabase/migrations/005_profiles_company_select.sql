@@ -1,0 +1,82 @@
+-- ============================================================
+-- COMPLIBOARD — MIGRATION 005: COLLEAGUES CAN SEE EACH OTHER
+-- ============================================================
+--
+-- WHY THIS EXISTS
+--
+-- `profiles` is the last table still scoped to the individual. Its SELECT policy is
+-- `auth.uid() = id`, so a person can see only their own row — while they already see
+-- every colleague's documents, checklists, calendar events, audits and evidence, because
+-- migrations 003 and 004 made all of those company-scoped. Not being able to see WHO ELSE
+-- is on the account, while seeing everything those people produced, is inconsistent.
+--
+-- It also breaks one thing silently, and that is the reason this is being done now rather
+-- than later. /api/account/export lists everyone on the account by reading
+--
+--     select id, company_id, full_name, created_at from profiles where company_id = ...
+--
+-- Under the current policy that query returns ONE row instead of all of them — no error,
+-- no empty result, just fewer people than the customer has. The export would look
+-- complete while having quietly dropped every colleague, from the endpoint whose entire
+-- purpose is handing over everything we hold. That route cannot be moved off the
+-- service-role key until this policy exists.
+--
+-- WHAT IS AND IS NOT CHANGING
+--
+-- SELECT becomes company-scoped, through auth_company_id() like every other table.
+--
+-- UPDATE deliberately stays `auth.uid() = id`. A person edits their own profile, not a
+-- colleague's. Seeing who is on the account and being able to rename them are different
+-- permissions, and there is no reason to grant the second.
+--
+-- INSERT stays absent (removed in 004): profiles are created by signup under the
+-- service-role key. DELETE stays absent: there is no way to remove a person from a
+-- company yet, which is recorded in TODO.md as a missing feature in its own right, not
+-- something to paper over with a policy here.
+--
+-- WHAT VISIBLY CHANGES IN THE APP: NOTHING.
+--
+-- Checked all ten places the app reads profiles under a user token — calendar, audits,
+-- requirements, compliance (x2), dashboard, hr, upload, AppLayout, documents. Every one
+-- is the same query:
+--
+--     .from('profiles').select('company_id').eq('id', user.id).single()
+--
+-- They already narrow to the caller's own row by id and select one column. Widening the
+-- policy cannot change what a query returns when the query is narrower than the policy.
+-- No screen displays a colleague list today.
+--
+-- What DOES become possible: a user could query profiles directly and enumerate their
+-- colleagues' names. That is a real capability change even though no screen uses it. It
+-- is judged acceptable because those same people already share every document in the
+-- company, and a profiles row holds an id, a company id, a name and a created date —
+-- nothing sensitive, no email, no credentials. Auth data lives in a schema this policy
+-- does not touch.
+--
+-- NOTE ON auth_company_id() AND THIS TABLE
+--
+-- The function reads profiles with definer rights, so it is not affected by the policy
+-- being replaced here and there is no circularity: the function does not consult the
+-- policy, and the policy calls the function. That separation is exactly what migration
+-- 004 introduced it for.
+-- ============================================================
+
+drop policy if exists "Users can view own profile" on public.profiles;
+
+create policy "profiles_select" on public.profiles for select to authenticated
+  using (profiles.company_id = public.auth_company_id());
+
+-- UPDATE is left exactly as it was, restated here only so the final state of this table
+-- is legible in one place. A person edits their own row and no one else's.
+--   "Users can update own profile"  UPDATE  USING (auth.uid() = id)
+
+-- ------------------------------------------------------------
+-- Verification — run by hand after applying, against STAGING first.
+--
+--   select cmd, policyname, qual, with_check from pg_policies
+--   where schemaname='public' and tablename='profiles' order by cmd;
+--   -- expect exactly two: SELECT via auth_company_id(), UPDATE via auth.uid() = id
+--
+-- Then, as two real users at two companies: each sees every profile at their own company
+-- and none at the other; each can rename themselves and not a colleague.
+-- ------------------------------------------------------------
