@@ -168,6 +168,14 @@ Tenancy is `profiles.company_id` — one company per user. A user's company is f
 `select company_id from profiles where id = auth.uid()`. Every RLS policy uses that
 subquery; every data table carries `company_id`, **never `user_id`**.
 
+**Read that direction carefully: one *company* per user, not one *user* per company.**
+Several `profiles` rows may share a `company_id`, and colleagues at one company are a normal,
+working state — that is what migrations 003–005 exist to scope. What is missing is an invite
+route, not a schema change; `/api/signup` creates a new company every time. A `memberships`
+table would be for the opposite shape — one person across several companies — and is not
+needed for user management. `DECISIONS.md` §19 records this, because the plan got it backwards
+once.
+
 - `company_id` is derived from the verified session token, **never from a client parameter.**
   The reference implementation is `app/api/documents/route.ts`, using `requireCompany()`
   from `lib/auth.ts` — copy that pattern. It covers all four methods: reading scoped to

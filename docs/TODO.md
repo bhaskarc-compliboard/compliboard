@@ -1,6 +1,17 @@
 # Detailed To-Do
-**Version:** 4 · **Updated:** 10 September 2026
-**Supersedes:** version 3 (10 Sep). Restructures the phase order: the phases are now
+**Version:** 5 · **Updated:** 10 September 2026
+**Supersedes:** version 4 (10 Sep). Three changes. **(1) Corrects the gate**, which claimed
+the `memberships` migration was a prerequisite for user management. It is not — several
+people at one company already works on `profiles.company_id`, proven on staging 10 Sep, and
+what is missing is an invite flow. `memberships` moves out of the gate to Phase 11+
+multi-site, where it answers its real question: one person across several companies. The
+gate is now two items. **(2) Adds Phase 1.6**, the multi-facility structure — `entities`
+seeded per company, `entity_id` on documents and evidence, a `scope` column on switches, and
+the design rule that site is a property of data and not of people. Phase 1 goes to ~1.5
+weeks. **(3) Rewrites the user-management feature** as something that needs no migration and
+ships on its own timeline, with the cost of shared logins recorded.
+
+**Version 4** restructured the phase order: the phases are now
 horizontal only, and everything vertical moved into a new final `MODULES` section — seven
 modules, each with the findings that were previously scattered through the document as
 debts. The Compliance Workspace left Phase 3 (it was the only vertical slice among the
@@ -17,10 +28,9 @@ in `BUILD-PLAN.md` at task level — the build plan stays as the *why*, this is 
 
 ## ⛔ GATE — THESE LAND BEFORE THE FIRST REAL CUSTOMER DOCUMENT
 
-Three pieces of work are cheap right now and expensive the moment a real customer's
-documents are in the database. Each one is currently an afternoon. After that first upload
-each one costs a maintenance window, a rollback plan, and a conversation with a customer
-about downtime.
+Two pieces of work are cheap right now and expensive the moment a real customer's
+documents are in the database. After that first upload each one costs a maintenance window,
+a rollback plan, and a conversation with a customer about downtime.
 
 **1. Key rotation. Six credentials.**
 Four leaked in a zip on 9 Sep. Both database passwords — production and staging — were
@@ -28,19 +38,30 @@ printed in full to a terminal on 10 Sep while fixing the migration script's erro
 The script redacts them now; the values are still out. Rotating six credentials against
 test data is a chore. Rotating them while customers are working is an outage.
 
-**2. The `memberships` migration.** `profiles.company_id` is one company per person.
-Moving to a user↔company many-to-many is nearly free today: production has four companies
-with one profile each, so there is nothing to reconcile. It is a prerequisite for user
-management (see the feature item below) *and* for multi-site roll-up views. **`auth_company_id()`
-returns a single `uuid` and 54 policies depend on it** — under memberships it must return a
-set or take an active-company parameter, which rewrites all of them plus the four storage
-policies. That is a large migration whichever day it happens; it is only *risky* once there
-is data.
+**2. The Phase 1 schema rebuild.** Enums instead of bare text, versioning columns,
+`industries[]`, the switch hierarchy, **and the multi-facility structure (1.6)**. Read
+Phase 1 and count how many items say "painful to retrofit" — that phrase is only true once
+there is data to retrofit around. Today the production tables hold test rows we wrote
+ourselves and can drop.
 
-**3. The Phase 1 schema rebuild.** Enums instead of bare text, versioning columns,
-`industries[]`, the switch hierarchy. Read Phase 1 and count how many items say "painful to
-retrofit" — that phrase is only true once there is data to retrofit around. Today the
-production tables hold test rows we wrote ourselves and can drop.
+> **Corrected 10 Sep — `memberships` was the third gate item and should not have been.**
+> The claim was that `profiles.company_id` blocks user management. It does not. **Two people
+> at one company already works on the current schema** — two `profiles` rows carrying the
+> same `company_id` — and it was proven on staging on 10 Sep: Test Alpha Chemical had two
+> users and each saw the other's checklists. Nothing structural prevents a colleague.
+>
+> What is missing is the **invite flow**: `/api/signup` creates a new company every time, so
+> there is no path that adds a second person to an existing one. That is why every company
+> has exactly one member. **A feature, not a migration.**
+>
+> `memberships` is needed for one thing only: **one person across several companies** — a
+> consultant serving two clients, or someone spanning facilities held as separate accounts.
+> Rare, and it belongs with multi-site, where it is now recorded (Phase 11+), with the
+> `auth_company_id()` warning intact.
+>
+> The distinction matters because the two are not the same size. The invite flow is a
+> feature that can ship any week. `memberships` rewrites 54 policies. Filing them together
+> made the cheap one look blocked by the expensive one.
 
 ### Why this gate is written at the top
 
@@ -273,9 +294,10 @@ with empty content.
 
 ---
 
-## FEATURE — USER MANAGEMENT IS MISSING ENTIRELY 🔒 ⏱ estimate after reading BizPulses
+## FEATURE — USER MANAGEMENT ⏱ estimate after reading BizPulses
 
 **Not a gap in the security work — a missing feature the security work made visible.**
+**It needs no migration. It works on the schema that is in production today.**
 
 There is no way to add a person to an existing company, and no way to remove one.
 
@@ -283,7 +305,10 @@ There is no way to add a person to an existing company, and no way to remove one
   creates a **new company** every time. A second person cannot be given access to an
   existing company at all. So the company-scoped visibility built in migrations 003 and
   004 currently has no users to be scoped *between* — every company has exactly one
-  person, by construction.
+  person, by construction. **By construction, not by schema:** two `profiles` rows sharing
+  a `company_id` is a legal, working state. It was run on staging on 10 Sep — Test Alpha
+  Chemical had two users and each saw the other's checklists, which is exactly the intent.
+  What is missing is the route that creates the second row.
 - **Nobody can be removed.** `profiles` has no DELETE policy and no route. The only
   deletion path is `/api/account` DELETE, which destroys the entire company.
 
@@ -305,41 +330,32 @@ policy work closes it; only a way to revoke membership does.
 - Remove access
 - **Records created by a removed person must survive.** The compliance record is a company
   asset (`DECISIONS.md` §1, §14) — removing a person must not remove their document
-  reviews, audits or checklists, or a departure silently deletes evidence.
+  reviews, audits or checklists, or a departure silently deletes evidence. Practically:
+  revoke the login and mark the profile inactive; never cascade a delete through their work.
 - Decide whether roles are needed, or whether everyone at a company is equal
 
-**Port from BizPulses rather than designing fresh.** It already has this. It uses a
-`memberships` table — user ↔ org many-to-many — which is exactly the shape
-`profiles.company_id` cannot express: one profile row means **one company per person**,
-so a consultant serving two customers, or an owner with two entities, has no
-representation at all. `PATTERNS.md` §3 documents the RLS pattern it uses, verbatim:
+**Ships on its own timeline — and ships, rather than being stockpiled.** It is not gated on
+any phase, so it can be built whenever a customer needs it. The rule is that it goes to real
+users when it is built. **Code written and held back is code that has never been tested
+against real use**, and an invite flow is exactly the kind of feature where the first real
+attempt finds the problems — an email that does not arrive, a link that expires, an invitee
+who already has an account with another company.
 
-```sql
-CREATE POLICY "org_isolation" ON inventory_rows
-    FOR ALL USING (
-        EXISTS (SELECT 1 FROM memberships
-                WHERE memberships.org_id = inventory_rows.org_id
-                  AND memberships.user_id = auth.uid())
-    );
-```
+**Port from BizPulses rather than designing fresh** — it already has invite, list and remove,
+and the flow is the valuable part. **But its `memberships` table is not the part to copy.**
+That table solves a different problem: **one person across several organisations.** Our
+problem is several people inside one company, and `profiles.company_id` expresses that fine.
+`PATTERNS.md` §3 has its RLS pattern; note that we already improved on it — a `SECURITY
+DEFINER` helper instead of the subquery repeated in every policy, and explicit `WITH CHECK`
+rather than relying on Postgres reusing `USING`. Take the flow, not the schema.
 
-Note the differences from what CompliBoard now has, both deliberate on our side and worth
-keeping: we use a `SECURITY DEFINER` helper rather than repeating the subquery (so the
-coupling lives in one place), and we write explicit `WITH CHECK` rather than relying on
-Postgres reusing `USING`. `PATTERNS.md` itself calls the implicit form "correct but
-implicit" and says being explicit documents the intent better. Port the *shape*, keep our
-improvements.
-
-**Migrating to `memberships` is already a prerequisite for multi-site roll-up views**
-(Phase 11+). Same migration, two reasons — do it once.
-
-⚠️ **`auth_company_id()` is the hard part, and it is bigger than it looks.** It returns a
-single `uuid`. Under `memberships` a person can belong to several companies, so it must
-either return a **set** (and every policy becomes `company_id IN (SELECT ...)`) or take an
-**active-company** parameter (and something must carry that choice through every request).
-**53 policies depend on that function.** Changing its signature rewrites all of them, plus
-the four storage policies. Plan it as its own migration with its own rehearsal, not as a
-step inside the user-management feature.
+**The cost of the interim, recorded so it is a choice and not an accident.** Until this
+ships, early customers with more than one person share a login. That is tolerated
+(`DECISIONS.md` §17.4) and it **weakens the audit trail**: every write records `user_id`, so
+a shared login attributes every document upload, every checklist tick and every audit run to
+one person. *"Who marked this complete, and when"* is part of what a compliance record is
+for — it is the thing a regulator or an insurer asks. A shared login does not corrupt the
+record, but it flattens it, and the flattened rows cannot be un-flattened afterwards.
 
 **Prerequisite already done:** migration 005 gives `profiles` a company-scoped SELECT
 policy — **applied to production 10 Sep** — which is what makes "list who has access"
@@ -348,9 +364,12 @@ person each, so nobody has a colleague to see.
 
 ---
 
-## PHASE 1 — Schema rebuild
+## PHASE 1 — Schema rebuild ⏱ ~1.5 weeks
 
 Production data is test data. Rebuild the schema correctly rather than patching it. Everything drops and reloads.
+
+**This is gate item 2.** Every column below is cheap to add to empty tables and expensive to
+add to a customer's. 1.6 is the clearest case in the phase and the most recent addition.
 
 ### 1.1 🔒 Design the corrected schema ⚡ ⏱ 2 days
 - ⬜ Postgres `ENUM` for every enum-like column, replacing bare `text`
@@ -383,6 +402,61 @@ The obligation-matching logic matches on industry alone. 90 of 188 rows are Oreg
 
 ### 1.5 `STATUS.md` ⬜ ⏱ 1 hour
 One line per module: working / broken / not-yet-rebuilt / verified-on-date. Prevents "broken and nobody noticed" during a rebuild.
+
+### 1.6 🔒 Multi-facility structure ⚡ ⏱ 1 day
+*Designed with 1.1, applied in 1.3. Numbered last because it was added last, not done last.*
+
+**One company with facilities in different places is normal in chemical manufacturing, and
+their requirement lists genuinely differ by site** — different OSHA citations, different
+waste rules, a different air authority. The six-facility cannabis prospect is not six legally
+separate entities; it is one business with six sites. Treating "the company" as the only unit
+of compliance is wrong for both.
+
+**The near-term workaround stands: one account per facility** (`DECISIONS.md` §17.4). It
+works today and it is the right call for release one. It also costs, and the cost is worth
+writing down rather than discovering:
+
+- Company-level documents — the corporate ISO certificate, the written HazCom program — get
+  uploaded once per account, and each copy ages independently.
+- There is no roll-up. Nobody can ask *"where are we exposed across all six?"*
+- Consolidating later means **merging several live customer accounts** and deciding which
+  copy of a shared document is authoritative. That is a data migration on real records with
+  a customer waiting.
+
+**So build the structure now and the interface later.** The structure is a day; retrofitting
+it after customer data exists is two to three weeks, because it reaches resolution, switches,
+evidence, documents and every screen at once.
+
+- ⬜ **`entities` populated with one site per company at signup, always** — including for
+  single-site customers. A default row means nothing is ever special-cased later: no
+  `if (company has one site)` branch, no nullable-everywhere, and adding a second site is an
+  insert rather than a migration. The table already exists with `entity_type` and
+  `parent_entity_id`; it holds zero rows today.
+- ⬜ **`entity_id` on `documents`, `obligations` and `obligation_evidence`.** `obligations`
+  already has it (FK to `entities`, `ON DELETE CASCADE`); the other two do not.
+- ⬜ **A `scope` column on `switches` — `company` or `site` — with a nullable `entity_id` on
+  `company_switches`.** Employee count and ISO certification are company-wide. Generator
+  category, air permit tier and underground storage tanks are per-site, and a company-wide
+  answer to those is simply wrong at five of six facilities.
+- ⬜ **Sites carry the nickname the operator actually uses** — `CompanyA-Hillsboro`, not
+  `Site 2` or a generated label. A plant manager thinks *"the Hillsboro plant"*; if the
+  product makes them translate that into an id, the product is harder to use than the
+  spreadsheet it replaces.
+
+**⚡ The design decision to record, because it is the one that could go wrong: site is a
+property of DATA, not of PEOPLE.** A permit belongs to a site. A user belongs to the
+*company* and sees everything in it. *"Which site am I looking at"* is a **filter** — a
+dropdown, with roll-up as "all sites" — and never a permission.
+
+The tempting alternative is per-user site access, and it is a trap. It makes the simple case
+(one site, one person) complicated, it turns a dropdown into a permissions system with an
+inheritance model and an admin screen, and every query then has to ask *"which sites may this
+person see"* before it can ask anything useful. If a customer later asks that the Hillsboro
+manager not see Seattle's findings, **that is a separate permissions feature**, priced and
+built as one — not something to pre-build for a customer who has not asked.
+
+**Not in this phase:** the site selector, the roll-up dashboard, per-site onboarding. Those
+are interface, they live in `MODULES`, and they get built when a customer asks for them.
 
 ---
 
@@ -598,11 +672,31 @@ Currently a prompt rule only.
 
 **Change monitoring** — Federal Register + eCFR APIs, OAR/WAC, agency bulletins, per-agency review intervals.
 
-**Multi-site** — `profiles.company_id` → memberships. Roll-up dashboard.
+**Multi-site** — the roll-up dashboard and the site selector, on the structure Phase 1.6 puts
+in place. This is interface work; the schema is done by then.
+
+**`memberships` lives here, and only here.** It is not needed for user management — several
+people in one company already works on `profiles.company_id`, and what is missing there is
+an invite flow, not a migration (see the feature item above, and the correction in the gate).
+`memberships` solves exactly one problem: **one person across several companies** — a
+consultant serving two clients, or someone spanning facilities that are held as separate
+accounts. Rare enough to wait, and it only becomes necessary once a customer actually has
+that shape.
+
+⚠️ **`auth_company_id()` is the hard part, and it is bigger than it looks.** It returns a
+single `uuid`. Under `memberships` a person can belong to several companies, so it must
+either return a **set** (and every policy becomes `company_id IN (SELECT ...)`) or take an
+**active-company** parameter (and something must carry that choice through every request).
+**54 of 58 policies depend on that function**, plus the four storage policies. Plan it as its
+own migration with its own rehearsal — never as a step inside another feature.
+
+Note this is a genuinely large migration whichever day it happens. What changed on 10 Sep is
+only that it is no longer *urgent*: it was in the gate as a prerequisite for user management,
+which it is not.
 
 **Platform** — Stripe, Drive OAuth, domain, Framer homepage, PDF export, `claude-sonnet-5` (⚡ golden-file pass before and after).
 
-**Key rotation** — 🔒 **before any real customer data enters the app.** Four keys leaked in a zip on 9 Sep.
+**Key rotation** — moved to the gate at the top, where it belongs. **Six credentials**, not four: the original zip leak on 9 Sep plus both database passwords printed to a terminal on 10 Sep.
 
 ---
 
@@ -963,9 +1057,10 @@ All four landed. Migrations 002–005 are in production, every route derives the
 the verified session, ten routes run under RLS on the caller's token, and the four that keep
 the service-role key each carry a named reason. §0.7 housekeeping is what remains of Phase 0.
 
-**Session B — schema rebuild** (1.1–1.4)
-Design, migrate, rebuild staging from zero, rebuild production, jurisdiction in the match key.
-**Do this before the first real customer document** — it is item 3 of the gate at the top.
+**Session B — schema rebuild** (1.1–1.6) ⏱ ~1.5 weeks
+Design, migrate, rebuild staging from zero, rebuild production, jurisdiction in the match key,
+multi-facility structure. **Do this before the first real customer document** — it is item 2
+of the gate at the top.
 
 **Session C — the runtime fixes** (2.1–2.4)
 Agency list, determination gate, critic pass, split identification from expansion. **This is where answer quality changes.**

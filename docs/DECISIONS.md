@@ -1,6 +1,13 @@
 # Decision Record
-**Version:** 5 · **Updated:** 10 September 2026
-**Supersedes:** version 4 (10 Sep). Adds §18, the decision to order the plan horizontally
+**Version:** 6 · **Updated:** 10 September 2026
+**Supersedes:** version 5 (10 Sep). Adds §19 and §20. **§19 corrects §17.5** — `memberships`
+is not a prerequisite for user management; several people at one company already works on
+`profiles.company_id`, and what is missing is an invite flow. `memberships` answers a
+different question, one person across several companies, and moves to multi-site. §17.4's
+reasoning is corrected in place and §17.5 is marked half-superseded; the half that survives
+is "do not stockpile the feature." **§20 records the multi-facility decision** — the data
+structure goes into the Phase 1 rebuild, the interface does not, and site is a property of
+data rather than of people. Version 5 added §18, the decision to order the plan horizontally
 first and vertically last — the phases now hold only infrastructure, and every module moved
 to a final `MODULES` section in `BUILD-PLAN.md` and `TODO.md`. Version 4 added §17, the decisions behind the second tenancy
 layer: RLS as an enforcement layer rather than a formality, `auth_company_id()` as the one
@@ -599,10 +606,11 @@ Writing it once also means the rule can be corrected in one place.
 hijack.
 
 **Reversal condition:** the function's signature is the constraint. It returns a single
-`uuid`, so a person belongs to one company. When `memberships` lands it must return a set
-or take an active-company parameter, and 54 policies change with it. That is a planned
-migration, not a reversal — but it is the reason this decision has a cost, and the cost
-grows with the number of policies.
+`uuid`, so a person belongs to one company — note that this is the *only* thing
+`profiles.company_id` restricts; several people sharing a company is unaffected (§19). *If*
+`memberships` is ever needed, the function must return a set or take an active-company
+parameter, and 54 policies change with it. That is a planned migration, not a reversal — but
+it is the reason this decision has a cost, and the cost grows with the number of policies.
 
 ### 17.3 `standard_templates` keeps a privileged write. Named, not habitual.
 
@@ -630,9 +638,15 @@ disappears with it.
 customers who need two people sharing may share one.
 
 **Reasoning.** User management does not exist — there is no way to add a person to an
-existing company or remove one (see the feature item in `TODO.md`). Building it properly
-means the `memberships` migration and a whole invite/remove flow, and that is not what
-stands between here and a first customer.
+existing company or remove one (see the feature item in `TODO.md`). Building it means an
+invite/remove flow, and that is not what stands between here and a first customer.
+
+> **Corrected 10 Sep.** This paragraph originally said building it "means the `memberships`
+> migration and a whole invite/remove flow." The migration half is wrong — see §19. Several
+> people at one company already works on `profiles.company_id`; only the flow is missing.
+> The decision here is unchanged, but its *reason* is smaller than it was written: this is
+> deferred because the feature is not the most valuable week available, **not** because a
+> migration blocks it.
 
 **The cost, stated so it is not discovered later:** a shared login weakens the audit trail.
 Every write attributes to one person, so "who marked this obligation complete, and when" —
@@ -645,24 +659,22 @@ discovered during an audit.
 **Reversal condition:** the first customer who needs two named people with separate
 accountability. That is not a nice-to-have request — it is the product's core claim.
 
-### 17.5 The schema migration goes early; the multi-user feature ships on its own timeline.
+### 17.5 The schema migration goes early; the multi-user feature ships on its own timeline. — **half SUPERSEDED same day by §19**
 
-**Decision:** separate the two. Move `profiles.company_id` to `memberships` **before real
-customer data exists**, because that is when it is nearly free. Build and ship the
-invite/list/remove feature whenever it is genuinely next.
+**Original decision:** separate the two. Move `profiles.company_id` to `memberships`
+**before real customer data exists**, because that is when it is nearly free. Build and ship
+the invite/list/remove feature whenever it is genuinely next.
 
-**Reasoning.** The migration is cheap now and expensive later — four companies, one profile
-each, nothing to reconcile. The feature is a week of UI, flows and edge cases that is not
-currently the most valuable week available.
+**What survives, and it is the better half.** *Do not stockpile the feature.* Writing invite
+and removal flows now and leaving them unreleased means code that has never met a real user,
+ageing against a schema that keeps moving. **Code written and not released is not tested — it
+is only compiled.** Build the feature when it is next, and ship it when it is built.
 
-**But do not stockpile the feature.** Writing invite and removal flows now and leaving them
-unreleased means code that has never met a real user, ageing against a schema that keeps
-moving. Code written and not released is not tested — it is only compiled. Land the schema;
-build the feature when it is next.
-
-**Reversal condition:** if the `memberships` migration turns out to be harder than expected
-against a live `auth_company_id()`, do it in a maintenance window rather than deferring it
-past the first customer. Deferring is the expensive option, not the safe one.
+**What is wrong:** the premise that the `memberships` migration has to happen at all, let
+alone first. It was written on the belief that `profiles.company_id` means one person per
+company. It means one *company* per person — several people can share a `company_id` today,
+and do. **§19 replaces this half.** The migration is not cheap-now-expensive-later work that
+must be raced ahead of the first customer; it is work for a customer shape nobody has yet.
 
 ### 17.6 Verification standard: compare rows against the service role, never HTTP status.
 
@@ -741,3 +753,97 @@ horizontal work is finished, this ordering is what gets traded — deliberately,
 rebuild cost stated, and with the affected module's dependencies named. The failure to avoid
 is drifting into module work because it is more visible than schema work, which is exactly
 what a plan with a vertical slice at Phase 3 invited.
+
+---
+
+## 19. `memberships` is not a prerequisite for user management — correcting §17.5
+
+**Decision, 10 September 2026: `memberships` leaves the gate. It is recorded under multi-site
+(Phase 11+ / F5) and nowhere else. The gate keeps key rotation and the Phase 1 schema
+rebuild.**
+
+**What was wrong.** The gate said *"the `memberships` migration is a prerequisite for user
+management"*, and §17.5 was built on the same belief. Both read `profiles.company_id` as
+"one person per company." It is the other direction: **one company per person.** Several
+`profiles` rows can carry the same `company_id`, and colleagues at one company work today —
+proven on staging on 10 Sep, where Test Alpha Chemical had two users and each saw the other's
+checklists, which is exactly what migrations 003–005 were built to do.
+
+**What is actually missing is the invite flow.** `/api/signup` creates a **new company** on
+every call, so no route adds a second person to an existing one. That is why every company
+has exactly one member — construction, not schema. A feature, not a migration.
+
+**What `memberships` is actually for: one person across several companies.** A consultant
+serving two clients, or an operator spanning facilities held as separate accounts. Real, but
+rare, and nobody has that shape yet. It belongs with multi-site.
+
+**Why the error mattered enough to record.** The two pieces of work are wildly different
+sizes. The invite flow is a feature that can ship in any week. `memberships` changes
+`auth_company_id()` from returning a `uuid` to returning a set or taking an active-company
+parameter, and **54 of 58 policies plus four storage policies** are rewritten with it. Filing
+them together made a cheap, valuable feature look blocked by an expensive migration — which
+is exactly the reasoning that defers a feature indefinitely without anyone deciding to.
+
+**The general lesson: check the direction of a one-to-many before planning around it.** The
+claim was never tested against the schema. Two rows in a table would have settled it, and did.
+
+**Reversal condition:** the first customer who is genuinely one person across two companies —
+a consultant, or an owner with two entities under separate accounts. Then `memberships` is
+required, and it is its own migration with its own rehearsal, never a step inside another
+feature.
+
+---
+
+## 20. Multi-facility: build the structure in Phase 1, and site is a property of data
+
+**Decision, 10 September 2026: the multi-site data structure goes into the Phase 1 schema
+rebuild (`TODO.md` 1.6, `BUILD-PLAN.md` 2.8). The interface does not — it stays in `MODULES`,
+built only if a customer asks. One account per facility remains the near-term answer.**
+
+**Why the structure now.** One company with facilities in several places is normal in
+chemical manufacturing, and **their requirement lists genuinely differ by site** — different
+OSHA citations, different waste rules, a different air authority. The six-facility cannabis
+prospect is one business with six sites, not six legal entities. A schema whose only unit of
+compliance is "the company" is wrong for both, and it is wrong quietly: it produces one
+obligation list where there should be six.
+
+**What goes in:** `entities` seeded with one site per company at signup — *including
+single-site customers*, so nothing is special-cased afterwards · `entity_id` on `documents`
+and `obligation_evidence` (`obligations` already has it) · a `scope` column on `switches`,
+`company` or `site`, with a nullable `entity_id` on `company_switches` · site names the
+operator recognises (`CompanyA-Hillsboro`, not `Site 2`).
+
+The scope column is the one that has to be right. Employee count and ISO certification are
+company-wide; generator category, air permit tier and underground storage tanks are per-site.
+A company-wide answer to a per-site switch is not approximately right — it is wrong at five
+of six facilities, and it is wrong in the direction of a confident answer.
+
+**⚡ The design rule, because this is the decision that could go wrong: site is a property of
+DATA, not of PEOPLE.** A permit belongs to a site. A user belongs to the *company* and sees
+everything in it. *"Which site am I looking at"* is a **filter** — a dropdown, roll-up being
+"all sites" — and never a permission.
+
+Per-user site access is the tempting alternative and it is a trap. It makes the simple case
+(one site, one person) complicated, it turns a dropdown into a permissions system with an
+inheritance model and an admin screen, and every query then has to resolve *"which sites may
+this person see"* before it can ask anything useful. If a customer later asks that the
+Hillsboro manager not see Seattle's findings, **that is a separate permissions feature**,
+priced and built as one — not pre-built for a customer who has not asked.
+
+**The cost of the interim, stated so it is a choice.** One account per facility works, and:
+company-level documents get uploaded once per account and age independently; there is no
+roll-up, so nobody can ask *"where are we exposed across all six?"*; and consolidating later
+means **merging live customer accounts** and deciding which copy of a shared document is
+authoritative — a data migration on real records with a customer waiting.
+
+**The trade in numbers.** One day of extra design in Phase 1, taking it from about a week to
+about a week and a half. Two to three weeks to retrofit after customer data exists, because
+it reaches resolution, switches, evidence, documents and every screen at once. This is the
+same argument as the gate (§18, and the gate at the top of `TODO.md`) applied to one specific
+column set.
+
+**Reversal condition:** if the structure turns out to complicate the single-site path in
+practice — the common case for early customers — simplify the *interface*, not the schema.
+The seeded default site exists precisely so the single-site case never has to know it is
+there. If it starts leaking into queries or screens, that is a sign the default is not being
+applied consistently, not that the structure was wrong.

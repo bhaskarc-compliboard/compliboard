@@ -1,6 +1,6 @@
 # Master Build Plan
-**Version:** 3.2 · **Updated:** 10 September 2026
-**Supersedes:** version 3.1 (10 Sep) — adds `PART C — MODULES`. The phases in Part B are now
+**Version:** 3.3 · **Updated:** 10 September 2026
+**Supersedes:** version 3.2 (10 Sep). **3.2** added `PART C — MODULES`. The phases in Part B are now
 horizontal only; everything vertical moved to the end. Phase 7 (Screens) was dissolved into
 the modules that own each screen, and the Compliance Workspace — which had no phase here at
 all, and sat at Phase 3 in `TODO.md` ahead of its own dependencies — became M1. Version 3.1
@@ -9,8 +9,13 @@ route conversions; version 3 (9 Sep) revised the plan against the actual codebas
 the due-diligence description — six planned items were wrong and are corrected below, marked
 ⟲. Versions 1 and 2 deleted.
 
-3.2 also replaces the stale `SESSION 1 — start here` list with where the work actually is,
-and drops the schema dump from `STILL NEEDED` — it was done on 9 Sep.
+3.2 also replaced the stale `SESSION 1 — start here` list with where the work actually is,
+and dropped the schema dump from `STILL NEEDED` — it was done on 9 Sep.
+
+**3.3** adds 2.8, the multi-facility structure, and puts a ~4 day estimate on Phase 2;
+corrects A.2 — `profiles.company_id` does not block user management, only an invite flow is
+missing, and `memberships` answers a different question and stays in F5; and adds the
+user-management feature block, which has no phase because it needs no migration.
 
 **Companions:** `DECISIONS.md` · `CHEMICAL-OR-WA.md` · `PATTERNS.md` · `CLAUDE.md`
 
@@ -41,6 +46,8 @@ select company_id from public.profiles where id = auth.uid()
 v2 was written around BizPulses's memberships model. Wrong for what exists.
 
 **Decision: keep `profiles.company_id`.** It is correct for the separate-account-per-facility approach already chosen for the six-facility cannabis prospect. Migrating to memberships becomes a prerequisite only for F5 (multi-site roll-up views), not now.
+
+⟲ **And it does not block user management.** Several people at one company is already a working state on this schema — two `profiles` rows sharing a `company_id`, proven on staging 10 Sep, each seeing the other's checklists. What is missing is an **invite flow**: `/api/signup` creates a new company every time, so there is no route that adds a second person to an existing one. That is a feature, not a migration. `memberships` answers a different question — **one person across several companies** — and stays in F5.
 
 **Consequence:** drop the `useCompanyId()` multi-company hook from Phase 0. A single-company helper is still worth extracting, but there is no company switcher to build.
 
@@ -219,8 +226,13 @@ It bypasses the pipe with a raw `fetch` because it needed web search. `askAI()` 
 
 ---
 
-## PHASE 2 — Schema extensions
+## PHASE 2 — Schema extensions ⏱ ~4 days
 ⟲ *Much smaller than v2 assumed — six of eight tables already exist.*
+
+**This is `TODO.md`'s Phase 1, counted differently.** The ~4 days here is the column and
+table work alone. `TODO.md` Phase 1 is **~1.5 weeks** because it also carries the design pass
+(1.1), rebuilding staging from zero and then production (1.3), and `STATUS.md` (1.5). Same
+work, two scopes — this plan says what is added, that one says what the week looks like.
 
 ### 2.1 🔒 Extend `requirement_templates` ⏱ half day
 Add: `industries text[]` · `jurisdiction_city` · `agency_id` · `secondary_agency_ids[]` · `applies_expression jsonb` · `scope_rules` · `citation_url` · `citation_quote` · `source_checked_at` · `citation_federal_analogue` · `produces_switch` · `verification_note` · `verified_by` · `verified_at` · `version` · `effective_from` · `effective_to` · `supersedes_id` · `cadence_type` · `cadence_anchor` · `evidence_types text[]`.
@@ -247,6 +259,35 @@ The obligation-matching logic matches on industry alone. **A live correctness bu
 
 ### 2.7 Extend `entities.entity_type` to include `product` ⏱ 10 min
 Needed for cannabis per-SKU pre-approval obligations.
+
+### 2.8 🔒⚡ Multi-facility structure ⏱ 1 day
+One company with sites in different places is normal in chemical manufacturing, and their
+requirement lists genuinely differ by site — different OSHA citations, different waste rules,
+a different air authority. The six-facility cannabis prospect is one business with six sites,
+not six legal entities.
+
+One account per facility remains the near-term answer and it works. It costs a roll-up view,
+it makes each company-level document get uploaded once per account, and consolidating later
+means merging live customer accounts and choosing which copy of a shared document wins.
+
+**Structure now, interface later.** `entities` seeded with one site per company at signup —
+including single-site customers, so nothing is special-cased afterwards · `entity_id` on
+`documents` and `obligation_evidence` (`obligations` already has it) · a `scope` column on
+`switches`, `company` or `site`, with a nullable `entity_id` on `company_switches`, because
+employee count is company-wide while generator category and air permit tier are not · sites
+named the way the operator names them (`CompanyA-Hillsboro`, never `Site 2`).
+
+⚡ **Site is a property of data, not of people.** A permit belongs to a site; a user belongs
+to the company and sees all of it. *"Which site am I looking at"* is a **filter**, never a
+permission. Per-user site access is the trap: it complicates the one-site case, turns a
+dropdown into a permissions system, and makes every query ask which sites a person may see
+before it can ask anything useful. If a customer asks for it later, it is a separate
+permissions feature, priced as one.
+
+A day now. Two to three weeks after customer data exists, because it reaches resolution,
+switches, evidence, documents and every screen at once.
+
+**Not here:** site selector, roll-up dashboard, per-site onboarding. Those are Part C.
 
 ---
 
@@ -284,6 +325,33 @@ Public-records lookups (EPA RCRAInfo, ECHO, TRI, FMCSA SAFER, DEQ/Ecology, **OLC
 
 ## PHASE 8 — Observability
 ✚ Error tracking · worker heartbeat · AI cost tracking · rate limiting. BizPulses has none of this and calls it the second-highest-value gap.
+
+---
+
+# FEATURE — USER MANAGEMENT
+
+**No phase, no migration, no dependency.** It works on the schema in production today, so it
+is not waiting on anything in Part B — it ships when a customer needs it.
+
+Invite a person to an existing company · list who has access · remove access. Records created
+by a removed person **survive**: the compliance record is a company asset (`DECISIONS.md` §1,
+§14), so revoking access must never cascade a delete through someone's document reviews,
+audits or checklists.
+
+**Ships rather than being stockpiled.** Code written and held back has never been tested
+against real use, and an invite flow is exactly where the first real attempt finds the
+problems — mail that does not arrive, a link that expires, an invitee who already has an
+account somewhere else.
+
+🅑 **Port the flow from BizPulses, not the schema.** It has invite/list/remove already. Its
+`memberships` table answers a different question (one person, several organisations) and
+stays in F5.
+
+**The interim has a cost, and it is a choice rather than an oversight.** Early customers with
+more than one person share a login (`DECISIONS.md` §17.4). Every write records `user_id`, so
+a shared login attributes every upload, tick and audit run to one person. *"Who marked this
+complete, and when"* is part of what a compliance record is for. A shared login does not
+corrupt the record; it flattens it, and it cannot be un-flattened afterwards.
 
 ---
 
@@ -375,7 +443,12 @@ as demand research. Design in `WORKSPACE.md` §10.
 **F2 Washington** — chemical (~90 rows) then cannabis (near-full rebuild). Generated independently, never seeded from Oregon.
 **F3 Checking agent** — different model, primary-source tiebreak, seeded known-bad rows, quarterly human spot-check of the checker's judgments.
 **F4 Change monitoring** — Federal Register + eCFR APIs, OAR/WAC, agency bulletins.
-**F5 Multi-site** — requires migrating `profiles.company_id` → memberships.
+**F5 Multi-site** — the roll-up dashboard and site selector, on the structure 2.8 puts in
+place. `memberships` belongs here and nowhere else: it solves **one person across several
+companies**, not several people in one company, and it is not a prerequisite for user
+management. ⚠️ `auth_company_id()` returns a single `uuid` and **54 of 58 policies** call it,
+plus four storage policies — changing its signature is its own migration with its own
+rehearsal.
 **F6 Platform** — Stripe, file upload, Drive OAuth, domain, Framer homepage, PDF export, `claude-sonnet-5` ⚡ only with a golden-file pass.
 **F7 Other verticals** — hospice, brewery, food & beverage, restaurants, auto body, wood products. ISO 9001 stays on the `standard_templates` path.
 
