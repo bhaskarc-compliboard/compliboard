@@ -1,6 +1,8 @@
 # Master Build Plan
-**Version:** 3.3 · **Updated:** 10 September 2026
-**Supersedes:** version 3.2 (10 Sep). **3.2** added `PART C — MODULES`. The phases in Part B are now
+**Version:** 3.4 · **Updated:** 10 September 2026
+**Supersedes:** version 3.3 (10 Sep). **3.4** corrects A.5: `is_determination` is not the `produces_switch` precursor but a companion to it, and `source` becomes `generated_by` with two values — the one column rename this plan permits. See DECISIONS.md §22.
+
+**3.3** added `PART C — MODULES`. The phases in Part B are now
 horizontal only; everything vertical moved to the end. Phase 7 (Screens) was dissolved into
 the modules that own each screen, and the Compliance Workspace — which had no phase here at
 all, and sat at Phase 3 in `TODO.md` ahead of its own dependencies — became M1. Version 3.1
@@ -103,7 +105,9 @@ The existing `requirement_templates` uses different names from the Chemical OR/W
 | `applies_expression` | `trigger_condition` (free text) | **Add** `applies_expression jsonb` as a new column. Keep `trigger_condition` for reference. |
 | `industries[]` | `industry` (text) | **Add** `industries text[]`, backfill from `industry`, migrate reads, then drop. |
 
-Also already present and useful: `is_determination boolean` (the `produces_switch` precursor), `source`, `trigger_plain`, `fails_if`, `priority`, `created_at`, `updated_at`.
+Also already present and useful: `is_determination boolean`, `source`, `trigger_plain`, `fails_if`, `priority`, `created_at`, `updated_at`.
+
+⟲ **Two corrections to that line (DECISIONS.md §22).** `is_determination` is **not** the `produces_switch` precursor — they coexist: the boolean says a row determines something, the name says *what*, and the resolution engine needs the second to write a value back. And `source` becomes **`generated_by`** with two values, `ai | manual`: the model name drives no decision, and trust is carried by `verification_status`, which is independent of origin. `priority` now has a written definition — the test is whether the business stops when an inspector finds it missing (§22.1).
 
 ⟲ **`agencies` has a different shape than specced** — `jurisdiction text` + `agency_type` rather than `jurisdiction_level`/`state`/`county`. It is workable. Add `jurisdiction_level`, `jurisdiction_state`, `jurisdiction_county`, `review_interval`, and `industries text[]` alongside.
 
@@ -238,7 +242,7 @@ work, two scopes — this plan says what is added, that one says what the week l
 Add: `industries text[]` · `jurisdiction_city` · `agency_id` · `secondary_agency_ids[]` · `applies_expression jsonb` · `scope_rules` · `citation_url` · `citation_quote` · `source_checked_at` · `citation_federal_analogue` · `produces_switch` · `verification_note` · `verified_by` · `verified_at` · `version` · `effective_from` · `effective_to` · `supersedes_id` · `cadence_type` · `cadence_anchor` · `evidence_types text[]`.
 
 Extend `status` values to `generated`/`disputed`/`verified`.
-**Do not rename existing columns.**
+**Do not rename existing columns** — with one deliberate exception: `source` → `generated_by`, collapsing `claude|gpt|gemini` to `ai|manual` (DECISIONS.md §22.3). It is renamed rather than kept because `source` and `source_type` would otherwise sit adjacent with unrelated meanings.
 
 ### 2.2 🔒 Extend `agencies` ⏱ 2 hours
 Add `jurisdiction_level`, `jurisdiction_state`, `jurisdiction_county`, `industries text[]`, `review_interval`.

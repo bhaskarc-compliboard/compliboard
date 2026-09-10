@@ -1,6 +1,14 @@
 # Decision Record
-**Version:** 7 · **Updated:** 10 September 2026
-**Supersedes:** version 6 (10 Sep). Adds §21, the four enum decisions settled before
+**Version:** 8 · **Updated:** 10 September 2026
+**Supersedes:** version 7 (10 Sep). Adds §22, the decisions taken while building the
+requirements data-pass worksheet: what `priority` actually means (the test is whether the
+business stops when an inspector finds it missing, and a third of the library being
+`critical` means nothing is), `produces_switch` as the name of a switch rather than a
+renamed boolean, `source` becoming `generated_by` with two values, and `cadence_type` left
+free text until the pass shows what it needs. **§22.3 also corrects a misreading carried in
+`CHEMICAL-OR-WA.md` §4.4**: the 174/11/3 model split was a sequential build log, not one
+enumeration with two validators — what it carries is a convergence signal, and that is why no
+fourth model was run. Version 7 added §21, the four enum decisions settled before
 migration 006: `employee_count` becomes an integer rather than a band, `layer` becomes
 jurisdiction-only with `contractual` moved to its own `source_type` axis,
 `obligations.status` follows the spec's four states rather than the code's five, and
@@ -335,7 +343,7 @@ Also caught: the Office of the State Fire Marshal separated from Oregon State Po
 | Document | Verdict |
 |---|---|
 | `CHEMICAL-OR-WA.md` | **Keep.** The master design document. |
-| `CompliBoardChemicalRequirementsMERGEDv2.xlsx` | **Keep — now the single source for the 188 rows.** Richest artifact: 188 rows, the 9-item VERIFY hit list, 26 switches, 18-row fixed-date calendar, and a `Layer` column that already encodes agency ("Oregon OSHA", "Federal DOT"). The normalised columns from the separate intake file — `jurisdiction_level` (95 federal / 87 state / 3 county / 3 contractual), `jurisdiction_state` (90 Oregon), `is_determination` (9 yes), `applies` (182 conditional / 6 universal), `source` (174 gpt / 11 claude / 3 gemini) — have since been merged into it. |
+| `CompliBoardChemicalRequirementsMERGEDv2.xlsx` | **Keep — now the single source for the 188 rows.** Richest artifact: 188 rows, the 9-item VERIFY hit list, 26 switches, 18-row fixed-date calendar, and a `Layer` column that already encodes agency ("Oregon OSHA", "Federal DOT"). The normalised columns from the separate intake file — `jurisdiction_level` (95 federal / 87 state / 3 county / 3 contractual), `jurisdiction_state` (90 Oregon), `is_determination` (9 yes), `applies` (182 conditional / 6 universal), `source` (174 gpt / +11 claude / +3 gemini — a sequential build log, not authorship; see §22.3) — have since been merged into it. |
 | `CompliBoard-Requirements-Module-Definition.md` | **Delete.** Fully absorbed into the Chemical OR/WA spec, which contains everything in it plus the regulatory map, runtime architecture, display, verification, and onboarding. Two overlapping specs will drift. |
 | `CompliBoardRequirementTemplate.xlsx` | **Delete.** 18-column intake template superseded by a schema with ~15 additional fields (`applies_expression`, `scope_rules`, `agency_id`, `citation_url`, `citation_quote`, `produces_switch`, verification and versioning columns). Keeping it invites loading data in the obsolete shape. **Superseded in fact on 10 Sep by `REQUIREMENTS-TEMPLATE.xlsx` (below), which is the shape that was missing.** The file is still on disk at the repo root as `CompliBoard-Requirement-Template.xlsx`; deleting it is §0.7 housekeeping. |
 | `REQUIREMENTS-TEMPLATE.xlsx` | **Keep, and treat as working state rather than a document.** Generated 10 Sep from the 188 production rows in the column order the rebuilt table will load in, with the six rows decided in §21.2 pre-filled and `category` deliberately empty. It is the worksheet for the re-categorisation and splitting pass (§21.4), not a specification — when the pass is loaded, the database becomes the source of truth again and this file is a record of how it got there. Regenerate rather than hand-edit if it drifts. |
@@ -1068,3 +1076,114 @@ which they do not always share.
 **Not part of 006: re-categorising and splitting the 188 rows.** That is chemical judgment,
 done against a template by the owner. 006 creates the enum; the data pass follows, and
 `requirement_templates.category` stays `text` until it is done.
+
+---
+
+## 22. Decisions taken during the requirements data pass — 10 September 2026
+
+### 22.1 What `priority` means
+
+**Decision: the test is what happens if this is missing when an inspector arrives.**
+
+| Value | The business consequence |
+|---|---|
+| `critical` | **The business stops.** Licence revoked, plant shut, operations halted. |
+| `high` | A fine, an enforcement action, or a finding at inspection. |
+| `standard` | A real obligation whose lapse is procedural. |
+
+**Reasoning.** The column has existed since the library was loaded and has never had a
+written definition anywhere — not in the spec, not in the build plan, not in a comment.
+Three values, 188 rows, no rule. It is also the **first sort key on the requirements
+screen**, so an undefined column has been deciding what every customer sees at the top of
+their list.
+
+The test is deliberately about **consequence, not about how serious the rule sounds.** A
+regulation can be important, well known, and heavily written about, and still not stop the
+business if it lapses. What a customer needs at the top of the list is what closes their
+doors, and that is a narrower set than what feels urgent.
+
+**62 of 188 rows are currently `critical` — a third of everything. If a third is critical,
+nothing is.** A ranking that flags a third of the list as maximum severity carries no
+information and trains the reader to ignore it. Re-rating happens as part of the data pass,
+against the definition above rather than against the impression each rule makes.
+
+**Reversal condition:** if re-rating against this test still leaves a quarter or more of the
+library `critical`, the test is not discriminating and needs a fourth value or a tighter
+`critical` — not a re-interpretation of the same three.
+
+### 22.2 `produces_switch` is a name, not a flag
+
+**Decision: `produces_switch` holds the NAME of the switch a row determines.
+`is_determination` stays as it is — the boolean.**
+
+**Reasoning.** They answer different questions and both are needed. `is_determination` says
+*this row determines something*; `produces_switch` says *what*. The resolution engine needs
+the second, because determining a value is useless unless it knows where to write it back.
+Collapsing them into one column would leave a boolean that flags 9 rows and no way to act on
+any of them.
+
+`produces_switch` **stays empty through this pass.** The switch library does not exist until
+6.2, so there are no names to reference yet; filling it now would mean inventing identifiers
+that the switch library then has to match. `is_determination` is carried across so the 9
+rows stay findable when there is something to point them at.
+
+### 22.3 `source` becomes `generated_by`, with two values
+
+**Decision: rename `source` to `generated_by` and collapse `claude | gpt | gemini` to
+`ai | manual`.**
+
+**Reasoning.** The model name drives no decision. Nothing in the product treats a GPT row
+differently from a Claude row, and nothing should: **trust is carried by
+`verification_status`** — `generated | disputed | verified` — which is independent of origin.
+A manual row can be unverified. An AI row can be primary-source verified. Origin and trust
+are two axes, and only one of them belongs in a column that anything reads.
+
+The rename also removes a live trap: `source` and `source_type` sit next to each other in the
+same table with unrelated meanings and near-identical names. One is where a row came from,
+the other is whether a government imposes it.
+
+**The correction that goes with it, because the old column was being read wrongly.** The
+174 / 11 / 3 split was recorded as evidence that the file was "substantially one enumeration
+with two validators, not three independent generations." **That is wrong.** The merge was
+**sequential, not competitive**: GPT generated first (174 rows), Claude ran next and added 11
+GPT had missed, Gemini ran last and added 3 the other two had missed. All three lists were
+merged. Nothing was chosen between, and no row was discarded in favour of a rival. The column
+is a **build log** — which model first contributed a row the others lacked.
+
+**What survives, and it is worth more than what it replaces: 174, then +11, then +3 is a
+convergence signal.** Each additional model found dramatically less than the one before it,
+and a curve that flattens that hard is evidence the enumeration is close to complete.
+
+The evidence is **weak but real.** Weak because three models trained on overlapping corpora
+can share a blind spot, and a requirement none of them knows about produces exactly this
+curve too. Real because the drop is that steep: if substantial territory were missing, the
+third model would not have found only three rows.
+
+**That curve is the reason a fourth model was not run.** Expected yield is roughly one row,
+and one row does not change a decision. The residual risk is the shared blind spot, and
+another model of the same kind is the wrong instrument for it — that is closed by
+primary-source retrieval against each agency's own published scope (§11, and
+`CHEMICAL-OR-WA.md` §4.5), which is where the effort goes instead.
+
+**Reversal condition:** if a customer or an inspection turns up a requirement none of the
+three models produced, the convergence reading is weakened and the agency-by-agency retrieval
+pass moves ahead of other library work.
+
+### 22.4 `cadence_type` stays free text until the pass says what it needs
+
+**Decision: leave `cadence_type` unconstrained through the data pass. It becomes an enum
+afterwards, from the values actually used.**
+
+**Reasoning.** The vocabulary is not known. `CHEMICAL-OR-WA.md` §2.2 offers
+`one_time | annual | quarterly | monthly | on_trigger | maintain_current`, and the 188 rows
+hold roughly 180 distinct prose cadences of a complexity that list plainly does not cover —
+*"PHA every 5 years; audit every 3; refresher ≤3; incident investigation within 48 hours"*.
+
+**An enum guessed before the work is an enum that gets fought.** The values reached for while
+categorising 188 real requirements are better evidence for the vocabulary than a list written
+in advance, and the cost of waiting is one migration. The cost of guessing wrong is either a
+vocabulary nobody can express the data in, or a `other` value that swallows the hard cases —
+which is the same as having no column.
+
+`cadence` itself — the prose — is kept regardless and is never replaced by `cadence_type`.
+It is 100% populated and irreducible.

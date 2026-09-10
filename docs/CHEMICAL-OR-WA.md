@@ -1,6 +1,12 @@
 # Chemical Manufacturing Vertical — Oregon & Washington
-**Version:** 1.1 · **Updated:** 10 September 2026
-**Supersedes:** version 1.0 (9 Sep). Expands §6.6 Multi-site: adds the rule that **site is a
+**Version:** 1.2 · **Updated:** 10 September 2026
+**Supersedes:** version 1.1 (10 Sep). **Corrects §4.4** — the 174 / 11 / 3 model split was
+described as "one enumeration with two validators." It is not: the merge was sequential, each
+model adding what the previous ones missed, so the column is a build log rather than
+authorship. What the split does carry is a convergence signal, and that is why no fourth model
+was run. §3.1 replaces `sources[]` with `generated_by` (ai | manual), since the model name
+drives no decision and trust is carried by `verification_status`. Version 1.1 expanded §6.6
+Multi-site: adds the rule that **site is a
 property of data, not of people** — which site you are looking at is a filter, never a
 permission — plus switch scope (company-wide vs per-site), site naming, and what goes into
 the schema now versus what waits for a customer to ask. Nothing else changed; 1.0 remains
@@ -411,7 +417,7 @@ requirement_templates            -- the library; global, not customer data
   verification_status             generated | verified | disputed
   verification_note
   verified_by, verified_at, source_checked_at
-  sources[]                       claude | gpt | gemini | manual | primary_source
+  generated_by                    ai | manual        -- origin only; trust lives in verification_status
   version, effective_from, effective_to, supersedes_id
 ```
 
@@ -531,7 +537,33 @@ Run each agency pass through Claude, GPT, and Gemini independently with the iden
 | Only one model produces it | `disputed` — likely either a real find or a hallucination; must be resolved |
 | Citation differs | Resolve against primary source, always |
 
-**Honest note on the existing data:** source resolution on the current merged chemical file is 174 GPT / 11 Claude / 3 Gemini. That is substantially one enumeration with two validators, not three independent generations merged as equals. Fine as a design — but describe it accurately, and consider weighting the merge to force genuine independence.
+**What the 174 / 11 / 3 split on the existing data actually means — corrected 10 Sep.**
+
+The merge that produced the current chemical file was **sequential, not competitive.** GPT
+generated first and produced 174 rows. Claude ran next and added **11 rows GPT had missed.**
+Gemini ran last and added **3 the other two had missed.** All three lists were merged; none
+was chosen over another, and no row was discarded in favour of a rival.
+
+So the `source` column is a **build log** — which model was the first to contribute a row the
+others lacked — and it is **not authorship, not a quality ranking, and not a tie-break.** An
+earlier version of this section read it as "substantially one enumeration with two
+validators." That was wrong, and it is corrected here rather than quietly dropped, because
+the wrong reading makes the data look weaker than it is.
+
+**The one thing worth keeping from that split is a convergence signal: 174, then +11, then
++3.** Each additional model found dramatically less than the one before it — a curve that
+flattens that hard is evidence the enumeration is close to complete.
+
+The evidence is **weak but real.** Weak because three models trained on overlapping corpora
+can share a blind spot, and a requirement none of them knows about produces exactly this
+curve too. Real because the drop is that steep: if substantial territory were missing, the
+third model would not have found only three rows.
+
+**That curve is why a fourth model was not run.** The expected yield is roughly one row, and
+one row does not change a decision. The remaining risk is a shared blind spot, and another
+model of the same kind is precisely the wrong instrument for that — a shared blind spot is
+closed by primary-source retrieval against the agency's own scope (§4.5), not by another
+opinion. That is where the effort goes instead.
 
 ## 4.5 Primary-source resolution — the step that makes verification meaningful
 
