@@ -157,13 +157,50 @@ Everything else could run under the caller's own token, which would make the dat
 enforcing layer rather than a second opinion. `/api/obligations` and `/api/account`
 GET/PUT could switch today with no other change.
 
-**Two things to sort out while doing it.** `/api/audits` reads `standard_templates`,
-shared across companies — fine now that it has a read policy, but it is the route most
-entangled with the service role. And the nine browser call sites that read `profiles`
-directly to fetch `company_id` (requirements, audits, calendar, dashboard, hr, compliance,
-documents, upload, AppLayout) should call `auth_company_id()` by RPC instead — that is
-what finishes decoupling the base case, since no policy depends on `profiles` any more but
-those pages still do.
+**Verification method — this is the part that matters.** Do NOT verify a conversion by
+HTTP status. RLS is a filter, not a gate: a read that is too narrow returns `[]` with a
+200, and a partially-narrowed join returns rows with the joined object silently empty.
+A 200 proves nothing. Every conversion is verified by comparing, per table, the rows
+returned under the caller's token against the same query run with the service role —
+exact id sets, not just counts — plus a check that any joined data is present.
+
+Writes are the safe direction: a blocked write errors loudly with `42501`. Reads are where
+the danger is.
+
+**Order — cheapest and loudest failures first:**
+1. ✅ `/api/obligations` — done 10 Sep, the pattern proof
+2. `/api/industries` · 3. `/api/calendar` · 4. `/api/folders`
+5. `/api/link-research`, `/api/substeps` · 6. `/api/documents`
+7. `/api/hr-audits`, `/api/hr` · 8. `/api/account/export`, `/api/audits` — last, most tables
+
+**⚠️ The profiles trap on `/api/account/export`. Decide before converting it.**
+That route reads `profiles` filtered by `company_id`, to list everyone on the account. But
+the SELECT policy on `profiles` is `auth.uid() = id` — a user can see only their own row.
+Under RLS that query silently returns ONE row instead of all of them, and the export looks
+complete while having quietly lost every colleague. No error, no empty result, just less
+data than the customer is owed — from the endpoint whose entire purpose is giving them
+everything we hold.
+
+Two ways out, and it needs a decision, not a guess: give `profiles` a company-scoped
+SELECT policy so colleagues can see each other (consistent with documents, checklists and
+the calendar, and probably right), or accept that the export covers only the requesting
+user and say so in the file's own `note` field. The same trap applies to `/api/account`
+DELETE, which reads `profiles` by `company_id` to find the logins to remove — but that
+route keeps the service-role key anyway.
+
+**⚠️ `standard_templates` keeps the service-role key for its cache-miss insert.**
+`/api/audits` reads the shared parsed-standard cache and, on a miss, writes the newly
+generated checklist back to it (`app/api/audits/route.ts`, around line 237). That table is
+reference data: `SELECT USING (true)`, no write policy, deliberately. Giving it an INSERT
+policy would let any authenticated user write into the cache every other company reads —
+poisoning shared regulatory content from a normal session. So when that route converts, it
+holds both clients and uses the admin one for that single insert, with a comment saying
+why. A route may keep the key for a named statement; it may not keep it out of habit.
+
+**Also still to do:** the nine browser call sites that read `profiles` directly to fetch
+`company_id` (requirements, audits, calendar, dashboard, hr, compliance, documents, upload,
+AppLayout) should call `auth_company_id()` by RPC instead. No policy depends on `profiles`
+any more, but those pages still do — that is what finishes decoupling the base case.
 
 ### 0.7 Housekeeping ⬜ ⏱ 2 hours
 - ⬜ Delete four orphaned storage files under a prefix matching no company

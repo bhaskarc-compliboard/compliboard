@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireCompany, supabaseAdmin } from '@/lib/auth'
+import { requireCompany } from '@/lib/auth'
 
 // GET /api/obligations
 // Returns every obligation for the signed-in user's company, joined with its full
@@ -8,14 +8,23 @@ import { requireCompany, supabaseAdmin } from '@/lib/auth'
 //
 // The company comes from the verified session. The company_id parameter is gone: it let
 // any caller read any company's compliance position, which is the single most sensitive
-// list this product holds. Reference: app/api/documents/route.ts.
+// list this product holds.
+//
+// FIRST ROUTE CONVERTED OFF THE SERVICE-ROLE KEY (§0.9). It queries through `authed.db`,
+// which acts as the caller under RLS, so the database enforces tenancy here rather than
+// merely agreeing with the code. The `.eq('company_id', …)` below is now a filter rather
+// than the boundary — the policy is the boundary — and it stays because a query that
+// states its own scope is easier to read and costs nothing.
+//
+// Chosen to go first because its failure is loud and harmless: read-only, one table, and
+// a scoping mistake shows up as an empty list rather than as another company's data.
 export async function GET(request: NextRequest) {
   try {
     const authed = await requireCompany(request)
     if (!authed.ok) return authed.response
-    const company_id = authed.auth.companyId
+    const { companyId: company_id, db } = authed.auth
 
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await db
       .from('obligations')
       .select(
         `

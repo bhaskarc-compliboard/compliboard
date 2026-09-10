@@ -7,11 +7,28 @@
 // that by hand in each handler is how one of them ends up trusting a query parameter
 // instead — which is exactly what had happened in app/api/documents/route.ts.
 //
-// The worked example of this pattern is app/api/documents/route.ts (CLAUDE.md §3.6):
+// TWO CLIENTS, AND THE DIFFERENCE MATTERS
+//
+// `supabaseAdmin` uses the service-role key. It bypasses RLS entirely, so any query
+// made with it is unfiltered and the caller is wholly responsible for its own scoping.
+//
+// `authed.db` is built per request from the ANON key plus the caller's own token, so
+// PostgREST runs every statement as that user and the policies apply. Migrations 002
+// through 004 made those policies complete, which is what lets routes stop relying on
+// the key that ignores them. A route running on `authed.db` fails closed if its own
+// scoping is wrong; a route on `supabaseAdmin` leaks.
+//
+// Prefer `authed.db`. `supabaseAdmin` remains exported for exactly three things:
+//   - verifying the bearer token (auth.getUser), which needs elevated rights
+//   - /api/signup, where no session exists yet
+//   - /api/account DELETE, which calls auth.admin.deleteUser
+// Anything else using it is now a decision that needs a comment explaining itself.
+//
+// The worked example of the pattern is app/api/documents/route.ts (CLAUDE.md §3.6):
 // reads scoped to the session's company, writes using the session's ids, an ownership
 // check on every row touched, and 404 rather than 403 so ids cannot be probed.
 
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 
 // The service-role client bypasses RLS entirely, so every caller of this module is
@@ -26,6 +43,15 @@ export type AuthedCompany = {
   userId: string
   /** The company that user belongs to, read from profiles — never from input. */
   companyId: string
+  /**
+   * A Supabase client acting AS THE CALLER, under RLS.
+   *
+   * Built fresh for this request because it carries this request's token — it must
+   * never be hoisted to module scope or cached between requests, or one user's client
+   * would serve another's. Queries through it are filtered by the policies, so a
+   * scoping mistake produces an empty result rather than another company's data.
+   */
+  db: SupabaseClient
 }
 
 /**
@@ -37,7 +63,7 @@ export type AuthedCompany = {
  *
  *     const authed = await requireCompany(request)
  *     if (!authed.ok) return authed.response
- *     const { companyId, userId } = authed.auth
+ *     const { companyId, userId, db } = authed.auth
  */
 export async function requireCompany(
   request: NextRequest
@@ -45,6 +71,8 @@ export async function requireCompany(
   const authHeader = request.headers.get('authorization') || ''
   const token = authHeader.replace('Bearer ', '')
 
+  // Verifying the token needs elevated rights, so this one step stays on the admin
+  // client regardless of what the route does afterwards.
   const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token)
   if (authError || !user) {
     return {
@@ -53,6 +81,22 @@ export async function requireCompany(
     }
   }
 
+  // The caller's own client. Anon key plus their token, so PostgREST runs as them and
+  // every policy applies. persistSession/autoRefreshToken are off because this lives
+  // for one request on a server — there is no session to persist and nothing to refresh.
+  const db = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      global: { headers: { Authorization: `Bearer ${token}` } },
+      auth: { persistSession: false, autoRefreshToken: false },
+    }
+  )
+
+  // Read through the admin client, not `db`. profiles' SELECT policy is auth.uid() = id
+  // so `db` would work here too, but this lookup is what every other policy depends on
+  // via auth_company_id(), and it should not itself be subject to a policy that a future
+  // change might narrow. Keeping it on the admin client makes the base case unconditional.
   const { data: profile } = await supabaseAdmin
     .from('profiles')
     .select('company_id')
@@ -66,5 +110,5 @@ export async function requireCompany(
     }
   }
 
-  return { ok: true, auth: { userId: user.id, companyId: profile.company_id } }
+  return { ok: true, auth: { userId: user.id, companyId: profile.company_id, db } }
 }
