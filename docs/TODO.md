@@ -366,11 +366,16 @@ add to a customer's. 1.6 is the clearest case in the phase and the most recent a
 
 ### Phase 1 is complete — 11 September 2026
 
-All six items. **Migrations 006–010 are on staging; production is on 007.** 008, 009 and
-010 are pending there — caught by a pre-flight on 11 Sep after this section first claimed
-production was on 009. Nothing reads the new tables yet so nothing is broken by the gap,
-but until they land production's 10 companies have no primary site and the two environments
-are not the same shape.
+All six items. **Migrations 006–010 are applied to BOTH staging and production**, as of
+11 September.
+
+**The two environments are verified identical: 673 objects each, 0 differences** — columns,
+indexes, policies, constraints, enum values, functions, triggers, grants and storage
+policies, compared in both directions.
+
+*This paragraph twice said production was further ahead than it was, both times written from
+recollection and both times caught by a pre-flight or a comparison. It is now read from the
+database.*
 
 **Gate item 2 is closed.** Only key rotation remains before the first real customer document.
 

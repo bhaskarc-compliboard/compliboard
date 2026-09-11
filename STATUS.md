@@ -1,13 +1,15 @@
 # STATUS
 
-**Updated:** 11 September 2026 · **Environment:** staging on 000–010, **production on 000–007**
+**Updated:** 11 September 2026 · **Environment:** **staging and production both on 000–010**
 
-> ⚠️ **Production is three migrations behind.** 008 (switches, coverage, candidates, jobs),
-> 009 (site jurisdiction) and 010 (every company gets a site) are on staging only. An
-> earlier version of this file said production was on 009; that was wrong and was caught by
-> a pre-flight. Nothing reads those tables yet, so nothing is broken by the gap — but the
-> two environments are not the same shape, and every day that is true makes the next
-> comparison harder to interpret.
+> ✅ **The two environments are the same shape again.** Compared object for object —
+> columns, indexes, policies, constraints, enum values, functions, triggers, grants and
+> storage policies — **673 objects each, zero differences, in either direction.** Verified
+> after 008, 009 and 010 landed in production on 11 Sep.
+>
+> This file previously said production was on 009 when it was on 007. That was written from
+> recollection rather than from the database and was caught by a pre-flight. Every count in
+> this file is now read from the database.
 
 ## Why this file exists
 
@@ -53,9 +55,10 @@ which is the exact failure this file exists to prevent.
 |---|---|---|---|
 | **Tenancy / RLS** | ✅ working | 10–11 Sep | 58 policies across 23 tables, all company-scoped ones through `auth_company_id()`. `anon` holds zero grants anywhere. Verified by comparing row counts under a caller's token against the service role, not by HTTP status. |
 | **Storage scoping** | ✅ working | 10 Sep | Six tests with real sessions: a company can read and write only its own prefix. Before migration 002 every authenticated user could read and delete all 52 files across 7 companies. |
-| **Migration chain** | ✅ working | 11 Sep | 000→010 applied to an **empty** database and compared object-for-object against production: identical. `npm run db:reset` does this; running it the first time found two migrations that had never been able to build from nothing. |
+| **Migration chain** | ✅ working | 11 Sep | 000→010 applied to an **empty** database and compared object-for-object against production: **673 objects each, 0 differences.** `npm run db:reset` does this; running it the first time found two migrations that had never been able to build from nothing. |
 | **Requirement library** | ✅ working | 11 Sep | 194 rows in production and staging — 192 active, 2 retired parents, 6 split children with resolved lineage. Every row categorised. |
-| **Switches / coverage / candidates / jobs** | ⬜ not built | 11 Sep | Tables exist (migration 008) and are **empty with no caller**. `switches` fills at 6.2; the rest at Phase 4 and later. Not a gap — they are ahead of their users on purpose. |
+| **Switches / coverage / candidates / jobs** | ⬜ not built | 11 Sep | Tables exist **in both environments** (migration 008) and are **empty with no caller**. `switches` fills at 6.2; the rest at Phase 4 and later. Not a gap — they are ahead of their users on purpose. |
+| **Multi-facility structure** | ✅ working | 11 Sep | Every company has exactly one primary site, **in both environments**. Production's 10 were backfilled by 010 and the trigger is armed, so a new company gets its site in the same statement that creates it. Sites carry their own state, county, city and fire authority. |
 | **Worker** | ⬜ not built | — | Phase 5. The `jobs` table exists; nothing polls it. |
 | **Resolution engine** | ⬜ not built | — | Phase 4.1. Until it exists, obligations stay empty — which is the Requirements line above. |
 
@@ -65,7 +68,13 @@ These are true regardless of which screen you are looking at.
 
 - **No county-scoped requirement can resolve for anyone.** `jurisdiction_layer = 'county'` is a
   value the match key must serve, and signup hardcodes `county: ''` and never asks. Until
-  M7's signup rework captures a full address, those rows cannot apply to anybody.
+  M7's signup rework geocodes the address (`DECISIONS.md` §25.1), those rows cannot apply to
+  anybody. 2 of production's 10 companies have a NULL county today, and the other 8 were
+  hand-typed in three different capitalisations — which is the argument for geocoding.
+- **No `local` fire-code requirement can resolve either.** `entities.fire_authority` is unset
+  on all 10 production sites, correctly: it is asked, never derived, because fire districts
+  do not follow county lines (`DECISIONS.md` §25.2). Until M7 asks, those three rows show as
+  undetermined rather than resolving against a guess.
 - **No user management.** A person cannot be added to a company or removed from one. When
   an employee leaves, their login keeps working indefinitely with full access. Needs no
   migration — only an invite flow (`TODO.md` FEATURE, `DECISIONS.md` §19).
