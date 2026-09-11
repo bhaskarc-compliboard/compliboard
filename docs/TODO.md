@@ -357,76 +357,6 @@ with empty content.
 
 ---
 
-## FEATURE — USER MANAGEMENT ⏱ estimate after reading BizPulses
-
-**Not a gap in the security work — a missing feature the security work made visible.**
-**It needs no migration. It works on the schema that is in production today.**
-
-There is no way to add a person to an existing company, and no way to remove one.
-
-- **Nobody can be added.** The only path that creates a profile is `/api/signup`, and it
-  creates a **new company** every time. A second person cannot be given access to an
-  existing company at all. So the company-scoped visibility built in migrations 003 and
-  004 currently has no users to be scoped *between* — every company has exactly one
-  person, by construction. **By construction, not by schema:** two `profiles` rows sharing
-  a `company_id` is a legal, working state. It was run on staging on 10 Sep — Test Alpha
-  Chemical had two users and each saw the other's checklists, which is exactly the intent.
-  What is missing is the route that creates the second row.
-- **Nobody can be removed.** `profiles` has no DELETE policy and no route. The only
-  deletion path is `/api/account` DELETE, which destroys the entire company.
-
-**The consequence, stated plainly:** when an employee leaves, their login keeps working
-indefinitely. They keep full read and write access to every document, audit, permit and
-piece of evidence at that company, and can still delete things. For a product whose value
-is holding a customer's compliance evidence trail, that is a real exposure.
-
-**Policies do not fix this.** Migrations 002–005 make the database enforce that a person
-sees only their own company's data. A departed employee is *still a legitimate member of
-that company* as far as the database is concerned — their profile row still says so. RLS
-is working exactly as designed and the wrong person is inside the boundary. No amount of
-policy work closes it; only a way to revoke membership does.
-
-**Scope**
-
-- Invite a person to an existing company
-- List who has access
-- Remove access
-- **Records created by a removed person must survive.** The compliance record is a company
-  asset (`DECISIONS.md` §1, §14) — removing a person must not remove their document
-  reviews, audits or checklists, or a departure silently deletes evidence. Practically:
-  revoke the login and mark the profile inactive; never cascade a delete through their work.
-- Decide whether roles are needed, or whether everyone at a company is equal
-
-**Ships on its own timeline — and ships, rather than being stockpiled.** It is not gated on
-any phase, so it can be built whenever a customer needs it. The rule is that it goes to real
-users when it is built. **Code written and held back is code that has never been tested
-against real use**, and an invite flow is exactly the kind of feature where the first real
-attempt finds the problems — an email that does not arrive, a link that expires, an invitee
-who already has an account with another company.
-
-**Port from BizPulses rather than designing fresh** — it already has invite, list and remove,
-and the flow is the valuable part. **But its `memberships` table is not the part to copy.**
-That table solves a different problem: **one person across several organisations.** Our
-problem is several people inside one company, and `profiles.company_id` expresses that fine.
-`PATTERNS.md` §3 has its RLS pattern; note that we already improved on it — a `SECURITY
-DEFINER` helper instead of the subquery repeated in every policy, and explicit `WITH CHECK`
-rather than relying on Postgres reusing `USING`. Take the flow, not the schema.
-
-**The cost of the interim, recorded so it is a choice and not an accident.** Until this
-ships, early customers with more than one person share a login. That is tolerated
-(`DECISIONS.md` §17.4) and it **weakens the audit trail**: every write records `user_id`, so
-a shared login attributes every document upload, every checklist tick and every audit run to
-one person. *"Who marked this complete, and when"* is part of what a compliance record is
-for — it is the thing a regulator or an insurer asks. A shared login does not corrupt the
-record, but it flattens it, and the flattened rows cannot be un-flattened afterwards.
-
-**Prerequisite already done:** migration 005 gives `profiles` a company-scoped SELECT
-policy — **applied to production 10 Sep** — which is what makes "list who has access"
-possible at all. It changes nothing visible today: production has four companies with one
-person each, so nobody has a colleague to see.
-
----
-
 ## PHASE 1 — Schema rebuild ✅ **COMPLETE 11 September 2026** ⏱ ~1.5 weeks
 
 Production data is test data. Rebuild the schema correctly rather than patching it. Everything drops and reloads.
@@ -1291,6 +1221,113 @@ only be completed by someone we have already decided to serve.
 the first time the product tells the customer what it thinks they are, and the first time
 they can correct it. Getting that wrong is not a UX blemish — jurisdiction is part of the
 match key (`CLAUDE.md` §3.2), so a misclassification serves the wrong body of law silently.
+
+---
+
+### M8 — Account
+
+**Depends on:** nothing. That is the point of it being here rather than in a phase.
+
+`/api/account` (GET, PUT, DELETE) and `/api/account/export` both work — converted to the
+caller's token on 10 Sep and verified by comparing row counts against the service role.
+Migration 005 exists because the export was silently dropping every colleague from a
+customer's data export: right shape, right status, fewer people.
+
+What is missing is everything to do with **who else is on the account**.
+
+#### M8.1 Invite, list, remove ⬜ ⏱ estimate after reading BizPulses
+
+*Moved here 11 Sep. It had been sitting between Phase 0 and Phase 1, belonging to neither
+and scheduled by nothing.*
+
+**Not a gap in the security work — a missing feature the security work made visible.**
+**It needs no migration. It works on the schema that is in production today.**
+
+There is no way to add a person to an existing company, and no way to remove one.
+
+- **Nobody can be added.** The only path that creates a profile is `/api/signup`, and it
+  creates a **new company** every time. A second person cannot be given access to an
+  existing company at all. So the company-scoped visibility built in migrations 003 and
+  004 currently has no users to be scoped *between* — every company has exactly one
+  person, by construction. **By construction, not by schema:** two `profiles` rows sharing
+  a `company_id` is a legal, working state. It was run on staging on 10 Sep — Test Alpha
+  Chemical had two users and each saw the other's checklists, which is exactly the intent.
+  What is missing is the route that creates the second row.
+- **Nobody can be removed.** `profiles` has no DELETE policy and no route. The only
+  deletion path is `/api/account` DELETE, which destroys the entire company.
+
+**The consequence, stated plainly:** when an employee leaves, their login keeps working
+indefinitely. They keep full read and write access to every document, audit, permit and
+piece of evidence at that company, and can still delete things. For a product whose value
+is holding a customer's compliance evidence trail, that is a real exposure.
+
+**Policies do not fix this.** Migrations 002–005 make the database enforce that a person
+sees only their own company's data. A departed employee is *still a legitimate member of
+that company* as far as the database is concerned — their profile row still says so. RLS
+is working exactly as designed and the wrong person is inside the boundary. No amount of
+policy work closes it; only a way to revoke membership does.
+
+**Scope**
+
+- Invite a person to an existing company
+- List who has access
+- Remove access
+- **Records created by a removed person must survive.** The compliance record is a company
+  asset (`DECISIONS.md` §1, §14) — removing a person must not remove their document
+  reviews, audits or checklists, or a departure silently deletes evidence. Practically:
+  revoke the login and mark the profile inactive; never cascade a delete through their work.
+- Decide whether roles are needed, or whether everyone at a company is equal
+
+**Ships on its own timeline — and ships, rather than being stockpiled.** It is not gated on
+any phase, so it can be built whenever a customer needs it. The rule is that it goes to real
+users when it is built. **Code written and held back is code that has never been tested
+against real use**, and an invite flow is exactly the kind of feature where the first real
+attempt finds the problems — an email that does not arrive, a link that expires, an invitee
+who already has an account with another company.
+
+**Port from BizPulses rather than designing fresh** — it already has invite, list and remove,
+and the flow is the valuable part. **But its `memberships` table is not the part to copy.**
+That table solves a different problem: **one person across several organisations.** Our
+problem is several people inside one company, and `profiles.company_id` expresses that fine.
+`PATTERNS.md` §3 has its RLS pattern; note that we already improved on it — a `SECURITY
+DEFINER` helper instead of the subquery repeated in every policy, and explicit `WITH CHECK`
+rather than relying on Postgres reusing `USING`. Take the flow, not the schema.
+
+**The cost of the interim, recorded so it is a choice and not an accident.** Until this
+ships, early customers with more than one person share a login. That is tolerated
+(`DECISIONS.md` §17.4) and it **weakens the audit trail**: every write records `user_id`, so
+a shared login attributes every document upload, every checklist tick and every audit run to
+one person. *"Who marked this complete, and when"* is part of what a compliance record is
+for — it is the thing a regulator or an insurer asks. A shared login does not corrupt the
+record, but it flattens it, and the flattened rows cannot be un-flattened afterwards.
+
+**Prerequisite already done:** migration 005 gives `profiles` a company-scoped SELECT
+policy — **applied to production 10 Sep** — which is what makes "list who has access"
+possible at all. It changes nothing visible today: production has four companies with one
+person each, so nobody has a colleague to see.
+
+#### M8.2 The cost of waiting, taken knowingly ⚠️
+
+**Early customers with more than one person share a login. That is accepted
+(`DECISIONS.md` §17.4), and it has a price that should be visible rather than implicit.**
+
+Every write records `user_id`. Under a shared login that is one person's id on every
+document upload, every checklist tick, every audit run and every piece of evidence —
+regardless of who actually did it.
+
+**"Who marked this complete, and when" is not a nice-to-have for this product. It is a
+large part of what a compliance record IS** — the question a regulator, an insurer or an
+auditor asks first. A shared login does not corrupt the record; it **flattens** it.
+
+And the flattening is permanent. **Records created under a shared login stay ambiguous
+forever**, because the information was never captured — shipping the invite flow later
+fixes every subsequent row and no earlier one. That is the real cost of deferring: not
+that the feature is late, but that a window of the customer's history is ambiguous for the
+life of the account.
+
+**Taken knowingly.** The trade is that an invite flow is not what stands between here and a
+first customer, and a customer who knows the limitation can work within it. It should be
+said out loud during those conversations rather than discovered during an audit.
 
 ---
 

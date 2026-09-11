@@ -38,7 +38,7 @@ Consult it before starting work so effort lands on the current phase rather than
 something scheduled for later or already dropped.
 
 Part B is **horizontal** — schema, runtime, worker, resolution, library, observability —
-and Part C is **vertical**: the seven product modules, built last, once the ground under
+and Part C is **vertical**: the eight product modules, built last, once the ground under
 them has stopped moving. That split is the plan's main structural claim; the reasoning is
 written at the head of Part C.
 
@@ -46,7 +46,7 @@ written at the head of Part C.
 The task-level to-do: what is done, what is in progress, what has not been started, phase
 by phase. Where the build plan is the *why* and the ordering, this is the *what next*.
 
-Same two-part shape as the build plan: numbered phases first, then `MODULES` (M1–M7) at
+Same two-part shape as the build plan: numbered phases first, then `MODULES` (M1–M8) at
 the end, each module carrying the findings behind it. **Most of the real product work is
 in that final section** — the phases are short because infrastructure is smaller than
 product. Read the ⛔ GATE at the top before planning anything: three pieces of work are

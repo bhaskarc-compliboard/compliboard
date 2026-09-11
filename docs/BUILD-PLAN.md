@@ -402,7 +402,7 @@ that own each screen. The remaining phases are deliberately not renumbered — t
 `TODO.md` and `DECISIONS.md` reference phases by number throughout, and renumbering breaks
 every reference silently.
 
-`TODO.md` carries these at task level, as M1–M7, with the findings behind each. This is the
+`TODO.md` carries these at task level, as M1–M8, with the findings behind each. This is the
 *why*; that is the *what next*.
 
 **Design system:** CompliBoard already has one (`max-w-6xl`, underline tabs, flat cards).
@@ -452,6 +452,21 @@ progress bar, not a compliance measure. Requirements page grouped by agency, cov
 from `industry_coverage`, the verification section from `WORKSPACE.md` — three at a time,
 empty state is the good state. **Numbers stay off until the library is verified** (Phase 5's human verification pass).
 **Depends on** Phase 6's evidence normalisation, `industry_coverage` (2.4).
+
+## M8 — Account
+Invite a person to an existing company, list who has access, remove access. **Needs no
+migration** — several people at one company already works on `profiles.company_id`, and
+`memberships` answers a different question (one person across several companies) which stays
+in F5. Records created by a removed person survive: the compliance record is a company asset.
+
+Moved here 11 Sep from a floating position between Phase 0 and Phase 1, where it belonged to
+neither. It depends on nothing, which is exactly why it can ship in any week and exactly why
+it kept not being scheduled.
+
+**The cost of waiting is recorded rather than implicit.** Shared logins are accepted for
+early customers and they flatten the audit trail — every write records one person's id
+regardless of who acted — and **records created that way stay ambiguous forever**, because
+shipping the feature later fixes every subsequent row and no earlier one.
 
 ## M7 — Onboarding and signup
 Remove the industry dropdown — it is circular, offering only verticals already built. Email,

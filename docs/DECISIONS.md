@@ -1,6 +1,10 @@
 # Decision Record
-**Version:** 11 · **Updated:** 11 September 2026
-**Supersedes:** version 10 (11 Sep). Adds §25, where jurisdiction comes from: state, county
+**Version:** 12 · **Updated:** 11 September 2026
+**Supersedes:** version 11 (11 Sep). Adds §26: the invite flow becomes `MODULES` M8 —
+Account, a new and eighth module. It had been floating between Phase 0 and Phase 1,
+scheduled by nothing precisely because it depends on nothing. The cost of waiting is now
+recorded rather than implicit — records written under a shared login stay ambiguous forever,
+so deferring costs a window of history rather than a late feature. Version 11 added §25, where jurisdiction comes from: state, county
 and city are **geocoded** from the address against the US Census Bureau Geocoder rather than
 typed or inferred — a deterministic lookup against an authoritative source outranks both a
 stated value and an AI one, which strengthens §24.1 — and a geocode failure leaves
@@ -1419,3 +1423,36 @@ the honest state and it is already what `obligation_status` is built for (§21.3
 **Reversal condition:** a customer with many sites for whom asking per site is genuinely
 burdensome. Then a lookup table becomes worth building — as a **pre-fill the user
 confirms**, with unknown still meaning unknown.
+
+---
+
+## 26. The invite flow is a module, not a floating feature — 11 September 2026
+
+**Decision: user management becomes `MODULES` M8 — Account. It was sitting between Phase 0
+and Phase 1, belonging to neither and scheduled by nothing.**
+
+**Reasoning.** It has no dependency on any phase — §19 established that it needs no
+migration, because several people at one company already works on `profiles.company_id`.
+Something that depends on nothing cannot be ordered by its dependencies, so it was never
+next, and a thing that is never next is never built.
+
+Placing it as a module makes it comparable to the other seven: it competes for a slot on
+value rather than drifting because nothing blocks it. That is also the honest reading of
+§17.4 — it was deferred because it is not the most valuable week available, which is a
+judgement that should be re-made against a list rather than assumed each time.
+
+**Account is a new module, and the eighth.** There was no Account module to add it to; the
+existing `/api/account` and `/api/account/export` work and are verified, so M8 is
+substantially this one feature plus whatever that pair accumulates.
+
+**The cost of waiting is recorded in M8.2 rather than left implicit**, because it is the
+kind of cost that is invisible until it is permanent: shared logins are accepted, every
+write records one person's id regardless of who acted, and **records created that way stay
+ambiguous forever.** Shipping the invite flow later fixes every subsequent row and no
+earlier one. So the price of deferring is not a late feature — it is a window of the
+customer's history that cannot be reconstructed, in a product whose value is the
+reconstruction.
+
+**Reversal condition:** the first customer who needs two named people with separate
+accountability. §17.4 already names that as the trigger, and it is not a nice-to-have
+request — it is the product's core claim.
