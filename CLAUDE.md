@@ -196,6 +196,24 @@ once.
 - **`GRANT` is not automatic** — every new table needs its own grant line or all reads
   and writes fail with "permission denied," even for service role, even when RLS passes.
   Migration 001 has no GRANT statements; verify before assuming those tables are reachable.
+- **...and NOT granting is not denying.** The other half of the same surprise, and the more
+  dangerous half. This project carries **default privileges** on `public` — `pg_default_acl`
+  rows owned by both `postgres` and `supabase_admin` — which grant `anon`, `authenticated`
+  and `service_role` full DML on **any** table created there, before a single `GRANT`
+  statement runs. So migration 004's revokes apply only to the tables that existed in
+  September; every table created after it starts life with `anon` holding everything again.
+
+  **Any migration that creates a table in `public` must explicitly `REVOKE ALL ... FROM
+  anon`**, or `anon` silently holds full DML on it and RLS is the only thing standing
+  between an unauthenticated request and the data. Leaving a table out of the grant list
+  closes nothing. Verify with:
+  ```
+  select * from information_schema.role_table_grants
+   where table_schema='public' and grantee='anon';   -- must return zero rows
+  ```
+  Found on 11 Sep when migration 008's own verification block refused it: a table
+  deliberately omitted from every grant line still came out readable and writable by
+  `authenticated`, and only an explicit `REVOKE` closed it.
 - **Routes connect as the caller.** `requireCompany()` returns `authed.db`, a client built
   from the anon key plus the request's own token, so policies apply. It is built per
   request and must never be hoisted to module scope or cached — it carries one user's
@@ -232,6 +250,13 @@ once.
   `--linked` is required. Confirm any live constraint name this way before writing a
   DROP — not from memory, not from the prior migration file.
 - Every migration opens with a paragraph explaining **why**, not just what.
+- **`CHECK` constraints pass on NULL, so a NULL inside one silently disables it.** The
+  usual way to write one by accident is `array_length()`: on an empty array it returns
+  **NULL, not 0**, so `array_length(col, 1) > 0` is NULL, `false OR NULL` is NULL, and the
+  constraint accepts everything. Use `cardinality()`, which returns 0 — or wrap the
+  expression in `coalesce`. This shipped once, in migration 008, and was caught only by
+  attempting the write the constraint was supposed to refuse. **Test a CHECK by violating
+  it; a constraint nobody has tried to break is a comment.**
 - Column conventions: `id UUID PRIMARY KEY DEFAULT gen_random_uuid()` · `TIMESTAMPTZ NOT
   NULL DEFAULT now()` · `NUMERIC` never float · `DATE` not timestamp for dates ·
   indexes named `idx_<table>_<cols>`, always company-leading · `updated_at` with a trigger.

@@ -26,17 +26,35 @@ const supabaseAdmin = createClient(
 //
 // The data here is not tenant data. It is the shared regulatory library, identical for
 // every company, so there is nothing to scope and nothing to leak.
+// ⚠️ THIS ROUTE BROKE IN PRODUCTION ON 11 SEP AND NOTHING NOTICED.
+//
+// Migration 007 replaced `industry text` with `industries text[]`, and this — the only
+// caller, named as such in 007's own header — kept selecting the old column. PostgREST
+// answered `42703: column requirement_templates.industry does not exist`, the catch below
+// turned it into a 500, and the signup dropdown came back empty. **An empty dropdown
+// blocks signup**, on the one page that has no session and no other way in.
+//
+// `npm run check` passed the whole time. A column name inside .select() is a STRING, and
+// the generated types cannot see into it — which is the entire value of the generated
+// types everywhere else. Renaming a column is therefore a two-part change: the migration,
+// and a sweep of every query string that names it. CLAUDE.md §3.7.
 export async function GET() {
   try {
     const { data, error } = await supabaseAdmin
       .from('requirement_templates')
-      .select('industry')
+      .select('industries')
+      // Retired rows do not count. A requirement superseded by a split is still in the
+      // table (effective_to set, never deleted) and its industry is still served by its
+      // children — but if an industry's rows were ever ALL retired, the product can no
+      // longer serve it and the dropdown must stop offering it.
+      .is('effective_to', null)
 
     if (error) throw error
 
-    // Collapse to distinct, non-empty values, sorted for a stable order.
+    // One row can serve several verticals now — cannabis extraction and chemical blending
+    // share OSHA and fire-code rows (CLAUDE.md §7) — so this flattens rather than maps.
     const industries = Array.from(
-      new Set((data ?? []).map((r) => r.industry).filter(Boolean))
+      new Set((data ?? []).flatMap((r) => r.industries ?? []).filter(Boolean))
     ).sort()
 
     return NextResponse.json({ industries })

@@ -267,6 +267,23 @@ with empty content.
 
 ### 0.8 Follow-ups from the Phase 1 rebuild ⬜
 
+- ✅ **`/api/industries` was broken in production by migration 007, and nothing noticed.**
+  007 replaced `industry text` with `industries text[]`; this route — **named as the only
+  caller in 007's own header** — kept selecting the old column. PostgREST returned
+  `42703: column requirement_templates.industry does not exist`, the catch turned it into
+  a 500, and the signup dropdown came back empty. **An empty dropdown blocks signup**, on
+  the one page with no session and no other way in. Fixed 11 Sep.
+
+  **`npm run check` passed throughout.** A column name inside `.select()` is a string and
+  the generated types cannot see into it — which is exactly what makes them valuable
+  everywhere else. A column rename is therefore two changes: the migration, and a sweep of
+  every query string naming that column.
+
+  A sweep of all 57 source files against the live schema found this and nothing else. Two
+  call sites use a **variable** table name (`/api/account/export`'s `byCompany()` and
+  `/api/account` DELETE's table list) which neither the sweep nor the compiler can check;
+  all 23 tables they name were verified by hand to carry `company_id`.
+
 - ⬜ **The loader should reach production without a service-role key in `.env.local`.**
   `scripts/load-requirements.js` writes through PostgREST, so `--production` needs
   `SUPABASE_PROD_URL` and `SUPABASE_PROD_SERVICE_ROLE_KEY` — and `CLAUDE.md` §3.8 says
