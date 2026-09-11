@@ -1,6 +1,12 @@
 # Detailed To-Do
-**Version:** 6 · **Updated:** 11 September 2026
-**Supersedes:** version 5 (10 Sep). Phase 1 is **complete** — migrations 006–010 on both
+**Version:** 7 · **Updated:** 11 September 2026
+**Supersedes:** version 6 (11 Sep). **Phase 2.1 is done on staging** — 33 agencies, 187 of
+194 requirements assigned a regulator, and the 56-row `industry_coverage` cross product.
+2.1's cannabis list is corrected (it omitted EPA, PHMSA and federal OSHA, which made solvent
+extraction invisible to Stage 2) and gains an open item to fill `agencies.url` against live
+pages. **6.5a, 6.5b and 6.5c are new**: the six Oregon agencies the coverage table found
+with zero requirements behind them, the two rows needing a decision rather than a generation
+pass, and what the empty rows demonstrated about §1.1's claim. Version 6 recorded that Phase 1 is **complete** — migrations 006–010 on both
 environments, verified identical at 673 objects. The gate drops to **one** item, key
 rotation. Phase 2 is marked next with what it inherits, read from the database. A phase-number
 mapping is added at the top because this file and `BUILD-PLAN.md` **swap phases 1 and 2**.
@@ -891,6 +897,83 @@ holds **0 rows**; this is what fills it.
 
 ### 6.5 Oregon layer, agency by agency ⬜ ⏱ 1 week
 **Cite OAR 437, not 29 CFR.** Oregon is a State Plan state.
+
+#### 6.5a The six Oregon agencies with ZERO requirements behind them ⬜
+*Found 11 Sep by `industry_coverage`, the day it was first populated. Not a bug — this is
+the table doing the job it was built for. See 6.5c.*
+
+Every one of these is in scope for a chemical-manufacturing company in Oregon — the Stage 2
+query returns them — and every one has **nothing to return at Stage 3**. `CHEMICAL-OR-WA.md`
+§1.3 already names content for most of them, so this is a starting list rather than a
+research task. **Work them in this order; the first is the one a customer would notice
+missing.**
+
+- ⬜ **`OR-DOR` — Oregon Department of Revenue. 0 rows.** The gap that matters most. The
+  **Corporate Activity Tax** is an Oregon-specific *gross receipts* tax with its own
+  registration and filing obligations above a receipts threshold. It is not an income tax,
+  it has no equivalent in most states, and a model reasoning from other states will not
+  produce it — §3.3's failure mode exactly. A chemical manufacturer over the threshold owes
+  it and the library currently says nothing.
+- ⬜ **`OED` — Oregon Employment Department. 0 rows.** Unemployment insurance registration
+  and payroll reporting, ORS chapter 657 / OAR chapter 471. Note the one library row that
+  touches this is `Oregon payroll withholding/unemployment accounts`, deliberately left
+  unassigned because it spans Revenue *and* OED — see 6.5b.
+- ⬜ **`ODA` — Oregon Department of Agriculture. 0 rows.** Pesticide and fertiliser
+  registration and licensing; food safety licensing where applicable. Conditional on what
+  the company formulates, so it may resolve to `does_not_apply` for many customers — but
+  `unknown` and "we have no rows" are not the same thing, and today it is the second.
+- ⬜ **`ODOT-MCTD` — ODOT Motor Carrier Transportation Division. 0 rows.** Intrastate motor
+  carrier and hazmat transport. The library has 7 FMCSA rows for the interstate case and
+  nothing for the intrastate one, which is the more likely shape for an Oregon SMB.
+- ⬜ **`LOCAL-SEWER` — local sewer authority / POTW. 0 rows.** Industrial wastewater
+  discharge permit or pretreatment authorisation, self-monitoring and reporting, slug
+  discharge control plan. §1.3 names Portland BES and Clean Water Services.
+- ⬜ **`LOCAL-GOV` — local city or county jurisdiction. 0 rows.** Business licence, zoning
+  and conditional use, building and occupancy, local stormwater.
+
+**`OSHA` (federal) is also at 0 and is NOT on this list.** Every piece of OSHA content sits
+on an Oregon row citing 29 CFR as its analogue, correctly routed to `OR-OSHA` (54 rows). Its
+zero is accurate rather than a gap — Oregon is a State Plan state and federal OSHA does not
+enforce here.
+
+**All 25 cannabis coverage rows are also at 0**, including `OLCC`. That is the whole
+vertical, not a gap within one, and it belongs to a future library rather than to 6.5.
+
+#### 6.5b Two rows that need a decision, not a generation pass ⬜
+*Both surfaced by Part C's assignment on 11 Sep and left `agency_id = NULL` on purpose.*
+
+- ⬜ **`Oregon payroll withholding/unemployment accounts`** — genuinely two regulators,
+  Revenue for withholding and the Employment Department for unemployment. This is what
+  `secondary_agency_ids[]` exists for; somebody has to say which is primary.
+- ⬜ **`Oregon continuation coverage (Mini-COBRA)`, ORS 743B.347** — regulated by the **DCBS
+  Division of Financial Regulation, which is not in `agencies`.** Either add the agency row
+  or assign by hand. It was not invented during the load, deliberately.
+
+#### 6.5c What the empty coverage rows demonstrated — 11 September 2026
+*The first evidence for a claim the design has been asserting since `CHEMICAL-OR-WA.md` was
+written.*
+
+§1.1's second job for the agency frame reads:
+
+> **"A missing requirement inside a free enumeration is invisible. A thinly-covered agency
+> in a known list is a visible gap."**
+
+That was a prediction. **On the day `industry_coverage` was first populated it produced the
+list above without anybody looking for it** — 32 of 56 rows empty, six of them naming an
+Oregon regulator with real obligations and no library rows.
+
+**None of those six was findable before.** The library was 194 rows in one undifferentiated
+pile; "what is missing" had no shape to be asked against, and the only way to notice the
+Corporate Activity Tax was absent was to already know it existed. The gap did not become
+smaller — it became **addressable**, because the question changed from "what have we
+forgotten" to "which of these 31 agencies has nothing behind it".
+
+**The mechanism is worth naming because it generalises:** the value is in the rows with
+**nothing** in them. A coverage table listing only what has been covered would have shown 24
+green rows and no information. The `not_built` default is not a placeholder awaiting real
+data — it *is* the data, and building the cross product rather than only the populated
+combinations is what made it so (`DECISIONS.md` §32 records the one case where a `not_built`
+row is deliberately withheld, and why that case is different).
 
 ### 6.6 Primary-source retrieval ⬜ ⏱ 4 days
 Every disputed item and flagged specific resolved by **retrieval, not model vote.** eCFR, Federal Register, Oregon OAR/ORS.
