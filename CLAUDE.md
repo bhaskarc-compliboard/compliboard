@@ -211,6 +211,12 @@ once.
 
 - All schema changes go through tracked migration files. Never ad hoc changes to the
   live database.
+- **After adding a migration, run `npm run db:reset`.** It wipes staging and replays the
+  whole chain from 000, which is the only thing that proves the chain can build a database
+  from nothing. Applying migrations incrementally proves only that they worked once, in one
+  order, from one starting state — the first from-zero run on 11 Sep found two collisions
+  that had been invisible for months. The reset refuses `--production` by flag and again by
+  ref; there is no combination of arguments that resets production.
 - `npm run db:migrate` pushes migrations **and** regenerates TypeScript types. Never run
   one without the other — types must always reflect the live schema so a wrong column
   name is a compile error, not a runtime 400. If type generation fails, fix it and run

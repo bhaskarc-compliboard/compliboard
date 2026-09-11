@@ -705,6 +705,23 @@ create policy "requirement_templates readable by authenticated users"
 -- bucket-only policies migration 002 replaces; they are recorded here so the
 -- baseline is an honest snapshot and so 002 has something to drop.
 
+-- IDEMPOTENT ON PURPOSE, unlike the 30 policies above.
+--
+-- Those live on public tables, so `drop schema`/`drop table` takes them away and this
+-- file recreates them on a clean run. These three live on storage.objects, which is NOT
+-- in public and therefore survives anything that only clears public — including
+-- `npm run db:reset`. Without the guards below, the second run of this file against the
+-- same project fails with:
+--
+--     ERROR: policy "Users can delete own files" for table "objects" already exists
+--
+-- which is exactly what happened on 11 September, the first time the chain was ever run
+-- from an empty database. Migration 002 already drops-if-exists for the same reason; this
+-- file should have from the start.
+drop policy if exists "Users can delete own files"     on storage.objects;
+drop policy if exists "Users can upload to own folder" on storage.objects;
+drop policy if exists "Users can view own files"       on storage.objects;
+
 create policy "Users can delete own files"
   on storage.objects
   as permissive

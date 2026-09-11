@@ -436,17 +436,49 @@ add to a customer's. 1.6 is the clearest case in the phase and the most recent a
 | | | |
 |---|---|---|
 | **1.2** | The six new tables | `switches`, `company_switches`, `industry_coverage`, `library_candidates`, `jobs`, `topics`. None exist yet, and 1.6's switch-scope work lands with them |
-| **1.3** | Rebuild staging from zero | **Still has no command behind it** — see the note below |
+| **1.3** | Rebuild staging from zero | ✅ **DONE 11 Sep.** `npm run db:reset` exists, and running it found two defects — see below |
 | **1.4** | Jurisdiction in the match key | The columns now exist to do it properly; the matching rule itself is still unwritten |
 | **1.5** | `STATUS.md` | First line already earned, see below |
 | **1.6** | Multi-facility wiring | `entities.is_primary` and `obligation_evidence.entity_id` landed with 007. Still to do: `entity_id` on `documents`, `document_reviews` and `calendar_events`; `scope` on `switches` (needs 1.2); seeding a site at signup; backfilling the 10 existing companies |
 
-**⚠️ 1.3 is the one with nothing behind it.** `scripts/db-migrate.js` is forward-only — it
-runs `supabase db push` and reads the remote history. There is no reset, so *"rebuild
-staging from zero, which proves the migrations are complete"* is a sentence with no command
-under it. The chain 000→007 has never been run end to end against an empty database; it has
-only ever been run incrementally. **That is the difference between believing the migrations
-are complete and knowing it**, and it is worth closing before the chain gets longer.
+### ✅ 1.3 — the chain now builds a database from nothing, and it did not before
+
+`npm run db:reset` drops every object in `public` (and the policies the chain owns on
+`storage.objects`), clears the migration history, and runs 000→007 against the empty
+result. It refuses `--production` outright, by flag and independently by ref, and requires
+typing `RESET`.
+
+**Running it for the first time broke twice, which is the entire value of having run it.**
+
+**1. `001_step3_spine.sql` collided with `000_baseline.sql`.**
+`ERROR: relation "requirement_templates" already exists`. 000 was reconstructed from
+production's catalogs on 9 Sep, at which point 001 had long been applied — so everything
+001 creates is already inside 000. Verified against a database with only 000 applied: 6 of
+6 tables, 8 of 8 indexes, 6 of 6 RLS, 6 of 6 policies. 001 is now a **no-op that explains
+itself**, kept rather than deleted so the numbering and the two databases' histories stay
+honest.
+
+**2. `000_baseline.sql` collided with its own previous run.**
+`ERROR: policy "Users can delete own files" for table "objects" already exists`. 000
+recreates three storage policies so that 002 has something to drop — but they live on
+`storage.objects`, not in `public`, and the bucket-only ones reference nothing in `public`,
+so not even `CASCADE` reaches them. 000 now drops-if-exists first, the way 002 always did,
+and the reset clears storage policies too.
+
+**Neither was reachable incrementally.** 001 was marked applied by hand before 000 existed,
+so it had never been executed again; the storage collision needs 000 to run twice. Both
+would have surfaced the first time anyone built a database from scratch — a new
+environment, a disaster recovery, a second staging project — and would have looked like a
+mystery rather than a known quantity.
+
+**The proof, which is the point:** production (grown incrementally, migration by migration
+since June) and staging (built from nothing by 000→007 on 11 Sep) compared across columns,
+indexes, policies, constraints, enum values, functions, triggers, grants and storage
+policies — **484 objects each, 0 differences.**
+
+**The rule this earns:** *a chain that has only ever been applied incrementally is not known
+to work. It is known to have worked once, in one order, from one starting state.* Run
+`npm run db:reset` after adding a migration, not before shipping one.
 
 ### 1.1 🔒 Design the corrected schema ⚡ ⏱ 2 days
 - ⬜ Postgres `ENUM` for every enum-like column, replacing bare `text`

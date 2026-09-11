@@ -25,7 +25,8 @@
 // this machine. That is acceptable on a developer laptop and not on a shared box.
 
 import { execSync } from "child_process";
-import { readdirSync } from "fs";
+import { readdirSync, writeFileSync, unlinkSync } from "fs";
+import { tmpdir } from "os";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { createInterface } from "readline";
@@ -40,6 +41,13 @@ const isProduction = process.argv.includes("--production");
 // migration applied, where there is no history table to read yet. It is not a way
 // past a failed check — see appliedVersions().
 const isNewProject = process.argv.includes("--new-project");
+
+// --reset wipes every object in the public schema and re-runs the whole chain from 000.
+// It exists to answer one question that no incremental run can: does this chain, applied
+// to an empty database, reproduce what it claims to? Until it has been run once, "the
+// migrations are complete" is a belief, not a fact — and every migration added makes it a
+// more expensive belief to check.
+const isReset = process.argv.includes("--reset");
 
 // ---------------------------------------------------------------------------
 // 1. Pick the target. Each branch reads only its own variables.
@@ -98,6 +106,34 @@ if (!isProduction && prodRef && target.ref === prodRef) {
   console.error("\nCannot run: the default (staging) target is pointing at the production " +
                 "project.\n\nSUPABASE_PROJECT_REF matches SUPABASE_PROD_REF. If you mean to " +
                 "change production,\nrun: npm run db:migrate:prod\n");
+  process.exit(1);
+}
+
+// ---------------------------------------------------------------------------
+// 2b. --reset AND --production IS NOT A COMBINATION. IT IS A MISTAKE.
+//
+// Checked here, before anything else can happen, and phrased as impossible rather than
+// discouraged. There is no legitimate reason to wipe production: the data is the product,
+// and a reset that "proves the chain" against production proves it by destroying every
+// customer's compliance record. Nothing downstream should ever have to ask whether this
+// combination was intended.
+// ---------------------------------------------------------------------------
+
+if (isReset && isProduction) {
+  console.error("\n  REFUSED: --reset and --production cannot be used together.\n");
+  console.error("  --reset destroys every table and every row in the public schema. There is no");
+  console.error("  circumstance in which that is the right thing to do to production — the data IS");
+  console.error("  the product. If you are trying to prove the migration chain reproduces itself,");
+  console.error("  that is what staging is for:\n");
+  console.error("      npm run db:reset\n");
+  process.exit(1);
+}
+
+// A second, independent check on the same mistake, by ref rather than by flag — in case
+// the staging variables are ever pointed at the production project by accident.
+if (isReset && prodRef && target.ref === prodRef) {
+  console.error(`\n  REFUSED: --reset was asked to wipe ${target.ref}, which is SUPABASE_PROD_REF.\n`);
+  console.error("  The flags said staging; the environment says production. Fix .env.local.\n");
   process.exit(1);
 }
 
@@ -227,6 +263,120 @@ function appliedVersions() {
       return { ok: false, error: second };
     }
   }
+}
+
+// ---------------------------------------------------------------------------
+// 3b. THE RESET ITSELF
+//
+// Runs before the pending-migration list is computed, so that list is built against the
+// emptied database and comes out as "all of them" rather than "none".
+//
+// *** IT DROPS EVERY OBJECT IN public, NOT THE SCHEMA ITSELF. That is deliberate. ***
+//
+// `drop schema public cascade` is the more obvious way to write this and it is wrong here.
+// The schema carries DEFAULT PRIVILEGES — pg_default_acl rows owned by both `postgres` and
+// `supabase_admin` — which decide what grants a newly created table gets. Those are part of
+// how Supabase sets a project up; they are NOT created by any migration in this chain. So:
+//
+//   * they are out of scope for what a reset is supposed to prove, and
+//   * dropping the schema deletes them, and this connection is `postgres`, which is not a
+//     member of `supabase_admin` and therefore CANNOT put that half back.
+//
+// The result would be a staging project permanently and invisibly unlike production, in a
+// way the object-for-object comparison does not even look at. Dropping the contents and
+// keeping the container proves exactly the same thing with none of that.
+//
+// The migration history lives in supabase_migrations.schema_migrations, a different schema
+// again, so it has to be cleared explicitly or the chain would consider itself already
+// applied to a database with no tables in it.
+// ---------------------------------------------------------------------------
+
+if (isReset) {
+  const counts = publicTableCount();
+  console.log(`\n  *** RESET: ${target.ref}   (${target.label}) ***\n`);
+  console.log("  EVERY TABLE AND EVERY ROW IN THE public SCHEMA WILL BE DESTROYED.");
+  console.log(`  ${typeof counts === "number" ? counts : "an unknown number of"} tables, and everything in them.`);
+  console.log("  Then migrations 000 onwards run against the empty database.\n");
+  console.log("  What survives, because it lives in another schema: auth.users (logins keep");
+  console.log("  working), storage.objects (uploaded files stay), and the storage bucket.");
+  console.log("  What does not: companies, profiles, documents rows, the library — everything.\n");
+  console.log("  Type RESET and press Enter to proceed. Anything else aborts.\n");
+
+  if (!process.stdin.isTTY) {
+    console.error("  Aborted: no interactive terminal, so the confirmation cannot be typed.\n");
+    process.exit(1);
+  }
+  const rlr = createInterface({ input: process.stdin, output: process.stdout });
+  const answer = await new Promise((resolve) => rlr.question("  > ", resolve));
+  rlr.close();
+  if (answer.trim() !== "RESET") {
+    console.error("\n  Aborted. Nothing was dropped.\n");
+    process.exit(1);
+  }
+
+  // ONE statement, not several. `supabase db query -f` sends the file as a single
+  // prepared statement, and Postgres refuses more than one command in one of those
+  // ("cannot insert multiple commands into a prepared statement"). So everything —
+  // including clearing the history table — lives inside a single DO block. It is also
+  // better this way: one statement is one transaction, so a reset either happens
+  // completely or not at all, rather than leaving a half-dropped schema behind.
+  const resetSql = `
+do $$
+declare r record;
+begin
+  -- Tables first; cascade takes their constraints, indexes, policies and triggers,
+  -- including the storage-schema policies that reference public.profiles.
+  for r in select tablename from pg_tables where schemaname = 'public' loop
+    execute format('drop table if exists public.%I cascade', r.tablename);
+  end loop;
+
+  for r in select viewname from pg_views where schemaname = 'public' loop
+    execute format('drop view if exists public.%I cascade', r.viewname);
+  end loop;
+
+  for r in select p.oid::regprocedure as sig from pg_proc p
+           join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'public' loop
+    execute format('drop function if exists %s cascade', r.sig);
+  end loop;
+
+  for r in select t.typname from pg_type t join pg_namespace n on n.oid = t.typnamespace
+           where n.nspname = 'public' and t.typtype in ('e','c','d') loop
+    execute format('drop type if exists public.%I cascade', r.typname);
+  end loop;
+
+  for r in select sequencename from pg_sequences where schemaname = 'public' loop
+    execute format('drop sequence if exists public.%I cascade', r.sequencename);
+  end loop;
+
+  -- NOT public, and that is the point. The chain also writes policies onto
+  -- storage.objects (000 creates three, 002 replaces them with four), and those survive
+  -- anything that only clears public — the bucket-only ones do not reference public at
+  -- all, so not even CASCADE reaches them. Leaving them behind means the next run of 000
+  -- collides with its own output. A reset has to return the project to a state the chain
+  -- can build from, which means every schema the chain writes to, not just the main one.
+  for r in select policyname from pg_policies where schemaname = 'storage' and tablename = 'objects' loop
+    execute format('drop policy if exists %I on storage.objects', r.policyname);
+  end loop;
+
+  -- Without this the chain believes it has already been applied to an empty database.
+  delete from supabase_migrations.schema_migrations;
+end $$;
+`;
+
+  const sqlPath = join(tmpdir(), `compliboard-reset-${Date.now()}.sql`);
+  writeFileSync(sqlPath, resetSql);
+  console.log("\n  Dropping…\n");
+  try {
+    execSync(`npx supabase db query --db-url "${dbUrl}" -f "${sqlPath}"`, { stdio: "inherit" });
+  } catch (err) {
+    console.error(`\n  Reset failed: ${redact(err?.message?.split("\n")[0] ?? err)}`);
+    console.error("  The database may be partly dropped. Re-run the reset before anything else.\n");
+    process.exit(1);
+  } finally {
+    try { unlinkSync(sqlPath); } catch { /* best effort */ }
+  }
+  console.log("\n  public is empty and the migration history is cleared.");
+  console.log("  Applying the full chain from 000…\n");
 }
 
 const local = localMigrations();

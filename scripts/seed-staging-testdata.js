@@ -1,0 +1,81 @@
+// Recreates the staging test accounts after `npm run db:reset`.
+//
+//   node --env-file=.env.local scripts/seed-staging-testdata.js
+//
+// A reset clears the public schema, which takes companies and profiles with it. It does
+// NOT touch the auth schema, so the logins themselves survive with their passwords —
+// testalpha@example.com, testbeta@example.com, testalpha2@example.com still work. What is
+// missing afterwards is the public-side half: the company rows, and the profile rows that
+// tie a login to a company.
+//
+// Two companies, three people. Alpha has two, which is the arrangement the tenancy tests
+// need: they prove a colleague can see a colleague's work while Beta sees neither.
+//
+// STAGING ONLY. It refuses to run against anything else, by ref, before it writes.
+
+import { createClient } from "@supabase/supabase-js";
+
+const STAGING_REF = "amzsavsrabrlcprltpom";
+
+const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+const ref = url.replace("https://", "").split(".")[0];
+if (ref !== STAGING_REF) {
+  console.error(`\n  REFUSED: NEXT_PUBLIC_SUPABASE_URL points at "${ref}", not staging (${STAGING_REF}).`);
+  console.error("  This creates test companies called CB-Test-*. It has no business anywhere else.\n");
+  process.exit(1);
+}
+const db = createClient(url, process.env.SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } });
+
+// Emails, not ids: an id changes if a login is ever recreated, an email does not.
+const PLAN = [
+  {
+    company: { name: "Test Alpha Chemical", industry: "chemical-manufacturing",
+               state: "Oregon", county: "Washington", city: "Hillsboro", employee_count: 42 },
+    people: [
+      { email: "testalpha@example.com",  full_name: "Alpha Owner" },
+      { email: "testalpha2@example.com", full_name: "Alpha Colleague" },
+    ],
+  },
+  {
+    company: { name: "Test Beta Cannabis", industry: "cannabis",
+               state: "Oregon", county: "Multnomah", city: "Portland", employee_count: 8 },
+    people: [{ email: "testbeta@example.com", full_name: "Beta Owner" }],
+  },
+];
+
+const { data: users, error: uErr } = await db.auth.admin.listUsers({ perPage: 200 });
+if (uErr) { console.error("  Could not list auth users:", uErr.message); process.exit(1); }
+const idByEmail = new Map(users.users.map((u) => [u.email, u.id]));
+
+console.log(`\n  Target: ${ref} (staging)\n`);
+for (const { company, people } of PLAN) {
+  const missing = people.filter((p) => !idByEmail.has(p.email));
+  if (missing.length) {
+    console.error(`  No auth user for ${missing.map((m) => m.email).join(", ")}.`);
+    console.error("  Create the login first — this script only rebuilds the public-side rows.\n");
+    process.exit(1);
+  }
+
+  // employee_count is an integer now (migration 006). A band would be refused.
+  const { data: co, error: cErr } = await db.from("companies").insert(company).select("id, name").single();
+  if (cErr) { console.error(`  Creating ${company.name} failed: ${cErr.message}`); process.exit(1); }
+  console.log(`  ${co.name}  (${co.id.slice(0, 8)})  employee_count=${company.employee_count}`);
+
+  for (const p of people) {
+    const { error: pErr } = await db.from("profiles")
+      .insert({ id: idByEmail.get(p.email), company_id: co.id, full_name: p.full_name });
+    if (pErr) { console.error(`    ${p.email} failed: ${pErr.message}`); process.exit(1); }
+    console.log(`    ${p.email.padEnd(26)} ${p.full_name}`);
+  }
+
+  // TODO 1.6: every company gets a primary site at signup, single-site ones included, so
+  // nothing downstream has to ask whether a company has sites. Signup does not do this
+  // yet; the test data should still look like what signup will produce.
+  const { error: eErr } = await db.from("entities").insert({
+    company_id: co.id, entity_type: "site", is_primary: true,
+    name: `${co.name.split(" ")[1]}-${company.city}`,
+  });
+  if (eErr) console.log(`    (primary site not created: ${eErr.message})`);
+  else console.log(`    primary site: ${co.name.split(" ")[1]}-${company.city}`);
+}
+console.log("\n  Done. Passwords are unchanged — the auth schema is never touched by a reset.\n");

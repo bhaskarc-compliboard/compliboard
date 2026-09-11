@@ -12,7 +12,8 @@
     "db:migrate": "node --env-file=.env.local scripts/db-migrate.js && node --env-file=.env.local scripts/db-types.js",
     "db:migrate:prod": "node --env-file=.env.local scripts/db-migrate.js --production && node --env-file=.env.local scripts/db-types.js --production",
     "db:types": "node --env-file=.env.local scripts/db-types.js",
-    "check": "npm run typecheck && npm run build"
+    "check": "npm run typecheck && npm run build",
+    "db:reset": "node --env-file=.env.local scripts/db-migrate.js --reset && node --env-file=.env.local scripts/db-types.js"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.81",
