@@ -1,6 +1,8 @@
 # Detailed To-Do
-**Version:** 8 · **Updated:** 11 September 2026
-**Supersedes:** version 7 (11 Sep). **Phase 2.1 is done on BOTH environments** — 33 agencies,
+**Version:** 9 · **Updated:** 11 September 2026
+**Supersedes:** version 8 (11 Sep). Golden-file case 001 (2.8) gains two assertions — no
+Oregon agency, and say what is not covered — checkable only because 2.1 assigned `agency_id`.
+Version 8 recorded **Phase 2.1 done on BOTH environments** — 33 agencies,
 187 of 194 requirements assigned, 56 coverage rows, verified identical staging-to-production.
 Records the deferred service-role key rotation in the gate section. Version 7 recorded **Phase 2.1 done on staging** — 33 agencies, 187 of
 194 requirements assigned a regulator, and the 56-row `industry_coverage` cross product.
@@ -859,9 +861,24 @@ reaches the caller verbatim as `{"error": "Unexpected end of JSON input"}`.
 
 ### 2.8 Golden-file test set ⬜ ⏱ 1 day
 - ⬜ Schema: input, expected, actual, matched, missed, extra
-- ⬜ **Test #1 is the 2.5L bottle case with the correct answer written out**
+- ⬜ **Test #1 is the 2.5L bottle case with the correct answer written out** — and it now
+  carries **three** assertions, not one. See `TESTING.md` "Case 001".
+  - ⬜ the gate asks for the SDS rather than enumerating past the missing packing group
+  - ⬜ **the answer draws on NO Oregon agency.** Reno→Philadelphia is entirely federal; only
+    PHMSA's 15 and FMCSA's 7 rows are in scope. All 31 Oregon-chemical agencies returning
+    from Stage 2 is the §3.2 jurisdiction failure arriving from the *over*-serving side
+  - ⬜ **the answer states that origin and destination state requirements are not covered.**
+    Neither Nevada nor Pennsylvania is in the library — 94 Oregon rows, 98 federal, nothing
+    else — so silence about them implies a completeness we do not have
 - ⬜ Add every failure found
 - ⬜ Re-run after every prompt change or model upgrade
+
+> **Assertion 2 is checkable only because of Phase 2.1, which was not why 2.1 was built.**
+> Before `agency_id` was assigned, "the answer drew on Oregon material it should not have"
+> was a judgement requiring somebody who already knew the Oregon library well enough to
+> recognise a row from it. It is now a `WHERE` clause. The column was added to bound Stage 2's
+> enumeration; it also made **the negative case** — did the wrong rows stay out — mechanical,
+> and that is the half that degrades silently.
 
 ---
 

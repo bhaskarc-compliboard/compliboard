@@ -1,6 +1,10 @@
 # Testing
-**Version:** 1 · **Updated:** 11 September 2026
-**Supersedes:** nothing. New file.
+**Version:** 2 · **Updated:** 11 September 2026
+**Supersedes:** version 1 (11 Sep). Golden-file case 001 gains two assertions beyond the
+original one: the answer must draw on **no Oregon agency** (Reno to Philadelphia is entirely
+federal — 22 of 192 live rows are in scope), and it must **say that origin and destination
+state requirements are not covered** (neither Nevada nor Pennsylvania is in the library).
+Records that assertion 2 was unfalsifiable before Phase 2.1 and is a `WHERE` clause now.
 
 **Status: (a) is a standing obligation and starts now. (b) is specced in `TODO.md` 2.8 with
 two cases written. (c) is not built and is deliberately bounded.**
@@ -79,6 +83,90 @@ the same mistake cannot return quietly. Case 001 is the **2.5L bottle** — the 
 failure, where the model enumerated past a missing packing group and attached $650–1,800 of
 costs to a requirement that did not exist as stated. Case 002 is DOT shipping for isopropyl
 alcohol drums, with two of seven facts checked against live eCFR text.
+
+---
+
+## Case 001 — three assertions, not one
+*Spec extended 11 September 2026. The file is not written yet; `tests/golden/` holds only 002.*
+
+**The shipment is Reno to Philadelphia. That is entirely federal.** DOT hazmat is 49 CFR and
+applies in every state, so **the only library rows in scope are PHMSA's 15 and FMCSA's 7** —
+22 of 192 live rows. The company is Oregon-based, and for this question **its jurisdiction is
+irrelevant**: the goods never touch Oregon.
+
+**Assertion 1 — the original one.** The gate asks for the SDS instead of enumerating past the
+missing packing group. Packing group determines UN number, hazard class, limited-quantity
+eligibility, packaging spec and label — five of the six things that went wrong.
+
+**Assertion 2 — NEW. The answer must not draw on any Oregon agency.**
+
+If Stage 2 returns all 31 Oregon-chemical agencies and the determination gate starts asking
+Oregon OSHA questions about a Nevada-to-Pennsylvania shipment, **that is the same failure as
+serving Oregon requirements to a Texas company, arriving from the other direction.** §3.2's
+rule — *jurisdiction is always part of the match key* — is usually read as "do not under-serve
+by getting the state wrong". This is the over-serving face of it: the state is right about the
+company and wrong about the question, and the result is a plant manager working through
+Oregon heat-illness and wildfire-smoke obligations before shipping a box.
+
+**The check:**
+
+```sql
+-- Oregon-agency rows that a correct answer to case 001 must NOT cite.
+select t.requirement_name, a.short_name
+  from public.requirement_templates t join public.agencies a on a.id = t.agency_id
+ where a.jurisdiction_level in ('state', 'county', 'city', 'local')
+   and t.effective_to is null;          -- 91 rows today: 88 Oregon state, 3 Oregon local
+```
+
+**Assertion 3 — NEW. The answer must state that origin and destination state requirements are
+not covered.**
+
+**Neither Nevada nor Pennsylvania is in the library.** It holds 94 live Oregon rows and 98
+federal ones, and nothing else. So the honest answer covers the federal rules **and says
+plainly that state requirements at origin and destination are not covered.**
+
+That is the coverage strip doing its job on a question where **the gap is real**, rather than
+implying completeness by silence. An answer that gives the 49 CFR obligations and stops,
+saying nothing about Nevada or Pennsylvania, reads as complete and is not — and it fails
+`CLAUDE.md` §6 in the quietest available way, by omission rather than by assertion.
+
+### Why this is 2.1 paying off in a way nobody planned
+
+**Assertion 2 was unfalsifiable four days ago and is a `WHERE` clause today.**
+
+Before Part C, every requirement had `agency_id = NULL`. "The answer drew on Oregon material
+it should not have" was a judgement somebody had to make by reading the output and
+recognising the content — which means it was only catchable by someone who already knew the
+Oregon library well enough to spot a row from it. There was no column to test.
+
+`agency_id` was assigned to serve Stage 2's scoping — bounding what the model is asked to
+enumerate. It turns out to also make **the negative case checkable**: not "did the right rows
+appear" but **"did the wrong ones stay out"**, which is the harder half and the one that
+degrades silently. The same column answers both, and only one of them was the reason for
+building it.
+
+The general shape is worth keeping: **a structural column added for retrieval usually makes
+some previously-editorial assertion mechanical.** It is the argument for finishing 6.5a — the
+six empty agencies — ahead of things that look more visible.
+
+### One document disagrees, and it is worth reading before writing the file
+
+`CHEMICAL-OR-WA.md` §5.2, describing Stage 2 for this exact question, says:
+
+> *"For the shipping question: DOT/PHMSA (transport), OSHA/state plan (workplace labeling),
+> FMCSA (own fleet), and possibly the state fire authority for storage before shipment."*
+
+That names **a state plan and a state fire authority as in scope**, which reads as a
+contradiction of assertion 2. **It is not, and the reconciliation is the useful part:** §5.2
+is written generically, and the state plan it means is *the state where the work happens*. For
+a shipment originating in Reno that is **Nevada's** programme, not Oregon's — and Nevada is
+not in the library, which is assertion 3.
+
+So the precise rule is not "no workplace regime is in scope for a shipping question". It is
+**"no *Oregon* agency is in scope for a shipment that never enters Oregon."** If case 001 is
+ever rewritten as an Oregon-origin shipment, assertion 2 inverts and Oregon OSHA becomes
+required rather than forbidden. **Write the case with the origin stated explicitly**, because
+the assertion depends entirely on it.
 
 ---
 
