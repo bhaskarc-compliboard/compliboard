@@ -24,15 +24,13 @@ export type Database = {
           industries: string[]
           jurisdiction_city: string | null
           jurisdiction_county: string | null
-          jurisdiction_level:
-            | Database["public"]["Enums"]["jurisdiction_layer"]
-            | null
+          jurisdiction_level: Database["public"]["Enums"]["jurisdiction_layer"]
           jurisdiction_state: string | null
           name: string
           notes: string | null
           phone: string | null
           review_interval: string | null
-          short_name: string | null
+          short_name: string
           updated_at: string
           url: string | null
         }
@@ -45,15 +43,13 @@ export type Database = {
           industries?: string[]
           jurisdiction_city?: string | null
           jurisdiction_county?: string | null
-          jurisdiction_level?:
-            | Database["public"]["Enums"]["jurisdiction_layer"]
-            | null
+          jurisdiction_level: Database["public"]["Enums"]["jurisdiction_layer"]
           jurisdiction_state?: string | null
           name: string
           notes?: string | null
           phone?: string | null
           review_interval?: string | null
-          short_name?: string | null
+          short_name: string
           updated_at?: string
           url?: string | null
         }
@@ -66,15 +62,13 @@ export type Database = {
           industries?: string[]
           jurisdiction_city?: string | null
           jurisdiction_county?: string | null
-          jurisdiction_level?:
-            | Database["public"]["Enums"]["jurisdiction_layer"]
-            | null
+          jurisdiction_level?: Database["public"]["Enums"]["jurisdiction_layer"]
           jurisdiction_state?: string | null
           name?: string
           notes?: string | null
           phone?: string | null
           review_interval?: string | null
-          short_name?: string | null
+          short_name?: string
           updated_at?: string
           url?: string | null
         }

@@ -1,0 +1,173 @@
+{
+  "_readme": [
+    "HOW A REQUIREMENT GETS ITS AGENCY. Phase 2.1, Part C. Read by scripts/assign-agencies.js.",
+    "",
+    "Rules are tried IN FILE ORDER and the FIRST MATCH WINS, so the order is part of the",
+    "meaning and reordering this file changes the answer. `layer` matches",
+    "requirement_templates.jurisdiction_layer; `citation` is a POSIX regex tried against the",
+    "citation text. A rule with `agency: null` matches deliberately and assigns nothing —",
+    "it is how a genuinely ambiguous row is kept out of an automatic answer.",
+    "",
+    "*** THE PAIR (LAYER, CITATION) IS THE KEY. CITATION ALONE IS WRONG. ***",
+    "49 rows in this library carry jurisdiction_layer = 'state', jurisdiction_state =",
+    "'Oregon' AND a 29 CFR citation. Oregon is an OSHA-approved State Plan state: federal",
+    "OSHA does not enforce at private-sector chemical plants there, Oregon OSHA does, under",
+    "OAR chapter 437. Mapping those 49 rows on citation alone hands a quarter of the library",
+    "to a regulator with no authority over the customer — CHEMICAL-OR-WA.md §1.2 calls this",
+    "the single most common error a model makes on Oregon and Washington. Rule 1 exists for",
+    "exactly those 49 rows and must stay first.",
+    "",
+    "*** TWO RULES FOR WRITING A NEW RULE. BOTH COST A REAL MISTAKE TO LEARN. ***",
+    "",
+    "A. THE FIRST CITATION IN A MULTI-STATUTE STRING NAMES THE PRIMARY REGULATOR; LATER",
+    "   ONES ARE CONTEXT. \"ORS 653.050 and ORS chapter 657B\" is a BOLI posting obligation",
+    "   that MENTIONS Paid Leave — it is not a Paid Leave requirement. An unanchored rule 6",
+    "   took it anyway. Anchor with ^ when a rule keys on a statute that is commonly cited",
+    "   in passing by requirements belonging to somebody else.",
+    "",
+    "B. A CFR TITLE IS NOT AN AGENCY. THE PART IS. Title 29 is the whole of Labor: OSHA has",
+    "   parts 1904/1910/1915/1926/1928, but 516 is wage and hour, 825 is FMLA, 2520 is",
+    "   ERISA, 1602 is EEO-1 and 1636 is the PWFA. A bare `29 CFR` rule filed six",
+    "   employment requirements under OSHA. 49 CFR splits too — 100-185 PHMSA, 350-399",
+    "   FMCSA — and 21 CFR covers both FDA and DEA. DECISIONS.md §33.",
+    "",
+    "AND PROJECT BEFORE ASSIGNING. Both mistakes above passed review as rules and were",
+    "visible in one line of a read-only projection over all 194 rows. Read the projection",
+    "BY TARGET, not by total: \"187 of 194 assigned\" was true of the broken mapping too.",
+    "",
+    "A row that matches no rule keeps agency_id = NULL and is listed for a person to assign.",
+    "NULL is the honest answer for an unknown regulator; a guess is not (CLAUDE.md §6).",
+    "",
+    "A contractual row has jurisdiction_layer = NULL and no agency, and that is CORRECT",
+    "rather than unresolved — a private contract has no regulator. Rule 0 says so explicitly",
+    "so those three rows are never counted as a gap."
+  ],
+
+  "rules": [
+    { "n": 0, "layer": null, "citation": "^(NACD membership terms|Registrar contract rules)$",
+      "agency": null, "final": true,
+      "why": "Contractual. A private contract has no regulator, so NULL is the right answer and not a gap. Matched explicitly so these three rows never appear in the unresolved list." },
+
+    { "n": 1, "layer": "state", "citation": "29 CFR|OAR (chapter )?437",
+      "agency": "OR-OSHA",
+      "why": "THE MOST CONSEQUENTIAL RULE IN THIS FILE, and it must stay above rule 20. An Oregon row citing 29 CFR is an Oregon OSHA requirement citing its federal analogue in the wrong field. Oregon is a State Plan state; federal OSHA does not enforce there. 49 rows." },
+
+    { "n": 2, "layer": "state", "citation": "OAR (chapter )?340",
+      "agency": "OR-DEQ",
+      "why": "OAR chapter 340 is DEQ: air, hazardous waste, water, USTs, spill reporting." },
+
+    { "n": 3, "layer": "state", "citation": "40 CFR",
+      "agency": "OR-DEQ",
+      "why": "An Oregon row citing 40 CFR is Oregon implementing an EPA programme under its own authority — RCRA and NPDES are both delegated. Below rule 2 so a row citing both lands the same way." },
+
+    { "n": 4, "layer": "state", "citation": "OAR (chapter )?837|ORS 453",
+      "agency": "OSFM",
+      "why": "Community Right to Know / Hazardous Substance Information Survey." },
+
+    { "n": 5, "layer": "state", "citation": "OAR (chapter )?918|ORS 480\\.5",
+      "agency": "OR-BCD",
+      "why": "Boiler and pressure vessel. Easy to mistake for a local building department; it is a state division of DCBS." },
+
+    { "n": 6, "layer": "state", "citation": "^ORS (chapter )?657B|^OAR chapter 471, division 70",
+      "agency": "PLO",
+      "why": "Paid Leave Oregon. MUST stay above rule 7: Paid Leave lives inside OAR chapter 471, so the broader OED rule would swallow it. ANCHORED TO THE START OF THE CITATION, and that anchor is not cosmetic — unanchored it also caught \"Required worksite posters\", whose citation reads \"Applicable federal/Oregon laws, including ORS 653.050 and ORS chapter 657B\". Posters are a BOLI obligation that MENTIONS Paid Leave; the first citation in a multi-statute string names the primary regulator, a later one is context. Caught in the read-only projection on 11 Sep, which is what the projection is for." },
+
+    { "n": 7, "layer": "state", "citation": "OAR (chapter )?471|ORS (chapter )?657([^B]|$)",
+      "agency": "OED",
+      "why": "Unemployment insurance and payroll reporting." },
+
+    { "n": 8, "layer": "state", "citation": "OAR (chapter )?436|ORS 656",
+      "agency": "OR-WCD",
+      "why": "Workers' compensation coverage and claim processing." },
+
+    { "n": 9, "layer": "state", "citation": "OAR (chapter )?170|ORS 178\\.2",
+      "agency": "OREGONSAVES",
+      "why": "OAR chapter 170 is the Oregon Retirement Savings Board. THIS CITATION WAS MISREAD AS PAID LEAVE OREGON during the 11 Sep analysis pass; the rule is written explicitly so the same mistake cannot be made silently again." },
+
+    { "n": 10, "layer": "state", "citation": "ORS 25\\.790",
+      "agency": "OR-DOJ-CS",
+      "why": "Oregon new-hire reporting goes to the DOJ Division of Child Support, not to the Employment Department." },
+
+    { "n": 11, "layer": "state", "citation": "OAR (chapter )?839|ORS 65[23]|ORS 659A",
+      "agency": "BOLI",
+      "why": "Wage and hour, sick time, protected leave, and the whole ORS 659A discrimination and accommodation family." },
+
+    { "n": 12, "layer": "state", "citation": "ORS chapters 316 and 657",
+      "agency": null, "final": true,
+      "why": "AMBIGUOUS ON PURPOSE. 'Oregon payroll withholding/unemployment accounts' is genuinely two regulators — Revenue for withholding, the Employment Department for unemployment. That is a primary plus secondary_agency_ids decision, which is a judgement rather than a pattern. Left for a person." },
+
+    { "n": 13, "layer": "state", "citation": "OAR (chapter )?150|ORS 317A|ORS (chapter )?316",
+      "agency": "OR-DOR",
+      "why": "Department of Revenue, including the Corporate Activity Tax. Below rule 12 so the dual-agency row is caught first." },
+
+    { "n": 14, "layer": "state", "citation": "ORS (Ch\\.|chapter)? ?6[03]\\b",
+      "agency": "OR-SOS",
+      "why": "Business registry and annual renewal, ORS chapters 60 and 63." },
+
+    { "n": 15, "layer": "state", "citation": "ORS 743B",
+      "agency": null, "final": true,
+      "why": "Oregon Mini-COBRA is regulated by the DCBS Division of Financial Regulation, WHICH IS NOT IN THE AGENCY LIST. Assigning it would mean inventing a row. Flagged rather than guessed — add the agency or assign by hand." },
+
+    { "n": 16, "layer": "local", "citation": "Fire Code|OFC|IFC|NFPA",
+      "agency": "LOCAL-FIRE",
+      "why": "Oregon Fire Code as adopted and enforced by the local authority. Which authority is a question the product asks the user (DECISIONS.md §25); the agency row is generic for that reason." },
+
+    { "n": 19, "layer": "federal", "citation": "42 U\\.S\\.C\\. §+ ?(2000e|2000gg|1211)|29 U\\.S\\.C\\. §+ ?6[23][0-9]|29 CFR (part |§+ ?)?16[0-9][0-9]",
+      "agency": "EEOC",
+      "why": "Title VII, the ADA, the ADEA, the Pregnant Workers Fairness Act and EEO-1 reporting. 29 CFR parts 1600-1699 are the EEOC's own regulations and have nothing to do with OSHA — see rule 21." },
+
+    { "n": 20, "layer": "federal", "citation": "29 U\\.S\\.C\\. §+ ?(20[67]|211|102[1-4]|26[0-9][0-9]|2101|116[1-8])|38 U\\.S\\.C\\.|20 CFR|29 CFR (part |§+ ?)?(516|825|2520)",
+      "agency": "USDOL",
+      "why": "FLSA wage and hour, FMLA, ERISA reporting, WARN, USERRA, and COBRA's labour-side provisions. ABOVE the IRS rule because COBRA cites both 29 U.S.C. and 26 U.S.C. and the labour side is the one an employer acts on." },
+
+    { "n": 21, "layer": "federal", "citation": "29 CFR (part |§+ ?)?19[0-9][0-9]",
+      "agency": "OSHA",
+      "why": "Federal OSHA as BASELINE CONTENT, and NARROWED TO OSHA'S OWN PARTS — 29 CFR 1904, 1910, 1915, 1926, 1928. *** A BARE \"29 CFR\" TEST IS WRONG AND SHIPPED HERE ONCE. *** Title 29 is the whole of Labor: part 516 is wage and hour, 825 is FMLA, 1602 is EEO-1, 1636 is the PWFA, 2520 is ERISA. An unanchored rule took all six of those for OSHA in the 11 Sep projection. Reached only by rows that are themselves federal — an Oregon row was already taken by rule 1. NOTE: this rule currently matches ZERO rows, because every piece of OSHA content in this library sits on an Oregon row citing 29 CFR as its analogue. That is a true statement about the library, not a broken rule." },
+
+    { "n": 22, "layer": "federal", "citation": "40 CFR|15 U\\.S\\.C\\. §+ ?26[0-9][0-9]",
+      "agency": "EPA",
+      "why": "RCRA, EPCRA, Clean Air, Clean Water, SPCC. The 15 U.S.C. 26xx branch is TSCA, which is EPA and must not be confused with 15 U.S.C. 12xx, which is CPSC." },
+
+    { "n": 23, "layer": "federal", "citation": "49 CFR (part |§+ ?)?3[5-9][0-9]",
+      "agency": "FMCSA",
+      "why": "49 CFR parts 350-399 are motor carrier safety. ABOVE rule 24, which would otherwise take every 49 CFR row for PHMSA." },
+
+    { "n": 24, "layer": "federal", "citation": "49 CFR",
+      "agency": "PHMSA",
+      "why": "Everything else in 49 CFR here is hazardous materials transport, parts 100-185." },
+
+    { "n": 25, "layer": "federal", "citation": "27 CFR|18 U\\.S\\.C\\. § ?842",
+      "agency": "ATF", "why": "Explosives licence or permit." },
+
+    { "n": 26, "layer": "federal", "citation": "21 CFR §+ ?1309|21 U\\.S\\.C\\. § ?822",
+      "agency": "DEA", "why": "List I / List II chemical registration." },
+
+    { "n": 27, "layer": "federal", "citation": "21 CFR §+ ?1\\.2|21 U\\.S\\.C\\. § ?350d",
+      "agency": "FDA", "why": "Food facility registration." },
+
+    { "n": 28, "layer": "federal", "citation": "16 CFR|15 U\\.S\\.C\\. §+ ?12[0-9][0-9]",
+      "agency": "CPSC", "why": "Consumer hazardous-chemical labelling and poison-prevention packaging." },
+
+    { "n": 29, "layer": "federal", "citation": "6 CFR part 27|CFATS",
+      "agency": "CISA",
+      "why": "Chemical facility security. THE AGENCY ROW CARRIES A WARNING: CFATS authority lapsed 28 July 2023 and must be verified before anything is published under it." },
+
+    { "n": 30, "layer": "federal", "citation": "15 CFR|31 CFR",
+      "agency": "BIS", "why": "Export controls and AES filing." },
+
+    { "n": 31, "layer": "federal", "citation": "8 U\\.S\\.C\\. § ?1324a|8 CFR",
+      "agency": "USCIS", "why": "Form I-9 employment verification." },
+
+    { "n": 33, "layer": "federal", "citation": "26 U\\.S\\.C\\.|26 CFR",
+      "agency": "IRS",
+      "why": "Employer payroll tax and ACA reporting. BELOW rule 20 so COBRA, which cites both, goes to Labor." },
+
+    { "n": 90, "layer": null, "citation": "^Best practice \\(not statute\\)$",
+      "agency": null, "final": true,
+      "why": "NOT AN AGENCY PROBLEM — A LIBRARY-QUALITY PROBLEM. This row asserts a requirement with no enforceable citation behind it. No regulator can be assigned because none requires it. It needs a citation or it needs removing; see the flagged list." },
+
+    { "n": 91, "layer": null, "citation": "^2025 session law, eff\\. Jan 1, 2026$",
+      "agency": null, "final": true,
+      "why": "NOT AN AGENCY PROBLEM — A LIBRARY-QUALITY PROBLEM. 'A 2025 session law' names no chapter, no statute and no rule, so it cannot be checked against a primary source or assigned a regulator. Needs the actual ORS or OAR citation." }
+  ]
+}

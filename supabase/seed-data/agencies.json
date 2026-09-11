@@ -1,0 +1,379 @@
+{
+  "_readme": [
+    "THE AGENCY LIST. Phase 2.1. Loaded by scripts/load-agencies.js.",
+    "",
+    "This is the list Stage 2 of the runtime pipeline bounds every answer against",
+    "(CHEMICAL-OR-WA.md §5.2). An agency missing from here is not an error anywhere — it is",
+    "a regulator that quietly never appears in an answer. §1.1: 'a missing requirement",
+    "inside a free enumeration is invisible; a thinly-covered agency in a known list is a",
+    "visible gap.' That only holds if the list is complete.",
+    "",
+    "IF YOU ARE ADDING AN AGENCY, READ THESE FOUR THINGS FIRST.",
+    "",
+    "1. DO NOT DUPLICATE A SHARED AGENCY PER INDUSTRY. Oregon OSHA, DEQ, OSFM, DOR, ODA,",
+    "   the employment agencies and all three local rows serve chemical AND cannabis. They",
+    "   carry both slugs in `industries`; there is exactly one row each.",
+    "   *** THE UNIQUE KEY WILL NOT STOP YOU DOING THIS WRONG. *** The constraint is on",
+    "   (short_name, jurisdiction_level, jurisdiction_state), so 'OR-OSHA' and",
+    "   'OR-OSHA-CANNABIS' are two perfectly legal rows. This is DISCIPLINE, NOT",
+    "   ENFORCEMENT. A duplicated agency splits its industry_coverage into two half-rows",
+    "   that each look complete and each pass every constraint — which is how the coverage",
+    "   strip starts lying while every check still passes.",
+    "",
+    "2. `url` IS NULL ON EVERY ROW AND THAT IS DELIBERATE. A plausible URL can be produced",
+    "   for any agency from model memory. That is the problem: an unverified link is the",
+    "   fact class CLAUDE.md §6 says must carry a verification badge, and this table has no",
+    "   badge column — so an unverified URL has nowhere to declare itself as unverified.",
+    "   Blank is the only honest state the schema can express. Filling them is a checked",
+    "   pass against live pages (TODO 2.1), not a typing exercise.",
+    "",
+    "3. jurisdiction_level AND ITS MATCHING COLUMN ARE BOTH REQUIRED, and migration 011",
+    "   enforces it: federal must have a NULL state; state, county, city and local must",
+    "   name one; county and city must name theirs too. `local` requires a state and",
+    "   nothing more, because which fire district covers an address is not derivable from",
+    "   the address — the product asks (DECISIONS.md §25).",
+    "",
+    "4. WASHINGTON IS NOT HERE ON PURPOSE. DECISIONS.md §32. It goes in the day the",
+    "   Washington library starts, not before.",
+    "",
+    "`notes` is read by the model at Stage 2. It is for facts that change what the agency",
+    "means, not for descriptions of what it does — see OR-OSHA, which carries the State",
+    "Plan rule in words because a hardcoded vertical fact in a prompt template is what",
+    "CLAUDE.md §7 forbids."
+  ],
+
+  "agencies": [
+    {
+      "short_name": "OSHA",
+      "name": "Occupational Safety and Health Administration",
+      "agency_type": "workplace_safety",
+      "jurisdiction_level": "federal",
+      "jurisdiction_state": null,
+      "industries": ["chemical-manufacturing", "cannabis"],
+      "review_interval": "annual",
+      "notes": "BASELINE CONTENT, NOT THE ENFORCING AUTHORITY IN OREGON. 29 CFR 1910 and 1904 are the source standards, but Oregon and Washington are both OSHA-approved State Plan states and federal OSHA does not enforce at private-sector chemical plants in either. For an Oregon customer the enforcing agency is Oregon OSHA (OR-OSHA) and the citation shown must be OAR 437. Use this row for the federal baseline and for multi-state questions; do not cite it to an Oregon customer as the enforcer."
+    },
+    {
+      "short_name": "EPA",
+      "name": "U.S. Environmental Protection Agency",
+      "agency_type": "environmental",
+      "jurisdiction_level": "federal",
+      "jurisdiction_state": null,
+      "industries": ["chemical-manufacturing", "cannabis"],
+      "review_interval": "annual",
+      "notes": "RCRA, TSCA, EPCRA, Clean Air Act, Clean Water Act, SPCC, CERCLA, FIFRA. Oregon implements RCRA with state additions through DEQ, so a hazardous-waste question usually has both this row and OR-DEQ in scope. Carries the cannabis slug because solvent extraction generates spent-solvent hazardous waste under RCRA."
+    },
+    {
+      "short_name": "PHMSA",
+      "name": "Pipeline and Hazardous Materials Safety Administration (U.S. DOT)",
+      "agency_type": "transport",
+      "jurisdiction_level": "federal",
+      "jurisdiction_state": null,
+      "industries": ["chemical-manufacturing", "cannabis"],
+      "review_interval": "annual",
+      "notes": "49 CFR parts 100-185. Carries the cannabis slug because extraction ships butane and ethanol, which are hazardous materials under the same rules. COMBINATION PACKAGING is the scope rule this library gets wrong most often: inner packagings are not separately marked or labelled; the outer package carries the marking and label."
+    },
+    {
+      "short_name": "FMCSA",
+      "name": "Federal Motor Carrier Safety Administration (U.S. DOT)",
+      "agency_type": "transport",
+      "jurisdiction_level": "federal",
+      "jurisdiction_state": null,
+      "industries": ["chemical-manufacturing"],
+      "review_interval": "annual",
+      "notes": "49 CFR parts 350-399. In scope only if the company operates its own fleet. A company that ships by common carrier owes PHMSA obligations and none of these."
+    },
+    {
+      "short_name": "ATF",
+      "name": "Bureau of Alcohol, Tobacco, Firearms and Explosives",
+      "agency_type": "licensing",
+      "jurisdiction_level": "federal",
+      "jurisdiction_state": null,
+      "industries": ["chemical-manufacturing"],
+      "review_interval": "annual",
+      "notes": "Conditional: explosives licence or permit, only if the operation handles listed explosive materials."
+    },
+    {
+      "short_name": "DEA",
+      "name": "Drug Enforcement Administration",
+      "agency_type": "licensing",
+      "jurisdiction_level": "federal",
+      "jurisdiction_state": null,
+      "industries": ["chemical-manufacturing"],
+      "review_interval": "annual",
+      "notes": "Conditional: List I / List II chemical registration and recordkeeping."
+    },
+    {
+      "short_name": "FDA",
+      "name": "U.S. Food and Drug Administration",
+      "agency_type": "product_safety",
+      "jurisdiction_level": "federal",
+      "jurisdiction_state": null,
+      "industries": ["chemical-manufacturing"],
+      "review_interval": "annual",
+      "notes": "Conditional: food-contact substances, food facility registration."
+    },
+    {
+      "short_name": "CPSC",
+      "name": "U.S. Consumer Product Safety Commission",
+      "agency_type": "product_safety",
+      "jurisdiction_level": "federal",
+      "jurisdiction_state": null,
+      "industries": ["chemical-manufacturing"],
+      "review_interval": "annual",
+      "notes": "Conditional: consumer product and poison-prevention packaging."
+    },
+    {
+      "short_name": "CISA",
+      "name": "Cybersecurity and Infrastructure Security Agency (DHS)",
+      "agency_type": "security",
+      "jurisdiction_level": "federal",
+      "jurisdiction_state": null,
+      "industries": ["chemical-manufacturing"],
+      "review_interval": "quarterly",
+      "notes": "*** VERIFY BEFORE PUBLISHING ANYTHING UNDER THIS AGENCY. *** The CFATS program's statutory authority LAPSED on 28 July 2023 and its current status must be confirmed against a primary source before any requirement is shown to a customer. CHEMICAL-OR-WA.md §1.2 names this as a high-risk item for a model to state confidently from training data — it will describe CFATS as in force, because it was, for most of the text it was trained on. Reviewed quarterly rather than annually for that reason."
+    },
+    {
+      "short_name": "BIS",
+      "name": "Bureau of Industry and Security (U.S. Department of Commerce)",
+      "agency_type": "trade",
+      "jurisdiction_level": "federal",
+      "jurisdiction_state": null,
+      "industries": ["chemical-manufacturing"],
+      "review_interval": "annual",
+      "notes": "Conditional: export controls and AES filing, only if exporting."
+    },
+    {
+      "short_name": "EEOC",
+      "name": "U.S. Equal Employment Opportunity Commission",
+      "agency_type": "labor",
+      "jurisdiction_level": "federal",
+      "jurisdiction_state": null,
+      "industries": ["chemical-manufacturing", "cannabis"],
+      "review_interval": "annual",
+      "notes": "Not named in CHEMICAL-OR-WA.md §1.2, added because the library already holds requirements it enforces: ADA employment accommodation (42 U.S.C. 12111-12117) and the ADEA (29 U.S.C. 621-634). Without this row those rows have no agency to point at."
+    },
+    {
+      "short_name": "USDOL",
+      "name": "U.S. Department of Labor",
+      "agency_type": "labor",
+      "jurisdiction_level": "federal",
+      "jurisdiction_state": null,
+      "industries": ["chemical-manufacturing", "cannabis"],
+      "review_interval": "annual",
+      "notes": "Not named in §1.2; added for library rows already present — WARN Act notice (29 U.S.C. 2101-2109), USERRA (38 U.S.C. 4301-4335) and COBRA's labor-side provisions (29 U.S.C. 1161-1168). Covers the wage-and-hour, veterans and benefits-security functions collectively; split into sub-agencies only if a requirement ever needs to distinguish them."
+    },
+    {
+      "short_name": "IRS",
+      "name": "Internal Revenue Service",
+      "agency_type": "tax",
+      "jurisdiction_level": "federal",
+      "jurisdiction_state": null,
+      "industries": ["chemical-manufacturing", "cannabis"],
+      "review_interval": "annual",
+      "notes": "Not named in §1.2; added for library rows already present — employer payroll tax accounts and filings (26 U.S.C. 3102, 3111, 3402, 6011) and ACA employer shared responsibility reporting (26 U.S.C. 4980H, 6055, 6056)."
+    },
+    {
+      "short_name": "USCIS",
+      "name": "U.S. Citizenship and Immigration Services (DHS)",
+      "agency_type": "labor",
+      "jurisdiction_level": "federal",
+      "jurisdiction_state": null,
+      "industries": ["chemical-manufacturing", "cannabis"],
+      "review_interval": "annual",
+      "notes": "Not named in §1.2; added for the Form I-9 employment verification row already in the library (8 U.S.C. 1324a; 8 CFR 274a.2)."
+    },
+
+    {
+      "short_name": "OR-OSHA",
+      "name": "Oregon Occupational Safety and Health Division (Oregon OSHA)",
+      "agency_type": "workplace_safety",
+      "jurisdiction_level": "state",
+      "jurisdiction_state": "Oregon",
+      "industries": ["chemical-manufacturing", "cannabis"],
+      "review_interval": "annual",
+      "notes": "*** OREGON IS AN OSHA-APPROVED STATE PLAN STATE. OREGON OSHA ENFORCES INSTEAD OF FEDERAL OSHA. *** Federal OSHA does not directly enforce at private-sector chemical plants in Oregon. Oregon OSHA adopts the federal standards under OAR chapter 437 and adds its own, sometimes more stringent — heat illness prevention and wildfire smoke are Oregon rules with no federal equivalent. THE CITATION SHOWN TO AN OREGON CUSTOMER MUST BE THE OAR 437 CITATION, NEVER THE 29 CFR ONE. The substance is usually identical; the enforcement authority is not, and a state inspector will notice. This is the single most common error a model makes on Oregon and Washington. Where a requirement's federal origin matters, it belongs in citation_federal_analogue, not in citation. NOTE ON THE CURRENT LIBRARY: 49 rows carry jurisdiction_layer = state, jurisdiction_state = Oregon AND a 29 CFR citation. Those are Oregon OSHA requirements citing their federal analogue in the wrong field. They resolve to this agency, not to OSHA."
+    },
+    {
+      "short_name": "OR-DEQ",
+      "name": "Oregon Department of Environmental Quality",
+      "agency_type": "environmental",
+      "jurisdiction_level": "state",
+      "jurisdiction_state": "Oregon",
+      "industries": ["chemical-manufacturing", "cannabis"],
+      "review_interval": "annual",
+      "notes": "Air (ACDP or Title V), Cleaner Air Oregon, hazardous waste under Oregon's RCRA implementation, water (NPDES/WPCF, the 1200-Z industrial stormwater general permit), underground storage tanks, spill reporting. Cleaner Air Oregon is a genuine Oregon distinctive with no Washington equivalent. §1.3 flags the ACDP annual report and fee due dates as a disagreement in earlier generation work — verify against a primary source before showing a date."
+    },
+    {
+      "short_name": "OSFM",
+      "name": "Oregon State Fire Marshal",
+      "agency_type": "fire",
+      "jurisdiction_level": "state",
+      "jurisdiction_state": "Oregon",
+      "industries": ["chemical-manufacturing", "cannabis"],
+      "review_interval": "annual",
+      "notes": "Community Right to Know (CR2K) / Hazardous Substance Information Survey, ORS 453.307-453.414 and OAR chapter 837. *** OREGON'S REPORTING THRESHOLDS ARE LOWER THAN FEDERAL EPCRA TIER II. *** A facility can be below the federal reporting threshold and still owe an Oregon survey, so 'not required to file Tier II' does not answer this question. Annual filing window early in the calendar year — verify the exact dates before stating them."
+    },
+    {
+      "short_name": "OR-DOR",
+      "name": "Oregon Department of Revenue",
+      "agency_type": "tax",
+      "jurisdiction_level": "state",
+      "jurisdiction_state": "Oregon",
+      "industries": ["chemical-manufacturing", "cannabis"],
+      "review_interval": "annual",
+      "notes": "Includes the Corporate Activity Tax, an Oregon-specific gross receipts tax with its own registration and filing obligations above a receipts threshold. It is not an income tax and is easily missed by a model reasoning from other states."
+    },
+    {
+      "short_name": "BOLI",
+      "name": "Oregon Bureau of Labor and Industries",
+      "agency_type": "labor",
+      "jurisdiction_level": "state",
+      "jurisdiction_state": "Oregon",
+      "industries": ["chemical-manufacturing", "cannabis"],
+      "review_interval": "annual",
+      "notes": "Wage and hour, sick time, Oregon Family Leave, required workplace postings, and the ORS 659A family — discrimination, disability and pregnancy accommodation, protected leave, the required harassment policy."
+    },
+    {
+      "short_name": "OR-SOS",
+      "name": "Oregon Secretary of State",
+      "agency_type": "business_registry",
+      "jurisdiction_level": "state",
+      "jurisdiction_state": "Oregon",
+      "industries": ["chemical-manufacturing", "cannabis"],
+      "review_interval": "annual",
+      "notes": "Business registry and annual renewal, ORS chapters 60 and 63."
+    },
+    {
+      "short_name": "ODOT-MCTD",
+      "name": "Oregon Department of Transportation — Motor Carrier Transportation Division",
+      "agency_type": "transport",
+      "jurisdiction_level": "state",
+      "jurisdiction_state": "Oregon",
+      "industries": ["chemical-manufacturing"],
+      "review_interval": "annual",
+      "notes": "Intrastate motor carrier and hazmat transport. In scope only where the company moves its own product; the interstate equivalent is FMCSA."
+    },
+    {
+      "short_name": "ODA",
+      "name": "Oregon Department of Agriculture",
+      "agency_type": "licensing",
+      "jurisdiction_level": "state",
+      "jurisdiction_state": "Oregon",
+      "industries": ["chemical-manufacturing", "cannabis"],
+      "review_interval": "annual",
+      "notes": "Pesticide and fertiliser registration and licensing; food safety licensing where applicable. Shared with cannabis, where it covers hemp and pesticide use."
+    },
+    {
+      "short_name": "OED",
+      "name": "Oregon Employment Department",
+      "agency_type": "labor",
+      "jurisdiction_level": "state",
+      "jurisdiction_state": "Oregon",
+      "industries": ["chemical-manufacturing", "cannabis"],
+      "review_interval": "annual",
+      "notes": "Unemployment insurance and payroll reporting, ORS chapter 657 and OAR chapter 471. Paid Leave Oregon is administered by this department but is carried as its own row (PLO) — see that row for why."
+    },
+    {
+      "short_name": "PLO",
+      "name": "Paid Leave Oregon",
+      "agency_type": "labor",
+      "jurisdiction_level": "state",
+      "jurisdiction_state": "Oregon",
+      "industries": ["chemical-manufacturing", "cannabis"],
+      "review_interval": "annual",
+      "notes": "ORS chapter 657B, OAR chapter 471 division 70. Administered by the Employment Department, carried separately because an employer thinks of it as its own obligation with its own contributions and notices, and CHEMICAL-OR-WA.md §1.1's third job for the agency frame is that it matches how the user thinks. Fold it into OED only if a requirement ever needs them to be one thing."
+    },
+    {
+      "short_name": "OR-WCD",
+      "name": "Oregon Workers' Compensation Division (DCBS)",
+      "agency_type": "labor",
+      "jurisdiction_level": "state",
+      "jurisdiction_state": "Oregon",
+      "industries": ["chemical-manufacturing", "cannabis"],
+      "review_interval": "annual",
+      "notes": "Coverage requirement, claim processing and posting. ORS 656.017 and 656.262, OAR chapter 436."
+    },
+    {
+      "short_name": "OR-BCD",
+      "name": "Oregon Building Codes Division (DCBS)",
+      "agency_type": "fire",
+      "jurisdiction_level": "state",
+      "jurisdiction_state": "Oregon",
+      "industries": ["chemical-manufacturing", "cannabis"],
+      "review_interval": "annual",
+      "notes": "Boiler and pressure-vessel registration, operating certificates and periodic inspection. ORS 480.510-480.665, OAR chapter 918 division 225. Three requirements in the library cite it; it is easy to mistake for a local building department and is not one."
+    },
+    {
+      "short_name": "OWRD",
+      "name": "Oregon Water Resources Department",
+      "agency_type": "environmental",
+      "jurisdiction_level": "state",
+      "jurisdiction_state": "Oregon",
+      "industries": ["cannabis"],
+      "review_interval": "annual",
+      "notes": "Water rights and use. Named in TODO 2.1's cannabis list, where irrigation and process water are a live question. Add the chemical slug if a water-rights requirement is ever written for that vertical — none exists today."
+    },
+    {
+      "short_name": "OLCC",
+      "name": "Oregon Liquor and Cannabis Commission",
+      "agency_type": "licensing",
+      "jurisdiction_level": "state",
+      "jurisdiction_state": "Oregon",
+      "industries": ["cannabis"],
+      "review_interval": "quarterly",
+      "notes": "The primary cannabis regulator: licensing, seed-to-sale tracking, packaging and labelling, testing, security, transport manifests. Reviewed quarterly rather than annually because cannabis rules change faster than the rest of this list. NO REQUIREMENTS EXIST FOR THIS AGENCY YET — its coverage row is the point of loading it."
+    },
+    {
+      "short_name": "OR-DOJ-CS",
+      "name": "Oregon Department of Justice — Division of Child Support",
+      "agency_type": "labor",
+      "jurisdiction_level": "state",
+      "jurisdiction_state": "Oregon",
+      "industries": ["chemical-manufacturing", "cannabis"],
+      "review_interval": "annual",
+      "notes": "Not named in §1.3; added for the Oregon new-hire reporting row already in the library (ORS 25.790; 42 U.S.C. 653a)."
+    },
+    {
+      "short_name": "OREGONSAVES",
+      "name": "OregonSaves (Oregon Retirement Savings Board)",
+      "agency_type": "labor",
+      "jurisdiction_level": "state",
+      "jurisdiction_state": "Oregon",
+      "industries": ["chemical-manufacturing", "cannabis"],
+      "review_interval": "annual",
+      "notes": "Not named in §1.3; added for the OregonSaves retirement programme row already in the library (ORS 178.200-178.245; OAR chapter 170 division 80). Recorded here because that citation was misread as Paid Leave Oregon during the Part C mapping pass on 11 Sep — OAR chapter 170 is the Retirement Savings Board, and Paid Leave is OAR 471 division 70."
+    },
+
+    {
+      "short_name": "LOCAL-FIRE",
+      "name": "Local fire authority",
+      "agency_type": "fire",
+      "jurisdiction_level": "local",
+      "jurisdiction_state": "Oregon",
+      "industries": ["chemical-manufacturing", "cannabis"],
+      "review_interval": "annual",
+      "notes": "*** WHICH AUTHORITY THIS IS CANNOT BE DERIVED FROM THE ADDRESS. *** Portland Fire & Rescue, Tualatin Valley Fire & Rescue and others; fire districts do not follow county lines and a company may have been inspected by one it cannot name. DECISIONS.md §25: state, county and city come from geocoding, the fire authority comes from ASKING THE USER. That is why this row has a state and no city — a city here would be an invented answer to a question the product is supposed to ask. Covers hazardous materials facility and operational permits, periodic inspections, high-piled storage, spray finishing, flammable liquid storage, HMMP/HMIS where required, and fire protection system testing records."
+    },
+    {
+      "short_name": "LOCAL-SEWER",
+      "name": "Local sewer authority (POTW)",
+      "agency_type": "environmental",
+      "jurisdiction_level": "local",
+      "jurisdiction_state": "Oregon",
+      "industries": ["chemical-manufacturing", "cannabis"],
+      "review_interval": "annual",
+      "notes": "City of Portland BES, Clean Water Services and others, depending on address. Industrial wastewater discharge permit or pretreatment authorisation, self-monitoring and reporting, slug discharge control plan. Same identification problem as LOCAL-FIRE: the specific authority is established by asking, not by geocoding."
+    },
+    {
+      "short_name": "LOCAL-GOV",
+      "name": "Local city or county jurisdiction",
+      "agency_type": "business_registry",
+      "jurisdiction_level": "local",
+      "jurisdiction_state": "Oregon",
+      "industries": ["chemical-manufacturing", "cannabis"],
+      "review_interval": "annual",
+      "notes": "Business licence, zoning and conditional use, building and occupancy, local stormwater. For cannabis this is also where a local opt-out or additional land-use condition lives, which can be decisive."
+    }
+  ]
+}

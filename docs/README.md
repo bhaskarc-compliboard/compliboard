@@ -1,8 +1,9 @@
 # docs/
-**Version:** 2 · **Updated:** 11 September 2026
-**Supersedes:** version 1 (10 Sep) — which carried no version header of its own, which was
-the one rule in here it did not follow. Adds `HOW-WE-BUILD.md` and `STATUS.md`, notes that
-`PATTERNS.md` describes a different codebase, and lists every file.
+**Version:** 3 · **Updated:** 11 September 2026
+**Supersedes:** version 2 (11 Sep). Adds `AUDIT-CHECKS.md`. Version 2 added
+`HOW-WE-BUILD.md` and `STATUS.md`, noted that `PATTERNS.md` describes a different codebase,
+and listed every file; it superseded version 1 (10 Sep), which carried no version header of
+its own — the one rule in here it did not follow.
 
 The written record of what CompliBoard is and why it is built the way it is.
 
@@ -87,6 +88,15 @@ CompliBoard, which is Next.js. **Every file path it names belongs to that codeba
 (`app/src/routes/chat.tsx`, `routeTree.gen.ts`, its dated migrations) — they do not exist
 here and are not meant to. It is the only document in this folder that describes a system
 other than this one.
+
+### `AUDIT-CHECKS.md`
+The questions `npm run check` does not answer. It answers *"does the code build and
+behave"*; nothing answered *"is what we are telling customers actually true"*, and this is
+that second set. Each check is a question, the query that answers it, and **the answer on
+the date it was last actually run** — including where that answer is bad. A check earns a
+place there only if a wrong answer would reach a customer and **nothing else would notice**:
+if a database constraint or `npm run check` would catch it, it belongs in one of those
+instead. Run by hand today; Phase 6 gives them a dashboard.
 
 ### `STATUS.md` — *at the repo root, not in this folder*
 One line per module: working, degraded, broken, not-yet-rebuilt, unknown or not built —

@@ -734,8 +734,29 @@ Where answer quality actually changes. Everything here is ⚡.
 Moves cannabis from *enumerate from nothing* to *bounded agency scope*. **Highest value per hour in the entire plan.**
 
 - ⬜ Chemical Oregon: Oregon OSHA, DEQ, OSFM, local fire, local sewer, SoS, DOR, BOLI, ODOT, ODA + federal OSHA-baseline, EPA, DOT/PHMSA, FMCSA
-- ⬜ Cannabis Oregon: OLCC, Oregon OSHA, ODA, DOR, Water Resources, DEQ, local fire, local jurisdiction
+- ⬜ Cannabis Oregon: OLCC, Oregon OSHA, ODA, DOR, Water Resources, DEQ, local fire, local jurisdiction,
+  **+ federal OSHA-baseline, EPA, DOT/PHMSA** — *corrected 11 Sep, see below*
 - ⬜ Tag by industry via `industries[]`
+
+> **CORRECTION, 11 September 2026 — the cannabis list omitted three federal agencies.**
+> As originally written it named only state and local regulators. That makes **solvent
+> extraction — the part of the cannabis vertical that *is* chemical manufacturing —
+> invisible to Stage 2.** Extraction generates spent-solvent hazardous waste under RCRA
+> (EPA), ships butane and ethanol under 49 CFR (DOT/PHMSA), and its workplace standards are
+> the federal OSHA baseline that Oregon OSHA adopts under OAR 437. Omitting them undercuts
+> the shared-library thesis (`CLAUDE.md` §7 — "cannabis extraction and chemical blending
+> share OSHA and fire-code requirements") at the first opportunity to demonstrate it.
+>
+> **The industry slug is `cannabis`**, matching the only existing usage (`companies.industry`).
+> Fixed here because this list is where the agency rows were built from.
+
+- ⬜ **Fill `agencies.url` in a checked pass against live pages.** All 33 rows load with
+  `url = NULL`, deliberately. A plausible URL can be produced for every agency from model
+  memory, and that is exactly the problem: an unverified link is the fact class `CLAUDE.md`
+  §6 says must carry a verification badge, and **`agencies` has no badge column — so an
+  unverified URL has nowhere to declare itself as unverified.** Blank is the only honest
+  state the table can currently express. Do it the way the golden-file citations were done:
+  open each page in-session and record what it actually says.
 
 ### 2.2 Determination gate — Stage 1 ⚡ ⏱ 2 days
 - ⬜ Classify: what facts decide this, which are known, which are blocking

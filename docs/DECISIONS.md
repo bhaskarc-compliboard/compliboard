@@ -1,6 +1,14 @@
 # Decision Record
-**Version:** 15 · **Updated:** 11 September 2026
-**Supersedes:** version 14 (11 Sep). Adds §29 (an unmatched requirement is a library
+**Version:** 17 · **Updated:** 11 September 2026
+**Supersedes:** version 16 (11 Sep). Adds §33, a near miss: a mapping rule reading
+`29 CFR → OSHA` would have filed six employment requirements — the FLSA, FMLA, ERISA, Title
+VII, the PWFA and EEO-1 — under the wrong regulator, silently, because a requirement under a
+wrong agency looks entirely normal. Caught by projecting the mapping read-only over all 194
+rows and reading the result by target rather than by count. The rule: a CFR title is not an
+agency, the part is. Version 16 added §32: Washington's agencies wait for the
+Washington library rather than loading now as permanently-`not_built` coverage rows — a gap
+is only information when somebody expected the thing to be there, and the reversal condition
+is the day the first Washington requirement is written. Version 15 added §29 (an unmatched requirement is a library
 candidate, never a new version — a version claims the law changed, a candidate claims only
 that a model said something), §30 (the customer-facing "what changed" diff is M6 work,
 answerable from the validity windows rather than computed at resolution time) and §31 (the
@@ -1721,3 +1729,88 @@ is that it works; if it stops working it has no other defence.
 **Interim mitigation applied the same day:** the ambiguous bare `Phase N` references in this
 record are tagged `(TODO.md numbering)` so a reader need not resolve them from context.
 Records written before the two schemes diverged in usage all meant `TODO.md`'s.
+
+---
+
+## 32. Washington agencies wait for the Washington library — 11 September 2026
+
+**Decision: Phase 2.1 loads Oregon and federal agencies only. None of
+`CHEMICAL-OR-WA.md` §1.4's Washington regulators — L&I/DOSH, Ecology, Revenue, the
+rest — goes into `agencies`, and therefore none appears in `industry_coverage`.**
+
+**Reasoning, and it cuts against the table's own default.** `industry_coverage` exists to
+show gaps: a `not_built` row for an agency we have not covered is the honest, useful row,
+and §1.1's second job — "a thinly-covered agency in a known list is a visible gap" — argues
+for loading every regulator we can name, covered or not. By that reasoning Washington
+belongs in.
+
+It does not, for one reason: **the coverage strip's job is showing gaps in what we are
+trying to serve.** The library holds 93 Oregon state rows and **zero** Washington rows, and
+no Washington library is scheduled this quarter. A dozen permanently-`not_built` Washington
+rows would make the strip longer without making it truer — the reader learns "we have not
+built Washington", which they already knew from the fact that Washington is not sold. A gap
+is only information when somebody was expecting the thing to be there.
+
+**Reversal condition — specific and near: they go in the day the Washington library starts.**
+Not when a Washington customer signs up, not when §1.4 is reviewed. The moment the first
+Washington requirement row is written, its regulator must already exist as a row or the
+requirement has nowhere to point, so the agency load is the first step of that work rather
+than a follow-up to it.
+
+**One thing to carry forward when that happens.** §1.4 records that Washington is a State
+Plan state like Oregon, that its dangerous-waste program under WAC 173-303 is *broader than
+federal RCRA*, and that its PSM rule is not a copy of 29 CFR 1910.119. Those are row-level
+facts belonging in each Washington agency's `notes`, exactly as the Oregon State Plan fact
+sits on the `OR-OSHA` row rather than in a prompt template (`CLAUDE.md` §7).
+
+---
+
+## 33. A CFR title is not an agency — the part is. A near miss, 11 September 2026
+
+**What happened.** The Part C mapping table assigned a regulator to each of 194
+requirements from the pair `(jurisdiction_layer, citation)`. One of its rules read
+`federal + "29 CFR" → OSHA`. It was reviewed, approved, and wrong.
+
+**Title 29 is the whole of Labor, not OSHA.** OSHA occupies parts 1904, 1910, 1915, 1917,
+1918, 1926 and 1928. The rest of the title is other agencies entirely:
+
+| 29 CFR | Belongs to |
+|---|---|
+| part 516 | wage and hour — **DOL** |
+| part 825 | FMLA — **DOL** |
+| part 2520 | ERISA reporting — **DOL** |
+| part 1602 | EEO-1 — **EEOC** |
+| part 1636 | Pregnant Workers Fairness Act — **EEOC** |
+
+**Six requirements would have been filed under the Occupational Safety and Health
+Administration**: the FLSA, the FMLA, ERISA, Title VII, the PWFA and EEO-1 reporting.
+
+**Why it would not have been caught.** *A requirement under a wrong agency looks entirely
+normal.* Nothing complains. The foreign key is valid, the row renders, the count is right,
+`npm run check` passes, and no constraint in the database expresses "the FMLA is not an OSHA
+rule." The failure surfaces only at Stage 2, where the agency frame bounds what the model is
+asked to enumerate — so a chemical company asking about workplace safety would have been
+served ERISA obligations under the OSHA heading, and a question about family leave would
+have found nothing under Labor. **It is silent in exactly the way `CHEMICAL-OR-WA.md` §1.1
+says agency framing is supposed to prevent.**
+
+**How it WAS caught, and this is the transferable part.** The mapping was **projected over
+all 194 rows read-only, and the result read agency by agency, before a single row was
+written.** The projection showed six employment statutes sitting under `OSHA`, which is
+visible in one line of output and invisible in a rule that looks right. The same pass caught
+a second error — a Paid Leave rule swallowing a BOLI posters requirement.
+
+**Two rules follow.**
+
+**1. A CFR title is not an agency; the part is.** Any rule keyed on a bare title —
+`29 CFR`, `21 CFR`, `40 CFR`, `49 CFR` — is wrong unless the title happens to have one
+occupant. 49 CFR is DOT but splits: parts 100-185 are PHMSA, 350-399 are FMCSA. 21 CFR
+covers both FDA and DEA. Write the part.
+
+**2. Project before assigning, and read the projection by target rather than by count.**
+"187 of 194 assigned" was true of the broken mapping and of the fixed one. The error was
+only visible in *which rows landed where*. A total is not a check.
+
+**Reversal condition:** none. This is a finding, not a preference. The narrower rule costs
+nothing — rule 21 now matches zero rows, because every piece of OSHA content in this library
+sits on an Oregon row, and that is a true fact about the library rather than a broken rule.
