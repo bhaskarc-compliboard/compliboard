@@ -98,6 +98,7 @@ try {
                        coalesce(citation, '') as cite,
                        coalesce(agency_id::text, '') as current_agency_id,
                        coalesce(jurisdiction_state, '') as st,
+                       coalesce(effective_to::text, '') as retired_on,
                        industries
                   from public.requirement_templates order by requirement_name`);
 } catch (e) {
@@ -150,9 +151,11 @@ console.log(line + "\n");
 // first. --verbose prints every row; the default prints the small buckets in full and the
 // large ones as a sample, because an unread wall of 194 lines is not a review.
 for (const [ag, rows] of [...byAgency.entries()].sort((a, b) => b[1].length - a[1].length)) {
-  console.log(`  ${String(rows.length).padStart(3)}  ${ag}`);
+  const live = rows.filter((r) => !r.retired_on).length;
+  const note = live === rows.length ? "" : `   (${live} live, ${rows.length - live} retired — coverage counts ${live})`;
+  console.log(`  ${String(rows.length).padStart(3)}  ${ag}${note}`);
   const show = verbose || rows.length <= 8 ? rows : rows.slice(0, 4);
-  for (const r of show) console.log(`         r${String(r._rule).padStart(2)} [${r.lay}] ${r.nm}`);
+  for (const r of show) console.log(`         r${String(r._rule).padStart(2)} [${r.lay}] ${r.nm}${r.retired_on ? `   << RETIRED ${r.retired_on}, not counted in coverage` : ""}`);
   if (show.length < rows.length) console.log(`         … ${rows.length - show.length} more (--verbose to see them)`);
 }
 
@@ -201,8 +204,22 @@ for (const ind of INDUSTRIES) {
   for (const a of agencyRows) {
     const inds = Array.isArray(a.industries) ? a.industries : String(a.industries ?? "").replace(/[{}]/g, "").split(",").filter(Boolean);
     if (!inds.includes(ind)) continue;
-    // How many requirements this projection puts under this agency FOR THIS INDUSTRY.
+    // How many requirements this projection puts under this agency FOR THIS INDUSTRY —
+    // *** LIVE ROWS ONLY. A RETIRED ROW MUST NOT BE COUNTED. ***
+    //
+    // A retired row (effective_to set) is a row that was superseded or split. It KEEPS its
+    // agency_id — see the note at the assignment step — but it is not part of what the
+    // library can tell a customer today, and row_count is what the coverage strip renders.
+    // Counting it inflates coverage by one for every split we have ever done: two today
+    // (the boiler parent and the silica parent), and the number only grows, because
+    // library rows are versioned rather than edited (CLAUDE.md §3.2) so retired rows
+    // accumulate forever while live ones do not.
+    //
+    // Migration 011's own column comment already said "how many LIVE requirement_templates
+    // rows stand behind this coverage claim". The intent was recorded and the first
+    // implementation did not honour it. Caught in review before the production apply.
     const n = (byAgency.get(a.short_name) ?? []).filter((r) => {
+      if (r.retired_on) return false;
       const ri = Array.isArray(r.industries) ? r.industries : String(r.industries ?? "").replace(/[{}]/g, "").split(",").filter(Boolean);
       return ri.includes(ind);
     }).length;
@@ -268,6 +285,14 @@ if (!url || !svc) die(`No URL/service-role key for ${target.label}.`);
 if (!url.includes(target.ref)) die(`The ${target.label} URL points at ${url.replace("https://", "").split(".")[0]}, not ${target.ref}. Refusing to write to a project the flags did not choose.`);
 const db = createClient(url, svc, { auth: { persistSession: false, autoRefreshToken: false } });
 
+// RETIRED ROWS ARE ASSIGNED AN AGENCY, DELIBERATELY. A row with effective_to set is not
+// deleted and never will be — CLAUDE.md §3.2, library rows are versioned, never edited in
+// place, so that an audit pinned to a version stays reproducible. An audit that resolved
+// against the silica parent last year must still be able to say WHICH REGULATOR that
+// requirement belonged to; a NULL agency on a retired row would make last year's answer
+// less explicable than it was at the time. Provenance is the whole reason the row survives.
+// What retired rows must NOT do is count toward coverage — see the row_count filter above.
+//
 // One UPDATE per agency rather than one per row: 24 statements instead of 187, and each one
 // is a whole agency's worth of rows moving together. A partial failure leaves some agencies
 // assigned and others not, which the verification below detects and reports rather than
@@ -327,6 +352,23 @@ console.log(`    ${totals.with_agency} of ${totals.total} requirements have an a
 console.log(`    ${Number(totals.total) - Number(totals.with_agency)} left NULL              (projected ${deliberateNull.length + unmatched.length})`);
 console.log(`    ${totals.coverage} industry_coverage rows        (projected ${coverage.length})`);
 console.log(`    ${totals.cov_claimed} coverage rows claiming more than not_built   (must be 0)`);
+
+// Recompute every row_count straight from the library, with the live filter, and compare to
+// what was stored. This is the check that would have caught the retired-row bug had it
+// existed before the bug did.
+const recount = query(`with truth as (
+    select a.short_name as sn, i.ind as industry, count(t.id) as n
+      from public.agencies a
+      cross join lateral unnest(a.industries) as i(ind)
+      left join public.requirement_templates t
+             on t.agency_id = a.id and t.industries @> array[i.ind] and t.effective_to is null
+     group by 1, 2)
+  select a.short_name as sn, c.industry as ind, c.row_count::int as stored, tr.n::int as live
+    from public.industry_coverage c
+    join public.agencies a on a.id = c.agency_id
+    join truth tr on tr.sn = a.short_name and tr.industry = c.industry
+   where c.row_count <> tr.n`);
+for (const r of recount) mismatches.push(`row_count ${r.ind}/${r.sn}: stored ${r.stored}, live rows ${r.live}`);
 
 if (Number(totals.with_agency) !== assigned) mismatches.push(`total assigned: projected ${assigned}, database ${totals.with_agency}`);
 if (Number(totals.coverage) !== coverage.length) mismatches.push(`coverage rows: projected ${coverage.length}, database ${totals.coverage}`);

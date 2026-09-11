@@ -1,6 +1,8 @@
 # Audit Checks
-**Version:** 1 · **Updated:** 11 September 2026
-**Supersedes:** nothing. New file.
+**Version:** 2 · **Updated:** 11 September 2026
+**Supersedes:** version 1 (11 Sep). Adds check 4, `row_count` must count only live
+requirements — written because migration 011's column comment said "live" and the first
+implementation counted retired rows anyway. A comment is not a constraint.
 
 **Status: the checks are written down and run by hand. None of them runs automatically yet.**
 **Related:** `TODO.md` Phase 6 (observability) · `DECISIONS.md` · `CHEMICAL-OR-WA.md` §7 (verification)
@@ -133,6 +135,74 @@ is a claim the library does not have to honour — and because `verified_has_row
 `row_count > 0`, a typed number is also what would let a `verified` row exist over zero
 requirements. Migration 011 §6b records this and the column comment says **derived, never
 typed**. Re-check this whenever anything new writes to that table.
+
+---
+
+## 4. Does `row_count` count only LIVE requirements?
+
+**The rule.** For every coverage row, `row_count` must equal the number of
+`requirement_templates` rows that are assigned to that agency, carry that industry, **and
+have `effective_to IS NULL`.**
+
+```sql
+with truth as (
+  select a.short_name as sn, i.ind as industry, count(t.id) as n
+    from public.agencies a
+    cross join lateral unnest(a.industries) as i(ind)
+    left join public.requirement_templates t
+           on t.agency_id = a.id
+          and t.industries @> array[i.ind]
+          and t.effective_to is null        -- <<< THE WHOLE CHECK IS THIS LINE
+   group by 1, 2)
+select a.short_name, c.industry, c.row_count as stored, tr.n as live
+  from public.industry_coverage c
+  join public.agencies a on a.id = c.agency_id
+  join truth tr on tr.sn = a.short_name and tr.industry = c.industry
+ where c.row_count <> tr.n;     -- must return zero rows
+```
+
+**Answer, 11 September 2026:** zero rows. `sum(row_count)` across all 56 coverage rows is
+**185**, against **192** live requirements of which **185** carry an agency — the other 7 are
+the deliberate NULLs.
+
+**Why this check exists, and it is the reason this file exists at all.**
+
+The first implementation of the coverage cross product **counted retired rows.** It stored
+`OR-OSHA = 54` and `OR-BCD = 3`; the true live counts are 53 and 2. The two extras are split
+parents — `Respirable crystalline silica exposure standard` and `Boiler and pressure-vessel
+registration/inspection` — each superseded by children and retired on 11 Sep.
+
+**Migration 011's own column comment already said what the rule was:**
+
+> *'How many **live** requirement_templates rows stand behind this coverage claim. DERIVED,
+> NEVER TYPED…'*
+
+**The intent was documented and the code did not honour it, and nothing noticed.** A comment
+is not a constraint. Nothing in the database, the type system or `npm run check` can read an
+English word in a column comment and enforce it — and the wrong number was internally
+consistent, matched its own projection exactly, and passed every check the script had. **The
+gap between a documented intent and an enforced one is precisely what this file exists to
+close**, and this is the first entry that was written because that gap had already opened.
+
+**It also does not stay small.** Library rows are versioned, never edited in place
+(`CLAUDE.md` §3.2), so **retired rows accumulate forever while live ones do not**. Every
+split, every superseded row, every corrected requirement adds one to the overstatement and
+takes nothing away. Two today, on a library of 192; the error only ever grows, and it grows
+fastest during exactly the work — Phase 6's agency-by-agency verification pass — that
+produces the most splits. An error that shrinks can be left; this one had to be caught before
+it was inherited.
+
+**Now enforced** in `scripts/assign-agencies.js`: the query above runs after every write and
+`die()`s on any row, so a stored `row_count` that disagrees with the live library stops the
+run rather than being reported later. Tested by violating it on staging — `OR-OSHA` was set
+back to 54 by hand and the check reported `stored 54, live 53` — per `CLAUDE.md` §3.7, a
+check nobody has tried to break is a comment.
+
+**Related, and not the same thing:** retired rows DO keep their `agency_id`. A row is
+retired, never deleted, so that an audit pinned to it stays reproducible — and that audit
+must still be able to say which regulator the requirement belonged to. Provenance is the
+reason the row survives; coverage is a statement about what the library can tell a customer
+today. The two questions have different answers and the schema holds both.
 
 ---
 
