@@ -1,6 +1,10 @@
 # Chemical Manufacturing Vertical — Oregon & Washington
-**Version:** 1.3 · **Updated:** 11 September 2026
-**Supersedes:** version 1.2 (11 Sep). **Rewrites §3.2's match rule** — it described three
+**Version:** 1.4 · **Updated:** 11 September 2026
+**Supersedes:** version 1.3 (11 Sep). Adds to §3.2 where the four jurisdiction facts come
+from: state, county and city are geocoded from the address against the US Census Bureau
+Geocoder, and fire authority is asked, because fire districts do not follow county lines.
+Both failure paths leave the jurisdiction unknown and ask. Version 1.3 **rewrote §3.2's
+match rule** — it described three
 jurisdiction cases and migration 007 made five plus a nullable. `city` and `local` resolve
 per SITE rather than per company, `local` may be a fire district that is neither a city nor
 a county, and a NULL layer is not a jurisdiction case at all: those rows are contractual and
@@ -477,10 +481,29 @@ a certified company is never told about the surveillance audit it will fail. App
 default and every company is told it must maintain an ISO certificate it has never held.
 **The match key's job is to hand them to the switch evaluator, not to decide them.**
 
-**The source of truth is the company's stated address, never a derived one.**
-`companies.state/county/city` and `entities.state/county/city`. Never `scan_result`, which
-is an unverified AI website scan — it silently outranked the stated address for months and
-cost most companies their state-level requirements (`DECISIONS.md` §24.1, `TODO.md` 1.4).
+### Where the four jurisdiction facts come from
+
+*Recorded 11 Sep, `DECISIONS.md` §25. Not built — it lands with the M7 signup rework.*
+
+| Fact | Source | Why |
+|---|---|---|
+| `state`, `county`, `city` | **Geocode the address.** US Census Bureau Geocoder — no API key, effectively unlimited, returns matched address, city, state, state FIPS, county and county FIPS | A lookup with a **known correct answer**. A model would be right most of the time and wrong occasionally *with no signal on which* — and a wrong county silently changes which requirements apply |
+| `fire_authority` | **Ask the user.** One field at onboarding | Fire districts **do not follow county or city lines**. Tualatin Valley Fire & Rescue spans Washington, Clackamas and Multnomah counties, so geocoding cannot produce it — which is why it is a fourth independent fact and not derived from the other three |
+
+**Never `scan_result`.** An unverified AI website scan silently outranked the stated address
+for months and cost most companies their state-level requirements (`DECISIONS.md` §24.1,
+`TODO.md` 1.4).
+
+**A deterministic lookup against an authoritative source outranks both a stated value and an
+inferred one.** That is stronger than §24.1's ordering and replaces it for these three
+fields: a customer typing "Washington County" can be wrong, and people in Portland routinely
+do not know which of three counties an address falls in.
+
+**Both failure paths ask rather than substitute.** A geocode failure — Census downtime is
+common enough that commercial geocoders advertise against it — leaves the jurisdiction
+**unknown**, and the state- and county-scoped requirements show as undetermined. An unknown
+fire authority leaves the three `local` rows undetermined. Neither resolves against a guess,
+and neither disappears.
 
 **Rows are versioned, never edited.** A regulation changes; the old row gets `effective_to`, a new row gets `version + 1` and `effective_from`. Audits pin to a library version so past reports remain reproducible.
 

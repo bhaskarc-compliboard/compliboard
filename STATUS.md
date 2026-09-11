@@ -1,6 +1,13 @@
 # STATUS
 
-**Updated:** 11 September 2026 · **Environment:** staging on migrations 000–010, production on 000–009
+**Updated:** 11 September 2026 · **Environment:** staging on 000–010, **production on 000–007**
+
+> ⚠️ **Production is three migrations behind.** 008 (switches, coverage, candidates, jobs),
+> 009 (site jurisdiction) and 010 (every company gets a site) are on staging only. An
+> earlier version of this file said production was on 009; that was wrong and was caught by
+> a pre-flight. Nothing reads those tables yet, so nothing is broken by the gap — but the
+> two environments are not the same shape, and every day that is true makes the next
+> comparison harder to interpret.
 
 ## Why this file exists
 

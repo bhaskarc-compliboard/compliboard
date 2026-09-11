@@ -1,6 +1,12 @@
 # Decision Record
-**Version:** 10 · **Updated:** 11 September 2026
-**Supersedes:** version 9 (11 Sep). Adds §24, the match key: the company's stated address
+**Version:** 11 · **Updated:** 11 September 2026
+**Supersedes:** version 10 (11 Sep). Adds §25, where jurisdiction comes from: state, county
+and city are **geocoded** from the address against the US Census Bureau Geocoder rather than
+typed or inferred — a deterministic lookup against an authoritative source outranks both a
+stated value and an AI one, which strengthens §24.1 — and a geocode failure leaves
+jurisdiction unknown and asks rather than substituting. Fire authority is **asked**, because
+fire districts do not follow county lines and the customer has been inspected by one.
+Version 10 added §24, the match key: the company's stated address
 is authoritative and an AI website scan never is — a derived value silently outranked a
 stated one for months and cost most companies their state-level requirements — and the
 match key's implementation belongs to Phase 4's resolution engine, with Phase 1 landing its
@@ -1332,3 +1338,84 @@ signup rework captures a full address, no county-scoped requirement can resolve 
 **Reversal condition:** if resolution turns out to need a database-side filter for
 performance — it will not at a few thousand library rows — the predicate stays the
 definition and the SQL becomes an optimisation that must be a proven superset of it.
+
+---
+
+## 25. Where jurisdiction comes from — 11 September 2026
+
+**Recorded, not built.** The implementation belongs to M7, where signup is reworked.
+
+### 25.1 State, county and city come from geocoding the address
+
+**Decision: geocode the address. Not AI, and not the user typing a county name.**
+
+The **US Census Bureau Geocoder** does this with **no API key and effectively unlimited
+use**, returning the matched address, city, state, state FIPS, county and county FIPS. It
+is the authoritative source for exactly this question, and it is free.
+
+**Why not AI.** This is a lookup with a **known correct answer**. A model would be right
+most of the time and wrong occasionally, **with no signal on which** — and jurisdiction is
+the match key. A wrong county silently changes which requirements apply, which is the
+failure mode this product exists to prevent, arriving through the one field that decides
+everything downstream. `CLAUDE.md` §3.3 is the general form of this: the model reasons well
+against an artifact and enumerates unreliably from nothing. An address lookup is not
+reasoning against an artifact; it is a database query someone else already runs.
+
+**This is stronger than §24.1, and supersedes its ordering for these three fields.** That
+decision said a stated value outranks an inferred one. This one says: **a deterministic
+lookup against an authoritative source outranks both.** A customer typing "Washington
+County" is a stated value and can still be wrong — people mistype, and people in Portland
+routinely do not know which of three counties their address falls in.
+
+**The failure path is part of the decision and must be built.** Census downtime is common
+enough that commercial geocoders market themselves specifically against it. So:
+
+> **A geocode failure leaves jurisdiction UNKNOWN and asks. It never silently substitutes.**
+
+Same rule as a missing address (§24.1's reversal condition). An unknown jurisdiction means
+the state- and county-scoped requirements show as **undetermined** — open questions with a
+reason — rather than resolving against a guess. A retry, a queue, and a visible "we could
+not confirm your county" are all acceptable; quietly falling back to what the user typed,
+or to a model, is not.
+
+**Reversal condition:** if the Census Geocoder's match rate proves too low for real
+customer addresses — rural sites and new construction are the usual gap — the answer is a
+second authoritative geocoder as a fallback, not a model. The rule is authoritative source
+or unknown.
+
+### 25.2 Fire authority is asked, not derived
+
+**Decision: ask the user. One field, at onboarding.**
+
+**Geocoding does not solve this, and the three `local` fire-code requirements depend on
+it.** Fire districts do not follow county or city lines. **Tualatin Valley Fire & Rescue
+spans Washington, Clackamas and Multnomah counties** — so knowing a site is in Hillsboro,
+Washington County, Oregon does not tell you who inspects it. That is precisely why
+`entities.fire_authority` exists as a **fourth independent fact** alongside state, county
+and city, rather than being derived from them.
+
+**Why asking is right here, when it is wrong for the other three.** The user knows the
+answer with high confidence and can give it instantly: **a fire marshal has visited them.**
+Their inspection reports have a letterhead. This is the rare compliance fact where the
+customer is the authoritative source, and asking costs one field.
+
+**Do not infer it with AI.** Fire district boundaries are exactly the fact class that goes
+stale and gets confidently wrong — districts merge, annex and redraw, and a model trained
+on a 2023 corpus will state a 2019 boundary with full confidence. `CLAUDE.md` §6 lists
+this class as needing a verification badge; a field with a badge that nobody checks is
+worse than an empty field that asks.
+
+**When it is unknown, the three `local` requirements show as undetermined.** They do not
+resolve against a guessed authority, and they do not silently disappear. Undetermined is
+the honest state and it is already what `obligation_status` is built for (§21.3).
+
+**Two options rejected, and why:**
+
+| Option | Why not |
+|---|---|
+| **A curated per-metro lookup table** | Accurate where it is built and **silent where it is not** — a company outside a covered metro gets a confident empty answer, which is indistinguishable from "no fire authority applies". The failure is invisible, which is the disqualifying property. It may earn a place later as a *suggestion* the user confirms, never as a source of truth. |
+| **AI with web search** | Belongs to the `verification_flags` class — a generated answer needing primary-source confirmation before anything relies on it. Putting it in the match key means the flag is never seen, because resolution does not read flags. If it is worth searching for, it is worth the user confirming, and the user already knows. |
+
+**Reversal condition:** a customer with many sites for whom asking per site is genuinely
+burdensome. Then a lookup table becomes worth building — as a **pre-fill the user
+confirms**, with unknown still meaning unknown.

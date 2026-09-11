@@ -436,9 +436,11 @@ add to a customer's. 1.6 is the clearest case in the phase and the most recent a
 
 ### Phase 1 is complete — 11 September 2026
 
-All six items. **Migrations 006–010 are on staging; production is on 006–009** — 010 goes
-with the next production window, and until it does, production's 10 companies have no
-primary site.
+All six items. **Migrations 006–010 are on staging; production is on 007.** 008, 009 and
+010 are pending there — caught by a pre-flight on 11 Sep after this section first claimed
+production was on 009. Nothing reads the new tables yet so nothing is broken by the gap,
+but until they land production's 10 companies have no primary site and the two environments
+are not the same shape.
 
 **Gate item 2 is closed.** Only key rotation remains before the first real customer document.
 
@@ -1264,6 +1266,18 @@ only be completed by someone we have already decided to serve.
 - ⬜ Remove the industry dropdown and `/api/industries` — it is circular, offering only verticals already built
 - ⬜ Signup collects **email, password, website, address** only
 - ⬜ **Address required** — it decides which body of law reaches them; not derivable from a website
+- ⬜ **Geocode the address for state, county and city** — US Census Bureau Geocoder, no API
+  key, effectively unlimited. Not typed by the user and not inferred by a model: it is a
+  lookup with a known correct answer, and a wrong county silently changes which
+  requirements apply. **A geocode failure leaves the jurisdiction unknown and asks — it
+  never substitutes.** `DECISIONS.md` §25.1
+- ⬜ **Ask for the fire authority. One field.** Geocoding cannot produce it — fire districts
+  do not follow county lines, and Tualatin Valley Fire & Rescue spans three counties. The
+  customer knows, because a fire marshal has visited them. Unknown means the three `local`
+  fire-code requirements show undetermined rather than resolving against a guess.
+  `DECISIONS.md` §25.2
+- ⬜ **Capture `county`** — signup hardcodes `county: ''` today, so **no county-scoped
+  requirement can resolve for anyone**. Geocoding is what fills it
 - ⬜ Scan runs as a background job, not inline; do not block signup
 - ⬜ Scan output carries a **sufficiency confidence**, not just extracted fields
 - ⬜ `primary_industry` + `secondary_activities[]`, with `basis` and `resolved_by`
