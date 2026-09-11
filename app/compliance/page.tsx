@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import { createClient, authHeaders } from '@/lib/supabase'
 import AppLayout from '@/components/AppLayout'
 import AIDisclaimer from '@/components/AIDisclaimer'
+import { ACCEPTED_FILE_TYPES } from '@/lib/acceptedFiles'
 
 const STATUS_MESSAGES: Record<string, string[]> = {
   hazmat: [
@@ -166,6 +167,9 @@ function CompliancePageInner() {
   const dataRef = React.useRef<ChecklistData | null>(null)
   const [followUpQuestion, setFollowUpQuestion] = useState('')
   const [researchData, setResearchData] = useState<string | null>(null)
+  // This page had NO error state at all: a non-ok response set `data` to undefined and
+  // showed a blank. Minimal addition — one string, cleared on each submit.
+  const [errorMsg, setErrorMsg] = useState('')
   const [mode, setMode] = useState<'checklist' | 'research'>('checklist')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const searchParams = useSearchParams()
@@ -615,6 +619,7 @@ Give them a specific direct answer — exactly what they need to do, which speci
         if (i > 0) setCompletedSteps(prev => [...prev, messages[i - 1]])
       }, delays[i])
     })
+    setErrorMsg('')
     try {
       let res
       if (uploadedFile) {
@@ -631,6 +636,10 @@ Give them a specific direct answer — exactly what they need to do, which speci
         })
       }
       const json = await res.json()
+      if (!res.ok) {
+        setErrorMsg(json.error || 'That request could not be completed.')
+        return
+      }
       if (currentMode === 'research') {
         const answerText = json.research || json.data?.title || 'No results'
         setResearchData(answerText)
@@ -788,7 +797,7 @@ Give them a specific direct answer — exactly what they need to do, which speci
         </div>
 
         <div className="no-print mb-4">
-          <input ref={fileInputRef} type="file" accept=".pdf,.xlsx,.xls,.csv,.doc,.docx,image/*"
+          <input ref={fileInputRef} type="file" accept={ACCEPTED_FILE_TYPES}
             onChange={handleFileChange} className="hidden" id="file-upload" />
           {!uploadedFile ? (
             <label htmlFor="file-upload"
@@ -813,6 +822,12 @@ Give them a specific direct answer — exactly what they need to do, which speci
             {loading ? 'Working...' : uploadedFile ? 'Ask about this file →' : 'Research this topic →'}
           </button>
         </div>
+
+        {errorMsg && (
+          <div className="no-print mb-4 p-3 bg-red-50 border border-red-200 rounded-xl">
+            <p className="text-sm text-red-600">{errorMsg}</p>
+          </div>
+        )}
 
         {loading && (
           <div className="no-print mt-6 p-5 bg-white rounded-xl border border-gray-200 shadow-sm">
@@ -891,6 +906,12 @@ Give them a specific direct answer — exactly what they need to do, which speci
             {loading ? 'Working...' : 'Get my compliance checklist →'}
           </button>
         </div>
+
+        {errorMsg && (
+          <div className="no-print mb-4 p-3 bg-red-50 border border-red-200 rounded-xl">
+            <p className="text-sm text-red-600">{errorMsg}</p>
+          </div>
+        )}
 
         {loading && (
           <div className="no-print mt-6 p-5 bg-white rounded-xl border border-gray-200 shadow-sm">

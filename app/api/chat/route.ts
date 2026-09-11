@@ -1,6 +1,7 @@
 import { askAI, type AIContent } from '@/lib/ai';
 import { buildSystemPrompt } from '@/prompts/checklist';
 import { NextRequest, NextResponse } from "next/server";
+import { parseDocumentToBlocks } from '@/lib/documentContent';
 
 export async function POST(request: NextRequest) {
   try {
@@ -8,6 +9,7 @@ export async function POST(request: NextRequest) {
 
     let question = '';
     let fileData: string | null = null;
+    let fileBuffer: ArrayBuffer | null = null;
     let fileType: string | null = null;
     let fileName: string | null = null;
     let mode = 'checklist';
@@ -22,8 +24,8 @@ export async function POST(request: NextRequest) {
       if (file) {
         fileType = file.type;
         fileName = file.name;
-        const buffer = await file.arrayBuffer();
-        fileData = Buffer.from(buffer).toString('base64');
+        fileBuffer = await file.arrayBuffer();
+        fileData = Buffer.from(fileBuffer).toString('base64');
       }
     } else {
       const body = await request.json();
@@ -47,43 +49,20 @@ export async function POST(request: NextRequest) {
 
     let messageContent: AIContent;
 
-    if (fileData && fileType) {
-      const isImage = fileType.startsWith('image/');
-      const isPDF = fileType === 'application/pdf';
-
-      if (isImage) {
-        messageContent = [
-          {
-            type: 'image',
-            source: {
-              type: 'base64',
-              media_type: fileType as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp',
-              data: fileData,
-            },
-          },
-          {
-            type: 'text',
-            text: 'File name: ' + fileName + '\n\nUser question: ' + userQuestion,
-          },
-        ];
-      } else if (isPDF) {
-        messageContent = [
-          {
-            type: 'document',
-            source: {
-              type: 'base64',
-              media_type: 'application/pdf',
-              data: fileData,
-            },
-          },
-          {
-            type: 'text',
-            text: 'File name: ' + fileName + '\n\nUser question: ' + userQuestion,
-          },
-        ] as AIContent;
-      } else {
-        messageContent = 'File name: ' + fileName + '\n\nUser question: ' + userQuestion;
+    if (fileBuffer && fileName) {
+      const parsed = await parseDocumentToBlocks(fileBuffer, fileName, fileType);
+      if (!parsed.ok) {
+        // A file we cannot read must say so. It must never become an answer built from
+        // the filename alone, which is what this route did until 11 Sep.
+        return NextResponse.json(
+          { error: parsed.failure.message, document_failed: parsed.failure },
+          { status: 400 }
+        );
       }
+      messageContent = [
+        ...parsed.blocks,
+        { type: 'text', text: 'File name: ' + fileName + '\n\nUser question: ' + userQuestion },
+      ] as AIContent;
     } else {
       messageContent = userQuestion;
     }

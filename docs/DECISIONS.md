@@ -1,6 +1,16 @@
 # Decision Record
-**Version:** 12 · **Updated:** 11 September 2026
-**Supersedes:** version 11 (11 Sep). Adds §26: the invite flow becomes `MODULES` M8 —
+**Version:** 14 · **Updated:** 11 September 2026
+**Supersedes:** version 13 (11 Sep). Adds §28, what actually feeds a document prompt: one
+shared parser for every route, and the two findings behind it — `/api/chat` answered from
+the filename alone for formats its own file pickers offered, and `/api/hr` excluded `.docx`
+from every HR answer while telling the user the format was unreadable, when the parsers had
+existed all along and the restriction was a workaround for a mislabelled file. Version 13
+added §27, how the product speaks when something fails
+— polite, plain, honest about whose problem it is, never asserting anything about a document
+it did not read, always saying what to do next. The operative rule goes in `CLAUDE.md` §5.1
+beside the error-handling rules it extends; `WORKSPACE.md` §10.8 is the same rule scoped to
+signup and is referenced rather than duplicated. The worked example is an alert that told a
+user to check a file for dates after refusing to read it. Version 12 added §26: the invite flow becomes `MODULES` M8 —
 Account, a new and eighth module. It had been floating between Phase 0 and Phase 1,
 scheduled by nothing precisely because it depends on nothing. The cost of waiting is now
 recorded rather than implicit — records written under a shared login stay ambiguous forever,
@@ -1466,3 +1476,135 @@ reconstruction.
 **Reversal condition:** the first customer who needs two named people with separate
 accountability. §17.4 already names that as the trigger, and it is not a nice-to-have
 request — it is the product's core claim.
+
+---
+
+## 27. How the product speaks when something fails — 11 September 2026
+
+**Decision: every message the user sees is polite, plain, and honest about whose problem it
+is. The operative rule lives in `CLAUDE.md` §5.1, beside the error-handling rules it
+extends.**
+
+- When the failure is the product's — a file it cannot read, a service that did not
+  respond, a parse that failed — **say so plainly and never imply the user did something
+  wrong.**
+- **Never assert anything about a document the product did not successfully read.**
+- **Always tell the user what they can do next**, if there is anything.
+- **Error messages, empty states and refusals alike.** An empty state is a message.
+
+### Why in `CLAUDE.md` §5 and not §3
+
+§3 holds the non-negotiables about **code**: secrets, the security boundary, migrations,
+the AI call site. This is a rule about **what the product says**, and §5 is already the
+error-handling section — *"never silent"*, `response_message` in plain language always
+written on success and failure, `error_message` technical. §5.1 is the tone-and-ownership
+half of the rule §5 already half-states. Filing it under §3 would separate it from the
+mechanism it governs.
+
+It is in `CLAUDE.md` at all, rather than only here, because that file is read at the start
+of every session and this needs to be in the room while the message is being written — not
+looked up afterwards. This section holds the reasoning; that one holds the rule.
+
+**`WORKSPACE.md` §10.8 is the same rule, scoped.** It works out per-case wording for the
+three signup-scan failures and opens with *"two of these are the product's problem, not the
+user's, and should not read as the user failing."* §5.1 generalises it; §10.8 stays the
+worked pattern. Neither duplicates the other.
+
+### The worked example, and why it is worth keeping
+
+> `alert('No compliance dates found in this file. Make sure it contains deadline or expiry dates.')`
+
+Shown by `/calendar` for a document that `/api/extract-dates` had **rejected before any
+date-finding ran.** In one sentence it:
+
+1. **asserted a fact about contents nobody had read** — there may well have been dates in it;
+2. **implied the user's file was the problem**, when the product's own format support was;
+3. **told them to go and check something that was never the cause.**
+
+**The cause was structural, not careless wording.** "No dates in it" and "could not read it"
+came back as an identical empty array, so the caller *could not* tell them apart — the
+honest message was unavailable at the point it needed to be said. That is the general shape
+of this failure: **a message lies because the data behind it cannot express the truth.**
+
+So the rule has a design consequence, not only an editorial one: **when a call can fail in
+ways that need different things said, the response has to carry which.** Fixed 11 Sep by
+adding `extraction_failed` with a `reason`, and by giving the generic `catch` its own
+`reason: 'extraction_error'` so "something broke at our end" is distinguishable from both
+the others.
+
+**Reversal condition:** none. If following it ever produces a message that is accurate and
+useless — "something went wrong, there is nothing you can do" — the answer is to make the
+failure actionable, not to soften the message into a claim that is not true.
+
+---
+
+## 28. What actually feeds a document prompt — 11 September 2026
+
+**Decision: one shared parser, `lib/documentContent.ts`, feeds every route that sends a
+document to the model. Excel, CSV, text, Word and PowerPoint are converted to text and
+sent. Formats that cannot be read produce a described failure, never a silent omission.**
+
+This is a `CLAUDE.md` §3.1 change — *"what data or context feeds a prompt"* — and it is the
+largest one this project has made. It is recorded here because §3.1 says such changes are
+discussed first, and because the two findings behind it are worth more than the fix.
+
+### 28.1 `/api/chat` answered from the filename alone
+
+For every upload that was not a PDF or an image, the route fell through to:
+
+```js
+messageContent = 'File name: ' + fileName + '\n\nUser question: ' + userQuestion
+```
+
+**The document's contents never reached the model.** The answer came back confident,
+well-formatted and built from a filename.
+
+**What makes this more than a missing branch: the file pickers actively offered those
+formats.** `/compliance` offered `.xlsx .xls .csv .doc .docx`; `/upload` offered
+`.xlsx .xls .csv`. A user was invited to upload a spreadsheet, did so, asked a question
+about it, and was answered by a model that had been told only what the file was called.
+Nothing in the product said otherwise. The fallback branch was the oldest code in the
+route and had simply never been revisited when the pickers were widened.
+
+**The general shape, which is the part to carry forward: an `else` branch that produces a
+plausible result is more dangerous than one that throws.** A throw gets found on the first
+test. A plausible result gets found when somebody wonders why an answer about a
+spreadsheet never mentions anything in the spreadsheet.
+
+### 28.2 `/api/hr` excluded `.docx` and blamed the format
+
+`/api/hr` accepted PDFs and images only. Everything else was refused with:
+
+> *"…which cannot be read here. Only PDFs and images can be. Re-upload it as a PDF."*
+
+**The parsers existed the entire time.** `/api/extract-dates` had been reading Word, Excel,
+CSV and PowerPoint for as long as `/api/hr` had been rejecting them, and `/api/audits` read
+Word and PowerPoint successfully. The restriction was a **workaround for one specific bug**
+— a `.docx` had once been base64'd and labelled `image/jpeg`, which produced confident
+nonsense — and the workaround was then written into the code comment as though it were a
+property of the format.
+
+**Most handbooks are `.docx`.** So the HR module's core input was the one thing it refused,
+the user was told their file was unreadable, and the true cause — a mislabelled upload,
+fixed long ago — was invisible. A workaround that is documented as a limitation stops
+looking like a bug and starts looking like a design.
+
+**The rule this earns:** when a format, a feature or a case is disabled as a workaround,
+**record it as a workaround with the cause**, not as a property of the thing disabled. The
+comment is what tells the next person whether to fix it or respect it.
+
+### 28.3 Four copies of the same branching, no two alike
+
+`/api/chat`, `/api/audits`, `/api/extract-dates` and `/api/hr` each carried their own
+version. `extract-dates` read five formats, `audits` four, `hr` two, `chat` effectively two
+with a silent fallback. **Four copies is four chances to disagree, and they took all four.**
+`lib/documentContent.ts` is now the only implementation; `lib/acceptedFiles.ts` holds the
+picker list so the three file inputs cannot drift apart again.
+
+`text/plain` is new — it existed in none of the four, which is why a `.txt` reached the
+model as a filename and nothing else.
+
+**Reversal condition:** if a format proves to parse badly enough to be worse than refusing
+it — a scanned PDF-in-Word, say — it may be removed from the accepted list. It must then be
+removed from `ACCEPTED_FILE_TYPES` too, so the picker stops offering it, and the reason
+recorded here. Disabling it in the parser alone recreates §28.1 exactly.

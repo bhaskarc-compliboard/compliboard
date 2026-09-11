@@ -1,99 +1,72 @@
 import { askAIJson, type AIContent } from '@/lib/ai'
 import { EXTRACT_PROMPT } from '@/prompts/extract-dates'
 import { NextRequest, NextResponse } from 'next/server'
-import * as XLSX from 'xlsx'
-import mammoth from 'mammoth'
-import officeParser from 'officeparser'
+import { parseDocumentToBlocks } from '@/lib/documentContent'
 
 export async function POST(request: NextRequest) {
+  // Declared outside the try so the catch can name the file it failed on. A message that
+  // cannot say WHICH document it is about is not much of a message.
+  let fileLabel = 'that file'
   try {
     const formData = await request.formData()
     const file = formData.get('file') as File | null
     const fileName = formData.get('file_name') as string || ''
+    if (file) fileLabel = fileName || file.name
 
     if (!file) {
       return NextResponse.json({ dates_found: [] })
     }
 
-    const fileType = file.type
-    const fileName2 = file.name.toLowerCase()
-    const buffer = await file.arrayBuffer()
-    const base64 = Buffer.from(buffer).toString('base64')
-
-    const isImage = fileType.startsWith('image/')
-    const isPDF = fileType === 'application/pdf' || fileName2.endsWith('.pdf')
-    const isExcel = fileType.includes('spreadsheet') || fileType.includes('excel') || fileName2.endsWith('.xlsx') || fileName2.endsWith('.xls')
-    const isCSV = fileType === 'text/csv' || fileName2.endsWith('.csv')
-    const isWord = fileType.includes('wordprocessingml') || fileType.includes('msword') || fileName2.endsWith('.docx') || fileName2.endsWith('.doc')
-    const isPowerPoint = fileType.includes('presentationml') || fileType.includes('powerpoint') || fileName2.endsWith('.pptx') || fileName2.endsWith('.ppt')
-
-    let messageContent: AIContent
-
-    if (isPDF) {
-      messageContent = [
-        {
-          type: 'document',
-          source: { type: 'base64', media_type: 'application/pdf', data: base64 },
-        } as any,
-        { type: 'text', text: `File name: ${fileName}\n\nExtract all important compliance dates from this document.` },
-      ]
-    } else if (isImage) {
-      messageContent = [
-        {
-          type: 'image',
-          source: {
-            type: 'base64',
-            media_type: fileType as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp',
-            data: base64,
-          },
-        },
-        { type: 'text', text: `File name: ${fileName}\n\nExtract all important compliance dates from this document.` },
-      ]
-    } else if (isExcel) {
-      // Convert Excel to text using xlsx library
-      const nodeBuffer = Buffer.from(buffer)
-      const workbook = XLSX.read(nodeBuffer, { type: 'buffer', cellDates: true })
-      let textContent = `File name: ${fileName}\n\n`
-      for (const sheetName of workbook.SheetNames) {
-        const sheet = workbook.Sheets[sheetName]
-        const csv = XLSX.utils.sheet_to_csv(sheet)
-        textContent += `Sheet: ${sheetName}\n${csv}\n\n`
-      }
-      messageContent = [
-        { type: 'text', text: `${textContent}\n\nExtract all important compliance dates from this spreadsheet.` },
-      ]
-    } else if (isCSV) {
-      // CSV is plain text — read directly
-      const text = new TextDecoder().decode(buffer)
-      messageContent = [
-        { type: 'text', text: `File name: ${fileName}\n\n${text}\n\nExtract all important compliance dates from this spreadsheet.` },
-      ]
-    } else if (isWord) {
-      // Convert Word doc to HTML using mammoth (preserves table structure)
-      const nodeBuffer = Buffer.from(buffer)
-      const result = await mammoth.convertToHtml({ buffer: nodeBuffer })
-      const text = result.value
-      messageContent = [
-        { type: 'text', text: `File name: ${fileName}\n\n${text}\n\nExtract all important compliance dates from this document.` },
-      ]
-    } else if (isPowerPoint) {
-      // Convert PowerPoint to text using officeparser
-      const nodeBuffer = Buffer.from(buffer)
-      const ast = await (officeParser as any).parseOffice(nodeBuffer)
-      const text = ast.toText()
-      messageContent = [
-        { type: 'text', text: `File name: ${fileName}\n\n${text}\n\nExtract all important compliance dates from this presentation.` },
-      ]
-    } else {
-      // Unsupported file type
-      return NextResponse.json({ dates_found: [] })
+    // Parsing lives in lib/documentContent.ts. This route previously carried its own copy
+    // of the branching — the most complete of the four, which is why the shared version
+    // was built from it. text/plain is the one format it did not have.
+    const parsed = await parseDocumentToBlocks(await file.arrayBuffer(), file.name, file.type)
+    if (!parsed.ok) {
+      // THE UPLOAD STILL SUCCEEDS. This route runs in the background behind a file upload
+      // and has always answered "no dates" rather than failing it — a document that cannot
+      // be read for dates is still a document worth storing.
+      //
+      // But "no dates" and "could not read it" are different answers, and returning the
+      // same empty array for both makes them indistinguishable to the caller. Two callers
+      // currently turn that empty array into
+      //
+      //     "No compliance dates found in this file."
+      //
+      // which asserts something about the document's CONTENTS on the basis of never
+      // having read it. extraction_failed carries the reason so a caller can tell the
+      // difference and say the true thing instead.
+      console.warn('extract-dates: ' + parsed.failure.message)
+      return NextResponse.json({ dates_found: [], extraction_failed: parsed.failure })
     }
 
-    const parsed = await askAIJson(EXTRACT_PROMPT, messageContent, { maxTokens: 1000 })
+    const messageContent: AIContent = [
+      ...parsed.blocks,
+      { type: 'text', text: `File name: ${fileName || file.name}\n\nExtract all important compliance dates from this document.` },
+    ]
 
-    return NextResponse.json(parsed)
+    const result = await askAIJson(EXTRACT_PROMPT, messageContent, { maxTokens: 1000 })
+
+    return NextResponse.json(result)
   } catch (error) {
+    // THIRD OUTCOME, AND UNTIL NOW INDISTINGUISHABLE FROM THE OTHER TWO.
+    //
+    // "no dates in it", "we cannot read that format" and "something broke at our end" are
+    // three different things, and all three used to come back as an identical empty array.
+    // Same field, different `reason`, so a caller branches on presence once and reads
+    // `reason` only if it cares which.
+    //
+    // Still 200 and still dates_found: [] — the upload must not fail because date
+    // extraction did.
     console.error('Date extraction error:', error)
-    return NextResponse.json({ dates_found: [] })
+    return NextResponse.json({
+      dates_found: [],
+      extraction_failed: {
+        name: fileLabel,
+        reason: 'extraction_error',
+        extension: '',
+        message: `We couldn't read the dates out of "${fileLabel}" — something went wrong at our end, `
+          + `not with your file. It has still been saved. This is usually temporary, so try again in a moment.`,
+      },
+    })
   }
 }

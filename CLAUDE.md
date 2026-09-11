@@ -374,6 +374,33 @@ Two messages, two audiences:
 Named error classes carry the failure mode; one catch block maps each to a sentence a
 non-technical operator can act on.
 
+### 5.1 How the product speaks when something fails
+
+**Every message the user sees must be polite, plain, and honest about whose problem it is.**
+
+- **When the failure is the product's** — a file it cannot read, a service that did not
+  respond, a parse that failed — **say so plainly, and never imply the user did something
+  wrong.**
+- **Never assert anything about a document the product did not successfully read.** Not its
+  contents, not what it lacks, not what the user should check in it.
+- **Always tell the user what they can do next**, if there is anything.
+- **This applies to error messages, empty states and refusals alike.** An empty state is a
+  message: "nothing found" is a claim, and it has to be true.
+
+**The worked example, because it shipped and nobody noticed:**
+
+> `alert('No compliance dates found in this file. Make sure it contains deadline or expiry dates.')`
+
+Shown by `/calendar` for a document `/api/extract-dates` had **rejected before any
+date-finding ran**. Three failures in one sentence: it asserted a fact about contents
+nobody had read, it implied the user's file was at fault, and it told them to go and check
+something that was never the problem. The cause was structural — "no dates" and "could not
+read it" returned an identical empty array, so the caller could not tell them apart. Fixed
+11 Sep by `extraction_failed`; see `DECISIONS.md` §27.
+
+`WORKSPACE.md` §10.8 applies this same rule to the three signup-scan failures, with wording
+worked out per case. That section is the pattern to copy, not to duplicate.
+
 Validate AI output with Zod at the boundary — a per-field diagnosis beats a Postgres
 error string. Keep the database constraints too.
 

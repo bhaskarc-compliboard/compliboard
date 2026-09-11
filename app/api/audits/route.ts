@@ -3,8 +3,7 @@ import { auditClassifyPrompt, auditGenerateStandardPrompt, auditMatchPrompt } fr
 import { reviewDocument } from '@/lib/documentReview'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireCompany, supabaseAdmin } from '@/lib/auth'
-import mammoth from 'mammoth'
-import officeParser from 'officeparser'
+import { parseDocumentToBlocks, type DocumentParseFailure } from '@/lib/documentContent'
 
 // THIS ROUTE IS A POOR FIT FOR SERVERLESS, AND maxDuration IS NOT THE FIX.
 //
@@ -58,37 +57,20 @@ interface MatchResult {
 }
 
 // Turns an attached file into AIContent for the classify call. Same
-// PDF/image/Word/PowerPoint branching as reviewDocument, but feeding the
-// classify prompt rather than the review prompt.
-async function fileToContent(file: File, extraText: string): Promise<AIContent> {
-  const fileType = file.type
-  const fileName = file.name.toLowerCase()
-  const buffer = await file.arrayBuffer()
-  const base64 = Buffer.from(buffer).toString('base64')
-
-  const isImage = fileType.startsWith('image/')
-  const isPDF = fileType === 'application/pdf' || fileName.endsWith('.pdf')
-  const isWord = fileType.includes('wordprocessingml') || fileType.includes('msword') || fileName.endsWith('.docx') || fileName.endsWith('.doc')
-  const isPowerPoint = fileType.includes('presentationml') || fileType.includes('powerpoint') || fileName.endsWith('.pptx') || fileName.endsWith('.ppt')
-
-  if (isPDF) {
-    return [
-      { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64 } } as any,
-      { type: 'text', text: extraText },
-    ]
-  } else if (isImage) {
-    return [
-      { type: 'image', source: { type: 'base64', media_type: fileType as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp', data: base64 } },
-      { type: 'text', text: extraText },
-    ]
-  } else if (isWord) {
-    const result = await mammoth.convertToHtml({ buffer: Buffer.from(buffer) })
-    return [{ type: 'text', text: result.value + '\n\n' + extraText }]
-  } else if (isPowerPoint) {
-    const ast = await (officeParser as any).parseOffice(Buffer.from(buffer))
-    return [{ type: 'text', text: ast.toText() + '\n\n' + extraText }]
-  }
-  throw new Error('Unsupported file type')
+// Turns the uploaded file into content for the classify prompt. The parsing itself lives
+// in lib/documentContent.ts — this only adds the instruction text, which is the part that
+// differs per route.
+//
+// It used to read PDF, image, Word and PowerPoint and throw a bare
+// `new Error('Unsupported file type')` for anything else, which the catch below turned
+// into a 500 saying "Something went wrong". Excel and CSV were never handled at all.
+async function fileToContent(
+  file: File,
+  extraText: string
+): Promise<{ ok: true; content: AIContent } | { ok: false; failure: DocumentParseFailure }> {
+  const parsed = await parseDocumentToBlocks(await file.arrayBuffer(), file.name, file.type)
+  if (!parsed.ok) return { ok: false, failure: parsed.failure }
+  return { ok: true, content: [...parsed.blocks, { type: 'text', text: extraText }] as AIContent }
 }
 
 // Lists this company's saved audits. The company_id parameter is gone — it let any
@@ -217,9 +199,18 @@ export async function POST(request: NextRequest) {
 
       // --- Step 1: classify + extract ---
       const classifyText = `User request: ${question}`
-      const classifyContent: AIContent = file
-        ? await fileToContent(file, classifyText)
-        : [{ type: 'text', text: classifyText }]
+      let classifyContent: AIContent = [{ type: 'text', text: classifyText }]
+      if (file) {
+        const loaded = await fileToContent(file, classifyText)
+        if (!loaded.ok) {
+          // 400 and the reason, not a 500 saying "Something went wrong".
+          return NextResponse.json(
+            { error: loaded.failure.message, document_failed: loaded.failure },
+            { status: 400 }
+          )
+        }
+        classifyContent = loaded.content
+      }
 
       const classified = await askAIJson(
         auditClassifyPrompt(companyName, industry),

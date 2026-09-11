@@ -1199,6 +1199,36 @@ rebuild (Phase 1) for the versioning columns.
 - ⬜ **`app/documents/page.tsx` is 1,103 lines.** Split when the module is worked, not
   before — a rewrite ahead of the indexing change is a rewrite done twice.
 
+- ⬜ **The file pickers are narrower than the routes behind them, and narrower than each
+  other.** Once `/api/chat` reads every accepted file type correctly, `/upload` and
+  `/compliance` still restrict their pickers to a smaller set than `/documents` offers —
+  Word is missing from `/upload`, PowerPoint from both. Decide whether to widen them to
+  match, and whether `/upload` survives as its own page once **M7's** onboarding flow
+  exists, before doing so.
+
+  Verified 11 Sep, every `accept=` in the app:
+
+  | Page | `accept` | Gap |
+  |---|---|---|
+  | `/documents` | `.pdf .xlsx .xls .csv .docx .doc .pptx .ppt image/*` | the widest — the reference |
+  | `/compliance` | `.pdf .xlsx .xls .csv .doc .docx image/*` | no PowerPoint |
+  | `/upload` | `.pdf .xlsx .xls .csv image/*` | **no Word, no PowerPoint** |
+  | `/calendar` | `.xlsx .xls .csv .pdf .docx .doc .pptx .ppt` | **no images**, though `/api/extract-dates` reads them |
+  | `/audits` ×2 | `.pdf .doc .docx image/*` | no Excel, CSV or PowerPoint |
+  | `/hr` | `.pdf image/*` | narrowest, and **correct** — `hr/route.ts` only accepts those two and says so |
+
+  Only `/upload` and `/compliance` post to `/api/chat`, so only those two are affected by
+  the route change. `/calendar` is the same *class* of defect against a different route and
+  is worth fixing in the same pass. **`/hr` is not a gap** — its narrowness matches its
+  route deliberately, and widening it would reintroduce the confident-nonsense bug that
+  route's comments describe.
+
+  ⚠️ **Widening a picker is not the whole fix.** `app/compliance/page.tsx` has no error
+  handling on the chat path at all — no `res.ok` check and no error state in the component,
+  so a 400 sets `data` to undefined and shows a blank. `app/upload/page.tsx:124` is a bare
+  `catch {}` commented *"extraction failed silently"*. Until those display the message the
+  route now returns, a rejected file looks like nothing happened.
+
 - ⬜ `app/upload/page.tsx:89` calls `getPublicUrl` on a private bucket — already broken,
   already listed in §0.7. Fix it there, not here.
 

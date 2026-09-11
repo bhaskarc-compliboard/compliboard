@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { createClient, authHeaders } from '@/lib/supabase'
 import AppLayout from '@/components/AppLayout'
+import { ACCEPTED_FILE_TYPES } from '@/lib/acceptedFiles'
 
 const PRESET_CATEGORIES = [
   { value: 'audit-reports', label: 'Audit Reports' },
@@ -113,6 +114,12 @@ export default function UploadPage() {
           formData.append('question', 'Extract all compliance deadlines from this document. For each deadline return: title, due_date (as YYYY-MM-DD or descriptive text), and whether it is recurring (true/false). Return as JSON array.')
           const res = await fetch('/api/chat', { method: 'POST', body: formData })
           const json = await res.json()
+          // A refused file used to disappear into the bare catch below. Surface it in the
+          // error banner this page already has.
+          if (!res.ok) {
+            setError(json.error || 'That file could not be read.')
+            return
+          }
           if (json.data?.must_do) {
             const deadlines = json.data.must_do.slice(0, 10).map((item: {name: string}) => ({
               title: item.name,
@@ -160,7 +167,7 @@ export default function UploadPage() {
             <input
               ref={fileInputRef}
               type="file"
-              accept=".pdf,.xlsx,.xls,.csv,image/*"
+              accept={ACCEPTED_FILE_TYPES}
               onChange={handleFileChange}
               className="hidden"
               id="file-upload"

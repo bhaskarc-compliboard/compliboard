@@ -1,0 +1,140 @@
+{
+  "id": "002-dot-shipping-isopropyl-drums",
+  "title": "DOT shipping requirements — isopropyl alcohol, 5-gallon drums, common carrier",
+  "recorded": "2026-09-11",
+  "status": "baseline-recorded",
+  "_status_values": [
+    "baseline-recorded",
+    "scored",
+    "passing",
+    "failing"
+  ],
+  "input": {
+    "document": {
+      "name": "isopropyl-alcohol-sds.txt",
+      "type": "text/plain",
+      "description": "Public Safety Data Sheet extract for isopropyl alcohol",
+      "contents": "Product Identifier: ISOPROPYL ALCOHOL, Supplier: Simchem Corporation\nCAS Number: 67-63-0\nUS DOT 49 CFR Transportation Data:\n  Proper Shipping Name: Isopropanol\n  UN Number: UN1219\n  Hazard Class: 3\n  Packing Group: II\n  Labels: Flammable Liquid\nAppearance: Clear, colorless liquid\nFlash Point: 12°C"
+    },
+    "question": "What DOT shipping requirements apply to shipping this chemical in 5-gallon drums by common carrier?"
+  },
+  "run": {
+    "run_at": "2026-09-11",
+    "model": "claude-sonnet-4-5",
+    "model_source": "AI_MODEL unset; lib/ai.ts default",
+    "temperature": null,
+    "temperature_note": "askAI omits the parameter entirely unless a caller passes one, so this used the API default",
+    "max_tokens": 6000,
+    "web_search": false,
+    "system_prompt_source": "prompts/checklist.ts -> CHECKLIST_PROMPT",
+    "system_prompt_sha256": "d1707b9a65f26f2d1190867860c2c340be95a704b1867258d95873f8cf200f35",
+    "system_prompt_chars": 2625,
+    "call": "askAI(CHECKLIST_PROMPT, userContent, { maxTokens: 6000 })",
+    "user_content": "File name: isopropyl-alcohol-sds.txt\n\nDocument contents:\nProduct Identifier: ISOPROPYL ALCOHOL, Supplier: Simchem Corporation\nCAS Number: 67-63-0\nUS DOT 49 CFR Transportation Data:\n  Proper Shipping Name: Isopropanol\n  UN Number: UN1219\n  Hazard Class: 3\n  Packing Group: II\n  Labels: Flammable Liquid\nAppearance: Clear, colorless liquid\nFlash Point: 12°C\n\nUser question: What DOT shipping requirements apply to shipping this chemical in 5-gallon drums by common carrier?",
+    "latency_ms": 42067,
+    "response_chars": 8581
+  },
+  "expected": [
+    {
+      "id": "un-number",
+      "fact": "UN1219",
+      "must_appear": true,
+      "source": "stated in the input document",
+      "citation": "",
+      "citation_url": "",
+      "citation_quote": "",
+      "source_checked_at": null,
+      "source_check_method": "",
+      "verification_status": "unverified"
+    },
+    {
+      "id": "hazard-class",
+      "fact": "Hazard Class 3 (flammable liquid)",
+      "must_appear": true,
+      "source": "stated in the input document",
+      "citation": "",
+      "citation_url": "",
+      "citation_quote": "",
+      "source_checked_at": null,
+      "source_check_method": "",
+      "verification_status": "unverified"
+    },
+    {
+      "id": "packing-group",
+      "fact": "Packing Group II",
+      "must_appear": true,
+      "source": "stated in the input document",
+      "citation": "",
+      "citation_url": "",
+      "citation_quote": "",
+      "source_checked_at": null,
+      "source_check_method": "",
+      "verification_status": "unverified"
+    },
+    {
+      "id": "un-spec-packaging",
+      "fact": "UN-specification packaging is required",
+      "must_appear": true,
+      "source": "regulatory requirement",
+      "citation": "49 CFR 173.202",
+      "citation_url": "https://www.ecfr.gov/current/title-49/subtitle-B/chapter-I/subchapter-C/part-173/subpart-E/section-173.202",
+      "citation_quote": "§ 173.202 Non-bulk packagings for liquid hazardous materials in Packing Group II. (a) When § 172.101 of this subchapter specifies that a liquid hazardous material be packaged under this section, only non-bulk packagings prescribed in this section may be used for its transportation. Authorized outer packagings include steel drums \"1A1 or 1A2\" and plastic drums \"1H1 or 1H2\"; the same drum specifications also appear under single packagings, excluding transport aboard passenger aircraft.",
+      "source_checked_at": "2026-09-11",
+      "source_check_method": "retrieved from the eCFR API in this session (renderer/v1/content/enhanced/current) and quoted from that response",
+      "verification_status": "primary-source-retrieved"
+    },
+    {
+      "id": "hazmat-labeling",
+      "fact": "Hazmat labeling/marking is required",
+      "must_appear": true,
+      "source": "regulatory requirement",
+      "citation": "",
+      "citation_url": "",
+      "citation_quote": "",
+      "source_checked_at": null,
+      "source_check_method": "",
+      "verification_status": "unverified"
+    },
+    {
+      "id": "shipping-paper",
+      "fact": "A shipping paper with a 24-hour emergency contact is required",
+      "must_appear": true,
+      "source": "regulatory requirement",
+      "citation": "",
+      "citation_url": "",
+      "citation_quote": "",
+      "source_checked_at": null,
+      "source_check_method": "",
+      "verification_status": "unverified"
+    },
+    {
+      "id": "hazmat-training",
+      "fact": "Hazmat employee training is required",
+      "must_appear": true,
+      "source": "regulatory requirement",
+      "citation": "49 CFR 172.704",
+      "citation_url": "https://www.ecfr.gov/current/title-49/subtitle-B/chapter-I/subchapter-C/part-172/subpart-H/section-172.704",
+      "citation_quote": "§ 172.704 Training requirements. (c)(2): \"A hazmat employee must receive the training required by this subpart at least once every three years.\"",
+      "source_checked_at": "2026-09-11",
+      "source_check_method": "retrieved from the eCFR API in this session (renderer/v1/content/enhanced/current) and quoted from that response",
+      "verification_status": "primary-source-retrieved"
+    }
+  ],
+  "_expected_note": "citation/citation_url/citation_quote are populated ONLY where the section was actually retrieved from eCFR. verification_status says which: 'primary-source-retrieved' means the text was fetched this session; 'unverified' means nobody has checked it and the empty citation is an absence of work, not an absence of a rule. Neither value means human-verified — DECISIONS.md §21.4 reserves 'verified' for a person, and no person has read these.",
+  "actual": {
+    "raw": "```json\n{\n  \"title\": \"DOT Shipping Requirements for Isopropyl Alcohol in 5-Gallon Drums\",\n  \"safety_alert\": \"Isopropyl alcohol is a flammable liquid with a flash point of 12°C (53°F). It must be handled, stored, and shipped as a Class 3 Flammable Liquid under DOT regulations. Improper packaging or labeling can result in fires, explosions, or serious injuries during transport.\",\n  \"must_do\": [\n    {\n      \"name\": \"Use DOT-Approved Packaging\",\n      \"description\": \"Ship isopropyl alcohol in UN-rated packaging approved for Packing Group II liquids under 49 CFR 173.202 and 49 CFR 178.504.\",\n      \"source_url\": \"https://www.ecfr.gov/current/title-49/subtitle-B/chapter-I/subchapter-C/part-173/subpart-E/section-173.202\",\n      \"why\": \"UN1219 Packing Group II materials require specific containers that have passed drop, pressure, and compatibility tests. Using non-compliant containers can result in spills, fires, and civil penalties up to $96,624 per violation.\",\n      \"cost_note\": \"$15 to $40 per 5-gallon UN-rated steel or plastic drum depending on supplier and quantity\",\n      \"providers\": [\n        {\n          \"name\": \"Uline\",\n          \"type\": \"Industrial packaging supplier\",\n          \"coverage\": \"national\",\n          \"note\": \"Sells UN-rated drums and shipping supplies with same-day shipping in many regions\"\n        },\n        {\n          \"name\": \"Grainger\",\n          \"type\": \"Industrial supply\",\n          \"coverage\": \"national\",\n          \"note\": \"Stocks UN-rated containers and hazmat shipping materials\"\n        }\n      ]\n    },\n    {\n      \"name\": \"Apply Proper DOT Labels and Markings\",\n      \"description\": \"Affix Class 3 Flammable Liquid labels and mark each drum with UN1219, Isopropanol, and Packing Group II per 49 CFR 172.400 and 49 CFR 172.301.\",\n      \"source_url\": \"https://www.ecfr.gov/current/title-49/subtitle-B/chapter-I/subchapter-C/part-172/subpart-E\",\n      \"why\": \"DOT requires specific diamond-shaped hazard labels and text markings so emergency responders and carriers know what they are handling. Missing or incorrect labels can delay shipments and result in fines of $500 to $96,624 per package.\",\n      \"cost_note\": \"$10 to $30 for a roll of 500 Class 3 Flammable Liquid labels\",\n      \"providers\": [\n        {\n          \"name\": \"Labelmaster\",\n          \"type\": \"Hazmat labeling and compliance supplier\",\n          \"coverage\": \"national\",\n          \"note\": \"Specializes in DOT labels, placards, and shipping documents\"\n        },\n        {\n          \"name\": \"Uline\",\n          \"type\": \"Industrial packaging supplier\",\n          \"coverage\": \"national\",\n          \"note\": \"Stocks all standard DOT hazmat labels and marking supplies\"\n        }\n      ]\n    },\n    {\n      \"name\": \"Provide a Shipping Paper with Emergency Contact\",\n      \"description\": \"Include a shipping paper listing the hazardous material as UN1219, Isopropanol, 3, PG II and provide a 24-hour emergency response phone number under 49 CFR 172.200 and 49 CFR 172.604.\",\n      \"source_url\": \"https://www.ecfr.gov/current/title-49/subtitle-B/chapter-I/subchapter-C/part-172/subpart-C\",\n      \"why\": \"Carriers and emergency responders need immediate access to material information and expert guidance in case of spills or accidents. Shipping without proper documentation can result in shipment refusal and civil penalties up to $96,624.\",\n      \"cost_note\": \"Free to create your own shipping paper template or $200 to $600 per year for 24-hour emergency response phone service\",\n      \"providers\": [\n        {\n          \"name\": \"CHEMTREC\",\n          \"type\": \"24-hour emergency response hotline\",\n          \"coverage\": \"national\",\n          \"note\": \"Provides emergency phone numbers and incident response support for hazmat shippers\"\n        },\n        {\n          \"name\": \"INFOTRAC\",\n          \"type\": \"24-hour emergency response hotline\",\n          \"coverage\": \"national\",\n          \"note\": \"Alternative emergency response service for hazardous materials transportation\"\n        }\n      ]\n    },\n    {\n      \"name\": \"Complete Hazmat Employee Training\",\n      \"description\": \"Train anyone who packages, marks, labels, or ships hazardous materials under 49 CFR 172.704 with general awareness, function-specific, and safety training every three years.\",\n      \"source_url\": \"https://www.ecfr.gov/current/title-49/subtitle-B/chapter-I/subchapter-C/part-172/subpart-H/section-172.704\",\n      \"why\": \"DOT requires documented training for all employees involved in hazmat shipping to prevent accidents and ensure regulatory compliance. Untrained employees can make costly mistakes and employers face penalties of $500 to $96,624 per violation plus liability for accidents.\",\n      \"cost_note\": \"$50 to $300 per employee for online or in-person DOT hazmat training depending on depth and provider\",\n      \"providers\": [\n        {\n          \"name\": \"Labelmaster\",\n          \"type\": \"Hazmat training and compliance\",\n          \"coverage\": \"national\",\n          \"note\": \"Online and in-person DOT hazmat training with certificates and record-keeping\"\n        },\n        {\n          \"name\": \"Dangerous Goods Training Solutions (DGTS)\",\n          \"type\": \"Specialized hazmat training\",\n          \"coverage\": \"national\",\n          \"note\": \"Offers DOT, IATA, and IMDG hazmat training courses\"\n        },\n        {\n          \"name\": \"Lion Technology\",\n          \"type\": \"Hazmat training and software\",\n          \"coverage\": \"national\",\n          \"note\": \"Online DOT training with software for shipping document creation\"\n        }\n      ]\n    },\n    {\n      \"name\": \"Verify Carrier Acceptance of Hazmat Shipments\",\n      \"description\": \"Confirm your common carrier accepts Class 3 flammable liquids and provide required shipping papers before tendering the shipment under 49 CFR 177.817.\",\n      \"source_url\": \"https://www.ecfr.gov/current/title-49/subtitle-B/chapter-I/subchapter-C/part-177/subpart-B/section-177.817\",\n      \"why\": \"Not all carriers accept hazardous materials and those that do require advance notice and proper documentation. Tendering hazmat without carrier approval can result in shipment refusal, delays, and additional fees.\",\n      \"cost_note\": \"Hazmat shipping fees typically add $30 to $100 per package depending on carrier and service level\",\n      \"providers\": [\n        {\n          \"name\": \"FedEx\",\n          \"type\": \"Common carrier with hazmat services\",\n          \"coverage\": \"national\",\n          \"note\": \"Accepts limited quantities and fully regulated hazmat with proper documentation\"\n        },\n        {\n          \"name\": \"UPS\",\n          \"type\": \"Common carrier with hazmat services\",\n          \"coverage\": \"national\",\n          \"note\": \"Offers hazmat shipping for properly classified and packaged materials\"\n        },\n        {\n          \"name\": \"Old Dominion Freight Line\",\n          \"type\": \"LTL freight carrier\",\n          \"coverage\": \"national\",\n          \"note\": \"Handles larger hazmat shipments including drums with proper documentation\"\n        }\n      ]\n    }\n  ],\n  \"good_to_have\": [\n    {\n      \"name\": \"Maintain Hazmat Shipping Records\",\n      \"description\": \"Keep copies of shipping papers, training records, and emergency response documentation for at least three years as recommended by 49 CFR 172.201 and 49 CFR 172.704.\",\n      \"source_url\": \"https://www.ecfr.gov/current/title-49/subtitle-B/chapter-I/subchapter-C/part-172/subpart-C/section-172.201\",\n      \"why\": \"Organized records help demonstrate compliance during DOT inspections and protect your business in case of incidents or audits.\",\n      \"cost_note\": \"Free if using basic filing system or $10 to $50 per month for cloud-based hazmat compliance software\"\n    },\n    {\n      \"name\": \"Consider Hazmat Compliance Software\",\n      \"description\": \"Use specialized software to generate compliant shipping papers, labels, and training records as recommended by industry associations and hazmat service providers.\",\n      \"source_url\": \"\",\n      \"why\": \"Software reduces human error in classification, labeling, and documentation which are common causes of DOT violations and shipment delays.\",\n      \"cost_note\": \"$50 to $300 per month depending on shipment volume and features\"\n    }\n  ],\n  \"follow_up_questions\": [\n    \"How many drums of isopropyl alcohol do you ship per month?\",\n    \"Are you shipping within one state or across state lines?\",\n    \"Do you currently have any employees trained in DOT hazmat shipping requirements?\",\n    \"Are you the manufacturer or distributor of this product or are you using it internally and shipping to other company locations?\"\n  ]\n}\n```"
+  },
+  "matched": null,
+  "missed": null,
+  "extra": null,
+  "_scoring_note": "matched / missed / extra are NOT populated. Scoring is a separate pass and was not requested when this baseline was recorded. A null here means 'not scored', which is different from an empty list meaning 'scored, nothing found'.",
+  "notes": [
+    "PAYLOAD PROVENANCE — CORRECTED 11 SEP, AND THE CORRECTION IS THE POINT. When this baseline was recorded, the SDS text was added to the message BY HAND, because /api/chat built its content as 'File name: ' + fileName + '\\n\\nUser question: ' + userQuestion for any file that was not a PDF or an image — the document's contents never reached the model. The note here said this case was therefore IDEALISED rather than reproducible through the live path.",
+    "THAT IS NO LONGER TRUE. On 11 Sep the parsing was unified into lib/documentContent.ts and text/plain was added as a branch it had never had, so /api/chat now reads a .txt and sends its contents. **This case is reproducible through the live path**: uploading isopropyl-alcohol-sds.txt to /compliance and asking the same question now sends the same document to the same model. The recorded `actual` predates that change and was produced by the hand-built payload — so it is a valid baseline for the content, and a re-run is what would confirm the live path matches it.",
+    "Composition differs in one respect worth knowing before comparing a re-run: the live path puts the document blocks first and 'File name: … User question: …' after them, whereas this recorded run had the filename, then the document, then the question, in a single text block. Same information, different order.",
+    "CITATION CONFIDENCE IS NOT UNIFORM ACROSS THE SEVEN EXPECTED FACTS. Two were retrieved from the live eCFR API in this session and are quoted from that response: 49 CFR 173.202 (UN-spec packaging) and 49 CFR 172.704 (hazmat employee training). The other FIVE were NOT checked against any source — labeling/marking (cited by the model as 172.400 and 172.301), shipping papers with emergency contact (172.200 and 172.604), carrier acceptance (177.817), and the three facts stated in the input document itself (UN1219, Hazard Class 3, Packing Group II). An empty citation and a populated one DO NOT carry the same confidence, and the section numbers for the unchecked four come from the model's own answer, which is the thing under test — they are not independent corroboration.",
+    "Retrieval was via the eCFR API because the human-facing eCFR URL redirects to a bot-block interstitial (302 to unblock.federalregister.gov). The citation_url recorded on each fact is the human-readable one, which is what a person should follow; it is not the URL that was fetched. Also note the fetch is model-mediated — the page was read back by a summarising model, not transcribed by hand — so 'primary-source-retrieved' is the honest ceiling here, not 'verified'.",
+    "The response came back wrapped in ```json fences despite the system prompt's 'No other text. No markdown. No backticks.' askAI returns raw text; only askAIJson strips fences, and /api/chat calls askAI.",
+    "system_prompt_sha256 is recorded so that 'the prompt changed' is detectable. TODO 2.8 says re-run after every prompt change or model upgrade — this is what makes that checkable rather than remembered."
+  ]
+}

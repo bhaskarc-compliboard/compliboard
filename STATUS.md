@@ -1,7 +1,10 @@
 # STATUS
 
-**Version:** 2 · **Updated:** 11 September 2026
-**Supersedes:** version 1 (11 Sep) — which said production was on 009 when it was on 007.
+**Version:** 3 · **Updated:** 11 September 2026
+**Supersedes:** version 2 (11 Sep). Records what changed when document parsing was unified:
+HR now reads `.docx`, four modules gained honest failure messages, and two pickers are
+still narrower than their routes. Version 2 corrected version 1, which said production was
+on 009 when it was on 007.
 **Environment:** **staging and production both on 000–010**
 
 > ✅ **The two environments are the same shape again.** Compared object for object —
@@ -42,14 +45,14 @@ which is the exact failure this file exists to prevent.
 | Module | State | Verified | Notes |
 |---|---|---|---|
 | **Requirements screen** (`/requirements`) | 🔧 not-yet-rebuilt | 11 Sep | Migration 007 dropped the 376 obligations — derived output, and they carried the jurisdiction defect. Nothing regenerates them until the resolution engine exists (**Phase 4.1**). `/api/obligations` returns `[]` with a 200 and the page renders empty. **Expected. Not a regression.** |
-| **Audits** (`/audits`) | 🟡 degraded | 10 Sep | **Silently drops documents it cannot read.** Observed in a real run: `satisfied=2 needs_info=1` computed from **one readable document out of eight**, the other seven dropped by `if (dlError \|\| !fileData) continue` with no error and no record. Plausible numbers, wrong basis — `TODO.md` M2(a). Also `matched_documents` can contain an entry with a null `document_id`. |
-| **HR** (`/hr`) | 🟡 degraded | 10 Sep, by reading the code — **not run** | Audit reads **one** handbook; ask reads all. Requirements are eleven hardcoded words in a prompt with no jurisdiction and no thresholds, so a handbook can pass "FMLA present" and miss both Oregon obligations. `draft_policies` ships suggested legal language unconditionally. `TODO.md` M3. |
-| **Documents** (`/documents`) | ✅ working | 10 Sep | All four methods converted to the caller's token and verified by per-table row-count comparison against the service role. Debts, not breakage: review runs inline and twice per document; nothing records what a document supersedes (`TODO.md` M4). |
-| **Calendar** (`/calendar`) | ✅ working | 10 Sep | Converted and verified the same way. Debt: dates are extracted from documents rather than read from obligation cadence, so the calendar lists dates somebody's paperwork mentioned rather than deadlines that bind (`TODO.md` M5). |
+| **Audits** (`/audits`) | 🟡 degraded | 11 Sep | **11 Sep: an unreadable attachment now returns 400 with the reason instead of a 500 saying "Something went wrong", and Excel and CSV are read where they previously were not.** Unchanged and still the headline defect: **Silently drops documents it cannot read.** Observed in a real run: `satisfied=2 needs_info=1` computed from **one readable document out of eight**, the other seven dropped by `if (dlError \|\| !fileData) continue` with no error and no record. Plausible numbers, wrong basis — `TODO.md` M2(a). Also `matched_documents` can contain an entry with a null `document_id`. |
+| **HR** (`/hr`) | 🟡 degraded | 11 Sep, by reading the code — **not run** | **`.docx` handbooks now reach the model.** Until 11 Sep this route accepted PDFs and images only and told the user the format was unreadable — the parsers existed all along and the restriction was a workaround for a mislabelled upload (`DECISIONS.md` §28.2). Most handbooks are `.docx`, so the module's core input was the one thing it refused. Still degraded, unchanged by this: audit reads **one** handbook while ask reads all; requirements are eleven hardcoded words with no jurisdiction or thresholds, so a handbook can pass "FMLA present" and miss both Oregon obligations; `draft_policies` ships suggested legal language unconditionally. `TODO.md` M3. **The route's own file picker is still `.pdf,image/*`** and was not widened — see the note below. |
+| **Documents** (`/documents`) | ✅ working | 11 Sep | All four methods converted to the caller's token and verified by per-table row-count comparison against the service role. **11 Sep: picker widened to the shared list, and a document that cannot be read now says so instead of reporting "no dates found" on a file nobody opened.** Debts, not breakage: review runs inline and twice per document; nothing records what a document supersedes (`TODO.md` M4). |
+| **Calendar** (`/calendar`) | ✅ working | 11 Sep | Converted and verified the same way. **11 Sep: an unreadable import now says why, instead of "No compliance dates found in this file. Make sure it contains deadline or expiry dates." — shown for documents that had been rejected before any date-finding ran** (`CLAUDE.md` §5.1, `DECISIONS.md` §27). **Its picker is still narrower than its route** — no images, though `/api/extract-dates` reads them. Debt: dates are extracted from documents rather than read from obligation cadence (`TODO.md` M5). |
 | **Dashboard** (`/dashboard`) | ❓ unknown | — | **Not exercised this session.** Reads calendar, document reviews and checklists — **not** obligations — so the empty obligations table does not affect it. That is from reading the page, not from running it. |
-| **Compliance workspace** (`/compliance`) | ❓ unknown | — | Not exercised this session. The 1,282-line page that predates the Workspace design in `WORKSPACE.md`; that design is M1 and unbuilt. |
+| **Compliance workspace** (`/compliance`) | ❓ unknown | — | **Still not exercised** — changed on 11 Sep but not run. Its uploads now reach the model as content rather than as a filename (`DECISIONS.md` §28.1), the picker matches the shared list, and it gained its first error display: it previously had no error state at all, so a failed request showed a blank. The 1,282-line page predates the Workspace design in `WORKSPACE.md`; that design is M1 and unbuilt. |
 | **Signup** (`/signup`) | 🟡 degraded | 11 Sep | **Was ⛔ broken in production for roughly two hours today** — migration 007 renamed `industry` → `industries[]` and `/api/industries`, the only caller, kept selecting the old name, so the dropdown came back empty and blocked signup. **Fixed and verified 11 Sep.** Still degraded: does not capture `county`, and `employee_count` is never asked for (writes NULL). |
-| **Upload** (`/upload`) | 🟡 degraded | 9 Sep | `app/upload/page.tsx:89` calls `getPublicUrl` on a private bucket. Already broken before this work; `TODO.md` §0.7. |
+| **Upload** (`/upload`) | 🟡 degraded | 11 Sep | `app/upload/page.tsx:89` calls `getPublicUrl` on a private bucket — **still broken**, predates this work, `TODO.md` §0.7. 11 Sep: picker widened to the shared list, and a refused file now reaches the error banner this page already had instead of a bare `catch {}` commented *"extraction failed silently"*. |
 
 ## Infrastructure
 
@@ -80,6 +83,11 @@ These are true regardless of which screen you are looking at.
 - **No user management.** A person cannot be added to a company or removed from one. When
   an employee leaves, their login keeps working indefinitely with full access. Needs no
   migration — only an invite flow (`TODO.md` FEATURE, `DECISIONS.md` §19).
+- **Two file pickers are still narrower than the routes behind them.** `/calendar` offers no
+  images though `/api/extract-dates` reads them; `/audits` offers no Excel, CSV or
+  PowerPoint though `/api/audits` now reads all three; `/hr` offers `.pdf,image/*` though
+  its route now reads everything. Only `/documents`, `/compliance` and `/upload` were
+  widened on 11 Sep. Recorded in `TODO.md` M4.
 - **Key rotation outstanding.** Six credentials. Item 1 of the gate, and the only gate item
   still open.
 

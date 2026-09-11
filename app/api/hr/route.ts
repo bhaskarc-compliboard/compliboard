@@ -22,6 +22,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireCompany } from '@/lib/auth'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
+import { parseDocumentToBlocks, describeUnsupported, extensionOf } from '@/lib/documentContent'
+
 const BUCKET = 'company-documents'
 
 type OwnedDocument = { id: string; name: string; file_url: string; file_type: string | null }
@@ -35,41 +37,31 @@ type LoadFailure = {
   message: string
 }
 
-// The model is only sent PDFs and images. Anything else — .docx above all — would
-// previously be base64'd and labelled image/jpeg, which is not a format the model can
-// read; it produced confident nonsense rather than an error.
-const IMAGE_TYPES: Record<string, string> = {
-  jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png',
-  gif: 'image/gif', webp: 'image/webp',
-}
-
-function extensionOf(path: string): string {
-  const base = path.split('?')[0]
-  const dot = base.lastIndexOf('.')
-  return dot === -1 ? '' : base.slice(dot + 1).toLowerCase()
-}
-
-// Returns a content block, or a described failure. Never returns a block for a format
-// the model cannot actually read.
+// *** WIDENED 11 SEP, FROM PDF AND IMAGES ONLY TO EVERY FORMAT THE PRODUCT ACCEPTS. ***
+//
+// This route used to refuse Word, Excel, CSV, text and PowerPoint, and the comment here
+// described that as a property of the formats: "not a format the model can read". That was
+// wrong, and it hid the real cause. A .docx used to be base64'd and labelled image/jpeg —
+// which produced confident nonsense — so the format was banned rather than parsed. The
+// parsers existed all along; /api/extract-dates had been reading Word, Excel, CSV and
+// PowerPoint for as long as this route had been rejecting them, and /api/audits read Word
+// and PowerPoint successfully.
+//
+// So the restriction was a workaround for a missing wire-up, recorded as though it were a
+// limitation. A handbook in .docx — which is most handbooks — was silently excluded from
+// every HR answer, and the user was told the format could not be read.
+//
+// Returns content blocks, or a described failure. Never returns blocks for a format the
+// model cannot actually read.
 async function loadContentBlock(
   db: SupabaseClient,
   doc: OwnedDocument
-): Promise<{ block: Record<string, unknown> } | { failure: LoadFailure }> {
+): Promise<{ blocks: Array<Record<string, unknown>> } | { failure: LoadFailure }> {
   const ext = extensionOf(doc.file_url)
-  const isPDF = ext === 'pdf' || (doc.file_type || '').includes('pdf')
-  const imageType = IMAGE_TYPES[ext]
 
-  if (!isPDF && !imageType) {
-    return {
-      failure: {
-        id: doc.id,
-        name: doc.name,
-        reason: 'unsupported_format',
-        message: `"${doc.name}" is a ${ext ? '.' + ext : 'file of unknown'} format, which cannot be read here. Only PDFs and images can be. Re-upload it as a PDF to include it.`,
-      },
-    }
-  }
-
+  // Download FIRST now. The old order checked the extension before downloading, which was
+  // free when only two formats were allowed; now that nearly everything is parseable, the
+  // format check is the parser's job and it needs the bytes.
   const { data: fileData, error } = await db.storage.from(BUCKET).download(doc.file_url)
   if (error || !fileData) {
     return {
@@ -82,13 +74,26 @@ async function loadContentBlock(
     }
   }
 
-  const base64 = Buffer.from(await fileData.arrayBuffer()).toString('base64')
-
-  return {
-    block: isPDF
-      ? { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64 } }
-      : { type: 'image', source: { type: 'base64', media_type: imageType, data: base64 } },
+  // doc.file_url carries the extension; doc.name may not. Parse against the stored path.
+  const parsed = await parseDocumentToBlocks(
+    await fileData.arrayBuffer(),
+    doc.file_url,
+    doc.file_type
+  )
+  if (!parsed.ok) {
+    return {
+      failure: {
+        id: doc.id,
+        name: doc.name,
+        reason: 'unsupported_format',
+        // Re-describe against the document's display name — the shared message names the
+        // storage path, which is not what the user called it.
+        message: describeUnsupported(doc.name, ext).message,
+      },
+    }
   }
+
+  return { blocks: parsed.blocks }
 }
 
 /**
@@ -163,7 +168,7 @@ export async function POST(request: NextRequest) {
           continue
         }
         contentBlocks.push({ type: 'text', text: `Handbook: "${doc.name}"` })
-        contentBlocks.push(result.block)
+        contentBlocks.push(...result.blocks)
         documentsRead.push({ id: doc.id, name: doc.name })
       }
 
@@ -215,9 +220,8 @@ export async function POST(request: NextRequest) {
     if ('failure' in result) {
       return NextResponse.json({ error: result.failure.message, documents_failed: [result.failure] }, { status: 400 })
     }
-    const block = result.block
     const userMessage = 'Audit this HR handbook. Identify what policy sections are present and what important sections are missing.'
-    const parsed = await askAIJson(hrAuditPrompt(), [block, { type: 'text', text: userMessage }], { maxTokens: 3000 })
+    const parsed = await askAIJson(hrAuditPrompt(), [...result.blocks, { type: 'text', text: userMessage }], { maxTokens: 3000 })
     return NextResponse.json({ data: parsed })
   } catch (error) {
     console.error('HR API error:', error)

@@ -138,7 +138,15 @@ export default function CalendarPage() {
         setSelectedDates(new Set(json.dates_found.map((_: any, i: number) => i)))
         setShowImport(false)
         setImportFile(null)
+      } else if (json.extraction_failed) {
+        // The document was never read, so nothing may be asserted about what is in it.
+        // Until 11 Sep this branch did not exist and an unreadable file produced "No
+        // compliance dates found in this file. Make sure it contains deadline or expiry
+        // dates." — a claim about contents nobody had looked at, plus a suggestion that
+        // the user check their own file. CLAUDE.md §5.1.
+        alert(json.extraction_failed.message)
       } else {
+        // Genuinely read, genuinely empty. The suggestion is fair here.
         alert('No compliance dates found in this file. Make sure it contains deadline or expiry dates.')
       }
     } catch (err) {

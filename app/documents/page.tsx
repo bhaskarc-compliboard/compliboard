@@ -5,6 +5,7 @@ import { createClient, authHeaders } from '@/lib/supabase'
 import AppLayout from '@/components/AppLayout'
 import AIDisclaimer from '@/components/AIDisclaimer'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { ACCEPTED_FILE_TYPES } from '@/lib/acceptedFiles'
 
 interface Document {
   id: string
@@ -468,6 +469,10 @@ function DocumentsPageContent() {
       if (dateJson.dates_found && dateJson.dates_found.length > 0) {
         setPendingDates(dateJson.dates_found)
         setSelectedDates(new Set(dateJson.dates_found.map((_: any, i: number) => i)))
+      } else if (dateJson.extraction_failed) {
+        // Never read — say that, rather than reporting on contents nobody saw.
+        // CLAUDE.md §5.1.
+        alert(dateJson.extraction_failed.message)
       } else {
         alert('No compliance dates found in this document.')
       }
@@ -798,7 +803,7 @@ function DocumentsPageContent() {
                       </div>
                       <div className="space-y-3">
                         <div>
-                          <input ref={fileInputRef} type="file" multiple accept=".pdf,.xlsx,.xls,.csv,.docx,.doc,.pptx,.ppt,image/*" onChange={handleFileChange} className="hidden" id="file-upload" />
+                          <input ref={fileInputRef} type="file" multiple accept={ACCEPTED_FILE_TYPES} onChange={handleFileChange} className="hidden" id="file-upload" />
                           {files.length === 0 ? (
                             <label htmlFor="file-upload" className="flex items-center gap-3 w-full border border-dashed border-gray-300 rounded-xl px-4 py-4 cursor-pointer hover:border-green-500 hover:bg-green-50 transition-colors">
                               <span className="text-2xl">📎</span>
