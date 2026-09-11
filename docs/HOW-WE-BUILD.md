@@ -1,7 +1,9 @@
 # How We Build CompliBoard
 
-**Version:** 1 · **Updated:** 11 September 2026
-**Supersedes:** —
+**Version:** 2 · **Updated:** 11 September 2026
+**Supersedes:** version 1 (11 Sep). Adds **step 12 to the loop** — write the manual tests,
+two per feature, into `docs/TESTING.md` before the commit. A standing obligation, not a
+suggestion.
 **Who this is for:** the next session, human or AI, picking this up cold.
 
 `CLAUDE.md` holds the rules. This holds the *method* — how work actually gets done here, why it is shaped this way, and what it has already caught. Read it before the first task of a session.
@@ -40,7 +42,18 @@ This has been tested: the migration script's TTY guard — written by Claude Cod
 9. Verify production            Same checks, against the other database
 10. Update the docs             Same session, not later
 11. Commit and push             Plain-language messages
+12. Write the manual tests      Two per feature, into TESTING.md, before the commit
 ```
+
+**Step 12 is a standing obligation, not a suggestion.** Every major piece of work ends with a
+short numbered list of things to click and ask — **two per feature: the perfect case and the
+edge case** — written into `docs/TESTING.md` in the same session. The perfect case asks
+whether the right answer is also a *convincing* one; the edge case asks what happens when a
+document is missing, a permit expired, two handbooks disagree or a switch is unset. **The edge
+case is where domain knowledge does work no script replicates** — a test script knows whether
+a field is null, it does not know that an Oregon customer must be shown OAR 437 rather than 29
+CFR. Written at the end, while the work is fresh, because a list written a week later tests
+what was remembered rather than what was built.
 
 **Step 1 is not optional and is the highest-value step in the loop.** Every significant finding in this project came from a read-only investigation before anything was written — the unauthenticated account-deletion route, the open storage bucket, the audit engine silently dropping documents, `/api/industries` broken in production, the migration chain that could not build from zero.
 

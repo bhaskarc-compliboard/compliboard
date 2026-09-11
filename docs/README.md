@@ -1,6 +1,6 @@
 # docs/
-**Version:** 3 · **Updated:** 11 September 2026
-**Supersedes:** version 2 (11 Sep). Adds `AUDIT-CHECKS.md`. Version 2 added
+**Version:** 4 · **Updated:** 11 September 2026
+**Supersedes:** version 3 (11 Sep). Adds `TESTING.md`. Version 3 added `AUDIT-CHECKS.md`. Version 2 added
 `HOW-WE-BUILD.md` and `STATUS.md`, noted that `PATTERNS.md` describes a different codebase,
 and listed every file; it superseded version 1 (10 Sep), which carried no version header of
 its own — the one rule in here it did not follow.
@@ -88,6 +88,16 @@ CompliBoard, which is Next.js. **Every file path it names belongs to that codeba
 (`app/src/routes/chat.tsx`, `routeTree.gen.ts`, its dated migrations) — they do not exist
 here and are not meant to. It is the only document in this folder that describes a system
 other than this one.
+
+### `TESTING.md`
+Three kinds of test that get confused, kept apart: **manual** (what the owner does as a user —
+two per feature, the perfect case and the edge case, and the edge case is where domain
+knowledge does work no script replicates), **automated regression** (the golden-file set, run
+after any prompt, model or matching change, which can only tell you the output *moved*), and
+**unattended exploration** (the overnight agent — what it can do, and the hard line that it
+**cannot validate regulatory content**, because a model checking a model produces agreement
+and agreement is not verification). Carries the manual test set for each piece of work as it
+lands; writing it is step 12 of `HOW-WE-BUILD.md` §2's loop.
 
 ### `AUDIT-CHECKS.md`
 The questions `npm run check` does not answer. It answers *"does the code build and
