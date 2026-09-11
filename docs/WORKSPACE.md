@@ -1,6 +1,61 @@
+> # ⚠️ v3 NEEDED — THIS DOCUMENT PREDATES THE SWITCH SCHEMA
+>
+> *Added 11 September 2026. **This is a list of gaps, not a rewrite.** v3 is not written here.*
+>
+> Migration 008 built `switches` and `company_switches`, and the conversation model in this
+> document was designed before either existed. Five things it says are now either
+> unimplementable or already solved differently. **All five are M1 work — none of them
+> blocks Phase 2.**
+>
+> **1. `expires_at` breaks the conversation model.**
+> Switches carry `volatility` (`static | annual | monthly`) and an `expires_at`, and an
+> expired switch reverts to **`unknown`**, not to its last value — because a stale `false`
+> is a false green. This document's model treats an established fact as established. It has
+> **no state for a fact that un-establishes itself**, and no account of what the product
+> says when one does.
+>
+> **2. `user_locked` is an overwrite lock, not a confirmation gate.**
+> §5.2's three-tier confirmation scheme reaches for the same worry — *do not let the
+> machine quietly overwrite what the user told us* — and `company_switches` already solves
+> it, with `user_locked` plus the four-value `source` enum (`ai_from_documents`,
+> `ai_from_profile`, `user_set`, `computed`). **§5.2 needs rewriting against what exists,
+> not translating into it.** The two are not the same mechanism: a lock prevents a write, a
+> gate delays one.
+>
+> **3. Site scoping is a hard failure, not a degradation.**
+> `company_switches` carries a composite FK on `(switch_id, scope)` and a CHECK requiring
+> `entity_id` when `scope = 'site'`. So **a site-scoped fact cannot be written at all
+> without knowing which site it belongs to** — the insert is refused. Conversation as
+> described here captures a fact without ever establishing a site. Defaulting to the
+> primary site would satisfy the constraint and is **the exact failure `DECISIONS.md` §20
+> exists to prevent**: a company-wide answer to a per-site question is wrong at every site
+> but one, confidently.
+>
+> **4. No concept of `is_determination` / `produces_switch`.**
+> Some requirements determine switches. So answering one requirement can **change what else
+> is required, mid-topic** — the list the user is working through rewrites itself under
+> them. This document has no account of that happening during a conversation.
+>
+> **5. No concept of `switches.depends_on_switch`.**
+> Switches form a hierarchy: `psm_rmp_threshold` is only worth asking if a listed substance
+> is handled at all. Asking in the wrong order **wastes the user's questions**, which is
+> precisely what §4.3's determination gate exists to optimise.
+>
+> ---
+>
+> **This blocks M1, not Phase 2.** Phase 2.2 cites this document only at **§4.3** (the
+> determination gate), and none of the five above touches §4.3. Phase 2 can proceed against
+> this document as written; M1 cannot.
+>
+> Until v3 exists, read §5.2, §6 and §7 as **design intent predating the schema**, and check
+> `DECISIONS.md` §20–§23 and migration 008 for what is actually built.
+
 # Compliance Workspace Design
-**Version:** 2 · **Updated:** 10 September 2026
-**Supersedes:** version 1 (9 Sep), deleted. Adds §10, signup and industry classification.
+**Version:** 2 · **Updated:** 11 September 2026
+**Supersedes:** version 1 (9 Sep), deleted. v2 added §10, signup and industry
+classification. **The body is unchanged since 10 Sep** — 11 Sep added only the v3-needed
+block above and explicit numbers on §9's items, neither of which revises the design. The
+version stays at 2 deliberately: v3 is the rewrite this document needs and has not had.
 
 **Status: design agreed. Not built.**
 **Related:** `DECISIONS.md` · `CHEMICAL-OR-WA.md` (six-stage runtime, §5) · `BUILD-PLAN.md`
@@ -284,11 +339,20 @@ Items 1–4 are quality-affecting and specced before writing.
 
 ## 9. Open questions
 
-1. **Ambiguous fact capture** — how aggressively to confirm before writing. Too eager is annoying; too permissive silently records wrong facts.
-2. **Auto-close interval** — a week? Longer for checklists in progress?
-3. **Topic summary format** — what is worth keeping once the transcript is gone.
-4. **Concurrent topics** — one open topic at a time, or several? Several means the pollution problem returns across topics.
-5. **Scoped answers reused** — if a user says "common carrier for this shipment" three times, does that become a durable default?
+*Numbered explicitly 11 Sep. They were an ordered list, so `§9.3` and `§9.4` already
+resolved by ordinal — but nothing on the page said so, and two documents cite those
+targets. Numbering them is cheaper than rewriting the citations, and makes the next
+citation unambiguous.*
+
+**§9.1 Ambiguous fact capture** — how aggressively to confirm before writing. Too eager is annoying; too permissive silently records wrong facts.
+
+**§9.2 Auto-close interval** — a week? Longer for checklists in progress?
+
+**§9.3 Topic summary format** — what is worth keeping once the transcript is gone.
+
+**§9.4 Concurrent topics** — one open topic at a time, or several? Several means the pollution problem returns across topics.
+
+**§9.5 Scoped answers reused** — if a user says "common carrier for this shipment" three times, does that become a durable default?
 
 ---
 

@@ -1,6 +1,11 @@
 # Decision Record
-**Version:** 14 · **Updated:** 11 September 2026
-**Supersedes:** version 13 (11 Sep). Adds §28, what actually feeds a document prompt: one
+**Version:** 15 · **Updated:** 11 September 2026
+**Supersedes:** version 14 (11 Sep). Adds §29 (an unmatched requirement is a library
+candidate, never a new version — a version claims the law changed, a candidate claims only
+that a model said something), §30 (the customer-facing "what changed" diff is M6 work,
+answerable from the validity windows rather than computed at resolution time) and §31 (the
+two plans keep their separate phase numbering; the mapping table stays). Version 14 added
+§28, what actually feeds a document prompt: one
 shared parser for every route, and the two findings behind it — `/api/chat` answered from
 the filename alone for formats its own file pickers offered, and `/api/hr` excluded `.docx`
 from every HR answer while telling the user the format was unreadable, when the parsers had
@@ -11,7 +16,8 @@ it did not read, always saying what to do next. The operative rule goes in `CLAU
 beside the error-handling rules it extends; `WORKSPACE.md` §10.8 is the same rule scoped to
 signup and is referenced rather than duplicated. The worked example is an alert that told a
 user to check a file for dates after refusing to read it. Version 12 added §26: the invite flow becomes `MODULES` M8 —
-Account, a new and eighth module. It had been floating between Phase 0 and Phase 1,
+Account, a new and eighth module. It had been floating between Phase 0 and Phase 1
+(TODO.md numbering),
 scheduled by nothing precisely because it depends on nothing. The cost of waiting is now
 recorded rather than implicit — records written under a shared login stay ambiguous forever,
 so deferring costs a window of history rather than a late feature. Version 11 added §25, where jurisdiction comes from: state, county
@@ -23,7 +29,8 @@ fire districts do not follow county lines and the customer has been inspected by
 Version 10 added §24, the match key: the company's stated address
 is authoritative and an AI website scan never is — a derived value silently outranked a
 stated one for months and cost most companies their state-level requirements — and the
-match key's implementation belongs to Phase 4's resolution engine, with Phase 1 landing its
+match key's implementation belongs to Phase 4's resolution engine, with Phase 1 (TODO.md
+numbering) landing its
 inputs. Version 9 added §23, taken while building the six new tables:
 multi-value switches decompose into one switch per substance rather than becoming an array
 or jsonb — `applies_expression` is the test, since a requirement gated on lead cannot say
@@ -53,7 +60,8 @@ is not a prerequisite for user management; several people at one company already
 different question, one person across several companies, and moves to multi-site. §17.4's
 reasoning is corrected in place and §17.5 is marked half-superseded; the half that survives
 is "do not stockpile the feature." **§20 records the multi-facility decision** — the data
-structure goes into the Phase 1 rebuild, the interface does not, and site is a property of
+structure goes into the Phase 1 (TODO.md numbering) rebuild, the interface does not, and
+site is a property of
 data rather than of people. Version 5 added §18, the decision to order the plan horizontally
 first and vertically last — the phases now hold only infrastructure, and every module moved
 to a final `MODULES` section in `BUILD-PLAN.md` and `TODO.md`. Version 4 added §17, the decisions behind the second tenancy
@@ -852,7 +860,7 @@ feature.
 
 ---
 
-## 20. Multi-facility: build the structure in Phase 1, and site is a property of data
+## 20. Multi-facility: build the structure in Phase 1 (TODO.md numbering), and site is a property of data
 
 **Decision, 10 September 2026: the multi-site data structure goes into the Phase 1 schema
 rebuild (`TODO.md` 1.6, `BUILD-PLAN.md` 2.8). The interface does not — it stays in `MODULES`,
@@ -1274,7 +1282,7 @@ whether `applies_expression` ever needs to look inside.
 **Decision: five of the six new tables are built in migration 008. `topics` waits.**
 
 **Reasoning.** It is the only one of the six whose *shape* depends on an unresolved design
-question rather than on unwritten code. `WORKSPACE.md` §9 lists four open questions and two
+question rather than on unwritten code. `WORKSPACE.md` §9 lists five open questions and two
 of them decide columns and constraints:
 
 - **Concurrency** (§9.4) — one open topic per company, or several? One is a partial unique
@@ -1333,7 +1341,7 @@ the user can fix an address; they cannot fix a JSON blob they have never been sh
 source — a signup that captures no address at all — then the correct behaviour is an
 **unknown** jurisdiction and an asked question, not a silent substitution.
 
-### 24.2 The match key's implementation is Phase 4, not Phase 1
+### 24.2 The match key's implementation is Phase 4, not Phase 1 (TODO.md numbering)
 
 **Decision: Phase 1 lands the match key's INPUTS. The rule itself is written down now and
 implemented in Phase 4.1, inside the resolution engine.**
@@ -1449,7 +1457,7 @@ confirms**, with unknown still meaning unknown.
 ## 26. The invite flow is a module, not a floating feature — 11 September 2026
 
 **Decision: user management becomes `MODULES` M8 — Account. It was sitting between Phase 0
-and Phase 1, belonging to neither and scheduled by nothing.**
+and Phase 1 (TODO.md numbering), belonging to neither and scheduled by nothing.**
 
 **Reasoning.** It has no dependency on any phase — §19 established that it needs no
 migration, because several people at one company already works on `profiles.company_id`.
@@ -1608,3 +1616,108 @@ model as a filename and nothing else.
 it — a scanned PDF-in-Word, say — it may be removed from the accepted list. It must then be
 removed from `ACCEPTED_FILE_TYPES` too, so the picker stops offering it, and the reason
 recorded here. Disabling it in the parser alone recreates §28.1 exactly.
+
+---
+
+## 29. An unmatched requirement is a library candidate, not a new version
+
+**Decision, 11 September 2026: when the pipeline produces a requirement that is not in the
+library, it is written to `library_candidates`. It is NOT written to
+`requirement_templates` as a new row, and it is NOT written as a new version of an
+existing row.**
+
+**Reasoning.** The two look similar and mean opposite things.
+
+**A version** (`version + 1`, `supersedes_id`, `effective_to` on the old row) asserts that
+**the law changed** — that a rule we had recorded is now superseded by a different rule. It
+is a claim about the world, it goes into the match key, and an audit pinned to a version
+stays reproducible against it (§3.2).
+
+**A candidate** asserts only that **a model said something we do not have a row for.**
+That is a statement about our coverage, not about the law. It has no citation anybody has
+checked, no jurisdiction anybody has confirmed, and no verification status a person has
+set.
+
+**Writing a candidate as a version would put unverified model output into the library
+under a version number**, where the versioning machinery would then treat it as
+authoritative: it would resolve into obligations, appear in a customer's requirement list,
+and be indistinguishable from a row somebody had actually verified. That is the omniscient
+status tracker (`CLAUDE.md` §6) arriving through the back door of a schema field.
+
+`library_candidates` exists precisely so the pipeline has somewhere honest to put these:
+`times_seen` counts how often one is produced, `normalized_name` dedupes across phrasings,
+and the queue becomes usage-ranked demand research (§6). A candidate becomes a
+requirement only by a person promoting it — `promoted_to_requirement_id` records when that
+happens.
+
+**Reversal condition:** none for the direction. If promotion ever needs to be automatic —
+it should not — the gate is `verification_status`, never the absence of a check.
+
+---
+
+## 30. A customer-facing "what changed" view is M6 work, not pipeline work
+
+**Decision, 11 September 2026: the diff a customer sees — what changed in their
+obligations since last time — belongs to M6 (Dashboard). It is not part of the resolution
+engine and must not be computed at resolution time.**
+
+**Reasoning.** The data to answer it already exists once Phase 1's columns are populated.
+`obligations` carries `applicable_from` and `applicable_to`, so "what became applicable"
+and "what stopped applying" are a query over a date range. `obligation_evidence` carries
+`valid_until`, so "what expired" is another. Nothing needs to be computed and stored at
+resolution time, and storing it would be a derived copy — the same mistake §21.3 rejected
+for `at_risk` and `expiring_soon`.
+
+**Why M6 and not Phase 4.** Resolution's job is to produce the current list, deterministically
+(§3.2). A diff is a *presentation* of two states of that list. Putting it in the engine
+would give the engine a second responsibility and a reason to keep history in a shape
+convenient for display rather than for correctness.
+
+**What M6 must get right when it is built:** the diff is the honest half of the dashboard.
+A number that only climbs is a progress bar; **"three things became required this month and
+one certificate expired" is the sentence a customer actually needs**, and it is only
+possible because obligations are never deleted (§3.2) and carry a validity window.
+
+**Reversal condition:** if the query proves too slow to run per page load at real data
+volumes — unlikely at a few hundred obligations per company — the answer is a materialised
+view or a cache with an explicit staleness window, not a column written by the resolution
+engine.
+
+---
+
+## 31. The two plans keep their separate phase numbering — 11 September 2026
+
+**Decision: `TODO.md` and `BUILD-PLAN.md` are NOT renumbered. The mapping table at the top
+of both stays, and is the fix.**
+
+They agree on Phase 0 and Phase 4 and on nothing else. Most sharply, **phases 1 and 2 are
+swapped**: `TODO.md` Phase 1 is the schema rebuild and `BUILD-PLAN.md` Phase 2 is; `TODO.md`
+Phase 2 is the runtime pipeline and `BUILD-PLAN.md` Phase 1 is.
+
+**Reasoning — three things, and the third is the one that decided it.**
+
+**The risk is flagged, at the top of both files, and has misled no one.** The mapping table
+is the first thing either document shows, above the gate in one and above Part A in the
+other. Every phase reference written since has been correct.
+
+**`BUILD-PLAN.md` alone carries 53 `Phase N` references**, and `TODO.md` and this record
+carry more. Renumbering means rewriting all of them and every cross-document citation that
+points at them. The mapping is one table read once; the churn is a few hundred edits, each
+of which can be wrong.
+
+**A renumbering pass during Phase 2's checkbox work is exactly where reference errors get
+planted.** Phase 2 is the runtime pipeline — dozens of items ticked off across both files
+over days. Doing a global renumber in the middle of that means every edit lands in a
+document whose numbering is in motion, and a reference typed against the old scheme reads
+as valid. `DECISIONS.md` §15.8 records the same failure from versioned filenames: renaming
+breaks every reference silently, and silence is the problem.
+
+**Reversal condition — and it is a real one, not a formality: unify them the first time the
+mapping actually misleads somebody.** Not the first time someone finds it awkward. A wrong
+phase acted on, a task started in the wrong document, a reference written against the wrong
+scheme — any of those, and the churn becomes worth paying. The table's whole justification
+is that it works; if it stops working it has no other defence.
+
+**Interim mitigation applied the same day:** the ambiguous bare `Phase N` references in this
+record are tagged `(TODO.md numbering)` so a reader need not resolve them from context.
+Records written before the two schemes diverged in usage all meant `TODO.md`'s.

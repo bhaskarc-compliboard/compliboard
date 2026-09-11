@@ -179,6 +179,13 @@ The storage policies did not protect these — the service-role key bypasses RLS
 
 **Confirmed safe, left as they are:** `/api/signup` (no session exists yet), `/api/industries` (shared library data, no tenant rows), `/api/chat`, `/api/extract-dates`, `/api/scan-website`, `/api/feedback` (no database, no service role).
 
+> ⚠️ **That line answers a narrower question than it appears to. Corrected 11 Sep.**
+> The pass asked *"does this route leak another tenant's data?"* — and for those six the
+> answer is genuinely no. **It never asked "may a stranger call this?"** None of the six
+> has a session check, and nothing gates them: there is no `middleware.ts`, no
+> `vercel.json`, and `next.config.ts` is empty, so every route handler is publicly
+> addressable. "No database" is not the same as "safe". See §0.8b.
+
 **Deleted rather than fixed** — all three orphaned with zero callers:
 `/api/folders/industry`, `/api/requirements`, `/api/sync-obligations`.
 Confirmed before deleting: no `vercel.json`, no cron schedule anywhere in the repo, **no cron jobs configured in Vercel at all**, the marketing site is not in this repo, and no script or document holds a hardcoded URL. Hardening three routes nobody calls is worse than deleting them.
@@ -214,6 +221,12 @@ two databases have not drifted.
 **folder_audits is retired, not deferred.** It inferred compliance from folder *names* — a folder called "DOT" with any file in it read as green. A filename is not evidence, and an expired permit filed in a correctly-named folder scored identically to a current one. That is the false-green failure the product exists to prevent, so it is deleted rather than re-scoped: table, three policies, three foreign keys, generated types, its entry in the account-delete list, and its references here. There was no page, component or nav entry. One production row destroyed — a scan result derived from folder names, not a customer document.
 
 **`/api/cron/monthly-summary` deleted with it.** A third of the email was built on folder audits, and §0.8 established the route had never run — no `vercel.json`, no cron jobs configured in Vercel at all. Dead code calling dead code. `CRON_SECRET` is removed from `.env.example` too. A monthly summary is still wanted, but it should be written against obligations and evidence — what the company must do and what proves it — not against folder names. That belongs after Phase 4, when obligations are real.
+
+> **Wording checked 11 Sep and it still holds** — with one thing now true that was not when
+> it was written: obligations are no longer merely "not real yet", they are **empty in both
+> environments**, because migration 007 dropped all 376 and nothing regenerates them until
+> Phase 4.1. So "after Phase 4" is not a preference about quality, it is a hard dependency:
+> there is nothing for a summary to be written against until the resolution engine exists.
 
 ### 0.6 Write policies on every table ✅ DONE (10 Sep) — migration 004, **applied to production**
 
@@ -348,6 +361,53 @@ with empty content.
   built yet — not a regression.** It belongs in `STATUS.md` the moment 1.5 writes it,
   as: *Requirements — not-yet-rebuilt, awaiting Phase 4.1.* Without that line, the first
   person to open the page after the rebuild reports a bug that isn't one.
+
+---
+
+### 0.8b 🔒 Six routes have no session check, and one of them fetches URLs for you ⬜
+*Found 11 Sep by a read-only audit, after the route census had passed all six.*
+
+`/api/chat`, `/api/extract-dates`, `/api/feedback`, `/api/scan-website`, `/api/industries`
+and `/api/signup` have no `requireCompany`, no `getUser`, no token read. The last two are
+**documented, deliberate exceptions** (§0.9). The first four are not — they were passed by
+the census on the grounds that they touch no tables, which is true and is not the same
+question. Nothing upstream gates them: no middleware, no `vercel.json`, empty
+`next.config.ts`.
+
+**None of the six can read or write another tenant's data.** The exposure is cost and
+abuse, not leakage — which is why the tenancy pass did not flag it and why this is its own
+item rather than a correction to that pass.
+
+| Route | What an anonymous caller gets |
+|---|---|
+| `/api/chat` | a model call at `maxTokens: 6000`, **plus server-side parsing** of Excel/Word/PowerPoint since 11 Sep — the widening enlarged this surface |
+| `/api/extract-dates` | a model call at `maxTokens: 1000` |
+| `/api/scan-website` | a model call with **web search**, and up to 17 outbound fetches — see below |
+| `/api/feedback` | **an email**, from your Resend account, to `FEEDBACK_EMAIL` |
+
+**⚠️ `/api/scan-website` is the one to look at first.** It takes `url` from the request body,
+prepends `https://` if absent, and fetches it **plus 16 guessed subpaths** (`/products`,
+`/about`, …). No allowlist, no scheme check, nothing blocking private or link-local address
+ranges. One unauthenticated request is up to 17 outbound fetches from your infrastructure to
+a destination the caller picks.
+
+**Assessed as BLIND SSRF, and the blindness is the only thing limiting it.** The fetched HTML
+is not returned to the caller. It is stripped of tags, truncated to 4,000 characters, and
+passed into a model prompt; the caller receives the model's *extracted fields*, not the page.
+So exfiltrating a metadata endpoint or an internal page is not direct — it is mediated by a
+model asked to describe a business. That is a real mitigation and it is **not a control**: it
+narrows the channel rather than closing it, it depends on prompt behaviour rather than on a
+check, and it does nothing at all about the requests themselves reaching internal hosts.
+Timing and error differences remain observable, and the 10-second timeout bounds each fetch
+but not the pattern.
+
+`/api/feedback` additionally interpolates caller input straight into the HTML email body
+(`${message}`, `${company}`) with no escaping.
+
+**Not fixed here deliberately** — a fix means deciding an auth story for the pre-login
+surface (`/api/scan-website` runs during signup, before a session exists, like
+`/api/industries`), which is M7's territory, plus rate limiting, which is Phase 9. Recorded
+so the decision is made rather than inherited.
 
 ---
 
@@ -960,7 +1020,20 @@ wait for its module's turn. Correctness bugs in shipped code are not module work
 resolution engine (Phase 4). The Workspace is the *surface* over those four; without them it
 is a chat box.
 
-#### M1.0 `topics` — the table is deliberately not built ⬜
+#### M1.0 `/api/chat` never enables web search ⬜
+*Recorded 11 Sep.*
+
+`askAI()` supports `enableWebSearch`, and three call sites use it: both `/api/audits`
+classify calls and `lib/documentReview`. **`/api/chat` — the route the Workspace answers
+through today — does not.** Every answer it gives comes from model knowledge alone, with no
+live verification of a threshold, a fee, a form version or a citation.
+
+That is exactly the fact class `CLAUDE.md` §6 says must carry a verification badge, and the
+Workspace is where those answers are shown. Turning it on is one option flag; deciding
+*when* it should fire is M1 design work and touches §3.1 (what data feeds a prompt), so it
+is recorded rather than switched on.
+
+#### M1.0b `topics` — the table is deliberately not built ⬜
 *Recorded 11 Sep. `DECISIONS.md` §23.2.*
 
 Five of the six Phase 1.2 tables landed in migration 008. `topics` did not, on purpose: it
@@ -1198,6 +1271,23 @@ rebuild (Phase 1) for the versioning columns.
 
 - ⬜ **`app/documents/page.tsx` is 1,103 lines.** Split when the module is worked, not
   before — a rewrite ahead of the indexing change is a rewrite done twice.
+
+- ⬜ **`companies.scan_result` is an untyped blob holding facts that now have a home.**
+  *Recorded 11 Sep.* The column itself **is** migrated — it is in `000_baseline.sql:155` as
+  `scan_result jsonb`. What was never migrated is its **contents**: state, chemicals,
+  operations and certifications, written by `/api/scan-website` as free-form JSON with no
+  schema, no validation, no `basis`, no confidence and no expiry.
+
+  Those are switches. `company_switches` now exists (migration 008) and carries value,
+  state, confidence, basis, source and `expires_at` for exactly these facts. So the blob is
+  a parallel, weaker store of the same information — and it is the one that silently
+  outranked the customer's stated address for months (`DECISIONS.md` §24.1).
+
+  **Cross-reference: this is M7's to resolve, not M4's.** M7 reworks signup, which is what
+  writes `scan_result` in the first place; §25.1 already decides that jurisdiction comes
+  from geocoding rather than from the scan. Draining the blob into `company_switches` is
+  part of that rework, and until it happens two stores of the same facts disagree by
+  design.
 
 - ⬜ **The file pickers are narrower than the routes behind them, and narrower than each
   other.** Once `/api/chat` reads every accepted file type correctly, `/upload` and
