@@ -1,6 +1,10 @@
 # Decision Record
-**Version:** 9 · **Updated:** 11 September 2026
-**Supersedes:** version 8 (10 Sep). Adds §23, taken while building the six new tables:
+**Version:** 10 · **Updated:** 11 September 2026
+**Supersedes:** version 9 (11 Sep). Adds §24, the match key: the company's stated address
+is authoritative and an AI website scan never is — a derived value silently outranked a
+stated one for months and cost most companies their state-level requirements — and the
+match key's implementation belongs to Phase 4's resolution engine, with Phase 1 landing its
+inputs. Version 9 added §23, taken while building the six new tables:
 multi-value switches decompose into one switch per substance rather than becoming an array
 or jsonb — `applies_expression` is the test, since a requirement gated on lead cannot say
 "one of the values in this array is lead" — which takes the switch count from ~46 to ~59;
@@ -1265,3 +1269,66 @@ user depending on which it was.
 
 **Reversal condition:** the Workspace work starting. At that point both open questions get
 answered by the people building the screen, which is the right moment for them.
+
+---
+
+## 24. The match key — 11 September 2026
+
+### 24.1 The company's stated address is authoritative. A website scan never is.
+
+**Decision: jurisdiction comes from `companies.state/county/city` and
+`entities.state/county/city`. `companies.scan_result` is never read for it, by anything.**
+
+**Reasoning, and it is not hypothetical.** The deleted `app/api/sync-obligations` read the
+company's state from `scan_result->>'state'` — the output of an AI website scan — rather
+than from the address the customer typed. Three things followed, and all three were live:
+
+- **`scan_result` is null for 7 of 10 production companies.** For those the jurisdiction
+  filter fell back to "federal only" and **silently dropped all 94 Oregon requirements**.
+  Under `CLAUDE.md` §3.2 that is the safer direction — absence of evidence producing less,
+  not more — but the customer is still told less than they owe with no indication.
+- **The two sources already disagree on a real row.** `CB-Test 2` is Oregon by address and
+  **Washington** by scan. It would have been matched against Washington, of which the
+  library holds nothing, and received only federal rows.
+- **A derived value silently outranked a stated one for months**, and nobody could see it
+  happening, because the failure mode of a too-narrow filter is fewer rows and a 200.
+
+**The general rule this earns: a value a person stated outranks a value a model inferred,
+wherever both exist.** A scan is useful for *proposing* an answer — M7's teaching
+confirmation is exactly that — but the thing resolution reads must be the answer the
+customer has seen and accepted. That is also what makes a wrong jurisdiction correctable:
+the user can fix an address; they cannot fix a JSON blob they have never been shown.
+
+**Reversal condition:** none for the ordering. If a scan ever becomes the only available
+source — a signup that captures no address at all — then the correct behaviour is an
+**unknown** jurisdiction and an asked question, not a silent substitution.
+
+### 24.2 The match key's implementation is Phase 4, not Phase 1
+
+**Decision: Phase 1 lands the match key's INPUTS. The rule itself is written down now and
+implemented in Phase 4.1, inside the resolution engine.**
+
+**Reasoning.** Phase 4.1 is *"jurisdiction + switches + library version → obligations,
+deterministic"*. The match key is three-quarters of that sentence, and 4.4 makes *"state X
+never receives state-Y requirements"* a required test **of the engine**. Building it in
+Phase 1 means building it against an engine that does not exist and then building it again.
+
+**It belongs in code as a pure predicate, never as a SQL filter.** §3.2 requires resolution
+to be deterministic and computed in code; a predicate can be tested without a database; and
+a too-narrow SQL filter fails by **returning fewer rows with a perfectly good 200**, which
+is precisely how the original defect survived for months. Load candidates with a
+deliberately broad query, narrow in tested code, so that a wrong query errs toward a
+superset where the code catches it.
+
+**What Phase 1 landed instead:** jurisdiction columns on `entities` (migration 009), which
+made `local` and `city` resolvable at all — they were unresolvable for every company
+because a site had no way to say where it was; the source-of-truth decision above; and the
+complete six-case rule in `CHEMICAL-OR-WA.md` §3.2, so Phase 4 inherits it.
+
+**Still missing, and named so it is not forgotten:** signup hardcodes `county: ''` and
+never asks. `jurisdiction_layer = 'county'` is a value the rule must serve, so until the M7
+signup rework captures a full address, no county-scoped requirement can resolve for anyone.
+
+**Reversal condition:** if resolution turns out to need a database-side filter for
+performance — it will not at a few thousand library rows — the predicate stays the
+definition and the SQL becomes an optimisation that must be a proven superset of it.

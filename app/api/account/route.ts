@@ -165,6 +165,53 @@ async function listCompanyObjects(companyId: string): Promise<string[]> {
 // Stored files are removed too. Previously they were left behind: deleting a company
 // orphaned its files in the bucket forever, which is both a storage leak and, for a
 // customer who asked to be deleted, a promise not kept.
+// ---------------------------------------------------------------------------
+// WHAT A COMPANY DELETION DESTROYS
+//
+// These two lists together must account for EVERY table carrying a company_id.
+// `scripts/check-schema-contracts.js` enforces that at build time, as part of
+// `npm run check`, and fails naming any table in neither.
+//
+// The lists are explicit rather than derived, and that is a deliberate choice. Deriving
+// them would mean querying information_schema, which PostgREST cannot do — it would take a
+// stored function, putting a catalog lookup inside the most destructive path in the
+// product. More importantly, a reviewer reading this route can see exactly what is
+// destroyed. A derived list is invisible at review time, and this is the one route where
+// knowing precisely what gets destroyed is the point. So: an explicit list, and a build
+// that fails when it goes stale.
+//
+// Order matters. Children before parents, because three of these do NOT cascade from
+// companies: `profiles` and `hr_audits` are ON DELETE NO ACTION, so a company row cannot
+// be removed while they hold rows; `corrections` is ON DELETE SET NULL, so its rows would
+// SURVIVE with a null company_id — orphaned customer data left behind by a deletion the
+// customer asked for. Those three are why this loop exists at all rather than relying on
+// the cascade.
+const COMPANY_SCOPED_TABLES = [
+  'checklists',
+  'corrections',        // SET NULL — would survive as an orphan if not deleted here
+  'obligations',
+  'company_switches',
+  'entities',
+  'document_reviews',
+  'audits',
+  'company_templates',
+  'hr_audits',          // NO ACTION — blocks the company delete if left
+  'calendar_events',
+  'documents',
+  'company_folders',
+  'jobs',
+  'profiles',           // NO ACTION — blocks the company delete if left. Last: everything
+                        // above may reference a user, and this is what removes the people.
+] as const
+
+// Tables with a company_id that this loop deliberately does NOT name, each with the
+// reason. A table may only be here if something else genuinely removes its rows.
+const DELETED_BY_CASCADE_OR_PARENT = [
+  'checklist_items',       // deleted above by checklist_id, before its parent goes
+  'obligation_evidence',   // deleted above by obligation_id, before its parent goes
+] as const
+// ---------------------------------------------------------------------------
+
 export async function DELETE(request: NextRequest) {
   try {
     const authed = await requireCompany(request)
@@ -229,20 +276,7 @@ export async function DELETE(request: NextRequest) {
       await supabaseAdmin.from('obligation_evidence').delete().in('obligation_id', obligationIds)
     }
 
-    for (const table of [
-      'checklists',
-      'corrections',
-      'obligations',
-      'entities',
-      'document_reviews',
-      'audits',
-      'company_templates',
-      'hr_audits',
-      'calendar_events',
-      'documents',
-      'company_folders',
-      'profiles',
-    ]) {
+    for (const table of COMPANY_SCOPED_TABLES) {
       const { error } = await supabaseAdmin.from(table).delete().eq('company_id', companyId)
       if (error) throw new Error(`Failed clearing ${table}: ${error.message}`)
     }

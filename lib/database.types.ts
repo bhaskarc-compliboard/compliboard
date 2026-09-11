@@ -159,6 +159,7 @@ export type Database = {
           created_at: string | null
           description: string | null
           due_date: string
+          entity_id: string | null
           id: string
           is_recurring: boolean | null
           recurrence_period: string | null
@@ -173,6 +174,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           due_date: string
+          entity_id?: string | null
           id?: string
           is_recurring?: boolean | null
           recurrence_period?: string | null
@@ -187,6 +189,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           due_date?: string
+          entity_id?: string | null
           id?: string
           is_recurring?: boolean | null
           recurrence_period?: string | null
@@ -199,6 +202,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_events_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entities"
             referencedColumns: ["id"]
           },
         ]
@@ -626,6 +636,7 @@ export type Database = {
           document_id: string | null
           document_name: string
           document_type: string | null
+          entity_id: string | null
           expiring_soon: boolean | null
           expiry_date: string | null
           folder_id: string | null
@@ -651,6 +662,7 @@ export type Database = {
           document_id?: string | null
           document_name: string
           document_type?: string | null
+          entity_id?: string | null
           expiring_soon?: boolean | null
           expiry_date?: string | null
           folder_id?: string | null
@@ -676,6 +688,7 @@ export type Database = {
           document_id?: string | null
           document_name?: string
           document_type?: string | null
+          entity_id?: string | null
           expiring_soon?: boolean | null
           expiry_date?: string | null
           folder_id?: string | null
@@ -706,11 +719,19 @@ export type Database = {
             referencedRelation: "documents"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "document_reviews_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entities"
+            referencedColumns: ["id"]
+          },
         ]
       }
       documents: {
         Row: {
           company_id: string | null
+          entity_id: string | null
           file_size: number | null
           file_type: string
           file_url: string
@@ -724,6 +745,7 @@ export type Database = {
         }
         Insert: {
           company_id?: string | null
+          entity_id?: string | null
           file_size?: number | null
           file_type: string
           file_url: string
@@ -737,6 +759,7 @@ export type Database = {
         }
         Update: {
           company_id?: string | null
+          entity_id?: string | null
           file_size?: number | null
           file_type?: string
           file_url?: string
@@ -757,6 +780,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "documents_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entities"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "documents_folder_id_fkey"
             columns: ["folder_id"]
             isOneToOne: false
@@ -767,36 +797,54 @@ export type Database = {
       }
       entities: {
         Row: {
+          address: string | null
+          city: string | null
           company_id: string
+          county: string | null
           created_at: string
           details: Json
           entity_type: Database["public"]["Enums"]["entity_scope"]
+          fire_authority: string | null
           id: string
           is_primary: boolean
           name: string
           parent_entity_id: string | null
+          postal_code: string | null
+          state: string | null
           updated_at: string
         }
         Insert: {
+          address?: string | null
+          city?: string | null
           company_id: string
+          county?: string | null
           created_at?: string
           details?: Json
           entity_type: Database["public"]["Enums"]["entity_scope"]
+          fire_authority?: string | null
           id?: string
           is_primary?: boolean
           name: string
           parent_entity_id?: string | null
+          postal_code?: string | null
+          state?: string | null
           updated_at?: string
         }
         Update: {
+          address?: string | null
+          city?: string | null
           company_id?: string
+          county?: string | null
           created_at?: string
           details?: Json
           entity_type?: Database["public"]["Enums"]["entity_scope"]
+          fire_authority?: string | null
           id?: string
           is_primary?: boolean
           name?: string
           parent_entity_id?: string | null
+          postal_code?: string | null
+          state?: string | null
           updated_at?: string
         }
         Relationships: [

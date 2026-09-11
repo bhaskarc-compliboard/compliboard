@@ -214,6 +214,16 @@ once.
   Found on 11 Sep when migration 008's own verification block refused it: a table
   deliberately omitted from every grant line still came out readable and writable by
   `authenticated`, and only an explicit `REVOKE` closed it.
+- **A column rename is TWO changes: the migration, and a sweep of every query string that
+  names the column.** A column name inside `.select('x')` or `.eq('x', …)` is a string
+  literal — `tsc` and the generated types cannot see into it, which is exactly what makes
+  them valuable everywhere else. `npm run check` runs
+  **`scripts/check-schema-contracts.js`** for this: it validates every query string against
+  `lib/database.types.ts` (offline, no credentials), and separately enforces that
+  `/api/account` DELETE names every table carrying a `company_id`. It has one blind spot,
+  documented in the script: a `.from(variable)` call cannot be attributed to a table, there
+  are two such call sites, and they must be checked by hand after any rename. Written after
+  007 renamed a column and broke signup in production with a green build.
 - **Routes connect as the caller.** `requireCompany()` returns `authed.db`, a client built
   from the anon key plus the request's own token, so policies apply. It is built per
   request and must never be hoisted to module scope or cached — it carries one user's

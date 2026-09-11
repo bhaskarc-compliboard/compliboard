@@ -305,7 +305,8 @@ with empty content.
 - ⬜ **The requirements screen is empty until Phase 4, and that is expected.**
   Migration 007 drops `obligations` — 376 rows in production, all of it derived output
   (188 templates × 2 companies) and all of it carrying the jurisdiction bug: matching was
-  on industry alone, so a Texas company was served Oregon requirements (1.4). Nothing
+  on an unverified AI scan blob rather than the customer's stated address, so most
+  companies silently received federal rows only (1.4). Nothing
   regenerates those rows until the resolution engine exists in **Phase 4.1**.
 
   So after 007 lands, `/requirements` shows nothing and `/api/obligations` returns an
@@ -454,7 +455,7 @@ add to a customer's. 1.6 is the clearest case in the phase and the most recent a
 |---|---|---|
 | **1.2** | The six new tables | ✅ **Five DONE 11 Sep** (migration 008, staging only): `switches`, `company_switches`, `industry_coverage`, `library_candidates`, `jobs`. `topics` deliberately deferred — see M1 |
 | **1.3** | Rebuild staging from zero | ✅ **DONE 11 Sep.** `npm run db:reset` exists, and running it found two defects — see below |
-| **1.4** | Jurisdiction in the match key | The columns now exist to do it properly; the matching rule itself is still unwritten |
+| **1.4** | Make the match key's inputs correct and complete | Renamed 11 Sep. Sites can now state their jurisdiction (009) and the rule is written down; the **implementation moved to Phase 4.1**, where the engine that uses it lives |
 | **1.5** | `STATUS.md` | First line already earned, see below |
 | **1.6** | Multi-facility wiring | `entities.is_primary` and `obligation_evidence.entity_id` landed with 007. Still to do: `entity_id` on `documents`, `document_reviews` and `calendar_events`; `scope` on `switches` (needs 1.2); seeding a site at signup; backfilling the 10 existing companies |
 
@@ -523,8 +524,77 @@ to work. It is known to have worked once, in one order, from one starting state.
 - ⬜ Rebuild staging from zero — proves the migrations are complete
 - ⬜ Rebuild production, reload the 188 requirements, recreate test accounts
 
-### 1.4 🔒 Jurisdiction in the match key ⬜ ⏱ half day
-The obligation-matching logic matches on industry alone. 90 of 188 rows are Oregon-specific. (It lived in `app/api/sync-obligations`, deleted 9 Sep as orphaned — the bug is in the matching rule, which still has to be written correctly here.) **A Texas chemical manufacturer is currently served Oregon requirements** — a live correctness bug, not a scale limit.
+### 1.4 🔒 Make the match key's inputs correct and complete ⬜ ⏱ half day
+*Renamed 11 Sep. The implementation moved to Phase 4.1 — see below.*
+
+**94 of 192 active requirement rows are Oregon-specific** (91 at `layer = state`, plus the
+3 fire-code rows at `layer = local`). Getting the match key wrong therefore decides roughly
+half of what a customer is told.
+
+**⚠️ THE DESCRIPTION ABOVE WAS WRONG IN FOUR DOCUMENTS. Corrected 11 Sep.**
+
+The deleted route did **not** match on industry alone. It filtered on jurisdiction:
+
+```js
+templateQuery = state
+  ? templateQuery.or(`jurisdiction_state.is.null,jurisdiction_state.eq.${state}`)
+  : templateQuery.is('jurisdiction_state', null)
+```
+
+**The real defect is that `state` came from `scan_result->>'state'` — an unverified AI
+website-scan blob — and not from `companies.state`, the address the customer gave us.**
+
+Three consequences, and the direction is the opposite of what was recorded:
+
+1. **`scan_result` is null for 7 of 10 production companies.** For those the filter falls
+   to `jurisdiction_state is null`: **federal rows only, all 94 Oregon rows silently
+   dropped.** The live failure is UNDER-serving, not over-serving. Per `CLAUDE.md` §3.2
+   that is the safer direction, and it is still wrong — a company is told less than it
+   owes and has no way to know.
+2. **The two sources already disagree on a live row.** `CB-Test 2` is `Oregon` by address
+   and `Washington` by scan. It would have been matched against Washington, of which the
+   library holds zero rows, and received only the 95 federal ones.
+3. **County, city and local were never considered at all** — only `jurisdiction_state`.
+
+Over-serving is *possible* through the same hole (a scan claiming Oregon for a Texas
+company) but no production row does it. The honest statement is: **the match key used a
+derived, unverified jurisdiction in place of a stated one, and ignored three of the five
+layers.** `${state}` was also interpolated straight into a PostgREST `.or()` string, so a
+comma in the value would have broken the filter.
+
+**Why it matters that the record was wrong:** it would have sent someone hunting for a
+missing `.eq()` that was never missing, and left the actual cause — an AI artifact
+silently outranking the customer's own address — in place. `DECISIONS.md` §24.1 settles
+the source of truth.
+
+### Why the implementation is Phase 4.1 and not Phase 1
+
+Phase 4.1 is defined as *"Jurisdiction + switches + library version → obligations.
+Deterministic."* **The match key is three-quarters of that sentence.** Writing it now means
+writing it against a resolution engine that does not exist, then writing it again — and
+4.4 makes *"state X never receives state-Y requirements"* a required test of that engine,
+not of a route.
+
+It belongs in `lib/resolution.ts` as a **pure predicate** — facts and rows in, rows out —
+never as a SQL filter. Three reasons: §3.2 requires resolution to be deterministic and
+computed in code; a predicate is testable without a database and a PostgREST `.or()` string
+is not; and the failure mode of a too-narrow SQL filter is **fewer rows with a perfectly
+good 200**, which is exactly what the deleted route did for months with nobody noticing.
+Load candidates with a deliberately broad query and narrow in tested code, so that if the
+SQL is ever wrong it is wrong in the superset direction where the code catches it.
+
+### What Phase 1 lands instead — the inputs, not the rule
+
+- ✅ **Jurisdiction columns on `entities`** (migration 009). A site had no way to say where
+  it was, which made `local` and `city` requirements **unresolvable for every company**.
+  The three Oregon Fire Code rows are the first that need it.
+- ✅ **The authoritative-source decision** — `companies.state/county/city`, never
+  `scan_result` (`DECISIONS.md` §24.1).
+- ✅ **The full six-case match rule written into `CHEMICAL-OR-WA.md` §3.2**, including the
+  two cases that had no rule at all, so Phase 4 inherits it rather than reinventing it.
+- ⬜ **Address capture is still incomplete.** Signup hardcodes `county: ''` and never asks,
+  yet `jurisdiction_layer = 'county'` is a value the match key must serve. Belongs with
+  M7's signup rework, and until then no county-scoped requirement can resolve.
 
 ### 1.5 `STATUS.md` ⬜ ⏱ 1 hour
 One line per module: working / broken / not-yet-rebuilt / verified-on-date. Prevents "broken and nobody noticed" during a rebuild.

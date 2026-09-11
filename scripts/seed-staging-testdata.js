@@ -31,6 +31,9 @@ const PLAN = [
   {
     company: { name: "Test Alpha Chemical", industry: "chemical-manufacturing",
                state: "Oregon", county: "Washington", city: "Hillsboro", employee_count: 42 },
+    // Not a city and not a county — the case `local` exists for. Belongs to the SITE, so
+    // it sits outside `company`: `companies` has no such column and never should.
+    site: { fire_authority: "Tualatin Valley Fire & Rescue" },
     people: [
       { email: "testalpha@example.com",  full_name: "Alpha Owner" },
       { email: "testalpha2@example.com", full_name: "Alpha Colleague" },
@@ -48,7 +51,7 @@ if (uErr) { console.error("  Could not list auth users:", uErr.message); process
 const idByEmail = new Map(users.users.map((u) => [u.email, u.id]));
 
 console.log(`\n  Target: ${ref} (staging)\n`);
-for (const { company, people } of PLAN) {
+for (const { company, people, site } of PLAN) {
   const missing = people.filter((p) => !idByEmail.has(p.email));
   if (missing.length) {
     console.error(`  No auth user for ${missing.map((m) => m.email).join(", ")}.`);
@@ -71,11 +74,18 @@ for (const { company, people } of PLAN) {
   // TODO 1.6: every company gets a primary site at signup, single-site ones included, so
   // nothing downstream has to ask whether a company has sites. Signup does not do this
   // yet; the test data should still look like what signup will produce.
+  // The site carries its OWN address (migration 009), not just the company's. For a
+  // single-site company they are the same; the moment there are two they are not, and
+  // `city` and `local` requirements resolve against the SITE — CHEMICAL-OR-WA.md §3.2.
+  // Migration 009's backfill only reaches sites that existed when it ran, so a site
+  // created afterwards has to set its own.
   const { error: eErr } = await db.from("entities").insert({
     company_id: co.id, entity_type: "site", is_primary: true,
     name: `${co.name.split(" ")[1]}-${company.city}`,
+    state: company.state, county: company.county, city: company.city,
+    fire_authority: site?.fire_authority ?? null,
   });
   if (eErr) console.log(`    (primary site not created: ${eErr.message})`);
-  else console.log(`    primary site: ${co.name.split(" ")[1]}-${company.city}`);
+  else console.log(`    primary site: ${co.name.split(" ")[1]}-${company.city}  (${company.city}, ${company.county} County, ${company.state}${site?.fire_authority ? "; " + site.fire_authority : ""})`);
 }
 console.log("\n  Done. Passwords are unchanged — the auth schema is never touched by a reset.\n");

@@ -255,8 +255,26 @@ Add `status`, `match_confidence`, `match_rationale`, `contribution`, `valid_from
 
 Only five new tables, not eleven.
 
-### 2.5 🔒 Jurisdiction in the match key ⏱ half day
-The obligation-matching logic matches on industry alone. **A live correctness bug** — a Texas chemical manufacturer is served Oregon requirements. (The route that carried this logic, `app/api/sync-obligations`, was deleted on 9 Sep as orphaned with zero callers. The bug is in the matching rule, not the route, and travels with it into whatever rebuilds it.)
+### 2.5 🔒⟲ Make the match key's inputs correct and complete ⏱ half day
+⟲ **Renamed and re-scoped 11 Sep, and the bug description below was wrong in this document
+and three others.**
+
+The deleted `app/api/sync-obligations` did **not** match on industry alone — it filtered on
+`jurisdiction_state`. The defect was that the state came from `scan_result->>'state'`, an
+unverified AI website scan, rather than from `companies.state`. `scan_result` is null for 7
+of 10 production companies, so those fell back to federal-only and **silently lost all 94
+Oregon rows**; and the two sources already disagree on a live row. The direction is
+under-serving, not the over-serving recorded here. Full account in `TODO.md` 1.4.
+
+**The implementation is Phase 4 work, not Phase 2 schema work.** Phase 4 is
+"jurisdiction + switches + library version → obligations", and the match key is most of
+that sentence; it belongs in the resolution engine as a tested pure predicate, never as a
+SQL filter whose failure mode is fewer rows with a 200.
+
+What Phase 2 lands is the **inputs**: jurisdiction columns on `entities` so `local` and
+`city` requirements are resolvable at all (migration 009), the decision that
+`companies.state/county/city` is authoritative and `scan_result` never is (`DECISIONS.md`
+§24.1), and the six-case match rule written into `CHEMICAL-OR-WA.md` §3.2.
 
 ### 2.6 🅑✚ Derived types from the generated schema ⏱ half day
 `type TableName = keyof Database["public"]["Tables"]` and equivalents. Renaming a table or switch becomes a compile error.

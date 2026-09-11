@@ -1,6 +1,13 @@
 # Chemical Manufacturing Vertical — Oregon & Washington
-**Version:** 1.2 · **Updated:** 10 September 2026
-**Supersedes:** version 1.1 (10 Sep). **Corrects §4.4** — the 174 / 11 / 3 model split was
+**Version:** 1.3 · **Updated:** 11 September 2026
+**Supersedes:** version 1.2 (11 Sep). **Rewrites §3.2's match rule** — it described three
+jurisdiction cases and migration 007 made five plus a nullable. `city` and `local` resolve
+per SITE rather than per company, `local` may be a fire district that is neither a city nor
+a county, and a NULL layer is not a jurisdiction case at all: those rows are contractual and
+are gated by a switch, which the match key must pass through rather than decide. Also
+records that the company's stated address is the source of truth and a website scan never
+is. Version 1.2 corrected §4.4's reading of the model split; version 1.1 expanded §6.6
+Multi-site. **Corrects §4.4** — the 174 / 11 / 3 model split was
 described as "one enumeration with two validators." It is not: the merge was sequential, each
 model adding what the previous ones missed, so the column is a build log rather than
 authorship. What the split does carry is a convergence signal, and that is why no fourth model
@@ -431,7 +438,49 @@ obligation_evidence      requirement ↔ document links, as rows
 
 ## 3.2 Three structural rules
 
-**Jurisdiction is in the match key.** The current `.eq('industry', ...)` alone serves Oregon requirements to Texas companies. Resolution filters on federal OR (state AND matching state) OR (county AND matching county).
+**Jurisdiction is in the match key.** Serving one state's requirements to another state's company is a silent, dangerous failure (`CLAUDE.md` §3.2).
+
+*Rewritten 11 Sep. The previous version described three cases; migration 007 made
+`jurisdiction_layer` five values plus a nullable, and two of those had no rule at all.*
+
+**The six cases, complete:**
+
+| `jurisdiction_layer` | Applies when | Compared against |
+|---|---|---|
+| `federal` | always | — serves every state |
+| `state` | the company's state matches | `companies.state` |
+| `county` | the company's county matches | `companies.county` |
+| `city` | the site's city matches | **`entities.city`** |
+| `local` | the site's fire authority covers it | **`entities.fire_authority`, else county, else city** |
+| `NULL` | **never decided here** | — see below |
+
+**Three things this settles that the three-case version did not:**
+
+**1. `city` and `local` resolve per SITE, not per company.** Two plants of one company can
+sit under different fire authorities (§6.6, `DECISIONS.md` §20), so a company-level answer
+is wrong at every site but one. Migration 009 gave `entities` the address columns this
+needs; before that, both layers were unresolvable for every company.
+
+**2. `local` means "the authority having jurisdiction", which may be neither a city nor a
+county.** An Oregon rural fire protection district is its own body. That is why
+`entities.fire_authority` exists and is checked first: falling back to county or city is a
+best effort, not the definition.
+
+**3. A `NULL` layer is not a jurisdiction case at all, and the match key must pass it
+through untouched.** Those rows are contractual — ISO 9001, ISO 14001, NACD Responsible
+Distribution — imposed by a registrar rather than a government, and they are not
+territorial (`DECISIONS.md` §21.2). **They are gated by a SWITCH, not by geography**:
+`holds_iso_certification` is already switch #9 in §2.4.
+
+That distinction is easy to get wrong in either direction, and both are bad. Drop them and
+a certified company is never told about the surveillance audit it will fail. Apply them by
+default and every company is told it must maintain an ISO certificate it has never held.
+**The match key's job is to hand them to the switch evaluator, not to decide them.**
+
+**The source of truth is the company's stated address, never a derived one.**
+`companies.state/county/city` and `entities.state/county/city`. Never `scan_result`, which
+is an unverified AI website scan — it silently outranked the stated address for months and
+cost most companies their state-level requirements (`DECISIONS.md` §24.1, `TODO.md` 1.4).
 
 **Rows are versioned, never edited.** A regulation changes; the old row gets `effective_to`, a new row gets `version + 1` and `effective_from`. Audits pin to a library version so past reports remain reproducible.
 
