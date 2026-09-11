@@ -1,6 +1,8 @@
 # Detailed To-Do
-**Version:** 7 · **Updated:** 11 September 2026
-**Supersedes:** version 6 (11 Sep). **Phase 2.1 is done on staging** — 33 agencies, 187 of
+**Version:** 8 · **Updated:** 11 September 2026
+**Supersedes:** version 7 (11 Sep). **Phase 2.1 is done on BOTH environments** — 33 agencies,
+187 of 194 requirements assigned, 56 coverage rows, verified identical staging-to-production.
+Records the deferred service-role key rotation in the gate section. Version 7 recorded **Phase 2.1 done on staging** — 33 agencies, 187 of
 194 requirements assigned a regulator, and the 56-row `industry_coverage` cross product.
 2.1's cannabis list is corrected (it omitted EPA, PHMSA and federal OSHA, which made solvent
 extraction invisible to Stage 2) and gains an open item to fill `agencies.url` against live
@@ -479,6 +481,32 @@ database.*
 
 **Gate item 2 is closed.** Only key rotation remains before the first real customer document.
 
+> **The production service-role key was echoed into a session transcript on 11 September,
+> and rotation is DEFERRED to the gate batch rather than done immediately.**
+>
+> *What happened:* checking whether `SUPABASE_PROD_SERVICE_ROLE_KEY` was set during the
+> Phase 2.1 production load, the check used a shell expansion that prints the value when it
+> is non-empty rather than one that prints only "set" or "blank". The full JWT went into the
+> terminal and the conversation. It was never written to a file, and `.env.local` is
+> gitignored, so nothing reached the repository.
+>
+> *Why deferred rather than rotated now, and this is a judgement that could go the other
+> way:* a service-role key bypasses RLS entirely, so the exposure is real. What it currently
+> reaches is **ten seeded companies, no customer documents, and a requirement library that is
+> public regulation**. Production holds nothing confidential today. Rotating now means
+> rotating twice — once now and once in the gate batch with the other five credentials —
+> and a key rotated in isolation is the kind that gets missed in the hosting platform's
+> settings and takes the app down on a Friday.
+>
+> *The condition is not a date.* It rotates **with the rest, before the first real customer
+> document reaches production**. If anything changes that timing — a pilot customer, a real
+> upload, anything that makes production hold data somebody would mind losing — this rotates
+> first and alone.
+>
+> *And the check itself is fixed:* test presence with `${VAR:+set}`, never with a form that
+> can print the value. The three loaders already print only names, never values, in their
+> own guidance.
+
 **✅ Done, in production:** 1.1, and the library reloaded onto it.
 
 - **Migration 006** — twelve enum types; six columns converted; `employee_count` from text
@@ -736,8 +764,15 @@ blank by design — `STATUS.md` says so, and it is not a regression.
 
 Where answer quality actually changes. Everything here is ⚡.
 
-### 2.1 🔒 Agency list ⬜ ⏱ 1 afternoon
+### 2.1 🔒 Agency list ✅ **DONE (11 Sep) — applied to staging AND production**
 Moves cannabis from *enumerate from nothing* to *bounded agency scope*. **Highest value per hour in the entire plan.**
+
+**What landed:** migration 011 (uniqueness, NOT NULLs, the jurisdiction CHECK, the GIN index,
+and the `verified`-needs-a-verifier CHECK, each tested by violation) · **33 agencies** ·
+**187 of 194 requirements assigned a regulator** from a reviewable mapping table, 7
+deliberately NULL · **56 `industry_coverage` rows**, all `not_built`. Both environments
+verified identical: 615 objects, 0 differences, and 0 differences across agencies,
+assignments and coverage compared row by row.
 
 - ⬜ Chemical Oregon: Oregon OSHA, DEQ, OSFM, local fire, local sewer, SoS, DOR, BOLI, ODOT, ODA + federal OSHA-baseline, EPA, DOT/PHMSA, FMCSA
 - ⬜ Cannabis Oregon: OLCC, Oregon OSHA, ODA, DOR, Water Resources, DEQ, local fire, local jurisdiction,
