@@ -443,6 +443,82 @@ export type Database = {
           },
         ]
       }
+      company_switches: {
+        Row: {
+          basis: string | null
+          company_id: string
+          confidence: Database["public"]["Enums"]["switch_confidence"] | null
+          created_at: string
+          determined_at: string | null
+          entity_id: string | null
+          expires_at: string | null
+          id: string
+          scope: Database["public"]["Enums"]["switch_scope"]
+          source: Database["public"]["Enums"]["switch_value_source"] | null
+          state: Database["public"]["Enums"]["switch_state"]
+          switch_id: string
+          updated_at: string
+          user_locked: boolean
+          value: string | null
+        }
+        Insert: {
+          basis?: string | null
+          company_id: string
+          confidence?: Database["public"]["Enums"]["switch_confidence"] | null
+          created_at?: string
+          determined_at?: string | null
+          entity_id?: string | null
+          expires_at?: string | null
+          id?: string
+          scope: Database["public"]["Enums"]["switch_scope"]
+          source?: Database["public"]["Enums"]["switch_value_source"] | null
+          state?: Database["public"]["Enums"]["switch_state"]
+          switch_id: string
+          updated_at?: string
+          user_locked?: boolean
+          value?: string | null
+        }
+        Update: {
+          basis?: string | null
+          company_id?: string
+          confidence?: Database["public"]["Enums"]["switch_confidence"] | null
+          created_at?: string
+          determined_at?: string | null
+          entity_id?: string | null
+          expires_at?: string | null
+          id?: string
+          scope?: Database["public"]["Enums"]["switch_scope"]
+          source?: Database["public"]["Enums"]["switch_value_source"] | null
+          state?: Database["public"]["Enums"]["switch_state"]
+          switch_id?: string
+          updated_at?: string
+          user_locked?: boolean
+          value?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_switches_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_switches_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_switches_switch_scope_fkey"
+            columns: ["switch_id", "scope"]
+            isOneToOne: false
+            referencedRelation: "switches"
+            referencedColumns: ["id", "scope"]
+          },
+        ]
+      }
       company_templates: {
         Row: {
           company_id: string
@@ -780,6 +856,192 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      industry_coverage: {
+        Row: {
+          agency_id: string
+          created_at: string
+          id: string
+          industry: string
+          jurisdiction_state: string | null
+          last_verified_at: string | null
+          notes: string | null
+          row_count: number
+          status: Database["public"]["Enums"]["coverage_status"]
+          updated_at: string
+          verified_by: string | null
+        }
+        Insert: {
+          agency_id: string
+          created_at?: string
+          id?: string
+          industry: string
+          jurisdiction_state?: string | null
+          last_verified_at?: string | null
+          notes?: string | null
+          row_count?: number
+          status?: Database["public"]["Enums"]["coverage_status"]
+          updated_at?: string
+          verified_by?: string | null
+        }
+        Update: {
+          agency_id?: string
+          created_at?: string
+          id?: string
+          industry?: string
+          jurisdiction_state?: string | null
+          last_verified_at?: string | null
+          notes?: string | null
+          row_count?: number
+          status?: Database["public"]["Enums"]["coverage_status"]
+          updated_at?: string
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "industry_coverage_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      jobs: {
+        Row: {
+          attempts: number
+          cancel_requested: boolean
+          company_id: string | null
+          created_at: string
+          error_message: string | null
+          finished_at: string | null
+          heartbeat_at: string | null
+          id: string
+          job_type: Database["public"]["Enums"]["job_type"]
+          max_attempts: number
+          payload: Json
+          progress_message: string | null
+          response_message: string | null
+          result: Json | null
+          scheduled_for: string
+          serialization_key: string
+          started_at: string | null
+          status: Database["public"]["Enums"]["job_status"]
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          cancel_requested?: boolean
+          company_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          finished_at?: string | null
+          heartbeat_at?: string | null
+          id?: string
+          job_type: Database["public"]["Enums"]["job_type"]
+          max_attempts?: number
+          payload?: Json
+          progress_message?: string | null
+          response_message?: string | null
+          result?: Json | null
+          scheduled_for?: string
+          serialization_key: string
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["job_status"]
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          cancel_requested?: boolean
+          company_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          finished_at?: string | null
+          heartbeat_at?: string | null
+          id?: string
+          job_type?: Database["public"]["Enums"]["job_type"]
+          max_attempts?: number
+          payload?: Json
+          progress_message?: string | null
+          response_message?: string | null
+          result?: Json | null
+          scheduled_for?: string
+          serialization_key?: string
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["job_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jobs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      library_candidates: {
+        Row: {
+          agency_guess: string | null
+          citation_guess: string | null
+          created_at: string
+          first_seen_at: string
+          id: string
+          industry: string
+          jurisdiction_state: string | null
+          last_seen_at: string
+          normalized_name: string
+          operator_feedback: string | null
+          promoted_to_requirement_id: string | null
+          raw_name: string
+          status: string
+          times_seen: number
+          updated_at: string
+        }
+        Insert: {
+          agency_guess?: string | null
+          citation_guess?: string | null
+          created_at?: string
+          first_seen_at?: string
+          id?: string
+          industry: string
+          jurisdiction_state?: string | null
+          last_seen_at?: string
+          normalized_name: string
+          operator_feedback?: string | null
+          promoted_to_requirement_id?: string | null
+          raw_name: string
+          status?: string
+          times_seen?: number
+          updated_at?: string
+        }
+        Update: {
+          agency_guess?: string | null
+          citation_guess?: string | null
+          created_at?: string
+          first_seen_at?: string
+          id?: string
+          industry?: string
+          jurisdiction_state?: string | null
+          last_seen_at?: string
+          normalized_name?: string
+          operator_feedback?: string | null
+          promoted_to_requirement_id?: string | null
+          raw_name?: string
+          status?: string
+          times_seen?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "library_candidates_promoted_to_requirement_id_fkey"
+            columns: ["promoted_to_requirement_id"]
+            isOneToOne: false
+            referencedRelation: "requirement_templates"
             referencedColumns: ["id"]
           },
         ]
@@ -1175,6 +1437,68 @@ export type Database = {
         }
         Relationships: []
       }
+      switches: {
+        Row: {
+          allowed_values: string[]
+          created_at: string
+          depends_on_switch: string | null
+          depends_on_value: string | null
+          determination_source: Database["public"]["Enums"]["switch_determination_source"]
+          domain: string | null
+          id: string
+          jurisdiction_variant: boolean
+          label: string
+          notes: string | null
+          question_plain: string | null
+          scope: Database["public"]["Enums"]["switch_scope"]
+          updated_at: string
+          value_type: Database["public"]["Enums"]["switch_value_type"]
+          volatility: Database["public"]["Enums"]["switch_volatility"]
+        }
+        Insert: {
+          allowed_values?: string[]
+          created_at?: string
+          depends_on_switch?: string | null
+          depends_on_value?: string | null
+          determination_source: Database["public"]["Enums"]["switch_determination_source"]
+          domain?: string | null
+          id: string
+          jurisdiction_variant?: boolean
+          label: string
+          notes?: string | null
+          question_plain?: string | null
+          scope: Database["public"]["Enums"]["switch_scope"]
+          updated_at?: string
+          value_type: Database["public"]["Enums"]["switch_value_type"]
+          volatility?: Database["public"]["Enums"]["switch_volatility"]
+        }
+        Update: {
+          allowed_values?: string[]
+          created_at?: string
+          depends_on_switch?: string | null
+          depends_on_value?: string | null
+          determination_source?: Database["public"]["Enums"]["switch_determination_source"]
+          domain?: string | null
+          id?: string
+          jurisdiction_variant?: boolean
+          label?: string
+          notes?: string | null
+          question_plain?: string | null
+          scope?: Database["public"]["Enums"]["switch_scope"]
+          updated_at?: string
+          value_type?: Database["public"]["Enums"]["switch_value_type"]
+          volatility?: Database["public"]["Enums"]["switch_volatility"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "switches_depends_on_switch_fkey"
+            columns: ["depends_on_switch"]
+            isOneToOne: false
+            referencedRelation: "switches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -1185,6 +1509,7 @@ export type Database = {
     Enums: {
       applies_mode: "conditional" | "universal"
       checklist_item_category: "must_do" | "good_to_have"
+      coverage_status: "not_built" | "generated" | "verified"
       entity_scope:
         | "organization"
         | "site"
@@ -1199,6 +1524,12 @@ export type Database = {
         | "superseded"
       folder_section: "files" | "hr" | "log"
       generated_by: "ai" | "manual"
+      job_status: "pending" | "running" | "succeeded" | "failed" | "cancelled"
+      job_type:
+        | "index_document"
+        | "generate_library"
+        | "check_library"
+        | "monitor_changes"
       jurisdiction_layer: "federal" | "state" | "county" | "city" | "local"
       obligation_status:
         | "applies"
@@ -1218,6 +1549,21 @@ export type Database = {
         | "fees_taxes"
       requirement_priority: "critical" | "high" | "standard"
       requirement_source_type: "statutory" | "contractual"
+      switch_confidence: "high" | "medium" | "low"
+      switch_determination_source:
+        | "documents"
+        | "profile"
+        | "user_answer"
+        | "computed_by_requirement"
+      switch_scope: "company" | "site"
+      switch_state: "known" | "unknown" | "needs_user"
+      switch_value_source:
+        | "ai_from_documents"
+        | "ai_from_profile"
+        | "user_set"
+        | "computed"
+      switch_value_type: "enum" | "boolean" | "number" | "text"
+      switch_volatility: "static" | "annual" | "monthly"
       verification_status: "generated" | "disputed" | "verified"
     }
     CompositeTypes: {
@@ -1348,6 +1694,7 @@ export const Constants = {
     Enums: {
       applies_mode: ["conditional", "universal"],
       checklist_item_category: ["must_do", "good_to_have"],
+      coverage_status: ["not_built", "generated", "verified"],
       entity_scope: [
         "organization",
         "site",
@@ -1364,6 +1711,13 @@ export const Constants = {
       ],
       folder_section: ["files", "hr", "log"],
       generated_by: ["ai", "manual"],
+      job_status: ["pending", "running", "succeeded", "failed", "cancelled"],
+      job_type: [
+        "index_document",
+        "generate_library",
+        "check_library",
+        "monitor_changes",
+      ],
       jurisdiction_layer: ["federal", "state", "county", "city", "local"],
       obligation_status: [
         "applies",
@@ -1385,6 +1739,23 @@ export const Constants = {
       ],
       requirement_priority: ["critical", "high", "standard"],
       requirement_source_type: ["statutory", "contractual"],
+      switch_confidence: ["high", "medium", "low"],
+      switch_determination_source: [
+        "documents",
+        "profile",
+        "user_answer",
+        "computed_by_requirement",
+      ],
+      switch_scope: ["company", "site"],
+      switch_state: ["known", "unknown", "needs_user"],
+      switch_value_source: [
+        "ai_from_documents",
+        "ai_from_profile",
+        "user_set",
+        "computed",
+      ],
+      switch_value_type: ["enum", "boolean", "number", "text"],
+      switch_volatility: ["static", "annual", "monthly"],
       verification_status: ["generated", "disputed", "verified"],
     },
   },

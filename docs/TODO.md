@@ -435,7 +435,7 @@ add to a customer's. 1.6 is the clearest case in the phase and the most recent a
 
 | | | |
 |---|---|---|
-| **1.2** | The six new tables | `switches`, `company_switches`, `industry_coverage`, `library_candidates`, `jobs`, `topics`. None exist yet, and 1.6's switch-scope work lands with them |
+| **1.2** | The six new tables | ✅ **Five DONE 11 Sep** (migration 008, staging only): `switches`, `company_switches`, `industry_coverage`, `library_candidates`, `jobs`. `topics` deliberately deferred — see M1 |
 | **1.3** | Rebuild staging from zero | ✅ **DONE 11 Sep.** `npm run db:reset` exists, and running it found two defects — see below |
 | **1.4** | Jurisdiction in the match key | The columns now exist to do it properly; the matching rule itself is still unwritten |
 | **1.5** | `STATUS.md` | First line already earned, see below |
@@ -857,6 +857,30 @@ wait for its module's turn. Correctness bugs in shipped code are not module work
 **Depends on:** determination gate (2.2) · critic pass (2.3) · `company_switches` (1.2) ·
 resolution engine (Phase 4). The Workspace is the *surface* over those four; without them it
 is a chat box.
+
+#### M1.0 `topics` — the table is deliberately not built ⬜
+*Recorded 11 Sep. `DECISIONS.md` §23.2.*
+
+Five of the six Phase 1.2 tables landed in migration 008. `topics` did not, on purpose: it
+is the only one whose **shape** waits on a design decision rather than on unwritten code,
+and it is the furthest of the six from a caller — the Workspace is this section, the last
+in the plan, behind the determination gate, the critic pass, `company_switches` and
+resolution.
+
+**Two of `WORKSPACE.md` §9's open questions decide columns, not screens:**
+
+- **§9.4 concurrency** — one open topic per company, or several? One is a partial unique
+  index on `(company_id) where status = 'open'`; several is the absence of one. **This is
+  not deferrable after the fact.** If several are allowed and users create several, adding
+  the constraint later means closing somebody's open work.
+- **§9.3 summary format** — what is worth keeping once the transcript is gone. That is the
+  content of the column that *is* this table's durable output.
+
+**Already decided, so it is not re-argued when the time comes:** "discarding the
+transcript" (§6.1) means **nulling the column and keeping the row**, never deleting the
+row. A discarded transcript must still leave behind that a topic existed, when it closed
+and why — `close_reason` distinguishes *you closed it*, *a checklist closed it* (§6.2) and
+*it went stale* (§6.1), and those read very differently to the person who comes back to it.
 
 #### M1.1 Follow-up classification ⚡ ⏱ 2 days
 - ⬜ Elaboration → expansion only

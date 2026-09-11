@@ -1,6 +1,11 @@
 # Decision Record
-**Version:** 8 · **Updated:** 10 September 2026
-**Supersedes:** version 7 (10 Sep). Adds §22, the decisions taken while building the
+**Version:** 9 · **Updated:** 11 September 2026
+**Supersedes:** version 8 (10 Sep). Adds §23, taken while building the six new tables:
+multi-value switches decompose into one switch per substance rather than becoming an array
+or jsonb — `applies_expression` is the test, since a requirement gated on lead cannot say
+"one of the values in this array is lead" — which takes the switch count from ~46 to ~59;
+and `topics` is deliberately not built, because two of `WORKSPACE.md`'s open questions
+decide its columns and it is the furthest of the six from a caller. Version 8 added §22, the decisions taken while building the
 requirements data-pass worksheet: what `priority` actually means (the test is whether the
 business stops when an inspector finds it missing, and a third of the library being
 `critical` means nothing is), `produces_switch` as the name of a switch rather than a
@@ -1187,3 +1192,76 @@ which is the same as having no column.
 
 `cadence` itself — the prose — is kept regardless and is never replaced by `cadence_type`.
 It is 100% populated and irreducible.
+
+---
+
+## 23. Decisions taken building the six new tables — 11 September 2026
+
+### 23.1 Multi-value switches decompose. No arrays, no jsonb.
+
+**Decision: `substance_exposure_above_action_level` becomes one switch per substance —
+`exposure_lead`, `exposure_benzene`, `exposure_silica`, `exposure_hexavalent_chromium`,
+`exposure_formaldehyde`, and the rest. `company_switches.value` stays `text`.**
+
+**Reasoning: they are not one fact.** Each substance has its own action level, its own
+standard, and its own requirement set. Lead at 30 µg/m³ and silica at 25 µg/m³ are different
+numbers in different regulations enforced on different schedules. Calling them one switch
+because they share a sentence in a design document is a formatting observation, not a
+modelling one.
+
+**`applies_expression` is the test that settles it.** A requirement gated on lead exposure
+has to say *"`exposure_lead` is true"*. With an array it would have to say *"one of the
+values in this array is `lead`"* — which is a string search inside a column, in a resolution
+engine whose entire purpose is that applicability is a deterministic query and never a
+guess. Every requirement that gates on a substance would carry that search, and each one is
+a place to get the matching subtly wrong.
+
+**The switches screen settles it a second time.** `CHEMICAL-OR-WA.md` §6.4 shows one fact
+per row, each with its own basis, confidence and "affects N requirements". *"Which
+substances are you above the action level for"* is one question with fourteen answers, and
+it cannot show a basis — the basis for lead is a lead air-sampling result and the basis for
+silica is a different document entirely.
+
+**It also makes switches map one-to-one with the rows they gate.** The fourteen substance
+standards are already fourteen separate rows in `requirement_templates`. One switch each
+means the gate and the requirement line up exactly, instead of fourteen requirements sharing
+one switch whose value has to be unpacked.
+
+**The count:** approximately 46 switches becomes approximately **59**. That is the real
+number and always was; 46 was 45 plus one bundle.
+
+**Reversal condition:** if a future switch genuinely has several simultaneous values that no
+requirement ever reads individually — a list nothing gates on, kept only for display — then
+an array column is right for that switch. It is not right for this one, and the test is
+whether `applies_expression` ever needs to look inside.
+
+### 23.2 `topics` is deliberately not built
+
+**Decision: five of the six new tables are built in migration 008. `topics` waits.**
+
+**Reasoning.** It is the only one of the six whose *shape* depends on an unresolved design
+question rather than on unwritten code. `WORKSPACE.md` §9 lists four open questions and two
+of them decide columns and constraints:
+
+- **Concurrency** (§9.4) — one open topic per company, or several? One is a partial unique
+  index on `(company_id) where status = 'open'`. Several is no index. This is not
+  deferrable after the fact: if several are allowed and users create several, adding the
+  constraint later means closing somebody's open work.
+- **Summary format** (§9.3) — what is worth keeping once the transcript is gone. That is
+  the content of the column that *is* the table's durable output.
+
+It is also the furthest of the six from a caller: the Compliance Workspace is M1, the last
+section of the plan, behind the determination gate, the critic pass, `company_switches` and
+the resolution engine. Building it now locks in a guess that nothing will exercise for
+months, and the usual cheap-now argument does not apply — there is no data to migrate around
+later, because the table would be empty the entire time.
+
+**Already decided for when it is built, so it is not re-litigated:** *"discarding the
+transcript"* (§6.1) means **nulling the column and keeping the row**, never deleting the
+row. A discarded transcript must still leave behind the fact that a topic existed, when it
+closed, and why — otherwise "was this ever asked?" becomes unanswerable, and `close_reason`
+(user closed it / a checklist closed it / inactivity closed it) reads very differently to a
+user depending on which it was.
+
+**Reversal condition:** the Workspace work starting. At that point both open questions get
+answered by the people building the screen, which is the right moment for them.
