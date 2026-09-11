@@ -1,6 +1,12 @@
 # Detailed To-Do
-**Version:** 5 · **Updated:** 10 September 2026
-**Supersedes:** version 4 (10 Sep). Three changes. **(1) Corrects the gate**, which claimed
+**Version:** 6 · **Updated:** 11 September 2026
+**Supersedes:** version 5 (10 Sep). Phase 1 is **complete** — migrations 006–010 on both
+environments, verified identical at 673 objects. The gate drops to **one** item, key
+rotation. Phase 2 is marked next with what it inherits, read from the database. A phase-number
+mapping is added at the top because this file and `BUILD-PLAN.md` **swap phases 1 and 2**.
+`/api/industries`, the invite feature (now M8 — Account) and the Phase 6 counts are corrected.
+
+**Version 5** made three changes. **(1) Corrects the gate**, which claimed
 the `memberships` migration was a prerequisite for user management. It is not — several
 people at one company already works on `profiles.company_id`, proven on staging 10 Sep, and
 what is missing is an invite flow. `memberships` moves out of the gate to Phase 11+
@@ -26,11 +32,35 @@ in `BUILD-PLAN.md` at task level — the build plan stays as the *why*, this is 
 
 ---
 
+> ### ⚠️ THE TWO PLANS NUMBER PHASES DIFFERENTLY. PHASES 1 AND 2 ARE SWAPPED.
+>
+> They agree on 0 and 4 and on nothing else. **"Start Phase 2" means opposite things in the
+> two files**, so always say which document a phase number belongs to.
+>
+> | `TODO.md` | `BUILD-PLAN.md` | |
+> |---|---|---|
+> | Phase 0 — Foundation | Phase 0 — Foundation | agree |
+> | **Phase 1 — Schema rebuild** ✅ | **Phase 2 — Schema extensions** | **swapped** |
+> | **Phase 2 — The runtime pipeline** | **Phase 1 — Runtime fixes** | **swapped** |
+> | Phase 4 — Resolution engine | Phase 4 — Resolution engine | agree |
+> | Phase 5 — The worker | Phase 3 — The worker | differ |
+> | Phase 6 — Library: chemical Oregon | Phase 5 — Library data | differ |
+> | Phase 7 — Switches and evidence | Phase 6 — Switch determination | differ |
+> | Phase 9 — Observability | Phase 8 — Observability | differ |
+>
+> **Neither is renumbered, deliberately.** Both documents and `DECISIONS.md` reference
+> phases by number in dozens of places, and renumbering breaks every reference silently —
+> the same failure `DECISIONS.md` §15.8 records for versioned filenames. The mapping is
+> cheaper than the churn, but only if it is read, which is why it is at the top of both.
+>
+> **`TODO.md` is the one to follow for what to do next.** `BUILD-PLAN.md` is the *why* and
+> the ordering; `TODO.md` is the *what next*, and it supersedes the build plan at task level.
+
 ## ⛔ GATE — THESE LAND BEFORE THE FIRST REAL CUSTOMER DOCUMENT
 
-Two pieces of work are cheap right now and expensive the moment a real customer's
-documents are in the database. After that first upload each one costs a maintenance window,
-a rollback plan, and a conversation with a customer about downtime.
+**One item remains.** It is cheap right now and expensive the moment a real customer's
+documents are in the database — after that first upload it costs a maintenance window, a
+rollback plan, and a conversation with a customer about downtime.
 
 **1. Key rotation. Six credentials.**
 Four leaked in a zip on 9 Sep. Both database passwords — production and staging — were
@@ -38,11 +68,15 @@ printed in full to a terminal on 10 Sep while fixing the migration script's erro
 The script redacts them now; the values are still out. Rotating six credentials against
 test data is a chore. Rotating them while customers are working is an outage.
 
-**2. The Phase 1 schema rebuild.** Enums instead of bare text, versioning columns,
-`industries[]`, the switch hierarchy, **and the multi-facility structure (1.6)**. Read
-Phase 1 and count how many items say "painful to retrofit" — that phrase is only true once
-there is data to retrofit around. Today the production tables hold test rows we wrote
-ourselves and can drop.
+> ### ✅ Gate item 2 — the Phase 1 schema rebuild — CLOSED 11 September 2026
+>
+> Enums instead of bare text, versioning columns, `industries[]`, the switch hierarchy and
+> the multi-facility structure. **Migrations 006–010, applied to both environments and
+> verified identical at 673 objects with zero differences.** Everything that said "painful
+> to retrofit" was done while the production tables still held only test rows we wrote
+> ourselves.
+>
+> **Key rotation is the only thing left between here and a real customer document.**
 
 > **Corrected 10 Sep — `memberships` was the third gate item and should not have been.**
 > The claim was that `profiles.company_id` blocks user management. It does not. **Two people
@@ -60,7 +94,7 @@ ourselves and can drop.
 > `auth_company_id()` warning intact.
 >
 > The distinction matters because the two are not the same size. The invite flow is a
-> feature that can ship any week. `memberships` rewrites 54 policies. Filing them together
+> feature that can ship any week. `memberships` rewrites 59 policies. Filing them together
 > made the cheap one look blocked by the expensive one.
 
 ### Why this gate is written at the top
@@ -465,7 +499,7 @@ to work. It is known to have worked once, in one order, from one starting state.
 ### 1.3 Rebuild ⬜ ⏱ 1 day
 - ⬜ Write migrations, apply to staging, verify from scratch
 - ⬜ Rebuild staging from zero — proves the migrations are complete
-- ⬜ Rebuild production, reload the 188 requirements, recreate test accounts
+- ✅ Rebuilt production, reloaded the library (**194 rows, 192 active**), recreated test accounts
 
 ### 1.4 🔒 Make the match key's inputs correct and complete ⬜ ⏱ half day
 *Renamed 11 Sep. The implementation moved to Phase 4.1 — see below.*
@@ -603,7 +637,36 @@ are interface, they live in `MODULES`, and they get built when a customer asks f
 
 ---
 
-## PHASE 2 — The runtime pipeline
+## PHASE 2 — The runtime pipeline ⬅️ **NEXT**
+
+### What Phase 2 inherits — 11 September 2026
+
+*Read from the database, not recalled.*
+
+- **Two identical environments.** Staging and production both on migrations 000–010,
+  verified object for object: **673 objects each, 0 differences in either direction.**
+- **A migration chain proven from nothing.** `npm run db:reset` rebuilds staging empty and
+  runs 000→010. Run it after adding a migration, not before shipping one.
+- **A categorised library.** 194 rows, 192 active, 2 retired parents, 6 split children.
+  Every row has one of ten obligation types and a jurisdiction layer. **94 of 192 are
+  Oregon-specific**, which is why the match key decides roughly half of what a customer is
+  told.
+- **22 enum types**, 65 policies (59 through `auth_company_id()`), `anon` holding nothing.
+- **Five tables ahead of their callers** — `switches`, `company_switches`,
+  `industry_coverage`, `library_candidates`, `jobs` — all empty, all with no reader yet.
+- **Every company has exactly one primary site**, and a trigger keeps that true for the
+  next one.
+- **The six-case match rule written down** (`CHEMICAL-OR-WA.md` §3.2) and **not
+  implemented** — that is Phase 4.1, not this phase.
+- **`npm run check` guards the query strings the compiler cannot see**
+  (`scripts/check-schema-contracts.js`), written after a column rename broke signup in
+  production with a green build.
+
+**What Phase 2 does NOT inherit:** any obligations. The table is empty in both environments
+and stays empty until the resolution engine exists in Phase 4.1. The requirements screen is
+blank by design — `STATUS.md` says so, and it is not a regression.
+
+
 
 Where answer quality actually changes. Everything here is ⚡.
 
@@ -724,14 +787,23 @@ Railway or similar. **The worker does not hot-reload** — restart after every c
 
 ## PHASE 6 — Library: chemical Oregon
 
-### 6.1 Migrate the 188 rows ⬜ ⏱ 2 days
-Merge both spreadsheets. `MERGEDv2` has the VERIFY hit list, 26 switches, fixed-date calendar, and an agency-encoding `Layer`. The intake file has normalized jurisdiction, `is_determination`, `source`.
+### 6.1 Migrate the rows ✅ **DONE in Phase 1 (11 Sep)**
+Superseded by the Phase 1 rebuild. The library is **194 rows — 192 active, 2 retired
+parents, 6 split children** — loaded into both environments from
+`supabase/seed-data/REQUIREMENTS-FILLED-2026-09-11.xlsx`, every row categorised. It was 188
+when this line was written.
 
-### 6.2 Load 46 switches ⬜ ⏱ 1 day
-Definitions, hierarchy, jurisdiction variants, volatility.
+### 6.2 Load the switches ⬜ ⏱ 1 day
+**~59, not 46.** `substance_exposure_above_action_level` decomposed into one switch per
+substance (`DECISIONS.md` §23.1) — each has its own action level, standard and requirement.
+Definitions, hierarchy, jurisdiction variants, volatility. The `switches` table exists and
+holds **0 rows**; this is what fills it.
 
-### 6.3 Write `applies_expression` for 188 rows ⬜ ⏱ 5 days
-Free text → machine-evaluable. **Slow, and worth doing slowly.**
+⚠️ The seed will be a bulk insert with heterogeneous keys, which needs
+`defaultToNull: false` — see the note in migration 008 beside `allowed_values`.
+
+### 6.3 Write `applies_expression` for the active rows ⬜ ⏱ 5 days
+**192 active rows.** Free text → machine-evaluable. **Slow, and worth doing slowly.**
 
 ### 6.4 Federal layer, agency by agency ⬜ ⏱ 1 week
 ~95 rows serving every state forever.
@@ -830,7 +902,7 @@ that shape.
 single `uuid`. Under `memberships` a person can belong to several companies, so it must
 either return a **set** (and every policy becomes `company_id IN (SELECT ...)`) or take an
 **active-company** parameter (and something must carry that choice through every request).
-**54 of 58 policies depend on that function**, plus the four storage policies. Plan it as its
+**59 of 65 policies depend on that function**, plus the four storage policies. Plan it as its
 own migration with its own rehearsal — never as a step inside another feature.
 
 Note this is a genuinely large migration whichever day it happens. What changed on 10 Sep is

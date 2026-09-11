@@ -101,6 +101,15 @@ Once the law is known (L1) and the company is known (L2), applicability is arith
 
 ### 2.1 Jurisdiction goes in the match key
 
+> ⚠️ **The paragraph below was wrong and is corrected in §24. Kept, not rewritten, because
+> the correction is more instructive than a clean statement would be.** The deleted route
+> did *not* match on industry alone — it filtered on `jurisdiction_state`, taken from an
+> unverified AI website scan rather than the customer's address. That blob was null for 7
+> of 10 companies, so most silently received **federal rows only**: the failure direction
+> is UNDER-serving, not the over-serving described here. **94 of 192** active rows are
+> Oregon-specific, not 90 of 188. The complete six-case rule is in `CHEMICAL-OR-WA.md` §3.2
+> and the source-of-truth decision in §24.1 and §25.1.
+
 Today the obligation-matching logic matches `.eq('industry', ...)` alone. (It lived in `app/api/sync-obligations`, deleted 9 Sep as an orphaned route with zero callers; the matching rule is what carries the bug and it is still to be rebuilt.) 90 of 188 chemical rows are Oregon-specific. A Texas chemical manufacturer is currently served Oregon SoS registration, CR2K, and Oregon OSHA. That is a **confidently wrong requirement** — the dangerous failure direction.
 
 Resolution filters on: `federal OR (state AND matching) OR (county AND matching) OR (city AND matching)`.
@@ -362,9 +371,9 @@ Also caught: the Office of the State Fire Marshal separated from Oregon State Po
 | Document | Verdict |
 |---|---|
 | `CHEMICAL-OR-WA.md` | **Keep.** The master design document. |
-| `CompliBoardChemicalRequirementsMERGEDv2.xlsx` | **Keep — now the single source for the 188 rows.** Richest artifact: 188 rows, the 9-item VERIFY hit list, 26 switches, 18-row fixed-date calendar, and a `Layer` column that already encodes agency ("Oregon OSHA", "Federal DOT"). The normalised columns from the separate intake file — `jurisdiction_level` (95 federal / 87 state / 3 county / 3 contractual), `jurisdiction_state` (90 Oregon), `is_determination` (9 yes), `applies` (182 conditional / 6 universal), `source` (174 gpt / +11 claude / +3 gemini — a sequential build log, not authorship; see §22.3) — have since been merged into it. |
+| `CompliBoard-Requirements-chemical-manufacturing.xlsx` *(on disk; recorded here originally as `CompliBoardChemicalRequirementsMERGEDv2.xlsx`)* | **Superseded 11 Sep.** It was the single source for the 188 rows; the library now lives in the database (194 rows, 192 active) and the worksheet that loaded it is `supabase/seed-data/REQUIREMENTS-FILLED-2026-09-11.xlsx`. Keep as provenance. Richest artifact: 188 rows, the 9-item VERIFY hit list, 26 switches, 18-row fixed-date calendar, and a `Layer` column that already encodes agency ("Oregon OSHA", "Federal DOT"). The normalised columns from the separate intake file — `jurisdiction_level` (95 federal / 87 state / 3 county / 3 contractual), `jurisdiction_state` (90 Oregon), `is_determination` (9 yes), `applies` (182 conditional / 6 universal), `source` (174 gpt / +11 claude / +3 gemini — a sequential build log, not authorship; see §22.3) — have since been merged into it. |
 | `CompliBoard-Requirements-Module-Definition.md` | **Delete.** Fully absorbed into the Chemical OR/WA spec, which contains everything in it plus the regulatory map, runtime architecture, display, verification, and onboarding. Two overlapping specs will drift. |
-| `CompliBoardRequirementTemplate.xlsx` | **Delete.** 18-column intake template superseded by a schema with ~15 additional fields (`applies_expression`, `scope_rules`, `agency_id`, `citation_url`, `citation_quote`, `produces_switch`, verification and versioning columns). Keeping it invites loading data in the obsolete shape. **Superseded in fact on 10 Sep by `REQUIREMENTS-TEMPLATE.xlsx` (below), which is the shape that was missing.** The file is still on disk at the repo root as `CompliBoard-Requirement-Template.xlsx`; deleting it is §0.7 housekeeping. |
+| `CompliBoard-Requirement-Template.xlsx` *(that is the name on disk)* | **Delete.** 18-column intake template superseded by a schema with ~15 additional fields (`applies_expression`, `scope_rules`, `agency_id`, `citation_url`, `citation_quote`, `produces_switch`, verification and versioning columns). Keeping it invites loading data in the obsolete shape. **Superseded in fact on 10 Sep by `REQUIREMENTS-TEMPLATE.xlsx` (below), which is the shape that was missing.** The file is still on disk at the repo root as `CompliBoard-Requirement-Template.xlsx`; deleting it is §0.7 housekeeping. |
 | `REQUIREMENTS-TEMPLATE.xlsx` | **Keep, and treat as working state rather than a document.** Generated 10 Sep from the 188 production rows in the column order the rebuilt table will load in, with the six rows decided in §21.2 pre-filled and `category` deliberately empty. It is the worksheet for the re-categorisation and splitting pass (§21.4), not a specification — when the pass is loaded, the database becomes the source of truth again and this file is a record of how it got there. Regenerate rather than hand-edit if it drifts. |
 
 ---
@@ -627,7 +636,8 @@ sufficient. Measure it; do not assume it. No such case exists today.
 ### 17.2 `auth_company_id()`, SECURITY DEFINER, is where tenancy lives.
 
 **Decision:** one function returns the caller's company, read from `profiles` with definer
-rights. Every company-scoped policy calls it. 54 of 58 policies do.
+rights. Every company-scoped policy calls it. 59 of 65 policies do, as of 11 Sep — the
+count grows with every company-scoped table and is read from the database, never recalled.
 
 **Reasoning.** The same subquery — `company_id in (select company_id from profiles where
 id = auth.uid())` — had been written into twenty policies and all four storage policies.
@@ -647,7 +657,7 @@ hijack.
 `uuid`, so a person belongs to one company — note that this is the *only* thing
 `profiles.company_id` restricts; several people sharing a company is unaffected (§19). *If*
 `memberships` is ever needed, the function must return a set or take an active-company
-parameter, and 54 policies change with it. That is a planned migration, not a reversal — but
+parameter, and 59 policies change with it. That is a planned migration, not a reversal — but
 it is the reason this decision has a cost, and the cost grows with the number of policies.
 
 ### 17.3 `standard_templates` keeps a privileged write. Named, not habitual.
@@ -818,7 +828,7 @@ rare, and nobody has that shape yet. It belongs with multi-site.
 **Why the error mattered enough to record.** The two pieces of work are wildly different
 sizes. The invite flow is a feature that can ship in any week. `memberships` changes
 `auth_company_id()` from returning a `uuid` to returning a set or taking an active-company
-parameter, and **54 of 58 policies plus four storage policies** are rewritten with it. Filing
+parameter, and **59 of 65 policies plus four storage policies** are rewritten with it. Filing
 them together made a cheap, valuable feature look blocked by an expensive migration — which
 is exactly the reasoning that defers a feature indefinitely without anyone deciding to.
 

@@ -52,6 +52,11 @@ Four layers, and the third is the important one:
 or a new feature rather than relying on memory of a past session — see `docs/README.md`
 for what each covers. Not all of them are present at any given time; the owner adds them.
 
+- **`HOW-WE-BUILD.md`** — **the working method. Read it before the first task of a
+  session.** The three roles and why they stay separate, the loop from read-only
+  investigation through to production, what counts as verification, and what the method
+  has already caught. *This file holds the rules; that one holds the method and the
+  reasoning behind them.*
 - **`DECISIONS.md`** — every decision made and why, plus the condition under which it
   would be reversed.
 - **`CHEMICAL-OR-WA.md`** — the full design of the first vertical: regulatory map, data
@@ -63,6 +68,10 @@ for what each covers. Not all of them are present at any given time; the owner a
   topic lifecycle, signup and industry classification. Design agreed, not built.
 - **`PATTERNS.md`** — conventions carried over from the sibling Bizpulses project, with
   notes on what to copy and what not to.
+
+**`STATUS.md` is at the repo root**, not in `docs/`. One line per module with the date it
+was last actually checked — the difference between "not rebuilt yet" and "broken and
+nobody noticed".
 
 **Both plans are ordered horizontal first, vertical last.** The numbered phases are
 infrastructure — schema, runtime pipeline, resolution, worker, library, observability. The
@@ -184,11 +193,14 @@ once.
   into. A row belonging to another company returns **404, not 403**, so ids cannot be
   probed by watching which error comes back.
 - Every table needs `SELECT`, `INSERT`, `UPDATE`, and `DELETE` policies. **Done —
-  migrations 003–005.** All 18 tables carry a full set, the three reference tables
-  (`requirement_templates`, `agencies`, `standard_templates`) are read-only to
-  authenticated callers, and the not-logged-in role holds no grants at all.
+  migrations 003–010.** All 23 tables carry what they need — the three reference tables
+  (`requirement_templates`, `agencies`, `standard_templates`, `switches`,
+  `industry_coverage`) are read-only to authenticated callers, `library_candidates` is
+  closed to them entirely, `jobs` is read-only, and the not-logged-in role holds no grants
+  at all. `obligations` has **no DELETE policy on purpose** — §3.2, obligations are marked,
+  never deleted.
 - **Tenancy is expressed through `public.auth_company_id()`**, a `SECURITY DEFINER`
-  function returning the caller's company from `profiles` with definer rights. 54 of 58
+  function returning the caller's company from `profiles` with definer rights. 59 of 65
   policies call it. Write new policies through it — never re-derive the subquery, because
   a copy of it silently depends on `profiles`' own RLS.
 - Explicit `WITH CHECK` on every policy, not just `USING`.

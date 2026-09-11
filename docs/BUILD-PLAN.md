@@ -1,6 +1,11 @@
 # Master Build Plan
-**Version:** 3.4 · **Updated:** 10 September 2026
-**Supersedes:** version 3.3 (10 Sep). **3.4** corrects A.5: `is_determination` is not the `produces_switch` precursor but a companion to it, and `source` becomes `generated_by` with two values — the one column rename this plan permits. See DECISIONS.md §22.
+**Version:** 3.5 · **Updated:** 11 September 2026
+**Supersedes:** version 3.4 (11 Sep). **3.5** marks Phase 2 — the schema rebuild — COMPLETE,
+rewrites `WHERE THIS ACTUALLY IS` from the database rather than from recollection, adds
+M8 — Account, and puts a phase-number mapping at the top: this file and `TODO.md` **swap
+phases 1 and 2**, which is a trap for anyone told to "start Phase 2".
+
+**3.4** corrected A.5: `is_determination` is not the `produces_switch` precursor but a companion to it, and `source` becomes `generated_by` with two values — the one column rename this plan permits. See DECISIONS.md §22.
 
 **3.3** added `PART C — MODULES`. The phases in Part B are now
 horizontal only; everything vertical moved to the end. Phase 7 (Screens) was dissolved into
@@ -24,6 +29,30 @@ user-management feature block, which has no phase because it needs no migration.
 **Legend:** ⚡ quality-affecting, discuss first · 🔒 blocking · 🅑 proven in BizPulses · ✚ improvement on BizPulses · ⟲ corrected after reading the code · ⏱ effort
 
 ---
+
+> ### ⚠️ THE TWO PLANS NUMBER PHASES DIFFERENTLY. PHASES 1 AND 2 ARE SWAPPED.
+>
+> They agree on 0 and 4 and on nothing else. **"Start Phase 2" means opposite things in the
+> two files**, so always say which document a phase number belongs to.
+>
+> | `TODO.md` | `BUILD-PLAN.md` | |
+> |---|---|---|
+> | Phase 0 — Foundation | Phase 0 — Foundation | agree |
+> | **Phase 1 — Schema rebuild** ✅ | **Phase 2 — Schema extensions** | **swapped** |
+> | **Phase 2 — The runtime pipeline** | **Phase 1 — Runtime fixes** | **swapped** |
+> | Phase 4 — Resolution engine | Phase 4 — Resolution engine | agree |
+> | Phase 5 — The worker | Phase 3 — The worker | differ |
+> | Phase 6 — Library: chemical Oregon | Phase 5 — Library data | differ |
+> | Phase 7 — Switches and evidence | Phase 6 — Switch determination | differ |
+> | Phase 9 — Observability | Phase 8 — Observability | differ |
+>
+> **Neither is renumbered, deliberately.** Both documents and `DECISIONS.md` reference
+> phases by number in dozens of places, and renumbering breaks every reference silently —
+> the same failure `DECISIONS.md` §15.8 records for versioned filenames. The mapping is
+> cheaper than the churn, but only if it is read, which is why it is at the top of both.
+>
+> **`TODO.md` is the one to follow for what to do next.** `BUILD-PLAN.md` is the *why* and
+> the ordering; `TODO.md` is the *what next*, and it supersedes the build plan at task level.
 
 # PART A — CODEBASE BASELINE
 
@@ -230,8 +259,13 @@ It bypasses the pipe with a raw `fetch` because it needed web search. `askAI()` 
 
 ---
 
-## PHASE 2 — Schema extensions ⏱ ~4 days
+## PHASE 2 — Schema extensions ✅ **COMPLETE 11 September 2026** ⏱ ~4 days
 ⟲ *Much smaller than v2 assumed — six of eight tables already exist.*
+
+**Delivered as migrations 006–010**, applied to both environments and verified identical at
+673 objects with zero differences. 2.8 (multi-facility) landed across 007, 008, 009 and 010;
+2.5 was renamed and its implementation moved to Phase 4 — see below. `TODO.md` Phase 1 has
+the full account.
 
 **This is `TODO.md`'s Phase 1, counted differently.** The ~4 days here is the column and
 table work alone. `TODO.md` Phase 1 is **~1.5 weeks** because it also carries the design pass
@@ -485,7 +519,7 @@ as demand research. Design in `WORKSPACE.md` §10.
 **F5 Multi-site** — the roll-up dashboard and site selector, on the structure 2.8 puts in
 place. `memberships` belongs here and nowhere else: it solves **one person across several
 companies**, not several people in one company, and it is not a prerequisite for user
-management. ⚠️ `auth_company_id()` returns a single `uuid` and **54 of 58 policies** call it,
+management. ⚠️ `auth_company_id()` returns a single `uuid` and **59 of 65 policies** call it,
 plus four storage policies — changing its signature is its own migration with its own
 rehearsal.
 **F6 Platform** — Stripe, file upload, Drive OAuth, domain, Framer homepage, PDF export, `claude-sonnet-5` ⚡ only with a golden-file pass.
@@ -493,22 +527,32 @@ rehearsal.
 
 ---
 
-# WHERE THIS ACTUALLY IS — 10 September 2026
+# WHERE THIS ACTUALLY IS — 11 September 2026
 
-**Phase 0 is done except housekeeping.** 0.1–0.3 landed 9 Sep. 0.4 was solved differently
-than planned — no Docker, so the baseline was reconstructed from the production catalogs
-(`000_baseline.sql`, 19 tables, structure only). 0.5–0.8 landed as migrations 002–005, all
-applied to production, plus the route conversions: every route now derives the company from
-the verified session, ten run under RLS on the caller's token, and the four that keep the
-service-role key each carry a named reason in the file.
+*Every figure below is read from the database, not recalled. Two earlier summaries were
+wrong about migration state, both times written from memory.*
 
-**What is left of Phase 0:** housekeeping (`TODO.md` §0.7), and key rotation — still
-outstanding, now six credentials rather than four, and now item 1 of the gate at the top of
-`TODO.md`.
+**Phase 0 done except housekeeping.** 0.1–0.3 landed 9 Sep; 0.4 was solved differently than
+planned — no Docker, so the baseline was reconstructed from production's catalogs. 0.5–0.8
+landed as migrations 002–005 plus the route conversions: every route derives the company
+from the verified session, ten run under RLS on the caller's token, and the four holding the
+service-role key each carry a named reason.
 
-**Next:** Phase 2 (schema extensions) as the rebuild, then Phase 1 (runtime fixes), because
-the rebuild is cheap only until the first real customer document is in the database. Read the
-gate in `TODO.md` before choosing anything else.
+**Phase 2 — the schema rebuild — is COMPLETE.** Migrations 006–010, on **staging and
+production both**, verified identical at **673 objects, 0 differences**. The library is 194
+rows (192 active). Every company has exactly one primary site. `switches`,
+`company_switches`, `industry_coverage`, `library_candidates` and `jobs` exist and are
+empty, ahead of their callers on purpose.
+
+**The migration chain is proven from nothing.** `npm run db:reset` rebuilds staging from an
+empty database and runs 000→010. Running it the first time found two migrations that had
+never been able to build from scratch.
+
+**Next: Phase 1 here — runtime fixes — which is `TODO.md`'s Phase 2.** Agency list,
+determination gate, critic pass, splitting identification from expansion. That is where
+answer quality changes.
+
+**Still open, and the only gate item left:** key rotation, six credentials.
 
 ---
 

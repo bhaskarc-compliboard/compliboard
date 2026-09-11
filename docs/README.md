@@ -1,4 +1,8 @@
 # docs/
+**Version:** 2 · **Updated:** 11 September 2026
+**Supersedes:** version 1 (10 Sep) — which carried no version header of its own, which was
+the one rule in here it did not follow. Adds `HOW-WE-BUILD.md` and `STATUS.md`, notes that
+`PATTERNS.md` describes a different codebase, and lists every file.
 
 The written record of what CompliBoard is and why it is built the way it is.
 
@@ -25,6 +29,17 @@ apply" — if you need something a missing document would have told you, ask.
 
 Filenames are stable. Versions live **inside** each file, in the header block — see
 [Versioning](#versioning).
+
+### `HOW-WE-BUILD.md`
+**The working method — read this before the first task of a session.** How work actually
+gets done here: the three roles and why they stay separate, the loop from read-only
+investigation to production, what verification means (measurement, never a status code),
+and what the method has already caught.
+
+**It is not `CLAUDE.md`.** That file holds the *rules* — what must and must not be done.
+This one holds the *method and the reasoning behind it*: why the rules are shaped that
+way, and which specific failures produced them. A rule you understand the origin of is a
+rule you apply correctly in a case it does not literally cover.
 
 ### `DECISIONS.md`
 Every decision made and why, plus **the condition under which it would be reversed**.
@@ -68,7 +83,19 @@ Conventions carried over from the sibling Bizpulses project, with notes on **wha
 and what not to**. The "what not to" half matters as much as the other; it records
 patterns that were tried and found wanting, so they are not adopted again by default.
 Note that its "this repo" wording refers to Bizpulses, which is TanStack Start — not
-CompliBoard, which is Next.js.
+CompliBoard, which is Next.js. **Every file path it names belongs to that codebase**
+(`app/src/routes/chat.tsx`, `routeTree.gen.ts`, its dated migrations) — they do not exist
+here and are not meant to. It is the only document in this folder that describes a system
+other than this one.
+
+### `STATUS.md` — *at the repo root, not in this folder*
+One line per module: working, degraded, broken, not-yet-rebuilt, unknown or not built —
+**and the date it was last actually checked.** It exists so that during a rebuild "broken
+because we have not rebuilt it yet" and "broken and nobody noticed" stop looking the same.
+It lives at the root because it describes the running system rather than the design, and
+because it should be the first thing seen.
+
+`unknown` is a real answer there and is used.
 
 ## Versioning
 

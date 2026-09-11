@@ -1,6 +1,8 @@
 # STATUS
 
-**Updated:** 11 September 2026 · **Environment:** **staging and production both on 000–010**
+**Version:** 2 · **Updated:** 11 September 2026
+**Supersedes:** version 1 (11 Sep) — which said production was on 009 when it was on 007.
+**Environment:** **staging and production both on 000–010**
 
 > ✅ **The two environments are the same shape again.** Compared object for object —
 > columns, indexes, policies, constraints, enum values, functions, triggers, grants and
@@ -53,7 +55,7 @@ which is the exact failure this file exists to prevent.
 
 | Piece | State | Verified | Notes |
 |---|---|---|---|
-| **Tenancy / RLS** | ✅ working | 10–11 Sep | 58 policies across 23 tables, all company-scoped ones through `auth_company_id()`. `anon` holds zero grants anywhere. Verified by comparing row counts under a caller's token against the service role, not by HTTP status. |
+| **Tenancy / RLS** | ✅ working | 11 Sep | **65 policies across 23 tables, 59 of them through `auth_company_id()`** (read from the database, not recalled). `anon` holds zero grants anywhere. Verified by comparing row counts under a caller's token against the service role, not by HTTP status. |
 | **Storage scoping** | ✅ working | 10 Sep | Six tests with real sessions: a company can read and write only its own prefix. Before migration 002 every authenticated user could read and delete all 52 files across 7 companies. |
 | **Migration chain** | ✅ working | 11 Sep | 000→010 applied to an **empty** database and compared object-for-object against production: **673 objects each, 0 differences.** `npm run db:reset` does this; running it the first time found two migrations that had never been able to build from nothing. |
 | **Requirement library** | ✅ working | 11 Sep | 194 rows in production and staging — 192 active, 2 retired parents, 6 split children with resolved lineage. Every row categorised. |
