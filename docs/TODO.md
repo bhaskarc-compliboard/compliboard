@@ -427,14 +427,20 @@ person each, so nobody has a colleague to see.
 
 ---
 
-## PHASE 1 — Schema rebuild 🔄 ⏱ ~1.5 weeks
+## PHASE 1 — Schema rebuild ✅ **COMPLETE 11 September 2026** ⏱ ~1.5 weeks
 
 Production data is test data. Rebuild the schema correctly rather than patching it. Everything drops and reloads.
 
 **This is gate item 2.** Every column below is cheap to add to empty tables and expensive to
 add to a customer's. 1.6 is the clearest case in the phase and the most recent addition.
 
-### Where Phase 1 stands — 11 September 2026
+### Phase 1 is complete — 11 September 2026
+
+All six items. **Migrations 006–010 are on staging; production is on 006–009** — 010 goes
+with the next production window, and until it does, production's 10 companies have no
+primary site.
+
+**Gate item 2 is closed.** Only key rotation remains before the first real customer document.
 
 **✅ Done, in production:** 1.1, and the library reloaded onto it.
 
@@ -456,8 +462,8 @@ add to a customer's. 1.6 is the clearest case in the phase and the most recent a
 | **1.2** | The six new tables | ✅ **Five DONE 11 Sep** (migration 008, staging only): `switches`, `company_switches`, `industry_coverage`, `library_candidates`, `jobs`. `topics` deliberately deferred — see M1 |
 | **1.3** | Rebuild staging from zero | ✅ **DONE 11 Sep.** `npm run db:reset` exists, and running it found two defects — see below |
 | **1.4** | Make the match key's inputs correct and complete | Renamed 11 Sep. Sites can now state their jurisdiction (009) and the rule is written down; the **implementation moved to Phase 4.1**, where the engine that uses it lives |
-| **1.5** | `STATUS.md` | First line already earned, see below |
-| **1.6** | Multi-facility wiring | `entities.is_primary` and `obligation_evidence.entity_id` landed with 007. Still to do: `entity_id` on `documents`, `document_reviews` and `calendar_events`; `scope` on `switches` (needs 1.2); seeding a site at signup; backfilling the 10 existing companies |
+| **1.5** | `STATUS.md` | ✅ **DONE 11 Sep** — at the repo root. One line per module with the date it was last actually checked, and `unknown` used where it is the true answer |
+| **1.6** | Multi-facility wiring | ✅ **DONE 11 Sep** across 007–010. `entity_id` on all five tables; `switches.scope` with its composite FK and check (008); jurisdiction columns on `entities` (009); **every company now gets a primary site in the same statement that creates it**, and the 10 existing companies were backfilled (010) |
 
 ### ✅ 1.3 — the chain now builds a database from nothing, and it did not before
 

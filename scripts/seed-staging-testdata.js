@@ -51,6 +51,28 @@ if (uErr) { console.error("  Could not list auth users:", uErr.message); process
 const idByEmail = new Map(users.users.map((u) => [u.email, u.id]));
 
 console.log(`\n  Target: ${ref} (staging)\n`);
+
+// Idempotent on purpose. This runs after every `npm run db:reset`, and sooner or later it
+// runs twice — at which point a plain insert half-succeeds: a new company and its
+// trigger-created site land, then the profile insert fails on the primary key because the
+// auth user already has one, leaving an orphan company behind. Clearing first makes a
+// second run a no-op rather than a mess. Deleting the company cascades to its profiles and
+// entities.
+for (const { company } of PLAN) {
+  const { data: existing } = await db.from("companies").select("id").eq("name", company.name);
+  for (const row of existing ?? []) {
+    // profiles.company_id is ON DELETE NO ACTION, not CASCADE — so the company delete
+    // FAILS while a profile points at it, rather than cascading. Deleting the profiles
+    // first is required, and not checking the error is how the first version of this
+    // looked like it worked: the delete quietly failed, the old company survived, and the
+    // next insert collided on profiles_pkey.
+    const { error: pErr } = await db.from("profiles").delete().eq("company_id", row.id);
+    if (pErr) { console.error(`  Could not clear profiles for ${company.name}: ${pErr.message}`); process.exit(1); }
+    const { error: cErr } = await db.from("companies").delete().eq("id", row.id);
+    if (cErr) { console.error(`  Could not clear ${company.name}: ${cErr.message}`); process.exit(1); }
+  }
+}
+
 for (const { company, people, site } of PLAN) {
   const missing = people.filter((p) => !idByEmail.has(p.email));
   if (missing.length) {
@@ -74,18 +96,25 @@ for (const { company, people, site } of PLAN) {
   // TODO 1.6: every company gets a primary site at signup, single-site ones included, so
   // nothing downstream has to ask whether a company has sites. Signup does not do this
   // yet; the test data should still look like what signup will produce.
-  // The site carries its OWN address (migration 009), not just the company's. For a
-  // single-site company they are the same; the moment there are two they are not, and
-  // `city` and `local` requirements resolve against the SITE — CHEMICAL-OR-WA.md §3.2.
-  // Migration 009's backfill only reaches sites that existed when it ran, so a site
-  // created afterwards has to set its own.
-  const { error: eErr } = await db.from("entities").insert({
-    company_id: co.id, entity_type: "site", is_primary: true,
-    name: `${co.name.split(" ")[1]}-${company.city}`,
-    state: company.state, county: company.county, city: company.city,
-    fire_authority: site?.fire_authority ?? null,
-  });
-  if (eErr) console.log(`    (primary site not created: ${eErr.message})`);
-  else console.log(`    primary site: ${co.name.split(" ")[1]}-${company.city}  (${company.city}, ${company.county} County, ${company.state}${site?.fire_authority ? "; " + site.fire_authority : ""})`);
+  // The site already exists: migration 010 creates one in the same statement as the
+  // company, named and located from the company's own columns. So this UPDATES rather than
+  // inserts — inserting would hit the one-primary-per-company index, which is the right
+  // failure but a confusing one to read.
+  //
+  // fire_authority is the only thing the trigger cannot derive: it is neither the city nor
+  // the county, and for Hillsboro it is a rural fire district covering several of both.
+  // That is the case `jurisdiction_layer = local` exists for.
+  const { error: eErr } = await db.from("entities")
+    .update({ fire_authority: site?.fire_authority ?? null })
+    .eq("company_id", co.id).eq("is_primary", true);
+  // Read the name back rather than printing the one this script used to construct — the
+  // trigger owns it now, and a log that states a name nothing set is the kind of quietly
+  // wrong output this project keeps finding.
+  const { data: seeded } = await db.from("entities")
+    .select("name, state, county, city, fire_authority")
+    .eq("company_id", co.id).eq("is_primary", true).single();
+  if (eErr) console.log(`    (could not set fire_authority: ${eErr.message})`);
+  console.log(`    primary site: ${seeded.name}  (${seeded.city}, ${seeded.county} County, ${seeded.state}` +
+              `${seeded.fire_authority ? "; " + seeded.fire_authority : ""})`);
 }
 console.log("\n  Done. Passwords are unchanged — the auth schema is never touched by a reset.\n");
