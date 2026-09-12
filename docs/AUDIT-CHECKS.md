@@ -1,6 +1,9 @@
 # Audit Checks
-**Version:** 9 · **Updated:** 12 September 2026
-**Supersedes:** version 8 (12 Sep). Adds **check 18** — does an incomplete chemical inventory
+**Version:** 10 · **Updated:** 12 September 2026
+**Supersedes:** version 9 (12 Sep). Check 10 is re-run after Phase 6.3 and **the census itself is
+now a file** — `supabase/census.sql` — because the check had produced three different totals (673,
+619, 798) from three ad-hoc censuses, and a count with no stored definition behind it cannot tell
+drift from rewording. Version 9 added **check 18** — does an incomplete chemical inventory
 still refuse to clear a requirement? Written because a compensating control that was assumed
 turned out to be absent from the data and unworkable as described. Version 8 added **check 17** — does every fact a stage establishes
 reach the stage downstream that needs it? A value returned to the client looks exactly like a
@@ -45,9 +48,11 @@ needs to know about. Phase 6 is where they get a dashboard. Until then they are 
 and the answers are written here.
 
 **Every number below was read from the database on the date given, on staging, which is
-object-for-object identical to production — **619 objects, 0 differences, re-verified 12 Sep**
-after migrations 011 and 012. (An earlier census reported 673; see check 10 for why that is a
-different count and not a loss.)**
+object-for-object identical to production — **798 objects, 0 differences, re-verified 12 Sep**
+after migrations 013 and 014 and the expression load. The two census outputs are byte-identical
+(sha256 `859e7199bfd964cb…` on both sides). (Earlier censuses reported 673 and 619; those were
+differently-built questions, not losses — which is why the census now lives in
+`supabase/census.sql` instead of being rewritten each time. See check 10.)**
 
 ---
 
@@ -360,11 +365,35 @@ domain, both dependency columns and a hash of notes) with 0 differences, the sam
 dependency edges as a set in both directions, and the same graph depth map — 55 roots and 35
 children on each side.
 
-*Note on the number:* an earlier comparison after migration 010 reported **673** objects.
-That was a differently-built census, not a regression — it counted grants through
-`information_schema.role_table_grants`, which filters to roles the caller belongs to and
-returns nothing here. **Whichever census this check settles on, it must be the same one every
-time, or the count itself becomes a false alarm.**
+**Run again 12 Sep after Phase 6.3 — migrations 013 and 014 and the expression load:**
+
+| Compared | Staging | Production | Differences |
+|---|---|---|---|
+| Schema objects (`supabase/census.sql`) | 798 | 798 | **0** — outputs byte-identical, same sha256 |
+| ↳ tables · columns · constraints · indexes | 25 · 367 · 107 · 74 | same | 0 |
+| ↳ policies · triggers · functions · enum values | 70 · 13 · 5 · 87 | same | 0 |
+| ↳ table ACLs · RLS flags | 25 · 25 | same | 0 |
+| `requirement_templates`, keyed on `requirement_name` | 205 rows / 200 live / 199 expressions | same | **0** — same sha256 |
+| `switches`, 13 fields row-for-row | 95 / 40 edges / 6 with thresholds | same | **0** |
+| Dependency graph walked | 95 nodes reached, 55 roots, 40 children, max depth 1, no cycle | same | **0** |
+| `company_chemicals` · `regulated_substances` | exists, 0 rows · 0 rows | same | 0 |
+| Switch ids referenced by an expression | 83 referenced, **0 dangling**, 12 unreferenced | same | 0 |
+
+**The census is now `supabase/census.sql`**, and that is the substantive change. This check had
+produced **673**, then **619**, now **798** — three numbers from three censuses written from
+scratch, none of them a regression and none of them comparable to the others. Its own note
+already said the census must be the same one every time; it was not, because it existed only as
+a query someone retyped. A number whose definition is not stored cannot distinguish drift from
+rewording, and this check exists to detect drift.
+
+*Two traps the file now documents, both hit while writing it:* the Supabase CLI takes SQL as a
+positional argument, so a file starting with `--` comments is parsed as flags — the command
+prints its own help, the pipeline compares **two empty outputs and reports them identical**, and
+the check passes having checked nothing. Hence `/* */`, and hence **assert a non-zero object
+count before trusting a clean diff**. And UUID primary keys are generated independently in each
+database, so joining `requirement_templates` on `id` across environments reports 34 spurious
+differences; the natural key is `requirement_name`, which is unique per live/retired state (0
+duplicates on both sides, verified).
 
 ---
 

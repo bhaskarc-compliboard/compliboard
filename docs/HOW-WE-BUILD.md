@@ -1,7 +1,13 @@
 # How We Build CompliBoard
 
-**Version:** 3 · **Updated:** 12 September 2026
-**Supersedes:** version 2 (11 Sep). §3 gains three rules earned since — read a derived result
+**Version:** 5 · **Updated:** 12 September 2026
+**Supersedes:** version 4 (12 Sep). §3 gains the rule that a check compares against the artifact
+and never against a remembered number, with the three false alarms in one session that earned it
+— and the correction that the "Oregon sick-time split" invoked for one of them does not exist.
+§4 gains the rule that a pre-flight names files exactly as
+they appear on disk, read from the directory — because approximate filenames make every file
+list look unexpected and so defeat the abort guard that protects production; §7 cross-references
+it as the same class as writing a summary from recollection. Version 3 added: §3 gains three rules earned since — read a derived result
 by target rather than by total; test the direction you are not building; some invariants
 cannot be constraints and need a named owner. §10 is brought current. Version 2 added **step
 12 to the loop** — write the manual tests,
@@ -113,6 +119,36 @@ Every fault found in three days had that shape:
 
 **Some invariants cannot be constraints, and those need a named owner.** Added 12 Sep. A dependency cycle needs recursion to detect and a CHECK sees one row at a time; a `row_count` matching the live library needs a join. Both live in loaders that refuse the whole file. **The test for whether something can be a constraint is not whether it is important.**
 
+**A check compares against the artifact, not against a remembered number.** Added 12 Sep, after
+three false alarms in one session — all from the same move. The rule §7 states for *summaries*
+("written from the database, not from recollection") applies with more force to *verification*,
+because a verification is the thing that is supposed to catch drift. **A remembered number that
+is one version stale does not fail quietly — it raises an alarm, and a false alarm costs more
+than the check saved.**
+
+| The check | Compared against | The artifact it should have compared against |
+|---|---|---|
+| Production's migration list | A hand-off naming `014_company_chemicals.sql` and `015_requirement_splits.sql` | `ls supabase/migrations/` — which lists `013_chemical_inventory.sql` and `014_unidentified_chemicals_are_unknown.sql`, and shows the splits are section 4 of 013 |
+| Production's switch count | 101 switches / 44 edges, carried from an investigation report | The dry run printed on screen: `95 switches · 0 new · 0 changed`, matching `switches.json` at 95/40 and both databases at 95/40 |
+| Production's requirement count | A summary predating migration 013 | The database: 205 rows / 200 live, after 013's three splits took 194/192 to 205/200 |
+
+Each cost a full read-only reconciliation, and all three found nothing wrong. **Three in one
+session is a pattern, not an incident.** The cost is not the reconciliations — it is that the
+abort guard on production (§4) only works while an unexpected result is rare, and each false
+alarm spends some of that.
+
+*One correction earned by the third reconciliation, kept because §7 says a record that quietly
+rewrites its own mistakes is worth less:* the stale summary was attributed to "the Oregon
+sick-time split". **There is no Oregon sick-time split.** `Oregon sick time` is a single live row
+and has never been split; the library's five split parents are Boiler and pressure-vessel,
+Respirable crystalline silica, and 013's three — Electronic OSHA injury-data submission, Process
+Safety Management, and Permit-required confined spaces. The stale number was real; the reason
+given for it was itself recalled.
+
+**The operative form is short.** Before raising a discrepancy, re-read the thing — `ls` the
+directory, re-read the dry run still on screen, re-run the count. It costs one command, and it
+is cheaper than being right for the wrong reason.
+
 ---
 
 ## 4. The two databases
@@ -128,6 +164,12 @@ Every fault found in three days had that shape:
 **Production migrations are run by the owner, in a plain terminal, typing `PRODUCTION`.** The script prints the target ref, the staging ref for contrast, and the exact list of pending files.
 
 > **An unexpected file count is the correct signal to abort — and twice it was.** Both times the cause was a real defect: a CLI output-shape bug, and a migration history that had not been read. If the count is expected to be unusual, it is stated *in advance* in the hand-off, never reasoned about at the prompt.
+
+**And the guard is only as good as the names in the hand-off. A pre-flight names files exactly as they appear on disk, read from the directory rather than from what the work was called while it was being done.** Added 12 Sep. A hand-off for migrations 013 and 014 named them `014_company_chemicals.sql` and `015_requirement_splits.sql` — two files that have never existed here. The owner aborted, which was right; the reconciliation then found nothing wrong with the migrations at all. `git log --follow --name-status` shows zero rename entries over `supabase/migrations/` in the project's whole history, both files were added once under the names they carry, and the "missing" split migration is section 4 of `013_chemical_inventory.sql`. The origin of the two names could not be established from the repo or the session transcript, and that is recorded as unknown rather than guessed at.
+
+**The cost is not the wasted reconciliation. It is the guard.** Its entire value is that an unexpected file list means *stop*. A pre-flight that paraphrases filenames — approximate numbering, a descriptive name for what the work was called while it was being done, two logical pieces written as two files when they shipped as one — makes every list look unexpected. The second false alarm is annoying; by the third the list stops being read, and the one real mismatch goes through. **A guard that cries wolf is worse than no guard, because no guard is at least known to be absent.**
+
+This is the same class as writing a summary from recollection rather than from the database (§7). The fix is identical in shape: `ls` the directory and paste what it says. It costs one command.
 
 ---
 
@@ -170,6 +212,10 @@ Every fault found in three days had that shape:
 **Record the reasoning and the reversal condition.** A decision without a stated condition for revisiting it becomes dogma.
 
 **Write from the database, not from recollection.** A summary claimed production was two migrations further along than it was. Both chat and Claude Code had it wrong. Summaries are built by querying.
+
+**Name files from the directory, not from recollection either.** The same rule, applied to a hand-off rather than a summary — and with a sharper cost, because approximate filenames in a pre-flight defeat the abort guard that protects production. §4 has the incident.
+
+**And the same rule governs verification, not only writing.** A check run against a remembered number is not a check. §3 has the rule and the three false alarms that earned it.
 
 ---
 

@@ -209,6 +209,13 @@ const COMPANY_SCOPED_TABLES = [
 const DELETED_BY_CASCADE_OR_PARENT = [
   'checklist_items',       // deleted above by checklist_id, before its parent goes
   'obligation_evidence',   // deleted above by obligation_id, before its parent goes
+  'company_chemicals',     // cascades twice over, and both were checked in the database
+                           // rather than assumed: entity_id -> entities ON DELETE CASCADE
+                           // (and `entities` is named in the loop above, so the rows go
+                           // with the site), and company_id -> companies ON DELETE CASCADE
+                           // for anything the site delete misses. Its third FK, cas_number
+                           // -> regulated_substances, is ON DELETE RESTRICT and points at
+                           // shared reference data, so it cannot block a company delete.
 ] as const
 // ---------------------------------------------------------------------------
 
