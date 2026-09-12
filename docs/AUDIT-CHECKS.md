@@ -1,6 +1,10 @@
 # Audit Checks
-**Version:** 6 · **Updated:** 12 September 2026
-**Supersedes:** version 5 (12 Sep). Adds **check 14** — a test harness whose checks are weaker
+**Version:** 7 · **Updated:** 12 September 2026
+**Supersedes:** version 6 (12 Sep). Adds **check 15** — which models accept the parameters we
+send, after finding that the Claude 5 family rejects `temperature` outright and that a one-line
+`AI_MODEL` change would have 400'd six call sites at once — and **check 16**, whether two runs
+of the same audit agree, which measures the consistency claim the original diligence made:
+six runs of one 272-item standard, `satisfied` ranging 6 to 21. Version 6 added **check 14** — a test harness whose checks are weaker
 than its assertions is indistinguishable from a passing suite, which is worse than one that
 skips, because a SKIP is visible and a partial match prints green. Three such checkers found
 and fixed; fixing one of them exposed the runner rebuilding the gate's context instead of
@@ -524,6 +528,103 @@ contains a vocabulary-building loop any more.
 **The general rule this leaves:** *a harness may rebuild nothing. Whatever it needs from the
 code under test, it imports.* Rebuilding the prompt from source was the right instinct applied
 to half the input.
+
+---
+
+## 15. Does every model this project can be pointed at accept the parameters we send it?
+
+**Added 12 September 2026, after finding a one-line environment change that would have taken
+out six call sites at once.**
+
+```
+For each model in {AI_MODEL, AI_MODEL_CRITIQUE, AI_MODEL_JUDGEMENT, AI_MODEL_PROSE}
+and each model those could plausibly be set to:
+  send a 4-token request WITH temperature, and one WITHOUT.
+  Record which are accepted.
+```
+
+**Answer, 12 September 2026, probed against this account:**
+
+| Model | `temperature` |
+|---|---|
+| `claude-opus-5` | **REJECTS** — 400 `` `temperature` is deprecated for this model `` |
+| `claude-sonnet-5` | **REJECTS** |
+| `claude-fable-5-1` | **REJECTS** |
+| `claude-sonnet-4-5` | accepts |
+| `claude-haiku-4-5-20251001` | accepts |
+| `claude-opus-4-1` | **does not exist on this account** — 404 |
+| `claude-opus-4-20250514` | does not exist; past end-of-life |
+
+**Why nothing else catches it.** `npm run check` type-checks the *shape* of `AskAIOptions` and
+has no idea which values a given model will refuse. There is no test that calls a model. And
+the failure is **not** at build time or deploy time — it is at the first request after
+somebody changes an environment variable.
+
+**Six call sites pass `temperature: 0.1`:** the determination gate, both `/api/audits` classify
+calls, the audit match call, and document review. **`AI_MODEL=claude-sonnet-5` reads like
+ordinary maintenance** and would have 400'd every one of them — the gate returning nothing on
+a route with no way to say so, and every audit failing at classification. **It would have been
+found as a production incident, by a customer.**
+
+**Now handled, not merely known:** `lib/ai.ts` drops the parameter for models that do not
+accept it rather than letting the call fail, and logs once so the drop is greppable. Matched on
+the major version immediately after the tier name, so `claude-sonnet-4-5` and
+`claude-haiku-4-5-…` are correctly excluded — their major version is 4.
+
+**Run this check before any model change, and add a row.** The parameters a model accepts are
+part of its contract, and **that contract is a fact about an account rather than about the
+world** — checked the way a constraint name is checked (`CLAUDE.md` §3.7), from the thing
+itself, never from memory. `claude-opus-4-1` was named from memory in the first draft of the
+task routing and does not exist.
+
+---
+
+## 16. Do two runs of the same audit agree with each other?
+
+**Added 12 September 2026. The original diligence said readiness numbers differed between
+runs; this is that claim, measured.**
+
+```sql
+select company_id, source_name, count(*) as runs,
+       min(readiness_satisfied) as min_sat, max(readiness_satisfied) as max_sat,
+       min(readiness_needs_work) as min_work, max(readiness_needs_work) as max_work
+  from public.audits
+ group by company_id, source_name
+having count(*) > 1;
+```
+
+**Answer, from `baseline-outputs/audits.json` — six audits of ISO 9001:2015, the same 272-item
+standard, the same company, across two days in July:**
+
+| | satisfied | needs_info | needs_work | distinct documents cited |
+|---|---|---|---|---|
+| 24 Jul 16:17 | **6** | 49 | 217 | 11 |
+| 24 Jul 16:45 | 9 | 54 | 209 | 16 |
+| 24 Jul 17:26 | 7 | 26 | 239 | 15 |
+| 25 Jul 16:57 | 15 | 74 | 183 | 18 |
+| 25 Jul 17:03 | 13 | 68 | 191 | 19 |
+| 25 Jul 17:04 | **21** | 69 | 182 | 19 |
+
+**A 3.5× spread on the headline number.** In the worst run, **219 of 272 items cite no document
+at all**.
+
+**Why nothing else catches it — and this is the part that matters.** Each run is internally
+consistent: the counts are computed in code from that run's own verdicts (`CLAUDE.md` §3.2),
+so every number is arithmetically correct. Read one audit and there is nothing wrong with it.
+**The error is only visible across runs**, and nothing in the product ever looks across runs.
+
+**The critic cannot help here, and it is worth saying why.** Stage 5 reviews **one output**. It
+has no access to the previous run and no way to know the previous run disagreed. It will
+correctly report that a verdict is built on 11 documents out of a larger set — and it did, on
+the worst run — but *"the same question answered twice gives different answers"* is a property
+of a **pair** of outputs. **Consistency is observable only by a probe across runs**, which is
+`TESTING.md` (c)'s category and needs no regulatory knowledge: both answers cannot be right.
+
+**What this does NOT tell us:** which run is closer to correct. It tells us at most one is, and
+probably neither. `CLAUDE.md` §3.2 requires resolution to be deterministic — same inputs,
+identical output — so once the resolution engine exists (4.1) this check becomes a hard
+assertion rather than an observation. **Until then it is the sharpest measurement of the
+product's central problem that exists.**
 
 ---
 

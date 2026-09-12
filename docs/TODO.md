@@ -853,8 +853,24 @@ columns that nothing populates any more; dropping them is a migration. And the p
 determination UI in `app/compliance/page.tsx` is dead for new checklists but live for saved
 ones, so it cannot simply be deleted.
 
-### 2.3 Critic pass — Stage 5 ⬅️ **NEXT** ⚡ ⏱ 3 days
-Fresh call, sees only the output, adversarial framing.
+### 2.3 Critic pass — Stage 5 ✅ **DONE (12 Sep) — live on `/api/chat` checklist mode and `/api/audits`**
+Fresh call, sees only the output, adversarial framing. Full spec: `docs/CRITIC-PASS.md`.
+Decision: `DECISIONS.md` §39.
+
+**Acceptance MET against the frozen 2.5L artifact** (`baseline-outputs/`, production, 21 Jul):
+**13 findings, 7 blocking**, and all seven §4 errors caught — including the combination-packaging
+error, quoted and explained. **Plus four §4 never named**: an asserted ISO 9001 certification
+nobody established, staff assumed at a Reno workplace when the only established site is
+Hillsboro, the wrong limited-quantity section (173.150 for a load called corrosive), and a
+coverage finding that **Oregon OSHA has jurisdiction and is never mentioned** — §1.2's State
+Plan trap, caught against the agency list 2.1 built.
+
+**Negative control held: case 002, verified correct — 0 blocking.** Without it a critic that
+flags everything passes the first test perfectly (`DECISIONS.md` §35.2).
+
+⬜ **Open from 2.3:** questions 1 and 2 (physical object, regime) can only be *inferred* from
+prose — nothing in `ChecklistItem` carries either, because making the model state them was
+Stage 4 and Stage 4 is not built.
 
 **What 2.3 inherits from 2.2:**
 - **A gate that stops the pipeline**, so the critic never sees an answer built past a missing
@@ -884,11 +900,44 @@ cannabis customer gets `proceed` with zero library rows behind the result.
 - ⬜ Only survivors get sub-steps and costs
 - ⬜ Sub-steps go to determination and decision first, procurement second
 
-### 2.5 `lib/ai.ts` improvements ⚡ ⏱ 1 day
-- ⬜ Task-based model routing — strongest for critic, cheap for expansion
+### 2.5 `lib/ai.ts` improvements 🟡 **routing DONE (12 Sep); three items open** ⚡
+- ✅ **Task-based model routing** — `judgement` · `critique` · `prose` · `default`, private to
+  `lib/ai.ts` per `CLAUDE.md` §3.4, each overridable by environment and each falling back to
+  `AI_MODEL`. Built as step one of 2.3: critique on the same tier as generation gives up the
+  asymmetry the whole stage rests on.
 - ⬜ Record token usage per call
-- ⬜ Temperature audit across every call site
+- 🟡 **Temperature audit across every call site** — the incompatibility below is found and
+  handled; the wider audit of *which* calls should carry a temperature at all is still open
 - ⬜ Migrate `scan-website` back through `askAI()` (web search is now supported)
+
+> ## 🔴 THE MODEL UPGRADE THAT WOULD HAVE BEEN A PRODUCTION INCIDENT
+>
+> **The Claude 5 family REJECTS `temperature` outright.** Not ignores — a **400**:
+> `` invalid_request_error: `temperature` is deprecated for this model. ``
+>
+> | rejects | accepts |
+> |---|---|
+> | `claude-opus-5` · `claude-sonnet-5` · `claude-fable-5-1` | `claude-sonnet-4-5` · `claude-haiku-4-5-20251001` |
+>
+> **Six call sites pass `temperature: 0.1`:** the determination gate, both `/api/audits`
+> classify calls, the audit match call, and document review.
+>
+> **`AI_MODEL=claude-sonnet-5` is a one-line environment change that reads like ordinary
+> maintenance.** Before 12 Sep it would have taken out all six at once — the gate returning
+> nothing on a route with no way to say so, and every audit failing at classification. **It
+> would have been found as a production incident**, by a customer, on a Monday.
+>
+> **Handled in `lib/ai.ts`: the parameter is DROPPED for models that do not accept it**,
+> rather than the call erroring. Temperature 0.1 means *be deterministic*, and those models
+> are deterministic by default — the intent survives and only the knob is gone. Logged once
+> per call so it is greppable rather than silent. `DECISIONS.md` §40.2, `AUDIT-CHECKS.md`
+> check 15.
+>
+> **The transferable part:** a model upgrade is not a configuration change. The parameters a
+> model accepts are part of its contract, and that contract is a fact about an account rather
+> than about the world — checked the way a constraint name is checked (`CLAUDE.md` §3.7),
+> from the thing itself. `claude-opus-4-1`, named from memory in the first draft of the
+> routing, does not exist on this account at all.
 
 ### 2.6 Zod at the AI boundary ⬜ ⏱ 2 days
 `askAIJson` returns `any` after a `JSON.parse`. A malformed extraction surfaces as a Postgres error rather than a per-field diagnosis.

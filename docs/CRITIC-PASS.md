@@ -1,8 +1,10 @@
 # The Critic Pass — Stage 5
-**Version:** 1 · **Updated:** 12 September 2026
-**Supersedes:** nothing. New file.
+**Version:** 2 · **Updated:** 12 September 2026
+**Supersedes:** version 1 (12 Sep), same day. **Built.** Adds §11, why the jurisdictional list
+lives in `lib/agencyScope.ts` rather than in the critic.
 
-**Status: SPEC. Nothing here is built.**
+**Status: BUILT 12 September 2026** — live on `/api/chat` checklist mode and `/api/audits`.
+Acceptance met against the frozen 2.5L artifact; negative control held on case 002.
 **Implements:** `TODO.md` 2.3 · `CHEMICAL-OR-WA.md` §5.2 Stage 5
 **Sits downstream of:** `DETERMINATION-GATE.md` (Stage 1)
 **Decisions:** `DECISIONS.md` §4 (the failure), §34 (the correction), §39 (this stage)
@@ -387,6 +389,34 @@ Both are currently `HUMAN` in the runner. **The critic is what could change that
 `baseline-outputs/audits.json` should hold the `satisfied=2 needs_info=1` run computed from one
 readable document of eight. That exercises the **evidence** question set (§3.2) rather than the
 requirements one, and it is the live defect `STATUS.md` records.
+
+---
+
+## 11. `lib/agencyScope.ts` — why the jurisdictional list has its own file
+
+**Added during the build, not in the spec by name.** §5 decided the critic gets the full
+jurisdictional list; it did not say where that list comes from.
+
+**It is not inside `criticPass.ts`, deliberately.** Building the list means reading `entities`
+for the primary site, `companies` for the industry, and `agencies` for the jurisdiction match —
+three tables and a five-branch filter on `jurisdiction_level`. Putting that in the critic
+couples a stage of the runtime pipeline to the schema, and the next caller that needs the same
+list would either import from the critic or grow a second copy. `lib/gateContext.ts` exists for
+the same reason and learned it the hard way (`AUDIT-CHECKS.md` check 14).
+
+**Its header says plainly what it is NOT: Stage 2.** It returns every agency with jurisdiction
+over the company's site and industry and **makes no judgement about which are relevant to a
+particular question.** That judgement is Stage 2, and Stage 2 does not exist.
+
+**When Stage 2 exists, the list narrows and no caller changes** — same function name, same
+return shape, populated from a question-scoped query instead of the whole jurisdiction. The
+identical arrangement as `gate.resolved`, and for the identical reason: the golden cases keep
+asserting across the swap.
+
+**It earned its place on the first run.** Against the 2.5L artifact the critic returned a
+`coverage` finding that **Oregon OSHA has jurisdiction over the established Hillsboro worksite
+and is never mentioned; the answer cites only the federal standard** — `CHEMICAL-OR-WA.md`
+§1.2's State Plan trap, caught because the list was there to be checked against.
 
 ---
 
