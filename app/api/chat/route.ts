@@ -24,6 +24,7 @@ import { parseDocumentToBlocks } from '@/lib/documentContent';
 import { requireCompany } from '@/lib/auth';
 import { gate, type GateAnswering } from '@/lib/determinationGate';
 import { criticise, applyCritique } from '@/lib/criticPass';
+import { establishedFactsBlock } from '@/lib/gateContext';
 import { agenciesInScopeFor } from '@/lib/agencyScope';
 import type { ChecklistAnswer } from '@/lib/answerSchema';
 
@@ -87,6 +88,8 @@ export async function POST(request: NextRequest) {
 
     let messageContent: AIContent;
     let documentBlocks: AIContent = [];
+    // Filled from the gate below, then folded into what the generating call sees.
+    let establishedBlock = '';
 
     if (fileBuffer && fileName) {
       const parsed = await parseDocumentToBlocks(fileBuffer, fileName, fileType);
@@ -124,6 +127,27 @@ export async function POST(request: NextRequest) {
         db,
         answering,
       });
+
+      // ------------------------------------------------------------------
+      // THE FACTS THE GATE ESTABLISHED NOW REACH THE GENERATING CALL.
+      //
+      // Until 12 Sep `g.resolved` went into the HTTP response and nowhere else — so the
+      // gate would determine the worksite was Hillsboro, Oregon, and the model producing the
+      // answer was never told. Asked about minimum wage "at our Hillsboro plant", it branched
+      // on Hillsboro, OHIO, which is a real place and a reasonable reading of a question
+      // nobody had told it was already settled. DECISIONS.md §41.
+      //
+      // Written by the same function the gate uses (lib/gateContext.ts), so a fact does not
+      // change shape as it moves between stages.
+      // ------------------------------------------------------------------
+      if (g.outcome === 'proceed') {
+        establishedBlock = establishedFactsBlock(g.resolved.known);
+        if (establishedBlock) {
+          messageContent = Array.isArray(messageContent)
+            ? ([...messageContent, { type: 'text', text: establishedBlock }] as AIContent)
+            : `${establishedBlock}\n\n${messageContent}`;
+        }
+      }
 
       if (g.outcome === 'ask') {
         // 200, not 4xx. An ask is a successful outcome of a well-formed request; a 400

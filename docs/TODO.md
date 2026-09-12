@@ -896,6 +896,16 @@ cannabis customer gets `proceed` with zero library rows behind the result.
 **Acceptance:** catches the combination-packaging error in the saved 2.5L output.
 
 ### 2.4 Split identification from expansion ⚡ ⏱ 1 day
+> **Measured argument for this, 12 Sep — `DECISIONS.md` §42.4.** A generation benchmark found
+> **every** finding was about identification: wrong physical object, wrong threshold, wrong
+> regime. **None** was about the quality of the sub-step prose. And the stronger model is
+> ~3× slower, which today is an objection to it doing *both jobs in one call* rather than an
+> objection to the model.
+>
+> Split them and the tiers already exist: `judgement` on the stronger model for a short
+> structured call, `prose` on the cheaper one for the long narrative. **Build these as two
+> stages for that reason, not only for the temperature difference.**
+
 - ⬜ Identification at `temperature: 0.1`, stating physical object and regime per requirement
 - ⬜ Only survivors get sub-steps and costs
 - ⬜ Sub-steps go to determination and decision first, procurement second
@@ -909,6 +919,11 @@ cannabis customer gets `proceed` with zero library rows behind the result.
 - 🟡 **Temperature audit across every call site** — the incompatibility below is found and
   handled; the wider audit of *which* calls should carry a temperature at all is still open
 - ⬜ Migrate `scan-website` back through `askAI()` (web search is now supported)
+- ⬜ **Revisit the generation default when 2.4 lands.** `DECISIONS.md` §42 measures
+  `claude-opus-5` as better on transport-shaped generation — case 002 clean, Sonnet blocking
+  in both runs and Opus in neither — and ~3× slower. The default stays on
+  `claude-sonnet-4-5` until identification and expansion are separate calls, at which point
+  the arithmetic changes.
 
 > ## 🔴 THE MODEL UPGRADE THAT WOULD HAVE BEEN A PRODUCTION INCIDENT
 >

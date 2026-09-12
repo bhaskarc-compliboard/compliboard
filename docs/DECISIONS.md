@@ -1,6 +1,12 @@
 # Decision Record
-**Version:** 21 · **Updated:** 12 September 2026
-**Supersedes:** version 20 (11 Sep). Adds §39 (the critic reports and never regenerates — a
+**Version:** 22 · **Updated:** 12 September 2026
+**Supersedes:** version 21 (12 Sep). Adds §41 (the gate established facts the generating call
+never received — `g.resolved` went into the HTTP response and nowhere else, so one model
+produced an OHIO minimum-wage branch for an Oregon site the gate already knew; fixed, and
+fifteen blocking findings on that case became three) and §42 (Sonnet against Opus on
+generation, measured with the critic held constant: Opus better on transport-shaped answers,
+~3× slower, and the default unchanged — plus the tier split that argues for building
+identification and expansion as separate stages). Version 21 added §39 (the critic reports and never regenerates — a
 silent fix destroys the evidence, and a self-healing loop means no failure is ever found; it
 runs on every answer because the 2.5L failure was two sentences about labels and any
 complexity heuristic skips exactly the case it exists for) and §40 (two model facts taken from
@@ -2285,3 +2291,156 @@ cost of two wasted calls per review; the budget is 12,000 instead.
 
 **A reviewer that reasons before answering is exactly what the tier was chosen for. The budget
 has to pay for the reasoning as well as the findings.**
+
+---
+
+## 41. The gate established facts the generator never saw — 12 September 2026
+
+**A pipeline bug, found by a model comparison rather than by a bug report.**
+
+The determination gate runs, establishes what is known about the company, and returns
+`g.resolved`. **That object went into the HTTP response and nowhere else.** The generating
+call received `buildSystemPrompt(mode, scanResult)` and the raw question. Nothing about what
+the gate had just determined reached the model writing the answer.
+
+**So the product was asking the model to answer questions it had already answered for
+itself.**
+
+### 41.1 How it surfaced
+
+A benchmark comparing two models on generation. Case 003 asks *"what minimum wage do we have
+to pay at our Hillsboro plant?"* for a company whose primary site the gate resolves to
+**Hillsboro, Washington County, Oregon**.
+
+**One model produced an Ohio minimum-wage branch** — *"Pay Ohio minimum wage if plant is in
+Hillsboro, Ohio"*. Hillsboro, Ohio is a real place. **The other refused to name a rate at all**,
+titling its answer *"Jurisdiction Not Yet Confirmed"* and asking the user which state the plant
+was in.
+
+**Both were reasonable answers to a question nobody had told them was settled.** And both were
+marked `blocking` by the critic — correctly, because the critic *was* given the established
+facts and could see that the answer asked for one of them.
+
+**That asymmetry is what made the bug visible: the critic saw the facts, the generator did
+not.** Without a stage that reviews the output against what was known, nothing would have
+distinguished "the model guessed" from "the model was not told".
+
+### 41.2 The fix, and what it measured
+
+`g.resolved.known` is now written into the generating call by
+`establishedFactsBlock()` — **the same module the gate uses to phrase them, so a fact does not
+change shape as it moves between stages.**
+
+Case 003, re-run twice on each model, before and after:
+
+| | blocking, before | blocking, after |
+|---|---|---|
+| `claude-sonnet-4-5` | 3, 3 | **1, 1** |
+| `claude-opus-5` | 4, 5 | **0, 1** |
+
+**Fifteen blocking findings became three.** Every "Jurisdiction Not Yet Confirmed" title became
+*"Minimum Wage Requirements for Hillsboro, Oregon"*. The Ohio branch did not recur.
+
+**And the three that remain are real, which is the better outcome than zero.** Two say Oregon's
+Portland-metro rate is keyed to the **Metro urban growth boundary, not to county membership**,
+and nobody has established which side of it Hillsboro sits on — a genuine missing fact, and one
+`site_employee_count`'s neighbours in the switch library do not yet cover. The third says
+Oregon requires the *greater* of daily or weekly overtime for manufacturing establishments.
+**The noise cleared and the signal stayed.**
+
+### 41.3 Why this is quality-affecting and was still the right call
+
+Changing what data feeds a prompt is `CLAUDE.md` §3.1's first category and normally requires
+discussion before it happens. It was discussed: the benchmark produced the evidence, the
+finding was reported, and the change was directed. **Recorded here because the next version of
+this — feeding the critic's findings back into a regeneration — is the one to refuse
+(§39).**
+
+**Reversal condition:** none for passing established facts. If a fact turns out to be wrong,
+the error belongs upstream in determination, and the answer being confidently wrong for the
+stated reason is better than being confidently wrong for an invented one.
+
+---
+
+## 42. Sonnet against Opus on generation, as measured — 12 September 2026
+
+**Recorded as a measurement, not a decision. The default is unchanged: generation stays on
+`claude-sonnet-4-5`.**
+
+Three cases, two models, two runs each. **The critic was held constant on `claude-opus-5` in
+all twelve runs** — it is the instrument, and an instrument that changes between measurements
+measures nothing.
+
+### 42.1 Opus is better on transport-shaped generation
+
+| case | Sonnet blocking | Opus blocking |
+|---|---|---|
+| 001 — 2.5L bottles | 1, 4 | **1, 0** |
+| 002 — isopropyl drums, SDS attached | 1, 1 | **0, 0** |
+
+**Case 002 is the clean signal: Sonnet blocking in both runs, Opus in neither.** Sonnet's two
+errors were real — a "Packing Group II marking" that 49 CFR 172.301 does not require, and the
+duplicate-labelling rule applied below its 64-cubic-foot trigger.
+
+**On case 001, Sonnet run 2 reproduced the founding failure verbatim** — the hazard label and
+the 172.301 marking attached to the inner bottles rather than the outer case, plus UN-spec
+packaging demoted to "good to have". Sonnet run 1 did not. **Opus made it in neither run.**
+
+**Run-to-run variance is large: Sonnet went 1 → 4 on the same question.** One run of one case
+would have shown nothing. Two runs is still small — but *"Sonnet reproduced the founding
+failure and Opus did not, on the case built to elicit it"* is not a close call.
+
+### 42.2 And it is roughly three times slower on the longest call the user waits on
+
+| case | Sonnet | Opus |
+|---|---|---|
+| 001 | 29s, 39s | **127s, 115s** |
+| 002 | 37s, 35s | **95s, 108s** |
+| 003 | 21s, 22s | 52s, 67s |
+
+**It compounds with the critic, which is already on Opus.** A case-001 request today is ~39s
+generate + ~81s critique ≈ **2 minutes**. On Opus generation it is ~127 + ~151 ≈ **4.6
+minutes**. Nobody waits 4.6 minutes for a checklist.
+
+**Both facts are true at once, and that is the record: better answers, unusable latency.** It
+is a product decision and not a quality one, and it should be revisited when either the latency
+changes or the pipeline stops asking one model to do judgement and prose in a single call
+(§42.4).
+
+### 42.3 The shape to watch if the generator ever changes
+
+**Every Sonnet blocking finding on the transport cases was a SCOPE error** — question 3, a rule
+attached to the wrong physical object or a threshold applied below its trigger. That is exactly
+the failure class the critic's five item-level questions were written against.
+
+**Opus's one blocking finding across both transport cases was PROCEDURAL** — *an SDS sealed
+inside the case does not satisfy 49 CFR 172.602; emergency response information must accompany
+the shipping paper.* Not a scope error at all.
+
+One instance is not a pattern. **But if the generator ever changes, the critic's questions must
+be re-examined rather than assumed**, because they may be tuned to the previous model's failure
+modes and simply stop finding things. **A critic that suddenly finds less is indistinguishable
+from a generator that suddenly got better**, and only re-examining the questions tells them
+apart.
+
+### 42.4 The tier split this argues for: identification versus expansion
+
+**Not work to do now — an argument for building Stages 4 and 6 separately when they are built.**
+
+`CHEMICAL-OR-WA.md` §5.2 already separates them: **Stage 4 identification** decides which
+requirements apply, to which physical object, under which regime, at temperature 0.1; **Stage 6
+expansion** writes sub-steps, costs and contacts for the survivors. Today neither exists and
+one call does both.
+
+**The hard judgement is worth Opus; the prose after it is not.** Every finding in this
+benchmark was about identification — wrong object, wrong threshold, wrong regime. None was
+about the quality of the sub-step prose. So the latency objection in §42.2 is an argument
+against Opus doing *both jobs in one call*, not against Opus.
+
+Split them and the tiers already exist: `judgement` on the stronger model for a short
+structured call, `prose` on the cheaper one for the long narrative. **That is the reason to
+build them as two stages rather than one, recorded before either is written.**
+
+**Reversal condition for the default:** revisit when Stage 4 and Stage 6 are separate, or when
+the latency gap narrows. Not before — the measurement holds either way and the arithmetic is
+the same.

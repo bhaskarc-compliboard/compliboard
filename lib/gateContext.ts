@@ -62,3 +62,35 @@ export function buildGateContext(
 
   return contextLines.join('\n')
 }
+
+/**
+ * THE FACTS THE GATE ESTABLISHED, WRITTEN FOR THE GENERATING CALL.
+ *
+ * Added 12 September 2026, after a model benchmark made a pipeline bug visible.
+ *
+ * THE BUG: the gate ran, established that the worksite was Hillsboro, Washington County,
+ * Oregon — and `g.resolved` went into the HTTP response and NOWHERE ELSE. The generating
+ * call received `buildSystemPrompt(mode, scanResult)` and the raw question, and nothing
+ * about what had just been determined. **The product was asking the model to answer
+ * questions it had already answered for itself.**
+ *
+ * It showed up as an anomaly in a model comparison rather than as a bug report: asked what
+ * minimum wage applies "at our Hillsboro plant", one model produced an OHIO minimum-wage
+ * branch — Hillsboro, Ohio is a real place — for a company whose site the gate knew was in
+ * Oregon. The other refused to name a rate until the state was confirmed. Both were
+ * reasonable answers to a question nobody had told them was already settled.
+ *
+ * Lives here, beside buildGateContext, because "how an established fact is written into a
+ * prompt" should have ONE answer. The gate and the generator now phrase it identically, so
+ * a fact does not change shape as it moves between stages.
+ */
+export function establishedFactsBlock(known: KnownFact[]): string {
+  if (known.length === 0) return ''
+  return [
+    'WHAT IS ALREADY ESTABLISHED ABOUT THIS COMPANY:',
+    known.map((k) => `  ${k.fact} = ${k.value}   [established by: ${k.source}]`).join('\n'),
+    '',
+    'Treat these as settled. Do not ask the user to confirm them, do not branch on them, and',
+    'do not answer for a jurisdiction other than the one named here.',
+  ].join('\n')
+}

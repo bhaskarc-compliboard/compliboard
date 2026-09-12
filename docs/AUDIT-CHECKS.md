@@ -1,6 +1,8 @@
 # Audit Checks
-**Version:** 7 · **Updated:** 12 September 2026
-**Supersedes:** version 6 (12 Sep). Adds **check 15** — which models accept the parameters we
+**Version:** 8 · **Updated:** 12 September 2026
+**Supersedes:** version 7 (12 Sep). Adds **check 17** — does every fact a stage establishes
+reach the stage downstream that needs it? A value returned to the client looks exactly like a
+value that is wired up, and no type-checker distinguishes them. Version 7 added **check 15** — which models accept the parameters we
 send, after finding that the Claude 5 family rejects `temperature` outright and that a one-line
 `AI_MODEL` change would have 400'd six call sites at once — and **check 16**, whether two runs
 of the same audit agree, which measures the consistency claim the original diligence made:
@@ -625,6 +627,38 @@ probably neither. `CLAUDE.md` §3.2 requires resolution to be deterministic — 
 identical output — so once the resolution engine exists (4.1) this check becomes a hard
 assertion rather than an observation. **Until then it is the sharpest measurement of the
 product's central problem that exists.**
+
+---
+
+## 17. Does every fact the gate establishes reach the call that needs it?
+
+**Added 12 September 2026, after a fact the product already had failed to reach the model
+writing the answer.**
+
+```
+For each stage that produces facts, and each stage downstream of it:
+  is the producing stage's output actually passed, or only returned to the client?
+```
+
+**Answer, 12 September 2026:** `gate.resolved.known` now reaches the generating call in
+`/api/chat` and is written by the same function the gate uses. **Before the fix it went into
+the HTTP response and nowhere else.**
+
+**Why nothing else catches it.** `g.resolved` was referenced, typed, returned and rendered —
+so it is not dead code, and no linter or type-checker has an opinion about whether a value
+that *is* used is used *everywhere it should be*. The symptom was a model giving a reasonable
+answer to a question it had not been told was settled: **asked about "our Hillsboro plant" it
+branched on Hillsboro, OHIO**, for a company whose Oregon site the gate had already resolved.
+That reads as a model failure and is a plumbing failure.
+
+**It was found by a model comparison, not by a test** — and only because the critic *was*
+given the facts and flagged the answer for asking about one of them. **The asymmetry is what
+made it visible.** `DECISIONS.md` §41.
+
+**Run this whenever a stage is added.** The pipeline has six stages specified and two built;
+each new one produces something, and the question *"who downstream needs this, and do they
+get it?"* has to be asked deliberately, because a value that is returned to the client looks
+exactly like a value that is wired up.
 
 ---
 
