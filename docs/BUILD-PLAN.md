@@ -1,6 +1,9 @@
 # Master Build Plan
-**Version:** 3.6 · **Updated:** 12 September 2026
-**Supersedes:** version 3.5 (11 Sep) — Part B Phase 1.1 and 1.2 are marked complete (the
+**Version:** 3.7 · **Updated:** 12 September 2026
+**Supersedes:** version 3.6 (12 Sep) — Part B 1.3 (the critic pass) is marked complete with its
+cost and the warning not to optimise it before Stage 2 exists, 1.5 records the temperature
+incompatibility, 1.6 records routing as done, and 1.4 gains the measured argument for splitting
+identification from expansion. **3.6** marked Part B Phase 1.1 and 1.2 complete (the
 agency list and the determination gate), Phase 6's switch seed is noted as done ahead of the
 rest of that phase, and the object-count claims are dated against the two different censuses.
 Earlier: version 3.4 (11 Sep). **3.5** marks Phase 2 — the schema rebuild — COMPLETE,
@@ -244,18 +247,45 @@ Before enumerating: what facts decide this, which are unknown, which unknowns ar
 a question slot — it had an **additive** one, positioned after the answer, so adding a question
 array would not have fixed it. The fix is a discriminated union. `DECISIONS.md` §34.
 
-### 1.3 ⚡ Critic pass — Stage 5 ⏱ 2–3 days
+### 1.3 ⚡ Critic pass — Stage 5 ✅ **DONE (12 Sep) — live on `/api/chat` checklist mode and `/api/audits`**
 Fresh call, sees only the output, adversarial framing. Physical object · regime · scope exclusions · assumed determinations · every date/fee/threshold · agency coverage · unstated assumptions.
 
 **Acceptance:** catches the combination-packaging error in the saved 2.5L output.
 
+**MET.** Run against the frozen artifact in `baseline-outputs/` (production, 21 Jul): **13
+findings, 7 blocking**, the combination-packaging error quoted and explained, and all seven
+known §4 errors caught — **plus four nobody had recorded**, including that Oregon OSHA has
+jurisdiction and the answer cites only the federal standard. **Negative control held: 0
+blocking on a verified-correct answer.** Full spec `docs/CRITIC-PASS.md`; decision
+`DECISIONS.md` §39 — **it reports and never regenerates, because a silent fix destroys the
+evidence.**
+
+**Note on cost, so nobody optimises it prematurely:** 84s average, 37–151s — more than
+generation and the gate combined. **The cause is that it receives all 31 in-scope agencies
+because Stage 2 (1.4 below) does not exist to narrow them.** Narrowing the input is the fix.
+
 ### 1.4 ⚡ Split identification from expansion ⏱ 1 day
 Identification at `temperature: 0.1`, stating physical object and regime. Critic runs. Only survivors get sub-steps and costs.
 
-### 1.5 ⚡ Temperature audit ⏱ 2 hours
+**A measured argument for this, 12 Sep (`DECISIONS.md` §42.4):** a generation benchmark found
+**every** finding was about identification — wrong physical object, wrong threshold, wrong
+regime — and **none** about the quality of sub-step prose. The stronger model is ~3× slower,
+which makes it an objection to one call doing *both jobs*, not to the model. Split them and the
+tiers already exist. **It also gives the critic's questions 1 and 2 something to check rather
+than infer**, since nothing in the answer currently states an object or a regime.
+
+### 1.5 ⚡ Temperature audit 🟡 **the incompatibility is found and handled; the wider audit is open** ⏱ 2 hours
 `lib/ai.ts` passes no temperature unless a caller sets one — so checklist generation runs at the API default. Document intended temperature per call site.
 
-### 1.6 Model routing + token accounting in `lib/ai.ts` ⏱ half day
+> **🔴 AND THE THING THIS AUDIT WOULD HAVE FOUND, FOUND ANOTHER WAY.** The **Claude 5 family
+> rejects `temperature` outright** — a 400, not an ignore. **Six call sites pass
+> `temperature: 0.1`**, so `AI_MODEL=claude-sonnet-5`, a one-line change that reads like
+> ordinary maintenance, would have taken out the determination gate, both audit classify calls,
+> the audit match call and document review together. **It would have been found as a
+> production incident.** `lib/ai.ts` now drops the parameter where it is not accepted.
+> `DECISIONS.md` §40.2, `AUDIT-CHECKS.md` check 15.
+
+### 1.6 Model routing + token accounting in `lib/ai.ts` 🟡 **routing DONE (12 Sep); token accounting open** ⏱ half day
 `task` parameter routing to model tier: strong for determination gate and identification, **strongest for critic**, cheap for expansion. Record `usage` on every call — the SDK returns it and nothing currently reads it.
 
 ### 1.7 ⟲ Migrate `scan-website` back through `askAI()` ⏱ 2 hours

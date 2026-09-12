@@ -84,6 +84,12 @@ for what each covers. Not all of them are present at any given time; the owner a
   instead of guessing. Prompt, output union, the two schema changes, route wiring, and how a
   user answers the question in place. **Built as of 11 Sep; §11, proximity confirmation, is
   specified and not built.**
+- **`CRITIC-PASS.md`** — Stage 5, the pass that reviews a finished answer for errors before
+  anybody acts on it: on a stronger model than the one that wrote it, and shown **only the
+  output**, never the instructions that produced it, because a reviewer reading those is
+  reviewing its own reasoning and will agree with it. **It reports and never regenerates** — a
+  silent fix destroys the evidence, and a self-healing loop means no failure is ever found.
+  **Built 12 Sep.**
 - **`AUDIT-CHECKS.md`** — the questions `npm run check` does not answer. It answers *"does
   the code build and behave"*; nothing answered *"is what we are telling customers actually
   true"*, and this is that second set. Each check is a question, the query that answers it,

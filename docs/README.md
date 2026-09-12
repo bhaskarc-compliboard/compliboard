@@ -1,6 +1,6 @@
 # docs/
-**Version:** 5 · **Updated:** 11 September 2026
-**Supersedes:** version 4 (11 Sep). Adds `DETERMINATION-GATE.md`. Version 4 added
+**Version:** 6 · **Updated:** 12 September 2026
+**Supersedes:** version 5 (11 Sep). Adds `CRITIC-PASS.md`. Version 5 added `DETERMINATION-GATE.md`. Version 4 added
 `TESTING.md`; version 3 added `AUDIT-CHECKS.md`. Version 2 added
 `HOW-WE-BUILD.md` and `STATUS.md`, noted that `PATTERNS.md` describes a different codebase,
 and listed every file; it superseded version 1 (10 Sep), which carried no version header of
@@ -106,6 +106,14 @@ after any prompt, model or matching change, which can only tell you the output *
 **cannot validate regulatory content**, because a model checking a model produces agreement
 and agreement is not verification). Carries the manual test set for each piece of work as it
 lands; writing it is step 12 of `HOW-WE-BUILD.md` §2's loop.
+
+### `CRITIC-PASS.md`
+Stage 5 — the pass that reviews a finished answer for errors before anybody acts on it, on a
+stronger model than the one that wrote it and shown **only the output**, never the instructions
+that produced it. Prompt, the two question sets, severity rules, and what the caller does with a
+finding. **It reports and never regenerates**: a silent fix destroys the evidence, and a
+self-healing loop means no failure is ever found. Built 12 Sep; acceptance met against the
+frozen 2.5L artifact.
 
 ### `AUDIT-CHECKS.md`
 The questions `npm run check` does not answer. It answers *"does the code build and

@@ -1,6 +1,9 @@
 # Detailed To-Do
-**Version:** 11 · **Updated:** 11 September 2026
-**Supersedes:** version 10 (11 Sep). **Phase 6.2 is on BOTH environments** — 619 objects each,
+**Version:** 12 · **Updated:** 12 September 2026
+**Supersedes:** version 11 (12 Sep). **Phase 2's quality items are closed** — 2.3 done, the
+measured per-stage latency recorded with the warning that the critic's cost is Stage 2's
+absence rather than a tuning problem, and 4.1 marked as the next large piece with what it
+inherits and the two things that block it. Version 11: **Phase 6.2 is on BOTH environments** — 619 objects each,
 0 differences; 90 switches compared row-for-row across 13 fields with 0 differences, the same
 35 edges and the same graph shape. Version 10 recorded **6.2 done on staging** — migration 012 adds
 `switches.thresholds`, and 90 switches are seeded with 35 dependency edges and no cycles.
@@ -751,16 +754,41 @@ are interface, they live in `MODULES`, and they get built when a customer asks f
 
 ---
 
-## PHASE 2 — The runtime pipeline 🟡 **IN PROGRESS — 2.1 and 2.2 complete, 2.3 next**
+## PHASE 2 — The runtime pipeline ✅ **THE QUALITY ITEMS ARE CLOSED — 12 September 2026**
 
 > **Where Phase 2 stands, 12 September 2026, read from both databases:**
 > **2.1 ✅** 33 agencies · 187 of 194 requirements assigned · 56 coverage rows.
 > **2.2 ✅** the determination gate, live on `/api/chat` and `/api/audits`, both directions
 > verified by `npm run golden`.
-> **2.8 🟡** the runner exists; three cases written, two of them scored.
-> **2.3 ⬅️ next**, and **6.2 ✅ was pulled forward ahead of it** so the critic is built
-> against a gate with a real vocabulary behind it.
-> Both environments on **000–012**, **619 objects each, 0 differences**.
+> **2.3 ✅** the critic pass, live on both, acceptance met against the frozen 2.5L artifact
+> and the negative control held.
+> **2.5 🟡** task-based model routing done; token usage, the wider temperature audit and
+> `scan-website` still open.
+> **2.8 🟡** the runner exists as `npm run golden`; three cases.
+> **Still open: 2.4, 2.6, 2.7.** **6.2 ✅ was pulled forward** so the critic was built against
+> a gate with a real vocabulary behind it.
+> Both environments on **000–012**, **619 objects each, 0 differences**, 90 switches, 35 edges.
+>
+> ### What Phase 2 costs, measured — and which stage owns it
+>
+> | stage | measured | note |
+> |---|---|---|
+> | Stage 1, the gate | **6–10s** | the cheapest thing in the pipeline |
+> | generation | **30s avg**, 21–39s | on `claude-sonnet-4-5`, the default |
+> | Stage 5, the critic | **84s avg, 37–151s** | **more than the other two combined** |
+>
+> **The critic is the expensive stage, and the cause is structural.** It is handed **all 31
+> agencies** with jurisdiction over the company, because **Stage 2 does not exist to narrow the
+> list to the ones this question actually touches.** `docs/CRITIC-PASS.md` §5 chose that
+> deliberately — a list too broad produces a false positive a human can dismiss, while a
+> missing list produces a silent gap nobody sees.
+>
+> **🔴 DO NOT OPTIMISE THE CRITIC PROMPT OR DROP ITS TIER. Narrowing the input is the fix, and
+> it is Stage 2's job (2.4 and Phase 4).** Tuning the prompt now optimises around a missing
+> stage, and the gain is given back the moment that stage lands.
+>
+> *(An earlier note called this "the gate's 42-second cost". The gate is 6–10s; 42s was a single
+> generation measurement recorded on 11 Sep. The expensive stage is the critic.)*
 
 ### What Phase 2 inherited — 11 September 2026
 
@@ -1010,8 +1038,34 @@ reaches the caller verbatim as `{"error": "Unexpected end of JSON input"}`.
 
 Pure code. No AI. The easiest piece, and the one that most needs tests.
 
-### 4.1 Resolution function ⬜ ⏱ 3 days
+### 4.1 Resolution function ⬅️ **THE NEXT LARGE PIECE** ⏱ 3 days
 Jurisdiction + switches + library version → obligations. Deterministic.
+
+**What 4.1 inherits from Phase 2 and 6.2 — most of its inputs now exist:**
+
+| input | state |
+|---|---|
+| **the library** | 194 rows, 192 live, every row categorised, **187 carrying a regulator** |
+| **jurisdiction** | on `entities`; one primary site per company, guaranteed by migration 010 |
+| **the switch vocabulary** | **90 switches**, 35 dependency edges, acyclic, 6 numeric with thresholds |
+| **agency scope** | `lib/agencyScope.ts` — the jurisdictional list, already used by the critic |
+| **coverage** | 56 rows, so an answer can say which agencies have nothing behind them |
+
+**What it does NOT inherit, and this decides the order of work:**
+
+- **`company_switches` is empty and stays empty until something writes to it.** The vocabulary
+  exists; no company's *answers* do. Resolution reads values, not definitions — so 4.1 has a
+  table to read and nothing in it. **Determination is the prerequisite, not the library.**
+- **`applies_expression` is NULL on all 194 rows.** That is 6.3 — the machine-evaluable form of
+  the trigger prose resolution matches against — and **6.3 is itself blocked on 6.3a**, the
+  per-substance threshold shape.
+- **No requirement points at a primary source** — 0 of 194 carry a `citation_url`, a quote or a
+  checked date. That does not block resolution; it blocks anyone *trusting* its output.
+
+**So the honest sequence is 6.3a → 6.3 → determination → 4.1**, and 4.1's three days are the
+smallest part of it. `CLAUDE.md` §3.2's safety properties become testable for the first time
+when it lands — **not one of them can be checked today**, because `obligations` is empty in
+both environments and nothing writes to it.
 
 ### 4.2 Atomic `replace_obligations` ⬜ ⏱ 1 day
 DELETE+INSERT in one transaction with an in-SQL ownership guard. **Half-written obligations are worse than stale ones.**
