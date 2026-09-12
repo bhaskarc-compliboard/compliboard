@@ -1,0 +1,111 @@
+{
+  "id": "003-oregon-minimum-wage-proceed",
+  "title": "Oregon minimum wage at the Hillsboro plant — THE PROCEED PATH",
+  "recorded": "2026-09-11",
+  "status": "expected-written",
+  "_status_values": ["expected-written", "baseline-recorded", "scored", "passing", "failing"],
+
+  "_why_this_case_exists": [
+    "Case 001 proves the gate ASKS. Nothing proved it does not ask when it should not.",
+    "",
+    "A gate that only ever asks is as broken as one that never does, and it fails in the",
+    "more expensive direction: a product that asks three questions before every answer has",
+    "reproduced the intake form it was sold as replacing (WORKSPACE.md §4.4). That failure",
+    "cannot be seen from inside a single answer — every question looks justified on its own —",
+    "so it has to be tested directly.",
+    "",
+    "This case is chosen from the library's own content, and chosen because the determining",
+    "fact is ALREADY ESTABLISHED rather than absent."
+  ],
+
+  "input": {
+    "document": null,
+    "question": "What minimum wage do we have to pay at our Hillsboro plant?",
+    "company": {
+      "name": "Test Alpha Chemical",
+      "industry": "chemical-manufacturing",
+      "primary_site": "Hillsboro, Washington County, Oregon"
+    },
+    "mode": "research",
+    "outputType": "answer",
+    "company_switches": "EMPTY — the switch library is not seeded until 6.2"
+  },
+
+  "_the_library_row_this_tests_against": {
+    "requirement_name": "Oregon minimum wage by location",
+    "agency": "BOLI",
+    "applies": "conditional",
+    "trigger_plain": "Covered work in Portland metro, standard, or nonurban area.",
+    "cadence": "Every payroll; changes July 1 annually",
+    "_note": "The trigger names exactly one determining fact: WHERE the work is. Oregon's minimum wage is set by geography — Portland metro, standard, and nonurban are three different rates."
+  },
+
+  "gate": {
+    "expected_outcome": "proceed",
+    "prompt_source": "lib/determinationGate.ts -> buildGatePrompt('answer')",
+    "system_prompt_sha256": "d416ba001bac2b1358852c115ed4b7afb3487f48fa04c7968bcd14db9c1cc9e1",
+    "system_prompt_chars": 4383,
+    "temperature": 0.1,
+    "max_tokens": 1500,
+    "web_search": false
+  },
+
+  "expected": [
+    {
+      "id": "gate-proceeds",
+      "assertion": "ACCEPTANCE — the response is outcome:'answer', not outcome:'ask'. The gate does not stop.",
+      "checkable": "response.outcome === 'answer'",
+      "verification": "structural",
+      "source": "DETERMINATION-GATE.md §7 — the bound on asking too much"
+    },
+    {
+      "id": "jurisdiction-counts-as-known",
+      "assertion": "The determining fact — where the work is — is reported as KNOWN, sourced from the profile rather than from the user. It must NOT be asked for: migration 010 guarantees every company has a primary site, and DECISIONS.md §25 says state, county and city come from GEOCODING, not from asking.",
+      "checkable": "response.gate.resolved.known contains a fact matching /worksite (state|county|city)/ with source 'ai_from_profile'",
+      "verification": "structural",
+      "source": "DECISIONS.md §20, §25; migration 009, 010",
+      "_note": "This assertion is why the gate reads `entities`. The first version of the spec did not, and this case is what found it."
+    },
+    {
+      "id": "no-question-about-location",
+      "assertion": "The gate does not ask where the plant is. Asking for an established fact is the persistence failure, and it is the one a user reads as the product not listening.",
+      "checkable": "response.outcome !== 'ask'",
+      "verification": "structural",
+      "source": "WORKSPACE.md §4.4; DETERMINATION-GATE.md §7 bound 3"
+    },
+    {
+      "id": "employee-count-is-non-blocking",
+      "assertion": "Employee count is genuinely irrelevant to the minimum wage rate — Oregon sets it by geography, not by headcount. It must not appear as a blocking fact. If the gate raises it at all it belongs in non_blocking_unknowns, never in an ask.",
+      "checkable": "no ask; and if 'employee' appears in resolved.non_blocking_unknowns that is acceptable",
+      "verification": "structural",
+      "source": "the library row's own trigger_plain names location and nothing else",
+      "_note": "companies.employee_count is NULL for all 10 companies since migration 006 converted the text bands rather than inventing numbers (DECISIONS.md §21.1). A gate that treated headcount as blocking would therefore block EVERY answer for EVERY company — which is exactly the runaway this case guards against."
+    },
+    {
+      "id": "answer-may-hedge-here",
+      "assertion": "If the gate does record a non-blocking unknown, the ANSWER path may state it conditionally via conditional_on. This is the field the checklist path deliberately does not have.",
+      "checkable": "lib/answerSchema.ts AnswerPayload has conditional_on; ChecklistAnswer does not, enforced by _ChecklistMayNotHedge",
+      "verification": "structural — compile-time",
+      "source": "DETERMINATION-GATE.md §3; DECISIONS.md §34"
+    },
+    {
+      "id": "no-fabricated-rate",
+      "assertion": "No specific dollar rate is asserted without a verification badge. Oregon's rates change every 1 July and 0 of 194 library rows carry a citation_url, a quote or a checked date — so any figure came from model memory.",
+      "verification": "structural",
+      "source": "CLAUDE.md §6; AUDIT-CHECKS.md check 1"
+    },
+    {
+      "id": "oregon-agency-is-correct-here",
+      "assertion": "Unlike case 001, an Oregon agency IS correct for this question — BOLI, jurisdiction_level 'state', jurisdiction_state 'Oregon'. The work is in Oregon. The two cases are deliberately opposite on this axis so that 'no Oregon agency' is not mistaken for a general rule.",
+      "checkable": "the requirement resolves to agencies.short_name = 'BOLI'",
+      "verification": "structural",
+      "source": "CLAUDE.md §3.2 — jurisdiction is part of the match key, in both directions"
+    }
+  ],
+
+  "run": null,
+  "matched": null,
+  "missed": null,
+  "extra": null,
+  "_run_note": "No baseline recorded yet. Nulls stay null until one is, so an empty result is never mistaken for a pass."
+}

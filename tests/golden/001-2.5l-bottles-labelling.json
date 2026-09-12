@@ -1,0 +1,124 @@
+{
+  "id": "001-2.5l-bottles-labelling",
+  "title": "Minimum labelling requirement for 2.5L bottles and for the case — THE ORIGINAL FAILURE",
+  "recorded": "2026-09-11",
+  "status": "expected-written",
+  "_status_values": ["expected-written", "baseline-recorded", "scored", "passing", "failing"],
+  "_why_this_case_exists": [
+    "This is the live test that scored B- and produced the six-stage pipeline. DECISIONS.md §4.",
+    "It asserted each bottle needs a DOT proper shipping name, UN number and hazard class.",
+    "Wrong: six bottles in a case is a COMBINATION PACKAGING. DOT marking and labelling",
+    "attach to the OUTER package; inner packagings are not separately marked or labelled.",
+    "Six sub-steps and $650-1,800 of cost estimates were built on a requirement that does",
+    "not exist as stated. Packing group — the determination the whole answer depends on —",
+    "was never established.",
+    "",
+    "THE ACCEPTANCE TEST FOR TODO 2.2: the gate must ASK FOR THE SDS rather than",
+    "enumerate past the missing packing group."
+  ],
+
+  "input": {
+    "document": null,
+    "question": "We ship isopropyl alcohol from our Reno warehouse to a customer in Philadelphia, six 2.5L bottles to a case. What is the minimum labelling requirement for the bottles and for the case?",
+    "company": {
+      "name": "Test Alpha Chemical",
+      "industry": "chemical-manufacturing",
+      "primary_site": "Hillsboro, Washington County, Oregon",
+      "_note": "The COMPANY is in Oregon. The SHIPMENT is Reno to Philadelphia and never enters Oregon. That distinction is the whole of assertion 2."
+    },
+    "mode": "checklist",
+    "outputType": "checklist",
+    "company_switches": "EMPTY — the switch library is not seeded until 6.2"
+  },
+
+  "gate": {
+    "expected_outcome": "ask",
+    "prompt_source": "lib/determinationGate.ts -> buildGatePrompt('checklist')",
+    "system_prompt_sha256": "5ed3ae9ff82b62f823a7680cea4aa52a58dd7bb7a6fe3cd47a0712e88f4fcfa1",
+    "system_prompt_chars": 4399,
+    "temperature": 0.1,
+    "max_tokens": 1500,
+    "web_search": false
+  },
+
+  "expected": [
+    {
+      "id": "gate-asks",
+      "assertion": "ACCEPTANCE — the response is outcome:'ask', not outcome:'answer'. No checklist is produced.",
+      "checkable": "response.outcome === 'ask'",
+      "verification": "structural",
+      "source": "TODO 2.2 acceptance; DECISIONS.md §4"
+    },
+    {
+      "id": "gate-asks-for-packing-group",
+      "assertion": "The single blocking fact is the packing group, and the artifact named is the SDS.",
+      "checkable": "response.ask.artifact matches /SDS|safety data sheet/i AND response.ask.question matches /packing group/i",
+      "verification": "structural",
+      "source": "DECISIONS.md §4 — 'Upload the SDS' resolves UN number, hazard class, LQ eligibility, packaging spec and label"
+    },
+    {
+      "id": "gate-asks-once",
+      "assertion": "Exactly one question. `ask` is an object, not an array — the cap is structural.",
+      "checkable": "typeof response.ask === 'object' && !Array.isArray(response.ask)",
+      "verification": "structural",
+      "source": "TODO 2.2; DETERMINATION-GATE.md §2"
+    },
+    {
+      "id": "gate-pairs-with-unlocks",
+      "assertion": "The question names what answering unlocks, and the list is non-empty.",
+      "checkable": "response.ask.unlocks.length > 0",
+      "verification": "structural",
+      "source": "TODO 2.2 — 'always paired with what it unlocks'"
+    },
+
+    {
+      "id": "no-oregon-agency",
+      "assertion": "ASSERTION 2 — the answer, once the SDS is supplied, draws on NO Oregon agency. Reno to Philadelphia is entirely federal; DOT hazmat is 49 CFR and applies in every state. The company being Oregon-based is irrelevant to this question. Serving Oregon requirements here is the same failure as serving Oregon requirements to a Texas company, arriving from the over-serving side rather than the under-serving one.",
+      "checkable": "no requirement cited resolves to an agency where agencies.jurisdiction_level IN ('state','county','city','local')",
+      "query": "select t.requirement_name, a.short_name from public.requirement_templates t join public.agencies a on a.id = t.agency_id where a.jurisdiction_level in ('state','county','city','local') and t.effective_to is null",
+      "in_scope_instead": {
+        "PHMSA": 15,
+        "FMCSA": 7,
+        "_total_live_library": 192,
+        "_note": "22 of 192 live rows are in scope for this question"
+      },
+      "out_of_scope_rows": 91,
+      "verification": "structural — checkable only because Phase 2.1 assigned agency_id on 11 Sep. Before that, 'the answer leaned on Oregon material' was a judgement requiring somebody who already knew the Oregon library. It is now a WHERE clause.",
+      "source": "CLAUDE.md §3.2; TESTING.md 'Case 001'; TODO 2.8"
+    },
+    {
+      "id": "states-not-covered-is-stated",
+      "assertion": "ASSERTION 3 — the answer states plainly that state requirements at origin (Nevada) and destination (Pennsylvania) are NOT covered. Neither state is in the library: it holds 94 live Oregon rows and 98 federal, and nothing else. An answer that gives the 49 CFR obligations and stops reads as complete and is not — failing CLAUDE.md §6 by omission rather than by assertion.",
+      "checkable": "the response text names Nevada and Pennsylvania as not covered",
+      "library_states": { "Oregon": 94, "federal": 98, "Nevada": 0, "Pennsylvania": 0 },
+      "verification": "unverified — requires reading the answer text; not yet structural",
+      "source": "CLAUDE.md §6; industry_coverage; TESTING.md 'Case 001'"
+    },
+
+    {
+      "id": "combination-packaging",
+      "assertion": "Once packing group is known: DOT marking and labelling attach to the OUTER package. The inner 2.5L bottles are NOT separately DOT-marked or labelled. This is the error the original test made.",
+      "citation": "49 CFR 173.25",
+      "verification": "unverified — not yet checked against live eCFR in this session",
+      "source": "DECISIONS.md §4; CHEMICAL-OR-WA.md §1.2"
+    },
+    {
+      "id": "no-invented-fleet",
+      "assertion": "The answer does not assume the company uses its own vehicles. The original output invented 'your own vehicles' in its title; the user never said it. FMCSA obligations apply only with an own fleet.",
+      "verification": "structural — no FMCSA requirement is cited unless the fleet fact is established",
+      "source": "DECISIONS.md §4 'invented premise in the title'"
+    },
+    {
+      "id": "no-fabricated-specifics",
+      "assertion": "No dates, fees or penalty figures are stated. The original attached $650-1,800 of cost estimates to a requirement that did not exist. 0 of 194 library rows carry a citation_url, a quote or a checked date, so any specific here came from model memory.",
+      "verification": "structural",
+      "source": "CLAUDE.md §6; AUDIT-CHECKS.md check 1"
+    }
+  ],
+
+  "run": null,
+  "matched": null,
+  "missed": null,
+  "extra": null,
+  "_run_note": "No baseline has been recorded against the gate yet. `run`, `matched`, `missed` and `extra` stay null until it is, so an empty result is never mistaken for a pass."
+}

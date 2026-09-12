@@ -1,6 +1,7 @@
 # docs/
-**Version:** 4 · **Updated:** 11 September 2026
-**Supersedes:** version 3 (11 Sep). Adds `TESTING.md`. Version 3 added `AUDIT-CHECKS.md`. Version 2 added
+**Version:** 5 · **Updated:** 11 September 2026
+**Supersedes:** version 4 (11 Sep). Adds `DETERMINATION-GATE.md`. Version 4 added
+`TESTING.md`; version 3 added `AUDIT-CHECKS.md`. Version 2 added
 `HOW-WE-BUILD.md` and `STATUS.md`, noted that `PATTERNS.md` describes a different codebase,
 and listed every file; it superseded version 1 (10 Sep), which carried no version header of
 its own — the one rule in here it did not follow.
@@ -88,6 +89,13 @@ CompliBoard, which is Next.js. **Every file path it names belongs to that codeba
 (`app/src/routes/chat.tsx`, `routeTree.gen.ts`, its dated migrations) — they do not exist
 here and are not meant to. It is the only document in this folder that describes a system
 other than this one.
+
+### `DETERMINATION-GATE.md`
+The full specification for Stage 1 of the runtime pipeline — the step that decides whether the
+answer depends on a fact we do not have, and asks for it instead of guessing. Prompt, output
+union, the two schema changes, the route wiring, and how a user answers the question in place.
+**Spec only; nothing in it is built.** Everything in it is quality-affecting under `CLAUDE.md`
+§3.1, which is why it is specified and reviewed before it is written.
 
 ### `TESTING.md`
 Three kinds of test that get confused, kept apart: **manual** (what the owner does as a user —

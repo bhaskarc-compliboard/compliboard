@@ -112,7 +112,9 @@ export default function UploadPage() {
           const formData = new FormData()
           formData.append('file', file)
           formData.append('question', 'Extract all compliance deadlines from this document. For each deadline return: title, due_date (as YYYY-MM-DD or descriptive text), and whether it is recurring (true/false). Return as JSON array.')
-          const res = await fetch('/api/chat', { method: 'POST', body: formData })
+          // /api/chat requires the session token since 11 Sep (TODO §0.8b) — it reads
+          // company_switches for the determination gate, which is tenant data.
+          const res = await fetch('/api/chat', { method: 'POST', body: formData, headers: await authHeaders() })
           const json = await res.json()
           // A refused file used to disappear into the bare catch below. Surface it in the
           // error banner this page already has.

@@ -1,6 +1,11 @@
 # Decision Record
-**Version:** 17 · **Updated:** 11 September 2026
-**Supersedes:** version 16 (11 Sep). Adds §33, a near miss: a mapping rule reading
+**Version:** 18 · **Updated:** 11 September 2026
+**Supersedes:** version 17 (11 Sep). Adds §34, **a correction to §4**: the checklist schema
+did not lack a slot for "I need one more fact first" — it had an ADDITIVE one, positioned
+after the answer, so the fix §4 implies was already in place when the failure happened.
+Additive and alternative are different things that look identical in a schema. The fix is a
+discriminated union, and the two additive slots are removed rather than left beside it.
+Version 17 added §33, a near miss: a mapping rule reading
 `29 CFR → OSHA` would have filed six employment requirements — the FLSA, FMLA, ERISA, Title
 VII, the PWFA and EEO-1 — under the wrong regulator, silently, because a requirement under a
 wrong agency looks entirely normal. Caught by projecting the mapping read-only over all 194
@@ -1814,3 +1819,82 @@ only visible in *which rows landed where*. A total is not a check.
 **Reversal condition:** none. This is a finding, not a preference. The narrower rule costs
 nothing — rule 21 now matches zero rows, because every piece of OSHA content in this library
 sits on an Oregon row, and that is a true fact about the library rather than a broken rule.
+
+---
+
+## 34. Correction to §4: the schema did not lack a question slot — it had the wrong kind
+
+**Decided 11 September 2026. §4's account of the 2.5L root cause is wrong in a way that would
+have produced the wrong fix.**
+
+**What §4 says.** Root cause 1: *"Output schema foreclosed the right answer. No slot for 'I
+need one more fact first.' A model asked to fill a checklist fills the checklist."*
+
+**What is actually in the schema.** `prompts/checklist.ts` has carried a question slot the
+whole time:
+
+```
+"follow_up_questions": [
+  "A specific follow-up question that would make this checklist more tailored to their situation"
+]
+```
+
+And `SUBSTEPS_PROMPT` carries another — a per-step `is_determination` flag with a
+`clarifying_questions[]` array beside it.
+
+**So the fix §4 implies — "add a question array" — was already done, and the failure happened
+anyway.**
+
+### 34.1 Additive and alternative are different things that look the same in a schema
+
+Both are *a place to put a question*. They mean opposite things.
+
+**An ADDITIVE slot sits after the answer** and means *"produce the checklist, then suggest
+refinements."* `follow_up_questions`' own description says so: questions that *"would make
+this checklist more tailored."* Substeps is sharper still — its questions are asked **after
+the step has been written**, which is the gate inverted.
+
+**An ALTERNATIVE slot replaces the answer** and means *"do not produce the checklist; this is
+what I need first."*
+
+A model filling an additive slot has already written the checklist by the time it reaches the
+question. **The second half of the sentence cannot undo the first half** — that is root cause
+2, autoregressive lock-in, and an additive question slot feeds it rather than fighting it.
+
+**The one gate-shaped output in this codebase was built for something else.**
+`auditClassifyPrompt` returns `type: "needs_clarification"` with a single
+`clarifying_question`, and `app/api/audits/route.ts` short-circuits on it. That is Stage 1 in
+miniature, arrived at accidentally while classifying audit requests — and it is the shape 2.2
+generalises rather than invents.
+
+### 34.2 The fix is a discriminated union, not a field
+
+`outcome: 'ask' | 'answer'`, mutually exclusive at the top level. Not `ask` alongside
+`must_do`: a model that populates both produces a checklist with a question above it, which is
+the 2.5L failure with a banner on it.
+
+**And `follow_up_questions` and `clarifying_questions` are REMOVED rather than left in place.**
+Two places to put a question, with different meanings, means the model uses both. The
+`needs_clarification` path in `auditClassifyPrompt` stays until the gate is wired into
+`/api/audits`, then collapses into it — removing it first would leave that route with no gate
+at all.
+
+### 34.3 The transferable lesson
+
+**When a schema permits the wrong answer, the fix is usually removing a field rather than
+adding one.** The same move appears twice more in the gate spec: the checklist path gets **no**
+`conditional_on` field, so hedging becomes unrepresentable rather than discouraged; and `ask`
+is an **object** rather than an array, so the one-question cap is structural rather than
+instructed.
+
+Each is the same idea — *make the wrong output impossible to express* — and each replaces an
+instruction a model under pressure can reinterpret. `DECISIONS.md` §27 reached the same
+conclusion from the other end: when a call can fail in ways needing different messages, the
+response must carry which, because a shared empty result makes the two indistinguishable.
+
+**Reversal condition:** none for the union. If a genuine need appears for an answer that also
+asks — it should not — it is a second request, not a second field.
+
+**What §4 keeps.** Its other three root causes stand unchanged, and its governing principle —
+excellent against an artifact, unreliable from nothing — is the most load-bearing sentence in
+this record. Only the first root cause is restated.

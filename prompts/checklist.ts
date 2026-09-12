@@ -8,6 +8,21 @@
  *
  * NOTE: after the rebuild, the checklist stops being something the user
  * invokes and becomes the answer to a gap. These prompts survive that.
+ *
+ * *** THREE QUESTION SLOTS WERE REMOVED FROM THIS FILE ON 11 SEPTEMBER 2026. ***
+ * CHECKLIST_PROMPT had `follow_up_questions[]`; SUBSTEPS_PROMPT had a per-step
+ * `is_determination` flag with `clarifying_questions[]` beside it. All three were
+ * ADDITIVE — positioned AFTER the answer, meaning "produce the checklist, then suggest
+ * refinements". A model filling an additive slot has already written the checklist by the
+ * time it reaches the question, and the second half of a sentence cannot undo the first
+ * half. That is DECISIONS.md §4's root cause 2 (autoregressive lock-in) being fed rather
+ * than fought, and it is why §4's stated root cause 1 — "no slot for 'I need one more
+ * fact first'" — is corrected in §34: there WAS a slot, of the wrong kind.
+ *
+ * Questions now come from ONE place, before the answer: lib/determinationGate.ts, whose
+ * output is an ALTERNATIVE to the answer rather than a field inside it. DO NOT ADD A
+ * QUESTION FIELD BACK TO THESE PROMPTS. Two places to put a question, with different
+ * meanings, means the model uses both.
  */
 
 export const CHECKLIST_PROMPT = `You are CompliBoard, a compliance assistant for small businesses in the United States.
@@ -44,12 +59,15 @@ Use this exact structure:
       "cost_note": "Cost range or empty string"
     }
   ],
-  "follow_up_questions": [
-    "A specific follow-up question that would make this checklist more tailored to their situation"
-  ]
 }
 
 CRITICAL RULES:
+- THERE IS NO FIELD FOR A CONDITIONAL STEP, AND THAT ABSENCE IS DELIBERATE. You may not
+  write "if packing group II, order these labels; if III, order those". A checklist is a
+  list of things a person will actually do, with hours and dollars attached, and it is the
+  expensive place to be wrong. If you cannot say which, you cannot put it in the list.
+  (The determination gate runs before you and asks for the missing fact — you will not
+  normally see a question in this state. If you do, leave the uncertain item out.)
 - description must include the regulation name and agency in one natural sentence
 - why must explain consequences of non-compliance in plain English
 - cost_note must use ranges not single numbers — never mislead with a low estimate
@@ -97,9 +115,7 @@ Use this exact structure:
       "search_hint": "Specific Google search string to find the exact page",
       "cost_note": "Exact fee if known, range if varies",
       "time_estimate": "How long this step takes",
-      "what_you_need": "Documents or information to have ready",
-      "is_determination": false,
-      "clarifying_questions": []
+      "what_you_need": "Documents or information to have ready"
     }
   ]
 }
@@ -111,8 +127,9 @@ CRITICAL RULES:
 - If nothing is needed to prepare, say None needed
 - Steps must be in logical order
 - 3 to 6 steps total — no more
-- is_determination true only when user must make a choice based on their situation
-- clarifying_questions must be empty array when is_determination is false`;
+- Do not ask the user questions. If a step depends on a fact you do not have, the
+  determination gate should have caught it before this call — say what the step is in the
+  general case and do not invent a branch.`;
 
 /**
  * Picks the right prompt for the mode, and — for checklist mode — bolts the

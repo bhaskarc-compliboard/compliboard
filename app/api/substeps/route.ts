@@ -59,8 +59,17 @@ export async function POST(request: NextRequest) {
       cost_note: item.cost_note || null,
       time_estimate: item.time_estimate || null,
       what_you_need: item.what_you_need || null,
-      is_determination: item.is_determination || false,
-      clarifying_questions: item.clarifying_questions || [],
+      // Always false / empty since 11 Sep. SUBSTEPS_PROMPT no longer emits either field:
+      // both were ADDITIVE question slots, asked AFTER the step had been written, which is
+      // the determination gate inverted (DECISIONS.md §34). Questions now come only from
+      // lib/determinationGate.ts, before the answer.
+      //
+      // The two COLUMNS remain on checklist_items and are now always false and empty.
+      // Dropping them is a migration and a separate piece of work — TODO 2.2 records it —
+      // so they are written explicitly here rather than left to a default that would hide
+      // the fact that nothing populates them.
+      is_determination: false,
+      clarifying_questions: [],
       agency_name: item.agency_name || null,
       search_hint: item.search_hint || null,
       sort_order: i,

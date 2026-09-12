@@ -6,6 +6,8 @@ import { createClient, authHeaders } from '@/lib/supabase'
 import AppLayout from '@/components/AppLayout'
 import AIDisclaimer from '@/components/AIDisclaimer'
 import { ACCEPTED_FILE_TYPES } from '@/lib/acceptedFiles'
+import { GateAskCard } from '@/components/GateAskCard'
+import type { GateAsk, GateAnswering } from '@/lib/determinationGate'
 
 const STATUS_MESSAGES: Record<string, string[]> = {
   hazmat: [
@@ -171,6 +173,10 @@ function CompliancePageInner() {
   // showed a blank. Minimal addition — one string, cleared on each submit.
   const [errorMsg, setErrorMsg] = useState('')
   const [mode, setMode] = useState<'checklist' | 'research'>('checklist')
+  // The determination gate stopped before producing anything and asked for one fact.
+  // Held here rather than inside the answer, because an ask REPLACES the answer —
+  // DECISIONS.md §34, docs/DETERMINATION-GATE.md §2.
+  const [gateAsk, setGateAsk] = useState<GateAsk | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const searchParams = useSearchParams()
 
@@ -487,12 +493,15 @@ This is item ${itemIndex + 1} from a compliance checklist.
 Other items already covered — do NOT overlap: ${otherItems}
 
 Generate 3 to 6 specific micro-steps to complete this one item only.
-Every step must include a direct deep link (not homepage), time estimate, cost, and what to prepare.
-Flag any step that requires the user to determine or choose something as is_determination true with 1-2 clarifying questions.`
+Every step must include a direct deep link (not homepage), time estimate, cost, and what to prepare.`
+        // The "flag anything the user must determine, with 1-2 clarifying questions"
+        // instruction was removed on 11 Sep with the field it wrote into. It asked
+        // questions AFTER the step was written, which is the determination gate inverted
+        // — DECISIONS.md §34. Questions come from Stage 1 now, before any of this runs.
 
         const res = await fetch('/api/chat', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: await authHeaders({ 'Content-Type': 'application/json' }),
           body: JSON.stringify({ question: prompt, mode: 'substeps' }),
         })
         const json = await res.json()
@@ -542,7 +551,7 @@ Give them a specific direct answer — exactly what they need to do, which speci
 
       const res = await fetch('/api/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: await authHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ question: prompt, mode: 'research' }),
       })
       const json = await res.json()
@@ -592,13 +601,31 @@ Give them a specific direct answer — exactly what they need to do, which speci
     return () => clearInterval(interval)
   }, [])
 
-  async function handleSubmit(submitMode?: string, customQuestion?: string) {
+  /**
+   * Answering a gate question, from the ask card.
+   *
+   * The ORIGINAL question is re-sent verbatim and `answering` rides alongside it. The gate
+   * re-runs against question + new fact; there is no half-built answer to resume, because
+   * the gate stopped before Stage 2. docs/DETERMINATION-GATE.md §5.2.
+   */
+  async function handleGateAnswer(answering: GateAnswering | null, file: File | null) {
+    if (file) setUploadedFile(file)
+    await handleSubmit(mode, askedQuestion, answering, file)
+  }
+
+  async function handleSubmit(
+    submitMode?: string,
+    customQuestion?: string,
+    answering?: GateAnswering | null,
+    answerFile?: File | null,
+  ) {
     const currentMode = (submitMode === 'research' || submitMode === 'checklist') ? submitMode : 'checklist'
     const q = customQuestion ?? (currentMode === 'checklist' ? createQuestion : askQuestion)
-    if (!q.trim() && !uploadedFile) return
+    if (!q.trim() && !uploadedFile && !answerFile) return
     setLoading(true)
     setData(null)
     setResearchData(null)
+    setGateAsk(null)
     setMode(currentMode as 'checklist' | 'research')
     setChecked({})
     setCompletedSteps([])
@@ -622,22 +649,34 @@ Give them a specific direct answer — exactly what they need to do, which speci
     setErrorMsg('')
     try {
       let res
-      if (uploadedFile) {
+      const fileToSend = answerFile ?? uploadedFile
+      if (fileToSend) {
         const formData = new FormData()
-        formData.append('file', uploadedFile)
+        formData.append('file', fileToSend)
         formData.append('question', q)
         formData.append('mode', currentMode)
-        res = await fetch('/api/chat', { method: 'POST', body: formData })
+        if (answering) formData.append('answering', JSON.stringify(answering))
+        // /api/chat requires the session token since 11 Sep — it reads company_switches
+        // for the determination gate, which is tenant data (TODO §0.8b).
+        res = await fetch('/api/chat', { method: 'POST', body: formData, headers: await authHeaders() })
       } else {
         res = await fetch('/api/chat', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ question: q, mode: currentMode, scanResult }),
+          headers: await authHeaders({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify({ question: q, mode: currentMode, scanResult, answering: answering ?? null }),
         })
       }
       const json = await res.json()
       if (!res.ok) {
         setErrorMsg(json.error || 'That request could not be completed.')
+        return
+      }
+
+      // An ask is a SUCCESSFUL outcome, not an error — it arrives as 200 and renders in
+      // the answer position. Returning here is what makes it an alternative to the answer
+      // rather than something shown alongside one.
+      if (json.outcome === 'ask' && json.ask) {
+        setGateAsk(json.ask as GateAsk)
         return
       }
       if (currentMode === 'research') {
@@ -829,6 +868,15 @@ Give them a specific direct answer — exactly what they need to do, which speci
           </div>
         )}
 
+        {/* The determination gate asked for one fact and produced nothing else. This sits
+            where the answer would have been — not above one, because an ask REPLACES the
+            answer (docs/DETERMINATION-GATE.md §2, §5). */}
+        {gateAsk && !loading && (
+          <div className="no-print mb-4">
+            <GateAskCard ask={gateAsk} onAnswer={handleGateAnswer} busy={loading} />
+          </div>
+        )}
+
         {loading && (
           <div className="no-print mt-6 p-5 bg-white rounded-xl border border-gray-200 shadow-sm">
             <div className="space-y-2">
@@ -910,6 +958,15 @@ Give them a specific direct answer — exactly what they need to do, which speci
         {errorMsg && (
           <div className="no-print mb-4 p-3 bg-red-50 border border-red-200 rounded-xl">
             <p className="text-sm text-red-600">{errorMsg}</p>
+          </div>
+        )}
+
+        {/* The determination gate asked for one fact and produced nothing else. This sits
+            where the answer would have been — not above one, because an ask REPLACES the
+            answer (docs/DETERMINATION-GATE.md §2, §5). */}
+        {gateAsk && !loading && (
+          <div className="no-print mb-4">
+            <GateAskCard ask={gateAsk} onAnswer={handleGateAnswer} busy={loading} />
           </div>
         )}
 

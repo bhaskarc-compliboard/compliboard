@@ -3,6 +3,7 @@ import { auditClassifyPrompt, auditGenerateStandardPrompt, auditMatchPrompt } fr
 import { reviewDocument } from '@/lib/documentReview'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireCompany, supabaseAdmin } from '@/lib/auth'
+import { gate, type GateAnswering } from '@/lib/determinationGate'
 import { parseDocumentToBlocks, type DocumentParseFailure } from '@/lib/documentContent'
 
 // THIS ROUTE IS A POOR FIT FOR SERVERLESS, AND maxDuration IS NOT THE FIX.
@@ -210,6 +211,37 @@ export async function POST(request: NextRequest) {
           )
         }
         classifyContent = loaded.content
+      }
+
+      // ------------------------------------------------------------------
+      // STAGE 1 — the determination gate, BEFORE classification rather than after.
+      //
+      // Classification is itself an AI call that enumerates; gating after it means paying
+      // for the enumeration and then discarding it. outputType is always 'checklist' here:
+      // an audit is a list of things somebody will do, with hours attached, so the stricter
+      // threshold applies — ask if the CONTENT OF ANY STEP would change (WORKSPACE.md §4.3).
+      //
+      // auditClassifyPrompt's own `needs_clarification` path stays for now and collapses
+      // into this one later. Removing it first would leave this route with no gate at all
+      // for the window in between, which is worse than briefly having two.
+      // docs/DETERMINATION-GATE.md §3.4, §4.3.
+      // ------------------------------------------------------------------
+      const answeringRaw = formData.get('answering') as string | null
+      let answering: GateAnswering | null = null
+      if (answeringRaw) {
+        try { answering = JSON.parse(answeringRaw) as GateAnswering } catch { answering = null }
+      }
+
+      const g = await gate({
+        question,
+        documentBlocks: Array.isArray(classifyContent) ? classifyContent : [],
+        companyId,
+        outputType: 'checklist',
+        db,
+        answering,
+      })
+      if (g.outcome === 'ask') {
+        return NextResponse.json({ outcome: 'ask', ask: g.ask })
       }
 
       const classified = await askAIJson(
