@@ -1696,6 +1696,10 @@ export type Database = {
     Functions: {
       array_is_ascending: { Args: { a: number[] }; Returns: boolean }
       auth_company_id: { Args: never; Returns: string }
+      close_and_replace_obligations: {
+        Args: { p_company_id: string; p_obligations: Json }
+        Returns: Json
+      }
       substance_inventory: {
         Args: { p_entity_id: string; p_list: string }
         Returns: boolean

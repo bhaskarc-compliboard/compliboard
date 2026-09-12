@@ -1,6 +1,11 @@
 # Detailed To-Do
-**Version:** 13 · **Updated:** 12 September 2026
-**Supersedes:** version 12 (12 Sep). **Phase 6.3 is on BOTH environments and Phase 2 is
+**Version:** 14 · **Updated:** 12 September 2026
+**Supersedes:** version 13 (12 Sep). Adds M6's requirement that the coverage strip
+**distinguish a profile from a default** — a company that has answered nothing resolves to 2
+`applies`, both true, both the same answer every Oregon employer gets, and on screen
+indistinguishable from a real profile. Named as a requirement because the failure it prevents
+is the omniscient status tracker in its most convincing form: everything on the list is true.
+Version 13: **Phase 6.3 is on BOTH environments and Phase 2 is
 closed.** 205 requirement rows (200 live) carry 199 machine-evaluable conditions; 95 switches,
 40 edges; 798 census objects, 0 differences. **4.1 is now the only thing between the library
 and a working Requirements screen.** The six low-confidence conditions and the one deliberate
@@ -1093,8 +1098,30 @@ smallest part of it. `CLAUDE.md` §3.2's safety properties become testable for t
 when it lands — **not one of them can be checked today**, because `obligations` is empty in
 both environments and nothing writes to it.
 
-### 4.2 Atomic `replace_obligations` ⬜ ⏱ 1 day
-DELETE+INSERT in one transaction with an in-SQL ownership guard. **Half-written obligations are worse than stale ones.**
+### 4.2 Atomic `close_and_replace_obligations` ✅ **DONE (12 Sep) — migration 016, staging**
+**Renamed from `replace_obligations`, and the rename is the decision** — `replace_` is what
+carried DELETE semantics in from `PATTERNS.md` §4, and §3.2 forbids deleting obligations at
+all. `DECISIONS.md` §47. Closes changed or departed rows by setting `applicable_to`, inserts
+the new ones, in one transaction. **Half-written obligations are worse than stale ones.**
+
+`SECURITY INVOKER` · `search_path = ''` · ownership guard raised in SQL · `REVOKE` from
+PUBLIC/anon/authenticated, `GRANT EXECUTE` to `service_role` only (ACL verified against
+`pg_proc.proacl`, not the caller-filtered view — see `AUDIT-CHECKS.md` check 22).
+
+Seven behavioural tests in the migration, all verified live through the service role:
+first-run insert · **idempotence** (a repeat writes nothing) · status change closes one and
+opens one · **`undetermined` → `does_not_apply` leaves a closed row behind it**, so the claim
+is auditable · a departed requirement is closed, never deleted · cross-tenant `entity_id`
+refused before any write · **a fault injected mid-INSERT rolls the close back with it**, so a
+failed recompute cannot leave a company's list closed-but-not-replaced.
+
+#### 4.2b Revoke EXECUTE on `substance_inventory` from PUBLIC ⬜ ⏱ 10 min
+Migration 013 created it with no revoke, and **Postgres grants EXECUTE on every new function
+to PUBLIC by default** — `CLAUDE.md` §3.6's "not granting is not denying", which is recorded
+for tables and not for functions. It leaks nothing today because `anon` holds no grant on
+`company_chemicals`, so the protection is a *table* grant rather than the function grant —
+the compensating-control shape §45 says must be named and tested. `AUDIT-CHECKS.md` check 22.
+**Do it in the next migration that touches grants, and use `pg_proc.proacl` to verify.**
 
 ### 4.3 Determination chain ⬜ ⏱ 1 day
 `produces_switch` writes back, re-resolve, cap at 3 passes.
@@ -1318,6 +1345,37 @@ requirement currently tests something coarser, because the data underneath does 
 
 **None of these is fixed by editing a switch.** Each is fixed by the data or the decision named
 in its row, which is why this sits under 6.4 rather than in 6.2.
+
+#### 6.4g Two rows are `entity_type = 'site'` and should probably be `organization` ⬜
+**A DATA question, not a resolver question.** Found 12 Sep by the first multi-site resolution
+run, and the distinction matters because the tempting fix is in the wrong place.
+
+**What the run showed.** 21 live requirements fan out to one obligation per site — 19 because
+`entity_type = 'site'`, 3 because their jurisdiction layer is `city` or `local` (one row is
+both). For a two-site company that is 21 requirements producing 42 rows. **Of the 19, only
+two name an expression made entirely of company-scoped switches:**
+
+| Requirement | Expression | Why it looks wrong |
+|---|---|---|
+| `USDOT number and motor-carrier registration` | `owns_fleet` (company) | A USDOT number is issued to the **carrier**, once. A second plant does not get a second number. |
+| `PHMSA annual hazmat registration` | `ships_placardable_hazmat` (company) | One registration, one fee, one registrant per year. Per-facility is not a thing PHMSA offers. |
+
+Both are federal registrations issued to a **legal entity**, not to a facility. The other 17
+use at least one site-scoped switch and fan out correctly.
+
+**⚡ WHY A DEDUP IN THE RESOLVER WOULD BE WRONG, and this is the point of recording it here.**
+The symptom — identical obligations at every site — is easy to make disappear: collapse rows
+whose expression names no site-scoped fact. **That would be a silent, general rule fixing two
+specific rows of bad data, and it would break the case this product exists for.** A company
+that genuinely needs *one air permit per facility* has expressions that are company-scoped in
+form and per-site in law; `Clean Air Act Title V permit`, `Oregon Air Contaminant Discharge
+Permit` and `1200-Z industrial stormwater permit` all resolved **differently at two sites of
+one company** in the same run. A dedup rule cannot tell those from these, because the
+difference is not in the expression — it is in what the regulator issues. **`entity_type` is
+where that fact belongs, and it is a library-verification question (6.8), not a code change.**
+
+Same class as 6.3b: a column on `requirement_templates` carrying the wrong value, fixed by
+correcting the row rather than by teaching the engine to compensate.
 
 #### 6.4e The 18 medium-confidence conditions ⬜
 **Three shapes, not eighteen problems.** (1) A rule whose text conditions *whether a plan must
@@ -1927,6 +1985,25 @@ an unverified library is that anti-pattern wearing a chart.
 - ⬜ Coverage strip from `industry_coverage` ⏱ 1 day — `OSHA ✓verified · DEQ ✓verified ·
   Local fire ◐partial · ODA ○not built`. A verified row and a generated row must not look
   the same.
+- ⬜ 🔴 **The strip must distinguish A PROFILE from A DEFAULT.** Added 12 Sep, from the first
+  real resolution run. A company that has answered nothing resolves to **2 `applies`** —
+  `Business registration active with OR Secretary of State` and `Emergency lighting / exit
+  sign testing` — because both turn on nothing but "the site is in Oregon", which we know
+  from the address. **Those two are the answer for ANY Oregon employer.** They are correct,
+  and on screen they are indistinguishable from a real profile: a user who signs up, uploads
+  nothing, and sees two requirements cannot tell whether that is *their* answer or the
+  default everyone gets.
+
+  **This is not a resolution bug and must not be fixed in the engine.** Suppressing the two
+  would be worse — they genuinely apply. The fix is that the screen says what it is standing
+  on: *"2 requirements from your address alone. 197 more depend on facts nobody has supplied
+  yet — the first four questions settle 79 of them."* Those numbers are already computed and
+  stored: `determined_by.switches_missing` is per-row, and the status counts are a `group by`.
+
+  **It is a named requirement, not a UI nicety, because the failure it prevents is the
+  omniscient status tracker** (`CLAUDE.md` §6) — a screen asserting a compliance position
+  before the evidence for it exists. A short list with no provenance is exactly that, and it
+  is the most convincing form of it, because everything on the list is true.
 
 #### M6.1 Verification section ⬜ ⏱ 2 days
 *(Designed in `WORKSPACE.md`; it lives on the dashboard, so it is planned here.)*

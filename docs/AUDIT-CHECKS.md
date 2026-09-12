@@ -1,6 +1,12 @@
 # Audit Checks
-**Version:** 11 · **Updated:** 12 September 2026
-**Supersedes:** version 10 (12 Sep). **Check 12 is FAILING on both environments** — migration
+**Version:** 12 · **Updated:** 12 September 2026
+**Supersedes:** version 11 (12 Sep). Adds **check 22** — function EXECUTE grants, where
+Postgres's default is PUBLIC and `CLAUDE.md` §3.6's "not granting is not denying" applies one
+layer down without being written down. `substance_inventory` is open to PUBLIC and leaks
+nothing only because a TABLE grant stops it. **And the check must read `pg_proc.proacl`:
+`information_schema.role_routine_grants` is caller-filtered and returns zero rows here, so a
+check written against it passes vacuously — which migration 016's own verification block
+does.** Version 11: **Check 12 is FAILING on both environments** — migration
 013 split three OR-OSHA requirements into eleven and nothing recounted the coverage rows, so
 `row_count` reads 53 where the live count is 61. Recorded as a bad answer rather than fixed,
 because it is a data change to production. Adds **checks 19–21**, the expression layer's
@@ -903,6 +909,54 @@ proxy is permitted, a proxy with a fabricated magnitude is not.
 hard failure would train people to bypass it. **The test of the check is not that it returns
 zero — it is that every non-zero answer has a name, a reason and a decision beside it**, which
 is what the table is.
+
+---
+
+## 22. Does any function in `public` hold EXECUTE for a role that should not have it?
+
+```sql
+select p.proname,
+       coalesce(array_to_string(p.proacl, '  |  '), '(null = DEFAULT: EXECUTE to PUBLIC)') as acl
+  from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+ where n.nspname = 'public'
+   and (p.proacl is null                        -- default = PUBLIC holds EXECUTE
+     or array_to_string(p.proacl, ',') like '=X/%')   -- a leading `=X` IS PUBLIC
+ order by p.proname;
+```
+
+**Answer, 12 September 2026, both environments: one function — `substance_inventory`.**
+
+| Function | ACL | Verdict |
+|---|---|---|
+| `close_and_replace_obligations` | `postgres=X · service_role=X` | ✅ correct — migration 016 revokes explicitly |
+| `auth_company_id` | `postgres=X · anon=X · authenticated=X · service_role=X` | ✅ intentional — every RLS policy calls it |
+| **`substance_inventory`** | **`=X` · postgres · anon · authenticated · service_role** | 🟡 **the leading `=X` is PUBLIC.** Migration 013 created it with no revoke |
+
+**It leaks nothing today, and that is luck rather than design.** The function is `SECURITY
+INVOKER` and reads `company_chemicals`, on which `anon` holds no grant at all, so an
+unauthenticated call returns nothing. **The protection is a table grant, not the function
+grant** — exactly the compensating-control shape `DECISIONS.md` §45 says must be named and
+tested or it is a belief. Revoking it is `TODO.md` 4.2b.
+
+**Why nothing else catches it.** `CLAUDE.md` §3.6 records "not granting is not denying" for
+tables; **the same default exists for functions and is not written down anywhere** — Postgres
+grants EXECUTE on every new function to PUBLIC, so a `create function` with no revoke is open
+by default. `npm run check` cannot see it, and RLS does not apply to a function body.
+
+> ### ⚠️ THE QUERY ABOVE READS `pg_proc.proacl` ON PURPOSE. DO NOT USE `information_schema.role_routine_grants`.
+>
+> **That view is filtered to roles the CALLER belongs to**, and it returns **zero rows** here —
+> so a check written against it passes vacuously, finds nothing, and reports clean. It is the
+> same trap that produced the 673-object census in check 10, one layer down.
+>
+> **Migration 016's own grant-verification block uses that view**, found immediately after
+> applying it: its "has anything leaked?" half can only ever find nothing, and its
+> "can service_role execute?" half passed only because the migration runs as `postgres`, who
+> does see the grants. The ACL it was checking is in fact correct — verified independently
+> with the query above — so nothing shipped wrong. **The check was weaker than its assertion,
+> which is check 14's category applied to SQL.** The migration is not being edited after the
+> fact; the correction is this check, and `TODO.md` 4.2b carries the revoke that will re-verify
+> properly.
 
 ---
 

@@ -1,6 +1,9 @@
 # Testing
-**Version:** 7 · **Updated:** 12 September 2026
-**Supersedes:** version 6 (12 Sep). Adds **the expression layer's three invariants** — a new
+**Version:** 8 · **Updated:** 12 September 2026
+**Supersedes:** version 7 (12 Sep). Adds **`npm run mutation`** — nine deliberate breakages of
+the resolution engine, all nine caught, because a suite that has only ever passed is
+consistent with a suite that asserts nothing. Records what a wrong implementation looks like
+for each property, which is the part a passing test cannot tell you. Version 7 added **the expression layer's three invariants** — a new
 class, because they are tests of a body of DATA and a violation is silent: a condition naming a
 switch nobody defined is valid JSON that evaluates to `unknown` forever. Records that the
 manual test for this layer is a read rather than a click, and the two known-failing cases kept
@@ -26,6 +29,49 @@ Records that assertion 2 was unfalsifiable before Phase 2.1 and is a `WHERE` cla
 
 **Status: (a) is a standing obligation and starts now. (b) is specced in `TODO.md` 2.8 with
 two cases written. (c) is not built and is deliberately bounded.**
+
+---
+
+## Proving the tests can fail — `npm run mutation`
+
+Added 12 September 2026, with the first test suite in the codebase.
+
+**`HOW-WE-BUILD.md` §3: a validator that has only ever said PASS is untested.** That applies
+to a test suite more than to anything else it was written about, because every property this
+suite guards **fails silently** — a wrong answer is a requirement quietly leaving a customer's
+list, not an error anyone sees. A green suite is not evidence that the properties hold. It is
+consistent with the tests asserting nothing at all.
+
+`npm run mutation` breaks the engine nine ways, runs the suite against each, records which
+tests caught it, restores the file and verifies it byte-identical. **Each mutation is a
+plausible implementation, not obvious junk** — the comparison inverted, the default flipped, a
+guard dropped. The shapes a reviewer reads past.
+
+| # | Property | What a wrong implementation looks like | Caught by |
+|---|---|---|---|
+| 1 | `unknown` never becomes `does_not_apply` | `verdict === true ? applies : does_not_apply` — one line, typechecks, every unanswered requirement leaves the list | **6** |
+| 2 | `not(unknown)` is `unknown` | `return !v`. Reads correctly in English; `!'unknown'` is `false` | **3** |
+| 3 | `any_of(false, unknown)` is `unknown` | Dropping the unknown check — equivalent to `||` with a coercion | **12** |
+| 4 | `all_of(true, unknown)` is `unknown` | The mirror. Over-includes rather than clears, so less dangerous — still asserts what nobody said | **12** |
+| 5 | A NULL expression is `undetermined`, never skipped | `if (!expr) continue` — the most natural line anyone would write | **2** |
+| 6 | Jurisdiction is decided **before** the expression | Treating out-of-jurisdiction as unproven rather than contradicted. §24's incident: fewer rows and a 200 | **2** |
+| 7 | A fact counts only when it is **readable** | `return t === 'true'`. Turns every unreadable answer into a confident FALSE | **2** |
+| 8 | A company-level expression is evaluated across **all** sites | Evaluating the primary site only. Cheaper, obvious, and wrong at five of six facilities — `DECISIONS.md` §20 | **5** |
+| 9 | `determined_by` names the facts that are missing | Leaving the array empty. Every status stays correct; the ask list silently becomes nothing | **2** |
+
+**All nine caught, 12 Sep 2026. Baseline and post-run both 119/119.**
+
+**It is NOT in `npm run check`, on purpose.** It edits source files and runs the suite ten
+times; a gate that rewrites the working tree is a gate nobody will trust under a git conflict.
+**Run it whenever the evaluator, the resolver or the jurisdiction predicate changes** — and
+treat a surviving mutation as a failing build, because that property is untested whatever the
+suite says.
+
+**Two mutations are worth reading even if you never run it.** #4 is the only one that errs
+toward over-inclusion, which is why it is listed below #3 despite failing the same number of
+tests — direction matters more than count. And #9 breaks nothing a user would see: every
+status stays correct, and the only casualty is the answer to *"what would we have to ask"*.
+That is the shape of defect this file exists for.
 
 ---
 

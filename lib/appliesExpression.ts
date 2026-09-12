@@ -230,6 +230,22 @@ export function switchesIn(e: Expression): string[] {
 }
 
 /**
+ * Every `substance_inventory()` list an expression consults.
+ *
+ * The sibling of `switchesIn()`, and it exists for the same reason: the resolver has to be
+ * able to say WHY an obligation came back unknown, and "a chemical inventory nobody has
+ * filled in" is a different question to put to a customer than "a switch nobody has
+ * answered". One is answered by listing what is on site; the other by answering a question.
+ */
+export function inventoriesIn(e: Expression): Array<InventoryClause['inventory']> {
+  if (isAll(e)) return e.all.flatMap(inventoriesIn)
+  if (isAny(e)) return e.any.flatMap(inventoriesIn)
+  if (isNot(e)) return inventoriesIn(e.not)
+  if (isInv(e)) return [e.inventory]
+  return []
+}
+
+/**
  * Every number an expression asserts.
  *
  * *** THE RULE THIS EXISTS FOR: a threshold in an expression must appear in the rule's own
