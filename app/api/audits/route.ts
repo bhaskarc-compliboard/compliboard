@@ -4,6 +4,8 @@ import { reviewDocument } from '@/lib/documentReview'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireCompany, supabaseAdmin } from '@/lib/auth'
 import { gate, type GateAnswering } from '@/lib/determinationGate'
+import { criticise, applyCritique } from '@/lib/criticPass'
+import { agenciesInScopeFor } from '@/lib/agencyScope'
 import { parseDocumentToBlocks, type DocumentParseFailure } from '@/lib/documentContent'
 
 // THIS ROUTE IS A POOR FIT FOR SERVERLESS, AND maxDuration IS NOT THE FIX.
@@ -247,7 +249,7 @@ export async function POST(request: NextRequest) {
       const classified = await askAIJson(
         auditClassifyPrompt(companyName, industry),
         classifyContent,
-        { maxTokens: 16000, enableWebSearch: true, temperature: 0.1 }
+        { maxTokens: 16000, enableWebSearch: true, temperature: 0.1, task: 'judgement' }
       )
 
       if (classified.type === 'question' || classified.type === 'needs_clarification') {
@@ -387,7 +389,7 @@ export async function POST(request: NextRequest) {
       const matched = await askAIJson(
         auditMatchPrompt(),
         [{ type: 'text', text: JSON.stringify(matchInput) }],
-        { maxTokens: 6000, temperature: 0.1 }
+        { maxTokens: 6000, temperature: 0.1, task: 'judgement' }
       )
       allResults.push(...(matched.results || []))
     }
@@ -409,6 +411,35 @@ export async function POST(request: NextRequest) {
       }
     })
 
+    // ------------------------------------------------------------------
+    // STAGE 5 — the critic pass, BEFORE the audit row is written.
+    //
+    // The ordering is the point. A saved readiness count that the critic then contradicts is
+    // worse than no critic: the customer sees a number, and the correction arrives after they
+    // have read it. docs/CRITIC-PASS.md §2.
+    //
+    // The EVIDENCE question set, not the requirements one. This module's failure is not a
+    // requirement stated wrongly, it is a verdict built on less than it should have been —
+    // STATUS.md records satisfied=2 needs_info=1 computed from ONE readable document out of
+    // eight, with seven dropped silently. Question 2 of that set asks exactly that: how many
+    // documents were available, and how many were used.
+    // ------------------------------------------------------------------
+    const critique = await criticise({
+      question: `Audit against "${sourceName}"`,
+      answer: { source_name: sourceName, line_items: merged },
+      questionSet: 'evidence',
+      establishedFacts: [],
+      declaredUnknowns: [],
+      agenciesInScope: await agenciesInScopeFor(companyId, db),
+      factsReliedOn:
+        `${candidates.length} document(s) were available to this audit. ` +
+        `${merged.filter(m => (m.matched_documents || []).length > 0).length} line item(s) cite at least one.`,
+    })
+    const applied = applyCritique(critique)
+
+    // Readiness is computed in CODE, never by AI — CLAUDE.md §3.2. A blocking finding does
+    // not silently change a verdict; it is recorded alongside so the number and the doubt
+    // about it travel together.
     const readinessSatisfied = merged.filter(m => m.status === 'satisfied').length
     const readinessNeedsInfo = merged.filter(m => m.status === 'needs_info').length
     const readinessNeedsWork = merged.filter(m => m.status === 'needs_work').length
@@ -433,7 +464,7 @@ export async function POST(request: NextRequest) {
 
     if (auditErr) throw auditErr
 
-    return NextResponse.json({ data: audit })
+    return NextResponse.json({ data: audit, critique: applied })
   } catch (error) {
     console.error('Audit engine error:', error)
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Audit failed' }, { status: 500 })

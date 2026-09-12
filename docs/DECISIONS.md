@@ -1,6 +1,12 @@
 # Decision Record
-**Version:** 20 · **Updated:** 11 September 2026
-**Supersedes:** version 19 (11 Sep). Adds §36 (the §2.4 switch list was written before the
+**Version:** 21 · **Updated:** 12 September 2026
+**Supersedes:** version 20 (11 Sep). Adds §39 (the critic reports and never regenerates — a
+silent fix destroys the evidence, and a self-healing loop means no failure is ever found; it
+runs on every answer because the 2.5L failure was two sentences about labels and any
+complexity heuristic skips exactly the case it exists for) and §40 (two model facts taken from
+memory and wrong: `claude-opus-4-1` does not exist on this account, and the Claude 5 family
+rejects `temperature` outright — a latent 400 across six call sites that routing surfaced
+rather than caused). Version 20 added §36 (the §2.4 switch list was written before the
 library: 6 of its switches nothing uses, 30 facts it lacks that 48 requirements need, and
 banded `employee_count` cannot express 3 of the 7 thresholds — including the 15 that gates the
 ADA, Title VII and the PWFA), §37 (tanks are the inventory and gallons are computed; no CHECK
@@ -2182,3 +2188,100 @@ name `outdoor_work` encoded an assumption the rule does not make, and **a foundr
 outdoor work would have been told the heat rule did not apply to it.** They are also two
 separate rules with separate triggers and separate controls, and Washington's thresholds
 differ from Oregon's on both.
+
+---
+
+## 39. The critic reports; it never regenerates — 12 September 2026
+
+**Decision: Stage 5 surfaces findings and code applies them by severity. It never loops back
+and never regenerates, and this holds after Stage 4 exists.**
+
+`CHEMICAL-OR-WA.md` §5.2 says *"material error → one loop back to identification"*.
+Identification is not built, so today the only thing to loop back to is the whole generating
+call. But the decision is not about what is available.
+
+**A silent fix destroys the evidence.** `TESTING.md` (b) says the golden set grows by one
+entry per failure found. **A self-healing loop means no failures are ever found** — the suite
+stops growing, and quality comes to depend on a loop nobody measures. The 2.5L failure is in
+the golden set *because* somebody saw it.
+
+Three further reasons: a regenerate has nothing new to work with, so it is `DECISIONS.md` §4's
+autoregressive lock-in dressed as a fix; the finding is more useful to a plant manager than
+the fix (*"this assumes you ship in your own vehicles — you didn't say that"*); and two model
+calls agreeing is agreement, which `TESTING.md` (c) already names as not verification.
+
+**Three outcomes, decided in code from severity, never by the critic choosing to loop:**
+`blocking` withholds the item and says why — **an empty checklist with a reason is more honest
+than a second guess**; `qualifying` shows beside the answer; `coverage` surfaces as a gap.
+
+**Reversal condition:** if a blocking finding is ever produced at a rate that makes checklists
+routinely empty, the answer is better generation or a stricter gate, not a repair loop.
+
+### 39.1 It runs on every answer, gated only by output type
+
+`checklist` and `audits` always · `research` not until it is structured · `substeps` never.
+
+**The complexity threshold is rejected, and the reason is the failure itself: the 2.5L case
+was two sentences about labels.** Fluent, confident, well-structured, and wrong about the
+central fact. **Any complexity heuristic skips exactly the case the critic exists for** — and
+"only on complex answers" asks the model to judge its own output, which is the same class of
+thing as a model setting its own `verified` flag.
+
+**And the anchoring threshold runs it MORE where the library is thin** — every cannabis
+question (25 coverage rows at `row_count = 0`) and every question hitting the six empty Oregon
+agencies. That is backwards from the cost instinct and correct on the merits: the thinner the
+anchor, the closer the answer is to free enumeration.
+
+**Cost, measured:** ~44s on a verified-correct answer and ~100s on the 15-item 2.5L artifact,
+on the strongest tier. That is a real addition to a 42-second generation.
+
+---
+
+## 40. Two model facts that were taken from memory and were wrong — 12 September 2026
+
+Both were found by running the thing, both in one sitting, and both are recorded because the
+second is a latent bug that predates the work that surfaced it.
+
+### 40.1 `claude-opus-4-1` does not exist on this account
+
+The first version of the critique tier named it as the strongest model. The first run returned
+`404 not_found_error`. **Probed rather than recalled**, 12 Sep: `claude-opus-5`,
+`claude-sonnet-5`, `claude-fable-5-1`, `claude-haiku-4-5-20251001` and `claude-sonnet-4-5` all
+answer; `claude-opus-4-1` and `claude-opus-4-20250514` do not, the latter being past
+end-of-life. The tier is `claude-opus-5`.
+
+**The rule:** a model identifier is a fact about an account, not about the world. Check it the
+way a constraint name is checked (`CLAUDE.md` §3.7) — from the thing itself, never from
+memory or from a prior migration file.
+
+### 40.2 The Claude 5 family REJECTS `temperature`, and six call sites pass it
+
+Not ignores — a **400**: `` `temperature` is deprecated for this model. ``
+
+```
+claude-opus-5              REJECTS      claude-haiku-4-5-20251001  accepts
+claude-sonnet-5            REJECTS      claude-sonnet-4-5          accepts
+claude-fable-5-1           REJECTS
+```
+
+**This was a latent bug before task routing existed, and routing only surfaced it.** Six call
+sites pass `temperature: 0.1` — the determination gate, both audit classify calls, the audit
+match call, document review. **Setting `AI_MODEL=claude-sonnet-5`, which reads like an
+ordinary upgrade, would have 400'd every one of them** and left the gate returning nothing on
+a route that had no way to say so.
+
+**Fixed by dropping the parameter for models that do not take it, not by erroring.**
+Temperature 0.1 means *be deterministic*; those models are deterministic by default, so the
+intent survives and only the knob is gone. Logged once per call so it is greppable rather than
+silent. Matched on the major version immediately after the tier name, so `claude-sonnet-4-5`
+and `claude-haiku-4-5-…` are correctly excluded.
+
+### 40.3 A thinking model spends the answer budget on thinking
+
+The spec proposed `maxTokens: 3000` for the critic. On `claude-opus-5` that returned **no text
+at all** — one empty `thinking` block and `stop_reason: max_tokens`. Thinking is drawn from
+the same budget as the answer. `askAI`'s automatic doubling would have recovered it at the
+cost of two wasted calls per review; the budget is 12,000 instead.
+
+**A reviewer that reasons before answering is exactly what the tier was chosen for. The budget
+has to pay for the reasoning as well as the findings.**

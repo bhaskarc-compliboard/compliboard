@@ -1,6 +1,10 @@
 # Audit Checks
-**Version:** 5 · **Updated:** 12 September 2026
-**Supersedes:** version 4 (12 Sep). Adds **check 13**, the switch dependency graph — a new
+**Version:** 6 · **Updated:** 12 September 2026
+**Supersedes:** version 5 (12 Sep). Adds **check 14** — a test harness whose checks are weaker
+than its assertions is indistinguishable from a passing suite, which is worse than one that
+skips, because a SKIP is visible and a partial match prints green. Three such checkers found
+and fixed; fixing one of them exposed the runner rebuilding the gate's context instead of
+importing it. Version 5 added **check 13**, the switch dependency graph — a new
 class of invariant, being a property of the shape of a set of rows rather than of any single
 row, and one no CHECK constraint can express. Version 4 gave check 10 its post-6.2 result — 619 objects
 each, 0 differences, plus the row and graph comparison. Version 3 added **checks 5–12, specified and not built** — array
@@ -449,6 +453,77 @@ be left describing a scope their switch no longer declares. Run (c) after any ch
 database afterwards, and refuses the whole file on a cycle. **Proven by seeding one** —
 `--prove-cycle-check` runs the real file (0), the real tanks/gallons pair reversed (refused),
 a three-node cycle (refused), and a four-deep acyclic chain (allowed).
+
+---
+
+## 14. Is every checker as strong as the assertion it claims to check?
+
+**Added 12 September 2026, after a checker reported PASS on a partial match.** This one is
+about the test harness rather than the data, and it earns its place for the reason at the head
+of this file: **a wrong answer here reaches a customer and nothing else notices** — because
+the thing that would normally notice is the suite, and the suite is what is broken.
+
+**The class:** *a test harness whose checks are weaker than its assertions is indistinguishable
+from a passing suite.*
+
+It is worse than a harness that skips, and the difference matters. A SKIP is **visible** — the
+run prints a count and says it is not a pass. A checker that tests half its assertion prints
+**green**, and green is the strongest signal a suite can send.
+
+**How to run it.** For every `expected[]` entry in `tests/golden/*.json`, compare the case's own
+`checkable` field against what `scripts/run-golden.js` implements, and ask *does the checker
+test everything the assertion names?*
+
+**Answer, 12 September 2026 — 23 assertions audited:**
+
+| | |
+|---|---|
+| implemented and matching | 13 |
+| **implemented but WEAKER than the assertion** | **3 — all now fixed** |
+| checkable field naming the wrong layer | 1 — the case text was reworded, not the checker |
+| marked HUMAN (a person reads the answer) | 7 |
+| no checker, reported SKIP | 7 |
+
+**The three that were weaker:**
+
+1. **`gate-asks-for-packing-group`** — the case asserts *"artifact matches /SDS|safety data
+   sheet/ AND question matches /packing group/"*. The checker searched the whole `ask` object
+   for the string "packing group" and never looked at `artifact` at all. **It produced a real
+   false pass**: a run whose `artifact` was `null` and whose question never mentioned an SDS
+   was reported green.
+2. **`jurisdiction-counts-as-known`** — the case requires a fact matching
+   `/worksite (state|county|city)/` **with** `source = 'ai_from_profile'`. The checker tested
+   the two conditions against the whole blob separately, so any fact could satisfy the first
+   while a different entry satisfied the second.
+3. **`answer-may-hedge-here`** — the case names the compile-time assertion
+   `_ChecklistMayNotHedge` by id. The checker grepped the two interfaces and never checked the
+   assertion existed, so deleting it would have left this green while removing the only thing
+   making the absence *enforced* rather than merely current.
+
+### 14.1 And fixing one of them found a second, larger bug
+
+Strengthening `gate-asks-for-packing-group` turned it red — **four runs out of four**, which
+ruled out variance. Isolating it found the cause was not the gate:
+
+**`scripts/run-golden.js` was building its own version of the gate's context.** Its own header
+says it rebuilds the *prompt* from `lib/determinationGate.ts` rather than holding a copy,
+because *"a copy of the prompt would be a copy that drifts — and the drift would be silent,
+because the tests would keep passing against the stale copy."* It then **hand-rolled the
+context** and that copy drifted exactly as the comment predicted: it emitted `id: label` per
+switch, where the module emits the `ask as:` wording and the `only if` dependency.
+
+**Ninety bare id-and-label lines pushed the model toward bare questions naming no artifact.**
+So the runner was measuring a gate the routes do not use, and reporting PASS on it.
+
+**Fixed structurally rather than by patching the copy:** the context builder moved to
+`lib/gateContext.ts` — **a file with no imports at all**, so a plain Node script can load it
+through native type stripping and cannot resolve a `@/` path alias. Both the module and the
+runner now import the same function, and neither builds its own. Verified: neither file
+contains a vocabulary-building loop any more.
+
+**The general rule this leaves:** *a harness may rebuild nothing. Whatever it needs from the
+code under test, it imports.* Rebuilding the prompt from source was the right instinct applied
+to half the input.
 
 ---
 

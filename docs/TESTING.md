@@ -1,6 +1,11 @@
 # Testing
-**Version:** 4 · **Updated:** 12 September 2026
-**Supersedes:** version 3 (11 Sep). (b) is no longer future — `npm run golden` exists, with
+**Version:** 5 · **Updated:** 12 September 2026
+**Supersedes:** version 4 (12 Sep). Records the question-7 variance — the gate's
+`non_blocking_unknowns` came back with three entries, then two, then zero on the same case —
+as a (c) consistency probe rather than a bug to solve now. And replaces the recalled
+"readiness numbers differed between runs" with the measured version from
+`baseline-outputs/audits.json`: six audits of the same 272-item standard for the same company,
+satisfied ranging 6 to 21. Version 4: (b) is no longer future — `npm run golden` exists, with
 three cases and four verdicts of which SKIP is never a pass. Version 3 added the **2.2 manual
 set** — including the unbuilt-industry
 case, where a clean gate and an unanchored answer look identical on screen, because "do we know
@@ -249,10 +254,43 @@ What it may do at the edge of this line: **retrieve** a primary source and repor
 text does not contain what the row claims. That is retrieval, not judgement, and the output
 is a queue for a person — never a `verified` flag.
 
+### The question-7 input varies run to run, and that is a consistency probe waiting to happen
+
+*Recorded 12 September 2026. Noted, not solved.*
+
+The determination gate returns `non_blocking_unknowns`, and Stage 5's question 7 — *"does any
+statement assume a fact the user did not provide?"* — checks the answer against it. **On the
+same question, the same case and the same temperature, that list came back with three entries,
+then two, then zero.**
+
+**A critic asserting against a list that varies run to run is asserting against something
+unstable.** It is not wrong on any single run; it is differently right each time, which is
+harder to notice and harder to test. Whether this matters depends on how much weight question
+7 ends up carrying — on the 2.5L artifact the critic found the unstated assumptions from the
+answer text alone, without needing the list.
+
+**This is (c)'s probe, not a bug report:** ask the same question twice and compare the
+declared unknowns. Both answers cannot be right about what was left open.
+
 ### Why consistency testing earns its place here specifically
 
-**The engine has a known consistency problem.** Readiness numbers differed between runs —
-recorded in the original diligence, before this rebuild. That is a system giving two answers
+**The engine has a known consistency problem, and it is now measured rather than recalled.**
+Readiness numbers differed between runs — recorded in the original diligence, before this
+rebuild. **`baseline-outputs/audits.json` holds the evidence**: six audits of **ISO 9001:2015,
+the same 272-item standard, the same company, across two days.**
+
+| | satisfied | needs_info | needs_work | distinct documents cited |
+|---|---|---|---|---|
+| 24 Jul 16:17 | **6** | 49 | 217 | 11 |
+| 24 Jul 16:45 | 9 | 54 | 209 | 16 |
+| 24 Jul 17:26 | 7 | 26 | 239 | 15 |
+| 25 Jul 16:57 | 15 | 74 | 183 | 18 |
+| 25 Jul 17:03 | 13 | 68 | 191 | 19 |
+| 25 Jul 17:04 | **21** | 69 | 182 | 19 |
+
+**A 3.5× spread on the headline number, and 219 of 272 items citing no document at all in the
+worst run.** Both cannot be right, and saying so needs no knowledge of ISO 9001 — which is
+exactly why this class of test can run unattended. That is a system giving two answers
 to one question, which needs no domain knowledge to detect and no regulatory truth to
 adjudicate: **both answers cannot be right, and finding that costs nothing but machine
 time.** `CLAUDE.md` §3.2 requires resolution to be deterministic — same inputs, identical

@@ -7,6 +7,7 @@ import AppLayout from '@/components/AppLayout'
 import AIDisclaimer from '@/components/AIDisclaimer'
 import { ACCEPTED_FILE_TYPES } from '@/lib/acceptedFiles'
 import { GateAskCard } from '@/components/GateAskCard'
+import { CritiqueNotice, type AppliedCritique } from '@/components/CritiqueNotice'
 import type { GateAsk, GateAnswering } from '@/lib/determinationGate'
 
 const STATUS_MESSAGES: Record<string, string[]> = {
@@ -177,6 +178,9 @@ function CompliancePageInner() {
   // Held here rather than inside the answer, because an ask REPLACES the answer —
   // DECISIONS.md §34, docs/DETERMINATION-GATE.md §2.
   const [gateAsk, setGateAsk] = useState<GateAsk | null>(null)
+  // What Stage 5 found. Held beside the answer rather than inside it: a blocking finding has
+  // already removed an item server-side, and this is the account of what was removed and why.
+  const [critique, setCritique] = useState<AppliedCritique | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const searchParams = useSearchParams()
 
@@ -626,6 +630,7 @@ Give them a specific direct answer — exactly what they need to do, which speci
     setData(null)
     setResearchData(null)
     setGateAsk(null)
+    setCritique(null)
     setMode(currentMode as 'checklist' | 'research')
     setChecked({})
     setCompletedSteps([])
@@ -679,6 +684,7 @@ Give them a specific direct answer — exactly what they need to do, which speci
         setGateAsk(json.ask as GateAsk)
         return
       }
+      setCritique((json.critique as AppliedCritique) ?? null)
       if (currentMode === 'research') {
         const answerText = json.research || json.data?.title || 'No results'
         setResearchData(answerText)
@@ -877,6 +883,10 @@ Give them a specific direct answer — exactly what they need to do, which speci
           </div>
         )}
 
+        {/* What the critic found. BESIDE the answer, never instead of it — a critique is not
+            an ask. Renders nothing at all when the review was clean. */}
+        {!loading && !gateAsk && <CritiqueNotice critique={critique} />}
+
         {loading && (
           <div className="no-print mt-6 p-5 bg-white rounded-xl border border-gray-200 shadow-sm">
             <div className="space-y-2">
@@ -969,6 +979,10 @@ Give them a specific direct answer — exactly what they need to do, which speci
             <GateAskCard ask={gateAsk} onAnswer={handleGateAnswer} busy={loading} />
           </div>
         )}
+
+        {/* What the critic found. BESIDE the answer, never instead of it — a critique is not
+            an ask. Renders nothing at all when the review was clean. */}
+        {!loading && !gateAsk && <CritiqueNotice critique={critique} />}
 
         {loading && (
           <div className="no-print mt-6 p-5 bg-white rounded-xl border border-gray-200 shadow-sm">

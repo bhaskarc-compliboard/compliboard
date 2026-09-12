@@ -31,6 +31,13 @@
 
 import { askAIJson, type AIContent } from '@/lib/ai'
 import type { SupabaseClient } from '@supabase/supabase-js'
+// The context builder lives in its own import-free file so the golden runner — a plain Node
+// script that cannot resolve the `@/` alias — calls the same function the routes do.
+// lib/gateContext.ts explains why that is worth a file.
+import { buildGateContext, type FactSource, type KnownFact } from '@/lib/gateContext'
+
+export { buildGateContext }
+export type { FactSource, KnownFact }
 
 // ---------------------------------------------------------------------------
 // THE OUTPUT UNION
@@ -39,21 +46,6 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 /** How a fact came to be known. Mirrors company_switches.source (migration 008), plus one
  *  value that is deliberately NOT a company_switches source: a fact stated in this question
  *  belongs to this question, and is never persisted. */
-export type FactSource =
-  | 'user_set'
-  | 'ai_from_documents'
-  | 'ai_from_profile'
-  | 'computed'
-  | 'stated_in_question'
-
-export interface KnownFact {
-  /** switches.id when the fact is in the vocabulary; null for a scoped product fact. */
-  switch_id: string | null
-  fact: string
-  value: string
-  source: FactSource
-}
-
 export interface UnknownFact {
   switch_id: string | null
   fact: string
@@ -251,6 +243,8 @@ export function buildGatePrompt(outputType: 'answer' | 'checklist'): string {
 const GATE_OPTIONS = {
   maxTokens: 1500,
   temperature: 0.1,
+  // A decision, not prose — DECISIONS.md §5 allocates the judgement tier to this stage.
+  task: 'judgement' as const,
   // WEB SEARCH IS OFF, DELIBERATELY. The gate decides what facts are MISSING; it does not
   // look anything up. A gate with search will research its way around a blocking fact and
   // return "proceed" on a guess — the exact failure it exists to prevent, arriving with
@@ -342,36 +336,17 @@ export async function gate(input: GateInput): Promise<GateResult> {
   // wrong — while excluding them risks missing a blocking fact only a library row knew
   // about, which the critic pass catches at Stage 5. DETERMINATION-GATE.md §6.
 
-  const contextLines: string[] = []
-  contextLines.push('ESTABLISHED FACTS ABOUT THIS COMPANY:')
-  contextLines.push(known.length === 0
-    ? '  (none established — this is not the same as "none apply")'
-    : known.map((k) => `  ${k.fact} = ${k.value}   [${k.source}]`).join('\n'))
-  contextLines.push('')
-  contextLines.push('VOCABULARY OF FACTS THIS PRODUCT CAN ASK ABOUT:')
-  contextLines.push((vocabulary ?? []).length === 0
-    ? '  (empty — the switch library is not seeded yet. Reason from the question and the\n' +
-      '   document alone, and return switch_id: null for anything you ask about.)'
-    : (vocabulary ?? []).map((v) => {
-        const s = v as unknown as {
-          id: string; label: string; question_plain: string | null
-          depends_on_switch: string | null; depends_on_value: string | null
-        }
-        const dep = s.depends_on_switch ? `  (only if ${s.depends_on_switch} = ${s.depends_on_value})` : ''
-        return `  ${s.id}: ${s.label}${dep}${s.question_plain ? `\n     ask as: ${s.question_plain}` : ''}`
-      }).join('\n'))
-  contextLines.push('')
-  contextLines.push(`THE USER'S QUESTION:`)
-  contextLines.push(question)
+  const contextLines = buildGateContext(question, known, vocabulary ?? [])
 
   const content: AIContent = Array.isArray(documentBlocks) && documentBlocks.length > 0
-    ? ([...documentBlocks, { type: 'text', text: contextLines.join('\n') }] as AIContent)
-    : contextLines.join('\n')
+    ? ([...documentBlocks, { type: 'text', text: contextLines }] as AIContent)
+    : contextLines
 
   const raw = await askAIJson<GateResult>(buildGatePrompt(outputType), content, GATE_OPTIONS)
 
   return normalise(raw, known, answering ?? null)
 }
+
 
 /**
  * Make the model's output safe to act on, and enforce the rules the schema cannot.

@@ -23,6 +23,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { parseDocumentToBlocks } from '@/lib/documentContent';
 import { requireCompany } from '@/lib/auth';
 import { gate, type GateAnswering } from '@/lib/determinationGate';
+import { criticise, applyCritique } from '@/lib/criticPass';
+import { agenciesInScopeFor } from '@/lib/agencyScope';
+import type { ChecklistAnswer } from '@/lib/answerSchema';
 
 export async function POST(request: NextRequest) {
   try {
@@ -134,7 +137,7 @@ export async function POST(request: NextRequest) {
         // structured-research change is listed as not-yet-specified in
         // DETERMINATION-GATE.md §10, and `conditional_on` reaches this path only when it
         // lands. `research` keeps its key so existing callers are unchanged.
-        const responseText = await askAI(systemPrompt, messageContent, { maxTokens: 6000 });
+        const responseText = await askAI(systemPrompt, messageContent, { maxTokens: 6000, task: 'prose' });
         return NextResponse.json({ outcome: 'answer', research: responseText, gate: g.resolved });
       }
 
@@ -142,11 +145,40 @@ export async function POST(request: NextRequest) {
       // this route carried until 11 Sep. The shared extractor tolerates narration around
       // the object, which the local version did not — lib/ai.ts is the only place that
       // logic should live.
-      const data = await askAIJson<unknown>(systemPrompt, messageContent, { maxTokens: 6000 });
-      return NextResponse.json({ outcome: 'answer', data, gate: g.resolved });
+      const data = await askAIJson<ChecklistAnswer>(systemPrompt, messageContent, { maxTokens: 6000, task: 'judgement' });
+
+      // ------------------------------------------------------------------
+      // STAGE 5 — the critic pass. A FRESH call that sees only the output.
+      //
+      // `systemPrompt` is in scope on this very line and is NOT passed: CriticInput has no
+      // field for it, because a critic reading the generating instructions reviews its own
+      // reasoning and agrees with it. docs/CRITIC-PASS.md §1.3.
+      //
+      // It never regenerates. Findings are applied by severity in code — blocking withholds
+      // the item and says why, which is not the same as a second attempt. DECISIONS.md §39.
+      // ------------------------------------------------------------------
+      const critique = await criticise({
+        question: userQuestion,
+        answer: data,
+        questionSet: 'requirements',
+        establishedFacts: g.resolved.known,
+        declaredUnknowns: g.resolved.non_blocking_unknowns,
+        agenciesInScope: await agenciesInScopeFor(companyId, db),
+        factsReliedOn: fileName ? `Read from the uploaded file "${fileName}".` : null,
+      });
+      const applied = applyCritique(critique);
+
+      const withheldNames = new Set(applied.withheld.map((w) => w.item).filter(Boolean) as string[]);
+      const kept: ChecklistAnswer = {
+        ...data,
+        must_do: (data.must_do ?? []).filter((i) => !withheldNames.has(i.name)),
+        good_to_have: (data.good_to_have ?? []).filter((i) => !withheldNames.has(i.name)),
+      };
+
+      return NextResponse.json({ outcome: 'answer', data: kept, gate: g.resolved, critique: applied });
     }
 
-    const data = await askAIJson<unknown>(systemPrompt, messageContent, { maxTokens: 6000 });
+    const data = await askAIJson<unknown>(systemPrompt, messageContent, { maxTokens: 6000, task: 'prose' });
     return NextResponse.json({ outcome: 'answer', data });
   } catch (error) {
     console.error("Full error:", error);

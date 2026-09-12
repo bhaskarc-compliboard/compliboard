@@ -31,6 +31,7 @@ import { readFileSync, writeFileSync, readdirSync } from 'fs'
 import { createHash } from 'crypto'
 import { createClient } from '@supabase/supabase-js'
 import Anthropic from '@anthropic-ai/sdk'
+import { buildGateContext } from '../lib/gateContext.ts'
 
 const CASE_DIR = 'tests/golden'
 const GATE_SRC = 'lib/determinationGate.js'.replace('.js', '.ts')
@@ -81,10 +82,19 @@ const CHECKS = {
   'gate-asks':                 (r) => [r.outcome === 'ask', `outcome = ${r.outcome}`],
   'gate-proceeds':             (r) => [r.outcome === 'proceed', `outcome = ${r.outcome}`],
   'no-question-about-location':(r) => [r.outcome !== 'ask', `outcome = ${r.outcome}`],
+  // Tests BOTH halves of the case's own `checkable`: the artifact must name the SDS AND the
+  // question must name the packing group. The first version tested only the second half,
+  // against the whole `ask` blob rather than the two named fields — and it reported PASS on
+  // a run whose artifact was null and whose question never mentioned an SDS.
+  // AUDIT-CHECKS.md check 14.
   'gate-asks-for-packing-group': (r) => {
     if (r.outcome !== 'ask') return [false, 'did not ask at all']
-    const blob = JSON.stringify(r.ask).toLowerCase()
-    return [blob.includes('packing group'), blob.includes('packing group') ? 'named' : 'packing group never mentioned']
+    const artifact = String(r.ask.artifact ?? '')
+    const question = String(r.ask.question ?? '')
+    const sds = /SDS|safety data sheet/i.test(artifact)
+    const pg = /packing group/i.test(question)
+    return [sds && pg,
+      `artifact names an SDS: ${sds ? 'yes' : `NO (${artifact || 'null'})`} · question names the packing group: ${pg ? 'yes' : 'NO'}`]
   },
   'gate-asks-once': (r) => {
     if (r.outcome !== 'ask') return [false, 'did not ask at all']
@@ -95,11 +105,16 @@ const CHECKS = {
     const n = Array.isArray(r.ask.unlocks) ? r.ask.unlocks.length : 0
     return [n > 0, `${n} unlocks listed`]
   },
+  // The case says: a fact matching /worksite (state|county|city)/ WITH source ai_from_profile.
+  // The first version matched 'oregon' or 'hillsboro' anywhere in the blob and checked the
+  // source separately, so a fact named anything at all could satisfy it as long as SOME entry
+  // carried that source. Now the two conditions must hold on the SAME entry.
   'jurisdiction-counts-as-known': (r) => {
     if (r.outcome !== 'proceed') return [false, 'did not proceed']
-    const known = JSON.stringify(r.resolved?.known ?? []).toLowerCase()
-    const hit = /worksite|oregon|hillsboro|washington/.test(known) && known.includes('ai_from_profile')
-    return [hit, hit ? 'jurisdiction present, sourced from the profile' : 'jurisdiction NOT reported as known — the gate cannot see entities']
+    const known = r.resolved?.known ?? []
+    const hit = known.find((k) => /worksite (state|county|city|location)/i.test(String(k.fact ?? '')) && k.source === 'ai_from_profile')
+    return [!!hit, hit ? `"${hit.fact}" = ${hit.value} [ai_from_profile]`
+      : `no known fact matches /worksite (state|county|city)/ with source ai_from_profile — the gate may not be reading entities. Saw: ${known.map((k) => k.fact).join(', ') || '(nothing)'}`]
   },
   'employee-count-is-non-blocking': (r) => {
     if (r.outcome === 'ask') {
@@ -125,8 +140,12 @@ const CHECKS = {
     }
     const answerHas = /\bconditional_on\b/.test(body('AnswerPayload'))
     const checklistHas = /\b(conditional_on|depends_on|follow_up_questions|clarifying_questions)\b/.test(body('ChecklistAnswer'))
-    return [answerHas && !checklistHas,
-      `AnswerPayload.conditional_on ${answerHas ? 'present' : 'MISSING'}; ChecklistAnswer hedge/question field ${checklistHas ? 'PRESENT — must not be' : 'absent'}`]
+    // The case names the compile-time assertion by id. Without checking it exists, deleting
+    // `_ChecklistMayNotHedge` would leave this green while removing the only thing that makes
+    // the absence enforced rather than merely current.
+    const assertionPresent = /_ChecklistMayNotHedge/.test(raw) && /_AnswerMayHedge/.test(raw)
+    return [answerHas && !checklistHas && assertionPresent,
+      `AnswerPayload.conditional_on ${answerHas ? 'present' : 'MISSING'}; ChecklistAnswer hedge/question field ${checklistHas ? 'PRESENT — must not be' : 'absent'}; compile-time assertions ${assertionPresent ? 'present' : 'MISSING — the absence is no longer enforced'}`]
   },
 }
 
@@ -164,26 +183,24 @@ async function runCase(file) {
   const { data: site } = await db.from('entities').select('state, county, city')
     .eq('company_id', co.id).eq('is_primary', true).maybeSingle()
   const { data: est } = await db.from('company_switches').select('switch_id, value, source').eq('company_id', co.id)
-  const { data: vocab } = await db.from('switches').select('id, label, question_plain')
+  const { data: vocab } = await db.from('switches')
+    .select('id, label, question_plain, depends_on_switch, depends_on_value').order('id')
 
+  // THE CONTEXT IS BUILT BY THE MODULE, NOT BY THIS FILE.
+  //
+  // This runner rebuilds the PROMPT from lib/determinationGate.ts's source because a copy
+  // drifts silently. It used to hand-roll the CONTEXT, and that copy drifted too — it
+  // emitted `id: label` per switch where the module emits the `ask as:` wording and the
+  // `only if` dependency. Ninety bare id-and-label lines pushed the model toward bare
+  // questions with no artifact named, so this runner was measuring a gate the routes do not
+  // use, and reported PASS on it. AUDIT-CHECKS.md check 14.
   const known = []
-  if (site?.state) known.push(`  worksite state = ${site.state}   [ai_from_profile]`)
-  if (site?.county) known.push(`  worksite county = ${site.county}   [ai_from_profile]`)
-  if (site?.city) known.push(`  worksite city = ${site.city}   [ai_from_profile]`)
-  for (const e of est ?? []) known.push(`  ${e.switch_id} = ${e.value}   [${e.source}]`)
+  if (site?.state) known.push({ switch_id: null, fact: 'worksite state', value: site.state, source: 'ai_from_profile' })
+  if (site?.county) known.push({ switch_id: null, fact: 'worksite county', value: site.county, source: 'ai_from_profile' })
+  if (site?.city) known.push({ switch_id: null, fact: 'worksite city', value: site.city, source: 'ai_from_profile' })
+  for (const e of est ?? []) known.push({ switch_id: e.switch_id, fact: e.switch_id, value: e.value, source: e.source })
 
-  const ctx = [
-    'ESTABLISHED FACTS ABOUT THIS COMPANY:',
-    known.length ? known.join('\n') : '  (none established — this is not the same as "none apply")',
-    '',
-    'VOCABULARY OF FACTS THIS PRODUCT CAN ASK ABOUT:',
-    (vocab ?? []).length === 0
-      ? '  (empty — the switch library is not seeded yet. Reason from the question and the\n   document alone, and return switch_id: null for anything you ask about.)'
-      : (vocab ?? []).map((v) => `  ${v.id}: ${v.label}`).join('\n'),
-    '',
-    "THE USER'S QUESTION:",
-    c.input.question,
-  ].join('\n')
+  const ctx = buildGateContext(c.input.question, known, vocab ?? [])
 
   const started = Date.now()
   const msg = await anthropic.messages.create({
