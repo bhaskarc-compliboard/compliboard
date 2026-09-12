@@ -1,0 +1,2960 @@
+[
+  {
+    "requirement": "1,3-Butadiene exposure standard",
+    "agency": "OR-OSHA",
+    "prose": "Occupational exposure",
+    "expression": {
+      "switch": "exposure_butadiene",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "1200-Z industrial stormwater permit",
+    "agency": "OR-DEQ",
+    "prose": "Covered industrial activity is exposed to stormwater and discharges to water/storm system, absent valid no-exposure exclusion.",
+    "expression": {
+      "switch": "industrial_stormwater",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Aboveground storage tank formal inspections (STI SP001)",
+    "agency": "EPA",
+    "prose": "ASTs subject to SPCC",
+    "expression": {
+      "switch": "aboveground_storage_tanks",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "ACA employer shared responsibility/reporting",
+    "agency": "IRS",
+    "prose": "Averaged 50+ full-time employees including FTEs, with controlled-group aggregation.",
+    "expression": {
+      "all": [
+        {
+          "switch": "has_employees",
+          "op": "is",
+          "value": true
+        },
+        {
+          "switch": "employee_count",
+          "op": ">=",
+          "value": 50
+        }
+      ]
+    },
+    "confidence": "medium",
+    "note": "Uses headcount as a proxy for \"50+ full-time equivalents including FTE aggregation\". ALTERNATIVE: FTE is a computed figure that is not headcount — a company with 80 part-timers may be under 50 FTE. This over-triggers.",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "Acrylonitrile exposure standard",
+    "agency": "OR-OSHA",
+    "prose": "Occupational exposure",
+    "expression": {
+      "switch": "exposure_acrylonitrile",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "ADA employment accommodation",
+    "agency": "EEOC",
+    "prose": "At least 15 employees for each working day in 20 weeks in current/preceding year.",
+    "expression": {
+      "all": [
+        {
+          "switch": "has_employees",
+          "op": "is",
+          "value": true
+        },
+        {
+          "switch": "employee_count",
+          "op": ">=",
+          "value": 15
+        }
+      ]
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "Adverse-reaction allegation records",
+    "agency": "EPA",
+    "prose": "Manufacturer/processor/distributor receives allegation of significant adverse health/environment reaction.",
+    "expression": {
+      "switch": "open_adverse_reaction_allegation",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Age Discrimination in Employment Act",
+    "agency": "EEOC",
+    "prose": "20+ employees for each working day in 20 weeks in current/preceding year.",
+    "expression": {
+      "all": [
+        {
+          "switch": "has_employees",
+          "op": "is",
+          "value": true
+        },
+        {
+          "switch": "employee_count",
+          "op": ">=",
+          "value": 20
+        }
+      ]
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "Annual Oregon generator report",
+    "agency": "OR-DEQ",
+    "prose": "Oregon SQG or LQG.",
+    "expression": {
+      "switch": "hazwaste_generator_category",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Asbestos exposure standard",
+    "agency": "OR-OSHA",
+    "prose": "Disturbs/is exposed to ACM in older building/equipment",
+    "expression": {
+      "switch": "exposure_asbestos",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "ATF explosives license/permit",
+    "agency": "ATF",
+    "prose": "Manufactures, imports, deals in, acquires, or uses regulated explosive material.",
+    "expression": {
+      "switch": "explosives_atf",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Authorized packaging and closure",
+    "agency": "PHMSA",
+    "prose": "Hazmat is offered.",
+    "expression": {
+      "switch": "ships_placardable_hazmat",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Benzene exposure standard",
+    "agency": "OR-OSHA",
+    "prose": "May reach 0.5 ppm action level or 1 ppm PEL, or emergency/dermal criteria",
+    "expression": {
+      "switch": "exposure_benzene",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Beryllium exposure standard",
+    "agency": "OR-OSHA",
+    "prose": "Beryllium action-level, dermal, symptom, or sensitization risk",
+    "expression": {
+      "switch": "exposure_beryllium",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Bloodborne Pathogens exposure-control plan",
+    "agency": "OR-OSHA",
+    "prose": "Reasonably anticipated exposure to blood/OPIM, including designated first-aid responders.",
+    "expression": {
+      "switch": "bloodborne_exposure",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Boiler and pressure-vessel operating certificate",
+    "agency": "OR-BCD",
+    "prose": "Owns/operates a covered boiler, pressure vessel, or pressure system.",
+    "expression": {
+      "switch": "boilers_pressure_vessels",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Boiler and pressure-vessel periodic inspection",
+    "agency": "OR-BCD",
+    "prose": "Owns/operates a covered boiler, pressure vessel, or pressure system.",
+    "expression": {
+      "switch": "boilers_pressure_vessels",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Business registration active with OR Secretary of State",
+    "agency": "OR-SOS",
+    "prose": "",
+    "expression": {
+      "jurisdiction": "state",
+      "op": "is",
+      "value": "Oregon"
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "Cadmium exposure standard",
+    "agency": "OR-OSHA",
+    "prose": "Cadmium exposure at action level or covered tasks",
+    "expression": {
+      "switch": "exposure_cadmium",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Cargo tank inspection/test",
+    "agency": "PHMSA",
+    "prose": "Owns/leases/uses DOT cargo tank.",
+    "expression": {
+      "switch": "cargo_tanks_or_rail",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Cargo-tank loading/unloading controls",
+    "agency": "PHMSA",
+    "prose": "Loads/unloads hazmat from motor vehicle/cargo tank.",
+    "expression": {
+      "switch": "cargo_tanks_or_rail",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "CERCLA reportable-quantity release notice",
+    "agency": "EPA",
+    "prose": "CERCLA hazardous substance released to environment at/above RQ in 24 hours without exemption.",
+    "expression": {
+      "inventory": "cercla"
+    },
+    "confidence": "medium",
+    "note": "Same event problem as above: holding the substance is not releasing it.",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "CFATS legal-status watch",
+    "agency": "CISA",
+    "prose": "Historically, Chemicals of Interest above screening thresholds triggered Top-Screen review.",
+    "expression": {
+      "switch": "psm_rmp_threshold",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Chemical Data Reporting",
+    "agency": "EPA",
+    "prose": "Site manufactures/imports reportable chemical at applicable threshold, subject to exemptions/lower thresholds.",
+    "expression": {
+      "all": [
+        {
+          "switch": "business_type",
+          "op": "in",
+          "value": [
+            "manufacturer",
+            "toll_processor"
+          ]
+        },
+        {
+          "switch": "imports_exports",
+          "op": "in",
+          "value": [
+            "imports",
+            "both"
+          ]
+        }
+      ]
+    },
+    "confidence": "low",
+    "note": "Manufactures OR imports above a CDR threshold. ALTERNATIVE: this is an AND of manufacture and import, which is wrong — it should be an OR, and the volume threshold has no home at all. The CDR threshold is per-substance and regulated_substances has no CDR column.",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "Chemical storage compatibility / segregation",
+    "agency": "LOCAL-FIRE",
+    "prose": "",
+    "expression": {
+      "switch": "hazardous_chemicals_present",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Clean Air Act Risk Management Program",
+    "agency": "EPA",
+    "prose": "Stationary process contains more than threshold quantity of a listed toxic/flammable substance.",
+    "expression": {
+      "inventory": "rmp"
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "Clean Air Act Title V permit",
+    "agency": "EPA",
+    "prose": "Major source, acid-rain source, covered incinerator, or other source required by CAA rules.",
+    "expression": {
+      "switch": "air_permit_required",
+      "op": "is",
+      "value": "title_v"
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "Cleaner Air Oregon toxics review",
+    "agency": "OR-DEQ",
+    "prose": "DEQ calls in an existing source or a new/modified source requires toxic-air risk assessment.",
+    "expression": {
+      "switch": "air_toxics_program_applicable",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "COBRA continuation coverage",
+    "agency": "USDOL",
+    "prose": "Group health plan and normally 20+ employees on >50% of typical business days in prior year.",
+    "expression": {
+      "all": [
+        {
+          "switch": "has_group_health_plan",
+          "op": "is",
+          "value": true
+        },
+        {
+          "switch": "employee_count",
+          "op": ">=",
+          "value": 20
+        }
+      ]
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "Commercial vehicle annual inspection",
+    "agency": "FMCSA",
+    "prose": "Operates CMV subject to Part 396.",
+    "expression": {
+      "switch": "owns_fleet",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Confined spaces — identification and signage",
+    "agency": "OR-OSHA",
+    "prose": "The workplace contains one or more permit-required confined spaces.",
+    "expression": {
+      "switch": "confined_spaces_present",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "Confined spaces — rescue capability",
+    "agency": "OR-OSHA",
+    "prose": "Employees enter a permit-required confined space.",
+    "expression": {
+      "switch": "confined_spaces_present",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "Confined spaces — written entry programme and permits",
+    "agency": "OR-OSHA",
+    "prose": "Employees enter a permit-required confined space.",
+    "expression": {
+      "switch": "confined_spaces_present",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "Consumer hazardous-chemical labeling",
+    "agency": "CPSC",
+    "prose": "Hazardous product is intended/packaged for household or consumer use under CPSC jurisdiction.",
+    "expression": {
+      "switch": "consumer_products_cpsc",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "DEA List I chemical registration",
+    "agency": "DEA",
+    "prose": "Manufactures, distributes, imports, or exports a List I chemical without exemption.",
+    "expression": {
+      "inventory": "dea_list_i"
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "Domestic violence/harassment/sexual assault/bias/stalking leave and safety accommodation",
+    "agency": "BOLI",
+    "prose": "Employer has 6+ employees and covered worker requests leave or safety accommodation.",
+    "expression": {
+      "all": [
+        {
+          "switch": "has_employees",
+          "op": "is",
+          "value": true
+        },
+        {
+          "switch": "employee_count",
+          "op": ">=",
+          "value": 6
+        }
+      ]
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "DOT cylinder requalification",
+    "agency": "PHMSA",
+    "prose": "Fills/offers/uses DOT specification or special-permit cylinder.",
+    "expression": {
+      "switch": "ships_placardable_hazmat",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Driver qualification file",
+    "agency": "FMCSA",
+    "prose": "Employs drivers subject to Part 391.",
+    "expression": {
+      "switch": "owns_fleet",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Driver vehicle inspection/defect correction",
+    "agency": "FMCSA",
+    "prose": "Operates covered CMVs.",
+    "expression": {
+      "switch": "owns_fleet",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Drug/alcohol testing and Clearinghouse",
+    "agency": "FMCSA",
+    "prose": "Employs CDL drivers operating CDL-required CMVs on public roads.",
+    "expression": {
+      "switch": "cdl_drivers",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "e-Manifest Third Rule implementation",
+    "agency": "EPA",
+    "prose": "Participates in hazardous-waste manifest system.",
+    "expression": {
+      "switch": "hazwaste_generator_category",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "EEO-1 Component 1",
+    "agency": "EEOC",
+    "prose": "100+ private employees including certain affiliates; some federal contractors with 50+.",
+    "expression": {
+      "any": [
+        {
+          "switch": "employee_count",
+          "op": ">=",
+          "value": 100
+        },
+        {
+          "all": [
+            {
+              "switch": "federal_contractor",
+              "op": "is",
+              "value": true
+            },
+            {
+              "switch": "employee_count",
+              "op": ">=",
+              "value": 50
+            }
+          ]
+        }
+      ]
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "Electronic submission of Form 300A — 20-249 employees, listed industry",
+    "agency": "OR-OSHA",
+    "prose": "20-249 employees at an establishment in an industry listed in Appendix A to Subpart E.",
+    "expression": {
+      "all": [
+        {
+          "switch": "site_employee_count",
+          "op": ">=",
+          "value": 20
+        },
+        {
+          "switch": "site_employee_count",
+          "op": "<",
+          "value": 250
+        }
+      ]
+    },
+    "confidence": "low",
+    "note": "Site headcount band only. ALTERNATIVE: the \"listed industry\" half is NAICS and absent, so this triggers for every 20-249 site regardless of industry. Over-triggers substantially.",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "Electronic submission of Form 300A — 250+ employees",
+    "agency": "OR-OSHA",
+    "prose": "250 or more employees at an establishment required to keep records.",
+    "expression": {
+      "switch": "site_employee_count",
+      "op": ">=",
+      "value": 250
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "Electronic submission of Forms 300 and 301 — 100+ employees, Appendix B industry",
+    "agency": "OR-OSHA",
+    "prose": "100 or more employees at an establishment in an industry listed in Appendix B to Subpart E.",
+    "expression": {
+      "switch": "site_employee_count",
+      "op": ">=",
+      "value": 100
+    },
+    "confidence": "low",
+    "note": "Same NAICS gap — Appendix B membership is not expressible.",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "Emergency Action Plan",
+    "agency": "OR-OSHA",
+    "prose": "Another standard requires an EAP or employer uses emergency organization; written if >10 employees.",
+    "expression": {
+      "any": [
+        {
+          "switch": "hazardous_chemicals_present",
+          "op": "is",
+          "value": true
+        },
+        {
+          "switch": "emergency_response_team",
+          "op": "not",
+          "value": "evacuate_only",
+          "as": "an emergency response posture beyond evacuation"
+        }
+      ]
+    },
+    "confidence": "medium",
+    "note": "The \">10 employees\" clause governs whether the plan must be WRITTEN, not whether it applies. ALTERNATIVE: include employee_count > 10, which would wrongly exempt a 5-person plant from having an EAP at all.",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "Emergency eyewash/shower suitability",
+    "agency": "OR-OSHA",
+    "prose": "Eyes/body may contact injurious corrosive material.",
+    "expression": {
+      "switch": "corrosive_materials_present",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Emergency lighting / exit sign testing",
+    "agency": "LOCAL-FIRE",
+    "prose": "",
+    "expression": {
+      "jurisdiction": "state",
+      "op": "is",
+      "value": "Oregon"
+    },
+    "confidence": "medium",
+    "note": "Universal for occupied buildings; the fire code scopes it by occupancy class, which is not a switch.",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "Emergency response information/phone",
+    "agency": "PHMSA",
+    "prose": "Shipment requires response information.",
+    "expression": {
+      "switch": "ships_placardable_hazmat",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Emergency-use respirator inspection",
+    "agency": "OR-OSHA",
+    "prose": "Maintains emergency-use or escape respirators.",
+    "expression": {
+      "switch": "emergency_respirators_present",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Employee alarm-system testing",
+    "agency": "OR-OSHA",
+    "prose": "Alarm system meets an OSHA emergency requirement.",
+    "expression": {
+      "switch": "alarm_system_present",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Employee handbook, current version controlled",
+    "agency": "(none)",
+    "prose": "",
+    "expression": null,
+    "confidence": "none",
+    "note": "NO EXPRESSION. Citation is \"Best practice (not statute)\" — nothing requires it, so there is no condition under which it applies. TODO 6.3b.",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "Employee medical/exposure record retention and access",
+    "agency": "OR-OSHA",
+    "prose": "Employer creates/maintains covered medical or exposure records.",
+    "expression": {
+      "switch": "creates_medical_exposure_records",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Employer payroll tax accounts and filings",
+    "agency": "IRS",
+    "prose": "Pays employees.",
+    "expression": {
+      "switch": "has_employees",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "EPA hazardous-waste identification number",
+    "agency": "EPA",
+    "prose": "Site conducts hazardous-waste activity requiring an EPA ID; SQGs/LQGs clearly require one.",
+    "expression": {
+      "switch": "hazwaste_generator_category",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "EPA pesticide product registration",
+    "agency": "EPA",
+    "prose": "Product is intended to prevent, destroy, repel, or mitigate a pest or makes pesticidal claims.",
+    "expression": {
+      "switch": "pesticide_products_fifra",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "EPCRA emergency-planning notification",
+    "agency": "EPA",
+    "prose": "Extremely hazardous substance is present at or above TPQ.",
+    "expression": {
+      "inventory": "ehs"
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "EPCRA emergency-release notification",
+    "agency": "EPA",
+    "prose": "EHS/CERCLA substance released at or above RQ without exclusion.",
+    "expression": {
+      "any": [
+        {
+          "inventory": "ehs"
+        },
+        {
+          "inventory": "cercla"
+        }
+      ]
+    },
+    "confidence": "medium",
+    "note": "A release of an EHS or a CERCLA substance at or above RQ. ALTERNATIVE: this is event-triggered — the release must have HAPPENED — and no switch records that. The expression says \"could owe this\", not \"owes this now\".",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "EPCRA Section 311 SDS/list submission",
+    "agency": "EPA",
+    "prose": "OSHA hazardous chemical ≥10,000 lb or EHS at lower of 500 lb or TPQ, subject to exemptions.",
+    "expression": {
+      "any": [
+        {
+          "inventory": "ehs"
+        },
+        {
+          "switch": "tier2_epcra_threshold",
+          "op": "is",
+          "value": true
+        }
+      ]
+    },
+    "confidence": "low",
+    "note": "Same gap as Tier II.",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "EPCRA Tier II annual inventory",
+    "agency": "EPA",
+    "prose": "Chemical exceeded Section 312 threshold at any time in prior year.",
+    "expression": {
+      "any": [
+        {
+          "inventory": "ehs"
+        },
+        {
+          "switch": "tier2_epcra_threshold",
+          "op": "is",
+          "value": true
+        }
+      ]
+    },
+    "confidence": "low",
+    "note": "The 10,000 lb OSHA-hazardous-chemical half has no inventory list behind it — regulated_substances carries EHS, TRI, PSM, RMP and CERCLA, not \"is an OSHA hazardous chemical\". So the boolean stand-in is still doing half the work. ALTERNATIVE: add an is_osha_hazardous flag to regulated_substances and drop the switch entirely.",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "Episodic generation",
+    "agency": "EPA",
+    "prose": "VSQG/SQG temporarily exceeds category and elects Subpart L.",
+    "expression": {
+      "switch": "hazwaste_generator_category",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "ERISA plan documents/disclosures/Form 5500",
+    "agency": "USDOL",
+    "prose": "Sponsors ERISA-covered retirement or welfare plan.",
+    "expression": {
+      "switch": "sponsors_erisa_plan",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Ethylene oxide exposure standard",
+    "agency": "OR-OSHA",
+    "prose": "EtO exposure from reaction, sterilization, sampling, cylinder, leak",
+    "expression": {
+      "switch": "exposure_ethylene_oxide",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Export classification, licensing, and restricted-party controls",
+    "agency": "BIS",
+    "prose": "Exports/reexports/transfers chemicals, equipment, software, technology, or services subject to EAR/OFAC.",
+    "expression": {
+      "switch": "imports_exports",
+      "op": "in",
+      "value": [
+        "exports",
+        "both"
+      ]
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "Family and Medical Leave Act",
+    "agency": "USDOL",
+    "prose": "Employer 50+ in 20 weeks; employee usually 12 months, 1,250 hours, and 50 within 75 miles.",
+    "expression": {
+      "all": [
+        {
+          "switch": "has_employees",
+          "op": "is",
+          "value": true
+        },
+        {
+          "switch": "employee_count",
+          "op": ">=",
+          "value": 50
+        }
+      ]
+    },
+    "confidence": "medium",
+    "note": "Employer threshold only. ALTERNATIVE: the prose also carries EMPLOYEE eligibility (12 months, 1,250 hours, 50 within 75 miles) — which is per-person and cannot be a company switch. Treating the row as employer-level means the obligation exists and eligibility is decided per request.",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "Fatality/catastrophe/hospitalization/amputation/eye-loss report",
+    "agency": "OR-OSHA",
+    "prose": "A work-related reportable event occurs under Oregon definitions.",
+    "expression": {
+      "switch": "has_employees",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "FDA food-facility registration",
+    "agency": "FDA",
+    "prose": "Facility manufactures/processes/packs/holds food, including covered food-grade additives/chemicals, without exemption.",
+    "expression": {
+      "switch": "food_contact_or_food_grade",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Federal greenhouse-gas report",
+    "agency": "EPA",
+    "prose": "Covered facility/supplier meets Part 98 trigger, commonly 25,000 metric tons CO2e for facilities.",
+    "expression": {
+      "switch": "ghg_emissions_tco2e",
+      "op": ">=",
+      "value": 25000
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "Final paycheck deadlines",
+    "agency": "BOLI",
+    "prose": "Employment ends.",
+    "expression": {
+      "switch": "has_employees",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Fire Prevention Plan",
+    "agency": "OR-OSHA",
+    "prose": "A standard requires it; written if >10 employees.",
+    "expression": {
+      "any": [
+        {
+          "switch": "hazardous_chemicals_present",
+          "op": "is",
+          "value": true
+        },
+        {
+          "switch": "flammable_liquid_quantity_band",
+          "op": "not",
+          "value": "below_maq",
+          "as": "flammable liquids at or above the fire-code maximum"
+        }
+      ]
+    },
+    "confidence": "medium",
+    "note": "Same written-vs-applies reading as the EAP.",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "Fire-code hazardous-material permits",
+    "agency": "LOCAL-FIRE",
+    "prose": "Hazardous-material permit or MAQ thresholds are exceeded.",
+    "expression": {
+      "switch": "flammable_liquid_quantity_band",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Fire-extinguisher employee education",
+    "agency": "OR-OSHA",
+    "prose": "Employees may use extinguishers instead of evacuation-only policy.",
+    "expression": {
+      "all": [
+        {
+          "switch": "portable_extinguishers_present",
+          "op": "is",
+          "value": true
+        },
+        {
+          "switch": "extinguisher_use_policy",
+          "op": "is",
+          "value": "employees_may_use",
+          "as": "employees may use extinguishers rather than evacuate"
+        }
+      ]
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "First aid / CPR designated responder certification",
+    "agency": "OR-OSHA",
+    "prose": "No clinic/hospital in near proximity to the site",
+    "expression": {
+      "switch": "near_medical_facility",
+      "op": "is",
+      "value": false
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "First aid, medical services, eyewash/shower",
+    "agency": "OR-OSHA",
+    "prose": "No near clinic/hospital, first-aid response needed, or corrosive exposure possible.",
+    "expression": {
+      "any": [
+        {
+          "switch": "near_medical_facility",
+          "op": "is",
+          "value": false
+        },
+        {
+          "switch": "corrosive_materials_present",
+          "op": "is",
+          "value": true
+        }
+      ]
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "Fixed fire-suppression system inspection",
+    "agency": "OR-OSHA",
+    "prose": "Uses sprinkler or fixed extinguishing system.",
+    "expression": {
+      "switch": "sprinkler_system_present",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Forklift operator training/evaluation",
+    "agency": "OR-OSHA",
+    "prose": "Employee operates powered industrial truck.",
+    "expression": {
+      "switch": "powered_industrial_trucks",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Forklift pre-use inspection",
+    "agency": "OR-OSHA",
+    "prose": "Facility operates powered industrial trucks.",
+    "expression": {
+      "switch": "powered_industrial_trucks",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Form I-9 employment verification",
+    "agency": "USCIS",
+    "prose": "Hires employee for U.S. work.",
+    "expression": {
+      "switch": "has_employees",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Formaldehyde exposure standard",
+    "agency": "OR-OSHA",
+    "prose": "Exposure to gas/solution/releasing material",
+    "expression": {
+      "switch": "exposure_formaldehyde",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "General and categorical pretreatment standards",
+    "agency": "EPA",
+    "prose": "Industrial wastewater goes to POTW; categorical rule applies if process fits category.",
+    "expression": {
+      "switch": "wastewater_discharge",
+      "op": "is",
+      "value": "to_potw"
+    },
+    "confidence": "medium",
+    "note": "ALTERNATIVE: the categorical half depends on whether the process fits a listed category, which is NAICS-adjacent and absent. Over-triggers for a POTW discharger in no category.",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "Hazardous-waste determination",
+    "agency": "EPA",
+    "prose": "Any discard, spent/off-spec material, residue, sludge, spill debris, lab waste, or container residue may be solid waste.",
+    "expression": {
+      "switch": "hazardous_chemicals_present",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Hazmat classification/proper shipping name",
+    "agency": "PHMSA",
+    "prose": "Material meets DOT hazard definition or is hazardous substance, marine pollutant, hot material, or waste.",
+    "expression": {
+      "switch": "ships_placardable_hazmat",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Hazmat employee training/testing",
+    "agency": "PHMSA",
+    "prose": "Job directly affects hazmat transportation safety.",
+    "expression": {
+      "switch": "ships_placardable_hazmat",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Hazmat endorsement/TSA assessment",
+    "agency": "FMCSA",
+    "prose": "Driver operates CMV requiring placards.",
+    "expression": {
+      "all": [
+        {
+          "switch": "cdl_drivers",
+          "op": "is",
+          "value": true
+        },
+        {
+          "switch": "ships_placardable_hazmat",
+          "op": "is",
+          "value": true
+        }
+      ]
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "Hazmat security plan",
+    "agency": "PHMSA",
+    "prose": "Offers/transports materials/quantities in §172.800(b).",
+    "expression": {
+      "switch": "ships_placardable_hazmat",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Hazmat shipping paper",
+    "agency": "PHMSA",
+    "prose": "Shipment not excepted.",
+    "expression": {
+      "switch": "ships_placardable_hazmat",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "HAZWOPER program/training/medical",
+    "agency": "OR-OSHA",
+    "prose": "Covered hazardous-waste site/TSDF work or emergency response beyond incidental releases.",
+    "expression": {
+      "switch": "emergency_response_team",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Hearing Conservation program",
+    "agency": "OR-OSHA",
+    "prose": "Exposure ≥85 dBA 8-hour TWA.",
+    "expression": {
+      "switch": "noise_above_action_level",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Heat illness prevention",
+    "agency": "OR-OSHA",
+    "prose": "Work area heat index reaches 80°F, subject to exceptions.",
+    "expression": {
+      "switch": "heat_exposure_area",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Hexavalent chromium exposure standard",
+    "agency": "OR-OSHA",
+    "prose": "Cr(VI) exposure from chromates, pigments, plating, welding, contamination",
+    "expression": {
+      "switch": "exposure_hexavalent_chromium",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Hours of service/ELD",
+    "agency": "FMCSA",
+    "prose": "Covered interstate CMV driver without exception.",
+    "expression": {
+      "switch": "owns_fleet",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Immediate hazmat incident notice",
+    "agency": "PHMSA",
+    "prose": "Incident meets serious immediate-notice criteria.",
+    "expression": {
+      "switch": "open_hazmat_incident",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Industrial stormwater no-exposure certification",
+    "agency": "EPA",
+    "prose": "Covered industrial site seeks exclusion because all activity/material is sheltered.",
+    "expression": {
+      "not": {
+        "switch": "industrial_stormwater",
+        "op": "is",
+        "value": true
+      }
+    },
+    "confidence": "medium",
+    "note": "The certification is the route OUT of the permit, so FALSE is the trigger. ALTERNATIVE: it is voluntary — a site may simply take the permit — so this is arguably an opportunity rather than an obligation.",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "Industrial wastewater discharge authorization",
+    "agency": "OR-DEQ",
+    "prose": "Process wastewater goes to surface water, land, groundwater, or POTW; local sewer permit may apply.",
+    "expression": {
+      "switch": "wastewater_discharge",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Inorganic arsenic exposure standard",
+    "agency": "OR-OSHA",
+    "prose": "May reach 5 µg/m³ action level or covered operation",
+    "expression": {
+      "switch": "exposure_arsenic",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "ISO 14001 certificate maintained",
+    "agency": "(none)",
+    "prose": "Holds or advertises ISO 14001",
+    "expression": {
+      "switch": "holds_iso_certification",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "ISO 9001 certificate maintained",
+    "agency": "(none)",
+    "prose": "Holds or advertises ISO 9001",
+    "expression": {
+      "switch": "holds_iso_certification",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Laboratory Chemical Hygiene Plan",
+    "agency": "OR-OSHA",
+    "prose": "Laboratory-scale hazardous chemical use under qualified supervision meets scope.",
+    "expression": {
+      "switch": "onsite_laboratory",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Lactation rest periods/private space",
+    "agency": "BOLI",
+    "prose": "Employee needs to express milk; ≤10 employees may assert undue hardship only with facts.",
+    "expression": {
+      "all": [
+        {
+          "switch": "has_employees",
+          "op": "is",
+          "value": true
+        }
+      ]
+    },
+    "confidence": "medium",
+    "note": "The prose says \"<=10 employees may assert undue hardship only with facts\" — a DEFENCE, not a threshold. So it applies to every employer and the size affects the defence. ALTERNATIVE: read 10 as a threshold and write employee_count > 10, which would wrongly exclude small employers from a duty they have.",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "Land Disposal Restrictions notice/certification",
+    "agency": "EPA",
+    "prose": "Restricted waste/residue goes for treatment, recycling, or land disposal.",
+    "expression": {
+      "switch": "hazwaste_generator_category",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Lead exposure standard",
+    "agency": "OR-OSHA",
+    "prose": "Inorganic lead may reach 30 µg/m³ TWA",
+    "expression": {
+      "switch": "exposure_lead",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Lockout/Tagout energy-control program",
+    "agency": "OR-OSHA",
+    "prose": "Servicing exposes worker to unexpected startup/energization/stored energy.",
+    "expression": {
+      "switch": "servicing_energised_equipment",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "LQG accumulation controls",
+    "agency": "EPA",
+    "prose": "Generates ≥1,000 kg nonacute/month, >1 kg acute, or acute-residue threshold.",
+    "expression": {
+      "switch": "hazwaste_generator_category",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "LQG biennial report",
+    "agency": "EPA",
+    "prose": "Site was LQG in any month; Oregon replaces with annual report.",
+    "expression": {
+      "switch": "hazwaste_generator_category",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "LQG contingency plan and quick-reference guide",
+    "agency": "EPA",
+    "prose": "Site is LQG.",
+    "expression": {
+      "switch": "hazwaste_generator_category",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "LQG personnel training",
+    "agency": "EPA",
+    "prose": "LQG employees perform waste/emergency duties.",
+    "expression": {
+      "switch": "hazwaste_generator_category",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Manifest and authorized transporter/destination",
+    "agency": "EPA",
+    "prose": "Generator ships hazardous waste off site without exception.",
+    "expression": {
+      "switch": "hazwaste_generator_category",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Manifest exception reporting",
+    "agency": "EPA",
+    "prose": "Signed receiving confirmation not received on time.",
+    "expression": {
+      "switch": "manifest_return_overdue",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Manufacturer/importer classification, SDS, shipped labels",
+    "agency": "OR-OSHA",
+    "prose": "Manufactures/imports/distributes hazardous chemicals subject to HCS.",
+    "expression": {
+      "all": [
+        {
+          "switch": "hazardous_chemicals_present",
+          "op": "is",
+          "value": true
+        },
+        {
+          "switch": "business_type",
+          "op": "in",
+          "value": [
+            "manufacturer",
+            "blender",
+            "repackager",
+            "distributor",
+            "toll_processor"
+          ]
+        }
+      ]
+    },
+    "confidence": "medium",
+    "note": "ALTERNATIVE: the business_type clause lists every value and is therefore a no-op.",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "Manufacturing daily overtime",
+    "agency": "BOLI",
+    "prose": "Nonexempt employee works in manufacturing establishment; generally overtime after 10 hours/day and 40/week.",
+    "expression": {
+      "switch": "nonexempt_employees",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Meal and rest periods",
+    "agency": "BOLI",
+    "prose": "Nonexempt shift meets duration schedule.",
+    "expression": {
+      "switch": "nonexempt_employees",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Methylene chloride exposure standard",
+    "agency": "OR-OSHA",
+    "prose": "Occupational exposure",
+    "expression": {
+      "switch": "exposure_methylene_chloride",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Methylene chloride risk-management rule",
+    "agency": "EPA",
+    "prose": "Manufactures, imports, processes, distributes, uses, or disposes of methylene chloride.",
+    "expression": {
+      "switch": "tsca_regulated_substances",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Minimum wage, overtime, and time records",
+    "agency": "USDOL",
+    "prose": "Employees covered by FLSA and not validly exempt.",
+    "expression": {
+      "switch": "nonexempt_employees",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Monthly generator-category determination",
+    "agency": "EPA",
+    "prose": "Facility generates hazardous waste.",
+    "expression": {
+      "switch": "hazardous_chemicals_present",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "NACD Responsible Distribution verification",
+    "agency": "(none)",
+    "prose": "NACD member",
+    "expression": {
+      "switch": "has_contract_flowdowns",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Noncompetition agreement restrictions",
+    "agency": "BOLI",
+    "prose": "Uses noncompetition agreement and statutory salary/exempt/status/interest/duration criteria may be met.",
+    "expression": {
+      "switch": "uses_noncompete_agreements",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "NSPS/NESHAP/MACT applicability screen",
+    "agency": "OR-DEQ",
+    "prose": "Equipment, source category, HAP, capacity, or construction date fits an applicable subpart.",
+    "expression": {
+      "switch": "air_permit_required",
+      "op": "not",
+      "value": "none"
+    },
+    "confidence": "low",
+    "note": "Gated on holding an air permit. ALTERNATIVE: NSPS and NESHAP applicability turns on source category, HAP, capacity and construction date — none of which is a switch, and an unpermitted source can still be subject. This under-triggers.",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "Oil Facility Response Plan determination",
+    "agency": "EPA",
+    "prose": "SPCC facility meets substantial-harm criteria or EPA requires plan.",
+    "expression": {
+      "all": [
+        {
+          "switch": "aboveground_storage_tanks",
+          "op": "is",
+          "value": true
+        },
+        {
+          "switch": "oil_storage_aboveground_gallons",
+          "op": ">=",
+          "value": 1320
+        }
+      ]
+    },
+    "confidence": "medium",
+    "note": "Gated on being an SPCC facility. ALTERNATIVE: the substantial-harm criteria are separate and larger (1 million gallons, proximity to water); this triggers the DETERMINATION, not the plan, which is arguably right but the row name says \"determination\".",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "Oregon Air Contaminant Discharge Permit",
+    "agency": "OR-DEQ",
+    "prose": "Source/activity is listed, exceeds threshold, is new/modified major source, or DEQ requires a permit.",
+    "expression": {
+      "switch": "air_permit_required",
+      "op": "in",
+      "value": [
+        "general_acdp",
+        "simple_acdp",
+        "standard_acdp",
+        "title_v"
+      ]
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "Oregon Community Right to Know inventory",
+    "agency": "OSFM",
+    "prose": "Hazardous substance reaches Oregon quantity; common thresholds 5 gal liquid, 10 lb solid, 20 ft³ gas, with special rules.",
+    "expression": {
+      "switch": "or_cr2k_threshold",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Oregon continuation coverage (Mini-COBRA)",
+    "agency": "(none)",
+    "prose": "Fewer than 20 employees + group health plan",
+    "expression": {
+      "all": [
+        {
+          "switch": "has_group_health_plan",
+          "op": "is",
+          "value": true
+        },
+        {
+          "switch": "employee_count",
+          "op": "<",
+          "value": 20
+        }
+      ]
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "Oregon disability accommodation",
+    "agency": "BOLI",
+    "prose": "Employer has 6+ employees and worker/applicant is protected.",
+    "expression": {
+      "all": [
+        {
+          "switch": "has_employees",
+          "op": "is",
+          "value": true
+        },
+        {
+          "switch": "employee_count",
+          "op": ">=",
+          "value": 6
+        }
+      ]
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "Oregon discrimination/harassment/retaliation",
+    "agency": "BOLI",
+    "prose": "General Oregon discrimination law generally reaches employers with one or more employees, subject to claim-specific rules.",
+    "expression": {
+      "switch": "has_employees",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Oregon equal pay",
+    "agency": "BOLI",
+    "prose": "Employees perform work of comparable character; differences need bona fide factors.",
+    "expression": {
+      "switch": "has_employees",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Oregon Family Leave Act",
+    "agency": "BOLI",
+    "prose": "Employer has 25+ Oregon employees; post-July 2024 reasons include pregnancy disability, specified sick-child leave, bereavement.",
+    "expression": {
+      "all": [
+        {
+          "switch": "has_employees",
+          "op": "is",
+          "value": true
+        },
+        {
+          "switch": "employee_count",
+          "op": ">=",
+          "value": 25
+        }
+      ]
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "Oregon greenhouse-gas report",
+    "agency": "OR-DEQ",
+    "prose": "Air-permitted source has ≥2,500 metric tons CO2e direct emissions or another covered category applies.",
+    "expression": {
+      "all": [
+        {
+          "switch": "air_permit_required",
+          "op": "not",
+          "value": "none"
+        },
+        {
+          "switch": "ghg_emissions_tco2e",
+          "op": ">=",
+          "value": 2500
+        }
+      ]
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "Oregon hazardous-waste site notification",
+    "agency": "OR-DEQ",
+    "prose": "Oregon site performs a regulated generator, transporter, recycler, treatment, storage, disposal, or episodic activity.",
+    "expression": {
+      "switch": "hazwaste_generator_category",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Oregon minimum wage by location",
+    "agency": "BOLI",
+    "prose": "Covered work in Portland metro, standard, or nonurban area.",
+    "expression": {
+      "switch": "has_employees",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Oregon new-hire reporting",
+    "agency": "OR-DOJ-CS",
+    "prose": "New hire or rehire in Oregon.",
+    "expression": {
+      "switch": "has_employees",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Oregon payroll withholding/unemployment accounts",
+    "agency": "(none)",
+    "prose": "Pays employees performing services localized to Oregon.",
+    "expression": {
+      "switch": "has_employees",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Oregon pregnancy accommodations",
+    "agency": "BOLI",
+    "prose": "Employer has 6+ employees and accommodation is needed for pregnancy/childbirth/related condition.",
+    "expression": {
+      "all": [
+        {
+          "switch": "has_employees",
+          "op": "is",
+          "value": true
+        },
+        {
+          "switch": "employee_count",
+          "op": ">=",
+          "value": 6
+        }
+      ]
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "Oregon sick time",
+    "agency": "BOLI",
+    "prose": "All employees protected; paid at 10+ Oregon employees or 6+ with Portland location.",
+    "expression": {
+      "all": [
+        {
+          "switch": "has_employees",
+          "op": "is",
+          "value": true
+        },
+        {
+          "any": [
+            {
+              "switch": "employee_count",
+              "op": ">=",
+              "value": 10
+            },
+            {
+              "all": [
+                {
+                  "switch": "site_employee_count",
+                  "op": ">=",
+                  "value": 6
+                },
+                {
+                  "jurisdiction": "city",
+                  "op": "is",
+                  "value": "Portland"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "confidence": "medium",
+    "note": "Read \"paid at 10+ or 6+ with Portland location\" as a condition on the PAID entitlement. ALTERNATIVE: the rule protects ALL employees regardless of count and only the PAID half is conditional — in which case applies is universal-for-employers and the count belongs in the obligation, not the expression.",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "OregonSaves retirement program",
+    "agency": "OREGONSAVES",
+    "prose": "Employer has Oregon employees and no qualified retirement-plan exemption.",
+    "expression": {
+      "all": [
+        {
+          "switch": "has_employees",
+          "op": "is",
+          "value": true
+        },
+        {
+          "switch": "sponsors_erisa_plan",
+          "op": "is",
+          "value": false
+        }
+      ]
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "OSHA injury and illness log",
+    "agency": "OR-OSHA",
+    "prose": ">10 employees in prior year and not partially exempt; chemical sectors generally not exempt.",
+    "expression": {
+      "all": [
+        {
+          "switch": "has_employees",
+          "op": "is",
+          "value": true
+        },
+        {
+          "switch": "employee_count",
+          "op": ">",
+          "value": 10
+        }
+      ]
+    },
+    "confidence": "medium",
+    "note": "ALTERNATIVE: the partial-exemption list is NAICS-based; the prose says chemical sectors are generally not exempt, so for this vertical the omission is safe but it is still an omission.",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "Overhead/gantry crane inspections",
+    "agency": "OR-OSHA",
+    "prose": "Operates overhead/gantry crane.",
+    "expression": {
+      "switch": "cranes_present",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Package marking and labeling",
+    "agency": "PHMSA",
+    "prose": "Package contains regulated hazmat without exception.",
+    "expression": {
+      "switch": "ships_placardable_hazmat",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Paid Leave Oregon",
+    "agency": "PLO",
+    "prose": "Most employees covered; employers with 25+ employees pay employer share; smaller generally remit employee share.",
+    "expression": {
+      "one": 0,
+      "all": [
+        {
+          "switch": "has_employees",
+          "op": "is",
+          "value": true
+        }
+      ]
+    },
+    "confidence": "medium",
+    "note": "Applies to essentially all employers; 25+ only changes whether the EMPLOYER share is owed. ALTERNATIVE: gate on employee_count >= 25, which would wrongly exempt small employers from remitting the employee share.",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "Pay statement expanded disclosures (2026)",
+    "agency": "(none)",
+    "prose": "",
+    "expression": {
+      "switch": "has_employees",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "PCB use/storage/cleanup/disposal",
+    "agency": "EPA",
+    "prose": "Owns PCB equipment, stores PCB waste, has contaminated material/surfaces, or unknown-status legacy equipment.",
+    "expression": {
+      "switch": "pcb_equipment_present",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Perchloroethylene risk-management rule",
+    "agency": "EPA",
+    "prose": "Manufactures, imports, processes, distributes, uses, or disposes of PCE.",
+    "expression": {
+      "switch": "tsca_regulated_substances",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Personal fall-arrest equipment inspection",
+    "agency": "OR-OSHA",
+    "prose": "Uses personal fall-protection systems.",
+    "expression": {
+      "switch": "fall_protection_used",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Personnel/time/pay record access",
+    "agency": "BOLI",
+    "prose": "Current/former employee requests covered records.",
+    "expression": {
+      "switch": "has_employees",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Pesticide-producing establishment registration",
+    "agency": "EPA",
+    "prose": "Produces, formulates, repackages, relabels, or otherwise produces a pesticide/device/active ingredient.",
+    "expression": {
+      "switch": "pesticide_products_fifra",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "PFAS historical manufacture/import reporting",
+    "agency": "EPA",
+    "prose": "Manufactured/imported PFAS or PFAS-containing articles in 2011-2022 under final scope.",
+    "expression": {
+      "switch": "pfas_2011_2022",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "PHMSA annual hazmat registration",
+    "agency": "PHMSA",
+    "prose": "Offers/transports quantities in §107.601, including placardable shipments and specified bulk, explosive, PIH, or radioactive quantities.",
+    "expression": {
+      "switch": "ships_placardable_hazmat",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Pipe labeling for hazardous substance piping",
+    "agency": "OR-OSHA",
+    "prose": "Piping systems carrying hazardous substances on site",
+    "expression": {
+      "switch": "hazardous_piping_present",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Placarding",
+    "agency": "PHMSA",
+    "prose": "Table 1/2 quantities meet placard rules.",
+    "expression": {
+      "switch": "ships_placardable_hazmat",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Portable fire-extinguisher checks",
+    "agency": "OR-OSHA",
+    "prose": "Portable extinguishers are provided.",
+    "expression": {
+      "switch": "portable_extinguishers_present",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Portable ladder inspection",
+    "agency": "OR-OSHA",
+    "prose": "Employees use portable ladders.",
+    "expression": {
+      "switch": "portable_ladders_used",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "PPE hazard assessment and certification",
+    "agency": "OR-OSHA",
+    "prose": "Tasks expose workers to eye/face/head/foot/hand/body or other hazards.",
+    "expression": {
+      "switch": "has_employees",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Pregnant Workers Fairness Act",
+    "agency": "EEOC",
+    "prose": "15+ employees and known pregnancy/childbirth-related limitation.",
+    "expression": {
+      "all": [
+        {
+          "switch": "has_employees",
+          "op": "is",
+          "value": true
+        },
+        {
+          "switch": "employee_count",
+          "op": ">=",
+          "value": 15
+        }
+      ]
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "PSM — compliance audit",
+    "agency": "OR-OSHA",
+    "prose": "Process meets Appendix A threshold or has 10,000 lb or more of a covered flammable gas or liquid.",
+    "expression": {
+      "inventory": "psm"
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "PSM — management of change",
+    "agency": "OR-OSHA",
+    "prose": "Process meets Appendix A threshold or has 10,000 lb or more of a covered flammable gas or liquid.",
+    "expression": {
+      "inventory": "psm"
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "PSM — mechanical integrity programme",
+    "agency": "OR-OSHA",
+    "prose": "Process meets Appendix A threshold or has 10,000 lb or more of a covered flammable gas or liquid.",
+    "expression": {
+      "inventory": "psm"
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "PSM — process hazard analysis",
+    "agency": "OR-OSHA",
+    "prose": "Process meets Appendix A threshold or has 10,000 lb or more of a covered flammable gas or liquid.",
+    "expression": {
+      "inventory": "psm"
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "PSM — process safety information compiled and current",
+    "agency": "OR-OSHA",
+    "prose": "Process meets Appendix A threshold or has 10,000 lb or more of a covered flammable gas or liquid.",
+    "expression": {
+      "inventory": "psm"
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "Refrigerant management and leak repair",
+    "agency": "EPA",
+    "prose": "Owns/operates/services/disposes appliances with regulated refrigerant; special leak duties for ≥50 lb charge.",
+    "expression": {
+      "switch": "refrigeration_over_50lb",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Required harassment/discrimination policy",
+    "agency": "BOLI",
+    "prose": "Has Oregon employees.",
+    "expression": {
+      "switch": "has_employees",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Required worksite posters",
+    "agency": "BOLI",
+    "prose": "Has Oregon worksite/remote workers requiring access.",
+    "expression": {
+      "switch": "has_employees",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Respirable crystalline silica — employee training",
+    "agency": "OR-OSHA",
+    "prose": "Powders/fillers/maintenance/cutting/cleanup may reach 25 µg/m³ action level",
+    "expression": {
+      "switch": "exposure_silica",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Respirable crystalline silica — exposure assessment",
+    "agency": "OR-OSHA",
+    "prose": "Powders/fillers/maintenance/cutting/cleanup may reach 25 µg/m³ action level",
+    "expression": {
+      "switch": "exposure_silica",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Respirable crystalline silica — medical surveillance",
+    "agency": "OR-OSHA",
+    "prose": "Powders/fillers/maintenance/cutting/cleanup may reach 25 µg/m³ action level",
+    "expression": {
+      "switch": "exposure_silica",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Respirable crystalline silica — written exposure control plan",
+    "agency": "OR-OSHA",
+    "prose": "Powders/fillers/maintenance/cutting/cleanup may reach 25 µg/m³ action level",
+    "expression": {
+      "switch": "exposure_silica",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Respiratory Protection program",
+    "agency": "OR-OSHA",
+    "prose": "Respirator is required or voluntary use exceeds filtering-facepiece-only exception.",
+    "expression": {
+      "switch": "respirator_use",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "RMP 2024 amendments (SCCAP) — new elements",
+    "agency": "EPA",
+    "prose": "RMP-covered facilities",
+    "expression": {
+      "switch": "psm_rmp_threshold",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Safety committee or safety meetings",
+    "agency": "OR-OSHA",
+    "prose": "Every employer except sole owner who is only employee must choose compliant option.",
+    "expression": {
+      "switch": "has_employees",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Satellite accumulation controls",
+    "agency": "EPA",
+    "prose": "Waste accumulates at/near generation under operator control before central transfer.",
+    "expression": {
+      "switch": "hazwaste_generator_category",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "SDS on file, current, 16-section GHS format (user/employer side)",
+    "agency": "OR-OSHA",
+    "prose": "",
+    "expression": {
+      "switch": "hazardous_chemicals_present",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Shipping-paper retention",
+    "agency": "PHMSA",
+    "prose": "Offers/transports hazmat.",
+    "expression": {
+      "switch": "ships_placardable_hazmat",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Significant New Use Rule screening and SNUN",
+    "agency": "EPA",
+    "prose": "Chemical is subject to SNUR and intended manufacture/import/process/use/PPE/release/disposal is a significant new use.",
+    "expression": {
+      "switch": "tsca_regulated_substances",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Slings inspection",
+    "agency": "OR-OSHA",
+    "prose": "Slings used.",
+    "expression": {
+      "switch": "slings_used",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "SPCC Plan",
+    "agency": "EPA",
+    "prose": "Could discharge oil to waters and has >1,320 gal aboveground capacity in ≥55-gal containers or >42,000 gal buried, absent exemption.",
+    "expression": {
+      "all": [
+        {
+          "switch": "aboveground_storage_tanks",
+          "op": "is",
+          "value": true
+        },
+        {
+          "switch": "oil_storage_aboveground_gallons",
+          "op": ">=",
+          "value": 1320
+        }
+      ]
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "SQG accumulation controls",
+    "agency": "EPA",
+    "prose": "Generates 100-1,000 kg/month nonacute waste and remains within SQG limits.",
+    "expression": {
+      "switch": "hazwaste_generator_category",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "SQG emergency preparedness",
+    "agency": "EPA",
+    "prose": "Site is SQG.",
+    "expression": {
+      "switch": "hazwaste_generator_category",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "SQG four-year re-notification",
+    "agency": "EPA",
+    "prose": "Site is federally regulated SQG; authorized-state equivalent may satisfy.",
+    "expression": {
+      "switch": "hazwaste_generator_category",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Substantial-risk information submission",
+    "agency": "EPA",
+    "prose": "Manufacturer/processor/distributor obtains information reasonably supporting substantial risk and EPA does not already have it.",
+    "expression": {
+      "switch": "open_substantial_risk_information",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Title V monitoring and compliance certification",
+    "agency": "EPA",
+    "prose": "Facility has Title V permit.",
+    "expression": {
+      "switch": "air_permit_required",
+      "op": "is",
+      "value": "title_v"
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "Title VII nondiscrimination/harassment/religious accommodation",
+    "agency": "EEOC",
+    "prose": "At least 15 employees for each working day in 20 weeks in current/preceding year.",
+    "expression": {
+      "all": [
+        {
+          "switch": "has_employees",
+          "op": "is",
+          "value": true
+        },
+        {
+          "switch": "employee_count",
+          "op": ">=",
+          "value": 15
+        }
+      ]
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "Toxics Use and Hazardous Waste Reduction plan/EMS",
+    "agency": "OR-DEQ",
+    "prose": "Facility is TRI Form A/R reporter, LQG, or SQG.",
+    "expression": {
+      "any": [
+        {
+          "switch": "hazwaste_generator_category",
+          "op": "in",
+          "value": [
+            "sqg",
+            "lqg"
+          ]
+        },
+        {
+          "inventory": "tri"
+        }
+      ]
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "TRI supplier notification",
+    "agency": "EPA",
+    "prose": "Supplier ships mixture/trade-name product containing listed toxic chemical to a covered customer and no exemption applies.",
+    "expression": {
+      "all": [
+        {
+          "inventory": "tri"
+        },
+        {
+          "switch": "business_type",
+          "op": "in",
+          "value": [
+            "manufacturer",
+            "blender",
+            "repackager",
+            "distributor",
+            "toll_processor"
+          ]
+        }
+      ]
+    },
+    "confidence": "medium",
+    "note": "Ships a mixture containing a listed chemical to a covered customer. ALTERNATIVE: the business_type clause is every allowed value, so it is a no-op that reads as a constraint — arguably it should be dropped.",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "TRI toxic chemical report",
+    "agency": "EPA",
+    "prose": "Covered NAICS, ≥10 FTEs, and activity threshold met; generally 25,000 lb manufactured/processed or 10,000 lb otherwise used, with lower PBT/PFAS thresholds.",
+    "expression": {
+      "all": [
+        {
+          "inventory": "tri"
+        },
+        {
+          "switch": "employee_count",
+          "op": ">=",
+          "value": 10
+        }
+      ]
+    },
+    "confidence": "medium",
+    "note": "Drops the \"covered NAICS\" half, which DECISIONS §36.2 decided is not a switch and reads from companies.industry. ALTERNATIVE: the expression is incomplete until the evaluator can reach the industry, so this over-triggers for an uncovered NAICS.",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "Trichloroethylene risk-management rule",
+    "agency": "EPA",
+    "prose": "Manufactures, imports, processes, distributes, uses, or disposes of TCE.",
+    "expression": {
+      "switch": "tsca_regulated_substances",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "TSCA import certification",
+    "agency": "EPA",
+    "prose": "Chemical, mixture, or covered article is imported and requires positive/negative certification.",
+    "expression": {
+      "switch": "imports_exports",
+      "op": "in",
+      "value": [
+        "imports",
+        "both"
+      ]
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "TSCA Inventory and premanufacture notice",
+    "agency": "EPA",
+    "prose": "Chemical is not on active TSCA Inventory and no exemption applies.",
+    "expression": {
+      "all": [
+        {
+          "switch": "tsca_regulated_substances",
+          "op": "is",
+          "value": true
+        },
+        {
+          "switch": "business_type",
+          "op": "in",
+          "value": [
+            "manufacturer",
+            "toll_processor"
+          ]
+        }
+      ]
+    },
+    "confidence": "medium",
+    "note": "ALTERNATIVE: the trigger is a chemical NOT on the active Inventory, which is the opposite of tsca_regulated_substances (substances under a risk-management rule ARE on it). This may be backwards.",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "TSCA Section 12(b) export notification",
+    "agency": "EPA",
+    "prose": "Exports a chemical subject to a TSCA action triggering notice.",
+    "expression": {
+      "switch": "imports_exports",
+      "op": "in",
+      "value": [
+        "exports",
+        "both"
+      ]
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "Underground storage tank registration/permit",
+    "agency": "OR-DEQ",
+    "prose": "Owns/operates a regulated UST containing petroleum or another regulated substance.",
+    "expression": {
+      "switch": "underground_storage_tanks",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Universal-waste management",
+    "agency": "EPA",
+    "prose": "Manages batteries, lamps, mercury equipment, pesticides, aerosol cans, or state-added universal waste under Part 273.",
+    "expression": {
+      "switch": "universal_waste_present",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "USDOT number and motor-carrier registration",
+    "agency": "FMCSA",
+    "prose": "Operates a covered commercial motor vehicle in interstate commerce or another federally covered operation.",
+    "expression": {
+      "switch": "owns_fleet",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Used-oil management",
+    "agency": "EPA",
+    "prose": "Generates, stores, processes, burns, or markets used oil.",
+    "expression": {
+      "switch": "used_oil_present",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "USERRA military-service rights",
+    "agency": "USDOL",
+    "prose": "Applicant/employee has past, current, or future uniformed service.",
+    "expression": {
+      "switch": "has_employees",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "UST detection and operability tests",
+    "agency": "OR-DEQ",
+    "prose": "Regulated UST operates.",
+    "expression": {
+      "switch": "underground_storage_tanks",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Vinyl chloride exposure standard",
+    "agency": "OR-OSHA",
+    "prose": "Manufacture/reaction/repackaging or exposure",
+    "expression": {
+      "switch": "exposure_vinyl_chloride",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "VSQG conditions",
+    "agency": "EPA",
+    "prose": "No more than 100 kg nonacute/month, 1 kg acute/month, and applicable accumulation limits.",
+    "expression": {
+      "switch": "hazwaste_generator_category",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "WARN Act notice",
+    "agency": "USDOL",
+    "prose": "100+ full-time, or 100+ employees working ≥4,000 hours/week excluding overtime, and covered loss at single site.",
+    "expression": {
+      "all": [
+        {
+          "switch": "mass_layoff_or_closure_planned",
+          "op": "is",
+          "value": true
+        },
+        {
+          "switch": "employee_count",
+          "op": ">=",
+          "value": 100
+        }
+      ]
+    },
+    "confidence": "medium",
+    "note": "Employer threshold 100. ALTERNATIVE: the rule also reaches employers with 100+ working >=4,000 hours/week excluding overtime, which is an hours figure no switch holds; and the loss must be at a SINGLE SITE, which argues for site_employee_count. Dropped the hours branch rather than invent it.",
+    "kind": "judgement"
+  },
+  {
+    "requirement": "Weekly central accumulation inspection",
+    "agency": "EPA",
+    "prose": "SQG/LQG accumulates hazardous waste in containers centrally.",
+    "expression": {
+      "switch": "hazwaste_generator_category",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Wildfire smoke program",
+    "agency": "OR-OSHA",
+    "prose": "Exposure may reach PM2.5 35.5 µg/m³, subject to exceptions.",
+    "expression": {
+      "switch": "wildfire_smoke_exposure",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Workers' compensation coverage/claim processing",
+    "agency": "OR-WCD",
+    "prose": "Employs workers not exempt.",
+    "expression": {
+      "switch": "has_employees",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Workplace Hazard Communication program",
+    "agency": "OR-OSHA",
+    "prose": "Employees are exposed/potentially exposed to hazardous chemicals in normal use or foreseeable emergency.",
+    "expression": {
+      "switch": "hazardous_chemicals_present",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  },
+  {
+    "requirement": "Written hazmat incident report",
+    "agency": "PHMSA",
+    "prose": "Transportation/loading/unloading release/incident meets criteria.",
+    "expression": {
+      "switch": "open_hazmat_incident",
+      "op": "is",
+      "value": true
+    },
+    "confidence": "high",
+    "note": "",
+    "kind": "mechanical"
+  }
+]

@@ -1,6 +1,11 @@
 # Decision Record
-**Version:** 22 · **Updated:** 12 September 2026
-**Supersedes:** version 21 (12 Sep). Adds §41 (the gate established facts the generating call
+**Version:** 23 · **Updated:** 12 September 2026
+**Supersedes:** version 22 (12 Sep). Adds §43 (`applies_expression` is nested JSON and the
+renderer ships with it — store the structure, review the sentence; plus the three faults
+building the renderer found in its first twenty rows) and §44 (a threshold in an expression
+must appear in the rule's own text in that unit, or the expression asserts a number nobody
+wrote down — which caught a figure imported from a neighbouring rule on its first run).
+Version 22 added §41 (the gate established facts the generating call
 never received — `g.resolved` went into the HTTP response and nowhere else, so one model
 produced an OHIO minimum-wage branch for an Oregon site the gate already knew; fixed, and
 fifteen blocking findings on that case became three) and §42 (Sonnet against Opus on
@@ -2444,3 +2449,94 @@ build them as two stages rather than one, recorded before either is written.**
 **Reversal condition for the default:** revisit when Stage 4 and Stage 6 are separate, or when
 the latency gap narrows. Not before — the measurement holds either way and the arithmetic is
 the same.
+
+---
+
+## 43. `applies_expression` is nested JSON, and the renderer ships with it — 12 September 2026
+
+**Decision: the format is nested JSON in `requirement_templates.applies_expression`; the
+review artifact is one line of English produced by `render()` in `lib/appliesExpression.ts`.
+Both are built in 6.3, not one then the other.**
+
+**Why not a small DSL, which reads better.** A DSL needs a parser, a grammar, error messages
+and a test suite — for 194 expressions that never exceed two levels of nesting. A malformed
+DSL string is detectable only at evaluation time; malformed JSON fails on insert. And
+`CLAUDE.md` §3.2 requires resolution to be deterministic, so a hand-written parser is the
+most likely place for that to quietly stop being true. Postgres can also query inside jsonb —
+*"which requirements reference `exposure_lead`"* is a containment query rather than a string
+search, which is exactly what the determination gate's eventual swap needs.
+
+**So: store the structure, review the sentence.** The owner is the verification step, and a
+format that has to be parsed by a human before it can be checked makes that step theatre.
+Same arrangement that already worked twice — the agency mapping reviewed as a table and
+stored as JSON, the switch seed reviewed as a per-domain listing and stored as JSON.
+
+### 43.1 Three-valued evaluation is the part that is not about format
+
+`evaluate()` returns `true | false | unknown`. **An unset switch produces `unknown`, never
+`false`** — `CLAUDE.md` §3.2, absence of evidence never produces a clear.
+
+The truth table is deliberate and is the most dangerous thing in the file to get wrong:
+**`unknown AND false` is `false`** (one branch already fails, so the conjunction cannot
+succeed) but **`unknown AND true` is `unknown`** (we genuinely cannot say). Same shape for
+OR, inverted. `substance_inventory()` returns SQL `NULL` for a site with no inventory for the
+identical reason: a site that has not been asked is not a site determined to be below the
+threshold.
+
+### 43.2 What building the renderer found, in its first twenty rows
+
+**Three faults, none of which a review of the JSON would have surfaced:**
+
+1. **An expression referenced `worksite_city`, a switch that does not exist.** The Oregon
+   sick-time rule turns on *"6+ with a Portland location"*, and the draft invented a switch to
+   say so — after §38.3 had deliberately dropped `entity_county` so that jurisdiction would
+   not become a fifth free-text place to disagree with itself. Caught by `switchesIn()`
+   reporting a reference the seeded vocabulary did not contain. **Fixed by adding a
+   `jurisdiction` node type**: site state, county and city are read from `entities`, not from
+   a switch, and the format now has somewhere to say that.
+2. **Enum clauses rendered worse than the raw identifier** — *"flammable liquids at or above
+   the fire-code maximum is at_or_above_maq"*, the gloss and the enum value both. An `as`
+   gloss now replaces the whole clause rather than renaming its subject.
+3. **An expression had been written for a row that no longer exists** — `Process Safety
+   Management`, retired by migration 013's split into five. Expressions must be written after
+   splits land, not before.
+
+**This is the argument for building the renderer before the 194 rather than after**, and it
+is an argument from evidence rather than from taste: the JSON for all three faults was
+well-formed, correctly typed, and wrong.
+
+---
+
+## 44. A threshold in an expression must appear in the rule's own text, in that unit
+
+**Decision, 12 September 2026: every number in an `applies_expression` must be findable in
+that requirement's own `trigger_condition` or `citation`. If it is not, the expression is
+asserting a number nobody wrote down.**
+
+**The classic way to get this wrong is a unit conversion.** A threshold written in pounds,
+restated in gallons, requires assuming a density — and **density is a property of one product,
+not of the rule.** 260 gallons "is" 2,200 lb only for a specific liquid; for another it is not,
+and the expression then triggers at the wrong quantity for every company holding anything else.
+The same error one level up is what made `or_cr2k_threshold` a stand-in rather than a fact:
+Oregon's rule is *5 gallons liquid, 10 pounds solid, 20 cubic feet gas*, which is three
+dimensions and cannot be one number. Migration 013 stores `unit` beside `max_quantity` and
+`substance_inventory()` compares only `lb` rows for precisely this reason.
+
+**A second way, less obvious and caught on the first run: importing a threshold from a
+neighbouring rule.** `thresholdsIn()` flagged **1,320** in `Oil Facility Response Plan
+determination` — a real figure, from 40 CFR 112.1, belonging to the **SPCC Plan** row and not
+to this one, whose own trigger reads *"SPCC facility meets substantial-harm criteria or EPA
+requires plan"*. The number is correct about the world and wrong about the rule, which is the
+hardest kind of wrong to see by reading.
+
+**It also flagged 250** in the 20–249 employee band, where the rule text says `20-249` and the
+expression said `< 250`. **That one is arguably fine and is still worth the flag** — writing
+`<= 249` uses the rule's own number and costs nothing.
+
+**Enforced by `thresholdsIn()`** in `lib/appliesExpression.ts`, which returns every numeric
+literal an expression asserts, so the comparison can run in `npm run check` rather than
+depending on a reviewer noticing.
+
+**Reversal condition:** none. If a rule genuinely requires a derived number, the derivation
+belongs in a named function with its assumptions stated — not inline in an expression where it
+looks like a quotation.

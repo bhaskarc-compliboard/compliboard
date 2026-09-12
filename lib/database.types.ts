@@ -402,6 +402,85 @@ export type Database = {
         }
         Relationships: []
       }
+      company_chemicals: {
+        Row: {
+          basis: string | null
+          cas_number: string | null
+          company_id: string
+          confidence: Database["public"]["Enums"]["switch_confidence"] | null
+          created_at: string
+          determined_at: string | null
+          entity_id: string
+          expires_at: string | null
+          id: string
+          max_quantity: number | null
+          physical_state: Database["public"]["Enums"]["chemical_state"] | null
+          source: Database["public"]["Enums"]["switch_value_source"] | null
+          substance_name: string
+          unit: Database["public"]["Enums"]["chemical_unit"] | null
+          updated_at: string
+          user_locked: boolean
+        }
+        Insert: {
+          basis?: string | null
+          cas_number?: string | null
+          company_id: string
+          confidence?: Database["public"]["Enums"]["switch_confidence"] | null
+          created_at?: string
+          determined_at?: string | null
+          entity_id: string
+          expires_at?: string | null
+          id?: string
+          max_quantity?: number | null
+          physical_state?: Database["public"]["Enums"]["chemical_state"] | null
+          source?: Database["public"]["Enums"]["switch_value_source"] | null
+          substance_name: string
+          unit?: Database["public"]["Enums"]["chemical_unit"] | null
+          updated_at?: string
+          user_locked?: boolean
+        }
+        Update: {
+          basis?: string | null
+          cas_number?: string | null
+          company_id?: string
+          confidence?: Database["public"]["Enums"]["switch_confidence"] | null
+          created_at?: string
+          determined_at?: string | null
+          entity_id?: string
+          expires_at?: string | null
+          id?: string
+          max_quantity?: number | null
+          physical_state?: Database["public"]["Enums"]["chemical_state"] | null
+          source?: Database["public"]["Enums"]["switch_value_source"] | null
+          substance_name?: string
+          unit?: Database["public"]["Enums"]["chemical_unit"] | null
+          updated_at?: string
+          user_locked?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_chemicals_cas_number_fkey"
+            columns: ["cas_number"]
+            isOneToOne: false
+            referencedRelation: "regulated_substances"
+            referencedColumns: ["cas_number"]
+          },
+          {
+            foreignKeyName: "company_chemicals_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_chemicals_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       company_folders: {
         Row: {
           company_id: string | null
@@ -1286,6 +1365,72 @@ export type Database = {
           },
         ]
       }
+      regulated_substances: {
+        Row: {
+          cas_number: string
+          cercla_rq_lb: number | null
+          created_at: string
+          ehs_tpq_lb: number | null
+          is_dea_list_i: boolean
+          is_ehs: boolean
+          is_psm_listed: boolean
+          is_rmp_listed: boolean
+          is_tri_listed: boolean
+          name: string
+          psm_threshold_lb: number | null
+          rmp_threshold_lb: number | null
+          source_checked_at: string | null
+          source_list: string | null
+          source_url: string | null
+          synonyms: string[]
+          tri_manufacture_lb: number | null
+          tri_otherwise_used_lb: number | null
+          updated_at: string
+        }
+        Insert: {
+          cas_number: string
+          cercla_rq_lb?: number | null
+          created_at?: string
+          ehs_tpq_lb?: number | null
+          is_dea_list_i?: boolean
+          is_ehs?: boolean
+          is_psm_listed?: boolean
+          is_rmp_listed?: boolean
+          is_tri_listed?: boolean
+          name: string
+          psm_threshold_lb?: number | null
+          rmp_threshold_lb?: number | null
+          source_checked_at?: string | null
+          source_list?: string | null
+          source_url?: string | null
+          synonyms?: string[]
+          tri_manufacture_lb?: number | null
+          tri_otherwise_used_lb?: number | null
+          updated_at?: string
+        }
+        Update: {
+          cas_number?: string
+          cercla_rq_lb?: number | null
+          created_at?: string
+          ehs_tpq_lb?: number | null
+          is_dea_list_i?: boolean
+          is_ehs?: boolean
+          is_psm_listed?: boolean
+          is_rmp_listed?: boolean
+          is_tri_listed?: boolean
+          name?: string
+          psm_threshold_lb?: number | null
+          rmp_threshold_lb?: number | null
+          source_checked_at?: string | null
+          source_list?: string | null
+          source_url?: string | null
+          synonyms?: string[]
+          tri_manufacture_lb?: number | null
+          tri_otherwise_used_lb?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       requirement_templates: {
         Row: {
           agency_id: string | null
@@ -1551,10 +1696,16 @@ export type Database = {
     Functions: {
       array_is_ascending: { Args: { a: number[] }; Returns: boolean }
       auth_company_id: { Args: never; Returns: string }
+      substance_inventory: {
+        Args: { p_entity_id: string; p_list: string }
+        Returns: boolean
+      }
     }
     Enums: {
       applies_mode: "conditional" | "universal"
       checklist_item_category: "must_do" | "good_to_have"
+      chemical_state: "solid" | "liquid" | "gas"
+      chemical_unit: "lb" | "gal" | "ft3"
       coverage_status: "not_built" | "generated" | "verified"
       entity_scope:
         | "organization"
@@ -1740,6 +1891,8 @@ export const Constants = {
     Enums: {
       applies_mode: ["conditional", "universal"],
       checklist_item_category: ["must_do", "good_to_have"],
+      chemical_state: ["solid", "liquid", "gas"],
+      chemical_unit: ["lb", "gal", "ft3"],
       coverage_status: ["not_built", "generated", "verified"],
       entity_scope: [
         "organization",

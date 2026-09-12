@@ -1,6 +1,9 @@
 # Testing
-**Version:** 5 · **Updated:** 12 September 2026
-**Supersedes:** version 4 (12 Sep). Records the question-7 variance — the gate's
+**Version:** 6 · **Updated:** 12 September 2026
+**Supersedes:** version 5 (12 Sep). Adds an assertion CLASS rather than a case — every
+threshold in an expression must be quoted from the rule's own text, never derived — which
+caught a figure imported from a neighbouring rule on its first run. Version 5 recorded the
+question-7 variance — the gate's
 `non_blocking_unknowns` came back with three entries, then two, then zero on the same case —
 as a (c) consistency probe rather than a bug to solve now. And replaces the recalled
 "readiness numbers differed between runs" with the measured version from
@@ -115,6 +118,30 @@ assertion a script cannot judge — *"does it say Nevada and Pennsylvania are no
 and **`SKIP`** for one with no checker implemented. **A SKIP is never reported as a pass**, and
 the run says how many there were: a suite that silently passed what it could not check would
 be the worst version of this file.
+
+### An assertion class, not a case: thresholds must be quoted, not derived
+
+*Added 12 September 2026. `DECISIONS.md` §44.*
+
+**Any number in an `applies_expression` must appear in that requirement's own
+`trigger_condition` or `citation`, in that unit.** If it does not, the expression is asserting
+a number nobody wrote down.
+
+This is a **class** rather than a case: it runs over every expression rather than over one
+input, and it needs no model call. `thresholdsIn()` in `lib/appliesExpression.ts` returns every
+numeric literal an expression asserts; comparing that list against the row's own text is a
+string search.
+
+**Two ways it fails, and the second is the one a reviewer cannot see:**
+
+- **A unit conversion.** A threshold written in pounds restated in gallons requires assuming a
+  density, and density belongs to a product rather than to a rule.
+- **A number imported from a neighbouring rule.** Caught on the first run: **1,320** appeared
+  in `Oil Facility Response Plan determination`, a real figure from 40 CFR 112.1 belonging to
+  the **SPCC Plan** row. Correct about the world, wrong about the rule.
+
+**It runs in `npm run check`, not in `npm run golden`** — it asserts a property of the library
+rather than of an answer, so it belongs with the static checks and costs nothing to run.
 
 **It grows by one entry per failure found.** Every real-world wrong answer becomes a case, so
 the same mistake cannot return quietly. Case 001 is the **2.5L bottle** — the original
