@@ -4,7 +4,10 @@
 renderer ships with it — store the structure, review the sentence; plus the three faults
 building the renderer found in its first twenty rows) and §44 (a threshold in an expression
 must appear in the rule's own text in that unit, or the expression asserts a number nobody
-wrote down — which caught a figure imported from a neighbouring rule on its first run).
+wrote down — which caught a figure imported from a neighbouring rule on its first run; §44.1
+generalises it to a proxy with a fabricated magnitude, §44.2 rules out a clause true of every
+company, §44.3 makes "broader where the vocabulary cannot narrow" a standing rule for the
+class, and §44.4 gives the test that distinguishes a real split from a wrong one).
 Version 22 added §41 (the gate established facts the generating call
 never received — `g.resolved` went into the HTTP response and nowhere else, so one model
 produced an OHIO minimum-wage branch for an Oregon site the gate already knew; fixed, and
@@ -2540,3 +2543,84 @@ depending on a reviewer noticing.
 **Reversal condition:** none. If a rule genuinely requires a derived number, the derivation
 belongs in a named function with its assumptions stated — not inline in an expression where it
 looks like a quotation.
+
+### 44.1 The general form: a proxy is permitted; a proxy with a fabricated magnitude is not
+
+**Strengthened 12 September 2026.** The rule above covers two forms — a unit conversion and a
+number borrowed from a neighbouring rule. There is a third, and it is the most defensible-
+looking of the three because the *proxy itself* is legitimate.
+
+A rule says *"used in greater than 1% concentration"*. The vocabulary has no concentration
+fact, so the expression substitutes a quantity — and invents a magnitude to go with it. **The
+substitution is fine. The magnitude is fabricated**, because the rule names no quantity at all,
+and the number now looks quoted when nothing quoted it.
+
+**The full rule, in three parts:** a threshold in an expression must appear in the rule's own
+text, **in that unit**, and **as that quantity**.
+
+**What to do instead.** Use the proxy at its honest strength — *does the site hold this
+substance at all* — and put the condition the vocabulary cannot reach into `scope_rules`,
+marked as unresolvable from current data. That produces an expression that is broader than the
+rule and says so (§44.3), rather than one that is narrower than the rule by an amount nobody
+chose.
+
+### 44.2 A clause true of every company is not a condition
+
+**A conjunct that cannot be false constrains nothing and reads as though it does.** The way it
+arises is an enum clause listing every allowed value — `business_type is one of [manufacturer,
+blender, repackager, distributor, toll_processor]` — which looks like a restriction to a
+business kind and is satisfied by every row that has a business type at all.
+
+**It is worse than redundant: it makes an expression look more considered than it is**, and a
+reviewer reading the rendered line sees a constraint being applied. Two expressions carried
+this and both are now reduced to their real condition.
+
+**The test:** if removing a clause changes no company's answer, it is not a clause.
+
+### 44.3 Where the vocabulary cannot narrow, be deliberately BROADER — and say so
+
+**Standing rule for a whole class, not a note on one row.**
+
+Several requirements turn partly on a fact the vocabulary does not hold — most often NAICS
+industry membership, which `DECISIONS.md` §36.2 deliberately kept out of the switch library.
+`Electronic submission of Form 300A` reaches establishments *in a listed industry*;
+`NSPS/NESHAP applicability` turns on source category, HAP, capacity and construction date.
+
+**In every such case the expression omits the narrowing condition rather than approximating
+it, and therefore triggers more often than the rule does.**
+
+**That is the safe direction and it is the same argument as `CRITIC-PASS.md` §5's agency
+list: a condition that is too broad produces a false positive a person can dismiss; a
+condition that is too narrow produces a silent gap nobody sees.** Those costs are not
+symmetrical, and the asymmetry is what decides it rather than a preference for caution.
+
+**Two obligations follow from choosing this direction.** The row's `confidence` must record
+that it over-triggers, so the breadth is a known property rather than a surprise. And the
+resolution engine must be able to say *why* an obligation applied — because "we could not
+check the industry" is a different sentence from "your industry is listed", and a user shown
+the second when the first is true has been misled.
+
+### 44.4 Two obligations that always co-trigger are one obligation
+
+**The rule that distinguishes a real split from a wrong one**, recorded because the judgement
+is easy to get backwards in either direction.
+
+**Split when the two have different CLOCKS.** The boiler row split into registration, operating
+certificate and periodic inspection because each runs on its own schedule and each can fail
+while the others hold. The silica row split for the same reason — assessment, written plan,
+medical surveillance and training are four schedules.
+
+**Do not split when the trigger, the cadence and the evidence all arrive together.** Two
+obligations that always become due at the same moment, on the same fact, evidenced by the same
+document, are one obligation wearing two names — and splitting them doubles a company's
+apparent burden without telling it anything new.
+
+**The test, in order:** same trigger? same cadence? does the evidence arrive together? **All
+three yes → one row.** Any one no → candidate for a split.
+
+**Checked against the three splits in migration 013**, since the rule is worth nothing if it
+is not applied to one's own work: `Electronic OSHA` has three *different triggers* (20-249,
+100+, 250+). `PSM`'s five share a trigger but have five different clocks — before operation,
+five years, inspection intervals, before change, three years. `Confined spaces` differs on both
+— identification triggers on *containing* a space, entry and rescue on *entering* one, and the
+clocks are initial, per-entry and annual. All three clear the test.

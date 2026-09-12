@@ -57,7 +57,7 @@
       ]
     },
     "confidence": "medium",
-    "note": "Uses headcount as a proxy for \"50+ full-time equivalents including FTE aggregation\". ALTERNATIVE: FTE is a computed figure that is not headcount — a company with 80 part-timers may be under 50 FTE. This over-triggers.",
+    "note": "Uses headcount as a proxy for \"50+ full-time equivalents including FTE aggregation\". ALTERNATIVE: FTE is a computed figure that is not headcount \u2014 a company with 80 part-timers may be under 50 FTE. This over-triggers.",
     "kind": "judgement"
   },
   {
@@ -348,7 +348,7 @@
       ]
     },
     "confidence": "low",
-    "note": "Manufactures OR imports above a CDR threshold. ALTERNATIVE: this is an AND of manufacture and import, which is wrong — it should be an OR, and the volume threshold has no home at all. The CDR threshold is per-substance and regulated_substances has no CDR column.",
+    "note": "Manufactures OR imports above a CDR threshold. ALTERNATIVE: this is an AND of manufacture and import, which is wrong \u2014 it should be an OR, and the volume threshold has no home at all. The CDR threshold is per-substance and regulated_substances has no CDR column.",
     "kind": "judgement"
   },
   {
@@ -437,7 +437,7 @@
     "kind": "mechanical"
   },
   {
-    "requirement": "Confined spaces — identification and signage",
+    "requirement": "Confined spaces \u2014 identification and signage",
     "agency": "OR-OSHA",
     "prose": "The workplace contains one or more permit-required confined spaces.",
     "expression": {
@@ -450,7 +450,7 @@
     "kind": "judgement"
   },
   {
-    "requirement": "Confined spaces — rescue capability",
+    "requirement": "Confined spaces \u2014 rescue capability",
     "agency": "OR-OSHA",
     "prose": "Employees enter a permit-required confined space.",
     "expression": {
@@ -463,7 +463,7 @@
     "kind": "judgement"
   },
   {
-    "requirement": "Confined spaces — written entry programme and permits",
+    "requirement": "Confined spaces \u2014 written entry programme and permits",
     "agency": "OR-OSHA",
     "prose": "Employees enter a permit-required confined space.",
     "expression": {
@@ -618,7 +618,7 @@
     "kind": "judgement"
   },
   {
-    "requirement": "Electronic submission of Form 300A — 20-249 employees, listed industry",
+    "requirement": "Electronic submission of Form 300A \u2014 20-249 employees, listed industry",
     "agency": "OR-OSHA",
     "prose": "20-249 employees at an establishment in an industry listed in Appendix A to Subpart E.",
     "expression": {
@@ -640,7 +640,7 @@
     "kind": "judgement"
   },
   {
-    "requirement": "Electronic submission of Form 300A — 250+ employees",
+    "requirement": "Electronic submission of Form 300A \u2014 250+ employees",
     "agency": "OR-OSHA",
     "prose": "250 or more employees at an establishment required to keep records.",
     "expression": {
@@ -653,7 +653,7 @@
     "kind": "judgement"
   },
   {
-    "requirement": "Electronic submission of Forms 300 and 301 — 100+ employees, Appendix B industry",
+    "requirement": "Electronic submission of Forms 300 and 301 \u2014 100+ employees, Appendix B industry",
     "agency": "OR-OSHA",
     "prose": "100 or more employees at an establishment in an industry listed in Appendix B to Subpart E.",
     "expression": {
@@ -662,7 +662,7 @@
       "value": 100
     },
     "confidence": "low",
-    "note": "Same NAICS gap — Appendix B membership is not expressible.",
+    "note": "Same NAICS gap \u2014 Appendix B membership is not expressible.",
     "kind": "judgement"
   },
   {
@@ -759,7 +759,7 @@
     "prose": "",
     "expression": null,
     "confidence": "none",
-    "note": "NO EXPRESSION. Citation is \"Best practice (not statute)\" — nothing requires it, so there is no condition under which it applies. TODO 6.3b.",
+    "note": "NO EXPRESSION. Citation is \"Best practice (not statute)\" \u2014 nothing requires it, so there is no condition under which it applies. TODO 6.3b.",
     "kind": "judgement"
   },
   {
@@ -840,13 +840,13 @@
       ]
     },
     "confidence": "medium",
-    "note": "A release of an EHS or a CERCLA substance at or above RQ. ALTERNATIVE: this is event-triggered — the release must have HAPPENED — and no switch records that. The expression says \"could owe this\", not \"owes this now\".",
+    "note": "A release of an EHS or a CERCLA substance at or above RQ. ALTERNATIVE: this is event-triggered \u2014 the release must have HAPPENED \u2014 and no switch records that. The expression says \"could owe this\", not \"owes this now\".",
     "kind": "judgement"
   },
   {
     "requirement": "EPCRA Section 311 SDS/list submission",
     "agency": "EPA",
-    "prose": "OSHA hazardous chemical ≥10,000 lb or EHS at lower of 500 lb or TPQ, subject to exemptions.",
+    "prose": "OSHA hazardous chemical \u226510,000 lb or EHS at lower of 500 lb or TPQ, subject to exemptions.",
     "expression": {
       "any": [
         {
@@ -880,7 +880,7 @@
       ]
     },
     "confidence": "low",
-    "note": "The 10,000 lb OSHA-hazardous-chemical half has no inventory list behind it — regulated_substances carries EHS, TRI, PSM, RMP and CERCLA, not \"is an OSHA hazardous chemical\". So the boolean stand-in is still doing half the work. ALTERNATIVE: add an is_osha_hazardous flag to regulated_substances and drop the switch entirely.",
+    "note": "The 10,000 lb OSHA-hazardous-chemical half has no inventory list behind it \u2014 regulated_substances carries EHS, TRI, PSM, RMP and CERCLA, not \"is an OSHA hazardous chemical\". So the boolean stand-in is still doing half the work. ALTERNATIVE: add an is_osha_hazardous flag to regulated_substances and drop the switch entirely.",
     "kind": "judgement"
   },
   {
@@ -957,7 +957,7 @@
       ]
     },
     "confidence": "medium",
-    "note": "Employer threshold only. ALTERNATIVE: the prose also carries EMPLOYEE eligibility (12 months, 1,250 hours, 50 within 75 miles) — which is per-person and cannot be a company switch. Treating the row as employer-level means the obligation exists and eligibility is decided per request.",
+    "note": "Employer threshold only. ALTERNATIVE: the prose also carries EMPLOYEE eligibility (12 months, 1,250 hours, 50 within 75 miles) \u2014 which is per-person and cannot be a company switch. Treating the row as employer-level means the obligation exists and eligibility is decided per request.",
     "kind": "judgement"
   },
   {
@@ -1248,7 +1248,7 @@
   {
     "requirement": "Hazmat security plan",
     "agency": "PHMSA",
-    "prose": "Offers/transports materials/quantities in §172.800(b).",
+    "prose": "Offers/transports materials/quantities in \u00a7172.800(b).",
     "expression": {
       "switch": "ships_placardable_hazmat",
       "op": "is",
@@ -1287,7 +1287,7 @@
   {
     "requirement": "Hearing Conservation program",
     "agency": "OR-OSHA",
-    "prose": "Exposure ≥85 dBA 8-hour TWA.",
+    "prose": "Exposure \u226585 dBA 8-hour TWA.",
     "expression": {
       "switch": "noise_above_action_level",
       "op": "is",
@@ -1300,7 +1300,7 @@
   {
     "requirement": "Heat illness prevention",
     "agency": "OR-OSHA",
-    "prose": "Work area heat index reaches 80°F, subject to exceptions.",
+    "prose": "Work area heat index reaches 80\u00b0F, subject to exceptions.",
     "expression": {
       "switch": "heat_exposure_area",
       "op": "is",
@@ -1361,7 +1361,7 @@
       }
     },
     "confidence": "medium",
-    "note": "The certification is the route OUT of the permit, so FALSE is the trigger. ALTERNATIVE: it is voluntary — a site may simply take the permit — so this is arguably an opportunity rather than an obligation.",
+    "note": "The certification is the route OUT of the permit, so FALSE is the trigger. ALTERNATIVE: it is voluntary \u2014 a site may simply take the permit \u2014 so this is arguably an opportunity rather than an obligation.",
     "kind": "judgement"
   },
   {
@@ -1380,7 +1380,7 @@
   {
     "requirement": "Inorganic arsenic exposure standard",
     "agency": "OR-OSHA",
-    "prose": "May reach 5 µg/m³ action level or covered operation",
+    "prose": "May reach 5 \u00b5g/m\u00b3 action level or covered operation",
     "expression": {
       "switch": "exposure_arsenic",
       "op": "is",
@@ -1432,7 +1432,7 @@
   {
     "requirement": "Lactation rest periods/private space",
     "agency": "BOLI",
-    "prose": "Employee needs to express milk; ≤10 employees may assert undue hardship only with facts.",
+    "prose": "Employee needs to express milk; \u226410 employees may assert undue hardship only with facts.",
     "expression": {
       "all": [
         {
@@ -1443,7 +1443,7 @@
       ]
     },
     "confidence": "medium",
-    "note": "The prose says \"<=10 employees may assert undue hardship only with facts\" — a DEFENCE, not a threshold. So it applies to every employer and the size affects the defence. ALTERNATIVE: read 10 as a threshold and write employee_count > 10, which would wrongly exclude small employers from a duty they have.",
+    "note": "The prose says \"<=10 employees may assert undue hardship only with facts\" \u2014 a DEFENCE, not a threshold. So it applies to every employer and the size affects the defence. ALTERNATIVE: read 10 as a threshold and write employee_count > 10, which would wrongly exclude small employers from a duty they have.",
     "kind": "judgement"
   },
   {
@@ -1462,7 +1462,7 @@
   {
     "requirement": "Lead exposure standard",
     "agency": "OR-OSHA",
-    "prose": "Inorganic lead may reach 30 µg/m³ TWA",
+    "prose": "Inorganic lead may reach 30 \u00b5g/m\u00b3 TWA",
     "expression": {
       "switch": "exposure_lead",
       "op": "is",
@@ -1488,7 +1488,7 @@
   {
     "requirement": "LQG accumulation controls",
     "agency": "EPA",
-    "prose": "Generates ≥1,000 kg nonacute/month, >1 kg acute, or acute-residue threshold.",
+    "prose": "Generates \u22651,000 kg nonacute/month, >1 kg acute, or acute-residue threshold.",
     "expression": {
       "switch": "hazwaste_generator_category",
       "op": "is",
@@ -1568,27 +1568,12 @@
     "agency": "OR-OSHA",
     "prose": "Manufactures/imports/distributes hazardous chemicals subject to HCS.",
     "expression": {
-      "all": [
-        {
-          "switch": "hazardous_chemicals_present",
-          "op": "is",
-          "value": true
-        },
-        {
-          "switch": "business_type",
-          "op": "in",
-          "value": [
-            "manufacturer",
-            "blender",
-            "repackager",
-            "distributor",
-            "toll_processor"
-          ]
-        }
-      ]
+      "switch": "hazardous_chemicals_present",
+      "op": "is",
+      "value": true
     },
-    "confidence": "medium",
-    "note": "ALTERNATIVE: the business_type clause lists every value and is therefore a no-op.",
+    "confidence": "high",
+    "note": "\u00a744.2 \u2014 dropped a business_type clause listing every allowed value: it constrained nothing and read as a restriction. ALTERNATIVE: the business_type clause lists every value and is therefore a no-op.",
     "kind": "judgement"
   },
   {
@@ -1705,7 +1690,7 @@
       "value": "none"
     },
     "confidence": "low",
-    "note": "Gated on holding an air permit. ALTERNATIVE: NSPS and NESHAP applicability turns on source category, HAP, capacity and construction date — none of which is a switch, and an unpermitted source can still be subject. This under-triggers.",
+    "note": "Gated on holding an air permit. ALTERNATIVE: NSPS and NESHAP applicability turns on source category, HAP, capacity and construction date \u2014 none of which is a switch, and an unpermitted source can still be subject. This under-triggers.",
     "kind": "judgement"
   },
   {
@@ -1751,7 +1736,7 @@
   {
     "requirement": "Oregon Community Right to Know inventory",
     "agency": "OSFM",
-    "prose": "Hazardous substance reaches Oregon quantity; common thresholds 5 gal liquid, 10 lb solid, 20 ft³ gas, with special rules.",
+    "prose": "Hazardous substance reaches Oregon quantity; common thresholds 5 gal liquid, 10 lb solid, 20 ft\u00b3 gas, with special rules.",
     "expression": {
       "switch": "or_cr2k_threshold",
       "op": "is",
@@ -1856,7 +1841,7 @@
   {
     "requirement": "Oregon greenhouse-gas report",
     "agency": "OR-DEQ",
-    "prose": "Air-permitted source has ≥2,500 metric tons CO2e direct emissions or another covered category applies.",
+    "prose": "Air-permitted source has \u22652,500 metric tons CO2e direct emissions or another covered category applies.",
     "expression": {
       "all": [
         {
@@ -1986,7 +1971,7 @@
       ]
     },
     "confidence": "medium",
-    "note": "Read \"paid at 10+ or 6+ with Portland location\" as a condition on the PAID entitlement. ALTERNATIVE: the rule protects ALL employees regardless of count and only the PAID half is conditional — in which case applies is universal-for-employers and the count belongs in the obligation, not the expression.",
+    "note": "Read \"paid at 10+ or 6+ with Portland location\" as a condition on the PAID entitlement. ALTERNATIVE: the rule protects ALL employees regardless of count and only the PAID half is conditional \u2014 in which case applies is universal-for-employers and the count belongs in the obligation, not the expression.",
     "kind": "judgement"
   },
   {
@@ -2171,7 +2156,7 @@
   {
     "requirement": "PHMSA annual hazmat registration",
     "agency": "PHMSA",
-    "prose": "Offers/transports quantities in §107.601, including placardable shipments and specified bulk, explosive, PIH, or radioactive quantities.",
+    "prose": "Offers/transports quantities in \u00a7107.601, including placardable shipments and specified bulk, explosive, PIH, or radioactive quantities.",
     "expression": {
       "switch": "ships_placardable_hazmat",
       "op": "is",
@@ -2269,7 +2254,7 @@
     "kind": "judgement"
   },
   {
-    "requirement": "PSM — compliance audit",
+    "requirement": "PSM \u2014 compliance audit",
     "agency": "OR-OSHA",
     "prose": "Process meets Appendix A threshold or has 10,000 lb or more of a covered flammable gas or liquid.",
     "expression": {
@@ -2280,7 +2265,7 @@
     "kind": "judgement"
   },
   {
-    "requirement": "PSM — management of change",
+    "requirement": "PSM \u2014 management of change",
     "agency": "OR-OSHA",
     "prose": "Process meets Appendix A threshold or has 10,000 lb or more of a covered flammable gas or liquid.",
     "expression": {
@@ -2291,7 +2276,7 @@
     "kind": "judgement"
   },
   {
-    "requirement": "PSM — mechanical integrity programme",
+    "requirement": "PSM \u2014 mechanical integrity programme",
     "agency": "OR-OSHA",
     "prose": "Process meets Appendix A threshold or has 10,000 lb or more of a covered flammable gas or liquid.",
     "expression": {
@@ -2302,7 +2287,7 @@
     "kind": "judgement"
   },
   {
-    "requirement": "PSM — process hazard analysis",
+    "requirement": "PSM \u2014 process hazard analysis",
     "agency": "OR-OSHA",
     "prose": "Process meets Appendix A threshold or has 10,000 lb or more of a covered flammable gas or liquid.",
     "expression": {
@@ -2313,7 +2298,7 @@
     "kind": "judgement"
   },
   {
-    "requirement": "PSM — process safety information compiled and current",
+    "requirement": "PSM \u2014 process safety information compiled and current",
     "agency": "OR-OSHA",
     "prose": "Process meets Appendix A threshold or has 10,000 lb or more of a covered flammable gas or liquid.",
     "expression": {
@@ -2326,7 +2311,7 @@
   {
     "requirement": "Refrigerant management and leak repair",
     "agency": "EPA",
-    "prose": "Owns/operates/services/disposes appliances with regulated refrigerant; special leak duties for ≥50 lb charge.",
+    "prose": "Owns/operates/services/disposes appliances with regulated refrigerant; special leak duties for \u226550 lb charge.",
     "expression": {
       "switch": "refrigeration_over_50lb",
       "op": "is",
@@ -2363,9 +2348,9 @@
     "kind": "mechanical"
   },
   {
-    "requirement": "Respirable crystalline silica — employee training",
+    "requirement": "Respirable crystalline silica \u2014 employee training",
     "agency": "OR-OSHA",
-    "prose": "Powders/fillers/maintenance/cutting/cleanup may reach 25 µg/m³ action level",
+    "prose": "Powders/fillers/maintenance/cutting/cleanup may reach 25 \u00b5g/m\u00b3 action level",
     "expression": {
       "switch": "exposure_silica",
       "op": "is",
@@ -2376,9 +2361,9 @@
     "kind": "mechanical"
   },
   {
-    "requirement": "Respirable crystalline silica — exposure assessment",
+    "requirement": "Respirable crystalline silica \u2014 exposure assessment",
     "agency": "OR-OSHA",
-    "prose": "Powders/fillers/maintenance/cutting/cleanup may reach 25 µg/m³ action level",
+    "prose": "Powders/fillers/maintenance/cutting/cleanup may reach 25 \u00b5g/m\u00b3 action level",
     "expression": {
       "switch": "exposure_silica",
       "op": "is",
@@ -2389,9 +2374,9 @@
     "kind": "mechanical"
   },
   {
-    "requirement": "Respirable crystalline silica — medical surveillance",
+    "requirement": "Respirable crystalline silica \u2014 medical surveillance",
     "agency": "OR-OSHA",
-    "prose": "Powders/fillers/maintenance/cutting/cleanup may reach 25 µg/m³ action level",
+    "prose": "Powders/fillers/maintenance/cutting/cleanup may reach 25 \u00b5g/m\u00b3 action level",
     "expression": {
       "switch": "exposure_silica",
       "op": "is",
@@ -2402,9 +2387,9 @@
     "kind": "mechanical"
   },
   {
-    "requirement": "Respirable crystalline silica — written exposure control plan",
+    "requirement": "Respirable crystalline silica \u2014 written exposure control plan",
     "agency": "OR-OSHA",
-    "prose": "Powders/fillers/maintenance/cutting/cleanup may reach 25 µg/m³ action level",
+    "prose": "Powders/fillers/maintenance/cutting/cleanup may reach 25 \u00b5g/m\u00b3 action level",
     "expression": {
       "switch": "exposure_silica",
       "op": "is",
@@ -2428,7 +2413,7 @@
     "kind": "mechanical"
   },
   {
-    "requirement": "RMP 2024 amendments (SCCAP) — new elements",
+    "requirement": "RMP 2024 amendments (SCCAP) \u2014 new elements",
     "agency": "EPA",
     "prose": "RMP-covered facilities",
     "expression": {
@@ -2521,7 +2506,7 @@
   {
     "requirement": "SPCC Plan",
     "agency": "EPA",
-    "prose": "Could discharge oil to waters and has >1,320 gal aboveground capacity in ≥55-gal containers or >42,000 gal buried, absent exemption.",
+    "prose": "Could discharge oil to waters and has >1,320 gal aboveground capacity in \u226555-gal containers or >42,000 gal buried, absent exemption.",
     "expression": {
       "all": [
         {
@@ -2655,31 +2640,16 @@
     "agency": "EPA",
     "prose": "Supplier ships mixture/trade-name product containing listed toxic chemical to a covered customer and no exemption applies.",
     "expression": {
-      "all": [
-        {
-          "inventory": "tri"
-        },
-        {
-          "switch": "business_type",
-          "op": "in",
-          "value": [
-            "manufacturer",
-            "blender",
-            "repackager",
-            "distributor",
-            "toll_processor"
-          ]
-        }
-      ]
+      "inventory": "tri"
     },
-    "confidence": "medium",
-    "note": "Ships a mixture containing a listed chemical to a covered customer. ALTERNATIVE: the business_type clause is every allowed value, so it is a no-op that reads as a constraint — arguably it should be dropped.",
+    "confidence": "high",
+    "note": "\u00a744.2 \u2014 dropped a business_type clause listing every allowed value: it constrained nothing and read as a restriction. Ships a mixture containing a listed chemical to a covered customer. ALTERNATIVE: the business_type clause is every allowed value, so it is a no-op that reads as a constraint \u2014 arguably it should be dropped.",
     "kind": "judgement"
   },
   {
     "requirement": "TRI toxic chemical report",
     "agency": "EPA",
-    "prose": "Covered NAICS, ≥10 FTEs, and activity threshold met; generally 25,000 lb manufactured/processed or 10,000 lb otherwise used, with lower PBT/PFAS thresholds.",
+    "prose": "Covered NAICS, \u226510 FTEs, and activity threshold met; generally 25,000 lb manufactured/processed or 10,000 lb otherwise used, with lower PBT/PFAS thresholds.",
     "expression": {
       "all": [
         {
@@ -2693,7 +2663,7 @@
       ]
     },
     "confidence": "medium",
-    "note": "Drops the \"covered NAICS\" half, which DECISIONS §36.2 decided is not a switch and reads from companies.industry. ALTERNATIVE: the expression is incomplete until the evaluator can reach the industry, so this over-triggers for an uncovered NAICS.",
+    "note": "Drops the \"covered NAICS\" half, which DECISIONS \u00a736.2 decided is not a switch and reads from companies.industry. ALTERNATIVE: the expression is incomplete until the evaluator can reach the industry, so this over-triggers for an uncovered NAICS.",
     "kind": "judgement"
   },
   {
@@ -2873,7 +2843,7 @@
   {
     "requirement": "WARN Act notice",
     "agency": "USDOL",
-    "prose": "100+ full-time, or 100+ employees working ≥4,000 hours/week excluding overtime, and covered loss at single site.",
+    "prose": "100+ full-time, or 100+ employees working \u22654,000 hours/week excluding overtime, and covered loss at single site.",
     "expression": {
       "all": [
         {
@@ -2908,7 +2878,7 @@
   {
     "requirement": "Wildfire smoke program",
     "agency": "OR-OSHA",
-    "prose": "Exposure may reach PM2.5 35.5 µg/m³, subject to exceptions.",
+    "prose": "Exposure may reach PM2.5 35.5 \u00b5g/m\u00b3, subject to exceptions.",
     "expression": {
       "switch": "wildfire_smoke_exposure",
       "op": "is",
