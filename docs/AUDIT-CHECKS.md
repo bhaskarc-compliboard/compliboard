@@ -1,6 +1,10 @@
 # Audit Checks
-**Version:** 12 · **Updated:** 12 September 2026
-**Supersedes:** version 11 (12 Sep). Adds **check 22** — function EXECUTE grants, where
+**Version:** 13 · **Updated:** 12 September 2026
+**Supersedes:** version 12 (12 Sep). **Check 22's query is corrected to use `aclexplode`** —
+its first version pattern-matched the ACL text for `=X/` and reported a false alarm on a
+function whose grants were correct, because `postgres=X/postgres` contains that substring too.
+Caught by running the check against a known-good function. Check 10 re-run after 015 and 016:
+**799 objects, 0 differences, byte-identical.** Version 12 added **check 22** — function EXECUTE grants, where
 Postgres's default is PUBLIC and `CLAUDE.md` §3.6's "not granting is not denying" applies one
 layer down without being written down. `substance_inventory` is open to PUBLIC and leaks
 nothing only because a TABLE grant stops it. **And the check must read `pg_proc.proacl`:
@@ -406,7 +410,14 @@ domain, both dependency columns and a hash of notes) with 0 differences, the sam
 dependency edges as a set in both directions, and the same graph depth map — 55 roots and 35
 children on each side.
 
-**Run again 12 Sep after Phase 6.3 — migrations 013 and 014 and the expression load:**
+**Run again 12 Sep after Phase 4.1 — migrations 015 and 016 on both environments: 799 objects
+each, 0 differences, the two outputs byte-identical (sha256 `2407ffbcebcddc66…`).** The count
+moved 798 → 799 for one reason and the census can say which: `g_function` 5 → 6,
+`close_and_replace_obligations`. **That is the point of storing the census in a file** — a
+count that moves by one and can be attributed is information; the same count arrived at by
+retyping the query is noise.
+
+**Run 12 Sep after Phase 6.3 — migrations 013 and 014 and the expression load:**
 
 | Compared | Staging | Production | Differences |
 |---|---|---|---|
@@ -915,22 +926,35 @@ is what the table is.
 ## 22. Does any function in `public` hold EXECUTE for a role that should not have it?
 
 ```sql
+-- aclexplode, NOT a LIKE on the ACL text. grantee = 0 IS PUBLIC, unambiguously.
 select p.proname,
-       coalesce(array_to_string(p.proacl, '  |  '), '(null = DEFAULT: EXECUTE to PUBLIC)') as acl
-  from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+       case when a.grantee = 0 then 'PUBLIC' else pg_get_userbyid(a.grantee) end as grantee
+  from pg_proc p
+  join pg_namespace n on n.oid = p.pronamespace
+  left join lateral aclexplode(p.proacl) a on true
  where n.nspname = 'public'
-   and (p.proacl is null                        -- default = PUBLIC holds EXECUTE
-     or array_to_string(p.proacl, ',') like '=X/%')   -- a leading `=X` IS PUBLIC
+   and (p.proacl is null                         -- NULL acl = DEFAULT = PUBLIC holds EXECUTE
+     or (a.privilege_type = 'EXECUTE' and a.grantee = 0))
  order by p.proname;
 ```
 
-**Answer, 12 September 2026, both environments: one function — `substance_inventory`.**
+> **⚠️ Do NOT pattern-match the ACL text for this.** The first version of this check used
+> `proacl::text like '%=X/%'` and reported **PUBLIC can execute `close_and_replace_obligations`**
+> — a false alarm, because `postgres=X/postgres` also contains `=X/`. Only an entry whose
+> grantee is *empty* is PUBLIC, which in text means a leading `=`, and a `like` that gets that
+> right is one nobody will read correctly six months from now. `aclexplode` says what it means.
+> **Caught by running the check against a function whose grants were known-correct** — the
+> negative control that `HOW-WE-BUILD.md` §3 asks for, which is the only reason it was not
+> written into this file as a finding.
 
-| Function | ACL | Verdict |
+**Answer, 12 September 2026 — re-measured with `aclexplode` on BOTH environments, identical:
+one function, `substance_inventory`.**
+
+| Function | EXECUTE held by | Verdict |
 |---|---|---|
-| `close_and_replace_obligations` | `postgres=X · service_role=X` | ✅ correct — migration 016 revokes explicitly |
-| `auth_company_id` | `postgres=X · anon=X · authenticated=X · service_role=X` | ✅ intentional — every RLS policy calls it |
-| **`substance_inventory`** | **`=X` · postgres · anon · authenticated · service_role** | 🟡 **the leading `=X` is PUBLIC.** Migration 013 created it with no revoke |
+| `close_and_replace_obligations` | `postgres`, `service_role` | ✅ correct — migration 016 revokes explicitly. **PUBLIC holds nothing** |
+| `auth_company_id` | `postgres`, `anon`, `authenticated`, `service_role` | ✅ intentional — every RLS policy calls it |
+| **`substance_inventory`** | **`PUBLIC`**, `anon`, `authenticated`, `postgres`, `service_role` | 🟡 migration 013 created it with no revoke |
 
 **It leaks nothing today, and that is luck rather than design.** The function is `SECURITY
 INVOKER` and reads `company_chemicals`, on which `anon` holds no grant at all, so an
