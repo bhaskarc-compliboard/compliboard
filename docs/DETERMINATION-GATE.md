@@ -1,6 +1,9 @@
 # The Determination Gate — Stage 1
-**Version:** 2 · **Updated:** 11 September 2026
-**Supersedes:** version 1 (11 Sep), same day. Two corrections found while building: the
+**Version:** 3 · **Updated:** 11 September 2026
+**Supersedes:** version 2 (11 Sep). Adds **§11, proximity confirmation — specified, not
+built**: confirming a numeric switch whose value sits near a threshold the current question
+depends on. Not a blocking question — the gate asks when a fact is missing, this speaks when
+a fact is present but fragile. Version 2 was the same day. Two corrections found while building: the
 `/api/chat` change closes **one** of §0.8b's four undocumented routes, not four; and the gate
 must read the primary site's jurisdiction from `entities`, which v1 omitted — without it the
 gate asks where the worksite is, a fact every company already has.
@@ -622,6 +625,134 @@ than a rewrite, and all five are cheap now:
 **What would make it a rewrite instead:** the gate inline in `/api/chat`; a boolean-plus-string
 return; asking the model for prose rather than ids; or letting the `ask` shape differ between
 the two routes. All four are cheaper now and expensive in Phase 6.
+
+---
+
+## 11. PROXIMITY CONFIRMATION — specified, NOT built
+
+*Added 11 September 2026 with Phase 6.2. Nothing here is implemented.*
+
+**The gate asks when a fact is MISSING. This asks when a fact is PRESENT BUT FRAGILE.**
+
+They are different operations and must not be conflated. A blocking question stops the
+pipeline and produces nothing; a proximity confirmation **does not stop anything** — the
+answer is produced either way. It is a sentence shown alongside the work, not instead of it.
+
+### 11.1 Trigger — three conditions, all required
+
+1. A **numeric** switch has a value.
+2. The **current question depends on it**.
+3. The value **sits near one of that switch's thresholds** (migration 012).
+
+**Condition 2 is the one that keeps this from becoming noise.** The same company at 47
+employees asking about hazmat labelling must not be asked about headcount — the answer does
+not turn on it, and asking anyway is the product talking about itself. Proximity matters only
+when a nearby threshold is in play **for this question**.
+
+### 11.2 "Near" is proportional, not fixed
+
+**Three away from 50 is 6% and meaningful. Three away from 10 is 30%, and a twelve-person
+shop hiring two is a normal week.** A fixed window is wrong at both ends of the range —
+too noisy on small numbers, too quiet on large ones.
+
+**Proposed rule: within 10% of a threshold, floored at 1 and capped at 10.**
+
+```
+near(value, t) :=  |value − t| ≤ max(1, min(10, 0.10 × t))
+```
+
+| Threshold | Window | Fires at | Why that is right |
+|---|---|---|---|
+| 6 | ±1 | 5, 6, 7 | a 6-person shop is one hire from four Oregon accommodation rules |
+| 10 | ±1 | 9–11 | tight, because small numbers move by ones |
+| 15 | ±1.5 | 14–16 | the ADA/Title VII/PWFA line |
+| 25 | ±2.5 | 23–27 | OFLA |
+| 50 | ±5 | 45–55 | **FMLA and the ACA — 47 fires, which is the case that motivated this** |
+| 100 | ±10 | 90–110 | WARN, EEO-1 |
+| 1,000 kg | ±10 (capped) | 990–1,010 | LQG. The cap matters: 10% of 1,000 is 100, and 900 kg is not near 1,000 in any useful sense — it is a different generator category with a month's headroom |
+
+**The cap is doing more work than the floor.** Without it, `ghg_emissions_tco2e` at 25,000
+would fire anywhere from 22,500 — a 2,500-tonne window, which is the *entire* Oregon
+threshold. Percentage windows grow with the number and confidence does not.
+
+**Reversal condition:** if the fire rate proves too high in practice, tighten the percentage
+before touching the floor or cap. The floor exists so small thresholds work at all.
+
+### 11.3 Behaviour — confirm, do not ask
+
+> **"I have 47 employees on file — is that still right? FMLA applies at 50, so this answer
+> depends on it."**
+
+Two seconds to answer, and **it makes the reasoning visible**, which is the thing a checklist
+never does. A checklist says *do this*; this says *here is the number I am using and here is
+what turns on it*. The second is what a person can actually check.
+
+Rendered as a single line above the answer, with the value inline and editable. **Not the
+`GateAskCard`** — that component means "I have stopped". This one means "here is what I used".
+
+### 11.4 Once per session, with one exception
+
+Confirm on the **first dependent question**, then treat the value as fresh for the rest of
+that session. Confirm again next session.
+
+**Asking four times in ten minutes about a number the product already has reads as not
+listening**, and it is §7's too-much-asking failure wearing a friendlier face — worse, in a
+way, because each individual confirmation is polite and reasonable.
+
+**The exception: if they CHANGED it, re-anchor explicitly on the next dependent question
+rather than silently.** Somebody who has just said 47 is now 52 is *engaged with the number*,
+and the next answer turning on it should say so — *"using 52 employees, which you just
+updated"*. Silently carrying the new value is correct arithmetic and poor conversation: the
+user cannot tell whether the correction landed.
+
+### 11.5 On confirmation — the write, and why the date matters as much as the value
+
+```
+company_switches: value        = the confirmed number
+                  source       = 'user_set'
+                  user_locked  = true
+                  determined_at = now()        ← FRESH, and this is the half that gets missed
+                  expires_at   = now() + volatility window
+```
+
+**Confirming does not only correct the number, it re-dates it.** Without a fresh
+`determined_at`, a value the user just confirmed still expires on the original schedule — so
+a number confirmed today could go stale next week because it was first recorded a year ago.
+That reads as broken, and it is the kind of broken nobody reports because it looks like
+ordinary staleness.
+
+**Then every obligation turning on that switch recomputes.** One confirmation, dozens of
+obligations corrected — which is the whole argument for resolution being a deterministic
+query (§3.2) rather than something re-reasoned per answer.
+
+### 11.6 This is general, and headcount is only the first instance
+
+| Switch | Thresholds | Volatility |
+|---|---|---|
+| `employee_count` | 6, 10, 15, 20, 25, 50, 100 | annual |
+| `site_employee_count` | 6, 10 | annual |
+| `hazwaste_nonacute_kg_per_month` | 100, 1,000 | **monthly — by regulation** |
+| `hazwaste_acute_kg_per_month` | 1 | monthly |
+| `oil_storage_aboveground_gallons` | 1,320, 42,000 | static |
+| `ghg_emissions_tco2e` | 2,500, 25,000 | annual |
+
+**Generator category is the sharpest case, not headcount.** It is monthly *by regulation* —
+`Monthly generator-category determination` is a requirement in its own right, and `Episodic
+generation` exists because a generator temporarily crosses a line. A site at 950 kg/month
+crossing 1,000 becomes an LQG with a contingency plan, personnel training, a biennial report
+and weekly inspections. **That is the confirmation most worth making, and it recurs twelve
+times a year.**
+
+### 11.7 What is NOT specified here
+
+- **The component.** M1's.
+- **Whether a confirmation counts against §7's ask budget.** It should not — it is not an
+  ask — but the logging in §7 must distinguish the two or the rate becomes meaningless.
+- **`tier2_epcra_threshold`, `or_cr2k_threshold` and `psm_rmp_threshold` are boolean and
+  cannot use this**, because their thresholds are **per chemical** rather than per site. A
+  single site-level quantity cannot express "10,000 lb of any one hazardous chemical", and
+  one switch per chemical is unbounded. That is the open modelling question §23.1's reversal
+  condition anticipates, and it is 6.3's to answer.
 
 ---
 

@@ -1,6 +1,13 @@
 # Decision Record
-**Version:** 19 · **Updated:** 11 September 2026
-**Supersedes:** version 18 (11 Sep). Adds §35, two corrections to the determination-gate spec
+**Version:** 20 · **Updated:** 11 September 2026
+**Supersedes:** version 19 (11 Sep). Adds §36 (the §2.4 switch list was written before the
+library: 6 of its switches nothing uses, 30 facts it lacks that 48 requirements need, and
+banded `employee_count` cannot express 3 of the 7 thresholds — including the 15 that gates the
+ADA, Title VII and the PWFA), §37 (tanks are the inventory and gallons are computed; no CHECK
+can catch a dependency cycle, so the loader walks the graph) and §38 (exposure switches are
+annual not static; the five-entity-type to two-scope flattening is a recorded approximation;
+`outdoor_work` splits because its name encoded an assumption Oregon's heat rule does not make).
+Version 19 added §35, two corrections to the determination-gate spec
 found while building it: the `/api/chat` authentication closes **one** of §0.8b's four
 undocumented routes rather than four, and the gate as specced could not see the worksite's
 jurisdiction — it would have asked for an address every company has already given us. **Only
@@ -1977,3 +1984,181 @@ consistency probes — *both answers cannot be right* is checkable without knowi
 **Reversal condition:** none. Both are corrections of fact. The standing rule is the second
 one: **every gate-like feature gets a negative case in the golden set, written at the same
 time as the positive one, not afterwards.**
+
+---
+
+## 36. The switch list was written before the library, and the library wins — 11 September 2026
+
+**`CHEMICAL-OR-WA.md` §2.4 proposed 46 switches. Reading all 188 `trigger_condition` prose
+strings in `requirement_templates` found that the list is wrong in both directions.**
+
+| | |
+|---|---|
+| Requirements expressible with §2.4's list (+ §23.1's substance split) | **140 of 188** |
+| Requirements needing a fact no switch covers | **48** |
+| §2.4 switches no requirement uses | **6** |
+| Facts needed that §2.4 has no switch for | **30** |
+
+**The shape of the gap matters more than the count. Two whole classes were missing:**
+
+**The equipment layer.** The library holds **23 requirements with `entity_type = 'equipment'`** —
+forklifts, cranes, slings, ladders, fall arrest, sprinklers, extinguishers, alarms, emergency
+respirators, hazardous piping. §2.4 proposed **not one switch for any of them.** They are the
+cheapest facts in the whole list, mostly answerable by walking the floor, and they gate 23
+requirements.
+
+**The employment layer.** §2.4 was written for a chemical plant. The library carries a full
+Oregon and federal employment layer — 16 BOLI rows, 6 DOL, 5 EEOC, plus IRS, USCIS, Paid
+Leave Oregon, Workers' Comp and OregonSaves. Those need `has_employees`,
+`nonexempt_employees`, `has_group_health_plan`, `sponsors_erisa_plan`, `federal_contractor`
+and `uses_noncompete_agreements` — none a chemical fact, all required.
+
+**Seeded: 90 switches.**
+
+### 36.1 `employee_count` is a number, and bands do not merely lose precision
+
+**§2.4 proposed bands: 1-10 / 11-19 / 20-24 / 25-49 / 50-99 / 100+.**
+
+The trigger prose names **seven** distinct thresholds: **6, 10, 15, 20, 25, 50, 100.** A band
+can only answer a threshold that falls on a band **boundary**. Three do not:
+
+| Threshold | Falls | Gates |
+|---|---|---|
+| **6** | inside 1-10 | four Oregon accommodation and leave rows |
+| **10** | inside 1-10 | the OSHA 300 log, the Emergency Action Plan, the Fire Prevention Plan |
+| **15** | inside 11-19 | **the ADA, Title VII, and the Pregnant Workers Fairness Act** |
+
+**A company in the 11-19 band is unresolvable against three federal discrimination statutes.**
+That is not a rounding error — bands do not make the answer less precise, they make it
+unavailable. `companies.employee_count` has been `integer` since migration 006, which
+converted the text bands rather than inventing numbers from them.
+
+**And it splits.** Oregon sick time reads *"10+ Oregon employees or 6+ with a Portland
+location"* — enterprise and site in one sentence. WARN reads *"covered loss at a single
+site"*. One switch cannot be both, so `employee_count` is company-scoped and
+`site_employee_count` is site-scoped, and a row needing the site number names it in
+`applies_expression`.
+
+### 36.2 `naics_code` is not a switch
+
+Five triggers turn on industry — TRI's "covered NAICS", the OSHA 300 log's "listed
+industries" and "Appendix B", NESHAP subparts, categorical pretreatment. It still does not
+become a switch. **`AUDIT-CHECKS.md` check 9 already names four free-text columns holding
+industry strings with no shared list and no foreign key between any of them.** A fifth is
+the wrong direction. It reads from `companies.industry` through
+`determination_source = 'profile'`.
+
+### 36.3 The six unused switches stay, and are marked
+
+`multi_site` · `multi_state` · `owns_vs_leases_facility` · `hot_work_welding` ·
+`spray_finishing` · `high_piled_storage`
+
+Each carries **`SEEDED BUT UNUSED … DO NOT REMOVE AS DEAD WEIGHT`** in its `notes`, because
+a future reader sweeping for unused rows would otherwise be right to delete them.
+
+`multi_site` and `multi_state` become load-bearing the moment a customer has a second site or
+crosses a state line, and migration 010 already gives every company a site row so the
+structure is waiting. **The three fire switches are more interesting: they are the
+`LOCAL-FIRE` coverage gap arriving from a second direction.** §1.3 names hot work, spray
+finishing and high-piled storage as fire permit types; `LOCAL-FIRE` holds 3 library rows
+against a much larger real scope (TODO 6.5a). The switches have nothing to gate because the
+requirements were never written, not because the facts do not matter.
+
+---
+
+## 37. `aboveground_storage_tanks` is the inventory; the gallons are computed — 11 September 2026
+
+**The dependency direction, and the check that makes it enforceable.**
+
+Two switches each have a locally correct reason to depend on the other:
+
+- `oil_storage_aboveground_gallons` cannot be known without knowing the tanks. → depends on
+  `aboveground_storage_tanks`.
+- The AST inspection requirement's trigger reads **"ASTs subject to SPCC"**, which argues
+  `aboveground_storage_tanks` depends on the SPCC quantity. → depends the other way.
+
+**Read in isolation, both are right. Together they cycle.**
+
+**Decision: tanks are the INVENTORY fact and gallons are COMPUTED from it. One edge, one
+direction.** The AST requirement's "subject to SPCC" condition belongs in
+`applies_expression` — it is a condition on the *requirement*, not a dependency between
+*facts*. A switch dependency answers "which fact do I need first"; you need the tanks first,
+always.
+
+### 37.1 No constraint can catch a cycle, so the loader does
+
+`switches_no_self_dependency` checks `depends_on_switch IS DISTINCT FROM id`. **That stops
+`A → A` and nothing else.** `A → B → A` satisfies every foreign key, satisfies that CHECK on
+both rows, and is accepted by the database.
+
+A cycle is not expressible as a CHECK — detecting one needs recursion and a CHECK sees one
+row at a time. A trigger with a recursive CTE would work and would re-walk the whole graph on
+every write; `switches` is written by exactly one thing. **So the check lives in
+`scripts/load-switches.js`, walks the graph depth-first, reports the whole cycle rather than
+"a cycle exists", and refuses the file rather than loading half of it.**
+
+**Why a cycle is worse than it sounds:** it makes the graph unwalkable. Nothing can decide
+which fact to establish first, so the determination gate would either loop or pick
+arbitrarily — and picking arbitrarily is the failure that looks like working software.
+
+**Proven by seeding one**, per `AUDIT-CHECKS.md`'s standard — `--prove-cycle-check` runs four
+cases in memory: the real file (0 cycles), **the real pair reversed** (refused), a three-node
+cycle (refused, showing it walks the graph rather than comparing pairs), and a four-deep
+chain with no cycle (correctly allowed, so it is not just flagging depth).
+
+---
+
+## 38. Switch scope and volatility — three decisions and one recorded approximation
+
+### 38.1 `exposure_*` is `annual`, not `static`
+
+**`static` asserts that a fact does not change. Exposure changes whenever the process does.**
+Every substance standard in the library mandates periodic monitoring — *"initial and periodic;
+annual training; medical at least every two years"* — and **a lead result from four years ago
+is not evidence of today's exposure.** Fourteen switches become things that expire, which is
+the point: an expired switch reverts to `unknown`, and `unknown` is honest where a stale
+`false` is a false green.
+
+### 38.2 The scope flattening is a decision, not an oversight
+
+**`requirement_templates.entity_type` has five values. `switch_scope` has two.**
+
+| entity_type | rows | resolves to |
+|---|---|---|
+| `organization` | 98 | `company` |
+| `chemical` | 27 | `site` |
+| `person` | 27 | `site` |
+| `equipment` | 23 | `site` |
+| `site` | 19 | `site` |
+
+**`person`, `equipment` and `chemical` all resolve to the site where they are.** This is
+lossy and deliberate, and it is written down here so that a future session reads it as a
+decision rather than as something nobody noticed.
+
+**Where the loss actually bites: the 14 `exposure_*` switches.** Exposure is a property of
+**a person doing a task** — the lead standard turns on whether *this worker* is above the
+action level, not whether the site is. `switch_scope` cannot express that. Site is the honest
+floor: "is anyone at this site above the action level" is weaker than the standard, and it is
+the strongest thing the schema can hold. **Recorded rather than absorbed**, because the day a
+customer asks why a warehouse worker is being asked about lead, this is the answer.
+
+**Reversal condition:** if a requirement ever needs per-person resolution — a medical
+surveillance roster, say — `switch_scope` gains a third value and `company_switches` gains a
+person reference. That is a migration, not a workaround.
+
+### 38.3 The scopes settled, and the two that moved
+
+`owns_fleet` and `cdl_drivers` are **company**-scoped: a fleet is an enterprise asset and
+FMCSA registration is enterprise-level. Per-vehicle facts belong to the equipment layer.
+
+**`entity_county` is dropped entirely.** Migration 009 put the authoritative county on
+`entities`, and a switch would be a fifth free-text place for a jurisdiction to disagree with
+itself. The gate reads it from `entities` directly (§35.2).
+
+**`outdoor_work` splits into `heat_exposure_area` and `wildfire_smoke_exposure`, and the name
+was the bug.** §2.4 justified one switch as covering "heat and wildfire smoke rules". Oregon's
+heat rule triggers on **"work area heat index reaches 80°F"** — *indoor areas included*. The
+name `outdoor_work` encoded an assumption the rule does not make, and **a foundry with no
+outdoor work would have been told the heat rule did not apply to it.** They are also two
+separate rules with separate triggers and separate controls, and Washington's thresholds
+differ from Oregon's on both.

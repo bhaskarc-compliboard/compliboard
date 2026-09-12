@@ -1493,6 +1493,7 @@ export type Database = {
           notes: string | null
           question_plain: string | null
           scope: Database["public"]["Enums"]["switch_scope"]
+          thresholds: number[] | null
           updated_at: string
           value_type: Database["public"]["Enums"]["switch_value_type"]
           volatility: Database["public"]["Enums"]["switch_volatility"]
@@ -1510,6 +1511,7 @@ export type Database = {
           notes?: string | null
           question_plain?: string | null
           scope: Database["public"]["Enums"]["switch_scope"]
+          thresholds?: number[] | null
           updated_at?: string
           value_type: Database["public"]["Enums"]["switch_value_type"]
           volatility?: Database["public"]["Enums"]["switch_volatility"]
@@ -1527,6 +1529,7 @@ export type Database = {
           notes?: string | null
           question_plain?: string | null
           scope?: Database["public"]["Enums"]["switch_scope"]
+          thresholds?: number[] | null
           updated_at?: string
           value_type?: Database["public"]["Enums"]["switch_value_type"]
           volatility?: Database["public"]["Enums"]["switch_volatility"]
@@ -1546,6 +1549,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      array_is_ascending: { Args: { a: number[] }; Returns: boolean }
       auth_company_id: { Args: never; Returns: string }
     }
     Enums: {

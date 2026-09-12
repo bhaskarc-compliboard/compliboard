@@ -1,6 +1,10 @@
 # Detailed To-Do
-**Version:** 9 · **Updated:** 11 September 2026
-**Supersedes:** version 8 (11 Sep). Golden-file case 001 (2.8) gains two assertions — no
+**Version:** 10 · **Updated:** 11 September 2026
+**Supersedes:** version 9 (11 Sep). **Phase 6.2 is done on staging** — migration 012 adds
+`switches.thresholds`, and 90 switches are seeded with 35 dependency edges and no cycles.
+Adds **6.3a**, the open shape question (per-substance thresholds, which recur across four
+switches and must be solved once), and **6.3b**, three `is_determination` corrections found
+while seeding. Version 9: golden-file case 001 (2.8) gains two assertions — no
 Oregon agency, and say what is not covered — checkable only because 2.1 assigned `agency_id`.
 Version 8 recorded **Phase 2.1 done on BOTH environments** — 33 agencies,
 187 of 194 requirements assigned, 56 coverage rows, verified identical staging-to-production.
@@ -943,6 +947,64 @@ holds **0 rows**; this is what fills it.
 
 ### 6.3 Write `applies_expression` for the active rows ⬜ ⏱ 5 days
 **192 active rows.** Free text → machine-evaluable. **Slow, and worth doing slowly.**
+**Inherits 90 switches from 6.2** (`supabase/seed-data/switches.json`), 6 of them numeric
+with thresholds, 35 dependency edges, no cycles.
+
+#### 6.3a 🔴 THE OPEN SHAPE QUESTION — per substance, not per site ⬜
+*Raised 11 Sep by the 6.2 seed. Not a limitation to work around — a modelling problem that
+recurs four times, and whatever 6.3 decides for one of them decides for all four.*
+
+Four switches are **boolean because their thresholds are per CHEMICAL and a site-level
+number cannot express them:**
+
+| Switch | The threshold that will not fit |
+|---|---|
+| `tier2_epcra_threshold` | 10,000 lb **of any one hazardous chemical**, or the lower of 500 lb and the TPQ for an EHS |
+| `ehs_above_tpq` | each extremely hazardous substance has **its own** threshold planning quantity |
+| `tri_reportable` | 25,000 lb manufactured or processed, 10,000 lb otherwise used — **per listed chemical**, with much lower PBT and PFAS thresholds |
+| `psm_rmp_threshold` | Appendix A lists **a threshold quantity per substance** |
+
+Add TSCA Chemical Data Reporting, whose threshold is also per substance, and it is five.
+
+**Why it cannot be solved the way §23.1 solved the last one.** `substance_exposure_above_action_level`
+decomposed into 14 switches because the library holds exactly 14 substance standards — a
+**closed** set. These are **open**: EPCRA's list is hundreds of substances, TRI's is
+hundreds more, and both change. One switch per substance is unbounded, and §23.1's own
+reversal condition anticipates exactly this case.
+
+**Why it must be solved once rather than four times.** All four ask the same question — *does
+this site hold substance X above quantity Y* — and four different answers would mean four
+different shapes in `applies_expression`, four places for the resolution engine to get the
+matching subtly wrong, and four screens showing the same fact differently.
+
+Three shapes worth considering, none chosen: **(a)** a `company_chemicals` table — one row
+per substance per site with a quantity, which `applies_expression` joins against; **(b)** a
+switch per *regulatory list* rather than per substance, keeping the quantity in evidence;
+**(c)** keep the booleans and make the determination requirement's own output the record.
+**(a)** looks most likely and is the largest, because it is a new table in the spine.
+
+**Blocked on nothing.** It needs a decision, not data.
+
+#### 6.3b `is_determination` is wrong on three rows ⬜
+*Found 11 Sep while seeding switches. Library-quality, not switch work — these live on
+`requirement_templates`, which is why 6.2 did not touch them.*
+
+- ⬜ **`Monthly generator-category determination` should be flagged and is NOT.** It is the
+  most determination-shaped row in the library: named "determination", monthly **by
+  regulation**, and its output gates **16 other requirements** — more than any other switch.
+  It should carry `is_determination = true` and `produces_switch = 'hazwaste_generator_category'`.
+- ⬜ **`Pay statement expanded disclosures (2026)` should NOT be flagged.** It determines
+  nothing. It is also the row whose citation is `2025 session law, eff. Jan 1, 2026`, already
+  flagged as having no enforceable citation — one row with two problems.
+- ⬜ **`Chemical storage compatibility / segregation` should NOT be flagged.** A `universal`
+  row with no trigger prose at all; calling it a determination looks like a generator flag
+  rather than a judgement.
+
+- ⬜ **And `produces_switch` is NULL on all 9 currently-flagged rows.** The seed names what
+  each should point at — `air_permit_required`, `industrial_stormwater`, `or_cr2k_threshold`,
+  `business_type`, `hazardous_chemicals_present`, `hazardous_piping_present`,
+  `has_group_health_plan`. Three of those switches did not exist before 6.2, which is its own
+  evidence that the flag was set before the vocabulary existed.
 
 ### 6.4 Federal layer, agency by agency ⬜ ⏱ 1 week
 ~95 rows serving every state forever.
