@@ -79,6 +79,24 @@ for what each covers. Not all of them are present at any given time; the owner a
   *what next* to the build plan's *why*.
 - **`WORKSPACE.md`** — the Compliance Workspace module: conversation model, fact capture,
   topic lifecycle, signup and industry classification. Design agreed, not built.
+- **`DETERMINATION-GATE.md`** — the full specification for Stage 1 of the runtime pipeline,
+  the step that decides whether the answer depends on a fact we do not have and asks for it
+  instead of guessing. Prompt, output union, the two schema changes, route wiring, and how a
+  user answers the question in place. **Built as of 11 Sep; §11, proximity confirmation, is
+  specified and not built.**
+- **`AUDIT-CHECKS.md`** — the questions `npm run check` does not answer. It answers *"does
+  the code build and behave"*; nothing answered *"is what we are telling customers actually
+  true"*, and this is that second set. Each check is a question, the query that answers it,
+  and **the answer on the date it was last actually run** — including where that answer is
+  bad. A check earns its place only if a wrong answer would reach a customer and **nothing
+  else would notice**.
+- **`TESTING.md`** — three kinds of test that get confused, kept apart: **manual** (two per
+  feature, the perfect case and the edge case, and the edge case is where domain knowledge
+  does work no script replicates), **automated regression** (the golden-file set,
+  `npm run golden`, which can only tell you the output *moved*), and **unattended
+  exploration** (the overnight agent — and the hard line that it **cannot validate
+  regulatory content**, because a model checking a model produces agreement, and agreement
+  is not verification). Writing the manual set is step 12 of `HOW-WE-BUILD.md` §2's loop.
 - **`PATTERNS.md`** — conventions carried over from the sibling Bizpulses project, with
   notes on what to copy and what not to.
 
