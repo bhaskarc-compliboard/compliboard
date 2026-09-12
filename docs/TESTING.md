@@ -1,6 +1,10 @@
 # Testing
-**Version:** 2 · **Updated:** 11 September 2026
-**Supersedes:** version 1 (11 Sep). Golden-file case 001 gains two assertions beyond the
+**Version:** 3 · **Updated:** 11 September 2026
+**Supersedes:** version 2 (11 Sep). Adds the **2.2 manual set** — including the unbuilt-industry
+case, where a clean gate and an unanchored answer look identical on screen, because "do we know
+enough about YOU" and "do we know enough about your INDUSTRY" are different questions and 2.2
+answers only the first. Records that the golden runner now exists as `npm run golden`.
+Version 2: golden-file case 001 gains two assertions beyond the
 original one: the answer must draw on **no Oregon agency** (Reno to Philadelphia is entirely
 federal — 22 of 192 live rows are in scope), and it must **say that origin and destination
 state requirements are not covered** (neither Nevada nor Pennsylvania is in the library).
@@ -77,6 +81,22 @@ facts, each labelled by how well it is known — `primary-source-retrieved` or `
 **What it concludes: only that the output moved, and where.** A golden file cannot tell you
 the new answer is worse. A human reads the diff. That is the point — it makes change
 *visible*, which is the thing prompt work otherwise lacks entirely.
+
+**The runner exists as of 11 September: `npm run golden`.** It reads every case in
+`tests/golden/`, runs it against staging, and reports per-assertion PASS / FAIL / HUMAN / SKIP.
+Three things about it are deliberate:
+
+- **It rebuilds the gate prompt from `lib/determinationGate.ts` rather than holding a copy.**
+  A copy would drift, and the drift would be silent because the tests would keep passing
+  against the stale copy.
+- **An assertion with no checker reports SKIP, never PASS.** A runner that silently passed
+  what it could not check would be worse than no runner — `AUDIT-CHECKS.md`'s standard.
+- **Assertions a script cannot judge report HUMAN** — "does it say Nevada and Pennsylvania are
+  not covered" is read by a person, not matched by a regex.
+
+The `system_prompt_sha256` in each case is a tripwire: when the prompt changes, the run says
+so loudly and tells you every stored expectation was written against the old one. *(Proven by
+falsifying a recorded hash and confirming it fired, then restoring it.)*
 
 **It grows by one entry per failure found.** Every real-world wrong answer becomes a case, so
 the same mistake cannot return quietly. Case 001 is the **2.5L bottle** — the original
@@ -227,6 +247,100 @@ and it is the one class of overnight work with no way to produce a false clean.
 *(That finding predates this repository's documents and is carried in from the owner's
 original diligence rather than read from the code. It should be re-measured against the
 resolution engine once Phase 4.1 exists, and recorded here with a date.)*
+
+---
+
+# MANUAL TEST SET — 2.2, the determination gate
+*Written 11 September 2026, the day it landed. `HOW-WE-BUILD.md` §2 step 12.*
+
+**Unlike 2.1, this one you can see.** The gate runs on every `/api/chat` and `/api/audits`
+request, and when it stops, a card appears where the answer would have been.
+
+**Before you start:** confirm the dev server points at **staging** — you should be able to
+sign in as *Test Alpha Chemical* (Hillsboro, Oregon) or *Test Beta Cannabis* (Portland).
+`/api/chat` now requires a login, so a signed-out tab gets a 401 rather than an answer, and
+that is the fix working rather than a bug.
+
+### 1. The perfect case — does it ask, and is the question a good trade?
+
+1. Sign in as **Test Alpha Chemical**. Go to `/compliance`, *Create* tab.
+2. Ask, verbatim: **"We ship isopropyl alcohol from our Reno warehouse to a customer in
+   Philadelphia, six 2.5L bottles to a case. What is the minimum labelling requirement for
+   the bottles and for the case?"**
+3. **Expected: an amber card, no checklist.** It should ask about the concentration or the
+   packing group, offer to take the SDS, and list what that unlocks.
+4. **The convincing test, not the correct one:** read the card as somebody with a shipment
+   going out tomorrow. Does it read as a **trade** — *give me this, get those five things* —
+   or as an obstacle? If the `unlocks` list is vague ("a more accurate answer"), the question
+   is not earning itself.
+5. **Type an answer in the box** — `II` — and send. You should get a checklist, not the same
+   question again.
+6. **Then upload an SDS instead** (`tests/golden/` case 002 has the text of one). The fact
+   should now come from the document rather than from you.
+
+### 2. The edge case — what the card looks like when it is WRONG
+
+These are the four failure shapes. Each is worth deliberately provoking once.
+
+1. **It asks twice for the same thing.** Answer the question, and if the same card comes
+   back, that is the infinite-ask bug — **the one failure worse than a wrong answer**. The
+   suppression rule in `lib/determinationGate.ts` is supposed to make this impossible; if you
+   see it, stop and report it rather than working around it.
+2. **It asks something it already knows.** Ask **"what minimum wage do we pay at our
+   Hillsboro plant?"** If it asks where your site is, the gate has lost sight of `entities`
+   (`DECISIONS.md` §35.2). It should answer.
+3. **It asks three questions in one.** Read the question text: "What is the packing group,
+   and do you use your own vehicles, and how many employees do you have?" is one `ask` object
+   carrying three questions in a sentence. The schema caps the object, not the prose.
+4. **It hedges in a checklist.** If a checklist step says *"if packing group II, order these;
+   if III, order those"*, the gate let something through it should have asked about. The
+   schema has no field for that, so it would arrive inside a `description` string.
+
+### 3. The edge case with no gate opinion — an industry we have not built
+
+**This is the one that is easy to miss, because everything on screen looks fine.**
+
+1. Sign in as **Test Beta Cannabis**.
+2. Ask anything real — **"what do we need in place to store and use butane for extraction?"**
+3. **Expect a clean gate and a confident answer.** The gate will probably proceed: it knows
+   the worksite is Portland, Oregon, and nothing about the question is missing a *company*
+   fact.
+4. **And the answer is unanchored.** All 25 of the cannabis coverage rows are at
+   `row_count = 0`. **There is not one library row behind that answer** — it is the free
+   enumeration mode `CLAUDE.md` §3.3 names as known-bad, and the gate has no opinion about it
+   whatsoever.
+
+**The two questions are different, and 2.2 only answers the first:**
+
+| | Question | Answered by | State today |
+|---|---|---|---|
+| **About YOU** | do we know enough about this company and this shipment? | **the determination gate** (2.2) | ✅ built |
+| **About YOUR INDUSTRY** | do we know enough about this vertical to answer at all? | **`industry_coverage`** (2.1) + the coverage strip (M6) | data exists, **nothing renders it** |
+
+A gate that passes cleanly means *"nothing about you is missing"*. It does **not** mean
+*"this answer is anchored"*. Those are answered by different tables, and today only one of
+them is wired to anything. **Until the coverage strip exists, a confident cannabis answer is
+indistinguishable on screen from a confident chemical one**, and only the second has 187
+requirements behind it.
+
+Repeat step 2 as **Test Alpha Chemical** — same gate behaviour, 187 rows behind it instead of
+zero, and **nothing on the screen tells you which you are looking at.** That difference is
+what M6 has to make visible, and noticing it is the point of this test.
+
+### 4. The proceed path, which is easy to forget to check
+
+Ask three ordinary questions in a row as Test Alpha Chemical and count how many produce a
+card. **If it is more than one, the gate is asking too much** — and that failure is invisible
+one answer at a time, because each question looks justified on its own
+(`DETERMINATION-GATE.md` §7). It is also the direction that loses users: people abandon a
+product that interrogates them, and they do not file a bug first.
+
+### What none of these can tell you
+
+Whether the gate asked for the **right** fact. It asks one question confidently either way,
+and a plausible wrong question — asking about employee count for a shipping question — reads
+exactly like a good one. `tests/golden/` case 003 covers the specific case where employee
+count must not block; everything else is judgement.
 
 ---
 

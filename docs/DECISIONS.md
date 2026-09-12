@@ -1,6 +1,12 @@
 # Decision Record
-**Version:** 18 · **Updated:** 11 September 2026
-**Supersedes:** version 17 (11 Sep). Adds §34, **a correction to §4**: the checklist schema
+**Version:** 19 · **Updated:** 11 September 2026
+**Supersedes:** version 18 (11 Sep). Adds §35, two corrections to the determination-gate spec
+found while building it: the `/api/chat` authentication closes **one** of §0.8b's four
+undocumented routes rather than four, and the gate as specced could not see the worksite's
+jurisdiction — it would have asked for an address every company has already given us. **Only
+the PROCEED-path golden case could have caught the second**, which is the transferable half:
+testing only the direction you are building for finds nothing about the direction you are
+not. Version 18 added §34, **a correction to §4**: the checklist schema
 did not lack a slot for "I need one more fact first" — it had an ADDITIVE one, positioned
 after the answer, so the fix §4 implies was already in place when the failure happened.
 Additive and alternative are different things that look identical in a schema. The fix is a
@@ -1898,3 +1904,76 @@ asks — it should not — it is a second request, not a second field.
 **What §4 keeps.** Its other three root causes stand unchanged, and its governing principle —
 excellent against an artifact, unreliable from nothing — is the most load-bearing sentence in
 this record. Only the first root cause is restated.
+
+---
+
+## 35. Two corrections to the determination-gate spec, both found by building it
+
+**11 September 2026. Both errors were mine, both were in `DETERMINATION-GATE.md` v1, and
+both were caught between writing the spec and finishing the code.**
+
+### 35.1 The `/api/chat` authentication closes ONE route, not four
+
+**What the spec said:** adding `requireCompany()` to `/api/chat` "closes four of the six
+routes named in `TODO.md` §0.8b as a side effect."
+
+**What is true:** §0.8b names six routes with no session check. Two — `/api/industries` and
+`/api/signup` — are **documented deliberate exceptions** (§0.9), because both serve the
+pre-login signup page. That leaves **four undocumented**: `/api/chat`, `/api/extract-dates`,
+`/api/feedback`, `/api/scan-website`. This work closes **`/api/chat`. One of four.**
+
+**Still open, and worth naming rather than leaving inside a corrected count:**
+`/api/scan-website` still takes a URL from an unauthenticated request body and fetches it
+plus sixteen guessed subpaths — the blind SSRF in §0.8b. `/api/feedback` still interpolates
+caller input straight into an HTML email body with no escaping, and still sends from the
+project's Resend account. `/api/extract-dates` still takes an anonymous model call.
+
+**Why it matters beyond the arithmetic:** the instruction that followed said "verify the four
+§0.8b routes it closes", which is my error propagating into somebody else's plan. **A wrong
+count in a security record reads as progress and is the kind of thing nobody re-derives.**
+`AUDIT-CHECKS.md` check 11 exists for exactly this class — every count a document asserts,
+re-measured — and this is its first live example.
+
+### 35.2 The gate could not see where the worksite is — and only the PROCEED test would have caught it
+
+**What the spec said the gate reads:** the question, the uploaded document, `company_switches`
+for established facts, and `switches` for the vocabulary. It listed `requirement_templates`
+as deliberately excluded and argued that case at length.
+
+**What it omitted:** `entities`. **Jurisdiction — state, county, city — is not in
+`company_switches` and never will be**, because it is a property of a *site* rather than of a
+company (§20), and it has lived on `entities` since migration 009.
+
+**The consequence, had it shipped:** the gate would have asked *"where is your worksite?"* —
+a fact **migration 010 guarantees every company already has**, and one that §25 says comes
+from **geocoding rather than from asking**. That is `DETERMINATION-GATE.md` §7's persistence
+failure — the gate asking for something already established — arriving on day one, for **the
+single most frequently determining fact in the product**. Jurisdiction is in the match key
+for every requirement the library holds.
+
+**How it was caught, and this is the part worth keeping.** It was not caught by review, by
+typechecking, or by the acceptance test. **It was caught by writing the second golden case —
+the one that proves the gate does NOT ask when it should not.**
+
+Case 001 tests the ask direction. It passed with the bug present, and would have kept
+passing: a gate that asks too much still asks for the SDS. **Only a case asserting "this
+question must NOT produce a question" could surface a gate that asks for something it already
+knows.**
+
+> **Testing only the direction you are building for finds nothing about the direction you are
+> not.**
+
+The 2.2 work was entirely about making the product ask. Every instinct while building it was
+pointed at the ask path: the prompt, the schema, the card, the round trip, the acceptance
+criterion inherited from `DECISIONS.md` §4. The proceed path was the afterthought — and it
+was the only thing that could find this.
+
+**The general form, which applies well beyond this gate:** where a feature exists to make
+something happen, the test that matters most is usually the one asserting it does *not*
+happen in the ordinary case. A spam filter is tested by the mail that must arrive. A gate is
+tested by the question it must not ask. `TESTING.md` (c) says the same thing about
+consistency probes — *both answers cannot be right* is checkable without knowing which is.
+
+**Reversal condition:** none. Both are corrections of fact. The standing rule is the second
+one: **every gate-like feature gets a negative case in the golden set, written at the same
+time as the positive one, not afterwards.**
