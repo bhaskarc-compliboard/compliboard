@@ -1,6 +1,13 @@
 # Audit Checks
-**Version:** 10 · **Updated:** 12 September 2026
-**Supersedes:** version 9 (12 Sep). Check 10 is re-run after Phase 6.3 and **the census itself is
+**Version:** 11 · **Updated:** 12 September 2026
+**Supersedes:** version 10 (12 Sep). **Check 12 is FAILING on both environments** — migration
+013 split three OR-OSHA requirements into eleven and nothing recounted the coverage rows, so
+`row_count` reads 53 where the live count is 61. Recorded as a bad answer rather than fixed,
+because it is a data change to production. Adds **checks 19–21**, the expression layer's
+invariants: every switch a condition names exists (a missing one is valid JSON that evaluates
+to `unknown` forever, with no error anywhere), every inventory CAS is one we hold thresholds
+for (vacuous today, and recorded as vacuous), and no condition asserts a number the rule does
+not say. Version 10: check 10 is re-run after Phase 6.3 and **the census itself is
 now a file** — `supabase/census.sql` — because the check had produced three different totals (673,
 619, 798) from three ad-hoc censuses, and a count with no stored definition behind it cannot tell
 drift from rewording. Version 9 added **check 18** — does an incomplete chemical inventory
@@ -72,11 +79,16 @@ select count(*) filter (where citation is null)                    as no_citatio
 
 | | |
 |---|---|
-| rows with a citation | **194 of 194** |
-| rows with a `citation_url` | **0 of 194** |
-| rows with a `citation_quote` | **0 of 194** |
-| rows with a `source_checked_at` | **0 of 194** |
-| rows at `status = 'verified'` | **0 of 194** — all 194 are `generated` |
+| rows with a citation | **200 of 200 live** |
+| rows with a `citation_url` | **0 of 200** |
+| rows with a `citation_quote` | **0 of 200** |
+| rows with a `source_checked_at` | **0 of 200** |
+| rows at `status = 'verified'` | **0 of 200** — all 200 are `generated` |
+| rows with `citation_federal_analogue` | **0 of 200** |
+
+*Re-measured 12 September 2026 on both environments. The denominator moved from 194 to 200
+live rows because migration 013 split three requirements into eleven; the numerators did not
+move at all, because splitting a row cannot give it a source its parent never had.*
 
 **Every requirement in the library names a rule and NOT ONE links to it.** No row carries
 the text it is asserting, and no row records a date on which a human opened the source.
@@ -86,7 +98,7 @@ enum value reads as a mild caveat — *a model wrote this, a person has not sign
 The columns say something harder: **there is no artifact behind any of these rows at all.**
 Not an unchecked link — no link. `CLAUDE.md` §3.3 is the rule this bumps against: the model
 reasons excellently against an artifact and enumerates unreliably from nothing, and today
-the library is the output of the second mode for all 194 rows.
+the library is the output of the second mode for all 205 rows.
 
 **What it does NOT mean.** It does not mean the citations are wrong. Spot checks against
 live eCFR text during the golden-file work found the ones checked to be accurate. It means
@@ -119,7 +131,7 @@ select count(*) from public.requirement_templates
 | | |
 |---|---|
 | Oregon rows citing 29 CFR | **49** |
-| rows with `citation_federal_analogue` set | **0 of 194** |
+| rows with `citation_federal_analogue` set | **0 of 200 live** — re-measured 12 Sep |
 
 **The column built for exactly this stands empty while 49 rows do the thing it exists to
 prevent.** `citation_federal_analogue` was added in migration 007 so a requirement could say
@@ -188,9 +200,32 @@ select a.short_name, c.industry, c.row_count as stored, tr.n as live
  where c.row_count <> tr.n;     -- must return zero rows
 ```
 
-**Answer, 11 September 2026:** zero rows. `sum(row_count)` across all 56 coverage rows is
-**185**, against **192** live requirements of which **185** carry an agency — the other 7 are
-the deliberate NULLs.
+**Answer, 11 September 2026:** zero rows. `sum(row_count)` across all 56 coverage rows was
+**185**, against **192** live requirements of which **185** carried an agency — the other 7
+being the deliberate NULLs.
+
+> ### ⛔ **FAILING as of 12 September 2026, on BOTH environments. One row.**
+>
+> | agency | industry | stored | live |
+> |---|---|---|---|
+> | **OR-OSHA** | chemical-manufacturing | **53** | **61** |
+>
+> **Cause, and it is not mysterious: migration 013 split three requirements and nothing
+> recounted the coverage rows.** Electronic OSHA injury-data submission became 3, Process
+> Safety Management became 5, Permit-required confined spaces became 3 — all OR-OSHA, all
+> chemical-manufacturing, a net **+8**, which is exactly the gap. `sum(row_count)` is still
+> 185 against **193** live rows carrying an agency.
+>
+> **Why this is the check working rather than the check being noise.** `row_count` is what the
+> product shows a customer when it says how much of an agency it covers. Nothing else in the
+> system reads it, so nothing else would have noticed it drifting — no constraint, no build, no
+> test. It was caught by a documentation sweep two days after it broke, which is later than it
+> should have been and is still the only thing that caught it.
+>
+> **The fix is a recount, not an edit**, and it belongs with whatever writes coverage rows —
+> a migration that splits requirements must recount the coverage rows it touched, or the
+> recount must be a step the loader owns. **Filed as `TODO.md` 6.4f. Not fixed in this sweep:
+> it is a data change to production and belongs in its own reviewed step.**
 
 **Why this check exists, and it is the reason this file exists at all.**
 
@@ -214,7 +249,7 @@ close**, and this is the first entry that was written because that gap had alrea
 **It also does not stay small.** Library rows are versioned, never edited in place
 (`CLAUDE.md` §3.2), so **retired rows accumulate forever while live ones do not**. Every
 split, every superseded row, every corrected requirement adds one to the overstatement and
-takes nothing away. Two today, on a library of 192; the error only ever grows, and it grows
+takes nothing away. Two today, on a library of 200; the error only ever grows, and it grows
 fastest during exactly the work — Phase 6's agency-by-agency verification pass — that
 produces the most splits. An error that shrinks can be left; this one had to be caught before
 it was inherited.
@@ -253,7 +288,7 @@ select t.requirement_name, x.bad_id
 bare `uuid[]` and **Postgres cannot enforce element-level foreign keys on an array** — there
 is no syntax for it. So an invented, mistyped or stale UUID sits in that array, matches
 nothing at query time, raises no error, and simply means the second regulator silently
-vanishes from the answer. The column is empty on all 194 rows today, which is exactly why
+vanishes from the answer. The column is empty on all 200 live rows today, which is exactly why
 this should be written before anything fills it.
 
 ---
@@ -399,7 +434,7 @@ duplicates on both sides, verified).
 
 ## 11. Is every count asserted in a document still true?
 
-The documents assert numbers constantly: 194 requirements, 192 active, 33 agencies, 56
+The documents assert numbers constantly: 205 requirements, 200 live, 33 agencies, 56
 coverage rows, 65 policies, 59 through `auth_company_id()`, 615 objects, 49 Oregon rows
 citing 29 CFR. Each is a claim with a date. This check re-derives them and reports the ones
 that have moved.
@@ -465,8 +500,9 @@ select cs.id, cs.switch_id, cs.scope from public.company_switches cs
  where s.scope <> cs.scope;
 ```
 
-**Answer, 12 September 2026, both environments:** 0 dangling edges · **90 of 90 reachable** ·
-0 scope mismatches · 35 edges · depths `{1: 55, 2: 35}`.
+**Answer, re-measured 12 September 2026, both environments:** 0 dangling edges · **95 of 95
+reachable** · 0 scope mismatches · **40 edges** · 55 roots and 40 children, max depth 1, and the
+two depth maps compared row for row with 0 differences.
 
 **Why nothing else catches it.** `switches_no_self_dependency` checks
 `depends_on_switch IS DISTINCT FROM id` — **that stops `A → A` and nothing else.** `A → B → A`
@@ -772,6 +808,101 @@ Writing the runner now would fix its structure around the third of the checks th
 be expressible today, and that third is the least important. **Build it once, after Phase 2,
 against the full set.** Until then these are run by hand and the answers are written here
 with their dates — which is slower, and is not the same as not doing them.
+
+---
+
+## 19. Does every switch a condition names actually exist?
+
+```sql
+with used as (
+  select distinct trim(both '"' from
+           jsonb_path_query(applies_expression, 'lax $.**.switch')::text) as s
+    from public.requirement_templates
+   where applies_expression is not null)
+select s from used
+ where s not in (select id from public.switches);   -- must return zero rows
+```
+
+**Answer, 12 September 2026, both environments:** zero rows. **83 distinct switches referenced,
+0 dangling**, 12 switches referenced by nothing (4 of those are context rather than triggers —
+`TODO.md` 6.4d).
+
+**Why nothing else catches it.** A condition naming a switch nobody defined is **valid JSON**.
+It loads, it stores, it evaluates — to `unknown`, forever. And `unknown` is the correct,
+designed answer for a fact we do not have, so the requirement it guards simply never resolves
+in either direction and **no error is raised anywhere**. There is no foreign key to lean on:
+the switch id lives inside a `jsonb` document, not in a column. `npm run check` cannot see into
+it, and the golden-file set would not either, because the pipeline behaves *correctly* given a
+missing fact.
+
+`load-expressions.js` refuses the whole file on an unknown switch, which closes the write path.
+**This check exists because the write path is not the only path** — a row can be updated in the
+database directly, and a switch can be renamed or deleted after the conditions were written.
+The loader asks "is this file valid"; this asks "is the library still consistent".
+
+---
+
+## 20. Is every CAS number in a customer's inventory one we hold thresholds for?
+
+```sql
+select c.id, c.cas_number
+  from public.company_chemicals c
+  left join public.regulated_substances r on r.cas_number = c.cas_number
+ where c.cas_number is not null and r.cas_number is null;   -- must return zero rows
+
+-- and, separately, the size of the unevaluable population:
+select count(*) filter (where cas_number is null)            as unidentified,
+       count(*) filter (where max_quantity is null
+                          or unit is null or unit <> 'lb')   as unquantified,
+       count(*)                                              as total
+  from public.company_chemicals;
+```
+
+**Answer, 12 September 2026, both environments:** zero rows — **vacuously, because
+`company_chemicals` holds 0 rows and `regulated_substances` holds 0 rows.** Seeding the
+reference table is `TODO.md` 6.4b. **A vacuous pass is recorded as vacuous**; this check has
+never refused anything and by the standard in "How to add a check" is therefore untested.
+
+**Why it exists anyway, and why the second query matters more than the first.** The first query
+is largely guarded by a foreign key (`company_chemicals.cas_number → regulated_substances`), so
+it should stay at zero by construction. **The second query is the one with no constraint behind
+it**, because `cas_number` is *deliberately nullable*: a site can tell us it has a drum of
+"parts washer solvent" before anyone works out what is in it, and recording that is better than
+recording nothing. Migration 014 makes such a row return `unknown` rather than `false`
+(`DECISIONS.md` §45).
+
+**So the number to watch is not a violation count — it is a proportion.** If most of a
+customer's inventory is unidentified, every threshold question they ask comes back `unknown`,
+and the product is honest and useless at the same time. That is a *product* signal, not a data
+error, and no other check would surface it.
+
+---
+
+## 21. Does any condition assert a number the rule does not say?
+
+```
+npm run expressions        # dry run; warns per row, refuses nothing
+```
+
+**Answer, 12 September 2026:** **2 warnings out of 199 conditions**, both known and both
+recorded with their reasoning:
+
+| Requirement | Number | Status |
+|---|---|---|
+| `Electronic submission of Form 300A — 20-249 employees` | `250` | The rule's text says "20-249"; the condition says `< 250`. The same boundary written as an exclusive bound — **accepted** |
+| `Oil Facility Response Plan determination` | `1320` | 1,320 gallons is the SPCC threshold and is stored on `oil_storage_aboveground_gallons`; it does not appear in **this row's** trigger prose — **accepted, flagged medium** |
+
+**Why nothing else catches it.** A fabricated threshold is **not a bug in any sense a machine
+can detect**: the JSON is well-formed, the type is right, the switch exists, and the number is
+usually a real number from a real regulation. The one that shipped was imported from a
+*neighbouring* rule — correct in its own context, wrong here. `DECISIONS.md` §44 is the rule
+(a threshold must appear in the rule's own text, in that unit) and §44.1 generalises it: a
+proxy is permitted, a proxy with a fabricated magnitude is not.
+
+**This check is a warning and not a refusal on purpose.** The two above are legitimate and a
+hard failure would train people to bypass it. **The test of the check is not that it returns
+zero — it is that every non-zero answer has a name, a reason and a decision beside it**, which
+is what the table is.
 
 ---
 

@@ -1,6 +1,10 @@
 # Testing
-**Version:** 6 · **Updated:** 12 September 2026
-**Supersedes:** version 5 (12 Sep). Adds an assertion CLASS rather than a case — every
+**Version:** 7 · **Updated:** 12 September 2026
+**Supersedes:** version 6 (12 Sep). Adds **the expression layer's three invariants** — a new
+class, because they are tests of a body of DATA and a violation is silent: a condition naming a
+switch nobody defined is valid JSON that evaluates to `unknown` forever. Records that the
+manual test for this layer is a read rather than a click, and the two known-failing cases kept
+visible on purpose. Version 6 supersedes version 5 (12 Sep). Adds an assertion CLASS rather than a case — every
 threshold in an expression must be quoted from the rule's own text, never derived — which
 caught a figure imported from a neighbouring rule on its first run. Version 5 recorded the
 question-7 variance — the gate's
@@ -16,12 +20,47 @@ enough about YOU" and "do we know enough about your INDUSTRY" are different ques
 answers only the first. Records that the golden runner now exists as `npm run golden`.
 Version 2: golden-file case 001 gains two assertions beyond the
 original one: the answer must draw on **no Oregon agency** (Reno to Philadelphia is entirely
-federal — 22 of 192 live rows are in scope), and it must **say that origin and destination
+federal — 22 of 200 live rows are in scope), and it must **say that origin and destination
 state requirements are not covered** (neither Nevada nor Pennsylvania is in the library).
 Records that assertion 2 was unfalsifiable before Phase 2.1 and is a `WHERE` clause now.
 
 **Status: (a) is a standing obligation and starts now. (b) is specced in `TODO.md` 2.8 with
 two cases written. (c) is not built and is deliberately bounded.**
+
+---
+
+## The expression layer is a new class of invariant
+
+Added 12 September 2026, with Phase 6.3. **These are not tests of code and not tests of a
+model — they are tests of a body of data, and they fail in a way no type-checker and no build
+can see.** A condition that names a switch nobody defined is still valid JSON, still loads,
+and still evaluates: it just evaluates to `unknown` forever, so the requirement it guards
+becomes permanently unanswerable and nothing anywhere reports an error.
+
+They belong here and in `AUDIT-CHECKS.md` (checks 19–21) for different reasons: **the loader
+enforces them at write time, and the audit checks ask whether they are still true afterwards.**
+A row can be edited in the database without going through the loader; the second question is
+not the first question asked twice.
+
+| Invariant | Why a violation is silent | Enforced where |
+|---|---|---|
+| **Every switch id named by a condition exists** | An unknown switch has no value, so the clause is `unknown`; `unknown AND true = unknown` and the requirement never resolves either way. No error, no log, no failed query. | `load-expressions.js` refuses the file · `AUDIT-CHECKS.md` check 19 |
+| **Every CAS in a company's inventory is in `regulated_substances`** | A CAS matching nothing used to make `substance_inventory()` return `false` — a clear, produced by not looking. Migration 014 makes it `unknown` instead. The invariant now guards the *data quality* question rather than the safety one. | FK `company_chemicals.cas_number → regulated_substances` · migration 014's own semantics · check 20 |
+| **No threshold appears that is absent from the rule's own text, in that unit** | A number that looks authoritative and is not. The one that shipped came from a *neighbouring* rule, so it was real, correctly typed, and wrong for this requirement. | `load-expressions.js` warns per row · `DECISIONS.md` §44 · check 21 |
+
+**The manual test for this layer is not a click — it is a read.** `npm run expressions` prints
+every non-high-confidence condition as an English sentence next to the rule's own trigger
+prose. **The test is: does the sentence say what the prose says?** Two people can do this
+without a database. It is the only test in this file that a domain expert can run better than
+an engineer, which is exactly `HOW-WE-BUILD.md` §1's argument for keeping the roles apart.
+
+**Two known-failing cases to keep visible rather than fix quietly:**
+1. `NSPS/NESHAP/MACT applicability screen` **under-triggers** — gated on holding an air permit,
+   and an unpermitted source can still be subject. This is the one that fails in the dangerous
+   direction. `TODO.md` 6.4a.
+2. `Employee handbook, current version controlled` has **no condition at all** and is live. Any
+   test asserting "every live requirement has a condition" must expect 199, not 200, until
+   `TODO.md` 6.4c decides whether a best-practice row belongs in a legal library.
 **Related:** `AUDIT-CHECKS.md` · `HOW-WE-BUILD.md` §2 · `TODO.md` 2.8 · `CLAUDE.md` §3.10
 
 ---
@@ -156,7 +195,8 @@ alcohol drums, with two of seven facts checked against live eCFR text.
 
 **The shipment is Reno to Philadelphia. That is entirely federal.** DOT hazmat is 49 CFR and
 applies in every state, so **the only library rows in scope are PHMSA's 15 and FMCSA's 7** —
-22 of 192 live rows. The company is Oregon-based, and for this question **its jurisdiction is
+22 of 200 live rows. *(Re-measured 12 Sep: PHMSA 15, FMCSA 7, unchanged by migration 013's
+splits, which touched OSHA and confined-space rows only. The denominator moved 192 → 200.)* The company is Oregon-based, and for this question **its jurisdiction is
 irrelevant**: the goods never touch Oregon.
 
 **Assertion 1 — the original one.** The gate asks for the SDS instead of enumerating past the
@@ -271,8 +311,10 @@ with a timestamp and a progress bar to make it look like process. A model checki
 model's regulatory output produces agreement, and agreement is not verification.
 
 **Verification is the human step and stays one.** `AUDIT-CHECKS.md` check 1 is the reason,
-and it is not an abstraction: **0 of 194 rows carry a `citation_url`, a `citation_quote`, or a
-`source_checked_at`, and 0 are at `status = 'verified'`.** There is no artifact behind any of
+and it is not an abstraction: **0 of 200 live rows carry a `citation_url`, a `citation_quote`, or a
+`source_checked_at`, and 0 are at `status = 'verified'`** — re-measured 12 Sep, and the
+numerators did not move when the denominator went 194 → 200, because splitting a row cannot
+give it a source its parent never had.** There is no artifact behind any of
 them. An agent has nothing to check *against* — which is `CLAUDE.md` §3.3 exactly: excellent
 against an artifact, unreliable from nothing. The overnight agent is the unanchored case by
 construction.

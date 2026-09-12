@@ -1,7 +1,10 @@
 # How We Build CompliBoard
 
-**Version:** 5 · **Updated:** 12 September 2026
-**Supersedes:** version 4 (12 Sep). §3 gains the rule that a check compares against the artifact
+**Version:** 6 · **Updated:** 12 September 2026
+**Supersedes:** version 5 (12 Sep). §3 gains *build the review artifact before the bulk work* —
+the renderer that caught a logical inversion and a fabricated threshold in its first twenty
+rows, and would have caught neither built afterwards. §8's gate gains a seventh credential.
+Version 5: §3 gains the rule that a check compares against the artifact
 and never against a remembered number, with the three false alarms in one session that earned it
 — and the correction that the "Oregon sick-time split" invoked for one of them does not exist.
 §4 gains the rule that a pre-flight names files exactly as
@@ -109,7 +112,7 @@ Every fault found in three days had that shape:
 
 **Check the constraints are not too strict, either.** A company that stops and restarts an activity must still be representable.
 
-**Compare schemas object-for-object, not by generated types.** An identical types file proves only what the generator emits. It says nothing about indexes, policies, constraints or triggers. Production and staging are compared across all of them — **currently 619 objects, 0 differences.** *(The earlier 673 was a differently-built census; see `AUDIT-CHECKS.md` check 10. Whichever census the check uses has to be the same one every time, or the count itself becomes the false alarm.)*
+**Compare schemas object-for-object, not by generated types.** An identical types file proves only what the generator emits. It says nothing about indexes, policies, constraints or triggers. Production and staging are compared across all of them — **currently 798 objects, 0 differences, the two outputs byte-identical.** *(673, then 619, now 798: three runs, three censuses, none comparable to the others and none of them a regression. The census is now a file — `supabase/census.sql` — because a count whose definition is not stored cannot tell drift from rewording, and telling those apart is the only reason the check exists. `AUDIT-CHECKS.md` check 10.)*
 
 **A validator that has only ever said PASS is untested.** Run it against deliberately broken input and confirm it refuses. This was done with eight mutations of the requirements worksheet, and since with a deliberately corrupted `row_count`, a falsified prompt hash, and a dependency cycle fed to the loader that refuses them.
 
@@ -148,6 +151,19 @@ given for it was itself recalled.
 **The operative form is short.** Before raising a discrepancy, re-read the thing — `ls` the
 directory, re-read the dry run still on screen, re-run the count. It costs one command, and it
 is cheaper than being right for the wrong reason.
+
+**Build the review artifact BEFORE the bulk work, not after.** Added 12 Sep. Writing 200
+machine-evaluable conditions is the kind of work nobody can review as JSON, so a renderer was
+built first — one that turns a stored condition back into an English sentence — and the loader
+was made to print that sentence for every condition it was not confident about. **In its first
+twenty rows it caught a logical inversion and a threshold that appears in no rule**: a clause
+reading the TSCA Inventory backwards, and a number carried in from a neighbouring rule
+(`DECISIONS.md` §43, §44). Built afterwards, it would have caught neither — a renderer run over
+finished work produces 200 plausible sentences, and nobody reads 200 plausible sentences
+looking for the two that are wrong. **The artifact's value is that it exists while the work is
+still being decided**, so each sentence is read once, at the moment its author can still
+remember why they wrote it. The same shape as step 12's manual tests: written while fresh, or
+written about what was remembered.
 
 ---
 
@@ -223,7 +239,7 @@ This is the same class as writing a summary from recollection rather than from t
 
 > **These land before the first real customer document arrives.** After that, each costs a maintenance window and a rollback plan instead of an afternoon.
 
-Currently: **key rotation** — six credentials. Four from a zip shared on 9 Sep, plus both database passwords printed to a terminal on 10 Sep.
+Currently: **key rotation** — seven credentials. Four from a zip shared on 9 Sep, both database passwords printed to a terminal on 10 Sep, and on 12 Sep the **production service-role key**, printed by a shell check written to say *set* or *blank* — `${VAR:+set}${VAR:-blank}` expands to the value when the variable is set. **That seventh one argues for rotating now rather than at the gate**, because the service role bypasses RLS entirely. Still one gate ITEM; seven credentials inside it.
 
 The gate is easy to state and easy to slip past. A prospect signs, someone wants to try it, and the work does not get harder overnight — it gets harder gradually, which is how these get skipped permanently.
 
@@ -258,11 +274,12 @@ Four days, from a first read of the codebase:
 - 17 of 21 routes trusting client-supplied identity — all closed, ten converted to run under the caller's own token
 - Tenancy enforced in two independent layers, so a route that forgets a check now fails closed
 - A schema rebuildable from source, proven by building it from nothing twice
-- 194 requirements categorised into ten obligation types, priority re-rated, splits mechanism proven
-- **Thirteen migrations, two identical environments, 619 objects, zero differences**
-- **33 regulators and 187 of 194 requirements assigned to one** — and a near miss caught by projecting the mapping before applying it, which would otherwise have filed the FLSA, FMLA, ERISA, Title VII, the PWFA and EEO-1 under the Occupational Safety and Health Administration
+- **205 requirement rows, 200 live**, categorised into ten obligation types, priority re-rated, splits mechanism proven and used five times — and **not one of the 11 rows added since is new regulatory content**, all of them children of three rows that were split
+- **Fifteen migrations, two identical environments, 798 census objects, zero differences** — the outputs byte-identical, from a census that now lives in a file
+- **33 regulators and 193 of 200 live requirements assigned to one** — and a near miss caught by projecting the mapping before applying it, which would otherwise have filed the FLSA, FMLA, ERISA, Title VII, the PWFA and EEO-1 under the Occupational Safety and Health Administration
 - **A determination gate that asks for the one missing fact instead of guessing past it** — the failure that started the project, now a test that passes
-- **90 switches derived from 188 requirement trigger strings**, against 46 proposed before the library existed: six nothing uses, thirty missing, and a banded headcount that would have made three federal statutes unanswerable
+- **95 switches derived from 188 requirement trigger strings**, against 46 proposed before the library existed: six nothing uses, thirty missing, and a banded headcount that would have made three federal statutes unanswerable
+- **199 of 200 live requirements carry a machine-evaluable condition**, referencing 83 of the 95 switches with **none dangling** — and the 200th is empty on purpose, because nothing requires it
 - **A coverage table that produced six empty Oregon regulators on the day it was filled**, including a state gross-receipts tax with no row behind it — none of them findable before, because "what is missing" had no shape to be asked against
 
 **Nothing on that list was found by reading code alone.** All of it came from running something and measuring the result — and increasingly, from **measuring the thing the work was not about**: the proceed path, the rows that stayed out, the count nobody was watching.

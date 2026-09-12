@@ -424,7 +424,7 @@ This encodes the product's core safety rule directly in the data model: a false 
 45. `flammable_liquid_quantity_band` — drives fire code permits
 46. `emergency_response_team` — HAZWOPER responder tier vs evacuation-only
 
-Approximately 46 switches. **Most are determined from documents and profile without asking the user anything.** The genuinely user-facing question count is expected to be 5–8 for a typical company.
+Approximately 46 switches *(**superseded — 95 are seeded.** This estimate predates the requirement library; see the block at the head of §2.4 and `DECISIONS.md` §36. The claim below is unchanged and gets stronger, not weaker: 53 of the 95 are determined from documents, 11 from the profile, 2 computed, and 29 could ever need a person.)*. **Most are determined from documents and profile without asking the user anything.** The genuinely user-facing question count is expected to be 5–8 for a typical company.
 
 > *Superseded — see the block at the head of §2.4. The seeded count is 90: 52 determined from
 > documents, 11 from the profile, 2 computed, and **25 that genuinely need a user to answer**.
@@ -933,7 +933,7 @@ This states plainly what is covered and to what standard. It is the answer to "d
 
 ## 6.4 Switches screen — the highest-leverage screen in the product
 
-46 switches *(superseded — **90** are seeded; see the block at the head of §2.4)*, most pre-answered from documents and profile, each showing the basis, each editable, each edit instantly recomputing every obligation.
+46 switches *(superseded — **95** are seeded; see the block at the head of §2.4)*, most pre-answered from documents and profile, each showing the basis, each editable, each edit instantly recomputing every obligation.
 
 ```
 Hazardous waste generator category            SQG          [edit] 🔒
@@ -1122,7 +1122,7 @@ One thing stays human, and it is not the library. It is **the checker's own judg
 
 > **Never ask the user anything that can be derived from the address, the website, a public database, or a document they already have.**
 
-There are ~46 switches *(**90** as seeded — but the argument below is unchanged and gets stronger: 52 of the 90 are determined from documents, 11 from the profile, 2 computed, and only **25** could ever need a person)*. If onboarding asks 46 questions, nobody finishes, and the answers are wrong anyway — an eight-person chemical blender does not know their generator category or TRI status. **That not knowing is why they need the product.** An onboarding form that demands expert answers is asking the customer to do the job they are paying for.
+There are ~46 switches *(**95** as seeded — but the argument below is unchanged and gets stronger: 53 of the 95 are determined from documents, 11 from the profile, 2 computed, and only **29** could ever need a person)*. If onboarding asks 46 questions, nobody finishes, and the answers are wrong anyway — an eight-person chemical blender does not know their generator category or TRI status. **That not knowing is why they need the product.** An onboarding form that demands expert answers is asking the customer to do the job they are paying for.
 
 Sources ranked by cost to the user, cheapest first:
 

@@ -1,11 +1,19 @@
 # Detailed To-Do
-**Version:** 12 · **Updated:** 12 September 2026
-**Supersedes:** version 11 (12 Sep). **Phase 2's quality items are closed** — 2.3 done, the
+**Version:** 13 · **Updated:** 12 September 2026
+**Supersedes:** version 12 (12 Sep). **Phase 6.3 is on BOTH environments and Phase 2 is
+closed.** 205 requirement rows (200 live) carry 199 machine-evaluable conditions; 95 switches,
+40 edges; 798 census objects, 0 differences. **4.1 is now the only thing between the library
+and a working Requirements screen.** The six low-confidence conditions and the one deliberate
+NULL are named as **6.4** work rather than left as loose ends, and the 12 switches no condition
+references are classified rather than listed. Every count re-read from the database for this
+version, not carried forward — `DECISIONS.md` §46. Version 12: **Phase 2's quality items are closed** — 2.3 done, the
 measured per-stage latency recorded with the warning that the critic's cost is Stage 2's
 absence rather than a tuning problem, and 4.1 marked as the next large piece with what it
 inherits and the two things that block it. Version 11: **Phase 6.2 is on BOTH environments** — 619 objects each,
 0 differences; 90 switches compared row-for-row across 13 fields with 0 differences, the same
-35 edges and the same graph shape. Version 10 recorded **6.2 done on staging** — migration 012 adds
+35 edges and the same graph shape. *(Those counts were true of 6.2 and are superseded above;
+the census that produced 619 is not the census that produces today's 798 — see
+`AUDIT-CHECKS.md` check 10.)* Version 10 recorded **6.2 done on staging** — migration 012 adds
 `switches.thresholds`, and 90 switches are seeded with 35 dependency edges and no cycles.
 Adds **6.3a**, the open shape question (per-substance thresholds, which recur across four
 switches and must be solved once), and **6.3b**, three `is_determination` corrections found
@@ -81,11 +89,18 @@ in `BUILD-PLAN.md` at task level — the build plan stays as the *why*, this is 
 documents are in the database — after that first upload it costs a maintenance window, a
 rollback plan, and a conversation with a customer about downtime.
 
-**1. Key rotation. Six credentials.**
+**1. Key rotation. Seven credentials.**
 Four leaked in a zip on 9 Sep. Both database passwords — production and staging — were
 printed in full to a terminal on 10 Sep while fixing the migration script's error output.
-The script redacts them now; the values are still out. Rotating six credentials against
-test data is a chore. Rotating them while customers are working is an outage.
+The script redacts them now; the values are still out. **Seventh, added 12 Sep: the
+PRODUCTION service-role key**, printed in full to a terminal while checking whether the
+loader credentials were set — `${VAR:+set}${VAR:-blank}` prints the *value* when the variable
+is set, which is the opposite of what the line was written to do. It is in a transcript, not in
+any file, and nothing was committed. **It is the most sensitive of the seven, because the
+service role bypasses RLS entirely** (`CLAUDE.md` §3.6) — so this one argues for rotating now
+rather than waiting for the batch. The safe form of that check is `${VAR:+set}` with no `:-`
+half. Rotating seven credentials against test data is a chore. Rotating them while customers
+are working is an outage.
 
 > ### ✅ Gate item 2 — the Phase 1 schema rebuild — CLOSED 11 September 2026
 >
@@ -494,9 +509,10 @@ All six items. **Migrations 006–010 are applied to BOTH staging and production
 differences** — columns, indexes, policies, constraints, enum values, functions, triggers,
 grants and storage policies, compared in both directions.
 
-*Still identical on 12 September after 011 and 012, at **619 objects** — a differently-built
-census rather than a loss, and `AUDIT-CHECKS.md` check 10 records that whichever census the
-check uses must be the same one every time.*
+*Still identical on 12 September after 013 and 014, at **798 objects**, the two census outputs
+byte-identical. 673 → 619 → 798 are three differently-built censuses rather than losses or
+gains; the census now lives in `supabase/census.sql` so a fourth number cannot be a fourth
+question. `AUDIT-CHECKS.md` check 10.*
 
 *This paragraph twice said production was further ahead than it was, both times written from
 recollection and both times caught by a pre-flight or a comparison. It is now read from the
@@ -603,7 +619,7 @@ to work. It is known to have worked once, in one order, from one starting state.
 - ⬜ `applies_expression jsonb`
 - ⬜ Verification: `verification_status`, `verified_by`, `verified_at`, `citation_url`, `citation_quote`, `source_checked_at`
 - ⬜ New cadence values: `continuous`, `pre_approval`
-- ⬜ `entity_scope` gains `product`
+- ✅ `entity_scope` gains `product` — **verified 12 Sep**: the enum is `organization | site | chemical | equipment | person | product`. No requirement row uses `product` yet (104 organization, 27 chemical, 26 person, 24 equipment, 19 site), which is expected — it exists for the cannabis vertical.
 
 ### 1.2 New tables ⬜ ⏱ 2 days
 - ⬜ `switches` — definitions with hierarchy
@@ -767,7 +783,9 @@ are interface, they live in `MODULES`, and they get built when a customer asks f
 > **2.8 🟡** the runner exists as `npm run golden`; three cases.
 > **Still open: 2.4, 2.6, 2.7.** **6.2 ✅ was pulled forward** so the critic was built against
 > a gate with a real vocabulary behind it.
-> Both environments on **000–012**, **619 objects each, 0 differences**, 90 switches, 35 edges.
+> Both environments on **000–014**, **798 census objects each, 0 differences** (byte-identical
+> output, same sha256), **95 switches, 40 edges**, and **199 of 200 live requirements carrying
+> a machine-evaluable condition**.
 >
 > ### What Phase 2 costs, measured — and which stage owns it
 >
@@ -909,7 +927,7 @@ Stage 4 and Stage 4 is not built.
   same name and shape, which is what lets golden files survive that swap.
 - **`conditional_on` on the answer path**, so a declared hedge is inspectable.
 - **`npm run golden`**, so 2.3's cases are entries rather than transcripts.
-- **90 switches and 187 agency assignments**, so "what obligations of that agency are
+- **95 switches and 193 agency assignments on 200 live rows**, so "what obligations of that agency are
   conspicuously absent" (critic question 6) is answerable against a real agency list.
 
 **What 2.3 must not assume:** obligations are empty until 4.1, `company_switches` is empty
@@ -1045,9 +1063,9 @@ Jurisdiction + switches + library version → obligations. Deterministic.
 
 | input | state |
 |---|---|
-| **the library** | 194 rows, 192 live, every row categorised, **187 carrying a regulator** |
+| **the library** | **205 rows, 200 live**, every row categorised, **193 carrying a regulator** (7 deliberately NULL) |
 | **jurisdiction** | on `entities`; one primary site per company, guaranteed by migration 010 |
-| **the switch vocabulary** | **90 switches**, 35 dependency edges, acyclic, 6 numeric with thresholds |
+| **the switch vocabulary** | **95 switches**, 40 dependency edges, acyclic (95 nodes reached, 55 roots, 40 children, max depth 1), 6 numeric with thresholds |
 | **agency scope** | `lib/agencyScope.ts` — the jurisdictional list, already used by the critic |
 | **coverage** | 56 rows, so an answer can say which agencies have nothing behind them |
 
@@ -1056,13 +1074,21 @@ Jurisdiction + switches + library version → obligations. Deterministic.
 - **`company_switches` is empty and stays empty until something writes to it.** The vocabulary
   exists; no company's *answers* do. Resolution reads values, not definitions — so 4.1 has a
   table to read and nothing in it. **Determination is the prerequisite, not the library.**
-- **`applies_expression` is NULL on all 194 rows.** That is 6.3 — the machine-evaluable form of
-  the trigger prose resolution matches against — and **6.3 is itself blocked on 6.3a**, the
-  per-substance threshold shape.
-- **No requirement points at a primary source** — 0 of 194 carry a `citation_url`, a quote or a
-  checked date. That does not block resolution; it blocks anyone *trusting* its output.
+- **No requirement points at a primary source** — 0 of 200 live rows carry a `citation_url`, a
+  quote or a checked date, and 0 are at `status = 'verified'`. That does not block resolution;
+  it blocks anyone *trusting* its output.
+- **The chemical reference table is empty.** `regulated_substances` holds 0 rows, so the 15
+  conditions that call `substance_inventory()` return `unknown` rather than a verdict. Verified
+  against the function body: with no inventory rows the first branch returns `null`, and with
+  inventory but no reference data every row is unevaluable and lands on the same `null`.
+  **There is no state in which the unseeded table produces a clear** — but 4.1 should expect
+  those 15 to be open questions rather than answers on day one. Seeding it is 6.4b.
 
-**So the honest sequence is 6.3a → 6.3 → determination → 4.1**, and 4.1's three days are the
+**`applies_expression` is no longer on this list — 6.3 landed on both environments on 12 Sep.**
+199 of 200 live rows carry a condition, 83 distinct switches are referenced and none dangles.
+6.3a was answered (per-substance thresholds live on `regulated_substances`, not on switches).
+
+**So the honest sequence is now determination → 4.1**, and 4.1's three days are the
 smallest part of it. `CLAUDE.md` §3.2's safety properties become testable for the first time
 when it lands — **not one of them can be checked today**, because `obligations` is empty in
 both environments and nothing writes to it.
@@ -1130,27 +1156,50 @@ holds **0 rows**; this is what fills it.
 ⚠️ The seed will be a bulk insert with heterogeneous keys, which needs
 `defaultToNull: false` — see the note in migration 008 beside `allowed_values`.
 
-### 6.3 Write `applies_expression` for the active rows ⬅️ **ALSO NEXT** ⏱ 5 days
-**192 live rows.** Free text → machine-evaluable. **Slow, and worth doing slowly.**
+### 6.3 Write `applies_expression` for the active rows ✅ **DONE (12 Sep) — applied to staging AND production**
 
-**What 6.3 inherits from 6.2:**
-- **90 switches with agreed ids**, derived from the 188 trigger strings these expressions
+**199 of 200 live rows carry a machine-evaluable condition, in both environments,
+byte-identical.** 83 distinct switches referenced, **0 dangling**, 0 retired rows carrying one.
+The 200th is deliberately NULL and is named in 6.4 below.
+
+Shipped: **migration 013** (`regulated_substances` keyed by CAS, `company_chemicals`
+site-scoped, `substance_inventory()`, and three under-decomposed rows split into 11);
+**migration 014** (an unidentified chemical makes the answer `unknown`, not `false` —
+`DECISIONS.md` §45); **`lib/appliesExpression.ts`** (nested JSON, three-valued `evaluate()`,
+and a renderer that ships with it); **`scripts/load-expressions.js`** (`npm run expressions`),
+which refuses an unknown switch, a threshold not quoted from the rule's own text, and a clause
+true of every company — and prints every non-high-confidence condition as English, because a
+dry run nobody can read is a dry run nobody does.
+
+**What it inherited from 6.2:**
+- **90 switches with agreed ids** *(95 by the time 6.3 finished — 6.3 added the five its own
+  expressions needed)*, derived from the 188 trigger strings these expressions
   will be written against — so the expression and the prose are talking about the same fact.
 - **6 numeric switches carrying their thresholds**, so `15` lives in one place instead of
   being hard-coded into the ADA row, the Title VII row and the PWFA row — three places to get
   it wrong and nowhere to look it up.
-- **35 dependency edges, acyclic**, so an expression can rely on a parent fact being
+- **35 dependency edges, acyclic** *(40 now)*, so an expression can rely on a parent fact being
   establishable first.
-- **90 `question_plain` strings**, so nothing has to invent the wording.
+- **90 `question_plain` strings** *(95 now)*, so nothing has to invent the wording.
 - **`employee_count` split company/site**, so an expression can say which one it means.
 
 **What it must decide before it can finish:** 6.3a below. Four switches are boolean because
 their thresholds are per-chemical, and no expression can be written for them until that shape
 is chosen.
 
-#### 6.3a 🔴 THE OPEN SHAPE QUESTION — per substance, not per site ⬜
+#### 6.3a ✅ THE OPEN SHAPE QUESTION — per substance, not per site — **ANSWERED 12 Sep**
 *Raised 11 Sep by the 6.2 seed. Not a limitation to work around — a modelling problem that
 recurs four times, and whatever 6.3 decides for one of them decides for all four.*
+
+> **Answered by migration 013: the thresholds belong to the SUBSTANCE, not to the site.**
+> `regulated_substances` is keyed by CAS number and carries EHS TPQ, TRI manufacture and
+> otherwise-used, PSM, RMP and CERCLA RQ; `company_chemicals` records what a site holds;
+> `substance_inventory(entity_id, list)` asks *does this site hold any one substance at or
+> above ITS OWN threshold on this list?* One function, four questions, because all four are
+> that same shape. **Keyed by CAS and not by name**, because "isopropanol", "isopropyl
+> alcohol" and "IPA" are one chemical with three names and every published list — EHS
+> Appendix A, TRI, PSM Appendix A — is published by CAS. `DECISIONS.md` §23.1's own reversal
+> condition anticipated this case. The reference table is still empty; seeding it is 6.4b.
 
 Four switches are **boolean because their thresholds are per CHEMICAL and a site-level
 number cannot express them:**
@@ -1183,9 +1232,15 @@ switch per *regulatory list* rather than per substance, keeping the quantity in 
 
 **Blocked on nothing.** It needs a decision, not data.
 
-#### 6.3b `is_determination` is wrong on three rows ⬜
+#### 6.3b `is_determination` is wrong on three rows ⬜ **still open — re-measured 12 Sep**
 *Found 11 Sep while seeding switches. Library-quality, not switch work — these live on
-`requirement_templates`, which is why 6.2 did not touch them.*
+`requirement_templates`, which is why 6.2 did not touch them. 6.3 did not touch them either:
+it writes `applies_expression` and nothing else.*
+
+> **Measured 12 Sep on both environments: 9 of 200 live rows carry `is_determination = true`,
+> `Monthly generator-category determination` is still `false`, and `produces_switch` is NULL on
+> all 200.** So the second half of every item below — wiring a determination to the switch it
+> produces — is unstarted across the whole library, not only on these three rows.
 
 - ⬜ **`Monthly generator-category determination` should be flagged and is NOT.** It is the
   most determination-shaped row in the library: named "determination", monthly **by
@@ -1204,13 +1259,98 @@ switch per *regulatory list* rather than per substance, keeping the quantity in 
   `has_group_health_plan`. Three of those switches did not exist before 6.2, which is its own
   evidence that the flag was set before the vocabulary existed.
 
-### 6.4 Federal layer, agency by agency ⬜ ⏱ 1 week
+### 6.4 Finish what 6.3 could not ⬜ ⏱ 3 days
+
+**Named work, not loose ends.** 6.3 shipped 199 conditions and wrote down which of them it did
+not trust. These are those, and each has a stated reason rather than a TODO.
+
+#### 6.4a The six low-confidence conditions ⬜
+Five over-trigger and one under-triggers. **Fix the under-triggering one first** — an answer
+that is too broad is visible in the UI, an answer that is too narrow is silent.
+
+| Requirement | What is wrong | Direction |
+|---|---|---|
+| **NSPS/NESHAP/MACT applicability screen** | Gated on holding an air permit. Applicability turns on source category, HAP, capacity and construction date — none of which is a switch, and an **unpermitted source can still be subject**. | ⚠️ **under-triggers** |
+| Chemical Data Reporting | Written as an AND of manufacture and import; the rule is an OR. The volume threshold has no home — CDR thresholds are per substance and `regulated_substances` has no CDR column. | over |
+| Electronic submission of Form 300A (20–249) | The "listed industry" half is NAICS and absent, so it fires for **every** 20–249 site. | over |
+| Electronic submission of Forms 300 & 301 (100+) | Same gap — Appendix B membership is not expressible. | over |
+| EPCRA §311 SDS/list | The 10,000 lb half has no inventory list behind it; a boolean stands in for half the test. | over |
+| EPCRA Tier II | Same gap as §311. | over |
+
+**Four of the six are one missing input: NAICS.** `companies.industry` exists and the evaluator
+cannot reach it (`DECISIONS.md` §36.2 decided industry is not a switch). Deciding how a
+condition reads industry closes 4 of these 6 and several of the 18 medium ones at once.
+
+#### 6.4b Seed `regulated_substances` ⬜
+0 rows today. EHS TPQs, TRI thresholds, PSM Appendix A, RMP and CERCLA RQs, all keyed by CAS.
+**15 of the 199 conditions cannot return a verdict until this exists.** Also closes the DEA
+gap: `regulated_substances` holds no DEA threshold column, so `DEA List I chemical
+registration` currently triggers on *presence* rather than on the cumulative twelve-month
+quantity the rule names (`DECISIONS.md` §44.1 — inventing that number would be the exact
+fault the rule forbids).
+
+#### 6.4c The one deliberate NULL ⬜
+`Employee handbook, current version controlled`, cited as **"Best practice (not statute)"**.
+It has no condition because nothing requires it — there is no fact that makes it apply. **The
+question is not what expression to write; it is whether a best-practice row belongs in a
+library of legal obligations at all.** Either give it a non-legal row type that the resolver
+skips, or retire it. Leaving it live with a NULL condition means resolution has to special-case
+one row, which is how `if (industry === '...')` starts.
+
+#### 6.4d The 12 switches no condition references ⬜ **mostly expected**
+Measured 12 Sep, identical on both environments: 83 of the 95 switches are named by a
+condition, **0 dangle**, and 12 are referenced by nothing. **That is not one problem.**
+
+**Four are expected and need no work.** `entity_state`, `multi_site`, `multi_state` and
+`owns_vs_leases_facility` are *context*, not triggers — they tell the pipeline and the UI which
+jurisdiction and which sites are in play. A switch earns its place by being readable, not by
+appearing in a condition. Leave them.
+
+**Eight are real gaps, and each is the same gap:** a quantity or activity trigger whose
+requirement currently tests something coarser, because the data underneath does not exist yet.
+
+| Switch | What the condition tests instead, and what closes it |
+|---|---|
+| `ehs_above_tpq`, `tri_reportable` | `substance_inventory()` against an empty reference table — closes with **6.4b** |
+| `hazwaste_nonacute_kg_per_month`, `hazwaste_acute_kg_per_month` | a generator-category boolean — closes with **6.3b** |
+| `hot_work_welding`, `spray_finishing`, `high_piled_storage` | the fire-code rows are scoped by occupancy class, which is not a switch |
+| `dea_list_chemicals` | presence of a DEA List I chemical rather than the cumulative 12-month quantity (`DECISIONS.md` §44.1) |
+
+**None of these is fixed by editing a switch.** Each is fixed by the data or the decision named
+in its row, which is why this sits under 6.4 rather than in 6.2.
+
+#### 6.4e The 18 medium-confidence conditions ⬜
+**Three shapes, not eighteen problems.** (1) A rule whose text conditions *whether a plan must
+be written* read as *whether it applies* — EAP, Fire Prevention Plan, lactation space. (2) An
+**event** trigger where no switch records the event — CERCLA RQ release, EPCRA release
+notification; these say "could owe this", not "owes this". (3) NAICS again — pretreatment,
+OSHA log, Paid Leave Oregon. Fix the three shapes and most of the eighteen move.
+
+---
+
+#### 6.4f ⛔ Recount `industry_coverage.row_count` — **a live defect, not a task** ⬜
+**`AUDIT-CHECKS.md` check 12 is FAILING on both environments as of 12 Sep.** One row: OR-OSHA
+× chemical-manufacturing stores **53** where the live count is **61**. Migration 013 split
+three OR-OSHA requirements into eleven — a net +8 — and nothing recounted the coverage rows.
+
+**This is customer-visible.** `row_count` is what the coverage strip uses to say how much of an
+agency the product covers, so today it understates OR-OSHA by eight requirements. Nothing else
+reads the column, which is exactly why nothing noticed for two days.
+
+**The fix is a recount and it must not be a one-off UPDATE.** A migration that splits, retires
+or adds requirements changes coverage counts as a side effect, and this will recur on 6.5 and
+6.6. Either the recount becomes the last step of the loader that owns coverage rows, or
+`row_count` stops being stored and becomes a view — **and the second option is worth the
+argument**, because a stored count with no owner is a number that drifts silently, which is the
+whole reason check 12 exists.
+
+### 6.5 Federal layer, agency by agency ⬜ ⏱ 1 week
 ~95 rows serving every state forever.
 
-### 6.5 Oregon layer, agency by agency ⬜ ⏱ 1 week
+### 6.6 Oregon layer, agency by agency ⬜ ⏱ 1 week
 **Cite OAR 437, not 29 CFR.** Oregon is a State Plan state.
 
-#### 6.5a The six Oregon agencies with ZERO requirements behind them ⬜
+#### 6.6a The six Oregon agencies with ZERO requirements behind them ⬜
 *Found 11 Sep by `industry_coverage`, the day it was first populated. Not a bug — this is
 the table doing the job it was built for. See 6.5c.*
 
@@ -1249,9 +1389,9 @@ zero is accurate rather than a gap — Oregon is a State Plan state and federal 
 enforce here.
 
 **All 25 cannabis coverage rows are also at 0**, including `OLCC`. That is the whole
-vertical, not a gap within one, and it belongs to a future library rather than to 6.5.
+vertical, not a gap within one, and it belongs to a future library rather than to 6.6.
 
-#### 6.5b Two rows that need a decision, not a generation pass ⬜
+#### 6.6b Two rows that need a decision, not a generation pass ⬜
 *Both surfaced by Part C's assignment on 11 Sep and left `agency_id = NULL` on purpose.*
 
 - ⬜ **`Oregon payroll withholding/unemployment accounts`** — genuinely two regulators,
@@ -1261,7 +1401,7 @@ vertical, not a gap within one, and it belongs to a future library rather than t
   Division of Financial Regulation, which is not in `agencies`.** Either add the agency row
   or assign by hand. It was not invented during the load, deliberately.
 
-#### 6.5c What the empty coverage rows demonstrated — 11 September 2026
+#### 6.6c What the empty coverage rows demonstrated — 11 September 2026
 *The first evidence for a claim the design has been asserting since `CHEMICAL-OR-WA.md` was
 written.*
 
@@ -1287,13 +1427,13 @@ data — it *is* the data, and building the cross product rather than only the p
 combinations is what made it so (`DECISIONS.md` §32 records the one case where a `not_built`
 row is deliberately withheld, and why that case is different).
 
-### 6.6 Primary-source retrieval ⬜ ⏱ 4 days
+### 6.7 Primary-source retrieval ⬜ ⏱ 4 days
 Every disputed item and flagged specific resolved by **retrieval, not model vote.** eCFR, Federal Register, Oregon OAR/ORS.
 
-### 6.7 Human verification by fact class ⬜ ⏱ 4 days
+### 6.8 Human verification by fact class ⬜ ⏱ 4 days
 Dates/fees/thresholds → disputed → critical citations → divergence-table rows → `scope_rules`. ~50–60 rows. Mark `verified` with date **and verifier**.
 
-### 6.8 Standing "confirm before publishing" list ⬜ ongoing
+### 6.9 Standing "confirm before publishing" list ⬜ ongoing
 **CFATS is entry #1** — lapsed since July 2023, verified live. Models state it as current with full confidence.
 
 ---

@@ -357,8 +357,10 @@ What Phase 2 lands is the **inputs**: jurisdiction columns on `entities` so `loc
 ### 2.6 🅑✚ Derived types from the generated schema ⏱ half day
 `type TableName = keyof Database["public"]["Tables"]` and equivalents. Renaming a table or switch becomes a compile error.
 
-### 2.7 Extend `entities.entity_type` to include `product` ⏱ 10 min
-Needed for cannabis per-SKU pre-approval obligations.
+### 2.7 Extend `entities.entity_type` to include `product` ✅ **DONE — verified 12 Sep**
+Needed for cannabis per-SKU pre-approval obligations. The enum (named `entity_scope`; the
+column is `entity_type`, per the mapping in §1's table) now reads
+`organization | site | chemical | equipment | person | product`. No row uses `product` yet.
 
 ### 2.8 🔒⚡ Multi-facility structure ⏱ 1 day
 Design in `CHEMICAL-OR-WA.md` §6.6; decision and reasoning in `DECISIONS.md` §20.

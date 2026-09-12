@@ -1,6 +1,12 @@
 # Decision Record
-**Version:** 25 · **Updated:** 12 September 2026
-**Supersedes:** version 24 (12 Sep). Adds §46: a pre-flight names files exactly as they appear
+**Version:** 26 · **Updated:** 12 September 2026
+**Supersedes:** version 25 (12 Sep). Documentation sweep: **§43 and §45 gain the reversal
+conditions they were missing** — every decision from §41 to §46 now states one, per
+`HOW-WE-BUILD.md` §7. §43's records that the renderer is reversible only if the stored form
+becomes readable enough to check directly, and explicitly NOT by better validation, since all
+three faults it caught were well-formed. §45's records that the `unknown` asymmetry cannot be
+reverted at any volume of inconvenience, because it is `CLAUDE.md` §3.2 applied to one
+function. Version 25 added §46: a pre-flight names files exactly as they appear
 on disk, read from the directory — because approximate filenames make every file list look
 unexpected and so defeat the abort guard on production; recorded with the origin of the wrong
 names left as unknown rather than guessed at. Version 24 added §45: an unidentified chemical now makes
@@ -2040,7 +2046,7 @@ Leave Oregon, Workers' Comp and OregonSaves. Those need `has_employees`,
 `nonexempt_employees`, `has_group_health_plan`, `sponsors_erisa_plan`, `federal_contractor`
 and `uses_noncompete_agreements` — none a chemical fact, all required.
 
-**Seeded: 90 switches.**
+**Seeded: 90 switches.** *(95 as of 12 Sep — Phase 6.3 added the five its own conditions needed. The reasoning below is unchanged.)*
 
 ### 36.1 `employee_count` is a number, and bands do not merely lose precision
 
@@ -2513,7 +2519,17 @@ threshold.
 
 **This is the argument for building the renderer before the 194 rather than after**, and it
 is an argument from evidence rather than from taste: the JSON for all three faults was
-well-formed, correctly typed, and wrong.
+well-formed, correctly typed, and wrong. *(Final count: 205 rows, 200 live, 199 conditions —
+the renderer was built against the first twenty and carried the other 179.)* The general form
+of the move is now `HOW-WE-BUILD.md` §3: build the review artifact before the bulk work.
+
+**Reversal condition.** If the stored form ever becomes readable enough that a person can check
+it directly — a flat DSL string rather than nested JSON — the renderer stops earning its keep
+and the structure should be stored in the readable form instead. That is a real possibility for
+a condition of two or three clauses; it is not one for the seven-clause conditions in this set.
+The test is whether a reviewer would rather read the stored value than the rendered sentence.
+**What would NOT reverse it: the loader getting better at validation.** Validation proves a
+condition is well-formed. Every one of the three faults was well-formed.
 
 ---
 
@@ -2696,7 +2712,19 @@ worked if implemented. The three failures are independent and each is easy to ma
 
 **Where a design tolerates a risk because something else catches it, the something else is
 part of the design** and belongs in `AUDIT-CHECKS.md` with a query that proves it still holds
-— not in a comment asserting that it does.
+— not in a comment asserting that it does. That is check 18.
+
+**Reversal condition, and it is narrower than it looks.** The asymmetry — positive checked
+first, so an incomplete inventory can still answer `true` but can no longer answer `false` —
+would be revisited only if sites in practice carry so many unidentified rows that
+`substance_inventory()` returns `unknown` for nearly everyone, making the 15 conditions that
+depend on it useless in a different way. **The fix then would be to improve identification, not
+to restore the clear.** Reverting to `false`-on-unevaluable is not available at any volume of
+inconvenience: `CLAUDE.md` §3.2 is that absence of evidence never produces a clear, and this
+decision is that rule applied to one function. **What would legitimately change the shape:**
+once `regulated_substances` is seeded (TODO 6.4b), a row whose CAS matches nothing is more
+likely a typo than an unlisted substance, and it may be worth distinguishing *unidentified*
+from *unrecognised* so the UI can ask a sharper question. Both still return `unknown`.
 
 ---
 

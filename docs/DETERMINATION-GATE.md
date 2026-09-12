@@ -1,6 +1,10 @@
 # The Determination Gate — Stage 1
-**Version:** 3 · **Updated:** 11 September 2026
-**Supersedes:** version 2 (11 Sep). Adds **§11, proximity confirmation — specified, not
+**Version:** 4 · **Updated:** 12 September 2026
+**Supersedes:** version 3 (11 Sep). §8's five counts re-measured: `switches` is 95 rows and
+`applies_expression` is 199 of 200 live, so two of the five moved — **and `company_switches` is
+still 0, which is the row that section is actually about.** A vocabulary and a set of conditions
+establish nothing about a real company until something writes that company's answers. Version 3
+added **§11, proximity confirmation — specified, not
 built**: confirming a numeric switch whose value sits near a threshold the current question
 depends on. Not a blocking question — the gate asks when a fact is missing, this speaks when
 a fact is present but fragile. Version 2 was the same day. Two corrections found while building: the
@@ -502,7 +506,7 @@ the document rather than asserted by the user — which is a better source and i
 | **`entities` (primary site)** | **state, county, city — the jurisdiction** | **10 rows, one per company** |
 | `company_switches` | what is already established | **0 rows** |
 | `switches` | vocabulary, `question_plain`, `depends_on_switch` | **0 rows** |
-| `requirement_templates` | **NOT READ. Stage 3's job.** | 194 rows |
+| `requirement_templates` | **NOT READ. Stage 3's job.** | 205 rows, 200 live |
 
 > **`entities` was missing from this list in v1 of this spec, and building golden case 003
 > found it.** The gate read `company_switches` and `switches` only — so it could not see
@@ -565,12 +569,21 @@ counter in front of it.
 ## 8. Empty tables, and why that is the permanent case
 
 ```
-switches                                   0 rows
-company_switches                           0 rows
-requirement_templates.produces_switch      0 of 194
-requirement_templates.applies_expression   0 of 194
-requirement_templates.is_determination     9 of 194
+switches                                  95 rows      (was 0 when this was written)
+company_switches                           0 rows      (unchanged — the permanent point)
+requirement_templates.produces_switch      0 of 200 live
+requirement_templates.applies_expression 199 of 200 live
+requirement_templates.is_determination     9 of 200 live
 ```
+
+*Re-measured 12 September 2026, both environments. **Two of the five moved and the argument
+below survives both.*** `switches` is now seeded and `applies_expression` is written, so the
+*vocabulary* and the *conditions* exist — but **`company_switches` is still 0 rows, and that is
+the row this section is about.** A vocabulary of 95 facts and 199 conditions that read them
+establishes nothing about any actual company until something writes a company's answers. The
+gate cannot read values that do not exist, so it must establish them in conversation, which is
+why this is the permanent case rather than a temporary gap. **`produces_switch` being 0 of 200
+is the live defect** — `TODO.md` 6.3b.*
 
 **Correction to the Phase 2.1 report:** I stated there that determinations name the switch
 they produce. They do not — all 9 `is_determination` rows have `produces_switch = NULL`. That
