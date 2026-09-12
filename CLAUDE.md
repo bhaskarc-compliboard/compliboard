@@ -40,9 +40,22 @@ Four layers, and the third is the important one:
 | Layer | What | Produced by |
 |---|---|---|
 | 1. Library | What the law requires, by industry + jurisdiction | AI generates, **human verifies** |
-| 2. Switches | ~46 facts about this company | AI determines, user can override |
+| 2. Switches | **90 facts about this company or one of its sites** | AI determines, user can override |
 | 3. Obligations | Which library rows apply | **Code. Never AI.** |
 | 4. Evidence | Which documents prove each obligation | AI matches, stored as rows |
+
+**On layer 2:** the count was `~46` here until 12 September, from an estimate in
+`CHEMICAL-OR-WA.md` §2.4 written before the requirement library existed. The seeded list is
+**90**, derived by reading all 188 `trigger_condition` strings in `requirement_templates` and
+asking of each *which fact does this actually need* — which found 6 proposed switches nothing
+uses and 30 missing facts that 48 requirements depend on. `DECISIONS.md` §36; the list itself
+is `supabase/seed-data/switches.json`, which is the source of truth.
+
+**And a switch is scoped to a company OR to one site** (`switch_scope`), which the old wording
+missed: 70 of the 90 are site-scoped, because a second plant has its own air permit, its own
+generator category and its own forklifts. `employee_count` exists twice for that reason — once
+enterprise-wide and once per site — since Oregon's sick-time rule reads *"10+ Oregon employees
+or 6+ with a Portland location"* in a single sentence.
 
 ---
 
