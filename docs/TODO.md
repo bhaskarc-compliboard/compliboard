@@ -1,6 +1,8 @@
 # Detailed To-Do
-**Version:** 10 · **Updated:** 11 September 2026
-**Supersedes:** version 9 (11 Sep). **Phase 6.2 is done on staging** — migration 012 adds
+**Version:** 11 · **Updated:** 11 September 2026
+**Supersedes:** version 10 (11 Sep). **Phase 6.2 is on BOTH environments** — 619 objects each,
+0 differences; 90 switches compared row-for-row across 13 fields with 0 differences, the same
+35 edges and the same graph shape. Version 10 recorded **6.2 done on staging** — migration 012 adds
 `switches.thresholds`, and 90 switches are seeded with 35 dependency edges and no cycles.
 Adds **6.3a**, the open shape question (per-substance thresholds, which recur across four
 switches and must be solved once), and **6.3b**, three `is_determination` corrections found
@@ -936,7 +938,7 @@ parents, 6 split children** — loaded into both environments from
 `supabase/seed-data/REQUIREMENTS-FILLED-2026-09-11.xlsx`, every row categorised. It was 188
 when this line was written.
 
-### 6.2 Load the switches ⬜ ⏱ 1 day
+### 6.2 Load the switches ✅ **DONE (11 Sep) — applied to staging AND production**
 **~59, not 46.** `substance_exposure_above_action_level` decomposed into one switch per
 substance (`DECISIONS.md` §23.1) — each has its own action level, standard and requirement.
 Definitions, hierarchy, jurisdiction variants, volatility. The `switches` table exists and

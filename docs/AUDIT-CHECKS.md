@@ -1,6 +1,7 @@
 # Audit Checks
-**Version:** 3 · **Updated:** 11 September 2026
-**Supersedes:** version 2 (11 Sep). Adds **checks 5–12, specified and not built** — array
+**Version:** 4 · **Updated:** 11 September 2026
+**Supersedes:** version 3 (11 Sep). Check 10 gains its 11 Sep post-6.2 result — 619 objects
+each, 0 differences, plus the row and graph comparison. Version 3 added **checks 5–12, specified and not built** — array
 foreign keys Postgres cannot enforce, the one-primary-site invariant, split lineage, orphaned
 storage objects, industry-slug agreement across four free-text columns, staging/production
 drift, the numbers documents assert, and the `ON DELETE SET NULL` blast radius. Adds the
@@ -335,6 +336,13 @@ saying so.** Drift shows up later as a query that works locally and 400s in prod
 `/api/industries` failure in §0.4 was exactly that shape and nothing noticed for a day. Last
 run 11 Sep after Phase 2.1: **615 objects each, 0 differences**, plus 23 tables with
 identical ACLs and RLS flags and `anon` holding nothing on either side.
+
+**Run again 11 Sep after Phase 6.2: 619 objects each, 0 differences**, plus 90 switches
+compared row-for-row across 13 fields (id, label, scope, value_type, volatility,
+determination_source, jurisdiction_variant, allowed_values, thresholds, question_plain,
+domain, both dependency columns and a hash of notes) with 0 differences, the same 35
+dependency edges as a set in both directions, and the same graph depth map — 55 roots and 35
+children on each side.
 
 *Note on the number:* an earlier comparison after migration 010 reported **673** objects.
 That was a differently-built census, not a regression — it counted grants through
