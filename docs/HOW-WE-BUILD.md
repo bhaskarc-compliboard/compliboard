@@ -1,7 +1,10 @@
 # How We Build CompliBoard
 
-**Version:** 2 · **Updated:** 11 September 2026
-**Supersedes:** version 1 (11 Sep). Adds **step 12 to the loop** — write the manual tests,
+**Version:** 3 · **Updated:** 12 September 2026
+**Supersedes:** version 2 (11 Sep). §3 gains three rules earned since — read a derived result
+by target rather than by total; test the direction you are not building; some invariants
+cannot be constraints and need a named owner. §10 is brought current. Version 2 added **step
+12 to the loop** — write the manual tests,
 two per feature, into `docs/TESTING.md` before the commit. A standing obligation, not a
 suggestion.
 **Who this is for:** the next session, human or AI, picking this up cold.
@@ -80,6 +83,11 @@ Every fault found in three days had that shape:
 | Migration chain never built from zero | Applied incrementally for months, apparently fine |
 | Seed script not idempotent | Second run half-created a company, reported success |
 | `corrections` not in the deletion list | Rows survive a deletion, orphaned, silently |
+| `29 CFR → OSHA` in a mapping table | 187 of 194 assigned — true of the broken mapping and the fixed one |
+| The gate could not read `entities` | It asks for an address; every question it asks is defensible |
+| A cycle between two switch dependencies | Both edges locally correct, foreign keys satisfied |
+| Banded `employee_count` | A value for every company; three statutes unanswerable |
+| `row_count` counting retired rows | Internally consistent, matched its own projection |
 
 **So verification rules:**
 
@@ -95,9 +103,15 @@ Every fault found in three days had that shape:
 
 **Check the constraints are not too strict, either.** A company that stops and restarts an activity must still be representable.
 
-**Compare schemas object-for-object, not by generated types.** An identical types file proves only what the generator emits. It says nothing about indexes, policies, constraints or triggers. Production and staging are compared across all of them — currently 673 objects, 0 differences.
+**Compare schemas object-for-object, not by generated types.** An identical types file proves only what the generator emits. It says nothing about indexes, policies, constraints or triggers. Production and staging are compared across all of them — **currently 619 objects, 0 differences.** *(The earlier 673 was a differently-built census; see `AUDIT-CHECKS.md` check 10. Whichever census the check uses has to be the same one every time, or the count itself becomes the false alarm.)*
 
-**A validator that has only ever said PASS is untested.** Run it against deliberately broken input and confirm it refuses. This was done with eight mutations of the requirements worksheet.
+**A validator that has only ever said PASS is untested.** Run it against deliberately broken input and confirm it refuses. This was done with eight mutations of the requirements worksheet, and since with a deliberately corrupted `row_count`, a falsified prompt hash, and a dependency cycle fed to the loader that refuses them.
+
+**Read a derived result BY TARGET, not by total.** Added 12 Sep. A mapping assigning a regulator to 194 requirements reported *187 assigned* both before and after a rule that would have filed six employment statutes under the workplace-safety regulator. The total was identical; only *which rows landed where* differed. **A count is not a check** — it is the one number a wrong answer is most likely to get right.
+
+**Test the direction you are NOT building.** Added 12 Sep. Every instinct while building the determination gate pointed at making it ask: the prompt, the schema, the card, the acceptance criterion. The case that found the real bug was the one asserting it must **not** ask — a gate that could not see the company's own site would have asked for an address every customer had already given, and the ask-path test passed throughout. Where a feature exists to make something happen, the test that matters most is usually the one asserting it does not happen in the ordinary case.
+
+**Some invariants cannot be constraints, and those need a named owner.** Added 12 Sep. A dependency cycle needs recursion to detect and a CHECK sees one row at a time; a `row_count` matching the live library needs a join. Both live in loaders that refuse the whole file. **The test for whether something can be a constraint is not whether it is important.**
 
 ---
 
@@ -191,7 +205,7 @@ Honest list, not a formality.
 
 ## 10. What this method has actually produced
 
-Three days, from a first read of the codebase:
+Four days, from a first read of the codebase:
 
 - A storage bucket where any logged-in user could read and delete every file — found, fixed, verified with six cross-tenant tests
 - An account-deletion route destroying an entire company from a URL with no authentication — found, fixed, confirmation-gated, tested five ways
@@ -199,6 +213,10 @@ Three days, from a first read of the codebase:
 - Tenancy enforced in two independent layers, so a route that forgets a check now fails closed
 - A schema rebuildable from source, proven by building it from nothing twice
 - 194 requirements categorised into ten obligation types, priority re-rated, splits mechanism proven
-- Eleven migrations, two identical environments, 673 objects, zero differences
+- **Thirteen migrations, two identical environments, 619 objects, zero differences**
+- **33 regulators and 187 of 194 requirements assigned to one** — and a near miss caught by projecting the mapping before applying it, which would otherwise have filed the FLSA, FMLA, ERISA, Title VII, the PWFA and EEO-1 under the Occupational Safety and Health Administration
+- **A determination gate that asks for the one missing fact instead of guessing past it** — the failure that started the project, now a test that passes
+- **90 switches derived from 188 requirement trigger strings**, against 46 proposed before the library existed: six nothing uses, thirty missing, and a banded headcount that would have made three federal statutes unanswerable
+- **A coverage table that produced six empty Oregon regulators on the day it was filled**, including a state gross-receipts tax with no row behind it — none of them findable before, because "what is missing" had no shape to be asked against
 
-**Nothing on that list was found by reading code alone.** All of it came from running something and measuring the result.
+**Nothing on that list was found by reading code alone.** All of it came from running something and measuring the result — and increasingly, from **measuring the thing the work was not about**: the proceed path, the rows that stayed out, the count nobody was watching.

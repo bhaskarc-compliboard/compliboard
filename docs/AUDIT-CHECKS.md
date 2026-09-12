@@ -1,6 +1,8 @@
 # Audit Checks
-**Version:** 4 · **Updated:** 11 September 2026
-**Supersedes:** version 3 (11 Sep). Check 10 gains its 11 Sep post-6.2 result — 619 objects
+**Version:** 5 · **Updated:** 12 September 2026
+**Supersedes:** version 4 (12 Sep). Adds **check 13**, the switch dependency graph — a new
+class of invariant, being a property of the shape of a set of rows rather than of any single
+row, and one no CHECK constraint can express. Version 4 gave check 10 its post-6.2 result — 619 objects
 each, 0 differences, plus the row and graph comparison. Version 3 added **checks 5–12, specified and not built** — array
 foreign keys Postgres cannot enforce, the one-primary-site invariant, split lineage, orphaned
 storage objects, industry-slug agreement across four free-text columns, staging/production
@@ -31,7 +33,9 @@ needs to know about. Phase 6 is where they get a dashboard. Until then they are 
 and the answers are written here.
 
 **Every number below was read from the database on the date given, on staging, which is
-object-for-object identical to production (673 objects, 0 differences, verified 11 Sep).**
+object-for-object identical to production — **619 objects, 0 differences, re-verified 12 Sep**
+after migrations 011 and 012. (An earlier census reported 673; see check 10 for why that is a
+different count and not a loss.)**
 
 ---
 
@@ -392,6 +396,59 @@ refusing — 53 requirements would quietly lose their regulator if somebody remo
 fire if the FK itself is ever dropped; **the second is the one that matters**, because it
 shows the blast radius *before* a delete rather than after. `scripts/load-agencies.js`
 already refuses to delete agencies for this reason and reports them instead.
+
+---
+
+## 13. Is the switch dependency graph still acyclic, and does every edge resolve?
+
+**A new class of invariant, added 12 September 2026 with Phase 6.2.** The first thing in this
+schema whose correctness is a property of the *shape of a set of rows* rather than of any
+single row.
+
+```sql
+-- (a) every depends_on_switch points at a switch that exists
+select s.id, s.depends_on_switch from public.switches s
+ where s.depends_on_switch is not null
+   and not exists (select 1 from public.switches p where p.id = s.depends_on_switch);
+
+-- (b) every switch is reachable from a root. An unreachable one is in a cycle.
+with recursive walk as (
+  select id from public.switches where depends_on_switch is null
+  union all
+  select s.id from public.switches s join walk w on s.depends_on_switch = w.id)
+select (select count(*) from walk) as reachable, (select count(*) from public.switches) as total;
+
+-- (c) every company_switches row's (switch_id, scope) matches what switches declares
+select cs.id, cs.switch_id, cs.scope from public.company_switches cs
+  join public.switches s on s.id = cs.switch_id
+ where s.scope <> cs.scope;
+```
+
+**Answer, 12 September 2026, both environments:** 0 dangling edges · **90 of 90 reachable** ·
+0 scope mismatches · 35 edges · depths `{1: 55, 2: 35}`.
+
+**Why nothing else catches it.** `switches_no_self_dependency` checks
+`depends_on_switch IS DISTINCT FROM id` — **that stops `A → A` and nothing else.** `A → B → A`
+satisfies both rows' CHECK, satisfies the foreign key, and is accepted. **A cycle is not
+expressible as a CHECK constraint at all** — detecting one needs recursion and a CHECK sees
+one row at a time.
+
+And a cycle is not untidy, it is **unwalkable**: nothing can decide which fact to establish
+first, so the determination gate would either loop or pick arbitrarily. Picking arbitrarily is
+the failure that looks like working software.
+
+**Query (c) is the one that will eventually matter most.** The composite FK
+`(switch_id, scope) → switches(id, scope)` enforces it *at write time* — verified in both
+directions on 12 Sep, a site-only switch claimed as `company` and a company-only switch
+claimed as `site` were each refused. But **if a switch's own `scope` is ever changed after
+values exist**, the FK is checked against the new row and existing `company_switches` rows can
+be left describing a scope their switch no longer declares. Run (c) after any change to
+`switches.scope`.
+
+**Owner:** `scripts/load-switches.js` walks the graph before writing and again from the
+database afterwards, and refuses the whole file on a cycle. **Proven by seeding one** —
+`--prove-cycle-check` runs the real file (0), the real tanks/gallons pair reversed (refused),
+a three-node cycle (refused), and a four-deep acyclic chain (allowed).
 
 ---
 

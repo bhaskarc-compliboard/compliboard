@@ -1,6 +1,9 @@
 # Master Build Plan
-**Version:** 3.5 · **Updated:** 11 September 2026
-**Supersedes:** version 3.4 (11 Sep). **3.5** marks Phase 2 — the schema rebuild — COMPLETE,
+**Version:** 3.6 · **Updated:** 12 September 2026
+**Supersedes:** version 3.5 (11 Sep) — Part B Phase 1.1 and 1.2 are marked complete (the
+agency list and the determination gate), Phase 6's switch seed is noted as done ahead of the
+rest of that phase, and the object-count claims are dated against the two different censuses.
+Earlier: version 3.4 (11 Sep). **3.5** marks Phase 2 — the schema rebuild — COMPLETE,
 rewrites `WHERE THIS ACTUALLY IS` from the database rather than from recollection, adds
 M8 — Account, and puts a phase-number mapping at the top: this file and `TODO.md` **swap
 phases 1 and 2**, which is a trap for anyone told to "start Phase 2".
@@ -220,16 +223,26 @@ Delete Build Plan v1 and v2, `CompliBoard-Requirements-Module-Definition.md`, `C
 
 ---
 
-## PHASE 1 — Runtime fixes
-*What changes the demo.*
+## PHASE 1 — Runtime fixes 🟡 **1.1 and 1.2 COMPLETE 11 September 2026**
+*What changes the demo.* **(`TODO.md` calls this Phase 2 — the two plans swap phases 1 and 2;
+the mapping table at the top of both is the fix, `DECISIONS.md` §31.)*
 
-### 1.1 🔒 Agency list ⏱ 1 afternoon
+### 1.1 🔒 Agency list ✅ **DONE (11 Sep) — both environments**
 Populate the existing `agencies` table and tag by industry. **Moves cannabis from tier-3 (enumerate from nothing) to tier-2 (bounded agency scope).** Highest-value hour before the demo.
 
-### 1.2 ⚡ Determination gate — Stage 1 ⏱ 1–2 days
+**Delivered:** migration 011, **33 agencies**, **187 of 194 requirements assigned a regulator**
+from a reviewable mapping table, and a **56-row `industry_coverage`** cross product — all of it
+`not_built`, 32 rows with nothing behind them, which is the point. `TODO.md` 2.1.
+
+### 1.2 ⚡ Determination gate — Stage 1 ✅ **DONE (11 Sep) — live on `/api/chat` and `/api/audits`**
 Before enumerating: what facts decide this, which are unknown, which unknowns are *blocking*, what artifact resolves each. **The output schema must include an "ask" path** — its absence is the root cause of the demonstrated failure.
 
 **Acceptance:** the 2.5L bottle question requests the SDS instead of enumerating past the missing packing group.
+
+**MET, and verified by `npm run golden` against staging.** Full spec in
+`docs/DETERMINATION-GATE.md`. One correction to the sentence above: the schema did not *lack*
+a question slot — it had an **additive** one, positioned after the answer, so adding a question
+array would not have fixed it. The fix is a discriminated union. `DECISIONS.md` §34.
 
 ### 1.3 ⚡ Critic pass — Stage 5 ⏱ 2–3 days
 Fresh call, sees only the output, adversarial framing. Physical object · regime · scope exclusions · assumed determinations · every date/fee/threshold · agency coverage · unstated assumptions.
@@ -263,7 +276,8 @@ It bypasses the pipe with a raw `fetch` because it needed web search. `askAI()` 
 ⟲ *Much smaller than v2 assumed — six of eight tables already exist.*
 
 **Delivered as migrations 006–010**, applied to both environments and verified identical at
-673 objects with zero differences. 2.8 (multi-facility) landed across 007, 008, 009 and 010;
+673 objects with zero differences *(that census; 619 under the current one — `AUDIT-CHECKS.md`
+check 10)*. 2.8 (multi-facility) landed across 007, 008, 009 and 010;
 2.5 was renamed and its implementation moved to Phase 4 — see below. `TODO.md` Phase 1 has
 the full account.
 
@@ -370,13 +384,18 @@ Pure code, no AI. Atomic `replace_obligations` stored function with an in-SQL ow
 ---
 
 ## PHASE 5 — Library data: chemical Oregon
-Migrate the 188 rows (both spreadsheets merged — `MERGEDv2` has the VERIFY hit list, 26 switches, and an agency-encoding `Layer`; the intake file has normalized jurisdiction) · load 46 switches · write `applies_expression` for all rows · federal layer agency by agency · Oregon layer · primary-source retrieval · human verification by fact class · standing "confirm before publishing" list (**CFATS is entry #1**).
+Migrate the 188 rows (both spreadsheets merged — `MERGEDv2` has the VERIFY hit list, 26 switches, and an agency-encoding `Layer`; the intake file has normalized jurisdiction) · load the switches (**done 11–12 Sep: 90, not the 46 proposed — `DECISIONS.md` §36**) · write `applies_expression` for all rows · federal layer agency by agency · Oregon layer · primary-source retrieval · human verification by fact class · standing "confirm before publishing" list (**CFATS is entry #1**).
 
 ⟲ **`supabase/seed-data/load-chemical-requirements.sql` already exists** (109KB). Check what it loads before regenerating anything.
 
 ---
 
 ## PHASE 6 — Switch determination and evidence
+*(`TODO.md` 6.2 — the switch seed — was pulled forward and **completed 11–12 September**: 90
+switches in both environments, derived from the library's own trigger prose rather than from
+`CHEMICAL-OR-WA.md` §2.4's proposal. `DECISIONS.md` §36. What remains here is DETERMINATION —
+establishing a company's values for those switches at runtime — which is a different piece of
+work and is not done.)*
 Public-records lookups (EPA RCRAInfo, ECHO, TRI, FMCSA SAFER, DEQ/Ecology, **OLCC licensee list**) · ⚡ switch determination from documents · ⚡ normalize audit output into `obligation_evidence` · evidence expiry enforced in code.
 
 ---
@@ -539,7 +558,8 @@ from the verified session, ten run under RLS on the caller's token, and the four
 service-role key each carry a named reason.
 
 **Phase 2 — the schema rebuild — is COMPLETE.** Migrations 006–010, on **staging and
-production both**, verified identical at **673 objects, 0 differences**. The library is 194
+production both**, verified identical — **673 objects at the time, 619 under the current census
+after 011 and 012 (`AUDIT-CHECKS.md` check 10)**, 0 differences either way. The library is 194
 rows (192 active). Every company has exactly one primary site. `switches`,
 `company_switches`, `industry_coverage`, `library_candidates` and `jobs` exist and are
 empty, ahead of their callers on purpose.

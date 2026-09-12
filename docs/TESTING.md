@@ -1,6 +1,8 @@
 # Testing
-**Version:** 3 · **Updated:** 11 September 2026
-**Supersedes:** version 2 (11 Sep). Adds the **2.2 manual set** — including the unbuilt-industry
+**Version:** 4 · **Updated:** 12 September 2026
+**Supersedes:** version 3 (11 Sep). (b) is no longer future — `npm run golden` exists, with
+three cases and four verdicts of which SKIP is never a pass. Version 3 added the **2.2 manual
+set** — including the unbuilt-industry
 case, where a clean gate and an unanchored answer look identical on screen, because "do we know
 enough about YOU" and "do we know enough about your INDUSTRY" are different questions and 2.2
 answers only the first. Records that the golden runner now exists as `npm run golden`.
@@ -68,7 +70,12 @@ type, what should come back. "Check the agency stuff works" is not a test.
 
 # (b) AUTOMATED REGRESSION — the golden-file set
 
-Specced in `TODO.md` 2.8. Lives in `tests/golden/`.
+**`npm run golden`. Built 11 September 2026; `TODO.md` 2.8. Cases live in `tests/golden/`.**
+
+**Status, 12 September: three cases, two of them exercising the determination gate.** 001 (the
+2.5L bottle) proves it asks; 003 (Oregon minimum wage) proves it does **not** ask when the
+facts are there; 002 predates the gate and is skipped by the runner with a reason rather than
+counted as a pass.
 
 **Run after every prompt change, model upgrade, temperature change, or change to requirements
 matching** — i.e. everything in `CLAUDE.md` §3.1. Those are precisely the changes whose
@@ -97,6 +104,12 @@ Three things about it are deliberate:
 The `system_prompt_sha256` in each case is a tripwire: when the prompt changes, the run says
 so loudly and tells you every stored expectation was written against the old one. *(Proven by
 falsifying a recorded hash and confirming it fired, then restoring it.)*
+
+**Four verdicts, and three of them are not "pass".** `PASS` · `FAIL` · **`HUMAN`** for an
+assertion a script cannot judge — *"does it say Nevada and Pennsylvania are not covered"* —
+and **`SKIP`** for one with no checker implemented. **A SKIP is never reported as a pass**, and
+the run says how many there were: a suite that silently passed what it could not check would
+be the worst version of this file.
 
 **It grows by one entry per failure found.** Every real-world wrong answer becomes a case, so
 the same mistake cannot return quietly. Case 001 is the **2.5L bottle** — the original
@@ -199,7 +212,9 @@ overnight run is useful or dangerous.
 
 - **Run the golden files** and report which moved.
 - **Run the audit sweep continuously** — every check in `AUDIT-CHECKS.md`, on a schedule,
-  against staging.
+  against staging. **Check 13 (the switch dependency graph) is the best-shaped one for this**:
+  it needs no regulatory knowledge, it has a single correct answer, and the failure it detects
+  is invisible to every other tool.
 - **Property-test for CONSISTENCY without knowing the truth.** This is the largest and least
   obvious category, and it needs no regulatory knowledge at all:
   - the same question twice → the same answer

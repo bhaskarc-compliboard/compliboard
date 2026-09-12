@@ -197,10 +197,18 @@ The storage policies did not protect these — the service-role key bypasses RLS
 
 > ⚠️ **That line answers a narrower question than it appears to. Corrected 11 Sep.**
 > The pass asked *"does this route leak another tenant's data?"* — and for those six the
-> answer is genuinely no. **It never asked "may a stranger call this?"** None of the six
-> has a session check, and nothing gates them: there is no `middleware.ts`, no
+> answer is genuinely no. **It never asked "may a stranger call this?"** At the time none of
+> the six had a session check, and nothing gated them: there is no `middleware.ts`, no
 > `vercel.json`, and `next.config.ts` is empty, so every route handler is publicly
 > addressable. "No database" is not the same as "safe". See §0.8b.
+>
+> **Updated 12 Sep: `/api/chat` now has one.** It was closed by Phase 2.2, because the
+> determination gate has to read `company_switches` and a route that does not know who is
+> asking cannot avoid re-asking — the security item and the functional prerequisite were the
+> same work. **Three remain open: `/api/extract-dates`, `/api/feedback`,
+> `/api/scan-website`.** `/api/signup` and `/api/industries` stay open deliberately (§0.9).
+> `DECISIONS.md` §35.1 records that a spec draft claimed this closed four routes when it
+> closed one.
 
 **Deleted rather than fixed** — all three orphaned with zero callers:
 `/api/folders/industry`, `/api/requirements`, `/api/sync-obligations`.
@@ -477,11 +485,15 @@ add to a customer's. 1.6 is the clearest case in the phase and the most recent a
 ### Phase 1 is complete — 11 September 2026
 
 All six items. **Migrations 006–010 are applied to BOTH staging and production**, as of
-11 September.
+11 September. *(012 is the latest as of 12 September — see Phase 2 and 6.2.)*
 
-**The two environments are verified identical: 673 objects each, 0 differences** — columns,
-indexes, policies, constraints, enum values, functions, triggers, grants and storage
-policies, compared in both directions.
+**The two environments were verified identical at the close of Phase 1: 673 objects each, 0
+differences** — columns, indexes, policies, constraints, enum values, functions, triggers,
+grants and storage policies, compared in both directions.
+
+*Still identical on 12 September after 011 and 012, at **619 objects** — a differently-built
+census rather than a loss, and `AUDIT-CHECKS.md` check 10 records that whichever census the
+check uses must be the same one every time.*
 
 *This paragraph twice said production was further ahead than it was, both times written from
 recollection and both times caught by a pre-flight or a comparison. It is now read from the
@@ -739,14 +751,25 @@ are interface, they live in `MODULES`, and they get built when a customer asks f
 
 ---
 
-## PHASE 2 — The runtime pipeline ⬅️ **NEXT**
+## PHASE 2 — The runtime pipeline 🟡 **IN PROGRESS — 2.1 and 2.2 complete, 2.3 next**
 
-### What Phase 2 inherits — 11 September 2026
+> **Where Phase 2 stands, 12 September 2026, read from both databases:**
+> **2.1 ✅** 33 agencies · 187 of 194 requirements assigned · 56 coverage rows.
+> **2.2 ✅** the determination gate, live on `/api/chat` and `/api/audits`, both directions
+> verified by `npm run golden`.
+> **2.8 🟡** the runner exists; three cases written, two of them scored.
+> **2.3 ⬅️ next**, and **6.2 ✅ was pulled forward ahead of it** so the critic is built
+> against a gate with a real vocabulary behind it.
+> Both environments on **000–012**, **619 objects each, 0 differences**.
+
+### What Phase 2 inherited — 11 September 2026
 
 *Read from the database, not recalled.*
 
 - **Two identical environments.** Staging and production both on migrations 000–010,
   verified object for object: **673 objects each, 0 differences in either direction.**
+  *(Current as of 12 Sep: **000–012, 619 objects** under a differently-built census —
+  `AUDIT-CHECKS.md` check 10. This block records what Phase 2 inherited on 11 Sep.)*
 - **A migration chain proven from nothing.** `npm run db:reset` rebuilds staging empty and
   runs 000→010. Run it after adding a migration, not before shipping one.
 - **A categorised library.** 194 rows, 192 active, 2 retired parents, 6 split children.
@@ -807,16 +830,47 @@ assignments and coverage compared row by row.
   state the table can currently express. Do it the way the golden-file citations were done:
   open each page in-session and record what it actually says.
 
-### 2.2 Determination gate — Stage 1 ⚡ ⏱ 2 days
-- ⬜ Classify: what facts decide this, which are known, which are blocking
-- ⬜ **Output schema must include an "ask" path** — its absence is the root cause of the 2.5L failure
-- ⬜ At most one blocking question, always paired with what it unlocks
-- ⬜ Stricter threshold for checklists (§4.3 of the workspace design)
+### 2.2 Determination gate — Stage 1 ✅ **DONE (11 Sep) — live on both `/api/chat` and `/api/audits`**
+Full spec: `docs/DETERMINATION-GATE.md`. Decisions: `DECISIONS.md` §34, §35.
 
-**Acceptance:** the 2.5L bottle question requests the SDS instead of enumerating past the missing packing group.
+- ✅ Classify: what facts decide this, which are known, which are blocking
+- ✅ **An "ask" path** — and it is a **discriminated union**, not a field. `DECISIONS.md` §34
+  corrects §4: the schema did not lack a question slot, it had an ADDITIVE one positioned
+  after the answer. All three additive slots removed.
+- ✅ At most one blocking question — enforced by the **shape** (`ask` is an object, not an
+  array), always paired with a non-empty `unlocks`
+- ✅ Stricter threshold for checklists — and the checklist schema has **no conditional
+  field**, enforced at compile time in `lib/answerSchema.ts`, so hedging is unrepresentable
+  rather than discouraged
+- ✅ `/api/chat` authenticated as part of this, because the gate reads `company_switches`
 
-### 2.3 Critic pass — Stage 5 ⚡ ⏱ 3 days
+**Acceptance MET, verified by `npm run golden` against staging:** the 2.5L bottle question
+returns `outcome: 'ask'`, names the SDS, and lists five unlocks. And the **proceed** case
+(003) verifies the other direction — it does not ask when the facts are there.
+
+⬜ **Still open from 2.2:** `checklist_items.is_determination` and `.clarifying_questions` are
+columns that nothing populates any more; dropping them is a migration. And the per-step
+determination UI in `app/compliance/page.tsx` is dead for new checklists but live for saved
+ones, so it cannot simply be deleted.
+
+### 2.3 Critic pass — Stage 5 ⬅️ **NEXT** ⚡ ⏱ 3 days
 Fresh call, sees only the output, adversarial framing.
+
+**What 2.3 inherits from 2.2:**
+- **A gate that stops the pipeline**, so the critic never sees an answer built past a missing
+  determination — which removes the largest class of thing it would otherwise have to catch.
+- **`gate.resolved.non_blocking_unknowns` as a list.** Critic question 7 — *"does any
+  statement assume a fact the user did not provide?"* — is checkable against a field rather
+  than re-derived from prose. Populated by the model today and by a query after 6.3, with the
+  same name and shape, which is what lets golden files survive that swap.
+- **`conditional_on` on the answer path**, so a declared hedge is inspectable.
+- **`npm run golden`**, so 2.3's cases are entries rather than transcripts.
+- **90 switches and 187 agency assignments**, so "what obligations of that agency are
+  conspicuously absent" (critic question 6) is answerable against a real agency list.
+
+**What 2.3 must not assume:** obligations are empty until 4.1, `company_switches` is empty
+until determination writes to it, and **a clean gate does not mean an anchored answer** — a
+cannabis customer gets `proceed` with zero library rows behind the result.
 
 - ⬜ Physical object · regime · scope exclusions · assumed determinations · every date/fee/threshold · agency coverage · unstated assumptions
 - ⬜ Must see what the answer is *built on*, not just the latest turn
@@ -865,8 +919,8 @@ reaches the caller verbatim as `{"error": "Unexpected end of JSON input"}`.
 - ⬜ `error_message` — technical, with the first 3000 chars of raw model output on parse failures
 - ⬜ Fix silent failures: storage upload, DB insert, export
 
-### 2.8 Golden-file test set ⬜ ⏱ 1 day
-- ⬜ Schema: input, expected, actual, matched, missed, extra
+### 2.8 Golden-file test set 🟡 **RUNNER BUILT (11 Sep) — `npm run golden`. Cases still growing.**
+- ✅ Schema: input, expected, actual, matched, missed, extra
 - ⬜ **Test #1 is the 2.5L bottle case with the correct answer written out** — and it now
   carries **three** assertions, not one. See `TESTING.md` "Case 001".
   - ⬜ the gate asks for the SDS rather than enumerating past the missing packing group
@@ -938,7 +992,18 @@ parents, 6 split children** — loaded into both environments from
 `supabase/seed-data/REQUIREMENTS-FILLED-2026-09-11.xlsx`, every row categorised. It was 188
 when this line was written.
 
-### 6.2 Load the switches ✅ **DONE (11 Sep) — applied to staging AND production**
+### 6.2 Load the switches ✅ **DONE (11–12 Sep) — applied to staging AND production**
+
+**What it verified, beyond the loader's own check:** the composite FK `(switch_id, scope)`
+binds in **both** directions — a site-only switch claimed as `company` and a company-only
+switch claimed as `site` were each refused. `site_scope_has_a_site` refused both a site
+switch with no `entity_id` and a company switch with one. Both threshold CHECKs refused a
+boolean carrying thresholds, an unsorted array and duplicates. Three positive controls were
+accepted and cleaned up. 10 of 10 as expected, and `company_switches` back to 0.
+
+**And the graph:** 0 dangling `depends_on_switch`, 90 of 90 reachable from a root (an
+unreachable switch would mean a cycle), depths `{1: 55, 2: 35}` — a forest of shallow trees
+two levels deep, identical on both databases.
 **~59, not 46.** `substance_exposure_above_action_level` decomposed into one switch per
 substance (`DECISIONS.md` §23.1) — each has its own action level, standard and requirement.
 Definitions, hierarchy, jurisdiction variants, volatility. The `switches` table exists and
@@ -947,10 +1012,23 @@ holds **0 rows**; this is what fills it.
 ⚠️ The seed will be a bulk insert with heterogeneous keys, which needs
 `defaultToNull: false` — see the note in migration 008 beside `allowed_values`.
 
-### 6.3 Write `applies_expression` for the active rows ⬜ ⏱ 5 days
-**192 active rows.** Free text → machine-evaluable. **Slow, and worth doing slowly.**
-**Inherits 90 switches from 6.2** (`supabase/seed-data/switches.json`), 6 of them numeric
-with thresholds, 35 dependency edges, no cycles.
+### 6.3 Write `applies_expression` for the active rows ⬅️ **ALSO NEXT** ⏱ 5 days
+**192 live rows.** Free text → machine-evaluable. **Slow, and worth doing slowly.**
+
+**What 6.3 inherits from 6.2:**
+- **90 switches with agreed ids**, derived from the 188 trigger strings these expressions
+  will be written against — so the expression and the prose are talking about the same fact.
+- **6 numeric switches carrying their thresholds**, so `15` lives in one place instead of
+  being hard-coded into the ADA row, the Title VII row and the PWFA row — three places to get
+  it wrong and nowhere to look it up.
+- **35 dependency edges, acyclic**, so an expression can rely on a parent fact being
+  establishable first.
+- **90 `question_plain` strings**, so nothing has to invent the wording.
+- **`employee_count` split company/site**, so an expression can say which one it means.
+
+**What it must decide before it can finish:** 6.3a below. Four switches are boolean because
+their thresholds are per-chemical, and no expression can be written for them until that shape
+is chosen.
 
 #### 6.3a 🔴 THE OPEN SHAPE QUESTION — per substance, not per site ⬜
 *Raised 11 Sep by the 6.2 seed. Not a limitation to work around — a modelling problem that

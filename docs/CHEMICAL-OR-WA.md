@@ -1,6 +1,9 @@
 # Chemical Manufacturing Vertical — Oregon & Washington
-**Version:** 1.4 · **Updated:** 11 September 2026
-**Supersedes:** version 1.3 (11 Sep). Adds to §3.2 where the four jurisdiction facts come
+**Version:** 1.5 · **Updated:** 12 September 2026
+**Supersedes:** version 1.4 (11 September 2026). **§2.4's switch list is marked SUPERSEDED by
+`supabase/seed-data/switches.json`** — 46 proposed against 90 seeded, and the block at the head
+of that section records the four specific corrections and why the old list is kept rather than
+rewritten. Version 1.4 added to §3.2 where the four jurisdiction facts come
 from: state, county and city are geocoded from the address against the US Census Bureau
 Geocoder, and fire authority is asked, because fire districts do not follow county lines.
 Both failure paths leave the jurisdiction unknown and ask. Version 1.3 **rewrote §3.2's
@@ -323,6 +326,54 @@ This encodes the product's core safety rule directly in the data model: a false 
 
 ## 2.4 The switch list — chemical manufacturing, OR & WA
 
+> # ⚠️ SUPERSEDED BY `supabase/seed-data/switches.json` — 12 September 2026
+>
+> **The list below is kept as written and is no longer the source of truth.** The seeded
+> switch library is the file, and it is loaded into `switches` in both environments.
+>
+> | | §2.4, below | The seed file |
+> |---|---|---|
+> | count | 46 (a bundle, so really 45 + 1) | **90** |
+> | derived from | judgement, before the library existed | **188 `trigger_condition` strings** |
+> | switches nothing uses | **6 of them** | the same 6, kept and marked |
+> | facts missing | **30, needed by 48 requirements** | present |
+>
+> **WHY THE DIFFERENCE MATTERS MORE THAN THE COUNT.** §2.4 was written before
+> `requirement_templates` held anything, so it is a good-faith prediction of which facts a
+> chemical plant's obligations would turn on. The seed was produced by reading every trigger
+> in the library and asking, of each, *which fact does this actually need?* Two whole classes
+> turned out to be missing:
+>
+> - **The equipment layer.** The library has **23 requirements with `entity_type =
+>   'equipment'`** — forklifts, cranes, slings, ladders, fall arrest, sprinklers,
+>   extinguishers, alarms, emergency respirators, hazardous piping. §2.4 proposes **no switch
+>   for any of them**, and they are the cheapest facts in the list.
+> - **The employment layer.** The library carries 16 Oregon labour rows and a dozen federal
+>   ones, needing `has_employees`, `has_group_health_plan`, `sponsors_erisa_plan`,
+>   `federal_contractor`, `uses_noncompete_agreements` — none of which is a chemical fact.
+>
+> **And three specific corrections a reader of §2.4 must know about:**
+>
+> 1. **`employee_count` is a NUMBER, not the bands at item 3.** The library names seven
+>    thresholds — 6, 10, 15, 20, 25, 50, 100 — and three fall *inside* a band. **The 15 gates
+>    the ADA, Title VII and the Pregnant Workers Fairness Act**, so a company in the 11–19
+>    band is unresolvable against all three. Bands do not lose precision; they make three
+>    federal statutes unanswerable. It also splits into company and site scope.
+> 2. **Item 40, `substance_exposure_above_action_level`, does not exist.** It decomposes into
+>    14 per-substance switches — `DECISIONS.md` §23.1.
+> 3. **Item 41, `outdoor_work`, had the wrong name.** It splits into `heat_exposure_area` and
+>    `wildfire_smoke_exposure`. Oregon's heat rule triggers on *"work area heat index reaches
+>    80°F"* — **indoor areas included** — so `outdoor_work` encoded an assumption the rule
+>    does not make, and a foundry with no outdoor work would have been told it did not apply.
+> 4. **Item 2, `entity_county`, is dropped.** Migration 009 put the authoritative county on
+>    `entities`; a switch would be a fifth free-text place for jurisdiction to disagree with
+>    itself.
+>
+> **Kept rather than rewritten, deliberately.** Rewriting the list in place would hide that
+> it was ever wrong, and *how* it was wrong is the transferable part: **derive from the
+> library, never propose to it.** `DECISIONS.md` §36 and §38 carry the reasoning; the file
+> carries the list.
+
 **Universal (reused by every vertical):**
 1. `entity_state` — Oregon / Washington
 2. `entity_county` — drives fire authority, and in WA the air authority
@@ -374,6 +425,11 @@ This encodes the product's core safety rule directly in the data model: a false 
 46. `emergency_response_team` — HAZWOPER responder tier vs evacuation-only
 
 Approximately 46 switches. **Most are determined from documents and profile without asking the user anything.** The genuinely user-facing question count is expected to be 5–8 for a typical company.
+
+> *Superseded — see the block at the head of §2.4. The seeded count is 90: 52 determined from
+> documents, 11 from the profile, 2 computed, and **25 that genuinely need a user to answer**.
+> The "5–8 user-facing questions" estimate is about how many get asked of any ONE company,
+> which is a different number from how many exist and is not contradicted by the 25.*
 
 ## 2.5 Determination requirements — the dependency chain
 
@@ -877,7 +933,7 @@ This states plainly what is covered and to what standard. It is the answer to "d
 
 ## 6.4 Switches screen — the highest-leverage screen in the product
 
-46 switches, most pre-answered from documents and profile, each showing the basis, each editable, each edit instantly recomputing every obligation.
+46 switches *(superseded — **90** are seeded; see the block at the head of §2.4)*, most pre-answered from documents and profile, each showing the basis, each editable, each edit instantly recomputing every obligation.
 
 ```
 Hazardous waste generator category            SQG          [edit] 🔒
@@ -1029,7 +1085,7 @@ One thing stays human, and it is not the library. It is **the checker's own judg
 | # | Step | Output |
 |---|---|---|
 | 1 | Schema: agencies, requirement_templates with jurisdiction + versioning + scope_rules, switches, company_switches, entities, obligations, obligation_evidence | Migration files — schema reproducible from source |
-| 2 | Load the 46 switches with definitions and jurisdiction variants | Switch library |
+| 2 | Load the switches with definitions and jurisdiction variants — **done 11–12 Sep: 90, not 46 (§2.4 header block)** | Switch library |
 | 3 | Federal layer, agency by agency, multi-model, primary-source resolution | ~95 verified federal rows serving all states |
 | 4 | Oregon layer, agency by agency | ~90 Oregon rows |
 | 5 | Human verification pass by fact class (§4.6) | Oregon marked verified with dates |
@@ -1066,7 +1122,7 @@ One thing stays human, and it is not the library. It is **the checker's own judg
 
 > **Never ask the user anything that can be derived from the address, the website, a public database, or a document they already have.**
 
-There are ~46 switches. If onboarding asks 46 questions, nobody finishes, and the answers are wrong anyway — an eight-person chemical blender does not know their generator category or TRI status. **That not knowing is why they need the product.** An onboarding form that demands expert answers is asking the customer to do the job they are paying for.
+There are ~46 switches *(**90** as seeded — but the argument below is unchanged and gets stronger: 52 of the 90 are determined from documents, 11 from the profile, 2 computed, and only **25** could ever need a person)*. If onboarding asks 46 questions, nobody finishes, and the answers are wrong anyway — an eight-person chemical blender does not know their generator category or TRI status. **That not knowing is why they need the product.** An onboarding form that demands expert answers is asking the customer to do the job they are paying for.
 
 Sources ranked by cost to the user, cheapest first:
 

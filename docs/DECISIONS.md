@@ -137,7 +137,7 @@ The proposal to split CompliBoard into ~10 industry-specific companies was consi
 | Layer | What | Owner | Producer |
 |---|---|---|---|
 | 1. Library | What the law requires, by industry + jurisdiction | Global | AI generates, human verifies |
-| 2. Switches | ~46 facts about this company | Per company | AI determines, user overrides |
+| 2. Switches | **90** facts about this company *(§36; ~46 was the pre-library estimate)* | Per company or per site | AI determines, user overrides |
 | 3. Obligations | Which library rows apply | Per company | **Code — pure calculation** |
 | 4. Evidence | Which documents prove each obligation | Per obligation | AI matches, stored as rows |
 
@@ -2064,6 +2064,15 @@ finishing and high-piled storage as fire permit types; `LOCAL-FIRE` holds 3 libr
 against a much larger real scope (TODO 6.5a). The switches have nothing to gate because the
 requirements were never written, not because the facts do not matter.
 
+**Reversal condition — for the list, not for the method: replace the seed file wholesale
+whenever the library grows a layer it does not cover.** The failure this records is not that
+somebody chose 46 badly; it is that the list was written *before* the thing it describes.
+The same will be true of the next vertical: a cannabis library will need switches nothing
+here anticipates, and the correct move is to read its trigger prose and extend the seed, not
+to reason about cannabis from first principles. **Derive from the library, never propose to
+it.** The six unused switches come out only if a deliberate decision says the requirements
+behind them will never be written — never as part of a sweep for dead rows.
+
 ---
 
 ## 37. `aboveground_storage_tanks` is the inventory; the gallons are computed — 11 September 2026
@@ -2105,6 +2114,17 @@ arbitrarily — and picking arbitrarily is the failure that looks like working s
 cases in memory: the real file (0 cycles), **the real pair reversed** (refused), a three-node
 cycle (refused, showing it walks the graph rather than comparing pairs), and a four-deep
 chain with no cycle (correctly allowed, so it is not just flagging depth).
+
+**Reversal condition on the DIRECTION:** if a requirement is ever written whose trigger turns
+on the SPCC quantity in order to establish whether tanks exist — which would be strange, and
+is the only thing that would justify the other arrow — the edge flips and the AST condition
+moves out of `applies_expression`. Nothing in the current library asks for that.
+
+**No reversal condition on the CHECK.** A cyclic dependency graph is unwalkable, not merely
+untidy: nothing can decide which fact to establish first, so the gate would either loop or
+pick arbitrarily — and picking arbitrarily is the failure that looks like working software.
+If the check ever becomes expensive enough to matter (it is O(n) over ~90 rows), it moves to
+a trigger with a recursive CTE. It does not get removed.
 
 ---
 
