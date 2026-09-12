@@ -1,6 +1,10 @@
 # Decision Record
-**Version:** 29 · **Updated:** 12 September 2026
-**Supersedes:** version 28 (12 Sep). **§46 gains 46.1 and 46.2.** A pre-flight must list what
+**Version:** 30 · **Updated:** 12 September 2026
+**Supersedes:** version 29 (12 Sep). **§38.2's entity_type table is corrected** — it carried
+194-era counts and the library has been 200 live rows since migration 013. Proportions and
+decision unchanged. Recorded separately from the 7.2 build because someone reaching for that
+table while building would have sized the scope flattening against a library that no longer
+exists. Version 29: **§46 gains 46.1 and 46.2.** A pre-flight must list what
 the TOOL will list — the set difference between the directory and the target's migration
 history — because a migration written earlier in the same session for different work is in the
 directory, absent from the history, and not on the author's mind. And 46.2 records the cost of
@@ -2233,13 +2237,17 @@ the point: an expired switch reverts to `unknown`, and `unknown` is honest where
 
 **`requirement_templates.entity_type` has five values. `switch_scope` has two.**
 
-| entity_type | rows | resolves to |
+| entity_type | live rows | resolves to |
 |---|---|---|
-| `organization` | 98 | `company` |
+| `organization` | 104 | `company` |
 | `chemical` | 27 | `site` |
-| `person` | 27 | `site` |
-| `equipment` | 23 | `site` |
+| `person` | 26 | `site` |
+| `equipment` | 24 | `site` |
 | `site` | 19 | `site` |
+
+*Re-measured 12 Sep 2026, both environments. The previous table read 98 / 27 / 27 / 23 / 19 —
+194 rows, the library as it stood before migration 013 split three requirements into eleven.
+The proportions are unchanged and so is the decision; the counts were stale by one migration.*
 
 **`person`, `equipment` and `chemical` all resolve to the site where they are.** This is
 lossy and deliberate, and it is written down here so that a future session reads it as a
