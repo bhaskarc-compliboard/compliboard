@@ -495,8 +495,8 @@
     "expression": {
       "inventory": "dea_list_i"
     },
-    "confidence": "high",
-    "note": "",
+    "confidence": "medium",
+    "note": "Holds any DEA List I chemical. ALTERNATIVE and the reason this is not high: DEA thresholds are CUMULATIVE OVER TWELVE MONTHS and per substance, and `regulated_substances` holds no DEA threshold column \u2014 so substance_inventory returns true on presence alone. That over-triggers, which is \u00a744.3's safe direction, but the row must record that it is presence and not a threshold. Adding a fabricated quantity here would be \u00a744.1 exactly.",
     "kind": "judgement"
   },
   {

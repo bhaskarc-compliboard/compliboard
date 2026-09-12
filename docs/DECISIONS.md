@@ -1,6 +1,10 @@
 # Decision Record
-**Version:** 23 · **Updated:** 12 September 2026
-**Supersedes:** version 22 (12 Sep). Adds §43 (`applies_expression` is nested JSON and the
+**Version:** 24 · **Updated:** 12 September 2026
+**Supersedes:** version 23 (12 Sep). Adds §45: an unidentified chemical now makes
+`substance_inventory()` return NULL rather than false — found by checking a compensating
+control that turned out not to exist in the data and would not have worked if it had, because
+a guard above a clause cannot see why the clause said no. The general rule: a compensating
+control has to be named and tested, or it is a belief. Version 23 added §43 (`applies_expression` is nested JSON and the
 renderer ships with it — store the structure, review the sentence; plus the three faults
 building the renderer found in its first twenty rows) and §44 (a threshold in an expression
 must appear in the rule's own text in that unit, or the expression asserts a number nobody
@@ -2624,3 +2628,69 @@ is not applied to one's own work: `Electronic OSHA` has three *different trigger
 five years, inspection intervals, before change, three years. `Confined spaces` differs on both
 — identification triggers on *containing* a space, entry and rescue on *entering* one, and the
 clocks are initial, per-entry and annual. All three clear the test.
+
+---
+
+## 45. An unidentified chemical makes the answer unknown — 12 September 2026
+
+**Found by checking a claim that a compensating control already existed. It did not, and the
+control that was proposed would not have worked.**
+
+### 45.1 The claim, and why it fails
+
+The claim: every `substance_inventory()` expression sits beneath `hazardous_chemicals_present`,
+so a wrong CAS number makes a requirement **unreachable** rather than **wrongly cleared** —
+and that is why the CAS-matching risk is tolerable.
+
+**Two things are wrong with it.**
+
+**It is not true of the data.** **0 of the 15** inventory-backed expressions carry that guard.
+`EPCRA emergency-planning notification` is `{ inventory: 'ehs' }` and nothing else; all five
+PSM rows are `{ inventory: 'psm' }` bare.
+
+**And adding the guard would not produce the claimed protection.** With
+`hazardous_chemicals_present = true` and a CAS that matches nothing, the conjunction evaluates
+`true AND false` = **false**. The guard only changes the answer when the guard itself is
+unknown. **The protection has to live inside the function, where the missing identification is
+visible — not in a conjunct above it, which cannot see why the inner clause said no.**
+
+### 45.2 The hole this exposed, which is real
+
+`company_chemicals.cas_number` is deliberately nullable: a company can record *"parts washer
+solvent"* before anybody identifies it, and recording that is better than recording nothing.
+But the function joins on CAS.
+
+**So a site with ten identified chemicals and one unidentified drum had inventory rows, took
+the `else` branch, and returned FALSE — which reads as determined not to apply.** A mistyped
+but well-formed CAS does the same: `67-63-1` for `67-63-0` passes the format CHECK, matches no
+row, and drops that substance silently out of every threshold test.
+
+**That is a silent wrong clear, which is the one failure class this product exists not to
+have.** An unidentified drum is absence of evidence, and `CLAUDE.md` §3.2 says absence of
+evidence never produces a clear.
+
+### 45.3 The fix, and the one thing it must not do
+
+Migration 014 makes `substance_inventory()` return **NULL when any row in the site's inventory
+is unevaluable** — no CAS, a CAS matching no known substance, no quantity, no unit, or a unit
+that cannot be compared.
+
+**But a positive answer is checked FIRST and survives an incomplete inventory.** If a known
+substance is already over its own threshold, an unidentified drum elsewhere cannot make that
+untrue. Without that ordering, every partially-identified site would go `unknown` and the table
+would be useless until somebody had identified everything — which is never. **The asymmetry is
+deliberate: an incomplete inventory can still say yes, and can no longer say no.**
+
+Five behavioural tests in the migration, each constructing its case: empty → NULL, one row
+below threshold → **false**, add an unidentified drum → **NULL**, raise a known substance over
+its threshold → **true despite the drum**, unmatched CAS → **NULL**.
+
+### 45.4 The rule this generalises to
+
+**A compensating control has to be named and tested, or it is a belief.** This one was
+plausible, widely assumed in the reasoning around it, false in the data, and would not have
+worked if implemented. The three failures are independent and each is easy to make alone.
+
+**Where a design tolerates a risk because something else catches it, the something else is
+part of the design** and belongs in `AUDIT-CHECKS.md` with a query that proves it still holds
+— not in a comment asserting that it does.

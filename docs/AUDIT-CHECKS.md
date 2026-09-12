@@ -1,6 +1,8 @@
 # Audit Checks
-**Version:** 8 · **Updated:** 12 September 2026
-**Supersedes:** version 7 (12 Sep). Adds **check 17** — does every fact a stage establishes
+**Version:** 9 · **Updated:** 12 September 2026
+**Supersedes:** version 8 (12 Sep). Adds **check 18** — does an incomplete chemical inventory
+still refuse to clear a requirement? Written because a compensating control that was assumed
+turned out to be absent from the data and unworkable as described. Version 8 added **check 17** — does every fact a stage establishes
 reach the stage downstream that needs it? A value returned to the client looks exactly like a
 value that is wired up, and no type-checker distinguishes them. Version 7 added **check 15** — which models accept the parameters we
 send, after finding that the Claude 5 family rejects `temperature` outright and that a one-line
@@ -659,6 +661,47 @@ made it visible.** `DECISIONS.md` §41.
 each new one produces something, and the question *"who downstream needs this, and do they
 get it?"* has to be asked deliberately, because a value that is returned to the client looks
 exactly like a value that is wired up.
+
+---
+
+## 18. Does an incomplete chemical inventory still refuse to clear a requirement?
+
+**Added 12 September 2026. `DECISIONS.md` §45.** This is the check for a compensating control,
+and it exists because the last one that was assumed rather than tested turned out to be absent
+from the data **and** unable to work as described.
+
+```sql
+-- Sites whose inventory contains a row nothing can evaluate.
+select e.id as entity_id, count(*) as unevaluable_rows
+  from public.company_chemicals c
+  join public.entities e on e.id = c.entity_id
+ where c.cas_number is null
+    or not exists (select 1 from public.regulated_substances r where r.cas_number = c.cas_number)
+    or c.max_quantity is null or c.unit is null
+ group by e.id;
+
+-- For each of those, every list must answer NULL unless a known substance is already over
+-- its own threshold. Anything answering FALSE is a silent wrong clear.
+select e.id,
+       public.substance_inventory(e.id,'ehs')  as ehs,
+       public.substance_inventory(e.id,'tri')  as tri,
+       public.substance_inventory(e.id,'psm')  as psm
+  from public.entities e;
+```
+
+**Answer, 12 September 2026:** `company_chemicals` is empty in both environments, so there is
+nothing to check yet — **and that is exactly when to write the check rather than after the
+first customer inventory arrives.** The behaviour is proven instead by migration 014's five
+constructed cases.
+
+**Why nothing else catches it.** A `false` from an inventory test is indistinguishable from a
+`false` from a genuine determination. Both render as "does not apply"; neither raises an error;
+the row count is right either way. **The only way to tell them apart is to know whether every
+row in the inventory could be evaluated**, and nothing in the product surfaces that today.
+
+**And the rule behind it, which outlives this table: where a design tolerates a risk because
+something else catches it, the something else is part of the design.** It gets a name, a query
+here, and a test — or it is a belief, and beliefs do not hold under a customer's data.
 
 ---
 
