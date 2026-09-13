@@ -1,5 +1,13 @@
 # Chemical Manufacturing Vertical — Oregon & Washington
-**Version:** 1.5 · **Updated:** 12 September 2026
+**Version:** 1.6 · **Updated:** 12 September 2026
+**Supersedes:** 1.5 (12 Sep). **Four corrections, all the same mistake: this file treated an SDS
+as an inventory.** §2.2's `basis` example attributed "1,400 lb methylene chloride" to an SDS;
+§10.4 claimed an SDS library resolves TSCA, EHS and TRI; §10.5's table listed every threshold
+regime against it; §11's upload checklist promised ~12 requirements from an SDS binder.
+**An SDS is written by the manufacturer, is identical for every customer, and contains no
+quantity** — so it establishes identity and nothing that turns on how much is held. Measured:
+three SDSs extracted for the test company moved **zero** obligations. The SDS binder and the
+chemical inventory list are now two different documents in every place they appeared as one.
 **Supersedes:** version 1.4 (11 September 2026). **§2.4's switch list is marked SUPERSEDED by
 `supabase/seed-data/switches.json`** — 46 proposed against 90 seeded, and the block at the head
 of that section records the four specific corrections and why the old list is kept rather than
@@ -306,8 +314,13 @@ company_switches (per company)
   value
   state          known | unknown | needs_user
   confidence     high | medium | low
-  basis          "SDS inventory shows 1,400 lb methylene chloride; manifest log shows
-                  ~180 kg/month waste generation"
+  basis          "Chemical inventory list, line 14: methylene chloride 1,400 lb;
+                  manifest log 2026-03 to 2026-08: ~180 kg/month"
+                 *(Corrected 12 Sep. The earlier example attributed a QUANTITY to an SDS.
+                  An SDS is authored by the manufacturer and is identical for every
+                  customer — it states what a chemical IS and never how much anybody
+                  holds. Quantities come from an inventory list, a Tier II report,
+                  purchase records or a question. See §10.5.)"
   source         ai_from_documents | ai_from_profile | user_set | computed
   determined_at, expires_at
   user_locked    boolean
@@ -1191,7 +1204,16 @@ The scan already exists. What it should be extracting for this vertical:
 
 The scan should output switches with `confidence`, and anything at medium or low goes to confirmation rather than being silently adopted.
 
-**High-value addition:** if the site publishes an SDS library, offer to pull it. That single action can resolve chemical identity, hazard class, packing group, TSCA status, EHS listing, and TRI exposure — the hardest cluster in the whole switch set — with no user effort.
+**High-value addition:** if the site publishes an SDS library, offer to pull it. That single action can resolve **chemical identity, hazard class and packing group** for every product they publish — the hardest *identification* problem in the switch set — with no user effort.
+
+> **⚠️ Corrected 12 September 2026, and the correction matters for what onboarding promises.**
+> The earlier version of this sentence also claimed TSCA status, EHS listing and TRI exposure.
+> **It cannot resolve those.** EHS, TRI, PSM, RMP and CR2K are all *threshold* questions — they
+> turn on how much of a substance a site holds — and **an SDS contains no quantity at all.**
+> Measured against the real library: extracting three SDSs for Test Alpha Chemical moved
+> **zero** obligations, because every threshold test correctly returned `unknown` for want of a
+> quantity. An SDS library gets you identity; the thresholds still need an inventory with
+> numbers on it. `docs/SWITCH-DETERMINATION.md` §1.
 
 ## 10.5 Layer 4 — Documents (one upload beats twenty questions)
 
@@ -1199,7 +1221,8 @@ Documents are the best switch source and the reason this product can serve SMBs 
 
 | Document | Resolves |
 |---|---|
-| **SDS library / chemical inventory** | chemical identity, hazard classes, packing groups, EHS, TSCA, TRI, PSM/RMP thresholds, CR2K, Tier II |
+| **SDS library** | chemical **identity** (CAS), hazard classes, packing groups, physical state. **NOT thresholds** — an SDS has no quantity in it |
+| **Chemical inventory list with quantities** | the threshold half: EHS, TRI, PSM/RMP, CERCLA, CR2K, Tier II. **This is the document those requirements actually need**, and it is a different document from the SDS binder |
 | **Hazardous waste manifests** (6 months) | `hazwaste_generator_category` — measured, not guessed |
 | **Air permit (ACDP / Title V / regional authority)** | air tier, monitoring, reporting, fee obligations |
 | **NPDES / 1200-Z / discharge permit** | water obligations |
@@ -1259,7 +1282,8 @@ Correcting is far easier than answering, and the corrections carry more signal t
 ```
 Upload these and we can determine the rest — no more questions.
 
-  ☐ Your SDS binder or chemical list      → resolves ~12 requirements
+  ☐ Your SDS binder                       → identifies your chemicals
+  ☐ Your chemical inventory WITH QUANTITIES → resolves ~15 threshold requirements
   ☐ Last 6 hazardous waste manifests      → confirms generator category
   ☐ Your air permit                       → resolves reporting and fees
   ☐ Most recent fire inspection report    → resolves local permits

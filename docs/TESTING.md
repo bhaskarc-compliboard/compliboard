@@ -1,6 +1,11 @@
 # Testing
-**Version:** 8 · **Updated:** 12 September 2026
-**Supersedes:** version 7 (12 Sep). Adds **`npm run mutation`** — nine deliberate breakages of
+**Version:** 9 · **Updated:** 12 September 2026
+**Supersedes:** version 8 (12 Sep). Adds **`npm run test`'s three guards** — no `.only`, nothing
+skipped, and a committed floor the total may rise above but never fall below, both refusals
+proved by breaking the suite. Records the actual count history (**167**, never 100 or 106) so
+the question does not have to be re-asked. And records that the **golden document cases are
+blocked on a decision, not on effort**: a case needs a committed document and the only
+candidates are customer-uploaded files. Version 8 added **`npm run mutation`** — nine deliberate breakages of
 the resolution engine, all nine caught, because a suite that has only ever passed is
 consistent with a suite that asserts nothing. Records what a wrong implementation looks like
 for each property, which is the part a passing test cannot tell you. Version 7 added **the expression layer's three invariants** — a new
@@ -29,6 +34,64 @@ Records that assertion 2 was unfalsifiable before Phase 2.1 and is a `WHERE` cla
 
 **Status: (a) is a standing obligation and starts now. (b) is specced in `TODO.md` 2.8 with
 two cases written. (c) is not built and is deliberately bounded.**
+
+---
+
+## The suite may grow. It may not silently shrink — `npm run test`
+
+Added 12 September 2026. `npm run test` is `scripts/test-guard.js`, which runs the suite and
+then refuses three things:
+
+| Guard | Refuses |
+|---|---|
+| **no `.only`** | a stray `.only` narrows a run to one test and reports **green** |
+| **0 skipped, 0 todo** | a skipped case disappears into a count nobody reads |
+| **a committed floor** | the total may rise above it, never fall below |
+
+**Both refusals were proved by breaking the suite on purpose**, then restoring it:
+
+```
+test-guard: .only found in jurisdiction.test.ts — the suite would report green
+            having run almost nothing.
+test-guard: 1 skipped
+```
+
+**Why this is the harness doing the thing the checks exist to prevent.** Check 14 records that a
+checker weaker than its assertion is indistinguishable from a passing suite. A narrowed *run* is
+the same failure one level up: nothing errors, nothing is red, and the only signal is a number
+in a summary line. `HOW-WE-BUILD.md` §3's rule — a validator that has only ever said PASS is
+untested — applies to the runner as much as to anything it runs.
+
+**On the count itself**, recorded because it was queried: the suite has been **1 → 37 → 58 →
+119 → 133 → 164 → 167**, each step after adding tests, and three consecutive runs on 12 Sep gave
+**167 · 0 skipped · 0 todo**. Per file: `appliesExpression` 58 · `jurisdiction` 24 · `resolve`
+40 · `sdsExtraction` 14 · `switchDetermination` 31. **No run in this project has reported 100 or
+106.** The floor is committed so the question does not have to be re-asked.
+
+---
+
+## Golden document cases — specified, blocked on one decision
+
+`docs/SWITCH-DETERMINATION.md` §6 has the full shape. Summarised here because this is where
+someone looks for what a test is:
+
+```
+tests/golden-documents/<case>/
+  source.pdf          the document, committed
+  extracted.txt       the text the pipeline produced, FROZEN
+  expected.json       human-written once, never regenerated
+```
+
+Four assertions, **the first two needing no AI**: `basis` is a literal substring of
+`extracted.txt` · `must_not_determine` has no hits · `must_determine` matches on switch, value
+and class · `max_determinations` caps enthusiasm.
+
+**⛔ Not built, and the blocker is a decision rather than effort.** A case needs a committed
+document, and the only realistic candidates are production files belonging to test companies —
+including `HF_Acid_SDS_2024.pdf`, whose review is a complete FMLA analysis with a headcount of
+42 and which would be the strongest negative control available. **Whether customer-uploaded
+files may enter the repository is not a decision to take quietly**, so the directory does not
+exist yet. Synthetic documents are the safe alternative and prove less.
 
 ---
 

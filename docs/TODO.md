@@ -1,6 +1,11 @@
 # Detailed To-Do
-**Version:** 14 · **Updated:** 12 September 2026
-**Supersedes:** version 13 (12 Sep). Adds M6's requirement that the coverage strip
+**Version:** 15 · **Updated:** 12 September 2026
+**Supersedes:** version 14 (12 Sep). Documentation sweep, every count re-read. **7.2's schema and
+logic are on both environments and no route calls them.** Adds a **phase index in this file's own
+numbering with a state against each** — there is no Phase 3 or Phase 8 here, those are build-plan
+numbers — and a **what-is-next-by-dependency** section, because resolution and determination both
+work and a user can see neither. Records 7.2's measured result: three SDSs moved **zero**
+obligations. Version 14 added M6's requirement that the coverage strip
 **distinguish a profile from a default** — a company that has answered nothing resolves to 2
 `applies`, both true, both the same answer every Oregon employer gets, and on screen
 indistinguishable from a real profile. Named as a requirement because the failure it prevents
@@ -87,6 +92,50 @@ in `BUILD-PLAN.md` at task level — the build plan stays as the *why*, this is 
 >
 > **`TODO.md` is the one to follow for what to do next.** `BUILD-PLAN.md` is the *why* and
 > the ordering; `TODO.md` is the *what next*, and it supersedes the build plan at task level.
+
+---
+
+## THIS FILE'S OWN PHASES, AND WHERE EACH STANDS
+
+*Read from this file's own headings on 12 September 2026. **Every number here is `TODO.md`'s
+numbering** — `BUILD-PLAN.md`'s differs for five of them, see the table above. There is no
+`PHASE 3` and no `PHASE 8` in this file; those numbers exist only in the build plan.*
+
+| `TODO.md` phase | State |
+|---|---|
+| **0 — Foundation** | 🟡 items open |
+| **1 — Schema rebuild** | ✅ complete 11 Sep |
+| **2 — The runtime pipeline** | ✅ quality items closed 12 Sep; 2.4, 2.6, 2.7 open |
+| **4 — Resolution engine** | 🟡 **4.1 and 4.2 done 12 Sep**; 4.3, 4.4 open |
+| **5 — The worker** | ⬜ not started *(= build plan's Phase 3)* |
+| **6 — Library: chemical Oregon** | 🟡 6.1–6.3 done; **6.4 open**, 6.5–6.9 not started |
+| **6b — Employment law library** | ⬜ not started |
+| **7 — Switches and evidence** | 🟡 **7.2's schema and logic done 12 Sep, no route**; 7.1, 7.3, 7.4 open |
+| **9 — Observability** | ⬜ not started *(= build plan's Phase 8)* |
+| **10 — Cannabis Oregon** | ⬜ not started |
+| **11+ — Later** | ⬜ |
+| **MODULES M1–M8** | ⬜ the seven product modules, built last |
+
+### What is genuinely next, BY DEPENDENCY rather than by number
+
+**The situation in one line: resolution works, determination works, and a user can see neither.**
+`obligations` is 0 rows on production and 0 on staging; nothing writes a switch value; no screen
+renders an obligation. Two engines, no surface.
+
+1. **7.2a — the routes.** The shortest path from "the logic exists" to "a person changed a
+   value and watched their list move". Everything under it is already tested.
+2. **M7's three questions.** `has_employees`, `employee_count`, `site_employee_count` gate 53
+   requirements and are **onboarding fields, not documents** — one question moved 19 obligations
+   where three SDSs moved none. This outranks most of Phase 7 on value per day.
+3. **6.4b — seed `regulated_substances`.** 15 requirements are blocked on an empty reference
+   table, for **every customer at once**, with no question asked.
+4. **M6's requirements screen.** Until something renders an obligation, none of the above is
+   visible to anybody outside a test script.
+
+**What is NOT next, despite being numbered earlier:** 4.3, 4.4, 5, 7.1 and 7.3 all add capability
+to layers that already work and are unrendered. `DECISIONS.md` §18 — horizontal first — was
+written when the ground was still moving. It has stopped.
+
 
 ## ⛔ GATE — THESE LAND BEFORE THE FIRST REAL CUSTOMER DOCUMENT
 
@@ -1519,8 +1568,70 @@ argument in full.
 ### 7.1 Public-records lookups ⬜ ⏱ 4 days
 EPA RCRAInfo (**generator category, free**), ECHO, TRI, FMCSA SAFER, DEQ/Ecology, SoS, **OLCC licensee list** (cannabis license type, endorsements, tier — free).
 
-### 7.2 Switch determination from documents ⚡ ⏱ 4 days
-One AI pass. Every value logs `basis`, confidence, source.
+### 7.2 Switch determination from documents 🟡 **SCHEMA AND LOGIC DONE (12 Sep) — NO ROUTE CALLS IT**
+Spec: `docs/SWITCH-DETERMINATION.md`. One AI pass; every value logs `basis`, `evidence_class`,
+confidence and source.
+
+**Shipped to both environments:** migration 017 (`evidence_class`, the append-only
+`switch_determinations` history, `company_switches.determined_from`, and a **composite FK pinning
+the denormalised class to the determination it came from**) · `prompts/switch-determination.ts`
+(seven forbidden inferences, exported so a golden case can assert each survives a prompt edit) ·
+`lib/switchDetermination.ts` (the precedence ladder and §49's overwrite history) ·
+`lib/sdsExtraction.ts` (§48's CAS check digit).
+
+**⛔ NOT BUILT — verified on disk, not assumed:** no route reads or writes `company_switches` or
+`switch_determinations`; the four files naming either are comments or the account-deletion list.
+`tests/golden-documents/` does not exist.
+
+> ### THE MEASURED RESULT, and it is not the one anybody expects
+>
+> Test Alpha Chemical, 2 sites, **221 obligations**:
+>
+> | | applies | does_not_apply | undetermined | unknown |
+> |---|---|---|---|---|
+> | nothing established | 3 | 0 | 1 | **217** |
+> | **+ three SDSs extracted** | **3** | **0** | **1** | **217** |
+> | + one confirmation | 12 | 0 | 1 | 208 |
+> | + one answer (`has_employees`) | 31 | 0 | 1 | 189 |
+> | + a realistic profile incl. falses | 40 | **108** | 1 | **72** |
+>
+> **Three SDSs moved ZERO obligations.** An SDS is written by the manufacturer, is identical for
+> every customer, and carries no quantity — so every threshold test correctly returned `unknown`.
+> One confirmation moved 9; one question moved 19. **The chemical library a customer is proudest
+> of is worth less than one question**, and that needs saying before a demo rather than during one.
+>
+> **And nothing ever moved from `applies` to `does_not_apply`** — not once, across every pair of
+> states. It cannot: establishing a fact nobody had only settles an open question. Moving a
+> requirement *off* a list requires *correcting* a fact, not supplying one. So "assume it applies
+> until ruled out" would not have left a handful of wrong entries — it would have shown this
+> company **108 requirements it is not subject to, beside the 40 it is**, indistinguishable.
+
+#### 7.2a The routes ⬜ ⏱ 1 day
+`/api/switches/answer` first — the smallest, and the one whose behaviour is already tested.
+
+#### 7.2b Golden document cases ⬜ **BLOCKED ON A DECISION, NOT ON EFFORT**
+A case needs a committed `source.pdf`. The only realistic candidates are production files
+belonging to test companies, including `HF_Acid_SDS_2024.pdf` — typed `Employee Handbook - Leave
+Policy Section` with a full FMLA analysis, which would be the strongest negative control
+available. **Whether customer-uploaded files may enter the repository is not a quiet decision.**
+
+#### 7.2c 🔒 A trigger for `user_locked` ⬜ ⏱ half day
+`AUDIT-CHECKS.md` check 24: **zero policies, zero constraints, zero triggers** reference
+`user_locked`. It is enforced in one library module, which under `CLAUDE.md` §3.6 is a route
+guard wearing a different coat. Must be a **trigger** — a policy cannot compare the old row to
+the new one, and the rule is about the transition.
+
+#### 7.2d Switch determination coverage — 42 of 95 have no path ⬜
+**Measured 12 Sep: 53 of 95 switches are document-sourced. The other 42 — 44.2% of the
+vocabulary — have no determination path even after 7.2 ships**: 29 need an ask path, 11 need
+signup to collect the field, 2 need 6.3b's wiring. `AUDIT-CHECKS.md` check 23 is the standing
+query, and the figure may only fall — if it rises, a switch was added without deciding how it
+gets answered.
+
+**Build the ask path for the 29 `user_answer` switches first and let it prove the pattern.**
+Measured: 4 of the 29 are referenced by no requirement at all, and the other 25 fully resolve
+**31** requirements. **25 questions buy 31 requirements** — about 1.2 each, with no head to
+attack (`owns_fleet` 7 transitive, then 3, then a tail of 2s and 1s).
 
 ### 7.3 Normalize audit output into `obligation_evidence` ⚡ ⏱ 4 days
 **One table resolves three findings:** no resolution tracking, dashboard-only-climbing, audits recomputing from scratch.

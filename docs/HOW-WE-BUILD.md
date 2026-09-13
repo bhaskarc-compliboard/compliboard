@@ -1,7 +1,11 @@
 # How We Build CompliBoard
 
-**Version:** 6 · **Updated:** 12 September 2026
-**Supersedes:** version 5 (12 Sep). §3 gains *build the review artifact before the bulk work* —
+**Version:** 7 · **Updated:** 12 September 2026
+**Supersedes:** version 6 (12 Sep). §3 gains *validate the structure of what you extracted
+before writing it* — from the CAS check digit, where the dangerous identifier is not the one
+that matches nothing but the one that matches something else. §7 gains the hand-off case: §46
+has now fired three times, each further from the artifact than the last, and the third had a
+correct pre-flight and an altered copy. Version 6: §3 gains *build the review artifact before the bulk work* —
 the renderer that caught a logical inversion and a fabricated threshold in its first twenty
 rows, and would have caught neither built afterwards. §8's gate gains a seventh credential.
 Version 5: §3 gains the rule that a check compares against the artifact
@@ -152,6 +156,18 @@ given for it was itself recalled.
 directory, re-read the dry run still on screen, re-run the count. It costs one command, and it
 is cheaper than being right for the wrong reason.
 
+**Validate the STRUCTURE of what you extracted before writing it, not after.** Added 12 Sep,
+from the CAS check digit. A value that is well-formed and wrong is indistinguishable from one
+that is well-formed and right once it is in the database — and the dangerous case is not the
+identifier that matches nothing, which announces itself, but the one that **matches something
+else**. `7664-93-9` is sulfuric acid, `7664-39-3` is hydrofluoric acid: two digits apart, both
+valid, both in the reference table, wildly different thresholds. A transposition satisfies the
+foreign key and every structural test available. **So every property checkable without a
+reference lookup gets checked at the boundary** — a check digit, a date that parses, a number
+inside its permitted range, an enum value in its allowed list, **a quote that appears in the
+document it is quoted from** — and a failure produces an absence rather than a value.
+`DECISIONS.md` §48.
+
 **Build the review artifact BEFORE the bulk work, not after.** Added 12 Sep. Writing 200
 machine-evaluable conditions is the kind of work nobody can review as JSON, so a renderer was
 built first — one that turns a stored condition back into an English sentence — and the loader
@@ -232,6 +248,19 @@ This is the same class as writing a summary from recollection rather than from t
 **Name files from the directory, not from recollection either.** The same rule, applied to a hand-off rather than a summary — and with a sharper cost, because approximate filenames in a pre-flight defeat the abort guard that protects production. §4 has the incident.
 
 **And the same rule governs verification, not only writing.** A check run against a remembered number is not a check. §3 has the rule and the three false alarms that earned it.
+
+**It governs the HAND-OFF too, and that is where it fired third.** Added 12 Sep. §46 was
+written for the pre-flight — the side that *produces* the file list. Its three firings have
+walked steadily further from the artifact: first a pair of filenames that existed nowhere;
+then a set of counts matching neither database; then, with the pre-flight demonstrably correct
+and printed from `ls`, **a name altered between reading the pre-flight and acting on it**.
+`014_company_chemicals.sql` · `015_close_and_replace_obligations.sql` ·
+`017_company_chemicals_cas_trim.sql` — none of the three has ever existed, in any commit, on
+any branch. **The artifact was right every time; the copy of it was not.** So the rule is not
+"write pre-flights carefully", it is: *anything a reader will compare character by character is
+copied from the thing itself, at every hop, including the last one.* The cheaper check belongs
+to whoever raises the alarm — the author has to be right about everything, the challenger only
+has to run `ls`.
 
 ---
 

@@ -1,6 +1,7 @@
 # Audit Checks
-**Version:** 15 · **Updated:** 12 September 2026
-**Supersedes:** version 14 (12 Sep). Adds **check 24** — `user_locked` has ZERO policies, ZERO
+**Version:** 16 · **Updated:** 12 September 2026
+**Supersedes:** version 15 (12 Sep). Check 10 re-run after migration 017: **840 objects each, 0
+differences, byte-identical**, up 41 and every one attributable. Version 15 added **check 24** — `user_locked` has ZERO policies, ZERO
 constraints and ZERO triggers behind it. It is enforced in one library module, which under
 `CLAUDE.md` §3.6 is a route guard wearing a different coat: an honest `update company_switches`
 from a future route under a user token would replace a person's stated fact with an inference,
@@ -418,7 +419,11 @@ domain, both dependency columns and a hash of notes) with 0 differences, the sam
 dependency edges as a set in both directions, and the same graph depth map — 55 roots and 35
 children on each side.
 
-**Run again 12 Sep after Phase 4.1 — migrations 015 and 016 on both environments: 799 objects
+**Run again 12 Sep after Phase 7.2's schema — migration 017 on both environments: 840 objects
+each, 0 differences, byte-identical (sha256 `6ecf7467ec5ee534…`).** Up 41 from 799, all
+attributable to 017: one table, its columns, constraints, indexes, one policy, four enum values.
+
+**Run 12 Sep after Phase 4.1 — migrations 015 and 016 on both environments: 799 objects
 each, 0 differences, the two outputs byte-identical (sha256 `2407ffbcebcddc66…`).** The count
 moved 798 → 799 for one reason and the census can say which: `g_function` 5 → 6,
 `close_and_replace_obligations`. **That is the point of storing the census in a file** — a
