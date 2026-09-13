@@ -1,6 +1,11 @@
 # Audit Checks
-**Version:** 21 · **Updated:** 13 September 2026
-**Supersedes:** version 20 (13 Sep). Adds **check 27** — can the caller execute every function its
+**Version:** 22 · **Updated:** 13 September 2026
+**Supersedes:** version 21 (13 Sep). Adds **check 28** — can every condition in the library ever be
+TRUE? **22 of 216 switch clauses cannot**, 17 of them comparing the `hazwaste_generator_category`
+enum with a boolean, so **a large-quantity generator receives zero hazardous-waste obligations**
+and is told so with a confident sentence. Found by a ten-minute domain read of the rendered
+screen, not by any of the three expression invariants, which check that the switch EXISTS but
+never that the literal's type could match it. Version 21: Adds **check 27** — can the caller execute every function its
 route calls? Both of `/api/obligations`'s were `service_role`-only while the route connects as the
 caller, so every first GET was a 500; on production that is all ten companies. **No test in
 `npm run check` makes an authenticated request**, so a grant is invisible to every one of the 250.
@@ -1295,6 +1300,81 @@ about *which* company the caller may act for. `close_and_replace_obligations` no
 the other company's obligation count unchanged at 221 afterwards. **RLS is what makes it safe;
 the guard is what makes it legible** — without it a cross-tenant call is a silent zero-row
 update.
+
+---
+
+## 28. Can every condition in the library ever be TRUE?
+
+**Not "is it right" — can it fire at all.** A clause comparing a literal of the wrong type to a
+switch is not a wrong answer; it is a requirement that is permanently `does_not_apply` for every
+customer, and it looks identical on screen to an honest exclusion.
+
+```sql
+-- the switch clauses and the switch they name, side by side
+select r.requirement_name, r.jurisdiction_layer, c.value->>'switch' as sw,
+       s.value_type, s.allowed_values, c.value->>'op' as op, c.value->'value' as literal
+  from public.requirement_templates r
+  cross join lateral jsonb_path_query(r.applies_expression, '$.**{0 to 8}?(@.switch != null)') c(value)
+  left join public.switches s on s.id = c.value->>'switch'
+ where r.effective_to is null
+   and (
+     (s.value_type = 'enum'    and jsonb_typeof(c.value->'value') = 'boolean')
+  or (s.value_type = 'boolean' and jsonb_typeof(c.value->'value') <> 'boolean')
+  or (s.value_type = 'number'  and jsonb_typeof(c.value->'value') <> 'number')
+  or (s.id is null)
+   );   -- must return zero rows
+```
+
+**Answer, 13 September 2026, staging: 22 clauses across 22 requirements. This is the worst
+content defect found in the project so far.**
+
+```
+live requirements: 200 | with an expression: 199 | switch clauses: 216
+TYPE-MISMATCHED CLAUSES: 22
+
+   17x  hazwaste_generator_category (enum) is true
+    2x  holds_iso_certification (enum) is true
+    1x  flammable_liquid_quantity_band (enum) is true
+    1x  wastewater_discharge (enum) is true
+    1x  emergency_response_team (enum) is true
+
+by layer: { federal: 15, state: 4, local: 1, none: 2 }
+```
+
+`hazwaste_generator_category` is an enum over `{none, vsqg, sqg, lqg}`. Seventeen requirements ask
+whether it **is `true`**, which no allowed value can satisfy. **Consequence, proved by running the
+resolver rather than argued:**
+
+```
+hazwaste_generator_category = lqg
+  hazardous-waste requirements resolved: 20 -> {"does_not_apply":17,"unknown":3}
+  APPLIES: NONE
+hazwaste_generator_category = sqg    ... identical
+hazwaste_generator_category = vsqg   ... identical
+```
+
+> **A LARGE-QUANTITY GENERATOR — the most heavily regulated waste category there is — receives
+> ZERO hazardous-waste obligations, and the screen tells them so in a confident sentence naming
+> the fact that ruled it out.** `LQG contingency plan`, `LQG personnel training`, `Manifest and
+> authorized transporter`, `Land Disposal Restrictions`: all cleared, for everyone, always. The
+> value of the switch is irrelevant — `coerceFact('lqg', enum)` returns `"lqg"` correctly, and
+> `"lqg" is true` is false, so the answer never depended on the customer at all.
+
+**Why nothing else catches it.** `applies_expression`'s three existing invariants check that every
+switch NAMED exists (check 19) and that no condition asserts a number the rule does not state
+(check 21). **Neither compares the literal's TYPE to the switch's `value_type`** — the expression
+is well-formed JSON naming a real switch, so it passes both. The resolver is equally blameless:
+three-valued logic on a false comparison is `false`, which is the correct answer to the question
+it was asked. **Every layer is right and the claim is wrong**, which is the same shape as
+`DECISIONS.md` §61 one level further out.
+
+**And it is a silent FALSE, not an unknown** — the direction that matters. `CLAUDE.md` §3.2 says
+absence of evidence must never produce a clear; this is worse, because it is *presence* of
+evidence producing a clear that contradicts the evidence.
+
+**Production: same library, same defect** — 205 rows are byte-identical across both environments.
+No production customer has computed obligations yet, so nobody has been told this. That is timing,
+not a control.
 
 ---
 

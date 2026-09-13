@@ -1,6 +1,11 @@
 # Detailed To-Do
-**Version:** 16 · **Updated:** 13 September 2026
-**Supersedes:** version 15 (12 Sep). **4.1, 4.3, 7.2, 7.2a, 7.3 and M6 are done and wired**;
+**Version:** 17 · **Updated:** 13 September 2026
+**Supersedes:** version 16 (13 Sep). Cases E, F, G and I **pass** — the mechanism is sound. Adds
+**6.4c, the library-quality revision**, now the largest item in phase 6: **22 of 216 switch clauses
+can never be true** (a large-quantity generator gets zero hazardous-waste obligations), plus three
+type-correct shapes no query can find, all surfaced by a ten-minute domain read of the rendered
+screen (`DECISIONS.md` §64). **Gates showing `does_not_apply` to any production customer.**
+Version 16: **4.1, 4.3, 7.2, 7.2a, 7.3 and M6 are done and wired**;
 version 15's headline — *"7.2's schema and logic are on both environments and no route calls
 them"* — is no longer true. Migration **022 is on production**, both environments on 000–022 with
 **0 object differences**. The chain runs end to end on staging: a question answered, 221
@@ -1341,7 +1346,7 @@ it writes `applies_expression` and nothing else.*
   `has_group_health_plan`. Three of those switches did not exist before 6.2, which is its own
   evidence that the flag was set before the vocabulary existed.
 
-### 6.4 Finish what 6.3 could not ⬜ ⏱ 3 days
+### 6.4 Finish what 6.3 could not ⬜ ⏱ 3 days + 6.4c
 
 **Named work, not loose ends.** 6.3 shipped 199 conditions and wrote down which of them it did
 not trust. These are those, and each has a stated reason rather than a TODO.
@@ -1362,6 +1367,50 @@ that is too broad is visible in the UI, an answer that is too narrow is silent.
 **Four of the six are one missing input: NAICS.** `companies.industry` exists and the evaluator
 cannot reach it (`DECISIONS.md` §36.2 decided industry is not a switch). Deciding how a
 condition reads industry closes 4 of these 6 and several of the 18 medium ones at once.
+
+#### 6.4c LIBRARY-QUALITY REVISION — all 199 conditions, informed by the SCREEN ⬜ ⏱ 4–6 days
+> ### This is now the largest item in phase 6 and it gates showing `does_not_apply` to anyone.
+
+**Why it exists.** Cases E, F, G and I passed on 13 Sep — the mechanism is sound. **A ten-minute
+domain read of the rendered rows then found three shapes of wrong rule that 199 expression
+reviews had not** (`DECISIONS.md` §64). Reading a spreadsheet asks *"is this well-formed"*.
+Reading **"Ruled out by: hazwaste_generator_category = vsqg"** on a screen asks *"is that actually
+true of this business"*, and only the second question catches a rule that is valid,
+machine-checkable and wrong.
+
+**(i) The 22 clauses that can NEVER be true — the floor, and the only part a query can find.**
+`AUDIT-CHECKS.md` check 28, run 13 Sep:
+
+```
+   17x  hazwaste_generator_category (enum) is true
+    2x  holds_iso_certification (enum) is true
+    1x  flammable_liquid_quantity_band (enum) is true
+    1x  wastewater_discharge (enum) is true
+    1x  emergency_response_team (enum) is true
+```
+
+**A large-quantity generator gets ZERO hazardous-waste obligations** and is told so in a confident
+sentence — proved by running the resolver at `lqg`, `sqg` and `vsqg` and getting identical output.
+**Fix these first: they are unambiguous, they are the most dangerous direction (a confident
+FALSE), and they need no judgement.**
+
+**(ii) The three shapes, which are type-correct and invisible to every query.** Look for each
+across all 199, not only where it was noticed:
+
+| Shape | Example found | What to look for |
+|---|---|---|
+| **Federal-shaped rule removing an Oregon obligation** | `EPA hazardous-waste ID` **and** `Oregon hazardous-waste site notification`, both cleared by `= vsqg`. A VSQG is exempt **federally**; Oregon is more stringent | Any clause where a federal exemption threshold gates a `state`-layer row. §1.2 names this trap for citations; it is in the expressions |
+| **Circular switch** | `Title V permit` ← `air_permit_required is title_v`; `Oregon ACDP` ← `air_permit_required in [...]`, and its `determination_source` is `documents` — learn whether you need a permit by reading the permit you hold | Any switch whose name restates its requirement. Honest version turns on potential-to-emit or source category — something establishable **before** the permit exists |
+| **Switch narrower than the rule it gates** | `Chemical storage compatibility / segregation`, cited to **Oregon Fire Code Ch. 50**, cleared by `hazardous_chemicals_present = false`. IFC Ch. 50 covers hazardous **materials** — compressed gases, oxidisers — broader than the HazCom sense | Any boolean switch standing in for a defined regulatory term. Compare the switch's `label` against the citation's own scope |
+
+**(iii) The ordering rule that follows.** **No production customer may be shown a
+`does_not_apply` rationale until (i) and (ii) are done.** Of the four states it is the only one
+making a confident negative claim on the product's own authority; `unknown` and `undetermined`
+are honest under a wrong condition, and `applies` over-triggers, which is visible and arguable.
+
+**How to work it:** against the rendered screen with a real fixture, not the JSON. That is what
+found all of this, and it is `DECISIONS.md` §64's reversal condition — when an hour of reading
+turns up nothing, the review goes back to periodic.
 
 #### 6.4b Seed `regulated_substances` ⬜
 0 rows today. EHS TPQs, TRI thresholds, PSM Appendix A, RMP and CERCLA RQs, all keyed by CAS.

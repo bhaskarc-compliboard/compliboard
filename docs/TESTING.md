@@ -1,6 +1,9 @@
 # Testing
-**Version:** 12 · **Updated:** 13 September 2026
-**Supersedes:** version 11 (13 Sep). Adds the **manual set for Phase 4.3 and M6** — five cases,
+**Version:** 13 · **Updated:** 13 September 2026
+**Supersedes:** version 12 (13 Sep). Records the **first run: E, F, G and I pass functionally.**
+Case E found a 500 on its first fixture (migration 023), and **Case G's domain half found the
+library defect that 199 expression reviews had missed** — the argument for the manual set,
+demonstrated. Version 12: Adds the **manual set for Phase 4.3 and M6** — five cases,
 **and the visual half 7.2a deferred is now written**, marked `SEE` rather than merged into that
 section. Case E carries an ordering trap that is real and unrecoverable: the first GET is what
 fires the lazy write, so opening the screen destroys the before-state. Case F is the only fixture
@@ -416,6 +419,35 @@ manufacturer is far more likely to be our coverage gap than their good fortune, 
 has to make that easy to say.
 
 ---
+
+### RESULT — first run, 13 September 2026
+
+**Cases E, F, G and I: PASS, functionally.** Run in the browser against staging by the owner,
+after migration 023.
+
+| Case | Result |
+|---|---|
+| **E** — first GET writes the list | **pass** — the write fired on first GET, the reload was idempotent |
+| **F** — pre-existing obligation closed, never deleted | **pass** — the seeded row was **closed**, not removed |
+| **G** — every claim traces to a fact | **pass mechanically** — every `does_not_apply` names a switch and a value, with a correction affordance. **See below for the domain half** |
+| **I** — the empty state is two claims | **pass** — both sentences render correctly |
+| **H** — the twelve inventory rows | not re-run; last measured 124 / 12 / 0 on Alpha |
+
+**Case E found the 500 that migration 023 fixed** — on its first run, its first fixture, against
+the first non-chemical company the writer had ever seen (`DECISIONS.md` §63).
+
+> ### AND CASE G's SECOND HALF DID EXACTLY WHAT IT WAS WRITTEN TO DO.
+>
+> The case says: *"this is the case where domain knowledge does work no script replicates."*
+> **Ten minutes of reading the rendered rows found three shapes of wrong rule that 199 expression
+> reviews had not**, and the sweep it prompted found that **22 of 216 switch clauses can never be
+> true** — a large-quantity generator receives zero hazardous-waste obligations and is told so
+> confidently. `DECISIONS.md` §64, `AUDIT-CHECKS.md` check 28, and the work is `TODO.md` 6.4c.
+>
+> **This is the argument for the manual set, demonstrated rather than asserted.** Every automated
+> check passed. The mechanism was correct at every layer. What was wrong was a claim about the
+> world, and the only instrument that detects that is a person who knows the subject, reading a
+> sentence the product actually said.
 
 ### What none of these five can tell you
 

@@ -1,6 +1,11 @@
 # Decision Record
-**Version:** 44 · **Updated:** 13 September 2026
-**Supersedes:** version 43 (13 Sep). Adds **§63** — the obligation writer had never once run
+**Version:** 45 · **Updated:** 13 September 2026
+**Supersedes:** version 44 (13 Sep). Adds **§64** — Cases E, F, G and I pass and the mechanism is
+sound; **the content is not.** A ten-minute domain read of the rendered screen found three shapes
+of wrong rule that 199 expression reviews did not, and the sweep it prompted found worse: **22 of
+216 switch clauses can never be true**, so **a large-quantity generator receives zero
+hazardous-waste obligations** and is told so confidently. 6.4 now carries a full item-by-item
+revision of `applies_expression`. Version 44 added **§63** — the obligation writer had never once run
 through its own route. It was proved by a script holding the service-role key, which set
 `obligations_computed_at` and made every later request skip the write; the route connects as
 `authenticated`, which held EXECUTE on neither function it calls, and returned 500 for every
@@ -4005,3 +4010,101 @@ member of — an internal admin tool, or the worker acting on a queue — the gu
 `auth.uid() is not null` condition is the seam: such a caller has no `auth.uid()` and passes
 through, restricted by the GRANT instead. If that becomes a user-facing role, the check needs a
 membership test rather than an equality test, and RLS on `obligations` needs the same change.
+
+---
+
+## 64. The mechanism passed, the content did not — and ten minutes beat 199 reviews — 13 September 2026
+
+**Cases E, F, G and I pass functionally.** First GET writes, reload is idempotent, the seeded
+obligation was **closed rather than deleted**, both empty states render correctly, and every
+`does_not_apply` names a switch and a value with a correction affordance. **The chain works.**
+
+**The content it carries does not, and a ten-minute domain read of the rendered screen found
+things that 199 expression reviews did not.** That is the argument for M6 preceding verification,
+demonstrated rather than predicted — and this time not by a composition defect (§61) but by
+**subject-matter knowledge applied to a sentence the product actually said to somebody.**
+
+> A spreadsheet of 199 conditions is read as *"is this expression well-formed"*. The same 199
+> rendered as **"Ruled out by: hazwaste_generator_category = vsqg"** are read as *"is that
+> actually true of this business"* — a different question, asked by a different part of the
+> brain, and the only one that catches a rule which is valid, machine-checkable and wrong.
+
+### THE THREE SHAPES — recorded as shapes, to be looked for across all 199
+
+**1. FEDERAL-SHAPED RULES REMOVING OREGON OBLIGATIONS.** *"EPA hazardous-waste identification
+number"* and *"Oregon hazardous-waste site notification"* are both ruled out by
+`hazwaste_generator_category = vsqg`. **A VSQG is exempt federally; Oregon's programme is more
+stringent.** Two requirements — one of them a state rule — removed by a single federal-shaped
+assumption, for a company in Oregon. §1.2 names this trap for CITATIONS; **it has surfaced in the
+expressions instead**, where nothing was looking for it.
+
+**2. CIRCULAR SWITCHES.** *"Clean Air Act Title V permit"* turns on `air_permit_required is
+title_v`; *"Oregon Air Contaminant Discharge Permit"* on `air_permit_required in
+[general_acdp, simple_acdp, standard_acdp, title_v]`. **The switch nearly restates the
+requirement** — and its `determination_source` is `documents`, so the product proposes to learn
+whether you need a permit by reading the permit you have. Whatever determines
+`air_permit_required` is doing all the regulatory work and is invisible. **The honest version
+turns on potential-to-emit or source category** — something a company can establish before it
+holds the permit.
+
+**3. A SWITCH NARROWER THAN THE RULE IT GATES.** *"Chemical storage compatibility / segregation"*,
+cited to **Oregon Fire Code (IFC-based) Ch. 50**, is ruled out by `hazardous_chemicals_present =
+false`. IFC Ch. 50 governs hazardous **materials** — compressed gases, oxidisers, cryogens —
+which is broader than the HazCom sense that switch carries. A site with no HazCom-hazardous
+chemical may still hold placarded compressed gas.
+
+### AND THE SWEEP THE FIRST SHAPE PROMPTED, WHICH FOUND SOMETHING WORSE
+
+Shape 1 was recorded as a judgement call about Oregon stringency. Sweeping all 199 expressions for
+it turned up a different and far more serious defect underneath:
+
+```
+live requirements: 200 | with an expression: 199 | switch clauses: 216
+TYPE-MISMATCHED CLAUSES: 22
+   17x  hazwaste_generator_category (enum) is true
+    2x  holds_iso_certification (enum) is true
+    1x  flammable_liquid_quantity_band (enum) is true
+    1x  wastewater_discharge (enum) is true
+    1x  emergency_response_team (enum) is true
+```
+
+`hazwaste_generator_category` is an enum over `{none, vsqg, sqg, lqg}`, and 17 requirements ask
+whether it **is `true`** — which no allowed value satisfies. Run through the resolver:
+
+```
+hazwaste_generator_category = lqg   -> 20 hazardous-waste requirements
+                                       {"does_not_apply":17,"unknown":3}   APPLIES: NONE
+= sqg  ... identical      = vsqg ... identical
+```
+
+> **A LARGE-QUANTITY GENERATOR RECEIVES ZERO HAZARDOUS-WASTE OBLIGATIONS**, and the screen says
+> so in a confident sentence naming the fact that supposedly ruled them out. The customer's answer
+> never mattered: `coerceFact('lqg', enum)` returns `"lqg"` correctly, and `"lqg" is true` is
+> false.
+
+**So the VSQG observation was right about the row and wrong about the reason.** It is not that a
+federal exemption was applied in Oregon — it is that the clause cannot be true for anybody, and
+`vsqg` merely happened to be the value printed in the rationale. **The domain read found the
+symptom; the sweep found the disease.** Both are worth recording, because the read is what made
+anyone look.
+
+**This is `AUDIT-CHECKS.md` check 28.** No existing invariant could see it: check 19 verifies the
+switch EXISTS, check 21 that no number is invented, and a boolean literal against an enum passes
+both. The resolver is equally correct — `false` is the right answer to the comparison it was
+given. **Every layer is right and the claim is wrong.**
+
+### What this changes about 6.4
+
+**6.4 was "seed `regulated_substances`".** It now also carries **a full item-by-item revision of
+`applies_expression`, informed by the screen rather than by the spreadsheet** — all 199, not only
+the 22 the type sweep can find, because shapes 1–3 are all type-correct and none of them would
+appear in any query. The 22 are the floor, not the scope.
+
+**And the ordering that follows from it:** no production customer may be shown a
+`does_not_apply` rationale until that revision is done. The mechanism is trustworthy; the content
+is not, and `does_not_apply` is the only one of the four states that makes a confident negative
+claim on the product's own authority.
+
+**Reversal condition:** none on the finding. On the method — if a future domain read of a
+rendered screen produces nothing in an hour, that is evidence the expressions have converged and
+the review can go back to being periodic rather than gating.
