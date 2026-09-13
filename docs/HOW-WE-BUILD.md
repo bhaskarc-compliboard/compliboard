@@ -1,7 +1,13 @@
 # How We Build CompliBoard
 
-**Version:** 9 · **Updated:** 13 September 2026
-**Supersedes:** version 8 (12 Sep). §3 gains *measure before writing "acceptable for now"* — the
+**Version:** 10 · **Updated:** 13 September 2026
+**Supersedes:** version 9 (13 Sep). §4 gains **the required shape of a production pre-flight** —
+it prints both inputs in full and derives the pending list in front of the reader, as
+`npm run preflight`. Six naming failures in two days survived four tightenings of the rule,
+because the problem was never the rule: a summary written from context was wearing the costume
+of a check. The general form — **a check that reports its CONCLUSION is a summary; a check that
+reports its INPUTS is a check** — applies to every check in `AUDIT-CHECKS.md`. Version 9: §3
+gains *measure before writing "acceptable for now"* — the
 recompute cost was a note until it was asked for as a figure, and the figure took a minute while
 the note would have been re-litigated by whoever read it next. Version 8: **§2's loop gains step
 0: two dependency questions, not
@@ -242,6 +248,43 @@ written about what was remembered.
 **Migrations are forward-only and the chain is proven.** `npm run db:reset` rebuilds staging from nothing and runs `000 → latest`. **Run it after adding any migration.** Incremental application hides defects: two were found the first time the chain ran end to end, and neither was reachable any other way.
 
 **Production migrations are run by the owner, in a plain terminal, typing `PRODUCTION`.** The script prints the target ref, the staging ref for contrast, and the exact list of pending files.
+
+### The required shape of a production pre-flight — `npm run preflight`
+
+**It prints both INPUTS in full, then derives the pending list in front of you.**
+
+```
+INPUT 1 — supabase/migrations/, every file          (all 22, listed)
+INPUT 2 — schema_migrations on <ref>, every row     (all 22, listed)
+DERIVED — INPUT 1 minus INPUT 2                     (+ every statement grepped per file)
+DERIVED — INPUT 2 minus INPUT 1
+PENDING COUNT: n
+```
+
+**Why it is a script and not a discipline.** Six times in two days a migration name, a count, or
+a description of what a file does was wrong somewhere between the directory and the prompt. The
+naming rule was written (§46), extended to the diff (§46.1), extended to the hand-off (§46.2)
+and extended to file contents (§56.2) — **and instances five and six happened after all four.**
+
+> ### The problem was never the rule. A SUMMARY WRITTEN FROM CONTEXT WAS WEARING THE COSTUME OF A CHECK.
+>
+> *"I diffed the history against the directory and found one pending file"* is indistinguishable
+> on the page from the same sentence written without having done it. **The reader cannot tell,
+> because the only thing shown is the conclusion.** Tightening the rule about what the conclusion
+> must contain cannot fix that — it makes a better-worded claim.
+
+**So the general rule, and it reaches past pre-flights:**
+
+> **A check that reports its CONCLUSION is a summary. A check that reports its INPUTS is a check.**
+
+With both lists on screen the reader does the subtraction in one glance, and **no claim about
+having done it is load-bearing.** The same test applies to every check in `AUDIT-CHECKS.md`:
+check 10 prints object counts and a sha rather than "they match"; check 22 prints the grantees
+rather than "no function is public"; `npm run audit:data` prints SKIP and what was missing rather
+than a pass. Where a check reports only its verdict, it is a summary and should be rewritten.
+
+**The reviewer's half is unchanged and is now cheap enough to be routine:** the two lists are
+printed, so an unexpected pending set is visible without trusting anything.
 
 > **An unexpected file count is the correct signal to abort — and twice it was.** Both times the cause was a real defect: a CLI output-shape bug, and a migration history that had not been read. If the count is expected to be unusual, it is stated *in advance* in the hand-off, never reasoned about at the prompt.
 

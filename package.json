@@ -19,7 +19,8 @@
     "expressions": "node --env-file=.env.local scripts/load-expressions.js",
     "test": "node scripts/test-guard.js",
     "mutation": "node scripts/mutation-check.js",
-    "audit:data": "node --env-file=.env.local scripts/audit-data-checks.js"
+    "audit:data": "node --env-file=.env.local scripts/audit-data-checks.js",
+    "preflight": "node --env-file=.env.local scripts/preflight-prod.js"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.81",
