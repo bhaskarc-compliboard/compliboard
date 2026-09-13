@@ -1,279 +1,206 @@
 'use client'
 
+/**
+ * THE REQUIREMENTS SCREEN — M6.
+ *
+ * Spec: `docs/REQUIREMENTS-SCREEN.md`. Decisions: `DECISIONS.md` §21.3, §58, §58.1–§58.6.
+ *
+ * *** THIS FILE COMPOSES. IT DOES NOT PHRASE. *** Every sentence comes from
+ * `lib/requirementsView.ts`, because every rule this screen carries is a rule about what it
+ * SAYS — no verdict, no count, no "satisfied", an empty evidence line rendered as a fact rather
+ * than a warning — and a rule about wording is testable only where the wording is produced.
+ * `tests/unit/requirementsView.test.ts` asserts all of it without rendering React.
+ *
+ * WHAT WAS HERE BEFORE, AND WHY THIS IS A REWRITE RATHER THAN AN EDIT. The previous 279 lines
+ * were written against the pre-007 vocabulary — `missing`, `at_risk`, `expiring_soon`,
+ * `satisfied`, `unconfirmed`. **Not one of those can occur**; the enum is
+ * `applies | does_not_apply | undetermined | unknown`. It rendered empty because `obligations`
+ * holds 0 rows, so nothing looked wrong. Two things went with it:
+ *
+ *   - THE `satisfied` FILTER. §58.1 separated *is this OWED* from *what has been SHOWN*, and a
+ *     "satisfied" filter collapses them back into the single verdict M6 was blocked to prevent.
+ *     Whether an obligation is met is a join against `obligation_evidence`, never a column
+ *     (§21.3) — and the old filter was reading a column that no longer exists.
+ *   - ITS COUNT. Same denominator problem in a different place: "Satisfied (12)" of what, in a
+ *     library where 0 of 200 rows have been checked against a published source?
+ */
+
 import { useState, useEffect } from 'react'
-import { createClient, authHeaders } from '@/lib/supabase'
+import { authHeaders } from '@/lib/supabase'
 import AppLayout from '@/components/AppLayout'
 import AIDisclaimer from '@/components/AIDisclaimer'
+import {
+  SECTIONS, sectionLabel, sectionBlurb, renderRow, renderCoverageStrip, renderEmptyState,
+  type RequirementRow, type ObligationStatus,
+} from '@/lib/requirementsView'
 
-interface RequirementTemplate {
-  id: string
-  category: string | null
-  requirement_name: string
-  citation: string | null
-  cadence: string | null
-  applies: string
-  trigger_plain: string | null
-  entity_type: string
-  evidence_description: string | null
-  fails_if: string | null
-  priority: string
-  layer: string
-  jurisdiction_state: string | null
-  jurisdiction_county: string | null
+type SectionKey = (typeof SECTIONS)[number]['key']
+
+interface ApiRow extends RequirementRow {
+  obligationId: string
+  /** Present on `unknown` rows: the facts that would settle it. */
+  factsNeeded: string[]
 }
 
-interface Obligation {
-  id: string
-  status: string
-  due_date: string | null
-  last_verified_at: string | null
-  notes: string | null
-  entity_id: string | null
-  requirement_templates: RequirementTemplate
-}
-
-const PRIORITY_STYLES: Record<string, string> = {
-  critical: 'bg-red-50 text-red-700 border-red-200',
-  high: 'bg-amber-50 text-amber-700 border-amber-200',
-  standard: 'bg-gray-50 text-gray-500 border-gray-200',
-}
-
-const STATUS_STYLES: Record<string, { label: string; dot: string; text: string }> = {
-  missing: { label: 'Missing', dot: 'bg-red-400', text: 'text-red-600' },
-  at_risk: { label: 'At risk', dot: 'bg-amber-400', text: 'text-amber-600' },
-  expiring_soon: { label: 'Expiring soon', dot: 'bg-amber-400', text: 'text-amber-600' },
-  satisfied: { label: 'Satisfied', dot: 'bg-green-500', text: 'text-green-600' },
-  not_applicable: { label: 'Not applicable', dot: 'bg-gray-300', text: 'text-gray-400' },
-  unconfirmed: { label: 'Unconfirmed — may apply', dot: 'bg-blue-400', text: 'text-blue-600' },
-}
-
-type FilterKey = 'all' | 'needs_attention' | 'unconfirmed' | 'satisfied'
-
-function isNeedsAttention(status: string) {
-  return status === 'missing' || status === 'at_risk' || status === 'expiring_soon'
+interface Coverage {
+  requirements: number; agencies: number; verified: number
+  switchesTotal: number; switchesFromDocuments: number
 }
 
 export default function RequirementsPage() {
-  const supabase = createClient()
-  const [companyName, setCompanyName] = useState('')
-  const [obligations, setObligations] = useState<Obligation[]>([])
+  const [rows, setRows] = useState<ApiRow[]>([])
+  const [coverage, setCoverage] = useState<Coverage | null>(null)
+  const [open, setOpen] = useState<SectionKey>('applies')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({})
-  const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({})
-  const [filter, setFilter] = useState<FilterKey>('all')
 
   useEffect(() => {
-    async function load() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('company_id')
-        .eq('id', user.id)
-        .single()
-      if (!profile?.company_id) {
-        setLoading(false)
-        return
-      }
-      const { data: company } = await supabase
-        .from('companies')
-        .select('name')
-        .eq('id', profile.company_id)
-        .single()
-      if (company?.name) setCompanyName(company.name)
-
+    ;(async () => {
       try {
         const res = await fetch('/api/obligations', { headers: await authHeaders() })
-        const json = await res.json()
-        if (json.error) {
-          setError(json.error)
-        } else {
-          setObligations(json.data || [])
-        }
-      } catch (err) {
-        setError('Could not load requirements.')
+        if (!res.ok) throw new Error(`Could not load your requirements (${res.status}).`)
+        const data = await res.json()
+        setRows(data.rows ?? [])
+        setCoverage(data.coverage ?? null)
+      } catch (e) {
+        // CLAUDE.md §5.1 — say whose problem it is, and never assert anything about data we
+        // did not successfully read.
+        setError(e instanceof Error ? e.message : 'We could not load your requirements.')
       } finally {
         setLoading(false)
       }
-    }
-    load()
+    })()
   }, [])
 
-  const needsAttention = obligations.filter((o) => isNeedsAttention(o.status))
-  const unconfirmed = obligations.filter((o) => o.status === 'unconfirmed')
-  const satisfied = obligations.filter((o) => o.status === 'satisfied')
+  const inSection = (k: SectionKey) =>
+    rows.filter((r) =>
+      k === 'unknown'
+        ? r.status === 'unknown' || r.status === 'undetermined'
+        : r.status === (k as ObligationStatus))
 
-  const filtered = obligations.filter((o) => {
-    if (filter === 'needs_attention') return isNeedsAttention(o.status)
-    if (filter === 'unconfirmed') return o.status === 'unconfirmed'
-    if (filter === 'satisfied') return o.status === 'satisfied'
-    return true
-  })
-
-  const grouped = filtered.reduce<Record<string, Obligation[]>>((acc, o) => {
-    const cat = o.requirement_templates?.category || 'Other'
-    if (!acc[cat]) acc[cat] = []
-    acc[cat].push(o)
-    return acc
-  }, {})
-
-  function toggleCategory(cat: string) {
-    setOpenCategories((prev) => ({ ...prev, [cat]: !prev[cat] }))
-  }
-
-  const STAT_CARDS: { key: FilterKey; label: string; count: number; color: string }[] = [
-    { key: 'needs_attention', label: 'Need attention', count: needsAttention.length, color: 'text-gray-700' },
-    { key: 'unconfirmed', label: 'Unconfirmed', count: unconfirmed.length, color: 'text-gray-700' },
-    { key: 'satisfied', label: 'Satisfied', count: satisfied.length, color: 'text-gray-700' },
-    { key: 'all', label: 'Total', count: obligations.length, color: 'text-gray-700' },
-  ]
+  // `undetermined` sits at the FOOT of the questions section under its own heading, never
+  // interleaved: §21.3 — `unknown` is a question we can ask, `undetermined` is a dead end.
+  // Offering them as one list either floods the customer with unanswerable questions or
+  // buries the answerable ones.
+  const questions = rows.filter((r) => r.status === 'unknown')
+  const deadEnds = rows.filter((r) => r.status === 'undetermined')
 
   return (
-    <AppLayout
-      title="Requirements"
-      didYouKnow={{
-        icon: '📚',
-        text: 'This list is matched automatically from a master requirements database for your industry and state. Items marked "Unconfirmed" could not be determined from your profile alone — a website being silent about something is never treated as proof it does not apply. Confirm those in passing as you go, or they will resolve on their own as you upload documents.',
-      }}
-    >
-      <div className="max-w-6xl mx-auto px-6 py-8">
-        <div className="mb-6">
-          <h1 className="text-xl font-semibold text-gray-900 mb-1">Requirements</h1>
-          <p className="text-sm text-gray-400">
-            {companyName ? `Every requirement matched to ${companyName}` : 'Every requirement matched to your business'}
-          </p>
-        </div>
+    <AppLayout>
+      <div className="mx-auto max-w-4xl px-6 py-8">
+        <h1 className="text-2xl font-semibold text-gray-900">Requirements</h1>
 
-        <div className="mb-6 bg-green-50 border border-green-200 rounded-xl px-5 py-4">
-          <p className="text-sm text-green-900">
-            These are the general requirements that can apply to a business in your industry. Upload your documents and CompliBoard narrows this to your company&apos;s exact list — with live compliance numbers.
-          </p>
-        </div>
+        {coverage && (
+          <section aria-label="What's behind this list" className="mt-4 rounded border border-gray-200 bg-gray-50 p-4">
+            <p className="text-xs font-medium uppercase tracking-wide text-gray-500">What&apos;s behind this list</p>
+            {renderCoverageStrip({ ...coverage, nothingAsserted: rows.length === 0 }).map((line) => (
+              <p key={line} className="mt-1 text-sm text-gray-600">{line}</p>
+            ))}
+          </section>
+        )}
 
-        {loading ? (
-          <div className="flex items-center justify-center h-40">
-            <p className="text-sm text-gray-400">Loading...</p>
-          </div>
-        ) : error ? (
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-8 text-center">
-            <p className="text-sm text-gray-500">{error}</p>
-          </div>
-        ) : obligations.length === 0 ? (
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-12 text-center">
-            <p className="text-4xl mb-4">📚</p>
-            <p className="text-base font-medium text-gray-700 mb-1">No requirements matched yet</p>
-            <p className="text-sm text-gray-400">Requirements are matched automatically once your industry and state are set.</p>
-          </div>
-        ) : (
+        {loading && <p className="mt-8 text-sm text-gray-500">Working out your requirements…</p>}
+
+        {error && (
+          <p className="mt-8 rounded border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</p>
+        )}
+
+        {!loading && !error && rows.length === 0 && (
+          /* §5.1 — an empty state is a claim and it has to be true. Zero obligations means
+             resolution has not run, NOT that nothing applies. */
+          <p className="mt-8 rounded border border-gray-200 p-4 text-sm text-gray-600">{renderEmptyState()}</p>
+        )}
+
+        {!loading && !error && rows.length > 0 && (
           <>
-            <div className="mb-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {STAT_CARDS.map((card) => (
+            {/* THREE PEER SECTIONS, NO COUNTS. A heading count asserts a denominator the strip
+                above says we do not have, and the list underneath is its own count (§58.3). */}
+            <nav className="mt-8 flex gap-6 border-b border-gray-200" aria-label="Sections">
+              {SECTIONS.map((s) => (
                 <button
-                  key={card.key}
-                  onClick={() => setFilter(card.key)}
-                  className={`bg-white rounded-xl border p-4 text-center transition-all ${
-                    filter === card.key ? 'border-green-500 ring-2 ring-green-100' : 'border-gray-200 hover:border-gray-300'
-                  }`}
+                  key={s.key}
+                  onClick={() => setOpen(s.key)}
+                  aria-current={open === s.key ? 'true' : undefined}
+                  className={`-mb-px border-b-2 pb-2 text-sm ${
+                    open === s.key ? 'border-gray-900 font-medium text-gray-900'
+                                   : 'border-transparent text-gray-500 hover:text-gray-700'}`}
                 >
-                  <p className={`text-2xl font-semibold ${card.color}`}>{card.count}</p>
-                  <p className="text-xs text-gray-400 mt-1">{card.label}</p>
+                  {sectionLabel(s.key)}
                 </button>
               ))}
-            </div>
+            </nav>
 
-            <div className="space-y-3">
-              {Object.entries(grouped).map(([category, items]) => {
-                const attentionInCategory = items.filter((o) => isNeedsAttention(o.status)).length
-                const isOpen = !!openCategories[category]
-                return (
-                  <div key={category} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                    <button
-                      onClick={() => toggleCategory(category)}
-                      className="w-full flex items-center gap-3 px-5 py-4 hover:bg-gray-50 transition-colors text-left"
-                    >
-                      <span className="text-gray-300 text-xs flex-shrink-0">{isOpen ? '▼' : '▶'}</span>
-                      <span className="text-sm font-bold uppercase tracking-wide text-gray-900">{category}</span>
-                      <span className="text-xs text-gray-400">{items.length} item{items.length !== 1 ? 's' : ''}</span>
-                      {attentionInCategory > 0 && (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-medium">
-                          {attentionInCategory} need{attentionInCategory === 1 ? 's' : ''} attention
-                        </span>
-                      )}
-                    </button>
+            <p className="mt-4 text-sm text-gray-600">{sectionBlurb(open)}</p>
 
-                    {isOpen && (
-                      <div className="px-5 pb-5 space-y-3 border-t border-gray-100 pt-4">
-                        {items.map((o) => {
-                          const rt = o.requirement_templates
-                          const isDetailOpen = expanded[o.id]
-                          const statusStyle = STATUS_STYLES[o.status] || STATUS_STYLES.missing
-                          return (
-                            <div key={o.id} className="bg-gray-50 rounded-xl border border-gray-200 p-4">
-                              <div className="flex items-center gap-2 flex-wrap mb-1">
-                                <span className={`text-xs px-2 py-0.5 rounded-md border font-medium ${PRIORITY_STYLES[rt?.priority] || PRIORITY_STYLES.standard}`}>
-                                  {rt?.priority || 'standard'}
-                                </span>
-                                <span className="flex items-center gap-1.5">
-                                  <span className={`w-1.5 h-1.5 rounded-full ${statusStyle.dot}`} />
-                                  <span className={`text-xs font-medium ${statusStyle.text}`}>{statusStyle.label}</span>
-                                </span>
-                              </div>
-                              <p className="text-sm font-semibold text-gray-900">{rt?.requirement_name}</p>
-                              {rt?.citation && <p className="text-xs text-gray-400 mt-0.5">{rt.citation}</p>}
-                              {rt?.applies === 'conditional' && rt?.trigger_plain && (
-                                <p className="text-xs text-blue-600 mt-1.5 italic">{rt.trigger_plain}</p>
-                              )}
+            <ul className="mt-4 space-y-3">
+              {(open === 'unknown' ? questions : inSection(open)).map((r) => (
+                <Row key={r.obligationId} row={r} />
+              ))}
+            </ul>
 
-                              <button
-                                onClick={() => setExpanded((prev) => ({ ...prev, [o.id]: !prev[o.id] }))}
-                                className="mt-2 text-xs text-gray-400 hover:text-gray-600 transition-colors"
-                              >
-                                {isDetailOpen ? '▲ Less detail' : '▼ More detail'}
-                              </button>
-
-                              {isDetailOpen && (
-                                <div className="mt-3 space-y-2 pt-3 border-t border-gray-200">
-                                  {rt?.cadence && (
-                                    <div>
-                                      <p className="text-xs font-medium text-gray-400">How often</p>
-                                      <p className="text-xs text-gray-700">{rt.cadence}</p>
-                                    </div>
-                                  )}
-                                  {rt?.evidence_description && (
-                                    <div>
-                                      <p className="text-xs font-medium text-gray-400">What proves this</p>
-                                      <p className="text-xs text-gray-700">{rt.evidence_description}</p>
-                                    </div>
-                                  )}
-                                  {rt?.fails_if && (
-                                    <div>
-                                      <p className="text-xs font-medium text-gray-400">Fails even if the document exists, if</p>
-                                      <p className="text-xs text-gray-700">{rt.fails_if}</p>
-                                    </div>
-                                  )}
-                                  {o.notes && (
-                                    <div>
-                                      <p className="text-xs font-medium text-gray-400">Why CompliBoard thinks this</p>
-                                      <p className="text-xs text-gray-700">{o.notes}</p>
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          )
-                        })}
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-
-            <AIDisclaimer variant="full" className="mt-8" />
+            {open === 'unknown' && deadEnds.length > 0 && (
+              <section className="mt-10 border-t border-gray-200 pt-6">
+                <h2 className="text-sm font-medium text-gray-900">Needs a person</h2>
+                <p className="mt-1 text-sm text-gray-600">
+                  Nothing we can ask will settle these. Someone has to decide.
+                </p>
+                <ul className="mt-4 space-y-3">
+                  {deadEnds.map((r) => <Row key={r.obligationId} row={r} />)}
+                </ul>
+              </section>
+            )}
           </>
         )}
+
+        <AIDisclaimer />
       </div>
     </AppLayout>
+  )
+}
+
+/** One row. All four states go through the same shell; the four ROOTS keep them apart. */
+function Row({ row }: { row: ApiRow }) {
+  const v = renderRow(row)
+  return (
+    <li className="rounded border border-gray-200 p-4">
+      <p className="font-medium text-gray-900">{v.title}</p>
+      <p className="mt-0.5 text-xs text-gray-500">{v.subtitle}</p>
+
+      <dl className="mt-3 space-y-2 text-sm">
+        <div className="flex gap-3">
+          <dt className="w-24 shrink-0 text-xs font-medium uppercase tracking-wide text-gray-400">
+            {v.verdictLabel}
+          </dt>
+          <dd className="text-gray-700">{v.verdictText}</dd>
+        </div>
+
+        {/* UNCONDITIONAL on an `applies` row — §58.1. A row asserting an obligation and then
+            saying nothing is completed by the reader as "and you have done it". */}
+        {v.shownLabel && (
+          <div className="flex gap-3">
+            <dt className="w-24 shrink-0 text-xs font-medium uppercase tracking-wide text-gray-400">
+              {v.shownLabel}
+            </dt>
+            <dd className={v.shownIsWarning ? 'text-amber-700' : 'text-gray-700'}>
+              {v.shownIsWarning && <span aria-hidden className="mr-1">⚠</span>}
+              {v.shownText}
+            </dd>
+          </div>
+        )}
+      </dl>
+
+      {row.status === 'unknown' && row.factsNeeded.length > 0 && (
+        /* The ask lives behind this: GET /api/switches/ask orders by the dependency graph and
+           says what each unblocks. Rendering these as gaps would discard three fields that
+           already exist (§58.2). */
+        <p className="mt-3 text-xs text-gray-500">
+          Waiting on: {row.factsNeeded.join(', ')}
+        </p>
+      )}
+
+      {v.action && (
+        <button className="mt-3 text-sm text-gray-900 underline underline-offset-2">{v.action}</button>
+      )}
+    </li>
   )
 }

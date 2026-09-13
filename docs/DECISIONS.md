@@ -1,6 +1,10 @@
 # Decision Record
-**Version:** 39 · **Updated:** 13 September 2026
-**Supersedes:** version 38 (13 Sep). Adds **§58** — 7.3 is built BEFORE M6, and the reason is not
+**Version:** 40 · **Updated:** 13 September 2026
+**Supersedes:** version 39 (13 Sep). Adds **§59** — removing an exception from a check is a test
+of what is underneath it, not a tightening. The no-aggregate test's header carve-out was
+reverted, and an assertion that the newly-unexcused strings were actually caught **failed**: the
+detector could not see `What you owe (40)` at all. The exception had been hiding both the case it
+excused and what the check would have done with it. Version 39 added **§58** — 7.3 is built BEFORE M6, and the reason is not
 schema but what the screen would say: `does_not_apply` and `unknown` rows can each say something
 honest and complete, while an `applies` row says "this applies to you" and then nothing, because
 the design deliberately never gave that column a second axis. Forty such rows read as a
@@ -3602,3 +3606,50 @@ are one surface.
 **Reversal condition** for 58.4 and 58.6 together: if a real user cannot find the
 `does_not_apply` section from the navigation, that is evidence about the navigation, not an
 argument for a separate page.
+
+---
+
+## 59. Removing an exception is a test of what is underneath it — 13 September 2026
+
+**The decision.** A check does not carry a pattern-shaped exception. Where an allowance is
+genuinely needed, it is an **identity** — the exact strings one named function produces — never a
+regex a future line could be written to match.
+
+**Why, and the second reason is the one worth having.**
+
+**The first is the obvious one: an exception is a precedent.** §58.3's no-aggregate test briefly
+allowlisted three section headings — `What you owe (40)` and friends — on the argument that a
+section SIZE is navigation rather than a claim. The argument is reasonable and it loses, because
+**the next count added has something to point at.** §58.3 exists precisely because a count is the
+easiest thing in the world to add without noticing it is a claim, and a test that permits a
+category of the failure it was written to prevent has stopped being the thing that prevents it.
+
+> ### **The second: an exception is a place nobody looks hard — and this one was concealing that the check could not see the string it was excusing.**
+>
+> When the allowlist was removed, an assertion proving the detector could still catch the
+> excused lines **failed**. The pattern looked for a number followed by `%`, `of N`,
+> `requirements`, `items`, `complete` or `covered`. **`What you owe (40)` matched none of them.**
+>
+> The carve-out had never been the thing protecting that heading. **The detector could not see it
+> either**, and nobody had checked, because the line was on the allowlist and therefore not
+> something the test was thought to be about.
+
+**So: removing an exception is not a tightening. It is a test of what is underneath it**, and it
+should be treated as one — with an assertion that the newly-unexcused case is actually caught,
+rather than an assumption that it now falls through to a check that works.
+
+**The general form:**
+
+> **An exception in a check hides two things: the case it excuses, and whatever the check would
+> have done with that case.** The second is invisible for exactly as long as the exception
+> stands, and is discovered only by removing it.
+
+This is `AUDIT-CHECKS.md` check 14's finding — *a checker weaker than its assertion is
+indistinguishable from a passing suite* — with a mechanism attached: **an exception is how a
+checker gets weaker than its assertion without anybody editing the assertion.**
+
+**Reversal condition:** none for the preference. An identity-shaped allowance remains acceptable
+where a check genuinely must exempt something, because widening it requires editing the function
+that produces the exempted strings — a visible change in the one place the product is permitted
+to say that kind of thing. **What is not acceptable is a pattern**, because a pattern is an
+invitation to match it.
