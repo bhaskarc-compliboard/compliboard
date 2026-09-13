@@ -2,7 +2,7 @@
  * THE OBLIGATION WRITER — Phase 4.3, the last link.
  *
  * 4.1 computes obligations, 4.2 stores them, and until now nothing called either. This is what
- * calls both. `DECISIONS.md` §55 (the recompute cost), §60 (lazy, and why), §47 (close, never
+ * calls both. `DECISIONS.md` §55 (the recompute cost), §62 (lazy, and why), §47 (close, never
  * delete).
  *
  * *** LAZY, ON FIRST REQUEST — NOT AT SIGNUP. *** And the reason is not cost. Writing at signup

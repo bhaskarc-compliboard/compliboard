@@ -1412,6 +1412,15 @@ are honest under a wrong condition, and `applies` over-triggers, which is visibl
 found all of this, and it is `DECISIONS.md` §64's reversal condition — when an hour of reading
 turns up nothing, the review goes back to periodic.
 
+#### HOUSEKEEPING — a stale citation inside an applied migration ⬜ ⏱ 10 min
+Migration 022's header **and its `comment on column`** cite `DECISIONS.md` **§60** for the lazy
+write. §60 did not exist when 022 was written — the number was predicted, not read — and the
+section that took it is the rule about recording findings from artifacts. The decision 022 meant
+is **§62**. The code reference in `lib/obligationWriter.ts` is corrected; **the column comment is
+live on production and cannot be edited in place**, because migrations are never changed after
+they run (`CLAUDE.md` §3.7). Fix is a comment-only migration re-issuing `comment on column`.
+Deliberately NOT folded into 023 — a migration does one thing (`DECISIONS.md` §56.1).
+
 #### 6.4b Seed `regulated_substances` ⬜
 0 rows today. EHS TPQs, TRI thresholds, PSM Appendix A, RMP and CERCLA RQs, all keyed by CAS.
 **15 of the 199 conditions cannot return a verdict until this exists.** Also closes the DEA
