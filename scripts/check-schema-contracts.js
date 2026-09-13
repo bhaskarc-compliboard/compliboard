@@ -49,14 +49,48 @@ const TYPES = join(ROOT, "lib/database.types.ts");
 // ---------------------------------------------------------------------------
 // Parse the generated types into { table: Set<column> }.
 // ---------------------------------------------------------------------------
+// *** VIEWS ARE READ TOO, AND THEY WERE NOT UNTIL 13 SEP 2026. ***
+//
+// The generated types put views under `Views:`, and this parser only ever walked `Tables:`.
+// So every `.from(<a view>)` was reported as "no such table" — a FALSE POSITIVE that looks
+// exactly like the true positive this script exists to produce, which is the worse of the two
+// failures: a checker that cries wolf gets its output skimmed, and the next real finding is
+// skimmed with it (HOW-WE-BUILD §4 on the abort guard).
+//
+// Found when the first view in the project — `obligation_evidence_state`, migration 020 — was
+// queried from a route. The script was right that the embed was illegal (PostgREST cannot
+// embed a view with no FK) and wrong about the plain `.from()` that replaced it. One run, one
+// true finding and one false one, indistinguishable in the output.
 function loadSchema() {
   const src = readFileSync(TYPES, "utf8");
   const tablesAt = src.indexOf("Tables: {");
   if (tablesAt === -1) fail("lib/database.types.ts has no `Tables:` block. Run `npm run db:types`.");
 
   const schema = {};
-  // Walk the Tables block, brace-counting, collecting `name: { Row: { ...keys } }`.
-  let i = src.indexOf("{", tablesAt) + 1, depth = 1, table = null, inRow = false, rowDepth = 0;
+  const views = new Set();
+  for (const blockName of ["Tables: {", "Views: {"]) {
+    const at = src.indexOf(blockName);
+    if (at === -1) continue;
+    const before = new Set(Object.keys(schema));
+    collectBlock(src, at, schema);
+    if (blockName.startsWith("Views")) {
+      for (const k of Object.keys(schema)) if (!before.has(k)) views.add(k);
+    }
+  }
+  // *** A VIEW HAS NO ROWS OF ITS OWN, SO IT CANNOT BE DELETED FROM. *** The deletion sweep
+  // below asks whether every relation carrying company_id is named in /api/account's DELETE.
+  // For a view that question is meaningless: deleting its base tables removes what it shows.
+  // Without this the first view in the project produced a finding that could only be silenced
+  // by adding a lie to the deletion list.
+  schema.__views__ = views;
+  const n = Object.keys(schema).length;
+  if (n < 5) fail(`Parsed only ${n} relations from lib/database.types.ts — the parser and the file disagree.`);
+  return schema;
+}
+
+function collectBlock(src, blockAt, schema) {
+  // Walk the block, brace-counting, collecting `name: { Row: { ...keys } }`.
+  let i = src.indexOf("{", blockAt) + 1, table = null, inRow = false, rowDepth = 0;
   const lines = src.slice(i).split("\n");
   let d = 1;
   for (const line of lines) {
@@ -74,9 +108,6 @@ function loadSchema() {
     if (inRow && d <= rowDepth) inRow = false;
     if (d <= 0) break;
   }
-  const n = Object.keys(schema).length;
-  if (n < 5) fail(`Parsed only ${n} tables from lib/database.types.ts — the parser and the file disagree.`);
-  return schema;
 }
 
 function walk(dir, out = []) {
@@ -183,7 +214,9 @@ if (!deleted || !exempt) {
     .map(([t]) => t)
     .sort();
   const named = new Set([...deleted, ...exempt]);
+  const views = schema.__views__ ?? new Set();
   for (const t of withCompanyId) {
+    if (views.has(t)) continue;   // a view has no rows to delete — see loadSchema()
     if (!named.has(t)) {
       note(ACCOUNT,
         `'${t}' carries company_id and is named in NEITHER list.\n` +

@@ -365,6 +365,7 @@ export type Database = {
           id: string
           industry: string | null
           name: string
+          obligations_computed_at: string | null
           pre_completed_items: Json | null
           scan_result: Json | null
           state: string | null
@@ -380,6 +381,7 @@ export type Database = {
           id?: string
           industry?: string | null
           name: string
+          obligations_computed_at?: string | null
           pre_completed_items?: Json | null
           scan_result?: Json | null
           state?: string | null
@@ -395,6 +397,7 @@ export type Database = {
           id?: string
           industry?: string | null
           name?: string
+          obligations_computed_at?: string | null
           pre_completed_items?: Json | null
           scan_result?: Json | null
           state?: string | null
