@@ -1,6 +1,12 @@
 # Decision Record
-**Version:** 38 · **Updated:** 13 September 2026
-**Supersedes:** version 37 (13 Sep). Adds **§57** — the five name-and-contents substitutions of
+**Version:** 39 · **Updated:** 13 September 2026
+**Supersedes:** version 38 (13 Sep). Adds **§58** — 7.3 is built BEFORE M6, and the reason is not
+schema but what the screen would say: `does_not_apply` and `unknown` rows can each say something
+honest and complete, while an `applies` row says "this applies to you" and then nothing, because
+the design deliberately never gave that column a second axis. Forty such rows read as a
+compliance position. Plus five display contracts settled before pixels: questions not gaps, no
+numeric aggregates (asserted by a test), `does_not_apply` as a peer section, no citation link
+until verified, one page. Version 38 added **§57** — the five name-and-contents substitutions of
 the last two days as ONE entry, because they are one failure: a value retyped or recalled at a
 hop where it could have been copied. Three are the owner's hand-off, two of those after the rule
 was extended to cover that step; one is mine and is the only one no name check could catch. The
@@ -3507,3 +3513,92 @@ guard standing between a hand-off and production.
 rather than retyped — the operator pasting the block rather than describing it — instances 3 and
 5 become impossible and this reduces to §56.2 alone. **That is the fix worth building if a sixth
 occurs.**
+
+---
+
+## 58. 7.3 comes before M6, and five display contracts settled with it — 13 September 2026
+
+### 58.1 The reorder, and the reason it is not about schema
+
+**Decision: `obligation_evidence` (7.3) is built BEFORE M6, reversing the order both plans imply.**
+
+**The reason is not that the list needs evidence rows to render — it does not.** `obligations`
+joined to `requirement_templates` is sufficient, and that was the finding. **The reason is what
+the screen would SAY.**
+
+| Row | What it can say |
+|---|---|
+| `does_not_apply` | *"This does not apply to you, and here is why: `industrial_stormwater` = false."* Honest, complete, carried by `resolution_rationale` |
+| `unknown` | *"We cannot say yet — these facts would settle it."* Honest, carried by `determined_by.switches_missing` |
+| **`applies`** | *"This applies to you."* **And then nothing.** |
+
+**There is nowhere to say anything further, because the design never gave `applies` a second
+axis.** `obligation_status` answers *does this apply* and deliberately not *have you done it* —
+§21.3 removed the name `satisfied` for exactly that reason, and put the second question in a
+join against `obligation_evidence`.
+
+**So a screen listing 40 `applies` rows with no evidence column reads as a compliance position.**
+A user sees a requirement asserted against their company with nothing qualifying it, and reads
+either *"and you have done it"* or, at best, cannot distinguish a satisfied requirement from one
+nobody has looked at. **That is the omniscient status tracker (`CLAUDE.md` §6) arriving through
+the one column the design never gave a status to** — and it arrives most convincingly precisely
+because every row on the list is true.
+
+**The other two states are safe alone; `applies` is not.** That asymmetry is the whole argument,
+and it is invisible until you ask what each row renders as a sentence.
+
+**Reversal condition:** if M6 ever ships before 7.3 for a reason that outweighs this, the
+`applies` section must carry an explicit *"we have not checked whether you have done this"* on
+every row — not a footnote, per row. That is uglier than waiting, which is why waiting wins.
+
+### 58.2 `undetermined` and `unknown` render as QUESTIONS, not gaps
+
+**Not a presentation choice — rendering them as gaps discards structure that already exists.**
+`determined_by.switches_missing` names the blocking switches; `switches.question_plain` holds
+the wording for all 95; 7.2a's ask endpoint already orders them and says what each unblocks.
+**The data IS a question.** A screen showing "72 unknown" as a list of gaps throws away three
+fields to produce a worse sentence.
+
+This also fixes M6.1's framing before it is built: *"an inbox that gets quiet, not a burn-down"*
+is already its spec, and M6 must match it rather than contradict the screen above it.
+
+### 58.3 No numeric aggregates anywhere in M6, and a TEST asserts it
+
+**Decision: no counts, no percentages, no totals. And it is asserted, not just written down.**
+
+The rule already existed — numbers are gated on library verification (6.7) — but **M6 is where
+it gets tested, and a count is the easiest thing in the world to add without noticing it is a
+claim.** `app/requirements/page.tsx` already renders `count: satisfied.length` today, of a state
+that no longer exists; nobody added that maliciously, and nobody caught it either.
+
+**So a test fails if a numeric aggregate appears in the requirements view.** Cheap, and it is
+the only thing that stops the next person adding one. **"40 requirements apply" and "you are 40%
+covered" are one CSS class apart**, and the second is the anti-pattern this product removed once
+already.
+
+### 58.4 `does_not_apply` is a PEER SECTION — equal in navigation, not on screen
+
+108 `does_not_apply` above 40 `applies` buries what the user came for. Making it a filter buries
+the product's most defensible output — requirements a company can *demonstrate* they are not
+subject to, each with the fact that ruled it out.
+
+**Peer section: equal weight in the navigation, not equal weight on the screen.** M1 inherits
+this framing, because a chat answer citing *"you are not subject to X"* must look consistent
+with the list.
+
+### 58.5 No citation link until the citation is verified
+
+0 of 200 rows carry a `citation_url` and 0 are `verified`. **A link to a rule nobody has checked
+asserts that somebody checked it** — and `CLAUDE.md` §6 requires that a verified row and a
+generated row not look the same. **A linked citation is what verified looks like.** Until 6.7,
+the citation renders as text.
+
+### 58.6 One page, not two
+
+A separate switches page is a second place to answer the same question with a different flow,
+and M6.1 would make a third. The requirements list, the questions and the verification section
+are one surface.
+
+**Reversal condition** for 58.4 and 58.6 together: if a real user cannot find the
+`does_not_apply` section from the navigation, that is evidence about the navigation, not an
+argument for a separate page.

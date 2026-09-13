@@ -699,6 +699,13 @@ export type Database = {
             foreignKeyName: "corrections_obligation_id_fkey"
             columns: ["obligation_id"]
             isOneToOne: false
+            referencedRelation: "obligation_evidence_state"
+            referencedColumns: ["obligation_id"]
+          },
+          {
+            foreignKeyName: "corrections_obligation_id_fkey"
+            columns: ["obligation_id"]
+            isOneToOne: false
             referencedRelation: "obligations"
             referencedColumns: ["id"]
           },
@@ -1193,9 +1200,11 @@ export type Database = {
           id: string
           match_confidence: string | null
           match_rationale: string | null
+          matched_by: Database["public"]["Enums"]["evidence_source"]
           obligation_id: string
           status: string | null
           superseded_by: string | null
+          superseded_reason: string | null
           valid_from: string | null
           valid_until: string | null
         }
@@ -1211,9 +1220,11 @@ export type Database = {
           id?: string
           match_confidence?: string | null
           match_rationale?: string | null
+          matched_by: Database["public"]["Enums"]["evidence_source"]
           obligation_id: string
           status?: string | null
           superseded_by?: string | null
+          superseded_reason?: string | null
           valid_from?: string | null
           valid_until?: string | null
         }
@@ -1229,9 +1240,11 @@ export type Database = {
           id?: string
           match_confidence?: string | null
           match_rationale?: string | null
+          matched_by?: Database["public"]["Enums"]["evidence_source"]
           obligation_id?: string
           status?: string | null
           superseded_by?: string | null
+          superseded_reason?: string | null
           valid_from?: string | null
           valid_until?: string | null
         }
@@ -1251,11 +1264,25 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "obligation_evidence_document_same_company"
+            columns: ["document_id", "company_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id", "company_id"]
+          },
+          {
             foreignKeyName: "obligation_evidence_entity_id_fkey"
             columns: ["entity_id"]
             isOneToOne: false
             referencedRelation: "entities"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "obligation_evidence_obligation_id_fkey"
+            columns: ["obligation_id"]
+            isOneToOne: false
+            referencedRelation: "obligation_evidence_state"
+            referencedColumns: ["obligation_id"]
           },
           {
             foreignKeyName: "obligation_evidence_obligation_id_fkey"
@@ -1790,7 +1817,25 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      obligation_evidence_state: {
+        Row: {
+          company_id: string | null
+          contradicting_evidence: number | null
+          expired_evidence: number | null
+          live_evidence: number | null
+          next_expiry: string | null
+          obligation_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "obligations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       array_is_ascending: { Args: { a: number[] }; Returns: boolean }
@@ -1823,6 +1868,7 @@ export type Database = {
         | "partially_satisfies"
         | "contradicts"
         | "superseded"
+      evidence_source: "user" | "document_review" | "ai_match"
       folder_section: "files" | "hr" | "log"
       generated_by: "ai" | "manual"
       job_status: "pending" | "running" | "succeeded" | "failed" | "cancelled"
@@ -2013,6 +2059,7 @@ export const Constants = {
         "contradicts",
         "superseded",
       ],
+      evidence_source: ["user", "document_review", "ai_match"],
       folder_section: ["files", "hr", "log"],
       generated_by: ["ai", "manual"],
       job_status: ["pending", "running", "succeeded", "failed", "cancelled"],

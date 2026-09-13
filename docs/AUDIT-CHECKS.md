@@ -1,6 +1,11 @@
 # Audit Checks
-**Version:** 18 · **Updated:** 13 September 2026
-**Supersedes:** version 17 (13 Sep). **Check 22 is CLOSED for `substance_inventory`** — migration
+**Version:** 19 · **Updated:** 13 September 2026
+**Supersedes:** version 18 (13 Sep). Adds **check 25** — every view over a tenant table must run
+as the caller. `obligation_evidence_state` shipped without `security_invoker` in migration 020
+and would have shown every company every other company's evidence counts; 021 fixed it before it
+reached production or any route. A view does not fail like a table: permission is not granted by
+accident, the view quietly bypasses the policies on what it reads. Version 18: **Check 22 is
+CLOSED for `substance_inventory`** — migration
 019 revoked it — and re-run across every function in `public` rather than the one under
 suspicion. Three still hold PUBLIC EXECUTE and all three are benign: two return `trigger` and
 cannot be called at all, one is an IMMUTABLE helper a CHECK constraint depends on. The rule is
@@ -1139,6 +1144,43 @@ transition. Filed as `TODO.md` 7.2c.
 **Until then this check is the control**, and it must be re-run whenever a route gains write
 access to `company_switches`. A non-zero answer to any of the three queries means the gap has
 been closed and this check should record how.
+
+---
+
+## 25. Does every view over a tenant table run as the CALLER?
+
+```sql
+select c.relname, array_to_string(c.reloptions, ',') as options
+  from pg_class c join pg_namespace n on n.oid = c.relnamespace
+ where n.nspname = 'public' and c.relkind = 'v'
+   and not coalesce(array_to_string(c.reloptions,',') like '%security_invoker=on%', false);
+   -- must return zero rows
+```
+
+**Answer, 13 September 2026, both environments: zero rows.** One view exists,
+`obligation_evidence_state`, and it carries `security_invoker=on`.
+
+**Why this check exists: it shipped wrong one migration ago.** Migration 020 created the view
+with no option set. **Postgres defaults a view to the VIEW OWNER's rights**, so RLS on
+`obligations` and `obligation_evidence` was evaluated as `postgres` rather than as the caller —
+and `authenticated` holds SELECT on it. Every company would have seen every other company's
+evidence counts. Fixed by 021 before it reached production or any route.
+
+> ### This is `CLAUDE.md` §3.6's trap one object further out, and it is worse.
+> §3.6 records that a new table in `public` starts life with `anon` holding everything — *"not
+> granting is not denying"*. **A view fails differently: permission is not granted by accident,
+> the view QUIETLY BYPASSES the policies on what it reads.** The base tables' policies were
+> correct and irrelevant, because nothing was consulting them. A table with a missing REVOKE is
+> at least visible in a grants query; a view with a missing option looks identical to a correct
+> one.
+
+**Why nothing else catches it.** 020's own behavioural block tested what the view **counts**,
+and a view counts correctly whoever it is counting for. `npm run check` cannot see it. The RLS
+policies it bypasses all exist and all pass their own tests.
+
+**It was found only because three assumptions were listed to be verified by measurement before
+the migration went to production, rather than the migration being declared finished when its own
+tests passed.** The other two were fine. That is the argument for the list.
 
 ---
 
