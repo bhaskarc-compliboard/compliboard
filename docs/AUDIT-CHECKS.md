@@ -1,6 +1,10 @@
 # Audit Checks
-**Version:** 20 · **Updated:** 13 September 2026
-**Supersedes:** version 19 (13 Sep). Adds **check 26** — every unresolved requirement must offer
+**Version:** 21 · **Updated:** 13 September 2026
+**Supersedes:** version 20 (13 Sep). Adds **check 27** — can the caller execute every function its
+route calls? Both of `/api/obligations`'s were `service_role`-only while the route connects as the
+caller, so every first GET was a 500; on production that is all ten companies. **No test in
+`npm run check` makes an authenticated request**, so a grant is invisible to every one of the 250.
+Version 20: Adds **check 26** — every unresolved requirement must offer
 an action the product can actually deliver. Twelve of Test Alpha's 136 `unknown` rows name no
 switch at all and offered a question nothing could answer; the unit test asserted that as the
 contract and passed. The third bucket, naming neither a switch nor an inventory list, is empty
@@ -1226,6 +1230,71 @@ a fixed test.** The third bucket — `switches = 0 AND inventory = 0` — is emp
 non-empty the moment a requirement's trigger names a fact the switch library does not carry. That
 is a **library** defect surfacing as a **screen** symptom, and this query is the only place the
 two are visible at once.
+
+---
+
+## 27. Can the CALLER execute every function a route calls as the caller?
+
+```sql
+select p.proname,
+       bool_or(pg_get_userbyid(a.grantee) = 'authenticated') as authenticated_may_execute,
+       bool_or(a.grantee = 0 or pg_get_userbyid(a.grantee) = 'anon') as anon_or_public_may
+  from pg_proc p
+  join pg_namespace n on n.oid = p.pronamespace
+  left join lateral aclexplode(coalesce(p.proacl, '{}')) a on a.privilege_type = 'EXECUTE'
+ where n.nspname = 'public'
+ group by p.proname order by 1;
+```
+
+**Read it as two questions at once.** Every function a route calls through `requireCompany()`'s
+client must be `true` in column 2. Column 3 is the one that needs judgement, and the rule is
+**not** "always false" — it is:
+
+> **No function that reads or writes TENANT DATA may be callable by `anon` or PUBLIC.** Trigger
+> functions and pure helpers may be, and are: a trigger function cannot usefully be invoked
+> directly, and a helper that touches no table has nothing to leak.
+
+**Answer, 13 September 2026, staging, after migration 023 — the full output, all six:**
+
+| function | authenticated | anon/PUBLIC | verdict |
+|---|---|---|---|
+| `close_and_replace_obligations` | **true** | **false** | correct — writes tenant rows |
+| `substance_inventory` | **true** | **false** | correct — reads tenant rows |
+| `auth_company_id` | true | **true** | **correct, and deliberate.** Policies are evaluated as `anon` during signup, before a session exists. It is `SECURITY DEFINER` and returns the CALLER's own company, so an `anon` caller gets NULL |
+| `create_primary_site` | true | true | trigger function — fires on `companies` insert; direct invocation does nothing useful |
+| `set_updated_at` | true | true | trigger function |
+| `array_is_ascending` | true | true | pure helper, touches no table |
+
+> **This table is the query's real output, not the expected one.** A first draft of this check
+> recorded `auth_company_id` as `anon = false` and asserted a blanket "no exceptions" rule — both
+> written from what the rule ought to be rather than from what the database returned, and both
+> wrong. Running it produced four functions the blanket rule would have flagged, none of which is
+> a defect. **A check whose recorded answer is an expectation is not a check** (`DECISIONS.md`
+> §60).
+
+**Production: not yet — 023 is not applied there.** This check must be re-run there the day it is.
+
+**Why this check exists.** Both functions were `service_role`-only, and `/api/obligations`
+connects **as the caller**. Every first GET returned `42501 permission denied` — on production
+that would have been all ten companies, every one of them a first customer. `DECISIONS.md` §63.
+
+> ### Why nothing in `npm run check` can find this, and that is structural.
+> **Not one of the 250 tests makes an authenticated HTTP request.** The unit suite runs pure
+> functions in-process, `npm run mutation` mutates those same functions, `check:schema` reads
+> type definitions offline with no credentials, and `next build` compiles. **A grant is invisible
+> to all of them**, and so is every other thing that only differs between "called as the service
+> role" and "called as a signed-in person".
+>
+> **The writer had been measured — 1.95 s, 221 obligations, idempotent on re-run — entirely as
+> `service_role`.** Those numbers were real and described a path no customer takes. A measurement
+> carries the identity it was taken under.
+
+**The second half, which this query does not answer.** A granted function can still be wrong
+about *which* company the caller may act for. `close_and_replace_obligations` now raises
+`caller belongs to company X, not Y` when they differ, verified live as a signed-in user, with
+the other company's obligation count unchanged at 221 afterwards. **RLS is what makes it safe;
+the guard is what makes it legible** — without it a cross-tenant call is a silent zero-row
+update.
 
 ---
 

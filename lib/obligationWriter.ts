@@ -121,7 +121,15 @@ export async function writeObligations(db: SupabaseClient, companyId: string): P
   const LISTS: InventoryClause['inventory'][] = ['ehs', 'tri', 'psm', 'rmp', 'cercla', 'dea_list_i']
   const invCache = new Map<string, Truth>()
   await Promise.all(siteList.flatMap((s) => LISTS.map(async (list) => {
-    const { data } = await db.rpc('substance_inventory', { p_entity_id: s.id, p_list: list })
+    // *** THE ERROR IS CHECKED, BECAUSE NULL AND FAILED LOOK IDENTICAL HERE. ***
+    // `data === null` is this function's own honest "unknown". A REFUSED call also returns
+    // null, and for the whole of 13 Sep it did: `authenticated` held no EXECUTE, so through
+    // the route every list came back `42501 permission denied` and was silently recorded as
+    // unknown. It happened to be the same answer only because `regulated_substances` is
+    // empty; once 6.4 seeds it, a discarded error here means a site with a real, evaluable
+    // inventory is reported as unevaluable and nobody is told. DECISIONS.md §63.
+    const { data, error } = await db.rpc('substance_inventory', { p_entity_id: s.id, p_list: list })
+    if (error) throw new Error(`Could not read the chemical inventory for ${s.name}: ${error.message}`)
     invCache.set(`${s.id}|${list}`, data === null ? 'unknown' : (data as boolean))
   })))
 

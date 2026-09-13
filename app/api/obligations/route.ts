@@ -115,6 +115,12 @@ export async function GET(request: NextRequest) {
       computedAt,
     })
   } catch (error) {
+    // *** LOG IT SERVER-SIDE, WITH THE STACK. *** On 13 Sep this route returned a 500 whose
+    // cause was a one-line Postgres refusal, and the dev log carried `500 in 645ms` and
+    // nothing else — the message was in the response body and nowhere a developer looks.
+    // Returning an error to the caller is not recording it. DECISIONS.md §63.
+    console.error('[/api/obligations] failed:', error)
+
     // §5.1 — plain language, and never a claim about data we did not read.
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'We could not work out your requirements.' },

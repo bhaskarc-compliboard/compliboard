@@ -309,6 +309,75 @@ describe('industry is a skip, not a status', () => {
   })
 })
 
+/**
+ * *** ZERO OBLIGATIONS IS A RESULT, AND IT IS THE COMMON CASE — NOT AN EDGE. ***
+ *
+ * Every fixture in this file has requirements, and so did every fixture in the project, which
+ * is why nothing caught what `docs/TESTING.md` Case E caught on its first run against its first
+ * non-chemical company: `/api/obligations` returned 500 for a cannabis business.
+ *
+ * The library holds 200 live rows and **all 200 are `chemical-manufacturing`**. So a company in
+ * any other vertical resolves to NOTHING — that is every industry except one, and every one of
+ * the 25 `industry_coverage` rows for cannabis says `not_built`. A product that cannot render an
+ * empty list cannot onboard its second customer. `DECISIONS.md` §63.
+ */
+describe('a company in an industry the library does not cover resolves to zero — a result, not a failure', () => {
+  const BETA: Company = { id: 'co-beta', name: 'Test Beta Cannabis', state: 'Oregon',
+                          county: 'Washington', city: 'Hillsboro', industry: 'cannabis' }
+  const BETA_SITE = site('site-beta', 'Hillsboro')
+  /** The whole library, as it actually is: every row chemical-manufacturing. */
+  const LIBRARY = [
+    req({ id: 'r-1', name: 'Hazard communication program' }),
+    req({ id: 'r-2', name: 'Oregon sick time', layer: 'state', state: 'Oregon',
+          appliesExpression: SICK_TIME }),
+    req({ id: 'r-3', name: 'TRI reporting', appliesExpression: { inventory: 'tri' } }),
+    req({ id: 'r-4', name: 'Per-site fire permit', entityType: 'site' }),
+  ]
+
+  test('zero obligations, and every row is accounted for as another industry', () => {
+    const r = resolve({ company: BETA, sites: [BETA_SITE], requirements: LIBRARY,
+                        companyFacts: {}, siteFacts: {} })
+    assert.equal(r.obligations.length, 0)
+    assert.equal(r.skippedOtherIndustry, LIBRARY.length,
+      'a row that does not apply by INDUSTRY is skipped, never given a status — §300 above')
+  })
+
+  test('it is an empty ARRAY, never null or undefined — the caller iterates it', () => {
+    const r = resolve({ company: BETA, sites: [BETA_SITE], requirements: LIBRARY,
+                        companyFacts: {}, siteFacts: {} })
+    assert.ok(Array.isArray(r.obligations))
+    assert.deepEqual(r.obligations, [])
+    // This is what reaches close_and_replace_obligations as p_obligations. An empty JSON array
+    // is a valid payload: every guard counts rows and gets zero, the close closes whatever was
+    // open, the insert inserts nothing. Migration 023 states it in the function itself.
+    assert.deepEqual(JSON.parse(JSON.stringify(r.obligations)), [])
+  })
+
+  test('NOTHING is invented to fill the gap — no undetermined, no unknown, no placeholder', () => {
+    const r = resolve({ company: BETA, sites: [BETA_SITE], requirements: LIBRARY,
+                        companyFacts: {}, siteFacts: {} })
+    for (const st of ['applies', 'does_not_apply', 'unknown', 'undetermined'])
+      assert.equal(r.obligations.filter((o) => o.status === st).length, 0,
+        `an uncovered industry produced a ${st} row — coverage is a LIBRARY fact, not a status`)
+  })
+
+  test('adding a fact does not conjure obligations from an empty library', () => {
+    const r = resolve({ company: BETA, sites: [BETA_SITE], requirements: LIBRARY,
+                        companyFacts: { has_employees: true, employee_count: 40 },
+                        siteFacts: { 'site-beta': { site_employee_count: 12 } } })
+    assert.equal(r.obligations.length, 0,
+      'answers are worthless without rows to evaluate them against — this is a coverage gap and must stay visible as one')
+  })
+
+  test('the SAME library resolves normally for the industry it covers — the fixture is not broken', () => {
+    const r = resolve({ company: ALPHA, sites: [HILLSBORO], requirements: LIBRARY,
+                        companyFacts: {}, siteFacts: {} })
+    assert.ok(r.obligations.length > 0,
+      'if this fails the test above proves nothing — it would be passing on a broken fixture')
+    assert.equal(r.skippedOtherIndustry, 0)
+  })
+})
+
 describe('inventory clauses', () => {
   const tri = req({ id: 'r-tri', name: 'TRI report', appliesExpression: { inventory: 'tri' } })
   test('no inventory resolver at all is unknown, and says so', () => {

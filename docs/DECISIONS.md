@@ -1,6 +1,12 @@
 # Decision Record
-**Version:** 43 · **Updated:** 13 September 2026
-**Supersedes:** version 42 (13 Sep). Adds **§62** — the lazy, synchronous obligation write,
+**Version:** 44 · **Updated:** 13 September 2026
+**Supersedes:** version 43 (13 Sep). Adds **§63** — the obligation writer had never once run
+through its own route. It was proved by a script holding the service-role key, which set
+`obligations_computed_at` and made every later request skip the write; the route connects as
+`authenticated`, which held EXECUTE on neither function it calls, and returned 500 for every
+uncomputed company — all ten on production. **A measurement carries the identity it was taken
+under.** Fixed by granting the caller and validating identity inside the function, not by handing
+the route a service-role client. Version 43 added **§62** — the lazy, synchronous obligation write,
 recorded at last (it was decided in session and never written down), together with a finding
 from the production pre-flight: migration 022 cites **§60** for that decision, **§60 did not
 exist when 022 was written**, and the section it now points at is the rule about not writing from
@@ -3899,3 +3905,103 @@ separate decision from shipping 022 — raised rather than folded in silently.
 load — a company with many sites crossing roughly 3 s — the write moves to signup or to the
 worker, and the empty-state sentence has to be settled before it does. `lib/obligationWriter.ts`
 records the threshold and what would change it.
+
+---
+
+## 63. The path that was measured was not the path customers use — 13 September 2026
+
+**The decision.** `/api/obligations` keeps connecting **as the caller**, and the two functions it
+needs are granted to `authenticated` with the caller's identity validated inside
+`close_and_replace_obligations`. **The alternative — handing the route a service-role client —
+was refused**, because it moves a per-tenant write off the security boundary and leaves a
+`companyId` variable in TypeScript as the only thing between one company's data and another's.
+That is the shape `CLAUDE.md` §3.6 exists to refuse. Migration 023.
+
+### What happened
+
+`docs/TESTING.md` Case E, **on its first run, on its first fixture**, against **the first
+non-chemical company the writer has ever seen**:
+
+```
+GET /requirements     200 in 84ms
+GET /api/obligations  500 in 645ms
+```
+
+The cause, from a real caller token rather than inferred:
+
+```
+signed in as testbeta@example.com — role in JWT: authenticated
+-- ordinary table read as the caller: OK (1 row)
+-- rpc substance_inventory as the caller --
+   error: 42501  permission denied for function substance_inventory
+```
+
+`close_and_replace_obligations` (016) and `substance_inventory` (019) both held EXECUTE for
+`service_role` and `postgres` only. The route connects as `authenticated`, so its first write was
+refused by Postgres before the function body ran.
+
+### *** THE FINDING, AND IT IS NOT THE GRANT ***
+
+> **Phase 4.3's write was proved by a script holding the service-role key.** That script set
+> `obligations_computed_at`, so every later request found it non-NULL and **skipped the write
+> entirely**. The 1.95 s, the 221 obligations, the idempotence re-run — all real, all measured,
+> and **none of them on the path a customer takes.** The lazy write had never once succeeded
+> through the route it exists to serve.
+
+**And I reported that measurement without distinguishing the two paths.** §55 and §62 record the
+numbers; neither says the caller was the service role. The general form is worth stating because
+it will recur:
+
+> **A measurement carries the identity it was taken under. A number obtained as `service_role`
+> is not evidence about a route that runs as `authenticated`, and the two are indistinguishable
+> in the output.**
+
+**It would have been every company on production.** All ten have `obligations_computed_at` NULL,
+so the first customer to open `/requirements` would have got this 500. Alpha escaped only because
+it was already computed.
+
+### Two corrections to the diagnosis I was given
+
+**"The guard derives identity from the payload, inferring it from the first row."** It does not,
+and never did. Migration 016's signature is `close_and_replace_obligations(p_company_id uuid,
+p_obligations jsonb)` — `p_company_id` is explicit, required non-null at line 66, and used in
+every statement. Nothing anywhere reads a company from the payload.
+
+**"The empty payload is the defect."** It is not. `jsonb_array_elements('[]')` yields no rows, so
+all three guards pass with zero, the close closes what is open and the insert inserts nothing.
+**The empty case was always correct and was never reached**, because the permission check comes
+first.
+
+**But the prescription was right, and that is the second time in two days.** *"Validate it
+against the caller"* is exactly the fix — not because identity came from the payload, but because
+letting the caller execute it is what requires an identity check. The same pattern as §61: a
+wrong mechanism, a correct principle, a real defect one layer over. The mechanism cost one
+`sed -n` of migration 016 to settle; acting on it without checking would have rewritten a
+signature that was already right and left the 500 exactly where it was.
+
+### Why no automated test caught it
+
+**Every fixture had requirements, and every test ran in-process.** The unit suite never
+authenticates, `npm run mutation` mutates pure functions, and `check:schema` reads type
+definitions offline. **Nothing in `npm run check` makes an authenticated HTTP request**, so a
+grant is invisible to all 250 tests. The zero-requirement case is now covered
+(`tests/unit/resolve.test.ts`, five assertions) — but that covers the resolver, which was never
+wrong. **The grant is covered by migration 023's verify block and by audit check 27.**
+
+### Two more defects of the same root, both fixed here
+
+1. **The inventory error was discarded.** `const { data } = await db.rpc('substance_inventory')`
+   — a refused call returns `null`, which this code could not tell from the function's own
+   honest "unknown". Through the route, **every list was `42501` all day and every one was
+   silently recorded as unknown.** It happened to be the same answer only because
+   `regulated_substances` is empty; after 6.4 it would report a site with a real inventory as
+   unevaluable, with no error anywhere. Now throws.
+2. **The route logged nothing.** The catch returned `error.message` to the caller and never
+   called `console.error`, so the dev log held `500 in 645ms` and the cause sat in a response
+   body nobody reads. **Returning an error to the caller is not recording it.**
+
+**Reversal condition:** if a future caller must compute obligations for a company it is not a
+member of — an internal admin tool, or the worker acting on a queue — the guard's
+`auth.uid() is not null` condition is the seam: such a caller has no `auth.uid()` and passes
+through, restricted by the GRANT instead. If that becomes a user-facing role, the check needs a
+membership test rather than an equality test, and RLS on `obligations` needs the same change.
