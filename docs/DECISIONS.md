@@ -1,6 +1,11 @@
 # Decision Record
-**Version:** 36 · **Updated:** 13 September 2026
-**Supersedes:** version 35 (13 Sep). Adds **§46.3** — the extended pre-flight rule fired
+**Version:** 37 · **Updated:** 13 September 2026
+**Supersedes:** version 36 (13 Sep). Adds **§56** — a migration does one thing and its filename
+says what (018 was briefly two unrelated changes; the half not in the name was the security fix,
+and it went invisible in a hand-off), and **§46 extends from NAMES to CONTENTS**: a pre-flight
+that names a migration correctly and describes it wrongly is worse than one that gets the name
+wrong, because the name check passes and the operator approves a migration having been told it
+does something else. Version 36 added **§46.3** — the extended pre-flight rule fired
 correctly on its first real test, and caught something the original could not: a correctly
 spelled name for a file that did not exist. Only subtracting the applied set from the directory
 tells that apart from a correctly spelled name for a real one. Version 35 added **§55** — the whole-company recompute measured rather
@@ -3374,3 +3379,65 @@ and the arithmetic is linear in sites — so the trigger is a multi-site custome
 **Reversal condition.** Build the per-switch obligation index first, as its own thing with its
 own tests, and only then narrow the recompute. **Narrowing the payload without it is the
 correctness hole above**, and "it was slow" is not a reason to accept one.
+
+---
+
+## 56. A migration does one thing — and a pre-flight copies CONTENTS, not just names — 13 September 2026
+
+**Two decisions, from one failure, and they are the same failure at two levels.**
+
+### 56.1 A migration does one thing, and its filename says what
+
+**Migration 018 was briefly written as two unrelated changes in one file** — `basis` becoming
+jsonb (§50) and a REVOKE closing `AUDIT-CHECKS.md` check 22 — on the reasoning that two
+twelve-line changes are cheaper as one migration than as two, and that the chain gets replayed
+from zero on every `db:reset`.
+
+**That was a false economy, and the cost arrived within the hour.** A migration with two
+purposes has **two honest names**. The filename can carry one. `018_basis_is_structured` is a
+correct name for the first half; `018_revoke_substance_inventory_from_public` is a correct name
+for the second. **Neither is wrong, and the half not in the name is invisible to everyone who
+only reads the file list** — which is what a pre-flight is.
+
+**And the half that vanished was the security fix.** That is not a coincidence: the basis change
+is what the session had been discussing, so it is what the filename described, and a REVOKE that
+closes a recorded finding disappeared behind it.
+
+**So: one migration, one thing, and the filename names it.** Split into
+`018_basis_is_structured.sql` and `019_revoke_substance_inventory_execute.sql`. The saving the
+combined file bought was one file. The cost was that the migration could not be referred to
+unambiguously for the rest of its life.
+
+**Reversal condition:** none for genuinely unrelated changes. **Two changes may share a migration
+when neither is comprehensible without the other** — a column and the constraint that makes it
+safe, a table and its policies. The test is not size; it is whether one filename can honestly
+describe both.
+
+### 56.2 §46 extended: a pre-flight copies a file's CONTENTS, not only its NAME
+
+**§46 and §46.1 govern names.** §46 says a filename is copied from the directory, never recalled.
+§46.1 says the list is the *diff* between directory and applied history, not the directory.
+**Both were followed here, and both passed.** The diff ran, reported `count pending: 1`, and
+named `018_basis_is_structured.sql` correctly.
+
+**The error was one level down: describing what the file DOES from session context rather than
+from the file.** The migration had two halves; the half named was the one discussed most
+recently; the half written earlier vanished from the description.
+
+> **A pre-flight that names a migration correctly and describes it wrongly is WORSE than one
+> that gets the name wrong.** A wrong name fails the check — the operator looks at `ls`, sees no
+> such file, and stops. **A right name with a wrong description passes every check there is**,
+> and the operator approves a migration having been told it does something else.
+
+**So the rule extends:** the same copy-don't-recall discipline that applies to a filename applies
+to the **summary of what it does**. A pre-flight that says what a migration changes reads the
+file — `grep -E '^(alter|create|revoke|grant|drop|comment|insert|update)' <file>` is enough —
+and lists every statement class it finds. **The description is derived from the file, exactly as
+the name is derived from the directory.**
+
+**Why this is a distinct failure from §46's three.** Those were a NAME substituted for a NAME —
+a paraphrase, catchable by comparing against `ls`. This was a file's CONTENTS summarised from
+memory. Nothing in the name check could have caught it, because the name was right.
+
+**Reversal condition:** none. If a migration ever becomes too large to summarise from its own
+statements, that is 56.1 telling you it does more than one thing.
