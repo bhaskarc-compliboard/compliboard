@@ -1,6 +1,9 @@
 # The Requirements Screen — M6
-**Version:** 2 · **Updated:** 13 September 2026
-**Supersedes:** version 1 (13 Sep). Section headings carry **no counts** — a heading count
+**Version:** 3 · **Updated:** 13 September 2026
+**Supersedes:** version 2 (13 Sep). Adds **§3.2a** — not every `unknown` row has a question behind
+it. Twelve of Test Alpha's 136 wait on chemical quantities rather than on a switch, so the action
+is chosen from what is missing and a row naming nothing offers no button at all (`DECISIONS.md`
+§61). Version 2: Section headings carry **no counts** — a heading count
 asserts a denominator the coverage strip says we do not have — and the test's header exception
 is reverted, which exposed that the detector could not see a parenthesised heading count at all.
 Three separate row roots rather than one renderer switching on state. The evidence panel is
@@ -201,6 +204,31 @@ unarguable.
 **And the distinction the screen must not collapse:** a question whose parent came back **false**
 is not blocked — it is **excluded**, and it disappears entirely. A site with no hazardous
 chemicals is not *pending* a lead-exposure answer.
+
+### 3.2a NOT EVERY `unknown` ROW HAS A QUESTION BEHIND IT
+
+**Measured on Test Alpha's 221 persisted obligations: 136 `unknown`, of which 124 name a switch
+and 12 name none.** Those twelve carry `switches_missing: []` and `inventory_missing` holding one
+of `psm`, `ehs`, `dea_list_i`, `tri`, `rmp`, `cercla` — they are waiting on **quantities held on
+site**, which no question in `switches` asks and no safety data sheet contains.
+
+So the ACTION is chosen from what is missing, never from the status:
+
+| What the row names | Sentence | Button |
+|---|---|---|
+| a switch | `Waiting on: owns_fleet` | **Answer the question** |
+| an inventory list | *we need the quantities you keep on site, not just the safety data sheets* | **Add your chemical inventory** |
+| neither | *waiting on a fact we cannot yet name* | **none** |
+
+**The third row is the rule, not the exception handling.** An affordance with nothing behind it
+invites a click that cannot work, and spends the single action the row has. Zero rows are in that
+state today; it is reachable only if a trigger names a fact the switch list does not carry.
+
+**This shipped broken once and is recorded as `DECISIONS.md` §61.** `renderUnknown()` returned
+"Answer the question" unconditionally and the unit test asserted exactly that, and passed —
+`resolve()` was correct, the renderer was correct, and only their composition was wrong. It was
+found by rendering the real rows. **Wording therefore lives in `lib/requirementsView.ts`, never
+in the page**, so that this class is testable somewhere other than in front of a customer.
 
 ### 3.3 Answering one
 

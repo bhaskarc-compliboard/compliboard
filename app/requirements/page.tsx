@@ -38,10 +38,6 @@ type SectionKey = (typeof SECTIONS)[number]['key']
 
 interface ApiRow extends RequirementRow {
   obligationId: string
-  /** Present on `unknown` rows: the switches that would settle it. */
-  factsNeeded: string[]
-  /** And the inventory lists — 12 of 136 unknown rows have ONLY these. */
-  inventoryNeeded: string[]
 }
 
 interface Coverage {
@@ -191,23 +187,13 @@ function Row({ row }: { row: ApiRow }) {
         )}
       </dl>
 
-      {row.status === 'unknown' && (
-        /* The ask lives behind this: GET /api/switches/ask orders by the dependency graph and
-           says what each unblocks. Rendering these as gaps would discard three fields that
-           already exist (§58.2).
-           *** `inventoryNeeded` IS HERE BECAUSE THE SCREEN FOUND IT MISSING. *** 12 of 136
-           unknown rows name no SWITCH — they are blocked on a chemical inventory instead, and
-           an earlier version rendered nothing at all for them: "we cannot say yet", with no
-           way to supply anything. Correct-looking and useless. Every layer beneath was right;
-           the screen was the first thing that could see it. */
-        <p className="mt-3 text-xs text-gray-500">
-          {row.factsNeeded.length > 0
-            ? `Waiting on: ${row.factsNeeded.join(', ')}`
-            : row.inventoryNeeded.length > 0
-              ? 'Waiting on your chemical inventory — we need quantities, not just safety data sheets.'
-              : 'Waiting on a fact we cannot yet name. Please tell us what changed.'}
-        </p>
-      )}
+      {/* The ask lives behind this: GET /api/switches/ask orders by the dependency graph and
+          says what each unblocks. Rendering these as gaps would discard three fields that
+          already exist (§58.2).
+          The SENTENCE and the BUTTON are both chosen in `renderUnknown` — this page composes,
+          it does not phrase (§61). Twelve of Test Alpha's 136 unknown rows wait on quantities
+          rather than on a question and get a different button for that reason. */}
+      {v.waitingText && <p className="mt-3 text-xs text-gray-500">{v.waitingText}</p>}
 
       {v.action && (
         <button className="mt-3 text-sm text-gray-900 underline underline-offset-2">{v.action}</button>

@@ -20,7 +20,8 @@ const row = (o: Partial<RequirementRow> = {}): RequirementRow => ({
   resolutionRationale: 'Because hazardous chemicals are present at this site.',
   siteName: 'Test Alpha Chemical — Portland',
   liveEvidence: 0, expiredEvidence: 0, contradictingEvidence: 0,
-  nextExpiry: null, evidenceNames: [], ...o,
+  nextExpiry: null, evidenceNames: [],
+  factsNeeded: [], inventoryNeeded: [], ...o,
 })
 
 describe('applies — two independent facts, never one verdict (§58.1)', () => {
@@ -86,12 +87,48 @@ describe('undetermined and unknown are different rows (§21.3)', () => {
     assert.equal(r.verdictLabel, 'UNRESOLVED')
     assert.equal(r.action, undefined, 'offering a question the product cannot ask is the collapse §21.3 forbids')
   })
-  test('unknown IS answerable and says so', () => {
-    const r = renderRow(row({ status: 'unknown',
+  test('unknown IS answerable and says so — WHEN a switch is what is missing', () => {
+    const r = renderRow(row({ status: 'unknown', factsNeeded: ['exposure_butadiene'],
       resolutionRationale: 'Cannot decide yet. 1 fact(s) not established: exposure_butadiene.' }))
     assert.equal(r.verdictLabel, 'NOT YET KNOWN')
     assert.equal(r.action, 'Answer the question')
+    assert.equal(r.waitingText, 'Waiting on: exposure_butadiene')
   })
+  /**
+   * *** THESE FOUR ARE THE DEFECT THE SCREEN FOUND, WRITTEN DOWN (§61). ***
+   *
+   * The test above USED to assert `action === 'Answer the question'` for any `unknown` row,
+   * with no `factsNeeded` set. It passed. It was asserting the bug: twelve of Test Alpha's 136
+   * unknown rows name no switch at all and had no question behind that button.
+   */
+  test('unknown waiting on QUANTITIES asks for the inventory, not for a question', () => {
+    const r = renderRow(row({ status: 'unknown', factsNeeded: [], inventoryNeeded: ['psm'],
+      resolutionRationale: 'Cannot decide yet. chemical inventory cannot answer: psm.' }))
+    assert.equal(r.verdictLabel, 'NOT YET KNOWN')
+    assert.equal(r.action, 'Add your chemical inventory')
+    assert.notEqual(r.action, 'Answer the question',
+      'there is no question behind this row — askableSwitches() has nothing to offer it')
+  })
+  test('every unknown row names what it is waiting for', () => {
+    for (const o of [{ factsNeeded: ['psm_covered'] }, { inventoryNeeded: ['ehs'] }, {}]) {
+      const r = renderRow(row({ status: 'unknown', ...o }))
+      assert.ok(r.waitingText && r.waitingText.length > 0,
+        `"we cannot say yet" with nothing after it is correct-looking and useless: ${JSON.stringify(o)}`)
+    }
+  })
+  test('an unknown row naming NOTHING offers no action at all', () => {
+    const r = renderRow(row({ status: 'unknown', factsNeeded: [], inventoryNeeded: [] }))
+    assert.equal(r.action, undefined,
+      'an affordance with nothing behind it invites a click that cannot work')
+    assert.ok(r.waitingText!.includes('cannot yet name'))
+  })
+  test('the inventory sentence says quantities, because SDSs are what customers upload', () => {
+    const r = renderRow(row({ status: 'unknown', inventoryNeeded: ['tri'] }))
+    assert.match(r.waitingText!, /quantities/)
+    assert.match(r.waitingText!, /safety data sheets/,
+      'a customer who uploads their binder and sees no movement concludes the product is broken')
+  })
+
   test('their labels are never equal', () => {
     assert.notEqual(renderRow(row({ status: 'unknown' })).verdictLabel,
                     renderRow(row({ status: 'undetermined' })).verdictLabel)

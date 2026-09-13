@@ -1,6 +1,13 @@
 # Decision Record
-**Version:** 41 · **Updated:** 13 September 2026
-**Supersedes:** version 40 (13 Sep). Adds **§60** — a finding is recorded from the artifact that
+**Version:** 42 · **Updated:** 13 September 2026
+**Supersedes:** version 41 (13 Sep). Adds **§61** — an `unknown` row's action is chosen from what
+it is actually missing, never fixed by its status: a button with nothing behind it is worse than
+no button. Twelve of 136 rows offered "Answer the question" with no question behind them, and
+**the test asserted that as the contract and passed** — `resolve()` was right, the renderer was
+right, and only their composition was wrong, which is the case for the screen preceding
+verification. Two corrections recorded with it: the count is 12 and not 13, and the mechanism
+described (a switch not naming itself) does not exist — all 72 missing switches name themselves
+with zero `company_switches` rows present. Version 41 added **§60** — a finding is recorded from the artifact that
 produced it, never from a description of work; if a defect is asserted and the place it was
 observed cannot be named, it did not happen. Recorded after a defect was narrated into existence
 with an invented figure attached, and refused. The escalation is the point: a wrong NAME is
@@ -3722,3 +3729,96 @@ would have been believed on its strength.
 **Reversal condition:** none. A finding without an artifact is a hypothesis, and hypotheses
 belong in the to-do file as things to check, never in the decision record as things that
 happened.
+
+---
+
+## 61. An affordance with nothing behind it — found by rendering, not by a test — 13 September 2026
+
+**The decision.** An `unknown` row's ACTION is chosen from what that row is actually missing,
+never fixed by its status. A row waiting on a switch offers **"Answer the question."** A row
+waiting on quantities offers **"Add your chemical inventory."** A row naming neither offers
+**nothing at all** — it still says what it is waiting for, but it does not hand the customer a
+button that cannot work.
+
+> **A button that cannot work is worse than no button.** It spends the one action the row gets on
+> a dead click, and a customer who clicks it concludes the product is broken rather than that we
+> are missing a number.
+
+### Two corrections to the account of this, both material
+
+**The count is 12, not 13**, and it was 12 in every artifact: the first query, the re-query after
+the read fix, and the render. `select ... where status='unknown'` returns 136; twelve carry
+`switches_missing: []`.
+
+**And the mechanism described — *"a switch with no `company_switches` row does not name itself,
+so read the fact name from the rationale instead"* — is not a defect this codebase has.** The
+query settles it:
+
+```
+company_switches rows present: 0
+distinct switches named as missing: 72
+  ...of which have NO company_switches row at all: 72
+```
+
+Test Alpha has **zero** switch rows, and all **72** distinct missing switches name themselves
+correctly. `missingOf()` reads the requirement's own named switches and subtracts what is
+established — **the name never came from the switch row**, so there was nothing there to fix.
+
+**What was real was the principle, and it found something the fix the day before had left.** §60
+was recorded that morning about a defect narrated into existence; this is the inverse and worth
+distinguishing: **a correct principle, attached to a wrong count and a wrong cause, that still
+pointed at a genuine defect one layer over.** The principle is what got acted on. The mechanism
+was checked before it was believed, which is the only reason the check was cheap.
+
+### What was actually wrong
+
+`renderUnknown()` returned `action: 'Answer the question'` unconditionally. The twelve
+inventory-blocked rows rendered that button, and `askableSwitches()` has nothing to offer them —
+they are waiting on `psm`, `ehs`, `dea_list_i`, `tri`, `rmp`, `cercla` quantities, not on a
+question anyone can ask.
+
+**And the test asserted the bug.** This is the sharper version of §60's argument, and it is not
+"no test covered it":
+
+```js
+test('unknown IS answerable and says so', () => {
+  const r = renderRow(row({ status: 'unknown', ... }))   // factsNeeded never set
+  assert.equal(r.action, 'Answer the question')          // PASSED
+})
+```
+
+A green assertion encoded the defect as the contract. **`resolve()` returned
+`inventory_missing` correctly; `renderUnknown()` returned a well-formed row; the loss was
+entirely in the read between them, and the composition is the only place it is visible.** No
+unit test of either side could see it, because neither side was wrong.
+
+### The argument for M6 preceding verification, stated from what happened
+
+The screen was the first artifact in the stack that could observe the defect **twice in two
+days**, in two different forms: rows that named no fact at all (fixed by threading
+`inventory_missing` through the route), and then rows that named a fact but offered the wrong way
+to supply it. Both times every layer underneath returned correct output. **That is the case for
+building the screen before verifying the content beneath it** — not because a screen is more
+visible, but because a composition defect has no other observer.
+
+### Measured after the fix
+
+```
+unknown rows: 136
+by action  : { "Answer the question": 124, "Add your chemical inventory": 12 }
+rows saying nothing about what they wait for: 0
+rows offering "Answer the question" with no question behind it: 0
+```
+
+Four tests now hold it, including one asserting that **every** `unknown` row names what it waits
+for, and one that the no-name case offers no action. `npm run check`: 96 files, 28 tables,
+**242 tests**, build compiled.
+
+**Also moved:** the waiting sentence now lives in `lib/requirementsView.ts` rather than in
+`app/requirements/page.tsx`. That module's own header says the page composes and does not
+phrase; the previous day's fix had put wording in the page, which is exactly why the follow-on
+defect was testable only by rendering.
+
+**Reversal condition:** if the ask path ever gains the ability to request a quantity directly —
+a question that captures "how much sulfuric acid do you keep" — the two actions converge and the
+branch collapses back to one. It has not, and `askableSwitches()` orders switches only.

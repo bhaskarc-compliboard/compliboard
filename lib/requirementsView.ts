@@ -29,6 +29,15 @@ export interface RequirementRow {
   contradictingEvidence: number
   nextExpiry: string | null
   evidenceNames: string[]
+  /**
+   * What an `unknown` row is waiting for. Both empty on every other status.
+   *
+   * These are on the ROW and not on the page because the ACTION is chosen from them (§61):
+   * a row waiting on a switch can be answered, a row waiting on quantities cannot, and
+   * offering the same button for both invites a click that does nothing.
+   */
+  factsNeeded: string[]
+  inventoryNeeded: string[]
 }
 
 export interface RenderedRow {
@@ -43,6 +52,8 @@ export interface RenderedRow {
   /** A fact, not a warning. `false` when there is simply no evidence yet. */
   shownIsWarning: boolean
   action?: string
+  /** `unknown` only: what is being waited for, in words. Never a bare "we cannot say yet". */
+  waitingText?: string
 }
 
 const sub = (r: RequirementRow) =>
@@ -110,10 +121,35 @@ export function renderDoesNotApply(r: RequirementRow): RenderedRow {
            action: "That's wrong — fix" }
 }
 
-/** Answerable. The question, not a gap (§58.2). */
+/**
+ * Answerable — SOMETIMES. The question, not a gap (§58.2).
+ *
+ * *** THE ACTION IS CHOSEN FROM WHAT IS MISSING, NEVER FIXED. *** `unknown` used to render
+ * "Answer the question" on every row. Twelve of Test Alpha's 136 are waiting on a chemical
+ * INVENTORY and name no switch at all — there is no question behind the button for those, and
+ * `askableSwitches()` has nothing to offer. A button that cannot work is worse than no button:
+ * it spends the one action the row gets on a dead click, and the customer concludes the product
+ * is broken rather than that we are missing quantities.
+ *
+ * Found by rendering the persisted rows, not by any test — `resolve()` returned
+ * `inventory_missing` correctly and the loss was entirely in the read. §61.
+ */
 export function renderUnknown(r: RequirementRow): RenderedRow {
-  return { ...base(r), verdictLabel: 'NOT YET KNOWN', verdictText: r.resolutionRationale,
-           action: 'Answer the question' }
+  const row = { ...base(r), verdictLabel: 'NOT YET KNOWN', verdictText: r.resolutionRationale }
+  if (r.factsNeeded.length > 0) {
+    return { ...row, waitingText: `Waiting on: ${r.factsNeeded.join(', ')}`,
+             action: 'Answer the question' }
+  }
+  if (r.inventoryNeeded.length > 0) {
+    return { ...row,
+             waitingText: 'Waiting on your chemical inventory — we need the quantities you keep ' +
+               'on site, not just the safety data sheets.',
+             action: 'Add your chemical inventory' }
+  }
+  // Neither named. Say so plainly and offer NOTHING (§5.1: never imply the user erred, never
+  // invite an action that cannot help). Zero rows are in this state today; it is reachable
+  // only if a requirement's trigger names a fact the switch list does not carry.
+  return { ...row, waitingText: 'Waiting on a fact we cannot yet name. Please tell us what changed.' }
 }
 
 /** A dead end. NO action — offering a question the product cannot ask is §21.3's collapse. */
