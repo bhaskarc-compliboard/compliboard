@@ -1,6 +1,10 @@
 # Audit Checks
-**Version:** 19 · **Updated:** 13 September 2026
-**Supersedes:** version 18 (13 Sep). Adds **check 25** — every view over a tenant table must run
+**Version:** 20 · **Updated:** 13 September 2026
+**Supersedes:** version 19 (13 Sep). Adds **check 26** — every unresolved requirement must offer
+an action the product can actually deliver. Twelve of Test Alpha's 136 `unknown` rows name no
+switch at all and offered a question nothing could answer; the unit test asserted that as the
+contract and passed. The third bucket, naming neither a switch nor an inventory list, is empty
+today and would be a library gap surfacing as a screen symptom. Version 19: Adds **check 25** — every view over a tenant table must run
 as the caller. `obligation_evidence_state` shipped without `security_invoker` in migration 020
 and would have shown every company every other company's evidence counts; 021 fixed it before it
 reached production or any route. A view does not fail like a table: permission is not granted by
@@ -1181,6 +1185,47 @@ policies it bypasses all exist and all pass their own tests.
 **It was found only because three assumptions were listed to be verified by measurement before
 the migration went to production, rather than the migration being declared finished when its own
 tests passed.** The other two were fine. That is the argument for the list.
+
+---
+
+## 26. Does every unresolved requirement offer an action the product can actually deliver?
+
+```sql
+select o.status,
+       coalesce(jsonb_array_length(o.determined_by->'switches_missing'), 0)  as switches,
+       coalesce(jsonb_array_length(o.determined_by->'inventory_missing'), 0) as inventory,
+       count(*)
+  from public.obligations o
+ where o.status = 'unknown' and o.applicable_to is null
+ group by 1,2,3 order by 4 desc;
+```
+
+**Read it as: any row with `switches = 0` is NOT answerable by a question.** `askableSwitches()`
+orders switches and has nothing to offer such a row, so a screen that shows it "Answer the
+question" is offering a button that cannot work.
+
+**Answer, 13 September 2026, staging, Test Alpha Chemical:** 136 `unknown` rows — **124 name a
+switch, 12 name only an inventory list** (`psm`, `ehs`, `dea_list_i`, `tri`, `rmp`, `cercla`),
+**0 name neither.** Rendered through `renderRow`: 124 offer *"Answer the question"*, 12 offer
+*"Add your chemical inventory"*, **0 offer a question with nothing behind it, and 0 say nothing
+about what they are waiting for.**
+
+**Production: not run — no company there has computed obligations** (`obligations_computed_at`
+is NULL everywhere; migration 022 adds the column). This check becomes meaningful there on the
+first real customer, and that is when it must be run, not before.
+
+**Why this check exists and why nothing else catches it.** `renderUnknown()` returned
+*"Answer the question"* unconditionally for every `unknown` row. **The unit test asserted exactly
+that and passed** — it never set `factsNeeded`, so the defect was the contract. `resolve()`
+produced `inventory_missing` correctly; the renderer produced a well-formed row; **only the
+composition was wrong, and a composition defect has no observer below the screen.** Found by
+rendering the real persisted rows. `DECISIONS.md` §61.
+
+**And it will fail again for a different reason, which is why it is a standing check rather than
+a fixed test.** The third bucket — `switches = 0 AND inventory = 0` — is empty today and becomes
+non-empty the moment a requirement's trigger names a fact the switch library does not carry. That
+is a **library** defect surfacing as a **screen** symptom, and this query is the only place the
+two are visible at once.
 
 ---
 

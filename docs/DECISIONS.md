@@ -3760,14 +3760,25 @@ so read the fact name from the rationale instead"* — is not a defect this code
 query settles it:
 
 ```
-company_switches rows present: 0
-distinct switches named as missing: 72
-  ...of which have NO company_switches row at all: 72
+company_switches rows for Test Alpha: 16 | distinct keys: 9
+distinct switches named as MISSING: 72
+  ...WITH a company_switches row: 0
+  ...with NO row at all         : 72
 ```
 
-Test Alpha has **zero** switch rows, and all **72** distinct missing switches name themselves
-correctly. `missingOf()` reads the requirement's own named switches and subtracts what is
-established — **the name never came from the switch row**, so there was nothing there to fix.
+All **72** distinct missing switches name themselves correctly, and not one of them has a row.
+`missingOf()` reads the requirement's own named switches and subtracts what is established —
+**the name never came from the switch row**, so there was nothing there to fix.
+
+> **CORRECTION, same day.** The first version of this block read `company_switches rows present:
+> 0`. That was not a fact, it was **a silently failed query**: it selected `switch_key`, a column
+> that does not exist, and `supabase-js` returns `data: null` with the error on a field I did not
+> check. Test Alpha has **16** rows across **9** distinct keys, all `user_set` and all `known`.
+> The conclusion is unchanged — 0 of the 72 missing switches have a row — but it was reached, for
+> one draft, from a null. **Every query in this file now goes through a helper that exits on
+> `error` rather than returning an empty array**, because an empty result and a failed call are
+> the same shape in this client and §60's rule is worth nothing if the artifact itself is a
+> mistake.
 
 **What was real was the principle, and it found something the fix the day before had left.** §60
 was recorded that morning about a defect narrated into existence; this is the inverse and worth
