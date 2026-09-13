@@ -1,6 +1,10 @@
 # Audit Checks
-**Version:** 16 · **Updated:** 12 September 2026
-**Supersedes:** version 15 (12 Sep). Check 10 re-run after migration 017: **840 objects each, 0
+**Version:** 17 · **Updated:** 13 September 2026
+**Supersedes:** version 16 (12 Sep). **Check 20 is now SKIPPED rather than passing.** It was a
+hard query against an empty table, which reports clean having examined nothing — check 14's
+finding turned on this file. It is now a hard assertion behind an announced precondition, in
+`npm run audit:data`, with checks 20b, 20c and 21 guarded the same way. "How to add a check"
+gains the rule. Version 16: Check 10 re-run after migration 017: **840 objects each, 0
 differences, byte-identical**, up 41 and every one attributable. Version 15 added **check 24** — `user_locked` has ZERO policies, ZERO
 constraints and ZERO triggers behind it. It is enforced in one library module, which under
 `CLAUDE.md` §3.6 is a route guard wearing a different coat: an honest `update company_switches`
@@ -888,7 +892,31 @@ select count(*) filter (where cas_number is null)            as unidentified,
   from public.company_chemicals;
 ```
 
-**Answer, 12 September 2026, both environments:** zero rows — **vacuously, because
+> ### ⊘ **SKIPPED, not passed — 13 September 2026.** `npm run audit:data`
+>
+> ```
+> ⊘ SKIP  check 20   every inventory CAS is in regulated_substances
+>         company_chemicals holds 0 rows — there is no inventory to check.
+>         This check has still never refused anything; it is UNTESTED, not passing.
+> ```
+>
+> **This check used to report a pass.** It was a hard query against an empty table, which
+> returns zero rows and therefore "clean" — and a check that cannot fail is indistinguishable
+> from one that is passing. That is check 14's own finding turned on this file.
+>
+> **It is now a hard assertion behind a precondition**, and the precondition announces itself
+> when it does not hold. The runner's exit line separates the two states the old form conflated:
+> `0 passed · 0 failed · 4 SKIPPED`, followed by *"4 check(s) NEVER RAN. They are untested, not
+> passing."* **A skipped check that says so is honest; a soft one that always passes is not.**
+>
+> Three checks were added alongside it, all guarded the same way: **20b** the unevaluable
+> proportion of an inventory (a product signal — if most of a customer's chemicals are
+> unidentified, every threshold answer is `unknown` and the product is honest and useless at
+> once), **20c** every stored CAS against its own check digit (§48, and deliberately
+> reimplemented in the script so it can refuse a row even if `lib/` changes), and **21** that
+> `stated`/`implied` determinations carry the quote and document their class requires.
+
+**Previous answer, 12 September 2026, both environments:** zero rows — **vacuously, because
 `company_chemicals` holds 0 rows and `regulated_substances` holds 0 rows.** Seeding the
 reference table is `TODO.md` 6.4b. **A vacuous pass is recorded as vacuous**; this check has
 never refused anything and by the standard in "How to add a check" is therefore untested.
@@ -1096,6 +1124,15 @@ been closed and this check should record how.
 ---
 
 ## How to add a check
+
+> ### And a check must be able to FAIL, or say that it could not run.
+>
+> Added 13 Sep. A hard query against an empty table returns zero rows and reports clean, which
+> is the same output as a check that examined everything and found nothing wrong. **Write the
+> assertion hard and guard it on its precondition**: if the data it needs is absent, print SKIP
+> and name what was missing. `npm run audit:data` does this for the checks that need live rows,
+> and its summary line distinguishes *passed* from *never ran*. A soft assertion is worse than
+> no check, because it occupies the place where a check would go.
 
 A check earns its place here if a wrong answer would reach a customer and **nothing else
 would notice**. That is the test. A check that duplicates a database constraint belongs in

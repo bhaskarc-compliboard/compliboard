@@ -1,5 +1,11 @@
 # Switch Determination — Phase 7.2
-**Version:** 2 · **Updated:** 12 September 2026
+**Version:** 3 · **Updated:** 12 September 2026
+**Supersedes:** version 2 (12 Sep). Adds **§10, the 7.2a spec** — the ask path is built FIRST on
+the measured argument (three SDSs moved zero obligations; one question moved 19), it reuses the
+determination gate's shipped ask contract rather than inventing a second, it adds `blocked_by`
+(from the dependency graph, not preference) and `affects`, and it **produces no proposals at
+all** (§51). Adds the `Basis` schema as structured jsonb with a renderer (§50), and names the
+two things still undecided: `expires_at` semantics and the service-role exception.
 **Supersedes:** version 1 (12 Sep). Adds §8 — coverage as a number (42 of 95 switches, 44.2%,
 have no determination path after this phase), §8.1 (build the ask path for the 29 `user_answer`
 switches first; 25 questions buy 31 requirements, and 4 of the 29 are referenced by nothing),
@@ -339,7 +345,116 @@ Separate task, after the pipeline works.
 
 ---
 
-## 9. The twelve mislabelled `determination_source` values — 6.4 work
+## 10. Phase 7.2a — the routes
+
+**Build the ask path FIRST, and the document path second.** Not an ordering convenience — the
+measured argument. Three SDSs extracted for the test company moved **zero** obligations; one
+answered question moved **19**. The **29 `user_answer` switches** touch **36** requirements and
+**fully resolve 31** between them, with no model in the loop and nothing to extract. The
+document path is the larger build and the smaller immediate payoff.
+
+### 10.1 What 7.2a does NOT do, decided rather than deferred
+
+| | Why |
+|---|---|
+| **Produces no proposals** | The ten propose-don't-write switches produce nothing at all. Nothing can accept a proposal yet, and both available homes are worse than silence (§51). **This blocks M6.1**, it is not a gap here |
+| **Writes no superseded proposals** | Falls out of the above — there are none to supersede |
+| **Does not recompute obligations** | Nothing in a request path calls `resolve()` or `close_and_replace_obligations`. `obligations` is 0 rows, so nothing breaks — but `CHEMICAL-OR-WA.md` §6.4 promises *"each edit instantly recomputing every obligation"*, and **that promise is 4.3's, not this task's.** Stated so it is a deferral rather than an omission |
+| **Invents no ask format** | `DETERMINATION-GATE.md`'s is shipped and live on two routes. 7.2a returns that shape |
+
+### 10.2 The ask path's contract — the gate's shape, unchanged
+
+**`GateAsk` and `GateAnswering` already exist in `lib/determinationGate.ts` and are in
+production.** 7.2a reuses them verbatim. A second ask contract would hand M1 the job of
+reconciling two, which is §52's failure exactly.
+
+```ts
+// UNCHANGED, from lib/determinationGate.ts
+GateAsk        { question, artifact, unlocks[], switch_id,
+                 why_blocking, assumed_if_unanswered, known[] }
+GateAnswering  { switch_id, fact, value }
+```
+
+**`GET /api/switches/ask`** — what to ask this company next.
+
+```ts
+{ asks: Array<GateAsk & {
+    blocked_by: string[]      // switch ids that must be answered BEFORE this one
+    affects: number           // transitive requirements this unblocks
+  }>,
+  remaining: number }
+```
+
+**Two additions, and each is a decision this route is entitled to make:**
+
+**`blocked_by` — ordering comes from the dependency graph, not from preference.** 21 switches
+carry `hazardous_chemicals_present` as `depends_on_switch`; asking `psm_rmp_threshold` before it
+asks a question whose answer cannot be used. **That is what the graph says, not a UI opinion** —
+so deciding it here is correct, and M1 and M7 inherit an ordering that is right for them too.
+
+**`affects` — the transitive count.** `CHEMICAL-OR-WA.md` §6.4 calls it *"the number that makes
+a user willing to correct a switch"*. Computable today from `applies_expression` plus the
+dependency edges. Omitting it would make M6 recompute it per render or change the contract.
+
+**`POST /api/switches/answer`** — record one answer.
+
+```ts
+→ { switch_id, entity_id: string | null, value: string, question: string }
+← { written: boolean, state: 'known' | 'needs_user',
+    basis: Basis, evidence_class: 'stated', affects: number,
+    obligations_stale: true }
+```
+
+`obligations_stale` is always `true` and is there to be honest: the answer landed, and the
+requirement list has **not** been recomputed (10.1). When 4.3 lands, this field is what it flips.
+
+### 10.3 The `basis` schema — §50, structured with a rendered sentence
+
+**`company_switches.basis` becomes `jsonb`. That is migration 018** — the column is `text`
+today and the existing rows convert, they do not drop.
+
+```ts
+export interface Basis {
+  v: 1
+  kind: 'user_answer' | 'document' | 'computed'
+  at: string                    // ISO date
+  question?: string             // user_answer — the question as asked
+  previous_value?: string       // user_answer, ON A CHANGE ONLY — §49
+  document_id?: string          // document
+  locator?: string              // "Permit cover page", "§4 Eligibility"
+  quote?: string                // VERBATIM. Checked as a substring of the document text
+  reasoning?: string            // implied / inferred only
+  computed_from?: string[]      // computed — the inputs
+}
+```
+
+**`renderBasis(b: Basis): string`** produces the sentence, and the sentence is never stored:
+
+```
+user_answer   User stated "false" on 2026-09-12, previously "true".
+              Question: "Are hazardous chemicals present at this site?"
+document      Standard ACDP permit, Permit cover page:
+              "Standard Air Contaminant Discharge Permit No. 26-2841…"
+computed      Computed from site_employee_count, has_employees.
+```
+
+**Three things the structure buys that a string does not**, and they are the argument:
+*"every switch resting on this document"* is a containment query rather than a `LIKE`; a `quote`
+can be re-checked character by character against the document it names; and when a document is
+superseded, every value standing on it is findable. Same call as `applies_expression` (§43) and
+`obligations.determined_by`, for the same reason — **I cannot verify prose and M6 cannot query
+it.**
+
+### 10.4 What is still undecided and must be settled before code
+
+| | |
+|---|---|
+| **`expires_at` semantics** | Does an expired switch revert to `unknown` or keep its value? **48 of 95 switches are non-static.** Whichever 7.2a writes becomes the rule by default |
+| **The service-role exception** | `switch_determinations` has only a SELECT policy, so writes need `supabaseAdmin` — permitted under `CLAUDE.md` §3.6 only as a **named statement with a comment**. That comment is the decision |
+
+---
+
+## 11. The twelve mislabelled `determination_source` values — 6.4 work
 
 | | Switches | Problem |
 |---|---|---|

@@ -1,7 +1,13 @@
 # How We Build CompliBoard
 
-**Version:** 7 · **Updated:** 12 September 2026
-**Supersedes:** version 6 (12 Sep). §3 gains *validate the structure of what you extracted
+**Version:** 9 · **Updated:** 13 September 2026
+**Supersedes:** version 8 (12 Sep). §3 gains *measure before writing "acceptable for now"* — the
+recompute cost was a note until it was asked for as a figure, and the figure took a minute while
+the note would have been re-litigated by whoever read it next. Version 8: **§2's loop gains step
+0: two dependency questions, not
+one.** The second — *what does this decide on behalf of something that does not exist yet* —
+found four accidental contracts on Phase 7.2a, three of which would have surfaced only when a
+downstream module broke on them. Version 7: §3 gains *validate the structure of what you extracted
 before writing it* — from the CAS check digit, where the dangerous identifier is not the one
 that matches nothing but the one that matches something else. §7 gains the hand-off case: §46
 has now fired three times, each further from the artifact than the last, and the third had a
@@ -47,6 +53,8 @@ This has been tested: the migration script's TTY guard — written by Claude Cod
 ## 2. The loop
 
 ```
+0. TWO dependency questions     What does this NEED that does not exist?
+                                What does this DECIDE for something that does not exist?
 1. Read-only investigation      "Report and stop. Change nothing."
 2. Review the report            Decide what is a real finding vs. a guess
 3. Decide the open questions    Product judgment — the owner's, not Claude Code's
@@ -60,6 +68,25 @@ This has been tested: the migration script's TTY guard — written by Claude Cod
 11. Commit and push             Plain-language messages
 12. Write the manual tests      Two per feature, into TESTING.md, before the commit
 ```
+
+**Step 0's SECOND question is the new one, and it is the one that pays.** The first is the
+ordinary dependency check: depending on something built is ordering, depending on something
+unbuilt is building against a guess. **The second asks what this item settles on behalf of
+something nobody has built yet** — and an item can depend on nothing unbuilt and still fix a
+contract three future modules will inherit without argument.
+
+Asked of Phase 7.2a it found four such contracts, and **three would have been invisible until
+something downstream broke on them**: a second ask-card format when one is already shipped and
+live on two routes; a response shape omitting the *"affects N requirements"* count the design
+calls the number that makes a user willing to correct a switch; a home for proposals chosen
+inside a one-day route task on behalf of three modules; and `basis` as prose, discovered when
+M6 tried to query it.
+
+**This project has the failure twice already.** `follow_up_questions` was a field shaped before
+the thing that would use it, and it made the determination gate impossible (`DECISIONS.md` §34).
+`determination_source` was a column named before the question was asked, and it answers the
+wrong one. Both are the same shape: **a contract set by whoever arrived first, with no argument,
+because nobody noticed a contract was being set.** `DECISIONS.md` §52.
 
 **Step 12 is a standing obligation, not a suggestion.** Every major piece of work ends with a
 short numbered list of things to click and ask — **two per feature: the perfect case and the
@@ -155,6 +182,27 @@ given for it was itself recalled.
 **The operative form is short.** Before raising a discrepancy, re-read the thing — `ls` the
 directory, re-read the dry run still on screen, re-run the count. It costs one command, and it
 is cheaper than being right for the wrong reason.
+
+**Measure before writing "acceptable for now".** Added 13 Sep. A whole-company recompute on
+every answer was flagged as acceptable-for-now in a report, as a note with no number attached.
+Asked to make it a figure, the measurement took one script and about a minute: **221 obligation
+rows touched per answer, 19 of them actually changed, 10.6× amplification, ~2,652 rows over a
+twelve-question session.**
+
+**The note cost more than the measurement would have.** A number is arguable — it has a
+threshold ("linear in sites; at ten sites it is 1,105 rows per answer") and therefore a date at
+which it stops being acceptable. A note is not arguable; it is a feeling, and feelings about
+performance are re-litigated from scratch by whoever reads them next.
+
+**So "acceptable for now" is not a conclusion — it is a prompt to go and measure**, and the
+measurement is almost always cheaper than the sentence it would have replaced. The same applies
+to "probably fine", "small enough to ignore" and "we can optimise later". Each of those is a
+claim with a number behind it that nobody has looked up. `DECISIONS.md` §55.
+
+**And measuring it changed nothing about the decision, which is the point.** The recompute is
+still whole-company, for the correctness reason in §55 — a narrowed payload cannot tell "no
+longer applies" from "not sent". What changed is that the trade is now written down with its
+trigger condition, instead of being a reassurance that would have to be re-earned.
 
 **Validate the STRUCTURE of what you extracted before writing it, not after.** Added 12 Sep,
 from the CAS check digit. A value that is well-formed and wrong is indistinguishable from one

@@ -1,6 +1,26 @@
 # Decision Record
-**Version:** 32 · **Updated:** 12 September 2026
-**Supersedes:** version 31 (12 Sep). Adds §49: an overwritten fact carries what it overwrote.
+**Version:** 35 · **Updated:** 13 September 2026
+**Supersedes:** version 34 (13 Sep). Adds **§55** — the whole-company recompute measured rather
+than noted: 221 obligation rows touched per answer for a 2-site company, 19 of them changed,
+**10.6× amplification**, and ~2,652 rows over a twelve-question session. Accepted for now, with
+the reason it is not fixed stated as a correctness argument rather than a scheduling one: a
+narrowed payload cannot distinguish "no longer applies" from "not sent", and the per-switch
+obligation index that would make a partial recompute safe is derivable but unbuilt. Version 34
+added **§53** — §51 constrains the SOURCE, not the switch: a
+user stating a fact is not an inference, so the ask path writes every switch a person answers
+including those on the propose-don't-write list, and reading §51 as a property of the switch
+would have made the second-highest-leverage question in the product unaskable. It also corrects
+the ask path's candidate set — offering only the 29 `user_answer` switches would never offer
+`hazardous_chemicals_present`, which is seeded `documents`. And **§54** — one answer unlocks one
+level of the dependency graph and stops, because without a recompute the first interaction
+returns nothing, and with recursion it becomes the cascade the gate spec already refuses.
+Version 33 added **§50** (`basis` is jsonb with a rendered sentence,
+following 4.1's `determined_by` precedent — migration 018), **§51** (a proposal is not produced
+until something can accept it; the ten propose-don't-write switches produce nothing, and this
+blocks M6.1 rather than gapping 7.2a), and **§52** (the second dependency question — *what does
+this decide on behalf of something that does not exist* — is now a step in the loop, after it
+found four accidental contracts of which three would have been invisible until something
+downstream broke). Version 32 added §49: an overwritten fact carries what it overwrote.
 The overwrite is correct — a newer stated value outranks an older one — but a value that flips
 silently leaves a requirement list that changes silently, and for a fact whose family gates 35
 requirements that is the whole explanation somebody is looking for. Version 31 added §48: validate the STRUCTURE of an identifier before
@@ -3076,3 +3096,248 @@ opening a history table they do not know exists. The cost is one string concaten
 claim ever made about a fact, in order — this becomes redundant duplication and should be
 dropped rather than maintained in two places. Until then the row is the only surface a person
 sees, and it has to carry its own history.
+
+---
+
+## 50. `basis` is structured, and the sentence is rendered from it — 12 September 2026
+
+**The decision.** `company_switches.basis` becomes **jsonb**, not text. The human sentence is
+produced by a renderer from the structure, never stored instead of it.
+
+**The precedent is 4.1's and this follows it deliberately.** `obligations.determined_by` is
+jsonb for exactly this reason, stated in migration 007's own header: *"resolution_rationale is
+free text and cannot answer either question that matters operationally — which obligations must
+be recomputed when one switch changes, and what turns on a given switch."* `basis` faces the
+same two questions one layer down — *which switches rest on this document*, and *what did we
+read to conclude this* — and prose answers neither.
+
+**And it is the same call as §43 for `applies_expression`, for the same two reasons.** A format
+that must be parsed by a human before it can be checked makes verification theatre; a format
+that must be parsed by a regex before it can be queried makes M6's provenance panel a string
+search. **Store the structure, review the sentence.**
+
+```
+{ "v": 1,
+  "kind": "user_answer" | "document" | "computed",
+  "at": "2026-09-12",
+  "question": "…",            // user_answer
+  "previous_value": "true",   // user_answer, on a change only — §49
+  "document_id": "uuid",      // document
+  "locator": "Permit cover page",
+  "quote": "…verbatim…",
+  "reasoning": "…",           // implied / inferred only
+  "computed_from": ["…"] }    // computed
+```
+
+**What this buys that a string does not:** *"show me every switch whose basis is this document"*
+is a containment query rather than a `LIKE`; a quote can be re-checked against the document it
+names character by character (`docs/SWITCH-DETERMINATION.md` §6); and when a document is
+superseded, every value resting on it is findable.
+
+**Consequence, stated rather than discovered: this is a migration.** `basis` is `text` today.
+Changing it is migration 018 and it must convert the rows that exist, not drop them.
+
+**Reversal condition.** If a basis ever needs to hold something genuinely unstructured — a
+paragraph of human judgement with no fields — the structure gains a `note` field rather than the
+column reverting to text. **What would NOT reverse it: the renderer being more code than a
+string concatenation.** That was the argument against §43's renderer too, and the renderer
+caught a logical inversion and a fabricated threshold in its first twenty rows.
+
+---
+
+## 51. A proposal is not produced until something can accept it — 12 September 2026
+
+**The decision.** Phase 7.2a writes only the switch values it is entitled to write. For the
+**ten** switches on the propose-don't-write list (`docs/SWITCH-DETERMINATION.md` §5), a
+determination that would need confirmation is **not produced and not stored anywhere.**
+
+**This sounds wasteful and it is the honest option.** Nothing in the product can accept a
+proposal today. The two places it could be put are both worse than not producing it:
+
+| Option | Why it is worse |
+|---|---|
+| A row in `switch_determinations` with no status | The `outcome` column was specced and not built (migration 017), so a proposal would be **indistinguishable from a determination that lost the precedence ladder** — and it would sit in a queue with no consumer, which is a backlog that looks like data |
+| Surface it through the ask path | **A proposal is not a question.** A question has no evidence behind it; a proposal has evidence and a value and is asking to be confirmed. Conflating them means the user is asked something the product already believes it knows, with no way to show them why |
+
+**Where a proposal actually belongs: M6.1, the verification section.** That screen's job is
+precisely *"here is what we concluded — correct it"*, which is the accept surface a proposal
+needs. **So this is recorded as BLOCKING M6.1**, not as a gap in 7.2a.
+
+**What 7.2a does instead:** the propose-path switches are simply left unestablished, and the
+`absent`/undetermined machinery already reports that honestly. A customer sees "we have not
+established this" rather than a silent guess or an unread queue.
+
+**Reversal condition.** The moment M6.1 exists — or any surface that can show evidence and take
+a yes — proposals are produced and this decision is spent. **It is a sequencing decision, not a
+position on proposals**, and it should not be cited later as an argument against them.
+
+---
+
+## 52. The second dependency question, and why it is now a step — 12 September 2026
+
+**The decision.** Before any item is built, two questions are asked, not one:
+
+1. **What does this need that does not exist?** — the ordinary dependency check.
+2. **What does this decide on behalf of something that does not exist yet?**
+
+**The second is new and it is the one that pays.** A dependency check on Phase 7.2a found four
+accidental decisions, and **three of them would have been invisible until something downstream
+broke on them:**
+
+| | Would have been discovered |
+|---|---|
+| A second ask-card contract, when `DETERMINATION-GATE.md`'s is already shipped and live on two routes | When M1 tried to render both |
+| A response shape omitting **"affects N requirements"**, which `CHEMICAL-OR-WA.md` §6.4 calls *"the number that makes a user willing to correct a switch"* | When M6 built the switches screen and found the field absent |
+| A home for proposals chosen inside a one-day route task, on behalf of M1, M6 and M7 | When whoever built the accept UI inherited a store nobody had agreed |
+| `basis` as prose | When M6 tried to query it |
+
+**The pattern this generalises.** `DECISIONS.md` §34 records a `follow_up_questions` field that
+made the determination gate impossible — a field shaped before the thing that would use it. §2
+of this project's own switch seed records a `determination_source` column answering the wrong
+question. **Both are the same failure: a contract set by whoever got there first, with no
+argument, because nobody noticed a contract was being set.**
+
+**Question 1 failing means building against a guess. Question 2 failing means building a guess
+FOR SOMEBODY ELSE**, who will discover it when it is expensive to change.
+
+**Reversal condition:** none. If the second question ever returns "nothing" for several items in
+a row, that is evidence the remaining work is genuinely independent, not evidence the step is
+unnecessary — and it costs one paragraph to ask.
+
+---
+
+## 53. §51 constrains the SOURCE, not the switch — 13 September 2026
+
+**The decision.** §51 — *a proposal is not produced until something can accept it* — governs
+what an AI may write **from inference**. It says nothing about what a **person** may establish.
+A user stating a fact is not an inference, so the ask path writes every switch a user answers,
+**including switches on the propose-don't-write list.**
+
+**Why the two lists do not conflict.** `hazardous_chemicals_present` is on both, for different
+reasons that are both correct:
+
+| List | Reason |
+|---|---|
+| propose-don't-write (§5 of the spec) | A wrong `false` inferred from a website scan **hides 35 requirements** — 8 directly and 27 more through the 21 switches that carry it as `depends_on_switch` |
+| highest-leverage question | It is the second-highest transitive leverage in the whole vocabulary, behind only `has_employees` |
+
+**Reading §51 as a property of the SWITCH would have made the second-highest-leverage question
+in the product unaskable** — the product would refuse to let a customer tell it something,
+because a model might have got it wrong. That is the failure, and it is not a small one.
+
+`DECISIONS.md` §24.1 already settles the ordering: **a stated value outranks an inferred one.**
+`fromUserAnswer()` writes `evidence_class = 'stated'` and `user_locked = true` precisely because
+a person said it. §51's caution is about evidence strength, and a statement is the strongest
+evidence class there is.
+
+**The general form:**
+
+> **A constraint on how a fact may be ESTABLISHED is not a constraint on the fact.** The same
+> switch can be unwritable from inference and writable from a statement. A rule that reads as a
+> property of the thing, when it is really a property of the route to the thing, removes
+> capability nobody meant to remove.
+
+**And the measurement forced a correction to the ask path's candidate set.** Only **2** of the
+ten propose-don't-write switches are seeded `determination_source = 'user_answer'`
+(`cdl_drivers`, `owns_fleet`). `hazardous_chemicals_present` is seeded `documents`. **So an ask
+path that offered only the 29 `user_answer` switches would never offer the highest-leverage
+question in the vocabulary** — the same mistake one layer down.
+
+**`determination_source` answers "which kind of source is AUTHORITATIVE for this fact". It does
+not say "the user may not be asked".** So the ask path's candidate set is *every switch that is
+unestablished and whose dependencies are satisfied*, with `user_answer` switches ranked first
+because **nothing else will ever establish those** — not because the others are off-limits.
+
+**Reversal condition.** If a switch is ever genuinely unanswerable by a person — a computed
+figure like `hazwaste_generator_category`, which is a monthly calculation rather than a fact
+anyone holds — it is excluded from the ask path **by being computed**, not by appearing on §51's
+list. That exclusion is a property of the switch and belongs in `determination_source`.
+
+---
+
+## 54. One answer unlocks one level, and then stops — 13 September 2026
+
+**The decision.** `POST /api/switches/answer` recomputes the askable set and returns the
+questions that answer **newly unblocked** — one level of the dependency graph, not a cascade.
+The next answer starts a new cycle.
+
+**Why it recomputes at all.** The product's proposition is *answer a question, watch your list
+move*. 21 switches carry `hazardous_chemicals_present` as `depends_on_switch`, and 7 carry
+`has_employees`. **Without a recompute, the very first thing a user does returns an empty next
+list** — the children only become askable once the parent is known — and the first interaction
+in the product produces nothing visible. That is precisely the failure the ask path exists to
+prevent.
+
+**Why exactly one level and not recursion.** Two reasons, and the second is the one already
+written down:
+
+- **A single answer unlocking a chain three deep reads as the product stalling.** The user
+  answers once and watches a queue grow; nothing about that feels like progress.
+- **`DETERMINATION-GATE.md` already warns about this**: *"at most one blocking question"*, and
+  *"you may ask one. Not two, not 'one, and also'."* A cascade from one click is the
+  too-much-asking failure that spec was written against, arriving by a different door.
+
+**The shape:**
+
+```
+answer → write → recompute the askable set → return ONLY the newly unblocked → stop
+```
+
+**What "newly unblocked" means precisely:** a switch that was blocked before this answer and is
+not blocked after it. Not "everything askable now" — that would return the whole remaining
+queue on every call and the one-level bound would be cosmetic.
+
+**Reversal condition.** If measurement ever shows users abandoning at the second or third
+question because each answer surfaces only one or two more, the bound is the thing to revisit —
+**by widening the returned set, never by recursing.** The distinction matters: returning more of
+the *current* level is a display decision; following the graph further is the cascade this
+decision refuses.
+
+---
+
+## 55. The whole-company recompute, as a measured number — 13 September 2026
+
+**The decision: accept the write amplification for now, and record it as a figure rather than
+as a note, so the point at which it stops being acceptable is arguable rather than felt.**
+
+**Measured 13 Sep, Test Alpha Chemical, 2 sites, one answer (`has_employees = true`):**
+
+| | |
+|---|---|
+| Obligation rows in the payload | **221** |
+| Rows whose status actually changed | **19** |
+| Rows closed **and** inserted (2 writes each) | 38 |
+| Rows touched only for `last_verified_at` | **202** |
+| **Write amplification** | **10.6× unchanged rows per changed row** |
+
+**Over a twelve-question session, if every answer recomputes: ~2,652 obligation rows touched,
+of which at most ~228 change** — and that is an upper bound, because later answers change fewer
+than the first.
+
+**Nothing pays this cost today.** No route calls `close_and_replace_obligations`; `obligations`
+is 0 rows in both environments. This is recorded before the first caller exists, not after.
+
+**What the fix would be.** Write only the changed row, and recompute only the obligations that
+switch touches. Both halves are straightforward in isolation.
+
+**Why it is not being done now, and this is the substantive part:**
+
+1. **`close_and_replace_obligations` is whole-company by design, and that design is load-bearing
+   (§47).** Its contract is *"here is the complete set; reconcile it"*, which is what makes the
+   fourth case — an obligation that has left the set entirely — detectable at all. A partial
+   call cannot distinguish *"this requirement no longer applies"* from *"this requirement was
+   not in the payload you sent"*, and the difference is an obligation silently staying open
+   forever. **Narrowing the payload would trade a 10.6× write cost for a correctness hole.**
+2. **A partial recompute needs to know which obligations one switch touches.** That is derivable
+   from `applies_expression` — the switch's family, transitively, exactly as `transitiveAffects()`
+   already computes for the ask path — **but it is not built**, and building it inside a route
+   task would be a third consumer of a derivation that has no owner.
+
+**When this stops being acceptable**, stated so it is checkable rather than a matter of taste:
+when a single company's obligation count times a session's answer count makes the recompute
+visible in the request path. At 221 rows it is not. **At ten sites it is 1,105 rows per answer**,
+and the arithmetic is linear in sites — so the trigger is a multi-site customer, not a busy one.
+
+**Reversal condition.** Build the per-switch obligation index first, as its own thing with its
+own tests, and only then narrow the recompute. **Narrowing the payload without it is the
+correctness hole above**, and "it was slow" is not a reason to accept one.

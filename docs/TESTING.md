@@ -1,6 +1,11 @@
 # Testing
-**Version:** 9 · **Updated:** 12 September 2026
-**Supersedes:** version 8 (12 Sep). Adds **`npm run test`'s three guards** — no `.only`, nothing
+**Version:** 10 · **Updated:** 13 September 2026
+**Supersedes:** version 9 (12 Sep). Adds the **manual set for Phase 7.2a**, written before the UI
+exists so it tests what was meant rather than what got built — four cases, each naming what it
+is blocked on, and each with what the failure looks like. Case A is the one that matters: one
+answer must unblock two questions AND move 19 obligations in the same interaction, and the four
+distinct ways that goes wrong have four distinct causes. Version 9 added **`npm run test`'s three
+guards** — no `.only`, nothing
 skipped, and a committed floor the total may rise above but never fall below, both refusals
 proved by breaking the suite. Records the actual count history (**167**, never 100 or 106) so
 the question does not have to be re-asked. And records that the **golden document cases are
@@ -67,6 +72,98 @@ untested — applies to the runner as much as to anything it runs.
 **167 · 0 skipped · 0 todo**. Per file: `appliesExpression` 58 · `jurisdiction` 24 · `resolve`
 40 · `sdsExtraction` 14 · `switchDetermination` 31. **No run in this project has reported 100 or
 106.** The floor is committed so the question does not have to be re-asked.
+
+---
+
+## Manual set — Phase 7.2a, the ask path
+
+*HOW-WE-BUILD step 12. Written 13 September 2026, **while the work was fresh and before the UI
+exists** — which is the point: a list written after the screen tests the screen that was built,
+not the thing that was meant.*
+
+> ### ⛔ NONE OF THESE CAN BE RUN TODAY, and what each is blocked on is named.
+> The pure layer exists and is tested (`lib/switchAsk.ts`, `lib/basis.ts`, 38 tests). **The two
+> routes and the screen do not.** These cases are the acceptance criteria for when they do.
+
+### Case A — the first answer. THE ONE THAT MATTERS.
+
+*Blocked on: `GET /api/switches/ask`, `POST /api/switches/answer`, and the obligation recompute.*
+
+**Do this.** A company with nothing established. Open the questions screen. Answer the first
+question — it should be `has_employees` — with **yes**.
+
+**The perfect case, and all four parts must happen in ONE interaction:**
+
+1. The question disappears from the list.
+2. **Two more questions appear that were not there before** — `employee_count` and
+   `site_employee_count`, which depend on it.
+3. **The requirement list moves.** Measured against the real library: `has_employees = true`
+   moves **19 obligations** from *unknown* to *applies* for a two-site company.
+4. The screen says what just happened in a sentence — *"19 requirements now apply"* — rather
+   than silently re-rendering.
+
+**What it looks like when it is wrong, and each has a different cause:**
+
+| Symptom | Cause |
+|---|---|
+| **The list of questions is empty afterwards** | The recompute did not run. The children only become askable once the parent is known (`DECISIONS.md` §54) — this is the exact failure the recompute exists to prevent, and it makes the first interaction in the product produce nothing |
+| **Two questions appear but the requirement count does not change** | The answer was written and `close_and_replace_obligations` was not called. `obligations_stale: true` in the response is the honest signal; a screen ignoring it shows a stale list with no warning |
+| **More than two questions appear** | The unlock cascaded. §54 is one level — a grandchild arriving from one click is the too-much-asking failure `DETERMINATION-GATE.md` already refuses |
+| **The requirement list gets SHORTER** | Stop. Adding a fact can only settle an open question; nothing should move *off* the list. Measured across every pair of states: **zero** `applies → does_not_apply` transitions |
+
+### Case B — a blocked question is visibly blocked
+
+*Blocked on: `GET /api/switches/ask` and the screen.*
+
+**Do this.** With nothing established, look at the full question list rather than just the next one.
+
+**Perfect:** questions that cannot be answered yet are **shown and marked**, naming what blocks
+them — *"needs: are hazardous chemicals present at this site?"* — not hidden. A user should be
+able to tell the difference between *"there are only six questions"* and *"there are thirty and
+you can answer six of them today"*.
+
+**Wrong:** blocked questions are absent. The user cannot tell whether the product has a short
+list or is hiding most of it, and the ordering — which comes from the dependency graph, not from
+a preference — becomes invisible and therefore unarguable.
+
+**The edge case, and it is where domain knowledge does work no script replicates.** Answer
+`hazardous_chemicals_present` = **no**. The 21 switches that depend on it must **vanish entirely,
+not become blocked**. They are excluded, not waiting: a site with no hazardous chemicals is not
+"pending" a lead-exposure answer, and showing them as blocked puts them back in the queue the
+moment anything else changes. A chemical-industry reader spots this instantly; a test counting
+list length does not.
+
+### Case C — changing an answer you already gave
+
+*Blocked on: `POST /api/switches/answer` and the screen rendering `basis`.*
+
+**Do this.** Answer `hazardous_chemicals_present` = yes. Then change it to no.
+
+**Perfect:** the switch shows its current value, who established it, and — because it changed —
+**what it replaced**: *"User stated no on 2026-09-13, previously yes."* (`DECISIONS.md` §49, and
+`renderBasis()` already produces this sentence from the stored structure.) Changing it is
+possible from the same place the value is displayed.
+
+**Wrong, and the second is worse than the first:**
+
+- The value changes and **nothing records that it changed**. A requirement list that moved
+  overnight has no explanation on the row, and §49 exists precisely because a correction and an
+  unexplained change look identical afterwards.
+- **A later document overwrites it.** A person's answer is `user_locked`, and no automatic pass
+  may replace it. **And this is currently enforced in one library module and nowhere in the
+  database** — zero policies, zero constraints, zero triggers reference `user_locked`
+  (`AUDIT-CHECKS.md` check 24, `TODO.md` 7.2c). **Until that trigger exists, this case is the
+  only thing standing between a stated fact and an inference.**
+
+### Case D — what an unanswerable question looks like
+
+*Blocked on: the screen.*
+
+**Perfect:** `hazwaste_generator_category` is never asked. It is a monthly calculation, not a
+fact anyone holds, and `askableSwitches()` excludes it by `determination_source`.
+
+**Wrong:** it appears in the list. A user asked to state their generator category will guess,
+and a guess written as `stated` with `user_locked = true` outranks every later calculation.
 
 ---
 
