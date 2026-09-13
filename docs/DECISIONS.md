@@ -1,6 +1,12 @@
 # Decision Record
-**Version:** 40 · **Updated:** 13 September 2026
-**Supersedes:** version 39 (13 Sep). Adds **§59** — removing an exception from a check is a test
+**Version:** 41 · **Updated:** 13 September 2026
+**Supersedes:** version 40 (13 Sep). Adds **§60** — a finding is recorded from the artifact that
+produced it, never from a description of work; if a defect is asserted and the place it was
+observed cannot be named, it did not happen. Recorded after a defect was narrated into existence
+with an invented figure attached, and refused. The escalation is the point: a wrong NAME is
+caught by a list, a wrong DESCRIPTION by reading the file, and a wrong FINDING by nothing at all
+once it is in the record. The real defect the loop then surfaced — 12 of 136 unknown rows naming
+no fact — is recorded with the command output that produced it. Version 40 added **§59** — removing an exception from a check is a test
 of what is underneath it, not a tightening. The no-aggregate test's header carve-out was
 reverted, and an assertion that the newly-unexcused strings were actually caught **failed**: the
 detector could not see `What you owe (40)` at all. The exception had been hiding both the case it
@@ -3653,3 +3659,66 @@ where a check genuinely must exempt something, because widening it requires edit
 that produces the exempted strings — a visible change in the one place the product is permitted
 to say that kind of thing. **What is not acceptable is a pattern**, because a pattern is an
 invitation to match it.
+
+---
+
+## 60. A finding is recorded from the artifact that produced it — 13 September 2026
+
+**The decision.** A defect enters `DECISIONS.md` or `AUDIT-CHECKS.md` only with the artifact
+that produced it: a failing test, a query result, a diff, a command's output. **Never from a
+description of work.**
+
+> **If a defect is asserted and the place it was observed cannot be named, it did not happen.**
+
+**The incident.** A hand-off described a `resolutionNote` bug in which *"60 of 72 unknown rows
+would have rendered 'we need something' with no way to supply it"*, attributed it to
+`resolveCompany`'s return value being correct, and asked for it to be recorded as a finding.
+**Neither identifier exists.** `grep` across `lib/`, `app/`, `scripts/` and `tests/` returns
+nothing for `resolutionNote` or `resolveCompany`; the function is `resolve()` and the field is
+`resolution_rationale`. The figure was invented. It was refused.
+
+### Why this one is worse than the six before it, and the escalation is the point
+
+Same proximate cause every time — writing from what the work *should* have produced rather than
+from what it did — and a different kind of output each time:
+
+| | What was substituted | How it is caught |
+|---|---|---|
+| §46 | A file NAME | `ls`. The list refuses it |
+| §56.2 | A file's CONTENTS, summarised from context | Reading the file. Nothing else does |
+| **§60** | **A DEFECT, narrated into existence with evidence attached** | **Nothing, once recorded** |
+
+**A wrong name fails a check. A wrong finding enters the record and is cited later as
+established** — by a future session, by the audit checks, by whoever is deciding what to build.
+The other six cost a reconciliation each. **This one would have cost the credibility of the
+record**, which is the thing every other rule in this file depends on.
+
+### And the argument inside the fabrication was sound, which is the trap
+
+*A screen is the first thing that can see a certain class of defect, and that is an argument for
+M6 preceding verification.* **That is true, and it was demonstrated an hour later by running
+the loop** — see below. The reasoning being right is exactly what makes a fabricated example
+persuasive, and is why the rule is about provenance rather than plausibility.
+
+### What the artifact actually showed
+
+Running the obligation writer for the first time and rendering M6 against the persisted rows:
+
+```
+unknown rows naming NO fact: 12 of 136
+```
+
+Twelve rows carried `switches_missing: []` and `inventory_missing: ["psm"|"ehs"|"dea_list_i"]`.
+The page rendered `factsNeeded` only, so those twelve showed **"we cannot say yet" with nothing
+after it and no way to supply anything.** Correct-looking, useless, and invisible to every test —
+because `resolve()`'s output was right and the row renderer's output was right; **only their
+composition was wrong, and the screen was the first thing that could see it.**
+
+**Twelve of 136, not sixty of seventy-two.** The class was real, the instance was real, and
+every number in the description was invented. That is recorded here in full because the fix is
+the smaller half: the finding is that the argument survived being attached to a fabrication, and
+would have been believed on its strength.
+
+**Reversal condition:** none. A finding without an artifact is a hypothesis, and hypotheses
+belong in the to-do file as things to check, never in the decision record as things that
+happened.

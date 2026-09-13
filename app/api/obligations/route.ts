@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
         agency_id: string | null
       }
       const ev = evidenceFor[o.id] ?? null
-      const det = (o.determined_by ?? {}) as { switches_missing?: string[] }
+      const det = (o.determined_by ?? {}) as { switches_missing?: string[]; inventory_missing?: string[] }
       return {
         obligationId: o.id,
         requirementName: rt.requirement_name,
@@ -91,6 +91,7 @@ export async function GET(request: NextRequest) {
         nextExpiry: ev?.next_expiry ?? null,
         evidenceNames: [] as string[],
         factsNeeded: det.switches_missing ?? [],
+        inventoryNeeded: det.inventory_missing ?? [],
       }
     })
 

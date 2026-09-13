@@ -38,8 +38,10 @@ type SectionKey = (typeof SECTIONS)[number]['key']
 
 interface ApiRow extends RequirementRow {
   obligationId: string
-  /** Present on `unknown` rows: the facts that would settle it. */
+  /** Present on `unknown` rows: the switches that would settle it. */
   factsNeeded: string[]
+  /** And the inventory lists — 12 of 136 unknown rows have ONLY these. */
+  inventoryNeeded: string[]
 }
 
 interface Coverage {
@@ -189,12 +191,21 @@ function Row({ row }: { row: ApiRow }) {
         )}
       </dl>
 
-      {row.status === 'unknown' && row.factsNeeded.length > 0 && (
+      {row.status === 'unknown' && (
         /* The ask lives behind this: GET /api/switches/ask orders by the dependency graph and
            says what each unblocks. Rendering these as gaps would discard three fields that
-           already exist (§58.2). */
+           already exist (§58.2).
+           *** `inventoryNeeded` IS HERE BECAUSE THE SCREEN FOUND IT MISSING. *** 12 of 136
+           unknown rows name no SWITCH — they are blocked on a chemical inventory instead, and
+           an earlier version rendered nothing at all for them: "we cannot say yet", with no
+           way to supply anything. Correct-looking and useless. Every layer beneath was right;
+           the screen was the first thing that could see it. */
         <p className="mt-3 text-xs text-gray-500">
-          Waiting on: {row.factsNeeded.join(', ')}
+          {row.factsNeeded.length > 0
+            ? `Waiting on: ${row.factsNeeded.join(', ')}`
+            : row.inventoryNeeded.length > 0
+              ? 'Waiting on your chemical inventory — we need quantities, not just safety data sheets.'
+              : 'Waiting on a fact we cannot yet name. Please tell us what changed.'}
         </p>
       )}
 
