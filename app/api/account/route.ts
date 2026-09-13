@@ -209,6 +209,12 @@ const COMPANY_SCOPED_TABLES = [
 const DELETED_BY_CASCADE_OR_PARENT = [
   'checklist_items',       // deleted above by checklist_id, before its parent goes
   'obligation_evidence',   // deleted above by obligation_id, before its parent goes
+  'switch_determinations', // cascades with the company: company_id -> companies ON DELETE
+                           // CASCADE, checked in the database rather than assumed. Its other
+                           // FKs point AWAY from the tenant (documents, switches) or are
+                           // ON DELETE CASCADE (entities). company_switches references it
+                           // via determined_from ON DELETE SET NULL, and that table is named
+                           // in the loop above, so ordering cannot strand anything.
   'company_chemicals',     // cascades twice over, and both were checked in the database
                            // rather than assumed: entity_id -> entities ON DELETE CASCADE
                            // (and `entities` is named in the loop above, so the rows go

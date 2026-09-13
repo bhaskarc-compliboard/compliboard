@@ -1,6 +1,15 @@
 # Decision Record
-**Version:** 30 · **Updated:** 12 September 2026
-**Supersedes:** version 29 (12 Sep). **§38.2's entity_type table is corrected** — it carried
+**Version:** 32 · **Updated:** 12 September 2026
+**Supersedes:** version 31 (12 Sep). Adds §49: an overwritten fact carries what it overwrote.
+The overwrite is correct — a newer stated value outranks an older one — but a value that flips
+silently leaves a requirement list that changes silently, and for a fact whose family gates 35
+requirements that is the whole explanation somebody is looking for. Version 31 added §48: validate the STRUCTURE of an identifier before
+writing it, never after. §45 protects the direction we can see — an identifier matching nothing
+makes a requirement unreachable. §48 protects the one we cannot: a transposed digit is
+syntactically valid and semantically absent, and it can land on a different real substance,
+producing a confident answer about a chemical the site does not hold. Generalised to every
+structural property checkable without a reference lookup. Version 30: **§38.2's entity_type
+table is corrected** — it carried
 194-era counts and the library has been 200 live rows since migration 013. Proportions and
 decision unchanged. Recorded separately from the 7.2 build because someone reaching for that
 table while building would have sized the scope flattening against a library that no longer
@@ -2965,3 +2974,105 @@ table, `obligations` could become a current-state table and a genuine replace wo
 correct. That trade is worth considering only when the window columns are demonstrably the
 wrong shape for a real query someone needs — not for tidiness, and **not because the
 reconciliation is more code than a DELETE.** It is more code on purpose.
+
+---
+
+## 48. Validate the STRUCTURE of an identifier before writing it, never after — 12 September 2026
+
+**The decision.** Any identifier carrying a check digit has it verified **before** the value
+reaches the database. Not on read, not in a nightly sweep, not by the foreign key. Before the
+write. Today that is CAS registry numbers in `lib/sdsExtraction.ts`; the rule is general and
+applies to every identifier of this shape the product ever ingests — EPA IDs, DOT numbers, UN
+numbers, NAICS codes, EINs.
+
+**Why the foreign key is not enough, and this is the whole argument.** `DECISIONS.md` §45
+established that a CAS matching nothing in `regulated_substances` makes the row unevaluable, so
+`substance_inventory()` returns `unknown` and the requirement becomes **unreachable rather than
+wrongly cleared**. That is the safe failure, it is already handled, and it is the one people
+think of.
+
+**It is not the failure that matters.** A transposed digit is **syntactically valid and
+semantically absent** — it is a well-formed CAS that is simply not the substance in front of
+you. And a transposition can land on a *different real substance*:
+
+```
+7664-93-9   sulfuric acid          valid
+7664-39-3   hydrofluoric acid      valid
+```
+
+Two digits apart, both in the reference table, wildly different thresholds. That row does not
+produce `unknown`. It produces a **confident, correctly-typed, foreign-key-satisfying answer
+about a chemical the site does not hold** — and every downstream layer treats it as established
+fact, because by every structural test available it is one.
+
+> **§45 protects the direction we can see. This protects the direction we cannot.**
+>
+> An unmatched identifier announces itself by matching nothing. A *mis*-matched identifier
+> announces nothing at all, and the more complete the reference data becomes, the more likely a
+> typo is to land on something real. **The check improves with our data; the risk it guards
+> against grows with our data too.**
+
+**Why a check digit specifically.** It is arithmetic rather than judgement, costs nothing, needs
+no reference data, and catches most transpositions — the single most common transcription error
+and the one most likely to produce another valid identifier. It cannot catch everything, and it
+does not need to: it converts a class of silent wrong answers into a class of loud absences,
+which is the trade `CLAUDE.md` §3.2 asks for everywhere else.
+
+**What happens to a value that fails.** It is stored as **NULL**, never as-is, and **the raw
+string goes into `basis`** so a person can correct it. The row itself is **kept** — dropping the
+component would make the site look cleaner than it is, which is the false green this whole
+design exists to prevent (§45).
+
+**This is the model for the rest of Phase 7.2, and it generalises past identifiers:**
+
+> **Validate the structure of what you extracted before writing it, not after.** A value that is
+> well-formed and wrong is indistinguishable from a value that is well-formed and right, once it
+> is in the database. Every structural property that can be checked without a reference lookup —
+> a check digit, a date that parses, a number inside its own permitted range, an enum value in
+> its own allowed list, a quote that appears in the document it is quoted from — is checked at
+> the boundary, and a failure produces an absence rather than a value.
+
+**Reversal condition:** none for the check itself. If an identifier standard is ever adopted
+that has no check digit, the rule degrades to the other structural checks above rather than
+being waived. **What would NOT justify waiving it: the extraction model getting better.** A
+better model makes fewer transcription errors; it does not make a transposed digit detectable
+any other way.
+
+*Numbered 48 rather than 53: §47 was the highest section in the file, and 53 would have left
+§48–52 as gaps that a future cross-reference could point at.*
+
+---
+
+## 49. An overwritten fact carries what it overwrote — 12 September 2026
+
+**The decision.** When a person answers the same question twice and changes the answer,
+`company_switches.basis` records the previous value and the date: *"User stated false on
+2026-09-12, previously true. Question: …"*. Re-answering with the same value is not a change and
+gets no such clause.
+
+**The overwrite itself is correct and is not what this is about.** `DECISIONS.md` §24.1 — a
+stated value outranks an inferred one, and a newer stated value outranks an older one. A person
+correcting their own answer should win, immediately, over everything.
+
+**What was missing is that nobody could tell it had happened.** A switch value that silently
+flips leaves a requirement list that silently changes, and the two are separated by however long
+it takes someone to notice. For a fact like `hazardous_chemicals_present` — 8 requirements
+directly and **35 through the 21 switches that depend on it** — that is not a detail. It is the
+whole explanation for why somebody's compliance list looked different on Tuesday.
+
+**Why `basis` and not only the history table.** `switch_determinations` holds the full chain
+regardless (§47's shape), and it is the right place for an audit. But an audit is something you
+go and do; **`basis` is the sentence displayed next to the value on the switches screen**, and
+the question "why did my list change" is asked by someone looking at that screen, not by someone
+opening a history table they do not know exists. The cost is one string concatenation.
+
+**The general form, and it is the reason this is a decision rather than a nicety:**
+
+> **A correction and an unexplained change look identical after the fact.** Where a value may be
+> overwritten by an authority that is allowed to overwrite it, the record of what it replaced
+> travels with the new value — not in a separate table that has to be sought out.
+
+**Reversal condition.** If the switches screen ever shows the determination chain inline — every
+claim ever made about a fact, in order — this becomes redundant duplication and should be
+dropped rather than maintained in two places. Until then the row is the only surface a person
+sees, and it has to carry its own history.

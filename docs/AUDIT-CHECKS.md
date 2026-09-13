@@ -1,6 +1,14 @@
 # Audit Checks
-**Version:** 13 · **Updated:** 12 September 2026
-**Supersedes:** version 12 (12 Sep). **Check 22's query is corrected to use `aclexplode`** —
+**Version:** 15 · **Updated:** 12 September 2026
+**Supersedes:** version 14 (12 Sep). Adds **check 24** — `user_locked` has ZERO policies, ZERO
+constraints and ZERO triggers behind it. It is enforced in one library module, which under
+`CLAUDE.md` §3.6 is a route guard wearing a different coat: an honest `update company_switches`
+from a future route under a user token would replace a person's stated fact with an inference,
+and nothing would refuse it. Version 14 added **check 23** — what fraction of the switch vocabulary
+can actually be populated. **42 of 95 switches, 44.2%, have no determination path even after
+7.2 ships.** Recorded as a number rather than a note because it is a coverage claim of the same
+kind the coverage strip makes, and nothing anywhere returned a figure for it. Version 13:
+**Check 22's query is corrected to use `aclexplode`** —
 its first version pattern-matched the ACL text for `=X/` and reported a false alarm on a
 function whose grants were correct, because `postgres=X/postgres` contains that substring too.
 Caught by running the check against a known-good function. Check 10 re-run after 015 and 016:
@@ -981,6 +989,104 @@ by default. `npm run check` cannot see it, and RLS does not apply to a function 
 > which is check 14's category applied to SQL.** The migration is not being edited after the
 > fact; the correction is this check, and `TODO.md` 4.2b carries the revoke that will re-verify
 > properly.
+
+---
+
+## 23. What fraction of the switch vocabulary can we actually populate?
+
+```sql
+select determination_source,
+       count(*) as switches,
+       round(100.0 * count(*) / sum(count(*)) over (), 1) as pct
+  from public.switches group by 1 order by switches desc;
+```
+
+**Answer, 12 September 2026, both environments.**
+
+| `determination_source` | Switches | What populates it | Built? |
+|---|---|---|---|
+| `documents` | **53** | Phase 7.2's determination pass | being built |
+| `user_answer` | **29** | An ask path | ⬜ |
+| `profile` | **11** | Signup collecting the field | ⬜ |
+| `computed_by_requirement` | **2** | 6.3b wiring `produces_switch` | ⬜ |
+
+> ### **42 of 95 switches — 44.2% of the vocabulary — have NO determination path even after 7.2 ships.**
+
+**This is a coverage number and it belongs with the other coverage numbers.** `CLAUDE.md` §6
+says the product states plainly what is verified, partial and not built, and this is the same
+claim one layer down: *what fraction of the facts our own model is built on can we actually
+find out?* Someone should be able to ask that and get an answer rather than a note.
+
+**Three things the number makes visible that prose did not:**
+
+- **The document pass is the majority of the vocabulary but not the majority of the value.**
+  53 switches are document-sourced and they touch 88 of 199 requirements. The 29 `user_answer`
+  switches touch 36 and **fully resolve 31**. So 25 questions buy 31 requirements — about 1.2
+  each, which is an honest and modest return, and worth knowing before anyone designs a
+  25-question onboarding form.
+- **The 11 `profile` switches are the highest-leverage group and the smallest.** `has_employees`
+  and `employee_count` alone gate 49 requirements transitively, and nothing collects either.
+- **4 of the 29 `user_answer` switches are referenced by no requirement at all**, so an ask path
+  built over the whole set would ask four questions that change nothing.
+
+**Why nothing else catches it.** Every other check in this file asks whether what we have is
+right. This one asks how much of it we can ever have. A vocabulary can be complete, consistent,
+acyclic and fully expressed in the library — all of which is true today — and still be
+unpopulatable for 44% of its entries, with no query anywhere returning a number about it.
+
+**Re-run after any phase that adds a determination path**, and expect the figure to move in one
+direction only. If it ever rises, a switch was added without deciding how it gets answered.
+
+---
+
+## 24. Is `user_locked` protected by anything other than the application?
+
+```sql
+-- policies that mention it
+select policyname, cmd from pg_policies
+ where schemaname = 'public' and tablename = 'company_switches'
+   and (qual like '%user_locked%' or with_check like '%user_locked%');
+
+-- constraints or triggers that mention it
+select conname from pg_constraint
+ where conrelid = 'public.company_switches'::regclass
+   and pg_get_constraintdef(oid) like '%user_locked%';
+select tgname from pg_trigger t join pg_class c on c.oid = t.tgrelid
+ where c.relname = 'company_switches' and not t.tgisinternal;
+```
+
+**Answer, 12 September 2026, both environments: ZERO policies, ZERO constraints, ZERO triggers.**
+
+`company_switches_update` reads, in full:
+
+```
+USING       (company_id = auth_company_id())
+WITH CHECK  (company_id = auth_company_id())
+```
+
+**It checks tenancy and nothing else.** Any authenticated caller may update any row of their own
+company, including one a person has locked. **`user_locked` is enforced entirely in
+`lib/switchDetermination.ts`, and only for callers that go through it.**
+
+**Why this is the shape of gap worth a standing check.** The rule is real, it is written down
+(`DECISIONS.md` §24.1, §49), and it is obeyed by the one module that exists today. The failure
+mode is not that the rule is wrong — it is **a route written six months from now, by someone who
+does not know the rule exists, doing an honest `update company_switches set value = …` under a
+user token.** Nothing refuses it. RLS passes, the types pass, `npm run check` passes, and a
+person's stated fact is replaced by an inference with no error anywhere.
+
+`CLAUDE.md` §3.6 is explicit that **RLS is the security boundary and route guards are a UX
+affordance**. A rule that lives only in one library module is a route guard wearing a different
+coat.
+
+**The fix, when it is done, is a trigger rather than a policy** — a policy cannot compare the old
+row to the new one, and the rule is *"you may not change `value` on a row where `user_locked` is
+true unless you are also setting it from a `user_set` source"*, which is a statement about the
+transition. Filed as `TODO.md` 7.2c.
+
+**Until then this check is the control**, and it must be re-run whenever a route gains write
+access to `company_switches`. A non-zero answer to any of the three queries means the gap has
+been closed and this check should record how.
 
 ---
 

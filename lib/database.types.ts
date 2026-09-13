@@ -533,7 +533,9 @@ export type Database = {
           confidence: Database["public"]["Enums"]["switch_confidence"] | null
           created_at: string
           determined_at: string | null
+          determined_from: string | null
           entity_id: string | null
+          evidence_class: Database["public"]["Enums"]["evidence_class"] | null
           expires_at: string | null
           id: string
           scope: Database["public"]["Enums"]["switch_scope"]
@@ -550,7 +552,9 @@ export type Database = {
           confidence?: Database["public"]["Enums"]["switch_confidence"] | null
           created_at?: string
           determined_at?: string | null
+          determined_from?: string | null
           entity_id?: string | null
+          evidence_class?: Database["public"]["Enums"]["evidence_class"] | null
           expires_at?: string | null
           id?: string
           scope: Database["public"]["Enums"]["switch_scope"]
@@ -567,7 +571,9 @@ export type Database = {
           confidence?: Database["public"]["Enums"]["switch_confidence"] | null
           created_at?: string
           determined_at?: string | null
+          determined_from?: string | null
           entity_id?: string | null
+          evidence_class?: Database["public"]["Enums"]["evidence_class"] | null
           expires_at?: string | null
           id?: string
           scope?: Database["public"]["Enums"]["switch_scope"]
@@ -585,6 +591,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_switches_determination_fkey"
+            columns: ["determined_from", "evidence_class"]
+            isOneToOne: false
+            referencedRelation: "switch_determinations"
+            referencedColumns: ["id", "evidence_class"]
           },
           {
             foreignKeyName: "company_switches_entity_id_fkey"
@@ -1624,6 +1637,92 @@ export type Database = {
         }
         Relationships: []
       }
+      switch_determinations: {
+        Row: {
+          company_id: string
+          confidence: Database["public"]["Enums"]["switch_confidence"] | null
+          created_at: string
+          determined_at: string
+          document_id: string | null
+          entity_id: string | null
+          evidence_class: Database["public"]["Enums"]["evidence_class"]
+          id: string
+          locator: string | null
+          model: string | null
+          prompt_sha256: string | null
+          quote: string | null
+          reasoning: string | null
+          source: Database["public"]["Enums"]["switch_value_source"]
+          switch_id: string
+          value: string | null
+        }
+        Insert: {
+          company_id: string
+          confidence?: Database["public"]["Enums"]["switch_confidence"] | null
+          created_at?: string
+          determined_at?: string
+          document_id?: string | null
+          entity_id?: string | null
+          evidence_class: Database["public"]["Enums"]["evidence_class"]
+          id?: string
+          locator?: string | null
+          model?: string | null
+          prompt_sha256?: string | null
+          quote?: string | null
+          reasoning?: string | null
+          source: Database["public"]["Enums"]["switch_value_source"]
+          switch_id: string
+          value?: string | null
+        }
+        Update: {
+          company_id?: string
+          confidence?: Database["public"]["Enums"]["switch_confidence"] | null
+          created_at?: string
+          determined_at?: string
+          document_id?: string | null
+          entity_id?: string | null
+          evidence_class?: Database["public"]["Enums"]["evidence_class"]
+          id?: string
+          locator?: string | null
+          model?: string | null
+          prompt_sha256?: string | null
+          quote?: string | null
+          reasoning?: string | null
+          source?: Database["public"]["Enums"]["switch_value_source"]
+          switch_id?: string
+          value?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "switch_determinations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "switch_determinations_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "switch_determinations_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "switch_determinations_switch_id_fkey"
+            columns: ["switch_id"]
+            isOneToOne: false
+            referencedRelation: "switches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       switches: {
         Row: {
           allowed_values: string[]
@@ -1718,6 +1817,7 @@ export type Database = {
         | "equipment"
         | "person"
         | "product"
+      evidence_class: "stated" | "implied" | "inferred" | "absent"
       evidence_contribution:
         | "satisfies"
         | "partially_satisfies"
@@ -1906,6 +2006,7 @@ export const Constants = {
         "person",
         "product",
       ],
+      evidence_class: ["stated", "implied", "inferred", "absent"],
       evidence_contribution: [
         "satisfies",
         "partially_satisfies",
