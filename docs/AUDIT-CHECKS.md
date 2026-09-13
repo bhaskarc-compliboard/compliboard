@@ -1,6 +1,10 @@
 # Audit Checks
-**Version:** 22 · **Updated:** 13 September 2026
-**Supersedes:** version 21 (13 Sep). Adds **check 28** — can every condition in the library ever be
+**Version:** 23 · **Updated:** 13 September 2026
+**Supersedes:** version 22 (13 Sep). Checks **27 and 28 now carry a PRODUCTION answer**, run there
+after migration 023 rather than inferred from staging: 27 passes identically on both sides, and 28
+returns **the same 22 mismatched clauses**, because it is the same library. Nobody has been shown
+those wrong answers only because no production company has computed obligations — timing, not a
+control. Version 22: Adds **check 28** — can every condition in the library ever be
 TRUE? **22 of 216 switch clauses cannot**, 17 of them comparing the `hazwaste_generator_category`
 enum with a boolean, so **a large-quantity generator receives zero hazardous-waste obligations**
 and is told so with a confident sentence. Found by a ten-minute domain read of the rendered
@@ -1277,7 +1281,16 @@ client must be `true` in column 2. Column 3 is the one that needs judgement, and
 > a defect. **A check whose recorded answer is an expectation is not a check** (`DECISIONS.md`
 > §60).
 
-**Production: not yet — 023 is not applied there.** This check must be re-run there the day it is.
+**Answer on PRODUCTION, 13 September 2026, after 023 — re-run, not assumed:**
+
+```
+close_and_replace_obligations   authenticated: true   anon/PUBLIC: false
+substance_inventory             authenticated: true   anon/PUBLIC: false
+auth_company_id                 authenticated: true   anon/PUBLIC: true   (deliberate, see above)
+create_primary_site / set_updated_at / array_is_ascending   anon: true   (triggers + pure helper)
+```
+
+**Identical to staging, six functions on both sides.**
 
 **Why this check exists.** Both functions were `service_role`-only, and `/api/obligations`
 connects **as the caller**. Every first GET returned `42501 permission denied` — on production
@@ -1372,9 +1385,15 @@ it was asked. **Every layer is right and the claim is wrong**, which is the same
 absence of evidence must never produce a clear; this is worse, because it is *presence* of
 evidence producing a clear that contradicts the evidence.
 
-**Production: same library, same defect** — 205 rows are byte-identical across both environments.
-No production customer has computed obligations yet, so nobody has been told this. That is timing,
-not a control.
+**Answer on PRODUCTION, 13 September 2026 — the same query, run there:**
+
+```
+mismatched_clauses: 22
+```
+
+**Identical, because it is the same library** — 205 rows, byte-identical across both environments.
+No production customer has computed obligations yet, **so nobody has been told this. That is
+timing, not a control**, and it is why `TODO.md` 6.4c gates showing `does_not_apply` to anyone.
 
 ---
 

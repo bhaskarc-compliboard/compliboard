@@ -1,6 +1,8 @@
 # Testing
-**Version:** 13 · **Updated:** 13 September 2026
-**Supersedes:** version 12 (13 Sep). Records the **first run: E, F, G and I pass functionally.**
+**Version:** 14 · **Updated:** 13 September 2026
+**Supersedes:** version 13 (13 Sep). Records Case F **in the data** — Beta ends at open 0, closed 1,
+the seeded obligation closed rather than deleted — and that Beta resolving to zero made Case I's
+second empty state render **for the first time**, which was unreachable before 023. Version 13: Records the **first run: E, F, G and I pass functionally.**
 Case E found a 500 on its first fixture (migration 023), and **Case G's domain half found the
 library defect that 199 expression reviews had missed** — the argument for the manual set,
 demonstrated. Version 12: Adds the **manual set for Phase 4.3 and M6** — five cases,
@@ -432,6 +434,13 @@ after migration 023.
 | **G** — every claim traces to a fact | **pass mechanically** — every `does_not_apply` names a switch and a value, with a correction affordance. **See below for the domain half** |
 | **I** — the empty state is two claims | **pass** — both sentences render correctly |
 | **H** — the twelve inventory rows | not re-run; last measured 124 / 12 / 0 on Alpha |
+
+**Case F, proved in the data rather than on screen.** Beta after the run: **open 0, closed 1.**
+The hand-seeded *"Adverse-reaction allegation records"* row carries `applicable_to`, not deletion.
+And Beta resolves to **zero** obligations — all 200 live library rows are
+`chemical-manufacturing` — so Case I's second sentence, *"we worked it out and found none that
+apply"*, **rendered for the first time.** It had never been reachable before 023, because the
+route returned 500 before it could be shown.
 
 **Case E found the 500 that migration 023 fixed** — on its first run, its first fixture, against
 the first non-chemical company the writer had ever seen (`DECISIONS.md` §63).

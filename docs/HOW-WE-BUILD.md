@@ -1,7 +1,15 @@
 # How We Build CompliBoard
 
-**Version:** 10 · **Updated:** 13 September 2026
-**Supersedes:** version 9 (13 Sep). §4 gains **the required shape of a production pre-flight** —
+**Version:** 11 · **Updated:** 13 September 2026
+**Supersedes:** version 10 (13 Sep). Adds **§3a, the found-by-rendering class** — a defect where
+every layer returns correctly and the loss is downstream, so no unit test can see it and a screen
+is the first instrument that can. **Demonstrated twice on 13 Sep**: a composition defect whose unit
+test asserted the bug and passed, and a content defect that ten minutes of domain reading found
+after 199 expression reviews had not. The argument for building the screen before verifying the
+content beneath it, now demonstrated rather than predicted. §4's pre-flight section records that
+**the printed-inputs shape held the one time it was tested** — an abort on a reported filename
+mismatch, settled by one `ls` and one `git log`, with the name appearing zero times anywhere.
+Version 10: §4 gains **the required shape of a production pre-flight** —
 it prints both inputs in full and derives the pending list in front of the reader, as
 `npm run preflight`. Six naming failures in two days survived four tightenings of the rule,
 because the problem was never the rule: a summary written from context was wearing the costume
@@ -237,6 +245,45 @@ written about what was remembered.
 
 ---
 
+## 3a. THE FOUND-BY-RENDERING CLASS — a defect every test passes
+
+**A defect where every layer returns correctly and the loss is in what happens between them.** No
+unit test can see it, because no unit is wrong. **A screen is the first instrument that can.**
+
+**Demonstrated twice on 13 September, and neither was predicted:**
+
+**1. The composition defect.** 12 of Test Alpha's 136 `unknown` rows named no fact and offered a
+question nothing could answer. `resolve()` returned `inventory_missing` correctly; `renderUnknown()`
+returned a well-formed row correctly. **Only the join between them was wrong** — and the unit test
+asserted the defect as the contract and passed, because it never set `factsNeeded`. Found by
+rendering the persisted rows. `DECISIONS.md` §61.
+
+**2. The content defect.** Cases E, F, G and I passed; the mechanism was sound at every layer.
+**Ten minutes of domain reading of the rendered rows then found three shapes of wrong rule that
+199 expression reviews had not**, and the sweep it prompted found that 22 of 216 switch clauses
+can never be true — **a large-quantity generator receives zero hazardous-waste obligations and is
+told so in a confident sentence.** `DECISIONS.md` §64, check 28.
+
+> **The two are the same class at different depths.** In the first the code was right and the
+> composition was wrong. In the second the code AND the composition were right and **the claim
+> about the world was wrong.** Neither is reachable by testing the parts, because in both cases
+> every part passes its own test — and in both cases the failure was legible in one sentence the
+> moment it was rendered for a person.
+
+**What follows for the order of work.** This is the argument for **building the screen before
+verifying the content beneath it**, and it is now demonstrated rather than predicted. A screen is
+not the last step of a module; it is the cheapest available instrument for a class of defect that
+has no other observer. When the choice is between more unit coverage of a correct function and
+rendering the output for somebody who knows the subject, **render it**.
+
+**And the corollary, which is the uncomfortable half:** a passing suite says nothing about this
+class. 250 tests were green the whole time. `npm run check` cannot make an authenticated request
+(§63), cannot compare a literal's type to a switch's (§64), and cannot read a sentence and ask
+whether it is true of a real business. **Those are three separate blind spots and only the first
+is closeable by writing more tests.**
+
+---
+
 ## 4. The two databases
 
 **Staging and production are separate Supabase projects in different regions.** They must stay structurally identical; the object comparison is how that is known rather than assumed.
@@ -293,6 +340,27 @@ printed, so an unexpected pending set is visible without trusting anything.
 **The cost is not the wasted reconciliation. It is the guard.** Its entire value is that an unexpected file list means *stop*. A pre-flight that paraphrases filenames — approximate numbering, a descriptive name for what the work was called while it was being done, two logical pieces written as two files when they shipped as one — makes every list look unexpected. The second false alarm is annoying; by the third the list stops being read, and the one real mismatch goes through. **A guard that cries wolf is worse than no guard, because no guard is at least known to be absent.**
 
 This is the same class as writing a summary from recollection rather than from the database (§7). The fix is identical in shape: `ls` the directory and paste what it says. It costs one command.
+
+> ### IT HELD, ON THE ONE OCCASION THAT TESTED IT — 13 Sep
+>
+> A production apply was aborted on a reported mismatch: *"the pre-flight said
+> `023_replace_obligations_explicit_company.sql`, the prompt listed
+> `023_caller_may_compute_own_obligations.sql`."* The reasoning attached was exactly the failure
+> this section exists to catch — *"either the listing printed one name and the derivation wrote
+> another, or the listing did not contain what was claimed."*
+>
+> **Neither had happened, and settling it took one `ls` plus one `git log`.** The name appears
+> **0 times** on disk, **0 times** in git history on any branch, and **0 times** in the
+> pre-flight's output — which emits exactly one 023 filename, twice, in the listing and in the
+> derived line. `git log --follow` shows status `A`, never a rename; the file's sha256 is
+> unchanged since the commit that shipped it to staging.
+>
+> **That is the shape working, not failing.** Both inputs were on the page, so the derived line
+> was checkable against them in one glance, and the check cost a directory listing rather than a
+> reconciliation. **And aborting was right regardless of whether the mismatch was real** — a
+> migration not applied costs one message; a migration applied from a misread name costs whatever
+> it does. `DECISIONS.md` §65 records it as the third fabrication and extends the rule: **a
+> composed filename is a described artifact, not a copied one.**
 
 ---
 

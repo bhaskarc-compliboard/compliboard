@@ -1,6 +1,11 @@
 # Detailed To-Do
-**Version:** 17 · **Updated:** 13 September 2026
-**Supersedes:** version 16 (13 Sep). Cases E, F, G and I **pass** — the mechanism is sound. Adds
+**Version:** 18 · **Updated:** 13 September 2026
+**Supersedes:** version 17 (13 Sep). Sweep. **7.2a, 7.3, M6 and 4.3 are complete and on both
+environments** (000–023, 0 object differences), and the manual set has been run by a person for
+the first time — Cases E, F, G and I pass. **What is next by dependency has changed now that a
+screen exists**: it is no longer infrastructure but **6.4c, the library-quality revision**, which
+gates showing `does_not_apply` to any customer — 22 of 216 clauses can never be true, plus three
+type-correct shapes no query can find. The gate is still at one item. Version 17: Cases E, F, G and I **pass** — the mechanism is sound. Adds
 **6.4c, the library-quality revision**, now the largest item in phase 6: **22 of 216 switch clauses
 can never be true** (a large-quantity generator gets zero hazardous-waste obligations), plus three
 type-correct shapes no query can find, all surfaced by a ten-minute domain read of the rendered
@@ -127,25 +132,34 @@ numbering** — `BUILD-PLAN.md`'s differs for five of them, see the table above.
 | **11+ — Later** | ⬜ |
 | **MODULES M1–M8** | ⬜ the seven product modules, built last |
 
-### What is genuinely next, BY DEPENDENCY rather than by number
+### What is genuinely next, BY DEPENDENCY rather than by number — rewritten 13 Sep
 
-**The situation in one line: resolution works, determination works, and a user can see neither.**
-`obligations` is 0 rows on production and 0 on staging; nothing writes a switch value; no screen
-renders an obligation. Two engines, no surface.
+**The previous version of this section said: *"resolution works, determination works, and a user
+can see neither. Two engines, no surface."* All four items it listed are done.** 7.2a shipped the
+routes, M7's three questions are answerable through the ask path, M6 renders, and 4.3 writes. A
+person has run the whole chain in a browser.
 
-1. **7.2a — the routes.** The shortest path from "the logic exists" to "a person changed a
-   value and watched their list move". Everything under it is already tested.
-2. **M7's three questions.** `has_employees`, `employee_count`, `site_employee_count` gate 53
-   requirements and are **onboarding fields, not documents** — one question moved 19 obligations
-   where three SDSs moved none. This outranks most of Phase 7 on value per day.
-3. **6.4b — seed `regulated_substances`.** 15 requirements are blocked on an empty reference
-   table, for **every customer at once**, with no question asked.
-4. **M6's requirements screen.** Until something renders an obligation, none of the above is
-   visible to anybody outside a test script.
+**The situation now, in one line: the machinery is trustworthy and the content it carries is
+not.** And that inverts the ordering, because **the constraint is no longer structural.**
 
-**What is NOT next, despite being numbered earlier:** 4.3, 4.4, 5, 7.1 and 7.3 all add capability
-to layers that already work and are unrendered. `DECISIONS.md` §18 — horizontal first — was
-written when the ground was still moving. It has stopped.
+1. **6.4c — the library revision. THE ONLY THING THAT MATTERS.** 22 of 216 switch clauses can
+   never be true; a large-quantity generator receives zero hazardous-waste obligations and is told
+   so confidently. Plus three type-correct shapes no query can find. **Nothing else on this list
+   is worth doing while the product's confident negatives are wrong**, because every other item
+   makes those wrong answers reach more people, faster.
+2. **6.4b — seed `regulated_substances`.** 15 requirements blocked on an empty reference table for
+   **every customer at once**, with no question asked. This is also the 12 rows Alpha shows as
+   *"waiting on your chemical inventory"* — the only unknown rows no question can unblock.
+3. **6.4a — the six low-confidence conditions**, four of which are one missing input (NAICS).
+4. **M7's onboarding.** `has_employees` and the two employee counts gate 53 requirements and are
+   form fields, not documents — one question moved 19 obligations where three SDSs moved none.
+   Cheap, and it is what makes a new company's first screen non-empty.
+
+**What is NOT next, despite being numbered earlier:** 4.4, 5, 6.5–6.9, 7.1 and the remaining
+modules. `DECISIONS.md` §18 — horizontal first — was written when the ground was moving; it
+stopped, and the order is now set by *what makes the product's claims true* rather than by what is
+unbuilt. **6.4c is a content problem, and it is the first time this project's critical path has
+been one.**
 
 
 ## ⛔ GATE — THESE LAND BEFORE THE FIRST REAL CUSTOMER DOCUMENT

@@ -1,6 +1,10 @@
 # Decision Record
-**Version:** 45 · **Updated:** 13 September 2026
-**Supersedes:** version 44 (13 Sep). Adds **§64** — Cases E, F, G and I pass and the mechanism is
+**Version:** 46 · **Updated:** 13 September 2026
+**Supersedes:** version 45 (13 Sep). Adds **§65** — the three fabrications of 13 September in one
+place, with the rule stated once and extended: **a composed filename is a described artifact, not
+a copied one.** Each was settled by one `grep`, one query or one `ls`. Records that the third
+arrived as an ABORT rather than a request, that aborting was right regardless, and that twice now
+a wrong mechanism has carried a correct principle. Version 45 added **§64** — Cases E, F, G and I pass and the mechanism is
 sound; **the content is not.** A ten-minute domain read of the rendered screen found three shapes
 of wrong rule that 199 expression reviews did not, and the sweep it prompted found worse: **22 of
 216 switch clauses can never be true**, so **a large-quantity generator receives zero
@@ -3841,6 +3845,13 @@ Four tests now hold it, including one asserting that **every** `unknown` row nam
 for, and one that the no-name case offers no action. `npm run check`: 96 files, 28 tables,
 **242 tests**, build compiled.
 
+> **Later, on the same day: that "28 tables" was the CHECKER's error, not a stale note.** The
+> database holds 26 tables and 1 view. `check-schema-contracts.js` was counting its own
+> `__views__` sentinel alongside the real relations, and the wrong headline had been quoted into
+> commit messages and documents all day before anyone subtracted it from a catalog query. It now
+> prints `27 relations (26 tables + 1 view)`. **The 242 is correct for the date and is left as
+> written** — a measurement records when it was taken. §65.
+
 **Also moved:** the waiting sentence now lives in `lib/requirementsView.ts` rather than in
 `app/requirements/page.tsx`. That module's own header says the page composes and does not
 phrase; the previous day's fix had put wording in the page, which is exactly why the follow-on
@@ -4108,3 +4119,64 @@ claim on the product's own authority.
 **Reversal condition:** none on the finding. On the method — if a future domain read of a
 rendered screen produces nothing in an hour, that is evidence the expressions have converged and
 the review can go back to being periodic rather than gating.
+
+---
+
+## 65. The three fabrications of 13 September, and the rule that covers all of them — 13 September 2026
+
+**This section exists so the rule is stated once and the instances are countable.** §60 records
+the first and states the rule; this records all three together, because the third arrived in a
+form the first two did not predict.
+
+> ### A finding is recorded from the ARTIFACT that produced it — a failing test, a query result,
+> a diff, a command's output. **Never from a description of work.**
+>
+> **If a defect is asserted and the place it was observed cannot be named, it did not happen.**
+>
+> **And a composed filename is a described artifact, not a copied one.** That is the extension
+> the third instance forced: the rule was written about findings, and a NAME is the same failure
+> with less text attached.
+
+### The three, in order, with what settled each
+
+| # | What was asserted | What settled it | Cost |
+|---|---|---|---|
+| **1** | A `resolutionNote` defect in `resolveCompany`, *"60 of 72 unknown rows"* | `grep` — **neither identifier exists**; the function is `resolve()`, the field is `resolution_rationale` | one grep. §60 |
+| **2** | *"Fix the 13 rows: a switch with no `company_switches` row does not name itself"* | A query — the count is **12**, and **all 72** missing switches name themselves correctly | one query. §61 |
+| **3** | *"The pre-flight said `023_replace_obligations_explicit_company.sql`"* | `ls`, `git log --all --diff-filter=A`, and re-running the pre-flight — the name appears **0 times** on disk, **0 times** in history on any branch, **0 times** in the pre-flight's output, which emits one 023 filename **twice** | one `ls`. This section |
+
+### Why the third is the interesting one, and it is not the worst
+
+**It arrived as an abort, not as an instruction.** The reasoning attached to it was a real failure
+mode, precisely stated — *"either the listing printed one name and the derivation wrote another,
+or the listing did not contain what was claimed"* — and that is a genuine class of pre-flight bug
+worth guarding against. **It simply had not occurred.** The printed-inputs shape (§56) did exactly
+what it was built to do: both INPUTS were on the page, so the derived line was checkable against
+them without trusting the script, and checking it cost one directory listing.
+
+**So the escalation of §60 does not continue upward here.** The order of severity is by what
+catches each, and the third is the *easiest* to catch:
+
+```
+a wrong NAME        -> caught by a list                      (§46, and this)
+a wrong DESCRIPTION -> caught only by reading the file       (§56.2)
+a wrong FINDING     -> caught by nothing, once recorded      (§60)
+```
+
+**What the third adds is that a fabrication can also be defensive** — a stop rather than a
+request — and that the correct response is identical: verify read-only, report what the artifacts
+say, change nothing. **Aborting on a suspected mismatch was right regardless of whether the
+mismatch was real.** A production migration not applied costs one message; a production migration
+applied from a misread name costs whatever it did.
+
+### The one that was NOT a fabrication, and belongs beside them
+
+§63's diagnosis — *"the guard derives identity from the payload"* — was also wrong, and is a
+different thing: **a wrong mechanism attached to a real defect.** The 500 existed, and
+*"validate it against the caller"* was the correct fix. So was §61's *"an affordance with nothing
+behind it is worse than no affordance"*, which found a genuine defect one layer from where it was
+aimed. **Twice now, a wrong mechanism has carried a right principle**, which is the argument for
+checking the mechanism cheaply rather than for discounting the direction.
+
+**Reversal condition:** none. The rule costs a grep, an `ls` or a query per assertion, and every
+instance so far has been settled by one of those three in under a minute.
