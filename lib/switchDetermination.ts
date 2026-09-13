@@ -17,6 +17,7 @@
  */
 
 import type { ObligationStatus } from './resolve.ts'
+import { userAnswerBasis, type Basis } from './basis.ts'
 
 export type EvidenceClass = 'stated' | 'implied' | 'inferred' | 'absent'
 export type Confidence = 'high' | 'medium' | 'low'
@@ -212,9 +213,8 @@ export function fromUserAnswer(
   value: string,
   question: string,
   previous?: { value: string | null; at?: string | null } | null,
-): Determination & { setsUserLocked: true; basis: string } {
-  const today = (previous?.at ?? new Date().toISOString()).slice(0, 10)
-  const changed = previous && previous.value !== null && previous.value !== value
+): Determination & { setsUserLocked: true; basis: Basis } {
+  const at = (previous?.at ?? new Date().toISOString()).slice(0, 10)
   return {
     switchId,
     value,
@@ -225,12 +225,10 @@ export function fromUserAnswer(
     quote: null,
     locator: null,
     reasoning: `Answered by a person: "${question}"`,
-    // The sentence a person reads on the switches screen. It states who said it, when, and —
-    // when it is a change — what it replaced, so the answer to "why did my list change" is on
-    // the row rather than in a table nobody thinks to open.
-    basis: changed
-      ? `User stated "${value}" on ${today}, previously "${previous!.value}". Question: "${question}"`
-      : `User stated "${value}" on ${today}. Question: "${question}"`,
+    // STRUCTURED, not a sentence — migration 018 made `basis` jsonb. The sentence a person
+    // reads comes from renderBasis(), so there is one place to change the wording and the
+    // two cannot drift. `previous_value` appears only on a real change (§49).
+    basis: userAnswerBasis(question, value, previous?.value ?? null, at),
     setsUserLocked: true,
   }
 }

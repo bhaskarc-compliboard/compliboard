@@ -528,7 +528,7 @@ export type Database = {
       }
       company_switches: {
         Row: {
-          basis: string | null
+          basis: Json | null
           company_id: string
           confidence: Database["public"]["Enums"]["switch_confidence"] | null
           created_at: string
@@ -547,7 +547,7 @@ export type Database = {
           value: string | null
         }
         Insert: {
-          basis?: string | null
+          basis?: Json | null
           company_id: string
           confidence?: Database["public"]["Enums"]["switch_confidence"] | null
           created_at?: string
@@ -566,7 +566,7 @@ export type Database = {
           value?: string | null
         }
         Update: {
-          basis?: string | null
+          basis?: Json | null
           company_id?: string
           confidence?: Database["public"]["Enums"]["switch_confidence"] | null
           created_at?: string

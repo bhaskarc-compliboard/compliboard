@@ -1,6 +1,9 @@
 # Decision Record
-**Version:** 35 · **Updated:** 13 September 2026
-**Supersedes:** version 34 (13 Sep). Adds **§55** — the whole-company recompute measured rather
+**Version:** 36 · **Updated:** 13 September 2026
+**Supersedes:** version 35 (13 Sep). Adds **§46.3** — the extended pre-flight rule fired
+correctly on its first real test, and caught something the original could not: a correctly
+spelled name for a file that did not exist. Only subtracting the applied set from the directory
+tells that apart from a correctly spelled name for a real one. Version 35 added **§55** — the whole-company recompute measured rather
 than noted: 221 obligation rows touched per answer for a 2-site company, 19 of them changed,
 **10.6× amplification**, and ~2,652 rows over a twelve-question session. Accepted for now, with
 the reason it is not fixed stated as a correctness argument rather than a scheduling one: a
@@ -3060,6 +3063,36 @@ any other way.
 
 *Numbered 48 rather than 53: §47 was the highest section in the file, and 53 would have left
 §48–52 as gaps that a future cross-reference could point at.*
+
+### 46.3 The extended rule fired correctly, on its first real test — 13 September 2026
+
+**§46.1 said a pre-flight must list what the TOOL will list — the set difference between the
+directory and the target's migration history — rather than naming files from the directory.
+Its first real test was a case where the two answers differed, and the diff was right.**
+
+A hand-off called for shipping "migration 018". **The directory contained no 018.** Reading the
+directory alone would have produced either a confused report or, worse, a plausible-looking list
+built from the highest number present. The diff answered flatly:
+
+```
+on disk : 18        applied on prod : 18
+PENDING = on disk MINUS applied:   (none)
+count pending: 0
+```
+
+**Zero pending is a fact about the relationship between the repo and one database, and it was
+the truth**: 017 had gone up two turns earlier and nothing had been written since. The
+instruction was acting on a migration that had been *specified* in §50 and never *created* —
+and the diff made that visible in one line rather than after an attempted push.
+
+**What this adds to §46 and §46.1.** The first three firings were about names that did not match
+a file. **This one was about a file that did not exist at all**, which the name-checking rule
+could not have caught: a correctly-spelled name for a non-existent file reads exactly like a
+correctly-spelled name for a real one. **Only subtracting the applied set from the directory
+distinguishes them.**
+
+The migration was then written, which is the right outcome — but it was written *knowing* it did
+not exist, rather than discovered missing by a failing push.
 
 ---
 

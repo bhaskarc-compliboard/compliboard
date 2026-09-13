@@ -12,6 +12,7 @@ import {
   decideOutcome, fromUserAnswer, reconcileNumeric, removesAnObligation,
   type Determination, type StoredValue,
 } from '../../lib/switchDetermination.ts'
+import { renderBasis, type Basis } from '../../lib/basis.ts'
 
 const doc = (over: Partial<Determination> = {}): Determination => ({
   switchId: 'air_permit_required', value: 'standard_acdp', evidenceClass: 'stated',
@@ -175,34 +176,36 @@ describe('removesAnObligation', () => {
 
 describe('an overwrite carries what it overwrote — DECISIONS §49', () => {
   const Q = 'Are hazardous chemicals present at this site?'
+  const say = (d: { basis: Basis }, v: string) => renderBasis(d.basis, v)
 
   test('a first answer states value and date, with no "previously"', () => {
     const d = fromUserAnswer('hazardous_chemicals_present', 'true', Q, null)
-    assert.match(d.basis, /^User stated "true" on \d{4}-\d{2}-\d{2}\. Question: /)
-    assert.doesNotMatch(d.basis, /previously/)
+    assert.equal(d.basis.kind, 'user_answer')
+    assert.equal('previous_value' in d.basis, false)
+    assert.match(say(d, 'true'), /^User stated "true" on \d{4}-\d{2}-\d{2}\. Question: /)
   })
 
-  test('CHANGING an answer records what it replaced', () => {
-    const d = fromUserAnswer('hazardous_chemicals_present', 'false', Q,
-      { value: 'true', at: '2026-09-12' })
-    assert.match(d.basis, /User stated "false" on 2026-09-12, previously "true"/,
-      'without this, a list that changed overnight has no explanation on the row')
-    assert.match(d.basis, /Are hazardous chemicals present/)
+  test('CHANGING an answer records what it replaced — in the STRUCTURE, not the prose', () => {
+    const d = fromUserAnswer('hazardous_chemicals_present', 'false', Q, { value: 'true', at: '2026-09-13' })
+    assert.equal(d.basis.previous_value, 'true',
+      'the previous value must be a field, so "which switches changed" is a query')
+    assert.match(say(d, 'false'), /User stated "false" on 2026-09-13, previously "true"/)
   })
 
   test('re-answering with the SAME value is not a change', () => {
-    const d = fromUserAnswer('x', 'true', Q, { value: 'true', at: '2026-09-12' })
-    assert.doesNotMatch(d.basis, /previously/, 're-confirming is not changing your mind')
+    const d = fromUserAnswer('x', 'true', Q, { value: 'true', at: '2026-09-13' })
+    assert.equal('previous_value' in d.basis, false)
+    assert.doesNotMatch(say(d, 'true'), /previously/)
   })
 
-  test('a previous NULL is not a change either — there was nothing to replace', () => {
-    const d = fromUserAnswer('x', 'true', Q, { value: null, at: '2026-09-12' })
-    assert.doesNotMatch(d.basis, /previously/)
+  test('a previous NULL is not a change either', () => {
+    const d = fromUserAnswer('x', 'true', Q, { value: null, at: '2026-09-13' })
+    assert.equal('previous_value' in d.basis, false)
   })
 
-  test('the question is always in the basis, so the answer can be read in context', () => {
-    for (const prev of [null, { value: 'false', at: '2026-09-12' }]) {
-      assert.match(fromUserAnswer('x', 'true', Q, prev).basis, /Question: "Are hazardous/)
+  test('the question is a FIELD, so an answer can be read in context without parsing', () => {
+    for (const prev of [null, { value: 'false', at: '2026-09-13' }]) {
+      assert.equal(fromUserAnswer('x', 'true', Q, prev).basis.question, Q)
     }
   })
 })
