@@ -1,6 +1,10 @@
 # Audit Checks
-**Version:** 17 · **Updated:** 13 September 2026
-**Supersedes:** version 16 (12 Sep). **Check 20 is now SKIPPED rather than passing.** It was a
+**Version:** 18 · **Updated:** 13 September 2026
+**Supersedes:** version 17 (13 Sep). **Check 22 is CLOSED for `substance_inventory`** — migration
+019 revoked it — and re-run across every function in `public` rather than the one under
+suspicion. Three still hold PUBLIC EXECUTE and all three are benign: two return `trigger` and
+cannot be called at all, one is an IMMUTABLE helper a CHECK constraint depends on. The rule is
+recorded so they are not re-raised. Version 17: **Check 20 is now SKIPPED rather than passing.** It was a
 hard query against an empty table, which reports clean having examined nothing — check 14's
 finding turned on this file. It is now a hard assertion behind an announced precondition, in
 `npm run audit:data`, with checks 20b, 20c and 21 guarded the same way. "How to add a check"
@@ -995,7 +999,22 @@ one function, `substance_inventory`.**
 |---|---|---|
 | `close_and_replace_obligations` | `postgres`, `service_role` | ✅ correct — migration 016 revokes explicitly. **PUBLIC holds nothing** |
 | `auth_company_id` | `postgres`, `anon`, `authenticated`, `service_role` | ✅ intentional — every RLS policy calls it |
-| **`substance_inventory`** | **`PUBLIC`**, `anon`, `authenticated`, `postgres`, `service_role` | 🟡 migration 013 created it with no revoke |
+| **`substance_inventory`** | `postgres`, `service_role` | ✅ **CLOSED 13 Sep by migration 019.** PUBLIC, anon and authenticated all revoked |
+
+> ### Re-run 13 September 2026, across EVERY function rather than the one under suspicion.
+> Three still hold PUBLIC EXECUTE, and **all three are benign — for two different reasons, both
+> worth writing down so the next person does not re-raise them:**
+>
+> | Function | Returns | Why the grant is inert or required |
+> |---|---|---|
+> | `set_updated_at` | **`trigger`** | A function returning `trigger` **cannot be called directly** — Postgres refuses it outside a trigger context. Used by 12 triggers. The grant is unreachable |
+> | `create_primary_site` | **`trigger`** | Same. Used by 1 trigger |
+> | `array_is_ascending(numeric[])` | `bool` | IMMUTABLE, SECURITY INVOKER, **takes an array and touches no table** — its body reads `generate_subscripts`, not data. It backs migration 012's CHECK on `switches.thresholds`, so **anyone permitted to write that table must be able to execute it**. Revoking it would break the constraint for every writer |
+>
+> **So check 22 now passes**, and the rule it leaves behind is sharper than "no function may be
+> public": *a function may hold PUBLIC EXECUTE when it is unreachable (returns `trigger`) or
+> when it reads no data and a constraint depends on it.* Anything else that appears in this
+> query is a finding.
 
 **It leaks nothing today, and that is luck rather than design.** The function is `SECURITY
 INVOKER` and reads `company_chemicals`, on which `anon` holds no grant at all, so an

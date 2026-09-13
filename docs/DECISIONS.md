@@ -1,6 +1,11 @@
 # Decision Record
-**Version:** 37 · **Updated:** 13 September 2026
-**Supersedes:** version 36 (13 Sep). Adds **§56** — a migration does one thing and its filename
+**Version:** 38 · **Updated:** 13 September 2026
+**Supersedes:** version 37 (13 Sep). Adds **§57** — the five name-and-contents substitutions of
+the last two days as ONE entry, because they are one failure: a value retyped or recalled at a
+hop where it could have been copied. Three are the owner's hand-off, two of those after the rule
+was extended to cover that step; one is mine and is the only one no name check could catch. The
+rule is restated as a practice at every hop, including the hand-off, and the reversal condition
+names the fix worth building if a sixth occurs. Version 37 added **§56** — a migration does one thing and its filename
 says what (018 was briefly two unrelated changes; the half not in the name was the security fix,
 and it went invisible in a hand-off), and **§46 extends from NAMES to CONTENTS**: a pre-flight
 that names a migration correctly and describes it wrongly is worse than one that gets the name
@@ -3441,3 +3446,64 @@ memory. Nothing in the name check could have caught it, because the name was rig
 
 **Reversal condition:** none. If a migration ever becomes too large to summarise from its own
 statements, that is 56.1 telling you it does more than one thing.
+
+---
+
+## 57. Five instances in two days: the rule is right, the practice is the problem — 13 September 2026
+
+**Recorded as one entry because they are one failure**, and counting them separately made each
+look like an isolated slip rather than a pattern with a single cause.
+
+| # | What was substituted | Whose | Caught by |
+|---|---|---|---|
+| 1 | `014_company_chemicals.sql` · `015_requirement_splits.sql` — names for files that never existed | owner's hand-off | `ls` |
+| 2 | Counts (692 objects, 76 switches, 11 unused) matching neither database | owner's hand-off | re-measuring |
+| 3 | `015_close_and_replace_obligations.sql` — 015's number on 016's name | owner's hand-off | `ls` |
+| 4 | **A file's CONTENTS** summarised from session context rather than read | mine | being asked to prove a constraint that was not there |
+| 5 | `018_revoke_substance_inventory_from_public.sql` — a correct name for half a file, retyped after the pre-flight had named it right | owner's hand-off | `ls` |
+
+**Three are the owner's, two of those after the rule was extended to cover exactly that step.**
+Recorded plainly because a rule that is only ever broken by one side is a rule about that side,
+and this one is not: instance 4 is mine, and it is the one no name check could have caught.
+
+### What the five have in common
+
+> **Every one is a value that was RETYPED or RECALLED at a step where it could have been COPIED.**
+
+Not one is a failure of the rule, and not one would have survived a `grep`. The directory was
+always right. The diff was always right. **The failure is always at a hop** — from the directory
+to a report, from a report to a hand-off, from a file to a description of it.
+
+### So the rule is stated as a practice, at every hop
+
+**Names and file contents are COPIED, never retyped or recalled, at every step between the
+directory and the prompt — including the hand-off.**
+
+That last clause is the one instances 3 and 5 broke, and it is the step §46's extension was
+written for. **A hand-off is not commentary on a pre-flight; it is a hop, and it is the last one
+before something irreversible happens.** The asymmetry noted in §46.2 still holds and cuts the
+other way here: the author must be right about everything, the challenger need only run `ls` —
+**and so must whoever writes the instruction, because it is the same one command.**
+
+### Why instance 4 is the one worth fearing
+
+Instances 1, 2, 3 and 5 all fail the check. Somebody lists the directory, finds no such file,
+and stops — which is what happened every time, at a cost of one reconciliation each.
+
+**Instance 4 passes every check there is.** The name was right, the diff was right,
+`count pending: 1` was right. Only the *description* of what the file did was wrong, and nothing
+in the process compares a description to anything. §56.2 is the fix — a pre-flight greps the
+statements out of the file — and it is the only one of the five that needed a new mechanism
+rather than more care.
+
+### The standing cost, restated because it is the reason any of this matters
+
+`HOW-WE-BUILD.md` §4 makes an unexpected file list a reason to **stop**. That instruction works
+only while an unexpected list is rare. **Five false alarms in two days is not rare.** Each one
+was cheap and correct to raise and found nothing wrong — and each spent a little of the only
+guard standing between a hand-off and production.
+
+**Reversal condition:** none. If the hand-off is ever generated from the pre-flight's own output
+rather than retyped — the operator pasting the block rather than describing it — instances 3 and
+5 become impossible and this reduces to §56.2 alone. **That is the fix worth building if a sixth
+occurs.**
