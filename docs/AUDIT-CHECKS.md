@@ -1,6 +1,11 @@
 # Audit Checks
-**Version:** 24 · **Updated:** 13 September 2026
-**Supersedes:** version 23 (13 Sep). **Nine of twenty-eight checks were in an UNKNOWN state after
+**Version:** 25 · **Updated:** 13 September 2026
+**Supersedes:** version 24 (13 Sep). **Check 8 is FAILING, and v24 recorded it as passing.** The
+query named bucket `documents`; the bucket is `company-documents`, so it returned zero rows
+against a bucket that does not exist and read as clean. Corrected: **4 orphaned customer files on
+production and 4 on staging** — the same four TODO 0.7 has listed since 9 September, which the
+check was written to catch and never could. **Two of the nine re-run checks were vacuous and only
+one said so.** Version 24: **Nine of twenty-eight checks were in an UNKNOWN state after
 six phases** — written, never run, indistinguishable on the page from the nineteen that had been.
 All nine are now run against both environments: seven pass, check 9 fails because the check is too
 strict (a `not_built` coverage row legitimately has nothing behind it), check 11 fails on four
@@ -417,11 +422,35 @@ boiler); both are correct, and the check exists for the third.
 ## 8. Are there storage objects under a prefix matching no company?
 
 ```sql
+-- THE BUCKET IS `company-documents`. It is not called `documents`, and this query said
+-- `documents` from the day it was written until 13 Sep — so it returned zero rows against a
+-- bucket that does not exist and READ AS A PASS. See the answer below.
 select o.name, split_part(o.name, '/', 1) as prefix
   from storage.objects o
- where o.bucket_id = 'documents'
+ where o.bucket_id = 'company-documents'
    and not exists (select 1 from public.companies c where c.id::text = split_part(o.name, '/', 1));
 ```
+
+> ### ⛔ **FAILING — 13 September 2026, BOTH environments.**
+>
+> ```
+> production : 52 objects in company-documents, 4 ORPHANED   (prefix fcde1027-4504-4adb-8a3e-a0d415275fd5)
+> staging    :  4 objects in company-documents, 4 ORPHANED
+> ```
+>
+> **And it was reported as PASSING earlier the same day.** The query named bucket `documents`;
+> the bucket is `company-documents`. There is no bucket called `documents`, so the check
+> returned zero rows and read as clean — **against a bucket that does not exist.**
+>
+> **This is check 14's own subject, in this file, about this file:** *is every checker as strong
+> as the assertion it claims to make?* A check that names a non-existent object passes forever
+> and is indistinguishable on the page from one that has been satisfied. It is the same class as
+> `CLAUDE.md` §3.7's NULL-swallowing CHECK constraint, and the same class as check 20 passing
+> vacuously on an empty table — except that one is **recorded** as vacuous and this one was not.
+>
+> **The four orphans on production are the four TODO 0.7 has listed since 9 September.** They
+> were found by accident then, the check was written to catch them, and the check never could.
+> They are customer files with no owner, no policy that matches, and no route that lists them.
 
 **Why nothing else catches it.** **Four already existed in production and were found by
 accident** (TODO 0.7). Storage is scoped by a path prefix, not by a foreign key — nothing
@@ -1435,12 +1464,19 @@ timing, not a control**, and it is why `TODO.md` 6.4c gates showing `does_not_ap
 | 6 | every company has exactly one primary site | **PASS** — 0 rows |
 | 7a | no child pointing at a still-live parent | **PASS** — 0 rows |
 | 7b | no retired row without a child or successor | **PASS** — 0 rows |
-| 8 | storage objects under a prefix matching no company | **PASS** — 0 rows. Four existed once and were found by accident; there are none now |
+| 8 | storage objects under a prefix matching no company | **FAIL — 4 orphans on each environment.** Reported PASS earlier the same day because the query named a bucket that does not exist; corrected below |
 | 9 | industry slugs agree across joining tables | **FAIL** — 1 row: `cannabis` |
 | 10 | production vs staging, object for object | **PASS** — **852 objects each, sha256 identical** |
 | 11 | every count asserted in a document still true | **FAIL** — see below |
 | 12 | every `agency_id` points at a live agency | **PASS** — 0 rows |
 | 20 | every inventory CAS is one we hold thresholds for | **PASS, VACUOUSLY** — `company_chemicals` is empty |
+
+> **Two of these ten were vacuous, and only one said so.** Check 20 is recorded as vacuous
+> because the table is visibly empty. **Check 8 was vacuous and read as clean**, because a
+> wrong bucket name and a genuinely empty result are the same zero. **A check that cannot
+> distinguish "nothing to find" from "looked in the wrong place" is not yet a check** — and the
+> cheapest fix is the one check 14 already prescribes: assert the population is non-zero before
+> asserting the exceptions are zero.
 
 **Check 9's failure is the check being too strict, not drift.** `cannabis` has 25
 `industry_coverage` rows, all `not_built`, and zero library rows — which is the documented state.
