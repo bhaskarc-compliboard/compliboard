@@ -163,7 +163,7 @@ function allScreenText(): string {
     ...SECTIONS.map((s) => sectionBlurb(s.key)),
     ...renderCoverageStrip({ requirements: 200, agencies: 33, verified: 0,
                              switchesTotal: 95, switchesFromDocuments: 53 }),
-    renderEmptyState(),
+    renderEmptyState(null), renderEmptyState('2026-09-13T20:32:03.229Z'),
     ...rows.flatMap((r) => [r.title, r.subtitle, r.verdictLabel, r.verdictText,
                             r.shownLabel ?? '', r.shownText ?? '', r.action ?? '']),
   ].join('\n')
@@ -267,10 +267,32 @@ describe('the coverage strip says two true things, and neither is the misreading
 })
 
 describe('the empty state is a claim and it has to be true (§5.1)', () => {
-  test('zero obligations means resolution has not run, not that nothing applies', () => {
-    const e = renderEmptyState()
+  test('NEVER COMPUTED says so, and says it is not a result', () => {
+    const e = renderEmptyState(null)
     assert.match(e, /have not worked out/)
     assert.match(e, /not a result/)
-    assert.doesNotMatch(e, /all set|nothing applies|compliant/i)
+    assert.doesNotMatch(e, /all set|compliant/i)
+  })
+  /**
+   * *** THE SECOND EMPTY STATE, WHICH DID NOT EXIST UNTIL THE LAZY WRITE DID. ***
+   * Before 4.3 nothing wrote obligations, so zero ALWAYS meant never-run and one sentence was
+   * correct. After it, a company whose resolution genuinely produces nothing was being told
+   * "nothing has been computed for your business so far" — the opposite of what happened.
+   */
+  test('COMPUTED AND EMPTY is a result, and must not claim nothing was computed', () => {
+    const e = renderEmptyState('2026-09-13T20:32:03.229Z')
+    assert.doesNotMatch(e, /have not worked out|not a result|nothing has been computed/,
+      'this company WAS computed — saying otherwise is false')
+    assert.match(e, /found none that apply/)
+    assert.match(e, /tell us if it looks wrong/,
+      'zero applicable requirements for a chemical manufacturer is more likely our bug than their luck')
+  })
+  test('the two sentences are never the same string', () => {
+    assert.notEqual(renderEmptyState(null), renderEmptyState('2026-09-13T20:32:03.229Z'))
+  })
+  test('neither empty state ever reads as a clean bill of health', () => {
+    for (const e of [renderEmptyState(null), renderEmptyState('2026-09-13T20:32:03.229Z')])
+      for (const w of ['compliant', 'all set', 'you are done', 'no action needed'])
+        assert.ok(!e.toLowerCase().includes(w), `empty state collapsed into a verdict: "${w}"`)
   })
 })

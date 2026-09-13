@@ -242,8 +242,17 @@ if (problems.length) {
   process.exit(1);
 }
 
+// *** COUNT THE RELATIONS, NOT THE KEYS. *** `schema` carries a `__views__` sentinel alongside
+// the real relations, so `Object.keys(schema).length` reported 28 when the database holds 26
+// tables and 1 view. A headline number that is one too high is worse than no number: it was
+// quoted into commit messages and docs all of 13 Sep before anyone subtracted it from a
+// catalog query. Say what each half is, so the next person can check it without reading this.
+const viewCount = schema.__views__.size;
+const tableCount = Object.keys(schema).length - 1 - viewCount;
+
 console.log(
-  `  check-schema-contracts: ok — ${files.length} files, ${Object.keys(schema).length} tables.\n` +
+  `  check-schema-contracts: ok — ${files.length} files, ` +
+  `${tableCount + viewCount} relations (${tableCount} tables + ${viewCount} view${viewCount === 1 ? "" : "s"}).\n` +
   `    ${skippedDynamic} dynamic .from(variable) call site(s), which cannot be checked here:\n` +
   dynamicSites.map((s) => `      ${s}`).join("\n") +
   `\n    Check these by hand after any column rename — see the blind-spot note above.`);

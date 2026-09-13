@@ -1,6 +1,13 @@
 # Testing
-**Version:** 11 · **Updated:** 13 September 2026
-**Supersedes:** version 10 (13 Sep). The **7.2a manual set is narrowed to API and state**, with
+**Version:** 12 · **Updated:** 13 September 2026
+**Supersedes:** version 11 (13 Sep). Adds the **manual set for Phase 4.3 and M6** — five cases,
+**and the visual half 7.2a deferred is now written**, marked `SEE` rather than merged into that
+section. Case E carries an ordering trap that is real and unrecoverable: the first GET is what
+fires the lazy write, so opening the screen destroys the before-state. Case F is the only fixture
+in the project where a hand-made obligation meets the writer, and tests that history is closed
+rather than deleted. Case G's second half is the one no script can do — whether a fact is actually
+sufficient to rule a requirement out. Records what none of them can tell you: **0 of 205
+requirement templates have been checked against a published source.** Version 11: The **7.2a manual set is narrowed to API and state**, with
 the visual half explicitly deferred to M6 and the reason stated in the set itself: a case that
 always fails for a reason unrelated to what it tests trains whoever runs it to skip failures.
 Version 10 added the **manual set for Phase 7.2a**, written before the UI
@@ -185,6 +192,244 @@ GET /api/switches/ask   → assert `hazwaste_generator_category` is absent
 It is a monthly calculation, not a fact anyone holds. **Wrong:** it appears. A user asked to
 state their generator category will guess, and a guess stored as `stated` with
 `user_locked = true` outranks every later calculation.
+
+---
+
+## Manual set — Phase 4.3 (the obligation writer) and M6 (the requirements screen)
+
+*HOW-WE-BUILD step 12. Written 13 September 2026, after both landed on staging and 022 landed on
+production.*
+
+> ### THE VISUAL HALF IS NO LONGER DEFERRED.
+>
+> 7.2a's set above is API-and-state only, and says so, because the screen did not exist. **It does
+> now.** Each case below that carries a **`SEE`** block is the half that was owed. They are written
+> here rather than merged into 7.2a's section for the reason that section gives: the two halves
+> fail for different reasons and get fixed in different files.
+
+**Both fixtures are on staging. Confirm the dev server points at staging before starting** —
+the two company names below do not exist on production (`CLAUDE.md` §3.8).
+
+| Fixture | Facts | Entities | Obligations | Computed |
+|---|---|---|---|---|
+| **Test Alpha Chemical** | 16, all `user_set` | 2 | 221 open | yes |
+| **Test Beta Cannabis** | 0 | 1 | 1 open, hand-seeded | **never** |
+
+---
+
+### Case E — the first GET writes the list. THE ONE THAT MATTERS FOR 4.3.
+
+> **⚠️ ORDER MATTERS, AND THE TRAP IS REAL: LOOKING IS WHAT FIRES IT.** The write happens on the
+> first `GET /api/obligations`, so **step 1 must be run before anything opens the screen.** Open
+> `/requirements` for Beta first and the before-state is gone, unrecoverably, and the case can
+> only be run again by reverting `obligations_computed_at` to NULL by hand.
+
+**Do this.** Log in as **Test Beta Cannabis** — the company that has never been computed.
+
+```sql
+-- 1. BEFORE. Run this FIRST.
+select obligations_computed_at,
+       (select count(*) from obligations o where o.company_id = c.id) as obligations
+  from companies c where c.name = 'Test Beta Cannabis';
+-- expect: NULL, 1
+```
+
+```
+-- 2. Now open /requirements. Time it roughly — it computes inside the request.
+```
+
+```sql
+-- 3. AFTER.
+select status, count(*) from obligations
+ where company_id = (select id from companies where name = 'Test Beta Cannabis')
+   and applicable_to is null group by status;
+```
+
+**Perfect — five assertions:**
+
+1. `obligations_computed_at` is **no longer NULL**.
+2. The page returned in a few seconds, not a minute. **Alpha's 221 took 1.95 s across 2 entities**
+   (`DECISIONS.md` §62). Beta has one entity and should be faster. **If this feels like a wait
+   rather than a page load, that is the reversal condition in §62 arriving — report the number.**
+3. **Reload the page. The counts do not change and nothing is re-opened:**
+   ```sql
+   select count(*) from obligations
+    where company_id = (…) and applicable_to = current_date;   -- the closures from this reload
+   ```
+   A second run must report `opened: 0, unchanged: N`. **If the numbers grow on every reload,
+   `close_and_replace_obligations` is inserting rather than matching**, and every refresh is
+   quietly doubling a customer's compliance record.
+4. **A cannabis company must not receive Oregon chemical-manufacturing rows.** Jurisdiction and
+   industry are both part of the match key (`CLAUDE.md` §3.2), and this is the fixture that can
+   catch it, because Alpha cannot:
+   ```sql
+   select count(*) from obligations o join requirement_templates r on r.id = o.requirement_template_id
+    where o.company_id = (…) and not ('cannabis' = any(r.industries));   -- expect 0
+   ```
+5. **`resolved_by` is `computed_by_code` on every row.** Never `ai`. One query settles it, and it
+   is the §3.2 line the whole architecture rests on:
+   ```sql
+   select resolved_by, count(*) from obligations where company_id = (…) group by 1;
+   ```
+
+**`SEE` — the screen, same interaction:** three section headings with **no counts in them**, a
+coverage strip stating what is verified and what is not, and — because Beta has answered nothing —
+**the questions section is the largest.** If `applies` is the largest section for a company with
+zero recorded facts, something is asserting obligations from no evidence.
+
+| Symptom | Cause |
+|---|---|
+| `computed_at` set, obligations still 1 | The write ran and wrote nothing. Beta's industry has no library rows — a real, reportable coverage gap, not a bug. Check `industry_coverage` before filing it |
+| Counts grow on every reload | The uniqueness index is not matching. §16's `UNIQUE … NULLS NOT DISTINCT` is what makes a NULL `entity_id` collide with another NULL; if that index is gone, every reload duplicates |
+| Any row with `resolved_by = 'ai'` | **Stop and report.** Layer 3 is code. This is the one failure in this file that is not a bug but an architectural breach |
+| Chemical requirements on a cannabis company | The match key lost industry or jurisdiction. Silent and dangerous — §3.2 names it explicitly |
+
+---
+
+### Case F — the pre-existing obligation must be CLOSED, never deleted
+
+**Why this case exists.** Beta carries **one obligation that predates the writer** — *"Adverse-reaction
+allegation records"*, `status = applies`, `resolution_rationale` NULL, seeded by hand. The lazy
+write in Case E runs `close_and_replace_obligations` over it. **This is the only fixture in the
+project where a hand-made row meets the writer**, and it tests the property the product is sold on:
+
+> *"We were subject to this from March 2024 to January 2026"* is the history the product exists to
+> preserve. **Obligations are marked, never deleted** (`CLAUDE.md` §3.2).
+
+**Do this.** After Case E, against Beta:
+
+```sql
+select status, applicable_from, applicable_to, resolution_rationale
+  from obligations o join requirement_templates r on r.id = o.requirement_template_id
+ where o.company_id = (…) and r.requirement_name = 'Adverse-reaction allegation records';
+```
+
+**Perfect — the row is STILL THERE.** Exactly one of two shapes, and both are correct:
+
+- **Superseded** — two rows: the old one with `applicable_to = today`, and a new open one.
+- **Closed** — one row with `applicable_to = today` and no replacement, because the requirement
+  is not in Beta's resolved set.
+
+**Wrong — and this one is silent:** the query returns **zero rows.** The history was destroyed and
+nothing anywhere records that it existed. **There is no DELETE policy on `obligations` and the
+function contains no DELETE**, so a zero here means something outside both is removing rows and
+must be found before anything else ships.
+
+---
+
+### Case G — every claim on the screen traces to a fact, and `does_not_apply` names it
+
+**Do this.** Log in as **Test Alpha Chemical** and open `/requirements`. Open the
+**`does_not_apply`** section and read ten rows.
+
+**Perfect.** Every one reads in this shape, with a real switch name and a real value:
+
+```
+Ruled out by: industrial_stormwater = false.
+Ruled out by: hazwaste_generator_category = vsqg.
+Ruled out by: air_permit_required = none.
+```
+
+**39 of 39 do this today.** The assertion is not "most of them" — **it is every one**, because a
+`does_not_apply` with no named fact is the one thing §3.2 forbids outright: a clear produced by
+absence of evidence rather than by contradicting evidence.
+
+```sql
+-- the machine-checkable half of the same assertion
+select count(*) from obligations
+ where company_id = (…) and status = 'does_not_apply' and applicable_to is null
+   and resolution_rationale !~ '^Ruled out by: [a-z_]+ = ';   -- expect 0
+```
+
+**And the domain half, which is the part no query can do.** Pick the three rows whose switch you
+know best and ask: **is that fact actually sufficient to rule that requirement out?**
+`industrial_stormwater = false` removing a DEQ 1200-Z obligation is right. The same fact removing a
+spill-response requirement would be wrong, and would look identical on screen. **This is the
+case where domain knowledge does work no script replicates** — it is the reason the manual set
+exists at all.
+
+| Symptom | Cause |
+|---|---|
+| A row says only *"does not apply"* with no fact | The rationale is being generated instead of composed. §3.2's rule is that the evidence is **recorded**, not described |
+| A rationale names a switch that is not in the list of 95 | The trigger references a fact the library does not carry. That is audit check 19, and it is a library defect surfacing as a screen symptom |
+| A fact rules out something it should not | **The most valuable failure in this file.** Nothing automated can find it. Report the requirement and the switch — the fix is in `applies_expression`, not in code |
+
+---
+
+### Case H — the twelve rows waiting on quantities, and the button behind them
+
+**Why this case exists.** It shipped wrong twice in two days, both times found by looking at the
+screen and by nothing else (`DECISIONS.md` §61, audit check 26). **`resolve()` was correct both
+times.**
+
+**Do this.** As Alpha, open the questions section and find the rows for **DEA List I chemical
+registration**, **PSM — management of change**, **EPCRA emergency-planning notification**.
+
+**Perfect — three assertions, all visual:**
+
+1. Each says **"Waiting on your chemical inventory — we need the quantities you keep on site, not
+   just the safety data sheets."**
+2. Its button says **"Add your chemical inventory"**, not "Answer the question".
+3. **Scroll the whole questions section: no row anywhere says "we cannot say yet" and then stops.**
+   Every one names something. `124 + 12 = 136`, and the third bucket is empty.
+
+**Why the wording is worth reading rather than skimming.** A customer who uploads their entire SDS
+binder and sees nothing move concludes the product is broken. **The sentence exists to say the
+upload was not wasted and a different thing is needed** — quantities are not in an SDS. If it
+reads as a complaint about their file, it is wrong (§5.1).
+
+| Symptom | Cause |
+|---|---|
+| A row says "Waiting on:" with nothing after it | `factsNeeded` is empty and `inventoryNeeded` is not being read. This is the exact defect of 13 Sep, returned |
+| Those rows offer "Answer the question" | The action is fixed by status again rather than chosen from what is missing |
+| A row names neither | **The interesting one.** A requirement's trigger names a fact that is in no question list and no inventory list — a library gap, not a screen bug. Report the requirement name |
+
+---
+
+### Case I — the empty state, which is TWO claims and only one of them can be true
+
+**Why this case exists.** `renderEmptyState()` took no argument until 13 Sep and always said *"we
+have not worked out your requirements yet."* That was true while nothing wrote obligations. **After
+4.3 it is false for the case that matters**: a company whose resolution genuinely produces nothing
+would be told nothing had been computed. §5.1 — an empty state is a claim and it has to be true.
+
+**Do this.** There is no fixture for the second state, and **making one is the point of the case**:
+
+```sql
+-- a company that has been computed and resolved to nothing.
+-- Create it on STAGING ONLY, by signing up a business in an industry with no library rows.
+select industry, jurisdiction, status from industry_coverage order by status;
+```
+
+**Perfect:**
+
+- A company **never computed** reads *"We have not worked out your requirements yet. This is not a
+  result."*
+- A company **computed with zero rows** reads *"We worked out your requirements and found none that
+  apply to you. That is a result… please tell us if it looks wrong."*
+- **Neither ever reads as a clean bill of health.** No "compliant", no "all set", no "no action
+  needed". The omniscient status tracker is a named anti-pattern here and was removed once already
+  (`CLAUDE.md` §6).
+
+**And the invitation to disagree is not politeness.** Zero applicable requirements for a real
+manufacturer is far more likely to be our coverage gap than their good fortune, and the sentence
+has to make that easy to say.
+
+---
+
+### What none of these five can tell you
+
+- **Whether the requirement rows themselves are right.** Every case above tests that the machinery
+  resolves, persists and renders correctly. **`verified_at` is set on 0 of 205 requirement
+  templates and `source_checked_at` on 0** — so a perfectly-resolved obligation may still point at
+  a rule that misstates the law. The coverage strip says this on every screen; these cases do not
+  test it and cannot.
+- **Whether the switch values are true.** 16 facts, all `user_set`. If a customer answers wrongly,
+  everything downstream is confidently wrong and every case here still passes.
+- **What happens at scale.** 2 entities, 221 obligations. §62's reversal condition is about a
+  company with many more.
+- **Anything about production.** No production company has computed obligations
+  (`obligations_computed_at` is NULL for all 10). Every case here runs on staging.
 
 ---
 

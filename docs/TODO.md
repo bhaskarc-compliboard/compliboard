@@ -1,6 +1,12 @@
 # Detailed To-Do
-**Version:** 15 · **Updated:** 12 September 2026
-**Supersedes:** version 14 (12 Sep). Documentation sweep, every count re-read. **7.2's schema and
+**Version:** 16 · **Updated:** 13 September 2026
+**Supersedes:** version 15 (12 Sep). **4.1, 4.3, 7.2, 7.2a, 7.3 and M6 are done and wired**;
+version 15's headline — *"7.2's schema and logic are on both environments and no route calls
+them"* — is no longer true. Migration **022 is on production**, both environments on 000–022 with
+**0 object differences**. The chain runs end to end on staging: a question answered, 221
+obligations persisted, the screen rendering them. **Next by dependency is 6.4** — seed
+`regulated_substances`, the reference thresholds — because 12 of Test Alpha's 136 unanswered
+requirements are blocked on a chemical inventory and no question can unblock them. Version 15: Documentation sweep, every count re-read. **7.2's schema and
 logic are on both environments and no route calls them.** Adds a **phase index in this file's own
 numbering with a state against each** — there is no Phase 3 or Phase 8 here, those are build-plan
 numbers — and a **what-is-next-by-dependency** section, because resolution and determination both

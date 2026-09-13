@@ -48,6 +48,8 @@ interface Coverage {
 export default function RequirementsPage() {
   const [rows, setRows] = useState<ApiRow[]>([])
   const [coverage, setCoverage] = useState<Coverage | null>(null)
+  /** NULL means never computed — a different empty state from "computed, and nothing applies". */
+  const [computedAt, setComputedAt] = useState<string | null>(null)
   const [open, setOpen] = useState<SectionKey>('applies')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -60,6 +62,7 @@ export default function RequirementsPage() {
         const data = await res.json()
         setRows(data.rows ?? [])
         setCoverage(data.coverage ?? null)
+        setComputedAt(data.computedAt ?? null)
       } catch (e) {
         // CLAUDE.md §5.1 — say whose problem it is, and never assert anything about data we
         // did not successfully read.
@@ -104,9 +107,13 @@ export default function RequirementsPage() {
         )}
 
         {!loading && !error && rows.length === 0 && (
-          /* §5.1 — an empty state is a claim and it has to be true. Zero obligations means
-             resolution has not run, NOT that nothing applies. */
-          <p className="mt-8 rounded border border-gray-200 p-4 text-sm text-gray-600">{renderEmptyState()}</p>
+          /* §5.1 — an empty state is a claim and it has to be true, and there are TWO true
+             claims here: "not worked out yet" and "worked out, and nothing applies". Only
+             `computedAt` separates them; a row count cannot (migration 022). The route has
+             always returned it — this page was throwing it away and asserting the first. */
+          <p className="mt-8 rounded border border-gray-200 p-4 text-sm text-gray-600">
+            {renderEmptyState(computedAt)}
+          </p>
         )}
 
         {!loading && !error && rows.length > 0 && (

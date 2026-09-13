@@ -257,7 +257,27 @@ export function renderCoverageStrip(x: {
  * "You're all set" is the omniscient status tracker in its purest form: a compliance position
  * asserted by a screen that has computed nothing.
  */
-export function renderEmptyState(): string {
-  return 'We have not worked out your requirements yet. This is not a result — nothing has been ' +
-         'computed for your business so far.'
+export function renderEmptyState(computedAt: string | null): string {
+  /**
+   * *** TWO EMPTY STATES, AND SAYING THE WRONG ONE IS A LIE. ***
+   *
+   * Migration 022 exists to make these distinguishable, because a row count cannot:
+   *
+   *   never computed   -> "we have not worked this out yet"     — not a result
+   *   computed, zero   -> "we worked it out and nothing applies" — a result, and a strong claim
+   *
+   * This function took no argument until 13 Sep and always returned the FIRST sentence. Before
+   * 4.3 that was true: nothing wrote obligations, so zero always meant never-run. After the
+   * lazy write it is false in the case that matters — a company whose resolution genuinely
+   * produces nothing would be told "nothing has been computed for your business so far", which
+   * is the opposite of what happened. §5.1: an empty state is a claim and it has to be true.
+   *
+   * The route already returns `computedAt`. It was reaching the page and being ignored.
+   */
+  if (!computedAt) {
+    return 'We have not worked out your requirements yet. This is not a result — nothing has ' +
+           'been computed for your business so far.'
+  }
+  return 'We worked out your requirements and found none that apply to you. That is a result, ' +
+         'not a gap — but it is unusual, so please tell us if it looks wrong.'
 }
