@@ -1,7 +1,12 @@
 # How We Build CompliBoard
 
-**Version:** 11 · **Updated:** 13 September 2026
-**Supersedes:** version 10 (13 Sep). Adds **§3a, the found-by-rendering class** — a defect where
+**Version:** 12 · **Updated:** 13 September 2026
+**Supersedes:** version 11 (13 Sep). Adds **§5a, the standing rule for whoever is DIRECTING the
+work** rather than for Claude Code: *before you assert a cause, point at the line that says it; if
+you can't, call it a hypothesis and have it checked; never hand over a record to file that you
+haven't seen evidence for.* Four composed findings in one session, each settled by one command —
+and **three of the four carried a correct principle attached to a wrong mechanism**, so the
+mitigation is catching rather than preventing. Version 11: Adds **§3a, the found-by-rendering class** — a defect where
 every layer returns correctly and the loss is downstream, so no unit test can see it and a screen
 is the first instrument that can. **Demonstrated twice on 13 Sep**: a composition defect whose unit
 test asserted the bug and passed, and a content defect that ten minutes of domain reading found
@@ -373,6 +378,42 @@ This is the same class as writing a summary from recollection rather than from t
 **Never guess a value it does not have.** Three requirement rows claimed county jurisdiction and named no county. The correct behaviour was to flag them, not to pick a county.
 
 **Never proceed on an unverified premise.** The most instructive failure of the project: Claude Code established early that `.env.local` pointed at production, then reused that as a current fact after it had changed. The one check it ran could not have distinguished the two cases. It later said so plainly — *"stale premise, and a check that couldn't have falsified it."*
+
+---
+
+## 5a. THE STANDING RULE FOR WHOEVER IS DIRECTING THE WORK
+
+*Added 13 September 2026. Every other section of this file is a rule for Claude Code. **This one
+is not.***
+
+> ### Before you assert a cause, point at the line that says it. If you can't, call it a
+> hypothesis and have Claude Code check it. **Never hand Claude Code a record to file that you
+> haven't seen evidence for.**
+
+**The reason, measured: four composed findings in one session.** Each was a plausible mechanism
+narrated rather than observed, and each was settled by a single command:
+
+| | What was asserted | Settled by | Cost |
+|---|---|---|---|
+| 1 | a `resolutionNote` defect, *"60 of 72 unknown rows"* | `grep` — neither identifier exists | one grep |
+| 2 | *"fix the 13 rows; a switch with no row does not name itself"* | a query — it is 12, and all 72 name themselves | one query |
+| 3 | *"the pre-flight said `023_replace_obligations_explicit_company.sql`"* | `ls` + `git log` — 0 occurrences anywhere | one `ls` |
+| 4 | *"013 rebuilt the table, `agency_id` never re-run, 60 with no regulator"* | it was 007, the gap was one day, and there are 7 | one `git log` |
+
+### The mitigation is CATCHING, not preventing
+
+**Three of the four carried a correct principle attached to a wrong mechanism** (§61, §63, §66) —
+*an affordance with nothing behind it is worse than none*; *validate it against the caller*; *ask
+what rebuilds a derived column when its table is replaced*. **All three found real defects.** A
+rule aimed at suppressing the assertions would have suppressed the insights with them.
+
+**So the rule is not "assert less". It is "assert, then check before it is written down".** The
+check costs one command; the thing it prevents is a wrong finding entering the record and being
+cited later as established (§60).
+
+**And the fourth instance has the shape worth remembering: it was a RETRACTION.** A
+self-correction is not self-verifying, and it carries extra authority precisely by admitting
+error. It earns the same `grep` as the claim it corrects — arguably more.
 
 ---
 

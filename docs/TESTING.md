@@ -1,6 +1,10 @@
 # Testing
-**Version:** 14 · **Updated:** 13 September 2026
-**Supersedes:** version 13 (13 Sep). Records Case F **in the data** — Beta ends at open 0, closed 1,
+**Version:** 15 · **Updated:** 13 September 2026
+**Supersedes:** version 14 (13 Sep). The 4.3/M6 manual set is recorded as **RUN, by a person, in a
+browser** — not as written. It found two things no automated check could, on its first attempt:
+**Case E crashed on its first fixture** (a 500 for every uncomputed company, which on production
+was all ten), and **Case G's domain half surfaced the 22 clauses that can never be true.**
+Version 14: Records Case F **in the data** — Beta ends at open 0, closed 1,
 the seeded obligation closed rather than deleted — and that Beta resolving to zero made Case I's
 second empty state render **for the first time**, which was unreachable before 023. Version 13: Records the **first run: E, F, G and I pass functionally.**
 Case E found a 500 on its first fixture (migration 023), and **Case G's domain half found the
@@ -421,6 +425,32 @@ manufacturer is far more likely to be our coverage gap than their good fortune, 
 has to make that easy to say.
 
 ---
+
+### RESULT — RUN, 13 September 2026, in a browser, by a person
+
+> **This set is recorded as RUN, not as written.** The distinction is the point of the file: a
+> manual set that has never been executed is a plan, exactly as an audit check with no recorded
+> answer is a plan (`AUDIT-CHECKS.md`). **Two of the five found something no automated check
+> could, on the first attempt.**
+
+**What it found, and neither was predicted:**
+
+**1. Case E crashed on its first fixture.** `/api/obligations` returned **500 in 645 ms** for the
+first non-chemical company the writer had ever seen. The route connects as the caller;
+`close_and_replace_obligations` and `substance_inventory` were `service_role`-only, so the first
+write was refused by Postgres. **It had never run through its own route** — Phase 4.3's 1.95 s and
+221 obligations were measured by a script holding the service-role key, which set
+`obligations_computed_at` and made every later request skip the write. **On production that was
+all ten companies.** Fixed by migration 023. `DECISIONS.md` §63.
+
+**2. Case G's domain half surfaced two library-quality shapes.** Ten minutes of reading the
+rendered rows found three kinds of wrong rule that 199 expression reviews had not, and the sweep
+it prompted found **22 of 216 switch clauses that can never be true** — a large-quantity generator
+receives **zero** hazardous-waste obligations and is told so in a confident sentence.
+`DECISIONS.md` §64, `AUDIT-CHECKS.md` check 28, work is `TODO.md` 6.4c.
+
+**Neither is reachable by any automated check**, and both were found on the first run. That is the
+argument for this file, demonstrated rather than asserted.
 
 ### RESULT — first run, 13 September 2026
 
@@ -997,7 +1027,7 @@ UI work has not started.** That distinction is the point of writing these now.
    differ from production's; you should see *Test Alpha Chemical* and *Test Beta Cannabis*).
 2. Sign in as the chemical company. Ask the Workspace: **"Which agencies regulate my
    facility?"**
-3. **Expected, once anything reads the table:** 31 agencies — 14 federal, 14 Oregon, 3 local.
+3. **Expected, once anything reads the table:** 33 agencies — 14 federal, 16 Oregon, 3 local.
    Oregon OSHA must be there. Federal OSHA may be, as baseline, but the answer must say
    **Oregon OSHA enforces**.
 4. **The convincing test, not the correct one:** does the answer name the regulator in the

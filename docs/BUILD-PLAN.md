@@ -570,7 +570,7 @@ as demand research. Design in `WORKSPACE.md` §10.
 **F5 Multi-site** — the roll-up dashboard and site selector, on the structure 2.8 puts in
 place. `memberships` belongs here and nowhere else: it solves **one person across several
 companies**, not several people in one company, and it is not a prerequisite for user
-management. ⚠️ `auth_company_id()` returns a single `uuid` and **59 of 65 policies** call it,
+management. ⚠️ `auth_company_id()` returns a single `uuid` and **64 of 71 policies** call it,
 plus four storage policies — changing its signature is its own migration with its own
 rehearsal.
 **F6 Platform** — Stripe, file upload, Drive OAuth, domain, Framer homepage, PDF export, `claude-sonnet-5` ⚡ only with a golden-file pass.

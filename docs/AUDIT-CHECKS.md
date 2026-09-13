@@ -1,6 +1,12 @@
 # Audit Checks
-**Version:** 23 · **Updated:** 13 September 2026
-**Supersedes:** version 22 (13 Sep). Checks **27 and 28 now carry a PRODUCTION answer**, run there
+**Version:** 24 · **Updated:** 13 September 2026
+**Supersedes:** version 23 (13 Sep). **Nine of twenty-eight checks were in an UNKNOWN state after
+six phases** — written, never run, indistinguishable on the page from the nineteen that had been.
+All nine are now run against both environments: seven pass, check 9 fails because the check is too
+strict (a `not_built` coverage row legitimately has nothing behind it), check 11 fails on four
+stale counts, and check 20 passes vacuously. **Two were fixed** — check 4's `row_count` by
+migration 024, check 27's grants by 023. Records the rule that keeps it from recurring: **a check
+with a query and no recorded answer is a plan, not a check.** Version 23: Checks **27 and 28 now carry a PRODUCTION answer**, run there
 after migration 023 rather than inferred from staging: 27 passes identically on both sides, and 28
 returns **the same 22 mismatched clauses**, because it is the same library. Nobody has been shown
 those wrong answers only because no production company has computed obligations — timing, not a
@@ -83,7 +89,29 @@ standard that a sweep which has only ever said "clean" is untested, and records 
 only live requirements — written because migration 011's column comment said "live" and the
 first implementation counted retired rows anyway. A comment is not a constraint.
 
-**Status: the checks are written down and run by hand. None of them runs automatically yet.**
+**Status: the checks are written down and run by hand. Only `npm run audit:data` automates any
+of them — checks 14, 20 and 21.**
+
+> ### ⚠️ NINE OF TWENTY-EIGHT WERE IN AN UNKNOWN STATE — measured 13 September 2026
+>
+> After six phases of migrations, **checks 5, 6, 7, 8, 9, 10, 11, 12 and 20 carried no recorded
+> answer at all.** Not a failing answer — no answer. They were written, never run, and nothing
+> distinguished them on the page from the nineteen that had been.
+>
+> **All nine were run on 13 Sep against both environments.** Seven passed, two failed, and one of
+> the failures had been sitting on production since 12 September.
+>
+> **What would keep it from recurring, in order of cost:**
+>
+> 1. **Every check carries an `**Answer, <date>:**` line or it is not a check.** A check with a
+>    query and no answer is a plan. This is free and is the rule from here.
+> 2. **Extend `npm run audit:data`.** It covers 3 of 28. Checks 4, 5, 6, 7, 9, 12 and 19 are pure
+>    SQL against one database and need no judgement — they could run in the same command today.
+> 3. **The remainder need judgement and stay by hand** — 10 (two databases), 11 (reads documents),
+>    16 (two runs of an audit), 23 (a percentage that may only fall).
+>
+> **The deeper cause is the one §60 names:** a check's recorded answer is the only evidence it was
+> ever run, and nine of them had none while reading as though they were part of a working set.
 **Related:** `TODO.md` Phase 6 (observability) · `DECISIONS.md` · `CHEMICAL-OR-WA.md` §7 (verification)
 
 ---
@@ -495,7 +523,7 @@ duplicates on both sides, verified).
 ## 11. Is every count asserted in a document still true?
 
 The documents assert numbers constantly: 205 requirements, 200 live, 33 agencies, 56
-coverage rows, 65 policies, 59 through `auth_company_id()`, 615 objects, 49 Oregon rows
+coverage rows, 71 policies, 64 through `auth_company_id()`, 615 objects, 49 Oregon rows
 citing 29 CFR. Each is a claim with a date. This check re-derives them and reports the ones
 that have moved.
 
@@ -1394,6 +1422,65 @@ mismatched_clauses: 22
 **Identical, because it is the same library** — 205 rows, byte-identical across both environments.
 No production customer has computed obligations yet, **so nobody has been told this. That is
 timing, not a control**, and it is why `TODO.md` 6.4c gates showing `does_not_apply` to anyone.
+
+---
+
+## The 13 September sweep — nine unknown checks, run
+
+*All nine against BOTH environments. Results identical on staging and production unless noted.*
+
+| # | Check | Result |
+|---|---|---|
+| 5 | `secondary_agency_ids[]` all point at a real agency | **PASS** — 0 rows |
+| 6 | every company has exactly one primary site | **PASS** — 0 rows |
+| 7a | no child pointing at a still-live parent | **PASS** — 0 rows |
+| 7b | no retired row without a child or successor | **PASS** — 0 rows |
+| 8 | storage objects under a prefix matching no company | **PASS** — 0 rows. Four existed once and were found by accident; there are none now |
+| 9 | industry slugs agree across joining tables | **FAIL** — 1 row: `cannabis` |
+| 10 | production vs staging, object for object | **PASS** — **852 objects each, sha256 identical** |
+| 11 | every count asserted in a document still true | **FAIL** — see below |
+| 12 | every `agency_id` points at a live agency | **PASS** — 0 rows |
+| 20 | every inventory CAS is one we hold thresholds for | **PASS, VACUOUSLY** — `company_chemicals` is empty |
+
+**Check 9's failure is the check being too strict, not drift.** `cannabis` has 25
+`industry_coverage` rows, all `not_built`, and zero library rows — which is the documented state.
+**A coverage row whose status is `not_built` legitimately has nothing behind it**, and the check
+needs that exemption or it fails permanently.
+
+**Check 11 genuinely fails.** Four counts in current document text had gone stale — `65 policies`
+and `23 tables` in STATUS, `65 policies` in this file and in BUILD-PLAN, `31 agencies` in two
+places. **Live: 71 policies, 26 tables, 33 agencies, 64 policies calling `auth_company_id()`.** Six
+policies and three tables arrived across migrations 017–023 and no document moved.
+
+> **And the sweep itself produced a wrong number, which is worth keeping.** A first pass counted
+> `64` as `49`, because the predicate was `qual || coalesce(with_check,'')` — **`qual` is NULL on
+> every INSERT-only policy, and NULL concatenated with anything is NULL**, so those policies
+> silently fell out of the count. `coalesce(qual,'') || coalesce(with_check,'')` returns 64. The
+> same NULL-swallowing shape as `array_length()` on an empty array (`CLAUDE.md` §3.7), in a
+> counting query rather than a constraint. *(The naive form of this check produces ~53 hits,
+most of them legitimate subsets — "the 21 switches that depend on it". It needs a human pass, and
+that is why it stays by hand.)*
+
+### The two that were fixed
+
+**Check 4 — `row_count`.** OR-OSHA read **53** against a live **61**, on both environments, since
+12 September. Cause: migration 013 split three OR-OSHA requirements into eleven — 3 retired, 11
+live, **net +8** — and nothing recounted. **Migration 024 recomputes it and is idempotent**;
+staging passes, and `sum(row_count)` is now 193, matching the 193 live rows that carry an agency.
+**Not yet on production.**
+
+> **Why the recount was not automatic, which is the finding rather than the fix.** `row_count` is
+> a **derived number written by hand**, and it has now been wrong **twice for unrelated reasons** —
+> once at birth (migration 011's comment said "live" and the first implementation counted retired
+> rows; *a comment is not a constraint*) and once when the library moved underneath a correct
+> value. **Nothing recomputes it, so correctness is a property of whoever last remembered.** 024
+> fixes today's value and does **not** make the column self-maintaining; a trigger is the real fix
+> and is a separate decision. `DECISIONS.md` §66.
+
+**And it is not rendered.** `/api/obligations:102` builds M6's coverage strip from live
+`count: 'exact'` queries, not from this column. **No customer has been shown 53.**
+
+**Check 27 — the caller's EXECUTE grants**, fixed by migration 023 and now passing on both sides.
 
 ---
 

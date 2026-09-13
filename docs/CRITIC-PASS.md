@@ -224,7 +224,7 @@ array.** `CLAUDE.md` §5 in its most literal form.
 
 §5.2 says *"agencies identified as having jurisdiction: [list from Stage 2]"*. **Stage 2 does
 not exist.** Phase 2.1 built the list anyway: `agencies` and `industry_coverage` are populated
-in both environments, and the scoping query returns 31 agencies for an Oregon chemical company.
+in both environments, and the scoping query returns 33 agencies for an Oregon chemical company.
 
 **Decision: pass the full jurisdictional list now rather than waiting for Stage 2.**
 

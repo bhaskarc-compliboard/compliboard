@@ -1,6 +1,10 @@
 # Detailed To-Do
-**Version:** 18 · **Updated:** 13 September 2026
-**Supersedes:** version 17 (13 Sep). Sweep. **7.2a, 7.3, M6 and 4.3 are complete and on both
+**Version:** 19 · **Updated:** 13 September 2026
+**Supersedes:** version 18 (13 Sep). Records **M1's six decisions (D22–D27) as SETTLED**, with the
+cost-to-reverse and the date each must be right by, so the next session does not re-derive them.
+**The GATE gains a second item** — the checklist/obligation reconciliation, because production
+holds **235 AI-generated checklist rows and 0 computed obligations** and the divergence accrues
+customer records (`DECISIONS.md` §68–§69). Version 18: Sweep. **7.2a, 7.3, M6 and 4.3 are complete and on both
 environments** (000–023, 0 object differences), and the manual set has been run by a person for
 the first time — Cases E, F, G and I pass. **What is next by dependency has changed now that a
 screen exists**: it is no longer infrastructure but **6.4c, the library-quality revision**, which
@@ -132,6 +136,31 @@ numbering** — `BUILD-PLAN.md`'s differs for five of them, see the table above.
 | **11+ — Later** | ⬜ |
 | **MODULES M1–M8** | ⬜ the seven product modules, built last |
 
+### M1 — THE SIX DECISIONS ARE SETTLED. DO NOT RE-LITIGATE THEM.
+
+*Settled 13 September 2026. Recorded here so the next session starts from them rather than
+re-deriving them. Reasoning and reversal costs: `DECISIONS.md` §68, §69.*
+
+| | Decision | Cost to reverse | Must be right by |
+|---|---|---|---|
+| **D22** | **Obligations are the spine; checklists are workspace artifacts. M1 writes NEITHER.** The reconciliation belongs to M2 | nothing is built on it | **before real customers — it is on the GATE** |
+| **D23** | **Build topics, minimal shape.** | **free today** | **before conversations are stored** |
+| **D24** | **Capture facts; do not generate questions.** | same as to build | any time |
+| **D25** | **Synchronous** — D20's reasoning, unchanged | same as to build | any time |
+| **D26** | **WORKSPACE gaps (a) and (d) as decisions now; (b), (c) and (e) at build time** | risk is not reversal — see below | at build |
+| **D27** | **Text search only. No `pg_trgm`.** | same as to build | any time |
+
+**D26's risk is a wrong call shipping invisibly**, the way the twelve inventory rows did (§61) —
+correct at every layer, wrong in composition, visible only on a screen. **The mitigation is
+rendering it early, not deciding it harder.**
+
+**D22 is on the GATE** and the reason is in §68: production already holds **235 AI-generated
+`checklist_items` across 11 checklists and 0 computed obligations**, while staging holds 0 and
+222. The divergence exists, M1 does not create it, and it accrues rows. Merging later means
+merging live customer records.
+
+---
+
 ### What is genuinely next, BY DEPENDENCY rather than by number — rewritten 13 Sep
 
 **The previous version of this section said: *"resolution works, determination works, and a user
@@ -164,11 +193,19 @@ been one.**
 
 ## ⛔ GATE — THESE LAND BEFORE THE FIRST REAL CUSTOMER DOCUMENT
 
-**One item remains.** It is cheap right now and expensive the moment a real customer's
+**Two items remain.** Both are cheap right now and expensive the moment a real customer's
 documents are in the database — after that first upload it costs a maintenance window, a
 rollback plan, and a conversation with a customer about downtime.
 
-**1. Key rotation. Seven credentials.**
+**1. The checklist / obligation reconciliation.** *(Added 13 Sep — `DECISIONS.md` §68.)*
+Two records of "what you must do" accumulate side by side with different provenance: **235
+AI-generated `checklist_items` on production against 0 computed obligations.** Not here because
+it is hard to reverse — nothing is built on it — but because **it accrues rows, and rows acquire
+owners.** Today it is test data on a database with no paying customers; after the first one,
+merging them is a conversation about somebody's compliance record changing shape. Belongs to M2;
+this entry is the deadline, not the design.
+
+**2. Key rotation. Seven credentials.**
 Four leaked in a zip on 9 Sep. Both database passwords — production and staging — were
 printed in full to a terminal on 10 Sep while fixing the migration script's error output.
 The script redacts them now; the values are still out. **Seventh, added 12 Sep: the
@@ -901,7 +938,7 @@ are interface, they live in `MODULES`, and they get built when a customer asks f
   Every row has one of ten obligation types and a jurisdiction layer. **94 of 192 are
   Oregon-specific**, which is why the match key decides roughly half of what a customer is
   told.
-- **22 enum types**, 65 policies (59 through `auth_company_id()`), `anon` holding nothing.
+- **22 enum types**, 71 policies (64 through `auth_company_id()`), `anon` holding nothing.
 - **Five tables ahead of their callers** — `switches`, `company_switches`,
   `industry_coverage`, `library_candidates`, `jobs` — all empty, all with no reader yet.
 - **Every company has exactly one primary site**, and a trigger keeps that true for the
@@ -1603,7 +1640,7 @@ Oregon regulator with real obligations and no library rows.
 pile; "what is missing" had no shape to be asked against, and the only way to notice the
 Corporate Activity Tax was absent was to already know it existed. The gap did not become
 smaller — it became **addressable**, because the question changed from "what have we
-forgotten" to "which of these 31 agencies has nothing behind it".
+forgotten" to "which of these 33 agencies has nothing behind it".
 
 **The mechanism is worth naming because it generalises:** the value is in the rows with
 **nothing** in them. A coverage table listing only what has been covered would have shown 24
@@ -1765,7 +1802,7 @@ that shape.
 single `uuid`. Under `memberships` a person can belong to several companies, so it must
 either return a **set** (and every policy becomes `company_id IN (SELECT ...)`) or take an
 **active-company** parameter (and something must carry that choice through every request).
-**59 of 65 policies depend on that function**, plus the four storage policies. Plan it as its
+**64 of 71 policies depend on that function**, plus the four storage policies. Plan it as its
 own migration with its own rehearsal — never as a step inside another feature.
 
 Note this is a genuinely large migration whichever day it happens. What changed on 10 Sep is

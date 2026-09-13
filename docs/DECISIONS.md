@@ -1,6 +1,13 @@
 # Decision Record
-**Version:** 48 · **Updated:** 13 September 2026
-**Supersedes:** version 47 (13 Sep). Adds **§67** — the critic pass had no test because it could
+**Version:** 49 · **Updated:** 13 September 2026
+**Supersedes:** version 48 (13 Sep). Adds **§68–§70**. §68: two records of *what you must do*
+already exist and the populations are inverted — **production holds 235 AI-generated
+`checklist_items` and 0 computed obligations**; the reconciliation goes on the GATE because it
+accumulates customer rows, not because it is hard to reverse. §69: reversibility decides WHEN a
+decision must be right — ask what accumulates while it stands, not how hard it is to undo. §70: a
+third failure class — **code that runs constantly, returns a defensible answer every time, and has
+never taken its real path.** `substance_inventory()` is called 12 times per recompute and
+short-circuits on its first branch; 15 conditions depend on it. Version 48 added **§67** — the critic pass had no test because it could
 not be IMPORTED by one: `@/lib/...` is resolved by the bundler and by `tsc` but not by Node's
 loader, which is what runs the suite. A module that cannot be imported will not be tested, and
 the absence looks exactly like a backlog item. 24 assertions added; three more files are still in
@@ -4334,3 +4341,147 @@ behind a discussion, so the fix is Stage 2 rather than tuning.
 **Reversal condition:** none on the tests. On the import convention — if the project ever runs
 its test suite through a bundler that resolves `@/`, the relative paths stay anyway, because
 they cost nothing and the failure they prevent is silent.
+
+---
+
+## 68. Two records of "what you must do", and only one of them has customers — 13 September 2026
+
+**The finding underneath D22.** Obligations are the spine; checklists are workspace artifacts.
+**M1 writes neither**, and the reconciliation belongs to M2.
+
+**The divergence is not hypothetical and M1 does not create it. It already exists, and the
+populations are inverted:**
+
+```
+production : checklist_items 235 · checklists 11 · obligations 0
+staging    : checklist_items   0 · checklists  0 · obligations 222
+```
+
+**Every row of "what you must do" that a real person has ever seen in this product is
+AI-generated.** Not one is computed. The deterministic path that `CLAUDE.md` §1 calls the whole
+architecture — *"obligations: which library rows apply — Code. Never AI."* — has **zero rows on
+production**, and the path it was built to replace has 235.
+
+### One writer, not two — corrected from the artifact
+
+The account this was recorded from said `/api/chat` and `/api/audits` both write
+`checklist_items`. They do not:
+
+```
+app/compliance/page.tsx:333   await supabase.from('checklist_items').insert(items)
+app/api/account/route.ts      .from('checklist_items').delete()       (deletion only)
+```
+
+**One insert site, client-side**, persisting `/api/chat`'s `must_do` / `good_to_have` arrays.
+`/api/audits` produces checklist-shaped output (`outputType: 'checklist'`) but writes `audits`,
+not `checklist_items`. **The correction does not weaken the finding — it sharpens it**: the
+divergence runs through a single page that writes AI output straight into a table, with no route,
+no `requireCompany()`, and no resolution in between.
+
+### Why this goes on the GATE
+
+**Not because the decision is hard to reverse. Nothing is built on it.** It is the **divergence it
+permits**: two records of what a company must do, with different provenance — one generated, one
+computed — accumulating side by side.
+
+> **Merging them later means merging live customer rows. Today it is 235 rows of test data on a
+> production database with no paying customers.** That is the same argument as key rotation and
+> the `memberships` migration, and it earns the same place: cheapest now, expensive after the
+> first real customer, and the cost is not engineering time but a conversation with someone whose
+> compliance record changed shape.
+
+**Reversal condition:** if M2 is built before the first customer, the reconciliation happens there
+and this drops off the gate on its own. The gate entry is a deadline, not a design.
+
+---
+
+## 69. Which decisions cost more later, and which cost the same — 13 September 2026
+
+**Reversibility changes WHEN a decision must be made, not how carefully.** Six decisions were
+settled for M1; only one of them gets materially more expensive with time, and it is not the one
+that looks hardest.
+
+| | Decision | Cost to reverse | When it must be right |
+|---|---|---|---|
+| **D24** | capture facts, do not generate questions | same as to build | any time |
+| **D25** | synchronous (D20's reasoning) | same as to build | any time |
+| **D27** | text search only, no `pg_trgm` | same as to build | any time |
+| **D23** | build topics, minimal shape | **free today** | **before conversations are stored** |
+| **D26** | WORKSPACE gaps (a) and (d) now, (b)(c)(e) at build time | not reversal — see below | at build |
+| **D22** | obligations are the spine | nothing is built on it | **before real customers** |
+
+**D24, D25 and D27 compound nothing.** Reversing them costs what building them cost. They can be
+wrong for a week with no interest accruing.
+
+**D23 is free exactly until conversations are stored**, after which changing the topic shape is a
+migration over customer conversation history.
+
+**D26's risk is not reversal at all — it is a wrong call shipping invisibly**, the way the twelve
+inventory rows did (§61): correct at every layer, wrong in composition, and visible only on a
+screen nobody had built yet. **The mitigation for D26 is not "decide carefully", it is "render it
+early".**
+
+**D22 is the one that gets harder, and not because it is hard to undo.** See §68: the divergence
+accumulates rows, and rows acquire owners.
+
+> **The general shape: ask not "how hard is this to reverse" but "what accumulates while it
+> stands".** A decision nothing accrues under can wait. A decision that accrues customer rows
+> cannot, however easy the code change would be in isolation.
+
+**Reversal condition:** none — this is an analysis, not a policy. It is recorded because the
+ordering it implies is not obvious from the decisions themselves.
+
+---
+
+## 70. Code that runs constantly and has never done its job — 13 September 2026
+
+**A third class, distinct from the two it is easily confused with.**
+
+| Class | Example | How it fails | When you find out |
+|---|---|---|---|
+| **Unrouted** | `switchAsk`, `switchDetermination`, `sdsExtraction` | loudly, on first reach | first real caller |
+| **Unimportable** | `criticPass` before §67 | silently — looks like a backlog item | never, until someone tries |
+| **Never takes its real path** | **`substance_inventory()`** | **silently, forever** | **never** |
+
+**`substance_inventory()` is reachable, exercised on every recompute, and has never executed its
+actual logic.** Measured:
+
+```
+called from lib/obligationWriter.ts:131, per site x 6 lists   (Alpha: 12 calls per recompute)
+requirements with an inventory clause : 15
+company_chemicals    : 0 rows — staging AND production
+regulated_substances : 0 rows — staging AND production
+Alpha's 15, as resolved : unknown 14 · applies 1 · does_not_apply 1
+```
+
+**And it short-circuits on the FIRST branch, which is not the one usually blamed:**
+
+```sql
+when not exists (select 1 from public.company_chemicals c where c.entity_id = p_entity_id)
+  then null
+```
+
+`company_chemicals` is empty, so it returns NULL **before ever touching
+`regulated_substances`.** Seeding the threshold table alone changes nothing — **6.4b is a
+two-part dependency**: reference thresholds *and* a way for a customer to record what they hold.
+That is worth knowing before it is scheduled as one item.
+
+### Why this class is the dangerous one
+
+> **A test passes. The screen reads "we cannot say yet." That sentence is TRUE.** It is simply
+> not true for the reason a reader would assume. The honest rendering is *"nobody has told us
+> what you store"*; what renders is indistinguishable from *"we checked, and you are below the
+> threshold."*
+
+Unrouted code announces itself the first time anyone reaches it. This never will. It returns a
+defensible answer every time, on every recompute, for every company, and the defensibility is
+what hides it. **15 of 199 conditions — 7.5% of the library — have been answering from a branch
+that has never been exercised.**
+
+**Recorded against `TODO.md` 6.4b as why that item matters more than its size suggests.** It
+reads as "seed a reference table". It is actually "turn on 15 requirements that currently look
+answered and are not".
+
+**Reversal condition:** none. Once both tables hold rows, the check is `AUDIT-CHECKS.md` 18 and 20
+running non-vacuously for the first time — and **both are recorded as vacuous today**, which is
+the only reason this was findable at all.
