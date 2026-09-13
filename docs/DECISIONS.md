@@ -1,6 +1,11 @@
 # Decision Record
-**Version:** 42 · **Updated:** 13 September 2026
-**Supersedes:** version 41 (13 Sep). Adds **§61** — an `unknown` row's action is chosen from what
+**Version:** 43 · **Updated:** 13 September 2026
+**Supersedes:** version 42 (13 Sep). Adds **§62** — the lazy, synchronous obligation write,
+recorded at last (it was decided in session and never written down), together with a finding
+from the production pre-flight: migration 022 cites **§60** for that decision, **§60 did not
+exist when 022 was written**, and the section it now points at is the rule about not writing from
+what the record would contain. §60's failure mode, mine, in the commit immediately before §60.
+A cross-reference is written only to a section already present in the file. Version 42 added **§61** — an `unknown` row's action is chosen from what
 it is actually missing, never fixed by its status: a button with nothing behind it is worse than
 no button. Twelve of 136 rows offered "Answer the question" with no question behind them, and
 **the test asserted that as the contract and passed** — `resolve()` was right, the renderer was
@@ -3822,3 +3827,64 @@ defect was testable only by rendering.
 **Reversal condition:** if the ask path ever gains the ability to request a quantity directly —
 a question that captures "how much sulfuric acid do you keep" — the two actions converge and the
 branch collapses back to one. It has not, and `askableSwitches()` orders switches only.
+
+---
+
+## 62. Obligations are written on first request — and a citation I predicted instead of read — 13 September 2026
+
+**The decision, which was taken in session and never written down until now.**
+
+- **LAZY.** A company's obligations are computed on the **first GET of `/api/obligations`**, not
+  at signup. Writing at signup would show a brand-new company ~200 rows that are almost all
+  `unknown` before they have answered a single question, and would take the choice away from M7,
+  which may later want to trigger the write deliberately.
+- **SYNCHRONOUS.** Inside the request. Measured at **1.95 s for 221 obligations** on Test Alpha —
+  a page load, not a job. Pushing it to the worker would mean the first requirements screen shows
+  a spinner over an empty list, which is the one state §5.1 says must never be rendered as a
+  claim.
+- **`/api/obligations` returns M6's shape** — `{ rows, coverage, computedAt }`. `counts` was
+  removed: a count on that payload is a denominator the coverage strip says we do not have (§58.3).
+
+**And the state the schema could not otherwise express**, which is why migration 022 exists at
+all: `obligations = 0 AND never computed` is *"we have not worked this out yet"*;
+`obligations = 0 AND computed` is *"we worked it out and nothing applies"*. **A row count cannot
+tell those apart. A nullable timestamp can, and NULL is the never-computed state rather than
+missing data.**
+
+### The finding, from the pre-flight, about this file's own discipline
+
+Migration 022's header and its `comment on column` both cite **`DECISIONS.md` §60** for the lazy
+decision. Read from the artifacts:
+
+```
+022 was committed in 745b1f0 (13 Sep)
+highest section in docs/DECISIONS.md at that commit:  ## 59
+grep -c "obligations_computed_at" docs/DECISIONS.md:  0
+```
+
+**§60 did not exist when 022 cited it.** The number was predicted from "the next one will be 60",
+not read — and the prediction was wrong twice over: §60 became the entry about recording findings
+from artifacts, and the decision 022 was pointing at **was never recorded at all**. A future
+reader following that citation lands on a rule about fabrication and finds no explanation of why
+the column is nullable.
+
+**This is §60's failure mode, committed by me, in the commit immediately before §60 was written.**
+Same proximate cause — writing from what the record *would* contain rather than from what it did.
+It is recorded here rather than quietly fixed because the symmetry is the useful part: the rule
+was not aimed at one party, and the first thing it caught was mine.
+
+**Rule that follows:** a cross-reference is written only to a section that already exists in the
+file. If the section is being added in the same change, add it first and then cite it — never the
+other way round, and never a number that has not been read back out of the file.
+
+### What was NOT done about it, and why
+
+**Migration 022 was not edited.** It is applied to staging; migrations are tracked and never
+changed after they run (§3.7). The stale citation therefore reaches production inside a column
+comment. The correction is a comment-only migration, additive and reversible, and it is a
+separate decision from shipping 022 — raised rather than folded in silently.
+
+**Reversal condition on the lazy write:** if the first-request cost stops looking like a page
+load — a company with many sites crossing roughly 3 s — the write moves to signup or to the
+worker, and the empty-state sentence has to be settled before it does. `lib/obligationWriter.ts`
+records the threshold and what would change it.
