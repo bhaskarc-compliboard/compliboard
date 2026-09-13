@@ -26,8 +26,13 @@
  * DECISIONS.md §34's lesson applied a second time.
  */
 
-import { askAIJson, type AIContent } from '@/lib/ai'
-import type { KnownFact } from '@/lib/gateContext'
+// Relative, not `@/lib/...`. The alias is resolved by the Next bundler and by tsc, but NOT by
+// Node's own loader — and `node --test` runs these files directly with type stripping, no
+// bundler. `@/` here made this module the one file in the project that could not be imported
+// by a test, which is how it reached 13 Sep as the only module with production callers and
+// zero coverage. Every other tested module already imports relatively. DECISIONS.md §67.
+import { askAIJson, type AIContent } from './ai.ts'
+import type { KnownFact } from './gateContext.ts'
 
 // ---------------------------------------------------------------------------
 // OUTPUT

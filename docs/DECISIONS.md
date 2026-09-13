@@ -1,6 +1,18 @@
 # Decision Record
-**Version:** 46 · **Updated:** 13 September 2026
-**Supersedes:** version 45 (13 Sep). Adds **§65** — the three fabrications of 13 September in one
+**Version:** 48 · **Updated:** 13 September 2026
+**Supersedes:** version 47 (13 Sep). Adds **§67** — the critic pass had no test because it could
+not be IMPORTED by one: `@/lib/...` is resolved by the bundler and by `tsc` but not by Node's
+loader, which is what runs the suite. A module that cannot be imported will not be tested, and
+the absence looks exactly like a backlog item. 24 assertions added; three more files are still in
+that state and all three are on M1's path. The latency — 84 s, 37–151 s — is untouched and is the
+real M1 risk. Version 47 added **§66** — the second question to ask of every stored
+derived value: not only *what recomputes it* but **what rebuilds it when the table it lives on is
+replaced.** Migration 007 did exactly that to `agency_id` on 10 Sep and it was repopulated on 11
+Sep; the gap was one day and was named in the migration's own header. **Every derived column that
+is recomputed by code is correct; all three that are not have failed or are failing.** Records the
+fourth composed finding, whose new shape is that it was a RETRACTION — a self-correction is not
+self-verifying. The general form was right and only the specifics were invented, for the fourth
+time. Version 46 added **§65** — the three fabrications of 13 September in one
 place, with the rule stated once and extended: **a composed filename is a described artifact, not
 a copied one.** Each was settled by one `grep`, one query or one `ls`. Records that the third
 arrived as an ABORT rather than a request, that aborting was right regardless, and that twice now
@@ -4180,3 +4192,145 @@ checking the mechanism cheaply rather than for discounting the direction.
 
 **Reversal condition:** none. The rule costs a grep, an `ls` or a query per assertion, and every
 instance so far has been settled by one of those three in under a minute.
+
+---
+
+## 66. What rebuilds a derived column when its table is replaced — 13 September 2026
+
+**The rule, and it is a better question than the one it extends.**
+
+> §65's sweep asked of every stored derived value: **what recomputes it?** That is necessary and
+> not sufficient. The second question is:
+>
+> ### **What rebuilds it when the TABLE it lives on is replaced?**
+>
+> A `create table` that replaces a spine starts every derived column at NULL. Nothing errors,
+> nothing is dropped, and the column is *present and empty* — which reads as "no value" rather
+> than "value destroyed". **A recompute job that runs on change does not fire, because nothing
+> changed: the table was replaced, not updated.**
+
+### It happened here, and the history is exact
+
+| | |
+|---|---|
+| **10 Sep, `7539d80`** | migration **007** rebuilds the requirements spine. Its own comment, line 161: *"until then every `requirement_templates.agency_id` is null — which is why that column is nullable"* |
+| **11 Sep, `582df7c`** | *"Give every requirement a regulator"* — `assign-agencies.js` runs and populates it |
+
+**One day, not eight, and it was closed deliberately rather than discovered.** The migration
+*named* the gap in its own header and pointed at the phase that would close it. That is the
+mechanism working, not failing — but the mechanism was a human remembering, which is exactly what
+this rule exists to replace.
+
+**Today's state, measured on both environments:** `205 rows · 198 with an agency · 7 NULL`, and
+all seven are deliberate — 3 contractual (ISO 9001, ISO 14001, NACD: a registrar or trade body is
+not a regulator), 2 genuinely ambiguous (Oregon Mini-COBRA, payroll withholding, spanning DOR and
+OED), 1 best-practice with no enforcer (*"Best practice (not statute)"*), 1 a 2025 session law
+with no agency assigned yet.
+
+### The two derived columns that still have no rebuild story
+
+From §65's table, the ones where the answer to **both** questions is *nothing*:
+
+- **`industry_coverage.row_count`** — wrong by 8 on one row until migration 024 today.
+- **`requirement_templates.applies_expression`** — hand-written JSON; **22 of 216 clauses can
+  never be true** (check 28).
+
+**Every derived column that IS recomputed by code is correct. All three that are not have failed
+or are failing.** That is not a coincidence worth a policy; it is a policy that writes itself.
+
+### The fourth composed finding, and it has a new shape
+
+The account this was recorded from described **013** dropping and rebuilding
+`requirement_templates` with `agency_id` loading NULL, `assign-agencies` never re-run, 60
+requirements with no regulator of which 53 had been reclassified, and **023** touching agencies.
+Settled read-only:
+
+```
+rebuild migration          : 007, not 013   (013 is the chemical inventory + three splits)
+013 and agencies           : it ASSIGNS them — looks up OR-OSHA and passes it into every split child
+split children with no agency: 0 of 17
+agency_id populated        : 198 of 205 rows.  Never 60 missing, never 53 reclassified
+023                        : grants and a caller guard. Touches no agency
+```
+
+**What is new is that this was a RETRACTION.** The first three composed findings were requests —
+fix this, record that. This one was an attempt to correct the record, and the correction was
+composed the same way. **A self-correction is not self-verifying**, and it deserves exactly the
+same `grep` before it is written down — more, arguably, because a correction carries extra
+authority precisely by admitting error.
+
+**And the direction the rule cuts is worth stating plainly: the general form was RIGHT.** A
+rebuild did drop a derived column, and *"what rebuilds it when the table is replaced"* is a real
+question this project had no answer to. **Only the specifics were invented.** That is the fourth
+time a correct principle has arrived attached to a wrong mechanism (§61, §63, and twice here), and
+it remains the argument for checking the mechanism cheaply rather than discounting the direction.
+
+**Numbering note:** this was asked for as §68. **§65 is the highest section that exists**; there
+is no §66 or §67 to follow. Recorded as §66, which is the next number — from `grep -c '^## '`,
+not from where the count was assumed to be.
+
+**Reversal condition:** none. The check is one line per derived column in `AUDIT-CHECKS.md` and
+costs nothing to keep.
+
+---
+
+## 67. The critic pass had no test because it could not be imported by one — 13 September 2026
+
+**The decision.** `lib/criticPass.ts` now has a unit suite — **24 assertions** across its two
+pure halves, `normaliseCritique` and `applyCritique`. And its two imports moved from `@/lib/...`
+to relative paths, **which is the reason it had no test at all.**
+
+### Why it had none, and it was not neglect
+
+`@/` is resolved by the Next bundler and by `tsc`. **It is not resolved by Node's own loader** —
+and `npm run test` runs these files directly under Node 24's type stripping, with no bundler:
+
+```
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package '@/lib'
+    imported from /Users/…/lib/criticPass.ts
+```
+
+**So the module was structurally untestable, and nothing said so.** It did not appear as a gap;
+it appeared as a file nobody had got to. Every other tested module in `lib/` already imports
+relatively — the convention existed and this file was outside it, invisibly.
+
+> **A module that cannot be imported by a test will not be tested, and the absence looks exactly
+> like a backlog item.** Three files are still in that state: `documentReview.ts`,
+> `determinationGate.ts`, `documentContent.ts`. All three are on M1's path.
+
+### What the tests assert, and why these
+
+`criticise()` itself is deliberately **not** tested — it calls a model, and a model checking a
+model is what `docs/TESTING.md` refuses. What is testable is **what the product does with
+whatever comes back**, including the shapes a model gets wrong:
+
+- **A finding with no quote is dropped.** The prompt demands a quote precisely so an invented
+  finding is hard to write; honouring that in code is what makes the instruction structural
+  rather than advisory.
+- **Garbage never throws, and unparseable is NOT a clean pass.** `null`, a bare string, a number,
+  `findings: 'none'` — each returns `complete: false`. **An answer nobody reviewed must not read
+  as reviewed.**
+- **An invented severity coerces DOWN to `qualifying`, never up to `blocking`** — coercing up
+  would let a malformed critique withhold a correct answer — **and the finding is kept**, because
+  a malformed label is not a reason to discard the substance.
+- **Question 5 never inflates the qualification count.** *"Flag every specific"* is
+  pattern-matching, not adversarial judgement, and fires on nearly every answer; folding it into
+  the count makes the count meaningless, and **the count is the only way to detect a critic that
+  has started inventing** (`CRITIC-PASS.md` §7.1).
+- **It never rewrites.** A test asserts no output field is named `corrected`, `revised`,
+  `replacement` or `fixed` — §39's contract, as an assertion rather than a comment.
+
+### What this does NOT close, stated plainly
+
+**It was already routed.** `criticPass` is called at `app/api/chat/route.ts:184` and
+`app/api/audits/route.ts:427`. The gap was never the wiring.
+
+**The latency is untouched and is the real M1 risk: 84 s average, 37–151 s**, measured 12 Sep.
+The cause is structural — the critic is handed all 33 agencies because Stage 2 does not exist to
+narrow them (`CRITIC-PASS.md` §5). **A unit test cannot see a minute of wall clock.** For a
+conversational surface that is a dead screen, and `CLAUDE.md` §3.1 puts prompt and model changes
+behind a discussion, so the fix is Stage 2 rather than tuning.
+
+**Reversal condition:** none on the tests. On the import convention — if the project ever runs
+its test suite through a bundler that resolves `@/`, the relative paths stay anyway, because
+they cost nothing and the failure they prevent is silent.
