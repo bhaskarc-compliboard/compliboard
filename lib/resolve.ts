@@ -388,10 +388,29 @@ export function resolve(input: ResolveInput): ResolveResult {
       if (verdict === true) {
         push('applies', `The condition is satisfied: ${describe(determinedBy)}`)
       } else if (verdict === false) {
+        // *** NAME THE FACT THAT RULED IT OUT. *** "This does not apply to you" is half an
+        // answer; the half a compliance customer needs is WHY, because that is the half they
+        // can check, challenge, and show to an auditor. A generic sentence here would make
+        // the 108 not-applicable rows the residue of the answer rather than part of it.
+        const known = determinedBy.switches.filter((sw) => !missingSwitches.has(sw))
+        const values = known
+          .map((sw) => {
+            const v = against.length
+              ? factsFor(companyFacts, siteFacts[against[0].id])[sw]
+              : companyFacts[sw]
+            return `${sw} = ${v === undefined || v === null ? 'unset' : String(v)}`
+          })
+          .join(', ')
+        const stillMissing = determinedBy.switches_missing.length
+          ? ` (${determinedBy.switches_missing.join(', ')} not established, but the answer is ` +
+            `already settled without them — a definite false outranks a missing fact)`
+          : ''
         push(
           'does_not_apply',
-          `The condition is not satisfied, and every fact it depends on is established. ` +
-            `This is a definite no, not an absence of evidence.`,
+          (values
+            ? `Ruled out by: ${values}.${stillMissing} `
+            : `Ruled out by the jurisdiction or inventory test. `) +
+            `This is a definite no with the evidence behind it, not an absence of evidence.`,
         )
       } else {
         // UNKNOWN, not undetermined. We lack an input, and we can name it — which is what

@@ -17,7 +17,7 @@
     "check:schema": "node scripts/check-schema-contracts.js",
     "golden": "node --env-file=.env.local scripts/run-golden.js",
     "expressions": "node --env-file=.env.local scripts/load-expressions.js",
-    "test": "node --test \"tests/unit/*.test.ts\"",
+    "test": "node scripts/test-guard.js",
     "mutation": "node scripts/mutation-check.js"
   },
   "dependencies": {

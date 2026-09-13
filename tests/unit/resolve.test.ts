@@ -431,3 +431,43 @@ describe('isEstablished — state and value must agree', () => {
     assert.equal(isEstablished('known', 'yes', 'boolean'), false)
   })
 })
+
+describe('a does_not_apply names the fact that ruled it out', () => {
+  test('the rationale carries the switch and its value', () => {
+    const o = only(resolve({
+      company: ALPHA, sites: [HILLSBORO],
+      requirements: [req({ id: 'r-x', name: 'Needs a fleet',
+        appliesExpression: { switch: 'owns_fleet', op: 'is', value: true } })],
+      companyFacts: { owns_fleet: false }, siteFacts: {},
+    }))
+    assert.equal(o.status, 'does_not_apply')
+    assert.match(o.resolutionRationale, /Ruled out by: owns_fleet = false/,
+      '"does not apply" without a reason is the half the customer cannot check')
+  })
+
+  test('a definite false reached DESPITE a missing fact says so', () => {
+    // false AND unknown = false. The answer is settled, and the row must not pretend
+    // every input was known — that would overstate what we checked.
+    const o = only(resolve({
+      company: ALPHA, sites: [HILLSBORO],
+      requirements: [req({ id: 'r-y', name: 'Both needed',
+        appliesExpression: { all: [
+          { switch: 'owns_fleet', op: 'is', value: true },
+          { switch: 'cdl_drivers', op: 'is', value: true }] } })],
+      companyFacts: { owns_fleet: false }, siteFacts: {},
+    }))
+    assert.equal(o.status, 'does_not_apply')
+    assert.match(o.resolutionRationale, /owns_fleet = false/)
+    assert.match(o.resolutionRationale, /cdl_drivers not established/)
+    assert.match(o.resolutionRationale, /a definite false outranks a missing fact/)
+  })
+
+  test('an out-of-jurisdiction row keeps its own reason', () => {
+    const texas: Company = { ...ALPHA, state: 'Texas' }
+    const o = only(resolve({ company: texas, sites: [{ ...HILLSBORO, state: 'Texas' }],
+      requirements: [req({ id: 'r-or', name: 'Oregon thing', layer: 'state', state: 'Oregon',
+        appliesExpression: { switch: 'has_employees', op: 'is', value: true } })],
+      companyFacts: { has_employees: true }, siteFacts: {} }))
+    assert.match(o.resolutionRationale, /Out of jurisdiction/)
+  })
+})
