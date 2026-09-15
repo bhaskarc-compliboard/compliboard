@@ -1,6 +1,9 @@
 # Chemical Manufacturing Vertical — Oregon & Washington
-**Version:** 1.6 · **Updated:** 12 September 2026
-**Supersedes:** 1.5 (12 Sep). **Four corrections, all the same mistake: this file treated an SDS
+**Version:** 1.7 · **Updated:** 15 September 2026
+**Supersedes:** 1.6 (12 Sep). §5.2's six-stage pipeline is **superseded for the RESEARCH path** by
+`DECISIONS.md` §77 — two AI calls, the library invisible, no critic. It stands as written for the
+**audit** path, and stages 1 and 6 are unchanged for both. No other section changed. Previously,
+1.6: **Four corrections, all the same mistake: this file treated an SDS
 as an inventory.** §2.2's `basis` example attributed "1,400 lb methylene chloride" to an SDS;
 §10.4 claimed an SDS library resolves TSCA, EHS and TRI; §10.5's table listed every threshold
 regime against it; §11's upload checklist promised ~12 requirements from an SDS binder.
@@ -755,6 +758,22 @@ The failed output had four causes, and only one was model capability:
 Additionally: checklist generation appears to run at default temperature because it is treated as conversational. **Identifying which requirements apply is a judgment call, not conversation.** That is a quality-affecting parameter and should be discussed before changing.
 
 ## 5.2 The six-stage runtime pipeline
+
+> ### ⚠ SUPERSEDED FOR THE RESEARCH PATH — `DECISIONS.md` §77, 15 September 2026.
+>
+> **Research is now two AI calls: gate, then answer.** Stages 2, 4 and 5 are dropped from that
+> path and stage 3 is inverted — the library **enriches silently after** the model answers rather
+> than filtering what it may consider, because **a gap in the library is indistinguishable from a
+> rule that does not exist**, and narrowing the model to the library inherits that ambiguity.
+>
+> **Stages 1 and 6 survive unchanged.** The critic (stage 5) moves to the **checklist boundary**,
+> where an answer becomes steps with hours and costs attached and can no longer be challenged
+> mid-flight.
+>
+> **The AUDIT path still follows the six stages below.** Research enriches; audit asserts. §77's
+> last section records why they must never be unified.
+>
+> Read the stages below as the audit pipeline, and as the origin of stages 1 and 6.
 
 ```
 User question
