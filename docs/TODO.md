@@ -156,6 +156,7 @@ decisions and the five schema gaps are settled before any of this starts.*
 | **M1.0** | **7.2a's two routes** — the floor, not part of M1 | — | 1 d |
 | **M1.1** | **Topics, minimal shape** (D23). `topics` table: company, title, status, opened/closed, summary. **Free today, not free once conversations are stored** (§69) | M1.0 | 1 d |
 | **M1.2** | **Follow-up classification** (§4.1) — three kinds, classified before anything expensive runs | M1.1 | 1 d |
+| **M1.2a** | ⚡ **The critic's `priorAssertions` field** — decision settled in `DECISIONS.md` §73 (prior ANSWERS, never prior findings). Field + prompt change | M1.2, timing | 0.5 d |
 | **M1.3** | **Fact capture, not question generation** (D24). The conversation writes `company_switches` through 7.2a's route; it does **not** invent questions — the queue comes from `askableSwitches()` and the dependency graph (v3.5) | M1.0, M1.1 | 1.5 d |
 | **M1.4** | **Site resolution before a site-scoped write** (v3.3). One site → silent. Several → the question carries the site. **Defaulting to primary is forbidden** (§20) | M1.3 | 1 d |
 | **M1.5** | **Show what we know** (§7) — facts in context before an answer, with `source` rendered so a document-derived value and a person's answer do not look alike | M1.3 | 1 d |
@@ -164,9 +165,13 @@ decisions and the five schema gaps are settled before any of this starts.*
 | **M1.8** | **Topic close onto a topic summary** (v3.6, **provisional**) | M1.1 | 0.5 d |
 
 **Synchronous throughout (D25).** Same reasoning as D20: the gate is 6–10 s, the answer ~30 s.
-**The critic is the risk, not the rule** — 84 s average, 37–151 s, because Stage 2 does not exist
-to narrow 33 agencies. **Measure it from a route before M1.5 renders anything**, and if a
-conversational turn crosses ~30 s, Stage 2 stops being deferred.
+
+> ### ⛔ MEASURED 15 SEP — THE CRITIC IS OVER BUDGET AND STAGE 2 IS NO LONGER DEFERRABLE.
+> **36.4 s mean, 33.2–42.2 s, n=3**, critic alone, on a five-item checklist with the live 33-agency
+> list (`DECISIONS.md` §74). Against a ~30 s conversational turn, and the gate and the generating
+> call sit on top of it. **Stage 2 — narrowing the agency list to the ones a question touches — is
+> now an M1 dependency, not a deferred optimisation.** Do not tune the prompt or drop the model
+> tier: the cost is the input (`CRITIC-PASS.md` §5), and both are §3.1 changes.
 
 **Text search only (D27).** No `pg_trgm` until something is actually slow.
 
@@ -175,14 +180,11 @@ render a numeric readiness count (numbers stay off until the library is verified
 
 **The two spec items still open, both flagged in v3 rather than hidden:**
 
-1. **`expires_at` is unimplemented** (v3.1) — 48 non-static switches, 0 rows with an expiry,
-   nothing reads the column. **This is the only one of the five gaps with no code at all**, and it
-   is the false-green direction.
-2. **The critic cannot see prior turns.** `WORKSPACE.md` §4.2 requires it — *"a critic seeing only
-   turn three will happily validate a font size inside a false premise"* — and `CriticInput` has
-   `question`, `answer`, `establishedFacts`, `declaredUnknowns`, `agenciesInScope`,
-   `factsReliedOn`, and **no field for prior assertions.** Field addition plus a prompt change,
-   which `CLAUDE.md` §3.1 puts behind a discussion.
+1. **`expires_at` has MOVED TO THE GATE** (item 2) — it is not an M1 gap. Every module that
+   writes a fact is affected and the failure direction is false green.
+2. **The critic cannot see prior turns — DECIDED, not built.** `DECISIONS.md` §73 settles what it
+   sees (prior **answers**, as claims under review) and what is withheld (its own prior
+   **findings**, which would be the reviewer reviewing its own review). Built as **M1.2a**.
 
 ---
 
@@ -243,7 +245,7 @@ been one.**
 
 ## ⛔ GATE — THESE LAND BEFORE THE FIRST REAL CUSTOMER DOCUMENT
 
-**Two items remain.** Both are cheap right now and expensive the moment a real customer's
+**Three items remain.** All are cheap right now and expensive the moment a real customer's
 documents are in the database — after that first upload it costs a maintenance window, a
 rollback plan, and a conversation with a customer about downtime.
 
@@ -255,7 +257,16 @@ owners.** Today it is test data on a database with no paying customers; after th
 merging them is a conversation about somebody's compliance record changing shape. Belongs to M2;
 this entry is the deadline, not the design.
 
-**2. Key rotation. Seven credentials.**
+**2. `expires_at` — a fact that cannot go stale is a false green waiting to happen.**
+*(Added 15 Sep — `WORKSPACE.md` v3.1.)* **48 of 95 switches are non-static** (`annual` or
+`monthly`), **0 rows carry an expiry, and nothing reads the column.** The decision is settled —
+an expired switch reads as `unknown`, never as its last value — and **no code implements it.**
+Here rather than in M1's task list because it is not an M1 gap: **every fact every module writes
+is affected**, the failure direction is **false green**, and a stale `false` clearing a
+requirement is indistinguishable on screen from an honest one. Cheapest before there is real data
+to migrate, and invisible if it slips.
+
+**3. Key rotation. Seven credentials.**
 Four leaked in a zip on 9 Sep. Both database passwords — production and staging — were
 printed in full to a terminal on 10 Sep while fixing the migration script's error output.
 The script redacts them now; the values are still out. **Seventh, added 12 Sep: the

@@ -1,6 +1,18 @@
 # Decision Record
-**Version:** 51 · **Updated:** 15 September 2026
-**Supersedes:** version 50 (15 Sep). Adds **§72** — 6.4b stays deferred and `regulated_substances`
+**Version:** 53 · **Updated:** 15 September 2026
+**Supersedes:** version 52 (15 Sep). Adds **§74** — the critic timed before M1 is built, not
+after: **36.4 s mean, 33.2–42.2 s, n=3**, critic alone, against a ~30 s conversational budget.
+**Over, so Stage 2 stops being deferrable.** The 84 s from 12 Sep is not contradicted — that was a
+272-item audit and this is a five-item checklist, so the critic costs ~36 s small and ~84 s large.
+Do not tune the prompt or drop the tier: the cost is the input, all 33 agencies, because Stage 2
+does not exist. Version 52 added **§73** — what the critic sees of a conversation.
+**Prior ANSWERS, never prior FINDINGS**: feeding the critic its own earlier judgements is the
+self-agreement failure the stage exists to prevent, one level out. Names the failure the fix
+creates — a wrong prior assertion becomes anchoring context — and the mitigation: prior
+assertions are labelled claims under review, not established facts. §65 gains the **provenance
+test** that replaces the plausibility framing (*which artifact would have produced this
+number?*) and a **sixth** composed assertion, a section citation written rather than read back.
+Version 51 added **§72** — 6.4b stays deferred and `regulated_substances`
 stays unseeded, because **moving thresholds into a table turns a visible problem into an invisible
 one**: a wrong literal is readable on the renderer, which is how the circular switches were found,
 and a wrong join is not. Deleting the table was refused on the code — its INNER JOIN is the only
@@ -4155,7 +4167,7 @@ the review can go back to being periodic rather than gating.
 
 ## 65. The composed assertions, and the rule that covers all of them — 13–15 September 2026
 
-*Five instances. The register is kept here so the rule is stated once and the count is not an
+*Six instances. The register is kept here so the rule is stated once and the count is not an
 impression. §60 records the first and states the rule; §66 records the fourth in full.*
 
 **This section exists so the rule is stated once and the instances are countable.** §60 records
@@ -4196,9 +4208,43 @@ where the rule is cheapest to apply and where it was aimed.
 > query: **`citation_quote` is NULL on all 205 rows**, which is exactly why both shapes in check
 > 30 are a worklist for 6.7 rather than work preceding it.
 >
-> **So the operational form of the rule is a question about provenance, not about plausibility:**
-> *which artifact would have produced this number?* If the answer is "none that exists", the
-> number is a hypothesis however reasonable it sounds.
+> ### THE OPERATIONAL FORM OF THE RULE — provenance, not plausibility
+>
+> The plausibility framing does not work and should not be used. **Eight was perfectly plausible;
+> that was the point.** So were 60 of 72, the 13 rows, and a migration filename that reads exactly
+> like the others. **Every one of the five sounded right.** A test that asks "does this sound
+> right" passes all of them.
+>
+> **The test is: WHICH ARTIFACT WOULD HAVE PRODUCED THIS NUMBER?**
+>
+> | Assertion | Artifact that would produce it | Verdict |
+> |---|---|---|
+> | *"12 of 136 name no switch"* | a query on `determined_by` | exists → checkable → **true** |
+> | *"22 of 216 clauses can never fire"* | a type sweep over `applies_expression` | exists → **true** |
+> | *"eight cases where Oregon genuinely differs"* | a comparison of our text against Oregon's rule | **`citation_quote` is NULL on all 205 rows. No such artifact.** → hypothesis |
+>
+> **If the answer is "none that exists", it is a hypothesis however reasonable it sounds** — and
+> the right move is to say so and check, not to soften the number.
+>
+> **This is also why the rule is cheap.** Naming the artifact takes one sentence, and it either
+> names a command or it does not.
+
+### The sixth: a citation composed rather than copied
+
+**Same week, same shape as the migration filename (#3).** A request to file the fifth instance
+"in §68" — but **§68 is the checklist/obligation finding**; the register is **§65**. Settled by
+`grep -n '^## 6[4-9]\.'`, which costs one command.
+
+**A section number is a filename with fewer characters.** §46 established that a pre-flight names
+files exactly as they appear on disk, read from the directory rather than from what the work was
+called; a cross-reference is the same act on a different artifact, and §62 already records the
+inverse failure — a migration citing a §60 that did not yet exist, predicted from "the next one
+will be 60". **The rule covers both directions: never write a reference you have not read back
+out of the file.**
+
+**Six instances this week, and the count is the useful part** — not because six is alarming, but
+because each was settled by one command, and a register that is countable is how the rate stays
+visible rather than becoming folklore.
 
 ### Why the third is the interesting one, and it is not the worst
 
@@ -4660,3 +4706,129 @@ and returns a **definite `false`**, which is the one direction `CLAUDE.md` §3.2
 `company_chemicals` writer exists, (b) becomes arguable again — because a verified number in a
 table with `source_url` and `source_checked_at` beside it is *better* provenance than a literal.
 The objection is to moving unverified numbers out of sight, not to the table.
+
+---
+
+## 73. What the critic sees of a conversation — 15 September 2026
+
+**⚡ `CLAUDE.md` §3.1 — this changes what feeds a prompt, so the decision is written before the
+code.** `WORKSPACE.md` §4.2 requires it: *"the critic must see what the answer is built on, not
+only the latest turn. If turn one asserted the bottle needs DOT labels and turn three asks about
+font size, a critic seeing only turn three will happily validate a font size inside a false
+premise."*
+
+**Today `CriticInput` carries** `question`, `answer`, `questionSet`, `establishedFacts`,
+`declaredUnknowns`, `agenciesInScope`, `factsReliedOn` — **and no field for anything from a prior
+turn.** So §4.2 is unsatisfiable as the interface stands.
+
+### The question that had to be settled first: prior ANSWERS or prior FINDINGS?
+
+**They are different inputs and they fail differently.**
+
+| | What it is | What it catches | How it fails |
+|---|---|---|---|
+| **Prior answers** | what the product ASSERTED in earlier turns | turn 3 validated inside turn 1's false premise — **exactly §4.2's case** | more input, more tokens, more chance of anchoring on a wrong premise as context |
+| **Prior findings** | what the CRITIC concluded in earlier turns | apparently: repeated mistakes | **the critic reads its own past judgement and agrees with it** |
+
+**The decision: PRIOR ANSWERS. Never prior findings.**
+
+> **`CRITIC-PASS.md`'s founding rule is that the critic sees only the OUTPUT, never the
+> instructions that produced it, because a reviewer reading those is reviewing its own reasoning
+> and will agree with it.** Feeding it its own earlier findings is that same failure one level
+> out — the reviewer reviewing its own review. It would produce agreement, and **agreement is not
+> verification.**
+>
+> A critic told *"you previously found this answer sound"* has been handed a reason to find the
+> next one sound. A critic told *"the product previously asserted X"* has been handed something to
+> attack, which is the whole job.
+
+### What it sees, precisely
+
+**Added:** `priorAssertions` — the **claims** of earlier turns in the same topic, not their prose.
+For a checklist answer that is the `must_do` item names; for a research answer, the assertion
+sentence. **Trimmed to claims for the same reason `factsReliedOn` is an extraction rather than the
+document** — passing the whole thing lets the critic re-derive the answer and then confirm it,
+which is the failure this stage exists to avoid.
+
+**Deliberately withheld, and each for a stated reason:**
+
+| Withheld | Why |
+|---|---|
+| The critic's own prior findings | self-agreement — the rule above |
+| The prompts that produced any turn | `CRITIC-PASS.md`'s founding rule, unchanged |
+| The user's prior phrasings | the claim is what can be wrong; how it was asked is not |
+| Turns from other topics | a topic is the unit; cross-topic context is noise with a cost |
+
+### The failure this creates, named in advance
+
+**A wrong prior assertion becomes context, and context anchors.** If turn 1 was wrong and the
+critic is shown it as a premise, the critic may accept it and go on to review turn 3 against it —
+**the precise failure §4.2 describes, reintroduced by the fix for §4.2.**
+
+**The mitigation is that prior assertions are labelled as CLAIMS UNDER REVIEW, not as
+established facts** — the same distinction `establishedFacts` already draws, which carries what
+the gate *determined* rather than what the model *said*. A critic that can attack a prior
+assertion is doing its job; one that treats it as given has been mis-fed.
+
+**This is a prompt change as well as a field**, and prompts live in `prompts/`, never inline.
+
+### Not built, and sequenced inside M1
+
+M1.2's follow-up classification is what makes a "prior turn in the same topic" addressable at all,
+so this lands after it and before M1.5 renders anything.
+
+**Reversal condition:** if Stage 2 lands and narrows the agency list, the critic's input shrinks
+enough that passing prior assertions in full prose becomes affordable, and the trimming is worth
+re-arguing. Not before — the critic is already the most expensive call in the product.
+
+---
+
+## 74. The critic timing, measured before M1 rather than after — 15 September 2026
+
+**Measured 15 September 2026, calling `criticise()` directly with a realistic checklist answer and
+the live agency list from staging. Three runs, real API calls.**
+
+```
+agencies passed to the critic: 33   (Stage 2 does not exist to narrow this)
+
+  run 1: 33.7s   findings 9 (blocking 2, q5 2)  complete=true
+  run 2: 42.2s   findings 9 (blocking 2, q5 2)  complete=true
+  run 3: 33.2s   findings 9 (blocking 2, q5 1)  complete=true
+
+  n=3  mean 36.4s  min 33.2s  max 42.2s
+```
+
+### It is over the threshold, so Stage 2 stops being deferrable
+
+**36.4 s mean against a ~30 s budget for a conversational turn, and that is the critic ALONE** —
+the gate is 6–10 s and the generating call ~30 s on top. **A turn in M1 is a minute-plus of dead
+screen**, and §5's rule is that nothing may show an infinite spinner.
+
+**The 84 s recorded on 12 September is not reproduced**, and the difference is worth stating
+rather than treating either number as wrong: that figure came from `/api/audits` across 12 runs on
+a 272-item ISO standard. **This is a five-item checklist.** So the honest reading is that the
+critic costs **~36 s at the small end and ~84 s on a large audit**, and the small end is what M1
+will feel.
+
+**Why the number was worth getting before building rather than after:** it is a *number*, not a
+judgement, it cost three API calls, and it changes M1's shape. **Measuring it after M1.5 renders
+would have meant discovering it in front of a user** — the same class as the 500 Case E found on
+its first fixture (§63).
+
+### What does NOT follow from it
+
+**Do not tune the prompt or lower the model tier.** `CRITIC-PASS.md` §5 is explicit: the cost is
+**the input**, because the critic is handed **all 33 agencies** since Stage 2 does not exist to
+narrow them to the ones a question touches. **Narrowing the input is the fix.** Tuning the prompt
+trades review quality for latency, which is the wrong trade in a product sold on trustworthiness,
+and `CLAUDE.md` §3.1 puts both behind a discussion anyway.
+
+**And the finding count is stable across runs — 9, 9, 9 with 2 blocking each time.** That matters
+independently: `CRITIC-PASS.md` §7.1 records that the count is the only way to detect a critic
+that has started inventing, and a stable count on identical input is the baseline that check
+would be measured against. **Question 5 varied (2, 2, 1), which is exactly why §7.1 separates it
+out of the count.**
+
+**Reversal condition:** if Stage 2 lands and the agency list narrows from 33 to the few a question
+actually touches, re-run this measurement before concluding anything about M1's shape. The
+threshold is the turn, not the stage.
