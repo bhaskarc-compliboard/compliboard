@@ -1,6 +1,11 @@
 # Audit Checks
-**Version:** 26 · **Updated:** 15 September 2026
-**Supersedes:** version 25 (13 Sep). Adds **check 29** — what is reachable in principle and reached
+**Version:** 27 · **Updated:** 15 September 2026
+**Supersedes:** version 26 (15 Sep). Adds **check 30** — is a state rule distinguishable from the
+federal rule it exceeds? Two enumerable shapes: **4 rows** gated on a determination result wearing
+the shape of a fact, and **21 state rows** whose expression is identical to a federal row's, of
+which **14 are harmless tautologies and 7 are the defect** — an Oregon rule resolving exactly as
+the federal one it should exceed, erring toward false green. **25 distinct rows of 205; 11 need
+judgement.** Both findable by query, neither fixable without 6.7. Version 26: Adds **check 29** — what is reachable in principle and reached
 by nothing? Kept as one class rather than scattered notes: **four modules, ~17 exports, ~60 tests,
 zero requests**, which is the whole 7.2/7.2a surface. Distinguishes it from the two neighbouring
 classes that fail differently — code reached for the first time by a user (§63) and code that
@@ -1577,6 +1582,95 @@ assumed**, because "no caller in the code" and "no caller at all" are different 
 
 **Three files remain unimportable by a test** — `documentReview.ts`, `determinationGate.ts`,
 `documentContent.ts` — all three on M1's path.
+
+---
+
+## 30. Is a state rule distinguishable from the federal rule it exceeds?
+
+**Two shapes, both enumerable by query, both on the 6.7 worklist.** This is the check that turns
+*"several rules look suspect"* — an impression from ten minutes of domain reading — into a number
+that can be re-run after 6.7 changes anything.
+
+### (a) A DETERMINATION RESULT wearing the shape of a fact
+
+```sql
+select requirement_name, jurisdiction_layer, applies_expression
+  from public.requirement_templates
+ where effective_to is null
+   and applies_expression::text like '%air_permit_required%'
+   and applies_expression::text not like '%ghg_emissions%';
+```
+
+**Answer, 15 September 2026: 4 rows.** `Clean Air Act Title V permit`, `Title V monitoring and
+compliance certification`, `Oregon Air Contaminant Discharge Permit`, `NSPS/NESHAP/MACT
+applicability screen`.
+
+> **The defect is not circularity, and "circular" was the wrong word.** `air_permit_required` is a
+> **determination result**, not an observable fact: something worked out the answer, and the
+> expression reads that answer instead of the inputs that produced it. Its
+> `determination_source` is `documents` — so the product proposes to learn whether you need a
+> permit by reading the permit you already hold. **The honest expression turns on
+> potential-to-emit or source category**, which a company can establish before any permit exists.
+
+**The distinction that keeps this check honest:** `has_employees` gating an employment requirement
+is also definitional, and is **harmless** — a tautology that costs nothing, because the fact and
+the requirement are genuinely the same question. A determination result is different: **there is a
+computation behind it, and the expression has hidden it.**
+
+### (b) A state rule whose expression is identical to its federal counterpart
+
+```sql
+select r.requirement_name, r.applies_expression
+  from public.requirement_templates r
+ where r.effective_to is null and r.jurisdiction_layer = 'state'
+   and exists (select 1 from public.requirement_templates f
+                where f.effective_to is null and f.jurisdiction_layer = 'federal'
+                  and f.applies_expression::text = r.applies_expression::text);
+```
+
+**Answer, 15 September 2026: 21 state rows**, over **4 distinct expressions** and 4 switches:
+
+```
+state=14 federal= 3   has_employees is true              <- definitional, harmless
+state= 3 federal= 2   hazardous_chemicals_present is true
+state= 2 federal=15   hazwaste_generator_category is true
+state= 2 federal= 1   nonexempt_employees is true
+```
+
+**14 are the harmless tautology. 7 are the defect:**
+
+| Requirement | Switch |
+|---|---|
+| Annual Oregon generator report | `hazwaste_generator_category` |
+| Oregon hazardous-waste site notification | `hazwaste_generator_category` |
+| Workplace Hazard Communication program | `hazardous_chemicals_present` |
+| SDS on file, current, 16-section GHS format | `hazardous_chemicals_present` |
+| Manufacturer/importer classification, SDS, shipped labels | `hazardous_chemicals_present` |
+| Manufacturing daily overtime | `nonexempt_employees` |
+| Meal and rest periods | `nonexempt_employees` |
+
+> **An Oregon state-plan rule resolves identically to the federal rule it is supposed to exceed.**
+> Where Oregon is stricter, the stricter rule is **invisible to the resolver** — and the error runs
+> in the **false-green direction**, because a company exempt federally is cleared of the Oregon
+> obligation too. The VSQG case found on 13 September is one instance; it is not the pattern.
+>
+> **Also measured, and it bounds the problem:** 60 state rows cite a CFR (Oregon adopting a
+> federal standard) and **39 of those carry no Oregon-specific clause at all**. The 21 above are
+> only the ones where an identical federal row exists to compare against.
+
+### The two things that matter more than the counts
+
+**1. Both shapes are findable by QUERY.** The library's defects of this kind are **enumerable**,
+not only discoverable by a person who knows the subject. That is what makes them trackable across
+6.7 rather than re-found each time somebody reads a screen.
+
+**2. Neither shape can be FIXED without 6.7.** Correcting an Oregon expression means knowing what
+Oregon's rule actually says, and **`citation_quote` is NULL on all 205 rows**. So these are a
+**worklist for 6.7, not work that precedes it.**
+
+**Distinct union of both shapes: 25 rows of 205** — no overlap, since shape (a) uses
+`air_permit_required` and none of shape (b)'s four switches is that. **Excluding the 14 harmless
+tautologies: 11 rows** need a judgement call.
 
 ---
 
