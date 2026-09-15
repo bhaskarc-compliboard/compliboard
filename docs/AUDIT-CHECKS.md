@@ -1,6 +1,10 @@
 # Audit Checks
-**Version:** 30 · **Updated:** 15 September 2026
-**Supersedes:** version 29 (15 Sep). Check 14 gains a **third instance, about negative tests**: two
+**Version:** 31 · **Updated:** 15 September 2026
+**Supersedes:** version 30 (15 Sep). Records plainly that **`check:live` does not cover
+production** — it writes rows and refuses production by construction, so production gets a
+migration's verify block and **no signed-in caller**. The thing that caught §63 and §80 has never
+run against production. Stated as a gap, with a read-only variant as the option; running the
+writing version against production is **not proposed**. Version 30: Check 14 gains a **third instance, about negative tests**: two
 guard probes returned the expected status for the wrong reason — one tripped an earlier guard, one
 used the caller's own entity (`DECISIONS.md` §81). **A guard test must fail when the guard is
 removed**, and the error body is the evidence, not the status code. Version 29: Check 27's table half is **automated as `npm run check:live`**
@@ -1403,6 +1407,34 @@ select p.proname,
 > **Why a separate command rather than part of `npm run check`:** it needs credentials and writes
 > rows, and the suite must stay runnable offline with none. The cost is that it can be skipped —
 > which is why `db:migrate` runs it rather than leaving it to discipline.
+>
+> ### ⛔ AND IT DOES NOT COVER PRODUCTION. THAT IS A GAP, NOT A LIMITATION.
+>
+> ```
+> db:migrate      : … db-migrate.js && db-types.js && npm run check:live
+> db:migrate:prod : … db-migrate.js --production && db-types.js --production
+> ```
+>
+> **`check:live` writes rows and refuses production by construction** — `check-live.js:36` refuses
+> any URL that is not the staging ref, and `:41` refuses to start if production credentials are
+> merely present.
+>
+> **So what production actually gets is the migration's own verify block and no signed-in caller.**
+> A verify block can assert grants, policies and constraints; **it cannot sign in as anybody**, so
+> the thing that caught §63, §80a and §80b — running the path as the person who will run it — has
+> never been done against production.
+>
+> **State it as a gap in coverage, because that is what it is.** Staging and production are
+> byte-identical after every ship, which makes the risk small; it does not make it zero, because
+> identical schema does not prove identical behaviour under a real session (RLS depends on
+> `profiles` rows, and production's are not staging's).
+>
+> **The option, if it ever matters: a READ-ONLY variant** — assert grants from `relacl`, policy
+> predicates from `pg_policies`, and RLS enabled, writing nothing. That covers most of what
+> check:live covers and can run anywhere.
+>
+> **Running the writing version against production is NOT proposed**, now or later. It would mean
+> customer-adjacent writes to prove a permission, which is the wrong trade at any point.
 
 > **Append-only tables are the exception and must stay one:** `switch_determinations` has INSERT
 > and deliberately no UPDATE or DELETE, and `obligations` has no DELETE policy at all (§3.2).

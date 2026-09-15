@@ -4218,7 +4218,7 @@ the review can go back to being periodic rather than gating.
 
 ## 65. The composed assertions, and the rule that covers all of them — 13–15 September 2026
 
-*Eight instances. The register is kept here so the rule is stated once and the count is not an
+*Nine instances. The register is kept here so the rule is stated once and the count is not an
 impression. §60 records the first and states the rule; §66 records the fourth in full.*
 
 **This section exists so the rule is stated once and the instances are countable.** §60 records
@@ -4343,6 +4343,34 @@ out of the file.**
 **Six instances this week, and the count is the useful part** — not because six is alarming, but
 because each was settled by one command, and a register that is countable is how the rate stays
 visible rather than becoming folklore.
+
+### The eighth, and it is about the TOOLING rather than the data
+
+**Asserted:** *"db:migrate now runs check:live afterwards — so the grant and the three policies
+get exercised as a real caller in the same command that applies them"*, offered as part of a
+production ship.
+
+**Settled by reading `package.json`:**
+
+```
+db:migrate      : … db-migrate.js && db-types.js && npm run check:live
+db:migrate:prod : … db-migrate.js --production && db-types.js --production
+```
+
+**True of staging, false of production — and it cannot be true of production**, because
+`check-live.js:36` refuses any URL that is not the staging ref and `:41` refuses to start if
+production credentials are merely present. **The claim was about a command that had been written
+that day and read once.**
+
+**This is a shape the register did not carry: every previous instance was about DATA** — a count,
+a defect, a file, a section number, what shipped. **This was about the TOOLING**, and it matters
+because tooling claims are load-bearing in a different way: a wrong count is corrected by the next
+query, while *"the command that applies it also checks it"* changes what a person believes is
+covered and stops them looking.
+
+**The check is identical, which is the useful part.** *Which artifact would produce this?*
+`package.json`'s `scripts` block, one `node -e`. **The provenance test does not care whether the
+claim is about data or about the build.**
 
 ### The seventh: a section number composed rather than copied
 
