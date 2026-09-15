@@ -156,7 +156,8 @@ decisions and the five schema gaps are settled before any of this starts.*
 | **M1.0** | **7.2a's two routes** — the floor, not part of M1 | — | 1 d |
 | **M1.1** | **Topics, minimal shape** (D23). `topics` table: company, title, status, opened/closed, summary. **Free today, not free once conversations are stored** (§69) | M1.0 | 1 d |
 | **M1.2** | **Follow-up classification** (§4.1) — three kinds, classified before anything expensive runs | M1.1 | 1 d |
-| **M1.2a** | ⚡ **The critic's `priorAssertions` field** — decision settled in `DECISIONS.md` §73 (prior ANSWERS, never prior findings). Field + prompt change | M1.2, timing | 0.5 d |
+| **M1.2a** | ~~The critic's `priorAssertions` field~~ — **WITHDRAWN for research.** §77 drops the critic from the research path entirely; §73's decision survives and applies at the **checklist boundary**, which is where it is now needed | — | — |
+| **M1.2b** | ⚡ **The gate gains prior turns, the frame, and a web-search flag** (§77 items 6–8). `gate()` takes `{question, documentBlocks, companyId, outputType, db, answering}` today — **no conversation history**, so it re-asks what was established two turns ago. Returns jurisdiction-of-question, tense, subject, and `needsWebSearch` | M1.1 | 1.5 d |
 | **M1.3** | **Fact capture, not question generation** (D24). The conversation writes `company_switches` through 7.2a's route; it does **not** invent questions — the queue comes from `askableSwitches()` and the dependency graph (v3.5) | M1.0, M1.1 | 1.5 d |
 | **M1.4** | **Site resolution before a site-scoped write** (v3.3). One site → silent. Several → the question carries the site. **Defaulting to primary is forbidden** (§20) | M1.3 | 1 d |
 | **M1.5** | **Show what we know** (§7) — facts in context before an answer, with `source` rendered so a document-derived value and a person's answer do not look alike | M1.3 | 1 d |
@@ -187,7 +188,8 @@ render a numeric readiness count (numbers stay off until the library is verified
 
 1. **`expires_at` has MOVED TO THE GATE** (item 2) — it is not an M1 gap. Every module that
    writes a fact is affected and the failure direction is false green.
-2. **The critic cannot see prior turns — DECIDED, not built.** `DECISIONS.md` §73 settles what it
+2. **The critic cannot see prior turns — DECIDED, and no longer an M1 blocker.** §77 drops the
+   critic from research; §73's decision applies at the checklist boundary instead. Previously: `DECISIONS.md` §73 settles what it
    sees (prior **answers**, as claims under review) and what is withheld (its own prior
    **findings**, which would be the reviewer reviewing its own review). Built as **M1.2a**.
 

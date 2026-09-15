@@ -1,6 +1,13 @@
 # Decision Record
-**Version:** 55 · **Updated:** 15 September 2026
-**Supersedes:** version 54 (15 Sep). Adds **§76** — the measurement. Narrowing 33 agencies to 4
+**Version:** 56 · **Updated:** 15 September 2026
+**Supersedes:** version 55 (15 Sep). Adds **§77**, the research path: **gate, then answer — two AI
+calls, nothing else.** The critic is **dropped from research** (a conversation self-corrects; the
+cost — most users will not ask — is accepted knowingly) and stays at the checklist boundary.
+Nothing narrows the model. **The library is INVISIBLE**: per-claim verification badges are
+withdrawn as wrong, because *marking something "from our verified library" is a product claim,
+not provenance* — a citation shifts the burden to the source, a badge shifts it to us. Cite
+generously, since citations are now the only catch. Web search and frame detection fold into the
+gate; the gate gains prior turns. Version 55 added **§76** — the measurement. Narrowing 33 agencies to 4
 buys **7.7 s (36.4 -> 28.7 s, 21%)** and costs **three coverage findings** (9,9,9 -> 6,6,6;
 blocking held at 2 throughout). **The agency list is not what costs 36 seconds**, so Stage 2 does
 not fix the latency it was proposed for, and §74's "Stage 2 stops being deferrable" is
@@ -5006,3 +5013,183 @@ synchronous in a conversation at all**, and that is a question about D25 rather 
 **Reversal condition:** if the critic's input ever grows to dominate its cost — a 272-item audit
 is the known case at ~84 s — narrowing becomes worth re-measuring for that path specifically. It
 is the small-conversation path this measurement covers.
+
+---
+
+## 77. The research path: two AI calls, and the library stays invisible — 15 September 2026
+
+**Decided 15 September 2026. Not built.** This revises `CHEMICAL-OR-WA.md` §5.2 **for the research
+path only**. The audit path is untouched and must stay untouched — see the last section.
+
+> ### THE SHAPE: **gate, then answer. Two AI calls. Nothing else.**
+> No agency scoping. No library filter. No classification that can exclude. No critic.
+
+### What survives from §5.2, measured rather than assumed
+
+| Stage | Fate |
+|---|---|
+| **1 — Gate** | **Survives, and grows.** It never read the library (`determinationGate.ts:332`), so nothing about it inverts |
+| **2 — Agency scoping** | **Dropped.** §76 measured it: 7.7 s for three lost coverage findings |
+| **3 — Library retrieval as FILTER** | **Inverted.** Enrichment, and invisible |
+| **4 — Identification** | **Dropped for research.** It presupposes a retrieved candidate set |
+| **5 — Critic** | **Dropped for research.** Kept at the checklist boundary |
+| **6 — Expansion** | **Survives** |
+
+**Nothing built depended on the inverted stages.** The gate and the critic are both independent of
+retrieval — `CriticInput` carries no library rows, and `/api/chat` and `/api/audits` contain zero
+references to `requirement_templates` or `obligations` (§71). **§5.2 is cited in five comments and
+one golden-case provenance note, and enforced by no type, no route and no test.** `criticPass.ts:77`
+has already departed from it once on its own reasoning.
+
+---
+
+### 1. The critic is DROPPED from research. Not deferred — dropped.
+
+**A conversation self-corrects in a way a one-shot answer does not.** The user can challenge a
+claim in the next turn, and that is the mechanism this project itself has run on.
+
+**The critic stays at the CHECKLIST boundary** — where an answer becomes steps with hours and
+costs attached, and the user can no longer challenge it mid-flight.
+
+> **The cost, accepted deliberately and recorded so nobody later discovers it as a defect: most
+> users will not ask.** An error in a research answer survives until somebody challenges it, and
+> most never will. **That is the trade, it is made knowingly, and it is made for research only.**
+
+**This also removes the dependency §76 opened.** No worker, no async critic, no reopening of D25.
+The turn is gate + answer and nothing waits.
+
+### 2. Nothing narrows the model
+
+**No agency scoping, no library filter, no bucket classification that excludes.** The model
+decides scope, because that is what it does reliably — the consultant tests scored ~99% anchored
+and B− unanchored, and the B− answer **named the right agencies** and missed a packaging detail.
+Territory right, details wrong.
+
+**And the library cannot know what it is missing.** A gap in it is indistinguishable from a rule
+that does not exist, so retrieval returning nothing is ambiguous in a way the system cannot
+resolve. **Narrowing the model to the library inherits that ambiguity silently.**
+
+### 3. *** THE LIBRARY IS INVISIBLE TO THE USER — and the earlier proposal was wrong ***
+
+**Recorded as a correction.** An earlier proposal in this session had every answer mark each claim
+as `✓ library, verified` / `◐ library, generated` / `○ model knowledge`. **That was wrong, and the
+reason is not cosmetic.**
+
+> **Marking something "from our verified library" is a PRODUCT CLAIM, not provenance.** If it is
+> then wrong, the failure is **a broken library** rather than a model mistake — and the library is
+> the thing being sold.
+>
+> **A citation shifts the burden to the source. A badge saying we verified this shifts it to us.**
+
+So: **no per-claim badges, no library labelling, no three-mark display.** The library's job is to
+**raise internal accuracy silently**. Where a library row and the model's recollection differ,
+**the row wins and the user never learns why.**
+
+**And this does nothing today, which must be said plainly rather than implied.** `citation_quote`
+is NULL on all 205 rows and `source_checked_at` on all 205 — **no row carries source text, so
+there is nothing to correct a recollection with.** Enrichment becomes real at **6.7**. **Today
+research is two calls and the library is untouched.**
+
+### 4. The answer cites generously
+
+**Every source that bears on a claim, not one authoritative source per point.**
+
+**It is a prompt instruction, not a stage.** The model already knows its sources while it is
+writing; asking it to justify afterwards is the expensive version and produces post-hoc
+rationalisation rather than provenance.
+
+**Why generously: citations are now the ONLY mechanism by which a wrong answer is caught.** The
+critic is gone from this path. More cited surface means more places a wrong recollection is
+visibly wrong to a reader who checks one.
+
+### 5. A page-level disclaimer, not per-assertion marking
+
+**The research surface carries one statement: verify against the cited source.**
+
+**This is consistent rather than a compromise.** The whole surface is unverified, so nothing on it
+claims to be checked — which is exactly the honesty the per-assertion marking was reaching for,
+without the product claim §3 refuses.
+
+### 6. Web search, decided by the GATE
+
+**`lib/ai.ts` already supports it** (`enableWebSearch`, wired at `ai.ts:137`) and **two paths
+already use it** — `documentReview.ts:73` and `/api/audits` at lines 252 and 282. **The gate and
+the critic explicitly set it false; the chat answer path does not enable it at all.**
+
+**The gate decides.** It is already reading the question closely, so *"is this about something
+recent, or outside the model's training window"* is **one more field it returns, not another
+call.**
+
+### 7. The gate sees prior turns
+
+**Today it does not.** `gate()` takes `{ question, documentBlocks, companyId, outputType, db,
+answering }` — **no conversation history**, so each turn is independent and it can re-ask what was
+established two turns ago.
+
+**That is the "minimise asking within a topic" problem, and it is a smaller fix than
+classification.** What the gate needs is **the conversation**, not a taxonomy.
+
+> **A bucket or tag classification is NOT wanted if it can exclude anything — that is narrowing by
+> another name.** If the gate returns what a question is about, it is **context with no
+> authority**.
+
+### 8. Frame detection folds into the gate
+
+**Jurisdiction of the question, tense, subject** — returned by the gate, not by a separate call.
+
+**The Arizona case is what this exists for and it must work.** An Oregon chemical company asks
+about a solvent facility in Arizona:
+
+- **Their switches are FALSE because they do not handle solvents TODAY**, and that must not
+  exclude anything.
+- **Arizona library rows do not exist**, and the Oregon rows are actively wrong for the question.
+- **The answer must be about Arizona.**
+
+**A hypothetical fact does NOT write to `company_switches`.** It is not a fact about the company.
+Where it lives is open — probably the topic (M1.1) — and that is a decision M1.1 must make rather
+than inherit.
+
+### Kept from the earlier proposal
+
+**Company facts as CONTEXT, never as a filter.** *"Which of this company's facts does this
+question touch"* is the more useful retrieval and **works in Arizona, where the requirement
+library is useless**: *"you have 47 employees and no current solvent handling, so the Arizona
+facility would be your first."* No requirement row contains that sentence. **47 employees is true
+whatever the question is; `handles_solvents = false` must exclude nothing.**
+
+---
+
+### THE RECORD: why research and audit must never be unified
+
+**Someone will propose it, and the argument will sound good** — both answer compliance questions,
+both call the model, both produce a list.
+
+> **Research ENRICHES a model answer with library support. Audit ASSERTS from the library and uses
+> the model to match evidence. They have opposite directions of authority, and merging them means
+> one of the two loses its.**
+
+| | Research | Audit |
+|---|---|---|
+| Source of truth | the model, quietly corrected by the library | the library, evidenced by documents |
+| Library silent | **say nothing and proceed** — it is unverified either way | **cannot proceed** — an assertion with no basis |
+| Wrong output | an unverified claim on a page that says so | **a false compliance status** |
+| Jurisdiction | the **question's** | the **company's** |
+| Tense | often hypothetical | always present |
+| Critic | **none** — the user challenges | **required** |
+
+**The failure mode, named in advance: unify them and the library becomes OPTIONAL for audit**,
+because research will have taught the system that a library gap is survivable. **`CLAUDE.md` §3.3's
+known-bad mode is free enumeration, and audit is precisely where it must never happen.** The day an
+audit says *"no library coverage, here is the model's view"*, the product has become the thing it
+was built to replace.
+
+**And the inverse is as bad:** make research assert from the library only, and the Arizona question
+returns nothing — or worse, returns Oregon.
+
+**§71 is the evidence this is not theoretical:** neither route touches the library today, and the
+reconciliation is item 6. **Unifying them would resolve item 6 in the wrong direction** — by making
+both paths equally unanchored, rather than by deciding what each is entitled to assert.
+
+**Reversal condition on the critic's absence:** if a research error ever reaches a customer
+decision and is traced to an unchallenged claim, the trade in §1 is what failed, and the answer is
+the checklist boundary moving earlier — not a critic added back into the conversation.
