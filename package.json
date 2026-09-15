@@ -9,7 +9,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "db:migrate": "node --env-file=.env.local scripts/db-migrate.js && node --env-file=.env.local scripts/db-types.js",
+    "db:migrate": "node --env-file=.env.local scripts/db-migrate.js && node --env-file=.env.local scripts/db-types.js && npm run check:live",
     "db:migrate:prod": "node --env-file=.env.local scripts/db-migrate.js --production && node --env-file=.env.local scripts/db-types.js --production",
     "db:types": "node --env-file=.env.local scripts/db-types.js",
     "check": "npm run typecheck && npm run check:schema && npm run test && npm run build",
@@ -20,7 +20,8 @@
     "test": "node scripts/test-guard.js",
     "mutation": "node scripts/mutation-check.js",
     "audit:data": "node --env-file=.env.local scripts/audit-data-checks.js",
-    "preflight": "node --env-file=.env.local scripts/preflight-prod.js"
+    "preflight": "node --env-file=.env.local scripts/preflight-prod.js",
+    "check:live": "node --env-file=.env.local scripts/check-live.js"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.81",

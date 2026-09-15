@@ -78,4 +78,11 @@ console.log(`\n  DERIVED — INPUT 2 minus INPUT 1 (applied but absent from disk
 console.log(orphan.length ? orphan.map((f) => '    ' + f).join('\n') : '    (none)')
 line('═')
 console.log(`  PENDING COUNT: ${pending.length}`)
-console.log(`\n  Both lists are above. The subtraction is checkable without trusting this script.\n`)
+console.log(`\n  Both lists are above. The subtraction is checkable without trusting this script.
+
+  RUN `npm run check:live` BEFORE APPLYING ANY OF THESE.
+    It signs in as a real user on staging and writes one row per tenant table a route will
+    write, then checks anon is refused. `npm run check` cannot see a missing grant or policy —
+    none of its tests makes an authenticated request, which is how three defects survived
+    (DECISIONS.md §63, §80). A migration that adds or alters a tenant table should not reach
+    production until check:live has run against staging with it applied.\n`)

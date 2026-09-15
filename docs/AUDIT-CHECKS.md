@@ -1,6 +1,10 @@
 # Audit Checks
-**Version:** 28 · **Updated:** 15 September 2026
-**Supersedes:** version 27 (15 Sep). **Check 27 now covers TABLES the caller must WRITE**, not only
+**Version:** 29 · **Updated:** 15 September 2026
+**Supersedes:** version 28 (15 Sep). Check 27's table half is **automated as `npm run check:live`**
+— signs in as a real staging user, writes one row per tenant table a route will write, asserts anon
+is refused, refuses production by ref, and runs after every `db:migrate`. **Its first run found a
+column that does not exist on `company_chemicals`**, a write path nothing had ever exercised.
+Version 28: **Check 27 now covers TABLES the caller must WRITE**, not only
 functions it must execute — §63 found the function case and the same defect sat one table over,
 invisible to the check as written: `switch_determinations` was SELECT-only to `authenticated`, so
 the first user answer was impossible (§80). A grant without a policy and a policy without a grant
@@ -1351,6 +1355,30 @@ select p.proname,
 > **A grant without a policy and a policy without a grant both fail**, and they fail identically
 > from the caller's side — `permission denied` either way. Check both columns, not one.
 >
+> ### AND IT IS NOW AUTOMATED — `npm run check:live`, 15 Sep
+>
+> A check run by hand is a check that stops being run. `scripts/check-live.js` signs in as a real
+> staging user, writes one row per tenant table a route will write, and asserts **anon is
+> refused** — then deletes the probe row. **It refuses production by ref before it does anything**,
+> and refuses to start if production credentials are merely present in the environment.
+>
+> **Wired into `npm run db:migrate`**, so every staging migration is followed by it, and named in
+> the production pre-flight. **First run found a second defect immediately**: the probe for
+> `company_chemicals` named a column that does not exist (`chemical_name`; it is
+> `substance_name`) — which is the same class as everything else here, a write path nothing had
+> ever exercised.
+>
+> ```
+>   ✓ switch_determinations      authenticated can write
+>   ✓ switch_determinations      anon refused (42501)
+>   ✓ company_chemicals          authenticated can write
+>   ✓ company_chemicals          anon refused (42501)
+> ```
+>
+> **Why a separate command rather than part of `npm run check`:** it needs credentials and writes
+> rows, and the suite must stay runnable offline with none. The cost is that it can be skipped —
+> which is why `db:migrate` runs it rather than leaving it to discipline.
+
 > **Append-only tables are the exception and must stay one:** `switch_determinations` has INSERT
 > and deliberately no UPDATE or DELETE, and `obligations` has no DELETE policy at all (§3.2).
 > **Absence there is the design, not a gap** — migration 025's verify block asserts the absence so

@@ -1,6 +1,11 @@
 # Testing
-**Version:** 15 · **Updated:** 13 September 2026
-**Supersedes:** version 14 (13 Sep). The 4.3/M6 manual set is recorded as **RUN, by a person, in a
+**Version:** 16 · **Updated:** 15 September 2026
+**Supersedes:** version 15 (13 Sep). **Case A has a defect in its own precondition** — a company
+with nothing established cannot show a count MOVING, only a list being CREATED, so the case cannot
+observe what it was written for. Run for the first time on a new fixture (Test Gamma Solvents):
+**21 applies of 200 created, 0.5 s, 7 questions unblocked.** That is the fresh-company figure; **a
+genuine delta figure does not exist yet.** Case A should split into A1 (creation) and A2
+(movement). Version 15: The 4.3/M6 manual set is recorded as **RUN, by a person, in a
 browser** — not as written. It found two things no automated check could, on its first attempt:
 **Case E crashed on its first fixture** (a 500 for every uncomputed company, which on production
 was all ten), and **Case G's domain half surfaced the 22 clauses that can never be true.**
@@ -425,6 +430,49 @@ manufacturer is far more likely to be our coverage gap than their good fortune, 
 has to make that easy to say.
 
 ---
+
+### ⛔ CASE A HAS A DEFECT IN ITS OWN PRECONDITION — 15 September 2026
+
+**Case A's precondition is *"a company with nothing established"*. Its assertion is *"the
+obligation count moves"*. Those cannot both hold.**
+
+Run for the first time on **Test Gamma Solvents** — chemical-manufacturing, Oregon, zero facts,
+created 15 Sep because neither existing fixture matched (Alpha had already answered
+`has_employees`; Beta matches zero library rows):
+
+```
+BEFORE: facts 0 · obligations 0 {}
+POST { has_employees, true }   as testgamma@example.com, 0.5s
+  obligations AFTER : 200  {"unknown":178,"applies":21,"undetermined":1}
+  persisted         : {"closed":0,"opened":200,"received":200,"unchanged":0,"open_total":200}
+  UNBLOCKED (one level, §54): 7
+  ask: READY 43 -> 49 · BLOCKED 38 -> 31
+```
+
+> **On a company with no obligations, one answer does not MOVE a count — it CREATES the list.**
+> `opened: 200, unchanged: 0, closed: 0`. There is no before to differ from, so **the case cannot
+> observe the thing it was written to observe.**
+
+**Two numbers, and they must not be conflated:**
+
+| | |
+|---|---|
+| **21 of 200 created** | the **fresh-company** figure. Measured 15 Sep. First measurement of anything here |
+| **a genuine delta** | **does not exist yet.** No measurement has ever shown `closed`/`opened` against a non-empty baseline |
+
+**Neither replaces 19 or 23**, and neither of those was ever a measurement: 19 is this case's own
+expectation, written before the endpoints existed; 23 appears in no artifact at all
+(`DECISIONS.md` §65, seventh instance).
+
+**THE FIX IS TO THE CASE.** A case testing *"what does one answer move"* needs a company that
+**already has obligations**. **Test Gamma is now that company** — it has been computed once — so
+the case is runnable in its intended form on the **next** answer, not this one. Case A should be
+split:
+
+- **A1 — the first answer.** Precondition: nothing established. Asserts **creation** — a list
+  comes into existence, `opened = N`, `closed = 0`, and `unblocked` is non-empty.
+- **A2 — a subsequent answer.** Precondition: obligations already computed. Asserts **movement** —
+  `closed` and `opened` both non-zero against a known baseline.
 
 ### RESULT — RUN, 13 September 2026, in a browser, by a person
 
