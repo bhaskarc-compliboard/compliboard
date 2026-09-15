@@ -1865,7 +1865,7 @@ export type Database = {
         | "equipment"
         | "person"
         | "product"
-      evidence_class: "stated" | "implied" | "inferred" | "absent"
+      evidence_class: "stated" | "declared" | "implied" | "inferred" | "absent"
       evidence_contribution:
         | "satisfies"
         | "partially_satisfies"
@@ -2055,7 +2055,7 @@ export const Constants = {
         "person",
         "product",
       ],
-      evidence_class: ["stated", "implied", "inferred", "absent"],
+      evidence_class: ["stated", "declared", "implied", "inferred", "absent"],
       evidence_contribution: [
         "satisfies",
         "partially_satisfies",

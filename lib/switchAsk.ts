@@ -19,6 +19,8 @@
  * Pure. No database, no model, no request. Everything here is a function of rows passed in.
  */
 
+import { isEstablished, type SwitchValueType } from './resolve.ts'
+
 export interface SwitchRow {
   id: string
   scope: 'company' | 'site'
@@ -48,6 +50,33 @@ export interface Askable {
 }
 
 const key = (id: string, entityId: string | null) => (entityId ? `${id}@${entityId}` : id)
+
+/**
+ * Build `Established` from raw `company_switches` rows.
+ *
+ * *** ONE COPY OF THIS RULE, AND §43 IS WHY. *** "Established" is not "a row exists" and it is
+ * not "state = known" either — it is **state = known AND the text coerces to a real value for
+ * that switch's TYPE**. `company_switches.value` is text for every switch, so a `number` switch
+ * holding `"abc"` has a row, has `state = 'known'`, and is NOT established. A check that stops
+ * at `value !== ''` accepts it.
+ *
+ * That divergence is silent in exactly the way §43 describes: each copy reads correctly on its
+ * own, the resolver ignores the fact while the ask path believes it answered, and nothing
+ * compares them. This function and `splitFacts` now share `isEstablished()` rather than each
+ * carrying their own approximation of it.
+ */
+export function establishedFrom(
+  rows: Array<{ switch_id: string; entity_id: string | null; value: string | null; state: string }>,
+  valueTypeOf: Record<string, SwitchValueType>,
+): Established {
+  const est: Established = {}
+  for (const r of rows) {
+    const vt = valueTypeOf[r.switch_id]
+    if (!vt || !isEstablished(r.state, r.value, vt)) continue
+    est[key(r.switch_id, r.entity_id)] = r.value as string
+  }
+  return est
+}
 
 /** Established means a non-empty value is present. Absent, null and '' are all NOT established. */
 export function isEstablishedFor(est: Established, id: string, entityId: string | null): boolean {

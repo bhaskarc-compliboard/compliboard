@@ -28,8 +28,18 @@ describe('a user answer is recorded as STATED, and locks', () => {
   const d = fromUserAnswer('confined_spaces_present', 'true',
     'Do employees enter tanks, vessels, pits, or other confined spaces?')
 
-  test('evidence_class is stated — a person stating it IS a statement', () => {
-    assert.equal(d.evidenceClass, 'stated')
+  /**
+   * *** THIS TEST ASSERTED WHAT THE DATABASE REFUSES, FOR TWO DAYS. ***
+   * It read `stated` as "a person states it". Migration 017's CHECK reads `stated` as "a
+   * document states it" and requires a document AND a quote. Both were written 13 Sep, both
+   * internally consistent, and nothing put them in one process until the route existed (§80).
+   */
+  test('evidence_class is DECLARED — a person is not a document (migration 026)', () => {
+    assert.equal(d.evidenceClass, 'declared')
+    assert.notEqual(d.evidenceClass, 'stated',
+      '`stated` carries a CHECK requiring a document and a quote a person cannot supply')
+    assert.equal(d.documentId, null)
+    assert.equal(d.quote, null)
     assert.equal(d.confidence, 'high')
     assert.equal(d.source, 'user_set')
   })

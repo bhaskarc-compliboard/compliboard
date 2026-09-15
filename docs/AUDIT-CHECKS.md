@@ -1,6 +1,10 @@
 # Audit Checks
-**Version:** 27 · **Updated:** 15 September 2026
-**Supersedes:** version 26 (15 Sep). Adds **check 30** — is a state rule distinguishable from the
+**Version:** 28 · **Updated:** 15 September 2026
+**Supersedes:** version 27 (15 Sep). **Check 27 now covers TABLES the caller must WRITE**, not only
+functions it must execute — §63 found the function case and the same defect sat one table over,
+invisible to the check as written: `switch_determinations` was SELECT-only to `authenticated`, so
+the first user answer was impossible (§80). A grant without a policy and a policy without a grant
+fail identically from the caller's side. Version 27: Adds **check 30** — is a state rule distinguishable from the
 federal rule it exceeds? Two enumerable shapes: **4 rows** gated on a determination result wearing
 the shape of a fact, and **21 state rows** whose expression is identical to a federal row's, of
 which **14 are harmless tautologies and 7 are the defect** — an Oregon rule resolving exactly as
@@ -1321,6 +1325,36 @@ select p.proname,
  where n.nspname = 'public'
  group by p.proname order by 1;
 ```
+
+> ### ⚠ EXTENDED 15 SEP — THIS COVERS TABLES TOO, AND IT DID NOT.
+>
+> §63 found the FUNCTION case. **The same defect exists one table over**, and the check as written
+> could not see it: `switch_determinations` held **SELECT only** for `authenticated`, with one
+> SELECT policy and no INSERT — so a person could read their own determination history and never
+> add to it, which made the first user answer impossible (§80, migration 025).
+>
+> **The shape to look for: a table granted SELECT to `authenticated` and WRITTEN by a route that
+> runs as the caller.** Run this alongside the function query:
+>
+> ```sql
+> select t.table_name,
+>        bool_or(g.privilege_type = 'INSERT') as authenticated_may_insert,
+>        (select count(*) from pg_policies p
+>           where p.schemaname='public' and p.tablename=t.table_name and p.cmd='INSERT') as insert_policies
+>   from information_schema.tables t
+>   left join information_schema.role_table_grants g
+>     on g.table_schema='public' and g.table_name=t.table_name and g.grantee='authenticated'
+>  where t.table_schema='public' and t.table_type='BASE TABLE'
+>  group by t.table_name order by 1;
+> ```
+>
+> **A grant without a policy and a policy without a grant both fail**, and they fail identically
+> from the caller's side — `permission denied` either way. Check both columns, not one.
+>
+> **Append-only tables are the exception and must stay one:** `switch_determinations` has INSERT
+> and deliberately no UPDATE or DELETE, and `obligations` has no DELETE policy at all (§3.2).
+> **Absence there is the design, not a gap** — migration 025's verify block asserts the absence so
+> a later widening cannot happen silently.
 
 **Read it as two questions at once.** Every function a route calls through `requireCompany()`'s
 client must be `true` in column 2. Column 3 is the one that needs judgement, and the rule is

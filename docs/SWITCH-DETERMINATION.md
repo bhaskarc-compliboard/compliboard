@@ -1,6 +1,6 @@
 # Switch Determination — Phase 7.2
-**Version:** 3 · **Updated:** 12 September 2026
-**Supersedes:** version 2 (12 Sep). Adds **§10, the 7.2a spec** — the ask path is built FIRST on
+**Version:** 4 · **Updated:** 15 September 2026
+**Supersedes:** version 3 (12 Sep). §2 gains **`declared` — a person told us directly**, ranked **4, above `stated`** (migration 026). The other four classes describe how a DOCUMENT supports a claim; a person is not on that scale, and `DECISIONS.md` §24.1's rule was unexpressible until now. `declared` may not carry a document (027). Previously, v3: Adds **§10, the 7.2a spec** — the ask path is built FIRST on
 the measured argument (three SDSs moved zero obligations; one question moved 19), it reuses the
 determination gate's shipped ask contract rather than inventing a second, it adds `blocked_by`
 (from the dependency graph, not preference) and `affects`, and it **produces no proposals at
@@ -46,10 +46,29 @@ answer *what kind of thing convinced us*, and the propose/write rule in §5 need
 
 | `evidence_class` | Definition | May carry |
 |---|---|---|
+| **`declared`** | **A person told us directly.** No document, and it may not carry one | `high` |
 | **`stated`** | The document **states** the value, in the switch's own vocabulary | `high` |
 | **`implied`** | The document contains a fact from which the value follows in **one step** | `high` or `medium` |
 | **`inferred`** | The value follows from a **pattern across documents**, or from a judgement | `medium` or `low` |
 | **`absent`** | **Never written.** The model reports "I looked and found nothing" | — |
+
+> ### ⚡ `declared` IS NOT ON THE DOCUMENT SCALE — added 15 September 2026, migration 026
+>
+> **`stated`, `implied`, `inferred` and `absent` all describe how a DOCUMENT supports a claim.**
+> They are one scale, and the ladder ranks them 3 / 2 / 1 / —. **A person telling us directly is
+> not on that scale.** It is a different kind of source and it is the strongest one in the
+> product, so `declared` ranks **4**, above all of them.
+>
+> **`DECISIONS.md` §24.1 — a stated value outranks an inferred one — has always implied that a
+> person outranks both, and the vocabulary could not say so.** `fromUserAnswer()` therefore
+> borrowed `stated`, which here means "this document says it" and carries a CHECK requiring a
+> document and a quote. The borrow was refused by the database the first time a route tried it
+> (§80).
+>
+> **`declared` may not carry a document.** If a document is the source, the class is `stated`,
+> `implied` or `inferred` — otherwise `declared` becomes the class that escapes every evidence
+> rule, which is how a vocabulary rots. Migration 027 enforces both halves, and proves each by
+> violating it.
 
 > ### ⚡ CORROBORATION IS NOT STATEMENT
 >

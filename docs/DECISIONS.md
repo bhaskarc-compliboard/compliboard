@@ -1,6 +1,20 @@
 # Decision Record
-**Version:** 58 · **Updated:** 15 September 2026
-**Supersedes:** version 57 (15 Sep). §65 gains a **seventh** composed assertion and it is a
+**Version:** 60 · **Updated:** 15 September 2026
+**Supersedes:** version 59 (15 Sep). Adds **§80** — **`declared`: a person is not a document.**
+The four evidence classes all describe how a DOCUMENT supports a claim; a person is not on that
+scale and is the strongest source in the product, so `declared` ranks **4, above `stated`**.
+§24.1's rule was unexpressible until now, which is why `fromUserAnswer()` borrowed a word meaning
+something else. **Third instance of §63's class and the sharpest: the module's own test asserted
+what its database refuses**, both written 13 Sep, nothing putting them in one process for two
+days. **Check 29's unrouted list is a queue of latent defects, not a tidy-up.** Version 59 added
+**§79** — two findings from one refactor. The duplicated
+`Established` builder **checked `value !== ''` and never consulted the value type**, so a `number`
+switch holding `"abc"` would be **established to the ask path and unknown to the resolver**: a
+question disappearing with nothing moving. **§43 demonstrated rather than predicted**, caught by
+the refactor rather than by review or the suite, because each copy reads correctly alone. And
+`switchesIn()` **already existed** at `appliesExpression.ts:224` with a doc comment naming this
+use — **the check is not "should this be shared" but "does it already exist"**. Version 58: §65
+gained a **seventh** composed assertion and it is a
 different failure from the six before it: **7.2a described as shipped**, with a duration, a row
 count and a second environment accumulated across several messages. **Production has never held a
 switch value or an obligation.** The figure traces to `TESTING.md` Case A, which says **19** and is
@@ -5300,3 +5314,147 @@ well-designed one.**
 currently be named. **If one appears, the fix is promoting it to a real fact deliberately — a user
 action, not a storage decision.** That distinction is the whole of it: a fact becomes real when
 somebody says it is, not when a system decides to keep it.
+
+---
+
+## 79. §43 demonstrated, and a duplication that was avoidable before it was written — 15 September 2026
+
+**Two findings from one refactor, both caught only because the copies were forced into one.**
+
+### 1. The `Established` copy was already wrong, and would have been silently wrong
+
+**The canonical rule consults the VALUE TYPE** (`lib/resolve.ts:193`):
+
+```ts
+export function isEstablished(state: string, raw: string | null | undefined, valueType: SwitchValueType): boolean {
+  return state === 'known' && coerceFact(raw, valueType) !== null
+}
+```
+
+**The duplicated copy in both new routes checked only `state === 'known'` and `value !== ''`.** It
+never looked at the type.
+
+> **A `number` switch holding `"abc"` would have been ESTABLISHED to the ask path and UNKNOWN to
+> the resolver.** The queue would believe a question answered and stop asking it; the engine would
+> treat the fact as missing and leave every requirement that depends on it `unknown`. **A customer
+> would see a question disappear and nothing move.**
+
+**This is §43 demonstrated rather than predicted.** §43 exists because
+`company_switches.value` is text for every switch and `'true' === true` is false — it was written
+after that rule was got wrong once. **The third copy got it wrong again, in a new way, in code
+written by someone who had read §43 the same day.**
+
+**And the shape is the one that matters: each copy reads correctly in isolation.** Nothing
+compares them. There is no test that could have failed, because both behaviours are defensible
+until you put them side by side. **It was caught by the refactor, not by review and not by the
+suite** — the two copies had to become one before the difference between them became visible.
+
+**Now one export**, `establishedFrom()` in `lib/switchAsk.ts`, sharing `isEstablished()` with
+`splitFacts`. **Zero copies of the rule remain.**
+
+### 2. `switchesIn()` already existed — the cheaper lesson
+
+`lib/appliesExpression.ts:224`, with a doc comment naming this exact use:
+
+```ts
+/** Every switch id an expression references. Used to validate against the seeded
+ *  vocabulary before an expression is stored, and to answer "what would break if this
+ *  switch changed". */
+export function switchesIn(e: Expression): string[]
+```
+
+**A second walker was written anyway, twice, in two routes.** It was then correctly identified as
+duplication to be lifted into `lib/` — **which is the right instinct applied one step too late.**
+
+> **The check is not "should this be shared". It is "does it already exist".**
+>
+> The first question produces a good refactor after the fact. The second produces no code at all.
+> **The expensive version is writing it, noticing, and lifting it; the cheap version is one
+> `grep` before writing.**
+
+**This is `AUDIT-CHECKS.md` check 29's inverse.** That check asks what exists and is called by
+nothing. This is the other failure with the same cause — **not knowing what is already in `lib/`**
+— and the same one-command fix.
+
+**Reversal condition:** none on either. Both are now single exports and the suite covers them
+through their callers.
+
+---
+
+## 80. `declared` — a person is not a document, and the third instance of §63's class — 15 September 2026
+
+### The vocabulary had no word for its strongest source
+
+`evidence_class` was `stated | implied | inferred | absent`. **All four describe how a DOCUMENT
+supports a claim** — they are one scale, and migration 017's own comment says so: *"`stated` and
+`implied` mean 'this document says/implies it', so they require a document AND the text that does
+it."*
+
+**A person telling us directly is not on that scale.** It is a different kind of source, and it is
+the strongest one in the product. Lacking a word, `fromUserAnswer()` borrowed `stated` — and the
+database refused it the first time a route tried:
+
+```
+new row for relation "switch_determinations" violates check constraint
+"switch_determinations_stated_needs_evidence"
+```
+
+**The ranking change is the point, not a side effect.** §24.1 settled that a stated value outranks
+an inferred one, which has always implied that **a person outranks both** — and the vocabulary
+could not express it. That is exactly why a person's answer had to borrow a word meaning something
+else.
+
+```
+RANK, before (13-15 Sep):   stated 3 · implied 2 · inferred 1
+RANK, after  (026):         declared 4 · stated 3 · implied 2 · inferred 1
+```
+
+**Two alternatives refused, and the reasons outlast the choice:**
+
+- **Widen the constraint** to exempt `source = 'user_set'` — admits a case the vocabulary cannot
+  express, and **the constraint stops meaning what its comment says.** A constraint that no longer
+  matches its own explanation is worse than none: it reads as enforced.
+- **Use `inferred`** — wrong on its face. It is the **weakest** class, and §24.1 already ranked it
+  below `stated`. A person's answer is the strongest evidence in the system.
+
+**`declared`, not `asserted`.** *Asserted* reads as a claim somebody is **making**; *declared* reads
+as a fact somebody is **supplying** — and the word will sit in a table next to `inferred`, where
+the reader is already weighing how much to believe.
+
+**And it may not carry a document** (027). If a document is the source, the class is `stated`,
+`implied` or `inferred` — **otherwise `declared` becomes the class that escapes every evidence
+rule, which is how a vocabulary rots.** Both halves are proved by violating them, per §3.7.
+
+**Two migrations for one change, and it is a Postgres rule rather than a style choice:**
+`ALTER TYPE ... ADD VALUE` must commit before the value can be named, so 026 adds the word and 027
+is the first statement allowed to use it.
+
+### THE THIRD INSTANCE OF §63'S CLASS, AND THE SHARPEST
+
+| | What was unreachable | How it surfaced |
+|---|---|---|
+| **§63** | `close_and_replace_obligations`, `substance_inventory` — `service_role` only | 500 on the first real GET |
+| **§79** | the duplicated `Established` builder, ignoring value type | the refactor forced two copies into one |
+| **§80** | `fromUserAnswer()` returning `stated` with no document | the first INSERT from a route |
+
+> **What makes this one sharpest: the module's own TEST asserted the behaviour its database
+> refuses.**
+>
+> ```js
+> test('evidence_class is stated — a person stating it IS a statement', () => {
+>   assert.equal(d.evidenceClass, 'stated')      // passed, for two days
+> ```
+>
+> Both were written on **13 September**. Both are internally consistent. **Nothing put them in the
+> same process for two days**, because `lib/switchDetermination.ts` had four exports, four tests
+> and **no production caller.**
+
+**`AUDIT-CHECKS.md` check 29's unrouted-module list is the leading indicator for this class, and it
+has now produced three findings in one sitting.** That changes what the list is:
+
+> **It is not a list of things to tidy. It is a queue of latent defects**, each of which will fail
+> on the day something first reaches it — and every one of them reads as finished work until then.
+> `switchAsk`, `sdsExtraction` and `basis` are still on it.
+
+**Reversal condition:** none on `declared`. On the class — when check 29's list is empty, the
+leading indicator stops indicating and becomes a regression check.

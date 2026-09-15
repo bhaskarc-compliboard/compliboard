@@ -19,7 +19,7 @@
 import type { ObligationStatus } from './resolve.ts'
 import { userAnswerBasis, type Basis } from './basis.ts'
 
-export type EvidenceClass = 'stated' | 'implied' | 'inferred' | 'absent'
+export type EvidenceClass = 'declared' | 'stated' | 'implied' | 'inferred' | 'absent'
 export type Confidence = 'high' | 'medium' | 'low'
 export type ValueSource = 'ai_from_documents' | 'ai_from_profile' | 'user_set' | 'computed'
 
@@ -60,7 +60,24 @@ export type Outcome =
   /** Record it and move the switch to needs_user. Nothing here can settle it. */
   | { action: 'needs_user'; reason: string }
 
-const RANK: Record<Exclude<EvidenceClass, 'absent'>, number> = { stated: 3, implied: 2, inferred: 1 }
+/**
+ * THE PRECEDENCE LADDER, AS A NUMBER.
+ *
+ *   BEFORE (13 Sep - 15 Sep):  stated 3 · implied 2 · inferred 1
+ *   AFTER  (migration 026):    declared 4 · stated 3 · implied 2 · inferred 1
+ *
+ * *** `declared` IS NEW AND IT SITS AT THE TOP. *** The other four classes all describe how a
+ * DOCUMENT supports a claim — they are one scale. A person telling us directly is not on that
+ * scale, and it is the strongest source in the product: `DECISIONS.md` §24.1 says a stated value
+ * outranks an inferred one, and a person outranks both.
+ *
+ * **That rule was unexpressible in this vocabulary until now**, which is exactly why
+ * `fromUserAnswer()` borrowed `stated` — a word that in migration 017 means "this document says
+ * it" and carries a CHECK requiring a document and a quote. The borrow was invisible for two
+ * days because nothing had ever called this module from a route (§80).
+ */
+const RANK: Record<Exclude<EvidenceClass, 'absent'>, number> =
+  { declared: 4, stated: 3, implied: 2, inferred: 1 }
 
 /**
  * Does writing this value REMOVE an obligation the company would otherwise see?
@@ -111,7 +128,7 @@ export function decideOutcome(
 
   // A person changing their own answer always wins, including over their earlier one.
   if (incoming.source === 'user_set') {
-    return { action: 'write', reason: 'Stated by a person, which outranks every inferred value.' }
+    return { action: 'write', reason: 'Declared by a person, which outranks every inferred value.' }
   }
 
   // ---- The §5 rule, applied before the ladder: a value that could remove an obligation is
@@ -218,7 +235,9 @@ export function fromUserAnswer(
   return {
     switchId,
     value,
-    evidenceClass: 'stated',
+    // `declared`, not `stated`. A person is not a document (migration 026), and `stated`
+    // carries a CHECK requiring a document and a quote that a person's answer cannot satisfy.
+    evidenceClass: 'declared',
     confidence: 'high',
     source: 'user_set',
     documentId: null,
