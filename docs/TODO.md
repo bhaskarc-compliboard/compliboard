@@ -166,7 +166,12 @@ decisions and the five schema gaps are settled before any of this starts.*
 
 **Synchronous throughout (D25).** Same reasoning as D20: the gate is 6–10 s, the answer ~30 s.
 
-> ### ⛔ MEASURED 15 SEP — THE CRITIC IS OVER BUDGET AND STAGE 2 IS NO LONGER DEFERRABLE.
+> ### ⛔ MEASURED 15 SEP — THE CRITIC IS OVER BUDGET. **STAGE 2 DOES NOT FIX IT.**
+> **Narrowing 33 agencies to 4 buys 7.7 s (36.4 -> 28.7 s) and costs three coverage findings**
+> (`DECISIONS.md` §76). The list is not what costs 36 s. **Stage 2 is withdrawn as a latency fix**;
+> if it is built it is for Stage 3's retrieval contract, and the library route may serve that with
+> no AI call. **The open question is now D25 itself** — whether the critic can be synchronous in a
+> conversation at all. Old note follows:
 > **36.4 s mean, 33.2–42.2 s, n=3**, critic alone, on a five-item checklist with the live 33-agency
 > list (`DECISIONS.md` §74). Against a ~30 s conversational turn, and the gate and the generating
 > call sit on top of it. **Stage 2 — narrowing the agency list to the ones a question touches — is

@@ -1,6 +1,18 @@
 # Decision Record
-**Version:** 53 · **Updated:** 15 September 2026
-**Supersedes:** version 52 (15 Sep). Adds **§74** — the critic timed before M1 is built, not
+**Version:** 55 · **Updated:** 15 September 2026
+**Supersedes:** version 54 (15 Sep). Adds **§76** — the measurement. Narrowing 33 agencies to 4
+buys **7.7 s (36.4 -> 28.7 s, 21%)** and costs **three coverage findings** (9,9,9 -> 6,6,6;
+blocking held at 2 throughout). **The agency list is not what costs 36 seconds**, so Stage 2 does
+not fix the latency it was proposed for, and §74's "Stage 2 stops being deferrable" is
+**withdrawn**. `CRITIC-PASS.md` §5's asymmetry is now measured rather than argued. Version 54
+added **§75** — Stage 2 stopped before any spec. §5.2
+specifies a **model call**, so narrowing the critic means **adding an AI call to remove input from
+a later one**; `CRITIC-PASS.md` §5 **already decided this trade in writing the other way**, and the
+reversal was proposed without noticing the decision existed; and a **third option the design does
+not consider** — `requirement_templates.agency_id` already partitions the library, so retrieval
+names its own agencies with no AI call, inverting Stages 2 and 3. Records the failure direction:
+too narrow is a gap **the critic cannot see**, and the obligations spine that would catch it is
+not connected to either answer route (§71). Version 53 added **§74** — the critic timed before M1 is built, not
 after: **36.4 s mean, 33.2–42.2 s, n=3**, critic alone, against a ~30 s conversational budget.
 **Over, so Stage 2 stops being deferrable.** The 84 s from 12 Sep is not contradicted — that was a
 272-item audit and this is a five-item checklist, so the critic costs ~36 s small and ~84 s large.
@@ -4832,3 +4844,165 @@ out of the count.**
 **Reversal condition:** if Stage 2 lands and the agency list narrows from 33 to the few a question
 actually touches, re-run this measurement before concluding anything about M1's shape. The
 threshold is the turn, not the stage.
+
+---
+
+## 75. Stage 2 reverses a written decision, and it is not obviously a query — 15 September 2026
+
+**Stopped before any spec.** §74's timing made Stage 2 look like the obvious next item. Reading
+the spec and the critic's own decision record changed that, and three corrections go on the record
+before anything is built.
+
+### 1. §5.2 specifies a MODEL CALL, not a query
+
+`CHEMICAL-OR-WA.md` §5.2, verbatim:
+
+```
+Activity: [question]
+Company: [state, county, industry, relevant switches]
+Available agencies for this jurisdiction: [list from §1.2-1.4]
+
+Which agencies have jurisdiction over this activity? For each, state
+in one line what its interest is. Do not enumerate requirements.
+```
+
+**So "narrow the critic's input" means adding an AI call in order to remove input from a later AI
+call.** The latency arithmetic is not obviously favourable, and the 36.4 s measurement does not by
+itself justify the work. **The spec was not read before the work was proposed** — by either of us;
+it was proposed from a latency number and accepted from the same.
+
+### 2. `CRITIC-PASS.md` §5 already decided this trade, in writing, the other way
+
+> *"a list that is too broad produces a false positive a human can dismiss, while a missing list
+> produces a silent gap nobody sees. Those are not symmetrical costs."*
+
+**Stage 2 reverses that**, and the reversal was proposed without anyone noticing a decision
+existed. That is allowed — §5 was written before there was a latency number, and new evidence is
+the right reason to reopen a decision. **What is not allowed is reversing it silently**, which is
+what would have happened had the spec gone straight to code.
+
+### 3. The library route is a third option the design does not consider
+
+`requirement_templates.agency_id` **already partitions the library** — OR-OSHA 61, EPA 52, BOLI
+16, PHMSA 15, OR-DEQ 11 live rows. **A retrieval that pulls candidate requirements names its own
+agencies as a side effect, with no AI call at all.** That inverts §5.2's Stage 2 and Stage 3:
+retrieve first, derive scope from what was retrieved.
+
+**It may be better than both options.** It removes a call rather than adding one, it is
+deterministic, and it makes the agency list a *consequence* of the anchor rather than a
+*constraint* on it — which is closer to `CLAUDE.md` §3.3's rule that every stage must have an
+anchor.
+
+**Also found, and it makes a query-based narrowing more plausible than expected:**
+`agencies.agency_type` is populated on **all 33 rows** across 11 values — `labor` 9,
+`environmental` 4, `licensing` 4, `transport` 3, `fire` 3, `workplace_safety` 2,
+`business_registry` 2, `product_safety` 2, `tax` 2, `trade` 1, `security` 1. **What does not
+exist in any form is a mapping from an activity to an `agency_type`.**
+
+### What Stage 2 would decide on behalf of things that do not exist
+
+- **Stage 3 inherits its output as a RETRIEVAL FILTER** — §5.2: *"Query `requirement_templates` on
+  industry + jurisdiction + the agencies from Stage 2."* A wrongly-excluded agency does not merely
+  go unmentioned; **its library rows are never fetched.** Building Stage 2 alone fixes Stage 3's
+  contract before Stage 3 is specced.
+- **M6's coverage strip** reads `industry_coverage` — 56 rows, company-wide and
+  question-independent. Stage 2 creates a **second, per-question notion of scope.** *"We cover 33
+  agencies"* and *"this answer touched 4"* are different claims and must not render as one.
+
+### The failure direction, which is the part that bounds the decision
+
+**Narrowing too far produces a gap the critic cannot see, because the critic only knows what it
+was given.** If Stage 2 drops PHMSA from a shipping question: Stage 3 retrieves no PHMSA rows, the
+answer contains no transport requirements, and **question 6 asks "for each agency with
+jurisdiction, was it addressed?" — with PHMSA absent from the list.** The omission is not missed;
+it is **outside the question being asked.** The answer is internally consistent, complete against
+its own frame, and wrong.
+
+**What bounds it today: nothing.** The obligations spine would be the natural backstop — a PHMSA
+obligation exists whether or not a conversation mentions it — but §71 established that
+`/api/chat` and `/api/audits` contain **zero references** to `requirement_templates` or
+`obligations`. **The backstop is not connected**, so narrowing currently has no floor.
+
+| | Too broad | Too narrow |
+|---|---|---|
+| Cost | a false positive | **a silent gap** |
+| Who catches it | a human reading the answer | **nobody** |
+| Latency | 36.4 s | faster |
+
+**Stage 2 trades a visible cost for an invisible one to buy latency.** That may still be right —
+a minute of dead screen is a real product failure — but it is not an optimisation, and it should
+not be described as one.
+
+**Reversal condition:** the measurement in §76 decides whether the 33-agency list is what costs
+36 s at all. If it is not, Stage 2 buys nothing and this entry closes the question.
+
+---
+
+## 76. Narrowing the agency list buys 7.7 seconds and costs three findings — 15 September 2026
+
+**The measurement §75 asked for. Identical input to §74's baseline — same question, same answer,
+same established facts, same declared unknowns — with the ONLY change being 4 hand-picked
+agencies (OR-OSHA, OR-DEQ, EPA, BOLI) instead of all 33.**
+
+```
+NARROW (4 agencies)   n=3  mean 28.7s  min 22.4s  max 35.5s
+BASELINE (33)         n=3  mean 36.4s  min 33.2s  max 42.2s
+
+DELTA: -7.7s  (21% faster)
+
+findings: baseline 9, 9, 9  (blocking 2 each)
+          narrow   6, 6, 6  (blocking 2, 2, 2 — coverage-q6 2, 2, 2)
+```
+
+### What it settles: the agency list is NOT what costs 36 seconds
+
+**Eight times fewer agencies buys 21% — and the narrow run still takes 28.7 s, which is still at
+the ~30 s conversational budget with the gate and the generating call on top.** The critic is
+expensive because it is a large reasoning call over a whole answer, not because of the list.
+
+> **So Stage 2 does not fix the latency problem it was proposed to fix.** A turn stays
+> minute-plus. **The premise of §74's "Stage 2 stops being deferrable" does not survive the
+> measurement**, and that conclusion is withdrawn.
+
+**And the residual variance says the same thing.** The narrow runs spread 22.4–35.5 s — a 13 s
+range on identical input — which overlaps the baseline's range. **Run-to-run variance is
+comparable to the entire effect of removing 29 agencies.** Three runs cannot separate them
+further, and a larger sample would be measuring the API, not the design.
+
+### The second finding, which is the more interesting one
+
+**The finding count dropped from 9 to 6, and it was stable at both sizes** — 9,9,9 then 6,6,6.
+**Blocking held at 2 in every run of both.** So:
+
+- **The three lost findings are coverage findings** — question 6, *"for each agency with
+  jurisdiction, was it addressed?"*. Narrow kept 2 coverage findings in all three runs; broad
+  found 3 more.
+- **Nothing blocking was lost.** The severity that withholds an item from the answer was
+  identical across both.
+
+> **This is `CRITIC-PASS.md` §5's asymmetry, measured rather than argued.** Narrowing removed
+> three observations about agencies that were not addressed, and the critic **cannot report on an
+> agency it was not given.** The 7.7 s was bought with exactly the currency §5 warned about: *"a
+> missing list produces a silent gap nobody sees."*
+>
+> Whether those three were real gaps or false positives is not knowable from this run — **and
+> that is the point.** With the broad list a human can read them and dismiss them. With the narrow
+> list they do not exist to be read.
+
+### What follows
+
+**Stage 2 is not worth building for latency.** 7.7 s does not move a minute-plus turn under a
+threshold, and it costs the coverage findings that are the critic's distinctive contribution.
+
+**If Stage 2 is built, it must be for a different reason** — Stage 3's retrieval filter, which is
+a correctness argument rather than a speed one, and which §75 notes can be served by the **library
+route** with no AI call at all.
+
+**And the real latency question is now open and unanswered:** the critic is ~29 s on a five-item
+checklist with four agencies. **If a conversational turn must be under 30 s, the critic cannot be
+synchronous in a conversation at all**, and that is a question about D25 rather than about Stage
+2. Not decided here; measured and recorded.
+
+**Reversal condition:** if the critic's input ever grows to dominate its cost — a 272-item audit
+is the known case at ~84 s — narrowing becomes worth re-measuring for that path specifically. It
+is the small-conversation path this measurement covers.
