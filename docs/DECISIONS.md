@@ -1,6 +1,11 @@
 # Decision Record
-**Version:** 56 · **Updated:** 15 September 2026
-**Supersedes:** version 55 (15 Sep). Adds **§77**, the research path: **gate, then answer — two AI
+**Version:** 57 · **Updated:** 15 September 2026
+**Supersedes:** version 56 (15 Sep). Adds **§78** — **hypothetical facts are not stored**, anywhere. M1.2b gives the gate prior turns, so the hypothetical is already in the conversation it
+reads; storing it too would put one fact in two places under different rules — **the two-systems
+problem, now found three times** (§71 checklists vs obligations, §24 `scan_result` vs the site,
+and this one, avoided). The lifecycle falls out of `WORKSPACE.md` §6.4: transcripts are
+disposable, so the hypothetical dies with the topic. **`topics` needs no facts column.**
+Version 56 added **§77**, the research path: **gate, then answer — two AI
 calls, nothing else.** The critic is **dropped from research** (a conversation self-corrects; the
 cost — most users will not ask — is accepted knowingly) and stays at the checklist boundary.
 Nothing narrows the model. **The library is INVISIBLE**: per-claim verification badges are
@@ -5193,3 +5198,51 @@ both paths equally unanchored, rather than by deciding what each is entitled to 
 **Reversal condition on the critic's absence:** if a research error ever reaches a customer
 decision and is traced to an unchallenged claim, the trade in §1 is what failed, and the answer is
 the checklist boundary moving earlier — not a critic added back into the conversation.
+
+---
+
+## 78. Hypothetical facts are not stored — 15 September 2026
+
+**A fact that belongs to a hypothetical is never written anywhere.** Not to `company_switches`,
+not to `topics`, not to a new table. It lives in the conversation and nowhere else.
+
+### Why, and the reasoning is that the alternative recreates a problem this project keeps finding
+
+**M1.2b gives the gate prior turns.** So *"the Arizona facility would have 12 employees"* is
+**already in the conversation the gate reads.** Storing it separately would put the same fact in
+two places under different rules — **and that is the two-systems problem, which this codebase has
+now produced three times:**
+
+| | Two records of the same thing | Recorded |
+|---|---|---|
+| 1 | `checklist_items` vs `obligations` — two answers to *"what must you do"*, neither connected to the library | **§71** |
+| 2 | `companies.scan_result` vs `entities.state/county/city` — jurisdiction from an AI website scan rather than the site; **`scan_result` is null for 7 of 10 production companies** | **§24** |
+| 3 | a stored hypothetical vs the conversation that produced it | **this entry, avoided** |
+
+**Each of the first two cost a reconciliation, and the second is still open.** The third is
+avoided for free by not creating it.
+
+### The lifecycle falls out rather than needing design
+
+`WORKSPACE.md` §6.4 already settles the lifespans: **transcripts are disposable — closed and
+discarded.** A hypothetical belongs to the exploration that produced it, so **when the topic closes
+and the transcript goes, the hypothetical goes with it.**
+
+> **Nobody should inherit *"the Arizona facility has 12 employees"* into a conversation six weeks
+> later about something else.** A stored hypothetical would do exactly that, and it would be
+> indistinguishable from a real fact at the point of use — which is the false-green direction.
+
+**The cost, stated plainly:** the gate re-reads the turns rather than reading a stored value.
+**That is not re-inference in any expensive sense — it is what conversation context is**, and the
+gate is 6–10 s with or without it.
+
+### What it simplifies
+
+**`topics` needs no facts column.** M1.1's shape gets smaller, not larger: company, title, status,
+opened/closed, summary. **A decision that removes a column is worth more than one that adds a
+well-designed one.**
+
+**Reversal condition:** if a hypothetical is ever needed **outside** its topic. No case can
+currently be named. **If one appears, the fix is promoting it to a real fact deliberately — a user
+action, not a storage decision.** That distinction is the whole of it: a fact becomes real when
+somebody says it is, not when a system decides to keep it.
