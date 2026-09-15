@@ -1,6 +1,12 @@
 # Decision Record
-**Version:** 50 · **Updated:** 15 September 2026
-**Supersedes:** version 49 (13 Sep). Adds **§71** — the audit engine and the requirement library
+**Version:** 51 · **Updated:** 15 September 2026
+**Supersedes:** version 50 (15 Sep). Adds **§72** — 6.4b stays deferred and `regulated_substances`
+stays unseeded, because **moving thresholds into a table turns a visible problem into an invisible
+one**: a wrong literal is readable on the renderer, which is how the circular switches were found,
+and a wrong join is not. Deleting the table was refused on the code — its INNER JOIN is the only
+source of a `true`. Records the **24 requirements carrying a numeric threshold literal** (27
+clauses, 14 distinct pairs, **no CAS numbers anywhere**) as model-derived and unverified, the same
+standing as the citations and 6.7's job. Version 50 added **§71** — the audit engine and the requirement library
 were **never connected**: `/api/audits` and `/api/chat` contain zero references to
 `requirement_templates` or `obligations` and generate their own lists from a standard name. **No
 company has ever held both kinds of row**, so the two have never had the chance to disagree,
@@ -4554,3 +4560,79 @@ second spine — is the decision, and it precedes any code in either module.
 **Reversal condition:** if `/api/audits` is rebuilt on `obligation_evidence` (M2's stated scope)
 and `/api/chat`'s checklist mode is rebuilt on obligations, item 6 dissolves into those two and
 this entry becomes history. Neither is scheduled.
+
+---
+
+## 72. 6.4b stays deferred, and a literal on a screen beats a number in a table — 15 September 2026
+
+**The decision: (c). `regulated_substances` stays, unseeded, and 6.7 decides what goes in it.**
+Not because the alternatives are expensive, but because one of them makes the problem harder to
+see.
+
+### The argument that settled it
+
+**(b) — moving thresholds into the table — turns a VISIBLE problem into an INVISIBLE one.**
+
+> A wrong number inside an expression is **readable on the renderer**. That is exactly how the
+> circular switches were found on 13 September: ten minutes of domain reading of rendered rows,
+> against 199 expression reviews that had found nothing (§64). **Moved into a reference table, the
+> same wrong number becomes a join nobody renders** — correct-looking, unauditable by eye, and
+> reachable only by someone who thinks to query it.
+
+That is the §61 shape one level out: the failure is not that the value is wrong, it is that
+nothing can *see* it is wrong. **The library's current weakness is that its numbers are
+unverified. Hiding them behind a join does not verify them; it removes the one check that has
+actually worked.**
+
+**(a) — deleting the table — was refused on the code.** The `regulated_substances` join is an
+INNER JOIN inside branch 2 and it is *the* source of every `true` the function can return:
+
+```sql
+join public.regulated_substances r on r.cas_number = c.cas_number
+...
+when 'psm' then r.is_psm_listed and c.max_quantity >= r.psm_threshold_lb
+```
+
+It is read again in branch 3, where a CAS **absent** from the table is one of three things that
+force `unknown` instead of `false`. Delete it and the function loses its positive path *and* a
+guard against a false negative.
+
+### The 24 thresholds, and their real status
+
+**24 of the 199 live requirements carry a numeric threshold literal; 27 clauses in total, 14
+distinct (switch, value) pairs.** Counted, not estimated:
+
+```
+ 3x employee_count >= 50      3x employee_count >= 20      3x employee_count >= 15
+ 3x employee_count >= 6       3x employee_count >= 10      2x site_employee_count >= 250
+ 2x employee_count >= 100     2x oil_storage_aboveground_gallons >= 1320
+ 1x site_employee_count >= 20/100/6   1x ghg_emissions_tco2e >= 2500 / >= 25000
+ 1x employee_count >= 25
+```
+
+**None of them is a substance threshold, and there are no CAS numbers in any expression** —
+`grep` across all 199 returns zero. Every inventory clause is `{"inventory": "<list>"}` and
+nothing else.
+
+> **They are not wrong because they are literals. They are unverified because nobody has read the
+> rule.** `verified_at` and `source_checked_at` are NULL on all 205 rows; these 24 numbers have
+> exactly the same standing as the 200 citations beside them — **model-derived, plausible, and
+> unchecked against a published source.** That is precisely what 6.7 exists to fix, and it is why
+> the thresholds and the citations should be verified in the same pass rather than treated as
+> separate problems.
+
+### What 6.4b becomes
+
+**Deferred behind a writer for `company_chemicals`.** The reference data is inert until something
+records what a customer holds: `substance_inventory()` short-circuits on branch 1
+(`not exists company_chemicals`) and never reaches the threshold join. Seeding EPA tables today
+changes no screen.
+
+**And the constraint that governs any future seeding: a list is seeded COMPLETE or not at all.**
+A partially-seeded list reaches branch 4 — every row identified, quantified, none over threshold —
+and returns a **definite `false`**, which is the one direction `CLAUDE.md` §3.2 forbids.
+
+**Reversal condition:** if 6.7 establishes the thresholds from primary sources and a
+`company_chemicals` writer exists, (b) becomes arguable again — because a verified number in a
+table with `source_url` and `source_checked_at` beside it is *better* provenance than a literal.
+The objection is to moving unverified numbers out of sight, not to the table.

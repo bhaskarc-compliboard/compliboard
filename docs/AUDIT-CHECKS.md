@@ -1,6 +1,11 @@
 # Audit Checks
-**Version:** 25 · **Updated:** 13 September 2026
-**Supersedes:** version 24 (13 Sep). **Check 8 is FAILING, and v24 recorded it as passing.** The
+**Version:** 26 · **Updated:** 15 September 2026
+**Supersedes:** version 25 (13 Sep). Adds **check 29** — what is reachable in principle and reached
+by nothing? Kept as one class rather than scattered notes: **four modules, ~17 exports, ~60 tests,
+zero requests**, which is the whole 7.2/7.2a surface. Distinguishes it from the two neighbouring
+classes that fail differently — code reached for the first time by a user (§63) and code that
+cannot be imported by a test (§67) — and from `substance_inventory`, which is reached and has never
+taken its real path (§70). Version 25: **Check 8 is FAILING, and v24 recorded it as passing.** The
 query named bucket `documents`; the bucket is `company-documents`, so it returned zero rows
 against a bucket that does not exist and read as clean. Corrected: **4 orphaned customer files on
 production and 4 on staging** — the same four TODO 0.7 has listed since 9 September, which the
@@ -1517,6 +1522,61 @@ staging passes, and `sum(row_count)` is now 193, matching the 193 live rows that
 `count: 'exact'` queries, not from this column. **No customer has been shown 53.**
 
 **Check 27 — the caller's EXECUTE grants**, fixed by migration 023 and now passing on both sides.
+
+---
+
+## 29. What is reachable in principle and reached by nothing?
+
+**A class, not three separate notes.** Code that is correct, tested, and has no caller is a
+different defect from code that is wrong — it fails on the day someone first reaches it, and
+until then it reads on every page as finished work.
+
+```
+# every exported callable in lib/, and who imports the module it lives in
+for f in lib/*.ts; do
+  name=$(basename "$f" .ts)
+  prod=$(grep -rl "from '@/lib/$name'\|from './$name.ts'" app lib components | grep -v "^$f$")
+  test=$(grep -rl "lib/$name.ts" tests)
+  [ -z "$prod" ] && echo "NO PRODUCTION CALLER: $f  (tests: ${test:-none})"
+done
+```
+
+**Answer, 15 September 2026 — derived by grep, not recalled. 69 exported callables in `lib/`:**
+
+| Module | Exports only a test calls | Reached in production? |
+|---|---|---|
+| `lib/switchAsk.ts` | 6 of 6 | **No** |
+| `lib/switchDetermination.ts` | 4 of 4 | **No** |
+| `lib/sdsExtraction.ts` | 4 of 4 | **No** |
+| `lib/basis.ts` | 3 | **No** — only via `switchDetermination`, itself unreached |
+| `lib/folderTemplates.ts` | — | **Dead.** 0 internal uses, 0 external, 0 tests |
+
+**Four modules, ~17 exports, roughly 60 tests, and no request has ever reached any of them.** That
+is the whole 7.2/7.2a surface: `/api/switches/ask` and `/api/switches/answer` do not exist, and
+**nothing in `app/` has ever written a `company_switches` row** — Test Alpha's 16 facts came from
+`scripts/seed-multisite-fixture.js:141`.
+
+**All 18 routes have a caller. All 6 database functions are reached** — including the three with
+no app/lib caller, which are reached by the database itself: `set_updated_at` by 12 triggers,
+`create_primary_site` by 1, `array_is_ascending` by 1 CHECK constraint. **Checked rather than
+assumed**, because "no caller in the code" and "no caller at all" are different questions.
+
+### Why this is a check and not a to-do
+
+**It has already produced two distinct failures this session**, and they failed differently:
+
+- **`close_and_replace_obligations` was reached for the first time by a user** and returned 500 for
+  every uncomputed company — the write had only ever run as `service_role` (§63).
+- **`criticPass` had no test because it could not be IMPORTED by one** — `@/lib/...` is resolved by
+  the bundler and by `tsc` but not by Node's loader. It looked like a backlog item (§67).
+
+> **And the third kind is not on this list, which is the point of keeping them apart.**
+> `substance_inventory()` is reached, exercised on every recompute, and has **never taken its real
+> path** because `company_chemicals` is empty (§70). Unreached code fails loudly on first contact.
+> That one never will.
+
+**Three files remain unimportable by a test** — `documentReview.ts`, `determinationGate.ts`,
+`documentContent.ts` — all three on M1's path.
 
 ---
 
