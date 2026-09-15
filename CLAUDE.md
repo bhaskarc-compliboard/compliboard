@@ -255,11 +255,34 @@ once.
   **Any migration that creates a table in `public` must explicitly `REVOKE ALL ... FROM
   anon`**, or `anon` silently holds full DML on it and RLS is the only thing standing
   between an unauthenticated request and the data. Leaving a table out of the grant list
-  closes nothing. Verify with:
+  closes nothing.
+
+  **AND THE SAME IS TRUE OF `authenticated`, WHICH THIS RULE USED TO OMIT.** The default ACL
+  reads `authenticated=arwdDxtm/postgres` — `a` insert, `r` select, `w` update, **`d` DELETE** —
+  and it arrives before any `GRANT` runs. So a migration that grants
+  `select, insert, update` to `authenticated` does **not** produce a table without DELETE:
+  it produces a table where DELETE was already there and three privileges were re-stated.
+
+  > ### A GRANT LIST DESCRIBES WHAT YOU ADDED, NOT WHAT THE ROLE HOLDS.
+  > The only way to know what a role holds is to **read it**. Every table this project
+  > deliberately keeps append-only or non-deletable — `switch_determinations`, `topics`,
+  > `obligations` — depends on that distinction.
+
+  **So the shape for a new table is REVOKE, then GRANT, for both roles:**
+  ```sql
+  revoke all on table public.<t> from anon;
+  revoke all on table public.<t> from authenticated;
+  grant select, insert, update on table public.<t> to authenticated;   -- no DELETE
   ```
-  select * from information_schema.role_table_grants
-   where table_schema='public' and grantee='anon';   -- must return zero rows
+  Verify by reading, never by trusting the grant list:
   ```
+  select grantee, privilege_type from information_schema.role_table_grants
+   where table_schema='public' and table_name='<t>';
+  -- anon: zero rows. authenticated: exactly what the migration named, and nothing else.
+  ```
+  **Found twice, both times by a migration's own verify block refusing it** — 11 Sep for
+  `anon` (migration 008) and 15 Sep for `authenticated` (migration 028, which granted three
+  privileges and was refused for holding a fourth it never granted). `DECISIONS.md` §81.
   Found on 11 Sep when migration 008's own verification block refused it: a table
   deliberately omitted from every grant line still came out readable and writable by
   `authenticated`, and only an explicit `REVOKE` closed it.

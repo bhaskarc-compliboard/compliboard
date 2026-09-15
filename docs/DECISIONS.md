@@ -4218,7 +4218,7 @@ the review can go back to being periodic rather than gating.
 
 ## 65. The composed assertions, and the rule that covers all of them — 13–15 September 2026
 
-*Seven instances. The register is kept here so the rule is stated once and the count is not an
+*Eight instances. The register is kept here so the rule is stated once and the count is not an
 impression. §60 records the first and states the rule; §66 records the fourth in full.*
 
 **This section exists so the rule is stated once and the instances are countable.** §60 records
@@ -4343,6 +4343,23 @@ out of the file.**
 **Six instances this week, and the count is the useful part** — not because six is alarming, but
 because each was settled by one command, and a register that is countable is how the rate stays
 visible rather than becoming folklore.
+
+### The seventh: a section number composed rather than copied
+
+**Same shape as #3 (the migration filename) and #6 (the §68/§65 citation).** A rule about negative
+tests was to be filed as *"§35's shape in a new place"* — but **§35 is *"Two corrections to the
+determination-gate spec"***, nothing to do with checks passing for the wrong reason. Settled by
+`grep -n '^## 35\.'`, one command.
+
+**The rule belongs under `AUDIT-CHECKS.md` check 14** — *"is every checker as strong as the
+assertion it claims to check?"* — which is the question it is actually about, and which now
+carries three instances.
+
+**Three of the seven are now cross-references**, which makes it the most common single shape in
+this register. §46 established that a pre-flight names files exactly as they appear on disk; §62
+recorded the inverse — a migration citing a `§60` that did not yet exist. **A section number is a
+filename with fewer characters, and it is easier to get wrong precisely because it looks like it
+needs no checking.**
 
 ### Why the third is the interesting one, and it is not the worst
 
