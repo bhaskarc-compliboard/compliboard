@@ -1,6 +1,12 @@
 # Decision Record
-**Version:** 49 · **Updated:** 13 September 2026
-**Supersedes:** version 48 (13 Sep). Adds **§68–§70**. §68: two records of *what you must do*
+**Version:** 50 · **Updated:** 15 September 2026
+**Supersedes:** version 49 (13 Sep). Adds **§71** — the audit engine and the requirement library
+were **never connected**: `/api/audits` and `/api/chat` contain zero references to
+`requirement_templates` or `obligations` and generate their own lists from a standard name. **No
+company has ever held both kinds of row**, so the two have never had the chance to disagree,
+which is harder to notice than a contradiction. Corrects §68 on both counts: item 6 is *decide
+what a checklist IS*, not *stop writing them*, and the accrual argument does not hold — the 235
+production items carry **zero** completions. Version 49 added **§68–§70**. §68: two records of *what you must do*
 already exist and the populations are inverted — **production holds 235 AI-generated
 `checklist_items` and 0 computed obligations**; the reconciliation goes on the GATE because it
 accumulates customer rows, not because it is hard to reverse. §69: reversibility decides WHEN a
@@ -4485,3 +4491,66 @@ answered and are not".
 **Reversal condition:** none. Once both tables hold rows, the check is `AUDIT-CHECKS.md` 18 and 20
 running non-vacuously for the first time — and **both are recorded as vacuous today**, which is
 the only reason this was findable at all.
+
+---
+
+## 71. The audit engine and the requirement library were never connected — 15 September 2026
+
+**Correction to §68 first, because the framing there was wrong twice.**
+
+§68 recorded item 6 as *"M1 stops writing checklists"* and put the urgency on accruing rows.
+Both halves were wrong:
+
+- **It is not "stop writing". It is "decide what a checklist IS"** — and that decision spans
+  `/api/chat` and `/api/audits`, so neither M1 nor M2 owns it. It stays sequenced as its own item.
+- **The urgency argument does not hold on the current rows.** Production's 235 items belong to a
+  single test company and **not one has ever been ticked** (`completed 0`, `completed_at 0`).
+  There is no human work product to preserve. The divergence is real; the accrual is not, yet.
+
+### THE FINDING, which is the more important half
+
+**The audit engine works entirely outside the requirement library.** Not two systems drifting
+apart — **two systems that were never connected.** Read from the files:
+
+```
+app/api/audits/route.ts : "requirement_templates"  -> 0 occurrences
+                          "obligations"            -> 0 occurrences
+app/api/chat/route.ts   : "requirement_templates"  -> 0 occurrences
+                          "obligations"            -> 0 occurrences
+```
+
+`/api/audits` classifies a document, resolves a `source_name`, and **generates its own list**,
+caching it in `standard_templates`. It never asks what this company is actually subject to.
+`/api/chat` does the same for the checklist mode that writes `checklist_items`.
+
+> **So `CLAUDE.md` §1's architecture — library → switches → obligations, "what's missing is a
+> database query and never an AI guess" — describes a pipeline that the two answer-producing
+> routes do not touch.** They are the enumerate-from-nothing mode §3.3 names as the known-bad
+> one, and they are the only two surfaces a person has ever used.
+
+### One correction to the account, and it sharpens rather than weakens it
+
+*"235 checklist items and 221 obligations describe the same company"* — **no company holds
+both:**
+
+```
+production : CB-Test-1            checklist_items 235 · obligations   0
+staging    : Test Alpha Chemical  checklist_items   0 · obligations 221
+             Test Beta Cannabis   checklist_items   0 · obligations   1
+```
+
+**They have never met.** Not one company has ever had both kinds of row, so nothing has ever had
+the opportunity to disagree. **That is worse than a contradiction and much easier to miss**: a
+contradiction is visible the moment both lists render for one customer, and this cannot produce
+one, because the two populations are in different environments and were written by paths that
+share no table.
+
+**Which is also why item 6 has content.** If the two had merely drifted, reconciling would be a
+merge. They did not drift — **there is no mapping to write, because a `checklist_items.name` is
+a generated string and an obligation is a row keyed to `requirement_templates.id`.** Deciding
+what a checklist IS — a view over obligations, a workspace artifact with no authority, or a
+second spine — is the decision, and it precedes any code in either module.
+
+**Reversal condition:** if `/api/audits` is rebuilt on `obligation_evidence` (M2's stated scope)
+and `/api/chat`'s checklist mode is rebuilt on obligations, item 6 dissolves into those two and
+this entry becomes history. Neither is scheduled.
