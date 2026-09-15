@@ -1,6 +1,13 @@
 # Decision Record
-**Version:** 57 · **Updated:** 15 September 2026
-**Supersedes:** version 56 (15 Sep). Adds **§78** — **hypothetical facts are not stored**, anywhere. M1.2b gives the gate prior turns, so the hypothetical is already in the conversation it
+**Version:** 58 · **Updated:** 15 September 2026
+**Supersedes:** version 57 (15 Sep). §65 gains a **seventh** composed assertion and it is a
+different failure from the six before it: **7.2a described as shipped**, with a duration, a row
+count and a second environment accumulated across several messages. **Production has never held a
+switch value or an obligation.** The figure traces to `TESTING.md` Case A, which says **19** and is
+a specification whose own header says it cannot run — a spec remembered as a result — and nothing
+produced 23 at all. The first six were single assertions caught in one exchange; this was a
+**repeated claim that was never challenged because each retelling agreed with the last.**
+**Self-consistency is not evidence**, and work was planned on top of it. Version 57 added **§78** — **hypothetical facts are not stored**, anywhere. M1.2b gives the gate prior turns, so the hypothetical is already in the conversation it
 reads; storing it too would put one fact in two places under different rules — **the two-systems
 problem, now found three times** (§71 checklists vs obligations, §24 `scan_result` vs the site,
 and this one, avoided). The lifecycle falls out of `WORKSPACE.md` §6.4: transcripts are
@@ -4191,7 +4198,7 @@ the review can go back to being periodic rather than gating.
 
 ## 65. The composed assertions, and the rule that covers all of them — 13–15 September 2026
 
-*Six instances. The register is kept here so the rule is stated once and the count is not an
+*Seven instances. The register is kept here so the rule is stated once and the count is not an
 impression. §60 records the first and states the rule; §66 records the fourth in full.*
 
 **This section exists so the rule is stated once and the instances are countable.** §60 records
@@ -4252,6 +4259,53 @@ where the rule is cheapest to apply and where it was aimed.
 >
 > **This is also why the rule is cheap.** Naming the artifact takes one sentence, and it either
 > names a command or it does not.
+
+### The seventh, and it is a different failure from the first six
+
+**Asserted:** that 7.2a had shipped — the ask path, the routes, **"23 obligations moving in six
+seconds, verified on staging AND production."**
+
+**Settled, four ways, all read-only:**
+
+```
+app/api/ : 18 routes, NO switches directory
+git log --all --diff-filter=A -- "*switches/*"  : never added, on any branch
+production  company_switches: 0 rows · obligations: 0
+staging     company_switches: 16 rows, newest 2026-09-12, from seed-multisite-fixture.js:141
+TODO.md     #### 7.2a The routes ⬜ ⏱ 1 day
+```
+
+**Production has never held a single switch value or a single obligation**, so *"verified on
+production"* describes something that could not have happened.
+
+**Where the number came from, and this is the instructive part.** `TESTING.md` **Case A** says
+**19**, and it is a **SPECIFICATION written before the endpoints existed.** Its own header says
+the case cannot run: *"a case reading 'click Requirements and see 19 obligations' would fail today
+for a reason that has nothing to do with the ask path: there is no Requirements screen."* **A
+spec was remembered as a result.** And `grep` for `23 obligation` across `docs/ lib/ app/ tests/`
+returns **nothing** — **no artifact produced 23 at all.**
+
+### *** WHY THIS ONE IS WORSE THAN THE SIX BEFORE IT ***
+
+| | Shape | How it surfaced |
+|---|---|---|
+| 1–6 | a name · a file's contents · a defect · a mechanism · a section number · a filename | **single assertions, each caught in one exchange** |
+| **7** | **a repeated claim that accumulated detail over time** | **never challenged — each retelling sounded consistent with the last** |
+
+> **Self-consistency is not evidence.** The first six were wrong once and checkable immediately.
+> This one was restated across several messages, gaining a duration, a row count and a second
+> environment as it went — and every retelling agreed with the one before it, which is exactly
+> what made it feel settled.
+>
+> **A claim that is repeated is not thereby corroborated. It is the same claim, again.**
+
+**And the cost is the one that compounds: work was planned on top of it.** M1's plan named 7.2a
+as its floor while the floor was described as already poured. **Every day an unbuilt thing is
+believed built, something else is designed against it.**
+
+**The provenance test is the only check that catches this**, because plausibility grows with
+retelling while provenance does not move: **which artifact produced this number?** Case A produced
+**19**, as an expectation, in a document that says it cannot be run. **Nothing produced 23.**
 
 ### The sixth: a citation composed rather than copied
 
