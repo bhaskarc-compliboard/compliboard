@@ -1,6 +1,9 @@
 # Detailed To-Do
-**Version:** 19 · **Updated:** 13 September 2026
-**Supersedes:** version 18 (13 Sep). Records **M1's six decisions (D22–D27) as SETTLED**, with the
+**Version:** 20 · **Updated:** 15 September 2026
+**Supersedes:** version 19 (13 Sep). Adds **M1's build plan**, nine tasks against `WORKSPACE.md`
+v3, with **7.2a named as its floor** — M1's central act is fact capture and no endpoint for it
+exists. Records the two spec items still open: `expires_at` is unimplemented, and the critic
+cannot see prior turns though §4.2 requires it. Version 19: Records **M1's six decisions (D22–D27) as SETTLED**, with the
 cost-to-reverse and the date each must be right by, so the next session does not re-derive them.
 **The GATE gains a second item** — the checklist/obligation reconciliation, because production
 holds **235 AI-generated checklist rows and 0 computed obligations** and the divergence accrues
@@ -135,6 +138,53 @@ numbering** — `BUILD-PLAN.md`'s differs for five of them, see the table above.
 | **10 — Cannabis Oregon** | ⬜ not started |
 | **11+ — Later** | ⬜ |
 | **MODULES M1–M8** | ⬜ the seven product modules, built last |
+
+### M1 — THE BUILD PLAN ⬜ ⏱ ~8 days
+
+*Written 15 September 2026 against `WORKSPACE.md` **v3**. Spec first, code second — the six
+decisions and the five schema gaps are settled before any of this starts.*
+
+> ### ⛔ M1 CANNOT START UNTIL 7.2a EXISTS.
+> `/api/switches/ask` and `/api/switches/answer` **do not exist**, and **nothing in `app/` has
+> ever written a `company_switches` row** — Test Alpha's 16 facts came from
+> `scripts/seed-multisite-fixture.js:141`. Four modules (`switchAsk`, `switchDetermination`,
+> `sdsExtraction`, `basis`) have ~17 exports, ~60 tests and **zero production callers** (check
+> 29). **M1's central act is fact capture and there is no endpoint for it.** 7.2a is one day.
+
+| # | Task | Depends on | ⏱ |
+|---|---|---|---|
+| **M1.0** | **7.2a's two routes** — the floor, not part of M1 | — | 1 d |
+| **M1.1** | **Topics, minimal shape** (D23). `topics` table: company, title, status, opened/closed, summary. **Free today, not free once conversations are stored** (§69) | M1.0 | 1 d |
+| **M1.2** | **Follow-up classification** (§4.1) — three kinds, classified before anything expensive runs | M1.1 | 1 d |
+| **M1.3** | **Fact capture, not question generation** (D24). The conversation writes `company_switches` through 7.2a's route; it does **not** invent questions — the queue comes from `askableSwitches()` and the dependency graph (v3.5) | M1.0, M1.1 | 1.5 d |
+| **M1.4** | **Site resolution before a site-scoped write** (v3.3). One site → silent. Several → the question carries the site. **Defaulting to primary is forbidden** (§20) | M1.3 | 1 d |
+| **M1.5** | **Show what we know** (§7) — facts in context before an answer, with `source` rendered so a document-derived value and a person's answer do not look alike | M1.3 | 1 d |
+| **M1.6** | **Conflict display** (v3.2) — determination disagreeing with a locked value is **shown, never silently resolved** | M1.3, 7.2c | 0.5 d |
+| **M1.7** | **"What moved" after an answer** (v3.4) — six became applicable, two no longer apply. One level only (§54) | M1.3 | 1 d |
+| **M1.8** | **Topic close onto a topic summary** (v3.6, **provisional**) | M1.1 | 0.5 d |
+
+**Synchronous throughout (D25).** Same reasoning as D20: the gate is 6–10 s, the answer ~30 s.
+**The critic is the risk, not the rule** — 84 s average, 37–151 s, because Stage 2 does not exist
+to narrow 33 agencies. **Measure it from a route before M1.5 renders anything**, and if a
+conversational turn crosses ~30 s, Stage 2 stops being deferred.
+
+**Text search only (D27).** No `pg_trgm` until something is actually slow.
+
+**What M1 does NOT do:** write obligations, write checklists, create or flag a checklist, or
+render a numeric readiness count (numbers stay off until the library is verified — M6.1).
+
+**The two spec items still open, both flagged in v3 rather than hidden:**
+
+1. **`expires_at` is unimplemented** (v3.1) — 48 non-static switches, 0 rows with an expiry,
+   nothing reads the column. **This is the only one of the five gaps with no code at all**, and it
+   is the false-green direction.
+2. **The critic cannot see prior turns.** `WORKSPACE.md` §4.2 requires it — *"a critic seeing only
+   turn three will happily validate a font size inside a false premise"* — and `CriticInput` has
+   `question`, `answer`, `establishedFacts`, `declaredUnknowns`, `agenciesInScope`,
+   `factsReliedOn`, and **no field for prior assertions.** Field addition plus a prompt change,
+   which `CLAUDE.md` §3.1 puts behind a discussion.
+
+---
 
 ### M1 — THE SIX DECISIONS ARE SETTLED. DO NOT RE-LITIGATE THEM.
 

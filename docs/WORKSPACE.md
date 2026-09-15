@@ -1,66 +1,173 @@
-> # ⚠️ v3 NEEDED — THIS DOCUMENT PREDATES THE SWITCH SCHEMA
->
-> *Added 11 September 2026. **This is a list of gaps, not a rewrite.** v3 is not written here.*
->
-> Migration 008 built `switches` and `company_switches`, and the conversation model in this
-> document was designed before either existed. Five things it says are now either
-> unimplementable or already solved differently. **All five are M1 work — none of them
-> blocks Phase 2.**
->
-> **1. `expires_at` breaks the conversation model.**
-> Switches carry `volatility` (`static | annual | monthly`) and an `expires_at`, and an
-> expired switch reverts to **`unknown`**, not to its last value — because a stale `false`
-> is a false green. This document's model treats an established fact as established. It has
-> **no state for a fact that un-establishes itself**, and no account of what the product
-> says when one does.
->
-> **2. `user_locked` is an overwrite lock, not a confirmation gate.**
-> §5.2's three-tier confirmation scheme reaches for the same worry — *do not let the
-> machine quietly overwrite what the user told us* — and `company_switches` already solves
-> it, with `user_locked` plus the four-value `source` enum (`ai_from_documents`,
-> `ai_from_profile`, `user_set`, `computed`). **§5.2 needs rewriting against what exists,
-> not translating into it.** The two are not the same mechanism: a lock prevents a write, a
-> gate delays one.
->
-> **3. Site scoping is a hard failure, not a degradation.**
-> `company_switches` carries a composite FK on `(switch_id, scope)` and a CHECK requiring
-> `entity_id` when `scope = 'site'`. So **a site-scoped fact cannot be written at all
-> without knowing which site it belongs to** — the insert is refused. Conversation as
-> described here captures a fact without ever establishing a site. Defaulting to the
-> primary site would satisfy the constraint and is **the exact failure `DECISIONS.md` §20
-> exists to prevent**: a company-wide answer to a per-site question is wrong at every site
-> but one, confidently.
->
-> **4. No concept of `is_determination` / `produces_switch`.**
-> Some requirements determine switches. So answering one requirement can **change what else
-> is required, mid-topic** — the list the user is working through rewrites itself under
-> them. This document has no account of that happening during a conversation.
->
-> **5. No concept of `switches.depends_on_switch`.**
-> Switches form a hierarchy: `psm_rmp_threshold` is only worth asking if a listed substance
-> is handled at all. Asking in the wrong order **wastes the user's questions**, which is
-> precisely what §4.3's determination gate exists to optimise.
->
-> ---
->
-> **This blocks M1, not Phase 2.** Phase 2.2 cites this document only at **§4.3** (the
-> determination gate), and none of the five above touches §4.3. Phase 2 can proceed against
-> this document as written; M1 cannot.
->
-> Until v3 exists, read §5.2, §6 and §7 as **design intent predating the schema**, and check
-> `DECISIONS.md` §20–§23 and migration 008 for what is actually built.
+# The Compliance Workspace — M1
 
-# Compliance Workspace Design
-**Version:** 2 · **Updated:** 11 September 2026
-**Supersedes:** version 1 (9 Sep), deleted. v2 added §10, signup and industry
-classification. **The body is unchanged since 10 Sep** — 11 Sep added only the v3-needed
-block above and explicit numbers on §9's items, neither of which revises the design. The
-version stays at 2 deliberately: v3 is the rewrite this document needs and has not had.
-
-**Status: design agreed. Not built.**
-**Related:** `DECISIONS.md` · `CHEMICAL-OR-WA.md` (six-stage runtime, §5) · `BUILD-PLAN.md`
+**Version:** 3 · **Updated:** 15 September 2026
+**Supersedes:** version 2 (11 Sep). **The five gaps are RESOLVED as decisions**, stated against
+the schema migration 008 actually built rather than described as problems — which is what made v2
+unusable. Adds **v3.6**: §6's terminal object is provisional, because D22 settles that M1 writes
+neither obligations nor checklists and v2's entire topic lifecycle closes onto a checklist. A
+topic closes onto a **topic summary**; checklists are **out of scope for M1**; the real decision
+is `TODO.md` item 6. §5.2's three-tier confirmation scheme is **superseded** by `user_locked`
+plus `source`, not translated into it. Read v3.1–v3.6 before §5, §6 or §7 — where they conflict,
+v3 wins.
 
 ---
+
+## v3 — THE FIVE GAPS, RESOLVED
+
+*Resolved 15 September 2026. **v2's block listed these as gaps and v2 was unusable for exactly
+that reason** — a list of what a document gets wrong is not a document. Each of the five below is
+now a DECISION stated against the schema that exists, with the behaviour migration 008 actually
+has. Where the old §5.2, §6 and §7 conflict with these, these win.*
+
+### v3.1 An established fact can un-establish itself — `expires_at`
+
+**The schema:** `switches.volatility` is `static | annual | monthly`, and
+`company_switches.expires_at` is a timestamp. **48 of 95 switches are non-static.** `expires_at`
+is currently NULL on every row, because nothing has ever set it.
+
+**The decision.** **An expired switch reads as `unknown`, never as its last value.** A stale
+`false` is a false green, which is the failure this product exists to prevent (`CLAUDE.md` §3.2).
+
+**What the conversation does with it, which v2 had no state for:**
+
+- An expired fact is **not** a fact the user must re-answer before anything else can proceed. It
+  re-enters the ask queue at its normal position.
+- The product **says what it used to be and when it lapsed**: *"You told us in March that you had
+  no confined spaces. That answer is a year old and this one changes — is it still true?"*
+  **Re-confirming is one tap and is recorded as a new answer**, not as an edit of the old one
+  (§49's overwrite history).
+- **It never silently reverts.** A requirement that moves from `does_not_apply` back to `unknown`
+  because a fact expired is shown as a change, with the expiry as its reason.
+
+**Not built.** Nothing reads `expires_at`; no code sets it. This is the only one of the five with
+no implementation at all, and it is M1 work.
+
+### v3.2 `user_locked` is an overwrite lock, not a confirmation gate
+
+**The schema:** `company_switches.user_locked boolean`, plus `source` with four values —
+`ai_from_documents`, `ai_from_profile`, `user_set`, `computed`.
+
+**The decision. v2's §5.2 three-tier confirmation scheme is SUPERSEDED, not translated.** The two
+mechanisms are different: **a lock prevents a write; a gate delays one.** The schema already
+prevents the write.
+
+- A person's answer sets `user_locked = true`. **Determination never overwrites a locked value** —
+  it records what it would have concluded, in `switch_determinations`, and surfaces the
+  disagreement.
+- **The conversation shows the conflict rather than resolving it silently:** *"Your SDS file
+  suggests you hold a listed substance above the PSM threshold. You told us otherwise in June.
+  Which is right?"*
+- **`source` is what the UI renders**, not confidence. A value from a document and a value from a
+  person must not look the same (`CLAUDE.md` §6).
+
+**Partially built.** `lib/switchDetermination.ts` implements the precedence ladder and is
+**unreached by any route** (check 29). **And the lock has no database enforcement**: check 24
+shows **zero policies, zero constraints, zero triggers** reference `user_locked`, so today it is a
+library rule wearing the coat of a boundary. TODO 7.2c.
+
+### v3.3 A site-scoped fact cannot be captured without a site
+
+**The schema:** `company_switches` carries a composite FK on `(switch_id, scope)` and a CHECK
+requiring `entity_id` when `scope = 'site'`. **70 of 95 switches are site-scoped.** The insert is
+**refused** without a site — it is a hard failure, not a degradation.
+
+**The decision. The conversation must establish WHICH SITE before it can capture a site-scoped
+fact, and defaulting to the primary site is forbidden.** `DECISIONS.md` §20: a company-wide answer
+to a per-site question is wrong at every site but one, confidently.
+
+**How that reads, and it is a feature rather than friction:**
+
+- **One site:** never ask. The company has one `entities` row and it is used silently.
+- **Several sites:** the question carries the site — *"At the Portland plant, do you have confined
+  spaces?"* — and the answer writes one row per site answered, not one row for the company.
+- **"All of them" is an accepted answer** and writes N rows, each attributable. It is not a
+  company-scoped row.
+- `employee_count` and `site_employee_count` exist as two switches for this reason, and Oregon's
+  sick-time rule reads both in one sentence.
+
+**Built in the resolver** (`obligationWriter.splitFacts`). **Absent from the conversation**, which
+has no concept of a current site.
+
+### v3.4 Answering one requirement can change what else is required, mid-topic
+
+**The schema:** `requirement_templates.is_determination boolean` — **9 live rows carry it.** Some
+requirements determine switches rather than being satisfied by evidence.
+
+**The decision. The list rewriting itself mid-conversation is CORRECT behaviour and must be
+shown, not hidden.**
+
+- When an answer changes a determination, the product **says what moved**: *"That makes you a
+  Small Quantity Generator. Six requirements just became applicable and two no longer apply."*
+- **It never silently re-orders the remaining questions.** §54 governs: one answer unlocks one
+  level and then stops, so a grandchild question does not appear from a single click.
+- A `does_not_apply` produced this way **names the fact that produced it**, like every other one —
+  `Ruled out by: <switch> = <value>` (39 of 39 do this today).
+
+**Built.** `is_determination` is read by `/api/substeps` and `app/compliance`; the recompute and
+the one-level unlock are in `switchAsk.newlyUnblocked()`, **unreached by any route**.
+
+### v3.5 Questions have a dependency order and asking in the wrong one wastes them
+
+**The schema:** `switches.depends_on_switch` and `depends_on_value`. **40 of 95 switches have a
+parent; the graph is acyclic, max depth 1, verified from both databases (check 13).**
+
+**The decision. The ask order comes from the dependency graph, never from a preference**, and the
+three states are distinct and all rendered:
+
+| State | Meaning | Shown? |
+|---|---|---|
+| **Askable** | parent known, or no parent | Yes — this is the queue |
+| **Blocked** | parent not yet established | **Yes, greyed**, with what blocks it |
+| **Excluded** | parent came back **false** | **No — it disappears entirely** |
+
+**A site with no hazardous chemicals is not *pending* a lead-exposure answer; that question does
+not exist for them.** Collapsing blocked and excluded is the distinction §58.2 forbids.
+
+**Built.** `lib/switchAsk.ts` — `askableSwitches`, `blockedBy`, `isExcluded`, `transitiveAffects`,
+`newlyUnblocked` — **6 exports, 6 tested, 0 production callers.** The routes are TODO 7.2a and are
+M1's floor.
+
+---
+
+## v3.6 §6's TERMINAL OBJECT IS PROVISIONAL AND THE DECISION LIVES ELSEWHERE
+
+> ### Read this before §6. **A topic currently closes onto a TOPIC SUMMARY, and that is a
+> placeholder.** What a topic *should* close onto depends on a decision that has not been made:
+> **what a checklist IS.** That decision is `TODO.md` item 6 and `DECISIONS.md` §71, it is
+> deliberately deferred, and §6 below is written as though checklists are still a first-class
+> persistent object — **which they are not.**
+
+**Why §6 could not simply be rewritten.** D22 settles that **M1 writes neither obligations nor
+checklists.** v2's §6 is built entirely on checklists as the terminal object:
+
+```
+§6.2  "Creating a checklist closes the topic. A checklist is a decision."
+§6.4  Checklists | Closed, saved, flagged when facts change      <- one of the four objects
+§6.5  "What the user returns to: Open checklists, closed topics, and their company profile."
+```
+
+Under D22 none of that can happen. **So the provisional decision, stated as a decision:**
+
+- **A topic closes onto a topic summary.** Facts captured, questions answered, what moved.
+- **Checklists are OUT OF SCOPE for M1.** M1 does not create, close, flag or regenerate one.
+- **§6.3's "a later fact would have changed a completed checklist" has no subject in M1** and is
+  held, not deleted — it becomes correct again the moment item 6 decides what a checklist is.
+- **§6.4's four objects become three** for M1: switches, topic summaries, transcripts.
+
+**Why this is a resolution and not another gap description.** It names what happens, it is
+actionable today, and it states the dependency in the text rather than leaving a reader to
+discover the contradiction. **v2 was unusable because it described what was wrong and stopped.**
+The difference is that someone can build M1 from this paragraph.
+
+**And the alternative was worse:** writing §6 as though checklists still exist would encode a
+contradiction with a settled decision, which outlasts a placeholder and is harder to find.
+
+**What unblocks it:** item 6 — whether a checklist is a view over obligations, a workspace
+artifact with no authority, or a second spine. Until then §6's lifecycle is correct in shape and
+provisional in its terminal object.
+
+---
+
 
 ## 1. What this module is
 
@@ -205,6 +312,11 @@ A research topic ends with an explicit close: CompliBoard writes a summary, save
 **Closing extracts facts before discarding.** Any `user_stated` facts write to switches. The durable part survives; the noise does not.
 
 **Auto-close on inactivity.** People do not close things. A topic idle for a week closes itself and says so — otherwise month-old open threads produce exactly the pollution being prevented.
+
+> ### ⚠ PROVISIONAL — see v3.6. Under D22, **M1 writes no checklists**, so §6.2–§6.5 below
+> describe a terminal object M1 does not create. **A topic closes onto a TOPIC SUMMARY.** What a
+> checklist is remains `TODO.md` item 6. The lifecycle's shape is right; its terminal object is
+> pending.
 
 ### 6.2 Creating a checklist closes the topic
 

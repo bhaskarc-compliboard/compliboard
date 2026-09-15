@@ -4153,7 +4153,10 @@ the review can go back to being periodic rather than gating.
 
 ---
 
-## 65. The three fabrications of 13 September, and the rule that covers all of them — 13 September 2026
+## 65. The composed assertions, and the rule that covers all of them — 13–15 September 2026
+
+*Five instances. The register is kept here so the rule is stated once and the count is not an
+impression. §60 records the first and states the rule; §66 records the fourth in full.*
 
 **This section exists so the rule is stated once and the instances are countable.** §60 records
 the first and states the rule; this records all three together, because the third arrived in a
@@ -4175,6 +4178,27 @@ form the first two did not predict.
 | **1** | A `resolutionNote` defect in `resolveCompany`, *"60 of 72 unknown rows"* | `grep` — **neither identifier exists**; the function is `resolve()`, the field is `resolution_rationale` | one grep. §60 |
 | **2** | *"Fix the 13 rows: a switch with no `company_switches` row does not name itself"* | A query — the count is **12**, and **all 72** missing switches name themselves correctly | one query. §61 |
 | **3** | *"The pre-flight said `023_replace_obligations_explicit_company.sql`"* | `ls`, `git log --all --diff-filter=A`, and re-running the pre-flight — the name appears **0 times** on disk, **0 times** in history on any branch, **0 times** in the pre-flight's output, which emits one 023 filename **twice** | one `ls`. This section |
+
+### The fourth and fifth, added 15 September
+
+| # | What was asserted | Settled by | Cost |
+|---|---|---|---|
+| **4** | *"013 rebuilt the table, `agency_id` never re-run, 60 with no regulator"* | `git log` — it was **007**, the gap was **one day**, and there are **7**, all deliberate | one `git log`. §66 |
+| **5** | *"eight cases where Oregon genuinely differs"* | **refused before filing** — `citation_quote` is NULL on all 205 rows, and it is a question about Oregon law, not about the database | nothing. Never written |
+
+**The fifth is the first that was stopped before it reached the record.** The first four were
+caught after being acted on or written; this one was declined at the point of filing, which is
+where the rule is cheapest to apply and where it was aimed.
+
+> **The tell was not implausibility — eight is a perfectly plausible number.** The tell is that
+> **no artifact in this project could produce it.** Whether Oregon's rule is stricter than the
+> federal one it adopts is not in `requirement_templates`, not in `switches`, and not in any
+> query: **`citation_quote` is NULL on all 205 rows**, which is exactly why both shapes in check
+> 30 are a worklist for 6.7 rather than work preceding it.
+>
+> **So the operational form of the rule is a question about provenance, not about plausibility:**
+> *which artifact would have produced this number?* If the answer is "none that exists", the
+> number is a hypothesis however reasonable it sounds.
 
 ### Why the third is the interesting one, and it is not the worst
 

@@ -1654,9 +1654,16 @@ state= 2 federal= 1   nonexempt_employees is true
 > in the **false-green direction**, because a company exempt federally is cleared of the Oregon
 > obligation too. The VSQG case found on 13 September is one instance; it is not the pattern.
 >
-> **Also measured, and it bounds the problem:** 60 state rows cite a CFR (Oregon adopting a
-> federal standard) and **39 of those carry no Oregon-specific clause at all**. The 21 above are
-> only the ones where an identical federal row exists to compare against.
+> ### The wider bound is the more useful figure, and it says this query sees a SLICE.
+>
+> **60 state rows cite a CFR** — Oregon adopting a federal standard — and **39 of those carry no
+> Oregon-specific clause at all.** The 21 above are only those with a **federal twin** whose
+> expression is byte-identical; a state row that adopts a federal standard and has no federal
+> counterpart in the library is invisible to this query and just as wrong.
+>
+> **So 21 is a floor, not a population.** The comparison the query can make is
+> expression-to-expression; the comparison that matters is expression-to-rule, and nothing in the
+> database supports it — **`citation_quote` is NULL on all 205 rows.**
 
 ### The two things that matter more than the counts
 
