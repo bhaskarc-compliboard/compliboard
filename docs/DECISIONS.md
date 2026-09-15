@@ -1,6 +1,12 @@
 # Decision Record
-**Version:** 60 · **Updated:** 15 September 2026
-**Supersedes:** version 59 (15 Sep). Adds **§80** — **`declared`: a person is not a document.**
+**Version:** 61 · **Updated:** 15 September 2026
+**Supersedes:** version 60 (15 Sep). Adds **§81** — the two measurements, kept apart: **21 applies
+of 200 CREATED** (a company with no obligations has no before) and **closed 5 / opened 5 /
+unchanged 195 MOVED** against a non-empty baseline. **Neither is 19 or 23**; both of those were
+expectations written before the endpoints existed. And **two guard probes passed for the wrong
+reason** — one tripped an earlier guard, one used the caller's own entity — which is check 14's
+subject again. **A guard test must fail when the guard is removed**, and the error body is the
+evidence, not the status code. Version 60 added **§80** — **`declared`: a person is not a document.**
 The four evidence classes all describe how a DOCUMENT supports a claim; a person is not on that
 scale and is the strongest source in the product, so `declared` ranks **4, above `stated`**.
 §24.1's rule was unexpressible until now, which is why `fromUserAnswer()` borrowed a word meaning
@@ -5458,3 +5464,103 @@ has now produced three findings in one sitting.** That changes what the list is:
 
 **Reversal condition:** none on `declared`. On the class — when check 29's list is empty, the
 leading indicator stops indicating and becomes a regression check.
+
+---
+
+## 81. Two measurements, and two probes that passed for the wrong reason — 15 September 2026
+
+### The two figures, and they are different measurements
+
+**7.2a ran over HTTP for the first time on 15 September**, as `testgamma@example.com` against
+staging. Two distinct things were measured and **they must not be conflated**:
+
+| | Measurement | What it is |
+|---|---|---|
+| **Creation** | `opened 200, closed 0, unchanged 0` — **21 applies of 200 created** | A company with **no obligations** answers its first question. There is no before, so nothing *moves*; the list comes into existence |
+| **Delta** | `closed 5, opened 5, unchanged 195` — **5 moved `unknown` → `applies`** | A company that **already has obligations** answers another (`owns_fleet = true`). `unknown 178 → 173`, `applies 21 → 26` |
+
+**Neither is 19 and neither is 23.** 19 was `TESTING.md` Case A's own expectation, written before
+the endpoints existed, in a document whose header says the case cannot run. **23 appears in no
+artifact at all** (§65, seventh instance). Both were expectations; **these two are the first
+measurements**, and they replace them rather than being reconciled against them.
+
+**The delta is the one Case A was written to observe and could not** — its precondition
+(*"a company with nothing established"*) guarantees the creation case. `TESTING.md` v16 records
+the split into A1 (creation) and A2 (movement).
+
+### THE PROBES THAT PASSED FOR THE WRONG REASON
+
+Eight guards were probed over the wire. Six tested what they claimed. **Two returned the expected
+status code for the wrong reason, and both would have been recorded as passing:**
+
+| Probe, as labelled | What actually happened |
+|---|---|
+| *"enum value not allowed"* — `air_permit_required = banana` | `air_permit_required` is **site-scoped**, so the **site guard fired first**: `400 This question is about one site.` **The enum guard was never reached.** |
+| *"entity_id of another company"* — `e2624d93…` | That id is **Gamma's own primary site**. `200`, correctly. **The tenancy guard was never tested.** |
+
+Re-run with a **company-scoped** enum switch (`business_type`) and one of **Alpha's** entities:
+
+```
+enum value not allowed (company-scoped)   HTTP 400  "banana" is not one of the accepted answers.
+GET  ask,    entity_id belonging to Alpha HTTP 404  Not found
+POST answer, entity_id belonging to Alpha HTTP 404  Not found
+POST answer, Gamma's own site             HTTP 200  written: true
+Alpha's switch count afterwards           16, unchanged
+```
+
+### The rule, and it is about NEGATIVE tests specifically
+
+> **A guard test must FAIL when the guard is removed.** If it still passes, it was testing
+> something else.
+>
+> **And a probe that trips an EARLIER guard has tested the earlier guard.** Ordered guards make
+> this easy to do by accident: every one of them returns a refusal, the refusal looks like the
+> one expected, and the status code agrees.
+
+**This is `AUDIT-CHECKS.md` check 14's subject — *is every checker as strong as the assertion it
+claims to check?* — in a new place.** It has now appeared three times:
+
+- **Check 8** queried bucket `documents`; the bucket is `company-documents`. Zero rows read as
+  clean, against a bucket that does not exist. **Four orphaned customer files on production.**
+- **Check 20** passes vacuously on an empty table, and **says so** — which is the correct form.
+- **These two probes**, passing on the wrong guard.
+
+**The cheapest discipline for a negative test: construct the input so that ONLY the guard under
+test can refuse it.** For an enum probe that means a switch with no site requirement; for a
+tenancy probe it means an id that genuinely belongs elsewhere. **Checking which guard produced
+the refusal is not optional — the message is the evidence, not the status code.**
+
+**Reversal condition:** none. This costs reading the error body instead of the status code.
+
+### POSTSCRIPT — 028 refused itself, and the reason is §3.6's trap
+
+Migration 028 (`topics`) **failed its own verify block on first apply**:
+
+```
+ERROR: MIGRATION 028 FAILED: authenticated holds DELETE on a table whose rows are
+closed, not deleted.
+```
+
+**The migration granted `select, insert, update` and never granted DELETE.** It arrived anyway,
+from the default ACL — `pg_default_acl` on this database reads
+`authenticated=arwdDxtm/postgres`, where `d` is DELETE, **on every table created in `public`
+before a single grant statement runs.**
+
+> **Granting does not REMOVE what the default already handed out.** `revoke all ... from
+> authenticated` then granting the three is the only way to end up with the set the migration
+> names. `CLAUDE.md` §3.6 records this for `anon`; **it is equally true of `authenticated`, and
+> that half was not written down.**
+
+**The whole file rolled back — the table did not exist afterwards** — which is the
+transaction-per-file behaviour working, and the verify block doing precisely what §3.7 asks of
+one.
+
+**Two more things caught in the same pass, both by checks rather than by review:**
+
+- **`check:live` left a probe row behind on every run.** `switch_determinations` is append-only,
+  so `authenticated` cannot delete its own probe — **four rows had accumulated**, found by the
+  check's own "left behind" message. Cleanup now uses the service role for append-only tables.
+- **`check:schema` refused `topics`** as carrying `company_id` and named in neither of
+  `/api/account`'s deletion lists — **the third new table this check has caught.** Added to
+  `DELETED_BY_CASCADE_OR_PARENT` with the reason read from `pg_constraint`: `ON DELETE CASCADE`,
+  and **0 inbound foreign keys**, so it is a leaf and the cascade can strand nothing.

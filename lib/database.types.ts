@@ -1818,6 +1818,50 @@ export type Database = {
           },
         ]
       }
+      topics: {
+        Row: {
+          closed_at: string | null
+          company_id: string
+          created_at: string
+          id: string
+          opened_at: string
+          status: Database["public"]["Enums"]["topic_status"]
+          summary: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          closed_at?: string | null
+          company_id: string
+          created_at?: string
+          id?: string
+          opened_at?: string
+          status?: Database["public"]["Enums"]["topic_status"]
+          summary?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          closed_at?: string | null
+          company_id?: string
+          created_at?: string
+          id?: string
+          opened_at?: string
+          status?: Database["public"]["Enums"]["topic_status"]
+          summary?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "topics_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       obligation_evidence_state: {
@@ -1914,6 +1958,7 @@ export type Database = {
         | "computed"
       switch_value_type: "enum" | "boolean" | "number" | "text"
       switch_volatility: "static" | "annual" | "monthly"
+      topic_status: "open" | "closed"
       verification_status: "generated" | "disputed" | "verified"
     }
     CompositeTypes: {
@@ -2110,6 +2155,7 @@ export const Constants = {
       ],
       switch_value_type: ["enum", "boolean", "number", "text"],
       switch_volatility: ["static", "annual", "monthly"],
+      topic_status: ["open", "closed"],
       verification_status: ["generated", "disputed", "verified"],
     },
   },

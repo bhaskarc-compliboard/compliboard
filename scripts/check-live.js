@@ -73,6 +73,20 @@ const CASES = [
            evidence_class: 'declared', source: 'user_set', reasoning: 'check:live probe' },
     cleanup: (db, id) => db.from('switch_determinations').delete().eq('id', id),
     note: '§80a — had SELECT and no INSERT until migration 025',
+    // Append-only: `authenticated` holds INSERT and SELECT and no DELETE by design (025), so the
+    // probe row cannot be removed as the user. Without this the check accumulated a row per run
+    // — found on its second run, by its own "left behind" message.
+    cleanupNeedsServiceRole: true,
+  },
+  {
+    table: 'topics',
+    row: { company_id: companyId, title: 'check:live probe' },
+    cleanup: (db, id) => db.from('topics').delete().eq('id', id),
+    note: 'added with migration 028, in the same change — adding a table here after the fact is how one gets missed',
+    // `authenticated` holds no DELETE on `topics` (a topic is closed, not deleted), so the probe
+    // row is removed with the service role rather than as the user. The check is about whether
+    // the CALLER can write, not whether it can tidy up after itself.
+    cleanupNeedsServiceRole: true,
   },
   {
     table: 'company_chemicals',
@@ -99,7 +113,13 @@ for (const c of CASES) {
     } else {
       console.log(`  ✓ ${c.table.padEnd(26)} anon refused (${anonErr.code})`)
     }
-    if (written?.id) await c.cleanup(asUser, written.id)
+    if (written?.id) {
+      const cleaner = c.cleanupNeedsServiceRole
+        ? createClient(url, process.env.SUPABASE_SERVICE_ROLE_KEY ?? '', { auth: { persistSession: false } })
+        : asUser
+      const { error: delErr } = await c.cleanup(cleaner, written.id)
+      if (delErr) console.log(`      (probe row ${written.id} left behind: ${delErr.message})`)
+    }
   }
 }
 

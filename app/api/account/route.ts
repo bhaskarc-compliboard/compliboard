@@ -222,6 +222,11 @@ const DELETED_BY_CASCADE_OR_PARENT = [
                            // for anything the site delete misses. Its third FK, cas_number
                            // -> regulated_substances, is ON DELETE RESTRICT and points at
                            // shared reference data, so it cannot block a company delete.
+  'topics',                // cascades with the company: company_id -> companies ON DELETE
+                           // CASCADE, read from pg_constraint rather than assumed. It is its
+                           // own leaf — nothing references `topics`, and it holds no facts of
+                           // its own (DECISIONS.md §78: a hypothetical is never stored), so
+                           // there is nothing for the cascade to strand. Migration 028.
 ] as const
 // ---------------------------------------------------------------------------
 

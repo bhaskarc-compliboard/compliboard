@@ -154,7 +154,7 @@ decisions and the five schema gaps are settled before any of this starts.*
 | # | Task | Depends on | ⏱ |
 |---|---|---|---|
 | **M1.0** | **7.2a's two routes** — the floor, not part of M1 | — | 1 d |
-| **M1.1** | **Topics, minimal shape** (D23). `topics`: company, title, status, opened/closed, summary. **NO facts column** — §78: hypotheticals are not stored, so nothing here holds a fact. **Free today, not free once conversations are stored** (§69) | M1.0 | 1 d |
+| **M1.1** ✅ | **DONE 15 Sep — migration 028, staging.** **Topics, minimal shape** (D23). `topics`: company, title, status, opened/closed, summary. **NO facts column** — §78: hypotheticals are not stored, so nothing here holds a fact. **Free today, not free once conversations are stored** (§69) | M1.0 | 1 d |
 | **M1.2** | **Follow-up classification** (§4.1) — three kinds, classified before anything expensive runs | M1.1 | 1 d |
 | **M1.2a** | ~~The critic's `priorAssertions` field~~ — **WITHDRAWN for research.** §77 drops the critic from the research path entirely; §73's decision survives and applies at the **checklist boundary**, which is where it is now needed | — | — |
 | **M1.2b** | ⚡ **The gate gains prior turns, the frame, and a web-search flag** (§77 items 6–8). `gate()` takes `{question, documentBlocks, companyId, outputType, db, answering}` today — **no conversation history**, so it re-asks what was established two turns ago. Returns jurisdiction-of-question, tense, subject, and `needsWebSearch` | M1.1 | 1.5 d |

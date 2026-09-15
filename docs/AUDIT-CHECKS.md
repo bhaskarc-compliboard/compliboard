@@ -1,6 +1,9 @@
 # Audit Checks
-**Version:** 29 · **Updated:** 15 September 2026
-**Supersedes:** version 28 (15 Sep). Check 27's table half is **automated as `npm run check:live`**
+**Version:** 30 · **Updated:** 15 September 2026
+**Supersedes:** version 29 (15 Sep). Check 14 gains a **third instance, about negative tests**: two
+guard probes returned the expected status for the wrong reason — one tripped an earlier guard, one
+used the caller's own entity (`DECISIONS.md` §81). **A guard test must fail when the guard is
+removed**, and the error body is the evidence, not the status code. Version 29: Check 27's table half is **automated as `npm run check:live`**
 — signs in as a real staging user, writes one row per tenant table a route will write, asserts anon
 is refused, refuses production by ref, and runs after every `db:migrate`. **Its first run found a
 column that does not exist on `company_chemicals`**, a write path nothing had ever exercised.
@@ -665,6 +668,28 @@ a three-node cycle (refused), and a four-deep acyclic chain (allowed).
 ---
 
 ## 14. Is every checker as strong as the assertion it claims to check?
+
+> ### THREE INSTANCES NOW, AND THE THIRD IS ABOUT NEGATIVE TESTS — 15 Sep
+>
+> | | What passed, and why it should not have |
+> |---|---|
+> | **Check 8** | queried bucket `documents`; the bucket is `company-documents`. **Zero rows against a bucket that does not exist, read as clean.** Four orphaned customer files on production |
+> | **Check 20** | passes vacuously on an empty table — **and says so.** This is the correct form |
+> | **Two guard probes** (§81) | returned the expected status code **for the wrong reason** |
+>
+> **The third is the one worth generalising.** Probing `air_permit_required` for a bad enum value
+> returned `400` — from the **site-scope guard**, which fires first. Probing "another company's
+> entity" used the caller's **own** entity and returned `200`, correctly. **Both would have been
+> recorded as passing.**
+>
+> **A guard test must FAIL when the guard is removed. A probe that trips an EARLIER guard has
+> tested the earlier guard.** Ordered guards make this easy to do by accident: every one returns a
+> refusal, and the status codes agree.
+>
+> **Construct the input so only the guard under test can refuse it, and read the error BODY —
+> the status code is not the evidence.**
+
+
 
 **Added 12 September 2026, after a checker reported PASS on a partial match.** This one is
 about the test harness rather than the data, and it earns its place for the reason at the head
