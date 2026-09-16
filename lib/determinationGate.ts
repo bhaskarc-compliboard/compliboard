@@ -29,12 +29,12 @@
  * (DETERMINATION-GATE.md §9).
  */
 
-import { askAIJson, type AIContent } from '@/lib/ai'
+import { askAIJson, type AIContent } from './ai.ts'
 import type { SupabaseClient } from '@supabase/supabase-js'
 // The context builder lives in its own import-free file so the golden runner — a plain Node
 // script that cannot resolve the `@/` alias — calls the same function the routes do.
 // lib/gateContext.ts explains why that is worth a file.
-import { buildGateContext, type FactSource, type KnownFact } from '@/lib/gateContext'
+import { buildGateContext, type FactSource, type KnownFact } from './gateContext.ts'
 
 export { buildGateContext }
 export type { FactSource, KnownFact }

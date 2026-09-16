@@ -1,6 +1,8 @@
 # M1.2b — The Gate Gains a Conversation
 
-**Version:** 1 · **Updated:** 15 September 2026
+**Version:** 2 · **Updated:** 15 September 2026
+**Supersedes:** version 1 (15 Sep). §4's measurement is **run**: the bound holds, and the latency
+motivation is **withdrawn** — the gate got faster with 7.7× the context (`DECISIONS.md` §83).
 **Status: SPECIFIED, NOT BUILT.** Decisions: `DECISIONS.md` §82 (the reordering, `hypothetical`,
 the trimming claim, the two contradictions), §77 (the research path), §78 (hypotheticals are not
 stored). Implements `WORKSPACE.md` v3 and `TODO.md` M1.2b.
@@ -158,12 +160,18 @@ THE USER'S QUESTION:
 `(switch_id, frame)` — a value restated in turn 9 replaces the one from turn 4 rather than adding
 to it.
 
-> **THIS HAS NOT BEEN MEASURED. No multi-turn conversation exists in this product.**
+> ### MEASURED 15 SEP — THE BOUND HOLDS AND THE MOTIVATION WAS WRONG. `DECISIONS.md` §83.
 >
-> **What would test it:** a real topic of ten or more turns, with the gate's input size in
-> characters and its latency recorded per turn. Until that runs, the bound is an argument, and the
-> gate is 6–10 s with its cost in the input — the same property §74 and §76 measured for the
-> critic.
+> ```
+>   turn 12: 9 fact lines from 11 asserted · claims 537 chars vs prose 810 (0.66)
+>   gate, turn 1  (97 chars):  9.9s -> ask
+>   gate, turn 12 (748 chars): 8.7s -> proceed, 14 known      DELTA -1.3s
+> ```
+>
+> **The gate got FASTER with 7.7× the context.** So *"unbounded context is a latency regression"*
+> is **not supported**, and the rule below stands on **correctness** instead: a fact must arrive
+> **labelled**, because prose forces the model to infer modality from a verb. The saving in size
+> is real but modest — claims are ~34% smaller at 12 turns and *larger* at one.
 
 **What is NOT carried, each for a stated reason:**
 

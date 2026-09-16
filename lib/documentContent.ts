@@ -1,7 +1,7 @@
 import * as XLSX from 'xlsx'
 import mammoth from 'mammoth'
 import officeParser from 'officeparser'
-import { ACCEPTED_FILE_TYPES_PROSE } from '@/lib/acceptedFiles'
+import { ACCEPTED_FILE_TYPES_PROSE } from './acceptedFiles.ts'
 
 /**
  * TURNS AN UPLOADED FILE INTO CONTENT BLOCKS THE MODEL CAN ACTUALLY READ.

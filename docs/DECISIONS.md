@@ -1,6 +1,11 @@
 # Decision Record
-**Version:** 62 · **Updated:** 15 September 2026
-**Supersedes:** version 61 (15 Sep). Adds **§82** — **M1.2b before M1.2**, because classification's
+**Version:** 63 · **Updated:** 15 September 2026
+**Supersedes:** version 62 (15 Sep). Adds **§83** — the trimming measurement, run before M1.2b was
+built. **The bound holds** (9 fact lines from a 12-turn topic, ceiling is a line per switch per
+frame) **and the motivation was wrong**: the gate got **1.3 s FASTER with 7.7× the context**, so
+"unbounded context is a latency regression" is not supported — the same input-size intuition §76
+already disproved for the critic. **Trimming stands on correctness, not cost**: a fact must arrive
+labelled, because prose forces the model to infer modality from a verb. Version 62 added **§82** — **M1.2b before M1.2**, because classification's
 three categories map exactly onto the three things the gate's history must carry: built in the
 wrong order, M1.2 classifies from PROSE while M1.2b later produces STRUCTURE and nothing
 reconciles them — §71 and §24's shape a third time. Adds **`hypothetical` as a sixth
@@ -5678,22 +5683,40 @@ stops being sufficient and **source and tense need separating into two fields.**
 be named today — a document states what IS — so the conflation of "from the question" and "not
 true yet" is accepted deliberately, with this paragraph as the trigger to revisit.
 
-### 3. TRIMMING — recorded as a DESIGN CLAIM, not a measurement
+### 3. TRIMMING — the rule stands, the reason was wrong
 
 **The claim:** prior turns reduce to **claims, not prose**, before the gate sees them — the shape
 `answering` already uses (`{switch_id, fact, value}`, never the sentence typed) and the shape §73
-settled for the critic, for the identical reason.
+settled for the critic.
 
-**The consequence claimed:** the context is bounded by **the vocabulary (95 switches)** rather than
-by turn count. **A 40-turn topic produces at most a few dozen fact lines, not 40 turns of prose.**
+> ### ⚠ CORRECTED IN PLACE, 15 Sep. THE ORIGINAL MOTIVATION IS WITHDRAWN.
+>
+> This section first argued: *"the gate is 6–10 s and its cost is input; an unbounded context is a
+> latency regression that arrives gradually and is attributed to the model."* **That is not
+> supported.** Measured (§83):
+>
+> ```
+>   gate, turn 1  (97 chars):  9.9s
+>   gate, turn 12 (748 chars): 8.7s        DELTA -1.3s with 7.7x the context
+> ```
+>
+> **The gate got FASTER.** The latency argument is removed rather than annotated, because a
+> withdrawn reason left standing gets cited.
 
-> **THIS IS A DESIGN CLAIM AND HAS NOT BEEN MEASURED.** No multi-turn conversation exists in this
-> product. **What would test it: a real one** — ten or more turns on one topic, with the gate's
-> input size and latency recorded per turn. Until that runs, the bound is an argument.
+**THE RULE SURVIVES ON CORRECTNESS.** A fact must arrive **labelled**: prose forces the model to
+infer modality from a verb — *"would have 12"* versus *"have 12"* — and `[hypothetical]` is
+explicit. **That is the whole reason, and it is sufficient.**
 
-**Why it matters that it is labelled as a claim:** the gate is 6–10 s and its cost is input
-(§74/§76 measured exactly that for the critic). An unbounded context is a latency regression that
-arrives gradually and is attributed to the model.
+> ### AND THE CONSEQUENCE IS A STANDING DISCIPLINE, NOT A NOTE.
+>
+> **If labelling is the feature, collapsing is incidental.**
+>
+> - **Carry every turn's facts, labelled.**
+> - **Collapse only where a later value supersedes an earlier one in the same frame.**
+> - **Add NO further trimming for size.** Not a summary, not a window, not a turn cap.
+>
+> Any future trimming must be justified by something other than input size, and by a number
+> (see §82.5).
 
 ### 4. CONTRADICTION — two kinds, and the collapse is the likely failure
 
@@ -5712,3 +5735,106 @@ reads, so an unlabelled one looks like a correction.
 
 **Reversal condition:** none on the distinction. If the two ever need the same handling, that is a
 finding about `user_locked`, not about conversations.
+
+---
+
+### 82.5 THE INPUT-SIZE PRIOR — twice unsupported, and once it cost three findings
+
+**The intuition that more input costs latency has now been measured twice and been wrong both
+times:**
+
+| | The design it justified | Measured |
+|---|---|---|
+| **§76** | Stage 2, narrowing the critic's 33 agencies | **7.7 s saved, 3 coverage findings lost.** The list was never what cost 36 s |
+| **§83** | trimming the gate's conversation history | **1.3 s FASTER with 7.7× the context** |
+
+**§76's is the expensive one: the narrowing was nearly built, and it would have traded a visible
+cost for an invisible one** — `CRITIC-PASS.md` §5's asymmetry, which was already written down.
+
+> ### THE PRIOR: a design justified by INPUT SIZE needs a number BEFORE it is built, not after.
+>
+> It is cheap — three API calls settled §76, two settled §83 — and the intuition is unreliable
+> enough that it should not survive to a spec unmeasured. **This is §74's lesson generalised:**
+> there the number was cheap and was nearly got late; here it is a whole class of reasoning that
+> keeps failing the same way.
+
+---
+
+## 83. The trimming measurement — the bound holds, the motivation was wrong — 15 September 2026
+
+**§82 recorded the trimming rule as a design claim and named what would test it: a real topic of
+ten or more turns, with the gate's input size and latency recorded per turn. Run before M1.2b was
+built, per §74's lesson.**
+
+### The bound — confirmed, and it is modest
+
+A realistic 12-turn topic (the Arizona case), claims collapsed by `(switch_id, frame)`:
+
+```
+  turn │ fact lines │ claims chars │ prose chars │ ratio
+     1 │          2 │          137 │         132 │ 1.04
+     4 │          4 │          254 │         324 │ 0.78
+     8 │          6 │          354 │         551 │ 0.64
+    12 │          9 │          537 │         810 │ 0.66
+
+  AFTER 12 TURNS: 9 fact lines from 11 facts asserted (2 collapsed — restatements)
+```
+
+**The ceiling is a line per switch per frame, not a line per turn** — 9 lines at 12 turns. But
+**claims are only ~34% smaller than prose at this scale**, and at one turn they are *larger*. The
+bound is real and the saving is not dramatic.
+
+### *** THE LATENCY CLAIM WAS WRONG, AND IT WAS THE REASON GIVEN ***
+
+Real gate calls, Test Gamma Solvents:
+
+```
+  turn 1  — no history           chars  97   mean 9.9s  [10.6, 9.3]   -> ask
+  turn 12 — claims appended      chars 748   mean 8.7s  [8.7, 8.6]    -> proceed, 14 known
+
+  DELTA: -1.3s for 651 extra characters
+```
+
+> **The gate got FASTER with 7.7× the context.** Input size is not what drives its latency at this
+> scale, so **"an unbounded context is a latency regression" — §82's stated motivation — is not
+> supported.** The same shape as §76, where narrowing the critic's agency list bought 7.7 s and
+> cost three findings: **the input-size intuition was wrong there too.**
+
+**So the trimming rule survives on a different justification, and the change matters:**
+
+| | |
+|---|---|
+| **Rejected** | *trim because context is expensive* — measured, and it is not |
+| **Stands** | **trim because a fact must arrive LABELLED.** Prose forces the model to infer modality from a verb; a claim line carries `[hypothetical]` explicitly (§82). **Correctness, not cost.** |
+
+**And the run showed the labelled block working:** turn 1 **asked**; turn 12 with the claims block
+**proceeded with 14 known facts.** The gate absorbed the conversation and stopped asking — which
+is the "do not ask twice" property `DETERMINATION-GATE.md` §5.2 exists for, demonstrated across
+turns for the first time.
+
+### Two things caught in the same run
+
+### §67's PREDICTION, CONFIRMED — recorded as a prediction met, not as a fix
+
+`lib/determinationGate.ts` **could not be imported**: `@/lib/...` is resolved by the bundler and by
+`tsc`, **not by Node's loader**, which is what ran the measurement.
+
+**§67 named three files still in that state — `documentReview.ts`, `determinationGate.ts`,
+`documentContent.ts` — and said "all three on M1's path."** That was written on 15 September.
+**One of the three blocked the first piece of M1 work attempted, the same day.**
+
+> **The prediction is the finding.** A module that cannot be imported does not announce itself; it
+> reads as a file nobody has got to. §67 said so, named the three, and the register was right
+> within hours. All three are now relative imports.
+
+**What makes this worth recording rather than fixing quietly:** check 29's unrouted list and
+§67's unimportable list are both **leading indicators**, and this is the first time one of them
+has been checked against an outcome. **It predicted correctly**, which is the argument for keeping
+such lists rather than treating them as tidy-ups.
+
+**A probe named a field that does not exist.** My harness printed `ask -> "undefined"` because it
+read `ask.fact`; `GateAsk` carries `question`. **Checked before reporting it as a defect** — it
+was the probe, not the gate. That is check 14's rule applied to a measurement rather than a test.
+
+**Reversal condition:** if a topic ever runs long enough that context size does move gate latency,
+the bound becomes a cost argument as well as a correctness one. At 12 turns it is not.

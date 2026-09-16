@@ -1,5 +1,5 @@
-import { askAIJson, type AIContent } from '@/lib/ai'
-import { reviewPrompt } from '@/prompts/document-review'
+import { askAIJson, type AIContent } from './ai.ts'
+import { reviewPrompt } from '../prompts/document-review'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import mammoth from 'mammoth'
 import officeParser from 'officeparser'

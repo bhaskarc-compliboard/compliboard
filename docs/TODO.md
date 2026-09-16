@@ -1,6 +1,10 @@
 # Detailed To-Do
-**Version:** 20 · **Updated:** 15 September 2026
-**Supersedes:** version 19 (13 Sep). Adds **M1's build plan**, nine tasks against `WORKSPACE.md`
+**Version:** 21 · **Updated:** 15 September 2026
+**Supersedes:** version 20 (15 Sep). **7.2a is DONE** — both routes built and driven over real
+HTTP as a signed-in user. **M1.1 is DONE and on production** (migration 028, `topics`, no facts
+column per §78). **M1.2b now precedes M1.2** (§82) and is **specified** in `docs/GATE-HISTORY.md`,
+with its trimming measurement already run (§83): the bound holds, the latency motivation is
+withdrawn. The gate gains a sixth `FactSource`, **`hypothetical`**. Version 20: Adds **M1's build plan**, nine tasks against `WORKSPACE.md`
 v3, with **7.2a named as its floor** — M1's central act is fact capture and no endpoint for it
 exists. Records the two spec items still open: `expires_at` is unimplemented, and the critic
 cannot see prior turns though §4.2 requires it. Version 19: Records **M1's six decisions (D22–D27) as SETTLED**, with the
@@ -1796,7 +1800,7 @@ the denormalised class to the determination it came from**) · `prompts/switch-d
 > until ruled out" would not have left a handful of wrong entries — it would have shown this
 > company **108 requirements it is not subject to, beside the 40 it is**, indistinguishable.
 
-#### 7.2a The routes ⬜ ⏱ 1 day
+#### 7.2a The routes ✅ **DONE 15 Sep — both routes, driven over real HTTP**
 `/api/switches/answer` first — the smallest, and the one whose behaviour is already tested.
 
 #### 7.2b Golden document cases ⬜ **BLOCKED ON A DECISION, NOT ON EFFORT**
