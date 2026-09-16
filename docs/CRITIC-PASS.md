@@ -1,9 +1,38 @@
 # The Critic Pass — Stage 5
-**Version:** 2 · **Updated:** 12 September 2026
+**Version:** 3 · **Updated:** 15 September 2026
+**Supersedes:** version 2 (12 Sep). **The research path no longer uses this stage** — dropped permanently by `DECISIONS.md` §77, and **not for the reason §5.2 gave**: not the missing `must_do[]`, but because a conversation self-corrects and the next turn does what a critic would. **The critic moves to the checklist boundary.** The accepted cost is recorded: most users will not ask. `/api/audits` and checklist mode are unchanged.
 **Supersedes:** version 1 (12 Sep), same day. **Built.** Adds §11, why the jurisdictional list
 lives in `lib/agencyScope.ts` rather than in the critic.
 
 **Status: BUILT 12 September 2026** — live on `/api/chat` checklist mode and `/api/audits`.
+
+> ### ⚠ THE RESEARCH PATH NO LONGER USES THIS STAGE, AND NOT FOR THE REASON THIS FILE GIVES.
+> **Updated 15 September 2026. `DECISIONS.md` §77, §92.**
+>
+> §5.2's table below says research is *"**No**, until it is structured"* — a **temporary**
+> exclusion, waiting for research output to gain a `must_do[]` the critic could iterate.
+> **That is superseded. The critic is dropped from the research path permanently**, and the
+> reason is not about output shape:
+>
+> > **A conversation self-corrects in a way a one-shot answer does not.** The user can challenge a
+> > claim on the next turn, and M1.2 now classifies that challenge as a `refinement` and
+> > recomputes. **A critic on every conversational turn buys what the next turn already gives.**
+>
+> **THE CRITIC MOVES TO THE CHECKLIST BOUNDARY** — where an answer becomes steps with hours and
+> costs attached, and the user can no longer challenge it mid-flight. That is where a one-shot
+> judgement is actually being made, and it is where this stage earns its cost.
+>
+> **The cost being accepted, recorded so nobody later finds it as a defect:** *most users will not
+> ask.* **An error in a research answer survives until somebody challenges it, and most never
+> will.** That is the trade, it is made knowingly, and it is made **for research only** — audits
+> and checklists keep the critic unconditionally.
+>
+> **And it is not a latency decision.** §74 measured the critic at 36.4 s and §76 measured
+> narrowing its input as buying 7.7 s while costing three coverage findings. **Research is
+> 58.9 s / 29.0 s WITHOUT it** (§92) — so removing it was never what made the path affordable.
+>
+> **`/api/audits` and `/api/chat` checklist mode are unchanged.** Everything below applies to
+> them as written; only the research row of §5.2's table has changed, and its reason with it.
 Acceptance met against the frozen 2.5L artifact; negative control held on case 002.
 **Implements:** `TODO.md` 2.3 · `CHEMICAL-OR-WA.md` §5.2 Stage 5
 **Sits downstream of:** `DETERMINATION-GATE.md` (Stage 1)
@@ -89,7 +118,7 @@ has several outputs to review, and two question sets.
 | Path | Output | Criticised? |
 |---|---|---|
 | `/api/chat` **checklist** | `ChecklistAnswer` | **Yes.** The shape §5.2 was written against and the shape the 2.5L failure took |
-| `/api/chat` **research** | **a prose string** | **No, until it is structured.** "Which physical object does this attach to" has no `must_do[]` to iterate. `DETERMINATION-GATE.md` §10 |
+| `/api/chat` **research** | **a prose string** | ~~No, until it is structured.~~ **NO — PERMANENTLY, and for a different reason.** Not the missing `must_do[]`: a conversation self-corrects, so the next turn does what a critic would. The stage moves to the **checklist boundary**. `DECISIONS.md` §77. *(The old reason — no `must_do[]` to iterate — was about shape and would have been fixed by structuring the output. This one would not.)* |
 | `/api/chat` **substeps** | micro-steps of one item | **Never.** It expands an item already criticised; re-criticising pays twice for one judgement — the same argument that leaves substeps ungated |
 | `/api/audits` | `line_items[]` with `status`, `note`, `fix` | **Yes, and arguably the higher-value one** |
 
@@ -312,7 +341,8 @@ and nothing records one.
 
 ### 8.2 It runs on everything, with output type as the only gate
 
-**`checklist` and `audits` always · `research` not until structured · `substeps` never.**
+**`checklist` and `audits` always · `research` NEVER (§77 — a conversation self-corrects; the
+stage moves to the checklist boundary) · `substeps` never.**
 
 **The complexity threshold is rejected, and this is the reason to record:** the 2.5L failure
 was **two sentences about labels.** It was fluent, confident, well-structured, and wrong about

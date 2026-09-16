@@ -1,5 +1,6 @@
 # The Determination Gate — Stage 1
-**Version:** 4 · **Updated:** 12 September 2026
+**Version:** 5 · **Updated:** 15 September 2026
+**Supersedes:** version 4 (12 Sep). **Points at `GATE-HISTORY.md` for the three things the gate gained on 15 Sep** — `priorTurns`, `frame` and `followUp` — rather than restating them, so there is one authoritative description of each. `GateResult` corrected to show the current shape. Everything else in this file is unchanged and correct.
 **Supersedes:** version 3 (11 Sep). §8's five counts re-measured: `switches` is 95 rows and
 `applies_expression` is 199 of 200 live, so two of the five moved — **and `company_switches` is
 still 0, which is the row that section is actually about.** A vocabulary and a set of conditions
@@ -14,6 +15,26 @@ gate asks where the worksite is, a fact every company already has.
 
 **Status: SPEC. Nothing here is built.**
 **Implements:** `TODO.md` 2.2 · `CHEMICAL-OR-WA.md` §5.2 Stage 1 · `WORKSPACE.md` §4.3
+
+> ### ⚠ THE GATE HAS GROWN SINCE THIS FILE WAS WRITTEN — 15 September 2026.
+>
+> **This document is authoritative for Stage 1 as originally specified: when to ask, what a
+> blocking fact is, the ask/proceed union, answering in place, and why the gate does not read the
+> library.** All of that is unchanged and correct.
+>
+> **Three things were added on 15 September and are NOT described here. `docs/GATE-HISTORY.md` is
+> authoritative for all three:**
+>
+> | Added | What it is | Where |
+> |---|---|---|
+> | `GateInput.priorTurns` | the conversation, as **claims never prose**, with a sixth `FactSource` — `hypothetical` | `GATE-HISTORY.md` §2–§3 |
+> | `GateResult.frame` | jurisdiction, tense and subject **of the QUESTION**, which need not be the company's | `GATE-HISTORY.md` §2 |
+> | `GateResult.followUp` | follow-up classification, **folded into this call rather than a third AI call** | `GATE-HISTORY.md` §8 |
+>
+> **One authoritative description per thing.** They are not restated here, because two
+> descriptions of one mechanism drift and the drift is invisible — which is the failure that
+> produced this pointer: this file sat at v4 for four days while eleven migrations and three
+> gate changes landed (`DECISIONS.md` §93).
 **Decisions:** `DECISIONS.md` §4 (the failure), §34 (the correction to §4)
 
 Everything in this document is quality-affecting under `CLAUDE.md` §3.1 — prompt, output
@@ -233,8 +254,12 @@ export interface GateResolved {
 }
 
 export type GateResult =
-  | { outcome: 'proceed'; resolved: GateResolved }
-  | { outcome: 'ask'; ask: GateAsk }
+  | { outcome: 'proceed'; resolved: GateResolved; frame: Frame; followUp: FollowUp }
+  | { outcome: 'ask';     ask: GateAsk;          frame: Frame; followUp: FollowUp }
+
+// ^^ `frame` and `followUp` were added 15 Sep and are NOT described in this file.
+//    `docs/GATE-HISTORY.md` is authoritative for both, and for `GateInput.priorTurns`.
+//    See the pointer at the top of this document.
 ```
 
 And the wire shape each route returns:

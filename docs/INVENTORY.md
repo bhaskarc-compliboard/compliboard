@@ -1,6 +1,15 @@
 # The Whole Surface — phase-by-phase inventory
 **Version:** 1 · **Updated:** 12 September 2026
 **What this is:** every phase, module, gate item and recorded finding in one pass, in
+
+> ### 📅 THIS IS A DATED SNAPSHOT, NOT A CURRENT STATE — taken **12 September 2026**.
+>
+> Every count below was true on that date and several are not now: eleven migrations have
+> landed since. **Read it as history.** For current state use `STATUS.md` (one line per
+> module with the date it was last actually checked) and the live database.
+>
+> **It is kept rather than updated** — a dated snapshot is honest history, and the only risk
+> is somebody reading it as current, which this block exists to prevent.
 `TODO.md`'s own numbering. Read it to see what exists and what does not without opening six
 files. **It is a snapshot, not a source of truth** — `TODO.md` stays authoritative for the
 *what next*, `DECISIONS.md` for the *why*, `AUDIT-CHECKS.md` for the *is it still true*.

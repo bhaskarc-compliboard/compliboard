@@ -1,6 +1,11 @@
 # Decision Record
-**Version:** 71 · **Updated:** 15 September 2026
-**Supersedes:** version 70 (15 Sep). Adds **§92** — **the conversation is a minute long and that
+**Version:** 72 · **Updated:** 15 September 2026
+**Supersedes:** version 71 (15 Sep). Adds **§93** — drift **caught by comparing dates, not by
+reading**. Three documents sat at 12 September while eleven migrations and three gate changes
+landed; two described live behaviour wrongly. `CRITIC-PASS.md` was **not wrong about the outcome
+but about the reason and the permanence**; `DETERMINATION-GATE.md` showed a `GateResult` the code
+no longer has. Fixed by **pointing rather than restating** — one authoritative description per
+thing. Now `AUDIT-CHECKS.md` check 31. Version 71 added **§92** — **the conversation is a minute long and that
 is a PRODUCT problem**, filed as a different category from everything else this week. Four
 measurements now: critic 36.4 s / 28.7 s narrowed, gate 9.9 s → 8.7 s with more context, and
 **/api/chat over HTTP at 58.9 s then 29.0 s — gate plus answer, no critic.** Nothing is wrong; the
@@ -6587,3 +6592,55 @@ choosing (3) reverses it and must be reversed on the record rather than by imple
 
 **Reversal condition:** none — this is a measurement and a categorisation. It closes when a
 product decision is taken, not when a number changes.
+
+---
+
+## 93. Drift caught by comparing dates, not by reading — 15 September 2026
+
+**A version-and-line-count listing printed for a different purpose showed three documents stamped
+12 September while eleven migrations and three gate changes had landed since.** Two of the three
+described live behaviour wrongly.
+
+| Document | What it said | Reality |
+|---|---|---|
+| **`CRITIC-PASS.md`** v2 | research gets the critic *"once it is structured"* — a **temporary** exclusion waiting on a `must_do[]` | §77 dropped it **permanently**, and for a different reason: **a conversation self-corrects**. The stage moved to the checklist boundary. **Fixed → v3** |
+| **`DETERMINATION-GATE.md`** v4 | `GateResult` as `{outcome, resolved \| ask}` | The code returns `frame` and `followUp` too, and takes `priorTurns`. **0 mentions of any of the three.** **Fixed → v5** |
+| **`INVENTORY.md`** v1 | a snapshot of counts | **Correct as history.** Kept, with the date raised into a block at the top |
+
+### THE FINDING IS HOW IT WAS FOUND
+
+> **By noticing DATES, not by reading content.** The three sat at 12 September in a table printed
+> to answer a different question, and the gap was visible without opening any of them.
+
+**Reading eighteen documents to find two that are wrong is expensive and nobody does it.**
+Comparing two dates is free and narrows eighteen to three before anything is opened. It is now
+`AUDIT-CHECKS.md` **check 31**, and running it today gives:
+
+```
+2026-09-10  PATTERNS.md
+2026-09-12  DETERMINATION-GATE.md
+2026-09-13  BUILD-PLAN.md · CRITIC-PASS.md · EVIDENCE-LINKING.md · INVENTORY.md
+---
+last change to lib/ app/ supabase/migrations/: 2026-09-15
+```
+
+**And the signal is not staleness.** `PATTERNS.md` is the oldest file here and is correct — it
+describes a different codebase. **The signal is a document that has not moved while the thing it
+describes HAS**, which is why the check compares two dates rather than reading one.
+
+### The fix pattern matters as much as the fix
+
+**`DETERMINATION-GATE.md` was fixed by POINTING, not by restating.** The gate's three new fields
+live in `GATE-HISTORY.md`; that file now carries a table naming each and where it is described.
+
+> **Two descriptions of one mechanism drift, and the drift is invisible.** That is the failure
+> which produced this entry — and restating `priorTurns` in a second file would have created the
+> next one. **One authoritative description per thing, a pointer from everywhere else.**
+
+**And `CRITIC-PASS.md`'s correction is the subtler of the two**, worth naming because it would
+have been easy to call it already right: **the file already excluded research.** It was not wrong
+about the outcome. **It was wrong about the reason and about the permanence** — *"not until it is
+structured"* implies the exclusion ends when the output gains a `must_do[]`, and §77's reason
+never ends. A reader would have built toward a milestone that is not coming.
+
+**Reversal condition:** none. The check costs two `git log` calls.

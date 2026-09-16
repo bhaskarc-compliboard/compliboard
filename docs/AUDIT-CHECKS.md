@@ -1,6 +1,11 @@
 # Audit Checks
-**Version:** 32 · **Updated:** 15 September 2026
-**Supersedes:** version 31 (15 Sep). Check 29 gains **a second sub-shape and it is worse**:
+**Version:** 33 · **Updated:** 15 September 2026
+**Supersedes:** version 32 (15 Sep). Adds **check 31 — has a document's SUBJECT changed since the
+document last did?** Three files sat at 12 September while eleven migrations and three gate changes
+landed; two described live behaviour wrongly. **Caught by noticing DATES, not by reading content** —
+comparing two dates narrows eighteen documents to three before anything is opened. Records that the
+signal is not staleness but a document that has not moved while its subject has, and that the fix
+is **pointing rather than restating**. Version 32: Check 29 gains **a second sub-shape and it is worse**:
 `gate()`'s `priorTurns` is built, tested and **passed by nobody** — `/api/chat` calls the gate on
 every request and omits it. Unlike `sdsExtraction`, which has no caller and would fail loudly, **a
 feature inert because an optional argument is omitted looks identical to one that works** and will
@@ -1848,6 +1853,54 @@ Oregon's rule actually says, and **`citation_quote` is NULL on all 205 rows**. S
 **Distinct union of both shapes: 25 rows of 205** — no overlap, since shape (a) uses
 `air_permit_required` and none of shape (b)'s four switches is that. **Excluding the 14 harmless
 tautologies: 11 rows** need a judgement call.
+
+---
+
+## 31. Has a document's SUBJECT changed since the document last did?
+
+**Not "is the document wrong" — that needs reading it. This asks a cheaper question first: has the
+thing it describes moved since it last moved?**
+
+```bash
+# For each doc, its last edit against the last edit of the code it describes.
+for doc in docs/*.md; do
+  d=$(git log -1 --format=%cd --date=short -- "$doc")
+  echo "$d  $doc"
+done | sort
+# then compare against:
+git log -1 --format=%cd --date=short -- lib/ app/ supabase/migrations/
+```
+
+**Answer, 15 September 2026.** Three documents had not moved since **12 September** while
+**eleven migrations and three gate changes** landed:
+
+| Document | State on 15 Sep | Outcome |
+|---|---|---|
+| `CRITIC-PASS.md` v2 | said research would get the critic *"once it is structured"* | **Wrong about live behaviour.** §77 dropped it permanently and for a different reason. **Fixed → v3** |
+| `DETERMINATION-GATE.md` v4 | `GateResult` showed a shape the code no longer has; **0 mentions** of `frame`, `followUp` or `priorTurns` | **Wrong about live behaviour.** **Fixed → v5**, by POINTING at `GATE-HISTORY.md` rather than restating |
+| `INVENTORY.md` v1 | a dated snapshot | **Correct as history.** Kept, with the date moved into a block at the top so it cannot be read as current |
+
+### Why this check exists, and it is about how the drift was FOUND
+
+> **It was caught by noticing DATES, not by reading content.** Three files sat at 12 September in
+> a version-and-line-count listing printed for another purpose, and the gap was visible at a
+> glance without opening any of them.
+
+**Reading eighteen documents to find two that are wrong is expensive and nobody does it.**
+Comparing two dates is free, and it narrows eighteen to three before anything is read.
+
+**The signal is not staleness by itself.** `PATTERNS.md` has not moved since 9 September and is
+correct — it describes a different codebase. **The signal is a document that has not moved while
+the thing it describes HAS.**
+
+### And the fix pattern is as important as the finding
+
+**`DETERMINATION-GATE.md` was fixed by pointing, not by restating.** The gate's three new fields
+are described in `GATE-HISTORY.md` and referenced from here.
+
+> **Two descriptions of one mechanism drift, and the drift is invisible** — which is the failure
+> that produced this check. **One authoritative description per thing, and a pointer from
+> everywhere else.**
 
 ---
 
