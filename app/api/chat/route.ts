@@ -22,11 +22,31 @@ import { buildSystemPrompt } from '@/prompts/checklist';
 import { NextRequest, NextResponse } from "next/server";
 import { parseDocumentToBlocks } from '@/lib/documentContent';
 import { requireCompany } from '@/lib/auth';
+import { verifyTurns, sealTurn, BadConversation, type SealedTurn } from '@/lib/turnSigning';
+import type { PriorTurn } from '@/lib/gateContext';
 import { gate, type GateAnswering } from '@/lib/determinationGate';
 import { criticise, applyCritique } from '@/lib/criticPass';
 import { establishedFactsBlock } from '@/lib/gateContext';
 import { agenciesInScopeFor } from '@/lib/agencyScope';
 import type { ChecklistAnswer } from '@/lib/answerSchema';
+
+/**
+ * The facts THIS turn asserted, for the turn the server is about to seal.
+ *
+ * *** ONLY WHAT THE GATE ATTRIBUTED TO THE QUESTION. *** `stated_in_question` and `hypothetical`
+ * are facts the user just supplied; the rest of `known` came from `company_switches` and is
+ * already established — putting it in the turn would duplicate a stored fact into the
+ * conversation, which is the two-systems shape §78 exists to avoid.
+ *
+ * `hypothetical` is carried BECAUSE it is not stored anywhere else: the conversation is its only
+ * home (§78), and the frame on the turn is what keeps it distinguishable from a real fact.
+ */
+function factsFromGate(g: { outcome: string; resolved?: { known: Array<{ switch_id: string | null; fact: string; value: string; source: string }> }; ask?: { known: Array<{ switch_id: string | null; fact: string; value: string; source: string }> } }) {
+  const known = g.outcome === 'proceed' ? (g.resolved?.known ?? []) : (g.ask?.known ?? []);
+  return known
+    .filter((k) => k.source === 'stated_in_question' || k.source === 'hypothetical')
+    .map((k) => ({ switch_id: k.switch_id, fact: k.fact, value: k.value, source: k.source as never }));
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -48,11 +68,18 @@ export async function POST(request: NextRequest) {
     // The user answering a previous ask. Carries the ask's context back so the gate does
     // not block a second time on the fact just supplied — DETERMINATION-GATE.md §5.2.
     let answering: GateAnswering | null = null;
+    // The conversation, as the client holds it. SIGNED — the server refuses a turn it did not
+    // issue (DECISIONS.md §89) and refuses a SET with a gap in it (§90). Absent on turn 1.
+    let sealedTurns: unknown = undefined;
+    let topicId = '';
 
     if (contentType.includes('multipart/form-data')) {
       const formData = await request.formData();
       question = formData.get('question') as string || '';
       mode = formData.get('mode') as string || 'checklist';
+      topicId = (formData.get('topicId') as string) || '';
+      const turnsRaw = formData.get('turns') as string | null;
+      if (turnsRaw) { try { sealedTurns = JSON.parse(turnsRaw); } catch { sealedTurns = null; } }
       const answeringRaw = formData.get('answering') as string | null;
       if (answeringRaw) {
         try { answering = JSON.parse(answeringRaw) as GateAnswering; } catch { answering = null; }
@@ -71,6 +98,8 @@ export async function POST(request: NextRequest) {
       mode = body.mode || 'checklist';
       scanResult = body.scanResult || null;
       answering = body.answering || null;
+      topicId = body.topicId || '';
+      sealedTurns = body.turns;
     }
 
     const userQuestion = question.trim() ||
@@ -119,6 +148,24 @@ export async function POST(request: NextRequest) {
     // DECISIONS.md §34.
     // ------------------------------------------------------------------
     if (mode !== 'substeps') {
+      // *** A FAILED VERIFICATION REFUSES. IT DOES NOT DROP THE TURNS AND CARRY ON. ***
+      // Dropping them is the silent direction: the user would get a correct-looking answer
+      // computed from nothing — no prior facts, no frame, no hypothetical labelling — and nothing
+      // on screen would say the conversation had been forgotten. A refusal is visible and
+      // recoverable; the silent path loses the reason their answer changed. GATE-HISTORY.md §9.3,
+      // and CLAUDE.md §5.1 — never assert anything about data we did not successfully read.
+      let priorTurns: PriorTurn[];
+      try {
+        priorTurns = verifyTurns(sealedTurns, companyId, topicId);
+      } catch (e) {
+        if (e instanceof BadConversation) {
+          // The topic id, never the turn contents.
+          console.error('[/api/chat] conversation rejected:', e.reason, 'topic:', topicId);
+          return NextResponse.json({ error: e.message }, { status: 400 });
+        }
+        throw e;
+      }
+
       const g = await gate({
         question: userQuestion,
         documentBlocks,
@@ -126,7 +173,17 @@ export async function POST(request: NextRequest) {
         outputType: mode === 'checklist' ? 'checklist' : 'answer',
         db,
         answering,
+        priorTurns,
       });
+
+      // *** ALWAYS APPEND, BEFORE BRANCHING ON THE KIND. *** GATE-HISTORY.md §8.4: every exchange
+      // is a turn, including one that asserts nothing, because "turn 4" must mean the fourth
+      // exchange. THE SERVER NUMBERS IT — `priorTurns.length + 1` counts what was verified rather
+      // than trusting a number the client sent.
+      const newTurn: SealedTurn | null = topicId
+        ? sealTurn({ turn: priorTurns.length + 1, frame: g.frame, facts: factsFromGate(g) },
+                   companyId, topicId)
+        : null;
 
       // ------------------------------------------------------------------
       // THE FACTS THE GATE ESTABLISHED NOW REACH THE GENERATING CALL.
@@ -153,7 +210,7 @@ export async function POST(request: NextRequest) {
         // 200, not 4xx. An ask is a successful outcome of a well-formed request; a 400
         // would put a reasonable question through every caller's error path and render it
         // as a failure. DETERMINATION-GATE.md §2.
-        return NextResponse.json({ outcome: 'ask', ask: g.ask });
+        return NextResponse.json({ outcome: 'ask', ask: g.ask, frame: g.frame, followUp: g.followUp, turn: newTurn });
       }
 
       if (mode === 'research') {
@@ -162,7 +219,7 @@ export async function POST(request: NextRequest) {
         // DETERMINATION-GATE.md §10, and `conditional_on` reaches this path only when it
         // lands. `research` keeps its key so existing callers are unchanged.
         const responseText = await askAI(systemPrompt, messageContent, { maxTokens: 6000, task: 'prose' });
-        return NextResponse.json({ outcome: 'answer', research: responseText, gate: g.resolved });
+        return NextResponse.json({ outcome: 'answer', research: responseText, gate: g.resolved, frame: g.frame, followUp: g.followUp, turn: newTurn });
       }
 
       // askAIJson replaces the hand-rolled `JSON.parse(responseText.replace(/```json/…))`
@@ -199,7 +256,7 @@ export async function POST(request: NextRequest) {
         good_to_have: (data.good_to_have ?? []).filter((i) => !withheldNames.has(i.name)),
       };
 
-      return NextResponse.json({ outcome: 'answer', data: kept, gate: g.resolved, critique: applied });
+      return NextResponse.json({ outcome: 'answer', data: kept, gate: g.resolved, critique: applied, frame: g.frame, followUp: g.followUp, turn: newTurn });
     }
 
     const data = await askAIJson<unknown>(systemPrompt, messageContent, { maxTokens: 6000, task: 'prose' });

@@ -1,6 +1,12 @@
 # Decision Record
-**Version:** 69 · **Updated:** 15 September 2026
-**Supersedes:** version 68 (15 Sep). Adds **§90** — **a signature proves ISSUANCE, not
+**Version:** 70 · **Updated:** 15 September 2026
+**Supersedes:** version 69 (15 Sep). Adds **§91** — M1.2c wired and run over HTTP: **the first
+time anything from M1.2b onward has been reachable.** Turn 1 with no turns sent returns a signed
+turn; turn 2 sends it back and the gate does not re-ask what turn 1 established. **All four
+attacks refused with 400 over the wire**, including §90's omission — a genuine signed turn
+refused because the SET is incomplete. **Check 29's three sub-shapes are closed**; `lib/` is down
+from four unreached modules to two. §90 also gains a correction: **a MAC chain buys nothing
+against truncation**, so the trade-off as originally put did not exist. Version 69 added **§90** — **a signature proves ISSUANCE, not
 COMPLETENESS.** A client could send turns 1, 2 and 4, dropping the correction, and every turn
 would verify: forgery by **omission** rather than authorship. Caught in review before any code.
 Fixed by a contiguity assertion. Records that **a MAC chain would not catch truncation either** —
@@ -6365,6 +6371,18 @@ truncation.**
 > **A truncation is a VALID PREFIX.** Turns 1–3 chain correctly whether or not a turn 4 was ever
 > issued. **Chains prevent reordering and insertion; they do not prevent stopping early.**
 >
+> ### AND THIS CORRECTS THE TRADE-OFF AS IT WAS PUT.
+>
+> The chain was offered as *"the option that would catch both, at more cost"* — a choice between
+> catching omission cheaply and catching **both** expensively. **There was no such choice.** A
+> chain catches omission, which contiguity already catches for one comparison, and **buys nothing
+> against truncation.**
+>
+> So the decision was never "is truncation worth the extra cost" — **it was "truncation cannot be
+> caught by any signing scheme without server state", which is a different question with a
+> different answer.** Recorded because the trade-off as described would have made accepting
+> truncation look like a budget decision, when it is a structural one.
+>
 > **Catching truncation requires the server to know the expected head**, which means state — and
 > the whole scheme exists because §78 says nothing is stored.
 
@@ -6413,3 +6431,90 @@ of them, and that keeps producing small surprises of this shape.
 **Reversal condition:** if a shared-conversation feature ever lets one person send another a topic,
 truncation stops being indistinguishable from loss — the sender knows what they sent — and the
 counter becomes worth adding.
+
+---
+
+## 91. M1.2c wired — the loop closed, over HTTP — 15 September 2026
+
+**The route change and the conversation contract, built and run as a signed-in user against
+staging. This is the first time anything from M1.2b onward has been REACHABLE.**
+
+### Turn 1 — no turns sent
+
+```
+HTTP 200  58.9s
+followUp : {"kind":"first","refersToTurn":null,"because":"No earlier turns in this conversation."}
+frame    : {"jurisdiction":{"state":"Arizona","city":"Phoenix"},"tense":"hypothetical",
+            "subject":"a solvent blending facility"}
+turn     : turn=1  facts=2  sig=db4820dccc4aff3e…
+```
+
+**Absence is not failure** — no `turns` field, a normal first turn, and a signed turn comes back.
+The gate attributed two facts to the question: `business_type = blend` and
+`hazardous_chemicals_present = true`, both `[stated_in_question]`.
+
+### Turn 2 — sending turn 1 back
+
+```
+HTTP 200  29.0s
+followUp : {"kind":"elaboration","refersToTurn":1,
+            "because":"Asks for MORE detail about OSHA requirements for the hypothetical
+                       Arizona facility already being discussed, asserting no new facts."}
+turn     : turn=2   (the SERVER numbered it)
+gate re-asked anything from turn 1? no — proceeded
+```
+
+**The gate did not re-ask what turn 1 established**, and `refersToTurn` points at 1 — which is the
+field that was `null` on every call two commits ago (§86).
+
+### The attacks, over the wire and not in a test
+
+```
+edited fact value                     HTTP 400  "We could not verify this conversation."
+invented turn with a made-up sig      HTTP 400  "We could not verify this conversation."
+OMISSION — turn 2 alone, genuine      HTTP 400  "We could not verify this conversation."
+replayed into a different topic       HTTP 400  "We could not verify this conversation."
+unmodified turns 1 and 2              HTTP 200  outcome=ask
+```
+
+**The third is §90's attack**, refused in production code rather than in a unit test: turn 2 is a
+turn the server issued and signed, and it is refused **because the set is incomplete**.
+
+**And the server log distinguishes the reasons while the response does not:**
+
+```
+[/api/chat] conversation rejected: "a turn did not verify"      topic: 433562a2-…
+[/api/chat] conversation rejected: "turns are not contiguous"   topic: 433562a2-…
+[/api/chat] conversation rejected: "a turn did not verify"      topic: 00000000-…
+```
+
+**One message to the caller, four distinct reasons in the log, and the topic id rather than the
+turn contents.** A verification error that narrates its reasoning to the client is a tool for
+finding the field the MAC does not cover.
+
+### Check 29's three sub-shapes, closed
+
+```
+priorTurns    app/ callers: app/api/chat/route.ts
+followUp      app/ callers: app/api/chat/route.ts, app/compliance/page.tsx
+turnSigning   app/ callers: app/api/chat/route.ts
+```
+
+**`lib/` is down from four modules with no production caller to two** — `folderTemplates` (dead,
+0 references anywhere) and `sdsExtraction` (waiting on M4's document surface, deliberately).
+
+> **This was three inert modules from one piece of work**, which is what made stopping before the
+> route wrong: `priorTurns`, `followUp` and `turnSigning` were each correct, tested, and reachable
+> by nothing. **The check that names them is what made that visible**, and it has now been useful
+> twice — once as a leading indicator (§83) and once as a stopping rule.
+
+### One thing measured that is not a defect but should not be forgotten
+
+**Turn 1 took 58.9 s and turn 2 took 29.0 s** on the research path. §74 measured the critic alone
+at 36.4 s and §76 showed narrowing its input does not help. **The research path drops the critic
+entirely (§77)**, so these numbers are gate plus answer — and the first turn is roughly twice the
+second because the frame and the facts are being established from nothing.
+
+**A minute for the first turn of a conversation is a product problem, not a correctness one**, and
+it is the same open question §76 left: whether a synchronous answer is viable at all, which is
+about D25 rather than about anything built here.

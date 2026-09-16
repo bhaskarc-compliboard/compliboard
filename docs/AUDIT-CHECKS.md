@@ -1725,8 +1725,17 @@ app/api/chat/route.ts` returns **0**; nothing in `app/` or `components/` referen
 > **That is worse than a module nothing calls**, because nothing will ever fail. There is no first
 > caller to break, no 500, no permission denied. It just quietly never remembers a conversation.
 
-**What would reach it: M1's conversation surface accumulating turns and passing them.** Until that
-exists, every `/api/chat` turn is independent exactly as before M1.2b was built.
+**What would reach it: M1's conversation surface accumulating turns and passing them.**
+
+> ### ✅ CLOSED 15 Sep — M1.2c wired the route. `DECISIONS.md` §91.
+> ```
+> priorTurns    app/ callers: app/api/chat/route.ts
+> followUp      app/ callers: app/api/chat/route.ts, app/compliance/page.tsx
+> turnSigning   app/ callers: app/api/chat/route.ts
+> ```
+> All three sub-shapes are reached. **`lib/` now has two modules with no production caller:**
+> `folderTemplates` (dead — 0 references anywhere) and `sdsExtraction` (waiting on M4's document
+> surface, deliberately). Down from four.
 
 **The general form worth carrying:** an optional parameter is a capability that can be built,
 tested, shipped and forgotten without a single failure. **When an argument is optional, something
