@@ -1,6 +1,8 @@
 # Detailed To-Do
-**Version:** 21 · **Updated:** 15 September 2026
-**Supersedes:** version 20 (15 Sep). **7.2a is DONE** — both routes built and driven over real
+**Version:** 22 · **Updated:** 15 September 2026
+**Supersedes:** version 21 (15 Sep). **M1.2b, M1.2 and M1.2c are DONE** — the conversation loop is
+closed and reachable over HTTP. The rotation gate's eighth credential now **exists**
+(`TURN_SIGNING_SECRET`) and is the only one never leaked, so it is **born rotated**. Version 21: **7.2a is DONE** — both routes built and driven over real
 HTTP as a signed-in user. **M1.1 is DONE and on production** (migration 028, `topics`, no facts
 column per §78). **M1.2b now precedes M1.2** (§82) and is **specified** in `docs/GATE-HISTORY.md`,
 with its trimming measurement already run (§83): the bound holds, the latency motivation is
@@ -286,10 +288,11 @@ requirement is indistinguishable on screen from an honest one. Cheapest before t
 to migrate, and invisible if it slips.
 
 **3. Key rotation. Seven credentials — EIGHT once M1.2c ships.**
-*(Eighth flagged 15 Sep: M1.2c signs conversation turns and needs a signing secret —
-`DECISIONS.md` §89. It is the only one that has never leaked, and the way to keep it that way is
-to create it AFTER this rotation or inside it. A list that grows while it waits is a list being
-deferred into something bigger.)*
+*(**Eighth, and it now EXISTS — `TURN_SIGNING_SECRET`, created 15 Sep with M1.2c.**
+`DECISIONS.md` §89. **It is the only one of the eight that has never leaked**, and the rule that
+keeps it that way is **born rotated**: it is rotated in this pass with the other seven, or it is
+regenerated at the moment they are. A list that grows while it waits is a list being deferred into
+something bigger — and this one has now grown.)*
 Four leaked in a zip on 9 Sep. Both database passwords — production and staging — were
 printed in full to a terminal on 10 Sep while fixing the migration script's error output.
 The script redacts them now; the values are still out. **Seventh, added 12 Sep: the

@@ -1,7 +1,10 @@
 # How We Build CompliBoard
 
-**Version:** 12 · **Updated:** 13 September 2026
-**Supersedes:** version 11 (13 Sep). Adds **§5a, the standing rule for whoever is DIRECTING the
+**Version:** 13 · **Updated:** 15 September 2026
+**Supersedes:** version 12 (13 Sep). Adds **§3b — where the server log is on Next 16**:
+`console.error` in a route goes to `.next/dev/logs/next-development.log`, **not** to the terminal
+running `npm run dev`. It cost a wrong conclusion on 15 Sep and will cost the next one too.
+Version 12: Adds **§5a, the standing rule for whoever is DIRECTING the
 work** rather than for Claude Code: *before you assert a cause, point at the line that says it; if
 you can't, call it a hypothesis and have it checked; never hand over a record to file that you
 haven't seen evidence for.* Four composed findings in one session, each settled by one command —
@@ -286,6 +289,28 @@ class. 250 tests were green the whole time. `npm run check` cannot make an authe
 (§63), cannot compare a literal's type to a switch's (§64), and cannot read a sentence and ask
 whether it is true of a real business. **Those are three separate blind spots and only the first
 is closeable by writing more tests.**
+
+---
+
+## 3b. WHERE THE SERVER LOG IS, ON NEXT 16
+
+**`console.error` in a route does NOT go to the terminal running `npm run dev`.** Next 16 writes
+its own structured log:
+
+```
+.next/dev/logs/next-development.log
+```
+
+**This cost a wrong conclusion on 15 September.** A route's rejection path logged four errors;
+grepping the terminal output found none, and *"the console.error did not reach this log"* was
+nearly recorded as a defect. The lines were there, in the other file, as JSON:
+
+```json
+{"level":"ERROR","message":"[/api/chat] conversation rejected: \"turns are not contiguous\" ..."}
+```
+
+**It will cost the next one too**, which is why it is here rather than in a commit message. When a
+route's logging appears to be missing, check that file before concluding anything.
 
 ---
 

@@ -1678,7 +1678,7 @@ done
 | `lib/switchDetermination.ts` | 4 of 4 | **No** |
 | `lib/sdsExtraction.ts` | 4 of 4 | **No** |
 | `lib/basis.ts` | 3 | **No** — only via `switchDetermination`, itself unreached |
-| `lib/folderTemplates.ts` | — | **Dead.** 0 internal uses, 0 external, 0 tests |
+| ~~`lib/folderTemplates.ts`~~ | — | **DELETED 15 Sep** — residue of a deliberately removed feature, not a deferral |
 
 **Four modules, ~17 exports, roughly 60 tests, and no request has ever reached any of them.** That
 is the whole 7.2/7.2a surface: `/api/switches/ask` and `/api/switches/answer` do not exist, and
@@ -1733,9 +1733,20 @@ app/api/chat/route.ts` returns **0**; nothing in `app/` or `components/` referen
 > followUp      app/ callers: app/api/chat/route.ts, app/compliance/page.tsx
 > turnSigning   app/ callers: app/api/chat/route.ts
 > ```
-> All three sub-shapes are reached. **`lib/` now has two modules with no production caller:**
-> `folderTemplates` (dead — 0 references anywhere) and `sdsExtraction` (waiting on M4's document
-> surface, deliberately). Down from four.
+> All three sub-shapes are reached.
+>
+> ### AND THE LIST IS NOW ONE ENTRY: `sdsExtraction`.
+> `folderTemplates` was **deleted**, not carried. It had 0 references anywhere, and git says why:
+> `e1d3182` *"remove all background folder creation"* and `bd25159` *"remove the 'add industry
+> folders' picker (contradicted the impose-no-folders decision)"*. **It was the residue of a
+> feature deliberately removed, not something waiting to be wired** — and keeping it on this list
+> implied the opposite.
+>
+> **A dead module and a deliberate deferral are different things, and listing them together makes
+> the list worth less.** One entry that means "this is waiting for M4's document surface" is a
+> queue. Two entries of different kinds is a pile.
+>
+> **Down from four to one.**
 
 **The general form worth carrying:** an optional parameter is a capability that can be built,
 tested, shipped and forgotten without a single failure. **When an argument is optional, something

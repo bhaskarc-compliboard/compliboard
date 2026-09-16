@@ -1,6 +1,12 @@
 # Decision Record
-**Version:** 70 · **Updated:** 15 September 2026
-**Supersedes:** version 69 (15 Sep). Adds **§91** — M1.2c wired and run over HTTP: **the first
+**Version:** 71 · **Updated:** 15 September 2026
+**Supersedes:** version 70 (15 Sep). Adds **§92** — **the conversation is a minute long and that
+is a PRODUCT problem**, filed as a different category from everything else this week. Four
+measurements now: critic 36.4 s / 28.7 s narrowed, gate 9.9 s → 8.7 s with more context, and
+**/api/chat over HTTP at 58.9 s then 29.0 s — gate plus answer, no critic.** Nothing is wrong; the
+thing is slow. Records what is NOT the answer on evidence (narrowing, tuning, removing a stage)
+and that the real options — streaming, an honest wait, or the worker — are product decisions, one
+of which reverses D25. Version 70 added **§91** — M1.2c wired and run over HTTP: **the first
 time anything from M1.2b onward has been reachable.** Turn 1 with no turns sent returns a signed
 turn; turn 2 sends it back and the gate does not re-ask what turn 1 established. **All four
 attacks refused with 400 over the wire**, including §90's omission — a genuine signed turn
@@ -6500,8 +6506,12 @@ followUp      app/ callers: app/api/chat/route.ts, app/compliance/page.tsx
 turnSigning   app/ callers: app/api/chat/route.ts
 ```
 
-**`lib/` is down from four modules with no production caller to two** — `folderTemplates` (dead,
-0 references anywhere) and `sdsExtraction` (waiting on M4's document surface, deliberately).
+**`lib/` is down from four modules with no production caller to ONE** — `sdsExtraction`, waiting
+on M4's document surface, deliberately. `folderTemplates` was **deleted**: 0 references anywhere,
+and git says why (`e1d3182` *"remove all background folder creation"*, `bd25159` *"contradicted the
+impose-no-folders decision"*). **It was the residue of a feature deliberately removed, not
+something waiting to be wired**, and listing a dead module beside a deliberate deferral makes the
+list worth less — one entry is a queue, two of different kinds is a pile.
 
 > **This was three inert modules from one piece of work**, which is what made stopping before the
 > route wrong: `priorTurns`, `followUp` and `turnSigning` were each correct, tested, and reachable
@@ -6518,3 +6528,62 @@ second because the frame and the facts are being established from nothing.
 **A minute for the first turn of a conversation is a product problem, not a correctness one**, and
 it is the same open question §76 left: whether a synchronous answer is viable at all, which is
 about D25 rather than about anything built here.
+
+---
+
+## 92. The conversation is a minute long, and that is a PRODUCT problem — 15 September 2026
+
+**Filed as a different category from everything else this week, because it is one.**
+
+### The measurements
+
+| | | |
+|---|---|---|
+| **§74** | critic alone, 5-item checklist, 33 agencies | **36.4 s** (33.2–42.2, n=3) |
+| **§76** | critic alone, same input, **4** agencies | **28.7 s** — narrowing bought 7.7 s and cost 3 findings |
+| **§83** | gate alone, turn 1 vs turn 12 | **9.9 s → 8.7 s** — *faster* with 7.7× the context |
+| **§91** | **/api/chat, research, over HTTP, as a signed-in user** | **turn 1: 58.9 s · turn 2: 29.0 s** |
+
+**§91's two are gate plus answer with NO critic** — §77 drops it from the research path entirely.
+So a minute is the honest cost of the path as designed, not the cost of something that can be
+switched off.
+
+**Turn 1 is roughly twice turn 2** because the frame, the subject and the facts are all being
+established from nothing; turn 2 reuses them.
+
+### Why this is a different category from the rest of this week
+
+**Everything else recorded since 13 September is a correctness finding** — a wrong claim, an
+unreachable module, a name wrong across a boundary, a check that passed for the wrong reason.
+**Each had a right answer and was fixed.**
+
+> **This one has no defect.** The gate is correct, the answer is correct, the signing is correct,
+> and the conversation takes a minute. **Nothing is wrong; the thing is slow.**
+>
+> **It is filed as a product problem so it stops being re-derived as a technical one.** Twice now
+> a latency intuition has produced a design proposal that measurement killed — Stage 2 (§76) and
+> the trimming rule's motivation (§83), and §82.5 records that as a standing prior.
+
+### What is NOT the answer, on evidence rather than opinion
+
+- **Not narrowing the input.** Measured twice, both times unsupported: §76 bought 7.7 s and lost
+  three coverage findings; §83 got *faster* with 7.7× more.
+- **Not tuning the prompt or dropping a model tier.** `CRITIC-PASS.md` §5 and `CLAUDE.md` §3.1 —
+  and the critic is not even on this path.
+- **Not removing a stage.** There are two calls. §77 already removed everything removable.
+
+### What the answer actually is, and it is a product decision
+
+**Either the answer streams, or the wait is made honest, or the work moves off the request.**
+
+1. **Stream the answer.** A minute of prose arriving is not a minute of blank screen. Changes
+   `/api/chat`'s response shape and every caller.
+2. **Make the wait honest** — `CLAUDE.md` §5: *no infinite spinner*. The gate's own output is a
+   natural progress signal, since it finishes in ~9 s and knows what it is about to ask.
+3. **Move it to the worker** — which reopens **D25** (synchronous) and needs Phase 5.
+
+**All three are product decisions rather than engineering ones**, and D25 is a written decision, so
+choosing (3) reverses it and must be reversed on the record rather than by implementation (§75).
+
+**Reversal condition:** none — this is a measurement and a categorisation. It closes when a
+product decision is taken, not when a number changes.
