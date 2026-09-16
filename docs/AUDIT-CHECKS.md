@@ -247,8 +247,15 @@ select count(*) from public.requirement_templates
 
 | | |
 |---|---|
-| Oregon rows citing 29 CFR | **49** |
-| rows with `citation_federal_analogue` set | **0 of 200 live** — re-measured 12 Sep |
+| Oregon rows citing 29 CFR | ~~49~~ → **60** — re-measured 15 Sep |
+| rows with `citation_federal_analogue` set | **0 of 200 live** — re-measured 12 Sep, unchanged 15 Sep |
+
+> **The number GREW from 49 to 60 between 11 and 15 September**, while the column built to hold
+> the state citation stayed at zero. Migration 013's splits added eleven OR-OSHA children, and
+> **each inherited the federal citation in the wrong field.** The defect reproduces itself every
+> time the library grows: there is nothing to stop a new row doing it, because
+> `citation_federal_analogue` is nullable and nothing reads it. **6.4c's revision is where this is
+> fixed**, and the count is the thing to watch — it may only fall.
 
 **The column built for exactly this stands empty while 49 rows do the thing it exists to
 prevent.** `citation_federal_analogue` was added in migration 007 so a requirement could say

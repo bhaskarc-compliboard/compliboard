@@ -287,7 +287,7 @@ is affected**, the failure direction is **false green**, and a stale `false` cle
 requirement is indistinguishable on screen from an honest one. Cheapest before there is real data
 to migrate, and invisible if it slips.
 
-**3. Key rotation. Seven credentials — EIGHT once M1.2c ships.**
+**3. Key rotation. EIGHT credentials.**
 *(**Eighth, and it now EXISTS — `TURN_SIGNING_SECRET`, created 15 Sep with M1.2c.**
 `DECISIONS.md` §89. **It is the only one of the eight that has never leaked**, and the rule that
 keeps it that way is **born rotated**: it is rotated in this pass with the other seven, or it is
