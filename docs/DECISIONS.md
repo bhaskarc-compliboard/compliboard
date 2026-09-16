@@ -1,6 +1,12 @@
 # Decision Record
-**Version:** 64 · **Updated:** 15 September 2026
-**Supersedes:** version 63 (15 Sep). Adds **§84** — M1.2b built, and the first multi-turn
+**Version:** 65 · **Updated:** 15 September 2026
+**Supersedes:** version 64 (15 Sep). Adds **§85** — **classification folds into the gate**, and
+`WORKSPACE.md` §4.1's "one cheap classification call" is **superseded**: §77 settled the research
+path at two calls three days after §4.1 was written, and the gate already holds the question, the
+prior turns and the frame. The input-size objection is **measured and unsupported twice** (§76,
+§83). Answers the three accumulation questions: a superseded turn **stays and collapses**, **every
+exchange is a turn** including one asserting no fact, and **a new question does NOT close a
+topic** — coupling them makes every topic one question long. Version 64 added **§84** — M1.2b built, and the first multi-turn
 conversation this product has had. **`confined_spaces_present = true [hypothetical]` sits beside
 `false [user_set]` with no conflict** — the false-green failure prevented rather than argued
 about. The gate did not re-ask a fact from an earlier turn; a within-conversation contradiction
@@ -5949,3 +5955,78 @@ make it.**
 the first question reliably well chosen, this closes as a non-issue; if it finds the gate spending
 its question on the hypothetical when the real operation had a blocking gap, that is a rule about
 frame precedence and belongs in the prompt.
+
+---
+
+## 85. Classification folds into the gate, and a new question does not close a topic — 15 September 2026
+
+**Not built. Two decisions, both reversing something written, both marked rather than done by
+implementation — which is §75's failure and the reason this was asked rather than proceeded with.**
+
+### 1. `WORKSPACE.md` §4.1's "one cheap classification call" is SUPERSEDED
+
+**The three kinds stand** — Elaboration, Refinement, New question. **The separate call does not.**
+
+> **§77 settled the research path at TWO AI calls: gate, then answer, nothing else.** §4.1 was
+> written **three days earlier**. A classification call is a third, and it contradicts a decision
+> made after it.
+
+**Folding is right rather than merely cheaper, and the reason is that the gate already holds
+everything classification needs** — the question, the prior turns, and the frame. **§77 items 6–8
+folded web search and frame detection in for exactly that reason**, and this is the same argument
+applied to the same call.
+
+**And the objection that more input costs the gate latency is measured and unsupported, twice:**
+
+| | Measured |
+|---|---|
+| **§76** | narrowing the critic's 33 agencies bought **7.7 s and cost three coverage findings** |
+| **§83** | the gate ran **1.3 s FASTER with 7.7× the context** |
+
+§82.5 already records that as a prior: **a design justified by input size needs a number before it
+is built.** Here the numbers exist and point the other way.
+
+### 2. THE THREE ACCUMULATION QUESTIONS, ANSWERED
+
+**(a) A superseded turn STAYS and collapses.** It falls out of §83's discipline — collapse only
+where a later value supersedes an earlier one **in the same frame**. A refinement that recomputes
+does not remove the turn that produced the old value; the turn stays and its fact is superseded by
+the newer one. **Already consistent, previously unstated. Now stated.**
+
+**(b) EVERY EXCHANGE IS A TURN**, including an elaboration that asserts no fact.
+
+> **"Turn 4" must mean the fourth exchange, which is what a person means by it.** If turns counted
+> only fact-bearing exchanges, turn numbers would stop matching the conversation and **every later
+> reader inherits the mismatch** — a rendered transcript, a summary, a support conversation about
+> "what did it say on turn 4".
+>
+> A turn with empty `facts` costs one line in the frame header and nothing else.
+
+**(c) A NEW QUESTION DOES NOT CLOSE A TOPIC — and this corrects §4.1's implication.**
+
+> **"Not a follow-up to the previous answer" and "a new topic" are different things.** Someone
+> asking about shipping and then about storage has asked **two questions in one topic**.
+
+- **Classification returns `new_question` as a SIGNAL** — it means the full pipeline runs rather
+  than an expansion, and nothing more.
+- **Closing a topic is a separate act:** the user, inactivity, or whatever M1.8 specifies.
+- **Coupling them means every topic is one question long, which is not a conversation.**
+
+**Accumulating across a question switch is safe under the frame mechanism**: different frames
+collapse separately and render labelled, so the gate sees both sets and knows which is which. §83
+measured the cost of the extra context and it is nothing.
+
+**Reversal condition:** if a real multi-question topic produces a gate that confuses two questions'
+facts **despite** the frames, couple them after all. That is a finding about whether the frame is
+a strong enough separator, and it needs a real conversation to produce it.
+
+### Why both were marked rather than implemented
+
+**§75 records the failure this avoids:** Stage 2 was proposed, and it reversed
+`CRITIC-PASS.md` §5's written trade **without anyone noticing a decision existed.** It was caught
+because the spec was read before the code was written.
+
+**A decision reversed by implementation leaves two documents that disagree and no record of which
+won.** `WORKSPACE.md` §4.1 now carries the supersede block and §4.1a, so a reader who starts there
+— which is what `docs/README.md` sends them to do — finds the current decision rather than the
+1 September one.

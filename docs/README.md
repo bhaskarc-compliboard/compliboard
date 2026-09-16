@@ -1,6 +1,17 @@
 # docs/
-**Version:** 6 · **Updated:** 12 September 2026
-**Supersedes:** version 5 (11 Sep). Adds `CRITIC-PASS.md`. Version 5 added `DETERMINATION-GATE.md`. Version 4 added
+**Version:** 7 · **Updated:** 15 September 2026
+**Supersedes:** version 6 (12 Sep). **Adds the FIVE documents that existed and were not listed** —
+`SWITCH-DETERMINATION.md`, `EVIDENCE-LINKING.md`, `REQUIREMENTS-SCREEN.md`, `GATE-HISTORY.md`,
+`INVENTORY.md`. Four were added between 12 and 15 September and this index did not move with them.
+
+> ### THIS IS THE DRIFT SHAPE THIS FILE EXISTS TO PREVENT.
+> **A document findable only by `ls` is a document the next session does not know exists** — and
+> this index is loaded at the start of a session precisely so that does not happen. Five missing
+> out of sixteen is the index failing at its one job. The rule that follows: **a new document is
+> not finished until it is listed here**, in the same change that creates it, not in a later
+> sweep.
+
+Version 6 (12 Sep): Adds `CRITIC-PASS.md`. Version 5 added `DETERMINATION-GATE.md`. Version 4 added
 `TESTING.md`; version 3 added `AUDIT-CHECKS.md`. Version 2 added
 `HOW-WE-BUILD.md` and `STATUS.md`, noted that `PATTERNS.md` describes a different codebase,
 and listed every file; it superseded version 1 (10 Sep), which carried no version header of
@@ -123,6 +134,42 @@ the date it was last actually run** — including where that answer is bad. A ch
 place there only if a wrong answer would reach a customer and **nothing else would notice**:
 if a database constraint or `npm run check` would catch it, it belongs in one of those
 instead. Run by hand today; Phase 6 gives them a dashboard.
+
+### `SWITCH-DETERMINATION.md`
+
+**How a fact about a company gets established, and which source wins when two disagree.** The
+precedence ladder — `user_locked` → evidence class → recency *within a class* → issuer authority →
+`needs_user` — and the five `evidence_class` values, of which **`declared` is on a different axis
+from the other four**: they say where a fact came from, it says whether it is true
+(`DECISIONS.md` §80). Added with Phase 7.2.
+
+### `EVIDENCE-LINKING.md`
+
+**Which document proves which obligation, as rows rather than prose.** `obligation_evidence`, the
+`obligation_evidence_state` view, and the rule that expired evidence can never satisfy a
+requirement — enforced in code as well as in the prompt. Phase 7.3. **Nothing writes the table
+yet**; the schema and the view are built and the writer is not.
+
+### `REQUIREMENTS-SCREEN.md`
+
+**What the requirements screen SAYS, and the six display contracts it must not break.** Four
+states rendered by four separate roots, no numeric aggregates, `unknown` rendered as a question
+rather than a gap, and **not every `unknown` row has a question behind it** — §3.2a, where twelve
+rows wait on quantities no question asks for. Module M6.
+
+### `GATE-HISTORY.md`
+
+**The conversation the determination gate reads, specified before it was built.** Prior turns as
+**claims, never prose**; the `hypothetical` source and why it is a different dimension from
+`stated_in_question`; the frame (jurisdiction, tense, subject) that marks a fact hypothetical at
+the moment it is captured; and **the two kinds of contradiction that must not be collapsed** — a
+correction within a conversation, versus a conflict against `company_switches`. Module M1.2b,
+built 15 Sep.
+
+### `INVENTORY.md`
+
+**What exists, as a list.** Every table with its row count, every module with its state, and what
+each is waiting on. A snapshot rather than a design — read it to find out what is there, not why.
 
 ### `STATUS.md` — *at the repo root, not in this folder*
 One line per module: working, degraded, broken, not-yet-rebuilt, unknown or not built —

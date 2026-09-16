@@ -1,7 +1,7 @@
 # The Compliance Workspace — M1
 
-**Version:** 3 · **Updated:** 15 September 2026
-**Supersedes:** version 2 (11 Sep). **The five gaps are RESOLVED as decisions**, stated against
+**Version:** 4 · **Updated:** 15 September 2026
+**Supersedes:** version 3 (15 Sep). §4.1's **"one cheap classification call" is SUPERSEDED** — classification folds into the determination gate, because §77 settled the research path at two AI calls and the gate already holds everything classification needs (`DECISIONS.md` §85). Adds **§4.1a: a new question does NOT close a topic.** Previously, v3: **Supersedes:** version 2 (11 Sep). **The five gaps are RESOLVED as decisions**, stated against
 the schema migration 008 actually built rather than described as problems — which is what made v2
 unusable. Adds **v3.6**: §6's terminal object is provisional, because D22 settles that M1 writes
 neither obligations nor checklists and v2's entire topic lifecycle closes onto a checklist. A
@@ -229,15 +229,54 @@ Users abandon forms. They answer questions asked in context, when the consequenc
 
 ### 4.1 Three kinds, classified before anything expensive runs
 
+> ### ⚠ SUPERSEDED IN PART — 15 September 2026. `DECISIONS.md` §85.
+>
+> **The three kinds stand. "One cheap classification call" does not.** Classification is **folded
+> into the determination gate** and is not a separate call.
+>
+> **What superseded it:** `DECISIONS.md` **§77**, which settled the research path at **two AI
+> calls — gate, then answer, nothing else.** §4.1 was written three days earlier, and a third call
+> contradicts it.
+>
+> **Why folding is right rather than merely cheaper:** the gate **already has the question, the
+> prior turns and the frame** — everything classification needs. §77 items 6–8 folded web search
+> and frame detection in for the same reason. And the objection that more input costs the gate
+> latency was **measured twice and found unsupported**: §76 (narrowing the critic bought 7.7 s and
+> cost three findings) and §83 (**the gate ran 1.3 s FASTER with 7.7× the context**).
+>
+> **Marked rather than done silently**, because reversing a written decision by implementation is
+> §75's exact failure.
+
+
 | Type | Example | What runs |
 |---|---|---|
 | **Elaboration** | "Explain step 3." "Where do I buy UN-spec boxes?" | Expansion only, against the existing answer |
 | **Refinement** | "What if it's PG III?" "We use a carrier." | Update the fact, then re-run identification → critic → expansion |
 | **New question** | Unrelated topic | Full six-stage pipeline |
 
-One cheap classification call decides. Running all six stages on every follow-up is slow and wasteful.
+~~One cheap classification call decides.~~ **SUPERSEDED — the GATE decides (`DECISIONS.md` §85).**
+The rest stands: running all six stages on every follow-up is slow and wasteful.
 
 **Refinement recomputes; it does not append.** The answer was built on a fact that changed. Adding a correction underneath leaves the wrong answer on screen above it.
+
+### 4.1a A NEW QUESTION DOES NOT CLOSE A TOPIC
+
+*Added 15 September 2026. `DECISIONS.md` §85.*
+
+**"Not a follow-up to the previous answer" and "a new topic" are different things.** Someone asking
+about shipping and then about storage has asked **two questions in one topic**.
+
+- **Classification returns `new_question` as a SIGNAL.** It means the full pipeline runs rather
+  than an expansion — nothing more.
+- **Closing a topic is a separate act:** the user, inactivity, or whatever M1.8 specifies.
+- **Coupling them means every topic is one question long, which is not a conversation.**
+
+**Accumulating across a question switch is safe under the frame mechanism.** Different frames
+collapse separately and render labelled, so the gate sees both sets and knows which is which
+(`GATE-HISTORY.md` §3). §83 measured the extra context and it costs nothing.
+
+**Reversal condition:** if a real multi-question topic produces a gate that confuses two questions'
+facts despite the frames, couple them after all.
 
 ### 4.2 The critic still runs
 

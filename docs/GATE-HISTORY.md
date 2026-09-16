@@ -1,6 +1,10 @@
 # M1.2b — The Gate Gains a Conversation
 
-**Version:** 3 · **Updated:** 15 September 2026
+**Version:** 4 · **Updated:** 15 September 2026
+**Supersedes:** version 3 (15 Sep). Adds **§8 — M1.2, classification folded into the gate** as two
+fields rather than a third AI call (`DECISIONS.md` §85), with **§8.4's caller contract that M1.3
+onwards inherits**: every exchange is a turn, a superseded turn stays, and a new question does not
+close the topic.
 **Supersedes:** version 2 (15 Sep). **BUILT** — §6a records the four demonstrations. Turn-one tense
 and the `answering` question are settled by contact; one item stays open.
 **Supersedes:** version 1 (15 Sep). §4's measurement is **run**: the bound holds, and the latency
@@ -243,6 +247,113 @@ not resist; `answering` stays with its handling folded into `collapseTurns`. **�
 run** (§83) — the bound holds, the latency motivation is withdrawn.
 
 **Still open: how a hypothetical frame spends the one blocking question.** §84 §4.
+
+## 8. M1.2 — CLASSIFICATION, FOLDED INTO THE GATE
+
+*Specified 15 September 2026. **Not built.** `DECISIONS.md` §85; `WORKSPACE.md` §4.1 as superseded
+and §4.1a.*
+
+### 8.1 It is not a call. It is two more fields.
+
+`WORKSPACE.md` §4.1 said *"one cheap classification call decides."* **That is superseded.** §77
+settled the research path at two AI calls, and the gate already has the question, the prior turns
+and the frame — **everything classification needs.** So the gate returns it.
+
+```ts
+export type FollowUpKind = 'first' | 'elaboration' | 'refinement' | 'new_question'
+
+export type GateResult =
+  | { outcome: 'proceed'; resolved: GateResolved; frame: Frame; followUp: FollowUp }
+  | { outcome: 'ask';     ask: GateAsk;          frame: Frame; followUp: FollowUp }
+
+export interface FollowUp {
+  kind: FollowUpKind
+  /** Which earlier turn this follows up ON. Null for `first` and `new_question`. The caller
+   *  needs it to know WHICH answer an elaboration is elaborating. */
+  refersToTurn: number | null
+  /** One sentence, for the record and for a person reading why the pipeline did what it did.
+   *  Never rendered to the user as-is. */
+  because: string
+}
+```
+
+**`first` is a fourth value and it is not a follow-up at all** — it is what turn 1 returns.
+Without it, `kind` would have to lie on the first turn, and §77's rule that a first turn behaves
+exactly as before this existed would be untestable.
+
+### 8.2 What each kind means, and what the caller runs
+
+| kind | Means | Caller runs |
+|---|---|---|
+| **`first`** | no prior turns | the full path — gate, then answer |
+| **`elaboration`** | *"explain step 3"*, *"where do I buy those"* — asks for more about an answer already given, asserts no new fact | **expansion against the existing answer.** No re-answer |
+| **`refinement`** | *"what if it's PG III"*, *"we use a carrier"* — a fact changed | **re-answer.** §4.1: *refinement recomputes; it does not append* — adding a correction underneath leaves the wrong answer on screen above it |
+| **`new_question`** | not a follow-up to the previous answer | the full path — **and the topic stays open** (§4.1a) |
+
+### 8.3 *** A NEW QUESTION DOES NOT CLOSE THE TOPIC ***
+
+**This is the correction to §4.1's implication and it is the part most likely to be
+re-collapsed.**
+
+> *"Not a follow-up to the previous answer"* and *"a new topic"* are **different things.** Someone
+> asking about shipping and then about storage has asked **two questions in one topic.**
+
+- `new_question` is a **SIGNAL**: run the full pipeline rather than an expansion. Nothing more.
+- **Closing a topic is a separate act** — the user, inactivity, or whatever M1.8 specifies.
+- **Coupling them means every topic is one question long, which is not a conversation.**
+
+**Turns keep accumulating across the switch**, and that is safe because of the frame: two
+questions produce two frames, `collapseTurns` keys on `(switch_id, frame)` so they collapse
+separately, and both render labelled. §83 measured the cost of the extra context and it is
+nothing.
+
+### 8.4 What a caller does — the contract M1.3 onwards inherits
+
+**This is the part that outlives M1.2**, because every later module reads turns that this
+decides how to write.
+
+```ts
+// 1. Call the gate with everything so far.
+const r = await gate({ question, documentBlocks, companyId, outputType, db, priorTurns: turns })
+
+// 2. ALWAYS append a turn. EVERY EXCHANGE IS A TURN (§85.2b) — including an elaboration
+//    that asserts nothing. "Turn 4" must mean the fourth exchange, which is what a person
+//    means by it. A turn with no facts costs one line.
+turns.push({
+  turn: turns.length + 1,
+  frame: r.frame,
+  facts: factsFrom(r),        // may be empty. That is normal, not a skip.
+})
+
+// 3. Branch on the kind. This is the ONLY thing followUp decides.
+switch (r.followUp.kind) {
+  case 'elaboration':  return expand(previousAnswer, r.followUp.refersToTurn)
+  case 'refinement':   return answerAgain()   // recompute, never append (§4.1)
+  case 'first':
+  case 'new_question': return answerAgain()   // and DO NOT close the topic (§8.3)
+}
+```
+
+**Three rules the contract carries, each stated because a later reader would otherwise choose
+differently:**
+
+1. **Append before branching.** The turn exists whatever the kind — otherwise an elaboration
+   vanishes from the history and turn numbers drift from the conversation.
+2. **A superseded turn STAYS.** A refinement recomputes the answer; it does not delete the turn
+   that carried the old fact. `collapseTurns` supersedes the *fact* within its frame and leaves
+   the turn (§85.2a).
+3. **The caller owns the turn list; nothing is stored.** §78 — a hypothetical is never written
+   anywhere, and `topics` has no facts column. The list lives for the length of the conversation
+   and dies with the transcript (`WORKSPACE.md` §6.4).
+
+### 8.5 What this does NOT decide
+
+- **When a topic closes.** M1.8. §8.3 only says classification does not decide it.
+- **What an elaboration renders against.** It needs the previous answer, which the caller holds
+  and the gate never sees — the gate reads claims, not answers (§4, and §73 for the critic's
+  version of the same rule).
+- **Whether `followUp` should be persisted.** It should not be, on §78's reasoning, but nothing
+  yet reads it a second time so the question has not arisen.
 
 ## 7. Open, and not decided here
 

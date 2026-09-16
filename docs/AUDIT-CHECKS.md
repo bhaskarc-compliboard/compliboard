@@ -1,6 +1,11 @@
 # Audit Checks
-**Version:** 31 · **Updated:** 15 September 2026
-**Supersedes:** version 30 (15 Sep). Records plainly that **`check:live` does not cover
+**Version:** 32 · **Updated:** 15 September 2026
+**Supersedes:** version 31 (15 Sep). Check 29 gains **a second sub-shape and it is worse**:
+`gate()`'s `priorTurns` is built, tested and **passed by nobody** — `/api/chat` calls the gate on
+every request and omits it. Unlike `sdsExtraction`, which has no caller and would fail loudly, **a
+feature inert because an optional argument is omitted looks identical to one that works** and will
+never fail. Records what would reach it (M1's conversation surface) and the general form: **when an
+argument is optional, something must assert a real caller passes it.** Version 31: Records plainly that **`check:live` does not cover
 production** — it writes rows and refuses production by construction, so production gets a
 migration's verify block and **no signed-in caller**. The thing that caught §63 and §80 has never
 run against production. Stated as a gap, with a read-only variant as the option; running the
@@ -1699,8 +1704,34 @@ assumed**, because "no caller in the code" and "no caller at all" are different 
 > path** because `company_chemicals` is empty (§70). Unreached code fails loudly on first contact.
 > That one never will.
 
-**Three files remain unimportable by a test** — `documentReview.ts`, `determinationGate.ts`,
-`documentContent.ts` — all three on M1's path.
+**All three unimportable files are fixed** — `documentReview.ts`, `determinationGate.ts`,
+`documentContent.ts` now import relatively. **§67 predicted that all three sat on M1's path and one
+blocked the first M1 measurement attempted, the same day** (`DECISIONS.md` §83). That is the first
+time one of these lists was checked against an outcome, and it was right.
+
+### ⚠ A SECOND SUB-SHAPE, AND IT IS WORSE — added 15 Sep
+
+**`gate()`'s `priorTurns` is built, tested, and passed by nobody.** `grep -c priorTurns
+app/api/chat/route.ts` returns **0**; nothing in `app/` or `components/` references it at all.
+
+> **This is NOT the same shape as `sdsExtraction` or `switchAsk`.** Those have **no caller** — they
+> fail loudly the first time anything reaches them, which is how §63 and §80 surfaced.
+>
+> **`priorTurns` has a caller that omits an optional argument.** `/api/chat` calls `gate()` on
+> every request and simply does not pass it. **The gate runs, returns a frame, and behaves
+> correctly for a single turn — so a feature that is inert because a parameter is omitted looks
+> identical to one that is working.**
+>
+> **That is worse than a module nothing calls**, because nothing will ever fail. There is no first
+> caller to break, no 500, no permission denied. It just quietly never remembers a conversation.
+
+**What would reach it: M1's conversation surface accumulating turns and passing them.** Until that
+exists, every `/api/chat` turn is independent exactly as before M1.2b was built.
+
+**The general form worth carrying:** an optional parameter is a capability that can be built,
+tested, shipped and forgotten without a single failure. **When an argument is optional, something
+must assert that a real caller passes it** — a test of the module cannot, because the module works
+either way.
 
 ---
 
