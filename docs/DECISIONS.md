@@ -1,6 +1,13 @@
 # Decision Record
-**Version:** 67 · **Updated:** 15 September 2026
-**Supersedes:** version 66 (15 Sep). Adds **§87** — `refersToTurn` means a different thing per
+**Version:** 68 · **Updated:** 15 September 2026
+**Supersedes:** version 67 (15 Sep). Adds **§89** — **`answering` is already forgeable**: a client
+can POST `employee_count = 5000` today and the gate treats it as established, with no validation
+beyond a `JSON.parse`. Blast radius stated exactly — **not a tenancy breach and not a persisted
+lie**, but a wrong answer to the person who forged it. **Turns will be SIGNED** (HMAC, nothing
+stored, §78 preserved), decided now because it is **free now and a contract change later**.
+Records why marking-without-signing fails — **a client that can forge a turn can forge the label**
+— and that signing adds an **eighth credential** to a rotation list of seven that is already
+overdue. Version 67 added **§87** — `refersToTurn` means a different thing per
 kind (elaboration → the ANSWER turn, refinement → the turn that ASSERTED THE FACT), **settled
 before anything reads it**, because two later readers would each pick the reading their use
 implied and neither would know — §71's shape before it exists, for the cost of a paragraph.
@@ -6235,3 +6242,81 @@ are the closest thing.
 **Reversal condition:** none. If a future change makes model output type-checked end to end — a
 schema validated at the boundary with Zod, which `CLAUDE.md` §5 already asks for — three of these
 four become compile-time or parse-time errors and this class shrinks to the database half.
+
+---
+
+## 89. `answering` is already forgeable, and turns will be signed — 15 September 2026
+
+### 1. THE EXPOSURE THAT EXISTS TODAY, independent of anything being built
+
+**`/api/chat` takes a fact from the request body and hands it to the gate with no validation
+beyond a `JSON.parse`:**
+
+```
+app/api/chat/route.ts:73    answering = body.answering || null;
+app/api/chat/route.ts:58    try { answering = JSON.parse(answeringRaw) } catch { answering = null }
+app/api/chat/route.ts:128   answering,          // straight into gate()
+```
+
+**A client can POST `{"answering": {"fact": "employee_count", "value": "5000"}}` and the gate
+treats it as established.** That is live now.
+
+**The real blast radius, stated exactly rather than inflated:**
+
+| | |
+|---|---|
+| **Not a tenancy breach** | `company_id` comes from `requireCompany()` at `route.ts:35`, never from the body (§3.6). A forged fact cannot reach another company |
+| **Not a persisted lie** | `/api/chat` contains **no `insert`, `upsert` or `update`** — grep returns nothing. A forged fact cannot become a `company_switches` row through this route |
+| **It IS** | **a wrong answer to the person who forged it**, with no marker that its premises were supplied rather than established |
+
+**Two ways that matters even so:** a user pasting a shared conversation, or a client bug replaying
+stale turns, produces a confidently wrong compliance answer — and *"the user only harms
+themselves"* is a weak defence in a product sold on being right.
+
+> **M1.2c does not create this. It multiplies it** — from one fact per request to a whole
+> conversation.
+
+### 2. THE DECISION: turns are SIGNED
+
+The server returns each turn with an HMAC; the client sends it back; the server verifies before
+the gate sees it. **Nothing is stored** — §78 is preserved exactly, the client still holds the
+conversation, and the server refuses a turn it did not issue.
+
+**Why now rather than later, and it is the argument that has settled three other things this
+week:**
+
+> **It is free now and a contract change later.** There are no clients — `/api/chat` does not pass
+> turns at all. Building M1.2c with signing costs an HMAC; **retrofitting it means changing a
+> shipped request shape.** Same argument as `topics` (§69: free today, a migration over customer
+> conversations tomorrow), `entity_id`, and `memberships`.
+
+**Why (3) — "mark it and trust it less" — was rejected specifically:**
+
+> **A client that can forge a turn can forge the source label on it.** Marking a fact as
+> client-supplied only helps if the mark itself cannot be edited, which requires signing — **at
+> which point signing is doing the work and the mark is decoration.**
+
+**And (2), keeping turns server-side, contradicts §78** for hypotheticals specifically: it is the
+two-systems problem §78 was written to avoid.
+
+### 3. IT ADDS AN EIGHTH CREDENTIAL, AND THE LIST IS ALREADY OVERDUE
+
+**A signing secret is a new credential on a gate item that currently reads "Key rotation. Seven
+credentials." and has been deferred repeatedly.** Four leaked in a zip on 9 Sep; both database
+passwords were printed to a terminal on 10 Sep; **the production service-role key was printed in
+full on 12 Sep and is the most sensitive of the seven, because the service role bypasses RLS
+entirely.**
+
+> **Recorded now rather than discovered at rotation.** An eighth credential does not make the
+> rotation harder in proportion — it makes it one item longer — but **a list that grows while it
+> waits is a list that is being deferred into something bigger**, and that is the mechanism by
+> which this kind of work never happens.
+
+**The mitigation that costs nothing: the signing secret is born rotated.** It is created after the
+other seven are rotated, or it joins them in the same pass. It is the only one of the eight that
+has never leaked, and it should stay that way by being the last one created rather than the first
+one forgotten.
+
+**Reversal condition:** if the product ever gains a shared-conversation feature — one person
+sending another a topic — signing becomes load-bearing for a second reason, and option (4), doing
+nothing, stops being arguable at all.

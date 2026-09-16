@@ -168,6 +168,7 @@ decisions and the five schema gaps are settled before any of this starts.*
 | **M1.1** ✅ | **DONE 15 Sep — migration 028, staging.** **Topics, minimal shape** (D23). `topics`: company, title, status, opened/closed, summary. **NO facts column** — §78: hypotheticals are not stored, so nothing here holds a fact. **Free today, not free once conversations are stored** (§69) | M1.0 | 1 d |
 | **M1.2b** ✅ | **DONE 15 Sep** (§84). ⚡ **The gate gains prior turns, the frame, and a web-search flag** (§77 items 6–8). `gate()` takes `{question, documentBlocks, companyId, outputType, db, answering}` today — **no conversation history**, so it re-asks what was established two turns ago. Returns jurisdiction-of-question, tense, subject, and `needsWebSearch` | M1.1 | 1.5 d |
 | **M1.2a** | ~~The critic's `priorAssertions` field~~ — **WITHDRAWN for research.** §77 drops the critic from the research path entirely; §73's decision survives and applies at the **checklist boundary**, which is where it is now needed | — | — |
+| **M1.2c** | ⚡ **THE CONVERSATION LOOP** — the caller that feeds M1.2b and M1.2. `GATE-HISTORY.md` §8.4 specifies the contract and **assigns it to nobody**, which is why it was not a task: a contract with no owner is a specification of something that will not happen. **Turns are SIGNED** (§89). Until this exists, M1.2b and M1.2 are built, correct and **inert** | M1.2 | 1.5 d |
 | **M1.2** ✅ | **DONE 15 Sep** (§86) — folded into the gate, not a third call. **Follow-up classification** (§4.1) — three kinds, classified before anything expensive runs | **M1.2b** | 1 d |
 | **M1.3** | **Fact capture, not question generation** (D24). The conversation writes `company_switches` through 7.2a's route; it does **not** invent questions — the queue comes from `askableSwitches()` and the dependency graph (v3.5) | M1.0, M1.1 | 1.5 d |
 | **M1.4** | **Site resolution before a site-scoped write** (v3.3). One site → silent. Several → the question carries the site. **Defaulting to primary is forbidden** (§20) | M1.3 | 1 d |
@@ -284,7 +285,11 @@ is affected**, the failure direction is **false green**, and a stale `false` cle
 requirement is indistinguishable on screen from an honest one. Cheapest before there is real data
 to migrate, and invisible if it slips.
 
-**3. Key rotation. Seven credentials.**
+**3. Key rotation. Seven credentials — EIGHT once M1.2c ships.**
+*(Eighth flagged 15 Sep: M1.2c signs conversation turns and needs a signing secret —
+`DECISIONS.md` §89. It is the only one that has never leaked, and the way to keep it that way is
+to create it AFTER this rotation or inside it. A list that grows while it waits is a list being
+deferred into something bigger.)*
 Four leaked in a zip on 9 Sep. Both database passwords — production and staging — were
 printed in full to a terminal on 10 Sep while fixing the migration script's error output.
 The script redacts them now; the values are still out. **Seventh, added 12 Sep: the

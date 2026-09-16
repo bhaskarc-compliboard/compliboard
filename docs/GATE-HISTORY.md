@@ -1,6 +1,11 @@
 # M1.2b — The Gate Gains a Conversation
 
-**Version:** 5 · **Updated:** 15 September 2026
+**Version:** 6 · **Updated:** 15 September 2026
+**Supersedes:** version 5 (15 Sep). Adds **§9 — M1.2c, the conversation loop**, with **signed
+turns** (`DECISIONS.md` §89): what is in the MAC and why `company` and `topic` are in it, the
+request and response shapes, and **what happens when verification fails — it REFUSES with 400**,
+because dropping the turns and proceeding is the silent direction and would produce a
+correct-looking answer computed from nothing.
 **Supersedes:** version 4 (15 Sep). Adds **§8.2a** — `refersToTurn` means a different thing per
 kind (an elaboration points at an ANSWER, a refinement at the turn that ASSERTED THE FACT), settled
 now because nothing reads it yet and two later readers would each pick the reading their use
@@ -385,6 +390,149 @@ differently:**
   version of the same rule).
 - **Whether `followUp` should be persisted.** It should not be, on §78's reasoning, but nothing
   yet reads it a second time so the question has not arisen.
+
+## 9. M1.2c — THE CONVERSATION LOOP
+
+*Specified 15 September 2026. **Not built.** `DECISIONS.md` §89. This is the caller §8.4 describes
+and does not assign — **a contract with no owner is a specification of something that will not
+happen**, and the proof is that M1.2b and M1.2 are built, correct and inert.*
+
+### 9.1 What is signed, and what is not
+
+**The server signs each turn as it issues it. The client stores and returns it. The server refuses
+a turn it did not issue.** Nothing is persisted — §78 is preserved exactly.
+
+```ts
+/** A turn as it crosses the wire. The client never constructs one; it echoes what it was given. */
+export interface SealedTurn {
+  turn: PriorTurn          // { turn, frame, facts } — exactly as §2 defines it
+  sig: string              // HMAC-SHA256 over the canonical form below
+}
+```
+
+**What goes into the MAC**, and every element is there for a reason:
+
+```
+canonical = JSON.stringify({
+  v:       1,                     // version, so the scheme can change without ambiguity
+  company: companyId,             // from the SESSION, never the body — §3.6
+  topic:   topicId,               // a turn cannot be replayed into a different conversation
+  turn:    turn.turn,             // nor reordered within one
+  frame:   turn.frame,            // the jurisdiction/tense that makes a fact hypothetical
+  facts:   turn.facts,            // the claims themselves
+})
+sig = HMAC_SHA256(TURN_SIGNING_SECRET, canonical)
+```
+
+> **`company` and `topic` are in the MAC and not merely checked afterwards.** A signature that
+> only covers the facts is a token any company can replay into any conversation. **Binding it to
+> the session's company means a stolen turn is useless to anybody else**, which is the same
+> property `requireCompany()` gives every other route.
+
+**What is NOT signed:** the question text, the answer, anything the user typed. **Only claims are
+signed, because only claims reach the gate** (§4). A user may retype their question freely.
+
+### 9.2 The request and response shapes
+
+```ts
+// POST /api/chat
+{
+  question: string,
+  mode: 'checklist' | 'research' | 'substeps',
+  topicId: string,                     // which conversation this belongs to
+  turns?: SealedTurn[],                // everything so far. Absent on turn 1.
+  answering?: GateAnswering,           // unchanged — see 9.5
+  file?: File                          // multipart, unchanged
+}
+
+// 200
+{
+  answer: ...,                          // unchanged
+  followUp: FollowUp,                   // §8 — kind, refersToTurn, because
+  frame: Frame,
+  turn: SealedTurn                      // THE NEW TURN, SIGNED. The client appends this.
+}
+```
+
+**The client's job is three lines and no judgement:** send the turns it holds, receive one more,
+append it. **It never builds a turn, never sets a `turn` number, never chooses a frame.** §8.4's
+*"append before branching"* becomes *"append what the server returned"*, which is a weaker
+requirement on the client and therefore a stronger guarantee.
+
+### 9.3 *** WHAT HAPPENS WHEN VERIFICATION FAILS — IT REFUSES ***
+
+**The question is whether a bad signature drops the turns and proceeds as a first turn, or refuses
+the request. They are different failure directions and one of them is silent.**
+
+> ### IT REFUSES. **HTTP 400, and the conversation stops.**
+>
+> **Dropping the turns and proceeding is the silent direction**, and this project has a register
+> of what silent failures cost. The user would get **a correct-looking answer computed from
+> nothing** — no prior facts, no frame, no hypothetical labelling — and **nothing on screen would
+> say the conversation had been forgotten.** They would see an answer that contradicts the one
+> three turns ago and have no way to know why.
+>
+> **A refusal is visible, recoverable and honest**: *"We could not verify this conversation.
+> Please start a new one."* The user loses a conversation they can restart. **The silent path
+> loses the reason their answer changed.**
+
+**The same reasoning §5.1 gives for every other error: never assert anything about data we did not
+successfully read.** A dropped-turns answer asserts a compliance position while silently
+discarding the context it was supposed to be based on.
+
+**Three cases, three distinct responses:**
+
+| Case | Response |
+|---|---|
+| Signature does not verify | **400** — `"We could not verify this conversation."` Logged with the topic id, **not** the turn contents |
+| Signature verifies, `company` in the MAC ≠ the session's | **404, not 403** (§3.6 — an id must not be probable by watching which error comes back) |
+| `turns` absent entirely | **normal first turn.** Absence is not failure — it is how every conversation starts |
+
+**The third line is load-bearing:** a scheme that cannot distinguish *"no turns"* from *"bad
+turns"* would make every first turn an error.
+
+### 9.4 What the loop looks like
+
+```ts
+const authed = await requireCompany(request)        // company from the SESSION
+const turns = verifyTurns(body.turns, authed.companyId, body.topicId)   // throws -> 400
+const r = await gate({ question, ..., priorTurns: turns.map(t => t.turn) })
+
+// §8.4, unchanged: ALWAYS append, before branching on the kind.
+const newTurn = sealTurn({ turn: turns.length + 1, frame: r.frame, facts: factsFrom(r) },
+                         authed.companyId, body.topicId)
+
+switch (r.followUp.kind) { ... }                    // §8.2
+return NextResponse.json({ answer, followUp: r.followUp, frame: r.frame, turn: newTurn })
+```
+
+**`turns.length + 1` is now safe**, which it was not in §8.4: the server counts what it verified
+rather than trusting a number the client sent.
+
+### 9.5 `answering` — the exposure that already exists
+
+**`answering` is a client-supplied fact today**, passed to the gate with no validation beyond a
+`JSON.parse` (`app/api/chat/route.ts:73`). **M1.2c does not create that and should not leave it.**
+
+**It folds into the same mechanism:** the ask that produced it is part of a turn the server
+issued, so **the answer to it rides back as a sealed turn** rather than as a bare
+`{fact, value}` object. That closes the older hole with the same code, and §84 already folded
+`answering`'s *handling* into the conversation — this folds its *transport*.
+
+**Until M1.2c ships, the exposure stands**, with the blast radius §89 records: a wrong answer to
+the person who forged it, not a tenancy breach and not a persisted lie.
+
+### 9.6 The secret
+
+`TURN_SIGNING_SECRET`, environment-only, **never in a code file** (§3.5). **It is an eighth
+credential on a rotation list of seven that is already overdue** — recorded in `TODO.md`'s gate
+item and in §89. **It should be created after that rotation, or inside it**: it is the only one of
+the eight that has never leaked, and the way to keep that true is not to create it early and
+forget it.
+
+**If the secret is absent, the server must refuse to sign rather than sign with a default.** A
+default secret is a signature that proves nothing, which is worse than no signature because it
+reads as verified.
 
 ## 7. Open, and not decided here
 
