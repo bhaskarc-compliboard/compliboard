@@ -1,6 +1,11 @@
 # M1.2b — The Gate Gains a Conversation
 
-**Version:** 6 · **Updated:** 15 September 2026
+**Version:** 7 · **Updated:** 15 September 2026
+**Supersedes:** version 6 (15 Sep). Adds **§9.1a — a signature proves ISSUANCE, not COMPLETENESS.**
+A client could send turns 1, 2 and 4 and every one would verify; **contiguity is now required.**
+Records that **a MAC chain would not catch truncation either** (a truncation is a valid prefix),
+that truncation is indistinguishable from ordinary loss and is therefore accepted, and that the
+cheapest fix if it ever needs one is a counter on `topics` rather than a chain.
 **Supersedes:** version 5 (15 Sep). Adds **§9 — M1.2c, the conversation loop**, with **signed
 turns** (`DECISIONS.md` §89): what is in the MAC and why `company` and `topic` are in it, the
 request and response shapes, and **what happens when verification fails — it REFUSES with 400**,
@@ -417,7 +422,7 @@ canonical = JSON.stringify({
   v:       1,                     // version, so the scheme can change without ambiguity
   company: companyId,             // from the SESSION, never the body — §3.6
   topic:   topicId,               // a turn cannot be replayed into a different conversation
-  turn:    turn.turn,             // nor reordered within one
+  turn:    turn.turn,             // nor RELABELLED as a different turn number
   frame:   turn.frame,            // the jurisdiction/tense that makes a fact hypothetical
   facts:   turn.facts,            // the claims themselves
 })
@@ -431,6 +436,63 @@ sig = HMAC_SHA256(TURN_SIGNING_SECRET, canonical)
 
 **What is NOT signed:** the question text, the answer, anything the user typed. **Only claims are
 signed, because only claims reach the gate** (§4). A user may retype their question freely.
+
+### 9.1a *** A SIGNATURE PROVES ISSUANCE, NOT COMPLETENESS ***
+
+**Each turn is signed individually, so a client can send turns 1, 2 and 4 — dropping turn 3, where
+a correction happened — and every remaining turn verifies.**
+
+> **That is forgery by OMISSION rather than by authorship, and it is the more useful attack.**
+> Keep *"12 employees"* from turn 2; drop the turn where it became 40. Nothing is forged, nothing
+> fails to verify, and the gate reasons from a fact the user corrected.
+
+**Signing was specified against forgery by authorship and does not address this.** The fix is
+cheap.
+
+**THE CONTIGUITY CHECK — required.** After verifying each signature, the server asserts the turn
+numbers are **exactly `1..N` with no gaps and no repeats**:
+
+```ts
+const numbers = verified.map(t => t.turn.turn)
+if (numbers.some((n, i) => n !== i + 1)) throw new BadConversation('non-contiguous turns')
+```
+
+**It catches omission in the middle, which is the dangerous case**, and it costs one comparison.
+
+#### What it does NOT catch: truncation
+
+**A client sending 1, 2, 3 when it received 4 passes every check**, because **the server cannot
+know turn 4 existed.**
+
+> ### AND A MAC CHAIN DOES NOT FIX THIS EITHER — which is worth stating, because it looks like it
+> would.
+>
+> Chaining (`sig_n = HMAC(secret, canonical_n || sig_{n-1})`) proves that what you hold is a
+> **valid prefix** of an issued conversation. **A truncation IS a valid prefix.** Turns 1–3 chain
+> correctly whether or not a turn 4 was ever issued. **Chains prevent reordering and insertion;
+> they do not prevent stopping early.**
+>
+> **Catching truncation requires the server to know the expected head**, which means state.
+
+**Does truncation matter? Less than omission, for a reason that is about the user rather than the
+maths:**
+
+| | |
+|---|---|
+| **Omission in the middle** | has **no legitimate counterpart.** A client has no reason to hold turns 1, 2 and 4 and not 3. It is only producible deliberately |
+| **Truncation** | is **indistinguishable from ordinary loss** — a closed tab, a failed response, a reload before turn 4 landed. A client that legitimately never received turn 4 sends exactly what an attacker sends |
+
+**So truncation is accepted, and the reason is that refusing it would refuse the honest case
+equally.** It is also close to what a user can already do by starting a fresh conversation — the
+difference being that starting over carries **no** stale facts while truncating carries **some**,
+which is why it is accepted rather than dismissed.
+
+**If it ever needs closing, the cheapest form is a counter and not a chain:** `topics` already
+exists and has no `last_turn` column; adding one and refusing any conversation whose highest turn
+is below it would catch truncation exactly. **§78 does not forbid it** — §78 forbids storing
+hypothetical **facts**, and a turn counter is not a fact. **Not proposed now**, because the
+legitimate-loss case would then need a way to recover, and that is a product decision rather than
+a security one.
 
 ### 9.2 The request and response shapes
 
@@ -485,6 +547,7 @@ discarding the context it was supposed to be based on.
 | Case | Response |
 |---|---|
 | Signature does not verify | **400** — `"We could not verify this conversation."` Logged with the topic id, **not** the turn contents |
+| **Turn numbers are not `1..N`** | **400**, same message and the same reasoning. A gap is not recoverable by guessing which turn is missing |
 | Signature verifies, `company` in the MAC ≠ the session's | **404, not 403** (§3.6 — an id must not be probable by watching which error comes back) |
 | `turns` absent entirely | **normal first turn.** Absence is not failure — it is how every conversation starts |
 

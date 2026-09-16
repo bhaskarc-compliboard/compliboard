@@ -1,6 +1,12 @@
 # Decision Record
-**Version:** 68 · **Updated:** 15 September 2026
-**Supersedes:** version 67 (15 Sep). Adds **§89** — **`answering` is already forgeable**: a client
+**Version:** 69 · **Updated:** 15 September 2026
+**Supersedes:** version 68 (15 Sep). Adds **§90** — **a signature proves ISSUANCE, not
+COMPLETENESS.** A client could send turns 1, 2 and 4, dropping the correction, and every turn
+would verify: forgery by **omission** rather than authorship. Caught in review before any code.
+Fixed by a contiguity assertion. Records that **a MAC chain would not catch truncation either** —
+a truncation is a valid prefix — and that truncation is **accepted** because it is
+indistinguishable from ordinary loss. M1.2c ships with **14 tests, every one an attack**.
+Version 68 added **§89** — **`answering` is already forgeable**: a client
 can POST `employee_count = 5000` today and the gate treats it as established, with no validation
 beyond a `JSON.parse`. Blast radius stated exactly — **not a tenancy breach and not a persisted
 lie**, but a wrong answer to the person who forged it. **Turns will be SIGNED** (HMAC, nothing
@@ -6320,3 +6326,90 @@ one forgotten.
 **Reversal condition:** if the product ever gains a shared-conversation feature — one person
 sending another a topic — signing becomes load-bearing for a second reason, and option (4), doing
 nothing, stops being arguable at all.
+
+---
+
+## 90. A signature proves issuance, not completeness — 15 September 2026
+
+**Caught in review of §9's spec, before any code was written.**
+
+### The attack the spec was missing
+
+**Each turn is signed individually and `turn` is inside the MAC. So a client can send turns 1, 2
+and 4 — dropping turn 3, where a correction happened — and every remaining turn verifies.**
+
+> **That is forgery by OMISSION rather than by authorship, and it is the more useful attack.**
+> Keep *"12 employees"* from turn 2; drop the turn where it became 40. **Nothing is forged**,
+> nothing fails to verify, and the gate reasons from a fact the user corrected.
+
+**Signing was specified against forgery by authorship and did not address it.** Demonstrated:
+
+```
+server issued 3 turns: employee_count 12 -> 40 (corrected in turn 2)
+client sends turns 1 and 3 — both genuine, both signed by us, turn 2 dropped
+RESULT: REFUSED — turns are not contiguous
+
+  turn 1 alone : 1 turn verified          <- each was legitimately issued
+  turn 3 alone : refused                  <- the SET is what is checked
+```
+
+**The fix is a contiguity assertion — exactly `1..N`, no gaps, no repeats — and it costs one
+comparison.** It also catches reordering and duplication, which the MAC does not.
+
+### *** A MAC CHAIN WOULD NOT FIX TRUNCATION EITHER, AND THIS IS THE PART WORTH KEEPING ***
+
+The natural next thought is to chain the MACs — `sig_n = HMAC(secret, canonical_n || sig_{n-1})` —
+so the set proves its own order. **It would catch reordering and insertion. It would not catch
+truncation.**
+
+> **A truncation is a VALID PREFIX.** Turns 1–3 chain correctly whether or not a turn 4 was ever
+> issued. **Chains prevent reordering and insertion; they do not prevent stopping early.**
+>
+> **Catching truncation requires the server to know the expected head**, which means state — and
+> the whole scheme exists because §78 says nothing is stored.
+
+**So the chain is not worth its cost here**: contiguity gets the case that matters for one
+comparison, and the case it misses is the one a chain also misses.
+
+### Why truncation is ACCEPTED, and the reason is about the user rather than the maths
+
+| | |
+|---|---|
+| **Omission in the middle** | has **no legitimate counterpart.** A client has no reason to hold turns 1, 2 and 4 and not 3. It is only producible deliberately — so refusing it costs nothing honest |
+| **Truncation** | is **indistinguishable from ordinary loss** — a closed tab, a failed response, a reload before the turn landed. **A client that legitimately never received turn 4 sends exactly what an attacker sends** |
+
+**Refusing truncation would refuse the honest case equally**, and there is no signal that separates
+them. It is also close to what a user can already do by starting a fresh conversation — the
+difference being that starting over carries **no** stale facts while truncating carries **some**,
+which is why it is accepted rather than dismissed.
+
+**If it ever needs closing, the cheapest form is a counter, not a chain.** `topics` exists and has
+no `last_turn` column; adding one and refusing any conversation whose highest turn is below it
+catches truncation exactly. **§78 does not forbid it** — §78 forbids storing hypothetical **facts**,
+and a turn counter is not a fact. **Not proposed now**, because the legitimate-loss case would then
+need a recovery path, and that is a product decision rather than a security one.
+
+### What M1.2c shipped with
+
+`lib/turnSigning.ts` — `sealTurn`, `verifyTurns`, `BadConversation`. **14 tests, every one an
+attack**, and each changes exactly ONE thing from a valid conversation and asserts on the **reason**
+rather than on the fact that something threw (check 14, §81).
+
+- Editing a value, inventing a turn, changing the **frame**, renumbering — all refused by signature
+- **Another company's session and a different topic id** — refused, because `company` and `topic`
+  are inside the MAC rather than checked afterwards
+- **Omission, reordering, duplication** — refused by contiguity, and one test asserts that the
+  dropped-turn set's members each verify individually, **proving the signature is not what caught
+  it**
+- **Truncation accepted**, with the test naming it as the documented gap
+- **A short or missing secret refuses to sign** — a default secret is a signature that proves
+  nothing and **reads as verified**
+
+**And one Node constraint, the same family as §67:** `constructor(public readonly reason: string)`
+is a TypeScript parameter property and **Node's type stripping rejects it**, which is what runs the
+suite. Declared and assigned explicitly instead. The suite runs the real files rather than a build
+of them, and that keeps producing small surprises of this shape.
+
+**Reversal condition:** if a shared-conversation feature ever lets one person send another a topic,
+truncation stops being indistinguishable from loss — the sender knows what they sent — and the
+counter becomes worth adding.
