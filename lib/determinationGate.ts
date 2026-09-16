@@ -92,8 +92,18 @@ export type FollowUpKind = 'first' | 'elaboration' | 'refinement' | 'new_questio
 
 export interface FollowUp {
   kind: FollowUpKind
-  /** Which earlier turn this follows up ON. Null for `first` and `new_question`. The caller
-   *  needs it to know WHICH answer an elaboration is elaborating. */
+  /**
+   * *** ONE FIELD, MEANING DEFINED BY THE KIND IT ACCOMPANIES. ***
+   *
+   *   elaboration   -> the turn whose ANSWER is being elaborated
+   *   refinement    -> the turn that ASSERTED THE FACT being superseded
+   *   first         -> null
+   *   new_question  -> null
+   *
+   * **Different semantics, and that is correct rather than a compromise**: an elaboration is
+   * about an ANSWER, a refinement is about a FACT. They coincide often and not always, and a
+   * conversation where they diverge would have settled it expensively. DECISIONS.md §87.
+   */
   refersToTurn: number | null
   /** One sentence. For the record, and for a person reading why the pipeline did what it did.
    *  NEVER rendered to the user as written. */
@@ -262,7 +272,16 @@ Only when FACTS STATED IN THIS CONVERSATION is present. On a first turn, omit it
                  people." The answer must be RECOMPUTED, not appended to.
   new_question   Not a follow-up to the previous answer. A different subject.
 
-  refers_to_turn  Which turn is being followed up ON. Null for new_question.
+  refers_to_turn  WHICH turn, and it means a different thing per kind. Read this carefully.
+
+                    elaboration   the turn whose ANSWER you are elaborating.
+                    refinement    the turn that ASSERTED THE FACT now being superseded —
+                                  NOT the turn whose answer changes. If turn 2 said "12
+                                  people" and turn 7 says "40", refers_to_turn is 2.
+                    new_question  null.
+
+                  These are different on purpose: an elaboration is about an ANSWER, a
+                  refinement is about a FACT. Do not infer which — use the rule above.
   because         Why you chose that kind, in one sentence. Name what you compared.
 
 A NEW QUESTION IS NOT A NEW TOPIC. Someone asking about shipping and then about storage has

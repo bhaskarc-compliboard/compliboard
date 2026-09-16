@@ -1,6 +1,10 @@
 # M1.2b — The Gate Gains a Conversation
 
-**Version:** 4 · **Updated:** 15 September 2026
+**Version:** 5 · **Updated:** 15 September 2026
+**Supersedes:** version 4 (15 Sep). Adds **§8.2a** — `refersToTurn` means a different thing per
+kind (an elaboration points at an ANSWER, a refinement at the turn that ASSERTED THE FACT), settled
+now because nothing reads it yet and two later readers would each pick the reading their use
+implied (`DECISIONS.md` §87).
 **Supersedes:** version 3 (15 Sep). Adds **§8 — M1.2, classification folded into the gate** as two
 fields rather than a third AI call (`DECISIONS.md` §85), with **§8.4's caller contract that M1.3
 onwards inherits**: every exchange is a turn, a superseded turn stays, and a new question does not
@@ -268,8 +272,8 @@ export type GateResult =
 
 export interface FollowUp {
   kind: FollowUpKind
-  /** Which earlier turn this follows up ON. Null for `first` and `new_question`. The caller
-   *  needs it to know WHICH answer an elaboration is elaborating. */
+  /** ONE FIELD, MEANING DEFINED BY THE KIND. See §8.2a — the two readings are different
+   *  on purpose and the model is TOLD which, not left to infer it. */
   refersToTurn: number | null
   /** One sentence, for the record and for a person reading why the pipeline did what it did.
    *  Never rendered to the user as-is. */
@@ -289,6 +293,33 @@ exactly as before this existed would be untestable.
 | **`elaboration`** | *"explain step 3"*, *"where do I buy those"* — asks for more about an answer already given, asserts no new fact | **expansion against the existing answer.** No re-answer |
 | **`refinement`** | *"what if it's PG III"*, *"we use a carrier"* — a fact changed | **re-answer.** §4.1: *refinement recomputes; it does not append* — adding a correction underneath leaves the wrong answer on screen above it |
 | **`new_question`** | not a follow-up to the previous answer | the full path — **and the topic stays open** (§4.1a) |
+
+### 8.2a `refersToTurn` — ONE FIELD, FOUR MEANINGS, DEFINED BY THE KIND
+
+| kind | `refersToTurn` points at |
+|---|---|
+| **`elaboration`** | the turn whose **ANSWER** is being elaborated |
+| **`refinement`** | the turn that **ASSERTED THE FACT** being superseded |
+| **`first`** | null |
+| **`new_question`** | null |
+
+**Different semantics, and that is correct rather than a compromise.** An elaboration is about an
+**answer**; a refinement is about a **fact**. They coincide whenever the fact was asserted in the
+turn that produced the answer — which is most of the time, and is why one run cannot tell them
+apart.
+
+> ### WHY THIS IS SETTLED NOW RATHER THAN WHEN THE TWO DIVERGE
+>
+> **Nothing reads `refersToTurn` today.** So two later readers would each pick the reading their
+> own use implied — **rendering wants the answer turn; recomputation wants the fact turn** — and
+> **neither would know the other had chosen differently.**
+>
+> **That is §71's shape before it exists**: two systems carrying one field with different
+> meanings, discovered when they disagree rather than when they are written. §71 and §24 each cost
+> a reconciliation. This costs a paragraph.
+
+**The model is TOLD which, not left to infer it** — the prompt names the rule per kind and gives
+the worked case: *"If turn 2 said '12 people' and turn 7 says '40', refers_to_turn is 2."*
 
 ### 8.3 *** A NEW QUESTION DOES NOT CLOSE THE TOPIC ***
 

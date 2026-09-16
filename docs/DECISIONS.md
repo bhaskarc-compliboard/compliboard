@@ -1,6 +1,13 @@
 # Decision Record
-**Version:** 66 · **Updated:** 15 September 2026
-**Supersedes:** version 65 (15 Sep). Adds **§86** — M1.2 built. All four kinds classified
+**Version:** 67 · **Updated:** 15 September 2026
+**Supersedes:** version 66 (15 Sep). Adds **§87** — `refersToTurn` means a different thing per
+kind (elaboration → the ANSWER turn, refinement → the turn that ASSERTED THE FACT), **settled
+before anything reads it**, because two later readers would each pick the reading their use
+implied and neither would know — §71's shape before it exists, for the cost of a paragraph.
+Verified on a conversation where the two readings diverge. Adds **§88** — **four names wrong on
+one side of a string boundary**, all invisible to the compiler: **assert on the VALUE, not the
+shape**, because a `null` that should be a number passes every structural test there is.
+Version 66 added **§86** — M1.2 built. All four kinds classified
 correctly on the first run, **`because` reads as reasoning rather than guessing**, and §8.4's
 contract held: 4 exchanges → 4 turns including a fact-free elaboration, the superseded turn
 stayed, nothing stored. **§4.1's correction is exercised** — a topic carrying two unrelated
@@ -6126,3 +6133,105 @@ boundary is JSON from a model or a database rather than a function signature.
 
 **Reversal condition:** none. The fallback reads `refers_to_turn` first and `refersToTurn` second,
 so a future prompt that changes case does not silently reintroduce it.
+
+---
+
+## 87. `refersToTurn` means a different thing per kind, settled before anything reads it — 15 September 2026
+
+| kind | points at |
+|---|---|
+| **`elaboration`** | the turn whose **ANSWER** is being elaborated |
+| **`refinement`** | the turn that **ASSERTED THE FACT** being superseded |
+| **`first`** | null |
+| **`new_question`** | null |
+
+**Different semantics, and that is correct rather than a compromise.** An elaboration is about an
+**answer**; a refinement is about a **fact**. One field, meaning defined by the kind it
+accompanies.
+
+### Why settled NOW and not when the two diverge
+
+**They coincide whenever the fact was asserted in the turn that produced the answer — which is
+most of the time.** M1.2's first run had `elaboration → 1` and `refinement → 1` and could not tell
+the readings apart.
+
+> **Nothing reads `refersToTurn` today.** So two later readers would each pick the reading their
+> own use implied — **rendering wants the answer turn; recomputation wants the fact turn** — and
+> **neither would know the other had chosen differently.**
+>
+> **That is §71's shape before it exists.** Two systems carrying one field with two meanings,
+> discovered when they disagree rather than when they are written. §71 (`checklist_items` vs
+> `obligations`) and §24 (`scan_result` vs the site's jurisdiction, **still null for 7 of 10
+> production companies**) each cost a reconciliation. **This costs a paragraph.**
+
+**The ambiguity is the kind that becomes expensive**, and the cost of removing it is zero while no
+caller exists. That is the whole argument.
+
+### The model is TOLD, not left to infer
+
+The prompt names the rule per kind and gives the worked case:
+
+```
+refinement    the turn that ASSERTED THE FACT now being superseded — NOT the turn whose
+              answer changes. If turn 2 said "12 people" and turn 7 says "40",
+              refers_to_turn is 2.
+```
+
+**Verified on a conversation where the two readings diverge** — turn 2 asserts the fact, turn 3
+answers on it, turn 4 supersedes it:
+
+```
+refinement: refersToTurn=2
+  fact turn   = 2 (where employee_count=12 was asserted)   <- the RULE
+  answer turn = 3 (the most recent answer)
+  because: The user corrected the employee count from 12 to 40, superseding the fact
+           asserted in turn 2.
+VERDICT: follows the per-kind rule
+```
+
+**`because` names the turn explicitly**, which is what makes the field auditable rather than
+decorative.
+
+---
+
+## 88. Four names wrong on one side of a string boundary — 15 September 2026
+
+**A class, recorded once rather than four times.**
+
+| | The name | Where it broke | How it presented |
+|---|---|---|---|
+| 1 | `switch_key` | a query against `company_switches`, whose column is `switch_id` | **`data: null` read as "zero rows"** — a conclusion drawn from a failed query (§61's correction) |
+| 2 | `chemical_name` | `check:live`'s probe against `company_chemicals`, whose column is `substance_name` | the check failed loudly — **the only one of the four that did** |
+| 3 | `ask.fact` | a timing harness reading `GateAsk`, which carries `question` | printed `ask -> "undefined"`, **nearly recorded as a gate defect** |
+| 4 | `refersToTurn` | the follow-up normaliser, against a prompt asking for `refers_to_turn` | **`null` on all four kinds, every run** — classification correct throughout (§86) |
+
+**Every one was invisible to the compiler**, because the other side of the boundary is **a string**
+— a column name inside `.select()`, a field name in JSON from a model. `CLAUDE.md` §3.6 already
+records this for database columns (*"a column name inside `.select('x')` is a string literal —
+`tsc` and the generated types cannot see into it"*). **These four show the same hole exists
+wherever a model's JSON is parsed**, and `scripts/check-schema-contracts.js` covers only the
+database half.
+
+### The general form
+
+> **When one side of a boundary is a string — a prompt, a query, a JSON payload — the compiler
+> cannot see the other side. The only check is to exercise the path and assert on the VALUE, not
+> on the shape.**
+>
+> **A `null` that should be a number passes every structural test there is.** So does an empty
+> array that should have rows, and so does a `false` that should be `true`. Three of the four
+> above produced a value that was structurally perfect and semantically empty, and **only the one
+> that hit a NOT NULL constraint announced itself.**
+
+**What this does not claim:** that more types would help. `FollowUp.refersToTurn` was correctly
+typed `number | null` and the defect was that `null` is a legal value of that type. **The type was
+right and the wire was wrong**, which is exactly the case types cannot catch.
+
+**What would catch it, and it is what caught all four:** running the path and asserting the value
+is what it should be — `refersToTurn === 2`, not `typeof refersToTurn`. `npm run check:live` is
+this discipline for database writes; nothing yet does it for model output, and the golden cases
+are the closest thing.
+
+**Reversal condition:** none. If a future change makes model output type-checked end to end — a
+schema validated at the boundary with Zod, which `CLAUDE.md` §5 already asks for — three of these
+four become compile-time or parse-time errors and this class shrinks to the database half.
