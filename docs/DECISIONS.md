@@ -1,6 +1,13 @@
 # Decision Record
-**Version:** 61 · **Updated:** 15 September 2026
-**Supersedes:** version 60 (15 Sep). Adds **§81** — the two measurements, kept apart: **21 applies
+**Version:** 62 · **Updated:** 15 September 2026
+**Supersedes:** version 61 (15 Sep). Adds **§82** — **M1.2b before M1.2**, because classification's
+three categories map exactly onto the three things the gate's history must carry: built in the
+wrong order, M1.2 classifies from PROSE while M1.2b later produces STRUCTURE and nothing
+reconciles them — §71 and §24's shape a third time. Adds **`hypothetical` as a sixth
+`FactSource`**: reusing `stated_in_question` collapses two dimensions — **where a fact came from**
+and **whether it is true** — and the collapse is invisible because every hypothetical does arrive
+stated in a question. Records the trimming rule **as a design claim, unmeasured**, and the two
+kinds of contradiction that must not be collapsed. Version 61 added **§81** — the two measurements, kept apart: **21 applies
 of 200 CREATED** (a company with no obligations has no before) and **closed 5 / opened 5 /
 unchanged 195 MOVED** against a non-empty baseline. **Neither is 19 or 23**; both of those were
 expectations written before the endpoints existed. And **two guard probes passed for the wrong
@@ -5609,3 +5616,99 @@ one.
   `/api/account`'s deletion lists — **the third new table this check has caught.** Added to
   `DELETED_BY_CASCADE_OR_PARENT` with the reason read from `pg_constraint`: `ON DELETE CASCADE`,
   and **0 inbound foreign keys**, so it is a leaf and the cascade can strand nothing.
+
+---
+
+## 82. M1.2b before M1.2, and `hypothetical` as a sixth source — 15 September 2026
+
+**Not built. Decided before code, because it changes what the gate may assert.**
+
+### 1. THE REORDERING — M1.2b (the gate gains prior turns) precedes M1.2 (classification)
+
+`BUILD-PLAN`'s order puts classification first. **It is wrong, and the weak version of why is
+"the context does not exist yet."** The strong version:
+
+> **M1.2's three categories map exactly onto the three things M1.2b must carry.**
+>
+> | Classification asks | It needs |
+> |---|---|
+> | is this a **refinement** of the last answer? | the prior **assertion** |
+> | is this a **correction** of a fact? | the prior **fact** |
+> | is this a **new question**? | the **frame** — a jurisdiction change makes it new regardless of wording |
+>
+> **So built in the wrong order, M1.2 classifies from PROSE while M1.2b later produces
+> STRUCTURE, and nothing reconciles them.** Two systems, one fact.
+
+**That is §71 and §24's shape a third time** — `checklist_items` vs `obligations`, and
+`companies.scan_result` vs the site's own jurisdiction, which is **still null for 7 of 10
+production companies**. Both cost a reconciliation. This one is avoided by an ordering change that
+costs nothing today.
+
+### 2. `hypothetical` — a sixth `FactSource`, and the reason is sharper than §80's
+
+`FactSource` is `user_set | ai_from_documents | ai_from_profile | computed | stated_in_question`.
+The obvious move is to reuse `stated_in_question` for a hypothetical, since every hypothetical
+does arrive stated in a question.
+
+**Refused, and the reason is a step beyond §80:**
+
+> **`stated_in_question` and `hypothetical` are DIFFERENT DIMENSIONS.** `stated_in_question` says
+> **where a fact came from**. `hypothetical` says **whether it is true**.
+>
+> *"We have 12 employees"* and *"the Arizona facility would have 12"* are **both stated in the
+> question** and differ in **modality, not provenance**.
+
+**Reusing the label collapses two axes, and the collapse is invisible precisely because every
+hypothetical happens to arrive stated in a question.** §80 was a missing word; **this is a word
+that means something adjacent enough to look right**, which is harder to notice and identical in
+consequence.
+
+**The failure direction is false green:** a hypothetical read as real resolves obligations for a
+facility that does not exist.
+
+**And it makes the frame (§77 item 8) LOAD-BEARING rather than informational.** The gate returns
+jurisdiction, tense and subject; **tense is what marks a fact hypothetical at the moment it is
+captured**, so the next turn receives it already labelled rather than re-inferring it from a modal
+verb. *"Would have"* versus *"have"* is one word, and asking a model to catch it reliably every
+turn is the enumerate-from-nothing failure in miniature.
+
+**Reversal condition, and it is recorded so the next reader knows this was CHOSEN rather than
+overlooked:** if a hypothetical ever arrives from somewhere other than the question, one value
+stops being sufficient and **source and tense need separating into two fields.** No such case can
+be named today — a document states what IS — so the conflation of "from the question" and "not
+true yet" is accepted deliberately, with this paragraph as the trigger to revisit.
+
+### 3. TRIMMING — recorded as a DESIGN CLAIM, not a measurement
+
+**The claim:** prior turns reduce to **claims, not prose**, before the gate sees them — the shape
+`answering` already uses (`{switch_id, fact, value}`, never the sentence typed) and the shape §73
+settled for the critic, for the identical reason.
+
+**The consequence claimed:** the context is bounded by **the vocabulary (95 switches)** rather than
+by turn count. **A 40-turn topic produces at most a few dozen fact lines, not 40 turns of prose.**
+
+> **THIS IS A DESIGN CLAIM AND HAS NOT BEEN MEASURED.** No multi-turn conversation exists in this
+> product. **What would test it: a real one** — ten or more turns on one topic, with the gate's
+> input size and latency recorded per turn. Until that runs, the bound is an argument.
+
+**Why it matters that it is labelled as a claim:** the gate is 6–10 s and its cost is input
+(§74/§76 measured exactly that for the critic). An unbounded context is a latency regression that
+arrives gradually and is attributed to the model.
+
+### 4. CONTRADICTION — two kinds, and the collapse is the likely failure
+
+**Same input, different meaning, and nothing in the schema distinguishes them:**
+
+| | What it is | What happens |
+|---|---|---|
+| **Within a conversation** — turn 1 says 12, turn 4 says 40 | a **correction**. A person revising themselves | **The later turn wins.** §49's overwrite history records what it replaced |
+| **Between the conversation and `company_switches`** — the stored fact says 12, this turn says 40 | **v3.2's conflict**. A determination disagreeing with a `user_locked` value | **It must reach the user.** Shown, never silently resolved |
+
+**The collapse to guard against: treating both as "the newer value wins."** That is right for the
+first and **wrong for the second**, where the stored value may be a person's locked answer and the
+new one an aside in a hypothetical. **A conversation must not silently overwrite an established
+fact**, and §78 is exactly why the risk exists — hypotheticals live in the transcript the gate
+reads, so an unlabelled one looks like a correction.
+
+**Reversal condition:** none on the distinction. If the two ever need the same handling, that is a
+finding about `user_locked`, not about conversations.

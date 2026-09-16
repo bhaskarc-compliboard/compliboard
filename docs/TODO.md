@@ -141,6 +141,13 @@ numbering** — `BUILD-PLAN.md`'s differs for five of them, see the table above.
 
 ### M1 — THE BUILD PLAN ⬜ ⏱ ~8 days
 
+> ### ⚠ M1.2b PRECEDES M1.2 — REORDERED 15 Sep, `DECISIONS.md` §82. Do not restore BUILD-PLAN's order.
+> **Classification's three categories map exactly onto the three things the gate's history must
+> carry** — a refinement needs the prior assertion, a correction needs the prior fact, a new
+> question needs the frame. **Built in the wrong order, M1.2 classifies from PROSE while M1.2b
+> later produces STRUCTURE, and nothing reconciles them.** Two systems, one fact — §71 and §24's
+> shape a third time, and this one costs nothing to avoid.
+
 *Written 15 September 2026 against `WORKSPACE.md` **v3**. Spec first, code second — the six
 decisions and the five schema gaps are settled before any of this starts.*
 
@@ -155,9 +162,9 @@ decisions and the five schema gaps are settled before any of this starts.*
 |---|---|---|---|
 | **M1.0** | **7.2a's two routes** — the floor, not part of M1 | — | 1 d |
 | **M1.1** ✅ | **DONE 15 Sep — migration 028, staging.** **Topics, minimal shape** (D23). `topics`: company, title, status, opened/closed, summary. **NO facts column** — §78: hypotheticals are not stored, so nothing here holds a fact. **Free today, not free once conversations are stored** (§69) | M1.0 | 1 d |
-| **M1.2** | **Follow-up classification** (§4.1) — three kinds, classified before anything expensive runs | M1.1 | 1 d |
-| **M1.2a** | ~~The critic's `priorAssertions` field~~ — **WITHDRAWN for research.** §77 drops the critic from the research path entirely; §73's decision survives and applies at the **checklist boundary**, which is where it is now needed | — | — |
 | **M1.2b** | ⚡ **The gate gains prior turns, the frame, and a web-search flag** (§77 items 6–8). `gate()` takes `{question, documentBlocks, companyId, outputType, db, answering}` today — **no conversation history**, so it re-asks what was established two turns ago. Returns jurisdiction-of-question, tense, subject, and `needsWebSearch` | M1.1 | 1.5 d |
+| **M1.2a** | ~~The critic's `priorAssertions` field~~ — **WITHDRAWN for research.** §77 drops the critic from the research path entirely; §73's decision survives and applies at the **checklist boundary**, which is where it is now needed | — | — |
+| **M1.2** | **Follow-up classification** (§4.1) — three kinds, classified before anything expensive runs | **M1.2b** | 1 d |
 | **M1.3** | **Fact capture, not question generation** (D24). The conversation writes `company_switches` through 7.2a's route; it does **not** invent questions — the queue comes from `askableSwitches()` and the dependency graph (v3.5) | M1.0, M1.1 | 1.5 d |
 | **M1.4** | **Site resolution before a site-scoped write** (v3.3). One site → silent. Several → the question carries the site. **Defaulting to primary is forbidden** (§20) | M1.3 | 1 d |
 | **M1.5** | **Show what we know** (§7) — facts in context before an answer, with `source` rendered so a document-derived value and a person's answer do not look alike | M1.3 | 1 d |
