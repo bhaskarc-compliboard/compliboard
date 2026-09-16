@@ -1,6 +1,10 @@
 # Audit Checks
-**Version:** 34 · **Updated:** 15 September 2026
-**Supersedes:** version 33 (15 Sep). Records **check 31's blind spot**: it compares COMMIT dates and
+**Version:** 35 · **Updated:** 15 September 2026
+**Supersedes:** version 34 (15 Sep). Check 31 gains **a third failure mode it cannot see — the
+adjacent passage.** A correction that leaves a contradiction beside it updates the file's date, so
+a date comparison reports the file as fresh; the staleness is inside a current file, next to what
+was corrected. **Three instances in two days, all in `WORKSPACE.md`.** The only defence is
+procedural. Version 34: Records **check 31's blind spot**: it compares COMMIT dates and
 cannot see a document whose HEADER disagrees with its own commit — found on `BUILD-PLAN.md`, header
 12 Sep, commit 13 Sep. A header nobody compares against the repository is an unverified claim in the
 metadata. Version 33: Adds **check 31 — has a document's SUBJECT changed since the
@@ -1941,6 +1945,25 @@ and from 9 September, exactly as the header says.
 **Two files flagged, one real. A check with a 50% false-positive rate on its first run is still
 worth having** — it narrowed eighteen files to two — **but its output is a list to look at, not a
 list of defects.**
+
+### A THIRD FAILURE MODE THIS CHECK CANNOT SEE: the adjacent passage
+
+**A correction that leaves a contradiction beside it.** Three instances in two days, all in
+`WORKSPACE.md`, none visible to any date comparison because **the file's date is current — it was
+just edited, which is how the contradiction got there:**
+
+| | The correction | What it left |
+|---|---|---|
+| 15 Sep | §4.1's *"one cheap classification call"* struck | the table row above it still said **"Full six-stage pipeline"** |
+| 15 Sep | §3's opening line struck | — (caught in the same pass) |
+| 15 Sep | §4.1 and §3 corrected | **§8's build order** still listed the critic as step 2 and four M6 steps as M1's |
+
+> **Editing a passage updates the file's date, so a date check reports it as fresh.** The staleness
+> is *inside* a current file, next to the thing that was corrected.
+>
+> **The only defence is procedural: correcting a claim means reading the passage that carries it,
+> not the sentence that prompted the edit.** A table row, a numbered list and an opening sentence
+> can all assert the same superseded thing, and striking one of them looks like finishing.
 
 ### And the fix pattern is as important as the finding
 

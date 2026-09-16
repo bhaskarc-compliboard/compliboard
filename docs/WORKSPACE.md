@@ -1,6 +1,7 @@
 # The Compliance Workspace — M1
 
-**Version:** 5 · **Updated:** 15 September 2026
+**Version:** 6 · **Updated:** 15 September 2026
+**Supersedes:** version 5 (15 Sep). **§8's build order is marked SUPERSEDED** — its step 2 is the critic, which §77 removed from this path, and four of its ten steps belong to M6. `TODO.md`'s M1 table is authoritative. Third instance in two days of a correction leaving a contradiction in an adjacent passage.
 **Supersedes:** version 4 (15 Sep). **Two stale claims that research runs the six-stage pipeline are struck** — §3's opening line and §4.1's table row — leaving `DECISIONS.md` §77 authoritative: research is gate, then answer. The table row is recorded as instructive: v4 struck the sentence beneath it and left the cell above, so a correction left a contradiction inside what it corrected.
 **Supersedes:** version 3 (15 Sep). §4.1's **"one cheap classification call" is SUPERSEDED** — classification folds into the determination gate, because §77 settled the research path at two AI calls and the gate already holds everything classification needs (`DECISIONS.md` §85). Adds **§4.1a: a new question does NOT close a topic.** Previously, v3: **Supersedes:** version 2 (11 Sep). **The five gaps are RESOLVED as decisions**, stated against
 the schema migration 008 actually built rather than described as problems — which is what made v2
@@ -484,6 +485,27 @@ Frame it as an inbox that gets quiet, not a burn-down. Otherwise the first time 
 ---
 
 ## 8. Build order within the module
+
+> ### ⚠ SUPERSEDED — 15 September 2026. **`TODO.md`'s M1 table is authoritative.**
+>
+> **The ten steps below are wrong in two ways that would cost a build**, and they are the same
+> class as §4.1's table row: a correction that left a contradiction in the passage next to it.
+>
+> **1. Step 2 is "Critic pass".** The critic is **not on the research path at all** — §77 dropped
+> it, and it sits at the checklist boundary (`CRITIC-PASS.md` v3). Building it second would build
+> a stage this module does not use.
+>
+> **2. Steps 7–10 are not M1.** "Checklist path", "Dashboard verification section", "Stale-checklist
+> flagging" and "Numbers enabled" belong to **M6 and M6.1** — and under D22, M1 writes no
+> checklists at all. Four of ten steps are another module's.
+>
+> **The live order is `TODO.md`'s table**: M1.0–M1.2c are done, and M1.3 (fact capture) → 7.2c →
+> M1.6, with M1.4, M1.5, M1.7 and M1.8 hanging off M1.3. **Read that, not this.**
+>
+> **Kept rather than deleted** because steps 1, 3, 4, 5 and 6 are the shape M1 actually took and
+> the ordering logic behind them is still the reasoning — it is the list that is stale, not the
+> thinking.
+
 
 1. Determination gate with an **ask** output path *(runtime, ⚡)*
 2. Critic pass *(runtime, ⚡)*

@@ -1,6 +1,8 @@
 # Detailed To-Do
-**Version:** 22 · **Updated:** 15 September 2026
-**Supersedes:** version 21 (15 Sep). **M1.2b, M1.2 and M1.2c are DONE** — the conversation loop is
+**Version:** 23 · **Updated:** 15 September 2026
+**Supersedes:** version 22 (15 Sep). **7.2c is scheduled** — immediately before M1.6, which is its
+only dependent. It sat outside M1 with nothing scheduling it, and check 24 shows `user_locked`
+protected by **zero** policies, constraints or triggers. Version 22: **M1.2b, M1.2 and M1.2c are DONE** — the conversation loop is
 closed and reachable over HTTP. The rotation gate's eighth credential now **exists**
 (`TURN_SIGNING_SECRET`) and is the only one never leaked, so it is **born rotated**. Version 21: **7.2a is DONE** — both routes built and driven over real
 HTTP as a signed-in user. **M1.1 is DONE and on production** (migration 028, `topics`, no facts
@@ -175,7 +177,8 @@ decisions and the five schema gaps are settled before any of this starts.*
 | **M1.3** | **Fact capture, not question generation** (D24). The conversation writes `company_switches` through 7.2a's route; it does **not** invent questions — the queue comes from `askableSwitches()` and the dependency graph (v3.5) | M1.0, M1.1 | 1.5 d |
 | **M1.4** | **Site resolution before a site-scoped write** (v3.3). One site → silent. Several → the question carries the site. **Defaulting to primary is forbidden** (§20) | M1.3 | 1 d |
 | **M1.5** | **Show what we know** (§7) — facts in context before an answer, with `source` rendered so a document-derived value and a person's answer do not look alike | M1.3 | 1 d |
-| **M1.6** | **Conflict display** (v3.2) — determination disagreeing with a locked value is **shown, never silently resolved** | M1.3, 7.2c | 0.5 d |
+| **7.2c** 🔒 | **A trigger for `user_locked`** — scheduled here 15 Sep because it is M1.6's only dependency, sits **outside** M1, and nothing had scheduled it. `AUDIT-CHECKS.md` check 24: **zero policies, zero constraints, zero triggers** reference `user_locked`, so it is enforced in one library module — a route guard wearing a different coat (`CLAUDE.md` §3.6). **Must be a TRIGGER**: a policy cannot compare the old row to the new one, and the rule is about the transition | M1.3 | 0.5 d |
+| **M1.6** | **Conflict display** (v3.2) — determination disagreeing with a locked value is **shown, never silently resolved**. **Needs 7.2c above**: showing a conflict is worth little while the lock it reports on is unenforced | **7.2c** | 0.5 d |
 | **M1.7** | **"What moved" after an answer** (v3.4) — six became applicable, two no longer apply. One level only (§54) | M1.3 | 1 d |
 | **M1.8** | **Topic close onto a topic summary** (v3.6, **provisional**) | M1.1 | 0.5 d |
 
