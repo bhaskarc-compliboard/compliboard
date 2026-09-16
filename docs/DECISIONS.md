@@ -1,6 +1,12 @@
 # Decision Record
-**Version:** 65 · **Updated:** 15 September 2026
-**Supersedes:** version 64 (15 Sep). Adds **§85** — **classification folds into the gate**, and
+**Version:** 66 · **Updated:** 15 September 2026
+**Supersedes:** version 65 (15 Sep). Adds **§86** — M1.2 built. All four kinds classified
+correctly on the first run, **`because` reads as reasoning rather than guessing**, and §8.4's
+contract held: 4 exchanges → 4 turns including a fact-free elaboration, the superseded turn
+stayed, nothing stored. **§4.1's correction is exercised** — a topic carrying two unrelated
+questions, two frames, no confusion; the reversal condition did not fire. **And a field was always
+null**: the prompt asks `refers_to_turn`, the normaliser read `refersToTurn`. Fourth name-across-a-
+boundary defect this week, all four invisible to the type system. Version 65 added **§85** — **classification folds into the gate**, and
 `WORKSPACE.md` §4.1's "one cheap classification call" is **superseded**: §77 settled the research
 path at two calls three days after §4.1 was written, and the gate already holds the question, the
 prior turns and the frame. The input-size objection is **measured and unsupported twice** (§76,
@@ -6030,3 +6036,93 @@ because the spec was read before the code was written.
 won.** `WORKSPACE.md` §4.1 now carries the supersede block and §4.1a, so a reader who starts there
 — which is what `docs/README.md` sends them to do — finds the current decision rather than the
 1 September one.
+
+---
+
+## 86. M1.2 built — four kinds, two questions in one topic, and a field that was always null — 15 September 2026
+
+**Built 15 September 2026 as specified in `GATE-HISTORY.md` §8. Classification is two fields on
+the gate's result, not a third AI call (§85).**
+
+### All four kinds, one conversation, two unrelated questions
+
+```
+turn 1  kind=first         refersToTurn=null  Phoenix, Arizona / hypothetical
+        because: No earlier turns in this conversation.
+turn 2  kind=elaboration   refersToTurn=1     Phoenix, Arizona / hypothetical
+        because: Asks for MORE detail about air permitting … without asserting any new fact
+                 or changing any established fact.
+turn 3  kind=refinement    refersToTurn=1     Phoenix, Arizona / hypothetical
+        because: The employee count for the hypothetical facility changed from 12 to 40,
+                 requiring recomputation of any thresholds that depend on employee count.
+turn 4  kind=new_question  refersToTurn=null  Portland, Oregon / present
+        because: The subject changed from a hypothetical Arizona facility to the existing
+                 Oregon operation, and the question is about storage rather than employment.
+```
+
+**`because` is reasoning rather than guessing**, and that was the field's purpose. Turn 3 names
+**what it compared** — *"changed from 12 to 40"* — rather than restating the label. Turn 4 names
+**both axes that changed**, jurisdiction and subject. A guess would have paraphrased the question.
+
+### §8.4's contract, checked rather than asserted
+
+```
+turns appended               : 4   (4 exchanges = 4 turns, including the fact-free elaboration)
+turn 2 facts                 : 0   (empty, and it is still a turn)
+employee_count after collapse: 40 (turn 3)
+turn 1 still present?        : YES — the superseded turn STAYS
+distinct frames              : 2
+facts stored anywhere?       : 3 rows in company_switches — UNCHANGED by this conversation
+```
+
+### *** THE CORRECTION TO §4.1, EXERCISED ***
+
+**A topic now carries two unrelated questions with both sets of facts visible and correctly
+framed** — which had never been run, and was §85's reversal condition waiting to fire:
+
+```
+turn 1  Phoenix, Arizona   HYPOTHETICAL  "a solvent blending facility"
+          handles_solvents = true        [hypothetical]
+turn 3  Phoenix, Arizona   HYPOTHETICAL  "a solvent blending facility"
+          employee_count   = 40          [hypothetical]
+turn 4  Portland, Oregon   PRESENT       "drum storage at the Oregon plant"
+          drum_storage     = true        [stated_in_question]
+```
+
+**The gate did not confuse them.** Two frames, collapsed separately, rendered labelled — and the
+Oregon turn correctly came back `tense=present` while the Arizona turns stayed `hypothetical`.
+**The reversal condition did not fire**, so §85's decision stands: a new question is a signal, not
+a topic boundary.
+
+### THE DEFECT: a field that was always null
+
+**All four kinds classified correctly on the first run, and `refersToTurn` was `null` on every
+one of them** — including elaboration and refinement, where it must point somewhere.
+
+**The prompt asks for `refers_to_turn`. The normaliser read `refersToTurn`.**
+
+```
+prompt      line 252:  "refers_to_turn": 3 or null,
+normaliser  line 518:  typeof f.refersToTurn === 'number' ...   // always undefined
+```
+
+> **A field that is ALWAYS null looks exactly like a field that is legitimately empty.** Nothing
+> failed. The classification was correct throughout, the type checked, 274 tests passed, and the
+> one output that carries *which* turn is being followed up on carried nothing.
+
+**It was caught by running all four kinds and noticing that the one which must point somewhere
+pointed nowhere.** After the fix: `elaboration → 1`, `refinement → 1`, `new_question → null`.
+
+**This is the same class as `switch_key` (§61's correction), `chemical_name` in `check:live`, and
+`ask.fact` in the timing harness — a name that is wrong on one side of a boundary.** Four
+instances this week, and **every one of them was invisible to the type system**, because the
+boundary is JSON from a model or a database rather than a function signature.
+
+**The general form, and it is narrower and more useful than "check your field names":**
+
+> **When one side of a boundary is a string — a prompt, a query, a JSON payload — the compiler
+> cannot see the other side. The only check is to exercise the path and assert on the VALUE, not
+> on the shape.** A `null` that should be a number passes every structural test there is.
+
+**Reversal condition:** none. The fallback reads `refers_to_turn` first and `refersToTurn` second,
+so a future prompt that changes case does not silently reintroduce it.

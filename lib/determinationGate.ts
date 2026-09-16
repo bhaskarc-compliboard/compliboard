@@ -80,9 +80,29 @@ export interface GateResolved {
   non_blocking_unknowns: UnknownFact[]
 }
 
+/**
+ * What kind of thing this turn is, relative to the conversation so far.
+ *
+ * *** `first` IS A FOURTH VALUE ON PURPOSE. *** Without it `kind` would have to lie on turn 1 —
+ * calling the opening question a "new_question" makes the first turn indistinguishable from a
+ * subject change on turn 9, and §77's rule that a first turn behaves exactly as it did before
+ * `priorTurns` existed would be untestable. `WORKSPACE.md` §4.1, `docs/GATE-HISTORY.md` §8.
+ */
+export type FollowUpKind = 'first' | 'elaboration' | 'refinement' | 'new_question'
+
+export interface FollowUp {
+  kind: FollowUpKind
+  /** Which earlier turn this follows up ON. Null for `first` and `new_question`. The caller
+   *  needs it to know WHICH answer an elaboration is elaborating. */
+  refersToTurn: number | null
+  /** One sentence. For the record, and for a person reading why the pipeline did what it did.
+   *  NEVER rendered to the user as written. */
+  because: string
+}
+
 export type GateResult =
-  | { outcome: 'proceed'; resolved: GateResolved; frame: Frame }
-  | { outcome: 'ask'; ask: GateAsk; frame: Frame }
+  | { outcome: 'proceed'; resolved: GateResolved; frame: Frame; followUp: FollowUp }
+  | { outcome: 'ask'; ask: GateAsk; frame: Frame; followUp: FollowUp }
 
 /** A user answering a previous ask, carried back by the client with the ORIGINAL question.
  *  DETERMINATION-GATE.md §5.2. */
@@ -224,6 +244,32 @@ const THRESHOLD_CHECKLIST = `THRESHOLD FOR THIS REQUEST — CHECKLIST
 const OUTPUT_INSTRUCTION = `Return ONE JSON object and nothing else. It has exactly one of two shapes,
 chosen by "outcome". Never both. Never an answer with a question attached —
 that is the failure mode this gate was built to remove.
+
+EVERY response, of either shape, also carries "frame" and "follow_up":
+
+  "follow_up": {
+    "kind": "elaboration" | "refinement" | "new_question",
+    "refers_to_turn": 3 or null,
+    "because": "one sentence"
+  }
+
+Only when FACTS STATED IN THIS CONVERSATION is present. On a first turn, omit it.
+
+  elaboration    Asks for MORE about something already answered, and asserts no new fact.
+                 "Explain step 3." "Where do I buy UN-spec boxes?" "What does that cost?"
+  refinement     A fact changed, so the previous answer was built on something no longer
+                 true. "What if it is PG III?" "Actually we use a carrier." "Closer to 40
+                 people." The answer must be RECOMPUTED, not appended to.
+  new_question   Not a follow-up to the previous answer. A different subject.
+
+  refers_to_turn  Which turn is being followed up ON. Null for new_question.
+  because         Why you chose that kind, in one sentence. Name what you compared.
+
+A NEW QUESTION IS NOT A NEW TOPIC. Someone asking about shipping and then about storage has
+asked two questions in one conversation. "new_question" means run the full pipeline rather
+than an expansion. It does not mean the conversation ended, and you must not treat earlier
+facts as stale because the subject changed — they are still true, and their frame says what
+they are about.
 
 EVERY response, of either shape, also carries "frame":
 
@@ -418,7 +464,7 @@ export async function gate(input: GateInput): Promise<GateResult> {
 
   const raw = await askAIJson<GateResult>(buildGatePrompt(outputType), content, GATE_OPTIONS)
 
-  return normalise(raw, known, answering ?? null)
+  return normalise(raw, known, answering ?? null, turns.length > 0)
 }
 
 
@@ -443,6 +489,48 @@ export async function gate(input: GateInput): Promise<GateResult> {
  * — so the prompt must make tense explicit, and a missing frame on a hypothetical question is a
  * prompt defect rather than something to paper over here.
  */
+/**
+ * *** CLASSIFICATION IS TWO FIELDS, NOT A THIRD AI CALL. ***
+ *
+ * `WORKSPACE.md` §4.1 said "one cheap classification call decides". That is SUPERSEDED (§85):
+ * §77 settled the research path at two calls — gate, then answer — three days after §4.1 was
+ * written, and the gate already holds the question, the prior turns and the frame, which is
+ * everything classification needs. §77 items 6-8 folded web search and frame detection in for the
+ * same reason.
+ *
+ * TURN 1 IS ALWAYS `first`, DECIDED HERE AND NOT BY THE MODEL. With no prior turns there is
+ * nothing to follow up on, and letting the model choose invites it to call an opening question a
+ * "new_question" — which is true in English and wrong as a signal.
+ */
+function normaliseFollowUp(raw: unknown, hasPriorTurns: boolean): FollowUp {
+  if (!hasPriorTurns) {
+    return { kind: 'first', refersToTurn: null, because: 'No earlier turns in this conversation.' }
+  }
+  // *** THE WIRE IS snake_case; THIS TYPE IS camelCase. *** The prompt asks for
+  // `refers_to_turn` and the first version of this function read `refersToTurn` — so it was
+  // always undefined and every follow-up came back with `refersToTurn: null`, on all four kinds,
+  // while the classification itself was correct. **A field that is always null looks like a
+  // field that is legitimately empty.** Caught by running all four kinds and noticing that the
+  // one which must point somewhere pointed nowhere. DECISIONS.md §86.
+  const f = (raw ?? {}) as Partial<FollowUp> & { refers_to_turn?: unknown }
+  const rawRefers = f.refers_to_turn ?? f.refersToTurn
+  const kind: FollowUpKind =
+    f.kind === 'elaboration' || f.kind === 'refinement' || f.kind === 'new_question'
+      ? f.kind
+      // An unreadable kind becomes `new_question`, which runs the FULL pipeline. The safe
+      // direction: an elaboration wrongly re-answered costs time, while a refinement wrongly
+      // treated as an elaboration leaves a stale answer on screen above a correction — the exact
+      // failure §4.1's "refinement recomputes; it does not append" exists to prevent.
+      : 'new_question'
+  const refers = typeof rawRefers === 'number' && rawRefers > 0 ? rawRefers : null
+  return {
+    kind,
+    // `new_question` refers to nothing by definition, whatever the model returned.
+    refersToTurn: kind === 'new_question' ? null : refers,
+    because: typeof f.because === 'string' && f.because.trim() ? f.because.trim() : '(not stated)',
+  }
+}
+
 function normaliseFrame(raw: unknown): Frame {
   const f = (raw ?? {}) as Partial<Frame> & { jurisdiction?: Frame['jurisdiction'] }
   return {
@@ -457,16 +545,18 @@ function normaliseFrame(raw: unknown): Frame {
 }
 
 export function normalise(
-  raw: GateResult & { frame?: unknown },
+  raw: GateResult & { frame?: unknown; follow_up?: unknown },
   known: KnownFact[],
-  answering: GateAnswering | null
+  answering: GateAnswering | null,
+  hasPriorTurns = false
 ): GateResult {
   const frame = normaliseFrame((raw as { frame?: unknown })?.frame)
+  const followUp = normaliseFollowUp((raw as { follow_up?: unknown })?.follow_up, hasPriorTurns)
   if (!raw || typeof raw !== 'object' || !('outcome' in raw)) {
     // A gate that cannot be parsed must not block the answer. Proceeding is the safe
     // direction here: the critic pass still sees the output, and a broken gate that
     // silently swallowed every question would be undetectable.
-    return { outcome: 'proceed', resolved: { known, non_blocking_unknowns: [] }, frame }
+    return { outcome: 'proceed', resolved: { known, non_blocking_unknowns: [] }, frame, followUp }
   }
 
   if (raw.outcome === 'ask') {
@@ -487,6 +577,7 @@ export function normalise(
           }],
         },
         frame,
+        followUp,
       }
     }
 
@@ -507,6 +598,7 @@ export function normalise(
         known: ask.known?.length ? ask.known : known,
       },
       frame,
+      followUp,
     }
   }
 
@@ -517,6 +609,7 @@ export function normalise(
       non_blocking_unknowns: raw.resolved?.non_blocking_unknowns ?? [],
     },
     frame,
+    followUp,
   }
 }
 
