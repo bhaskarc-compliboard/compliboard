@@ -34,7 +34,8 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 // The context builder lives in its own import-free file so the golden runner — a plain Node
 // script that cannot resolve the `@/` alias — calls the same function the routes do.
 // lib/gateContext.ts explains why that is worth a file.
-import { buildGateContext, type FactSource, type KnownFact } from './gateContext.ts'
+import { buildGateContext, collapseTurns, type FactSource, type KnownFact,
+         type PriorTurn, type Frame, type ConversationFact } from './gateContext.ts'
 
 export { buildGateContext }
 export type { FactSource, KnownFact }
@@ -80,8 +81,8 @@ export interface GateResolved {
 }
 
 export type GateResult =
-  | { outcome: 'proceed'; resolved: GateResolved }
-  | { outcome: 'ask'; ask: GateAsk }
+  | { outcome: 'proceed'; resolved: GateResolved; frame: Frame }
+  | { outcome: 'ask'; ask: GateAsk; frame: Frame }
 
 /** A user answering a previous ask, carried back by the client with the ORIGINAL question.
  *  DETERMINATION-GATE.md §5.2. */
@@ -101,7 +102,28 @@ export interface GateInput {
   outputType: 'answer' | 'checklist'
   /** The caller's token-scoped client, so RLS applies. Never hoisted, never cached. */
   db: SupabaseClient<any, any, any>
+
+  /**
+   * *** `answering` SURVIVES, AND IT FOLDS INTO THE SAME COLLAPSED SET. ***
+   *
+   * The question was whether keeping both produces two places carrying one fact. It does not,
+   * and the reason is that they are different turns rather than two records of one:
+   * `priorTurns` is turns 1..N-1; `answering` is the fact supplied in THIS turn, in reply to
+   * the ask this call is re-entering.
+   *
+   * What WOULD have produced two places is the old handling — `answering` pushed straight into
+   * `known` while conversation facts went somewhere else. So the field stays and the HANDLING
+   * folds: it becomes the last turn of the conversation and goes through `collapseTurns` with
+   * everything else. **One code path produces facts; one place collapses them.** If a client
+   * ever sends the same fact in both, collapse resolves it — `answering` is the later turn and
+   * wins, which is §82.4's correction rule, not a special case. DECISIONS.md §84.
+   */
   answering?: GateAnswering | null
+
+  /** The conversation so far, as CLAIMS. Never prose. Absent on a first turn, and the gate must
+   *  then behave exactly as it did before this existed — which is what keeps the three golden
+   *  cases asserting across the change. `docs/GATE-HISTORY.md`. */
+  priorTurns?: PriorTurn[]
 }
 
 // ---------------------------------------------------------------------------
@@ -203,9 +225,36 @@ const OUTPUT_INSTRUCTION = `Return ONE JSON object and nothing else. It has exac
 chosen by "outcome". Never both. Never an answer with a question attached —
 that is the failure mode this gate was built to remove.
 
+EVERY response, of either shape, also carries "frame":
+
+  "frame": {
+    "jurisdiction": { "state": "Arizona", "county": null, "city": "Phoenix" },
+    "tense": "present" | "hypothetical",
+    "subject": "a solvent blending facility" or null
+  }
+
+The frame describes THE QUESTION, not the company. They are often different.
+
+  jurisdiction  Where the question is about. An Oregon company can ask about Arizona.
+                Null fields where the question does not say.
+  tense         "hypothetical" when the question is about something that DOES NOT EXIST
+                YET — a facility they are considering, a product they might make, a
+                transaction they might do. "present" when it is about the operation as it
+                is today. "We are thinking about opening" is hypothetical. "We operate"
+                is present.
+  subject       What the question is about, in a few words. It is context and nothing
+                more: it must never be used to decide that something does not apply.
+
+TENSE MATTERS MORE THAN IT LOOKS. A fact stated about a hypothetical facility is NOT a
+fact about this company. "The Arizona site would have 12 employees" does not contradict
+"we have 47 employees" — they describe different things. If you are unsure, say
+"hypothetical": treating a real fact as hypothetical costs a question, and treating a
+hypothetical as real produces an answer about a facility that does not exist.
+
 If nothing is blocking:
 {
   "outcome": "proceed",
+  "frame": { ... },
   "resolved": {
     "known": [{ "switch_id": null, "fact": "...", "value": "...", "source": "stated_in_question" }],
     "non_blocking_unknowns": [{ "switch_id": null, "fact": "...", "stated_conditionally_as": "..." }]
@@ -215,6 +264,7 @@ If nothing is blocking:
 If something is blocking:
 {
   "outcome": "ask",
+  "frame": { ... },
   "ask": {
     "question": "one sentence",
     "artifact": "the SDS for this product" or null,
@@ -226,7 +276,13 @@ If something is blocking:
   }
 }
 
-"source" is one of: user_set, ai_from_documents, ai_from_profile, computed, stated_in_question.
+"source" is one of: user_set, ai_from_documents, ai_from_profile, computed, stated_in_question,
+hypothetical. Use "hypothetical" for any fact stated about something that does not exist yet —
+it is a statement about MODALITY, not about where the fact came from.
+
+DO NOT ASK FOR ANYTHING ALREADY IN "FACTS STATED IN THIS CONVERSATION". It was established in
+an earlier turn and asking again is the loop this gate exists to prevent. If an earlier turn
+and a later one disagree within the same frame, the LATER one is a correction and wins.
 Use a switch_id ONLY if the vocabulary below lists it. Otherwise null.`
 
 export function buildGatePrompt(outputType: 'answer' | 'checklist'): string {
@@ -253,7 +309,7 @@ const GATE_OPTIONS = {
 } as const
 
 export async function gate(input: GateInput): Promise<GateResult> {
-  const { question, documentBlocks, companyId, outputType, db, answering } = input
+  const { question, documentBlocks, companyId, outputType, db, answering, priorTurns } = input
 
   // --- what is already established, and the vocabulary of what can be asked ---
   //
@@ -309,14 +365,32 @@ export async function gate(input: GateInput): Promise<GateResult> {
     })
   }
 
-  // The fact the user just supplied in answer to a previous ask. It enters as known with
-  // source user_set, which is what stops the gate blocking twice on the same fact.
+  // *** THE CONVERSATION, INCLUDING `answering` AS ITS LAST TURN. ***
+  //
+  // `answering` used to be pushed straight into `known` — which put a conversation fact in the
+  // same list as facts read from `company_switches`, and would have been a second place carrying
+  // a fact once `priorTurns` existed. It now enters the conversation instead, as the turn after
+  // the last one, and `collapseTurns` handles it with everything else. §84.
+  //
+  // It keeps the property its old comment claimed: a fact supplied in reply to an ask is present
+  // when the gate runs again, so the gate does not block twice on the same fact.
+  const turns: PriorTurn[] = [...(priorTurns ?? [])]
   if (answering) {
-    known.push({
-      switch_id: answering.switch_id,
-      fact: answering.fact,
-      value: answering.value,
-      source: 'user_set',
+    const lastTurn = turns.reduce((m, t) => Math.max(m, t.turn), 0)
+    const lastFrame: Frame = turns.length > 0
+      ? turns[turns.length - 1].frame
+      : { jurisdiction: {}, tense: 'present', subject: null }
+    turns.push({
+      turn: lastTurn + 1,
+      frame: lastFrame,
+      facts: [{
+        switch_id: answering.switch_id,
+        fact: answering.fact,
+        value: answering.value,
+        // `user_set` unless the frame it was given under is hypothetical — a fact supplied
+        // about a facility that does not exist is not a fact about the company (§78).
+        source: lastFrame.tense === 'hypothetical' ? 'hypothetical' : 'user_set',
+      }],
     })
   }
 
@@ -336,7 +410,7 @@ export async function gate(input: GateInput): Promise<GateResult> {
   // wrong — while excluding them risks missing a blocking fact only a library row knew
   // about, which the critic pass catches at Stage 5. DETERMINATION-GATE.md §6.
 
-  const contextLines = buildGateContext(question, known, vocabulary ?? [])
+  const contextLines = buildGateContext(question, known, vocabulary ?? [], turns)
 
   const content: AIContent = Array.isArray(documentBlocks) && documentBlocks.length > 0
     ? ([...documentBlocks, { type: 'text', text: contextLines }] as AIContent)
@@ -356,16 +430,43 @@ export async function gate(input: GateInput): Promise<GateResult> {
  * is the one failure worse than a wrong answer. When it happens, proceed instead of asking
  * again, carrying the fact as known. DETERMINATION-GATE.md §5.2 rule 2.
  */
+/**
+ * *** TURN-ONE TENSE IS ONE PASS, ONE DIRECTION, AND IT DID NOT RESIST. ***
+ *
+ * The apparent circularity — the gate returns the frame AND labels facts by it — is that both
+ * outputs come from the same call, not that either depends on the other. The model reads the
+ * question, decides jurisdiction/tense/subject, and labels the facts it found IN that question.
+ * Nothing needs the frame before the frame exists. DECISIONS.md §84.
+ *
+ * The frame falls back to `present` with no jurisdiction when the model does not return one.
+ * **`present` is the safe default in the wrong direction only if a hypothetical is read as real**
+ * — so the prompt must make tense explicit, and a missing frame on a hypothetical question is a
+ * prompt defect rather than something to paper over here.
+ */
+function normaliseFrame(raw: unknown): Frame {
+  const f = (raw ?? {}) as Partial<Frame> & { jurisdiction?: Frame['jurisdiction'] }
+  return {
+    jurisdiction: {
+      state: f.jurisdiction?.state ?? null,
+      county: f.jurisdiction?.county ?? null,
+      city: f.jurisdiction?.city ?? null,
+    },
+    tense: f.tense === 'hypothetical' ? 'hypothetical' : 'present',
+    subject: typeof f.subject === 'string' && f.subject.trim() ? f.subject.trim() : null,
+  }
+}
+
 export function normalise(
-  raw: GateResult,
+  raw: GateResult & { frame?: unknown },
   known: KnownFact[],
   answering: GateAnswering | null
 ): GateResult {
+  const frame = normaliseFrame((raw as { frame?: unknown })?.frame)
   if (!raw || typeof raw !== 'object' || !('outcome' in raw)) {
     // A gate that cannot be parsed must not block the answer. Proceeding is the safe
     // direction here: the critic pass still sees the output, and a broken gate that
     // silently swallowed every question would be undetectable.
-    return { outcome: 'proceed', resolved: { known, non_blocking_unknowns: [] } }
+    return { outcome: 'proceed', resolved: { known, non_blocking_unknowns: [] }, frame }
   }
 
   if (raw.outcome === 'ask') {
@@ -385,6 +486,7 @@ export function normalise(
               `answered by the user as "${answering.value}"`,
           }],
         },
+        frame,
       }
     }
 
@@ -404,6 +506,7 @@ export function normalise(
         assumed_if_unanswered: ask.assumed_if_unanswered ?? '',
         known: ask.known?.length ? ask.known : known,
       },
+      frame,
     }
   }
 
@@ -413,6 +516,7 @@ export function normalise(
       known: raw.resolved?.known?.length ? raw.resolved.known : known,
       non_blocking_unknowns: raw.resolved?.non_blocking_unknowns ?? [],
     },
+    frame,
   }
 }
 

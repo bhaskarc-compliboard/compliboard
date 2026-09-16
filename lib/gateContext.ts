@@ -25,6 +25,20 @@ export type FactSource =
   | 'ai_from_profile'
   | 'computed'
   | 'stated_in_question'
+  /**
+   * *** A DIFFERENT AXIS FROM THE OTHER FIVE. *** They say where a fact CAME FROM.
+   * `hypothetical` says whether it is TRUE.
+   *
+   * "We have 12 employees" and "the Arizona facility would have 12" are BOTH stated in the
+   * question and differ in modality, not provenance. Reusing `stated_in_question` collapses two
+   * dimensions, and the collapse is invisible because every hypothetical does arrive stated in a
+   * question. DECISIONS.md §82.
+   *
+   * A `hypothetical` fact NEVER reaches `company_switches` (§78) and never resolves an
+   * obligation — both structural: `/api/switches/answer` is the only writer and takes no frame,
+   * and `writeObligations` reads `company_switches` and nothing else.
+   */
+  | 'hypothetical'
 
 export interface KnownFact {
   switch_id: string | null
@@ -33,10 +47,93 @@ export interface KnownFact {
   source: FactSource
 }
 
+/**
+ * The frame a turn was answered under. `WORKSPACE.md` v3 / DECISIONS.md §77 item 8.
+ *
+ * *** `tense` IS WHAT MARKS A FACT HYPOTHETICAL AT THE MOMENT IT IS CAPTURED. *** Without it the
+ * next turn has to re-infer modality from a verb — "would have" versus "have" is one word, and
+ * asking a model to catch it reliably every turn is the enumerate-from-nothing failure in
+ * miniature.
+ */
+export interface Frame {
+  jurisdiction: { state?: string | null; county?: string | null; city?: string | null }
+  tense: 'present' | 'hypothetical'
+  /** What the question is about. CONTEXT WITH NO AUTHORITY — it may not exclude anything. */
+  subject: string | null
+}
+
+/** A fact asserted in the conversation, already labelled. The gate never re-derives these. */
+export interface ConversationFact {
+  switch_id: string | null
+  fact: string
+  value: string
+  source: FactSource
+}
+
+/** One earlier turn, reduced to what it asserted. Claims, never prose. */
+export interface PriorTurn {
+  turn: number
+  frame: Frame
+  facts: ConversationFact[]
+}
+
+const frameKey = (f: Frame) =>
+  `${f.jurisdiction.state ?? ''}|${f.jurisdiction.county ?? ''}|${f.jurisdiction.city ?? ''}|${f.tense}`
+
+/**
+ * *** COLLAPSE ONLY WHERE A LATER VALUE SUPERSEDES AN EARLIER ONE IN THE SAME FRAME. ***
+ *
+ * DECISIONS.md §83's standing discipline, and the boundary is the whole of it:
+ *
+ *   SAME frame, same switch, later turn   -> the later value WINS. A correction (§82.4).
+ *   DIFFERENT frame, same switch          -> BOTH SURVIVE. `employee_count = 47 [user_set]` and
+ *                                            `employee_count = 12 [hypothetical]` describe
+ *                                            different things and are not in conflict at all.
+ *
+ * **No further trimming for size.** §83 measured the latency argument and withdrew it: the gate
+ * ran 1.3s FASTER with 7.7x the context. There is no summary, no window and no turn cap here,
+ * and adding one needs a reason that is not input size.
+ */
+export function collapseTurns(turns: PriorTurn[]): Array<ConversationFact & { turn: number; frame: Frame }> {
+  const byKey = new Map<string, ConversationFact & { turn: number; frame: Frame }>()
+  for (const t of [...turns].sort((a, b) => a.turn - b.turn)) {
+    for (const f of t.facts) {
+      byKey.set(`${f.switch_id ?? f.fact}|${frameKey(t.frame)}`, { ...f, turn: t.turn, frame: t.frame })
+    }
+  }
+  return [...byKey.values()].sort((a, b) => a.turn - b.turn)
+}
+
+/** The conversation block. Empty string when there is no conversation — a first turn renders
+ *  exactly what it rendered before this existed, which is what keeps the golden cases asserting
+ *  across the change. */
+export function renderConversation(turns: PriorTurn[]): string {
+  if (turns.length === 0) return ''
+  const facts = collapseTurns(turns)
+  if (facts.length === 0) return ''
+  const lines: string[] = ['FACTS STATED IN THIS CONVERSATION:']
+  let lastTurn = -1
+  for (const f of facts) {
+    if (f.turn !== lastTurn) {
+      const j = [f.frame.jurisdiction.city, f.frame.jurisdiction.county, f.frame.jurisdiction.state]
+        .filter(Boolean).join(', ') || '(not stated)'
+      lines.push(`  turn ${f.turn}  jurisdiction=${j}  tense=${f.frame.tense.toUpperCase()}` +
+                 (f.frame.subject ? `  subject="${f.frame.subject}"` : ''))
+      lastTurn = f.turn
+    }
+    lines.push(`    ${f.fact.padEnd(32)} = ${String(f.value).padEnd(14)} [${f.source}]`)
+  }
+  lines.push('')
+  lines.push('  A [hypothetical] fact describes something that DOES NOT EXIST YET. It does not')
+  lines.push('  contradict an established fact about the company, and it must not be treated as one.')
+  return lines.join('\n')
+}
+
 export function buildGateContext(
   question: string,
   known: KnownFact[],
-  vocabulary: Array<Record<string, unknown>>
+  vocabulary: Array<Record<string, unknown>>,
+  priorTurns: PriorTurn[] = []
 ): string {
   const contextLines: string[] = []
   contextLines.push('ESTABLISHED FACTS ABOUT THIS COMPANY:')
@@ -56,6 +153,14 @@ export function buildGateContext(
         const dep = s.depends_on_switch ? `  (only if ${s.depends_on_switch} = ${s.depends_on_value})` : ''
         return `  ${s.id}: ${s.label}${dep}${s.question_plain ? `\n     ask as: ${s.question_plain}` : ''}`
       }).join('\n'))
+  // The conversation, between what is established and what is being asked — because it is
+  // neither. An established fact is about the company; a conversation fact may be about
+  // something that does not exist.
+  const convo = renderConversation(priorTurns)
+  if (convo) {
+    contextLines.push('')
+    contextLines.push(convo)
+  }
   contextLines.push('')
   contextLines.push(`THE USER'S QUESTION:`)
   contextLines.push(question)

@@ -1,6 +1,8 @@
 # M1.2b — The Gate Gains a Conversation
 
-**Version:** 2 · **Updated:** 15 September 2026
+**Version:** 3 · **Updated:** 15 September 2026
+**Supersedes:** version 2 (15 Sep). **BUILT** — §6a records the four demonstrations. Turn-one tense
+and the `answering` question are settled by contact; one item stays open.
 **Supersedes:** version 1 (15 Sep). §4's measurement is **run**: the bound holds, and the latency
 motivation is **withdrawn** — the gate got faster with 7.7× the context (`DECISIONS.md` §83).
 **Status: SPECIFIED, NOT BUILT.** Decisions: `DECISIONS.md` §82 (the reordering, `hypothetical`,
@@ -219,6 +221,28 @@ Classification's three categories map onto three fields of what is specified abo
 from prose what this specification already carries as structure, and the two disagree.
 
 ---
+
+## 6a. BUILT — 15 September 2026, `DECISIONS.md` §84
+
+**Four demonstrations from the first multi-turn conversation this product has had**, run against
+staging as Test Gamma Solvents, an **Oregon** company:
+
+```
+turn 1  frame: Phoenix, Arizona · hypothetical · "a solvent blending facility"
+        ask -> "Would this facility have employees, or would it be owner-operated only?"
+turn 3  4 facts asserted collapse to 3 lines; employee_count 12 -> 40 (a correction)
+turn 4  "Would we need a confined space program there?" -> PROCEED, not re-asked
+```
+
+**`confined_spaces_present = true [hypothetical]` alongside `false [user_set]` — same switch,
+opposite values, no conflict.** That is §3's rendering doing its job, and it is the false-green
+failure prevented rather than described.
+
+**Two of §7's three open items are now settled by contact:** turn-one tense is one pass and did
+not resist; `answering` stays with its handling folded into `collapseTurns`. **§4's measurement is
+run** (§83) — the bound holds, the latency motivation is withdrawn.
+
+**Still open: how a hypothetical frame spends the one blocking question.** §84 §4.
 
 ## 7. Open, and not decided here
 

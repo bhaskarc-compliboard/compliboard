@@ -1,6 +1,13 @@
 # Decision Record
-**Version:** 63 · **Updated:** 15 September 2026
-**Supersedes:** version 62 (15 Sep). Adds **§83** — the trimming measurement, run before M1.2b was
+**Version:** 64 · **Updated:** 15 September 2026
+**Supersedes:** version 63 (15 Sep). Adds **§84** — M1.2b built, and the first multi-turn
+conversation this product has had. **`confined_spaces_present = true [hypothetical]` sits beside
+`false [user_set]` with no conflict** — the false-green failure prevented rather than argued
+about. The gate did not re-ask a fact from an earlier turn; a within-conversation contradiction
+resolved as a correction. **`answering` stays and its HANDLING folds** — it was the handling that
+made two places, not the field. **Turn-one tense is one pass and did not resist.** Records the
+**prompt edit** plainly (§3.1) and leaves one thing OPEN: nothing bounds how a hypothetical frame
+spends the one blocking question. Version 63 added **§83** — the trimming measurement, run before M1.2b was
 built. **The bound holds** (9 fact lines from a 12-turn topic, ceiling is a line per switch per
 frame) **and the motivation was wrong**: the gate got **1.3 s FASTER with 7.7× the context**, so
 "unbounded context is a latency regression" is not supported — the same input-size intuition §76
@@ -5838,3 +5845,107 @@ was the probe, not the gate. That is check 14's rule applied to a measurement ra
 
 **Reversal condition:** if a topic ever runs long enough that context size does move gate latency,
 the bound becomes a cost argument as well as a correctness one. At 12 turns it is not.
+
+---
+
+## 84. M1.2b built — three things settled by contact, one left open — 15 September 2026
+
+**Built 15 September 2026 against `docs/GATE-HISTORY.md`. Four demonstrations, from the first
+multi-turn conversation this product has ever had.**
+
+### ⚡ THE PROMPT CHANGED. Recorded plainly rather than left to be discovered.
+
+`CLAUDE.md` §3.1 puts prompt edits behind discussion. **This one happened**, and the record should
+say so:
+
+`OUTPUT_INSTRUCTION` in `lib/determinationGate.ts` gains **the `frame` block** (jurisdiction,
+tense, subject, with the rule that the frame describes THE QUESTION and not the company),
+**`hypothetical` in the source list**, and **a do-not-re-ask rule** naming the conversation block.
+
+**It was necessary rather than convenient:** `normaliseFrame` reads `raw.frame`, and without the
+prompt asking for one it would default to `present` with no jurisdiction on every call —
+**the feature would be inert and would look like it worked.** It is within `GATE-HISTORY.md` §2 as
+specified, so it is an edit made under an approved spec rather than an unreviewed one. **It is
+still a prompt edit, and this paragraph exists so nobody finds it by `git blame` in a month.**
+
+### 1. `answering` STAYS — and the reasoning is about the handling, not the field
+
+**The test put to it:** does keeping both `answering` and `priorTurns` produce two places carrying
+one fact?
+
+**The answer is no, and the reason is sharper than the test:** they are **different turns, not two
+records of one.** `priorTurns` is turns 1..N−1; `answering` is the fact supplied in **this** turn,
+in reply to the ask this call is re-entering.
+
+> **What produced two places was the OLD HANDLING, not the field.** `answering` was pushed
+> straight into `known` — the same list as facts read from `company_switches` — while conversation
+> facts would have gone somewhere else. **So the handling folds and the field stays:** `answering`
+> becomes the last turn of the conversation and goes through `collapseTurns` with everything else.
+> **One code path produces facts; one place collapses them.**
+
+**And the duplicate case needs no special handling.** If a client ever sends the same fact in both,
+`answering` is the later turn and wins — **which is §82.4's correction rule applying, not an
+exception carved for it.** A rule that covers a case it was not written for is usually the right
+rule.
+
+### 2. TURN-ONE TENSE — one pass, one direction. It did not resist.
+
+**Settled by contact rather than by reasoning**, which is what it was flagged for. The apparent
+circularity — the gate returns the frame *and* labels facts by it — is that **both outputs come
+from the same call, not that either depends on the other.**
+
+**Turn 1 returned `tense=hypothetical, jurisdiction=Phoenix, Arizona` on its first call**, from a
+company whose own state is Oregon. Nothing needed the frame before the frame existed.
+
+### 3. THE FOUR DEMONSTRATIONS
+
+```
+company: Test Gamma Solvents, Oregon
+real facts on file: confined_spaces_present=false · has_employees=true · owns_fleet=true
+
+turn 1  frame: Phoenix, Arizona · hypothetical · "a solvent blending facility"
+        ask -> "Would this facility have employees, or would it be owner-operated only?"
+turn 2  proceed (2 known)
+turn 3  proceed — 4 facts asserted collapse to 3 lines; employee_count now 40 (turn 3)
+turn 4  "Would we need a confined space program there?" -> proceed (3 known)
+```
+
+**(a) THE FALSE-GREEN FAILURE PREVENTED RATHER THAN ARGUED ABOUT.**
+`confined_spaces_present = true [hypothetical]` sits in the conversation while
+`confined_spaces_present = false` remains the company's established fact. **Same switch, opposite
+values, no conflict** — different frames, so `collapseTurns` keeps both. **This is the thing the
+labelling was built for, and it is the first time it has been shown rather than described.**
+
+**(b) NO RE-ASKING.** Turn 4 asked about confined spaces, established in turn 1, and the gate
+**proceeded**. `DETERMINATION-GATE.md` §5.2's do-not-ask-twice property, holding across turns for
+the first time.
+
+**(c) A JURISDICTION THAT IS NOT THE COMPANY'S**, visible in the frame on every turn.
+
+**(d) A WITHIN-CONVERSATION CONTRADICTION RESOLVED AS A CORRECTION.** Turn 2 says 12, turn 3 says
+40, same frame — **turn 3 wins.** Distinct from a contradiction against `company_switches`, which
+is v3.2's conflict and is not what happened.
+
+### 4. OPEN — how a hypothetical frame spends the one blocking question
+
+**Not a defect, and not something to fix from one observation.**
+
+Turn 1 asked *"would this facility have employees?"* from a company where `has_employees` is
+already `true`. **Treating those as different facts is correct — it is the distinction working.**
+The hypothetical facility's headcount is genuinely unknown.
+
+> **But the gate now has a new way to spend its one blocking question: asking about something that
+> does not exist.** `DETERMINATION-GATE.md`'s rule is at most one blocking question, paired with
+> what it unlocks. **Nothing currently bounds how a hypothetical frame spends it**, and whether
+> that question was the one a person would have asked first is unsettled from a single run.
+
+**What would settle it: several multi-turn hypothetical conversations, read for whether the first
+question is the one a person would have asked.** Three or four topics, different subjects, read by
+somebody who knows the domain — the same instrument that found the library defects in §64, and for
+the same reason: **it is a judgement about whether a question is worth asking, and no query can
+make it.**
+
+**Reversal condition:** none on the three settled items. On the open one — if a domain read finds
+the first question reliably well chosen, this closes as a non-issue; if it finds the gate spending
+its question on the hypothetical when the real operation had a blocking gap, that is a rule about
+frame precedence and belongs in the prompt.
