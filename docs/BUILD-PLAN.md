@@ -1,6 +1,8 @@
 # Master Build Plan
-**Version:** 3.7 · **Updated:** 12 September 2026
-**Supersedes:** version 3.6 (12 Sep) — Part B 1.3 (the critic pass) is marked complete with its
+**Version:** 3.8 · **Updated:** 13 September 2026
+**Supersedes:** 3.7 (12 Sep) — **header date corrected 15 Sep**: 3.7 was edited on 13 September and
+its header was never bumped, so the file claimed 12 Sep while git said 13 Sep. **`AUDIT-CHECKS.md`
+check 31 cannot see that class** — it compares COMMIT dates, not headers. Previously, 3.6 (12 Sep) — Part B 1.3 (the critic pass) is marked complete with its
 cost and the warning not to optimise it before Stage 2 exists, 1.5 records the temperature
 incompatibility, 1.6 records routing as done, and 1.4 gains the measured argument for splitting
 identification from expansion. **3.6** marked Part B Phase 1.1 and 1.2 complete (the

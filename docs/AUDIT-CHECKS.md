@@ -1,6 +1,9 @@
 # Audit Checks
-**Version:** 33 · **Updated:** 15 September 2026
-**Supersedes:** version 32 (15 Sep). Adds **check 31 — has a document's SUBJECT changed since the
+**Version:** 34 · **Updated:** 15 September 2026
+**Supersedes:** version 33 (15 Sep). Records **check 31's blind spot**: it compares COMMIT dates and
+cannot see a document whose HEADER disagrees with its own commit — found on `BUILD-PLAN.md`, header
+12 Sep, commit 13 Sep. A header nobody compares against the repository is an unverified claim in the
+metadata. Version 33: Adds **check 31 — has a document's SUBJECT changed since the
 document last did?** Three files sat at 12 September while eleven migrations and three gate changes
 landed; two described live behaviour wrongly. **Caught by noticing DATES, not by reading content** —
 comparing two dates narrows eighteen documents to three before anything is opened. Records that the
@@ -1899,6 +1902,45 @@ Comparing two dates is free, and it narrows eighteen to three before anything is
 **The signal is not staleness by itself.** `PATTERNS.md` has not moved since 9 September and is
 correct — it describes a different codebase. **The signal is a document that has not moved while
 the thing it describes HAS.**
+
+### ⚠ ITS BLIND SPOT: a document edited without its header bumped
+
+**This check compares COMMIT dates. It cannot see a header that disagrees with its own commit.**
+
+**Found 15 Sep:** `BUILD-PLAN.md`'s header read *"Updated: 12 September"* while
+`git log -1 -- docs/BUILD-PLAN.md` said **13 September**. The file was edited and its header was
+not bumped, so **every date-based comparison used a date one day stale** — and the check would
+have called it fine forever, because the commit date it reads was correct.
+
+**The cheap second query, which is the whole fix:**
+
+```bash
+for doc in docs/*.md; do
+  hdr=$(grep -m1 '^\*\*Version:\*\*' "$doc" | sed 's/.*Updated:\*\* *//')
+  git_date=$(git log -1 --format=%cd --date=short -- "$doc")
+  echo "$hdr | $git_date | $doc"      # the two must agree
+done
+```
+
+> **A document's header is a claim about itself, and this file's own rule is that a check reports
+> its INPUTS rather than its conclusion (`HOW-WE-BUILD.md` §4).** A header nobody compares against
+> the repository is exactly the unverified claim that rule exists to refuse — **in the metadata
+> rather than in the content, which is why it survived.**
+
+**AND THE QUERY ABOVE HAS A FALSE POSITIVE, FOUND ON ITS FIRST RUN.** It flagged two files:
+`BUILD-PLAN.md` (**real** — header 12 Sep, edited 13 Sep) and `PATTERNS.md` (**not real**).
+
+`PATTERNS.md`'s last commit is *"Stop putting version numbers in document filenames"* — **1405
+insertions, which is a RENAME.** Git dates the new path from the rename; the content is unchanged
+and from 9 September, exactly as the header says.
+
+> **A rename moves a file's commit date without changing a word in it.** So the second query needs
+> `git log --follow`, and even then a rename shows as a commit. **Check what the commit DID before
+> concluding the header is wrong** — which is the same rule as check 14, applied to this check.
+
+**Two files flagged, one real. A check with a 50% false-positive rate on its first run is still
+worth having** — it narrowed eighteen files to two — **but its output is a list to look at, not a
+list of defects.**
 
 ### And the fix pattern is as important as the finding
 

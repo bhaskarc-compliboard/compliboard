@@ -1,6 +1,7 @@
 # The Compliance Workspace — M1
 
-**Version:** 4 · **Updated:** 15 September 2026
+**Version:** 5 · **Updated:** 15 September 2026
+**Supersedes:** version 4 (15 Sep). **Two stale claims that research runs the six-stage pipeline are struck** — §3's opening line and §4.1's table row — leaving `DECISIONS.md` §77 authoritative: research is gate, then answer. The table row is recorded as instructive: v4 struck the sentence beneath it and left the cell above, so a correction left a contradiction inside what it corrected.
 **Supersedes:** version 3 (15 Sep). §4.1's **"one cheap classification call" is SUPERSEDED** — classification folds into the determination gate, because §77 settled the research path at two AI calls and the gate already holds everything classification needs (`DECISIONS.md` §85). Adds **§4.1a: a new question does NOT close a topic.** Previously, v3: **Supersedes:** version 2 (11 Sep). **The five gaps are RESOLVED as decisions**, stated against
 the schema migration 008 actually built rather than described as problems — which is what made v2
 unusable. Adds **v3.6**: §6's terminal object is provisional, because D22 settles that M1 writes
@@ -178,7 +179,10 @@ The Compliance Workspace is where a user asks a compliance question and gets an 
 2. Convert an answer into an execution checklist
 3. Request a checklist directly, without asking a question first
 
-All three run the same six-stage runtime pipeline. The difference is only how strictly the determination gate fires (§4.3).
+~~All three run the same six-stage runtime pipeline.~~ **SUPERSEDED — `DECISIONS.md` §77.**
+**Research is TWO AI calls: gate, then answer.** The six-stage pipeline in `CHEMICAL-OR-WA.md`
+§5.2 is the **audit** path and remains as written there. What is still true of all three: the
+difference between them is how strictly the determination gate fires (§4.3).
 
 ---
 
@@ -252,10 +256,18 @@ Users abandon forms. They answer questions asked in context, when the consequenc
 |---|---|---|
 | **Elaboration** | "Explain step 3." "Where do I buy UN-spec boxes?" | Expansion only, against the existing answer |
 | **Refinement** | "What if it's PG III?" "We use a carrier." | Update the fact, then re-run identification → critic → expansion |
-| **New question** | Unrelated topic | Full six-stage pipeline |
+| **New question** | Unrelated topic | ~~Full six-stage pipeline~~ → **the full research path: gate, then answer** (§77). And it does **not** close the topic — §4.1a |
 
 ~~One cheap classification call decides.~~ **SUPERSEDED — the GATE decides (`DECISIONS.md` §85).**
-The rest stands: running all six stages on every follow-up is slow and wasteful.
+The rest stands in spirit: re-running the whole path on every follow-up is slow and wasteful —
+though for research the path is two calls rather than six stages.
+
+> ### THE TABLE ROW ABOVE IS THE INSTRUCTIVE ONE.
+> When §4.1 was superseded on 15 Sep, **the sentence beneath the table was struck and the cell
+> above it was not.** A correction left a contradiction inside the thing it was correcting, and it
+> survived a cross-document check the same day because the check looked for *"cheap classification
+> call"* and the stale claim said *"six-stage pipeline"*. **Correcting a passage means reading the
+> whole passage, not the sentence that prompted it.**
 
 **Refinement recomputes; it does not append.** The answer was built on a fact that changed. Adding a correction underneath leaves the wrong answer on screen above it.
 

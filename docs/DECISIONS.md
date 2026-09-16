@@ -1,6 +1,13 @@
 # Decision Record
-**Version:** 72 · **Updated:** 15 September 2026
-**Supersedes:** version 71 (15 Sep). Adds **§93** — drift **caught by comparing dates, not by
+**Version:** 73 · **Updated:** 15 September 2026
+**Supersedes:** version 72 (15 Sep). Adds **§94** — a defect that **reproduces itself as the
+library grows**: Oregon rows citing 29 CFR went **49 → 60** while `citation_federal_analogue`
+stayed at 0, because migration 013's splits gave eleven children the federal citation in the wrong
+field. **The mechanism is the finding, not the count** — 6.4's worklist grows with the library.
+Says what would stop it (a rule at the split, then a CHECK) without building it. Adds **§95** — my
+own §81 instance, inside the sweep checking for them: a stricter test labelled with a check
+number, reporting a failure that was not one. **The rule now has instances on both sides.**
+Version 72 added **§93** — drift **caught by comparing dates, not by
 reading**. Three documents sat at 12 September while eleven migrations and three gate changes
 landed; two described live behaviour wrongly. `CRITIC-PASS.md` was **not wrong about the outcome
 but about the reason and the permanence**; `DETERMINATION-GATE.md` showed a `GateResult` the code
@@ -6644,3 +6651,79 @@ structured"* implies the exclusion ends when the output gains a `must_do[]`, and
 never ends. A reader would have built toward a milestone that is not coming.
 
 **Reversal condition:** none. The check costs two `git log` calls.
+
+---
+
+## 94. A defect that reproduces itself as the library grows — 15 September 2026
+
+**Check 2's number moved, and the movement is the finding.**
+
+```
+Oregon rows citing 29 CFR              11 Sep: 49    15 Sep: 60
+rows with citation_federal_analogue    11 Sep:  0    15 Sep:  0
+```
+
+**Migration 013 split three under-decomposed OR-OSHA requirements into eleven children, and every
+child inherited the federal citation in the wrong field.** The column built to hold the state
+citation — `citation_federal_analogue`, added by migration 007 so a row could say *"OAR
+437-002-0360, which adopts 29 CFR 1910.1200"* — stayed empty while the population doing the wrong
+thing grew by eleven.
+
+> ### THE COUNT IS NOT THE FINDING. THE MECHANISM IS.
+>
+> **This defect reproduces itself every time the library grows.** A split copies its parent's
+> citation; nothing looks at which field it lands in; and **6.4's worklist grows with the library
+> rather than staying at 60.** A fix that corrects 60 rows and changes nothing else is a fix that
+> has to be repeated after the next split.
+
+### What would stop it, none of it built now
+
+Three places, cheapest first:
+
+1. **A rule in whatever writes a child row.** Migration 013's split block sets
+   `agency_id`, `split_from_id` and the text by hand. **A split that copies a `29 CFR` citation
+   onto a `state`-layer row should move it to `citation_federal_analogue` and put the OAR in
+   `citation`** — at the point of writing, where the parent's intent is still known.
+2. **A CHECK constraint**: a `state`-layer row whose `citation` matches `CFR` must have
+   `citation_federal_analogue` non-null. **Cheap, and it would have refused all eleven children at
+   insert.** It also refuses the 60 rows that exist, so it can only land after they are fixed —
+   which is the right order and makes the constraint the thing that keeps them fixed.
+3. **A standing check**, which is what exists today: check 2, hand-run, reporting a number that
+   may only fall. **It is the weakest of the three because it reports rather than prevents**, and
+   the growth from 49 to 60 is what a reporting-only check looks like when nothing acts on it.
+
+**Recommended: (1) then (2).** The rule stops new instances; the constraint makes the stop
+permanent and cannot be added until 6.4c has cleared the existing 60. **Not built now** — it is
+6.4c's work and belongs with the revision rather than ahead of it.
+
+---
+
+## 95. My own instance of §81, inside the sweep that was checking for it — 15 September 2026
+
+**Running the standing checks, I wrote a stricter test than check 2 and labelled it with check 2's
+number.** It returned 2 rows and I reported them as a failure:
+
+```
+FAIL  2  Oregon requirements citing Oregon rules   — rows citing neither Oregon nor a CFR
+```
+
+**Check 2 does not ask that.** As written it asks how many Oregon state rows cite 29 CFR, and how
+many rows carry a `citation_federal_analogue`. **My version invented a third question and inherited
+the number's authority.**
+
+**The two rows it found were not defects** — `OFC / NFPA 101` (Oregon Fire Code and an NFPA
+standard) and `2025 session law, eff. Jan 1, 2026` (a law not yet codified into ORS). **Both are
+correct citations that simply name neither an OAR nor a CFR.**
+
+> **This is §81's shape — a probe that tests something other than what it claims — committed by me,
+> inside a sweep whose purpose was running checks faithfully.** Caught by looking at the two rows
+> before recording them, which is the one habit that works: **the finding had to survive being
+> read.**
+>
+> **The rule now has instances on both sides of this conversation**, which is the useful form of
+> it. A discipline only one party is held to is a performance; one that catches its author is a
+> check.
+
+**And the correct run found something better than the false failure would have been** — §94's
+mechanism, which no version of my stricter query would have surfaced, because it depends on
+comparing today's count against the one recorded four days ago.
