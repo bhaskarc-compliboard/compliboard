@@ -1,6 +1,11 @@
 # Detailed To-Do
-**Version:** 28 · **Updated:** 21 September 2026
-**Supersedes:** version 27 (21 Sep). **M1.2b's done-marker is CORRECTED**: the web-search flag it
+**Version:** 29 · **Updated:** 21 September 2026
+**Supersedes:** version 28 (21 Sep). **M1.3 is SUPERSEDED** (`DECISIONS.md` §108): conversational
+fact extraction **moves overnight** and what it finds is **proposed, not written**. Replaced by
+**M1.3a** (retain a conversation until processed), **M1.3b** (the overnight extractor — a nightly
+script before the worker), **M1.3c** (propose and confirm). **7.2a's ask path is unchanged and
+still writes at once.** Records **§109's testing plan as deferred** — many fields, related and
+unrelated, because everything so far was tuned on one shape. Version 28: **M1.2b's done-marker is CORRECTED**: the web-search flag it
 claimed to return **does not exist on `GateResult`** and never did (§101) — §65's seventh shape,
 a thing described as shipped, and it survived six days because **nothing read the field**. Adds
 **M1.9 — the research answer rebuilt free-flowing** (§102): CompliBoard's answer was the weakest
@@ -198,12 +203,15 @@ decisions and the five schema gaps are settled before any of this starts.*
 | **M1.2** ✅ | **DONE 15 Sep** (§86) — folded into the gate, not a third call. **Follow-up classification** (§4.1) — three kinds, classified before anything expensive runs | **M1.2b** | 1 d |
 | **M1.2d** | **THE CONVERSATION SURFACE — M1.2c's missing half.** **SEVERAL open topics per company** (§96e — §9.4 closed, no unique index). The browser holds turns, a `topics` row is **created**, `topicId` is sent. Today `app/compliance/page.tsx` sends neither, and `const newTurn = topicId ? sealTurn(...) : null` means **every turn in the browser is turn one**; `grep from('topics')` finds one cleanup and no writer. M1.2b/M1.2/M1.2c are correct over HTTP and **inert to a person**, and **nothing in M1 is reachable by a user until this exists** (§96) | M1.2c | 1.5 d |
 | **M1.4a** | **THE SINGLE-SITE SLICE of M1.4** — the one-site rule, and `entity_id` carried on the fact. **This is NOT a default to primary**: §20 forbids defaulting because a company-wide answer is *wrong at every site but one*, and **with one `entities` row there is no second site to be wrong about** — v3.3 already says *never ask*. **Ahead of M1.3 because 73 of 95 switches are site-scoped** and the route refuses every one without a site (§96) | M1.2d | 0.5 d |
-| **M1.3** | **Fact capture, not question generation** (D24). The conversation writes `company_switches` through 7.2a's route; it does **not** invent questions — the queue comes from `askableSwitches()` and the dependency graph (v3.5). **Writes a `KnownFact`, not a `{switch_id, value}` pair** — §96(b): `source` reaches the enum and Postgres refuses a hypothetical. **Stores immediately**, confirming only a coerced value (§96a). **A null `switch_id` is held in the turn, never written** (§96d) | **M1.4a** | 1.5 d |
-| **M1.4** | **Site resolution — the rest** (v3.3). **Several sites → the question carries the site**; *"all of them"* writes **N rows, each attributable**, never one company row. The one-site half is **M1.4a above** | M1.3 | 0.5 d |
-| **M1.5** | **Show what we know** (§7) — facts in context before an answer, with `source` rendered so a document-derived value and a person's answer do not look alike | M1.3 | 1 d |
-| **7.2c** 🔒 | **A trigger for `user_locked`** — scheduled here 15 Sep because it is M1.6's only dependency, sits **outside** M1, and nothing had scheduled it. `AUDIT-CHECKS.md` check 24: **zero policies, zero constraints, zero triggers** reference `user_locked`, so it is enforced in one library module — a route guard wearing a different coat (`CLAUDE.md` §3.6). **Must be a TRIGGER**: a policy cannot compare the old row to the new one, and the rule is about the transition | M1.3 | 0.5 d |
+| **M1.3** ⛔ | **SUPERSEDED 21 Sep — `DECISIONS.md` §108.** ~~The conversation writes `company_switches` in real time~~. **Facts inferred from free prose are extracted OVERNIGHT from whole conversations and PROPOSED, not written.** The reason is judgment, not load: the same fact was labelled `stated_in_question` on turn 1 and `hypothetical` on turn 2 of one conversation (§104), and reading the whole thing settles modality once and resolves corrections. **Replaced by M1.3a/b/c below.** Unchanged: the gate, the gate's prior turns, and **7.2a's ask path, which still writes at once** — a person answering a direct question is evidence, not an interpretation | — | — |
+| **M1.3a** | **Retain a conversation until it is processed**, then discard it. Reverses `GATE-HISTORY.md` §8.4 rule 3 (*the caller owns the turn list; nothing is stored*). **Does NOT breach §78**: a transcript is raw evidence, not a fact, and a hypothetical is still never written as true of the company. `WORKSPACE.md` §6.4's *disposable* becomes a disposal schedule | M1.2d | 1 d |
+| **M1.3b** | **The overnight extractor** — reads whole conversations and decides what is true of the company. **A nightly script first; `CLAUDE.md` §4's worker is where it ends up** — waiting for the worker would defer this behind infrastructure it does not need | M1.3a | 1.5 d |
+| **M1.3c** | **Propose and confirm.** *"From yesterday's conversation, it sounds like you have 47 employees — should we save that?"* One tap. **Reading a transcript is an INTERPRETATION and can misread**, so it is proposed, never written. The source label travels with the proposal, so §96(b) holds for whatever finally writes it | M1.3b | 1 d |
+| **M1.4** | **Site resolution — the rest** (v3.3). **Several sites → the question carries the site**; *"all of them"* writes **N rows, each attributable**, never one company row. The one-site half is **M1.4a above** | M1.3c | 0.5 d |
+| **M1.5** | **Show what we know** (§7) — facts in context before an answer, with `source` rendered so a document-derived value and a person's answer do not look alike | M1.3c | 1 d |
+| **7.2c** 🔒 | **A trigger for `user_locked`** — scheduled here 15 Sep because it is M1.6's only dependency, sits **outside** M1, and nothing had scheduled it. `AUDIT-CHECKS.md` check 24: **zero policies, zero constraints, zero triggers** reference `user_locked`, so it is enforced in one library module — a route guard wearing a different coat (`CLAUDE.md` §3.6). **Must be a TRIGGER**: a policy cannot compare the old row to the new one, and the rule is about the transition | M1.3c | 0.5 d |
 | **M1.6** | **Conflict display** (v3.2) — determination disagreeing with a locked value is **shown, never silently resolved**. **Needs 7.2c above**: showing a conflict is worth little while the lock it reports on is unenforced | **7.2c** | 0.5 d |
-| **M1.7** | **"What moved" after an answer** (v3.4) — six became applicable, two no longer apply. One level only (§54) | M1.3 | 1 d |
+| **M1.7** | **"What moved" after an answer** (v3.4) — six became applicable, two no longer apply. One level only (§54) | M1.3c | 1 d |
 | **M1.8** | **Topic close onto a topic summary** (v3.6, **provisional**) | M1.1 | 0.5 d |
 | **M1.9** ⚡ | **THE RESEARCH ANSWER — free-flowing, and it must beat the bare model** (§102). `RESEARCH_PROMPT`'s six fixed sections go (`prompts/checklist.ts:88–93`); `establishedFactsBlock` is rewritten so facts are **premises reasoned from**, not a list to be careful around; **`needsWebSearch` is built for real** — the gate returns it and the research call reads it (§101). Spec: `docs/RESEARCH-ANSWER.md` | M1.2b | 2 d |
 
@@ -365,6 +373,30 @@ truncation retry, so it is **specified before any code**, like the gate and the 
 the customer sees the corrected document, so a withheld item must never appear mid-stream and
 then vanish. **Streaming the ANSWER and withholding by severity are compatible only if the
 stream is held until the critic returns**, and working that out is most of this item.
+
+---
+
+## 📋 THE TESTING PLAN — DEFERRED ON PURPOSE ⬜
+
+*Recorded 21 September 2026. `DECISIONS.md` §109. **Not written now.***
+
+**Once the compliance workspace is complete, it is tested with questions from many fields — some
+compliance, some not.**
+
+| Related questions | whether it is good at compliance |
+|---|---|
+| **Unrelated questions** | **whether it knows when it is out of its depth and says so** |
+
+**Why deferred rather than skipped:** everything decided so far about answer quality rests on very
+few examples, **mostly one shape** — *one fact decides everything*, which is golden 001 and the
+2.5L bottle case. **The stormwater question was the second shape** — *several facts each decide a
+part* — and the product handled it worse: **the gate asked nothing**, and the answer assumed where
+the pad drains, which is the fact that decides whether any of it applies. **ChatGPT, with no
+context, asked for it.**
+
+**One data point is not a pattern**, and redesigning the gate on it would repeat the error §105
+and §107 both declined to make. A spread of questions is what settles whether the gate
+systematically under-asks on multi-fact questions.
 
 ---
 

@@ -1,7 +1,9 @@
 # M1.2b — The Gate Gains a Conversation
 
-**Version:** 9 · **Updated:** 21 September 2026
-**Supersedes:** version 8 (21 Sep). **§10.5 is DECIDED: SEVERAL open topics per company**, no
+**Version:** 10 · **Updated:** 21 September 2026
+**Supersedes:** version 9 (21 Sep). **§8.4 rule 3 — *nothing is stored* — is REVERSED**
+(`DECISIONS.md` §108): a conversation is retained until the overnight extractor has read it, then
+discarded. A transcript is raw evidence, not a fact, so §78 stands. Version 9: **§10.5 is DECIDED: SEVERAL open topics per company**, no
 partial unique index — §87's threads, and one-open-topic becomes one colleague blocking another
 once a company has two users. **The third option — a reload resuming the open topic with an empty
 turn list — is REFUSED on the record**: a continuous record with discontinuous content, which is
@@ -394,7 +396,10 @@ differently:**
 2. **A superseded turn STAYS.** A refinement recomputes the answer; it does not delete the turn
    that carried the old fact. `collapseTurns` supersedes the *fact* within its frame and leaves
    the turn (§85.2a).
-3. **The caller owns the turn list; nothing is stored.** §78 — a hypothetical is never written
+3. **The caller owns the turn list; nothing is stored.** — ⚠ **REVERSED 21 Sep, `DECISIONS.md`
+   §108.** A conversation is now **retained server-side until the overnight extractor has read
+   it, then discarded.** §78 is untouched: a transcript is raw evidence, not a fact, and a
+   hypothetical is still never written as true of the company. The rest of this rule stands — §78 — a hypothetical is never written
    anywhere, and `topics` has no facts column. The list lives for the length of the conversation
    and dies with the transcript (`WORKSPACE.md` §6.4).
 

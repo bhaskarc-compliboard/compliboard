@@ -1,7 +1,10 @@
 # The Compliance Workspace — M1
 
-**Version:** 7 · **Updated:** 21 September 2026
-**Supersedes:** version 6 (15 Sep). **v3.3's site-scoped count was wrong: 73 of 95, not 70** —
+**Version:** 8 · **Updated:** 21 September 2026
+**Supersedes:** version 7 (21 Sep). **§6.1 is narrowed again** (`DECISIONS.md` §108): facts
+inferred from free conversation are read **overnight** and **proposed**, not written when said —
+so a transcript is **retained until read**, and §6.4's *disposable* is a disposal schedule. The
+ask path is unchanged. Version 7: **v3.3's site-scoped count was wrong: 73 of 95, not 70** —
 read from the live `switches` table. **§6.1's "closing extracts facts" is SUPERSEDED**: a stated
 fact is stored **immediately**, not at topic close (`DECISIONS.md` §96a). The number mattered
 because it is what reversed M1.3 and M1.4's order. Version 6: **§8's build order is marked SUPERSEDED** — its step 2 is the critic, which §77 removed from this path, and four of its ten steps belong to M6. `TODO.md`'s M1 table is authoritative. Third instance in two days of a correction leaving a contradiction in an adjacent passage.
@@ -372,6 +375,12 @@ A research topic ends with an explicit close: CompliBoard writes a summary, save
 >
 > **Closing still writes the summary and discards the transcript. It no longer has facts left to
 > extract**, because they were written when they were said.
+>
+> ### ⚠ AND NARROWED AGAIN, 21 September 2026 — `DECISIONS.md` §108.
+> **The sentence above is true of the ASK PATH only.** A fact inferred from free conversation is
+> not written when it is said either: **whole conversations are read overnight and what is found
+> is PROPOSED to the customer.** So a transcript is **retained until it has been read**, then
+> discarded — §6.4's *disposable* becomes a disposal schedule rather than an immediate discard.
 
 ~~**Closing extracts facts before discarding.** Any `user_stated` facts write to switches. The durable part survives; the noise does not.~~
 

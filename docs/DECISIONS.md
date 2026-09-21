@@ -1,6 +1,14 @@
 # Decision Record
-**Version:** 86 · **Updated:** 21 September 2026
-**Supersedes:** version 85 (21 Sep). Adds **§107 — a citation you can reach where the claim is.**
+**Version:** 87 · **Updated:** 21 September 2026
+**Supersedes:** version 86 (21 Sep). Adds **§108 — conversational fact extraction moves
+overnight.** Facts inferred from free prose are read from whole conversations after the fact and
+**proposed to the customer**, not written. The gate, the gate's prior turns, and the direct ask
+path all stay live. **The reason is judgment, not load**: the same fact carried two labels in one
+conversation, and whole-conversation reading also resolves corrections. **Reverses §96(a) for
+conversational facts** (the ask path keeps it) and **reverses *nothing is stored*** — a transcript
+is raw evidence, not a fact, so §78 is untouched. **M1.3 as specced is superseded.** Adds **§109 —
+the testing plan, deferred**: many fields, related and unrelated, because everything so far was
+tuned on **one shape**, and the second shape was met once and handled worse. Version 86: Adds **§107 — a citation you can reach where the claim is.**
 Markers become hover/tap cards carrying the source and a link; **the Sources list stays because a
 card cannot print.** Records the formatting defects as **one cause, four shapes** — and that **two
 of the four were REPORTED BUT NOT REPRODUCED** in three re-runs, so the mechanism is a hypothesis
@@ -6942,6 +6950,16 @@ one and no conversation exists.** M1.2c is real over HTTP and inert to a person.
 
 ### (a) A STATED FACT IS STORED IMMEDIATELY, NOT AT TOPIC CLOSE
 
+> ### ⚠ NARROWED 21 September 2026 — §108. **This now applies to the ASK PATH ONLY.**
+> A fact **inferred from free conversation** is no longer stored in real time at all: whole
+> conversations are read overnight and what is found is **proposed**, not written. A person
+> answering a direct question still writes at once, exactly as below.
+>
+> **The argument below survives and is met differently.** *"The value of a captured fact is the
+> NEXT TURN"* is true — and the next turn already has it, because the gate sees prior turns with
+> nothing stored. **What this section got wrong was treating "available to the next turn" and
+> "written to `company_switches`" as one act.**
+
 **Decision: the write happens at the turn that states the fact.**
 
 **Topic close is too late, and the reason is what a captured fact is FOR.** Its value is the
@@ -8028,4 +8046,164 @@ Four runs of the identical stormwater question, same user, same company, minutes
 
 **Reversal condition:** none for the card. The display rules reverse individually if any is shown
 to mangle correct output — each is one function with its own tests.
+
+---
+
+## 108. Conversational fact extraction moves overnight — 21 September 2026
+
+> ### Facts inferred from free conversation are no longer extracted in real time. Conversations
+> ### are read after the fact — overnight, when load is low — and what is found is **proposed to
+> ### the customer**, not written.
+
+### What stays live, and why each one has to
+
+| | |
+|---|---|
+| **The gate** | It decides what THIS answer needs, **now**. There is nothing to defer |
+| **Prior turns inside one conversation** | The gate already sees them (M1.2b), so a fact said in turn 2 is used in turn 4 **with nothing stored**. The within-conversation case is already solved and is untouched |
+| **The direct ask path (7.2a)** | A person answering a direct question is **clean evidence**, not an interpretation — and moving their requirement list at once is the whole purpose of asking |
+
+**So what moves is one thing only: inferring, from free prose, that something is true of the
+company.**
+
+### THE REASON IS JUDGMENT, NOT LOAD
+
+**Real time forces the decision fact by fact, turn by turn.** That has already gone wrong, and
+the evidence is in this record:
+
+```
+turn 1   entity_state = Arizona   [stated_in_question]
+turn 2   entity_state = Arizona   [hypothetical]
+```
+
+**The same fact, the same facility, two labels, in one conversation** (§104). Reading the whole
+conversation at once, the Arizona facility is plainly hypothetical throughout — **the judgment is
+easier with the whole thing in view than it is one turn at a time.**
+
+**Three things follow from reading the whole:**
+
+- **Corrections resolve themselves.** *"47 employees"* then *"actually 52"* yields the settled
+  value. In real time the first write happens before the correction exists.
+- **Modality is decided once.** The frame-routing and label-consistency machinery §103 and §104
+  built exists to make a per-turn decision survive; most of it leaves the live path.
+- **The live path gets smaller**, which is the load argument, and it is the weakest of the three.
+
+### WHAT THIS REVERSES
+
+**1. §96 decision (a) — *"A STATED FACT IS STORED IMMEDIATELY, NOT AT TOPIC CLOSE"* — is reversed
+for CONVERSATIONAL facts.** They now wait for the overnight read.
+
+§96(a)'s argument was that *the value of a captured fact is the NEXT TURN* — and **that argument
+survives and is satisfied differently**: the next turn already has the fact, because the gate sees
+prior turns without anything being stored. **What §96(a) got wrong is that it treated "available
+to the next turn" and "written to `company_switches`" as the same act.** They are not.
+
+**The ask path keeps §96(a) exactly.** A person answering a direct question still writes at once,
+still `user_locked`, still recomputes. §96(a) is narrowed, not struck.
+
+**2. *"The caller owns the turn list; nothing is stored"* (`GATE-HISTORY.md` §8.4 rule 3) is
+reversed.** A conversation that is to be read overnight must **exist server-side until it is
+read**. Kept until processed, then discarded.
+
+> ### THIS DOES NOT BREACH §78, AND THE DISTINCTION IS THE WHOLE OF IT.
+>
+> §78 says **a hypothetical FACT is never written anywhere** — *"not to `company_switches`, not
+> to `topics`, not to a new table."* **A transcript is not a fact. It is the raw evidence a fact
+> might later be drawn from**, and the thing §78 forbids is recording *"the Arizona facility has
+> 12 employees"* as something true of this company.
+>
+> **That remains forbidden, and the extractor is what enforces it** — it reads the whole
+> conversation and decides what is true, which is precisely the judgment §78 was protecting.
+>
+> `WORKSPACE.md` §6.4 — *transcripts are disposable* — also survives: **kept until processed,
+> then discarded** is a disposal schedule, not permanence.
+
+### EXTRACTED FACTS ARE PROPOSED, NEVER WRITTEN
+
+**Reading a transcript and concluding *"they have 47 employees"* is the AI's interpretation of
+what somebody said, and it can misread.** So the next session asks:
+
+> *"From yesterday's conversation, it sounds like you have 47 employees — should we save that?"*
+
+**One tap to confirm.** The source label travels with the proposal, so **§96(b) still holds for
+whatever finally writes it**: the write path takes a labelled fact and the database refuses what
+it should refuse.
+
+> **This is the difference between the two paths, stated once:** the ask path has clean evidence —
+> a person answered the question that was put to them. The extractor has an interpretation. **An
+> interpretation gets confirmed; evidence does not need to be.**
+
+### THE COST, STATED RATHER THAN DISCOVERED
+
+**A new conversation the same day will not know facts from an earlier one until the overnight
+read.** Accepted.
+
+*(Within one conversation nothing is lost — that is the gate's prior turns. The gap is strictly
+across conversations, within one day.)*
+
+### IMPLEMENTATION — it does not need the worker
+
+**A nightly script reading the day's conversations is the first version.** `CLAUDE.md` §4's
+worker is where it ends up, and waiting for the worker would defer this behind infrastructure it
+does not require.
+
+### CONSEQUENCE FOR THE PLAN
+
+**M1.3 as specced — *"The conversation writes `company_switches` through 7.2a's route"* — is
+SUPERSEDED.** Its replacement is three pieces:
+
+1. **Retaining conversations until processed**, then discarding them
+2. **The overnight extractor**, reading whole conversations
+3. **The proposal-and-confirm surface**, where a reading becomes a fact by one tap
+
+**Reversal condition:** a customer case where same-day cross-conversation knowledge matters enough
+to pay for per-turn judgment. **None has been named**, and the Arizona labels are the evidence
+against paying for it.
+
+---
+
+## 109. The testing plan, deferred on purpose — 21 September 2026
+
+**Once the compliance workspace is complete, it is tested with questions from many fields — some
+compliance, some not. Not written now.**
+
+| | What it tests |
+|---|---|
+| **Related questions** | whether it is good at compliance |
+| **UNRELATED questions** | **whether it knows when it is out of its depth and says so** |
+
+**The second is the one nobody writes**, and it is the one `CLAUDE.md` §6 is about: a product that
+answers confidently outside what it knows is the omniscient-status-tracker failure in a new place.
+
+### WHY THIS IS DEFERRED RATHER THAN SKIPPED — everything so far was tuned on almost nothing
+
+**Every decision in this record about answer quality rests on very few examples, mostly of ONE
+SHAPE.**
+
+| Shape | The example |
+|---|---|
+| **One fact decides everything** | golden 001, *"Minimum labelling requirement for 2.5L bottles and for the case — THE ORIGINAL FAILURE"*, and the 2.5L nitric-acid research answer beside it. **The gate asks the one question, and the answer follows** |
+| **Several facts each decide a PART** | the stormwater question — permit coverage, spill containment, and fire code, each turning on something different |
+
+**The second shape was met once, and the product handled it worse.** Measured: on the stormwater
+question **the gate did not stop to ask anything**, and the answer assumed where the pad drains.
+**ChatGPT, with no context at all, asked:**
+
+> *"Where does the pad's rainwater go — storm drain, ditch/creek, UIC/drywell, sanitary sewer, or
+> does it infiltrate on-site?"*
+
+**That is the fact that decides whether any of the answer applies**, and the product with a
+determination gate did not ask for it while the bare model did.
+
+> ### ONE DATA POINT IS NOT A PATTERN, AND ACTING ON IT WOULD REPEAT THE MISTAKE JUST AVOIDED.
+>
+> §105 stopped refinement on the strength of one question; §107 declined to change the prompt on
+> the strength of one contradictory answer. **Redesigning the gate because of one stormwater
+> question is the same error in the other direction.**
+>
+> **A spread of questions is exactly what settles it** — whether the gate systematically
+> under-asks on multi-fact questions, or whether this was one question.
+
+**Reversal condition:** none — this is a plan, not a constraint. What would move it EARLIER is a
+second instance of the same shape failing the same way.
 
