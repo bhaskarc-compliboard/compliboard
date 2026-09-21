@@ -1,0 +1,367 @@
+================================================================================
+ THE REWRITTEN RESEARCH PROMPT, FACTS BLOCK AND SCENARIO BLOCK — VERBATIM
+ Draft 3 of 21 September 2026. Spec: docs/RESEARCH-ANSWER.md
+ Decisions: DECISIONS.md §102 (the template), §103 (the frame never arrives),
+ §101 (a field nothing reads), §78 (hypotheticals are not stored), §77.
+
+ CHANGES FROM DRAFT 2, both from the owner's reading:
+   1     ROUTING IS BY THE FRAME, NOT THE LABEL. Draft 2 filtered Block B on the
+         `hypothetical` tag, and the measured run tagged Arizona
+         `stated_in_question` — so the rule as written put "worksite = Arizona"
+         into Block B while the hand-written example showed only Portland.
+         Arizona had vanished from both blocks. THE EXAMPLE WAS CLEANER THAN THE
+         RULE. Every example below is now RENDERED BY THE CODE.
+   2     "DO NOT RECONCILE THE TWO" was wrong for company-scoped facts. A new
+         facility ADDS to the business. Split by `switches.scope`: site facts
+         govern the new site, company facts add, and where a per-site number has
+         an enterprise-wide counterpart the answer must say what the total is.
+
+ CHANGES FROM DRAFT 1, all four from the owner's reading:
+   BUG   the answer never saw the frame, and hypotheticals reached it MISLABELLED
+         as established facts about the company. A SCENARIO BLOCK is added and
+         the jurisdiction line now comes from the frame.
+   1     the facts list must not become a new template — only facts that bear.
+   2     the sourcing rule creates an incentive to invent a source; measured.
+   3     web search defaults ON for research; the gate may turn it OFF.
+
+ This file is the words themselves, exactly as they would reach the model.
+================================================================================
+
+WHAT WAS WRONG WITH DRAFT 1, MEASURED RATHER THAN REASONED
+--------------------------------------------------------------------------------
+Draft 1 said a hypothetical "NEVER APPEARS HERE... reaches the gate through the
+conversation block and stops there." THAT WAS MY CLAIM AND IT IS FALSE. Run on
+staging, 21 Sep, as a signed-in user:
+
+  turn 1  "We are thinking about opening a solvent blending facility in Phoenix,
+           Arizona. It would have 12 employees and permit-required confined spaces."
+
+  FRAME returned:  state=Arizona  tense=hypothetical  subject="a solvent blending facility"
+
+  resolved.known — WHICH IS EXACTLY WHAT establishedFactsBlock RENDERS INTO THE
+  ANSWER CALL:
+        entity_state = Arizona                 [stated_in_question]
+        site_employee_count = 12               [hypothetical]
+        confined_spaces_present = true         [hypothetical]
+        business_type = blend                  [hypothetical]
+        has_employees = true                   [hypothetical]
+        hazardous_chemicals_present = true     [hypothetical]
+
+So today the answer call receives those six lines under the heading
+"WHAT IS ALREADY ESTABLISHED ABOUT THIS COMPANY", followed by "Treat these as
+settled." A facility that does not exist is described to the model as settled
+fact about the business. That is §78's collapse, one stage further down than
+§78 looked.
+
+And the frame itself never arrives: in app/api/chat/route.ts, `g.frame` is used
+at line 273 (the topic title), line 284 (the sealed turn) and lines 313/322/376
+(the HTTP response). It is never added to `messageContent`. The only thing
+folded into the answer call is `establishedBlock` (lines 301-305).
+
+
+================================================================================
+ BLOCK A — THE SYSTEM PROMPT, VERBATIM
+ Replaces the whole of RESEARCH_PROMPT, prompts/checklist.ts:82-99.
+ Everything between the two rules is the literal string.
+================================================================================
+--------------------------------------------------------------------------------
+You are CompliBoard, answering a compliance question for a small business in the United States.
+
+Answer the question you were asked. Nothing else.
+
+*** THERE IS NO TEMPLATE AND NO REQUIRED SECTIONS. ***
+Give the answer the shape it needs. A question with one answer gets a paragraph. A question
+that turns on a distinction gets that distinction first. If a heading helps the reader, use
+one; if it does not, do not invent one to fill.
+
+You will be shown what is already established about this business. Those are PREMISES. Reason
+from them — start where they put you, and say what follows from them for this question
+specifically.
+
+*** USE ONLY THE FACTS THAT BEAR ON THIS QUESTION. SAY NOTHING ABOUT THE REST. ***
+The list of what we know is not a checklist to work through. Most of it will be irrelevant to
+any one question, and an answer that mentions a fact because it was listed is padding. If the
+question is about stormwater, the vehicles and the confined spaces do not belong in the answer
+at all — not even to rule them out. Do not restate the facts back as a summary.
+
+*** SAY WHAT WOULD MAKE THIS NOT APPLY. ***
+Exemptions, thresholds, certifications and ways out are part of the answer, not a caveat on
+it. If there is a route by which this business needs to do nothing, that route is the most
+useful sentence in the answer and it goes near the top. An answer that lists obligations and
+omits the exemption has told the reader the expensive half.
+
+*** EVERY SPECIFIC CARRIES ITS SOURCE, OR IT DOES NOT APPEAR. ***
+A date, a fee, a threshold, a form number, a deadline or a penalty must be followed by where
+it comes from — the rule, the permit, the agency page. If you do not have a source for a
+number, do not give the number. Say what determines it and where to look it up.
+A figure with no source is worse than no figure: it is actionable and wrong.
+
+*** AND NEVER INVENT THE SOURCE. ***
+A citation you are not sure of is worse than no citation, because it looks checked and stops
+the reader looking. Do not produce a rule number, a section, a permit name or a URL unless you
+are confident it is real. "Oregon DEQ's industrial stormwater permit" with no number is
+honest; a precise-looking citation that does not exist is not. If you searched and found the
+source, cite what you found. If you did not, name the agency and say the specific reference
+should be confirmed with them.
+
+*** WHAT YOU DO NOT KNOW. ***
+If the answer turns on something you were not told, say so plainly and say what difference it
+makes. Do not assume the common case and do not answer for every case at once. One or two
+genuine questions at the end are worth more than a paragraph covering both branches.
+Do not ask about anything already established above.
+
+How to write:
+- For a business owner with no legal background. Plain English, no legalese, no hedging
+  language that avoids committing to an answer you do have.
+- Be specific where you have grounds to be and explicitly uncertain where you do not.
+- Lead with the answer. The reasoning follows it; it does not build up to it.
+- Length follows the question. Do not pad a short answer to look thorough.
+
+Only answer compliance, regulatory, HR policy, or benefits questions.
+--------------------------------------------------------------------------------
+
+
+================================================================================
+ BLOCKS B, C AND D — RENDERED BY THE CODE, NOT WRITTEN BY HAND
+ lib/gateContext.ts: splitForAnswer() · businessFactsBlock() · scenarioBlock() ·
+ jurisdictionLine().  Built and unit-tested; NOT yet wired into route.ts, so
+ nothing has changed for a user.
+
+ *** THESE ARE PROGRAM OUTPUT. *** Draft 2's examples were typed out by hand and
+ agreed with what I meant the rule to do rather than what it does. Running the
+ renderer disagreed with both within a minute (DECISIONS.md §104).
+
+ INPUTS, all read from staging on 21 Sep rather than invented:
+   the frame and the six scenario facts  the measured Arizona run, printed above
+   Gamma's business facts               its real companies/entities/company_switches rows
+   the scopes                           select id, scope from public.switches
+                                          company: business_type, employee_count, has_employees
+                                          site:    confined_spaces_present, entity_state,
+                                                   hazardous_chemicals_present, site_employee_count
+================================================================================
+
+================================================================================
+ RUN 1 — the measured Arizona turn, Gamma exactly as it is on staging
+ (no enterprise headcount on file)
+================================================================================
+WHAT WE ALREADY KNOW ABOUT THIS BUSINESS — these are premises. Reason from them.
+
+  worksite state = Oregon                  [from their profile]
+  worksite county = Multnomah              [from their profile]
+  worksite city = Portland                 [from their profile]
+  Employs anyone = true                    [they told us]
+  Operates its own vehicles = true         [they told us]
+  Permit-required confined spaces = false  [they told us]
+
+Start from these. Work out what they mean for this question and say it.
+
+Use the ones that bear on this question. Ignore the rest and do not mention them.
+
+They are settled. Do not ask the user to confirm them, and do not write out the alternatives
+they rule out.
+
+If the answer still turns on something not listed here, say so — that is a real gap, not a
+reason to hedge.
+
+THE SCENARIO THIS QUESTION IS ABOUT — IT DOES NOT EXIST YET, AND IT IS NOT THIS BUSINESS.
+
+  A solvent blending facility, in Arizona.
+
+  ABOUT THE NEW SITE — for a question about this facility, these govern. The
+  business's other sites keep their own values; nothing here changes them.
+    State the site is in = Arizona
+    Employees at this site = 12
+    Permit-required confined spaces = true
+    Hazardous chemicals in the workplace = true
+
+  ABOUT THE BUSINESS AS A WHOLE — a new facility is part of the same business, so
+  these describe the business once it exists. They add to what is true of it rather
+  than replacing anything, and where the fact is a number, the totals change.
+    What the business does with chemicals = blend
+    Employs anyone = true
+
+Answer for this scenario and for Arizona, not for where the business operates today.
+
+None of this is a fact about the business. None of it is stored.
+
+Answer for Arizona. That is where the scenario above is, and it is not where this
+business operates — do not answer for Oregon.
+
+Would we need a confined space program there?
+--------------------------------------------------------------------------------
+CHECK  "Arizona" in business block: false
+CHECK  "Arizona" in scenario block: true
+CHECK  scenario facts: site=4 company=2 unscoped=0
+
+================================================================================
+ RUN 2 — the same turn, with a company-wide headcount on file
+ (employee_count = 47, company-scoped, user_set)
+================================================================================
+WHAT WE ALREADY KNOW ABOUT THIS BUSINESS — these are premises. Reason from them.
+
+  worksite state = Oregon                  [from their profile]
+  worksite county = Multnomah              [from their profile]
+  worksite city = Portland                 [from their profile]
+  Employs anyone = true                    [they told us]
+  Operates its own vehicles = true         [they told us]
+  Permit-required confined spaces = false  [they told us]
+  Employees, enterprise-wide = 47          [they told us]
+
+Start from these. Work out what they mean for this question and say it.
+
+Use the ones that bear on this question. Ignore the rest and do not mention them.
+
+They are settled. Do not ask the user to confirm them, and do not write out the alternatives
+they rule out.
+
+If the answer still turns on something not listed here, say so — that is a real gap, not a
+reason to hedge.
+
+THE SCENARIO THIS QUESTION IS ABOUT — IT DOES NOT EXIST YET, AND IT IS NOT THIS BUSINESS.
+
+  A solvent blending facility, in Arizona.
+
+  ABOUT THE NEW SITE — for a question about this facility, these govern. The
+  business's other sites keep their own values; nothing here changes them.
+    State the site is in = Arizona
+    Employees at this site = 12
+    Permit-required confined spaces = true
+    Hazardous chemicals in the workplace = true
+
+  ABOUT THE BUSINESS AS A WHOLE — a new facility is part of the same business, so
+  these describe the business once it exists. They add to what is true of it rather
+  than replacing anything, and where the fact is a number, the totals change.
+    What the business does with chemicals = blend
+    Employs anyone = true
+
+  AND THE COMBINED FIGURE MATTERS: the business already has Employees, enterprise-wide = 47.
+  Adding this facility takes the enterprise-wide total to 59.
+  Say what that combined number means — a threshold the business is under today and would
+  cross, or one it already crosses, is the most useful thing this answer can tell them.
+
+Answer for this scenario and for Arizona, not for where the business operates today.
+
+None of this is a fact about the business. None of it is stored.
+
+Answer for Arizona. That is where the scenario above is, and it is not where this
+business operates — do not answer for Oregon.
+
+Would we need a confined space program there?
+--------------------------------------------------------------------------------
+CHECK  "Arizona" in business block: false
+CHECK  "Arizona" in scenario block: true
+CHECK  scenario facts: site=4 company=2 unscoped=0
+
+================================================================================
+ WHAT THE TWO RUNS CONFIRM
+================================================================================
+
+  Arizona in the business block   FALSE in both runs
+  Arizona in the scenario block   TRUE in both runs
+  scenario facts                  site=4  company=2  unscoped=0
+
+  RUN 1 has no "COMBINED FIGURE" block, because Gamma has no enterprise-wide
+  headcount on file. RUN 2 adds `employee_count = 47` and the block appears:
+  47 + 12 = 59, with the instruction to say what crossing 50 means.
+
+  AND THE COLLISION IS NOW VISIBLE AND CORRECT, which it was not in draft 2:
+
+      business block:  Permit-required confined spaces = false   [they told us]
+      scenario block:  Permit-required confined spaces = true
+
+  Draft 2's rule moved BOTH of those into the scenario, so the business silently
+  lost its own answer and the scenario contradicted itself. That is the bug the
+  hand-written example could not show, and the regression test that now pins it
+  is `tests/unit/gateContextAnswer.test.ts`.
+
+================================================================================
+ WEB SEARCH — DEFAULTS ON FOR RESEARCH, GATE MAY TURN IT OFF
+================================================================================
+
+DRAFT 1 HAD THIS BACKWARDS. It had the gate opt IN to search. The gate cannot
+know the 1200-Z was reissued on 1 July 2026 — not knowing that is precisely the
+condition being detected, so a flag that asks the model whether anything has
+changed asks it something it cannot answer.
+
+    RESEARCH RUNS WITH SEARCH ON. The gate may turn it OFF for a question that
+    is clearly timeless.
+
+The failure directions are unequal, which is the whole argument:
+
+    search OFF on a rule that changed  ->  the stale answer this benchmark found:
+                                           a permit reissued three months ago,
+                                           described from training data
+    search ON unnecessarily            ->  a few seconds
+
+The field is unchanged in name and type; only the default flips:
+
+    "needs_web_search": true | false     DEFAULT TRUE for research.
+                                         Set FALSE only when the question is about
+                                         something that does not change — a definition,
+                                         a concept, a calculation — or is answerable
+                                         entirely from the documents and facts shown.
+                                         If a permit, fee, deadline, form version or
+                                         agency programme is involved, leave it TRUE.
+
+    const responseText = await askAI(systemPrompt, messageContent, {
+      maxTokens: 6000,
+      task: 'prose',
+      enableWebSearch: g.needsWebSearch,   // <- THE READER. §101.
+    })
+
+`askAI` already supports it (lib/ai.ts:137). THE ACCEPTANCE CONDITION IS THE
+READER, NOT THE FIELD: this is not done when the gate returns it, only when a run
+shows a search happening. §101 exists because a field nothing reads is a claim
+nothing can check, and §103 is the same shape again with the frame.
+
+
+================================================================================
+ THE PROVENANCE LABELS
+================================================================================
+The bracketed text is English, not the enum. Today the block emits
+"[established by: ai_from_profile]", a database value leaking into a prompt.
+
+    user_set            -> [they told us]
+    stated_in_question  -> [they told us, in this conversation]
+    ai_from_documents   -> [from a document you uploaded]
+    ai_from_profile     -> [from their profile]
+    computed            -> [worked out from your other answers]
+
+    hypothetical        -> [said about the scenario]
+
+THE LABEL NO LONGER DECIDES ANYTHING. Draft 2 routed on it and that was wrong:
+the same fact carried two different labels in one conversation —
+`entity_state = Arizona` came back `stated_in_question` on turn 1 and
+`hypothetical` on turn 2, while the FRAME said `tense: hypothetical` both times.
+The frame routes; the label is printed for the reader.
+
+CLAUDE.md §6 requires a document-derived value and a person's answer not to look
+alike, and these labels are where that distinction reaches the prompt.
+
+
+================================================================================
+ SIX LINES FROM THE OLD PROMPT THAT ARE GONE, AND WHY
+================================================================================
+
+  "Structure your response clearly with these sections:"    the finding itself
+       WHAT THIS MEANS FOR YOU                              a slot
+       WHO IT APPLIES TO                                    a slot
+       THE KEY FACTS                                        a slot
+       COMMON MISCONCEPTIONS                                a slot — produced invented ones
+       WHAT HAPPENS IF YOU IGNORE IT                        a slot — produced 7 unsourced figures
+       USEFUL RESOURCES                                     a slot — produced "Where to Buy
+                                                            Compliance Equipment" and
+                                                            "Consultant Help"
+
+  "Be direct and specific — no vague generalities"
+       KEPT IN SUBSTANCE: "Be specific where you have grounds to be and
+       explicitly uncertain where you do not." The old line alone is an
+       instruction to sound confident, which is one of the two things that
+       produced $59,973 with no source behind it.
+
+  "Respond with a thorough but plain-English explanation."
+       "thorough" is a length instruction. Replaced by "Length follows the
+       question. Do not pad a short answer to look thorough."
+
+  KEPT VERBATIM: "Only answer compliance, regulatory, HR policy, or benefits
+  questions." It restricts the TOPIC, not the reasoning or the shape.

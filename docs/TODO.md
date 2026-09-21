@@ -1,6 +1,10 @@
 # Detailed To-Do
-**Version:** 27 · **Updated:** 21 September 2026
-**Supersedes:** version 26 (21 Sep). Adds **0.11 — stream the long AI calls.** It removes the
+**Version:** 28 · **Updated:** 21 September 2026
+**Supersedes:** version 27 (21 Sep). **M1.2b's done-marker is CORRECTED**: the web-search flag it
+claimed to return **does not exist on `GateResult`** and never did (§101) — §65's seventh shape,
+a thing described as shipped, and it survived six days because **nothing read the field**. Adds
+**M1.9 — the research answer rebuilt free-flowing** (§102): CompliBoard's answer was the weakest
+of four on the same question, and the fixed-section template is the cause. Version 27: Adds **0.11 — stream the long AI calls.** It removes the
 SDK's non-streaming ceiling that §100 could only cap below, **and** answers §92's 58.9 s: a
 spinner over a 197-second call is the product saying nothing. Notes the hard part — the critic
 must still finish before anything is shown, or a withheld item appears mid-stream and vanishes.
@@ -188,7 +192,7 @@ decisions and the five schema gaps are settled before any of this starts.*
 |---|---|---|---|
 | **M1.0** | **7.2a's two routes** — the floor, not part of M1 | — | 1 d |
 | **M1.1** ✅ | **DONE 15 Sep — migration 028, staging.** **Topics, minimal shape** (D23). `topics`: company, title, status, opened/closed, summary. **NO facts column** — §78: hypotheticals are not stored, so nothing here holds a fact. **Free today, not free once conversations are stored** (§69) | M1.0 | 1 d |
-| **M1.2b** ✅ | **DONE 15 Sep** (§84). ⚡ **The gate gains prior turns, the frame, and a web-search flag** (§77 items 6–8). `gate()` takes `{question, documentBlocks, companyId, outputType, db, answering}` today — **no conversation history**, so it re-asks what was established two turns ago. Returns jurisdiction-of-question, tense, subject, and `needsWebSearch` | M1.1 | 1.5 d |
+| **M1.2b** ⚠ | **PARTLY DONE 15 Sep** (§84), **corrected 21 Sep** (§101). ⚡ Shipped: **prior turns**, and a **frame** carrying jurisdiction-of-question, tense and subject (§77 items 7–8). **NOT shipped: the web-search flag** (§77 item 6). `GateResult` has `outcome`, `resolved`/`ask`, `frame`, `followUp` and **no `needsWebSearch`** — `grep -rn needsWebSearch lib app` returns only `determinationGate.ts:373`, which is the gate's own call setting `enableWebSearch: false`. **The row said it was returned for six days**, and nothing noticed because nothing read it. Carried into **M1.9** below | M1.1 | 1.5 d |
 | **M1.2a** | ~~The critic's `priorAssertions` field~~ — **WITHDRAWN for research.** §77 drops the critic from the research path entirely; §73's decision survives and applies at the **checklist boundary**, which is where it is now needed | — | — |
 | **M1.2c** ✅ | **DONE 15 Sep** (§91) — route wired, run over HTTP, four attacks refused. ⚡ **THE CONVERSATION LOOP** — the caller that feeds M1.2b and M1.2. `GATE-HISTORY.md` §8.4 specifies the contract and **assigns it to nobody**, which is why it was not a task: a contract with no owner is a specification of something that will not happen. **Turns are SIGNED** (§89). Until this exists, M1.2b and M1.2 are built, correct and **inert** | M1.2 | 1.5 d |
 | **M1.2** ✅ | **DONE 15 Sep** (§86) — folded into the gate, not a third call. **Follow-up classification** (§4.1) — three kinds, classified before anything expensive runs | **M1.2b** | 1 d |
@@ -201,6 +205,7 @@ decisions and the five schema gaps are settled before any of this starts.*
 | **M1.6** | **Conflict display** (v3.2) — determination disagreeing with a locked value is **shown, never silently resolved**. **Needs 7.2c above**: showing a conflict is worth little while the lock it reports on is unenforced | **7.2c** | 0.5 d |
 | **M1.7** | **"What moved" after an answer** (v3.4) — six became applicable, two no longer apply. One level only (§54) | M1.3 | 1 d |
 | **M1.8** | **Topic close onto a topic summary** (v3.6, **provisional**) | M1.1 | 0.5 d |
+| **M1.9** ⚡ | **THE RESEARCH ANSWER — free-flowing, and it must beat the bare model** (§102). `RESEARCH_PROMPT`'s six fixed sections go (`prompts/checklist.ts:88–93`); `establishedFactsBlock` is rewritten so facts are **premises reasoned from**, not a list to be careful around; **`needsWebSearch` is built for real** — the gate returns it and the research call reads it (§101). Spec: `docs/RESEARCH-ANSWER.md` | M1.2b | 2 d |
 
 **RECORDED, NOT SCHEDULED — report readability.** *21 Sep.* **The answers work and are hard to
 read.** Raised from a browser test, held deliberately: **it waits until answer quality is

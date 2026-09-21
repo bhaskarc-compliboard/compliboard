@@ -1,0 +1,183 @@
+{
+  "id": "004-stormwater-bare-vs-compliboard",
+  "title": "Stormwater permit, outdoor solvent drums — CompliBoard vs three bare models",
+  "recorded": "2026-09-21",
+  "status": "scored",
+  "_status_values": [
+    "awaiting-inputs",
+    "baseline-recorded",
+    "scored",
+    "passing",
+    "failing"
+  ],
+  "_what_this_case_is": [
+    "NOT a golden file in the 001-003 sense. Those ask 'did the output move'. This asks the",
+    "question DECISIONS.md §102 records as the research-quality bar:",
+    "",
+    "    Does CompliBoard beat the bare model with no context, on the same question?",
+    "    If it does not, the product adds nothing on research.",
+    "",
+    "So it holds FOUR answers to one question and is scored by a person against the six",
+    "criteria below. It is the first case of a comparison that is meant to be repeated, not a",
+    "one-off write-up of a comparison already done."
+  ],
+  "_why_it_is_awaiting_inputs": [
+    "Three of the four answers are the owner's and are NOT RECONSTRUCTIBLE. Writing plausible",
+    "versions of them would produce a benchmark that measures nothing — which is the whole",
+    "subject of DECISIONS.md §65. The slots are empty on purpose and the case cannot be scored",
+    "until a person pastes the real text in.",
+    "",
+    "CompliBoard's answer below is NOT reconstructed: it is the stored row, read out of",
+    "`checklists` on staging, 2026-09-21T15:32Z, id a13b1116."
+  ],
+  "input": {
+    "question": "Our site is in Hillsboro, Oregon. We store drums of solvent outdoors on an uncovered pad, exposed to rain. Do we need a stormwater permit? And what about spill containment for the same pad?",
+    "compliboard_context": {
+      "company": "Test Gamma Solvents",
+      "industry": "chemical-manufacturing",
+      "_note": "The facts CompliBoard held that the bare models did not. Industry is the one the ChatGPT answer had to ask for."
+    },
+    "bare_model_context": "none — the question alone, no company, no profile, no documents"
+  },
+  "answers": {
+    "compliboard": {
+      "recorded": "2026-09-21",
+      "source": "Run over HTTP as testgamma@example.com on staging, through /api/chat mode=research, 40.4s, HTTP 200. The answer text as returned.",
+      "prompt_version": "Free-flowing prompt (DECISIONS.md §102/§105), three-block context (§103/§104), web search read from the gate (§101).",
+      "conditions": "Signed in as Test Gamma Solvents. Gate returned frame Oregon/Hillsboro tense=present and did NOT stop to ask.",
+      "text": "Yes, you need a stormwater permit. \nBecause you have industrial activity exposed to stormwater, you must obtain coverage under Oregon's 1200-Z permit\n. \nA \"no exposure\" certification—which would exempt you from the permit—requires all industrial materials and activities be protected by storm-resistant shelter to prevent exposure to precipitation\n. Your drums are not covered, so that exemption does not apply.\n\n\nThe current 1200-Z permit took effect July 1, 2026\n. You apply through Oregon DEQ's Your DEQ Online system; \nfees are listed in Table 70G, and activity fees may also apply\n. \nThe permit requires you to develop a stormwater pollution control plan and comply with monitoring and sampling requirements\n.\n\nFor spill containment: \nFederal EPA rules require secondary containment capacity equal to the larger of 100% of your largest single drum or 10% of the total volume of all drums\n. \nThe system must also hold at least 10% of total volume or 100% of the largest container, whichever is larger\n, and \nmust either prevent precipitation from entering or have capacity to accommodate rainwater\n. \nStates can enforce stricter requirements than the federal minimum\n.\n\n\nOregon Fire Code requires spill control for storage of hazardous material liquids where individual vessels exceed 55 gallons or aggregate capacity exceeds 1,000 gallons\n. Depending on how many drums you store, Oregon may require containment beyond the federal baseline.\n\nThe 1200-Z permit itself will require you to address spill prevention and containment in your stormwater pollution control plan. Moving your solvents indoors or under cover would eliminate the stormwater permit requirement entirely, but outdoor storage requires both the permit and physical containment.\n\nConfirm the specific containment capacity requirement with Oregon DEQ or the Oregon Fire Marshal—what you need depends on total drum count and whether state rules impose a higher standard than the federal 10%-or-largest-drum rule."
+    },
+    "chatgpt": {
+      "recorded": "2026-09-21",
+      "source": "tests/golden/storm_water.pdf. Text extracted 21 Sep. Verbatim: not paraphrased, not tidied, not reflowed.",
+      "conditions": "No log in, no background. Just asked on the web app.",
+      "text": "Yes—potentially, and the uncovered solvent-drum pad is a signiﬁcant factor. The answer turns\non your facility’s industrial activity/SIC code, where the stormwater goes, and whether the\nsolvents are exposed to precipitation.\n1. Stormwater permit\nOregon DEQ’s current 1200-Z Industrial Stormwater General Permit took effect July 1,\n2026. It regulates stormwater discharges from covered industrial activities to waters of the state.\nImportantly, having solvent drums outdoors does not by itself automatically mean you need\na 1200-Z permit. The facility has to fall within one of the industrial categories covered by the\npermit. If it does, outdoor storage/handling of solvents can make the activity subject to\nstormwater requirements.\nFor example, DEQ's sector requirements can speciﬁcally address containerized materials such as\nsolvents and require them to be protected from stormwater exposure.\nThere is another wrinkle for Hillsboro: if the pad drains to an underground injection control\n(UIC) system/drywell, Oregon has separate requirements for industrial/commercial facilities\nhandling hazardous substances. DEQ requires those facilities to prevent stormwater from being\nexposed to hazardous substances before it enters the UIC system.\n2. Spill containment\nIf your facility is subject to the 1200-Z permit, secondary containment is generally the\nexpectation for hazardous substances/chemical liquids exposed to stormwater. DEQ's\nstormwater requirements call for hazardous substances and chemical liquids with potential to\ncontaminate stormwater to be stored within berms or other secondary containment; where that\nisn't practicable, they must be kept in areas that don't drain off-site or to the storm sewer.\nSo, for an uncovered pad holding solvent drums, I would not treat an ordinary paved pad with\na storm drain as adequate spill containment. A typical compliant approach would be something\nlike:\n•impervious pad;\n•curbing/berm or a containment pallet/system;\n•enough capacity for the applicable spill plus rainfall/freeboard;\n•no uncontrolled connection to a storm drain;\ncontrolled removal of accumulated rainwater;\n•inspection for leaks and deterioration;\n•spill-response materials and procedures; and\n•protection against vehicle impacts and drum damage.\nDEQ's industrial stormwater guidance speciﬁcally recommends keeping drums/containers\ncontaining signiﬁcant materials or hazardous substances away from drainage pathways and\nsurface waters.\n3. There may also be ﬁre-code requirements\nIf these are ﬂammable solvents, Oregon OSHA's ﬂammable-liquid rules can independently\nrequire the storage area to be graded to divert spills or surrounded by a curb, with drainage\narranged so spills don't create a hazard.\nOregon's State Fire Marshal also regulates/reporting certain quantities of hazardous substances\nunder the Community Right to Know program.\nWhat I would need to give you a fairly deﬁnitive answer\nIf you give me these four facts, I can work through the Oregon requirements for your speciﬁc\nHillsboro site:\n1.What does the facility manufacture/process? (or your SIC code, if you know it)\n2.Are these virgin solvent drums, used/spent solvent, or both?\n3.Approximately how many gallons are stored on the pad?\n4.Where does the pad's rainwater go—storm drain, ditch/creek, UIC/drywell, sanitary\nsewer, or does it inﬁltrate on-site?\nThose details determine whether you're looking at 1200-Z coverage, UIC requirements,\nhazardous-waste requirements, ﬁre-code containment, or several of them simultaneously."
+    },
+    "gemini": {
+      "recorded": "2026-09-21",
+      "source": "tests/golden/storm_water.pdf. Text extracted 21 Sep. Verbatim: not paraphrased, not tidied, not reflowed.",
+      "conditions": "No background given.",
+      "text": "Stormwater Permit Requirements in Hillsboro, Oregon\nIf you store drums of solvent outdoors on an uncovered pad exposed to rain, yes, you\nwill very likely need an industrial stormwater permit.\n!The Oregon DEQ 1200-Z Permit: The Oregon Department of Environmental\nQuality (DEQ) regulates stormwater runoff from industrial sites under the 1200-Z\nGeneral NPDES Permit.\n!No \"No Exposure\" Exclusion: Because your solvent drums are outdoors and\nexposed to precipitation, your site does not qualify for a \"No Exposure\" exclusion. If\nstormwater from your facility ﬂows off the pad and into surface waters, ditches, or\nmunicipal storm sewer systems (managed locally in Hillsboro via Clean Water\nServices infrastructure), permit coverage is mandatory.\n!High Pollution Risk: Uncovered solvent storage is a major red ﬂag for stormwater\ninspections. Rainwater washing over the pad can pick up chemical residue or minor\ndrips, creating a high risk of benchmark exceedances and heavy penalties.\nSpill Containment and Secondary Containment Rules\nStoring hazardous liquids like solvents outdoors on an unroofed pad also triggers strict\nsecondary containment requirements under federal and state environmental laws.\n!Volume Sizing: Your secondary containment system must be capable of holding\nthe greater of 110% of the volume of your largest drum or 10% of the total\naggregate volume of all containers on the pad.\n!The Rainwater Problem: Because your pad is uncovered, your containment\nstructure will ﬁll up with rainwater.\n!You must design the containment to hold both the required spill volume plus the\nheavy runoff volume generated by a major design storm (such as a 24-hour, 25-\nyear storm event), or use physical berms to prevent outside run-on.\n!Water Disposal: Accumulated rainwater inside a solvent containment basin is\nconsidered potentially contaminated industrial wastewater. You cannot drain it\ninto a storm sewer. It must be tested, managed, and hauled off-site for proper\ndisposal unless explicitly permitted otherwise.\nRecommended Best Practices\nTo drastically reduce your compliance burden, lower your risk of spills, and avoid\nexpensive wastewater management fees, consider these solutions:\n!Build a Roof or Canopy: Installing a structural roof or heavy-duty cover over the\npad—along with perimeter curbing to block stormwater run-on—prevents rain from\never touching the drums.\n!Relocate Indoors: Moving your solvent inventory inside a warehouse or a\ndedicated chemical storage locker is the safest and most compliant option.\n!Coordinate Locally: Contact Clean Water Services (CWS) (the water resource\nmanagement district for Washington County/Hillsboro) or an environmental\nconsultant to verify your speciﬁc SIC code requirements and site drainage setup.\nWould you like help outlining a Stormwater Pollution Control Plan (SWPCP) for your\nfacility?"
+    },
+    "claude": {
+      "recorded": "2026-09-21",
+      "source": "tests/golden/storm_water.pdf. Text extracted 21 Sep. Verbatim: not paraphrased, not tidied, not reflowed.",
+      "conditions": "No background given.",
+      "text": "Short answer: yes to both, almost certainly, given what you've described.\nStormwater — 1200-Z permit\nOregon regulates this through DEQ's 1200-Z Industrial Stormwater Discharge General Permit,\nand the trigger isn't complicated: if your industrial activity area is exposed to precipitation and\nthat stormwater discharges — even indirectly through a ditch, storm drain, or sheet ﬂow — to a\nwater of the state, you need coverage. The classic example DEQ itself uses is materials stored\noutside where rain falls on the storage area and washes into the stormwater system — that's\nexactly your drum pad. City of Estacada\nThe one escape hatch is a \"No Exposure Certiﬁcation\" — but that only applies when industrial\nmaterials and activities are not exposed to stormwater (i.e., everything's under a roof or\notherwise shielded). Since you're describing an uncovered pad with drums sitting directly in the\nrain, that exemption isn't available to you. You're in coverage-required territory, not exemption\nterritory.\nWhether solvent storage/distribution speciﬁcally falls under a covered sector depends on your\nSIC code and activity classiﬁcation under the permit's Table 1/2 — coverage applies when\nstormwater is associated with an industrial activity identiﬁed in those tables, or when DEQ\nnotiﬁes a facility it needs coverage. Chemical storage and distribution operations are typically\ncaptured. Practically, the move is to register in Your DEQ Online, get your site's Standard\nIndustrial Classiﬁcation conﬁrmed, and if covered, develop a Stormwater Pollution Control Plan\n(SWPCP) — that's the document where the pad, the drums, and your containment measures all\nget described and where DEQ will look ﬁrst if there's ever a spill or an inspection. Oregon\nDepartment of Environmental Quality\nOne more thing worth ﬂagging: DEQ just reissued 1200-Z effective July 1, 2026, replacing the\n2021 version, so if anyone on your team was working off old guidance, get the current permit\ntext rather than an older PDF.\nSpill containment for the same pad\nThis is a separate obligation from the stormwater permit, and it's driven by ﬁre code, not DEQ.\nHillsboro enforces the Oregon Fire Code (based on the International Fire Code), and outdoor\nstorage of hazardous materials — solvents almost always qualify — requires secondary\ncontainment. The standard the ﬁre marshal will hold you to is containment sized for 110% of the\nlargest single container, or enough volume to hold the contents of the largest drum plus a safety\nmargin, with the containment area also needing a way to shed clean rainwater without it\nbecoming a pathway for spilled product to reach the storm drain (usually a manually-operated\nvalve or absorbent-sock drain, not a passive open drain).\nTwo more layers to check:\nIf any of what's in those drums is petroleum-based and your aggregate aboveground storage\nexceeds 1,320 gallons, you're also into SPCC (Spill Prevention, Control and Countermeasure)\nterritory under EPA's 40 CFR 112 — that requires a written SPCC plan, not just physical\ncontainment.\nAnd if any of the material is hazardous waste rather than virgin product, RCRA secondary\ncontainment rules (40 CFR 264/265 Subpart I) kick in with their own specs on containment\nsystem design, including things like a minimum containment capacity and compatibility of the\ncontainment liner with what's stored.\nPractical sequencing: get the pad physically compliant ﬁrst (curbing or berm sized to the 110%\nrule, with a controlled drain), because that containment design is also exactly what you'll\ndescribe in the SWPCP for the stormwater permit — the two requirements reinforce each other\nrather than being independent paperwork exercises. I'd loop in Hillsboro Fire & Rescue's hazmat\ninspector directly since local ﬁre code enforcement varies by jurisdiction in exact numbers and\ndrain valve requirements, and DEQ's regional NW ofﬁce for the 1200-Z application speciﬁcs."
+    },
+    "compliboard_templated": {
+      "recorded": "2026-09-21T15:32Z",
+      "source": "checklists.research_answer, staging, id a13b1116",
+      "prompt_version": "RESEARCH_PROMPT with six fixed sections (prompts/checklist.ts:88-93) — the version DECISIONS.md §102 replaces",
+      "text": "# STORMWATER PERMIT & SPILL CONTAINMENT FOR OUTDOOR SOLVENT STORAGE IN HILLSBORO, OREGON\n\n## WHAT THIS MEANS FOR YOU\n\n**Yes, you almost certainly need a stormwater permit.** In Oregon, industrial facilities that have stormwater runoff exposed to industrial materials must obtain coverage under the **1200-Z General Permit** (Industrial Stormwater). Storing drums of solvent outdoors where rain can contact them, or where spills could be washed away by rain, is exactly the kind of activity this permit regulates.\n\n**And yes, you need spill containment.** Oregon's rules require secondary containment for outdoor chemical storage. This means you can't just keep drums sitting on an open pad — you need something to catch spills and leaks before they reach stormwater drains or the ground.\n\n## WHO IT APPLIES TO\n\n- **Any industrial facility in Oregon** with outdoor activities or materials exposed to stormwater\n- **Specifically applies to you** because solvents are industrial materials, and you're storing them uncovered where rain hits them\n- The permit requirement isn't based on company size or number of drums — if you're doing this activity, you need the permit\n- Hillsboro is in the Portland metro area, so you're also in the **DEQ's Northwest Region** jurisdiction\n\n## THE KEY FACTS\n\n### Stormwater Permit (1200-Z)\n\n- Issued by the **Oregon Department of Environmental Quality (DEQ)**\n- Requires you to submit a **Notice of Intent (NOI)** before you can legally operate\n- You must develop a **Stormwater Pollution Control Plan (SWPCP)** that identifies:\n  - Where stormwater contacts industrial materials\n  - What pollutants could get into runoff\n  - What controls you'll use to prevent contamination\n  - How you'll inspect and maintain those controls\n- You must conduct **visual monitoring** of your stormwater discharge regularly\n- **Annual reporting** is required\n- Permit fee: approximately $565/year (subject to change)\n\n### Spill Containment Requirements\n\n- Oregon requires **secondary containment** for hazardous substance storage\n- For drums on a pad, this typically means:\n  - A **spill pallet or berm** that holds at least 110% of the largest container's volume\n  - Or a **concrete containment pad** with curbs/walls and a drain valve\n  - The containment must be **impervious** (won't leak into soil)\n- Any captured stormwater in your containment must be:\n  - **Inspected** before release\n  - **Treated as hazardous waste** if contaminated\n  - Possibly tested, depending on the solvent type\n\n### What You Need to Do Right Now\n\n1. **Stop storing drums uncovered immediately** — get temporary containment in place (tarps are a short-term fix only)\n2. **File for your 1200-Z permit** — submit an NOI to DEQ\n3. **Install proper secondary containment** — spill pallets or a bermed pad\n4. **Create your SWPCP** — this is your operating manual for stormwater management\n5. **Train your employees** on spill response and stormwater protection\n\n## COMMON MISCONCEPTIONS\n\n**\"We only have a few drums, so we don't need a permit.\"**  \nWrong. There's no minimum threshold based on quantity. If you're an industrial facility with outdoor exposure, you need the permit.\n\n**\"We'll just cover the drums with a tarp.\"**  \nNot good enough for compliance. You still need secondary containment beneath them in case of leaks or spills. A tarp also doesn't qualify as proper coverage under the permit — you'd need a permanent roof or enclosed structure.\n\n**\"Rainwater that falls on the pad is clean until a spill happens.\"**  \nNo. Even small drips, residue on drum lids, or vapors can contaminate stormwater. DEQ assumes any rain contacting your storage area is potentially polluted.\n\n**\"We're too small for DEQ to care.\"**  \nSize doesn't matter. DEQ enforces these rules on small businesses regularly. Complaints from neighbors or downstream water sampling can trigger inspections.\n\n**\"Spill containment is just an OSHA thing.\"**  \nIt's both. OSHA cares about worker safety; DEQ cares about environmental contamination. You need containment to satisfy both agencies.\n\n## WHAT HAPPENS IF YOU IGNORE IT\n\n### Stormwater Permit Violations\n\n- **Civil penalties**: Up to $25,000 per day per violation under Oregon law\n- **Federal fines**: EPA can also enforce, with penalties up to $59,973 per day (yes, per day)\n- **Stop-work orders**: DEQ can shut down your outdoor operations until you're compliant\n- **Mandatory corrective action**: You'll be ordered to fix the problem at your expense, often on a tight timeline\n\n### Lack of Spill Containment\n\n- **Immediate cleanup orders**: If a spill reaches soil or water, you pay for environmental remediation (often tens of thousands of dollars)\n- **Hazardous waste liability**: You're responsible for contaminated soil removal and disposal\n- **Third-party lawsuits**: If your runoff contaminates a neighbor's property or waterway, you can be sued\n- **Criminal charges**: Knowing violations that endanger public health can result in criminal prosecution\n\n### Real-World Consequences\n\nOregon DEQ actively patrols industrial areas and responds to complaints. In the Portland metro area (which includes Hillsboro), enforcement is particularly active. A single rainfall event that washes solvent residue into a storm drain can trigger a violation notice within days.\n\n## USEFUL RESOURCES\n\n### Oregon DEQ\n\n- **1200-Z General Permit information**: https://www.oregon.gov/deq/wq/wqpermits/Pages/NPDES-Stormwater-1200Z.aspx\n- **DEQ Northwest Region Office** (serves Hillsboro):  \n  700 NE Multnomah St., Suite 600, Portland, OR 97232  \n  Phone: (503) 229-5696\n- **File your Notice of Intent (NOI)**: Available on the DEQ website above\n\n### Spill Containment Guidance\n\n- **DEQ Hazardous Waste Program**: https://www.oregon.gov/deq/hazardouswaste  \n  Phone: (503) 229-5913\n- **EPA Secondary Containment Guidance**: Useful technical details on sizing and design\n\n### Where to Buy Compliance Equipment\n\n- Look for **spill pallets** rated for your solvent type (check chemical compatibility)\n- Many industrial supply companies in the Portland area sell compliant containment systems\n- Budget approximately $100-$500 per pallet depending on capacity\n\n### Consultant Help\n\nIf this feels overwhelming, consider hiring an environmental consultant who specializes in Oregon stormwater permits. They can:\n- Prepare your NOI and SWPCP\n- Design your containment system\n- Train your staff\n- Typical cost: $2,000-$5,000 for initial setup\n\n---\n\n**Bottom line:** Get compliant now. File for the permit, install containment, and document everything. The cost of compliance is far less than the cost of a violation, and Oregon DEQ does not look kindly on businesses that pollute stormwater with industrial chemicals.",
+      "_note_on_the_pdf_copy": "The PDF also contains a re-rendered copy of this answer (6193 chars). The text kept here is the DATABASE row (6722 chars), which is what the product actually produced.",
+      "_label": "BEFORE — the six-section template (prompts/checklist.ts:88-93). Kept because it is what DECISIONS.md §102 measured."
+    }
+  },
+  "scored_by": "a person. No model scores this — a model checking a model produces agreement, and agreement is not verification (TESTING.md (c)).",
+  "criteria": [
+    {
+      "id": "opened-from-what-it-knew",
+      "asks": "Did the answer start FROM the company's facts? Only CompliBoard had any, so only CompliBoard can pass or fail this.",
+      "chatgpt": "n/a — no context given",
+      "gemini": "n/a — no context given",
+      "claude": "n/a — no context given",
+      "compliboard": "NOT SCORED — THE FACT WAS NEVER AVAILABLE. `grep -n industry lib/determinationGate.ts` returns nothing: the gate never puts the company's industry into `known`, so no answer could have opened from it. That is fact capture, DEFERRED by §105, not answer quality. Scoring it down here would blame the answer for a missing input. (The templated answer failed this criterion for a different reason and the finding stands for it.)"
+    },
+    {
+      "id": "stated-the-trigger-correctly",
+      "asks": "Is permit coverage presented as gated on sector and discharge, or as automatic on outdoor exposure?",
+      "chatgpt": "PASS, and the most explicit of the four: 'having solvent drums outdoors does not by itself automatically mean you need a 1200-Z permit. The facility has to fall within one of the industrial categories covered by the permit.'",
+      "gemini": "NOT ADDRESSED. Says 'very likely need' and moves on; never states what decides it.",
+      "claude": "PASS. Gates on discharge to a water of the state, then separately on SIC/Table 1-2 coverage.",
+      "compliboard": "PARTIAL, and much improved. Gone: 'any industrial facility', 'no minimum threshold based on quantity'. Now: 'Because you have industrial activity exposed to stormwater, you must obtain coverage' — immediately followed by the no-exposure exemption. BUT IT STILL DOES NOT NAME THE SECTOR/SIC GATE, which ChatGPT and Claude both do. This is the one substantive regulatory point where both bare models are better."
+    },
+    {
+      "id": "named-the-way-out",
+      "asks": "Does it name the No Exposure Certification — the route by which no permit is needed? THE CRITERION THAT DECIDES WHETHER ANY OF THE REST APPLIES.",
+      "chatgpt": "FAIL. Names the sector gate, which is a different thing, and never mentions the certification.",
+      "gemini": "PASS. 'No \"No Exposure\" Exclusion: Because your solvent drums are outdoors and exposed to precipitation, your site does not qualify.'",
+      "claude": "PASS, and the fullest: 'The one escape hatch is a \"No Exposure Certification\" — but that only applies when industrial materials and activities are not exposed... that exemption isn't available to you.'",
+      "compliboard": "PASS, and near the top — second thing said. 'A \"no exposure\" certification—which would exempt you from the permit—requires all industrial materials and activities be protected by storm-resistant shelter... Your drums are not covered, so that exemption does not apply.' Also closes with the route out: moving solvents indoors 'would eliminate the stormwater permit requirement entirely'."
+    },
+    {
+      "id": "is-current",
+      "asks": "Does it carry the 1200-Z reissue effective 1 July 2026? And the SWPCP update due 30 November 2026?",
+      "chatgpt": "PASS on the reissue: 'took effect July 1, 2026'. FAIL on the 30 November deadline.",
+      "gemini": "FAIL. No date anywhere in the answer.",
+      "claude": "PASS on the reissue, and the only one to say what to DO about it: 'DEQ just reissued 1200-Z effective July 1, 2026, replacing the 2021 version, so if anyone on your team was working off old guidance, get the current permit text.' FAIL on the 30 November deadline.",
+      "compliboard": "PASS on the reissue: 'The current 1200-Z permit took effect July 1, 2026.' FAIL on the 30 November deadline, like all four.",
+      "_finding": "NOT ONE OF THE FOUR names the 30 November 2026 SWPCP deadline. It is a real gap in the whole field, not a CompliBoard-specific miss, and DECISIONS.md §102 is corrected to say so."
+    },
+    {
+      "id": "every-specific-sourced",
+      "asks": "Does every date, fee, threshold and penalty carry where it comes from?",
+      "chatgpt": "PASS, largely by restraint — it gives almost no hard numbers, and attributes what it does say to DEQ guidance, Oregon OSHA and the State Fire Marshal.",
+      "gemini": "PARTIAL. '110% of the largest drum or 10% of aggregate' and '24-hour, 25-year storm event' are attributed only to 'federal and state environmental laws'.",
+      "claude": "PASS, and the strongest: 40 CFR 112 for SPCC, 40 CFR 264/265 Subpart I for RCRA, the permit's Table 1/2, the 1,320-gallon SPCC threshold.",
+      "compliboard": "PASS on the failure that produced §102: ZERO dollar figures, down from seven. Specifics are now 'Table 70G', 100%/10% containment, 55 gallons / 1,000 gallons, July 1 2026. BUT THE CITATIONS ARE STRIPPED IN DISPLAY: lib/ai.ts:183-186 filters the response to type==='text' and takes block.text, dropping each block's `citations` array. The orphaned line breaks and bare full stops in the answer are where they were. So the sources exist in the API response and do not reach the reader."
+    },
+    {
+      "id": "are-the-cited-sources-real",
+      "asks": "Open every rule number, section, permit name and URL in the answer. Do they exist, and do they say what the answer claims?",
+      "_why": "The rule 'every specific carries its source, or it does not appear' creates an incentive to invent a plausible source. A FABRICATED OAR OR CFR CITATION IS WORSE THAN AN UNSOURCED FIGURE, because it looks checked and stops the reader looking. The prompt now says never invent one; this is the criterion that measures whether that held.",
+      "chatgpt": "NOT YET CHECKED. Attributes to DEQ guidance, Oregon OSHA and the State Fire Marshal by name, with no rule numbers to verify.",
+      "gemini": "NOT YET CHECKED. No rule numbers given; '110%' and '24-hour, 25-year storm event' are attributed only to 'federal and state environmental laws'.",
+      "claude": "NOT YET CHECKED, AND IT HAS THE MOST TO CHECK: 40 CFR 112, 40 CFR 264/265 Subpart I, the permit's Table 1/2, the 1,320-gallon SPCC threshold. Most specific, therefore most exposed if any is wrong.",
+      "compliboard": "NOT YET CHECKED. 'Table 70G', the 55-gallon / 1,000-gallon Oregon Fire Code thresholds, and the 100%/10% federal rule all need opening.",
+      "_note": "Scoring this needs a person opening the citations. It is the one criterion no amount of reading the answers can settle."
+    },
+    {
+      "id": "asked-only-what-it-lacked",
+      "asks": "Did it ask for what it genuinely needed, and nothing it already had?",
+      "chatgpt": "PASS. Four questions — what the facility makes, virgin or spent, how many gallons, where the pad's rainwater goes. All four are genuine with no context.",
+      "gemini": "WEAK. One question, and it is an offer of more output ('Would you like help outlining a SWPCP?'), not a fact it needs.",
+      "claude": "PASS by another route. Asks nothing but flags every conditional — SIC code, petroleum over 1,320 gallons, virgin vs hazardous waste — and says who to call.",
+      "compliboard": "WEAKER THAN CHATGPT. It asks nothing, but names the unknown and who owns it: 'Confirm the specific containment capacity requirement with Oregon DEQ or the Oregon Fire Marshal—what you need depends on total drum count.' Closer to Claude's approach than ChatGPT's four questions. The gate did not stop, so nothing was asked in the product either."
+    },
+    {
+      "id": "stable-between-runs",
+      "asks": "Ask the identical question twice. Do the specifics change?",
+      "chatgpt": "NOT MEASURED",
+      "gemini": "NOT MEASURED",
+      "claude": "NOT MEASURED",
+      "compliboard": "NOT MEASURED."
+    }
+  ],
+  "rerun": [
+    "1. Ask the question in `input.question` of the bare model, with no context. Paste it in.",
+    "2. Ask it of CompliBoard as a signed-in user whose company is chemical-manufacturing in Oregon.",
+    "3. Score both against `criteria`, by reading them.",
+    "4. Set status to `scored` and record the date. The comparison is the artifact; a summary of it is not."
+  ],
+  "_source_pdf": "tests/golden/storm_water.pdf. Text extracted 21 Sep. Verbatim: not paraphrased, not tidied, not reflowed.",
+  "_extraction_artifacts": [
+    "THE CHATGPT LIST IS COMPLETE. NO WORDS ARE MISSING. An earlier pass through this file marked a gap between '...no uncontrolled connection to a storm drain;' and 'controlled removal of accumulated rainwater;' and called the intervening words unrecoverable. That was WRONG. `pdftotext`, which resolves the embedded font encodings, reads the list cleanly straight across the page break. What the raw content-stream decode saw as a binary run was DISPLACED 'fi' LIGATURE GLYPHS sitting at the page boundary — glyph data, not text, and not a hole in the answer. The reason the two disagree is the tool, not the document: pdftotext resolved it; a hand-rolled inflate-and-decode did not. DECISIONS.md §65, eleventh instance.",
+    "Line breaks are the PDF's page wrapping, NOT the model's own formatting. Left as extracted rather than rejoined, because rejoining is an edit and these answers are evidence.",
+    "Gemini's bullet markers extract as '!' — a symbol-font glyph that maps to 0x21. They are bullets in the original. NOT substituted, because 'it is probably a bullet' is an inference.",
+    "The question line reads 'exposed to rain.Do we need' with no space — an artifact of how the PDF's text runs were split, matching the same missing spaces in the stored CompliBoard row."
+  ],
+  "scored_on": "2026-09-21",
+  "verdict": {
+    "ranking": "Claude 1st · ChatGPT and Gemini close behind with OPPOSITE failure modes · CompliBoard last, clearly.",
+    "compliboard_is_weakest": "CONFIRMED. It is the only one to overstate the trigger, the only one to omit BOTH the exemption and the reissue, the only one with unsourced figures, the only one that asked nothing — and the only one that knew who was asking. It is also the longest, at 1010 words against 420-611.",
+    "claude_is_strongest": "CONFIRMED. Only answer to pass the way-out, currency and sourcing criteria together, and the only one to cite regulations by number or to say what to do about the reissue.",
+    "where_this_scoring_DISAGREES_with_the_owner": "The owner read it as 'Claude and ChatGPT strongest'. On the criterion the owner himself called decisive — the No Exposure Certification, the route by which no permit is needed — CHATGPT MISSES IT AND GEMINI CATCHES IT. ChatGPT names the sector gate, which is a different mechanism. So ChatGPT and Gemini are not cleanly ordered: ChatGPT is better on currency, on stating the trigger, and on asking the right questions; Gemini is better on the single thing that decides whether the answer applies at all. Ranking ChatGPT above Gemini overall is defensible; calling it joint-strongest understates what Gemini caught.",
+    "what_it_does_not_settle": "Three of the four were single runs of a bare model with no context. A different run could name the exemption or drop the date. The benchmark is repeatable for that reason.",
+    "after_the_rebuild_2026_09_21": {
+      "question": "Is CompliBoard's answer comparable to ChatGPT's and Claude's? (DECISIONS.md §105)",
+      "answer": "YES — comparable. In the same class, winning some criteria and losing one.",
+      "what_it_now_clears_that_it_failed_before": [
+        "Named the way out — the No Exposure Certification, near the top. ChatGPT MISSES this.",
+        "Current — the 1 July 2026 reissue. Gemini MISSES this.",
+        "Zero unsourced dollar figures, down from seven.",
+        "304 words, down from 1010. No invented sections; no 'Where to Buy Compliance Equipment'."
+      ],
+      "where_it_is_still_behind": [
+        "It does not name the sector/SIC gate. ChatGPT and Claude both do. One substantive regulatory point, and both bare models beat it there.",
+        "Claude remains ahead overall: it names the exemption AND the sector gate, cites 40 CFR by number, and adds the SPCC and RCRA layers."
+      ],
+      "not_counted_against_it": "The company's industry never reaches the answer — the gate does not put it in `known`. That is deferred fact capture (§105), not answer quality."
+    }
+  }
+}

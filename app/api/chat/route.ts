@@ -27,7 +27,8 @@ import type { PriorTurn } from '@/lib/gateContext';
 import { gate, type GateAnswering } from '@/lib/determinationGate';
 import { criticise, applyCritique } from '@/lib/criticPass';
 import { recordCritique } from '@/lib/criticRecord';
-import { establishedFactsBlock } from '@/lib/gateContext';
+import { splitForAnswer, businessFactsBlock, scenarioBlock, jurisdictionLine,
+         type SwitchScope } from '@/lib/gateContext';
 import { agenciesInScopeFor } from '@/lib/agencyScope';
 import type { ChecklistAnswer } from '@/lib/answerSchema';
 
@@ -297,8 +298,37 @@ export async function POST(request: NextRequest) {
       // Written by the same function the gate uses (lib/gateContext.ts), so a fact does not
       // change shape as it moves between stages.
       // ------------------------------------------------------------------
+      //
+      // *** AND SINCE 21 SEP IT IS THREE BLOCKS, NOT ONE. DECISIONS.md §103, §104. ***
+      //
+      // One block put everything under "WHAT IS ALREADY ESTABLISHED ABOUT THIS COMPANY" and told
+      // the model to treat it as settled — including, measured on staging, a hypothetical Arizona
+      // facility's confined spaces. §78 made that impossible for `company_switches`; nothing made
+      // it impossible for the prompt, which is where the answer comes from.
+      //
+      //   businessFactsBlock   what is true of the business
+      //   scenarioBlock        a facility that does not exist, with the frame's jurisdiction
+      //   jurisdictionLine     what the ANSWER is written for — from the frame, not the profile
+      //
+      // THE SPLIT IS THE RENDERER'S, NOT THE MODEL'S. Routing is by the FRAME rather than by the
+      // `source` label, because the label is not stable: in one conversation `entity_state =
+      // Arizona` came back `stated_in_question` on turn 1 and `hypothetical` on turn 2 (§104).
       if (g.outcome === 'proceed') {
-        establishedBlock = establishedFactsBlock(g.resolved.known);
+        // scope decides whether a scenario fact REPLACES the business's value or ADDS to it.
+        const { data: scopeRows } = await db.from('switches').select('id, scope');
+        const scopeOf = Object.fromEntries(
+          (scopeRows ?? []).map((r) => [r.id, r.scope as SwitchScope])) as Record<string, SwitchScope>;
+
+        const ctx = splitForAnswer(g.resolved.known, priorTurns, g.frame, scopeOf);
+        const businessState =
+          ctx.business.find((b) => b.fact === 'worksite state')?.value ?? null;
+
+        establishedBlock = [
+          businessFactsBlock(ctx.business),
+          scenarioBlock(ctx.scenario, ctx.frame, ctx.business),
+          jurisdictionLine(ctx.frame, businessState),
+        ].filter(Boolean).join('\n\n');
+
         if (establishedBlock) {
           messageContent = Array.isArray(messageContent)
             ? ([...messageContent, { type: 'text', text: establishedBlock }] as AIContent)
@@ -318,7 +348,12 @@ export async function POST(request: NextRequest) {
         // structured-research change is listed as not-yet-specified in
         // DETERMINATION-GATE.md §10, and `conditional_on` reaches this path only when it
         // lands. `research` keeps its key so existing callers are unchanged.
-        const responseText = await askAI(systemPrompt, messageContent, { maxTokens: 6000, task: 'prose' });
+        // *** SEARCH IS ON UNLESS THE GATE TURNED IT OFF. *** §101's acceptance condition is a
+        // READER, and this is it: the flag was claimed shipped for six days with nothing reading
+        // it. The default runs this way because the gate cannot know a permit was reissued last
+        // quarter — not knowing is the condition being detected (`RESEARCH-ANSWER.md` §7a).
+        const responseText = await askAI(systemPrompt, messageContent,
+          { maxTokens: 6000, task: 'prose', enableWebSearch: g.needsWebSearch });
         return NextResponse.json({ outcome: 'answer', research: responseText, gate: g.resolved, frame: g.frame, followUp: g.followUp, turn: newTurn, topicId: activeTopicId || null });
       }
 

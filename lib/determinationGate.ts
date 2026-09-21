@@ -110,9 +110,21 @@ export interface FollowUp {
   because: string
 }
 
+/**
+ * *** DEFAULTS TRUE FOR RESEARCH, AND THE GATE MAY TURN IT OFF. ***
+ *
+ * The opposite — the gate opting IN — is what draft 2 of the research prompt had, and it is
+ * backwards: **the gate cannot know the 1200-Z was reissued on 1 July 2026**, and not knowing is
+ * precisely the condition being detected. A flag that asks the model whether anything has changed
+ * asks it something it cannot answer.
+ *
+ * The failure directions are unequal, which is the whole argument: search OFF on a rule that
+ * changed produces the stale answer `DECISIONS.md` §102 measured; search ON unnecessarily costs
+ * seconds. `docs/RESEARCH-ANSWER.md` §7a.
+ */
 export type GateResult =
-  | { outcome: 'proceed'; resolved: GateResolved; frame: Frame; followUp: FollowUp }
-  | { outcome: 'ask'; ask: GateAsk; frame: Frame; followUp: FollowUp }
+  | { outcome: 'proceed'; resolved: GateResolved; frame: Frame; followUp: FollowUp; needsWebSearch: boolean }
+  | { outcome: 'ask'; ask: GateAsk; frame: Frame; followUp: FollowUp; needsWebSearch: boolean }
 
 /** A user answering a previous ask, carried back by the client with the ORIGINAL question.
  *  DETERMINATION-GATE.md §5.2. */
@@ -320,6 +332,7 @@ If nothing is blocking:
 {
   "outcome": "proceed",
   "frame": { ... },
+  "needs_web_search": true,
   "resolved": {
     "known": [{ "switch_id": null, "fact": "...", "value": "...", "source": "stated_in_question" }],
     "non_blocking_unknowns": [{ "switch_id": null, "fact": "...", "stated_conditionally_as": "..." }]
@@ -330,6 +343,7 @@ If something is blocking:
 {
   "outcome": "ask",
   "frame": { ... },
+  "needs_web_search": true,
   "ask": {
     "question": "one sentence",
     "artifact": "the SDS for this product" or null,
@@ -340,6 +354,12 @@ If something is blocking:
     "known": [{ "switch_id": null, "fact": "...", "value": "...", "source": "..." }]
   }
 }
+
+needs_web_search DEFAULTS TO TRUE. Set it FALSE only when the question is about something that
+does not change — a definition, a concept, a calculation — or is answerable entirely from the
+documents and facts you were shown. If a permit, fee, filing deadline, form version or agency
+programme is involved, LEAVE IT TRUE. You cannot know whether a rule was reissued last quarter;
+that is the reason the default runs the other way.
 
 "source" is one of: user_set, ai_from_documents, ai_from_profile, computed, stated_in_question,
 hypothetical. Use "hypothetical" for any fact stated about something that does not exist yet —
@@ -571,11 +591,14 @@ export function normalise(
 ): GateResult {
   const frame = normaliseFrame((raw as { frame?: unknown })?.frame)
   const followUp = normaliseFollowUp((raw as { follow_up?: unknown })?.follow_up, hasPriorTurns)
+  // Only an explicit `false` turns it off. A missing field, a malformed one, or an unparseable
+  // gate all leave search ON — the safe direction, per the asymmetry on GateResult.
+  const needsWebSearch = (raw as { needs_web_search?: unknown })?.needs_web_search !== false
   if (!raw || typeof raw !== 'object' || !('outcome' in raw)) {
     // A gate that cannot be parsed must not block the answer. Proceeding is the safe
     // direction here: the critic pass still sees the output, and a broken gate that
     // silently swallowed every question would be undetectable.
-    return { outcome: 'proceed', resolved: { known, non_blocking_unknowns: [] }, frame, followUp }
+    return { outcome: 'proceed', resolved: { known, non_blocking_unknowns: [] }, frame, followUp, needsWebSearch }
   }
 
   if (raw.outcome === 'ask') {
@@ -597,11 +620,13 @@ export function normalise(
         },
         frame,
         followUp,
+        needsWebSearch,
       }
     }
 
     return {
       outcome: 'ask',
+      needsWebSearch,
       ask: {
         question: ask.question,
         artifact: ask.artifact ?? null,
@@ -629,6 +654,7 @@ export function normalise(
     },
     frame,
     followUp,
+    needsWebSearch,
   }
 }
 

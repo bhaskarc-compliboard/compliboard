@@ -2,6 +2,7 @@
 **Version:** 7 · **Updated:** 15 September 2026
 **Supersedes:** version 6 (12 Sep). **Adds the FIVE documents that existed and were not listed** —
 `SWITCH-DETERMINATION.md`, `EVIDENCE-LINKING.md`, `REQUIREMENTS-SCREEN.md`, `GATE-HISTORY.md`,
+`RESEARCH-ANSWER.md`,
 `INVENTORY.md`. Four were added between 12 and 15 September and this index did not move with them.
 
 > ### THIS IS THE DRIFT SHAPE THIS FILE EXISTS TO PREVENT.
@@ -165,6 +166,14 @@ rows wait on quantities no question asks for. Module M6.
 the moment it is captured; and **the two kinds of contradiction that must not be collapsed** — a
 correction within a conversation, versus a conflict against `company_switches`. Module M1.2b,
 built 15 Sep.
+
+### `RESEARCH-ANSWER.md`
+
+M1.9 — the research answer, rebuilt **free-flowing** after a four-way comparison found
+CompliBoard's answer the weakest and the only one that knew the company (`DECISIONS.md` §102).
+Holds the rewritten prompt in full, the facts block rewritten as **premises to reason from**
+rather than a list of prohibitions, `needsWebSearch` built with a reader this time (§101), the
+citation bar, and **the benchmark: beat the bare model or the product adds nothing on research.**
 
 ### `INVENTORY.md`
 

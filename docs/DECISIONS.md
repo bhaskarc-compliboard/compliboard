@@ -1,6 +1,47 @@
 # Decision Record
-**Version:** 78 · **Updated:** 21 September 2026
-**Supersedes:** version 77 (21 Sep). Adds **§100 — a hard 500 is a defect, not slowness**, and
+**Version:** 84 · **Updated:** 21 September 2026
+**Supersedes:** version 83 (21 Sep). Adds **§105 — the M1.9 release criterion**: the research
+answer must be **comparable to ChatGPT's and Claude's with no context**, and meeting it is the
+stopping condition. Not better on every point — §102 records that the three bare models each won
+different criteria. **Completeness of fact capture is explicitly NOT in the bar**: answering well
+without every fact does no harm, answering worse than a free chat does. Records **three deferrals**
+— the multi-case hypothetical matrix, Block D's same-place hypothetical, and complete fact
+capture — as untested cases rather than defects. Version 83: Adds **§104 — the worked example was cleaner than the rule.**
+A hand-typed example of a renderer's output agreed with the intent and not with the rule: the
+measured run tagged Arizona `stated_in_question`, so the rule put it in the BUSINESS block while
+the example showed it in neither. **Render the example from code** — an example is a checker, and
+by hand it checks only that the author can restate their intention (check 14, and the second
+instance in one day after §65's eleventh). Running it also found a defect nobody predicted: the
+business's own fact **migrated into the scenario** whenever the scenario named the same switch.
+**Routing is now by the FRAME, not the label** — the same fact carried two different labels in one
+conversation. And **a new facility ADDS to the business**: split by `switches.scope`, with the
+combined figure stated (47 + 12 = 59, crossing FMLA at 50) where *"do not reconcile the two"* had
+forbidden it. Version 82: Adds **§103 — the frame is computed and the answer never
+sees it.** `g.frame` reaches the topic title, the turn signature and the HTTP response, and
+**never `messageContent`**. Measured on staging: hypothetical facts do **not** stop at the gate —
+they arrive in `resolved.known` and render under *WHAT IS ALREADY ESTABLISHED ABOUT THIS COMPANY*
+followed by *Treat these as settled*, so **a facility that does not exist is described as settled
+fact about the business.** §78 made that structural for storage and nothing made it structural for
+the prompt. Third instance of §101's shape, and the hardest to see: the field is populated and
+plausible, and only the one consumer that matters is missing. Version 81: **§102 gains the other three answers, scored** — Claude
+first and CompliBoard last without argument, but **ChatGPT and Gemini fail in opposite directions
+and do not rank cleanly**: on the No Exposure Certification, the thing that decides whether any of
+the answer applies, ChatGPT misses and Gemini catches. **The reissue and the 30 November deadline
+are separated** — two of four caught the first, none caught the second. **§65 gains an ELEVENTH
+instance, mine**: a data loss that did not happen. A hand-rolled PDF extractor could not read a
+page boundary and the limit was recorded as *"not recoverable from the file"* — **a tool's blind
+spot presented as a property of the evidence.** Version 80: Adds **§102 — the template made the model worse than the
+bare model.** On one question CompliBoard was the weakest of four answers and **the only one that
+knew the company**: the trigger overstated, the 1200-Z reissue missing, the **No Exposure
+Certification absent** — the omission that could mean the whole answer does not apply — and seven
+unsourced figures. **The cause is the six fixed sections**: a slot is a demand, and the model
+fills every one. **A template narrows the OUTPUT the way a filter narrows the input** — §77 item
+2 in a direction it did not anticipate. Research output becomes **free-flowing**, and the bar is
+recorded: **beat the bare model, or the product adds nothing on research.** Version 79: Adds **§101 — a field nothing reads.** M1.2b was ✅ and
+claimed the gate returns `needsWebSearch`; **it does not and never did.** §65's seventh shape — a
+thing described as shipped — with a **new mechanism**: 7.2a survived by repetition, this survived
+because **an unread return value meets no caller, no type error and no test.** A field nothing
+reads is a claim nothing can check. Version 78: Adds **§100 — a hard 500 is a defect, not slowness**, and
 fixes it: `lib/ai.ts`'s ceiling now comes from the SDK's own formula (`client.js:671`) rather than
 from a chosen 32000, so the truncation retry cannot double past **21333** and crash before
 sending. **The honest behaviour at the limit already existed** — a truncated review records
@@ -4332,8 +4373,9 @@ the review can go back to being periodic rather than gating.
 
 ## 65. The composed assertions, and the rule that covers all of them — 13–15 September 2026
 
-*Ten instances. The register is kept here so the rule is stated once and the count is not an
-impression. **Four of the ten are cross-references — the most common single shape.** §60 records the first and states the rule; §66 records the fourth in full.*
+*Eleven instances. The register is kept here so the rule is stated once and the count is not
+an impression. **Four of the eleven are cross-references — the most common single shape** — and
+the eleventh is a new one: **a tool's blind spot presented as a property of the evidence.** §60 records the first and states the rule; §66 records the fourth in full.*
 
 **This section exists so the rule is stated once and the instances are countable.** §60 records
 the first and states the rule; this records all three together, because the third arrived in a
@@ -4534,6 +4576,46 @@ under a number that does not exist.**
 >
 > **A suffixed number is the easiest kind to compose**, because `§80a` reads as a refinement of a
 > section that does exist rather than as an invention. `grep` costs one command either way.
+
+### The eleventh: a data loss that did not happen — and it was mine
+
+**Asserted, 21 September, inside golden case 004:** that four lines of a ChatGPT answer were lost
+to an embedded binary object, marked in the file as *"The words between are NOT recoverable from
+the file and have NOT been guessed."*
+
+**No words were missing.** `pdftotext`, which resolves the PDF's font encodings, reads the list
+cleanly across the page break:
+
+```
+no uncontrolled connection to a storm drain;
+[page break]
+controlled removal of accumulated rainwater;
+```
+
+**What the binary run actually was: displaced `fi` ligature glyphs at the page boundary** — glyph
+data, not text. The machine had no poppler, so the extraction was hand-rolled: inflate the
+content streams, decode as MacRoman, parse the text operators. **That tool could not see the
+words; the document had them all along.**
+
+> ### THE HEDGE WAS NOT THE PROBLEM. THE SCOPE OF THE CLAIM WAS.
+>
+> The marker was careful in one way — it refused to guess the missing words, which was right. But
+> *"not recoverable from the file"* is a claim **about the document**, and the only artifact
+> behind it was **my own extraction**. The honest sentence was *"this extractor cannot read this
+> region"*, which is a claim about the tool and would have invited exactly the check that settled
+> it: **try another tool.**
+>
+> **A tool's blind spot presented as a property of the evidence.** That is a new shape for this
+> register — the first ten were about things that did not exist or were not read; this is about
+> reading something correctly with an instrument that could not see all of it, and attributing
+> the limit to the thing observed.
+>
+> **And it is the failure mode this project is most exposed to**, because so much here is settled
+> by a script written in the moment. `AUDIT-CHECKS.md` check 14 asks whether a checker is as
+> strong as the assertion it claims to check. **An extractor is a checker.**
+
+**Cost: one instruction, and a benchmark file that briefly recorded a competitor's answer as
+damaged when it was intact** — which would have scored ChatGPT down for something it did not do.
 
 ### Why the third is the interesting one, and it is not the worst
 
@@ -7319,4 +7401,456 @@ end to end. Stated because a green run is not evidence for a branch it did not e
 same time**: seeing text arrive is the honest response to a long wait, where a spinner for 58.9
 seconds is not. **One change, two problems, and neither of them is this one** — which is why this
 cap shipped first.
+
+---
+
+## 101. A field nothing reads — `needsWebSearch`, claimed for six days — 21 September 2026
+
+**`TODO.md` M1.2b was marked ✅ DONE on 15 September and said the gate *"Returns
+jurisdiction-of-question, tense, subject, and `needsWebSearch`"*. The field does not exist and
+never did.**
+
+### Settled by reading, two ways
+
+```
+GateResult =
+  | { outcome: 'proceed'; resolved: GateResolved; frame: Frame; followUp: FollowUp }
+  | { outcome: 'ask';     ask: GateAsk;           frame: Frame; followUp: FollowUp }
+
+grep -rn "needsWebSearch|web_search|enableWebSearch" lib/determinationGate.ts lib/gateContext.ts
+  -> determinationGate.ts:373   enableWebSearch: false
+```
+
+**The one match is the gate turning web search OFF for its own call** — the opposite of a flag it
+returns for somebody else. The three other things M1.2b claimed did ship: prior turns, the frame,
+and the follow-up classification.
+
+### THIS IS §65's SEVENTH SHAPE — a thing DESCRIBED AS SHIPPED
+
+The seventh instance was **7.2a described as shipped**, with a duration, a row count and a second
+environment. **The shape repeats. The mechanism that hid it does not**, and the new mechanism is
+the part worth recording:
+
+| | Why it survived |
+|---|---|
+| **§65 #7** — 7.2a | **repetition.** Each retelling agreed with the last, so self-consistency read as corroboration |
+| **This one** | **nothing read the field.** There was no caller to fail, no type error, no test to go red. A claim about an output that has no consumer **cannot be falsified by running the code** |
+
+> ### A FIELD NOTHING READS IS A CLAIM NOTHING CAN CHECK.
+>
+> Every other kind of drift in this project eventually meets a caller: a renamed column breaks a
+> query (`check-schema-contracts`), a missing grant produces a 500 on the first real request
+> (§63), a wrong evidence class is refused by a CHECK (§80). **An unread return value meets
+> nothing.** It would have sat in a ✅ row until somebody tried to use it — which is exactly what
+> happened, six days later, while specifying the thing that needed it.
+>
+> **And the ✅ is what made it expensive rather than merely wrong.** §65 #7's lesson was *every
+> day an unbuilt thing is believed built, something else is designed against it.* §77 item 6 —
+> *web search, decided by the gate* — was treated as available when the research answer was being
+> planned.
+
+**The check that catches it is the same one as always, applied to a field rather than a count:
+which artifact would show this exists?** For a return value that is `grep` on the type, and it
+costs one command.
+
+**Corrected rather than annotated:** M1.2b's row now says what shipped and what did not, and the
+web-search flag is carried into **M1.9**, where it has a reader — `docs/RESEARCH-ANSWER.md` §4.
+**It is not "done" anywhere until the research call reads it.**
+
+**Reversal condition:** none. This is a correction.
+
+---
+
+## 102. The template made the model worse than the bare model — 21 September 2026
+
+**The same stormwater question went to ChatGPT, Gemini and Claude with no context, and to
+CompliBoard with the company loaded. CompliBoard's answer was the weakest of the four — the only
+one that knew who was asking.**
+
+### The four failures, read out of the stored answer
+
+*The comparison is the owner's; the four failures below were verified against the row CompliBoard
+actually produced (`checklists` on staging, the 21 Sep stormwater answer), not taken on report.*
+
+| | | Evidence |
+|---|---|---|
+| **The trigger is overstated** | *"The permit requirement isn't based on company size or number of drums — if you're doing this activity, you need the permit"* | in the answer, verbatim. It states outdoor exposure as sufficient, which drops both the sector gating and the way out |
+| **The 1200-Z reissue is missing** | effective **1 July 2026**, with an **SWPCP update due 30 November 2026** | `grep -i "2026|reissue|November 30"` → the three `SWPCP` matches are generic mentions of the plan. **No date anywhere** |
+
+> ### CORRECTION, 21 Sep, after the three unassisted answers were read.
+> **The reissue and the SWPCP deadline are two different misses, and only one of them is
+> CompliBoard's alone.**
+>
+> | | Named the **1 July 2026 reissue** | Named the **30 Nov 2026 SWPCP deadline** |
+> |---|---|---|
+> | ChatGPT | **yes** | no |
+> | Gemini | no | no |
+> | Claude | **yes**, and says to replace old guidance | no |
+> | CompliBoard | no | no |
+>
+> **Two of four caught the reissue; none of the four caught the deadline.** So the reissue is a
+> real CompliBoard failure against a bar two competitors clear, and the deadline is a gap in the
+> whole field — stated separately because merging them would credit the benchmark with finding
+> something it did not.
+| **No Exposure Certification omitted** | the route by which a facility needs **no permit at all** | `grep -ci "no exposure"` → **0** |
+| **Unsourced figures** | `$59,973` · `$565` · `$25,000` · `$100` · `$500` · `$2,000` · `$5,000` | **seven figures, two links**, and neither link is attached to a figure — both are DEQ landing pages |
+
+> **The omission that matters most is the third.** The other three make the answer worse. **The No
+> Exposure Certification is the one that could mean the whole answer does not apply**, and a
+> compliance product that omits the exemption while listing the penalties has got the asymmetry
+> exactly backwards.
+
+### THE CAUSE IS THE TEMPLATE, AND THE HEADINGS ARE THE PROOF
+
+`prompts/checklist.ts:88–93` names six sections. The stored answer contains all six, in order, and
+then **invents more to fill them**:
+
+```
+## WHAT THIS MEANS FOR YOU      ## COMMON MISCONCEPTIONS
+## WHO IT APPLIES TO            ## WHAT HAPPENS IF YOU IGNORE IT
+## THE KEY FACTS                ## USEFUL RESOURCES
+                                   ### Where to Buy Compliance Equipment
+                                   ### Consultant Help
+```
+
+**A fixed section is a slot, and a model fills every slot it is given.** *"What happens if you
+ignore it"* is a demand for penalties, so penalties arrive — seven of them, none sourced. *"Useful
+resources"* is a demand for links, so links arrive, including a section on where to buy equipment
+that nobody asked about. **The three unassisted answers addressed the question and stopped.**
+
+> ### A TEMPLATE NARROWS THE OUTPUT THE WAY A FILTER NARROWS THE INPUT.
+>
+> **This confirms §77 item 2 — *nothing narrows the model* — in a direction that section did not
+> anticipate.** §77 was about what the model is SHOWN: do not pre-filter the library, do not hand
+> it a candidate set, because the narrowing happens before it reasons. **The template does the
+> same damage on the way out**, and it was not recognised as the same thing because it looks like
+> formatting.
+>
+> **And it explains why the first version of this product, which trusted the model with no
+> background at all, produced better research than the version that knows the company.** The
+> background was never the problem.
+
+**One claim NOT verified here:** that the figures change between runs. The mechanism is confirmed
+— nothing in `RESEARCH_PROMPT` requires a source for a number, and seven figures carry none — but
+run-to-run variance was not measured, because the two stored answers are to different questions.
+**It is measurable, and the benchmark below is where it gets measured.**
+
+### DECISION — research output is FREE-FLOWING
+
+**No fixed sections. The model answers the question asked, in whatever shape the answer needs.**
+
+**What stays, because none of it restricts reasoning:**
+
+| | |
+|---|---|
+| **The gate** | stopping only on a **genuinely blocking** fact |
+| **Citations as it goes** | §77 item 4 |
+| **Web search** | when the gate says the question touches something recent — §77 item 6, **which is unbuilt** (§101) |
+| **The page-level disclaimer** | §77 item 5 |
+| **The company's facts** | in context, **and USED — reasoned from, not listed** |
+
+**The last one is a change, not a restatement.** `establishedFactsBlock` (`lib/gateContext.ts`)
+currently ends: *"Treat these as settled. Do not ask the user to confirm them, do not branch on
+them, and do not answer for a jurisdiction other than the one named here."* **Every clause says
+what NOT to do with a fact. None says to reason from it** — which is why the background went
+unused in an answer that had it.
+
+### THE BENCHMARK — the research-quality bar, stated so it can be failed
+
+> ### CompliBoard must beat the bare model with no context, on the same question.
+> **If it does not, the product adds nothing on research.**
+
+**The unassisted ChatGPT answer ended by asking four questions:** what the facility makes, virgin
+or spent solvent, quantity, and where the pad drains. **CompliBoard already knew the first.** Its
+answer should have opened from it — *"you're a chemical manufacturer, so you're in a covered
+category"* — and asked only what it genuinely lacked.
+
+**And the fourth is the one that decides whether any of it applies** — where the pad drains. That
+is the owner's domain judgement, and it is the shape of a good gate question: not a fact to fill a
+field, but the fact the answer turns on.
+
+**Made repeatable:** the same question through the bare model and through CompliBoard, side by
+side. First case is the stormwater question, `tests/golden/004-stormwater-bare-vs-compliboard.json`,
+holding all four answers. **It is recorded as `awaiting-inputs` until the three unassisted answers
+are pasted in — they are the owner's and are not reconstructible.**
+
+### THE OTHER THREE, SCORED — and the ranking does not come out cleanly
+
+**Accepted 21 September, after the three unassisted answers were read in full**
+(`tests/golden/004-stormwater-bare-vs-compliboard.json`).
+
+| | No Exposure Certification | 1 July 2026 reissue | Trigger stated correctly | Specifics sourced |
+|---|---|---|---|---|
+| **ChatGPT** | **miss** | yes | yes — *"does not by itself automatically mean you need a 1200-Z permit"* | yes, largely by restraint |
+| **Gemini** | **catch** | **miss** | not addressed | partial |
+| **Claude** | catch | yes, and says to replace old guidance | yes | yes — 40 CFR 112, 264/265, the 1,320-gal threshold |
+| **CompliBoard** | miss | miss | **no** | **no** — 7 figures, 2 unattached links |
+
+**Claude is first and CompliBoard is last, both without argument.** CompliBoard is also the
+**longest** — 1010 words against 420–611 — which is the template showing up as length.
+
+> ### CHATGPT AND GEMINI FAIL IN OPPOSITE DIRECTIONS AND DO NOT RANK CLEANLY.
+>
+> **On the criterion that decides whether any of the answer applies — the No Exposure
+> Certification — ChatGPT misses it and Gemini catches it.** ChatGPT names the *sector gate*,
+> which is a different mechanism and does not tell a reader they might need no permit at all.
+> ChatGPT is better on currency, on stating the trigger and on asking the right questions;
+> Gemini is better on the one thing that could make the rest moot.
+>
+> **Recorded because the first reading had them ordered**, and an ordered pair invites *"be like
+> ChatGPT"* when the actual lesson is that the best answer in the room would have had to combine
+> two of them.
+
+**And the two currency misses are NOT the same miss:**
+
+| | 1 July 2026 reissue | 30 November 2026 SWPCP deadline |
+|---|---|---|
+| caught by | **ChatGPT, Claude** | **nobody** |
+
+**The reissue is a real CompliBoard failure against a bar two competitors clear. The deadline is a
+gap across the whole field** — and saying so separately matters, because merging them would
+credit the benchmark with finding something it did not.
+
+**Reversal condition:** a measured comparison where the free-flowing answer is worse than the
+templated one on the same question. **That is what the benchmark is for**, and it is the only
+thing that should reverse this.
+
+---
+
+## 103. The frame is computed and the answer never sees it — 21 September 2026
+
+**§101's shape, a third time, and this one is worse than a missing field: the frame EXISTS, is
+correct, and is read by everything except the stage that needs it.**
+
+### Confirmed in `app/api/chat/route.ts`
+
+`g.frame` is used at **line 273** (the topic title), **line 284** (the sealed turn) and **lines
+313 / 322 / 376** (the HTTP response). **It is never added to `messageContent`.** The only thing
+folded into the answer call is `establishedBlock`, lines 301–305. So the model writing the answer
+is told what is established and **never told what the question is about**.
+
+### And the second half, which was NOT what anyone predicted
+
+The expectation was that hypotheticals stop at the gate. **They do not.** Measured on staging,
+signed in, 21 Sep:
+
+```
+turn 1  "We are thinking about opening a solvent blending facility in Phoenix, Arizona.
+         It would have 12 employees and permit-required confined spaces."
+
+frame           state=Arizona  tense=hypothetical  subject="a solvent blending facility"
+
+resolved.known  — WHICH IS EXACTLY WHAT establishedFactsBlock RENDERS INTO THE ANSWER CALL
+    entity_state = Arizona                 [stated_in_question]
+    site_employee_count = 12               [hypothetical]
+    confined_spaces_present = true         [hypothetical]
+    business_type = blend                  [hypothetical]
+    has_employees = true                   [hypothetical]
+    hazardous_chemicals_present = true     [hypothetical]
+```
+
+**Those six lines reach the answer under the heading `WHAT IS ALREADY ESTABLISHED ABOUT THIS
+COMPANY`, followed by `Treat these as settled.`**
+
+> ### A FACILITY THAT DOES NOT EXIST IS DESCRIBED TO THE MODEL AS SETTLED FACT ABOUT THE BUSINESS.
+>
+> **§78 made this structural for `company_switches`** — the writer takes no frame, so a
+> hypothetical cannot be stored — and `GATE-HISTORY.md` §3 records that as the protection.
+> **Nothing made it structural for the PROMPT**, and the prompt is where the answer comes from.
+> §78 looked at storage; this is one stage further down.
+
+**The prompt permits it explicitly.** `determinationGate.ts:344` tells the model
+*`"source" is one of: user_set, ai_from_documents, ai_from_profile, computed, stated_in_question,
+hypothetical`* — and that list governs the `known` array of **both** outcomes, `resolved` and
+`ask`.
+
+### WHAT DID NOT REPRODUCE, STATED BECAUSE IT WOULD BE EASY TO CLAIM IT DID
+
+The predicted failure was *"it answers no, for Oregon, about a hypothetical Arizona facility."*
+**In this run it would not have.** Turn 2's `resolved.known` came back holding
+`confined_spaces_present = true [hypothetical]` and `entity_state = Arizona` — and **none of
+Gamma's real switch values at all**, including the real `confined spaces = false`. So the
+jurisdiction line would have pointed at Arizona and the confined-space fact would have been the
+hypothetical one.
+
+**One run is one observation.** What `resolved.known` contains is the model's choice, and a run
+where a real fact and a hypothetical one appear together is not ruled out by anything — it is
+exactly what §78's *"employee_count appears twice — 47 `[user_set]` and 12 `[hypothetical]` — and
+they do not conflict"* describes. **The defect is that the two are indistinguishable once they
+are in that block, not that a specific sentence came out wrong.**
+
+### The same shape as §101, and the precedents are nameable
+
+| | Computed | Read by |
+|---|---|---|
+| **§101** `needsWebSearch` | never — the field does not exist | nothing. **Claimed shipped for six days** |
+| **§86** `refersToTurn` | yes | nothing — *"a field that was always null"* |
+| **§103** `frame` | **yes, and correctly** | the topic title, the turn signature, the HTTP response — **not the answer** |
+
+> **The third is the hardest to notice**, because the field is populated, plausible and visibly
+> in use. `grep frame` returns hits. **Nothing is missing except the one consumer that matters**,
+> and no test fails for the absence of a consumer.
+
+### The fix, and it is two blocks rather than one rule
+
+**Hypotheticals stay out of the facts block — that part of the design was right.** They reach the
+answer **separately**, as the scenario being asked about, carrying the frame's jurisdiction, tense
+and subject. And the facts block's jurisdiction restriction — *"do not answer for a state other
+than the one named here"* — is **removed from the facts block and rebuilt from the frame**, because
+the frame is the thing that knows what the QUESTION is about, while the facts block only knows
+where the business is.
+
+**Why two blocks rather than a label:** *"[hypothetical]"* inside a list headed *WHAT WE ALREADY
+KNOW ABOUT THIS BUSINESS* is a contradiction the model must resolve, and **the heading wins**.
+Splitting the list moves the decision into the renderer, where it is structural, and the model is
+never asked to hold two meanings for one heading. `RESEARCH-PROMPT-DRAFT.txt` Block C.
+
+**Acceptance condition, per §101: a reader.** Not done when the frame is returned — done when the
+code that builds `messageContent` reads it, and an Arizona conversation answers for Arizona.
+
+**Reversal condition:** none. This is a defect.
+
+---
+
+## 104. The worked example was cleaner than the rule — 21 September 2026
+
+**A rule was written, a worked example of its output was typed out by hand, and the example
+agreed with what the rule was MEANT to do. Running the rule disagreed with both — in under a
+minute, on the first input.**
+
+### The rule, and what the example showed
+
+`RESEARCH-PROMPT-DRAFT.txt` draft 2 said Block B — the business's facts — *"removes facts tagged
+`hypothetical`"* and keeps the rest. The hand-written example beneath it showed Portland, Oregon,
+and no Arizona anywhere.
+
+**But the measured run tagged Arizona `stated_in_question`, not `hypothetical`** — and
+`stated_in_question` facts belong in Block B by design; that is how the stormwater drums appear
+there. **So the rule as written puts "worksite = Arizona" into the business's facts.** The example
+showed it in neither block. It had vanished.
+
+> ### THE EXAMPLE DEPICTED A RENDERER THAT DID NOT EXIST, AND HID THE ONE FACT THAT WOULD HAVE
+> ### EXPOSED THE RULE.
+>
+> Not by carelessness about the wording — by writing the output I intended rather than the output
+> the rule produces. **A hand-written example is an assertion about code, and it was the only
+> evidence offered for the rule working.**
+
+### And running it found a second defect nobody had predicted
+
+Routing on the fact's identity alone **moved the business's own fact into the scenario** whenever
+the scenario mentioned the same switch:
+
+```
+  ABOUT THE NEW SITE …
+    Permit-required confined spaces = false     <- THE BUSINESS'S REAL ANSWER
+    Permit-required confined spaces = true      <- the scenario's
+```
+
+The business block silently lost `confined spaces = false`, and the scenario contradicted itself.
+**The fix is one clause** — a fact the business *established* is never a scenario fact, only
+something *stated* in a hypothetical-framed turn is — and it is now pinned by a regression test
+that fails without it (`tests/unit/gateContextAnswer.test.ts`).
+
+### THE RULE THIS PRODUCES
+
+> **Render the example from code. A worked example produced by hand shows the author's intent, and
+> the whole purpose of an example is to show the behaviour.**
+
+**It is `AUDIT-CHECKS.md` check 14 again — *is every checker as strong as the assertion it claims
+to check?*** An example is a checker: it is offered as evidence that a rule does what it says.
+Typed out by hand it checks nothing except that the author can restate their own intention.
+
+**And it is the second time in one day.** §65's eleventh instance was a hand-rolled PDF extractor
+whose blind spot was recorded as a property of the document. **Both are the same failure: an
+artifact produced in the moment, trusted as evidence about something else.** The difference is
+that this one cost nothing, because the rule had not shipped — which is the argument for
+rendering examples early rather than at review.
+
+### Why the routing changed, in one line of evidence
+
+**The label is not reliable enough to route on**, and the measurement is the whole proof: in ONE
+conversation about the same Arizona facility, `entity_state = Arizona` came back
+**`stated_in_question` on turn 1 and `hypothetical` on turn 2.** The frame said
+`tense: hypothetical` both times.
+
+**So the frame routes and the label is printed for the reader.** A turn whose frame is hypothetical
+describes the scenario; every fact stated in that turn belongs to it, whatever each is tagged.
+
+### The other correction: a new facility ADDS to the business
+
+Draft 2 told the model *"do not reconcile the two"*. **Right for site facts, wrong for company
+facts** — a new facility is not a different business, and the instruction suppressed the most
+useful thing an expansion answer can say.
+
+**Split by `switches.scope`, which already exists:**
+
+| | |
+|---|---|
+| **site-scoped** scenario fact | governs the new site for this question; the business's other sites keep their own values |
+| **company-scoped** scenario fact | describes the business once the facility exists — adds to it, and where it is a number the totals change |
+| **a per-site number with an enterprise-wide counterpart** | the answer must state the combined figure |
+
+**The third row is not derivable from `scope`.** `scope` says which thing a number describes, not
+that two numbers are the same quantity at two levels — so `site_employee_count → employee_count`
+is a named pair in the renderer, with `CLAUDE.md` §1's reason beside it. **One member today.**
+Rendered, it produces: *"the business already has Employees, enterprise-wide = 47. Adding this
+facility takes the enterprise-wide total to 59."* Which is the FMLA threshold at 50, found by
+arithmetic the previous instruction forbade.
+
+**Reversal condition:** none for the rule about examples. The routing reverses if a frame turns out
+to be less reliable than the label, which would be visible as a scenario fact landing in the
+business block.
+
+---
+
+## 105. The M1.9 release criterion, and what is deliberately not in it — 21 September 2026
+
+> ### CompliBoard's research answer must be COMPARABLE to ChatGPT's and Claude's answering the
+> ### same question with no context. Not better on every point — comparable.
+>
+> **Meeting it is the stopping condition for M1.9.** Refinement stops here.
+
+### Why comparable rather than better
+
+**§102 found CompliBoard the weakest of four on the same question, and it was the only one that
+knew the company.** That is the failure that matters, and it is asymmetric:
+
+| | |
+|---|---|
+| A question answered **well without every fact** | does no harm |
+| A question answered **worse than a free chat** | is the product failing at the thing it charges for |
+
+**So the gate is answer quality against the bare models, and nothing else.** A bar of *better on
+every point* would be a bar nobody can call, and calling it is the whole purpose — §102 also
+records that Claude and ChatGPT and Gemini each won different criteria, so "best" is not a single
+ordering.
+
+### COMPLETENESS OF FACT CAPTURE IS EXPLICITLY NOT IN THE BAR
+
+**M1.3 captures facts; M1.9 answers questions. Only the second is gated.** A research answer that
+never learns the company's generator category is not thereby a bad answer — it is an answer with a
+question in it, which §77 item 4 and the bare-model comparison both treat as correct behaviour.
+**Fact capture is a later improvement, measured by what it unblocks, not by coverage.**
+
+**This is worth stating because the opposite is the natural assumption** — the product's whole
+architecture is about knowing the company, so "know more" reads as "answer better". §102 is the
+counter-example: CompliBoard knew the most and answered the worst.
+
+### DEFERRED — not solved, and each returns only when a real question shows it failing
+
+**Recorded so they are findable, and so nobody re-derives them as new discoveries.**
+
+| | What is deferred | What brings it back |
+|---|---|---|
+| **1** | **The multi-case matrix of hypotheticals** — past tense (*"when we had a second site"*), two jurisdictions in one question, an industry change rather than a site, a future change in the SAME place | A real question where the frame gets one of these wrong. The Arizona case is one point in that space and is the only one built for |
+| **2** | **Block D's same-place hypothetical.** `jurisdictionLine` compares the frame's state to the business's and says *"do not answer for Oregon"* only when they differ. A hypothetical Oregon site produces *"Answer for Oregon. That is the jurisdiction this question is about"* — true, but it does not carry that the question is about a facility that does not exist. **The scenario block carries that; the jurisdiction line does not** | An answer that treats a same-state hypothetical as present-tense |
+| **3** | **Complete fact capture about the company** | The bar above, once answer quality is settled. It is a later improvement by decision, not by oversight |
+
+**None of the three is a defect today.** Each is a case the design has not been tested against,
+which is a different thing, and saying so is the point of recording them.
+
+**Reversal condition for the bar itself:** a customer for whom a bare model is not the
+alternative — someone who would not have asked ChatGPT. **No such customer has been named**, and
+until one is, the free chat is what this product is measured against.
 
