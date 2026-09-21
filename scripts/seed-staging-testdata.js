@@ -8,8 +8,9 @@
 // missing afterwards is the public-side half: the company rows, and the profile rows that
 // tie a login to a company.
 //
-// Two companies, three people. Alpha has two, which is the arrangement the tenancy tests
-// need: they prove a colleague can see a colleague's work while Beta sees neither.
+// Three companies, four people. Alpha has two, which is the arrangement the tenancy tests
+// need: they prove a colleague can see a colleague's work while Beta sees neither. Gamma is
+// the empty one — TESTING.md Case A1's precondition, and the fixture that had no script.
 //
 // STAGING ONLY. It refuses to run against anything else, by ref, before it writes.
 
@@ -43,6 +44,27 @@ const PLAN = [
     company: { name: "Test Beta Cannabis", industry: "cannabis",
                state: "Oregon", county: "Multnomah", city: "Portland", employee_count: 8 },
     people: [{ email: "testbeta@example.com", full_name: "Beta Owner" }],
+  },
+  {
+    // *** ADDED 21 SEP, AND IT EXISTED FOR SIX DAYS WITH NO SCRIPT BEHIND IT. ***
+    //
+    // Test Gamma Solvents was created on 15 September by an ad-hoc script that was not
+    // committed, so `grep -rn Gamma scripts/ supabase/` returned NOTHING while the company,
+    // its site and 208 obligations sat on staging. A reset would have destroyed it and left
+    // testgamma@example.com signing in to a login with no profile and no company — every call
+    // failing to find a company, which reads as a broken product rather than as missing
+    // fixtures. Shape read back off the live rows before this was written, not remembered.
+    //
+    // WHY IT EXISTS AT ALL, since Alpha and Beta look similar: `TESTING.md` Case A1 needs a
+    // company with NOTHING ESTABLISHED. Alpha had already answered `has_employees`, and Beta
+    // matches zero library rows (cannabis, not chemical), so neither could show a first answer
+    // creating an obligation list. Gamma is chemical-manufacturing with no facts at all.
+    //
+    // employee_count is deliberately NULL. A number here is a fact established before anybody
+    // asked, which is exactly what the case's precondition forbids.
+    company: { name: "Test Gamma Solvents", industry: "chemical-manufacturing",
+               state: "Oregon", county: "Multnomah", city: "Portland", employee_count: null },
+    people: [{ email: "testgamma@example.com", full_name: "Gamma Tester" }],
   },
 ];
 

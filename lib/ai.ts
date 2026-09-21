@@ -112,8 +112,48 @@ export async function askAI(
   options: AskAIOptions = {}
 ): Promise<string> {
   const provider = process.env.AI_PROVIDER || 'claude'
-  let maxTokens = options.maxTokens ?? 2000
-  const HARD_CEILING = 32000
+  /**
+   * *** THE CEILING IS THE SDK'S, AND IT IS READ FROM THE SDK RATHER THAN CHOSEN. ***
+   *
+   * `@anthropic-ai/sdk` refuses a NON-STREAMING request it estimates could run past ten
+   * minutes — `client.js:671`, `calculateNonstreamingTimeout`:
+   *
+   *     const maxTime     = 60 * 60 * 1000          // 60 minutes
+   *     const defaultTime = 60 * 10 * 1000          // 10 minutes
+   *     const expectedTime = (maxTime * maxTokens) / 128000
+   *     if (expectedTime > defaultTime) throw 'Streaming is required for operations that
+   *                                            may take longer than 10 minutes.'
+   *
+   * Solving it: maxTokens > 600000 * 128000 / 3600000 = 21333.33, so **21333 is the largest
+   * value that does not throw** and 21334 does. Checked by evaluating the expression, not by
+   * reading the sentence.
+   *
+   * WHY IT WAS 32000 AND WHY THAT WAS A DEFECT. The retry below DOUBLES the budget when a
+   * response is truncated. The critic asks for 12000 (`criticPass.ts`), so one truncation took
+   * it to 24000 — past the ceiling — and **the SDK threw before sending anything.** That
+   * surfaced as an HTTP 500 on `/api/chat` checklist mode after ~200 s, on the customer's path.
+   * `DECISIONS.md` §99, §100.
+   *
+   * **A budget that cannot be sent is not a budget.** The clamp applies to the caller's own
+   * value too: a call that ASKS for 24000 would crash in exactly the same way.
+   *
+   * THE HONEST BEHAVIOUR AT THE LIMIT ALREADY EXISTS. A response that is still truncated at
+   * 21333 returns with `stop_reason === 'max_tokens'` and the critic records
+   * `complete: false` — which `lib/criticPass.ts` exists to carry, because *truncation and
+   * cleanliness are indistinguishable in an empty array*. **A review that stops at its limit
+   * and says so is correct; one that crashes the request is not.**
+   *
+   * Streaming removes this ceiling entirely and is `TODO.md` 0.11 — it is the real fix, and it
+   * is a separate change because it also answers §92's 58.9 s first turn.
+   */
+  const SDK_NONSTREAMING_MAX_TOKENS = 21333
+  let maxTokens = Math.min(options.maxTokens ?? 2000, SDK_NONSTREAMING_MAX_TOKENS)
+  if ((options.maxTokens ?? 0) > SDK_NONSTREAMING_MAX_TOKENS) {
+    console.warn(
+      `AI: maxTokens ${options.maxTokens} exceeds the SDK's non-streaming ceiling ` +
+      `(${SDK_NONSTREAMING_MAX_TOKENS}); clamped. A larger budget needs streaming — TODO 0.11.`)
+  }
+  const HARD_CEILING = SDK_NONSTREAMING_MAX_TOKENS
   const MAX_RETRIES = 2
 
   if (provider === 'claude') {

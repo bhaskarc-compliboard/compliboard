@@ -296,6 +296,58 @@ export function normaliseCritique(raw: unknown): CriticResult {
  * MAKES THE COUNT MEANINGLESS — and the count is the only way to detect a critic that has
  * started inventing (docs/CRITIC-PASS.md §7.1).
  */
+/**
+ * WHAT THE CODE DID WITH THE FINDING.
+ *
+ * §7.1 asked for *"whether it surfaced"*. Under §97 nothing surfaces to a customer, so the fact
+ * worth keeping is what the CODE did — and it is not derivable from severity alone:
+ *
+ *   withheld  the item was ACTUALLY REMOVED from the answer.
+ *   counted   question 5, and the item survived. A date, fee or threshold, never acted on.
+ *   kept      everything else — INCLUDING a blocking finding that removed nothing.
+ *
+ * *** THE ORDER OF THESE TWO TESTS IS THE WHOLE CORRECTNESS OF THIS FUNCTION, AND THE FIRST
+ *     VERSION HAD IT BACKWARDS. *** `applyCritique` puts a finding into `withheld` when
+ * `severity === 'blocking'` and into `unverifiedSpecifics` when `question === 5` — two
+ * independent filters, so **a finding that is both lands in both**, and the route removes its
+ * item. Testing `question === 5` first recorded such a finding as `counted` while the item it
+ * named had in fact been deleted from the answer.
+ *
+ * **That is the same conflation §97's browser test found on screen** — the page telling a user an
+ * item was removed and then listing the figures inside it as unverified — arriving a second time,
+ * in the record rather than in the UI. Caught by reading the first real rows: a run on 21 Sep
+ * produced `q5 blocking counted item="Report Biennial Waste Activity"` for an item the route had
+ * withheld.
+ *
+ * **`withheld` is what the CODE DID; `question_no` still says it was a specific**, so nothing is
+ * lost by preferring the stronger fact.
+ *
+ * *** AND THE SAME CONFLATION BIT A SECOND TIME, ONE LAYER DOWN. *** The next version tested
+ * `severity === 'blocking' && withheld.has(item)`. **Several findings can name the SAME item**,
+ * and only one of them needs to be blocking for the route to delete it — the route filters by
+ * item NAME, not by finding. So two `qualifying` findings on a deleted item were recorded as
+ * `kept` while the answer had shipped without it.
+ *
+ * Caught on 21 Sep by a probe that asserted each disposition against the answer actually
+ * returned: `2 MISMATCH(ES)`, both *"recorded kept but is NOT in the answer"*, on the item a
+ * third finding had withheld.
+ *
+ * > **`disposition` is about the ITEM'S FATE, not about this finding's severity.** If the item
+ * > did not ship, every finding naming it says so. Severity is already its own column.
+ *
+ * The remaining `kept` case is worth being able to count on its own. A blocking finding with
+ * `item: null` (questions 6 and 7 are whole-answer findings) matches no item name, so the route's
+ * filter drops nothing — and `/api/audits` never removes line items at all. **So "blocking" and
+ * "acted on" are different populations**, and recording severity alone would hide the gap.
+ */
+export function dispositionOf(f: Finding, withheld: ReadonlySet<string>): 'withheld' | 'kept' | 'counted' {
+  // NOT `severity === 'blocking' && ...`. THE ITEM'S FATE IS THE FACT, NOT THIS FINDING'S
+  // SEVERITY — see the second correction in the comment above.
+  if (f.item && withheld.has(f.item)) return 'withheld'
+  if (f.question === 5) return 'counted'
+  return 'kept'
+}
+
 export function applyCritique(result: CriticResult) {
   const blocking = result.findings.filter((f) => f.severity === 'blocking')
   const coverage = result.findings.filter((f) => f.severity === 'coverage')

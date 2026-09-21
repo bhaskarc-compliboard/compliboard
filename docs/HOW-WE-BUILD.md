@@ -1,7 +1,13 @@
 # How We Build CompliBoard
 
-**Version:** 13 · **Updated:** 15 September 2026
-**Supersedes:** version 12 (13 Sep). Adds **§3b — where the server log is on Next 16**:
+**Version:** 14 · **Updated:** 21 September 2026
+**Supersedes:** version 13 (15 Sep). **§4 gains the limit of the rebuild claim: the chain rebuilds
+the SCHEMA from zero and nothing else.** The library — 205 requirements, 95 switches, 33 agencies,
+the mapping and the expressions — lives in **load scripts, not migrations**, so a usable staging
+database is **eight steps** after a reset and one refusal leaves an empty `switches` table that
+makes every later check pass vacuously rather than fail. Records a **reset OWED** for migration
+029, with the accepted risk stated (029 is additive) and the precondition named: **the restore
+must be one command first.** Version 13: Adds **§3b — where the server log is on Next 16**:
 `console.error` in a route goes to `.next/dev/logs/next-development.log`, **not** to the terminal
 running `npm run dev`. It cost a wrong conclusion on 15 Sep and will cost the next one too.
 Version 12: Adds **§5a, the standing rule for whoever is DIRECTING the
@@ -323,6 +329,56 @@ route's logging appears to be missing, check that file before concluding anythin
 **Production credentials do not live on the laptop.** Vercel holds what the deployed app needs. The migration script reaches production through `SUPABASE_PROD_*` variables; the loader needs two more that are **expected to be blank** and set only for the duration of a load, then cleared. The loader refuses without them and prints a reminder to clear them.
 
 **Migrations are forward-only and the chain is proven.** `npm run db:reset` rebuilds staging from nothing and runs `000 → latest`. **Run it after adding any migration.** Incremental application hides defects: two were found the first time the chain ran end to end, and neither was reachable any other way.
+
+> ### ⚠ THE CHAIN REBUILDS THE SCHEMA FROM ZERO AND NOTHING ELSE. — 21 September 2026
+>
+> **The sentence above is true of the STRUCTURE and false of anything you could test against**,
+> and the distinction had never been written down. A reset leaves a correct, empty database.
+>
+> **The library is not in the migrations.** Only three carry seed inserts — 011 (agencies), 012
+> (thresholds), 013 (chemicals). Everything a question actually reasons against comes from load
+> scripts reading `supabase/seed-data/`:
+>
+> | | | Restored by |
+> |---|---|---|
+> | requirement_templates | **205** | `load-requirements.js` + an `.xlsx` |
+> | switches | **95** | `load-switches.js` |
+> | agencies | **33** | `load-agencies.js` |
+> | industry_coverage | **56** | `assign-agencies.js` |
+> | applies_expression | on 205 rows | `load-expressions.js` |
+> | the three test companies | Alpha, Beta, Gamma | `seed-staging-testdata.js` |
+> | Alpha's second site + 16 facts | | `seed-multisite-fixture.js` |
+>
+> **So a USABLE staging database is eight steps after a reset**, and on 21 September five of them
+> had not been exercised in the session that was about to depend on them.
+>
+> **THE FAILURE MODE IS THE POINT, AND IT IS NOT INCONVENIENCE.** One refusal in the middle —
+> step 6 declining, say — leaves `switches` at **zero rows**, and the determination gate reads an
+> empty vocabulary and asks nothing. **Every check that follows then passes against a database
+> with no library in it**, which is `AUDIT-CHECKS.md` check 14's subject in its most expensive
+> form: not a check that fails, a check that succeeds vacuously on an empty table.
+>
+> **What makes this a finding rather than a chore:** *"the schema is rebuildable from source"* has
+> been said in this project as though it meant the database is. It does not, and the gap is
+> invisible precisely because the reset itself always succeeds.
+
+#### ⬜ OWED: a reset, deferred 21 September 2026
+
+**Migration 029 was applied with `npm run db:migrate`, not `db:reset`,** so §3.7's guarantee —
+the chain builds a database from nothing — is **unmet for 029 and is recorded as owed rather
+than quietly skipped.**
+
+**The risk accepted, stated so it can be judged rather than trusted:** 029 is **additive** — two
+new tables, three new enums, one foreign key to `companies`, and no ALTER of anything that
+exists. It creates no column on a table another migration later reads, and drops nothing. The
+class of defect a from-zero run catches is **ordering and collision** — the two found on 11
+September were both of that kind — and an additive migration at the end of the chain has almost
+no surface for either. **Almost is not none, and that is exactly what the owed reset settles.**
+
+**THE PRECONDITION IS THE RESTORE COMMAND, NOT A CALENDAR.** The reset is deferred because the
+restore is eight manual steps; it stops being deferred when it is one. **Then it is exercised
+deliberately, on its own, not as a side effect of shipping the next thing** — a reset run in the
+middle of another task is a reset nobody is watching.
 
 **Production migrations are run by the owner, in a plain terminal, typing `PRODUCTION`.** The script prints the target ref, the staging ref for contrast, and the exact list of pending files.
 

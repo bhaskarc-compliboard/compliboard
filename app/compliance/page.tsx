@@ -7,8 +7,10 @@ import AppLayout from '@/components/AppLayout'
 import AIDisclaimer from '@/components/AIDisclaimer'
 import { ACCEPTED_FILE_TYPES } from '@/lib/acceptedFiles'
 import { GateAskCard } from '@/components/GateAskCard'
-import { CritiqueNotice, type AppliedCritique } from '@/components/CritiqueNotice'
 import type { GateAsk, GateAnswering } from '@/lib/determinationGate'
+// `import type` only — it is erased at compile time, so lib/turnSigning's node:crypto import
+// never reaches the browser bundle. The client only ever ECHOES a turn; it never builds one.
+import type { SealedTurn } from '@/lib/turnSigning'
 
 const STATUS_MESSAGES: Record<string, string[]> = {
   hazmat: [
@@ -178,9 +180,31 @@ function CompliancePageInner() {
   // Held here rather than inside the answer, because an ask REPLACES the answer —
   // DECISIONS.md §34, docs/DETERMINATION-GATE.md §2.
   const [gateAsk, setGateAsk] = useState<GateAsk | null>(null)
-  // What Stage 5 found. Held beside the answer rather than inside it: a blocking finding has
-  // already removed an item server-side, and this is the account of what was removed and why.
-  const [critique, setCritique] = useState<AppliedCritique | null>(null)
+  // *** THERE IS NO `critique` STATE. DECISIONS.md §97. ***
+  // The critic's findings are quality control and never reach a customer; they are written to
+  // critic_reviews / critic_findings server-side and are absent from the response body. A
+  // variable kept only to be emptied is dead code, and NO STATE IS A STRONGER GUARD AGAINST
+  // STALE OUTPUT THAN STATE KEPT EMPTY — there is nothing left for a later change to render.
+
+  /**
+   * THE CONVERSATION — M1.2c's turns, held where a person can reach them. GATE-HISTORY.md §10.
+   *
+   * *** IN REACT STATE AND NOWHERE ELSE. NOT localStorage. *** A turn list is the transcript in
+   * claim form, and `WORKSPACE.md` §6.4 makes the transcript DISPOSABLE — §78 turns that into a
+   * hard rule for the facts inside it, since a hypothetical "lives in the conversation and
+   * nowhere else". Persisting it here would make the disposable thing durable by accident.
+   *
+   * THE COST, WHICH IS REAL AND WAS DECIDED RATHER THAN DISCOVERED: a reload loses the
+   * conversation and starts a new topic. `DECISIONS.md` §96(e) — SEVERAL open topics per company,
+   * and the option that resumes the old topic with an empty turn list was REFUSED, because a row
+   * claiming to be the same conversation while the gate remembers none of it is a continuous
+   * record with discontinuous content.
+   *
+   * The turns are OPAQUE to this component. Each is signed by the server and echoed back
+   * untouched; editing one here would only make it fail to verify.
+   */
+  const [turns, setTurns] = useState<SealedTurn[]>([])
+  const [topicId, setTopicId] = useState<string>('')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const searchParams = useSearchParams()
 
@@ -630,7 +654,6 @@ Give them a specific direct answer — exactly what they need to do, which speci
     setData(null)
     setResearchData(null)
     setGateAsk(null)
-    setCritique(null)
     setMode(currentMode as 'checklist' | 'research')
     setChecked({})
     setCompletedSteps([])
@@ -661,6 +684,10 @@ Give them a specific direct answer — exactly what they need to do, which speci
         formData.append('question', q)
         formData.append('mode', currentMode)
         if (answering) formData.append('answering', JSON.stringify(answering))
+        // THE FILE BRANCH TOO. This is the one that gets forgotten, and a conversation that
+        // silently resets whenever somebody attaches a document is worse than no conversation.
+        formData.append('turns', JSON.stringify(turns))
+        formData.append('topicId', topicId)
         // /api/chat requires the session token since 11 Sep — it reads company_switches
         // for the determination gate, which is tenant data (TODO §0.8b).
         res = await fetch('/api/chat', { method: 'POST', body: formData, headers: await authHeaders() })
@@ -668,14 +695,32 @@ Give them a specific direct answer — exactly what they need to do, which speci
         res = await fetch('/api/chat', {
           method: 'POST',
           headers: await authHeaders({ 'Content-Type': 'application/json' }),
-          body: JSON.stringify({ question: q, mode: currentMode, scanResult, answering: answering ?? null }),
+          // `turns` is sent even when empty: its PRESENCE is what tells the route this is a
+          // conversation rather than a one-shot call, so a topic is opened. The two other
+          // /api/chat callers on this page deliberately send neither field. GATE-HISTORY.md §10.2.
+          body: JSON.stringify({ question: q, mode: currentMode, scanResult, answering: answering ?? null, turns, topicId }),
         })
       }
       const json = await res.json()
       if (!res.ok) {
+        // A conversation the server could not carry on with. CLEARING THE TURNS IS THE POINT:
+        // the message says "start fresh", and without this the very next request would send the
+        // same unusable turns and fail identically. GATE-HISTORY.md §10.4.
+        if (json.conversation_reset) {
+          setTurns([])
+          setTopicId('')
+        }
         setErrorMsg(json.error || 'That request could not be completed.')
         return
       }
+
+      // *** APPEND THE TURN BEFORE BRANCHING ON THE OUTCOME. ***
+      // GATE-HISTORY.md §8.4 rule 1: every exchange is a turn, INCLUDING an ask and including one
+      // that asserts nothing. Putting this after the `ask` return below would drop exactly the
+      // turns where the gate stopped to ask a question, and the turn numbers would then drift
+      // from the conversation a person had.
+      if (json.topicId) setTopicId(json.topicId as string)
+      if (json.turn) setTurns(prev => [...prev, json.turn as SealedTurn])
 
       // An ask is a SUCCESSFUL outcome, not an error — it arrives as 200 and renders in
       // the answer position. Returning here is what makes it an alternative to the answer
@@ -684,7 +729,6 @@ Give them a specific direct answer — exactly what they need to do, which speci
         setGateAsk(json.ask as GateAsk)
         return
       }
-      setCritique((json.critique as AppliedCritique) ?? null)
       if (currentMode === 'research') {
         const answerText = json.research || json.data?.title || 'No results'
         setResearchData(answerText)
@@ -883,9 +927,13 @@ Give them a specific direct answer — exactly what they need to do, which speci
           </div>
         )}
 
-        {/* What the critic found. BESIDE the answer, never instead of it — a critique is not
-            an ask. Renders nothing at all when the review was clean. */}
-        {!loading && !gateAsk && <CritiqueNotice critique={critique} />}
+        {/* *** THE CRITIC'S FINDINGS DO NOT RENDER HERE. DECISIONS.md §97. ***
+            All four boxes are a RED-LINED DRAFT, and a customer receives the corrected document,
+            not the corrections. Showing them made a correct, caught answer read as a wrong one:
+            the critic withheld the 1200-A, and the customer saw it anyway, headlined as a
+            removal. `CRITIC-PASS.md` §2.3's "surface, don't fix" is UNCHANGED in its reasoning —
+            the evidence is kept, the audience changes. The page disclaimer carries what the
+            unverified-figures box carried. */}
 
         {loading && (
           <div className="no-print mt-6 p-5 bg-white rounded-xl border border-gray-200 shadow-sm">
@@ -925,7 +973,11 @@ Give them a specific direct answer — exactly what they need to do, which speci
             </div>
             <div className="mt-4 flex items-center gap-3">
               <button
-                onClick={() => { setCreateQuestion(askQuestion); setTab('create'); handleSubmit('checklist', askQuestion) }}
+                /* *** askedQuestion, NOT askQuestion. *** `askedQuestion` is the question that
+                   produced the answer this button sits beneath; `askQuestion` is the live input
+                   box, which the user may have edited or replaced since. The label says "based
+                   on this research", so the code has to read the research. DECISIONS.md §97. */
+                onClick={() => { setCreateQuestion(askedQuestion); setTab('create'); handleSubmit('checklist', askedQuestion) }}
                 className="flex items-center gap-2 text-sm px-4 py-2.5 rounded-xl border border-green-600 bg-green-700 text-white hover:bg-green-800 transition-colors">
                 Create my action checklist →
               </button>
@@ -980,9 +1032,13 @@ Give them a specific direct answer — exactly what they need to do, which speci
           </div>
         )}
 
-        {/* What the critic found. BESIDE the answer, never instead of it — a critique is not
-            an ask. Renders nothing at all when the review was clean. */}
-        {!loading && !gateAsk && <CritiqueNotice critique={critique} />}
+        {/* *** THE CRITIC'S FINDINGS DO NOT RENDER HERE. DECISIONS.md §97. ***
+            All four boxes are a RED-LINED DRAFT, and a customer receives the corrected document,
+            not the corrections. Showing them made a correct, caught answer read as a wrong one:
+            the critic withheld the 1200-A, and the customer saw it anyway, headlined as a
+            removal. `CRITIC-PASS.md` §2.3's "surface, don't fix" is UNCHANGED in its reasoning —
+            the evidence is kept, the audience changes. The page disclaimer carries what the
+            unverified-figures box carried. */}
 
         {loading && (
           <div className="no-print mt-6 p-5 bg-white rounded-xl border border-gray-200 shadow-sm">

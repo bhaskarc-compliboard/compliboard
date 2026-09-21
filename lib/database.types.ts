@@ -721,6 +721,101 @@ export type Database = {
           },
         ]
       }
+      critic_findings: {
+        Row: {
+          because: string | null
+          company_id: string
+          created_at: string
+          disposition: Database["public"]["Enums"]["critic_disposition"]
+          finding: string
+          id: string
+          item: string | null
+          question_no: number
+          quote: string
+          review_id: string
+          severity: Database["public"]["Enums"]["critic_severity"]
+        }
+        Insert: {
+          because?: string | null
+          company_id: string
+          created_at?: string
+          disposition: Database["public"]["Enums"]["critic_disposition"]
+          finding: string
+          id?: string
+          item?: string | null
+          question_no: number
+          quote: string
+          review_id: string
+          severity: Database["public"]["Enums"]["critic_severity"]
+        }
+        Update: {
+          because?: string | null
+          company_id?: string
+          created_at?: string
+          disposition?: Database["public"]["Enums"]["critic_disposition"]
+          finding?: string
+          id?: string
+          item?: string | null
+          question_no?: number
+          quote?: string
+          review_id?: string
+          severity?: Database["public"]["Enums"]["critic_severity"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "critic_findings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "critic_findings_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "critic_reviews"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      critic_reviews: {
+        Row: {
+          answer_title: string | null
+          company_id: string
+          complete: boolean
+          created_at: string
+          id: string
+          question: string
+          source: Database["public"]["Enums"]["critic_source"]
+        }
+        Insert: {
+          answer_title?: string | null
+          company_id: string
+          complete: boolean
+          created_at?: string
+          id?: string
+          question: string
+          source: Database["public"]["Enums"]["critic_source"]
+        }
+        Update: {
+          answer_title?: string | null
+          company_id?: string
+          complete?: boolean
+          created_at?: string
+          id?: string
+          question?: string
+          source?: Database["public"]["Enums"]["critic_source"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "critic_reviews_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_reviews: {
         Row: {
           action_items: Json | null
@@ -1902,6 +1997,9 @@ export type Database = {
       chemical_state: "solid" | "liquid" | "gas"
       chemical_unit: "lb" | "gal" | "ft3"
       coverage_status: "not_built" | "generated" | "verified"
+      critic_disposition: "withheld" | "kept" | "counted"
+      critic_severity: "blocking" | "qualifying" | "coverage"
+      critic_source: "chat_checklist" | "audit"
       entity_scope:
         | "organization"
         | "site"
@@ -2092,6 +2190,9 @@ export const Constants = {
       chemical_state: ["solid", "liquid", "gas"],
       chemical_unit: ["lb", "gal", "ft3"],
       coverage_status: ["not_built", "generated", "verified"],
+      critic_disposition: ["withheld", "kept", "counted"],
+      critic_severity: ["blocking", "qualifying", "coverage"],
+      critic_source: ["chat_checklist", "audit"],
       entity_scope: [
         "organization",
         "site",

@@ -227,6 +227,21 @@ const DELETED_BY_CASCADE_OR_PARENT = [
                            // own leaf — nothing references `topics`, and it holds no facts of
                            // its own (DECISIONS.md §78: a hypothetical is never stored), so
                            // there is nothing for the cascade to strand. Migration 028.
+  'critic_reviews',        // cascades with the company: company_id -> companies ON DELETE
+                           // CASCADE, read from pg_constraint on 21 Sep rather than assumed.
+                           // Nothing outside its own pair references it.
+  'critic_findings',       // cascades TWICE, both read from pg_constraint: review_id ->
+                           // critic_reviews ON DELETE CASCADE and company_id -> companies
+                           // ON DELETE CASCADE, so neither ordering strands a row.
+                           //
+                           // AND IT IS NAMED HERE RATHER THAN IN THE LOOP FOR A SECOND REASON:
+                           // migration 029 leaves `authenticated` at ZERO on both tables, and
+                           // this route deletes through `supabaseAdmin`, so a named delete
+                           // WOULD work — but adding them to the loop would say these are
+                           // tenant rows a tenant's deletion sweeps. They are not. They are
+                           // system-generated quality control that happens to carry a
+                           // company_id (DECISIONS.md §97), and the cascade is the honest
+                           // mechanism: they go because the company they describe is gone.
 ] as const
 // ---------------------------------------------------------------------------
 

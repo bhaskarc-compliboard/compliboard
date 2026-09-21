@@ -1,6 +1,33 @@
 # Decision Record
-**Version:** 74 · **Updated:** 21 September 2026
-**Supersedes:** version 73 (15 Sep). Adds **§96 — M1's order reverses, and FIVE decisions about
+**Version:** 78 · **Updated:** 21 September 2026
+**Supersedes:** version 77 (21 Sep). Adds **§100 — a hard 500 is a defect, not slowness**, and
+fixes it: `lib/ai.ts`'s ceiling now comes from the SDK's own formula (`client.js:671`) rather than
+from a chosen 32000, so the truncation retry cannot double past **21333** and crash before
+sending. **The honest behaviour at the limit already existed** — a truncated review records
+`complete: false` and still writes its row. Streaming is `TODO.md` **0.11**: it removes the
+ceiling and answers §92's 58.9 s together. Version 77: Adds **§99 — two corrections found by PROVING the write, and
+a 500 that is not ours.** `dispositionOf` was wrong twice, both the same conflation §97 exists
+about: **`disposition` is the ITEM'S fate, not the finding's severity.** Both were caught by a
+probe that compares each stored row against **the answer the customer actually received** — a
+probe that could fail. And `/api/chat` checklist mode **can 500**: the critic's 12000-token budget
+doubles on truncation (`ai.ts:152`) and the SDK then refuses the non-streaming request outright.
+Reported, not fixed — §3.1. Version 76: Adds **§98 — the chain rebuilds the SCHEMA, not the
+database.** `db:reset` produces a correct, **empty** one: the library lives in load scripts, not
+migrations, so a usable staging database is **eight steps**, and **one refusal leaves `switches`
+at zero rows and every later check passes vacuously.** Records the 029 reset as **OWED** with the
+accepted risk (029 is additive), and names the precondition — `TODO.md` 0.10, the restore as one
+command. Version 75: **§65 gains a TENTH instance — `§80a`, the fourth
+cross-reference**, and the first composed citation attached to a **correct** finding, which
+removes the only cue that would prompt anyone to check it. Adds **§97 — the critic's findings are ours, not the
+customer's.** All four boxes come off every customer view: they are a **red-lined draft**, and a
+customer receives the corrected document. Found by a browser test where the critic had correctly
+withheld the wrong permit and **the customer saw it anyway, headlined as a removal** — a caught
+error reading as a shipped one. **Revises how `CRITIC-PASS.md` §2.3's *surface, don't fix* is
+applied, not its reasoning:** the evidence is kept, the audience changes — which forces the
+storage §7.1 asked for and nobody built, since the critique is **persisted nowhere today.** Two tables, not one — **a clean review writes no finding row
+and drops out of §7.1's denominator.** And **unrendered is not private**: `critique` comes out of
+both response bodies, because a payload readable in devtools is output that reached the customer.
+Version 74: Adds **§96 — M1's order reverses, and FIVE decisions about
 the first writer.** **73 of 95 switches are site-scoped** (read from the live table; the documents
 said 70), the conversation has no concept of a site, so **M1.3 first builds a writer for 22 facts
 whose call shape changes when the site arrives.** A conversation surface precedes both — the
@@ -4305,8 +4332,8 @@ the review can go back to being periodic rather than gating.
 
 ## 65. The composed assertions, and the rule that covers all of them — 13–15 September 2026
 
-*Nine instances. The register is kept here so the rule is stated once and the count is not an
-impression. §60 records the first and states the rule; §66 records the fourth in full.*
+*Ten instances. The register is kept here so the rule is stated once and the count is not an
+impression. **Four of the ten are cross-references — the most common single shape.** §60 records the first and states the rule; §66 records the fourth in full.*
 
 **This section exists so the rule is stated once and the instances are countable.** §60 records
 the first and states the rule; this records all three together, because the third arrived in a
@@ -4475,6 +4502,38 @@ this register. §46 established that a pre-flight names files exactly as they ap
 recorded the inverse — a migration citing a `§60` that did not yet exist. **A section number is a
 filename with fewer characters, and it is easier to get wrong precisely because it looks like it
 needs no checking.**
+
+### The tenth: `§80a`, and it is the FOURTH cross-reference
+
+**Asserted, 21 September:** *"it is §80a's shape exactly"* — of a draft migration that revoked
+everything from `authenticated` while both writing routes run under the caller's token.
+
+**The correction it carried was completely right**, and that is what makes it worth filing: the
+draft would have failed with *permission denied* on the first real insert. **The reasoning was
+sound and the citation was composed.**
+
+**Settled by `grep -n "80a" docs/DECISIONS.md`:** there is no §80a. §80 is *"`declared` — a person
+is not a document"*, and the row actually meant is §80's line in §63's class table:
+
+```
+| §80 | fromUserAnswer() returning `stated` with no document | the first INSERT from a route |
+```
+
+**Which is the right shape — the defect that only appears on the first real write from a route —
+under a number that does not exist.**
+
+> ### FOUR OF TEN ARE NOW CROSS-REFERENCES, AND IT IS THE MOST COMMON SHAPE IN THIS REGISTER.
+>
+> #3 a migration filename · #6 §68 for §65 · #7 §35 for check 14 · **#10 §80a for §80.**
+>
+> **And this one adds something the other three did not: a composed number can be attached to a
+> CORRECT finding.** The previous three were wrong citations on claims that were also wrong or
+> unverified, so checking the number and checking the claim were the same act. Here the claim was
+> right, which removes the only cue that would have prompted anyone to check — **the finding
+> being obviously correct is precisely when the citation goes unread.**
+>
+> **A suffixed number is the easiest kind to compose**, because `§80a` reads as a refinement of a
+> section that does exist rather than as an invention. `grep` costs one command either way.
 
 ### Why the third is the interesting one, and it is not the worst
 
@@ -6964,4 +7023,300 @@ acceptance condition, not a reason to hold M1.2d.
 | **(c) filter held narrow** | never as such — but it **expires** the moment a determination path gets a route, and then 7.2c precedes M1.6 rather than merely being scheduled before it |
 | **(d) held, not written** | a real case appears for promoting a null-switch fact to a real one. §78's own reversal applies: **the fix is a deliberate user action, not a storage decision** |
 | **(e) several open topics** | a named case for serialising a company's explorations. **Reversing means closing somebody's open work**, which is why it was decided rather than defaulted |
+
+---
+
+## 97. The critic's findings are ours, not the customer's — 21 September 2026
+
+**Decision: no critic output reaches a customer. All four boxes come off every customer view.
+The findings are kept, and their audience changes.**
+
+### What went wrong, from the rows rather than from the spec
+
+A browser test on 21 Sep produced a saved view showing the critic's full output — *"5 items were
+removed from this answer"*, *"Not covered here"*, *"Worth knowing"*, *"5 specific figures … have
+not been checked"* — sitting above a research answer it did not belong to.
+
+**And the content of it is the argument.** The critic had withheld the **1200-A** permit, which is
+the wrong permit for this site. **That is the critic working.** What the customer saw was a red
+box headlining the 1200-A by name, with the reason it was removed — so **a correct answer, caught
+and corrected, read as a wrong one.** The product did its job and then reported itself for it.
+
+> ### A CUSTOMER RECEIVES THE CORRECTED DOCUMENT, NOT THE CORRECTIONS.
+>
+> All four boxes are a **red-lined draft.** Red-lining is quality control and quality control is
+> ours. Handing it over does not make the product more honest — it makes a caught error
+> indistinguishable from a shipped one, and it is the caught ones that fill the box.
+
+### THIS REVISES HOW §2.3 IS APPLIED, NOT ITS REASONING
+
+`CRITIC-PASS.md`'s rule is **surface, don't fix**: the critic *"reports and never regenerates — a
+silent fix destroys the evidence, and a self-healing loop means no failure is ever found."*
+
+**That reasoning is untouched and is the reason the findings must still be written down.** What it
+was never about is *who reads them*. Surfacing preserves the evidence; it does not follow that the
+evidence is a customer-facing feature. **The evidence is kept. The audience changes.**
+
+**And nothing honest is lost by the removal.** The page disclaimer already says to verify against
+the cited source, which is exactly what the unverified-figures box carried — `CLAUDE.md` §6's
+requirement that unchecked figures carry a caveat is satisfied by the disclaimer, not by a count.
+
+### THE WATCH ITEM, WHICH IS A REAL COST AND IS NOT AN ARGUMENT AGAINST THIS
+
+**A removal can leave a hole where the right answer belonged.** The 1200-A came out and **nothing
+put the 1200-Z in** — so the customer got a checklist quietly missing the permit they actually
+need, and previously got a red box naming the wrong one.
+
+> **That is an UPSTREAM QUALITY PROBLEM. It is not a reason to show the critic's working.**
+> Showing a customer a removal notice does not give them the 1200-Z either; it gives them the
+> 1200-A plus an explanation. The fix is generation that reaches the right permit, and §7.1's
+> rate — **blocking findings as a share of answers** — is how we would know it is not.
+
+### What is built
+
+| | |
+|---|---|
+| 1 | **`CritiqueNotice` renders in no customer view.** Both call sites on `/compliance` |
+| 2 | **Findings are persisted**, because `criticise()` runs in two routes and **is stored nowhere today** — it goes into the HTTP response and dies in React state. Removing the UI without a home DESTROYS the evidence §2.3 exists to preserve |
+| 3 | **`critique` state is cleared on `loadResearch` and `loadChecklist`** — moot once nothing renders it, and kept anyway because stale state from one answer attached to another is the defect that produced this |
+| 4 | **The checklist button builds from `askedQuestion`**, the question that produced the answer above it, not `askQuestion`, the live input box |
+
+**§7.1 already asked for (2) and it was never built** — *"Log every finding: severity, question
+number, whether it surfaced… It needs a rate, and nothing records one."* This decision makes the
+storage necessary rather than merely advisable, and changes one field's meaning: **"whether it
+surfaced" becomes what the CODE did with it** — withheld, kept, or counted — since nothing
+surfaces to a customer any more.
+
+### TWO TABLES, AND THE REASON IS THE DENOMINATOR
+
+**The instruction was one table, one row per finding. It is two, and the second one is the
+parent.** Both reasons are the failures §7.1's metric exists to catch:
+
+| | |
+|---|---|
+| **The rate would be overstated by construction** | §7.1 asks for *"blocking findings as a share of **answers**"*. **A clean review writes no finding row and drops out of the denominator**, so a findings-only table computes the rate over reviews that found something — which is every review in the table. The number would look worst exactly when the critic is behaving |
+| **`complete = false` with zero findings is indistinguishable from clean** | `lib/criticPass.ts:70` — *truncation and cleanliness are indistinguishable in an empty array*. A truncated review also writes no finding rows, so without a parent row the two are the same absence. **That is the distinction the flag was added for**, and a findings-only table throws it away at the moment of storage |
+
+**So `critic_reviews` holds one row per `criticise()` call including the ones that found nothing,
+and `critic_findings` hangs off it.** The rate is `blocking findings ÷ reviews where complete`.
+
+### UNRENDERED IS NOT PRIVATE
+
+**`critique` comes out of both HTTP response bodies in the same change** — `/api/chat` and
+`/api/audits`.
+
+Removing `CritiqueNotice` stops it being drawn. **It does not stop it being sent**: the applied
+critique — every withheld item, every quote, every reason — still crosses to the browser and is
+readable in devtools' network tab by anyone who opens it. §97 says no internal output reaches a
+customer, and a payload they can read is output that reached them.
+
+> **The distinction is worth stating because it is the one a UI change naturally misses.** The
+> screen is what gets reviewed; the response body is not. Once the findings are written
+> server-side the field has no reader at all — `grep critique app --include=*.tsx` returns
+> nothing after this change — so removing it costs nothing and closes the gap.
+
+**Reversal condition:** a customer for whom the red-lining is the product — an auditor or a
+consultant reviewing our reasoning rather than acting on it. **That is a different surface with a
+different login, not a box on the answer page.**
+
+---
+
+## 98. The chain rebuilds the schema, not the database — 21 September 2026
+
+**`npm run db:reset` produces a correct, EMPTY database. That is not what "rebuildable from
+source" has been taken to mean in this project, and the difference was never written down.**
+
+### The evidence, counted before the claim was made
+
+| | Rows on staging | Restored by |
+|---|---|---|
+| `requirement_templates` | **205** | `load-requirements.js` + an `.xlsx` |
+| `switches` | **95** | `load-switches.js` |
+| `agencies` | **33** | `load-agencies.js` |
+| `industry_coverage` | **56** | `assign-agencies.js` |
+| `applies_expression` | on 205 rows | `load-expressions.js` |
+| companies / profiles / entities | 3 / 4 / 4 | `seed-staging-testdata.js` |
+
+**Only three migrations carry seed inserts at all** — 011 (agencies), 012 (thresholds), 013
+(chemicals). Everything a question reasons against comes from scripts reading
+`supabase/seed-data/`, which `drop table ... cascade` removes and `000 → latest` does not put
+back.
+
+> ### THE FAILURE MODE IS A CHECK THAT PASSES, NOT ONE THAT FAILS.
+>
+> One refusal in the middle of the restore — step 6 declining — leaves `switches` at **zero
+> rows.** The determination gate then reads an empty vocabulary and asks nothing, `askableSwitches`
+> returns an empty queue, and **every subsequent check succeeds against a database with no library
+> in it.** `AUDIT-CHECKS.md` check 14 in its most expensive form: not a broken check, a vacuous
+> one. Check 20 already documents the correct shape — it passes vacuously **and says so.**
+>
+> **And the gap is invisible because the reset itself always succeeds.** Nothing in the output of
+> `db:reset` is wrong. It rebuilt exactly what it claims to rebuild.
+
+### The decision, in two parts
+
+**1. The reset for 029 is OWED, not skipped.** `npm run db:migrate` applied it, so §3.7's
+guarantee — the chain builds a database from nothing — is **unmet for 029 and recorded as such.**
+
+**The accepted risk, stated so it can be judged rather than trusted:** 029 is **additive** — two
+new tables, three new enums, one FK to `companies`, no `ALTER` of an existing object, nothing
+dropped. **The class of defect a from-zero run catches is ordering and collision**, and both
+defects found on 11 September were of that kind. An additive migration at the end of the chain has
+almost no surface for either. **Almost is not none, which is what the owed reset is for.**
+
+**2. The precondition is a command, not a date.** `TODO.md` **0.10**: one `npm run db:restore`
+that runs the eight steps in order, prints a row count after each, and **refuses to continue when
+a step produces zero rows.**
+
+> **A rule that is expensive to obey is a rule that gets skipped, and §3.7 has now been skipped
+> once.** The fix is not restating the rule — it is making it cheap. **Once the restore is one
+> command a reset stops being something to avoid**, and then it is exercised **deliberately, on
+> its own, watched** — not folded into shipping something else, because a reset nobody is
+> watching is a reset that teaches nothing.
+
+**Reversal condition:** none for the finding. The owed reset closes when 0.10 exists and is run.
+
+---
+
+## 99. Two corrections found by proving the write, and a 500 that is not mine — 21 September 2026
+
+**§97's storage was built and then driven as a signed-in user through `/api/chat` checklist mode
+on staging. Three things came out of the proving that the building did not produce.**
+
+### 1. THE SAME CONFLATION, TWICE MORE, ONE LAYER DOWN EACH TIME
+
+`dispositionOf` records what the code did with a finding. It was wrong twice, and **both are the
+defect §97 was written about** — the page that told a user an item was removed and then listed
+the figures inside it as unverified.
+
+| | The rule | What the rows said | Why |
+|---|---|---|---|
+| **v1** | `question === 5` tested **first** | `q5 blocking counted` on an item the route had **deleted** | `applyCritique` filters `blocking` and `question === 5` **independently**, so a finding lands in **both**. Testing q5 first hid the deletion |
+| **v2** | `severity === 'blocking' && withheld.has(item)` | `q3 qualifying kept` and `q4 qualifying kept` on an item that **did not ship** | **Several findings name the same item**, and the route filters by item NAME. Only one of them has to be blocking for the item to go |
+
+> ### `disposition` IS ABOUT THE ITEM'S FATE, NOT ABOUT THIS FINDING'S SEVERITY.
+> If the item did not ship, every finding naming it says so. **Severity is already its own
+> column**, and asking one field to carry both is what produced the original screen.
+
+**Both were found by a probe that could fail**, and that is the transferable part. The probe
+asserts each stored `disposition` against the answer the customer actually received:
+
+```
+disposition vs the answer actually returned: 2 MISMATCH(ES)
+    q3 qualifying kept   item="Install ANSI-compliant plumbed eyewash sta"  <-- recorded kept but is NOT in the answer
+```
+
+**Neither version would have been caught by reading the rows.** `q3 qualifying kept` is a
+perfectly reasonable-looking row; it is only wrong relative to a document it was not stored
+beside. §81's rule, in a new place: **a probe that cannot fail has tested nothing** — and the
+thing that made this one able to fail was comparing the record against the artifact rather than
+against the code that wrote it.
+
+**The rule now lives in `lib/criticPass.ts`, not `lib/criticRecord.ts`**, and the reason is §67:
+`criticRecord` imports `@/lib/auth` for the admin client, and a `@/` alias cannot be resolved by
+Node's type stripping, **which is what runs the test suite.** The module is untestable by
+construction, so the one piece of it with a defect worth a test moved to the module that has one.
+**Five tests, and the first two fail under the two rules they replace** — verified by restoring
+each and watching the suite go red.
+
+### 2. `/api/chat` CHECKLIST MODE CAN 500, AND IT IS NOT THE CRITIC'S FAULT
+
+**Reproduced three times on a broad question. The server log (`HOW-WE-BUILD.md` §3b) says:**
+
+```
+Full error: Error: Streaming is required for operations that may take longer than 10 minutes.
+```
+
+**The mechanism, from the lines:** `lib/criticPass.ts:213` budgets the critic at
+`maxTokens: 12000` on `task: 'critique'`, the strongest tier. `lib/ai.ts:152` doubles the budget
+and retries whenever `stop_reason === 'max_tokens'` — `12000 → 24000`, ceiling 32000. **At that
+size the SDK refuses a non-streaming request outright**, so a checklist large enough to truncate
+turns into an HTTP 500 after ~200 seconds rather than into a longer answer.
+
+> **The retry that exists to rescue a truncated answer is what produces the failure.** It is not
+> a timeout and not a model error: nothing was sent. The refusal is a client-side guard on the
+> estimated duration.
+
+**NOT FIXED, DELIBERATELY.** Streaming, token limits and retry logic are all `CLAUDE.md` §3.1 —
+they change what feeds a prompt and what comes back. **This is a report.** Two things are worth
+knowing when it is picked up: the narrow-question run succeeded at **145 s**, so the ceiling is
+close to ordinary use rather than exotic; and this is a **hard 500 on the customer path**, which
+is a different class from §92's slowness.
+
+### 3. What the proof actually established, stated without stretching it
+
+| | |
+|---|---|
+| A real signed-in user's checklist request writes a review row | **yes** — 3 reviews, 42 findings, all via `/api/chat` |
+| `critique` is absent from the response body | **yes** — `response keys: outcome, data, gate, frame, followUp, turn, topicId` |
+| The caller cannot read or write the tables | **yes** — `permission denied` on both SELECT and INSERT under the user's own token |
+| Every stored disposition matches the shipped answer | **yes** — `ALL 10 CONSISTENT`, after two corrections |
+| `withheld` itself is exercised end to end | **in the earlier run**, not the final one — the last answer withheld nothing. The unit tests cover it; the HTTP evidence for it is the run before |
+
+**The last row is stated because it would be easy to imply otherwise.** A green final run is not
+evidence for a branch that run never entered.
+
+---
+
+## 100. A hard 500 is a defect, not slowness — 21 September 2026
+
+**§99 reported it. This fixes it, and the distinction from §92 is the reason it was not left to
+wait for streaming.**
+
+| | |
+|---|---|
+| **§92** | The research path takes ~60 s. **A product problem**: the answer arrives, and it is correct |
+| **§100** | Checklist mode returns **HTTP 500** after ~200 s. **A defect**: the answer never arrives, and nothing tells the user why |
+
+> **Slowness is a thing to improve. A crash on the customer's path is a thing to stop.** They are
+> not points on one scale, and treating the 500 as "the slow one, worse" would have parked it
+> behind a change it does not depend on.
+
+### The ceiling, read from the SDK rather than chosen
+
+`@anthropic-ai/sdk` `client.js:671`, `calculateNonstreamingTimeout`:
+
+```js
+const maxTime     = 60 * 60 * 1000          // 60 minutes
+const defaultTime = 60 * 10 * 1000          // 10 minutes
+const expectedTime = (maxTime * maxTokens) / 128000
+if (expectedTime > defaultTime) throw 'Streaming is required for operations that may take
+                                        longer than 10 minutes.'
+```
+
+Solving for the largest value that does not throw: **21333**. Evaluated rather than inferred —
+21333 passes, 21334 throws.
+
+**`lib/ai.ts` had `HARD_CEILING = 32000`, and the retry DOUBLES on truncation.** The critic asks
+for 12000, so one truncation took it to **24000 — past the ceiling — and the SDK threw before
+sending anything.** Not a timeout and not a model error: no request was made.
+
+**The clamp applies to the caller's own `maxTokens` too**, with a warning, because a call that
+asks for 24000 outright fails identically. `/api/audits` passes 16000 and is unaffected.
+
+### THE HONEST BEHAVIOUR AT THE LIMIT ALREADY EXISTED
+
+**A truncated review is a solved problem and a crashed request is not.** `normaliseCritique`
+(`criticPass.ts:267`) returns `complete: false` on every failure path — the distinction that
+exists because *truncation and cleanliness are indistinguishable in an empty array* — and
+`recordCritique` writes the `critic_reviews` row **with `complete: result.complete` before it
+checks whether there are any findings**, so a truncated review still lands as a row that says so.
+`complete: false` is asserted in `tests/unit/criticPass.test.ts`.
+
+> **A critic that stops at its limit and records that it stopped is correct. One that crashes the
+> customer's request is not.** The cap does not lose information; it converts a 500 into the
+> `complete: false` the schema was built to carry.
+
+**Proved on the question that produced the 500 three times** — broad hazardous-waste, Test Gamma,
+as a signed-in user: **HTTP 200 in 197.1 s**, a fourth `critic_reviews` row, 20 more findings.
+*(That run came back `complete: true`, so the truncated path is proved by its two pieces — the
+tested `normaliseCritique` and the two lines that write the row first — and has not been observed
+end to end. Stated because a green run is not evidence for a branch it did not enter.)*
+
+### Streaming is the real fix, and it is its own item
+
+`TODO.md` **0.11**. It removes this ceiling rather than avoiding it, **and it answers §92 at the
+same time**: seeing text arrive is the honest response to a long wait, where a spinner for 58.9
+seconds is not. **One change, two problems, and neither of them is this one** — which is why this
+cap shipped first.
 

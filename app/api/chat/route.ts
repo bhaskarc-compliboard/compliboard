@@ -26,6 +26,7 @@ import { verifyTurns, sealTurn, BadConversation, type SealedTurn } from '@/lib/t
 import type { PriorTurn } from '@/lib/gateContext';
 import { gate, type GateAnswering } from '@/lib/determinationGate';
 import { criticise, applyCritique } from '@/lib/criticPass';
+import { recordCritique } from '@/lib/criticRecord';
 import { establishedFactsBlock } from '@/lib/gateContext';
 import { agenciesInScopeFor } from '@/lib/agencyScope';
 import type { ChecklistAnswer } from '@/lib/answerSchema';
@@ -46,6 +47,37 @@ function factsFromGate(g: { outcome: string; resolved?: { known: Array<{ switch_
   return known
     .filter((k) => k.source === 'stated_in_question' || k.source === 'hypothetical')
     .map((k) => ({ switch_id: k.switch_id, fact: k.fact, value: k.value, source: k.source as never }));
+}
+
+/**
+ * A conversation the server cannot carry on with. `GATE-HISTORY.md` §10.4.
+ *
+ * *** THE MESSAGE IS THE PRODUCT'S PROBLEM, NEVER THE USER'S. *** `CLAUDE.md` §5.1: it says so
+ * plainly, asserts nothing about what was in the conversation (that is exactly what could not be
+ * read), and tells them what to do next. `conversation_reset` is what lets the client CLEAR its
+ * turns, so "start fresh" is true rather than a suggestion the next request contradicts.
+ *
+ * A missing topic and a bad signature read IDENTICALLY on purpose — a person cannot act on the
+ * difference, and naming it would say whether an id exists.
+ */
+const CONVERSATION_LOST =
+  "We lost track of this conversation and can't safely carry on with it. Nothing you've told us " +
+  'has been lost. Ask your question again and we’ll start fresh.'
+
+function conversationReset(message: string, status = 400) {
+  return NextResponse.json({ error: message, conversation_reset: true }, { status });
+}
+
+/**
+ * The topic's title, which cannot be deferred: `topics.title` is `not null` with
+ * `check (length(btrim(title)) > 0)` (migration 028).
+ *
+ * `frame.subject` is defined as *what the question is about* — it IS a title, and the gate
+ * already produced it for this turn. It is nullable, hence the ladder behind it.
+ */
+function topicTitle(subject: string | null, question: string, fileName: string | null): string {
+  const raw = (subject ?? '').trim() || question.trim() || (fileName ?? '').trim() || 'New topic';
+  return raw.length > 120 ? `${raw.slice(0, 117)}…` : raw;
 }
 
 export async function POST(request: NextRequest) {
@@ -148,6 +180,45 @@ export async function POST(request: NextRequest) {
     // DECISIONS.md §34.
     // ------------------------------------------------------------------
     if (mode !== 'substeps') {
+      // *** A CALLER THAT SENDS `turns` IS IN A CONVERSATION. ONE THAT DOES NOT IS NOT. ***
+      //
+      // The field's PRESENCE is the opt-in, and it has exactly one source of truth — a separate
+      // boolean could disagree with the turns sitting beside it. Two other call sites on
+      // app/compliance/page.tsx post a one-shot question (the substep expander and the per-item
+      // determination helper) and send no turns; without this they would each open a topic every
+      // time somebody clicked. GATE-HISTORY.md §10.2.
+      const inConversation = sealedTurns !== undefined && sealedTurns !== null;
+
+      // Turns with no topic were sealed against an id this request does not carry, so they cannot
+      // verify. Refusing by name beats letting the signature check fail with 'did not verify',
+      // which would report forgery for what is really a lost id.
+      if (!topicId && Array.isArray(sealedTurns) && sealedTurns.length > 0) {
+        return conversationReset(CONVERSATION_LOST);
+      }
+
+      // *** `topicId` MUST NAME A REAL ROW, AND THE REASON IS NOT SECURITY. ***
+      //
+      // The MAC covers `company` (lib/turnSigning.ts), so another tenant cannot replay a turn
+      // here whatever this check does. What it prevents is quieter: a client-chosen id seals and
+      // verifies perfectly well against itself, so the conversation would run under an id with NO
+      // ROW BEHIND IT — and the topic M1.8 writes a summary to would not be the topic the
+      // conversation happened in. That is the two-systems shape §78 spent an entry avoiding.
+      if (topicId) {
+        const { data: topic } = await db
+          .from('topics').select('id, status')
+          .eq('id', topicId).eq('company_id', companyId).maybeSingle();
+        // 404, not 403 — an id must not be probeable by watching which error comes back
+        // (CLAUDE.md §3.6, the /api/documents pattern).
+        if (!topic) return conversationReset(CONVERSATION_LOST, 404);
+        // A CLOSED TOPIC REFUSES A NEW TURN. WORKSPACE.md §6.1 closes a topic precisely because
+        // past conversations pollute future answers, so a closed topic that still takes turns is
+        // a close that closed nothing. §8.3 is not in tension: a new QUESTION does not close a
+        // topic, but a topic somebody closed stays closed.
+        if (topic.status !== 'open') {
+          return conversationReset("This topic is closed. Ask your question again and we’ll open a new one.");
+        }
+      }
+
       // *** A FAILED VERIFICATION REFUSES. IT DOES NOT DROP THE TURNS AND CARRY ON. ***
       // Dropping them is the silent direction: the user would get a correct-looking answer
       // computed from nothing — no prior facts, no frame, no hypothetical labelling — and nothing
@@ -159,9 +230,14 @@ export async function POST(request: NextRequest) {
         priorTurns = verifyTurns(sealedTurns, companyId, topicId);
       } catch (e) {
         if (e instanceof BadConversation) {
-          // The topic id, never the turn contents.
+          // The topic id and the reason, never the turn contents.
           console.error('[/api/chat] conversation rejected:', e.reason, 'topic:', topicId);
-          return NextResponse.json({ error: e.message }, { status: 400 });
+          // *** `conversation_reset`, LIKE EVERY OTHER UNUSABLE-CONVERSATION PATH. *** Without it
+          // the client keeps holding turns that can never verify and every later request fails
+          // identically — the user reads "start fresh" and gets the same refusal. Caught by
+          // probing it: the two verifyTurns refusals came back `reset=false` while the two topic
+          // refusals came back `reset=true`, for the same class of failure.
+          return conversationReset(CONVERSATION_LOST);
         }
         throw e;
       }
@@ -180,9 +256,33 @@ export async function POST(request: NextRequest) {
       // is a turn, including one that asserts nothing, because "turn 4" must mean the fourth
       // exchange. THE SERVER NUMBERS IT — `priorTurns.length + 1` counts what was verified rather
       // than trusting a number the client sent.
-      const newTurn: SealedTurn | null = topicId
+      // *** THE TOPIC IS CREATED AFTER THE GATE, AND THE TITLE IS WHY. ***
+      // `frame.subject` only exists once the gate has read the question, and `topics.title` is
+      // NOT NULL — so the insert cannot come first. It costs nothing to wait: turn one has no
+      // prior turns, and nothing needs the id until the seal two lines below.
+      //
+      // IF THE GATE THREW, WE NEVER REACH HERE. An exploration that produced no turn is not an
+      // exploration, and an empty topic row is worse than no row.
+      let activeTopicId = topicId;
+      if (inConversation && !activeTopicId) {
+        // As the CALLER, so `topics_insert`'s `with check (company_id = auth_company_id())` is
+        // what actually enforces tenancy — not this line. company_id comes from the verified
+        // token, never from the body (CLAUDE.md §3.6).
+        const { data: topic, error: topicErr } = await db
+          .from('topics')
+          .insert({ company_id: companyId, title: topicTitle(g.frame.subject, userQuestion, fileName) })
+          .select('id').single();
+        if (topicErr || !topic) {
+          console.error('[/api/chat] could not open a topic:', topicErr?.message);
+          return NextResponse.json(
+            { error: 'We could not start this conversation. Please try that again.' }, { status: 500 });
+        }
+        activeTopicId = topic.id;
+      }
+
+      const newTurn: SealedTurn | null = activeTopicId
         ? sealTurn({ turn: priorTurns.length + 1, frame: g.frame, facts: factsFromGate(g) },
-                   companyId, topicId)
+                   companyId, activeTopicId)
         : null;
 
       // ------------------------------------------------------------------
@@ -210,7 +310,7 @@ export async function POST(request: NextRequest) {
         // 200, not 4xx. An ask is a successful outcome of a well-formed request; a 400
         // would put a reasonable question through every caller's error path and render it
         // as a failure. DETERMINATION-GATE.md §2.
-        return NextResponse.json({ outcome: 'ask', ask: g.ask, frame: g.frame, followUp: g.followUp, turn: newTurn });
+        return NextResponse.json({ outcome: 'ask', ask: g.ask, frame: g.frame, followUp: g.followUp, turn: newTurn, topicId: activeTopicId || null });
       }
 
       if (mode === 'research') {
@@ -219,7 +319,7 @@ export async function POST(request: NextRequest) {
         // DETERMINATION-GATE.md §10, and `conditional_on` reaches this path only when it
         // lands. `research` keeps its key so existing callers are unchanged.
         const responseText = await askAI(systemPrompt, messageContent, { maxTokens: 6000, task: 'prose' });
-        return NextResponse.json({ outcome: 'answer', research: responseText, gate: g.resolved, frame: g.frame, followUp: g.followUp, turn: newTurn });
+        return NextResponse.json({ outcome: 'answer', research: responseText, gate: g.resolved, frame: g.frame, followUp: g.followUp, turn: newTurn, topicId: activeTopicId || null });
       }
 
       // askAIJson replaces the hand-rolled `JSON.parse(responseText.replace(/```json/…))`
@@ -250,13 +350,30 @@ export async function POST(request: NextRequest) {
       const applied = applyCritique(critique);
 
       const withheldNames = new Set(applied.withheld.map((w) => w.item).filter(Boolean) as string[]);
+
+      // *** THE FINDINGS ARE WRITTEN DOWN, NOT SHOWN. DECISIONS.md §97. ***
+      // A SERVICE-ROLE WRITE, and the reasoning is in lib/criticRecord.ts beside the call it
+      // makes: migration 029 leaves `authenticated` at zero on both tables, because a tenant who
+      // could insert findings against their own company could bend the rate we use to judge
+      // whether the critic is inventing them. Awaited so a serverless invocation cannot be
+      // frozen before the write lands; it never throws and never fails this request.
+      await recordCritique({
+        companyId, source: 'chat_checklist', question: userQuestion,
+        answerTitle: data.title ?? null, result: critique, withheld: withheldNames,
+      });
       const kept: ChecklistAnswer = {
         ...data,
         must_do: (data.must_do ?? []).filter((i) => !withheldNames.has(i.name)),
         good_to_have: (data.good_to_have ?? []).filter((i) => !withheldNames.has(i.name)),
       };
 
-      return NextResponse.json({ outcome: 'answer', data: kept, gate: g.resolved, critique: applied, frame: g.frame, followUp: g.followUp, turn: newTurn });
+      // *** `critique` IS NOT IN THIS RESPONSE, AND UNRENDERED IS NOT PRIVATE. ***
+      // Removing CritiqueNotice stopped it being DRAWN; it did not stop it being SENT. Every
+      // withheld item, quote and reason crossed to the browser and was readable in devtools'
+      // network tab. §97 says no internal output reaches a customer, and a payload they can read
+      // is output that reached them. It now has no reader at all — the findings are in
+      // critic_reviews / critic_findings.
+      return NextResponse.json({ outcome: 'answer', data: kept, gate: g.resolved, frame: g.frame, followUp: g.followUp, turn: newTurn, topicId: activeTopicId || null });
     }
 
     const data = await askAIJson<unknown>(systemPrompt, messageContent, { maxTokens: 6000, task: 'prose' });

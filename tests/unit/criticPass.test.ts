@@ -14,7 +14,7 @@
  */
 import test, { describe } from 'node:test'
 import assert from 'node:assert/strict'
-import { normaliseCritique, applyCritique, buildCriticPrompt,
+import { normaliseCritique, applyCritique, buildCriticPrompt, dispositionOf,
          type CriticResult } from '../../lib/criticPass.ts'
 
 const f = (o: Partial<CriticResult['findings'][number]> = {}) => ({
@@ -147,5 +147,56 @@ describe('the prompt is built per question set and never leaks the generating in
   })
   test('the two sets differ', () => {
     assert.notEqual(buildCriticPrompt('requirements'), buildCriticPrompt('evidence'))
+  })
+})
+
+describe('dispositionOf — what the CODE did with the finding (DECISIONS.md §97)', () => {
+  const finding = (o: Partial<CriticResult['findings'][number]>) => ({
+    severity: 'qualifying' as const, question: 1 as const, quote: 'q',
+    item: 'An item', finding: 'f', because: 'b', ...o,
+  })
+
+  // *** THE REGRESSION. The first version tested `question === 5` FIRST and recorded a finding
+  // that was BOTH blocking and a specific as `counted` — while the route had deleted the item it
+  // named. `applyCritique` puts it in BOTH buckets, because the two filters are independent.
+  test('a finding that is blocking AND question 5 records what HAPPENED: withheld', () => {
+    const f5 = finding({ severity: 'blocking', question: 5, item: 'Report Biennial Waste Activity' })
+    // The route removed it, which is the fact the record has to carry.
+    assert.equal(dispositionOf(f5, new Set(['Report Biennial Waste Activity'])), 'withheld')
+    // And applyCritique really does put it in both, which is WHY the order matters.
+    const applied = applyCritique({ findings: [f5], complete: true })
+    assert.equal(applied.withheld.length, 1)
+    assert.equal(applied.unverifiedSpecifics.length, 1)
+  })
+
+  // *** THE SECOND REGRESSION, one layer down. Several findings can name the SAME item and the
+  // route deletes by item NAME, so a qualifying finding on a deleted item must NOT read as kept.
+  test('ANY finding naming a withheld item is withheld, whatever its own severity', () => {
+    const removed = new Set(['Install ANSI-compliant plumbed eyewash station'])
+    for (const q of [3, 4] as const) {
+      assert.equal(
+        dispositionOf(finding({ severity: 'qualifying', question: q,
+                                item: 'Install ANSI-compliant plumbed eyewash station' }), removed),
+        'withheld',
+        `q${q} qualifying on a removed item must not read as kept — the answer shipped without it`)
+    }
+  })
+
+  test('question 5 is counted when its item SURVIVED', () => {
+    assert.equal(dispositionOf(finding({ question: 5 }), new Set()), 'counted')
+  })
+
+  // A blocking finding that removed nothing must not read as one that did — "blocking" and
+  // "acted on" are different populations and the record has to keep them apart.
+  test('blocking with item null removes nothing, so it is kept, not withheld', () => {
+    assert.equal(dispositionOf(finding({ severity: 'blocking', question: 6, item: null }), new Set()), 'kept')
+  })
+
+  test('blocking whose item the caller did not remove is kept — /api/audits removes nothing', () => {
+    assert.equal(dispositionOf(finding({ severity: 'blocking', item: 'Untouched' }), new Set()), 'kept')
+  })
+
+  test('an ordinary qualifying finding is kept', () => {
+    assert.equal(dispositionOf(finding({}), new Set()), 'kept')
   })
 })

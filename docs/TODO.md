@@ -1,6 +1,17 @@
 # Detailed To-Do
-**Version:** 24 · **Updated:** 21 September 2026
-**Supersedes:** version 23 (15 Sep). **M1's ORDER REVERSES** (`DECISIONS.md` §96). Two rows land
+**Version:** 27 · **Updated:** 21 September 2026
+**Supersedes:** version 26 (21 Sep). Adds **0.11 — stream the long AI calls.** It removes the
+SDK's non-streaming ceiling that §100 could only cap below, **and** answers §92's 58.9 s: a
+spinner over a 197-second call is the product saying nothing. Notes the hard part — the critic
+must still finish before anything is shown, or a withheld item appears mid-stream and vanishes.
+Version 26: Adds **0.10 — `npm run db:restore`, one command ahead of the
+next migration.** A reset costs **eight steps** and is therefore avoided, which is why §3.7 was
+deferred on 029; it must verify each step and **refuse to continue on zero rows**, because a
+refusal at step 6 leaves an empty `switches` table and every later check passes vacuously.
+Version 25: **No critic output reaches a customer** (`DECISIONS.md` §97)
+— all four boxes come off every customer view, and the findings need a home because they are
+**stored nowhere today**. Records **report readability** as a real problem held until answer
+quality settles. Version 24: **M1's ORDER REVERSES** (`DECISIONS.md` §96). Two rows land
 ahead of M1.3: **M1.2d, the conversation surface** — M1.2c is real over HTTP and **inert to a
 person**, because the browser sends no `topicId` and nothing creates a `topics` row — and
 **M1.4a, the single-site slice**, because **73 of 95 switches are site-scoped** (read from the
@@ -191,6 +202,14 @@ decisions and the five schema gaps are settled before any of this starts.*
 | **M1.7** | **"What moved" after an answer** (v3.4) — six became applicable, two no longer apply. One level only (§54) | M1.3 | 1 d |
 | **M1.8** | **Topic close onto a topic summary** (v3.6, **provisional**) | M1.1 | 0.5 d |
 
+**RECORDED, NOT SCHEDULED — report readability.** *21 Sep.* **The answers work and are hard to
+read.** Raised from a browser test, held deliberately: **it waits until answer quality is
+settled.** Polishing the presentation of answers whose content we are still changing is effort
+spent twice — and §97 has just changed what an answer contains, §92 has the research path at a
+minute, and the 1200-A/1200-Z hole is open. **This is the label for a real problem, not a
+deferral of it**: when it is scheduled the work is typography, hierarchy and length, and none of
+it is blocked by anything technical today.
+
 **Synchronous throughout (D25).** Same reasoning as D20: the gate is 6–10 s, the answer ~30 s.
 
 > ### ⛔ MEASURED 15 SEP — THE CRITIC IS OVER BUDGET. **STAGE 2 DOES NOT FIX IT.**
@@ -275,6 +294,74 @@ stopped, and the order is now set by *what makes the product's claims true* rath
 unbuilt. **6.4c is a content problem, and it is the first time this project's critical path has
 been one.**
 
+
+## 🔧 0.10 `npm run db:restore` — ONE COMMAND, AHEAD OF THE NEXT MIGRATION ⬜ ⏱ half day
+
+*Recorded 21 September 2026. `HOW-WE-BUILD.md` §4; `DECISIONS.md` §98.*
+
+**A reset currently costs eight steps and is therefore avoided, which is why `CLAUDE.md` §3.7 was
+deferred on migration 029 rather than followed.** A rule that is expensive to obey is a rule that
+gets skipped, and the fix is to make obeying it cheap — not to restate the rule.
+
+```
+1  npm run db:reset                                    (interactive, stays that way)
+2  load-requirements.js <xlsx> --apply                 205 requirement_templates
+3  load-agencies.js --apply                             33 agencies
+4  assign-agencies.js --apply                           agency_id + 56 industry_coverage
+5  load-expressions.js --apply                          applies_expression on 205 rows
+6  load-switches.js --apply                             95 switches, 40 edges, acyclic
+7  seed-staging-testdata.js                             Alpha, Beta, Gamma + primary sites
+8  seed-multisite-fixture.js                            Alpha's 2nd site + 16 facts
+```
+
+> ### IT VERIFIES AFTER EVERY STEP AND REFUSES TO CONTINUE ON ZERO ROWS.
+>
+> **That is the requirement, not a nicety.** A refusal at step 6 leaves `switches` empty, the gate
+> reads an empty vocabulary, and **every check that follows passes vacuously** — `AUDIT-CHECKS.md`
+> check 14's subject, on a database with no library in it. A restore that stops loudly at step 6
+> is worth more than one that completes quietly.
+>
+> Each step prints its row count and the count it expected. **The expected numbers are read from
+> the seed files, never hardcoded here** — a hardcoded 95 is a copy that drifts (§43).
+
+**Then exercise it deliberately** — a reset run on its own, watched, not folded into shipping
+something else. **That run is what settles the owed reset for 029.**
+
+**STAGING ONLY.** Every loader already refuses production without `--production`, and step 1
+refuses it twice (by flag and by ref). This command must not accept the flag at all.
+
+---
+
+## 🔧 0.11 Stream the long AI calls ⬜ ⏱ 1 day
+
+*Recorded 21 September 2026. `DECISIONS.md` §100 and §92.*
+
+**One change, two problems, and they have been treated as unrelated.**
+
+| | |
+|---|---|
+| **The ceiling** | The SDK refuses a non-streaming request over **21333** `maxTokens` (`client.js:671`). §100 capped the retry below it, which **avoids** the ceiling. Streaming **removes** it |
+| **The wait** | §92: 58.9 s first turn, 29.0 s second, and the checklist path measured **197 s**. A spinner is the product saying nothing for three minutes |
+
+> ### SEEING TEXT ARRIVE IS THE HONEST ANSWER TO A LONG WAIT.
+>
+> `CLAUDE.md` §5.1 — no infinite spinner. **A progress animation over a 197-second call is a
+> fiction**: it is not reporting progress, it is filling silence. Streamed text is the real thing
+> happening.
+
+**Scope:** `lib/ai.ts` gains a streaming path; the long call sites adopt it — `/api/chat`
+research and checklist, `/api/audits`. **The gate does not stream**: it returns a small JSON
+object and its latency is not the problem.
+
+⚡ **`CLAUDE.md` §3.1** — this changes how a prompt's output is consumed and interacts with the
+truncation retry, so it is **specified before any code**, like the gate and the critic were.
+
+**What it does NOT change:** the critic still runs to completion before anything is shown — §97,
+the customer sees the corrected document, so a withheld item must never appear mid-stream and
+then vanish. **Streaming the ANSWER and withholding by severity are compatible only if the
+stream is held until the critic returns**, and working that out is most of this item.
+
+---
 
 ## ⛔ GATE — THESE LAND BEFORE THE FIRST REAL CUSTOMER DOCUMENT
 

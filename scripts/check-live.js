@@ -43,13 +43,36 @@ if (process.env.SUPABASE_PROD_URL || process.env.SUPABASE_PROD_SERVICE_ROLE_KEY)
   process.exit(1)
 }
 
-const FIXTURE = { email: 'testgamma@example.com', password: process.env.CHECK_LIVE_PASSWORD ?? 'gamma@2026' }
+// *** NO DEFAULT, AND NO LITERAL. THE SAME SHAPE AS `TURN_SIGNING_SECRET`. ***
+//
+// This read `?? 'gamma@2026'` until 21 September — a working password for a real login,
+// committed to the repository. `CLAUDE.md` §3.5: never write a password into a code file, and
+// that rule has no staging exemption, because the exemption is how the pattern spreads to a
+// file where the stakes are different.
+//
+// A default is worse than an absent value in the same way a default signing secret is: it makes
+// the check appear to work while depending on something nobody declared. It also hid the
+// password from a search of the places a password is DOCUMENTED, which cost a needless reset of
+// a live fixture login on 21 September — the value was in the repo the whole time, in a file
+// nobody thinks of as holding one.
+//
+// It REFUSES rather than falling back, so a missing value is a visible stop, not a mystery
+// 'Invalid login credentials' from Supabase.
+const fixturePassword = process.env.CHECK_LIVE_PASSWORD
+if (!fixturePassword) {
+  console.error('\n  REFUSED: CHECK_LIVE_PASSWORD is not set.')
+  console.error('  This check signs in as a real staging fixture, and its password is not stored')
+  console.error('  in this file. Put it in .env.local (gitignored) and run again.\n')
+  process.exit(1)
+}
+
+const FIXTURE = { email: 'testgamma@example.com', password: fixturePassword }
 
 const pub = createClient(url, anonKey, { auth: { persistSession: false } })
 const { data: session, error: signInError } = await pub.auth.signInWithPassword(FIXTURE)
 if (signInError) {
   console.error(`\n  Could not sign in as ${FIXTURE.email}: ${signInError.message}`)
-  console.error('  This check needs a staging fixture login. Set CHECK_LIVE_PASSWORD if it changed.\n')
+  console.error('  CHECK_LIVE_PASSWORD is set but wrong, or the fixture login was changed.\n')
   process.exit(1)
 }
 const token = session.session.access_token

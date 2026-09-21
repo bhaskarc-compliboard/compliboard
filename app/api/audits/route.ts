@@ -4,7 +4,8 @@ import { reviewDocument } from '@/lib/documentReview'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireCompany, supabaseAdmin } from '@/lib/auth'
 import { gate, type GateAnswering } from '@/lib/determinationGate'
-import { criticise, applyCritique } from '@/lib/criticPass'
+import { criticise } from '@/lib/criticPass'
+import { recordCritique } from '@/lib/criticRecord'
 import { agenciesInScopeFor } from '@/lib/agencyScope'
 import { parseDocumentToBlocks, type DocumentParseFailure } from '@/lib/documentContent'
 
@@ -435,7 +436,24 @@ export async function POST(request: NextRequest) {
         `${candidates.length} document(s) were available to this audit. ` +
         `${merged.filter(m => (m.matched_documents || []).length > 0).length} line item(s) cite at least one.`,
     })
-    const applied = applyCritique(critique)
+    // `applyCritique` is NOT called here any more. Its whole output was the four boxes and the
+    // withheld-item list, and this route never withheld anything — so with §97 removing the
+    // boxes it had no reader left. The raw `CriticResult` goes to the record instead, which is
+    // strictly more than `applied` carried: severity and question number per finding, unbucketed.
+
+    // *** THE FINDINGS ARE WRITTEN DOWN, NOT SHOWN. DECISIONS.md §97. ***
+    // A SERVICE-ROLE WRITE — the reasoning lives in lib/criticRecord.ts, the same shape as the
+    // standard_templates insert above: a named carve-out with its argument beside it, not a
+    // route holding the key out of habit (CLAUDE.md §3.6).
+    //
+    // `withheld` IS EMPTY, AND THAT IS NOT AN OVERSIGHT. This route removes nothing — a blocking
+    // finding here does not drop a line item, it sits beside the verdict. So every finding is
+    // recorded as `kept`, which makes "blocking" and "acted on" separately countable rather than
+    // conflated. That gap is a thing to look at, not a thing to hide.
+    await recordCritique({
+      companyId, source: 'audit', question: `Audit against "${sourceName}"`,
+      answerTitle: sourceName, result: critique, withheld: new Set<string>(),
+    })
 
     // Readiness is computed in CODE, never by AI — CLAUDE.md §3.2. A blocking finding does
     // not silently change a verdict; it is recorded alongside so the number and the doubt
@@ -464,7 +482,9 @@ export async function POST(request: NextRequest) {
 
     if (auditErr) throw auditErr
 
-    return NextResponse.json({ data: audit, critique: applied })
+    // `critique` is not in this response — §97, and unrendered is not private: it was readable
+    // in devtools even with nothing rendering it. The findings are in critic_reviews.
+    return NextResponse.json({ data: audit })
   } catch (error) {
     console.error('Audit engine error:', error)
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Audit failed' }, { status: 500 })
