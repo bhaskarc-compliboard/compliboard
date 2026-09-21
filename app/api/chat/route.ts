@@ -17,7 +17,7 @@
 //
 // Callers must now send the session token: `headers: await authHeaders()` from lib/supabase.
 
-import { askAI, askAIJson, type AIContent } from '@/lib/ai';
+import { askAI, askAIJson, askAIWithCitations, type AIContent } from '@/lib/ai';
 import { buildSystemPrompt } from '@/prompts/checklist';
 import { NextRequest, NextResponse } from "next/server";
 import { parseDocumentToBlocks } from '@/lib/documentContent';
@@ -352,9 +352,12 @@ export async function POST(request: NextRequest) {
         // READER, and this is it: the flag was claimed shipped for six days with nothing reading
         // it. The default runs this way because the gate cannot know a permit was reissued last
         // quarter — not knowing is the condition being detected (`RESEARCH-ANSWER.md` §7a).
-        const responseText = await askAI(systemPrompt, messageContent,
+        // askAIWithCitations, not askAI — THE SOURCES ARE PART OF THE ANSWER (§106). The prose
+        // arrives split across many text blocks, one per cited span; `reassemble` joins them
+        // into continuous text, numbers the citations and returns the list behind the markers.
+        const answer = await askAIWithCitations(systemPrompt, messageContent,
           { maxTokens: 6000, task: 'prose', enableWebSearch: g.needsWebSearch });
-        return NextResponse.json({ outcome: 'answer', research: responseText, gate: g.resolved, frame: g.frame, followUp: g.followUp, turn: newTurn, topicId: activeTopicId || null });
+        return NextResponse.json({ outcome: 'answer', research: answer.text, sources: answer.sources, gate: g.resolved, frame: g.frame, followUp: g.followUp, turn: newTurn, topicId: activeTopicId || null });
       }
 
       // askAIJson replaces the hand-rolled `JSON.parse(responseText.replace(/```json/…))`

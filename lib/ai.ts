@@ -100,6 +100,82 @@ export function modelAcceptsTemperature(model: string): boolean {
   return !/^claude-[a-z]+-5(?:[.-]|$)/.test(model)
 }
 
+/** One thing the answer cited. Deduplicated by URL — one source, one number. */
+export interface Source {
+  n: number
+  title: string
+  url: string
+}
+
+export interface AIAnswer {
+  text: string
+  sources: Source[]
+}
+
+/**
+ * REASSEMBLE THE PROSE, AND KEEP THE CITATIONS.
+ *
+ * *** WHY THIS EXISTS: THE API SPLITS A SENTENCE INTO SEVERAL TEXT BLOCKS. ***
+ *
+ * With web search on, one paragraph comes back as many blocks — one per cited span, with the
+ * uncited connective tissue in blocks of its own. Dumped from a real response:
+ *
+ *    6  text len=85  citations=0  "**Effective date.** Oregon DEQ's current 1200-Z "
+ *    7  text len=80  citations=1  "took effect July 1, 2026, replacing the prior ve…"
+ *    8  text len=2   citations=0  ". "
+ *
+ * **Joining those with "\n" put a line break inside a sentence and left the full stop on a line
+ * of its own** — which is exactly what a customer saw: a lone "." under a deadline, a ", and"
+ * stranded on its own line. Every stray break was a dropped citation.
+ *
+ * **So: join with NOTHING.** Adjacent text blocks are one continuous passage. Paragraph breaks
+ * come only from the model's own text — block 16 above begins ".\n\n**No exposure…" — never from
+ * a block boundary.
+ *
+ * *** AND THE MARKER GOES AFTER THE PUNCTUATION, THE WAY A FOOTNOTE DOES. ***
+ * The cited span ends at the end of block 7, but the sentence ends in block 8. A marker placed
+ * at the block boundary would read "…prior version[1]. " instead of "…prior version.[1]". The
+ * shift below moves it past any punctuation that immediately follows.
+ */
+export function reassemble(content: Array<Record<string, unknown>>): AIAnswer {
+  // A private-use sentinel: it cannot occur in model prose, so moving it past punctuation
+  // afterwards cannot disturb the text itself.
+  const OPEN = '', CLOSE = ''
+  const byUrl = new Map<string, Source>()
+  let out = ''
+
+  for (const block of content) {
+    if (block.type !== 'text') continue
+    out += String(block.text ?? '')
+    const citations = (block.citations ?? []) as Array<{ url?: string; title?: string }>
+    // THE SAME SOURCE CITED TWICE GETS ONE NUMBER. Dedupe by URL, in first-seen order.
+    const ns: number[] = []
+    for (const c of citations) {
+      if (!c?.url) continue
+      let src = byUrl.get(c.url)
+      if (!src) {
+        src = { n: byUrl.size + 1, title: (c.title || c.url).trim(), url: c.url }
+        byUrl.set(c.url, src)
+      }
+      if (!ns.includes(src.n)) ns.push(src.n)
+    }
+    for (const n of ns) out += `${OPEN}${n}${CLOSE}`
+  }
+
+  // Move each marker past punctuation that follows it, repeatedly — ". " and ".)" both occur.
+  let prev: string
+  do {
+    prev = out
+    out = out.replace(new RegExp(`${OPEN}(\\d+)${CLOSE}([.,;:!?)\\]]+)`, 'g'), '$2' + OPEN + '$1' + CLOSE)
+  } while (out !== prev)
+
+  // Collapse a run of adjacent markers into one bracket group: [1][2] -> [1][2] is fine to read,
+  // but [1] [2] with a space is not what a footnote looks like, so they stay tight.
+  out = out.replace(new RegExp(`${OPEN}(\\d+)${CLOSE}`, 'g'), '[$1]')
+
+  return { text: out, sources: [...byUrl.values()] }
+}
+
 /**
  * THE PIPE.
  * Takes instructions (a prompt) + something to work on, sends it to
@@ -111,6 +187,21 @@ export async function askAI(
   content: AIContent,
   options: AskAIOptions = {}
 ): Promise<string> {
+  return (await askAIWithCitations(systemPrompt, content, options)).text
+}
+
+/**
+ * The same call, keeping the sources.
+ *
+ * `askAI` returns only the prose and every existing caller is unchanged. The research answer
+ * uses this one, because **a saved answer that has lost its sources has lost the thing
+ * "cite generously" was for** (`DECISIONS.md` §77 item 4).
+ */
+export async function askAIWithCitations(
+  systemPrompt: string,
+  content: AIContent,
+  options: AskAIOptions = {}
+): Promise<AIAnswer> {
   const provider = process.env.AI_PROVIDER || 'claude'
   /**
    * *** THE CEILING IS THE SDK'S, AND IT IS READ FROM THE SDK RATHER THAN CHOSEN. ***
@@ -177,13 +268,11 @@ export async function askAI(
         ...(options.enableWebSearch ? { tools: [{ type: 'web_search_20250305', name: 'web_search' }] } : {}),
       } as any)
 
-      // With tools enabled, the response can include search/tool-use blocks
-      // before the actual answer — concatenate every text block, in order,
-      // rather than assuming the first block is the answer.
-      const text = message.content
-        .filter((block: any) => block.type === 'text')
-        .map((block: any) => block.text)
-        .join('\n')
+      // With tools enabled, the response can include search/tool-use blocks before the actual
+      // answer, AND the answer itself arrives split across many text blocks. `reassemble` joins
+      // them into continuous prose and keeps the citations — see its comment for the block dump
+      // that forced it.
+      const answer = reassemble(message.content as unknown as Array<Record<string, unknown>>)
 
       // stop_reason is the deterministic signal for truncation — not a guess.
       // If the response was genuinely cut off by the token budget, retry with
@@ -195,9 +284,9 @@ export async function askAI(
         continue
       }
 
-      return text
+      return answer
     }
-    return ''
+    return { text: '', sources: [] }
   }
 
   throw new Error(`Unknown AI_PROVIDER: "${provider}". Supported: claude`)

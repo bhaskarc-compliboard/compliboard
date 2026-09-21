@@ -130,8 +130,12 @@ interface SavedChecklist {
   must_do_count: number
   completed_count: number
   research_answer: string | null
+  research_sources: ResearchSource[] | null
   converted_to_checklist_id: string | null
 }
+
+/** What the answer cited. Mirrors `Source` in lib/ai.ts and `checklists.research_sources`. */
+interface ResearchSource { n: number; title: string; url: string }
 
 const EXAMPLE_QUESTIONS = [
   "Ask anything about compliance, regulations or HR",
@@ -172,6 +176,10 @@ function CompliancePageInner() {
   const dataRef = React.useRef<ChecklistData | null>(null)
   const [followUpQuestion, setFollowUpQuestion] = useState('')
   const [researchData, setResearchData] = useState<string | null>(null)
+  // THE SOURCES TRAVEL WITH THE ANSWER, EVERYWHERE IT GOES — live, saved and printed.
+  // A "[3]" with no list behind it is worse than no marker: it looks like a citation and
+  // cannot be followed. DECISIONS.md §106.
+  const [researchSources, setResearchSources] = useState<ResearchSource[]>([])
   // This page had NO error state at all: a non-ok response set `data` to undefined and
   // showed a blank. Minimal addition — one string, cleared on each submit.
   const [errorMsg, setErrorMsg] = useState('')
@@ -254,7 +262,7 @@ function CompliancePageInner() {
     if (!profile?.company_id) return
     const { data: checklists } = await supabase
       .from('checklists')
-      .select('id, question, title, created_at, research_answer, converted_to_checklist_id')
+      .select('id, question, title, created_at, research_answer, research_sources, converted_to_checklist_id')
       .eq('company_id', profile.company_id)
       .order('created_at', { ascending: false })
       .limit(10)
@@ -283,7 +291,7 @@ function CompliancePageInner() {
     setSavedChecklists(withCounts)
   }
 
-  async function saveResearch(question: string, answer: string) {
+  async function saveResearch(question: string, answer: string, sources: ResearchSource[]) {
     if (!userId || !companyId) return null
     const { data: research, error } = await supabase
       .from('checklists')
@@ -293,6 +301,8 @@ function CompliancePageInner() {
         question,
         title: question.length > 80 ? question.slice(0, 80) + '…' : question,
         research_answer: answer,
+        // Stored with the answer, not only returned live — migration 030.
+        research_sources: sources.length > 0 ? sources : null,
       })
       .select()
       .single()
@@ -302,6 +312,7 @@ function CompliancePageInner() {
 
   function loadResearch(c: SavedChecklist) {
     setResearchData(c.research_answer)
+    setResearchSources((c.research_sources as ResearchSource[] | null) ?? [])
     setAskedQuestion(c.question)
     setAskQuestion(c.question)
     setMode('research')
@@ -653,6 +664,7 @@ Give them a specific direct answer — exactly what they need to do, which speci
     setLoading(true)
     setData(null)
     setResearchData(null)
+    setResearchSources([])
     setGateAsk(null)
     setMode(currentMode as 'checklist' | 'research')
     setChecked({})
@@ -731,10 +743,12 @@ Give them a specific direct answer — exactly what they need to do, which speci
       }
       if (currentMode === 'research') {
         const answerText = json.research || json.data?.title || 'No results'
+        const answerSources = (json.sources as ResearchSource[] | undefined) ?? []
         setResearchData(answerText)
+        setResearchSources(answerSources)
         setCurrentResearchId(null)
         if (userId && answerText !== 'No results') {
-          const researchId = await saveResearch(q, answerText)
+          const researchId = await saveResearch(q, answerText, answerSources)
           setCurrentResearchId(researchId)
           await loadSavedChecklists()
         }
@@ -828,6 +842,14 @@ Give them a specific direct answer — exactly what they need to do, which speci
             margin-bottom: 16px;
           }
           .sub-checklist { display: block !important; }
+          /* ON PAPER A LINK'S HREF IS INVISIBLE. A printed source you cannot follow is a
+             source in name only, so the URL is printed after the title. DECISIONS.md §106. */
+          .source-link::after {
+            content: " — " attr(href);
+            font-size: 10px;
+            color: #444;
+            word-break: break-all;
+          }
         }
         .print-only { display: none; }
       `}</style>
@@ -959,7 +981,16 @@ Give them a specific direct answer — exactly what they need to do, which speci
             </div>
             <div className="bg-white rounded-xl border border-gray-200 p-6">
               <div className="text-sm text-gray-700 leading-relaxed space-y-4">
-                {researchData.split('\n').map((line, i) => {
+                {researchData.split('\n').flatMap((line) => {
+                  // A BOLD RUN THAT OPENS A LINE AND IS FOLLOWED BY MORE TEXT IS A HEADING THE
+                  // MODEL DID NOT PUT A BLANK LINE AFTER. Seen live: "**Stormwater permit**Because
+                  // you have industrial activity…". The old code joined the API's text blocks with
+                  // "\n" and so broke that line by accident — while breaking sentences everywhere
+                  // else (DECISIONS.md §106). The stored text is the model's, verbatim; this splits
+                  // it for DISPLAY only, which is where a presentation problem belongs.
+                  const m = /^\*\*([^*]+)\*\*(?=\S)(.+)$/.exec(line)
+                  return m ? [`## ${m[1]}`, m[2].trim()] : [line]
+                }).map((line, i) => {
                   if (line.startsWith('## ') || line.startsWith('# ')) return (
                     <p key={i} className="text-xs font-bold uppercase tracking-widest text-green-700 mt-6 mb-1">{line.replace('## ', '').replace('# ', '')}</p>
                   )
@@ -970,6 +1001,25 @@ Give them a specific direct answer — exactly what they need to do, which speci
                   return <p key={i} className="text-gray-700" dangerouslySetInnerHTML={{__html: line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}} />
                 })}
               </div>
+
+              {/* SOURCES. Deliberately NOT `no-print`: the citations are part of the answer, and
+                  an answer printed without them has lost what "cite generously" was for
+                  (DECISIONS.md §77 item 4, §106). Numbered in marker order, one entry per
+                  source however many times it is cited. */}
+              {researchSources.length > 0 && (
+                <div className="mt-6 pt-4 border-t border-gray-100">
+                  <p className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Sources</p>
+                  <ol className="space-y-1">
+                    {researchSources.map((src) => (
+                      <li key={src.n} className="text-xs text-gray-600 flex gap-2">
+                        <span className="text-gray-400 flex-shrink-0">[{src.n}]</span>
+                        <a href={src.url} target="_blank" rel="noopener noreferrer"
+                           className="source-link text-green-700 hover:underline break-words">{src.title}</a>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              )}
             </div>
             <div className="mt-4 flex items-center gap-3">
               <button

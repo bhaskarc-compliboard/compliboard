@@ -311,6 +311,7 @@ export type Database = {
           id: string
           question: string
           research_answer: string | null
+          research_sources: Json | null
           safety_alert: string | null
           title: string
           user_id: string | null
@@ -322,6 +323,7 @@ export type Database = {
           id?: string
           question: string
           research_answer?: string | null
+          research_sources?: Json | null
           safety_alert?: string | null
           title: string
           user_id?: string | null
@@ -333,6 +335,7 @@ export type Database = {
           id?: string
           question?: string
           research_answer?: string | null
+          research_sources?: Json | null
           safety_alert?: string | null
           title?: string
           user_id?: string | null

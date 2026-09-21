@@ -1,6 +1,13 @@
 # Decision Record
-**Version:** 84 · **Updated:** 21 September 2026
-**Supersedes:** version 83 (21 Sep). Adds **§105 — the M1.9 release criterion**: the research
+**Version:** 85 · **Updated:** 21 September 2026
+**Supersedes:** version 84 (21 Sep). Adds **§106 — every stray line break was a dropped
+citation.** With web search on the answer arrives split one block per cited span; `lib/ai.ts`
+joined them with `"\n"` and discarded each block's `citations`, so a sentence broke mid-way and
+the full stop landed on its own line. **The ragged edges were where the sources used to be.**
+Prose now joins with nothing, markers sit after the punctuation like footnotes, one number per
+source, and a Sources list closes the answer — **stored with it** (migration 030,
+`research_sources jsonb`), because a saved answer that lost its sources lost what *cite
+generously* was for. Version 84: Adds **§105 — the M1.9 release criterion**: the research
 answer must be **comparable to ChatGPT's and Claude's with no context**, and meeting it is the
 stopping condition. Not better on every point — §102 records that the three bare models each won
 different criteria. **Completeness of fact capture is explicitly NOT in the bar**: answering well
@@ -7853,4 +7860,85 @@ which is a different thing, and saying so is the point of recording them.
 **Reversal condition for the bar itself:** a customer for whom a bare model is not the
 alternative — someone who would not have asked ChatGPT. **No such customer has been named**, and
 until one is, the free chat is what this product is measured against.
+
+---
+
+## 106. Every stray line break was a dropped citation — 21 September 2026
+
+**The research answer looked broken: a sentence, a line break, then ", and" alone on a line; a
+lone "." under a deadline. It was not a formatting bug in the sense of styling. Each break was a
+citation being thrown away.**
+
+### The cause, from the API's own output
+
+With web search on, the answer does not arrive as one text block. It arrives split — **one block
+per cited span**, with the connective tissue in blocks of its own. Dumped from a real response on
+21 Sep:
+
+```
+ 6  text len=85  citations=0  "**Effective date.** Oregon DEQ's current 1200-Z "
+ 7  text len=80  citations=1  "took effect July 1, 2026, replacing the prior ve…"
+ 8  text len=2   citations=0  ". "
+```
+
+`lib/ai.ts` filtered to `type === 'text'`, took `block.text`, and **joined with `"\n"`** — so a
+line break landed between "…prior version" and ". ", and the citation on block 7 was discarded
+with the rest of the object.
+
+> ### THE BREAKS AND THE MISSING SOURCES WERE THE SAME DEFECT, WHICH IS WHY IT LOOKED LIKE STYLING.
+> A reader sees ragged text. What is actually happening is that the thing holding the answer
+> together — where each claim came from — is being deleted on the way out, and the ragged edges
+> are where it used to be.
+
+### The fix, in three parts
+
+| | |
+|---|---|
+| **Prose** | adjacent text blocks join with **nothing**. Paragraph breaks come only from the model's own text — block 16 of that dump begins `".\n\n**No exposure…"` — never from a block boundary |
+| **Markers** | a number at the end of the cited span, **shifted past the punctuation that follows**, the way a footnote sits. One number per source however often it is cited, deduplicated by URL |
+| **Sources** | a numbered list at the end, title and link, in marker order |
+
+**`reassemble()` is a pure function with the real blocks as its test data** (§104: render the
+example from code). `askAI` is unchanged for its six existing callers and delegates to
+`askAIWithCitations`, which the research path uses.
+
+### THE SOURCES BELONG TO THE SAVED ANSWER, NOT THE RESPONSE
+
+Migration **030** adds `checklists.research_sources jsonb`.
+
+**Fixing the renderer alone would have fixed the live view and nothing else.** A research answer
+is saved, read back days later, and printed. **The markers survive on their own — they are
+characters in the prose — and a `[3]` with no list behind it is worse than no marker at all: it
+looks like a citation and cannot be followed.**
+
+`jsonb` rather than a table because a source has no life of its own: never shared between
+answers, never queried across rows, never updated, and it dies with the answer. §78's reasoning
+in the small — do not create a second place for something with exactly one owner.
+
+**And on paper a link's href is invisible**, so the print stylesheet prints the URL after the
+title. A printed source you cannot follow is a source in name only.
+
+### One residual case, fixed in the RENDERER rather than the text
+
+Live output contained `**Stormwater permit**Because you have industrial activity…`. The `[1]`
+marker sits at the end of the *next* sentence, which places the block boundary between the
+heading and the word — **so the model emitted no newline there, and inventing one at a block
+boundary is exactly what this entry removed.**
+
+**The old `"\n"` join set that line right by accident while breaking sentences everywhere else.**
+So the split is done at display time: a bold run that opens a line and is followed immediately by
+more text renders as a heading plus a paragraph. **The stored text stays the model's, verbatim.**
+
+### What was verified, and the one thing that was not
+
+| | |
+|---|---|
+| Re-run as `testgamma` over HTTP | **0** punctuation-only lines, **0** lines opening with a comma, 6 markers, **0** markers before their punctuation |
+| Markers against sources | every marker has a source and every source has a marker, 1–6 |
+| The saved version | written under the user's own token with RLS applied, read back through the same `select` the saved list uses: **answer identical, all 6 sources present, array order preserved.** The `jsonb` round trip reorders object keys and nothing else — checked rather than assumed |
+| **Print to PDF** | **NOT EXERCISED.** What was verified is that the Sources block carries no `no-print` class and that the `@media print` rule printing the URL exists. **A browser print was not run**, and saying otherwise would be the §65 class |
+
+**Reversal condition:** none for the prose join. If a provider ever returns text blocks that are
+genuinely separate paragraphs with no newline of their own, the join would need a rule — nothing
+observed suggests it.
 
