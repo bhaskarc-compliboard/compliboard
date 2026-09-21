@@ -1,6 +1,13 @@
 # Decision Record
-**Version:** 85 · **Updated:** 21 September 2026
-**Supersedes:** version 84 (21 Sep). Adds **§106 — every stray line break was a dropped
+**Version:** 86 · **Updated:** 21 September 2026
+**Supersedes:** version 85 (21 Sep). Adds **§107 — a citation you can reach where the claim is.**
+Markers become hover/tap cards carrying the source and a link; **the Sources list stays because a
+card cannot print.** Records the formatting defects as **one cause, four shapes** — and that **two
+of the four were REPORTED BUT NOT REPRODUCED** in three re-runs, so the mechanism is a hypothesis
+pinned by tests, while a **fourth was found by the verification itself** and recurs in 2 of 3
+runs. Opens an item that is **not to be acted on**: the answer varies between runs — length,
+source count, where the customer applies, and in one run **1200-A and 1200-Z contradicting each
+other inside one paragraph.** Version 85: Adds **§106 — every stray line break was a dropped
 citation.** With web search on the answer arrives split one block per cited span; `lib/ai.ts`
 joined them with `"\n"` and discarded each block's `citations`, so a sentence broke mid-way and
 the full stop landed on its own line. **The ragged edges were where the sources used to be.**
@@ -7941,4 +7948,84 @@ more text renders as a heading plus a paragraph. **The stored text stays the mod
 **Reversal condition:** none for the prose join. If a provider ever returns text blocks that are
 genuinely separate paragraphs with no newline of their own, the join would need a rule — nothing
 observed suggests it.
+
+---
+
+## 107. A citation you can reach where the claim is — 21 September 2026
+
+**The markers landed in the prose in §106 and the list landed at the bottom. Matching `[4]` to
+the fourth entry means scrolling away from the sentence you were reading, and on a phone that is
+the end of reading it.**
+
+### What was built
+
+**A marker is now a thing, not three characters.** Hovering it on a laptop or tapping it on a
+phone opens a small card at the claim: the source's title and a link that opens it.
+
+**The Sources list stays, and the reason is paper.** A hover card cannot print. On a printed PDF
+the list is the only way a citation survives, so: **card for screen, list for paper.** The card
+carries `no-print`; the list deliberately does not.
+
+**Tap is not an afterthought.** A phone has no hover, and a marker that only responds to a
+pointer is a marker a phone user must scroll away from to resolve — which is the problem this
+entry exists to fix. The card opens on click and closes on a second click, one at a time.
+
+### THE FORMATTING DEFECTS — one cause, now three shapes
+
+§106 joined the API's text blocks with nothing, because a break invented at a block boundary put
+a lone full stop on its own line. **The cost runs the other way: where the model itself omitted a
+separator, the pieces run together.** The old `"\n"` join set those cases right by accident while
+breaking sentences everywhere else.
+
+| Shape | Seen as | Provenance |
+|---|---|---|
+| A bold heading welded to the sentence after it | `**Stormwater permit**Because you have…` | **captured live**, §106 |
+| A markdown heading beginning mid-line, `##` showing | `…triggers the requirement.## Stormwater Permit` | **reported, NOT reproduced** |
+| A line opening with a lone colon | under *No-Exposure Option* | **reported, NOT reproduced** |
+| A sentence boundary with no space | `…Environmental Quality.You need an NPDES 1200-Z…` | **found while verifying** — and in **2 of 3** earlier captured runs |
+
+> ### TWO OF THE FOUR WERE NOT REPRODUCED, AND THAT IS RECORDED RATHER THAN GLOSSED.
+>
+> **Three re-runs of the same question produced neither the mid-line heading nor the lone colon.**
+> The mechanism is therefore a **hypothesis** — the same missing separator at a block boundary —
+> pinned by unit tests written against the reported strings rather than against a captured run.
+> **If the real cause is something else, those tests still pass and the defect returns.**
+
+**The fourth shape was found by the verification rather than by the report**, which is the
+argument for running the thing rather than reasoning about it (§104). It recurs: 2 of 3 earlier
+runs carry it.
+
+**All four are repaired at DISPLAY time. The stored text stays the model's, verbatim** —
+`lib/answerDisplay.ts`, no imports so the test suite can load it (§67), and idempotent, which is
+asserted.
+
+**The space rule is deliberately narrow:** the character before the stop must be lowercase or a
+digit, so `U.S.Code` and `1.5` are untouched. **And it inserts a space, never a paragraph break** —
+a space is certainly right; a break would be a guess about structure the model did not express.
+
+### OPEN — the answer varies between runs, including on what the customer should DO
+
+**Not to act on. To measure across more questions before anyone changes anything.**
+
+Four runs of the identical stormwater question, same user, same company, minutes apart:
+
+| | |
+|---|---|
+| Length | 2260 · 2523 · 3237 · 3364 characters |
+| Sources | 5 · 6 · 7 · 10 |
+| **Where you apply** | *"In Hillsboro, Clean Water Services acts as DEQ's agent… so you apply through them, not directly to DEQ"* — and another run routing the application through DEQ's own system, and one mentioning Clean Water Services not at all |
+| **Which permit** | one run opened *"Oregon requires an NPDES **1200-A** permit"* and then, in the next sentence, *"You need an NPDES **1200-Z** stormwater permit"* — **two different permits contradicting each other inside one paragraph** |
+
+> **The last row is the serious one and it is CONTENT, not formatting.** A reader told to apply in
+> the wrong place has been sent somewhere. The variance in length and source count is expected of
+> a model; **a self-contradiction inside one answer is not**, and neither is the application route
+> changing between runs.
+>
+> **One question is not a measurement.** `TESTING.md`'s golden set exists for exactly this, and
+> golden case 004 now has the four answers to compare against. **The next step is more questions,
+> not a prompt change** — §105 stopped refinement on the strength of one question and this would
+> be the same error in the other direction.
+
+**Reversal condition:** none for the card. The display rules reverse individually if any is shown
+to mangle correct output — each is one function with its own tests.
 

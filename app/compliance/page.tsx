@@ -11,6 +11,7 @@ import type { GateAsk, GateAnswering } from '@/lib/determinationGate'
 // `import type` only — it is erased at compile time, so lib/turnSigning's node:crypto import
 // never reaches the browser bundle. The client only ever ECHOES a turn; it never builds one.
 import type { SealedTurn } from '@/lib/turnSigning'
+import { displayLines, inlineParts } from '@/lib/answerDisplay'
 
 const STATUS_MESSAGES: Record<string, string[]> = {
   hazmat: [
@@ -180,6 +181,10 @@ function CompliancePageInner() {
   // A "[3]" with no list behind it is worse than no marker: it looks like a citation and
   // cannot be followed. DECISIONS.md §106.
   const [researchSources, setResearchSources] = useState<ResearchSource[]>([])
+  // Which citation card is open. HOVER handles a laptop through CSS; this is the TAP path,
+  // because a phone has no hover and a marker you cannot open is a marker you must scroll
+  // away from to resolve. One at a time — a key of `${lineIndex}-${n}`.
+  const [openCitation, setOpenCitation] = useState<string | null>(null)
   // This page had NO error state at all: a non-ok response set `data` to undefined and
   // showed a blank. Minimal addition — one string, cleared on each submit.
   const [errorMsg, setErrorMsg] = useState('')
@@ -981,24 +986,51 @@ Give them a specific direct answer — exactly what they need to do, which speci
             </div>
             <div className="bg-white rounded-xl border border-gray-200 p-6">
               <div className="text-sm text-gray-700 leading-relaxed space-y-4">
-                {researchData.split('\n').flatMap((line) => {
-                  // A BOLD RUN THAT OPENS A LINE AND IS FOLLOWED BY MORE TEXT IS A HEADING THE
-                  // MODEL DID NOT PUT A BLANK LINE AFTER. Seen live: "**Stormwater permit**Because
-                  // you have industrial activity…". The old code joined the API's text blocks with
-                  // "\n" and so broke that line by accident — while breaking sentences everywhere
-                  // else (DECISIONS.md §106). The stored text is the model's, verbatim; this splits
-                  // it for DISPLAY only, which is where a presentation problem belongs.
-                  const m = /^\*\*([^*]+)\*\*(?=\S)(.+)$/.exec(line)
-                  return m ? [`## ${m[1]}`, m[2].trim()] : [line]
-                }).map((line, i) => {
+                {displayLines(researchData).map((line, i) => {
+                  // ONE RENDERER FOR THE INLINE RUN, so bold and citation markers are handled in
+                  // the same pass. A marker is a component, not three characters: it opens a card
+                  // with the source and a link, where the claim is (DECISIONS.md §107).
+                  const inline = (text: string) => inlineParts(text).map((part, k) => {
+                    if (part.kind === 'text') {
+                      return <span key={k} dangerouslySetInnerHTML={{ __html:
+                        part.text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }} />
+                    }
+                    const src = researchSources.find((x) => x.n === part.n)
+                    if (!src) return <span key={k}>{part.text}</span>
+                    const key = `${i}-${part.n}`
+                    const open = openCitation === key
+                    return (
+                      <span key={k} className="group relative inline-block align-baseline">
+                        <button
+                          type="button"
+                          onClick={() => setOpenCitation(open ? null : key)}
+                          aria-label={`Source ${part.n}: ${src.title}`}
+                          className="align-super text-[10px] font-medium text-green-700 hover:text-green-900 cursor-pointer px-px">
+                          [{part.n}]
+                        </button>
+                        {/* THE CARD DOES NOT PRINT. On paper the Sources list below is the only
+                            way a citation survives, which is why that list stays. §107. */}
+                        <span className={`no-print absolute left-0 top-full z-30 mt-1 w-72 rounded-lg border border-gray-200 bg-white p-3 shadow-lg ${open ? 'block' : 'hidden'} group-hover:block`}>
+                          <span className="block text-[11px] font-semibold uppercase tracking-wide text-gray-400">Source {part.n}</span>
+                          <span className="mt-1 block text-xs font-medium text-gray-800">{src.title}</span>
+                          <a href={src.url} target="_blank" rel="noopener noreferrer"
+                             onClick={(e) => e.stopPropagation()}
+                             className="mt-2 inline-block text-xs text-green-700 hover:underline break-all">
+                            Open source ↗
+                          </a>
+                        </span>
+                      </span>
+                    )
+                  })
+
                   if (line.startsWith('## ') || line.startsWith('# ')) return (
-                    <p key={i} className="text-xs font-bold uppercase tracking-widest text-green-700 mt-6 mb-1">{line.replace('## ', '').replace('# ', '')}</p>
+                    <p key={i} className="text-xs font-bold uppercase tracking-widest text-green-700 mt-6 mb-1">{line.replace(/^#+ /, '')}</p>
                   )
                   if (line.startsWith('• ') || line.startsWith('- ')) return (
-                    <p key={i} className="flex gap-2 text-gray-600"><span className="text-green-500 flex-shrink-0">•</span><span dangerouslySetInnerHTML={{__html: line.replace(/^[•\-] /, '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}} /></p>
+                    <p key={i} className="flex gap-2 text-gray-600"><span className="text-green-500 flex-shrink-0">•</span><span>{inline(line.replace(/^[•\-] /, ''))}</span></p>
                   )
                   if (line.trim() === '') return <div key={i} className="h-1" />
-                  return <p key={i} className="text-gray-700" dangerouslySetInnerHTML={{__html: line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}} />
+                  return <p key={i} className="text-gray-700">{inline(line)}</p>
                 })}
               </div>
 
