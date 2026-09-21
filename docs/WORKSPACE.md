@@ -1,7 +1,10 @@
 # The Compliance Workspace — M1
 
-**Version:** 6 · **Updated:** 15 September 2026
-**Supersedes:** version 5 (15 Sep). **§8's build order is marked SUPERSEDED** — its step 2 is the critic, which §77 removed from this path, and four of its ten steps belong to M6. `TODO.md`'s M1 table is authoritative. Third instance in two days of a correction leaving a contradiction in an adjacent passage.
+**Version:** 7 · **Updated:** 21 September 2026
+**Supersedes:** version 6 (15 Sep). **v3.3's site-scoped count was wrong: 73 of 95, not 70** —
+read from the live `switches` table. **§6.1's "closing extracts facts" is SUPERSEDED**: a stated
+fact is stored **immediately**, not at topic close (`DECISIONS.md` §96a). The number mattered
+because it is what reversed M1.3 and M1.4's order. Version 6: **§8's build order is marked SUPERSEDED** — its step 2 is the critic, which §77 removed from this path, and four of its ten steps belong to M6. `TODO.md`'s M1 table is authoritative. Third instance in two days of a correction leaving a contradiction in an adjacent passage.
 **Supersedes:** version 4 (15 Sep). **Two stale claims that research runs the six-stage pipeline are struck** — §3's opening line and §4.1's table row — leaving `DECISIONS.md` §77 authoritative: research is gate, then answer. The table row is recorded as instructive: v4 struck the sentence beneath it and left the cell above, so a correction left a contradiction inside what it corrected.
 **Supersedes:** version 3 (15 Sep). §4.1's **"one cheap classification call" is SUPERSEDED** — classification folds into the determination gate, because §77 settled the research path at two AI calls and the gate already holds everything classification needs (`DECISIONS.md` §85). Adds **§4.1a: a new question does NOT close a topic.** Previously, v3: **Supersedes:** version 2 (11 Sep). **The five gaps are RESOLVED as decisions**, stated against
 the schema migration 008 actually built rather than described as problems — which is what made v2
@@ -70,7 +73,8 @@ library rule wearing the coat of a boundary. TODO 7.2c.
 ### v3.3 A site-scoped fact cannot be captured without a site
 
 **The schema:** `company_switches` carries a composite FK on `(switch_id, scope)` and a CHECK
-requiring `entity_id` when `scope = 'site'`. **70 of 95 switches are site-scoped.** The insert is
+requiring `entity_id` when `scope = 'site'`. **73 of 95 switches are site-scoped** — corrected from
+70 on 21 Sep, read from the live `switches` table, not from a document. The insert is
 **refused** without a site — it is a hard failure, not a degradation.
 
 **The decision. The conversation must establish WHICH SITE before it can capture a site-scoped
@@ -361,7 +365,15 @@ A research topic ends with an explicit close: CompliBoard writes a summary, save
 
 **Tell the user the real reason, politely:** past conversations pollute future answers. A closed topic keeps a bad premise from propagating. Had the 2.5L conversation continued eight more turns, every turn would have compounded the wrong bottle-labeling premise.
 
-**Closing extracts facts before discarding.** Any `user_stated` facts write to switches. The durable part survives; the noise does not.
+> ### ⚠ SUPERSEDED — 21 September 2026, `DECISIONS.md` §96(a). **A stated fact is stored
+> IMMEDIATELY, at the turn that states it — not at close.** Topic close is too late: the value of
+> a captured fact is the NEXT TURN and every later conversation, and the whole write measured
+> **0.5 s** (`TESTING.md` Case A, 15 Sep — three writes plus a 200-row recompute).
+>
+> **Closing still writes the summary and discards the transcript. It no longer has facts left to
+> extract**, because they were written when they were said.
+
+~~**Closing extracts facts before discarding.** Any `user_stated` facts write to switches. The durable part survives; the noise does not.~~
 
 **Auto-close on inactivity.** People do not close things. A topic idle for a week closes itself and says so — otherwise month-old open threads produce exactly the pollution being prevented.
 

@@ -1,6 +1,18 @@
 # Decision Record
-**Version:** 73 · **Updated:** 15 September 2026
-**Supersedes:** version 72 (15 Sep). Adds **§94** — a defect that **reproduces itself as the
+**Version:** 74 · **Updated:** 21 September 2026
+**Supersedes:** version 73 (15 Sep). Adds **§96 — M1's order reverses, and FIVE decisions about
+the first writer.** **73 of 95 switches are site-scoped** (read from the live table; the documents
+said 70), the conversation has no concept of a site, so **M1.3 first builds a writer for 22 facts
+whose call shape changes when the site arrives.** A conversation surface precedes both — the
+browser sends no `topicId` and nothing creates a `topics` row, so **M1.2c is real over HTTP and
+inert to a person.** Four decisions: a stated fact is stored **immediately** (§6.1 superseded),
+the write path takes a **`KnownFact` rather than a pair** so `source` reaches the enum and
+**Postgres refuses a hypothetical with no rule to remember**, the person-only filter **may not
+widen**, and a null-switch fact is **held in the turn, never written**. **(e) closes §9.4 the day
+M1.2d flagged it: SEVERAL open topics per company** — §87's threads, and one-open-topic becomes
+one colleague blocking another. A third option is **refused on the record** — a reload resuming
+the open topic with an empty turn list is *a continuous record with discontinuous content.*
+Version 73: Adds **§94** — a defect that **reproduces itself as the
 library grows**: Oregon rows citing 29 CFR went **49 → 60** while `citation_federal_analogue`
 stayed at 0, because migration 013's splits gave eleven children the federal citation in the wrong
 field. **The mechanism is the finding, not the count** — 6.4's worklist grows with the library.
@@ -6727,3 +6739,229 @@ correct citations that simply name neither an OAR nor a CFR.**
 **And the correct run found something better than the false failure would have been** — §94's
 mechanism, which no version of my stricter query would have surfaced, because it depends on
 comparing today's count against the one recorded four days ago.
+
+---
+
+## 96. M1's order reverses, and four decisions about the first writer — 21 September 2026
+
+**M1.3 is the first thing in this codebase that would write a company fact from a conversation.
+Everything below exists because a first writer decides things a later one only inherits.**
+
+### THE ORDER CHANGED, AND THE REASON IS A COUNT
+
+**`TODO.md` had M1.4 (site resolution) depending on M1.3 (fact capture). For the site-scoped
+majority that dependency runs the other way**, and the number is the whole argument:
+
+```
+select scope, count(*) from public.switches group by scope;   -- staging, 21 Sep
+  site     73
+  company  22
+```
+
+- **73 of 95 switches are site-scoped**, and `/api/switches/answer` refuses every one of them
+  without an `entity_id` — `route.ts`: *"This question is about one site. Tell us which one."*
+- **The conversation has no concept of a site.** `WORKSPACE.md` v3.3 already said so; nothing has
+  changed it.
+- So **M1.3 built first is a writer that can address 22 of 95 facts** and whose call shape changes
+  the moment the site arrives. That is building it twice, which is the thing `CLAUDE.md` §2's
+  ordering rule exists to prevent.
+
+**And a third item precedes both, which no row had:** `/api/switches/answer` has **zero callers**,
+`app/compliance/page.tsx` sends neither `turns` nor `topicId`, and nothing creates a `topics` row
+(`grep from('topics')` returns one cleanup in `scripts/check-live.js:84`). The chat route reads
+`const newTurn = topicId ? sealTurn(...) : null` — **so in the browser today every turn is turn
+one and no conversation exists.** M1.2c is real over HTTP and inert to a person.
+
+| New order | |
+|---|---|
+| **1. M1.2d** | **The conversation surface** — M1.2c's missing half. Nothing in M1 is reachable by a user until it exists |
+| **2. M1.4a** | **The single-site slice** — the one-site rule, and `entity_id` on the fact |
+| **3. M1.3** | **Fact capture** |
+
+> **The single-site rule is NOT a default to the primary site.** §20 forbids defaulting because a
+> company-wide answer to a per-site question is *wrong at every site but one, confidently*. **When
+> the company has exactly one `entities` row there is no second site to be wrong about** —
+> the set of sites the answer could belong to has one member, so nothing is being assumed.
+> `WORKSPACE.md` v3.3 already states it as *"never ask"*. **"Which site" and "all of them writes N
+> rows" stay in M1.4** and are genuinely M1.4's problem.
+
+### (a) A STATED FACT IS STORED IMMEDIATELY, NOT AT TOPIC CLOSE
+
+**Decision: the write happens at the turn that states the fact.**
+
+**Topic close is too late, and the reason is what a captured fact is FOR.** Its value is the
+**next turn** — the gate not re-asking what was just said — and every later conversation. A fact
+held until close is a fact the rest of that conversation cannot use, which is the *"asks twice"*
+failure `WORKSPACE.md` §5.2 exists to prevent, moved one level up.
+
+**The cost objection does not survive measurement.** The whole `/api/switches/answer` POST — three
+writes plus a full 200-row obligation recompute — is **0.5 s** on a fresh company (`TESTING.md`
+Case A, measured 15 Sep). There is no budget argument for batching it to the end.
+
+**`user_locked` is correct here, and it is not an overreach.** v3.2 defines the flag as *a person
+decided*. **A person stating a fact IS a person deciding it** — the statement is the decision, and
+nothing about saying it mid-conversation rather than in answer to a direct question makes it less
+so.
+
+#### The exception is INTERPRETATION, and it is a narrow one
+
+> **"about fifty" is not 47.**
+>
+> **Confirm when the value had to be COERCED into the switch's type. Write directly when it did
+> not.** A person saying *"yes"* to a boolean switch has been understood; a person saying *"about
+> fifty"* to a number switch has been **interpreted**, and an interpretation written as
+> `user_locked` is the product putting its own reading behind a person's name.
+
+This is not a confidence tier and must not grow into one — see the superseded ladder below. It is
+one mechanical test applied at the write boundary: **did the raw string survive into the stored
+value, or did something decide what it meant?**
+
+#### WHICH RESOLVES A CONTRADICTION, AND BOTH SIDES LOSE SOMETHING
+
+| Source | What it said | Outcome |
+|---|---|---|
+| `WORKSPACE.md` §6.1 | *"Closing extracts facts before discarding. Any `user_stated` facts write to switches."* | **SUPERSEDED.** Close still writes the summary and discards the transcript; it has no facts left to extract |
+| `TODO.md:1996` | *"Established facts write to `company_switches`… `user_stated` applies immediately"* | **Upheld** — this half was right |
+| `TODO.md:1996` | *"…`ai_inferred` confirms before applying"* | **GOES.** This is `WORKSPACE.md` §5.2's three-tier ladder, which **v3.2 marked SUPERSEDED, not translated** — *a lock prevents a write; a gate delays one*, and the schema already prevents it |
+
+**The instructive part is that the surviving half and the dead half sat in one four-line list**,
+and the dead half carried vocabulary (`ai_inferred`) that exists in no enum in the schema. A
+superseded scheme does not announce itself; it survives as the words a later list is written in.
+
+### (b) THE WRITE PATH ACCEPTS A `KnownFact`, NOT A `{switch_id, value}` PAIR
+
+**This is the one decision here that keeps §78 structural, and it is worth stating as a
+mechanism rather than as a preference.**
+
+**What protects a hypothetical from being stored today, precisely:**
+
+| | Protection | Structural? |
+|---|---|---|
+| 1 | `company_switches.source` is the enum `switch_value_source` = `('ai_from_documents','ai_from_profile','user_set','computed')` — migration 008:77. **Neither `stated_in_question` nor `hypothetical` is a member** | **Yes. Postgres refuses it** |
+| 2 | `writeObligations` reads `company_switches` and nothing else (`obligationWriter.ts:107`) | **Yes** |
+| 3 | `/api/switches/answer` takes `{switch_id, value, entity_id}` and no frame, so a hypothetical cannot arrive labelled | **No — it holds only because nothing carries a fact across that boundary** |
+
+**M1.3 is the thing that carries it, so protection 3 is the one it would break.**
+
+> ### THE PAIR SHAPE STRIPS THE LABEL BEFORE THE DATABASE SEES IT.
+>
+> The enum refuses a **labelled** hypothetical. It cannot refuse a **stripped** one.
+> `fromUserAnswer()` (`switchDetermination.ts:228`) hardcodes `source: 'user_set'` on everything
+> it is handed. Map a gate fact into `{switch_id, value}`, post it, and the label is gone two
+> function calls before Postgres is reached — **so "the Arizona facility would have 12 employees"
+> is written as a fact a person set about their own company**, and nothing in the stack objects.
+
+**Decision: the write path accepts the gate's `KnownFact`, which carries `source`.** A
+`hypothetical` then reaches the enum and is refused by the database, with **no rule for anyone to
+remember and nothing to forget at a mapping step.** That is what §78 means by structural, and the
+alternative — M1.3 filters before posting — is precisely the remembered rule §78's reasoning
+rejects.
+
+### (c) M1.3 WRITES ONLY WHAT A PERSON STATED, AND THE FILTER MAY NOT WIDEN
+
+`app/api/chat/route.ts:44` already does the right thing: `factsFromGate()` keeps **only**
+`stated_in_question` and `hypothetical`. **The rest of the gate's `known` array is not a person
+speaking** — `determinationGate.ts:410–412` pushes `ai_from_profile` worksite facts into the same
+list, and `company_switches` rows come back through it too.
+
+**M1.3 inherits that filter and must not widen it.** Widening it makes an AI determination a
+second writer of `company_switches`, and **the moment a second writer exists the `user_locked`
+conflict becomes real** rather than theoretical.
+
+**Which is why 7.2c stays where it is, and the condition is stated so it can be checked:**
+`grep -rn user_locked app lib scripts tests` returns exactly **one** production line —
+`answer/route.ts:108`, which *sets* the flag — plus `decideOutcome`, which *reads* it and has
+**zero callers outside its own module**. So today **the conflict M1.6 displays cannot occur**:
+every writer is a person, and `decideOutcome` explicitly permits what the route does — *"A person
+changing their own answer always wins, including over their earlier one."*
+
+> **7.2c is scheduled before M1.6 and not before M1.3 — ON THE CONDITION IN (c).** If the filter
+> ever widens, or any determination path gets a route, **7.2c becomes urgent that day** and this
+> line is the thing to re-read.
+
+### (d) A FACT WITH `switch_id: null` IS NOT WRITTEN — IT IS HELD IN THE TURN
+
+The gate's own prompt produces these deliberately — `determinationGate.ts:351`: *"Use a switch_id
+ONLY if the vocabulary below lists it. Otherwise null."* A conversational fact can therefore
+arrive as a free-text label with no switch behind it.
+
+**Decision: held in the turn, not dropped, and it does not reach the route.**
+
+- **Held, because dropping it would make the gate re-ask it next turn** — the *"asks twice"*
+  failure again. The conversation is the correct home for a fact with nowhere else to live, which
+  is §78's own reasoning applied to a second case.
+- **It already is held, and this costs nothing to keep.** `factsFromGate` filters on `source` and
+  **not** on `switch_id`, so a null-switch fact is already carried onto the sealed turn and already
+  renders in `renderConversation`. **The decision is a refusal at the write boundary, not a new
+  mechanism.**
+- **It does not reach the route.** `/api/switches/answer` refuses a missing `switch_id` with a 400
+  anyway; sending one and catching the refusal would put a normal outcome through an error path.
+
+**What this deliberately does NOT do:** it does not invent a switch, and it does not queue the
+fact for a human to map later. **D24 — capture facts, do not generate questions.** A fact the
+vocabulary cannot express is a signal about the vocabulary, and `AUDIT-CHECKS.md` check 28 is
+where that belongs if it ever becomes a pattern.
+
+### (e) SEVERAL OPEN TOPICS PER COMPANY — the fork M1.2d forces, closed the day it was flagged
+
+**`WORKSPACE.md` §9.4 and `TODO.md` M1.0b are CLOSED. Several. No partial unique index.**
+
+M1.0b recorded this as **not deferrable after the fact** — *"One is a partial unique index on
+`(company_id) where status = 'open'`; several is the absence of one… adding the constraint later
+means closing somebody's open work."*
+
+**It is the right product, not only the smaller build:**
+
+- **§87 settled that a new question does not close a topic**, so **topics carry threads.**
+  Shipping in the morning and hiring in the afternoon are two of them, and one-open-topic makes
+  starting the second require closing the first — asking a person to file their work before they
+  have finished with it.
+- **Two users, and one-open-topic becomes one person blocking another.** `CLAUDE.md` §3.6: several
+  `profiles` sharing a `company_id` is *a normal, working state*. A constraint on `(company_id)`
+  serialises colleagues with nothing to do with each other.
+
+> **The asymmetry was the whole argument for "one", and it does not survive contact.** Relaxing is
+> free and tightening closes somebody's open work — **but that only matters if we would ever
+> tighten**, and no product wants a single open thread per company. The option the asymmetry
+> protects is one we would never take.
+
+#### The third option, REFUSED and recorded as refused
+
+**A reload RESUMES the open topic with an empty turn list.** The row stays continuous; the
+context does not.
+
+> **It is a continuous record with discontinuous content.** The row claims to be the same
+> conversation while the gate remembers none of it, so the summary M1.8 writes and the thread a
+> person returns to both read one exploration where there were two — **and nothing on screen says
+> the middle went missing.**
+>
+> **A thing claiming a continuity it does not have is what `CLAUDE.md` §5.1 and §6 exist to
+> prevent**, and it is §9.3's shape exactly: dropping the turns and carrying on produces a
+> correct-looking answer computed from nothing.
+>
+> **It is recorded because it looks tidy** — no empty rows, no new state — so a later reader
+> optimising for either would arrive at it honestly. Considered, refused.
+
+#### The pile of open topics is M1.8's work, not a defect
+
+Every reload creates a row, turns die with React state, and **nothing closes a topic until M1.8**.
+Open rows with null summaries accumulate, and that is the designed intermediate state:
+
+**visible** (`select count(*) from topics where status='open'`) · **bounded to test data today**,
+since no production company can reach the surface before M1.8 ships in the same module · and the
+answer is **already designed, not new work** — `WORKSPACE.md` §6.1's **auto-close on inactivity**,
+*"a topic idle for a week closes itself and says so."*
+
+**What would make it a defect is an open row a person can see and cannot close.** That is M1.8's
+acceptance condition, not a reason to hold M1.2d.
+
+### Reversal conditions
+
+| Decision | Reverses if |
+|---|---|
+| **(a) immediate** | the recompute stops being cheap — a company whose obligation count makes 0.5 s into seconds. **The figure is per-write and measured once, on 200 rows** |
+| **(b) `KnownFact` shape** | nothing currently foreseeable. It costs one parameter and removes a class of defect |
+| **(c) filter held narrow** | never as such — but it **expires** the moment a determination path gets a route, and then 7.2c precedes M1.6 rather than merely being scheduled before it |
+| **(d) held, not written** | a real case appears for promoting a null-switch fact to a real one. §78's own reversal applies: **the fix is a deliberate user action, not a storage decision** |
+| **(e) several open topics** | a named case for serialising a company's explorations. **Reversing means closing somebody's open work**, which is why it was decided rather than defaulted |
+

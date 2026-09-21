@@ -1,7 +1,18 @@
 # M1.2b — The Gate Gains a Conversation
 
-**Version:** 7 · **Updated:** 15 September 2026
-**Supersedes:** version 6 (15 Sep). Adds **§9.1a — a signature proves ISSUANCE, not COMPLETENESS.**
+**Version:** 9 · **Updated:** 21 September 2026
+**Supersedes:** version 8 (21 Sep). **§10.5 is DECIDED: SEVERAL open topics per company**, no
+partial unique index — §87's threads, and one-open-topic becomes one colleague blocking another
+once a company has two users. **The third option — a reload resuming the open topic with an empty
+turn list — is REFUSED on the record**: a continuous record with discontinuous content, which is
+what the honesty rules exist to prevent. The pile of open rows is recorded as **M1.8's, not a
+defect**. Version 8: Adds **§10 — M1.2d, the conversation surface**, the half of
+M1.2c that no row had: **the browser sends no `topicId`, so `newTurn` is null on every request a
+person has ever made**, and `topics` has never had a row written by anything but a test. Specifies
+the three pieces (the browser holds turns · the route creates the topic · `topicId` is verified
+against a real row), **what a person sees when verification fails** (§9.3 settled the route's 400
+and not the screen's wording), and **surfaces §9.4's one-open-topic-or-several as the fork this
+forces** rather than picking it. `DECISIONS.md` §96. Version 7: Adds **§9.1a — a signature proves ISSUANCE, not COMPLETENESS.**
 A client could send turns 1, 2 and 4 and every one would verify; **contiguity is now required.**
 Records that **a MAC chain would not catch truncation either** (a truncation is a valid prefix),
 that truncation is indistinguishable from ordinary loss and is therefore accepted, and that the
@@ -608,3 +619,264 @@ reads as verified.
    different sizes. Folding is cleaner; keeping both is smaller. Not decided.
 3. **The measurement in §4** should run before this ships, not after — it is the §74 lesson, where
    a number that changed a design was cheap to get and was nearly got late.
+
+---
+
+# 10. M1.2d — THE CONVERSATION SURFACE
+
+**Specified 21 September 2026. `DECISIONS.md` §96. NOT BUILT.**
+
+⚡ **`CLAUDE.md` §3.1 — this changes what feeds a prompt** (a first turn and a fifth turn will no
+longer send the same context). Specified before code for that reason.
+
+## 10.1 The problem, stated from the code
+
+**§9 built the loop and nothing in the product calls it.** Three lines are the whole finding:
+
+```
+app/api/chat/route.ts   const newTurn = topicId ? sealTurn(...) : null
+app/compliance/page.tsx body: JSON.stringify({ question: q, mode: currentMode,
+                                               scanResult, answering: answering ?? null })
+grep -rn "from('topics')" app lib scripts   ->  scripts/check-live.js:84   (a test cleanup)
+```
+
+The page sends no `topicId`, so **`newTurn` is null on every request a person has ever made.** It
+also discards `json.turn`, `json.frame` and `json.followUp`, which the route has returned since
+15 September. And `topics` — migration 028, on both environments — **has never had a row written
+by anything but a test.**
+
+> ### SO EVERY TURN IN THE BROWSER IS TURN ONE.
+>
+> The gate re-asks what was established two messages ago, a hypothetical cannot be labelled
+> because there is no frame to carry, and `followUp` classifies nothing because there is nothing
+> prior to classify against. **M1.2b, M1.2 and M1.2c are built, correct, driven over HTTP, and
+> invisible to a person.** Everything after this in M1 is unreachable by a user until it exists.
+
+**What a person gets today when the gate asks** is worth stating exactly, because it is the thing
+M1.3 makes durable: `handleGateAnswer` re-sends the **original question verbatim** with
+`answering` riding alongside (`page.tsx:611–617`). The gate stops blocking, the answer arrives —
+and **no `company_switches` row is written.** Ask the same question tomorrow and the same question
+comes back. That is not M1.2d's job to fix; it is M1.3's. M1.2d is what gives M1.3 somewhere to
+write from.
+
+## 10.2 What this builds — three things, and the third is the one with a decision in it
+
+| | |
+|---|---|
+| **1** | **The browser holds the turns** and sends them back |
+| **2** | **The route creates a `topics` row** and returns its id |
+| **3** | **`topicId` is verified against a real row** before anything is sealed against it |
+
+### 1. The browser holds the turns
+
+**In React state on the page, and nowhere else.** Not `localStorage`, not `sessionStorage`, not a
+column.
+
+**Why nothing durable:** `WORKSPACE.md` §6.4 — *transcripts are disposable*. A turn list is the
+transcript in claim form, and §78 turns that into a hard rule for the facts inside it: a
+hypothetical *"lives in the conversation and nowhere else."* Persisting turns to the browser would
+make the disposable thing durable by accident, which is the sentence migration 028 already uses
+about the transcript column it does not have.
+
+**The cost, stated rather than discovered:** a page reload loses the conversation. See §10.5 — it
+is not free, and it lands on an open question rather than being decided here.
+
+```ts
+// page.tsx — new state, beside gateAsk
+const [turns, setTurns]     = useState<SealedTurn[]>([])
+const [topicId, setTopicId] = useState<string>('')
+```
+
+Both are sent on every `/api/chat` request in `research` and `checklist` mode — **JSON and
+multipart, both branches**, because the file branch is the one that gets forgotten:
+
+```ts
+// JSON branch
+body: JSON.stringify({ question: q, mode: currentMode, scanResult,
+                       answering: answering ?? null,
+                       turns, topicId })            // <- new
+// multipart branch
+formData.append('turns',   JSON.stringify(turns))   // <- new
+formData.append('topicId', topicId)                 // <- new
+```
+
+And on every response that carries one, **the turn is appended before anything branches on the
+answer** — §8.4's first rule, now on the client side of the boundary:
+
+```ts
+if (json.topicId) setTopicId(json.topicId)
+if (json.turn)    setTurns(prev => [...prev, json.turn])
+// ...then the existing ask / research / checklist handling, unchanged
+```
+
+> **`json.turn` is appended on an `ask` too.** An ask is an exchange. The existing code returns
+> early on `outcome === 'ask'`, so the append has to come **before** that return or asks fall out
+> of the history and the turn numbers drift from the conversation — which is precisely the defect
+> §8.4 rule 1 was written against, arriving on the other side of the wire.
+
+### 2. The route creates the `topics` row
+
+**The server creates it. The client never invents an id.**
+
+**Why that is not arbitrary:** `sealTurn(turn, companyId, topicId)` binds the MAC to whatever
+`topicId` it is given (`turnSigning.ts:83–95`). A client-chosen id still seals and verifies
+consistently — the MAC covers `company`, so cross-tenant replay fails either way — but it binds
+the conversation to **a topic row that does not exist**. The durable record and the conversation
+then describe the same exploration under different rules, which is the two-systems shape §78 spent
+a whole entry avoiding.
+
+**Where in the request, and the ordering falls out of the title:**
+
+```
+turn 1  (no topicId on the request)
+  |
+  ├─ verifyTurns([])            -> [] , nothing to verify
+  ├─ gate(...)                  -> g.frame.subject is available HERE and not before
+  ├─ INSERT topics { company_id, title, status: 'open' }   -> id
+  └─ sealTurn({turn: 1, ...}, companyId, id)
+```
+
+**The title comes from `g.frame.subject`, falling back to the question, truncated.**
+`topics.title` is `not null` with `check (length(btrim(title)) > 0)`, so it cannot be deferred to
+close. `frame.subject` is defined as *"what the question is about"* and is exactly a title; it is
+nullable, hence the fallback. **The gate must therefore run before the insert** — which is free,
+because turn 1 has no prior turns and nothing needs the id until the seal.
+
+**If the gate throws, no topic row is created.** An exploration that never produced a turn is not
+an exploration.
+
+**`company_id` comes from `requireCompany()`, never from the body** — `CLAUDE.md` §3.6. The
+insert runs as the caller on `authed.db`, so `topics_insert`'s `with check (company_id =
+auth_company_id())` is the thing that actually enforces it. Migration 028 granted
+`select, insert, update` and deliberately **no DELETE**.
+
+### 3. `topicId` is verified against a real row
+
+On **every turn after the first**, before `verifyTurns`:
+
+```ts
+const { data: topic } = await db.from('topics')
+  .select('id, status').eq('id', topicId).eq('company_id', companyId).maybeSingle()
+if (!topic) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+```
+
+**404, not 403** — an id must not be probeable by watching which error comes back (`CLAUDE.md`
+§3.6, the `/api/documents` pattern). One indexed lookup on `(company_id, status, opened_at)`
+against a gate that costs 6–10 s; the cost is not the argument here.
+
+> **Without this, `topicId` is a client-chosen string with no referent** and the row the summary
+> will eventually be written to is not the row the conversation ran under.
+
+**A CLOSED topic refuses a new turn** — `status` is read for this reason and not only for tidiness.
+`WORKSPACE.md` §6.1: closing exists *because past conversations pollute future answers*, and a
+closed topic that still accepts turns is a close that closed nothing. The refusal is a 400 with
+§10.4's wording, and **§8.3 is not in tension with it**: a new question does not close a topic, but
+a topic somebody closed stays closed.
+
+## 10.3 What M1.2d does NOT do
+
+- **It writes no facts.** `company_switches` is untouched. That is M1.3, and it is behind M1.4a.
+- **It does not close a topic.** M1.8. Every topic this creates is `open` with a null summary
+  until then — **stated plainly because it is a real consequence**: M1.2d ships a table that
+  accumulates open rows and nothing that closes them.
+- **It does not decide whether `answering` folds into `priorTurns`.** §7 item 2, still open. They
+  are the same mechanism at different sizes and both work; folding them is a separate change.
+- **It does not render the frame or the follow-up kind to the user.** The response carries them
+  today and the page will now hold them; showing them is M1.5.
+
+## 10.4 When verification fails — what a PERSON sees
+
+§9.3 settles the route's behaviour: **400, and the conversation stops.** It does not say what the
+screen says, and `CLAUDE.md` §5.1 requires that it be said before this ships.
+
+**Three rules from §5.1 apply, and the wording is worked out per case the way `WORKSPACE.md`
+§10.8 does it:**
+
+| What happened | What the user sees |
+|---|---|
+| Signature or contiguity failed | *"We lost track of this conversation and can't safely carry on with it. Nothing you've told us has been lost. Ask your question again and we'll start fresh."* |
+| The topic is closed | *"This topic is closed. Ask your question again and we'll open a new one."* |
+| The topic is not found | Same as the first row. **A person cannot act on the difference**, and naming it would leak whether an id exists |
+
+**The rules those obey:** the failure is the product's, so it says so and never implies the user
+did something wrong · it asserts nothing about what was in the conversation, because that is what
+could not be read · it says what to do next · and the client **clears `turns` and `topicId` when
+it renders any of them**, so "start fresh" is true rather than a suggestion the next request
+contradicts.
+
+## 10.5 SEVERAL OPEN TOPICS PER COMPANY — DECIDED 21 September 2026
+
+> ### **Several. No partial unique index.** `WORKSPACE.md` §9.4 and `TODO.md` M1.0b are CLOSED.
+
+**It is the right product, not only the smaller build**, and that distinction is the whole reason
+this is a decision rather than a default:
+
+- **§87 decided that a new question does not close a topic**, so **topics carry threads.**
+  Shipping in the morning and hiring in the afternoon are two threads. One-open-topic makes
+  starting the second require closing the first, which is asking a person to file their work
+  before they are finished with it.
+- **Once a company has more than one user, one-open-topic becomes one person blocking another.**
+  `CLAUDE.md` §3.6: several `profiles` rows sharing a `company_id` is *a normal, working state* —
+  the constraint is on `(company_id)`, so it would serialise colleagues who have nothing to do
+  with each other.
+
+**The asymmetry was the argument for "one" and it does not survive contact.** Relaxing a
+constraint is free; tightening one closes somebody's open work. **That is only an argument if we
+would ever tighten** — and no product wants a single open thread per company, so the option the
+asymmetry protects is one we would never take.
+
+### THE THIRD OPTION IS REJECTED, AND IT IS ON THE RECORD SO IT IS NOT CHOSEN LATER FOR LOOKING TIDY
+
+**Considered: a reload RESUMES the open topic with an empty turn list.** The topic row stays
+continuous; the conversation context does not.
+
+> ### REFUSED. **It is a continuous record with discontinuous content.**
+>
+> The row claims to be the same conversation while the gate remembers none of it. Everything
+> downstream — the summary M1.8 writes, the thread a person comes back to — reads one exploration
+> where there were two, and **nothing on the screen says the middle went missing.**
+>
+> **A thing claiming a continuity it does not have is precisely what this product's honesty rules
+> exist to prevent** — `CLAUDE.md` §5.1 (*never assert anything about data we did not successfully
+> read*) and §6. It is the same shape as §9.3's refusal: dropping the turns and carrying on
+> produces a correct-looking answer computed from nothing.
+>
+> **It looks tidy, which is the danger.** It creates no empty rows and needs no new state, so a
+> later reader optimising for either of those would arrive at it. This paragraph is here to stop
+> that.
+
+### THE PILE OF OPEN TOPICS IS M1.8'S, AND IS NOT A DEFECT
+
+**Stated here rather than in M1.8, because this is the section where somebody will notice it:**
+
+**Every reload creates a row. Turns die with React state. Nothing closes a topic until M1.8.** So
+open rows with null summaries accumulate, and that is the designed intermediate state, not a leak.
+
+- **It is visible** — `select count(*) from topics where status = 'open'` answers it exactly, at
+  any moment, on either environment.
+- **It is bounded to test data today.** No production company can reach this path: the surface
+  ships behind M1.8 in the same module.
+- **The designed answer already exists and is not new work.** `WORKSPACE.md` §6.1:
+  **auto-close on inactivity** — *"People do not close things. A topic idle for a week closes
+  itself and says so."* M1.8 builds it.
+
+**What would make it a defect** is an open row a person can see and cannot close. That is M1.8's
+acceptance condition, and it is the reason M1.8 is not optional rather than a reason to hold
+M1.2d.
+
+## 10.6 How it is verified
+
+**Not by HTTP status.** Per the standing rule, and because §81's two probes passed on the wrong
+guard:
+
+1. **Two turns in a browser, as a signed-in user**, where turn 2 asserts a fact turn 1 established.
+   **The gate must not re-ask it.** That is the observable M1.2b was built for and has never had.
+2. **`select count(*) from topics where company_id = …`** before and after — a row exists, with a
+   title that is not the string `'null'`.
+3. **Turn 2 sent with turn 1 removed** — contiguity refuses, 400, and **the screen shows §10.4's
+   sentence** rather than a spinner or a raw error.
+4. **Turn 2 sent with a `topicId` belonging to another company** — 404, and the probe uses an id
+   that **genuinely belongs elsewhere**. §81: an id that turns out to be the caller's own tests
+   nothing, and the message is the evidence, not the status code.
+5. **A reload mid-conversation** — whatever §10.5 decides, the observed behaviour matches it.
+

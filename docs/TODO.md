@@ -1,6 +1,13 @@
 # Detailed To-Do
-**Version:** 23 · **Updated:** 15 September 2026
-**Supersedes:** version 22 (15 Sep). **7.2c is scheduled** — immediately before M1.6, which is its
+**Version:** 24 · **Updated:** 21 September 2026
+**Supersedes:** version 23 (15 Sep). **M1's ORDER REVERSES** (`DECISIONS.md` §96). Two rows land
+ahead of M1.3: **M1.2d, the conversation surface** — M1.2c is real over HTTP and **inert to a
+person**, because the browser sends no `topicId` and nothing creates a `topics` row — and
+**M1.4a, the single-site slice**, because **73 of 95 switches are site-scoped** (read from the
+live table; the documents said 70) and M1.3 first would build a writer for 22 facts and change
+its shape when the site arrives. **The detail section at the foot of M1 is SUPERSEDED IN FULL** —
+it re-uses M1's numbers for six different tasks, so *"M1.3"* meant two things in one file.
+Version 23: **7.2c is scheduled** — immediately before M1.6, which is its
 only dependent. It sat outside M1 with nothing scheduling it, and check 24 shows `user_locked`
 protected by **zero** policies, constraints or triggers. Version 22: **M1.2b, M1.2 and M1.2c are DONE** — the conversation loop is
 closed and reachable over HTTP. The rotation gate's eighth credential now **exists**
@@ -174,8 +181,10 @@ decisions and the five schema gaps are settled before any of this starts.*
 | **M1.2a** | ~~The critic's `priorAssertions` field~~ — **WITHDRAWN for research.** §77 drops the critic from the research path entirely; §73's decision survives and applies at the **checklist boundary**, which is where it is now needed | — | — |
 | **M1.2c** ✅ | **DONE 15 Sep** (§91) — route wired, run over HTTP, four attacks refused. ⚡ **THE CONVERSATION LOOP** — the caller that feeds M1.2b and M1.2. `GATE-HISTORY.md` §8.4 specifies the contract and **assigns it to nobody**, which is why it was not a task: a contract with no owner is a specification of something that will not happen. **Turns are SIGNED** (§89). Until this exists, M1.2b and M1.2 are built, correct and **inert** | M1.2 | 1.5 d |
 | **M1.2** ✅ | **DONE 15 Sep** (§86) — folded into the gate, not a third call. **Follow-up classification** (§4.1) — three kinds, classified before anything expensive runs | **M1.2b** | 1 d |
-| **M1.3** | **Fact capture, not question generation** (D24). The conversation writes `company_switches` through 7.2a's route; it does **not** invent questions — the queue comes from `askableSwitches()` and the dependency graph (v3.5) | M1.0, M1.1 | 1.5 d |
-| **M1.4** | **Site resolution before a site-scoped write** (v3.3). One site → silent. Several → the question carries the site. **Defaulting to primary is forbidden** (§20) | M1.3 | 1 d |
+| **M1.2d** | **THE CONVERSATION SURFACE — M1.2c's missing half.** **SEVERAL open topics per company** (§96e — §9.4 closed, no unique index). The browser holds turns, a `topics` row is **created**, `topicId` is sent. Today `app/compliance/page.tsx` sends neither, and `const newTurn = topicId ? sealTurn(...) : null` means **every turn in the browser is turn one**; `grep from('topics')` finds one cleanup and no writer. M1.2b/M1.2/M1.2c are correct over HTTP and **inert to a person**, and **nothing in M1 is reachable by a user until this exists** (§96) | M1.2c | 1.5 d |
+| **M1.4a** | **THE SINGLE-SITE SLICE of M1.4** — the one-site rule, and `entity_id` carried on the fact. **This is NOT a default to primary**: §20 forbids defaulting because a company-wide answer is *wrong at every site but one*, and **with one `entities` row there is no second site to be wrong about** — v3.3 already says *never ask*. **Ahead of M1.3 because 73 of 95 switches are site-scoped** and the route refuses every one without a site (§96) | M1.2d | 0.5 d |
+| **M1.3** | **Fact capture, not question generation** (D24). The conversation writes `company_switches` through 7.2a's route; it does **not** invent questions — the queue comes from `askableSwitches()` and the dependency graph (v3.5). **Writes a `KnownFact`, not a `{switch_id, value}` pair** — §96(b): `source` reaches the enum and Postgres refuses a hypothetical. **Stores immediately**, confirming only a coerced value (§96a). **A null `switch_id` is held in the turn, never written** (§96d) | **M1.4a** | 1.5 d |
+| **M1.4** | **Site resolution — the rest** (v3.3). **Several sites → the question carries the site**; *"all of them"* writes **N rows, each attributable**, never one company row. The one-site half is **M1.4a above** | M1.3 | 0.5 d |
 | **M1.5** | **Show what we know** (§7) — facts in context before an answer, with `source` rendered so a document-derived value and a person's answer do not look alike | M1.3 | 1 d |
 | **7.2c** 🔒 | **A trigger for `user_locked`** — scheduled here 15 Sep because it is M1.6's only dependency, sits **outside** M1, and nothing had scheduled it. `AUDIT-CHECKS.md` check 24: **zero policies, zero constraints, zero triggers** reference `user_locked`, so it is enforced in one library module — a route guard wearing a different coat (`CLAUDE.md` §3.6). **Must be a TRIGGER**: a policy cannot compare the old row to the new one, and the rule is about the transition | M1.3 | 0.5 d |
 | **M1.6** | **Conflict display** (v3.2) — determination disagreeing with a locked value is **shown, never silently resolved**. **Needs 7.2c above**: showing a conflict is worth little while the lock it reports on is unenforced | **7.2c** | 0.5 d |
@@ -1986,6 +1995,32 @@ transcript" (§6.1) means **nulling the column and keeping the row**, never dele
 row. A discarded transcript must still leave behind that a topic existed, when it closed
 and why — `close_reason` distinguishes *you closed it*, *a checklist closed it* (§6.2) and
 *it went stale* (§6.1), and those read very differently to the person who comes back to it.
+
+> ### ⛔ SUPERSEDED IN FULL — 21 September 2026. **THE M1 TABLE ABOVE IS AUTHORITATIVE.**
+>
+> **The six `####` items below re-use M1's numbers for DIFFERENT TASKS**, and the collision is the
+> danger rather than the staleness:
+>
+> | This section | The table above |
+> |---|---|
+> | M1.1 = follow-up classification | M1.1 = `topics` ✅, M1.2 = classification ✅ |
+> | **M1.2 = fact capture** | **M1.3 = fact capture** |
+> | M1.3 = scoped questions | M1.3 = fact capture |
+> | M1.4 = topic lifecycle | M1.4 = site resolution |
+> | M1.5 = in-context fact display | M1.5 = show what we know |
+> | M1.6 = answer display | M1.6 = conflict display |
+>
+> **Someone reading "M1.3" gets one of two different tasks depending on where they look**, and
+> four of these six are already ✅ under their other number.
+>
+> **And it carries superseded vocabulary.** M1.2's *"`ai_inferred` confirms before applying"* is
+> `WORKSPACE.md` §5.2's three-tier ladder, which **v3.2 marked SUPERSEDED, not translated** — and
+> `ai_inferred` is in no enum in the schema. `DECISIONS.md` §96(a).
+>
+> **Kept, not deleted, for one paragraph's worth of reason:** M1.0 and M1.0b below are **not
+> superseded** — web search in `/api/chat` is still off, and M1.0b's `close_reason` reasoning is
+> the only place that decision is written down. **§8's class, at document scale**: a correction
+> that left a whole section standing beside it.
 
 #### M1.1 Follow-up classification ⚡ ⏱ 2 days
 - ⬜ Elaboration → expansion only
