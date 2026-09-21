@@ -1,6 +1,27 @@
 # Decision Record
-**Version:** 87 · **Updated:** 21 September 2026
-**Supersedes:** version 86 (21 Sep). Adds **§108 — conversational fact extraction moves
+**Version:** 90 · **Updated:** 21 September 2026
+**Supersedes:** version 89 (21 Sep). Adds **§113 — THE OPEN BASELINE.** A five-question benchmark
+against raw Claude and ChatGPT with no context found CompliBoard weaker on most: **the pipeline
+subtracts.** Research runs one open call in production — the gate, facts block, frame/scenario
+blocks and long prompt **switched off but not deleted**, each a config switch, so **the release
+mechanism and the experiment framework are the same thing.** R&D rebuilds upward, each piece
+shipping only if it beats the step before. The lesson, learned twice: **a structure built ahead of
+the model constrains it.** Adds **§114** the module-by-module loop and its three kinds of gap
+(schema / data / truth), **§115** benchmarks use an **incognito** chat, **§116** chat history is
+**gated**, not deferred, and **§117** release timing is **open** and the owner's. Version 89: Adds **§111 — a checklist is a HYBRID**, deciding `TODO.md`
+item 6 and resolving **§68**: the AI writes it but **starts from the obligations that apply**,
+matched items are **linked** so completing one counts on both sides, and anything beyond them is a
+**labelled suggestion**. A pure view cannot answer a hypothetical or anything outside the 205
+rows; a pure artifact is today's defect. Adds **§112 — checklists come AFTER research**, as their
+own section: the Create tab is untouched by sequencing rather than by a blocker, because the
+hybrid starts from facts the research path is still changing. Version 88: Adds **§110 — conversations are kept for FIFTEEN DAYS**,
+superseding §108's *discard after processing*: two tiers (automatic history, deliberate saves),
+download by print-to-PDF, a prominent notice, and **three requirements** — deletion on day 16 must
+actually happen **with a check that it ran** (§101's shape, pointed at a promise), account deletion
+takes chat history **immediately**, and it is **real customer data**, which puts it in the privacy
+policy and makes the eight-credential rotation gate live. **§65 gains a TWELFTH instance, mine:**
+`M1.2d` reported as unbuilt when it was built, committed in `71c2a4d` and measured by me the same
+day — **a plan trusted over the program it describes.** Version 87: Adds **§108 — conversational fact extraction moves
 overnight.** Facts inferred from free prose are read from whole conversations after the fact and
 **proposed to the customer**, not written. The gate, the gate's prior turns, and the direct ask
 path all stay live. **The reason is judgment, not load**: the same fact carried two labels in one
@@ -4395,9 +4416,10 @@ the review can go back to being periodic rather than gating.
 
 ## 65. The composed assertions, and the rule that covers all of them — 13–15 September 2026
 
-*Eleven instances. The register is kept here so the rule is stated once and the count is not
-an impression. **Four of the eleven are cross-references — the most common single shape** — and
-the eleventh is a new one: **a tool's blind spot presented as a property of the evidence.** §60 records the first and states the rule; §66 records the fourth in full.*
+*Twelve instances. The register is kept here so the rule is stated once and the count is not
+an impression. **Four of the twelve are cross-references — the most common single shape.** The
+eleventh was **a tool's blind spot presented as a property of the evidence**; the twelfth is
+**a plan trusted over the program it describes.** §60 records the first and states the rule; §66 records the fourth in full.*
 
 **This section exists so the rule is stated once and the instances are countable.** §60 records
 the first and states the rule; this records all three together, because the third arrived in a
@@ -4638,6 +4660,47 @@ words; the document had them all along.**
 
 **Cost: one instruction, and a benchmark file that briefly recorded a competitor's answer as
 damaged when it was intact** — which would have scored ChatGPT down for something it did not do.
+
+### The twelfth: reporting a feature as unbuilt that I had built and measured myself
+
+**Asserted, 21 September, in a status report:** that `M1.2d` was outstanding, and that *"the
+browser sends no turns — every message a person has ever sent has been turn one."*
+
+**Both halves are false, and the code says so in eight lines:**
+
+```
+page.tsx:219   const [turns, setTurns] = useState<SealedTurn[]>([])
+page.tsx:220   const [topicId, setTopicId] = useState<string>('')
+page.tsx:706   formData.append('turns', JSON.stringify(turns))
+page.tsx:718   body: JSON.stringify({ …, turns, topicId })
+page.tsx:739   if (json.topicId) setTopicId(...)
+page.tsx:740   if (json.turn) setTurns(prev => [...prev, json.turn])
+```
+
+Committed in **`71c2a4d`**, and working: **23 `topics` rows on staging**, all from 21 Sep.
+
+> ### THE SOURCE OF THE ERROR WAS A DOCUMENT I WROTE AND DID NOT UPDATE.
+>
+> `TODO.md`'s M1.2d row carries **no ✅**. The work went in as part of a commit about the critic's
+> findings and **its message does not mention turns, topics or conversations at all** — so the row
+> was never ticked, and the report was assembled from the row rather than from the file.
+>
+> **This is the register's oldest shape — a described artifact trusted over a readable one — with
+> the worst possible provenance: I had MEASURED the opposite myself, earlier the same session.**
+> A three-turn conversation was driven over HTTP and the gate did not re-ask on turn three. Then
+> the TODO row outvoted the measurement.
+
+**Two lessons, and the second is the useful one:**
+
+1. **A plan is not evidence about code.** `TODO.md` describes intent; `grep` describes the
+   program. When they disagree, the program wins and the plan gets fixed.
+2. **Work that lands inside an unrelated commit goes unrecorded.** The mechanism is mundane and
+   will recur: a feature carried in uncommitted alongside a different change inherits that
+   change's commit message, and nothing afterwards says it shipped. **The cheapest guard is to
+   tick the row in the same commit as the code**, which costs a line and closes the gap.
+
+**Cost: a recommendation that put "build the conversation surface" first when it was already
+built** — and the next build was nearly the wrong one.
 
 ### Why the third is the interesting one, and it is not the worst
 
@@ -8206,4 +8269,305 @@ determination gate did not ask for it while the bare model did.
 
 **Reversal condition:** none — this is a plan, not a constraint. What would move it EARLIER is a
 second instance of the same shape failing the same way.
+
+---
+
+## 110. Conversations are kept for fifteen days — 21 September 2026
+
+**Supersedes "discard after processing" in §108 / `TODO.md` M1.3a.**
+
+### Two tiers, and the user's rule is one sentence
+
+| | |
+|---|---|
+| **CHAT HISTORY** | **Automatic and temporary.** Every conversation, kept **15 days**, shown as a history the user can return to |
+| **SAVED** | **Deliberate and permanent.** The answers a person chose to keep |
+
+> **If it matters, save it or download it.**
+
+**DOWNLOAD is print-to-PDF**, as already settled for anything leaving the product: a clean print
+view of the whole conversation, sources included. **No PDF generation.** §106 already put the
+Sources list outside `no-print` and prints each URL after its title, so the machinery exists.
+
+**NOTICE is prominent, on the history list AND on each conversation:** conversations are cleared
+after 15 days; save or download anything you want to keep. **Nobody should discover a deletion
+they were not warned about.**
+
+### Why fifteen days rather than the morning after
+
+**Discarding overnight is a poor experience, and in compliance a person returns to a conversation
+because they are about to act on it** — the permit application is tomorrow, the inspector is next
+week. A product that deletes the reasoning the night before is one they stop using for anything
+that matters.
+
+**And it gives the overnight extractor room.** §108's extractor now has fifteen nights to read a
+conversation rather than one, **so a failed run can simply retry** instead of losing the
+conversation it failed on.
+
+**§78 is untouched.** A retained transcript is **evidence, not a fact** — the same distinction
+§108 drew. What may never be written is *"the Arizona facility has 12 employees"* as something
+true of this company.
+
+### WHAT IT BRINGS WITH IT — three REQUIREMENTS, not notes
+
+#### (a) Deletion on day 16 must actually happen, and something must check that it ran
+
+> **A retention promise nothing enforces is a claim on screen that is not true.**
+
+**This is §101's shape exactly** — a field nothing reads is a claim nothing can check — pointed at
+a promise instead of a return value. The screen will say *"cleared after 15 days"*, and if the job
+silently stops, **nothing fails, nothing 500s, no test goes red, and the text stays on the page
+being wrong.**
+
+So the requirement is two things, not one: **the deletion job, and a check that answers *did it
+run and what did it remove*.** `AUDIT-CHECKS.md` is where the second lives — its bar is *a wrong
+answer would reach a customer and nothing else would notice*, which this meets precisely.
+
+#### (b) Account deletion takes chat history IMMEDIATELY
+
+**Not after fifteen days. At once, with the rest of the company's data.**
+
+`scripts/check-schema-contracts.js` already enforces that `/api/account` DELETE names every table
+carrying a `company_id` — it caught `critic_reviews` and `critic_findings` on the day they were
+created. **A conversations table must be named there too**, and the checker will refuse the build
+if it is not. That is the mechanism; it needs no new rule.
+
+#### (c) IT IS REAL CUSTOMER DATA, AND TWO THINGS FOLLOW
+
+1. **The 15-day rule belongs in the privacy policy, not only on screen.** A retention period
+   stated in the interface and nowhere else is not a policy.
+2. **It makes key rotation more pressing.** `TODO.md`'s gate — *these land before the first real
+   customer document* — lists **eight credentials, seven of them leaked**. Retained conversations
+   **are** customer content: a person describing their site, their chemicals, their headcount.
+   **The gate was always "before real customer data", and this is what creates it.**
+
+**Reversal condition:** a retention period a customer or a regulator requires to be different.
+Fifteen days is a product judgement, not a legal one, and nothing in this record claims otherwise.
+
+---
+
+## 111. A checklist is a HYBRID — item 6 decided, §68 resolved — 21 September 2026
+
+**The three options were: a view over obligations, a workspace artifact with no authority, or a
+second spine** (`DECISIONS.md` §71, `WORKSPACE.md` v3.6). **It is none of the three as stated. It
+is a hybrid, and the hybrid is what makes both questions answerable.**
+
+> ### The AI writes the checklist, but STARTS FROM the obligations that apply to the question.
+>
+> **Items that match an obligation are LINKED to it** — completing one counts on both sides, so
+> work done in the checklist is visible on the Requirements screen.
+>
+> **Anything the AI adds beyond the obligations is marked a SUGGESTION, not a requirement.**
+
+### Why the hybrid over the other two
+
+| | Why it fails |
+|---|---|
+| **A pure view over obligations** | **cannot answer anything outside the library.** A hypothetical Arizona facility, or any question the **205 live requirement rows** do not cover, has no obligation to be a view of — and the product would simply go blank on the questions people actually ask |
+| **A pure workspace artifact** | **is what exists now, and it is the defect.** It can contradict the Requirements screen, and **work ticked off in a checklist is invisible to the obligation it fulfils** |
+
+**The hybrid handles both *"what do I owe"* and *"what if we expanded"*.** Where no obligation
+matches — a hypothetical, or a question outside the library — **every item is a labelled
+suggestion**, which is honest about what it is rather than silently presenting a guess as a
+requirement.
+
+### THIS RESOLVES §68, AND THE COST OF DELAY IS STILL ACCRUING
+
+§68's measurement stands and is the reason this cannot drift:
+
+```
+production : checklist_items 235 · checklists 11 · obligations 0
+staging    : checklist_items   0 · checklists  0 · obligations 222
+```
+
+**Every row of "what you must do" a real person has ever seen in this product is AI-generated.**
+The implementation stays on the *before real customers* list, and the reason is arithmetic:
+**every checklist created before it is built is another record that may disagree with the
+obligations**, and 235 already exist.
+
+**What this decides for the schema, stated so it is not rediscovered:** a checklist item needs a
+nullable link to an obligation and a flag for what it is. A NULL link is not a defect — it is the
+suggestion case, and it must be **visibly** a suggestion rather than an unlinked requirement.
+
+**Reversal condition:** a library complete enough that an unmatched item means the answer is
+wrong rather than that the library is thin. **205 rows against one vertical is not that**, and the
+suggestion label is what carries the honesty until it is.
+
+---
+
+## 112. Checklists come after research, as their own section — 21 September 2026
+
+**Research first: the conversation, the answer, fact handling. Then checklists, built on top.**
+
+**The Create tab is untouched until that section begins.** It is no longer waiting on a decision —
+§111 settled what a checklist is — it is **sequenced**, which is a different and weaker reason to
+leave something alone, and worth recording as such so nobody reads the silence as a blocker.
+
+**Why this order.** The hybrid in §111 starts from *the obligations that apply to the question* —
+and which obligations apply is decided by facts the conversation captures. **A checklist built
+before the research path is settled is a checklist built on facts that arrive by a route still
+being changed.** §102, §103, §106 and §107 all changed the research path in one day; the Create
+tab would have been rebuilt against each of them.
+
+**What it costs:** the 235 production checklist rows keep accruing. **Named rather than
+discovered** — §111 records that cost and this section accepts it for the length of one module.
+
+---
+
+## 113. THE OPEN BASELINE — the pipeline subtracts, so it is switched off — 21 September 2026
+
+**Scope: research mode only. Status: DECIDED, NOT BUILT.**
+
+### The benchmark that forced it
+
+**Five questions, each asked of raw Claude and ChatGPT with no context, and of CompliBoard:**
+a Seattle restaurant · a California hospice · Texas roofing · Oregon cannabis · Ohio hazmat
+freight. **CompliBoard was weaker on most.**
+
+§102 found this once on one question and the answer was to remove the template. **This is the
+finding again, wider, and the diagnosis is no longer about one prompt.**
+
+### The diagnosis — each piece subtracts
+
+| | |
+|---|---|
+| **The prompt narrows the model** | *"Answer the question you were asked. Nothing else"*, plus prohibitions, is a fence. §102 said a template narrows the OUTPUT; a list of things not to do narrows it too, and less visibly |
+| **Search leads instead of checking** | with search on by default the model searches first and writes from what it finds — so answers **mirror vendor pages**. §106's citations made this visible: the federal claims cited containment vendors while the Oregon ones cited DEQ |
+| **The gate blocks too readily** | and through a **chemical-manufacturing** switch vocabulary. **The cannabis question was withheld entirely over a butane threshold** — a vocabulary built for one vertical refusing a question from another |
+| **Nothing offers to help further** | the bare models end by offering the next thing. §109 already recorded ChatGPT asking four questions where the product asked none |
+
+### The decision
+
+> ### Research runs an OPEN BASELINE in production: one call to the current Sonnet, a
+> ### one-sentence role, web search available with **the model** deciding, prior messages as
+> ### history. Sources and the disclaimer stay.
+>
+> **Switched off: the gate, the facts block, the frame and scenario blocks, and the long prompt.**
+
+**THE PIPELINE IS NOT DELETED. Each piece becomes a configuration switch.** Production runs all
+off; staging runs whatever R&D is testing. **Rollback is one config value.**
+
+> **The release mechanism and the experiment framework are the same thing.** That is the point of
+> doing it with switches rather than by deleting code: there is no separate "experiment branch" to
+> keep alive, and no rebuild when a piece earns its way back.
+
+### R&D builds up from the baseline, one piece at a time
+
+**Each ships only if it beats the step before it.**
+
+| | |
+|---|---|
+| **1** | **Search that VERIFIES rather than leads**, preferring government sources |
+| **2** | **Specialist behaviour, and a specific offer** of what to do next |
+| **3** | **Company facts** |
+| **4** | **The gate, with a much higher bar** — block only when an answer without the fact would be *wrong*, and ask in plain language |
+
+**The gate is last, not first.** It is the piece with the most evidence against it and the most
+machinery behind it, and both of those are reasons to re-earn it rather than to assume it.
+
+### THE LESSON, RECORDED AS THE OWNER'S AND LEARNED TWICE
+
+> **A structure built ahead of the model constrains it.**
+
+**The requirement table was abandoned for the same reason** — a shape decided before the thing
+that had to fill it. **This is the second time**, and the second time is what makes it a rule
+rather than an anecdote. It is in `HOW-WE-BUILD.md` §11.
+
+**The baseline is wide open; everything on top must measurably beat it.**
+
+**Reversal condition:** a benchmark where a pipeline piece beats the baseline. **That is not a
+reversal of this decision — it is the mechanism this decision installs**, and the only thing that
+reverses it is the same measurement going the other way.
+
+---
+
+## 114. Module by module, and the loop that gets a module done — 21 September 2026
+
+**All modules ship. No compromise. One at a time.**
+
+### The loop
+
+| | |
+|---|---|
+| **1** | **The owner writes his user-view vision** for the module — what a person sees and does |
+| **2** | **Chat checks it against the system** and sorts every gap into exactly one of three kinds |
+| **3** | **Chat builds an artifact** the owner iterates on, to a **pre-agreed finish line** |
+| **4** | **The artifact FILE goes into the repo** — not a description of it |
+| **5** | **Chat writes one complete brief** |
+| **6** | **Chat runs long against the brief, checking its own work**, stopping only for a product decision, a production migration, and the end |
+| **7** | **Chat reviews at midpoint and finish only** |
+
+### THE THREE KINDS OF GAP, and sorting them is the whole value of step 2
+
+| | What it means | What happens |
+|---|---|---|
+| **SCHEMA gap** | the schema is wrong, **not the vision** | migrate |
+| **DATA gap** | the structure is fine; the data is absent or untrusted | content work — **and the screen stays truthful meanwhile** |
+| **TRUTH gap** | **no system can honestly know this** | **push back on the vision** |
+
+> **The third is the one a chat will not volunteer unless it is asked for.** A model handed a
+> vision will find a way to build it, and *"nothing can honestly know that"* is the answer that
+> looks like refusal. `CLAUDE.md` §6 is the same rule pointed at output; this points it at scope.
+
+**And the DATA row's second half is load-bearing:** a screen over absent data must say the data is
+absent. That is the omniscient-status-tracker anti-pattern, which has been removed from this
+product once already.
+
+**Recorded in `HOW-WE-BUILD.md` §12 as the method.**
+
+---
+
+## 115. Benchmarks use an INCOGNITO chat — 21 September 2026
+
+**Raw Claude in an incognito window, plus ChatGPT. Not a normal chat.**
+
+**A normal chat carries the owner's memory, and it contaminated earlier baselines** — a "bare
+model with no context" that has been told about this project for weeks is not bare. The
+comparison in §102 and the five-question benchmark in §113 both depend on the other side genuinely
+knowing nothing.
+
+> **It is the cheapest possible control and it was being skipped by default**, because a logged-in
+> chat is the one already open.
+
+**Golden case 004 records the conditions per answer for this reason** — *"No log in, no
+background. Just asked on the web app"* — and those words are now a requirement rather than a note.
+
+---
+
+## 116. Chat history is decided and not in the first release — 21 September 2026
+
+**§110 stands. It does not ship with the first release.**
+
+**It ships only when all four are true:**
+
+1. **The day-16 deletion job exists**
+2. **It is checked** — something answers *did it run, and what did it remove*
+3. **Account deletion removes chat history immediately**
+4. **The privacy policy says so**
+
+> **§110 recorded (a), (b) and (c) as requirements. This records that they are RELEASE GATES, not
+> follow-ups.** The difference matters: a requirement can ship late, and a gate cannot. A retention
+> promise on screen with no enforcement behind it is a false statement to a customer, and the
+> product would be making it on day one.
+
+**What ships instead:** conversations live for the length of the page, as they do today. **No
+history list, and therefore no promise to break.**
+
+---
+
+## 117. OPEN — release timing, and it is the owner's decision — 21 September 2026
+
+**Two options, and nothing in this record decides between them:**
+
+| | |
+|---|---|
+| **Release now**, improve module by module | customers see it sooner and shape it; every module ships into something live |
+| **Release after every module's pass** | nothing is seen until all of it is good |
+
+**This is recorded as OPEN rather than resolved because it is a business judgement about who the
+first customers are and what they are promised** — not something derivable from the code. §113's
+baseline makes either viable, which is part of why it was worth doing.
+
+**What would decide it:** who the first ten customers are, and whether they are being sold a
+finished product or are helping build one.
 

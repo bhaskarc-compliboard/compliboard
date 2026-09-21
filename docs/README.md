@@ -2,7 +2,7 @@
 **Version:** 7 · **Updated:** 15 September 2026
 **Supersedes:** version 6 (12 Sep). **Adds the FIVE documents that existed and were not listed** —
 `SWITCH-DETERMINATION.md`, `EVIDENCE-LINKING.md`, `REQUIREMENTS-SCREEN.md`, `GATE-HISTORY.md`,
-`RESEARCH-ANSWER.md`,
+`RESEARCH-ANSWER.md`, `SCHEMA.md` (generated), `HANDOFF-CODE.md`,
 `INVENTORY.md`. Four were added between 12 and 15 September and this index did not move with them.
 
 > ### THIS IS THE DRIFT SHAPE THIS FILE EXISTS TO PREVENT.
@@ -166,6 +166,24 @@ rows wait on quantities no question asks for. Module M6.
 the moment it is captured; and **the two kinds of contradiction that must not be collapsed** — a
 correction within a conversation, versus a conflict against `company_switches`. Module M1.2b,
 built 15 Sep.
+
+### `SCHEMA.md` — **GENERATED, do not edit**
+
+The database as it actually is, read from the live catalog by `scripts/schema-doc.js` and
+regenerated inside `npm run db:migrate`, so it cannot be stale by more than one migration. First a
+map of which module uses which tables, then every table — purpose, columns, keys, RLS policies,
+grants **read from the catalog rather than from the GRANT statements**, and which routes touch it —
+then enums, functions, views and triggers. **It exists because every hand-written summary of this
+schema has drifted:** `CLAUDE.md` said 23 tables when there were 27 and `~46` switches when 95 were
+seeded. A summary is a copy, and a copy of a moving thing is wrong by default (`DECISIONS.md` §43).
+
+### `HANDOFF-CODE.md`
+
+The state of the code at the end of a session, written for the next one: what is committed, the
+migration state of both environments from their own history tables, what is built and what is built
+and reached by nothing, open defects with where each lives, what `npm run check` does and does not
+cover, what was decided and not built, and the exact next step. **Every figure carries the command
+that produced it.**
 
 ### `RESEARCH-ANSWER.md`
 

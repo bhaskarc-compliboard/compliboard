@@ -138,6 +138,45 @@ interface SavedChecklist {
 /** What the answer cited. Mirrors `Source` in lib/ai.ts and `checklists.research_sources`. */
 interface ResearchSource { n: number; title: string; url: string }
 
+/**
+ * ONE EXCHANGE IN THE CONVERSATION. `DECISIONS.md` §108, TODO M1.2e.
+ *
+ * *** `kind` IS DELIBERATELY WIDER THAN QUESTION-AND-ANSWER, AND THAT IS THE POINT. ***
+ *
+ * The page held five singular pieces of state — one answer, one sources array, one ask, one
+ * question — and `handleSubmit` erased all of them before sending the next request. The turn
+ * machinery underneath was already correct (M1.2d: turns held, signed and sent), so the model had
+ * the conversation and **the person could not see it.**
+ *
+ * Two things coming later need a message that is NOT a reply to a question, and a list of
+ * `{question, answer}` pairs would design both of them out:
+ *
+ *   'proposal'  M1.3c — "From yesterday's conversation, it sounds like you have 47 employees —
+ *               should we save that?" It arrives unprompted, with no question above it.
+ *   'notice'    M1.8 — a closed topic's summary, and §110's retention notice.
+ *
+ * Neither is built here. The discriminator costs one field now and an unpick later.
+ */
+type ExchangeKind = 'answer' | 'ask' | 'proposal' | 'notice'
+
+interface Exchange {
+  id: string
+  kind: ExchangeKind
+  /** What the person typed. Null for a message nobody asked for — a proposal or a notice. */
+  question: string | null
+  /**
+   * The answer text. **A VALUE THAT CAN BE APPENDED TO**, so streaming (TODO 0.11) fills the
+   * newest exchange rather than needing this rebuilt: today it is replaced once, later it grows.
+   */
+  text: string
+  /** THIS answer's citations. Per-exchange because each answer cites its own sources (§106). */
+  sources: ResearchSource[]
+  /** The gate's question, when `kind === 'ask'`. Rendered in the flow, answered in the composer. */
+  ask: GateAsk | null
+  /** True while the request is in flight — this is the pending message at the foot of the list. */
+  pending: boolean
+}
+
 const EXAMPLE_QUESTIONS = [
   "Ask anything about compliance, regulations or HR",
   "What permits do I need to operate my facility?",
@@ -175,12 +214,20 @@ function CompliancePageInner() {
   const queueRef = React.useRef<number[]>([])
   const processingRef = React.useRef(false)
   const dataRef = React.useRef<ChecklistData | null>(null)
-  const [followUpQuestion, setFollowUpQuestion] = useState('')
-  const [researchData, setResearchData] = useState<string | null>(null)
+  // `researchData` and `researchSources` are GONE. They were two of the five singulars the
+  // page held, and `exchanges` carries both per answer now — the third answer's sources are the
+  // third answer's, not whatever the last request happened to return.
   // THE SOURCES TRAVEL WITH THE ANSWER, EVERYWHERE IT GOES — live, saved and printed.
   // A "[3]" with no list behind it is worse than no marker: it looks like a citation and
   // cannot be followed. DECISIONS.md §106.
-  const [researchSources, setResearchSources] = useState<ResearchSource[]>([])
+  /**
+   * THE CONVERSATION, AS A PERSON SEES IT. Oldest first; the composer is below it.
+   * Replaces the five singulars for the Ask tab. `data` (a checklist) is untouched — the Create
+   * tab is sequenced after research and is not part of this change (`DECISIONS.md` §112).
+   */
+  const [exchanges, setExchanges] = useState<Exchange[]>([])
+  /** The foot of the list, so the newest exchange stays in view. */
+  const bottomRef = useRef<HTMLDivElement>(null)
   // Which citation card is open. HOVER handles a laptop through CSS; this is the TAP path,
   // because a phone has no hover and a marker you cannot open is a marker you must scroll
   // away from to resolve. One at a time — a key of `${lineIndex}-${n}`.
@@ -227,6 +274,12 @@ function CompliancePageInner() {
   const [loadingDetermination, setLoadingDetermination] = useState<Record<string, boolean>>({})
   const [showDetermination, setShowDetermination] = useState<Record<string, boolean>>({})
   const [showStepsBanner, setShowStepsBanner] = useState(false)
+
+  // Keep the newest exchange in view. Oldest-first with the composer at the foot means the
+  // conversation grows downwards, and without this a long answer pushes the box off screen.
+  useEffect(() => {
+    if (exchanges.length > 0) bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+  }, [exchanges])
 
   useEffect(() => {
     async function loadProfile() {
@@ -316,10 +369,25 @@ function CompliancePageInner() {
   }
 
   function loadResearch(c: SavedChecklist) {
-    setResearchData(c.research_answer)
-    setResearchSources((c.research_sources as ResearchSource[] | null) ?? [])
+    // A SAVED ANSWER OPENS AS A ONE-EXCHANGE CONVERSATION, so the page has one shape whether
+    // you asked just now or are re-reading something from last week.
+    setExchanges([{
+      id: `saved-${c.id}`, kind: 'answer', question: c.question,
+      text: c.research_answer ?? '',
+      sources: (c.research_sources as ResearchSource[] | null) ?? [],
+      ask: null, pending: false,
+    }])
+    // *** A SAVED ANSWER IS NOT THE CONVERSATION IT CAME FROM. ***
+    // Saved rows carry no `topic_id` — nothing in the database references `topics` at all — so
+    // there is no conversation to resume. Carrying the live turns forward would append the next
+    // question to whatever topic was open: a different conversation wearing this one's history.
+    setTurns([])
+    setTopicId('')
+    setGateAsk(null)
     setAskedQuestion(c.question)
-    setAskQuestion(c.question)
+    // The composer stays EMPTY. It used to be refilled with the question you had just opened,
+    // which is what made people type over it.
+    setAskQuestion('')
     setMode('research')
     setData(null)
     setCurrentResearchId(c.id)
@@ -457,7 +525,7 @@ function CompliancePageInner() {
       })),
     })
     setChecked(checkState)
-    setResearchData(null)
+    setExchanges([])
     setMode('checklist')
     const cacheOnly: Record<string, ChecklistItem[]> = {}
     Object.entries(restoredSteps).forEach(([k, v]) => { if (v) cacheOnly[k] = v })
@@ -657,6 +725,27 @@ Give them a specific direct answer — exactly what they need to do, which speci
     await handleSubmit(mode, askedQuestion, answering, file)
   }
 
+  /**
+   * SENDING FROM THE COMPOSER, when the gate has a question outstanding.
+   *
+   * The gate's ask is a message in the flow now, so the composer has two jobs: a new question,
+   * or the answer to the one the gate asked. It cannot be both, and the outstanding ask decides
+   * which — the person types in one box either way, which is the whole point of M1.2e.
+   */
+  async function sendFromComposer() {
+    const typed = askQuestion.trim()
+    if (!typed && !uploadedFile) return
+    if (gateAsk) {
+      setAskQuestion('')
+      await handleGateAnswer(
+        { switch_id: gateAsk.switch_id, fact: gateAsk.switch_id ?? gateAsk.question, value: typed },
+        null,
+      )
+      return
+    }
+    await handleSubmit('research', typed)
+  }
+
   async function handleSubmit(
     submitMode?: string,
     customQuestion?: string,
@@ -667,9 +756,28 @@ Give them a specific direct answer — exactly what they need to do, which speci
     const q = customQuestion ?? (currentMode === 'checklist' ? createQuestion : askQuestion)
     if (!q.trim() && !uploadedFile && !answerFile) return
     setLoading(true)
-    setData(null)
-    setResearchData(null)
-    setResearchSources([])
+
+    // *** THE CONVERSATION IS APPENDED TO, NOT ERASED. ***
+    // This block used to open with setData(null) / setResearchData(null) / setGateAsk(null),
+    // destroying the previous exchange BEFORE the request was even sent. That is why M1.2d's
+    // turn machinery was invisible: the server had the conversation and the screen had one
+    // answer. A pending exchange goes on the end now and is filled in when the response lands.
+    //
+    // ANSWERING THE GATE OPENS AN EXCHANGE TOO. The 'ask' already in the list STAYS — it is what
+    // was said, and a conversation does not retract its own messages — and the reply appends
+    // after it, the way a reply does.
+    const pendingId = `x${Date.now()}`
+    // WHAT THE PERSON TYPED ALWAYS APPEARS, including the answer to the gate's question.
+    // `q` is the ORIGINAL question when answering — handleGateAnswer re-sends it verbatim — so
+    // the typed value has to come from `answering.value`, or the reply they just gave shows up
+    // nowhere and the conversation reads as if the gate answered itself.
+    const spoken = answering ? answering.value : q
+    if (currentMode === 'research') {
+      setExchanges((prev) => [...prev, {
+        id: pendingId, kind: 'answer', question: spoken, text: '', sources: [], ask: null, pending: true,
+      }])
+    }
+    if (currentMode !== 'research') setData(null)
     setGateAsk(null)
     setMode(currentMode as 'checklist' | 'research')
     setChecked({})
@@ -682,6 +790,9 @@ Give them a specific direct answer — exactly what they need to do, which speci
     setStepsCache({})
     setExpandedSteps({})
     setAskedQuestion(q)
+    // THE COMPOSER CLEARS ON SEND. It never did — `grep setAskQuestion('')` returned nothing —
+    // so the box kept the question you had just asked and you typed over it.
+    if (currentMode === 'research' && !answering) setAskQuestion('')
     setCurrentChecklistId(null)
     const messages = getStatusMessages(q)
     const delays = [0, 700, 1400, 2100, 2800, 3500, 4200, 4900]
@@ -727,6 +838,8 @@ Give them a specific direct answer — exactly what they need to do, which speci
           setTurns([])
           setTopicId('')
         }
+        // The pending exchange goes, or the list keeps a message that will never arrive.
+        setExchanges((prev) => prev.filter((x) => x.id !== pendingId))
         setErrorMsg(json.error || 'That request could not be completed.')
         return
       }
@@ -739,18 +852,38 @@ Give them a specific direct answer — exactly what they need to do, which speci
       if (json.topicId) setTopicId(json.topicId as string)
       if (json.turn) setTurns(prev => [...prev, json.turn as SealedTurn])
 
-      // An ask is a SUCCESSFUL outcome, not an error — it arrives as 200 and renders in
-      // the answer position. Returning here is what makes it an alternative to the answer
-      // rather than something shown alongside one.
+      // An ask is a SUCCESSFUL outcome, not an error — it arrives as 200 and renders in the
+      // flow as its own message, answered from the main composer rather than from a box of its
+      // own. TODO M1.2e.
       if (json.outcome === 'ask' && json.ask) {
         setGateAsk(json.ask as GateAsk)
+        if (currentMode === 'research') {
+          setExchanges((prev) => {
+            const next = [...prev]
+            const i = next.findIndex((x) => x.id === pendingId)
+            const asked: Exchange = { id: pendingId, kind: 'ask', question: spoken, text: '',
+                                      sources: [], ask: json.ask as GateAsk, pending: false }
+            if (i === -1) next.push({ ...asked, id: `x${Date.now()}` })
+            else next[i] = asked
+            return next
+          })
+        }
         return
       }
       if (currentMode === 'research') {
         const answerText = json.research || json.data?.title || 'No results'
         const answerSources = (json.sources as ResearchSource[] | undefined) ?? []
-        setResearchData(answerText)
-        setResearchSources(answerSources)
+        // Fill the pending exchange, or — when this was the gate's question being answered —
+        // append the answer after the 'ask' that is already in the list.
+        setExchanges((prev) => {
+          const next = [...prev]
+          const i = next.findIndex((x) => x.id === pendingId)
+          const filled: Exchange = { id: pendingId, kind: 'answer', question: spoken, text: answerText,
+                                     sources: answerSources, ask: null, pending: false }
+          if (i === -1) next.push({ ...filled, id: `x${Date.now()}` })
+          else next[i] = filled
+          return next
+        })
         setCurrentResearchId(null)
         if (userId && answerText !== 'No results') {
           const researchId = await saveResearch(q, answerText, answerSources)
@@ -817,12 +950,6 @@ Give them a specific direct answer — exactly what they need to do, which speci
       setCurrentStatus('')
       setCompletedSteps([])
     }
-  }
-
-  async function handleFollowUp() {
-    if (!followUpQuestion.trim()) return
-    setFollowUpQuestion('')
-    await handleSubmit(followUpQuestion)
   }
 
   const mustDoneCount = Object.entries(checked).filter(([k, v]) => {
@@ -896,6 +1023,135 @@ Give them a specific direct answer — exactly what they need to do, which speci
         {tab === 'ask' && (
         <div>
 
+        {/* ============================================================================
+            THE CONVERSATION. Oldest first, composer below it. TODO M1.2e.
+
+            Until 21 Sep this tab rendered ONE answer: `handleSubmit` erased the previous one
+            before sending the next request, so M1.2d's turn machinery — turns held, signed and
+            sent — was invisible to the person using it. The server had the conversation; the
+            screen had the last reply.
+            ============================================================================ */}
+        <div className="space-y-6">
+          {exchanges.map((x, xi) => (
+            <div key={x.id}>
+              {/* WHAT THE PERSON ASKED, above their answer. A proposal or a notice has no
+                  question — see the `kind` comment on Exchange. */}
+              {x.question && (
+                <div className="flex justify-end mb-2">
+                  <p className="max-w-[85%] rounded-2xl rounded-br-sm bg-green-700 px-4 py-2.5 text-sm text-white whitespace-pre-wrap">
+                    {x.question}
+                  </p>
+                </div>
+              )}
+
+              {x.pending && (
+                <div className="no-print rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+                  <div className="space-y-2">
+                    {completedSteps.map((step) => (
+                      <div key={step} className="flex items-center gap-2 text-sm text-gray-400">
+                        <span className="text-green-500">✓</span>{step}
+                      </div>
+                    ))}
+                    {currentStatus && (
+                      <div className="flex items-center gap-2 text-sm text-gray-700 font-medium">
+                        <span className="animate-spin inline-block">⟳</span>{currentStatus}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* THE GATE'S QUESTION, IN THE FLOW. It is not an error and not a modal — it is a
+                  message, and it is answered from the composer at the bottom like anything else.
+                  GateAskCard no longer carries an input of its own. */}
+              {x.kind === 'ask' && x.ask && !x.pending && (
+                <GateAskCard ask={x.ask} />
+              )}
+
+              {x.kind === 'answer' && !x.pending && x.text && (
+                <div className="rounded-xl border border-gray-200 bg-white p-6">
+                  <div className="text-sm text-gray-700 leading-relaxed space-y-4">
+                    {displayLines(x.text).map((line, i) => {
+                      const inline = (text: string) => inlineParts(text).map((part, k) => {
+                        if (part.kind === 'text') {
+                          return <span key={k} dangerouslySetInnerHTML={{ __html:
+                            part.text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }} />
+                        }
+                        // EACH ANSWER'S OWN SOURCES. Per-exchange, so the third answer's [2]
+                        // opens the third answer's second source (DECISIONS.md §106, §107).
+                        const src = x.sources.find((y) => y.n === part.n)
+                        if (!src) return <span key={k}>{part.text}</span>
+                        const key = `${x.id}-${i}-${part.n}`
+                        const open = openCitation === key
+                        return (
+                          <span key={k} className="group relative inline-block align-baseline">
+                            <button type="button" onClick={() => setOpenCitation(open ? null : key)}
+                              aria-label={`Source ${part.n}: ${src.title}`}
+                              className="align-super text-[10px] font-medium text-green-700 hover:text-green-900 cursor-pointer px-px">
+                              [{part.n}]
+                            </button>
+                            <span className={`no-print absolute left-0 top-full z-30 mt-1 w-72 rounded-lg border border-gray-200 bg-white p-3 shadow-lg ${open ? 'block' : 'hidden'} group-hover:block`}>
+                              <span className="block text-[11px] font-semibold uppercase tracking-wide text-gray-400">Source {part.n}</span>
+                              <span className="mt-1 block text-xs font-medium text-gray-800">{src.title}</span>
+                              <a href={src.url} target="_blank" rel="noopener noreferrer"
+                                 onClick={(e) => e.stopPropagation()}
+                                 className="mt-2 inline-block text-xs text-green-700 hover:underline break-all">
+                                Open source ↗
+                              </a>
+                            </span>
+                          </span>
+                        )
+                      })
+                      if (line.startsWith('## ') || line.startsWith('# ')) return (
+                        <p key={i} className="text-xs font-bold uppercase tracking-widest text-green-700 mt-6 mb-1">{line.replace(/^#+ /, '')}</p>
+                      )
+                      if (line.startsWith('• ') || line.startsWith('- ')) return (
+                        <p key={i} className="flex gap-2 text-gray-600"><span className="text-green-500 flex-shrink-0">•</span><span>{inline(line.replace(/^[•\-] /, ''))}</span></p>
+                      )
+                      if (line.trim() === '') return <div key={i} className="h-1" />
+                      return <p key={i} className="text-gray-700">{inline(line)}</p>
+                    })}
+                  </div>
+
+                  {/* SOURCES. Not `no-print`: on paper the list is the only way a citation
+                      survives, because the hover card cannot print (§106, §107). */}
+                  {x.sources.length > 0 && (
+                    <div className="mt-6 pt-4 border-t border-gray-100">
+                      <p className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Sources</p>
+                      <ol className="space-y-1">
+                        {x.sources.map((src) => (
+                          <li key={src.n} className="text-xs text-gray-600 flex gap-2">
+                            <span className="text-gray-400 flex-shrink-0">[{src.n}]</span>
+                            <a href={src.url} target="_blank" rel="noopener noreferrer"
+                               className="source-link text-green-700 hover:underline break-words">{src.title}</a>
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  )}
+
+                  {/* Only under the NEWEST answer: a checklist is built from one answer, and
+                      offering it under every past reply would ask which one it meant. */}
+                  {xi === exchanges.length - 1 && (
+                    <div className="no-print mt-4 flex items-center gap-3">
+                      <button
+                        onClick={() => { setCreateQuestion(x.question ?? ''); setTab('create'); handleSubmit('checklist', x.question ?? '') }}
+                        className="flex items-center gap-2 text-sm px-4 py-2.5 rounded-xl border border-green-600 bg-green-700 text-white hover:bg-green-800 transition-colors">
+                        Create my action checklist →
+                      </button>
+                      <p className="text-xs text-gray-400">Get actionable steps based on this research</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
+          <div ref={bottomRef} />
+        </div>
+
+        {/* THE COMPOSER, BELOW THE CONVERSATION. It was above it, and the person typed over
+            their last question every time. */}
+        <div className="mt-6">
         <div className="no-print mb-3 relative">
           <textarea
             className="w-full border border-gray-200 rounded-xl p-4 text-sm text-gray-800 resize-none focus:outline-none focus:border-green-500 bg-white"
@@ -932,7 +1188,7 @@ Give them a specific direct answer — exactly what they need to do, which speci
 
         <div className="no-print flex items-center gap-3">
           <button
-            onClick={() => handleSubmit('research', askQuestion)}
+            onClick={sendFromComposer}
             disabled={loading}
             className="bg-green-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50">
             {loading ? 'Working...' : uploadedFile ? 'Ask about this file →' : 'Research this topic →'}
@@ -948,125 +1204,7 @@ Give them a specific direct answer — exactly what they need to do, which speci
         {/* The determination gate asked for one fact and produced nothing else. This sits
             where the answer would have been — not above one, because an ask REPLACES the
             answer (docs/DETERMINATION-GATE.md §2, §5). */}
-        {gateAsk && !loading && (
-          <div className="no-print mb-4">
-            <GateAskCard ask={gateAsk} onAnswer={handleGateAnswer} busy={loading} />
-          </div>
-        )}
-
-        {/* *** THE CRITIC'S FINDINGS DO NOT RENDER HERE. DECISIONS.md §97. ***
-            All four boxes are a RED-LINED DRAFT, and a customer receives the corrected document,
-            not the corrections. Showing them made a correct, caught answer read as a wrong one:
-            the critic withheld the 1200-A, and the customer saw it anyway, headlined as a
-            removal. `CRITIC-PASS.md` §2.3's "surface, don't fix" is UNCHANGED in its reasoning —
-            the evidence is kept, the audience changes. The page disclaimer carries what the
-            unverified-figures box carried. */}
-
-        {loading && (
-          <div className="no-print mt-6 p-5 bg-white rounded-xl border border-gray-200 shadow-sm">
-            <div className="space-y-2">
-              {completedSteps.map((step) => (
-                <div key={step} className="flex items-center gap-2 text-sm text-gray-400">
-                  <span className="text-green-500">✓</span>{step}
-                </div>
-              ))}
-              {currentStatus && (
-                <div className="flex items-center gap-2 text-sm text-gray-700 font-medium">
-                  <span className="animate-spin inline-block">⟳</span>{currentStatus}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {researchData && !loading && (
-          <div className="mt-10 pt-8 border-t border-gray-100">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-base font-semibold text-gray-900">{askedQuestion}</h2>
-            </div>
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <div className="text-sm text-gray-700 leading-relaxed space-y-4">
-                {displayLines(researchData).map((line, i) => {
-                  // ONE RENDERER FOR THE INLINE RUN, so bold and citation markers are handled in
-                  // the same pass. A marker is a component, not three characters: it opens a card
-                  // with the source and a link, where the claim is (DECISIONS.md §107).
-                  const inline = (text: string) => inlineParts(text).map((part, k) => {
-                    if (part.kind === 'text') {
-                      return <span key={k} dangerouslySetInnerHTML={{ __html:
-                        part.text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }} />
-                    }
-                    const src = researchSources.find((x) => x.n === part.n)
-                    if (!src) return <span key={k}>{part.text}</span>
-                    const key = `${i}-${part.n}`
-                    const open = openCitation === key
-                    return (
-                      <span key={k} className="group relative inline-block align-baseline">
-                        <button
-                          type="button"
-                          onClick={() => setOpenCitation(open ? null : key)}
-                          aria-label={`Source ${part.n}: ${src.title}`}
-                          className="align-super text-[10px] font-medium text-green-700 hover:text-green-900 cursor-pointer px-px">
-                          [{part.n}]
-                        </button>
-                        {/* THE CARD DOES NOT PRINT. On paper the Sources list below is the only
-                            way a citation survives, which is why that list stays. §107. */}
-                        <span className={`no-print absolute left-0 top-full z-30 mt-1 w-72 rounded-lg border border-gray-200 bg-white p-3 shadow-lg ${open ? 'block' : 'hidden'} group-hover:block`}>
-                          <span className="block text-[11px] font-semibold uppercase tracking-wide text-gray-400">Source {part.n}</span>
-                          <span className="mt-1 block text-xs font-medium text-gray-800">{src.title}</span>
-                          <a href={src.url} target="_blank" rel="noopener noreferrer"
-                             onClick={(e) => e.stopPropagation()}
-                             className="mt-2 inline-block text-xs text-green-700 hover:underline break-all">
-                            Open source ↗
-                          </a>
-                        </span>
-                      </span>
-                    )
-                  })
-
-                  if (line.startsWith('## ') || line.startsWith('# ')) return (
-                    <p key={i} className="text-xs font-bold uppercase tracking-widest text-green-700 mt-6 mb-1">{line.replace(/^#+ /, '')}</p>
-                  )
-                  if (line.startsWith('• ') || line.startsWith('- ')) return (
-                    <p key={i} className="flex gap-2 text-gray-600"><span className="text-green-500 flex-shrink-0">•</span><span>{inline(line.replace(/^[•\-] /, ''))}</span></p>
-                  )
-                  if (line.trim() === '') return <div key={i} className="h-1" />
-                  return <p key={i} className="text-gray-700">{inline(line)}</p>
-                })}
-              </div>
-
-              {/* SOURCES. Deliberately NOT `no-print`: the citations are part of the answer, and
-                  an answer printed without them has lost what "cite generously" was for
-                  (DECISIONS.md §77 item 4, §106). Numbered in marker order, one entry per
-                  source however many times it is cited. */}
-              {researchSources.length > 0 && (
-                <div className="mt-6 pt-4 border-t border-gray-100">
-                  <p className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Sources</p>
-                  <ol className="space-y-1">
-                    {researchSources.map((src) => (
-                      <li key={src.n} className="text-xs text-gray-600 flex gap-2">
-                        <span className="text-gray-400 flex-shrink-0">[{src.n}]</span>
-                        <a href={src.url} target="_blank" rel="noopener noreferrer"
-                           className="source-link text-green-700 hover:underline break-words">{src.title}</a>
-                      </li>
-                    ))}
-                  </ol>
-                </div>
-              )}
-            </div>
-            <div className="mt-4 flex items-center gap-3">
-              <button
-                /* *** askedQuestion, NOT askQuestion. *** `askedQuestion` is the question that
-                   produced the answer this button sits beneath; `askQuestion` is the live input
-                   box, which the user may have edited or replaced since. The label says "based
-                   on this research", so the code has to read the research. DECISIONS.md §97. */
-                onClick={() => { setCreateQuestion(askedQuestion); setTab('create'); handleSubmit('checklist', askedQuestion) }}
-                className="flex items-center gap-2 text-sm px-4 py-2.5 rounded-xl border border-green-600 bg-green-700 text-white hover:bg-green-800 transition-colors">
-                Create my action checklist →
-              </button>
-              <p className="text-xs text-gray-400">Get actionable steps based on this research</p>
-            </div>
-          </div>
-        )}
+        </div>
 
         </div>
         )}

@@ -24,10 +24,22 @@ export function GateAskCard({
   busy,
 }: {
   ask: GateAsk
-  /** Re-submits the ORIGINAL question plus the fact. The caller owns the question text —
-   *  this component never rewrites it. */
-  onAnswer: (answering: GateAnswering | null, file: File | null) => void
-  busy: boolean
+  /**
+   * Re-submits the ORIGINAL question plus the fact. The caller owns the question text —
+   * this component never rewrites it.
+   *
+   * *** OPTIONAL SINCE 21 SEPTEMBER, AND ITS ABSENCE IS THE POINT. TODO M1.2e. ***
+   *
+   * In the conversation (the Ask tab) the gate's question is A MESSAGE IN THE FLOW, answered in
+   * the composer at the bottom like every other message. Passing no `onAnswer` renders that
+   * form: the question, what it unlocks, what we already have — and no input of its own, because
+   * a second box is a second place to answer and the person has to work out which one is live.
+   *
+   * The Create tab still passes both and still renders the input. It is sequenced after research
+   * (`DECISIONS.md` §112) and is deliberately unchanged by this edit.
+   */
+  onAnswer?: (answering: GateAnswering | null, file: File | null) => void
+  busy?: boolean
 }) {
   const [typed, setTyped] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
@@ -56,54 +68,62 @@ export function GateAskCard({
         </div>
       )}
 
+      {!onAnswer && (
+        <p className="mt-3 text-sm text-amber-900">
+          Answer below{ask.artifact ? ` or attach ${ask.artifact}` : ''} and I&apos;ll carry on.
+        </p>
+      )}
+
+      {onAnswer && (
       <div className="mt-4 flex flex-wrap items-center gap-2">
-        <input
-          ref={fileRef}
-          type="file"
-          className="hidden"
-          onChange={(e) => {
-            const f = e.target.files?.[0]
-            // The artifact is a better source than the user's recollection: the fact
-            // arrives as ai_from_documents rather than user_set. No `answering` object is
-            // sent — the gate re-reads the fact out of the document itself.
-            if (f) onAnswer(null, f)
-          }}
-        />
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => fileRef.current?.click()}
-          className="rounded-md bg-amber-700 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
-        >
-          {ask.artifact ? `Upload ${ask.artifact}` : 'Upload a document'}
-        </button>
-
-        <span className="text-sm text-amber-800">or</span>
-
-        <input
-          type="text"
-          value={typed}
-          disabled={busy}
-          placeholder="type the answer"
-          onChange={(e) => setTyped(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && typed.trim()) {
+          <input
+            ref={fileRef}
+            type="file"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0]
+              // The artifact is a better source than the user's recollection: the fact
+              // arrives as ai_from_documents rather than user_set. No `answering` object is
+              // sent — the gate re-reads the fact out of the document itself.
+              if (f) onAnswer(null, f)
+            }}
+          />
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => fileRef.current?.click()}
+            className="rounded-md bg-amber-700 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+          >
+            {ask.artifact ? `Upload ${ask.artifact}` : 'Upload a document'}
+          </button>
+  
+          <span className="text-sm text-amber-800">or</span>
+  
+          <input
+            type="text"
+            value={typed}
+            disabled={busy}
+            placeholder="type the answer"
+            onChange={(e) => setTyped(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && typed.trim()) {
+                onAnswer({ switch_id: ask.switch_id, fact: factName, value: typed.trim() }, null)
+              }
+            }}
+            className="min-w-[14rem] flex-1 rounded-md border border-amber-300 bg-white px-3 py-2 text-sm"
+          />
+          <button
+            type="button"
+            disabled={busy || !typed.trim()}
+            onClick={() =>
               onAnswer({ switch_id: ask.switch_id, fact: factName, value: typed.trim() }, null)
             }
-          }}
-          className="min-w-[14rem] flex-1 rounded-md border border-amber-300 bg-white px-3 py-2 text-sm"
-        />
-        <button
-          type="button"
-          disabled={busy || !typed.trim()}
-          onClick={() =>
-            onAnswer({ switch_id: ask.switch_id, fact: factName, value: typed.trim() }, null)
-          }
-          className="rounded-md border border-amber-300 bg-white px-3 py-2 text-sm font-medium text-amber-900 disabled:opacity-50"
-        >
-          {busy ? 'Working…' : 'Send'}
-        </button>
-      </div>
+            className="rounded-md border border-amber-300 bg-white px-3 py-2 text-sm font-medium text-amber-900 disabled:opacity-50"
+          >
+            {busy ? 'Working…' : 'Send'}
+          </button>
+        </div>
+      )}
 
       {ask.known.length > 0 && (
         // Quietly demonstrates the product is not asking for things it already knows —

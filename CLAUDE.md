@@ -534,6 +534,43 @@ Do not re-litigate without flagging.
 
 ---
 
+## 9a. ⚡ RULES FOR A LONG RUN
+
+**You will be given a brief and left to work.** These are the rules you have been checked against
+all along; they are here because on a long run nobody is checking but you. `HOW-WE-BUILD.md` §5a,
+§12; `DECISIONS.md` §65.
+
+> ### Before you assert a cause, point at the line that says it. If you can't, call it a
+> ### hypothesis and check it. Never file a record you haven't seen evidence for.
+
+- **Copy names from the artifact. Never compose one.** A filename, a section number, a column, a
+  function, a migration — read it back out of the file before you write it. Four of twelve recorded
+  mistakes are a composed cross-reference; each cost one `grep`. A suffixed number (`§80a`) is the
+  easiest kind to invent because it reads like a refinement.
+- **Show the input, not the conclusion.** Paste the query, the row, the diff, the command's output.
+  *"The check passes"* is a claim; the output is evidence. A number nobody can trace back to a
+  command does not go in a record.
+- **Verify as a signed-in user, not the service role.** A grant, a policy and a route guard are all
+  invisible to `service_role`. Six phases of tests passed while `/api/obligations` 500'd for every
+  real caller. And **read the error body, not the status code** — an ordered guard returns the same
+  refusal as the one you meant to test.
+- **A thing is done when something real uses it.** Not when it compiles, not when it is returned by
+  a function. A field nothing reads is a claim nothing can check; four modules had ~17 exports,
+  ~60 tests and zero callers. **The acceptance condition is a reader.**
+- **A plan is not evidence about code.** When `TODO.md` and `grep` disagree, the program wins and
+  the plan gets fixed. Tick the row in the same commit as the code, or the next person reads the
+  row.
+- **Render the example from code.** A worked example typed by hand shows what you meant the rule to
+  do. Run it.
+- **Check your own work against the brief before reporting.** Re-read the brief, list what it
+  asked, and say which items are done, which are not, and what you changed that it did not ask
+  for. **Report what is unfinished plainly** — a partial result described as complete is worse than
+  a partial result.
+- **Stop for exactly three things:** a product decision, a production migration, and the end.
+  Everything else, decide and record the reasoning.
+
+---
+
 ## 10. Naming
 
 The product is **CompliBoard** — one word, capital C, capital B — everywhere: code,

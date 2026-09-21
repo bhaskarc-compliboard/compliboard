@@ -1,7 +1,13 @@
 # How We Build CompliBoard
 
-**Version:** 14 · **Updated:** 21 September 2026
-**Supersedes:** version 13 (15 Sep). **§4 gains the limit of the rebuild claim: the chain rebuilds
+**Version:** 15 · **Updated:** 21 September 2026
+**Supersedes:** version 14 (21 Sep). Adds **§11 — a structure built ahead of the model constrains
+it**, learned twice (the requirement table, then the research pipeline): **the baseline is wide
+open and everything on top must measurably beat it**, enforced by making every pipeline piece a
+config switch so the release mechanism and the experiment framework are one thing. Adds **§12 —
+the module loop**, its **three kinds of gap** (schema / data / **truth**, the last of which a chat
+will not volunteer unless asked), and the rule that **benchmarks use an incognito chat** because a
+normal one carries memory that contaminated earlier baselines. Version 14: **§4 gains the limit of the rebuild claim: the chain rebuilds
 the SCHEMA from zero and nothing else.** The library — 205 requirements, 95 switches, 33 agencies,
 the mapping and the expressions — lives in **load scripts, not migrations**, so a usable staging
 database is **eight steps** after a reset and one refusal leaves an empty `switches` table that
@@ -572,6 +578,70 @@ Honest list, not a formality.
 **Staging data drifts.** Test companies, extra rows, probe records. `npm run db:reset` plus the seed script rebuilds it, but the discipline of doing so is not established.
 
 **Chat writes summaries from memory.** It has been wrong about migration state, about what a column recorded, and about whether a feature needed a migration. Every summary that matters should be produced by Claude Code from the database.
+
+---
+
+## 11. A STRUCTURE BUILT AHEAD OF THE MODEL CONSTRAINS IT
+
+**Learned twice, and the second time is what makes it a rule.** `DECISIONS.md` §113.
+
+| | |
+|---|---|
+| **First** | the **requirement table** — a shape decided before the thing that had to fill it, and abandoned |
+| **Second** | the **research pipeline** — a prompt, a fact block, a frame, a scenario block and a gate, all built before a benchmark said whether any of them helped. **Five questions against raw Claude and ChatGPT with no context: CompliBoard was weaker on most** |
+
+> ### THE BASELINE IS WIDE OPEN. EVERYTHING ON TOP MUST MEASURABLY BEAT IT.
+>
+> Not *"is defensible"*, not *"is principled"* — **beats the step before it, on questions somebody
+> actually asked.** A piece that cannot be shown to help is a piece that is narrowing the model
+> while looking like care.
+
+**The failure is hard to see from inside**, because every piece was added for a real reason and
+each one reads well on its own. §102 removed a template for narrowing the output; §113 found the
+prohibitions replacing it narrowed it too. **A fence built out of good reasons is still a fence.**
+
+**How this is applied in practice, not as a slogan:** every pipeline piece is a **configuration
+switch**, production runs with them off, and staging runs what is being tested. **The release
+mechanism and the experiment framework are the same thing** — so a piece earning its way back is a
+config change, and so is rolling it out again.
+
+---
+
+## 12. THE MODULE LOOP — how one module gets finished
+
+**All modules ship. No compromise. One at a time.** `DECISIONS.md` §114.
+
+| | |
+|---|---|
+| **1** | **The owner writes the user-view vision** — what a person sees and does |
+| **2** | **Chat checks it against the system** and sorts every gap into one of the three kinds below |
+| **3** | **Chat builds an artifact** the owner iterates on, to a **finish line agreed before it starts** |
+| **4** | **The artifact FILE goes into the repo.** Not a description of it |
+| **5** | **Chat writes one complete brief** |
+| **6** | **Chat runs long against the brief and checks its own work**, stopping only for a product decision, a production migration, and the end |
+| **7** | **Chat reviews at midpoint and finish only** |
+
+### The three kinds of gap
+
+| | Meaning | What happens |
+|---|---|---|
+| **SCHEMA** | the schema is wrong, **not the vision** | migrate |
+| **DATA** | the structure is fine; the data is absent or untrusted | content work — **and the screen stays truthful in the meantime** |
+| **TRUTH** | **no system can honestly know this** | **push back on the vision** |
+
+> **The third will not be volunteered unless it is asked for.** A model handed a vision finds a way
+> to build it, and *"nothing can honestly know that"* is the answer that looks like refusal. It is
+> §5a's standing rule pointed at scope instead of at causes.
+
+**And DATA's second half is the one that gets skipped:** a screen over absent data must say the
+data is absent. That is the omniscient-status-tracker anti-pattern, removed from this product once
+already.
+
+### Benchmarks use an INCOGNITO chat
+
+**Raw Claude in an incognito window, plus ChatGPT.** A normal chat carries the owner's memory and
+**contaminated earlier baselines** — a bare model that has heard about this project for weeks is
+not bare. `DECISIONS.md` §115.
 
 ---
 

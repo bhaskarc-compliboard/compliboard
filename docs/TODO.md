@@ -1,6 +1,26 @@
 # Detailed To-Do
-**Version:** 29 · **Updated:** 21 September 2026
-**Supersedes:** version 28 (21 Sep). **M1.3 is SUPERSEDED** (`DECISIONS.md` §108): conversational
+**Version:** 33 · **Updated:** 21 September 2026
+**Supersedes:** version 32 (21 Sep). Adds **R1 — the open baseline** (`DECISIONS.md` §113): a
+five-question benchmark against raw Claude and ChatGPT found CompliBoard weaker on most, so
+research ships as **one open call** with the gate, facts block, frame/scenario blocks and long
+prompt **switched off behind config**, and R&D builds back up one measured piece at a time. Records
+**chat history as GATED** for the first release (§116) and **release timing as OPEN** (§117). The
+schema is now a **generated document** — `docs/SCHEMA.md`, written by `scripts/schema-doc.js` from
+the live catalog inside `db:migrate`. Version 32: **M1.2e is ✅** — the conversation is on screen: exchanges
+stack oldest-first, the composer sits at the bottom and clears on send, the gate's question is a
+message answered in the same box, and each answer keeps its own sources. M1.2d's turn machinery is
+visible to a person for the first time. Version 31: **Item 6 is DECIDED** (`DECISIONS.md` §111): a checklist is a
+**hybrid** — written by the AI but starting from the obligations that apply, matched items linked
+so completing one counts on both sides, everything else a **labelled suggestion**. This resolves
+**§68**, and its implementation stays on the before-real-customers list because 235 production
+rows already exist. **Checklists are sequenced AFTER research** (§112), so the Create tab is
+untouched by sequencing rather than by a blocker. Version 30: **M1.2d is ✅ — it was built and committed in `71c2a4d` and
+this row was never ticked**, which produced a status report recommending work already done
+(`DECISIONS.md` §65, twelfth). Adds **M1.2e — the chat layout**, which is what is actually
+missing: no stacked conversation has ever existed in 296 commits. **M1.3a becomes FIFTEEN-DAY
+RETENTION** (§110) rather than discard-after-processing, carrying three requirements — an enforced
+day-16 deletion **with a check**, immediate removal on account deletion, and **real customer data**,
+which makes the credential-rotation gate live. Version 29: **M1.3 is SUPERSEDED** (`DECISIONS.md` §108): conversational
 fact extraction **moves overnight** and what it finds is **proposed, not written**. Replaced by
 **M1.3a** (retain a conversation until processed), **M1.3b** (the overnight extractor — a nightly
 script before the worker), **M1.3c** (propose and confirm). **7.2a's ask path is unchanged and
@@ -201,10 +221,11 @@ decisions and the five schema gaps are settled before any of this starts.*
 | **M1.2a** | ~~The critic's `priorAssertions` field~~ — **WITHDRAWN for research.** §77 drops the critic from the research path entirely; §73's decision survives and applies at the **checklist boundary**, which is where it is now needed | — | — |
 | **M1.2c** ✅ | **DONE 15 Sep** (§91) — route wired, run over HTTP, four attacks refused. ⚡ **THE CONVERSATION LOOP** — the caller that feeds M1.2b and M1.2. `GATE-HISTORY.md` §8.4 specifies the contract and **assigns it to nobody**, which is why it was not a task: a contract with no owner is a specification of something that will not happen. **Turns are SIGNED** (§89). Until this exists, M1.2b and M1.2 are built, correct and **inert** | M1.2 | 1.5 d |
 | **M1.2** ✅ | **DONE 15 Sep** (§86) — folded into the gate, not a third call. **Follow-up classification** (§4.1) — three kinds, classified before anything expensive runs | **M1.2b** | 1 d |
-| **M1.2d** | **THE CONVERSATION SURFACE — M1.2c's missing half.** **SEVERAL open topics per company** (§96e — §9.4 closed, no unique index). The browser holds turns, a `topics` row is **created**, `topicId` is sent. Today `app/compliance/page.tsx` sends neither, and `const newTurn = topicId ? sealTurn(...) : null` means **every turn in the browser is turn one**; `grep from('topics')` finds one cleanup and no writer. M1.2b/M1.2/M1.2c are correct over HTTP and **inert to a person**, and **nothing in M1 is reachable by a user until this exists** (§96) | M1.2c | 1.5 d |
+| **M1.2d** ✅ | **DONE — committed in `71c2a4d`, unmentioned in its own commit message, which is why this row went unticked until 21 Sep (`DECISIONS.md` §65, twelfth instance).** The browser holds turns (`page.tsx:219–220`) and sends them on **both** paths (`:706`, `:718`); the route creates the `topics` row and verifies `topicId` against a real one (`route.ts:191–281`); the turn is appended **before** the ask early-return (`:739–740`). **23 `topics` rows on staging.** **SEVERAL open topics per company** (§96e). What is NOT built is the STACKED LAYOUT — see M1.2e | M1.2c | 1.5 d |
+| **M1.2e** ✅ | **DONE 21 Sep.** `exchanges: Exchange[]` replaces the five singulars; `handleSubmit` **appends** instead of erasing; composer **at the bottom, clearing on send**; the gate's ask is **a message in the flow answered from the composer** (`GateAskCard`'s own input is now optional and the Ask tab passes no `onAnswer`); **sources are per-exchange**. `kind` carries `'proposal'` and `'notice'` for M1.3c and M1.8. `text` is appendable for streaming (0.11). Dead follow-up code removed — it called `handleSubmit` with the **pre-2026 one-argument signature**, so it would have submitted the text as a MODE. Driven over HTTP: 3 exchanges stay, composer empty after each send, oldest first, one topic, sources **11 · 10** and not shared. **RECORDED, NOT BUILT**: chat history (§110) is **never** the Saved tab — Saved is permanent, history is cleared after 15 days; **saving the whole conversation needs a `topic_id`** — nothing references `topics` today — so save on an answer saves **that answer**, and opening a saved answer **clears the live turns** rather than resuming a topic it never belonged to. **Create tab untouched** (§112) | M1.2d | 2 d |
 | **M1.4a** | **THE SINGLE-SITE SLICE of M1.4** — the one-site rule, and `entity_id` carried on the fact. **This is NOT a default to primary**: §20 forbids defaulting because a company-wide answer is *wrong at every site but one*, and **with one `entities` row there is no second site to be wrong about** — v3.3 already says *never ask*. **Ahead of M1.3 because 73 of 95 switches are site-scoped** and the route refuses every one without a site (§96) | M1.2d | 0.5 d |
 | **M1.3** ⛔ | **SUPERSEDED 21 Sep — `DECISIONS.md` §108.** ~~The conversation writes `company_switches` in real time~~. **Facts inferred from free prose are extracted OVERNIGHT from whole conversations and PROPOSED, not written.** The reason is judgment, not load: the same fact was labelled `stated_in_question` on turn 1 and `hypothetical` on turn 2 of one conversation (§104), and reading the whole thing settles modality once and resolves corrections. **Replaced by M1.3a/b/c below.** Unchanged: the gate, the gate's prior turns, and **7.2a's ask path, which still writes at once** — a person answering a direct question is evidence, not an interpretation | — | — |
-| **M1.3a** | **Retain a conversation until it is processed**, then discard it. Reverses `GATE-HISTORY.md` §8.4 rule 3 (*the caller owns the turn list; nothing is stored*). **Does NOT breach §78**: a transcript is raw evidence, not a fact, and a hypothetical is still never written as true of the company. `WORKSPACE.md` §6.4's *disposable* becomes a disposal schedule | M1.2d | 1 d |
+| **M1.3a** | **Retain a conversation for FIFTEEN DAYS** (`DECISIONS.md` §110 — supersedes *discard after processing*). **Two tiers**: chat history, automatic and temporary; saved, deliberate and permanent. **Download is print-to-PDF**, no generation. **Prominent notice** on the history list and on each conversation. Brings three REQUIREMENTS: **(a)** day-16 deletion must actually run, **with a check that it did** — a retention promise nothing enforces is §101's shape pointed at a claim on screen; **(b)** account deletion takes it **immediately**, and `check-schema-contracts` must refuse a conversations table missing from `/api/account` DELETE; **(c)** it is **real customer data** — the 15 days belong in the privacy policy, and it makes the **eight-credential rotation gate live**. Still no breach of §78: a transcript is evidence, not a fact | M1.2d | 1.5 d |
 | **M1.3b** | **The overnight extractor** — reads whole conversations and decides what is true of the company. **A nightly script first; `CLAUDE.md` §4's worker is where it ends up** — waiting for the worker would defer this behind infrastructure it does not need | M1.3a | 1.5 d |
 | **M1.3c** | **Propose and confirm.** *"From yesterday's conversation, it sounds like you have 47 employees — should we save that?"* One tap. **Reading a transcript is an INTERPRETATION and can misread**, so it is proposed, never written. The source label travels with the proposal, so §96(b) holds for whatever finally writes it | M1.3b | 1 d |
 | **M1.4** | **Site resolution — the rest** (v3.3). **Several sites → the question carries the site**; *"all of them"* writes **N rows, each attributable**, never one company row. The one-site half is **M1.4a above** | M1.3c | 0.5 d |
@@ -397,6 +418,58 @@ context, asked for it.**
 **One data point is not a pattern**, and redesigning the gate on it would repeat the error §105
 and §107 both declined to make. A spread of questions is what settles whether the gate
 systematically under-asks on multi-fact questions.
+
+---
+
+## 🔬 R1 — THE OPEN BASELINE, AND BUILDING BACK UP ⬜ ⚡
+
+*Decided 21 September 2026. `DECISIONS.md` §113. **Research mode only. Not built.***
+
+**A five-question benchmark against raw Claude and ChatGPT with no context — Seattle restaurant,
+California hospice, Texas roofing, Oregon cannabis, Ohio hazmat freight — found CompliBoard weaker
+on most.** The pipeline subtracts: the prompt fences the model, search leads instead of checking so
+answers mirror vendor pages, the gate blocks too readily through a chemical-manufacturing
+vocabulary (**the cannabis question was withheld entirely over a butane threshold**), and nothing
+offers to help further.
+
+| # | | |
+|---|---|---|
+| **R1.0** | **THE BASELINE, IN PRODUCTION.** One call to the current Sonnet, a one-sentence role, web search available with **the model** deciding, prior messages as history. Sources and disclaimer stay. **Off: the gate, the facts block, the frame and scenario blocks, the long prompt** | 1 d |
+| **R1.1** | **EVERY PIECE BECOMES A CONFIG SWITCH.** Production all off; staging runs what R&D tests; **rollback is one config value.** The release mechanism and the experiment framework are the same thing | 1 d |
+| **R1.2** | **Search that VERIFIES rather than leads**, preferring government sources | — |
+| **R1.3** | **Specialist behaviour, and a specific offer** of what to do next | — |
+| **R1.4** | **Company facts** | — |
+| **R1.5** | **The gate, at a much higher bar** — block only when an answer without the fact would be **wrong**, and ask in plain language. **Last, because it has the most evidence against it and the most machinery behind it** | — |
+
+**R1.2–R1.5 ship only if each beats the step before it, measured on real questions.** Benchmarks
+use an **incognito** chat plus ChatGPT (§115) — a normal chat carries the owner's memory and
+contaminated earlier baselines.
+
+**This does not delete the pipeline.** Everything M1.9, §103, §106 and §107 built stays in the
+repo behind a switch.
+
+---
+
+## 🔒 GATED — chat history does not ship in the first release ⬜
+
+*`DECISIONS.md` §116. §110 stands; these are RELEASE GATES, not follow-ups.*
+
+**All four must be true before the 15-day history is shown to anyone:**
+
+1. the day-16 deletion job exists · 2. **something checks that it ran, and what it removed** ·
+3. account deletion removes chat history **immediately** · 4. the **privacy policy** says so.
+
+**Until then conversations live for the length of the page, as they do today — no history list, and
+therefore no promise to break.** A retention promise on screen with nothing enforcing it is a false
+statement to a customer.
+
+---
+
+## ❓ OPEN — release timing, and it is the owner's call ⬜
+
+*`DECISIONS.md` §117.* **Release now and improve module by module, or after every module's pass.**
+Not derivable from the code: it depends on who the first ten customers are and whether they are
+being sold a finished product or helping build one. §113's baseline makes either viable.
 
 ---
 
