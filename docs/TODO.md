@@ -8,6 +8,9 @@ against the empty table the chain hands them, and `applies-expressions.json` car
 exactly the 11 children the worksheet lacks. **`DECISIONS.md` §98's owed reset for 029 and 030 is
 therefore NOT settled.** Adds **6.3c — which source is the library**, the row
 `013_chemical_inventory.sql:393` has named since 12 September and which did not exist until now.
+**4.2b is ✅ and was already done** — migration 019 closed it on 13 September and three documents
+went on calling it open, including the table in `AUDIT-CHECKS.md` two paragraphs above the prose
+that contradicted it. Verified by reading `pg_proc.proacl` on staging, not by reading the migration.
 Version 33: Adds **R1 — the open baseline** (`DECISIONS.md` §113): a
 five-question benchmark against raw Claude and ChatGPT found CompliBoard weaker on most, so
 research ships as **one open call** with the gate, facts block, frame/scenario blocks and long
@@ -1581,13 +1584,34 @@ is auditable · a departed requirement is closed, never deleted · cross-tenant 
 refused before any write · **a fault injected mid-INSERT rolls the close back with it**, so a
 failed recompute cannot leave a company's list closed-but-not-replaced.
 
-#### 4.2b Revoke EXECUTE on `substance_inventory` from PUBLIC ⬜ ⏱ 10 min
+#### 4.2b Revoke EXECUTE on `substance_inventory` from PUBLIC ✅ **DONE — by migration 019, 13 Sep**
 Migration 013 created it with no revoke, and **Postgres grants EXECUTE on every new function
 to PUBLIC by default** — `CLAUDE.md` §3.6's "not granting is not denying", which is recorded
-for tables and not for functions. It leaks nothing today because `anon` holds no grant on
-`company_chemicals`, so the protection is a *table* grant rather than the function grant —
+for tables and not for functions. It leaked nothing because `anon` holds no grant on
+`company_chemicals`, so the protection was a *table* grant rather than the function grant —
 the compensating-control shape §45 says must be named and tested. `AUDIT-CHECKS.md` check 22.
-**Do it in the next migration that touches grants, and use `pg_proc.proacl` to verify.**
+
+**It was closed nine days before this row was read, and three documents went on calling it open**
+— this row, `AUDIT-CHECKS.md`'s closing paragraph (whose own table two paragraphs above says
+CLOSED), and `docs/HANDOFF-CODE.md`'s open-defect list. `019_revoke_substance_inventory_execute.sql`
+is its own migration precisely so the filename would say so. §65's shape, inverted: not work
+described as done, but **work done and described as open**, which costs the next person a
+migration they do not need to write.
+
+**Read off staging, 22 September 2026** — not from the migration file, because a migration file
+says what was sent, not what the role holds (§3.6):
+
+```
+select p.proname, coalesce(array_to_string(p.proacl,' | '),'(null = PUBLIC)') acl
+  from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+ where n.nspname='public' and p.proname='substance_inventory';
+
+  substance_inventory | postgres=X/postgres | service_role=X/postgres | authenticated=X/postgres
+```
+
+**No PUBLIC entry and no `anon`.** `authenticated` is there deliberately — migration 023 granted
+it so a signed-in caller can compute their own obligations. Check 22's table still shows the
+pre-023 pair, which is the one thing left to re-measure there.
 
 ### 4.3 Determination chain ⬜ ⏱ 1 day
 `produces_switch` writes back, re-resolve, cap at 3 passes.

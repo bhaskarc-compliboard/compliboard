@@ -1,6 +1,10 @@
 # Audit Checks
-**Version:** 35 · **Updated:** 15 September 2026
-**Supersedes:** version 34 (15 Sep). Check 31 gains **a third failure mode it cannot see — the
+**Version:** 36 · **Updated:** 22 September 2026
+**Supersedes:** version 35 (15 Sep). **Check 22's closing paragraph was an instance of check 31's
+own third failure mode** — the adjacent passage. Its table recorded `substance_inventory` CLOSED by
+migration 019 on 13 September; two paragraphs below, the prose still said *"Revoking it is `TODO.md`
+4.2b"*, and `TODO.md` and `docs/HANDOFF-CODE.md` both believed the prose. Corrected against a live
+read of `pg_proc.proacl`, 22 Sep. Version 35: version 34 (15 Sep). Check 31 gains **a third failure mode it cannot see — the
 adjacent passage.** A correction that leaves a contradiction beside it updates the file's date, so
 a date comparison reports the file as fresh; the staleness is inside a current file, next to what
 was corrected. **Three instances in two days, all in `WORKSPACE.md`.** The only defence is
@@ -1166,11 +1170,18 @@ one function, `substance_inventory`.**
 > when it reads no data and a constraint depends on it.* Anything else that appears in this
 > query is a finding.
 
-**It leaks nothing today, and that is luck rather than design.** The function is `SECURITY
-INVOKER` and reads `company_chemicals`, on which `anon` holds no grant at all, so an
-unauthenticated call returns nothing. **The protection is a table grant, not the function
-grant** — exactly the compensating-control shape `DECISIONS.md` §45 says must be named and
-tested or it is a belief. Revoking it is `TODO.md` 4.2b.
+**It leaked nothing even before it was fixed, and that was luck rather than design.** The
+function is `SECURITY INVOKER` and reads `company_chemicals`, on which `anon` holds no grant at
+all, so an unauthenticated call returned nothing. **The protection was a table grant, not the
+function grant** — exactly the compensating-control shape `DECISIONS.md` §45 says must be named
+and tested or it is a belief. Migration 019 removed the reliance.
+
+> **This paragraph said "Revoking it is `TODO.md` 4.2b" until 22 September**, two paragraphs below
+> a table in this same file recording it CLOSED by migration 019 on 13 September. `TODO.md` 4.2b
+> and `docs/HANDOFF-CODE.md` carried the same stale claim. **Re-measured on staging 22 Sep:**
+> `postgres=X | service_role=X | authenticated=X` — no PUBLIC, no `anon`. The `authenticated`
+> entry is migration 023's, granted on purpose; the table above still shows the pre-023 pair and
+> is the one line here that wants re-running.
 
 **Why nothing else catches it.** `CLAUDE.md` §3.6 records "not granting is not denying" for
 tables; **the same default exists for functions and is not written down anywhere** — Postgres

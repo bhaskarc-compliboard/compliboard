@@ -132,7 +132,7 @@ $ for m in sdsExtraction basis …; do grep -rl "lib/$m" app | wc -l; done
 | **Enum values arrive as free text** | same path | `hazwaste_generator_category` allows `none\|vsqg\|sqg\|lqg`; the value carried was `"small quantity generator"`. `/api/switches/answer` would 400 on it |
 | **Citations discarded for every non-research caller** | `lib/ai.ts` — `askAI` returns `.text` only | `/api/audits` runs web search on two calls and drops its sources |
 | **`expires_at` set by nothing** | `company_switches` — **0 of 19 rows** | v3.1: an expired fact must read `unknown`; a stale `false` is a false green |
-| **`substance_inventory` EXECUTE granted to PUBLIC** | migration 013 | `TODO.md` 4.2b, ten minutes |
+| ~~**`substance_inventory` EXECUTE granted to PUBLIC**~~ | migration 013 | **NOT OPEN — corrected 22 Sep.** Migration **019** revoked it on 13 Sep; `pg_proc.proacl` on staging reads `postgres=X \| service_role=X \| authenticated=X`, no PUBLIC and no `anon`. This row, `TODO.md` 4.2b and `AUDIT-CHECKS.md`'s closing paragraph all carried the stale claim |
 | **5 of 6 saved research answers have no sources** | pre-030 rows | They render markers with no list |
 
 **Two entries in `TODO.md` that are NOT open, checked this session:** 6.4f's coverage-row defect is
