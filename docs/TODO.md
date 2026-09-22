@@ -1,6 +1,14 @@
 # Detailed To-Do
-**Version:** 33 · **Updated:** 21 September 2026
-**Supersedes:** version 32 (21 Sep). Adds **R1 — the open baseline** (`DECISIONS.md` §113): a
+**Version:** 34 · **Updated:** 22 September 2026
+**Supersedes:** version 33 (21 Sep). **0.10 is ✅ BUILT** — `npm run db:restore`, one command, every
+expected count read from a seed file and four production refusals each tested by violating it. **Its
+first run REFUSED before touching anything**, and the reason is a real finding: the seed files
+rebuild **194** of the library's **205** rows, because migration 013's three splits are a no-op
+against the empty table the chain hands them, and `applies-expressions.json` carries expressions for
+exactly the 11 children the worksheet lacks. **`DECISIONS.md` §98's owed reset for 029 and 030 is
+therefore NOT settled.** Adds **6.3c — which source is the library**, the row
+`013_chemical_inventory.sql:393` has named since 12 September and which did not exist until now.
+Version 33: Adds **R1 — the open baseline** (`DECISIONS.md` §113): a
 five-question benchmark against raw Claude and ChatGPT found CompliBoard weaker on most, so
 research ships as **one open call** with the gate, facts block, frame/scenario blocks and long
 prompt **switched off behind config**, and R&D builds back up one measured piece at a time. Records
@@ -329,7 +337,7 @@ unbuilt. **6.4c is a content problem, and it is the first time this project's cr
 been one.**
 
 
-## 🔧 0.10 `npm run db:restore` — ONE COMMAND, AHEAD OF THE NEXT MIGRATION ⬜ ⏱ half day
+## 🔧 0.10 `npm run db:restore` — ONE COMMAND, AHEAD OF THE NEXT MIGRATION ✅ **BUILT (22 Sep) — AND ITS FIRST RUN REFUSED**
 
 *Recorded 21 September 2026. `HOW-WE-BUILD.md` §4; `DECISIONS.md` §98.*
 
@@ -348,6 +356,10 @@ gets skipped, and the fix is to make obeying it cheap — not to restate the rul
 8  seed-multisite-fixture.js                            Alpha's 2nd site + 16 facts
 ```
 
+**Two numbers in that list were estimates and are now measured.** The worksheet holds **194**
+rows, not 205, and **199** of them carry an expression — the gap between 194 and the 205 on both
+databases is the whole of the finding below. The other six lines came out exactly as written.
+
 > ### IT VERIFIES AFTER EVERY STEP AND REFUSES TO CONTINUE ON ZERO ROWS.
 >
 > **That is the requirement, not a nicety.** A refusal at step 6 leaves `switches` empty, the gate
@@ -363,6 +375,53 @@ something else. **That run is what settles the owed reset for 029.**
 
 **STAGING ONLY.** Every loader already refuses production without `--production`, and step 1
 refuses it twice (by flag and by ref). This command must not accept the flag at all.
+
+### Built — `scripts/db-restore.js`, `npm run db:restore`
+
+**Every expected number is computed from a file; not one is typed in the script.** The worksheet
+is *found* in `supabase/seed-data/` rather than named, so the date in its filename is not a fifth
+place to keep right — two `.xlsx` files there is a stop, not a guess. The two fixture datasets
+moved out of their seeders into `scripts/fixtures/staging-testdata.js` and
+`scripts/fixtures/multisite.js` so the restore can count them without running them; the seeders
+import the same modules, so *"16 facts"* has one definition (§43).
+
+**Four production refusals, each tested by violating it:** `--production` (or any `--prod…`
+spelling) is not a flag it has · `SUPABASE_PROJECT_REF == SUPABASE_PROD_REF` · the write URL is
+the production project · **and the migrate target and the write target are different projects**,
+which would reset one database and seed another with both halves reporting success.
+
+**One addition the entry above did not ask for: it projects before it destroys.** The row counts,
+the source-consistency check and the census are read-only and run *before* step 1's `RESET` prompt.
+Without that the first run would have replaced the library at step 2 and then been refused at
+step 5, leaving staging with a library and `applies_expression` on nothing — destroying more than
+it rebuilt and stopping with no way back.
+
+### ⛔ THE FIRST RUN REFUSED, AND THE OWED RESET IS STILL OWED
+
+*Run 22 September 2026. Nothing was touched — staging is still 205 / 430 / 33 at migration 030.*
+
+> ### THE SEED FILES NO LONGER REBUILD THE LIBRARY. THEY REBUILD 194 OF ITS 205 ROWS.
+>
+> `REQUIREMENTS-FILLED-2026-09-11.xlsx` carries **194** rows. Migration **013** splits three of
+> them into **11 children** and retires the parents — and on a from-zero run **013 does nothing**,
+> because it looks its parents up by name (`013_chemical_inventory.sql:419`) in a table the chain
+> has not loaded yet and guards on `if parent_id is not null` (line 421). Its own verification
+> block then passes on the empty table: 0 orphans, 0 live parents. **§98's failure mode exactly —
+> a check that passes, not one that fails.**
+>
+> **Two sources say it independently.** The count (205 on staging vs 194 in the worksheet), and
+> `applies-expressions.json`, which carries expressions for **exactly those 11 children** — so
+> step 5 would have refused the whole file on 11 errors regardless.
+
+**Migration 013 wrote this down itself, at line 388:** *"NOTE FOR WHOEVER RELOADS THE LIBRARY:
+THIS IS THE FIRST TIME `requirement_templates` DIVERGES FROM the worksheet … the worksheet is no
+longer a complete source, and which of the two is authoritative now needs deciding. TODO 6.3c."*
+**That row did not exist. It does now — 6.3c below.** The restore cannot proceed until it is
+decided, and there is deliberately no flag that overrides it.
+
+**So `TODO.md` 0.10 is built and `DECISIONS.md` §98's owed reset for 029 and 030 is NOT settled.**
+The precondition for the reset was this command; the precondition for this command is a complete
+source.
 
 ---
 
@@ -1692,6 +1751,30 @@ it writes `applies_expression` and nothing else.*
   `business_type`, `hazardous_chemicals_present`, `hazardous_piping_present`,
   `has_group_health_plan`. Three of those switches did not exist before 6.2, which is its own
   evidence that the flag was set before the vocabulary existed.
+
+### 6.3c WHICH SOURCE IS THE LIBRARY — the worksheet, or the database? ⬜ ⏱ half day
+
+*Named by `supabase/migrations/013_chemical_inventory.sql:393` on 12 September and written here on
+22 September, when `npm run db:restore` refused its first run over it.*
+
+**The worksheet holds 194 rows. Staging and production hold 205.** The difference is 013's three
+splits — 11 children, 3 parents retired — which exist in the migration file and in the two live
+databases and **in no seed file.** A from-zero rebuild loses them silently, because 013 is a no-op
+against the empty table the chain hands it (0.10 above has the lines).
+
+| | What it means | Cost |
+|---|---|---|
+| **The worksheet is authoritative** | Regenerate it from the live library: 205 rows, the 3 parents carrying `effective_to`, the 11 children carrying `split_from` | The load path stays one file and one script, and `db:restore` works again |
+| **The database is authoritative** | The restore grows a step that re-applies content migrations after the library loads | A migration's effect now lives in two places, and the next content migration has to remember |
+
+**The first looks right** — `load-requirements.js` already round-trips every column the splits use,
+including `split_from` by name — **but it is a decision about where the library lives, not a
+refactor, so it is the owner's.** Until it is made, `npm run db:restore` refuses and the owed
+reset for 029 and 030 stays owed.
+
+**One loose end found beside it:** 013's comment says the splits added *"these nine"*; the rows say
+**eleven** (3 + 3 + 5, `select p.requirement_name, count(c.id) … join … on c.split_from_id = p.id`).
+The migration is applied and must not be edited; the number is recorded here instead.
 
 ### 6.4 Finish what 6.3 could not ⬜ ⏱ 3 days + 6.4c
 

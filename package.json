@@ -13,6 +13,7 @@
     "db:migrate:prod": "node --env-file=.env.local scripts/db-migrate.js --production && node --env-file=.env.local scripts/db-types.js --production",
     "db:types": "node --env-file=.env.local scripts/db-types.js",
     "check": "npm run typecheck && npm run check:schema && npm run test && npm run build",
+    "db:restore": "node --env-file=.env.local scripts/db-restore.js",
     "db:reset": "node --env-file=.env.local scripts/db-migrate.js --reset && node --env-file=.env.local scripts/db-types.js && node --env-file=.env.local scripts/schema-doc.js",
     "check:schema": "node scripts/check-schema-contracts.js",
     "golden": "node --env-file=.env.local scripts/run-golden.js",

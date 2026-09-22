@@ -17,6 +17,11 @@
 
 import { createClient } from '@supabase/supabase-js'
 
+// The fixture itself — the second site and its 16 facts — lives in its own module so
+// that `npm run db:restore` can count it without running this script. One definition,
+// because a count copied into the restore is a count that drifts (DECISIONS.md §43).
+import { SITE, COMPANY_FACTS, SITE_FACTS } from './fixtures/multisite.js'
+
 const apply = process.argv.includes('--apply')
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL
 const svc = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -26,44 +31,6 @@ if (process.argv.includes('--production') || (process.env.SUPABASE_PROD_REF && u
 }
 const db = createClient(url, svc, { auth: { persistSession: false } })
 const ref = url.replace('https://', '').split('.')[0]
-
-const SITE = {
-  name: 'Test Alpha Chemical — Portland',
-  entity_type: 'site',
-  state: 'Oregon', county: 'Multnomah', city: 'Portland',
-  // NULL on purpose: exercises jurisdictionMatch case 5's county fallback, which the
-  // Hillsboro site (which has a named fire authority) does not.
-  fire_authority: null,
-  is_primary: false,   // idx_entities_one_primary is UNIQUE (company_id) WHERE is_primary
-}
-
-/** Company-scoped: one answer for the business. */
-const COMPANY_FACTS = [
-  ['has_employees', 'true'],
-  ['employee_count', '7'],   // under 10 — so Oregon sick time CANNOT fire on the company branch
-]
-
-/** Site-scoped: different at each site, which is the whole point. */
-const SITE_FACTS = {
-  'Test Alpha Chemical — Hillsboro': [
-    ['site_employee_count', '1'],
-    ['hazardous_chemicals_present', 'true'],
-    ['onsite_laboratory', 'true'],
-    ['confined_spaces_present', 'true'],
-    ['hazwaste_generator_category', 'lqg'],
-    ['air_permit_required', 'title_v'],
-    ['industrial_stormwater', 'true'],
-  ],
-  'Test Alpha Chemical — Portland': [
-    ['site_employee_count', '6'],   // 6+ AND Portland -> sick time fires on the SITE branch
-    ['hazardous_chemicals_present', 'false'],
-    ['onsite_laboratory', 'false'],
-    ['confined_spaces_present', 'false'],
-    ['hazwaste_generator_category', 'vsqg'],
-    ['air_permit_required', 'none'],
-    ['industrial_stormwater', 'false'],
-  ],
-}
 
 console.log(`\n  Target : ${ref}   (STAGING)`)
 console.log(`  Mode   : ${apply ? '*** APPLY ***' : 'dry run — nothing will be written'}\n`)
