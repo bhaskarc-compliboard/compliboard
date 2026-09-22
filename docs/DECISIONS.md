@@ -1,6 +1,11 @@
 # Decision Record
-**Version:** 90 · **Updated:** 21 September 2026
-**Supersedes:** version 89 (21 Sep). Adds **§113 — THE OPEN BASELINE.** A five-question benchmark
+**Version:** 91 · **Updated:** 22 September 2026
+**Supersedes:** version 90 (21 Sep). Adds **§118 — the worksheet is the library, and requirement
+content never goes in a migration.** The owner's decision on `TODO.md` 6.3c, plus the standing rule
+that stops the recurrence: migration 013 put eleven requirement rows inside a migration, they
+existed in no seed file, and a from-zero rebuild lost them silently while 013's own verification
+passed on the empty table. The worksheet is regenerated from the live library — 205 rows, dateless
+filename — by a new `scripts/export-requirements.js`. Version 90: version 89 (21 Sep). Adds **§113 — THE OPEN BASELINE.** A five-question benchmark
 against raw Claude and ChatGPT with no context found CompliBoard weaker on most: **the pipeline
 subtracts.** Research runs one open call in production — the gate, facts block, frame/scenario
 blocks and long prompt **switched off but not deleted**, each a config switch, so **the release
@@ -8571,3 +8576,82 @@ baseline makes either viable, which is part of why it was worth doing.
 **What would decide it:** who the first ten customers are, and whether they are being sold a
 finished product or are helping build one.
 
+---
+
+## 118. The worksheet is the library, and content never goes in a migration — 22 September 2026
+
+**The owner's decision, on `TODO.md` 6.3c: THE WORKSHEET IS AUTHORITATIVE, regenerated from the
+live library.** And with it a standing rule, which is the half that stops this recurring:
+
+> ### REQUIREMENT CONTENT CHANGES GO THROUGH THE WORKSHEET AND `load-requirements.js`.
+> ### NEVER THROUGH A MIGRATION.
+>
+> A migration changes the SHAPE of the library. The worksheet is its CONTENT. Migration 013 put
+> content in a migration, and that is precisely how the seed files and the databases diverged.
+
+### What went wrong, with the lines
+
+Migration **013** split three requirements into **eleven children** and retired the parents. It
+finds its parents by name:
+
+```
+013_chemical_inventory.sql:419   select id into parent_id from public.requirement_templates
+                                  where requirement_name = '…' and effective_to is null;
+013_chemical_inventory.sql:421   if parent_id is not null then
+```
+
+On a from-zero run the chain has not loaded any library yet — `load-requirements.js` runs *after*
+the migrations, at step 2 of `npm run db:restore`. So `parent_id` is NULL, the block is skipped,
+and **013 does nothing.** Its own verification block (lines 600-622) then passes on the empty
+table: zero orphan children, zero live parents. **§98's failure mode exactly — a check that
+passes, not one that fails.**
+
+**013 predicted this itself, at line 388**, and pointed at a `TODO.md` row that did not exist:
+*"the worksheet is no longer a complete source, and which of the two is authoritative now needs
+deciding. TODO 6.3c."* Nine days later `npm run db:restore` refused its first run over it.
+
+**Measured on both databases before deciding anything** — `select count(*) … join … on
+c.split_from_id = p.id`, run against each:
+
+| | total | retired | children | with expression |
+|---|---|---|---|---|
+| staging | 205 | 5 | 17 | 199 |
+| production | 205 | 5 | 17 | 199 |
+
+Identical, and the worksheet held **194**. The eleven rows were serving real customers on
+production while existing in no file that could rebuild them.
+
+### Why the worksheet and not the database
+
+| | Cost |
+|---|---|
+| **Worksheet authoritative** *(chosen)* | The load path stays one file and one script. `load-requirements.js` already round-trips every column a split uses, `split_from` by name included |
+| Database authoritative | The restore grows a step that re-applies content migrations after the library loads — a migration's effect then lives in two places, and every future content migration has to remember |
+
+### What was done
+
+- **`scripts/export-requirements.js`** — the other direction of the loader. One SELECT, one file.
+  It takes its column list and its Reference/Notes sheets **off the worksheet it replaces**, so the
+  shape is never retyped, and it checks every round-trip rule the loader enforces before writing.
+- **`supabase/seed-data/REQUIREMENTS.xlsx`** — 205 rows, 5 parents carrying `effective_to`, 17
+  children carrying `split_from` by name, all 205 carrying their database ids. **The date is gone
+  from the filename** (`CLAUDE.md` §2: filenames are stable, the version lives in the header).
+  The old `REQUIREMENTS-FILLED-2026-09-11.xlsx` is deleted; git keeps it.
+- **`agency_id` and `applies_expression` are exported BLANK, on purpose.** `assign-agencies.js`
+  owns one and `applies-expressions.json` owns the other. A value in the worksheet would be a
+  second source of truth — the very failure being cleaned up — and `agency_id` would also invert
+  the load order, since requirements load at step 2 and agencies do not exist until step 3.
+- **Proved before anything destructive:** `load-requirements.js` in dry run against the *populated*
+  table, which is its strict RELOADING mode — every id in the file must exist in the database and
+  every row in the database must appear in the file. **205 rows read, 0 errors**, 17 warnings, all
+  of them the loader's own "has both an id and a split_from … treated as an existing row that
+  records its origin". Then `db:restore`'s read-only pre-flight: every library line reads
+  **now = sources rebuild**, 205 = 205, and the three seed files agree with each other.
+
+**Two comments still name the old filename** — `007_requirements_spine_rebuild.sql:20` and
+`013_chemical_inventory.sql:389`. **Applied migrations are not edited.** Both are true of the day
+they were written, and the rename is recorded here instead.
+
+**Reversal condition:** a requirement change that genuinely cannot be expressed in the worksheet —
+one that needs a column the sheet has no place for. That is a schema change, which is a migration's
+job, and the content still follows in the worksheet afterwards.

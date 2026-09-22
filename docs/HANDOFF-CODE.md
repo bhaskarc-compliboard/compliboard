@@ -55,6 +55,29 @@ $ npx supabase db query --project-ref <SUPABASE_PROD_REF> --linked   # same quer
 guarantee (the chain builds a database from nothing) is unmet for them. **The precondition is
 `TODO.md` 0.10**, the one-command restore, because a reset today is eight manual steps.
 
+> ### Update, 22 September — STILL OWED, and now one command away.
+>
+> **0.10 is built** (`npm run db:restore`) and **6.3c is decided and done** (`DECISIONS.md` §118):
+> the worksheet was rebuilding only 194 of the library's 205 rows, because migration 013 put eleven
+> requirement rows inside a migration and a from-zero run skips it. `supabase/seed-data/REQUIREMENTS.xlsx`
+> now carries all 205, and the restore's read-only pre-flight reads **205 = 205** on every library
+> line with the three seed files agreeing.
+>
+> **What has NOT happened: the restore has never been run to completion.** Step 1 is interactive by
+> design — a human types RESET — and that run was not performed. **The owed reset closes when all
+> eight steps pass, and not before.** One command, from an interactive terminal on a machine
+> pointed at staging:
+>
+> ```
+> npm run db:restore
+> ```
+>
+> It will destroy, and nothing rebuilds: 430 obligations, 62 critic_findings, 33 topics, 20
+> checklist_items, 13 checklists, 4 critic_reviews, 3 switch_determinations. **Confirmed nothing
+> outside staging references any of them** — all 62 finding ids and all 4 review ids grepped across
+> the repo: 0 matches, and `baseline-outputs/` is a production export from a database that has no
+> critic tables at all.
+
 ## 3. Production row counts — the number that matters most
 
 ```
