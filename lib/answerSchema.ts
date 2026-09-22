@@ -48,7 +48,16 @@ export interface ChecklistItem {
   description: string
   source_url: string
   why: string
-  cost_note: string
+  /** The OPEN BASELINE's shape (R1.0) asks for a readable source name beside the URL, so a
+   *  citation can render as a name rather than a bare link. Optional: every checklist stored
+   *  before 22 Sep 2026 has none. */
+  source_title?: string
+  /** *** NO LONGER ASKED FOR — `DECISIONS.md` §123. ***
+   *  `cost_note` and `providers` were slots, and §113's diagnosis is that the model fills every
+   *  slot it is given: the cost slot produced dollar ranges with nothing behind them and the
+   *  provider slot produced where-to-buy sections nobody asked for. They stay OPTIONAL rather
+   *  than deleted because 235 checklist_items on production carry them and must still render. */
+  cost_note?: string
   providers?: Array<{ name: string; type: string; coverage: string; note: string }>
 }
 
@@ -66,7 +75,8 @@ export interface ChecklistItem {
  */
 export interface ChecklistAnswer {
   title: string
-  safety_alert: string
+  /** Optional since 22 Sep: the open shape does not ask for it (§123). Stored answers keep theirs. */
+  safety_alert?: string
   must_do: ChecklistItem[]
   good_to_have: Array<Omit<ChecklistItem, 'providers'>>
   // NO conditional_on. NO follow_up_questions — that was the additive question slot

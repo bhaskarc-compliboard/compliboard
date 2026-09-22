@@ -17,7 +17,10 @@
 //
 // Callers must now send the session token: `headers: await authHeaders()` from lib/supabase.
 
-import { askAI, askAIJson, askAIWithCitations, type AIContent } from '@/lib/ai';
+import { askAI, askAIJson, askAIWithCitations, askAIOpenStream,
+         type AIContent, type OpenMessage } from '@/lib/ai';
+import { pipelineSwitch, logPipelineConfigOnce } from '@/lib/pipelineConfig';
+import { extractJsonText } from '@/lib/ai';
 import { buildSystemPrompt } from '@/prompts/checklist';
 import { NextRequest, NextResponse } from "next/server";
 import { parseDocumentToBlocks } from '@/lib/documentContent';
@@ -105,6 +108,9 @@ export async function POST(request: NextRequest) {
     // issue (DECISIONS.md §89) and refuses a SET with a gap in it (§90). Absent on turn 1.
     let sealedTurns: unknown = undefined;
     let topicId = '';
+    // THE OPEN BASELINE'S CONVERSATION MEMORY — plain text pairs, not signed turns.
+    // R1.0: prior messages go to the model as history. `DECISIONS.md` §123.
+    let history: Array<{ question?: string; answer?: string }> = [];
 
     if (contentType.includes('multipart/form-data')) {
       const formData = await request.formData();
@@ -113,6 +119,8 @@ export async function POST(request: NextRequest) {
       topicId = (formData.get('topicId') as string) || '';
       const turnsRaw = formData.get('turns') as string | null;
       if (turnsRaw) { try { sealedTurns = JSON.parse(turnsRaw); } catch { sealedTurns = null; } }
+      const historyRaw = formData.get('history') as string | null;
+      if (historyRaw) { try { history = JSON.parse(historyRaw); } catch { history = []; } }
       const answeringRaw = formData.get('answering') as string | null;
       if (answeringRaw) {
         try { answering = JSON.parse(answeringRaw) as GateAnswering; } catch { answering = null; }
@@ -133,6 +141,7 @@ export async function POST(request: NextRequest) {
       answering = body.answering || null;
       topicId = body.topicId || '';
       sealedTurns = body.turns;
+      history = Array.isArray(body.history) ? body.history : [];
     }
 
     const userQuestion = question.trim() ||
@@ -170,6 +179,117 @@ export async function POST(request: NextRequest) {
       ] as AIContent;
     } else {
       messageContent = userQuestion;
+    }
+
+    // ==================================================================
+    // THE OPEN BASELINE — `DECISIONS.md` §113 and §123, `TODO.md` R1.0.
+    //
+    //   > "this section needs no barrier between Claude and an answer."
+    //
+    // One sentence of role, the conversation as history, search available with the MODEL
+    // deciding, and a stream. Everything else is a switch and production runs them off.
+    //
+    // *** THIS BRANCHES BEFORE THE GATE BLOCK, AND THAT PLACEMENT IS THE POINT. *** `off`
+    // means the code path is NOT ENTERED — not entered and its output discarded. A gate that
+    // runs and is ignored still costs the latency, still spends the tokens, and still logs as
+    // though it decided something. `lib/pipelineConfig.ts` says so; this is where it is obeyed.
+    // ==================================================================
+    logPipelineConfigOnce();
+    const gateOn = mode === 'research' ? pipelineSwitch('RESEARCH_GATE')
+                 : mode === 'checklist' ? pipelineSwitch('CHECKLIST_GATE')
+                 : false; // substeps was never gated — see the note below.
+
+    if (mode !== 'substeps' && !gateOn) {
+      // *** SIGNED TURNS ARE IGNORED ON THIS PATH, DELIBERATELY. ***
+      // Turn signing (§89-§91) exists to stop a client editing the conversation the GATE reads,
+      // because the gate treats a prior turn's facts as established. With the gate off nothing
+      // is established from history — it is passed to the model as text and the model weighs it
+      // like any other context. So the signature protects nothing here, and requiring it would
+      // refuse a conversation for failing a check that has no subject. A client may still send
+      // `turns`; they are not read. When RESEARCH_GATE is ON, the path below is unchanged.
+      const messages: OpenMessage[] = [];
+      for (const h of history) {
+        const q = String(h?.question ?? '').trim();
+        const a = String(h?.answer ?? '').trim();
+        // Both halves or neither: a user turn with no assistant reply would make the array
+        // end on two user messages, which the API refuses.
+        if (!q || !a) continue;
+        messages.push({ role: 'user', content: q });
+        messages.push({ role: 'assistant', content: a });
+      }
+      messages.push({ role: 'user', content: messageContent });
+
+      const longPrompt = mode === 'research'
+        ? pipelineSwitch('RESEARCH_LONG_PROMPT') : pipelineSwitch('CHECKLIST_LONG_PROMPT');
+      const system = longPrompt ? systemPrompt : buildSystemPrompt(mode, scanResult, { open: true });
+
+      // ---- CHECKLIST: the same open call, and a SHAPE rather than a fence ----------------
+      // A shape is a container, not a barrier: the UI has to tick, count and store items, so
+      // the output has to be parseable. It streams anyway — which removes the SDK's
+      // non-streaming token ceiling for this path (`TODO.md` 0.11) — and is parsed at the end.
+      if (mode === 'checklist') {
+        let raw = '';
+        for await (const ev of askAIOpenStream(system, messages,
+                     { task: 'judgement', maxTokens: 8000, signal: request.signal })) {
+          if (ev.type === 'text') raw += ev.text;
+          else if (ev.type === 'reset') raw = '';
+          else if (ev.type === 'done') raw = ev.answer.text;
+          else if (ev.type === 'error') {
+            return NextResponse.json({ error: ev.message }, { status: 502 });
+          }
+        }
+        let data: ChecklistAnswer;
+        try {
+          data = JSON.parse(extractJsonText(raw)) as ChecklistAnswer;
+        } catch (e) {
+          // §5: never silent, and fold the raw response in so a bad extraction is
+          // diagnosable from the log days later.
+          console.error('checklist shape did not parse:', String(e), raw.slice(0, 3000));
+          return NextResponse.json(
+            { error: 'The checklist came back in a shape we could not read. Please try again.' },
+            { status: 502 });
+        }
+        return NextResponse.json({ outcome: 'answer', ...data, topicId: topicId || null });
+      }
+
+      // ---- RESEARCH: stream to the client -----------------------------------------------
+      const encoder = new TextEncoder();
+      const body = new ReadableStream({
+        async start(controller) {
+          const send = (o: unknown) => controller.enqueue(encoder.encode(JSON.stringify(o) + '\n'));
+          try {
+            for await (const ev of askAIOpenStream(system, messages,
+                         { task: 'prose', maxTokens: 8000, signal: request.signal })) {
+              if (ev.type === 'done') {
+                send({ type: 'done', research: ev.answer.text, sources: ev.answer.sources,
+                       stopReason: ev.stopReason, outputTokens: ev.outputTokens });
+              } else {
+                send(ev);
+              }
+            }
+          } catch (err) {
+            // An abort is not an error the user needs to read — they caused it. Anything
+            // else gets a sentence they can act on (§5.1).
+            const aborted = request.signal.aborted ||
+              (err as { name?: string })?.name === 'AbortError';
+            if (!aborted) {
+              console.error('open research stream failed:', err);
+              send({ type: 'error', message: 'The answer stopped part-way through. Please try again.' });
+            }
+          } finally {
+            controller.close();
+          }
+        },
+      });
+      return new Response(body, {
+        headers: {
+          'Content-Type': 'application/x-ndjson; charset=utf-8',
+          'Cache-Control': 'no-store, no-transform',
+          // Without this a proxy can buffer the whole response and deliver it at once,
+          // which looks exactly like not streaming.
+          'X-Accel-Buffering': 'no',
+        },
+      });
     }
 
     // ------------------------------------------------------------------

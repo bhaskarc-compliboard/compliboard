@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CompliBoard — Compliance Workspace</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;450;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F7F8FA;
+  --surface:#FFFFFF;
+  --ink:#111827;
+  --ink-soft:#4B5563;
+  --ink-faint:#9CA3AF;
+  --line:#E5E7EB;
+  --line-strong:#D1D5DB;
+  --green:#2F7D52;
+  --green-mid:#2F7D52;
+  --green-wash:#F0FDF4;
+  --amber:#92400E;
+  --amber-wash:#FFFBEB;
+  --radius:10px;
+  --ui:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  --read:"Newsreader",Georgia,"Times New Roman",serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#0F1311;--surface:#171C1A;--ink:#ECEFED;--ink-soft:#A8B3AE;--ink-faint:#7B8983;
+    --line:#293230;--line-strong:#3A4543;--green:#4ADE80;--green-mid:#4ADE80;--green-wash:#14241B;
+    --amber:#FCD34D;--amber-wash:#2A2213;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0F1311;--surface:#171C1A;--ink:#ECEFED;--ink-soft:#A8B3AE;--ink-faint:#7B8983;
+  --line:#293230;--line-strong:#3A4543;--green:#4ADE80;--green-mid:#4ADE80;--green-wash:#14241B;
+  --amber:#FCD34D;--amber-wash:#2A2213;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{
+  margin:0;height:100%;background:var(--paper);color:var(--ink);
+  font-family:var(--ui);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased;
+}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--green-mid);outline-offset:2px;border-radius:5px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* shell */
+.app{display:flex;height:100%;min-height:0}
+.rail{
+  width:206px;flex:0 0 206px;border-right:1px solid var(--line);background:var(--surface);
+  display:flex;flex-direction:column;padding:20px 12px;gap:1px;
+}
+.brand{padding:2px 10px 20px}
+.brand b{display:block;font-weight:600;font-size:15.5px;letter-spacing:-.01em}
+.brand span{font-size:12px;color:var(--ink-faint)}
+.rail a{
+  display:block;padding:8px 10px;border-radius:7px;color:var(--ink-soft);
+  text-decoration:none;font-size:14px;
+}
+.rail a.on{background:var(--green-wash);color:var(--green);font-weight:500}
+.rail a.off{opacity:.45;pointer-events:none}
+.rail .foot{margin-top:auto;padding:10px;font-size:12px;color:var(--ink-faint);line-height:1.5}
+
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{padding:26px 32px 0;background:var(--paper)}
+.topbar h1{font-family:var(--read);font-size:25px;font-weight:400;letter-spacing:-.01em;margin:0 0 4px}
+.topbar p{margin:0;color:var(--ink-soft);font-size:14px}
+.tabs{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;padding:18px 32px 0;background:var(--paper);border-bottom:1px solid var(--line)}
+.tabset{display:flex;gap:26px}
+.cnt{font-size:12px;color:var(--ink-faint);margin-left:3px}
+.tabs button.on .cnt{color:var(--green)}
+.fresh{
+  display:inline-flex;align-items:center;gap:6px;background:none;border:0;padding:0 0 11px;
+  font-size:13.5px;color:var(--ink-soft);
+}
+.fresh:hover{color:var(--green)}
+.tabs button{
+  background:none;border:0;padding:0 0 11px;font-size:14px;color:var(--ink-soft);
+  border-bottom:2px solid transparent;margin-bottom:-1px;
+}
+.tabs button.on{color:var(--green);border-bottom-color:var(--green);font-weight:500}
+.pane{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden}
+.wrap{max-width:760px;margin:0 auto;padding:26px 32px 36px}
+
+/* conversation */
+.asked{
+  font-size:15px;background:var(--green-wash);border:1px solid var(--line);
+  border-radius:12px 12px 3px 12px;padding:11px 15px;margin:0 0 20px auto;
+  max-width:76%;width:fit-content;
+}
+.answer{font-family:var(--read);font-size:17.5px;line-height:1.62;color:var(--ink)}
+.answer p{margin:0 0 15px;max-width:68ch}
+.answer strong{font-weight:500}
+.cite{
+  font-family:var(--ui);font-size:10.5px;font-weight:600;vertical-align:super;color:var(--green);
+  background:var(--green-wash);border:0;border-radius:4px;padding:1px 4px;margin-left:2px;line-height:1;
+}
+.sources{border-top:1px solid var(--line);margin-top:20px;padding-top:14px}
+.sources h4{font-family:var(--ui);font-size:12.5px;font-weight:600;color:var(--ink-soft);margin:0 0 9px}
+.sources ol{margin:0;padding-left:18px;font-family:var(--ui);font-size:13.5px;line-height:1.6}
+.sources li{margin-bottom:6px;color:var(--ink-soft)}
+.sources a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--line-strong)}
+.sources a:hover{color:var(--green);border-bottom-color:var(--green)}
+.sources .host{color:var(--ink-faint);font-size:12.5px}
+.turn{margin-bottom:30px}
+
+.acts{display:flex;flex-wrap:wrap;gap:9px;margin-top:18px}
+.act{background:var(--surface);border:1px solid var(--line-strong);border-radius:999px;padding:8px 15px;font-size:13.5px}
+.act:hover{border-color:var(--green);color:var(--green)}
+.act.key{border-color:var(--green);color:var(--green);font-weight:500}
+.act.key:hover{background:var(--green-wash)}
+
+.file{
+  display:flex;gap:12px;align-items:flex-start;background:var(--surface);border:1px solid var(--line);
+  border-radius:12px 12px 3px 12px;padding:12px 14px;margin:0 0 10px auto;max-width:76%;width:fit-content;
+}
+.file .ic{width:34px;height:34px;flex:0 0 34px;border-radius:7px;background:var(--green-wash);color:var(--green);display:grid;place-items:center;font-size:10.5px;font-weight:600}
+.file.warn .ic{background:var(--amber-wash);color:var(--amber)}
+.file .nm{font-size:14px;font-weight:500;margin-bottom:2px}
+.file .mt{font-size:12.5px;color:var(--ink-soft);line-height:1.5}
+.file .mt a{color:var(--green);text-decoration:none;border-bottom:1px solid currentColor}
+
+.nudge{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;font-size:14px;color:var(--ink-soft);margin-top:26px}
+.nudge b{color:var(--ink);font-weight:600}
+
+/* composer */
+.composer{background:var(--paper);padding:34px 32px 10px}
+.composer.docked{border-top:1px solid var(--line);padding:12px 32px 12px}
+.cbox{max-width:760px;margin:0 auto}
+.crow{display:flex;align-items:flex-end;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:13px 16px 13px 18px}
+.crow:focus-within{border-color:var(--green-mid)}
+.crow textarea{flex:1;border:0;outline:0;resize:none;background:none;color:var(--ink);font-family:var(--ui);font-size:15px;line-height:1.5;padding:9px 0;max-height:140px}
+.crow textarea::placeholder{color:var(--ink-faint)}
+.egs{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 16px;margin-top:28px;font-size:13px;color:var(--ink-faint)}
+.egs button{background:none;border:0;padding:0;font-size:13px;color:var(--ink-soft);border-bottom:1px solid var(--line-strong)}
+.egs button:hover{color:var(--green);border-bottom-color:var(--green)}
+.cmeta{display:flex;align-items:center;gap:10px;margin-top:26px;flex-wrap:wrap}
+.dockonly{display:none}
+.composer.docked .cmeta{display:none}
+.composer.docked .crow{padding:8px 8px 8px 16px}
+.composer.docked .dockonly{display:grid}
+.icbtn{background:none;border:0;padding:7px;border-radius:8px;color:var(--ink-faint);place-items:center}
+.icbtn:hover{background:var(--green-wash);color:var(--green)}
+.icbtn.go-ic{color:var(--green)}
+.icbtn.stopic{color:var(--ink-soft)}
+.icbtn.stopic:hover{background:var(--amber-wash);color:var(--amber)}
+.stopic{display:none}
+.stopic.on{display:grid}
+.composer.docked .stopic.hidden{display:none}
+.stopline{background:none;border:0;padding:0;font-size:13px;color:var(--ink-soft);border-bottom:1px solid var(--line-strong);margin-left:14px}
+.stopline:hover{color:var(--amber);border-bottom-color:var(--amber)}
+.go,.clip{
+  min-width:178px;padding:8px 18px;border-radius:999px;font-size:14px;
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;white-space:nowrap;
+}
+.go{background:var(--green);border:1px solid var(--green);color:#fff;font-weight:500}
+.go:hover{opacity:.9}
+.go.alt{background:var(--surface);color:var(--ink);border-color:var(--line-strong);font-weight:400}
+.go.alt:hover{border-color:var(--green);color:var(--green);opacity:1}
+.go:hover{opacity:.92}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:var(--surface)}
+.seg button{background:none;border:0;padding:7px 14px;font-size:13px;color:var(--ink-faint)}
+.seg button.on{background:var(--green-wash);color:var(--green);font-weight:500}
+.note{font-size:12.5px;color:var(--ink-faint)}
+.clip{background:var(--surface);border:1px solid var(--line-strong);color:var(--ink-soft)}
+.clip:hover{border-color:var(--green);color:var(--green)}
+
+/* checklist */
+.head{margin-bottom:20px}
+.head h2{font-family:var(--read);font-size:22px;font-weight:400;margin:0 0 5px;letter-spacing:-.01em}
+.head .sub{font-size:13px;color:var(--ink-faint)}
+.bar{height:4px;background:var(--line);border-radius:3px;margin:16px 0 8px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--green-mid);border-radius:3px;transition:width .3s}
+.item{display:flex;gap:12px;padding:15px 0;border-top:1px solid var(--line)}
+.item:last-child{border-bottom:1px solid var(--line)}
+.tick{width:19px;height:19px;flex:0 0 19px;margin-top:2px;border:1.5px solid var(--line-strong);border-radius:5px;background:none;display:grid;place-items:center;color:transparent;font-size:12px}
+.item.done .tick{background:var(--green-mid);border-color:var(--green-mid);color:#fff}
+.item.done .nm{color:var(--ink-faint);text-decoration:line-through}
+.item .nm{font-size:14.5px;font-weight:600;margin-bottom:3px}
+.item .ds{font-size:14px;color:var(--ink-soft);line-height:1.6;max-width:66ch}
+.item .row{display:flex;flex-wrap:wrap;gap:9px;align-items:center;margin-top:8px}
+.tag{font-size:11.5px;padding:2px 9px;border-radius:999px;border:1px solid var(--line-strong);color:var(--ink-faint)}
+.tag.chat{background:var(--green-wash);border-color:transparent;color:var(--green)}
+.tag.new{background:var(--amber-wash);border-color:transparent;color:var(--amber)}
+.item .src{font-size:12.5px}
+.item .src a{color:var(--ink-soft);text-decoration:none;border-bottom:1px solid var(--line)}
+.item .src a:hover{color:var(--green);border-bottom-color:var(--green)}
+
+/* lists */
+.banner{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:15px 17px;margin-bottom:20px}
+.banner p{margin:0;font-size:14px;color:var(--ink-soft)}
+.banner b{color:var(--ink);font-weight:600}
+.panel{background:none;border:0;border-radius:0}
+.row{display:flex;align-items:center;gap:14px;padding:16px 2px}
+.conv+.conv{border-top:1px solid var(--line)}
+.row{cursor:pointer}
+.chev{color:var(--ink-faint);flex:0 0 auto;transition:transform .2s}
+.chev.go-r{transform:none}
+.row:hover .chev.go-r{color:var(--green)}
+.waitnote{font-size:14px;color:var(--ink-soft);margin:0 0 4px;max-width:66ch}
+.peek{padding:2px 0 4px}
+.pk{display:flex;gap:10px;align-items:flex-start;font-size:14px;color:var(--ink);padding:5px 0}
+.pk.done{color:var(--ink-faint);text-decoration:line-through}
+.pt{width:15px;height:15px;flex:0 0 15px;margin-top:3px;border:1.5px solid var(--line-strong);border-radius:4px;display:grid;place-items:center;font-size:10px;color:transparent}
+.pk.done .pt{background:var(--green);border-color:var(--green);color:#fff;text-decoration:none}
+.more{font-size:13px;color:var(--ink-faint);margin:8px 0 0}
+.row:hover .t{color:var(--green)}
+.row .grow{flex:1;min-width:0;cursor:pointer}
+.row .t{font-size:14px;font-weight:500;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .m{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-top:3px;font-size:12px;color:var(--ink-faint)}
+.row .m .ok{color:var(--green)}
+.row .m .wait{color:var(--amber)}
+.del{background:none;border:0;padding:4px 2px;font-size:12.5px;color:var(--ink-faint);flex:0 0 auto;opacity:0}
+.row:hover .del,.del:focus-visible{opacity:1}
+.del:hover{color:#C0392B}
+.empty{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:46px 20px;text-align:center}
+.empty b{display:block;font-size:15px;font-weight:500;margin-bottom:4px}
+.empty span{font-size:13px;color:var(--ink-faint)}
+.life{display:inline-flex;align-items:center;gap:6px}
+.life i{width:6px;height:6px;border-radius:50%;background:var(--green-mid);display:block}
+.life.soon i{background:var(--amber)}
+.mini{background:none;border:0;padding:0;font-size:12.5px;color:var(--ink-soft);border-bottom:1px solid var(--line)}
+.mini:hover{color:var(--green);border-bottom-color:var(--green)}
+.policy{font-size:13px;color:var(--ink-soft);margin:0 0 18px;line-height:1.6;max-width:70ch}
+
+.stopped{font-size:14px;color:var(--ink-faint);padding:4px 0 2px}
+.working{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:16px 18px;margin-bottom:6px}
+.step{display:flex;align-items:center;gap:9px;font-size:14px;color:var(--ink-faint);padding:3px 0}
+.step.now{color:var(--ink)}
+.step .mk{color:var(--green);width:14px;display:inline-block}
+.spin{display:inline-block;animation:sp 1s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+.safety{display:flex;gap:11px;align-items:flex-start;background:var(--amber-wash);border:1px solid transparent;border-left:3px solid var(--amber);border-radius:8px;padding:13px 15px;margin:0 0 18px}
+.safety .bang{flex:0 0 18px;width:18px;height:18px;border-radius:50%;background:var(--amber);color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center;margin-top:1px}
+.safety b{display:block;font-family:var(--ui);font-size:13px;color:var(--amber);margin-bottom:2px}
+.safety p{font-family:var(--ui);font-size:13.5px;color:var(--amber);margin:0;line-height:1.55;max-width:64ch}
+
+.pop{position:fixed;z-index:60;width:280px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;box-shadow:0 10px 30px rgba(17,24,39,.12);font-family:var(--ui)}
+.pop .lbl{font-size:11px;color:var(--ink-faint);display:block;margin-bottom:3px}
+.pop .ttl{font-size:13px;font-weight:500;display:block;line-height:1.45}
+.pop .hst{font-size:12px;color:var(--ink-faint)}
+.pop a{display:inline-block;margin-top:8px;font-size:12.5px;color:var(--green);text-decoration:none;border-bottom:1px solid currentColor}
+
+.pagefoot{padding:14px 32px calc(16px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line);background:var(--paper)}
+.disc{font-size:12px;color:var(--ink-faint);line-height:1.5;margin:0;max-width:86ch}
+.disc+.disc{margin-top:4px}
+.disc b{color:var(--ink-soft);font-weight:500}
+
+@media print{
+  .rail,.tabs,.composer,.del,.acts{display:none!important}
+  body{background:#fff}
+  .sources a::after{content:" — " attr(href);font-size:10px;color:#444;word-break:break-all}
+}
+
+/* drawer */
+.dveil{position:fixed;inset:0;background:rgba(17,24,39,.32);z-index:40}
+.drawer{
+  position:fixed;top:0;right:0;bottom:0;width:min(560px,92vw);z-index:45;
+  background:var(--surface);border-left:1px solid var(--line);display:flex;flex-direction:column;
+  padding-top:env(safe-area-inset-top,0px);box-shadow:-18px 0 40px rgba(17,24,39,.07);
+}
+.drawer .dbody .answer{font-size:16px}
+.drawer footer:empty{display:none}
+.drawer header{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:22px 24px 0}
+.drawer header h2{font-family:var(--read);font-size:21px;font-weight:400;margin:0 0 4px;letter-spacing:-.01em}
+.drawer .prog{padding:14px 24px 16px;border-bottom:1px solid var(--line)}
+.drawer .bar{margin:0 0 7px}
+.dbody{flex:1;overflow-y:auto;padding:4px 24px 20px}
+.drawer footer{
+  display:flex;gap:10px;padding:14px 24px calc(18px + env(safe-area-inset-bottom,0px));
+  border-top:1px solid var(--line);background:var(--surface);
+}
+.act.ghost{border-color:transparent;color:var(--ink-faint);margin-left:auto}
+.act.ghost:hover{border-color:#F0A3A3;color:#C0392B}
+@media (max-width:560px){.drawer{width:100vw;border-left:0}}
+
+/* sheet */
+.veil{position:fixed;inset:0;background:rgba(17,24,39,.4);display:grid;place-items:center;padding:20px;z-index:50}
+.sheet{background:var(--surface);border-radius:14px;border:1px solid var(--line);max-width:470px;width:100%;padding:24px}
+.sheet h3{font-family:var(--read);font-size:20px;font-weight:400;margin:0 0 6px}
+.sheet .lede{font-size:14px;color:var(--ink-soft);margin:0 0 16px;line-height:1.6}
+.choice{display:block;width:100%;text-align:left;background:none;border:1px solid var(--line);border-radius:var(--radius);padding:14px 15px;margin-bottom:9px}
+.choice:hover{border-color:var(--green-mid)}
+.choice b{display:block;font-size:14.5px;font-weight:600;margin-bottom:3px}
+.choice span{font-size:13.5px;color:var(--ink-soft);line-height:1.55}
+.sheet .x{background:none;border:0;font-size:13.5px;color:var(--ink-faint);padding:6px 0;margin-top:4px}
+
+.hidden{display:none!important}
+
+@media (max-width:820px){
+  .rail{display:none}
+  .topbar{padding:20px 18px 0}
+  .tabs{padding:16px 18px 0;gap:20px}
+  .wrap{padding:20px 18px 30px}
+  .pagefoot{padding:12px 18px calc(14px + env(safe-area-inset-bottom,0px))}
+  .composer{padding:24px 18px 8px}
+  .composer.docked{padding:10px 18px calc(14px + env(safe-area-inset-bottom,0px))}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <nav class="rail">
+    <div class="brand"><b>CompliBoard</b><span>Test Alpha Chemical</span></div>
+    <a href="#" class="on">Compliance Workspace</a>
+    <a href="#" class="off">Documents</a>
+    <a href="#" class="off">Requirements</a>
+    <a href="#" class="off">Calendar</a>
+    <a href="#" class="off">Dashboard</a>
+    <div class="foot">Hillsboro, Oregon<br>Chemical manufacturing</div>
+  </nav>
+
+  <div class="main">
+    <div class="topbar">
+      <h1>Compliance Workspace</h1>
+      <p>Research the rules that apply to you, and turn what you find into action steps.</p>
+    </div>
+    <div class="tabs">
+      <div class="tabset">
+        <button id="t-chat" class="on" onclick="go('chat')">Ask a question</button>
+        <button id="t-hist" onclick="go('hist')">Conversations</button>
+        <button id="t-save" onclick="go('save')">Checklists <span class="cnt">2</span></button>
+      </div>
+      <button class="fresh" onclick="fresh()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        New conversation</button>
+    </div>
+
+    <div id="slot-top"></div>
+
+    <div class="pane" id="p-chat">
+      <div class="wrap"><div id="thread"></div></div>
+    </div>
+
+    <!-- HISTORY -->
+    <div class="pane hidden" id="p-hist">
+      <div class="wrap">
+        <div class="banner" id="fact-banner">
+          <p><b>One thing from yesterday.</b> It sounded like the west bay holds around 400 pounds of solvent waste a month. Saving that means we stop asking, and your requirements get sharper.</p>
+          <div class="acts">
+            <button class="act key" onclick="savedFact()">Save it</button>
+            <button class="act" onclick="document.getElementById('fact-banner').remove()">Not now</button>
+          </div>
+        </div>
+
+        <p class="policy">Summaries are kept until you delete them. The full back-and-forth is cleared 7 days after a conversation is summarised. Anything you uploaded stays in Documents.</p>
+
+        <div class="panel">
+          <div class="conv">
+            <div class="row" onclick="openConv('today')">
+              <div class="grow">
+                <p class="t">Do we need to file a Tier II report for the Hillsboro plant?</p>
+                <div class="m"><span>Today</span><span class="wait">Summary written overnight</span><span>3 questions answered</span></div>
+              </div>
+              <button class="del" onclick="event.stopPropagation()">Delete</button>
+              <svg class="chev go-r" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+            </div>
+          </div>
+          <div class="conv">
+            <div class="row" onclick="openConv('label')">
+              <div class="grow">
+                <p class="t">Label check — Solvent Blend 400</p>
+                <div class="m"><span>21 September</span><span class="ok">Summarised</span><span>Full conversation kept 6 more days</span></div>
+              </div>
+              <button class="del" onclick="event.stopPropagation()">Delete</button>
+              <svg class="chev go-r" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+            </div>
+          </div>
+          <div class="conv">
+            <div class="row" onclick="openConv('waste')">
+              <div class="grow">
+                <p class="t">Waste accumulation limits in the west bay</p>
+                <div class="m"><span>19 September</span><span class="ok">Summarised</span><span>Back-and-forth cleared</span></div>
+              </div>
+              <button class="del" onclick="event.stopPropagation()">Delete</button>
+              <svg class="chev go-r" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SAVED -->
+    <div class="pane hidden" id="p-save">
+      <div class="wrap">
+        <div class="head"><h2>Checklists</h2><div class="sub">Every checklist you've made, with where you got to</div></div>
+        <div class="panel">
+          <div class="conv">
+            <div class="row" onclick="openList('label')">
+              <div class="grow">
+                <p class="t">Label compliance review — Solvent Blend 400</p>
+                <div class="m"><span>22 September</span><span class="ok">3 of 11 done</span><span>4 from the conversation · 7 newly checked</span></div>
+              </div>
+              <button class="del" onclick="event.stopPropagation()">Delete</button>
+              <svg class="chev go-r" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+            </div>
+          </div>
+          <div class="conv">
+            <div class="row" onclick="openList('facility')">
+              <div class="grow">
+                <p class="t">Second blending facility — Oregon</p>
+                <div class="m"><span>20 September</span><span class="ok">2 of 23 done</span><span>Air, waste, fire code, stormwater, employment</span></div>
+              </div>
+              <button class="del" onclick="event.stopPropagation()">Delete</button>
+              <svg class="chev go-r" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COMPOSER -->
+    <div class="composer" id="composer">
+      <div class="cbox">
+        <div class="crow">
+          <textarea id="box" rows="1" placeholder="Ask about a rule, or describe a job you need the steps for…" oninput="grow(this)" onkeydown="key(event)"></textarea>
+          <button class="icbtn dockonly" onclick="openAttach()" title="Attach a file" aria-label="Attach a file">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M21.4 11.05 12.25 20.2a5.5 5.5 0 0 1-7.78-7.78l9.19-9.19a3.67 3.67 0 0 1 5.18 5.18l-9.2 9.2a1.83 1.83 0 0 1-2.59-2.6l8.49-8.48"/></svg>
+          </button>
+          <button class="icbtn dockonly go-ic" id="sendic" onclick="fire('prose')" title="Send" aria-label="Send">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </button>
+          <button class="icbtn dockonly stopic hidden" id="stopic" onclick="stopIt()" title="Stop" aria-label="Stop">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="6" y="6" width="12" height="12" rx="2.5"/></svg>
+          </button>
+        </div>
+        <div class="cmeta">
+          <button class="go" onclick="fire('prose')">Research this</button>
+          <button class="go alt" onclick="fire('list')">Make a checklist</button>
+          <button class="clip" onclick="openAttach()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M21.4 11.05 12.25 20.2a5.5 5.5 0 0 1-7.78-7.78l9.19-9.19a3.67 3.67 0 0 1 5.18 5.18l-9.2 9.2a1.83 1.83 0 0 1-2.59-2.6l8.49-8.48"/></svg>
+          Attach a file</button>
+        </div>
+        <div class="egs" id="egs">
+          <span>Try:</span>
+          <button onclick="ask('rest')">Second restaurant in Seattle, 25 staff</button>
+          <button onclick="ask('hospice')">Hospice caregivers driving to patients</button>
+          <button onclick="ask('roof')">Roofing crew and fall protection</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="slot-bottom"></div>
+    <footer class="pagefoot">
+      <p class="disc"><b>CompliBoard is an information tool, not professional advice.</b> Answers are generated by AI from current regulatory sources, and AI can make mistakes. Check anything important against the source it cites, or with someone qualified, before acting on it.</p>
+      <p class="disc" id="live">Connecting…</p>
+      <p class="disc"><button class="mini" onclick="ping()">Test short</button> <button class="mini" onclick="ping(ROLE+'\n\nQuestion: Do I need workers comp insurance?')">Test the real prompt</button> <span id="ping"></span></p>
+    </footer>
+  </div>
+</div>
+
+<div class="dveil hidden" id="dveil" onclick="closeAll()"></div>
+
+<aside class="drawer hidden" id="sdrawer" aria-label="Conversation summary">
+  <header>
+    <div>
+      <h2 id="s-title">Summary</h2>
+      <div class="sub" id="s-sub"></div>
+    </div>
+    <button class="icbtn" onclick="closeAll()" aria-label="Close">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+  </header>
+  <div class="dbody" id="s-body"></div>
+  <footer id="s-foot"></footer>
+</aside>
+<aside class="drawer hidden" id="drawer" aria-label="Checklist">
+  <header>
+    <div>
+      <h2 id="list-title">Checklist</h2>
+      <div class="sub" id="list-sub"></div>
+    </div>
+    <button class="icbtn" onclick="closeAll()" aria-label="Close">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+  </header>
+  <div class="prog">
+    <div class="bar"><i id="bar" style="width:0%"></i></div>
+    <span class="sub" id="prog">0 of 0 done</span>
+  </div>
+  <div class="dbody" id="items"></div>
+  <footer>
+    <button class="act" onclick="alert('Opens the browser print dialogue — saved as PDF from there.')">Download</button>
+    <button class="act ghost" onclick="closeList()">Delete</button>
+  </footer>
+</aside>
+
+<div class="veil hidden" id="attach">
+  <div class="sheet">
+    <h3>Attach a file</h3>
+    <p class="lede">Anything you upload is saved to your documents so you can find it later. Pick one to try.</p>
+    <button class="choice" onclick="attach('good')"><b>Solvent-Blend-400-label.pdf</b><span>A clean export — reads fine.</span></button>
+    <button class="choice" onclick="attach('bad')"><b>IMG_4471.jpg</b><span>A phone photo at an angle — shows what happens when we can't read it.</span></button>
+    <button class="x" onclick="close_('attach')">Cancel</button>
+  </div>
+</div>
+
+<div class="veil hidden" id="scope">
+  <div class="sheet">
+    <h3>How much should this cover?</h3>
+    <p class="lede">We talked about the pictograms. A label has more on it than that, and a checklist that stops where the conversation stopped can read as though you're finished.</p>
+    <button class="choice" onclick="build('narrow')"><b>Just what we discussed</b><span>4 items on pictograms and signal word, drawn from this conversation and its sources.</span></button>
+    <button class="choice" onclick="build('full')"><b>Everything on this label</b><span>11 items covering the full label. The 7 we didn't discuss are checked now and marked as newly researched.</span></button>
+    <button class="x" onclick="close_('scope')">Not now</button>
+  </div>
+</div>
+
+<script>
+var answerMode='prose', turns=0, SAMPLE=null, history=[], PENDING=null;
+function busy(on, cancel){
+  PENDING = on ? (cancel||function(){}) : null;
+  var sd=document.getElementById('sendic'), st=document.getElementById('stopic');
+  if(sd) sd.classList.toggle('hidden', !!on);
+  if(st){ st.classList.toggle('hidden', !on); st.classList.toggle('on', !!on); }
+  document.querySelectorAll('.go,.clip').forEach(function(b){ b.disabled=!!on; b.style.opacity=on?'.45':''; });
+}
+function stopIt(){
+  if(!PENDING) return;
+  var c=PENDING; busy(false); c();
+}
+(function connect(tries){
+  try{
+    if(typeof claude==='undefined'||!claude||!claude.use){
+      if(tries<40) return setTimeout(function(){connect(tries+1)},250);
+      return mark('No live connection — using demo answers.');
+    }
+    claude.use('sample').then(function(fn){
+      SAMPLE=fn;
+      mark(fn ? 'Live — answers come from Claude. No web search yet, so sources are named, not linked.'
+              : 'Live answers are not available in this view — using demo answers.');
+    }).catch(function(e){ mark('Could not reach Claude ('+(e&&e.code||'error')+') — using demo answers.'); });
+  }catch(e){ mark('Could not reach Claude — using demo answers.'); }
+})(0);
+function ping(p){
+  var out=document.getElementById('ping');
+  if(!SAMPLE){ out.textContent='SAMPLE is null — the capability did not resolve.'; return; }
+  out.textContent='calling… ('+((p||'x').length)+' chars)';
+  var t=Date.now();
+  try{
+    var r=SAMPLE(p||'Reply with exactly: OK');
+    if(!r||!r.then){ out.textContent='the call returned '+typeof r+', not a promise'; return; }
+    r.then(function(x){ out.textContent='got back "'+String(x&&x.text).slice(0,40)+'" in '+Math.round((Date.now()-t)/1000)+'s'; })
+     .catch(function(e){ out.textContent='rejected: '+String(e&&(e.code||e.message)||e); });
+  }catch(e){ out.textContent='threw: '+String(e&&e.message||e); }
+}
+function mark(msg){
+  var d=document.getElementById('live');
+  if(d) d.textContent=msg;
+}
+
+var ROLE = "You are a compliance specialist advising the owner or manager of a small or mid-size business in the United States. "
++"Answer the question they actually asked, then tell them the thing they did not ask but need to know. "
++"Be specific: name the agency, the rule, the threshold and the deadline where you know them. "
++"Where the answer depends on a fact you do not have, say which fact and what each answer would mean, rather than refusing. "
++"Write in plain paragraphs, no headings, no bullet lists, under 300 words. "
++"End with one specific offer of what you could do next if they gave you something — a document to check, a number to work out. "
++"You have NO web access, so never invent a URL. Finish with a line beginning 'SOURCES:' naming the agencies and rules you relied on, separated by semicolons.";
+
+function renderAnswer(raw){
+  var src='', body=raw;
+  var i=raw.lastIndexOf('SOURCES:');
+  if(i>-1){ src=raw.slice(i+8).trim(); body=raw.slice(0,i).trim(); }
+  var html='<div class="answer">';
+  body.split(/\n\n+/).forEach(function(par){
+    html+='<p>'+par.replace(/\n/g,' ').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')+'</p>';
+  });
+  if(src){
+    html+='<div class="sources"><h4>Sources named by the model — not verified, and not yet linked</h4><ol>';
+    src.split(/;|\n/).forEach(function(x){ if(x.trim()) html+='<li>'+x.trim().replace(/^[-•]\s*/,'')+'</li>'; });
+    html+='</ol></div>';
+  }
+  html+='<div class="acts">'
+   +'<button class="act key" onclick="document.getElementById(\'scope\').classList.remove(\'hidden\')">Turn this into a checklist</button>'
+   +'<button class="act" onclick="openConv(\'label\')">Summarise this</button></div></div>';
+  return html;
+}
+
+function live(question){
+  push('<div class="turn">'+asked(escapeHtml(question))+'</div>');
+  var id='w'+Date.now();
+  push('<div class="turn" id="'+id+'"><div class="working"><div class="step now"><span class="mk spin">&#8635;</span><span>Working on it…</span><button class="stopline" onclick="stopIt()">Stop</button></div></div></div>');
+  var box=document.getElementById(id);
+  history.push({role:'user', content:question});
+  var prompt=ROLE+"\n\nQuestion: "+question, dead=false;
+  busy(true, function(){
+    dead=true;
+    box.innerHTML='<div class="stopped">Stopped. Ask again, or change the question.</div>';
+  });
+  SAMPLE(prompt).then(function(r){
+    if(dead) return;
+    busy(false);
+    var txt=(r&&r.text)||'';
+    history.push({role:'assistant', content:txt});
+    try{ box.innerHTML=renderAnswer(txt); }
+    catch(e){ box.innerHTML='<div class="answer"><p>'+escapeHtml(txt)+'</p></div>'; }
+    var pane=document.getElementById('p-chat'); pane.scrollTop=pane.scrollHeight;
+  }).catch(function(e){
+    if(dead) return;
+    busy(false);
+    box.innerHTML='<div class="answer"><p>That didn\'t come back: '+escapeHtml(String(e&&(e.code||e.message)||e))+'</p></div>';
+  });
+}
+document.addEventListener('DOMContentLoaded',function(){
+  document.getElementById('slot-top').appendChild(document.getElementById('composer'));
+});
+
+function go(v){
+  ['chat','hist','save'].forEach(function(k){
+    var el=document.getElementById('p-'+k); if(el) el.classList.add('hidden');
+  });
+  document.getElementById('p-'+v).classList.remove('hidden');
+  document.getElementById('composer').classList.toggle('hidden', v!=='chat');
+  ['chat','hist','save'].forEach(function(k){document.getElementById('t-'+k).classList.toggle('on', k===v)});
+  document.querySelectorAll('.pane').forEach(function(p){p.scrollTop=0});
+}
+function close_(id){document.getElementById(id).classList.add('hidden')}
+function pop(el){
+  var old=document.querySelector('.pop'); if(old) old.remove();
+  if(el.dataset.open==='1'){ el.dataset.open=''; return; }
+  document.querySelectorAll('.cite').forEach(function(c){c.dataset.open=''});
+  el.dataset.open='1';
+  var r=el.getBoundingClientRect(), d=document.createElement('div');
+  d.className='pop';
+  d.innerHTML='<span class="lbl">Source '+el.textContent+'</span>'
+    +'<span class="ttl">'+el.dataset.t+'</span>'
+    +'<span class="hst">'+el.dataset.h+'</span>'
+    +'<a href="#" onclick="event.preventDefault()">Open source</a>';
+  document.body.appendChild(d);
+  d.style.top=Math.min(r.bottom+6,window.innerHeight-160)+'px';
+  d.style.left=Math.min(r.left,window.innerWidth-300)+'px';
+}
+document.addEventListener('click',function(e){
+  if(!e.target.closest('.cite')&&!e.target.closest('.pop')){
+    var o=document.querySelector('.pop'); if(o) o.remove();
+    document.querySelectorAll('.cite').forEach(function(c){c.dataset.open=''});
+  }
+});
+var CONV={
+ today:{title:'Do we need to file a Tier II report for the Hillsboro plant?',sub:'Today · 3 questions answered · not yet summarised',
+   body:'<p class="waitnote">This one hasn\'t been summarised yet. The summary is written overnight, and the full conversation is here until then.</p>',
+   foot:'<button class="act key" onclick="openThread(\'today\')">Open the conversation</button>'},
+ label:{title:'Label check — Solvent Blend 400',sub:'21 September · summarised · full conversation kept 6 more days',
+   body:'<div class="answer">'
+    +'<p><strong>What was asked.</strong> Whether the shipped container label for Solvent Blend 400 carries the right GHS pictograms.</p>'
+    +'<p><strong>What was found.</strong> Two problems. The exclamation mark pictogram appears alongside the health hazard pictogram for the same hazard class, and only one of the two belongs there.<button class="cite">1</button> The pictogram frames are printed in black rather than red, which means they do not count as GHS pictograms at all.<button class="cite">2</button></p>'
+    +'<p><strong>Not covered.</strong> Hazard statements, precautionary text and supplier identity were not checked in this conversation.</p>'
+    +'<div class="sources"><h4>Sources</h4><ol>'
+    +'<li><a href="#">Hazard Communication standard, appendix C, label content</a> <span class="host">osha.gov</span></li>'
+    +'<li><a href="#">Pictogram format and red frame requirements</a> <span class="host">osha.gov</span></li>'
+    +'</ol></div></div>',
+   foot:'<button class="act" onclick="openThread(\'label\')">Open the conversation</button>'
+    +'<button class="act" onclick="closeAll();openList(\'label\')">Open the checklist</button>'
+    +'<button class="act ghost" onclick="alert(\'Opens the browser print dialogue — saved as PDF from there.\')">Download</button>'},
+ waste:{title:'Waste accumulation limits in the west bay',sub:'19 September · summarised · back-and-forth cleared',
+   body:'<div class="answer">'
+    +'<p><strong>What was asked.</strong> How long hazardous waste can accumulate in the west bay, and what changes if the site moves up a generator category.</p>'
+    +'<p><strong>What it comes down to.</strong> Accumulation time is set by generator category, and the category is recalculated every month from what the site actually generates.<button class="cite">1</button> A single heavy month can move a site up, and the shorter clock applies from that point rather than from the next year.</p>'
+    +'<p><strong>Still open.</strong> The west bay\'s monthly figure was not established, so the category was not settled.</p>'
+    +'<div class="sources"><h4>Sources</h4><ol>'
+    +'<li><a href="#">Hazardous waste generator categories and accumulation limits</a> <span class="host">epa.gov</span></li>'
+    +'</ol></div></div>',
+   foot:'<button class="act ghost" onclick="alert(\'Opens the browser print dialogue — saved as PDF from there.\')">Download</button>'}
+};
+function openThread(k){
+  closeAll();
+  var t=document.getElementById('thread');
+  t.innerHTML='';
+  document.getElementById('egs').classList.add('hidden');
+  var c=document.getElementById('composer');
+  if(!c.classList.contains('docked')){
+    c.classList.add('docked');
+    document.getElementById('slot-bottom').appendChild(c);
+  }
+  turns=1;
+  if(k==='today'){
+    t.insertAdjacentHTML('beforeend','<div class="turn">'+asked('Do we need to file a Tier II report for the Hillsboro plant?')+A_TIER2+'</div>');
+  } else {
+    t.insertAdjacentHTML('beforeend','<div class="turn">'+FILE_GOOD+asked('Check this label for errors')+A_LABEL+'</div>');
+  }
+  go('chat');
+  document.getElementById('p-chat').scrollTop=0;
+}
+function openConv(k){
+  var c=CONV[k];
+  document.getElementById('s-title').textContent=c.title;
+  document.getElementById('s-sub').textContent=c.sub;
+  document.getElementById('s-body').innerHTML=c.body;
+  document.getElementById('s-foot').innerHTML=c.foot;
+  document.getElementById('sdrawer').classList.remove('hidden');
+  document.getElementById('dveil').classList.remove('hidden');
+}
+function closeAll(){
+  document.getElementById('sdrawer').classList.add('hidden');
+  closeList();
+}
+function fresh(){
+  document.getElementById('thread').innerHTML='';
+  document.getElementById('egs').classList.remove('hidden');
+  var c=document.getElementById('composer');
+  c.classList.remove('docked');
+  document.getElementById('slot-top').appendChild(c);
+  turns=0; answerMode='prose';
+  document.getElementById('box').value='';
+  document.getElementById('box').style.height='auto';
+  go('chat');
+}
+function openAttach(){document.getElementById('attach').classList.remove('hidden')}
+function fire(m){ answerMode=m; send(); }
+function grow(t){t.style.height='auto';t.style.height=Math.min(t.scrollHeight,140)+'px'}
+function key(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}}
+function send(){
+  var b=document.getElementById('box'), v=b.value.trim();
+  if(!v && turns===0){ ask(answerMode==='list'?'facility':'tier2'); return; }
+  if(!v) return;
+  b.value=''; b.style.height='auto';
+  if(SAMPLE){ start(); live(v); return; }
+  if(answerMode==='list'){ ask('facility'); return; }
+  ask('generic', v);
+}
+function start(){
+  document.getElementById('egs').classList.add('hidden');
+  var c=document.getElementById('composer');
+  if(!c.classList.contains('docked')){
+    c.classList.add('docked');
+    document.getElementById('slot-bottom').appendChild(c);
+  }
+  turns++;
+}
+function push(html){
+  document.getElementById('thread').insertAdjacentHTML('beforeend', html);
+  var p=document.getElementById('p-chat'); p.scrollTop=p.scrollHeight;
+}
+function asked(q){return '<div class="asked">'+q+'</div>'}
+function escapeHtml(s){return s.replace(/[&<>"']/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]})}
+
+var STEPS=['Reading the question','Searching regulator sources','Checking what applies here','Writing the answer'];
+function think(html){
+  var id='w'+Date.now();
+  push('<div class="turn" id="'+id+'"><div class="working"></div></div>');
+  var box=document.getElementById(id).firstChild, i=0, dead=false, h=null;
+  busy(true, function(){
+    dead=true; clearTimeout(h);
+    document.getElementById(id).innerHTML='<div class="stopped">Stopped. Ask again, or change the question.</div>';
+  });
+  (function tick(){
+    if(dead) return;
+    var out='';
+    for(var n=0;n<=i&&n<STEPS.length;n++){
+      out+= n<i ? '<div class="step"><span class="mk">✓</span>'+STEPS[n]+'</div>'
+                : '<div class="step now"><span class="mk spin">⟳</span>'+STEPS[n]+'<button class="stopline" onclick="stopIt()">Stop</button></div>';
+    }
+    box.innerHTML=out;
+    i++;
+    if(i<=STEPS.length){ h=setTimeout(tick,520); }
+    else {
+      busy(false);
+      document.getElementById(id).innerHTML=html;
+      var p=document.getElementById('p-chat'); p.scrollTop=p.scrollHeight;
+    }
+  })();
+}
+function ask2(head, body){
+  push('<div class="turn">'+head+'</div>');
+  think(body);
+}
+function ask(kind, typed){
+  start();
+  if(kind==='rest') ask2(asked('We\'re opening a second restaurant in Seattle with about 25 staff. What do we need on food handler permits and paid sick leave?'), A_REST);
+  else if(kind==='hospice') ask2(asked('California hospice agency, 12 caregivers driving to patients\' homes. How do mileage and overtime work?'), A_HOSPICE);
+  else if(kind==='roof') ask2(asked('40-person roofing contractor in Texas. What do we owe on fall protection and safety training?'), A_ROOF);
+  else if(kind==='tier2') ask2(asked('Do we need to file a Tier II report for the Hillsboro plant?'), A_TIER2);
+  else if(kind==='label'){ openAttach(); return; }
+  else if(kind==='facility') ask2(asked('What\'s involved in opening a second blending facility in Oregon?'), A_FACILITY);
+  else ask2(asked(escapeHtml(typed||'')), A_TIER2);
+  if(turns>=3) push(WRAP);
+}
+function attach(which){
+  close_('attach'); start();
+  if(which==='bad') ask2(FILE_BAD+asked('Check this label for errors'), A_BAD);
+  else ask2(FILE_GOOD+asked('Check this label for errors'), A_LABEL);
+}
+function savedFact(){
+  document.getElementById('fact-banner').innerHTML='<p><b>Saved.</b> Solvent waste is recorded at about 400 pounds a month for the west bay. You can change it in Requirements whenever it shifts.</p>';
+}
+
+
+var A_REST = '<div class="answer">'
++'<p>Two separate clocks start the day you hire, and the sick leave one is the easier to get wrong.</p>'
++'<p><strong>Food worker cards.</strong> Every employee who handles unpackaged food, utensils or food-contact surfaces needs a Washington food worker card, obtained within <strong>14 days of starting</strong>. It is the worker\'s card but the employer\'s duty to keep it on file and available.<button class="cite" data-t="Food worker card requirements" data-h="doh.wa.gov" onclick="pop(this)">1</button> A person-in-charge with food safety training has to be present during all hours of operation, which for a second location usually means promoting or hiring one more certified manager than you think.</p>'
++'<p><strong>Paid sick leave.</strong> Washington requires accrual of at least one hour for every 40 hours worked, from the first day, for every non-exempt employee including part-timers.<button class="cite" data-t="Paid sick leave, accrual and use" data-h="lni.wa.gov" onclick="pop(this)">2</button> Seattle\'s own ordinance layers on top, and where the two differ the employee gets the more generous of the two.<button class="cite" data-t="Seattle paid sick and safe time ordinance" data-h="seattle.gov" onclick="pop(this)">3</button> At 25 staff you land in Seattle\'s middle tier, which changes the carry-over cap rather than the accrual rate.</p>'
++'<p>The part that catches second locations: accrual follows the employee, not the site. Someone who picks up shifts at both restaurants accrues on total hours, and their balance travels with them.</p>'
++'<div class="sources"><h4>Sources</h4><ol>'
++'<li><a href="#">Food worker card requirements</a> <span class="host">doh.wa.gov</span></li>'
++'<li><a href="#">Paid sick leave, accrual and use</a> <span class="host">lni.wa.gov</span></li>'
++'<li><a href="#">Seattle paid sick and safe time ordinance</a> <span class="host">seattle.gov</span></li>'
++'</ol></div>'
++'<div class="acts"><button class="act key" onclick="build(\'facility\')">Turn this into a checklist</button>'
++'<button class="act" onclick="go(\'sum\')">Summarise this</button></div></div>';
+
+var A_HOSPICE = '<div class="answer">'
++'<p>Mileage is the simpler half. The expensive half is travel time, which is not the same thing.</p>'
++'<p><strong>Mileage.</strong> California requires employers to reimburse necessary expenses employees incur doing their job, which includes using a personal vehicle.<button class="cite" data-t="Labor Code section 2802" data-h="dir.ca.gov" onclick="pop(this)">1</button> The IRS rate is the common way to do it and is presumed reasonable, but it is not mandated — you can use actual cost or a fixed allowance as long as it genuinely covers what the employee spends.</p>'
++'<p><strong>Travel time is hours worked.</strong> Once a caregiver starts their first patient of the day, time driving between patients is compensable working time, not unpaid commute.<button class="cite" data-t="Hours worked and travel time" data-h="dir.ca.gov" onclick="pop(this)">2</button> That time counts toward the overtime threshold, which is where agencies get caught: six patient visits with an hour of driving between them can push a nominally part-time schedule past the daily overtime line.</p>'
++'<p><strong>Overtime.</strong> California owes overtime after 8 hours in a day as well as 40 in a week, and double time past 12.<button class="cite" data-t="Overtime, daily and weekly thresholds" data-h="dir.ca.gov" onclick="pop(this)">3</button> Whether a caregiver falls under the personal attendant exemption turns on the actual duties performed rather than the job title, and hospice caregivers providing clinical care generally do not qualify.</p>'
++'<div class="sources"><h4>Sources</h4><ol>'
++'<li><a href="#">Labor Code section 2802, reimbursement of business expenses</a> <span class="host">dir.ca.gov</span></li>'
++'<li><a href="#">Hours worked and travel time</a> <span class="host">dir.ca.gov</span></li>'
++'<li><a href="#">Overtime, daily and weekly thresholds</a> <span class="host">dir.ca.gov</span></li>'
++'</ol></div>'
++'<div class="acts"><button class="act key" onclick="build(\'facility\')">Turn this into a checklist</button>'
++'<button class="act" onclick="go(\'sum\')">Summarise this</button></div></div>';
+
+var A_ROOF = '<div class="answer">'
++'<p>Texas has no state plan, so federal OSHA applies directly — and roofing is one of its most heavily enforced areas.</p>'
++'<p><strong>The trigger height is 6 feet.</strong> In construction, fall protection is required at 6 feet above a lower level, not the 4 feet that applies in general industry.<button class="cite" data-t="Duty to have fall protection in construction" data-h="osha.gov" onclick="pop(this)">1</button> On a low-slope roof you can use guardrails, safety nets or a personal fall arrest system; on a steep roof the options narrow considerably.</p>'
++'<p><strong>Training is its own requirement, separate from equipment.</strong> A competent person has to train each exposed worker to recognise fall hazards and use the system correctly, and the certification has to be written, naming the employee and the date.<button class="cite" data-t="Fall protection training requirements" data-h="osha.gov" onclick="pop(this)">2</button> Having harnesses on site without that record is a citation on its own.</p>'
++'<p><strong>Equipment inspection is where crews slip.</strong> Personal fall arrest equipment needs inspection before each use, and anything that has arrested a fall comes out of service permanently rather than being returned to the truck.</p>'
++'<p>At 40 employees you are also past the 10-employee line for OSHA injury recordkeeping, and roofing is not on the partially exempt list.<button class="cite" data-t="Injury and illness recordkeeping" data-h="osha.gov" onclick="pop(this)">3</button></p>'
++'<div class="sources"><h4>Sources</h4><ol>'
++'<li><a href="#">Fall protection, duty to have fall protection in construction</a> <span class="host">osha.gov</span></li>'
++'<li><a href="#">Fall protection training requirements</a> <span class="host">osha.gov</span></li>'
++'<li><a href="#">Injury and illness recordkeeping, partial exemptions</a> <span class="host">osha.gov</span></li>'
++'</ol></div>'
++'<div class="acts"><button class="act key" onclick="build(\'facility\')">Turn this into a checklist</button>'
++'<button class="act" onclick="go(\'sum\')">Summarise this</button></div></div>';
+
+var A_TIER2 = '<div class="answer">'
++'<div class="safety"><span class="bang">!</span><div><b>Safety note</b>'
++'<p>If any extremely hazardous substance is ever released at or above its reportable quantity, notification is immediate — measured in minutes, not days — and it is a separate duty from this annual filing.</p></div></div>'
++'<p>Yes, almost certainly — and the threshold is lower than most people expect.</p>'
++'<p>Tier II is owed for any hazardous chemical you held <strong>above its threshold at any point</strong> in the previous calendar year. For most chemicals that is 10,000 pounds. For an extremely hazardous substance it drops to 500 pounds, or the substance\'s own planning quantity if that is lower.<button class="cite" data-t="EPCRA sections 311–312, Tier II inventory reporting" data-h="epa.gov" onclick="pop(this)">1</button> Peak matters, not average — a drum that sat on site for one afternoon in March counts.</p>'
++'<p>In Oregon the filing goes to the State Fire Marshal rather than DEQ, through the Community Right to Know program. The same submission satisfies both the state and the federal requirement, so there is one filing, not two.<button class="cite" data-t="Oregon Community Right to Know" data-h="oregon.gov" onclick="pop(this)">2</button> It is due by <strong>1 March</strong> for the year before.<button class="cite" data-t="Tier II submission deadlines and filing" data-h="oregon.gov" onclick="pop(this)">3</button></p>'
++'<p>The part worth checking before you file: peak quantities are easy to under-report when a chemical arrives and leaves inside a month, because the monthly inventory never shows it. Receiving records catch what a stock count misses.</p>'
++'<div class="sources"><h4>Sources</h4><ol>'
++'<li><a href="#">EPCRA sections 311–312, Tier II inventory reporting</a> <span class="host">epa.gov</span></li>'
++'<li><a href="#">Oregon Community Right to Know, hazardous substance reporting</a> <span class="host">oregon.gov</span></li>'
++'<li><a href="#">Tier II submission deadlines and filing</a> <span class="host">oregon.gov</span></li>'
++'</ol></div>'
++'<div class="acts">'
++'<button class="act key" onclick="document.getElementById(\'scope\').classList.remove(\'hidden\')">Turn this into a checklist</button>'
++'<button class="act" onclick="go(\'sum\')">Summarise this</button>'
++'<button class="act" onclick="alert(\'Opens the browser print dialogue — saved as PDF from there.\')">Download</button>'
++'</div></div>';
+
+var A_FACILITY = '<div class="answer">'
++'<p>More than most people plan for, and the order matters — two of these gate the others.</p>'
++'<p><strong>Before you sign a lease.</strong> Air is the one that decides whether a site works at all. A blending operation in Oregon needs a permit from DEQ, and which one depends on your potential emissions rather than actual throughput.<button class="cite" data-t="Air Contaminant Discharge Permits" data-h="oregon.gov" onclick="pop(this)">1</button> Cleaner Air Oregon can add a health-risk review on top, and that timeline is measured in months, not weeks.<button class="cite" data-t="Cleaner Air Oregon, risk-based air toxics" data-h="oregon.gov" onclick="pop(this)">2</button></p>'
++'<p><strong>Then waste.</strong> Your generator category is set by how much hazardous waste the new site produces per month on its own — it is not inherited from Hillsboro.<button class="cite" data-t="Hazardous waste generator categories" data-h="epa.gov" onclick="pop(this)">3</button> A second site often lands in a different category than the first, which changes accumulation limits and training.</p>'
++'<p><strong>Then fire and local.</strong> Hazardous material permits come from the local fire authority, and the quantity bands that trigger them are lower than the state waste thresholds, so this usually applies before anything else does.</p>'
++'<p>Employment obligations follow headcount at the new site rather than the company total for several Oregon rules, which is a common miss when a second site opens small.</p>'
++'<div class="sources"><h4>Sources</h4><ol>'
++'<li><a href="#">Air Contaminant Discharge Permits</a> <span class="host">oregon.gov</span></li>'
++'<li><a href="#">Cleaner Air Oregon, risk-based air toxics</a> <span class="host">oregon.gov</span></li>'
++'<li><a href="#">Hazardous waste generator categories</a> <span class="host">epa.gov</span></li>'
++'</ol></div>'
++'<div class="acts">'
++'<button class="act key" onclick="build(\'facility\')">Turn this into a checklist</button>'
++'<button class="act" onclick="go(\'sum\')">Summarise this</button>'
++'</div></div>';
+
+var FILE_GOOD = '<div class="file"><div class="ic">PDF</div><div>'
++'<div class="nm">Solvent-Blend-400-label.pdf</div>'
++'<div class="mt">Read as a <strong>GHS shipped container label</strong>. Saved to <a href="#">Documents → Labels</a>.</div>'
++'</div></div>';
+
+var FILE_BAD = '<div class="file warn"><div class="ic">JPG</div><div>'
++'<div class="nm">IMG_4471.jpg</div>'
++'<div class="mt">Saved to <a href="#">Documents → Labels</a></div>'
++'</div></div>';
+
+var A_BAD = '<div class="answer">'
++'<p>I\'d rather not guess at this one. The text came out too soft to read reliably — the lower third is at an angle and the small print is lost. What I can make out looks like a shipped container label with at least two pictograms, but the hazard statements and the supplier block aren\'t legible, and those are exactly where label errors usually sit.</p>'
++'<p>A photo taken square-on in good light would do it, or the original PDF if you have it. If neither is handy, tell me the product and I can walk the requirements with you instead.</p>'
++'<div class="acts"><button class="act" onclick="openAttach()">Upload a clearer copy</button></div>'
++'</div>';
+
+var A_LABEL = '<div class="answer">'
++'<p>Two problems with the pictograms, one of which would fail an inspection.</p>'
++'<p>The <strong>flame</strong> and <strong>health hazard</strong> pictograms are correct for this formulation. The <strong>exclamation mark</strong> should not be there — when a health hazard pictogram appears for the same hazard class, the exclamation mark is dropped rather than shown alongside it.<button class="cite" data-t="HazCom standard, appendix C, label content" data-h="osha.gov" onclick="pop(this)">1</button> Keeping both is one of the most common label errors.</p>'
++'<p>The borders are also wrong: a pictogram needs a red frame wide enough to be clearly visible, and these are printed in black.<button class="cite" data-t="Pictogram format and red frame requirements" data-h="osha.gov" onclick="pop(this)">2</button> A black-bordered diamond does not count as a GHS pictogram, even when the symbol inside it is right.</p>'
++'<p>The signal word placement is fine. I haven\'t checked the hazard statements, precautionary text or supplier identity — say the word and I\'ll take the whole label.</p>'
++'<div class="sources"><h4>Sources</h4><ol>'
++'<li><a href="#">Hazard Communication standard, appendix C, label content</a> <span class="host">osha.gov</span></li>'
++'<li><a href="#">Pictogram format and red frame requirements</a> <span class="host">osha.gov</span></li>'
++'</ol></div>'
++'<div class="acts">'
++'<button class="act key" onclick="document.getElementById(\'scope\').classList.remove(\'hidden\')">Turn this into a checklist</button>'
++'<button class="act" onclick="go(\'sum\')">Summarise this</button>'
++'</div></div>';
+
+var WRAP = '<div class="nudge"><b>This one has covered a fair bit.</b> Want me to wrap it up as a summary and start fresh? The new conversation carries the summary forward, so nothing gets lost.'
++'<div class="acts"><button class="act" onclick="go(\'sum\')">Wrap up and start fresh</button><button class="act" onclick="this.closest(\'.nudge\').remove()">Keep going</button></div></div>';
+
+var NARROW=[
+ {n:'Remove the exclamation mark pictogram',d:'It appears alongside the health hazard pictogram for the same hazard class. Only one of the two belongs on the label.',s:'osha.gov · HazCom appendix C',from:'chat'},
+ {n:'Reprint pictogram borders in red',d:'The frames are currently black. A black frame does not satisfy the pictogram requirement, regardless of the symbol inside it.',s:'osha.gov · pictogram format',from:'chat'},
+ {n:'Confirm the flame and health hazard pictograms match the formulation',d:'Both are correct for the current mix. Re-check if the formulation changes.',s:'osha.gov · HazCom appendix C',from:'chat'},
+ {n:'Keep the signal word where it is',d:'Placement and prominence are already right — noted so it survives the reprint.',s:'osha.gov · HazCom appendix C',from:'chat'}
+];
+var EXTRA=[
+ {n:'Check hazard statements against the classification',d:'Every hazard class the product falls into needs its full statement, word for word from the standard.',s:'osha.gov · appendix C.2',from:'new'},
+ {n:'Check precautionary statements for all four types',d:'Prevention, response, storage and disposal each need coverage. Dropping disposal is the usual omission.',s:'osha.gov · appendix C.3',from:'new'},
+ {n:'Verify supplier identity block',d:'Name, address and a working telephone number for the manufacturer, importer or other responsible party.',s:'osha.gov · 1910.1200(f)',from:'new'},
+ {n:'Confirm product identifier matches the safety data sheet',d:'The identifier on the label and on section 1 of the SDS have to be the same string.',s:'osha.gov · 1910.1200(f)',from:'new'},
+ {n:'Check the label survives normal conditions',d:'Legible, in English, and durable enough for the container\'s working life including wash-down.',s:'osha.gov · 1910.1200(f)',from:'new'},
+ {n:'Confirm pictogram size relative to the label',d:'Each needs to be large enough to be clearly visible — roughly a fifteenth of the label area is the usual working rule.',s:'osha.gov · appendix C.4',from:'new'},
+ {n:'Check supplemental information is separated',d:'Anything beyond required content must not contradict or dilute it, and belongs in its own area of the label.',s:'osha.gov · appendix C.3.1',from:'new'}
+];
+var FACILITY=[
+ {n:'Determine the air permit category from potential emissions',d:'Decide between a simple registration, an ACDP and a Title V permit. This gates the site choice, so do it before signing anything.',s:'oregon.gov · Air Contaminant Discharge Permits',from:'chat'},
+ {n:'Screen for Cleaner Air Oregon applicability',d:'A health-risk assessment can add months. Finding out early is the difference between a delay and a dead lease.',s:'oregon.gov · Cleaner Air Oregon',from:'chat'},
+ {n:'Establish the new site\'s generator category',d:'Based on the new site\'s own monthly hazardous waste, not the company total.',s:'epa.gov · generator categories',from:'chat'},
+ {n:'Apply for a fire-code hazardous material permit',d:'From the local fire authority. Quantity thresholds here are lower than the waste ones, so this usually bites first.',s:'newly checked · local fire code',from:'new'},
+ {n:'Check stormwater permit coverage',d:'A 1200-Z industrial stormwater permit, or a no-exposure certification if everything is under cover.',s:'newly checked · oregon.gov',from:'new'},
+ {n:'Register the site for employment obligations by site headcount',d:'Several Oregon rules count employees at the site rather than across the company.',s:'newly checked · oregon.gov',from:'new'}
+];
+var current=[];
+
+function build(which){
+  close_('scope');
+  if(which==='narrow'){ current=NARROW.slice(); title('Label compliance review','From your conversation of 22 September · 4 items, all discussed'); }
+  else if(which==='full'){ current=NARROW.concat(EXTRA); title('Label compliance review — Solvent Blend 400','From your conversation of 22 September · 4 items discussed, 7 checked to complete the review'); }
+  else { current=FACILITY.slice(); title('Second blending facility — Oregon','From your conversation of 22 September · 3 items discussed, 3 checked to complete the list'); }
+  current.forEach(function(i){i.done=false});
+  render();
+  document.getElementById('drawer').classList.remove('hidden');
+  document.getElementById('dveil').classList.remove('hidden');
+}
+function title(t,s){document.getElementById('list-title').textContent=t;document.getElementById('list-sub').textContent=s}
+function render(){
+  var h='';
+  current.forEach(function(it,i){
+    h+='<div class="item'+(it.done?' done':'')+'">'
+      +'<button class="tick" onclick="toggle('+i+')" aria-label="Mark done">✓</button>'
+      +'<div><div class="nm">'+it.n+'</div><div class="ds">'+it.d+'</div>'
+      +'<div class="row"><span class="tag '+(it.from==='chat'?'chat':'new')+'">'
+      +(it.from==='chat'?'from this conversation':'newly checked')+'</span>'
+      +'<span class="src"><a href="#">'+it.s+'</a></span></div></div></div>';
+  });
+  document.getElementById('items').innerHTML=h;
+  var d=current.filter(function(i){return i.done}).length;
+  document.getElementById('bar').style.width=(current.length?d/current.length*100:0)+'%';
+  document.getElementById('prog').textContent=d+' of '+current.length+' done';
+}
+function toggle(i){current[i].done=!current[i].done;render()}
+function openList(which){
+  if(which==='facility'){ current=FACILITY.slice(); title('Second blending facility — Oregon','Made 20 September · 3 from the conversation, 3 newly checked'); }
+  else { current=NARROW.concat(EXTRA); title('Label compliance review — Solvent Blend 400','Made 22 September · 4 from the conversation, 7 newly checked'); }
+  current.forEach(function(i,n){i.done = which==='facility' ? n<2 : n<3});
+  render();
+  document.getElementById('drawer').classList.remove('hidden');
+  document.getElementById('dveil').classList.remove('hidden');
+}
+function closeList(){
+  document.getElementById('drawer').classList.add('hidden');
+  document.getElementById('dveil').classList.add('hidden');
+}
+document.addEventListener('keydown',function(e){ if(e.key!=='Escape') return; if(PENDING){ stopIt(); return; } closeAll(); });
+</script>
+</body>
+</html>

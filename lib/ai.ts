@@ -302,6 +302,17 @@ export async function askAIJson<T = any>(
   options: AskAIOptions = {}
 ): Promise<T> {
   const raw = await askAI(systemPrompt, content, options)
+  return JSON.parse(extractJsonText(raw)) as T
+}
+
+/**
+ * PULL THE JSON OUT OF A REPLY THAT MAY HAVE PROSE AROUND IT.
+ *
+ * Exported so the open call's checklist path uses this exact logic rather than a second copy
+ * of it — `CLAUDE.md` §3.4: JSON extraction tolerant of narration lives in this module and is
+ * not reimplemented at a call site.
+ */
+export function extractJsonText(raw: string): string {
   let cleaned = raw
     .replace(/```json\n?/g, '')
     .replace(/```\n?/g, '')
@@ -322,5 +333,193 @@ export async function askAIJson<T = any>(
     }
   }
 
-  return JSON.parse(cleaned) as T
+  return cleaned
+}
+
+/* ===========================================================================
+ * THE OPEN CALL — `TODO.md` R1.0, `DECISIONS.md` §113.
+ *
+ * > "this section needs no barrier between Claude and an answer."
+ *
+ * One system sentence of role, the conversation as history, web search available with the
+ * MODEL deciding whether to use it, and a stream. No gate, no facts block, no scenario block,
+ * no critic, no prohibitions, no template — those are switches now (`lib/pipelineConfig.ts`),
+ * and production runs them off.
+ *
+ * This does NOT replace `askAIWithCitations`; that stays for every existing caller. Research
+ * and checklist move here because they are the two paths §113 measured.
+ * =========================================================================== */
+
+/** One turn. `content` may carry document blocks, so it is the same shape `askAI` accepts. */
+export interface OpenMessage {
+  role: 'user' | 'assistant'
+  content: AIContent
+}
+
+/**
+ * What the caller sees while the answer is being written.
+ *
+ * `reset` is the interesting one and it exists because of the narration rule below: in a stream
+ * you cannot know a text block was narration until a search follows it. So the text is emitted
+ * as it arrives and withdrawn if it turns out to have been narration. The alternative —
+ * buffering the opening text until the message ends — would mean NOT STREAMING AT ALL for every
+ * answer that does not search, which is most of them (samples 2 and 3 below).
+ */
+export type OpenStreamEvent =
+  | { type: 'text'; text: string }
+  | { type: 'reset' }
+  | { type: 'searching'; query: string | null }
+  | { type: 'done'; answer: AIAnswer; stopReason: string | null; outputTokens: number | null }
+  | { type: 'error'; message: string }
+
+/**
+ * *** THE NARRATION RULE, AND THE EVIDENCE IT CAME FROM. ***
+ *
+ * With web search available the model often opens by saying what it is about to do. That
+ * narration is not the answer, and concatenating every text block — which `reassemble` does —
+ * puts it at the top of what the customer reads and what we store.
+ *
+ * THREE SAMPLES, recorded 22 Sep from real streamed calls with the tool attached, one system
+ * sentence, no other context. Block sequences, in order:
+ *
+ *   SAMPLE 1  "Oregon cannabis extraction lab using butane — licenses and safety"
+ *     0  text                    len=126  cites=0  "I'll help you understand the licensing and safety requiremen"
+ *     1  server_tool_use                           query="Oregon cannabis extraction lab butane license requ…"
+ *     2  server_tool_use                           query="Oregon cannabis butane extraction safety regulatio…"
+ *     3  server_tool_use                           query="Oregon OLCC cannabis processor license extraction"
+ *     4  web_search_tool_result  results=9
+ *     5  web_search_tool_result  results=9
+ *     6  web_search_tool_result  results=9
+ *     7  text                    len=198  cites=0  "Based on my research, here's what you need to know about ope"
+ *     8  text                    len=185  cites=1  "The processing of marijuana items is subject to regulation b"
+ *     …  (35 more text blocks, the answer)
+ *
+ *   SAMPLE 2  "Do I need workers' comp insurance?"        — no search
+ *     0  text                    len=1194 cites=0  "I'd be happy to help you understand whether you need workers"
+ *
+ *   SAMPLE 3  "SDS versus container label under OSHA HazCom" — no search
+ *     0  text                    len=3355 cites=0  "I'll help you understand the differences between Safety Data"
+ *
+ * **Samples 2 and 3 are why the rule cannot be "drop an opening block that sounds like
+ * narration".** Those openings read exactly like sample 1's — *"I'll help you understand…"* —
+ * and they are the entire answer. A phrasing heuristic would have deleted both.
+ *
+ * > ### THE RULE: a text block is narration IF AND ONLY IF a `server_tool_use` block appears
+ * > ### LATER in the same response. No tool use, nothing is dropped.
+ *
+ * It is positional, not linguistic, so it cannot be fooled by how a sentence is worded.
+ *
+ * **The limit, stated rather than discovered later:** if a model ever writes real answer content,
+ * *then* searches, this drops that content. Nothing in three samples does that — in all three the
+ * pre-search text is a single block carrying **zero citations** — but it is the assumption this
+ * rests on, and a fourth sample that breaks it is the signal to make the rule narrower.
+ */
+export function stripNarration(
+  content: Array<Record<string, unknown>>,
+): Array<Record<string, unknown>> {
+  const firstToolUse = content.findIndex((b) => b.type === 'server_tool_use')
+  if (firstToolUse === -1) return content
+  return content.filter((b, i) => !(i < firstToolUse && b.type === 'text'))
+}
+
+/** The open answer: narration removed, then the existing reassembly — prose joined, citations numbered. */
+export function openAnswer(content: Array<Record<string, unknown>>): AIAnswer {
+  return reassemble(stripNarration(content))
+}
+
+export interface OpenCallOptions {
+  task?: AITask
+  model?: string
+  maxTokens?: number
+  /** Reaches the SDK request itself, so an abort stops the upstream call and the billing. */
+  signal?: AbortSignal
+  /** Default true. The MODEL decides whether to search; this only makes the tool available. */
+  enableWebSearch?: boolean
+}
+
+/**
+ * STREAMING IS REQUIRED HERE, NOT OPTIONAL.
+ *
+ * `askAIWithCitations` clamps to 21333 tokens because the SDK refuses a NON-streaming request it
+ * estimates could exceed ten minutes (see its comment: `client.js:671`). **Streaming removes that
+ * ceiling rather than working around it**, which is `TODO.md` 0.11's first half. Its second half —
+ * §92's 58.9 s of silence — is answered by the same change: text arrives as it is written, which
+ * is the honest alternative to a progress animation over a call that is not reporting progress.
+ */
+export async function* askAIOpenStream(
+  system: string,
+  messages: OpenMessage[],
+  options: OpenCallOptions = {},
+): AsyncGenerator<OpenStreamEvent> {
+  if (!messages.length) throw new Error('askAIOpenStream: messages is empty')
+  if (messages[messages.length - 1].role !== 'user') {
+    throw new Error('askAIOpenStream: the last message must be from the user')
+  }
+
+  const model = options.model || modelForTask(options.task ?? 'prose')
+  const stream = anthropic.messages.stream(
+    {
+      model,
+      max_tokens: options.maxTokens ?? 8000,
+      system,
+      messages: messages.map((m) => ({ role: m.role, content: m.content as any })),
+      ...(options.enableWebSearch === false
+        ? {}
+        : { tools: [{ type: 'web_search_20250305', name: 'web_search' }] }),
+    },
+    // The AbortSignal goes to the REQUEST, not just to our reading of it. Without this an
+    // abort stops the rendering and leaves the upstream call running and billing.
+    options.signal ? { signal: options.signal } : undefined,
+  )
+
+  // Events are pushed by the SDK's callbacks and pulled by this generator's consumer. The queue
+  // is what bridges the two; without it a slow consumer would drop events.
+  const queue: OpenStreamEvent[] = []
+  let done = false
+  let failed: Error | null = null
+  let wake: (() => void) | null = null
+  const push = (e: OpenStreamEvent) => { queue.push(e); wake?.(); wake = null }
+
+  let sawToolUse = false
+  let emittedText = false
+
+  stream.on('streamEvent', (event: any) => {
+    if (event.type === 'content_block_start') {
+      const b = event.content_block
+      if (b?.type === 'server_tool_use') {
+        // THE NARRATION RULE, applied live. Anything already shown was narration: withdraw it.
+        if (!sawToolUse && emittedText) push({ type: 'reset' })
+        sawToolUse = true
+        push({ type: 'searching', query: typeof b.input?.query === 'string' ? b.input.query : null })
+      }
+    } else if (event.type === 'content_block_delta' && event.delta?.type === 'text_delta') {
+      const text = String(event.delta.text ?? '')
+      if (text) { emittedText = true; push({ type: 'text', text }) }
+    }
+  })
+  stream.on('error', (err: any) => { failed = err instanceof Error ? err : new Error(String(err)); done = true; wake?.(); wake = null })
+  stream.on('abort', (err: any) => { failed = err instanceof Error ? err : new Error('aborted'); done = true; wake?.(); wake = null })
+
+  const finalPromise = stream.finalMessage()
+    .then((m) => m)
+    .catch((e) => { failed = e instanceof Error ? e : new Error(String(e)); return null })
+    .finally(() => { done = true; wake?.(); wake = null })
+
+  while (true) {
+    while (queue.length) yield queue.shift()!
+    if (done) break
+    await new Promise<void>((resolve) => { wake = resolve })
+  }
+  while (queue.length) yield queue.shift()!
+
+  const final = await finalPromise
+  if (failed) { yield { type: 'error', message: (failed as Error).message }; return }
+  if (!final) { yield { type: 'error', message: 'The model returned no message.' }; return }
+
+  yield {
+    type: 'done',
+    answer: openAnswer(final.content as unknown as Array<Record<string, unknown>>),
+    stopReason: (final as any).stop_reason ?? null,
+    outputTokens: (final as any).usage?.output_tokens ?? null,
+  }
 }

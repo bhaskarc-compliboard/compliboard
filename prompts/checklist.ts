@@ -189,7 +189,74 @@ CRITICAL RULES:
  * Picks the right prompt for the mode, and — for checklist mode — bolts the
  * company profile (from the website scan) onto the end of it.
  */
-export function buildSystemPrompt(mode: string, scanResult: Record<string, unknown> | null): string {
+/**
+ * THE OPEN BASELINE'S PROMPTS — `DECISIONS.md` §113 and §123, `TODO.md` R1.0.
+ *
+ *   > "this section needs no barrier between Claude and an answer."
+ *
+ * ONE SENTENCE OF ROLE. No prohibitions, no template, no "answer the question you were asked
+ * and nothing else", no CRITICAL RULES list. §113's finding is that each of those subtracts,
+ * and that a list of things not to do fences the model less visibly than a template does.
+ *
+ * The checklist keeps an output SHAPE and only a shape. **A shape is a container, not a
+ * fence** — the UI has to tick items, count them and store them, so the answer has to be
+ * parseable. What the shape asks for is only what the screen reads: a title, the two lists,
+ * and per item a name, a description, a why, and where it came from.
+ *
+ * *** WHAT WAS DROPPED FROM THE SHAPE AND WHY. *** `cost_note`, `providers` and
+ * `safety_alert` are gone. They are slots, and §113's diagnosis is that the model fills every
+ * slot it is given: the cost slot produced dollar ranges with no source behind them, and the
+ * provider slot produced where-to-buy sections nobody asked for. Both are named in §102 as the
+ * defect that removing the six fixed sections was meant to fix. They stay in the TYPE, optional,
+ * because 235 stored items on production carry them and must still render.
+ */
+export const OPEN_ROLE =
+  'You are a compliance specialist helping the owner or manager of a small or mid-size ' +
+  'business in the United States understand the rules that apply to them.'
+
+/** The shape, and nothing else. Field names match `lib/answerSchema.ts`. */
+export const OPEN_CHECKLIST_SHAPE = `${OPEN_ROLE}
+
+Respond with a single JSON object and nothing else — no prose around it, no markdown fences.
+
+{
+  "title": "short title for this checklist",
+  "must_do": [
+    {
+      "name": "short, action-oriented",
+      "description": "what to do, in one or two sentences",
+      "why": "why it matters, in plain language for a business owner",
+      "source_title": "the name of the source, e.g. OSHA Hazard Communication Standard",
+      "source_url": "a link to it, or an empty string"
+    }
+  ],
+  "good_to_have": [
+    {
+      "name": "short, action-oriented",
+      "description": "what to do, in one or two sentences",
+      "why": "why it is worth doing",
+      "source_title": "the name of the source, or an empty string",
+      "source_url": "a link to it, or an empty string"
+    }
+  ]
+}
+
+"must_do" is what is required. "good_to_have" is what is advisable but not required.`
+
+export function buildSystemPrompt(
+  mode: string,
+  scanResult: Record<string, unknown> | null,
+  options: { open?: boolean } = {},
+): string {
+  // THE OPEN BASELINE. Reached when the mode's LONG_PROMPT switch is off, which is how
+  // production runs. The long prompts below are not deleted — they are what the switch turns
+  // back on, and `TODO.md` R1.2-R1.5 build up from here one measured piece at a time.
+  if (options.open) {
+    if (mode === 'checklist') return OPEN_CHECKLIST_SHAPE;
+    // Research and substeps take the role sentence alone. Substeps expands one item of a list
+    // the user is already looking at; its shape is handled by its own caller.
+    return mode === 'substeps' ? SUBSTEPS_PROMPT : OPEN_ROLE;
+  }
   if (mode === 'research') return RESEARCH_PROMPT;
   if (mode === 'substeps') return SUBSTEPS_PROMPT;
   if (!scanResult) return CHECKLIST_PROMPT;

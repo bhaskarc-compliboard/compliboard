@@ -226,6 +226,11 @@ function CompliancePageInner() {
    * tab is sequenced after research and is not part of this change (`DECISIONS.md` §112).
    */
   const [exchanges, setExchanges] = useState<Exchange[]>([])
+  /** THE IN-FLIGHT ANSWER, so it can be stopped. Aborting this fetch aborts the route's
+   *  request to the model — `app/api/chat/route.ts` passes `request.signal` into the SDK —
+   *  so a stopped answer stops the billing and not just the rendering. R1 Task 5. */
+  const inFlight = useRef<AbortController | null>(null)
+  const stopAnswer = () => { inFlight.current?.abort(); inFlight.current = null }
   /** The foot of the list, so the newest exchange stays in view. */
   const bottomRef = useRef<HTMLDivElement>(null)
   // Which citation card is open. HOVER handles a laptop through CSS; this is the TAP path,
@@ -805,6 +810,8 @@ Give them a specific direct answer — exactly what they need to do, which speci
     setErrorMsg('')
     try {
       let res
+      const controller = new AbortController()
+      inFlight.current = controller
       const fileToSend = answerFile ?? uploadedFile
       if (fileToSend) {
         const formData = new FormData()
@@ -818,7 +825,7 @@ Give them a specific direct answer — exactly what they need to do, which speci
         formData.append('topicId', topicId)
         // /api/chat requires the session token since 11 Sep — it reads company_switches
         // for the determination gate, which is tenant data (TODO §0.8b).
-        res = await fetch('/api/chat', { method: 'POST', body: formData, headers: await authHeaders() })
+        res = await fetch('/api/chat', { method: 'POST', body: formData, headers: await authHeaders(), signal: controller.signal })
       } else {
         res = await fetch('/api/chat', {
           method: 'POST',
@@ -826,9 +833,69 @@ Give them a specific direct answer — exactly what they need to do, which speci
           // `turns` is sent even when empty: its PRESENCE is what tells the route this is a
           // conversation rather than a one-shot call, so a topic is opened. The two other
           // /api/chat callers on this page deliberately send neither field. GATE-HISTORY.md §10.2.
-          body: JSON.stringify({ question: q, mode: currentMode, scanResult, answering: answering ?? null, turns, topicId }),
+          // HISTORY, as plain question/answer pairs. The open baseline passes prior messages
+          // to the model as conversation rather than as facts extracted from signed turns —
+          // `DECISIONS.md` §123. `turns` is still sent so that turning RESEARCH_GATE back on
+          // needs no client change; the route ignores it while the gate is off.
+          body: JSON.stringify({ question: q, mode: currentMode, scanResult, answering: answering ?? null, turns, topicId,
+                                 history: exchanges.filter((x) => x.kind === 'answer' && x.question && x.text)
+                                                   .map((x) => ({ question: x.question, answer: x.text })) }),
+          signal: controller.signal,
         })
       }
+      // ------------------------------------------------------------------
+      // THE STREAMED ANSWER — the open baseline's research path returns NDJSON, one event
+      // per line, rather than a single JSON body. Text arrives as it is written.
+      //
+      // `reset` is the narration rule reaching the screen: the model may open by saying what
+      // it is about to do and only then search. That opening is not the answer, so when the
+      // first search starts the server says so and what has been shown is withdrawn.
+      // `lib/ai.ts` `stripNarration` has the three recorded samples behind the rule.
+      // ------------------------------------------------------------------
+      if (res.ok && (res.headers.get('content-type') ?? '').includes('x-ndjson')) {
+        const fill = (patch: Partial<Exchange>) => setExchanges((prev) => {
+          const next = [...prev]
+          const i = next.findIndex((x) => x.id === pendingId)
+          if (i !== -1) next[i] = { ...next[i], ...patch }
+          return next
+        })
+        const reader = res.body!.getReader()
+        const decoder = new TextDecoder()
+        let buffer = ''
+        let acc = ''
+        try {
+          for (;;) {
+            const { done, value } = await reader.read()
+            if (done) break
+            buffer += decoder.decode(value, { stream: true })
+            // A chunk can split a line in half; keep the remainder for the next read.
+            const lines = buffer.split('\n')
+            buffer = lines.pop() ?? ''
+            for (const line of lines) {
+              if (!line.trim()) continue
+              let ev: { type: string; [k: string]: unknown }
+              try { ev = JSON.parse(line) } catch { continue }
+              if (ev.type === 'text') { acc += String(ev.text ?? ''); fill({ text: acc, pending: false }) }
+              else if (ev.type === 'reset') { acc = ''; fill({ text: '', pending: true }) }
+              else if (ev.type === 'done') {
+                acc = String(ev.research ?? acc)
+                fill({ text: acc, sources: (ev.sources as ResearchSource[]) ?? [], pending: false })
+              } else if (ev.type === 'error') {
+                setErrorMsg(String(ev.message ?? 'That request could not be completed.'))
+              }
+            }
+          }
+        } catch (err) {
+          // An abort is the user's own doing: keep what arrived, say nothing.
+          if ((err as { name?: string })?.name !== 'AbortError') throw err
+        } finally {
+          reader.releaseLock?.()
+          inFlight.current = null
+        }
+        if (!acc) setExchanges((prev) => prev.filter((x) => x.id !== pendingId))
+        return
+      }
+
       const json = await res.json()
       if (!res.ok) {
         // A conversation the server could not carry on with. CLEARING THE TURNS IS THE POINT:
