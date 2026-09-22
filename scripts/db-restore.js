@@ -429,17 +429,25 @@ const STEPS = [
     ],
   },
   {
-    title: "the applies expressions",
-    cmd: ["node", ["--env-file=.env.local", "scripts/load-expressions.js", "--apply"]],
-    checks: [["rows with an expression", "select count(*) from public.requirement_templates where applies_expression is not null", EXPECT.expressions]],
-  },
-  {
+    // *** SWITCHES BEFORE EXPRESSIONS. THE OTHER WAY ROUND CANNOT WORK. ***
+    // load-expressions.js:70 reads `select id from public.switches` and refuses at :87 with
+    // "references switch X, which is not seeded" for every reference it cannot resolve.
+    // load-switches.js reads information_schema (179), the enum catalog (181) and
+    // public.switches itself (187) — and NOTHING produced by any other step. So the
+    // dependency runs one way only, and this is the order it requires.
     title: "the switch vocabulary",
     cmd: ["node", ["--env-file=.env.local", "scripts/load-switches.js", "--apply"]],
     checks: [
       ["switches", "select count(*) from public.switches", EXPECT.switches],
       ["depends_on_switch edges", "select count(*) from public.switches where depends_on_switch is not null", EXPECT.switchEdges],
     ],
+  },
+  {
+    // Needs BOTH: the switches above (load-expressions.js:70) and the live requirement rows
+    // from step 2 (:71, `where effective_to is null`).
+    title: "the applies expressions",
+    cmd: ["node", ["--env-file=.env.local", "scripts/load-expressions.js", "--apply"]],
+    checks: [["rows with an expression", "select count(*) from public.requirement_templates where applies_expression is not null", EXPECT.expressions]],
   },
   {
     title: "the staging test accounts",

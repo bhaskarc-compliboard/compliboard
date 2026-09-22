@@ -1,6 +1,10 @@
 # Detailed To-Do
-**Version:** 36 · **Updated:** 22 September 2026
-**Supersedes:** version 35 (22 Sep). The restore **ran from zero and all 31 migrations applied** —
+**Version:** 37 · **Updated:** 22 September 2026
+**Supersedes:** version 36 (22 Sep). **0.10's step order is CORRECTED — switches now 5, expressions
+now 6** (`DECISIONS.md` §120). The documented order put the expressions first and they reference the
+switches, so from zero it produced **216 errors and wrote nothing**; `load-switches.js` reads
+nothing any other step produces, so the two swap cleanly. Every other adjacency was checked against
+the loaders and holds. `scripts/db-restore.js` and this list now say the same thing. Version 36: The restore **ran from zero and all 31 migrations applied** —
 the chain builds the schema from nothing. Step 1 then crashed in `schema-doc.js` (`DECISIONS.md`
 §119) and steps 2-8 did not run, so **staging holds a full schema and no library.** The crash is
 fixed and `db:restore` gained **`--from N`**, gated on re-reading every skipped step's own checks.
@@ -360,23 +364,45 @@ gets skipped, and the fix is to make obeying it cheap — not to restate the rul
 1  npm run db:reset                                    (interactive, stays that way)
 2  load-requirements.js <xlsx> --apply                 205 requirement_templates
 3  load-agencies.js --apply                             33 agencies
-4  assign-agencies.js --apply                           agency_id + 56 industry_coverage
-5  load-expressions.js --apply                          applies_expression on 205 rows
-6  load-switches.js --apply                             95 switches, 40 edges, acyclic
+4  assign-agencies.js --apply                           agency_id on 198 + 56 industry_coverage
+5  load-switches.js --apply                             95 switches, 40 edges, acyclic
+6  load-expressions.js --apply                          applies_expression on 199 live rows
 7  seed-staging-testdata.js                             Alpha, Beta, Gamma + primary sites
 8  seed-multisite-fixture.js                            Alpha's 2nd site + 16 facts
 ```
 
-**Two numbers in that list were estimates and are now measured.** The worksheet holds **194**
-rows, not 205, and **199** of them carry an expression — the gap between 194 and the 205 on both
-databases is the whole of the finding below. The other six lines came out exactly as written.
+> ### ⚠ STEPS 5 AND 6 ARE SWAPPED FROM THE ORDER FIRST WRITTEN HERE, 22 September.
+>
+> **The original order put the expressions before the switches, and it cannot work.**
+> `load-expressions.js:70` reads `select id from public.switches` and refuses at `:87` —
+> *"references switch X, which is not seeded"* — once per reference it cannot resolve. From zero
+> that is **216 errors**, counted with the loader's own `switchesIn`, and nothing is written.
+> `DECISIONS.md` §120.
+
+**This list is now the one `scripts/db-restore.js` executes**, and the numbers are measured rather
+than estimated: the worksheet carries **205** rows since 6.3c, **199** of them take an expression,
+and **198** get an agency. The dependency behind the order, read off the loaders rather than
+assumed:
+
+| step | needs | the line that says so |
+|---|---|---|
+| 2 requirements | the schema only | reads enums, `requirement_templates`, `information_schema` (109/114/115) |
+| 3 agencies | the schema only | reads the enum catalog and `agencies` (112/118) |
+| 4 assign | **2 and 3** | `agencies` (95) — **dies if empty** (110) — and `requirement_templates` (96) |
+| 5 switches | **nothing from any other step** | reads `information_schema` (179), enums (181), `public.switches` (187) — and nothing else |
+| 6 expressions | **5, and 2** | `public.switches` (70) and live `requirement_templates` (71) |
+| 7 test accounts | the schema only | `companies` (48); the primary site comes from migration 010's trigger |
+| 8 multi-site | **5 and 7** | `companies` (38) and `switches` (51) |
+
+**Every other adjacency was checked the same way and is correct as written.** Exactly one edge in
+the eight was wrong.
 
 > ### IT VERIFIES AFTER EVERY STEP AND REFUSES TO CONTINUE ON ZERO ROWS.
 >
-> **That is the requirement, not a nicety.** A refusal at step 6 leaves `switches` empty, the gate
-> reads an empty vocabulary, and **every check that follows passes vacuously** — `AUDIT-CHECKS.md`
-> check 14's subject, on a database with no library in it. A restore that stops loudly at step 6
-> is worth more than one that completes quietly.
+> **That is the requirement, not a nicety.** A refusal at the switch step (**now 5**, 6 when this
+> was written) leaves `switches` empty, the gate reads an empty vocabulary, and **every check that
+> follows passes vacuously** — `AUDIT-CHECKS.md` check 14's subject, on a database with no library
+> in it. A restore that stops loudly there is worth more than one that completes quietly.
 >
 > Each step prints its row count and the count it expected. **The expected numbers are read from
 > the seed files, never hardcoded here** — a hardcoded 95 is a copy that drifts (§43).

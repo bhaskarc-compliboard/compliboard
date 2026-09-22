@@ -1,6 +1,12 @@
 # Decision Record
-**Version:** 92 · **Updated:** 22 September 2026
-**Supersedes:** version 91 (22 Sep). Adds **§119 — a parser that hunts for punctuation can be fooled
+**Version:** 93 · **Updated:** 22 September 2026
+**Supersedes:** version 92 (22 Sep). Adds **§120 — the documented restore order was never
+executable.** 0.10 put the expressions at step 5 and the switches at step 6, and the expressions
+reference the switches: from zero that is **216 errors**, exactly the number of switch references
+the file contains. `load-switches.js` reads nothing any other step produces, so the two are
+swapped; every other adjacency was checked against the loaders and holds. It survived eleven days
+because **every previous run had the switches already present** — an order that has only ever run
+incrementally has not been tested. Version 92: version 91 (22 Sep). Adds **§119 — a parser that hunts for punctuation can be fooled
 by punctuation.** The from-zero restore applied all 31 migrations, proving the chain builds the
 schema from nothing, then died in `schema-doc.js`, which parsed from the first `{` in the CLI's
 output — and against the CLI's drawn-table rendering that brace is inside `agencies.industries`'
@@ -8746,3 +8752,77 @@ prove was done.
 
 **Reversal condition:** if a step is ever added whose success leaves no observable count, the gate
 cannot vouch for it and `--from` must refuse to skip past it.
+
+---
+
+## 120. The documented restore order was never executable — 22 September 2026
+
+**`npm run db:restore -- --from 2` loaded steps 2, 3 and 4 clean — 205 requirement rows, 33
+agencies, 56 coverage rows, 198 carrying an agency. Step 5 then failed with 216 errors, every one
+of them the same sentence, and nothing was written.**
+
+```
+  0 switches · 200 live requirements
+  216 error(s). NOTHING WILL BE WRITTEN:
+    x [0] "…": references switch "…", which is not seeded.
+```
+
+### The cause, read off the loaders rather than inferred
+
+`TODO.md` 0.10 numbered the steps **expressions at 5, switches at 6** — and the expressions
+reference the switches:
+
+```
+scripts/load-expressions.js:70   switches = new Set(query('select id from public.switches')…)
+scripts/load-expressions.js:87   if (!switches.has(s)) errors.push(`…references switch "${s}", which is not seeded.`)
+```
+
+**216 is not approximately right, it is exact.** Counted with the loader's own `switchesIn` from
+`lib/appliesExpression.ts`, with the same `if (!x.expression) continue` guard the loader applies
+at `:84`, `applies-expressions.json` makes **216 switch references** across its 199 expressions.
+With `switches` at zero rows, every one of them fails at `:87`.
+
+### Does the dependency run the other way too? No — and that is what makes a swap safe
+
+**`scripts/load-switches.js` reads three things and none of them comes from another step:**
+`information_schema.columns` (179), the enum catalog (181), and `public.switches` itself (187).
+`grep -n "requirement_templates\|agencies\|applies_expression"` over that file returns **only
+comments and console output** — no query. So the edge is one-way, and the fix is to swap them.
+
+### Every other adjacency, checked the same way
+
+| step | needs | the line |
+|---|---|---|
+| 2 requirements | schema only | enums / `requirement_templates` / `information_schema` (109/114/115) |
+| 3 agencies | schema only | enum catalog, `agencies` (112/118) |
+| 4 assign | 2 and 3 | `agencies` (95), **dies if empty** (110); `requirement_templates` (96) |
+| 5 switches | **nothing** | (179/181/187) |
+| 6 expressions | 5 and 2 | `public.switches` (70), live `requirement_templates` (71) |
+| 7 test accounts | schema only | `companies` (48) |
+| 8 multi-site | 5 and 7 | `companies` (38), `switches` (51) |
+
+**Exactly one of the eight edges was wrong.** The rest hold as written.
+
+### Why it survived from 11 September to 22 September
+
+> ### AN ORDER THAT HAS ONLY EVER RUN INCREMENTALLY HAS NOT BEEN TESTED.
+>
+> Every previous run of these loaders happened against a database that **already had the 95
+> switches in it** — seeded once on 11-12 September and never dropped since. `load-expressions.js`
+> found its vocabulary every time, so the fact that nothing in the order guaranteed it was
+> invisible. **The order was written down, agreed, quoted in two documents, and had never once
+> been executed from zero.**
+>
+> This is `DECISIONS.md` §98's argument arriving at its own author: applying things incrementally
+> proves they worked once, in one order, from one starting state. It is also §113's shape — a
+> structure built ahead of the thing that had to run it.
+
+**Fixed in both places at once**, because a list that disagrees with the code is how this happened:
+`scripts/db-restore.js`'s STEPS array and `TODO.md` 0.10 now carry the same order, and the code
+carries the line numbers above as a comment so the next person does not have to re-derive them.
+
+**Two older passages say "step 6" for the switch step** — `DECISIONS.md` §98 and
+`HOW-WE-BUILD.md` §4. Both were true when written; §4 is live guidance and now says step 5, and
+§98 stays as the dated record it is.
+
+**Reversal condition:** none. The dependency is a fact about what the loaders read.

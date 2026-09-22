@@ -1,7 +1,9 @@
 # How We Build CompliBoard
 
-**Version:** 15 · **Updated:** 21 September 2026
-**Supersedes:** version 14 (21 Sep). Adds **§11 — a structure built ahead of the model constrains
+**Version:** 16 · **Updated:** 22 September 2026
+**Supersedes:** version 15 (21 Sep). §4's worked example renumbered: the switch step is **5**, not
+6, since the from-zero run found the documented order was never executable (`DECISIONS.md` §120).
+Version 15: version 14 (21 Sep). Adds **§11 — a structure built ahead of the model constrains
 it**, learned twice (the requirement table, then the research pipeline): **the baseline is wide
 open and everything on top must measurably beat it**, enforced by making every pipeline piece a
 config switch so the release mechanism and the experiment framework are one thing. Adds **§12 —
@@ -359,7 +361,8 @@ route's logging appears to be missing, check that file before concluding anythin
 > had not been exercised in the session that was about to depend on them.
 >
 > **THE FAILURE MODE IS THE POINT, AND IT IS NOT INCONVENIENCE.** One refusal in the middle —
-> step 6 declining, say — leaves `switches` at **zero rows**, and the determination gate reads an
+> the switch step declining, say (**step 5** since 22 Sep; it was 6 when this was written) —
+> leaves `switches` at **zero rows**, and the determination gate reads an
 > empty vocabulary and asks nothing. **Every check that follows then passes against a database
 > with no library in it**, which is `AUDIT-CHECKS.md` check 14's subject in its most expensive
 > form: not a check that fails, a check that succeeds vacuously on an empty table.

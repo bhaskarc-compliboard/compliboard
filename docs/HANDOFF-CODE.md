@@ -92,8 +92,14 @@ guarantee (the chain builds a database from nothing) is unmet for them. **The pr
 > top.** The schema is already correct, so:
 >
 > ```
-> npm run db:restore -- --from 2
+> npm run db:restore -- --from 5      # steps 2-4 already loaded; 5 is now the SWITCHES
 > ```
+>
+> **Steps 2, 3 and 4 have since loaded clean** — 205 requirement rows, 33 agencies, 56 coverage
+> rows, 198 with an agency. Step 5 then failed because 0.10's documented order ran the expressions
+> before the switches they reference (`DECISIONS.md` §120): **216 errors, nothing written.** The
+> order is fixed and the two are swapped, so **step 5 is now `load-switches.js`** and the resume
+> gate has been checked against today's counts — 31 / 205 / 33 / 56 / 198, all passing.
 >
 > It re-reads step 1's own check first (`migrations applied 31 = 31`) and refuses if the database
 > is not where `--from` claims. It needs no terminal prompt — only step 1 does.
