@@ -1,6 +1,12 @@
 # Decision Record
-**Version:** 91 · **Updated:** 22 September 2026
-**Supersedes:** version 90 (21 Sep). Adds **§118 — the worksheet is the library, and requirement
+**Version:** 92 · **Updated:** 22 September 2026
+**Supersedes:** version 91 (22 Sep). Adds **§119 — a parser that hunts for punctuation can be fooled
+by punctuation.** The from-zero restore applied all 31 migrations, proving the chain builds the
+schema from nothing, then died in `schema-doc.js`, which parsed from the first `{` in the CLI's
+output — and against the CLI's drawn-table rendering that brace is inside `agencies.industries`'
+default, `'{}'::text[]`. Reproduced, then fixed by pinning `-o json` **and** parsing the whole
+reply. `db:restore` gains `--from N`, gated on re-reading every skipped step's own checks.
+Version 91: version 90 (21 Sep). Adds **§118 — the worksheet is the library, and requirement
 content never goes in a migration.** The owner's decision on `TODO.md` 6.3c, plus the standing rule
 that stops the recurrence: migration 013 put eleven requirement rows inside a migration, they
 existed in no seed file, and a from-zero rebuild lost them silently while 013's own verification
@@ -8655,3 +8661,88 @@ they were written, and the rename is recorded here instead.
 **Reversal condition:** a requirement change that genuinely cannot be expressed in the worksheet —
 one that needs a column the sheet has no place for. That is a schema change, which is a migration's
 job, and the content still follows in the worksheet afterwards.
+
+---
+
+## 119. A parser that hunts for punctuation can be fooled by punctuation — 22 September 2026
+
+**The owner ran `npm run db:restore`. All 31 migrations applied from zero — `CLAUDE.md` §3.7's
+guarantee, proved for the first time, and the thing §98's owed reset existed to establish.** Then
+step 1 died in `scripts/schema-doc.js`, which runs *after* the schema is already correct, and steps
+2-8 never ran. **Staging was left with a full schema and no library: §98's vacuous-pass state, for
+real.**
+
+### The cause, reproduced rather than inferred
+
+`scripts/schema-doc.js` was **the only `supabase db query` call site in the repo that parsed output
+without `-o json`** — checked at every call site; the other nine all pass `--agent no -o json`, and
+`db-migrate.js:317` uses `-f` and `:370` is `db push`, neither of which parses. Without the flag the
+CLI picks the rendering, and the renderings are not all JSON:
+
+```
+$ npx supabase db query --linked --agent no  "select column_default …"
+┌────────────────┐
+│ column_default │
+├────────────────┤
+│ '{}'::text[]   │
+└────────────────┘
+
+$ npx supabase db query --linked --agent auto "select column_default …"
+{ "boundary": "…", "rows": [ { "column_default": "'{}'::text[]" } ] }
+```
+
+The parser was `out.indexOf('{')` then `JSON.parse(out.slice(i))`. **Against the drawn table the
+first `{` is inside a DATA VALUE.** Forcing that rendering through the real function reproduces the
+owner's crash exactly:
+
+```
+SyntaxError: Unexpected non-whitespace character after JSON at position 2
+    at q (scripts/schema-doc.js:50:15)
+{}'::text[]                         │ NULL │ …
+```
+
+The value is **`agencies.industries`, default `'{}'::text[]`** — the first brace-bearing value in
+`information_schema.columns` ordered by `table_name`, which is why the `columns` query at line 59 is
+where it landed.
+
+> **Why it had never happened before is a HYPOTHESIS, not a finding.** The rendering is chosen by
+> the CLI's own agent auto-detection, and in this sandbox it chooses the JSON envelope every time —
+> all 14 catalog queries return `firstBrace@0`, nothing before, everything parses. **I could not
+> reproduce the owner's conditions**; I could only reproduce the mechanism, by pinning the rendering
+> the crash implies. What is certain is that the format was never pinned, so it was always free to
+> change underneath.
+
+### The fix, and the part that generalises
+
+1. **Pin the rendering** — `--agent no -o json`, as every other script already did.
+2. **Parse the whole string. Never search for a brace.**
+
+> ### THE SECOND ONE IS THE REAL FIX.
+> A parser that locates its payload by hunting for punctuation can always be fooled by punctuation
+> in the data. One that parses the entire reply cannot, whatever a column default happens to
+> contain. Pinning the flag closes today's case; not hunting closes the class.
+
+3. **An unrecognised payload now throws.** `.rows ?? []` turned anything unexpected into *"no
+   rows"*, and a schema document that silently omits a table it could not read is worse than one
+   that was never written. *(Whether that path could actually fire is unproven — a failing query
+   exits 1, so `execFileSync` throws first. It is closed as softness, not filed as a defect.)*
+
+**Not affected:** `scripts/run-golden.js:216` uses the same first-`{`/last-`}` shape, but on **model
+output**, where tolerating narration around the object is the intended behaviour (`CLAUDE.md` §3.4).
+Different input, not the CLI, and it catches and reports rather than crashing.
+
+### And the restore is now resumable
+
+**Re-running the whole reset to recover would destroy a correct schema to rebuild the identical
+schema.** `npm run db:restore -- --from N` starts at step N — and does **not** take the operator's
+word for where that is. **Every check belonging to a skipped step is re-read first, and one failure
+refuses the resume:** the counts that would have proved a step succeeded are exactly the counts that
+prove it need not run. Verified both ways — `--from 5` against today's empty library refuses and
+names all four unmet checks; `--from 2` passes the gate on `migrations applied 31 = 31` and starts
+the loop at step 2.
+
+**Resuming is never a way past a failure.** It is a way not to repeat work the database can still
+prove was done.
+
+**Reversal condition:** if a step is ever added whose success leaves no observable count, the gate
+cannot vouch for it and `--from` must refuse to skip past it.

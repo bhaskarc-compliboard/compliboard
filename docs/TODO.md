@@ -1,6 +1,10 @@
 # Detailed To-Do
-**Version:** 35 · **Updated:** 22 September 2026
-**Supersedes:** version 34 (22 Sep). **6.3c is ✅ DECIDED AND DONE** — the owner chose the worksheet
+**Version:** 36 · **Updated:** 22 September 2026
+**Supersedes:** version 35 (22 Sep). The restore **ran from zero and all 31 migrations applied** —
+the chain builds the schema from nothing. Step 1 then crashed in `schema-doc.js` (`DECISIONS.md`
+§119) and steps 2-8 did not run, so **staging holds a full schema and no library.** The crash is
+fixed and `db:restore` gained **`--from N`**, gated on re-reading every skipped step's own checks.
+Version 35: **6.3c is ✅ DECIDED AND DONE** — the owner chose the worksheet
 (`DECISIONS.md` §118), it is regenerated from the live library at **205 rows** under a dateless
 filename, and the standing rule is that **requirement content never goes in a migration**.
 `db:restore`'s pre-flight is now clean, **205 = 205 on every library line** — but the restore has
@@ -431,6 +435,14 @@ decided, and there is deliberately no flag that overrides it.
 The precondition for the reset was this command; the precondition for this command is a complete
 source.
 
+> **Update 2, 22 September — the restore RAN, the schema proof landed, and step 1 crashed.**
+> All 31 migrations applied from zero (the §3.7 guarantee, proved), then `scripts/schema-doc.js`
+> died parsing the CLI's drawn-table rendering from the first `{`, which sat inside
+> `agencies.industries`' default `'{}'::text[]`. Steps 2-8 never ran; staging holds a full schema
+> and no library. Fixed in `DECISIONS.md` §119, and **`db:restore` gained `--from N`** so recovery
+> does not mean destroying a correct schema to rebuild the identical one. Resume with
+> `npm run db:restore -- --from 2`.
+>
 > **Update, 22 September — the blocker is gone and the reset is still owed.** 6.3c regenerated the
 > worksheet (§118), and the pre-flight now reads **205 = 205** on every library line with the three
 > seed files agreeing. **`npm run db:restore` has not yet been run to completion**: step 1 is

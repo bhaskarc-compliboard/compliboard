@@ -78,6 +78,29 @@ guarantee (the chain builds a database from nothing) is unmet for them. **The pr
 > the repo: 0 matches, and `baseline-outputs/` is a production export from a database that has no
 > critic tables at all.
 
+> ### WHAT ACTUALLY HAPPENED, 22 September — READ THIS BEFORE RUNNING ANYTHING.
+>
+> The owner ran it. **All 31 migrations applied from zero — the chain builds the schema from
+> nothing, which is what `CLAUDE.md` §3.7 and §98 wanted proved.** Then step 1 died in
+> `scripts/schema-doc.js` and **steps 2-8 never ran.**
+>
+> **STAGING RIGHT NOW: full schema, NO LIBRARY.** 0 requirement_templates, 0 agencies, 0 switches,
+> 0 companies. That is §98's vacuous-pass state — every check that reads the library will pass
+> against nothing. **Do not trust a green result from staging until the restore is finished.**
+>
+> The crash is fixed (`DECISIONS.md` §119) and **the restore no longer needs repeating from the
+> top.** The schema is already correct, so:
+>
+> ```
+> npm run db:restore -- --from 2
+> ```
+>
+> It re-reads step 1's own check first (`migrations applied 31 = 31`) and refuses if the database
+> is not where `--from` claims. It needs no terminal prompt — only step 1 does.
+>
+> **The owed reset closes when steps 2-8 finish and every count matches.** Migration-wise the
+> from-zero proof is already in hand; what is missing is the data.
+
 ## 3. Production row counts — the number that matters most
 
 ```

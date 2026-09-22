@@ -42,12 +42,66 @@ if (!ref) {
 const label = isProd ? 'PRODUCTION' : 'staging'
 console.log(`\n  schema-doc: reading ${label} (${ref})\n`)
 
+// *** THE FLAGS ARE LOAD-BEARING. DO NOT DROP THEM. ***
+//
+// This function used to pass NEITHER `-o json` NOR `--agent`, which left the RENDERING up to
+// the CLI's own agent auto-detection — and the two renderings are not both JSON:
+//
+//   --agent no   (no -o json)   a box-drawing TABLE:   | '{}'::text[]   |
+//   --agent yes / auto          a JSON envelope:       {"boundary":…,"rows":[…]}
+//   --agent no -o json          a BARE ARRAY:          [{…},…]           <- what we ask for
+//
+// It then parsed from `out.indexOf('{')` to the end of the string. Against the table rendering
+// the first `{` is INSIDE A DATA VALUE, so JSON.parse was handed table text:
+//
+//   SyntaxError: Unexpected non-whitespace character after JSON at position 2
+//     at q (scripts/schema-doc.js:50:15)      <- called from the `columns` query below
+//   {}'::text[]                         │ NULL   │ …
+//
+// The value is `agencies.industries`, whose default is `'{}'::text[]` — the first
+// brace-bearing value in information_schema.columns ordered by table_name. That crash killed
+// step 1 of `npm run db:restore` on 22 September AFTER all 31 migrations had applied, leaving
+// staging with a full schema and no library: DECISIONS.md §98's vacuous-pass state exactly.
+//
+// Two changes, and the second is the one that makes punctuation irrelevant for good:
+//
+//   1. PIN the rendering with `--agent no -o json`, as every other script here already does.
+//      scripts/schema-doc.js was the only call site parsing output without `-o json`.
+//   2. PARSE THE WHOLE STRING. Never search for a brace. A parser that hunts for punctuation
+//      can always be fooled by punctuation in the data; one that parses the entire payload
+//      cannot, whatever a column default happens to contain.
+//
+// And an unrecognised payload THROWS rather than returning []. `.rows ?? []` turned anything
+// unexpected into "no rows", and a schema document that silently omits a table it could not
+// read is worse than one that is not written at all.
 function q(sql) {
-  const out = execFileSync('npx', ['supabase', 'db', 'query', '--project-ref', ref, '--linked', sql],
-    { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, stdio: ['ignore', 'pipe', 'ignore'] })
-  const i = out.indexOf('{')
-  if (i === -1) return []
-  return JSON.parse(out.slice(i)).rows ?? []
+  let out
+  try {
+    out = execFileSync('npx',
+      ['supabase', 'db', 'query', '--project-ref', ref, '--linked', '--agent', 'no', '-o', 'json', sql],
+      { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'] })
+  } catch (err) {
+    // stderr is captured rather than discarded: without it a failure reads only
+    // "Command failed", which says nothing about which catalog query broke or why.
+    const detail = String(err?.stderr || err?.stdout || err?.message || '').trim().split('\n').slice(0, 4).join('\n    ')
+    throw new Error(`Catalog query failed on ${label} (${ref}):\n    ${detail}\n  SQL: ${sql.trim().split('\n')[0]}…`)
+  }
+  let parsed
+  try {
+    parsed = JSON.parse(out)
+  } catch (err) {
+    throw new Error(
+      `Could not parse the catalog reply as JSON: ${err.message}\n` +
+      `  SQL: ${sql.trim().split('\n')[0]}…\n` +
+      `  First 200 bytes: ${JSON.stringify(out.slice(0, 200))}\n` +
+      `  If this looks like a drawn table rather than JSON, the -o json flag has been lost.`)
+  }
+  if (Array.isArray(parsed)) return parsed
+  if (parsed && Array.isArray(parsed.rows)) return parsed.rows
+  throw new Error(
+    `Unrecognised payload from \`supabase db query\` — expected an array or an object with a ` +
+    `rows array, got keys: ${JSON.stringify(Object.keys(parsed ?? {}))}. Refusing to treat it as ` +
+    `an empty result.`)
 }
 
 // ---------------------------------------------------------------- the catalog

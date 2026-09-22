@@ -76,6 +76,36 @@ if (prodFlag) {
       `  production — the data IS the product. Staging is what this is for.`);
 }
 
+// ---------------------------------------------------------------------------
+// --from N : RESUME AT STEP N, because step 1 is the expensive one to repeat.
+//
+// On 22 September the owner's restore applied all 31 migrations from zero — the chain
+// builds the schema from nothing, which is the thing §98 wanted proved — and then step 1
+// died in `scripts/schema-doc.js`, which runs AFTER the schema is already correct. Steps
+// 2-8 never ran and staging sat with a full schema and no library.
+//
+// Re-running the whole reset to recover from that would destroy a correct schema to
+// rebuild the identical schema. So this starts where it left off — but it does NOT take
+// the operator's word for where that is. Every check belonging to a SKIPPED step is run
+// first as a precondition, and one failure refuses the resume. That is the same machinery
+// the steps themselves use, pointed backwards: the counts that would have proved a step
+// succeeded are exactly the counts that prove it does not need running.
+//
+// Resuming is therefore never a way to get past a failure. It is a way to not repeat work
+// the database can still prove was done.
+// ---------------------------------------------------------------------------
+const fromArg = process.argv.slice(2).find((a) => /^--from(=|$)/.test(a));
+let FROM = 1;
+if (fromArg) {
+  const inline = fromArg.includes("=") ? fromArg.split("=")[1] : process.argv[process.argv.indexOf(fromArg) + 1];
+  FROM = Number(inline);
+  if (!Number.isInteger(FROM) || FROM < 1 || FROM > 8) {
+    die(`--from takes a step number from 1 to 8; got "${inline ?? "(nothing)"}".\n\n` +
+        `  Step 1 is the reset. Steps 2-8 are the loaders and the fixtures — run\n` +
+        `  \`npm run db:restore\` with no flag to do all eight.`);
+  }
+}
+
 const stagingRef = process.env.SUPABASE_PROJECT_REF;
 const prodRef = process.env.SUPABASE_PROD_REF;
 const writeUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
@@ -323,7 +353,9 @@ const counts = tables.length
   ? query("select " + tables.map((t) => `(select count(*) from public.${t})::int as "${t}"`).join(", "))[0]
   : {};
 const populated = Object.entries(counts).filter(([, n]) => Number(n) > 0);
-console.log("\n  EVERYTHING ELSE — destroyed by step 1, and nothing rebuilds it");
+console.log(FROM === 1
+  ? "\n  EVERYTHING ELSE — destroyed by step 1, and nothing rebuilds it"
+  : "\n  EVERYTHING ELSE — step 1 is SKIPPED, so none of this is destroyed by this run");
 if (populated.length === 0) {
   console.log("    (nothing — every other table is already empty)");
 } else {
@@ -428,10 +460,65 @@ const STEPS = [
   },
 ];
 
+// ---------------------------------------------------------------------------
+// THE RESUME GATE. Every check belonging to a skipped step must already pass.
+//
+// A resume that trusted `--from` would be a way to skip a step that genuinely failed, which
+// is the opposite of what this command is for. So the counts are re-read: the same checks
+// that would have proved each skipped step succeeded are required to hold now.
+// ---------------------------------------------------------------------------
+if (FROM > 1) {
+  console.log("");
+  rule("=");
+  console.log(`  RESUMING AT STEP ${FROM} — steps 1-${FROM - 1} are SKIPPED and nothing will be dropped`);
+  rule("=");
+  console.log("\n  Proving the database is where --from says it is. Every check below belongs to a");
+  console.log("  step that will not run, and all of them must already pass.\n");
+
+  const failures = [];
+  for (const [i, step] of STEPS.slice(0, FROM - 1).entries()) {
+    for (const [label, sql, expect] of step.checks) {
+      let got;
+      try { got = scalar(sql); } catch (e) { failures.push(`step ${i + 1} "${label}": unreadable — ${e.message}`); continue; }
+      if (expect === "nonzero") {
+        console.log(`    step ${i + 1}  ${label.padEnd(28)} ${String(got).padStart(5)}   expected: more than 0${got === 0 ? "   NOT MET" : OK}`);
+        if (got === 0) failures.push(`step ${i + 1} "${label}" is zero.`);
+      } else {
+        const met = got === expect.n;
+        console.log(`    step ${i + 1}  ${label.padEnd(28)} ${String(got).padStart(5)}   expected ${String(expect.n).padStart(5)}${met ? OK : "   NOT MET"}`);
+        if (!met) failures.push(`step ${i + 1} "${label}": got ${got}, the sources say ${expect.n}.`);
+      }
+    }
+  }
+
+  if (failures.length) {
+    console.log("");
+    rule("=");
+    console.log("  RESUME REFUSED — NOTHING HAS BEEN TOUCHED");
+    rule("=");
+    for (const f of failures) console.log(`\n  ${f}`);
+    console.log("\n  A step you asked to skip cannot be shown to have happened. Resuming would build on\n" +
+                "  a database that is not in the state --from claims. Run the full restore instead:\n\n" +
+                "      npm run db:restore\n");
+    process.exit(1);
+  }
+  console.log("\n  Every skipped step's own checks pass. Resuming.\n");
+
+  // db:reset is three commands — the migration push, then `db:types`, then `schema:doc`.
+  // A failure in either of the last two leaves the SCHEMA correct and the DERIVED ARTIFACTS
+  // stale, and this resume does not regenerate them because it does not run step 1.
+  console.log("  NOTE: skipping step 1 also skips `db:types` and `schema:doc`, which run inside");
+  console.log("  `npm run db:reset`. If step 1 failed in either of those, regenerate them — neither");
+  console.log("  touches data:\n");
+  console.log("      npm run db:types     lib/database.types.ts");
+  console.log("      npm run schema:doc   docs/SCHEMA.md\n");
+}
+
 // Step 1 is interactive and stays that way (TODO.md 0.10): it drops every table on
 // staging, and a human types RESET. Checked here rather than at the top so the projection
-// above — which is entirely read-only — is printed even when there is no terminal.
-if (!process.stdin.isTTY) {
+// above — which is entirely read-only — is printed even when there is no terminal. Only
+// step 1 needs it: a resume past it writes with the loaders, which never prompt on staging.
+if (FROM === 1 && !process.stdin.isTTY) {
   die("Step 1 (npm run db:reset) needs a terminal to type RESET into, and there is none.\n\n" +
       "  Everything above is read-only and ran. Nothing was dropped. Run this again from an\n" +
       "  interactive shell to go further.");
@@ -451,6 +538,7 @@ function stop(stepIndex, why) {
 
 for (const [i, step] of STEPS.entries()) {
   stepNo = i + 1;
+  if (stepNo < FROM) continue;   // proved already done by the resume gate above
   const [bin, args] = step.cmd;
   console.log("");
   rule("=");
@@ -492,7 +580,10 @@ console.log("");
 rule("=");
 console.log(`  RESTORE COMPLETE — ${REF} (staging)`);
 rule("=");
-console.log(`\n  All ${STEPS.length} steps ran and every count matched its source file.\n`);
+console.log(FROM === 1
+  ? `\n  All ${STEPS.length} steps ran and every count matched its source file.\n`
+  : `\n  Steps ${FROM}-${STEPS.length} ran and every count matched its source file. Steps 1-${FROM - 1} were skipped,\n` +
+    `  and their own checks were re-read and passed before this started.\n`);
 console.log("  What this did NOT rebuild, because nothing seeds it: documents, checklists,");
 console.log("  topics, obligations, audits, jobs and every other per-company row. Logins and");
 console.log("  uploaded files survive — they live in the auth and storage schemas, which a");
