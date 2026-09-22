@@ -1,6 +1,11 @@
 # Decision Record
-**Version:** 94 · **Updated:** 22 September 2026
-**Supersedes:** version 93 (22 Sep). **§98's owed reset is CLOSED** — `npm run db:restore` ran to
+**Version:** 95 · **Updated:** 22 September 2026
+**Supersedes:** version 94 (22 Sep). **§117 is ANSWERED** — every module ships in the first release,
+no compromise, and the remaining gate items happen once just before launch. Adds **§122 — production
+is on 030**, applied 22 Sep after a pre-flight that derived the pending set as exactly 029 and 030;
+both catalogs re-read afterwards and both objects checked on production. The migration gap is closed
+and **catch-up is no longer paired with credential rotation, which is still outstanding.**
+Version 94: **§98's owed reset is CLOSED** — `npm run db:restore` ran to
 completion on staging, all 31 migrations from zero and every data count matching its source file.
 Adds **§121 — a script the quality gate cannot see was broken for seven days.** `npm run preflight`
 could not parse; `git log` puts the break at `d0eb1f5`, 15 Sep, unescaped backticks inside a
@@ -8604,7 +8609,7 @@ history list, and therefore no promise to break.**
 
 ---
 
-## 117. OPEN — release timing, and it is the owner's decision — 21 September 2026
+## 117. Release timing — ANSWERED 22 September 2026: every module ships in the first release
 
 **Two options, and nothing in this record decides between them:**
 
@@ -8619,6 +8624,19 @@ baseline makes either viable, which is part of why it was worth doing.
 
 **What would decide it:** who the first ten customers are, and whether they are being sold a
 finished product or are helping build one.
+
+---
+
+> ### ✅ ANSWERED — 22 September 2026. THE SECOND OPTION. **EVERY MODULE SHIPS IN THE FIRST
+> ### RELEASE. NO COMPROMISE.**
+>
+> The owner's decision. Not release-now-and-improve: the first release is the whole product, built
+> one module at a time until every one of them passes, in the loop `HOW-WE-BUILD.md` §12 describes.
+>
+> **And it settles the shape of the remaining gate work.** Credential rotation and anything else
+> still on `TODO.md`'s GATE happen **once, just before launch** — a single pass, rather than items
+> repeatedly re-scheduled against a release date that keeps moving. §114's *"all modules ship, no
+> compromise, one at a time"* is now the release plan and not only the build method.
 
 ---
 
@@ -8775,7 +8793,8 @@ Different input, not the CLI, and it catches and reports rather than crashing.
 schema.** `npm run db:restore -- --from N` starts at step N — and does **not** take the operator's
 word for where that is. **Every check belonging to a skipped step is re-read first, and one failure
 refuses the resume:** the counts that would have proved a step succeeded are exactly the counts that
-prove it need not run. Verified both ways — `--from 5` against today's empty library refuses and
+prove it need not run. Verified both ways — `--from 5` against the empty library of that moment
+(staging was mid-restore; it is fully loaded now) refuses and
 names all four unmet checks; `--from 2` passes the gate on `migrations applied 31 = 31` and starts
 the loop at step 2.
 
@@ -8939,3 +8958,45 @@ front of a production migration.
 
 **Reversal condition:** if scripts move to TypeScript and land inside `tsconfig.json`'s `include`,
 the separate syntax step becomes redundant.
+
+---
+
+## 122. Production is on 030 — 22 September 2026
+
+**A dated fact, not a decision.** Recorded because `STATUS.md` and the hand-offs have carried
+*"staging is two ahead of production"* since 21 September, and it is no longer true.
+
+**The owner ran `npm run preflight`** — itself unparseable until the same day (§121) — which printed
+both inputs in full and derived the pending set as exactly **`029_critic_findings.sql`** and
+**`030_research_sources.sql`**, with no orphans. Then `npm run db:migrate:prod`, typed
+`PRODUCTION`, both applied; `db:types` regenerated from production, `git status --porcelain` empty
+and `npm run typecheck` green.
+
+**Re-read from both catalogs afterwards rather than taken from the run's own output:**
+
+```
+staging     {"latest": "030", "migs": 31}    29 tables in public
+production  {"latest": "030", "migs": 31}    29 tables in public
+```
+
+**And the objects the two migrations were supposed to create were checked ON PRODUCTION**, because
+a migration recorded as applied is not the same claim as an object existing (§3.7's own argument):
+
+```
+select count(*) from information_schema.tables
+ where table_schema='public' and table_name in ('critic_reviews','critic_findings');   -- 2
+select count(*) from information_schema.columns
+ where table_schema='public' and table_name='checklists' and column_name='research_sources'; -- 1, nullable
+```
+
+**The library is identical either side** — 205 requirement rows, 5 retired, 17 split children, 199
+carrying an expression, 33 agencies, 56 coverage rows, 95 switches, 40 edges.
+
+**What has NOT changed, and it is still the thing that matters most:** production holds **235
+AI-written `checklist_items` and 0 computed obligations**, and **0 `company_switches`**. Two new
+tables and a nullable column do not move that. §68 and §111.
+
+> **The pairing to stop making:** production catch-up and credential rotation have travelled
+> together in every hand-off. **Catch-up is done. Rotation is not**, and nothing in this week's
+> database work touched it — seven leaked credentials plus the born-rotated eighth, now scheduled
+> for a single pass just before launch under §117.

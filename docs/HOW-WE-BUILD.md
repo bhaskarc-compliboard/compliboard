@@ -1,7 +1,11 @@
 # How We Build CompliBoard
 
-**Version:** 16 · **Updated:** 22 September 2026
-**Supersedes:** version 15 (21 Sep). §4's worked example renumbered: the switch step is **5**, not
+**Version:** 17 · **Updated:** 22 September 2026
+**Supersedes:** version 16 (22 Sep). §4's restore table is corrected: `applies_expression` lands on
+**199** of the 200 live rows, not 205; the worksheet is named `REQUIREMENTS.xlsx`; **the switches
+must load before the expressions** (§120); and the eight steps are now one command,
+`npm run db:restore`, which was run to completion on 22 Sep — **§98's owed reset is CLOSED**.
+Version 16: version 15 (21 Sep). §4's worked example renumbered: the switch step is **5**, not
 6, since the from-zero run found the documented order was never executable (`DECISIONS.md` §120).
 Version 15: version 14 (21 Sep). Adds **§11 — a structure built ahead of the model constrains
 it**, learned twice (the requirement table, then the research pipeline): **the baseline is wide
@@ -349,13 +353,21 @@ route's logging appears to be missing, check that file before concluding anythin
 >
 > | | | Restored by |
 > |---|---|---|
-> | requirement_templates | **205** | `load-requirements.js` + an `.xlsx` |
+> | requirement_templates | **205** | `load-requirements.js` + `supabase/seed-data/REQUIREMENTS.xlsx` |
 > | switches | **95** | `load-switches.js` |
 > | agencies | **33** | `load-agencies.js` |
 > | industry_coverage | **56** | `assign-agencies.js` |
-> | applies_expression | on 205 rows | `load-expressions.js` |
+> | applies_expression | on **199** of the 200 live rows | `load-expressions.js` |
 > | the three test companies | Alpha, Beta, Gamma | `seed-staging-testdata.js` |
 > | Alpha's second site + 16 facts | | `seed-multisite-fixture.js` |
+>
+> **The switches must load BEFORE the expressions** — `load-expressions.js:70` reads
+> `select id from public.switches`. The order written here on 21 September had them the other way
+> round and had never been executed from zero; it produced 216 errors when it finally was
+> (`DECISIONS.md` §120). `npm run db:restore` now carries the corrected order.
+>
+> **And this is all now ONE COMMAND** — `npm run db:restore`, `TODO.md` 0.10 — which was run to
+> completion on 22 September. §98's owed reset is **CLOSED**.
 >
 > **So a USABLE staging database is eight steps after a reset**, and on 21 September five of them
 > had not been exercised in the session that was about to depend on them.

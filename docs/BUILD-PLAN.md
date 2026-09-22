@@ -1,6 +1,8 @@
 # Master Build Plan
-**Version:** 3.8 · **Updated:** 13 September 2026
-**Supersedes:** 3.7 (12 Sep) — **header date corrected 15 Sep**: 3.7 was edited on 13 September and
+**Version:** 3.9 · **Updated:** 22 September 2026
+**Supersedes:** 3.8 (13 Sep). One correction: Phase 2's "the library is 194 rows" was written before
+migration 013's three splits and is now **205 rows, 200 active**, on both environments. Nothing else
+in the plan changed. Version 3.8 superseded 3.7 (12 Sep) — **header date corrected 15 Sep**: 3.7 was edited on 13 September and
 its header was never bumped, so the file claimed 12 Sep while git said 13 Sep. **`AUDIT-CHECKS.md`
 check 31 cannot see that class** — it compares COMMIT dates, not headers. Previously, 3.6 (12 Sep) — Part B 1.3 (the critic pass) is marked complete with its
 cost and the warning not to optimise it before Stage 2 exists, 1.5 records the temperature
@@ -593,8 +595,9 @@ service-role key each carry a named reason.
 
 **Phase 2 — the schema rebuild — is COMPLETE.** Migrations 006–010, on **staging and
 production both**, verified identical — **673 objects at the time, 619 under the current census
-after 011 and 012 (`AUDIT-CHECKS.md` check 10)**, 0 differences either way. The library is 194
-rows (192 active). Every company has exactly one primary site. `switches`,
+after 011 and 012 (`AUDIT-CHECKS.md` check 10)**, 0 differences either way. The library was 194
+rows (192 active) when this was written; it is **205 rows, 200 active** since migration 013's three
+splits, and both environments carry that (re-read 22 Sep). Every company has exactly one primary site. `switches`,
 `company_switches`, `industry_coverage`, `library_candidates` and `jobs` exist and are
 empty, ahead of their callers on purpose.
 

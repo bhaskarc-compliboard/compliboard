@@ -1,7 +1,8 @@
 # Handoff — the state of the code
 
-**Written 21 September 2026, at the end of the session. Every figure below came from a command, and
-the command is shown.** Nothing here is from memory. Where a figure is not measured, it says so.
+**Rewritten 22 September 2026. Every figure below came from a command run today, and the command is
+shown.** Nothing here is carried over from the previous handoff, and nothing is from memory. Where a
+figure is not measured, it says so.
 
 **If you are the next chat: read `CLAUDE.md` first (especially §9a), then `HOW-WE-BUILD.md` §11 and
 §12, then `docs/SCHEMA.md` for the database. This file is state, not method.**
@@ -12,173 +13,139 @@ the command is shown.** Nothing here is from memory. Where a figure is not measu
 
 ```
 $ git log --oneline -6
-cd93369 Read conversations overnight instead of guessing fact by fact as they happen
-c0ef608 Put each source behind the number that cites it, and close the seams
-3f8fb0e Put the answer's sources back, and stop breaking its sentences to do it
-91ab9e9 Let the research answer find its own shape, and give it what the question is about
-71c2a4d Keep the critic's working notes, stop showing them, and stop a crash on the customer's path
-9b89a4a Reverse the order of the workspace module, and settle five decisions about its first writer
+28e6709 Close the owed reset, and fix a pre-flight that had not parsed since 15 September
+e3344f9 Load the switches before the expressions that reference them
+ac227e6 Stop schema-doc parsing from the first brace, and let the restore resume
+616a337 Make the worksheet the library again, and keep content out of migrations
+cc81821 Correct three documents that called a fixed thing broken
+e5b7bd6 Add npm run db:restore, and find that the seed files no longer rebuild the library
 ```
 
-**Everything in this session is committed and pushed** — including `M1.2e` (the chat layout), the
-schema generator, and the records below. `git status --porcelain` is empty at the commit this file
-lands in.
+---
 
-> **One thing to know about `71c2a4d`:** M1.2d — the browser holding and sending turns — shipped
-> inside it and **its commit message does not mention turns, topics or conversations.** The
-> `TODO.md` row went unticked for a day and a status report then recommended building what was
-> already built (`DECISIONS.md` §65, twelfth instance). **Tick the row in the same commit as the
-> code.**
-
-## 2. Migration state — staging is TWO AHEAD of production
+## 2. Migration state — BOTH ENVIRONMENTS ON 030. THE GAP IS CLOSED.
 
 ```
-$ npx supabase db query --project-ref amzsavsrabrlcprltpom --linked \
-    "select count(*) n, max(version) latest from supabase_migrations.schema_migrations"
-  {'latest': '030', 'n': 31}
+$ npx supabase db query --project-ref <staging> --linked --agent no -o json \
+    "select count(*)::int migs, max(version) latest from supabase_migrations.schema_migrations"
+  {"latest": "030", "migs": 31}
 
-$ npx supabase db query --project-ref <SUPABASE_PROD_REF> --linked   # same query
-  {'latest': '028', 'n': 29}
+$ same query against <SUPABASE_PROD_REF>
+  {"latest": "030", "migs": 31}
 ```
 
 | | staging | production |
 |---|---|---|
-| Latest migration | **030** | **028** |
-| Count | 31 | 29 |
+| Latest migration | **030** | **030** |
+| Count | 31 | 31 |
+| Tables in `public` | 29 | 29 |
 
-**Not on production: 029 (`critic_reviews` / `critic_findings`) and 030
-(`checklists.research_sources`).** Both are additive — new tables, one new nullable column, no
-`ALTER` of anything existing. **Shipping them needs `npm run preflight` then
-`npm run db:migrate:prod`, run by the owner.**
-
-> ## ✅ THE OWED RESET IS CLOSED — 22 September 2026.
->
-> `npm run db:restore` completed on staging: **31 migrations applied from zero**, then all seven
-> data steps, every count matching its source file. Re-read from the catalog afterwards:
-> **205 · 33 · 56 · 95 · 40 · 199 · 3 · 4 · 16 · 31.** `schema:doc` clean, `check:live` green.
-> §3.7's guarantee is demonstrated rather than believed. Everything below this line is the history
-> of how it got there, kept because each of the three failed attempts found a real defect
-> (§118, §119, §120).
->
-> **Production is still on 028.** `npm run preflight` — which was itself unparseable from 15 to 22
-> September (§121) — now runs, and the pending set is exactly **029_critic_findings.sql** and
-> **030_research_sources.sql**. Both additive. `npm run db:migrate:prod` is the owner's.
-
-**A reset is OWED for both** — `DECISIONS.md` §98. They were applied with `db:migrate`, so §3.7's
-guarantee (the chain builds a database from nothing) is unmet for them. **The precondition is
-`TODO.md` 0.10**, the one-command restore, because a reset today is eight manual steps.
-
-> ### Update, 22 September — STILL OWED, and now one command away.
->
-> **0.10 is built** (`npm run db:restore`) and **6.3c is decided and done** (`DECISIONS.md` §118):
-> the worksheet was rebuilding only 194 of the library's 205 rows, because migration 013 put eleven
-> requirement rows inside a migration and a from-zero run skips it. `supabase/seed-data/REQUIREMENTS.xlsx`
-> now carries all 205, and the restore's read-only pre-flight reads **205 = 205** on every library
-> line with the three seed files agreeing.
->
-> **What has NOT happened: the restore has never been run to completion.** Step 1 is interactive by
-> design — a human types RESET — and that run was not performed. **The owed reset closes when all
-> eight steps pass, and not before.** One command, from an interactive terminal on a machine
-> pointed at staging:
->
-> ```
-> npm run db:restore
-> ```
->
-> It will destroy, and nothing rebuilds: 430 obligations, 62 critic_findings, 33 topics, 20
-> checklist_items, 13 checklists, 4 critic_reviews, 3 switch_determinations. **Confirmed nothing
-> outside staging references any of them** — all 62 finding ids and all 4 review ids grepped across
-> the repo: 0 matches, and `baseline-outputs/` is a production export from a database that has no
-> critic tables at all.
-
-> ### WHAT ACTUALLY HAPPENED, 22 September — READ THIS BEFORE RUNNING ANYTHING.
->
-> The owner ran it. **All 31 migrations applied from zero — the chain builds the schema from
-> nothing, which is what `CLAUDE.md` §3.7 and §98 wanted proved.** Then step 1 died in
-> `scripts/schema-doc.js` and **steps 2-8 never ran.**
->
-> **STAGING RIGHT NOW: full schema, NO LIBRARY.** 0 requirement_templates, 0 agencies, 0 switches,
-> 0 companies. That is §98's vacuous-pass state — every check that reads the library will pass
-> against nothing. **Do not trust a green result from staging until the restore is finished.**
->
-> The crash is fixed (`DECISIONS.md` §119) and **the restore no longer needs repeating from the
-> top.** The schema is already correct, so:
->
-> ```
-> npm run db:restore -- --from 5      # steps 2-4 already loaded; 5 is now the SWITCHES
-> ```
->
-> **Steps 2, 3 and 4 have since loaded clean** — 205 requirement rows, 33 agencies, 56 coverage
-> rows, 198 with an agency. Step 5 then failed because 0.10's documented order ran the expressions
-> before the switches they reference (`DECISIONS.md` §120): **216 errors, nothing written.** The
-> order is fixed and the two are swapped, so **step 5 is now `load-switches.js`** and the resume
-> gate has been checked against today's counts — 31 / 205 / 33 / 56 / 198, all passing.
->
-> It re-reads step 1's own check first (`migrations applied 31 = 31`) and refuses if the database
-> is not where `--from` claims. It needs no terminal prompt — only step 1 does.
->
-> **The owed reset closes when steps 2-8 finish and every count matches.** Migration-wise the
-> from-zero proof is already in hand; what is missing is the data.
-
-## 3. Production row counts — the number that matters most
+**029 and 030 were applied to production on 22 September** — the owner ran `npm run preflight`
+(pending was exactly those two), then `npm run db:migrate:prod`. Their objects are on production and
+were checked, not assumed:
 
 ```
-$ npx supabase db query --project-ref <prod> --linked "select 'obligations', count(*) …"
-  checklist_items          235
-  checklists                11
-  companies                 10
-  company_switches           0
-  documents                 38
-  obligations                0
-  requirement_templates    205
-  switches                  95
+$ select count(*) from information_schema.tables
+   where table_schema='public' and table_name in ('critic_reviews','critic_findings');   -- 2
+$ select count(*) from information_schema.columns
+   where table_schema='public' and table_name='checklists' and column_name='research_sources'; -- 1, nullable
 ```
 
-> ### **Production has 235 AI-written checklist rows and ZERO computed obligations.**
+> ### ✅ `DECISIONS.md` §98's OWED RESET IS CLOSED.
 >
-> The deterministic spine `CLAUDE.md` §1 calls the whole point of the product **has never produced
-> a row a customer has seen.** Every "what you must do" any real person has read here was written
-> by a model. `DECISIONS.md` §68, and §111 decided the fix (a checklist is a hybrid, linked to the
-> obligations it satisfies) — **not built.**
+> `npm run db:restore` ran to completion on staging on 22 September: **31 migrations applied from
+> zero**, then all seven data steps, every count matching the file it came from. **§3.7's guarantee
+> — that the chain plus the seed files rebuild a database from nothing — is demonstrated rather than
+> believed**, for the first time in the project.
+>
+> **It took three attempts and each failure was a real defect the incremental path had hidden:**
+> §118 (the seed files could no longer rebuild the library), §119 (a catalog parser that hunted for
+> a brace), §120 (a step order that had never been executable). **None was found by anything except
+> running from zero.**
 
-## 4. What `npm run check` covers
+---
+
+## 3. Row counts, both databases, read today
 
 ```
-$ python3 -c "…package.json…"
-  check = npm run typecheck && npm run check:schema && npm run test && npm run build
-  typecheck    = tsc --noEmit
-  check:schema = node scripts/check-schema-contracts.js
-  test         = node scripts/test-guard.js
-  build        = next build
+$ select (select count(*) from public.companies), … -- one statement per environment
+```
 
-$ npm run test
-ℹ tests 329 · suites 89 · pass 329 · fail 0
+| | staging | production |
+|---|---|---|
+| `requirement_templates` | 205 | **205** |
+| — retired / split children | — | 5 / 17 |
+| — carrying `applies_expression` | 199 | **199** |
+| `agencies` | 33 | **33** |
+| `industry_coverage` | 56 | **56** |
+| `switches` | 95 | **95** |
+| — `depends_on_switch` edges | 40 | **40** |
+| `companies` | 3 | **10** |
+| `profiles` | 4 | **4** |
+| `entities` | 4 | **10** |
+| `company_switches` | 16 | **0** |
+| `documents` | 0 | **38** |
+| `checklists` / `checklist_items` | 0 / 0 | **11 / 235** |
+| `obligations` | 0 | **0** |
+| `topics` | 0 | **0** |
+| `critic_reviews` / `critic_findings` | 0 / 0 | **0 / 0** |
+
+**The library is byte-for-byte the same shape on both** — 205 rows, 5 retired, 17 children, 199
+expressions, 95 switches, 40 edges.
+
+> ### **Production still has 235 AI-written checklist rows and ZERO computed obligations.**
+>
+> Unchanged by any of this week's work, and still the thing that matters most. The deterministic
+> spine `CLAUDE.md` §1 calls the whole point of the product **has never produced a row a customer
+> has seen.** §68, and §111 decided the fix (a checklist is a hybrid, linked to the obligations it
+> satisfies) — **not built.**
+
+**Staging is a freshly rebuilt database.** It holds the library, the three test companies (Test
+Alpha Chemical, Test Beta Cannabis, Test Gamma Solvents), four profiles, four sites and the 16
+multi-site facts — and nothing else. Every document, checklist, topic, obligation and critic row on
+staging was destroyed by the reset, deliberately and with nothing outside staging referencing them.
+
+---
+
+## 4. What `npm run check` covers — AND THE 20 SCRIPTS IT DOES NOT
+
+```
+$ npm run check      # typecheck && check:schema && test && build
+  check-schema-contracts: ok — 110 files, 30 relations (29 tables + 1 view).
+  tests 329 · suites 89 · pass 329 · fail 0
   test-guard: 329 tests, 0 skipped, 0 todo, floor 238. OK
+  ✓ Compiled successfully
 ```
 
-**What it does NOT cover, and this has cost real defects:**
+**What it does NOT cover, and each of these has cost a real defect:**
 
 - **No authenticated HTTP request.** A missing grant, a wrong policy or a route guard is invisible
-  to all 329 tests — `/api/obligations` 500'd for every real caller through six phases. Use
-  `npm run check:live` (signs in as a real fixture) and drive routes as a signed-in user.
-- **`check:schema` validates query strings against `lib/database.types.ts` offline.** It caught
-  `critic_reviews` missing from `/api/account` DELETE on the day the table was created. It has one
-  blind spot, documented in the script: `.from(variable)` cannot be attributed.
+  to all 329 tests. Use `npm run check:live`, which signs in as a real fixture.
 - **Nothing checks regulatory content.** A model checking a model produces agreement.
+- **⚠ IT EXECUTES 2 OF THIS REPO'S 22 SCRIPTS.** `check:schema` runs
+  `scripts/check-schema-contracts.js` and `test` runs `scripts/test-guard.js`; a syntax error in
+  either fails the gate. **The other twenty are invisible to it** — `tsconfig.json`'s `include`
+  lists `**/*.ts`, `**/*.tsx`, `**/*.mts` and the `.next` type folders and **no `**/*.js` pattern**,
+  no test imports a script, and `next build` does not compile `scripts/`. **`scripts/preflight-prod.js`
+  sat unparseable from 15 to 22 September while `npm run check` reported green** (§121). Swept
+  22 Sep with `node --check` over all 24 tracked `.js`/`.mjs` files: **0 broken.** The proposed fix
+  is a `check:syntax` step; it is **not built**, because it changes the commit gate.
+
+---
 
 ## 5. Built and verified, by module
 
 | | |
 |---|---|
 | **M1.0** 7.2a's two routes | `/api/switches/ask`, `/api/switches/answer` — built, driven over HTTP, **no UI caller** |
-| **M1.1** `topics` | migration 028, on **both** environments |
+| **M1.1** `topics` | migration 028, on **both** environments (both now on 030) |
 | **M1.2b** frame + prior turns | ⚠ **partly** — prior turns and the frame shipped; the web-search flag it claimed did not exist until M1.9 (§101) |
 | **M1.2** follow-up classification | folded into the gate, four kinds |
 | **M1.2c** signed turns | HMAC, contiguity, four attacks refused |
-| **M1.2d** the conversation surface | committed in `71c2a4d`; **33 `topics` rows on staging** |
-| **M1.2e** the chat layout | **done this session** — exchanges stack, composer at the bottom clearing on send, the gate's ask is a message answered in the same box, sources per exchange. Driven over HTTP: 3 exchanges stay, sources 11 · 10, not shared |
+| **M1.2d** the conversation surface | committed in `71c2a4d`. The 33 `topics` rows it had written on staging were destroyed by the 22 Sep reset — **`topics` is 0 on both environments today** |
+| **M1.2e** the chat layout | done 21 Sep — exchanges stack, composer at the bottom clearing on send, the gate's ask is a message answered in the same box, sources per exchange. Driven over HTTP: 3 exchanges stay, sources 11 · 10, not shared |
 | **M1.9** the research answer | free-flowing, sources, search read from the gate. §105's bar met **on one question** |
-| **2.3** the critic | built; findings now stored (029) and shown to nobody (§97) |
+| **2.3** the critic | built; findings stored (029, **now on production too**) and shown to nobody (§97). 0 rows in either environment |
 
 **Built and reached by nothing:**
 
@@ -196,9 +163,9 @@ $ for m in sdsExtraction basis …; do grep -rl "lib/$m" app | wc -l; done
 | **A fact answered to the gate is lost one turn later** | `app/api/chat/route.ts`, `factsFromGate()` — the filter keeps only `stated_in_question` and `hypothetical` | The `answering` fact is labelled `user_set` (`determinationGate.ts:475`) and is **stored nowhere**, so the filter drops the only copy. Measured: turn 2's sealed turn carries 2 facts and not the generator category |
 | **Enum values arrive as free text** | same path | `hazwaste_generator_category` allows `none\|vsqg\|sqg\|lqg`; the value carried was `"small quantity generator"`. `/api/switches/answer` would 400 on it |
 | **Citations discarded for every non-research caller** | `lib/ai.ts` — `askAI` returns `.text` only | `/api/audits` runs web search on two calls and drops its sources |
-| **`expires_at` set by nothing** | `company_switches` — **0 of 19 rows** | v3.1: an expired fact must read `unknown`; a stale `false` is a false green |
+| **`expires_at` set by nothing** | `company_switches` — **0 of 16 rows carry one** on staging (re-read 22 Sep), and **48 of 95 switches are non-static** | v3.1: an expired fact must read `unknown`; a stale `false` is a false green. On the GATE |
 | ~~**`substance_inventory` EXECUTE granted to PUBLIC**~~ | migration 013 | **NOT OPEN — corrected 22 Sep.** Migration **019** revoked it on 13 Sep; `pg_proc.proacl` on staging reads `postgres=X \| service_role=X \| authenticated=X`, no PUBLIC and no `anon`. This row, `TODO.md` 4.2b and `AUDIT-CHECKS.md`'s closing paragraph all carried the stale claim |
-| **5 of 6 saved research answers have no sources** | pre-030 rows | They render markers with no list |
+| ~~**5 of 6 saved research answers have no sources**~~ | pre-030 rows on staging | **Gone with the reset — `checklists` is 0 on staging.** The defect shape is untested rather than fixed: production's 11 checklists predate 030 and **0 carry `research_sources`** |
 
 **Two entries in `TODO.md` that are NOT open, checked this session:** 6.4f's coverage-row defect is
 **fixed** (0 mismatched rows; migration 024 did it and the entry was never updated), and 7.2d's
@@ -214,9 +181,12 @@ the implementation for 42.
 | **§111 a checklist is a hybrid** | Item 6 decided, §68 resolved. Starts from the obligations that apply; matched items linked; everything else a labelled suggestion |
 | **§112 checklists come after research** | The Create tab is untouched by **sequencing**, not by a blocker |
 | **§116 chat history is GATED** | Four gates before it ships: the deletion job, a check that it ran, immediate removal on account deletion, the privacy policy |
-| **§117 release timing** | **OPEN, and the owner's.** Release now and improve module by module, or after every module's pass |
+| **§117 release timing** | ✅ **ANSWERED 22 Sep — every module ships in the first release, no compromise.** Credential rotation and any remaining gate items happen **once, just before launch** |
 
 ## 8. The exact next step
+
+**The database work is finished.** Both environments are on 030, staging rebuilds from zero, the
+worksheet is authoritative, and the pre-flight runs. None of that is the product.
 
 > ### `TODO.md` **R1.0 + R1.1** — the open baseline, and the config switches that make it reversible.
 >
@@ -227,7 +197,8 @@ the implementation for 42.
 >
 > **R1.1 is not optional polish.** Without the switches, running the baseline means deleting work
 > and rollback means rewriting it. With them, the release mechanism and the experiment framework
-> are the same thing.
+> are the same thing — and §117's answer (every module ships in the first release) makes that
+> mechanism the thing the release itself runs on.
 
 **Then, in order:** R1.2 (search that verifies rather than leads) → R1.3 (specialist behaviour and
 a specific offer) → R1.4 (company facts) → R1.5 (the gate, at a much higher bar). **Each ships only
@@ -237,6 +208,10 @@ if it beats the step before, measured on real questions, benchmarked against an 
 **Do not start with:** M1.3b's extractor (needs M1.3a's retention, which is gated on §116's four
 conditions), or 7.2c's trigger (blocks only M1.6, which is behind M1.3c).
 
+**Still on the GATE before a real customer document:** the checklist/obligation reconciliation,
+`expires_at`, and **key rotation — the seven leaked credentials plus the born-rotated eighth.**
+Production catch-up used to sit beside rotation on that list; **it is done and rotation is not.**
+
 ## 9. Two commands worth knowing
 
 ```
@@ -244,9 +219,17 @@ npm run check        typecheck · schema contracts · 329 tests · build.  Green
 npm run check:live   signs in as a real staging fixture and writes as that user. Needs
                      CHECK_LIVE_PASSWORD in .env.local — there is no default any more.
 npm run schema:doc   regenerates docs/SCHEMA.md from the live catalog. Runs inside db:migrate.
+npm run db:restore   rebuilds STAGING from zero in one command — reset, then the seven data
+                     steps, printing got-vs-expected after each from the seed files. Refuses
+                     production four ways. `-- --from N` resumes, but re-reads every skipped
+                     step's own checks first and refuses if they do not hold.
+npm run preflight    READ-ONLY. Prints migrations on disk and migrations applied on production
+                     in full, then derives the pending set in front of you.
 ```
 
 **The staging fixtures are `testalpha@`, `testalpha2@`, `testbeta@`, `testgamma@example.com`.**
 Gamma is the empty one — chemical manufacturing, Oregon, and the company `TESTING.md` Case A1 needs.
-All four are in `scripts/seed-staging-testdata.js`; Gamma was added there on 21 Sep after six days
-of existing with no script behind it.
+All four are in `scripts/fixtures/staging-testdata.js`, which `scripts/seed-staging-testdata.js`
+and `scripts/db-restore.js` both import so the count has one definition. Gamma was added on 21 Sep
+after six days of existing with no script behind it. **All three companies were rebuilt by the
+22 Sep restore and are present.**

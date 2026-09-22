@@ -1,12 +1,26 @@
 # STATUS
 
-**Version:** 19 · **Updated:** 22 September 2026
-**Supersedes:** version 18 (15 Sep). **Staging is on 000–030 and was REBUILT FROM ZERO** — the chain
+**Version:** 20 · **Updated:** 22 September 2026
+**Supersedes:** version 19 (22 Sep). **BOTH ENVIRONMENTS ARE ON 000–030.** Production was caught up
+on 22 Sep — the owner ran `npm run preflight` (pending was exactly 029 and 030), then
+`db:migrate:prod`; both applied, and their objects were checked on production rather than assumed
+(2 critic tables, `checklists.research_sources` present and nullable). **Staging was rebuilt FROM
+ZERO the same day** — 31 migrations against an empty database, then seven data steps, every count
+matching its source file — which **CLOSES `DECISIONS.md` §98's owed reset**. Re-read from both
+catalogs today: library identical either side at **205 requirement rows (5 retired, 17 children,
+199 expressions) · 33 agencies · 56 coverage rows · 95 switches · 40 edges**; production carries
+**10 companies · 4 profiles · 10 entities · 38 documents · 11 checklists · 235 checklist_items ·
+0 obligations · 0 company_switches**; staging carries the three test companies, 4 profiles, 4 sites
+and 16 multi-site facts and nothing else. Three defects were found **only** by running from zero
+(§118, §119, §120), and a fourth beside them: **`npm run preflight` could not parse from 15 to 22
+Sep (§121), because `npm run check` executes 2 of this repo's 22 scripts.** Release timing is
+**ANSWERED** (§117): every module ships in the first release. Version 19: version 18 (15 Sep). **Staging is on 000–030 and was REBUILT FROM ZERO** — the chain
 plus the seed files reproduce the whole database, proved by running it rather than asserted
 (`DECISIONS.md` §98, now CLOSED). Counts re-read from the catalog on 22 Sep: **requirement_templates
 205 · agencies 33 · industry_coverage 56 · switches 95 · edges 40 · applies_expression 199 ·
-companies 3 · entities 4 · company_switches 16.** **Production is still on 000–028**; pending is
-exactly 029_critic_findings.sql and 030_research_sources.sql, both additive, not yet applied. The
+companies 3 · entities 4 · company_switches 16.** **Production was still on 000–028 AT THAT
+VERSION** — pending was exactly 029_critic_findings.sql and 030_research_sources.sql, both additive.
+Both were applied later the same day; see version 20 above. The
 library worksheet is now `REQUIREMENTS.xlsx` at **205 rows** and is authoritative (§118). Three
 defects were found only by the from-zero run — §118, §119, §120 — and a fourth beside it: **`npm run
 preflight` could not parse from 15 to 22 Sep (§121), and `npm run check` executes 2 of this repo's
@@ -148,7 +162,7 @@ which is the exact failure this file exists to prevent.
 |---|---|---|---|
 | **Tenancy / RLS** | ✅ working | 15 Sep | **75 policies across 27 tables, 68 of them through `auth_company_id()`** — re-read from `pg_policies` on 13 Sep, correcting the 65/23/59 this row carried since 11 Sep (`AUDIT-CHECKS.md` check 11). `anon` holds zero table grants anywhere and zero EXECUTE on either tenant function. Verified by comparing row counts under a caller's token against the service role, not by HTTP status. |
 | **Storage scoping** | ✅ working | 10 Sep | Six tests with real sessions: a company can read and write only its own prefix. Before migration 002 every authenticated user could read and delete all 52 files across 7 companies. |
-| **Migration chain** | ✅ working | 15 Sep | **000→028 on BOTH environments** — each reports `applied 29, latest 028`, read from `supabase_migrations.schema_migrations`. **Object-for-object: 0 differences across 10 categories**; census **879 objects each side, sha256 identical**. `npm run preflight` prints both inputs and derives the pending list in front of the reader. **`npm run db:migrate` now runs `check:live` after every staging migration** — and `db:migrate:prod` does NOT, by construction (`AUDIT-CHECKS.md` check 27). |
+| **Migration chain** | ✅ working | **22 Sep** | **000→030 on BOTH environments** — each reports `applied 31, latest 030`, read from `supabase_migrations.schema_migrations` today, 29 tables either side. **And the chain has now been proved from nothing**: `npm run db:restore` rebuilt staging from an empty schema on 22 Sep, all 31 migrations plus seven data steps, every count matching its seed file (`DECISIONS.md` §98, CLOSED). Production was caught up the same day via `preflight` → `db:migrate:prod`. **Object-for-object: 0 differences across 10 categories**; census **879 objects each side, sha256 identical**. `npm run preflight` prints both inputs and derives the pending list in front of the reader. **`npm run db:migrate` now runs `check:live` after every staging migration** — and `db:migrate:prod` does NOT, by construction (`AUDIT-CHECKS.md` check 27). |
 | **Requirement library** | 🟡 degraded | 12 Sep | **205 rows in both environments — 200 live, 5 retired parents, 17 split children, 0 orphaned lineage.** **The library grew from 194 rows to 205 and NOT ONE is new regulatory content.** Migration 013 split three under-decomposed rows — Electronic OSHA injury-data submission into 3, Process Safety Management into 5, Permit-required confined spaces into 3 — so 11 children replaced 3 parents: total 194 → 205, live 192 → 200. Every child's text is derived from its parent's (`CLAUDE.md` §5, and the split test is `DECISIONS.md` §44.4). **193 of 200 live rows carry a regulator**, 7 deliberately NULL. Jurisdiction: 99 Oregon at state layer, 3 Oregon local, 95 federal, 3 with no layer. **Degraded on one axis and it is the important one: all 200 live rows carry a citation, and 0 carry a `citation_url`, a `citation_quote` or a `source_checked_at`. 0 are at `status = 'verified'`.** Every row names a rule and not one links to it. `AUDIT-CHECKS.md` check 1. |
 | **Agency list** (`agencies`) | ✅ working | 12 Sep | **33 agencies in both environments** — 14 federal, 16 Oregon, 3 local. Shared regulators carry both industry slugs; none is duplicated. `url` is NULL on every row **deliberately** — an unverified link is the fact class `CLAUDE.md` §6 says must carry a badge, and this table has no badge column (`TODO.md` 2.1). Washington's regulators are absent on purpose (`DECISIONS.md` §32). |
 | **Requirement → agency assignment** | ✅ working | 12 Sep | **187 of 194 requirements carry a regulator**, from a reviewable mapping table (`supabase/seed-data/agency-mapping.json`), identical in both environments. **The 49 Oregon rows citing 29 CFR resolve to Oregon OSHA, not federal OSHA** — the line the whole mapping exists to get right. 7 are deliberately NULL: 3 contractual, 2 genuinely ambiguous, 2 with no enforceable citation. |

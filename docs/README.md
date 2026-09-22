@@ -1,6 +1,10 @@
 # docs/
-**Version:** 7 · **Updated:** 15 September 2026
-**Supersedes:** version 6 (12 Sep). **Adds the FIVE documents that existed and were not listed** —
+**Version:** 8 · **Updated:** 22 September 2026
+**Supersedes:** version 7 (15 Sep). One correction, and it reversed a rule: the seed-data entry said
+the database was the source of truth once a worksheet was loaded. **`DECISIONS.md` §118 decided the
+opposite** — the worksheet is authoritative and requirement content never goes in a migration. The
+worksheet is now `supabase/seed-data/REQUIREMENTS.xlsx`, dateless and 205 rows.
+Version 7: version 6 (12 Sep). **Adds the FIVE documents that existed and were not listed** —
 `SWITCH-DETERMINATION.md`, `EVIDENCE-LINKING.md`, `REQUIREMENTS-SCREEN.md`, `GATE-HISTORY.md`,
 `RESEARCH-ANSWER.md`, `SCHEMA.md` (generated), `HANDOFF-CODE.md`,
 `INVENTORY.md`. Four were added between 12 and 15 September and this index did not move with them.
@@ -243,11 +247,18 @@ Git holds the full history of every version. That is what it is for.
   `baseline-outputs/` (frozen AI output kept for comparison) live at the repo root
   because they are produced by tooling, not written by hand.
 - **Data destined for the database.** Anything that will end up as rows lives in
-  `supabase/seed-data/` — `load-chemical-requirements.sql`, and the filled requirement
-  worksheets that `scripts/load-requirements.js` reads. It sits next to the migrations
-  that shape the tables it loads into, and it is not part of the written record: once a
-  worksheet is loaded, the database is the source of truth and the file is only the
-  record of how it got there. The blank worksheet the pass starts from
+  `supabase/seed-data/` — `load-chemical-requirements.sql`, and `REQUIREMENTS.xlsx`, the
+  requirement worksheet that `scripts/load-requirements.js` reads. It sits next to the
+  migrations that shape the tables it loads into.
+
+  > **CORRECTED 22 September 2026 (`DECISIONS.md` §118).** This used to read *"once a worksheet
+  > is loaded, the database is the source of truth and the file is only the record of how it got
+  > there."* **That is now the opposite of the rule.** The worksheet is authoritative, and
+  > **requirement content changes go through it and `load-requirements.js`, never through a
+  > migration.** Believing the database was the source is what let migration 013 put eleven
+  > requirement rows somewhere no seed file could rebuild them — a from-zero restore lost them
+  > silently. `scripts/export-requirements.js` writes the worksheet back out of the live library
+  > if it ever has to be re-derived again. The blank worksheet the pass starts from
   (`REQUIREMENTS-TEMPLATE.xlsx`) stays at the repo root, because it is generated *from*
   the database rather than destined for it.
 - Rules for how the work is done. Those are in `CLAUDE.md` at the repo root, which is

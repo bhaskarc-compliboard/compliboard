@@ -1,6 +1,12 @@
 # Detailed To-Do
-**Version:** 38 · **Updated:** 22 September 2026
-**Supersedes:** version 37 (22 Sep). **0.10 is ✅ BUILT AND EXERCISED and §98's owed reset is
+**Version:** 39 · **Updated:** 22 September 2026
+**Supersedes:** version 38 (22 Sep). **PRODUCTION IS ON 030** — caught up 22 Sep after a `preflight`
+that derived the pending set as exactly 029 and 030. Both environments now read `applied 31, latest
+030`. **Release timing is ANSWERED (§117): every module ships in the first release, no compromise**,
+and credential rotation plus any other gate item happens **once, just before launch**. The GATE
+section now separates the two things that used to travel together — **catch-up is done, rotation is
+not.** Adds the **KNOWN GAP**: `npm run check` executes 2 of 22 scripts, with `check:syntax`
+proposed and deliberately not built. Version 38: **0.10 is ✅ BUILT AND EXERCISED and §98's owed reset is
 CLOSED** — the restore completed on staging, 31 migrations from zero and every data count matching
 its source. Records **§121**: `npm run preflight` could not parse (broken 15 Sep by `d0eb1f5`,
 unescaped backticks in a template), now fixed and run — pending on production is exactly
@@ -494,6 +500,41 @@ source.
 
 ---
 
+## 🕳 KNOWN GAP — `npm run check` executes 2 of this repo's 22 scripts ⬜ ⏱ 15 min
+
+*Recorded 22 September 2026. `DECISIONS.md` §121.* **Not scheduled, because it changes the commit
+gate and that is the owner's call.**
+
+`check` is `typecheck && check:schema && test && build`. It **runs** `check-schema-contracts.js` and
+`test-guard.js`, so a syntax error in either fails the gate. **The other twenty scripts are
+invisible to it:**
+
+- `tsconfig.json` sets `allowJs: true`, but its `include` lists `**/*.ts`, `**/*.tsx`, `**/*.mts`
+  and the `.next` type folders — **no `**/*.js` pattern at all**, so `scripts/*.js` are outside the
+  program and `tsc --noEmit` never opens them
+- `test-guard.js` runs `node --test tests/unit/*.test.ts`; **no test imports a script**
+- `next build` compiles `app/`, `lib/`, `components/` — not `scripts/`
+
+> **This is not hypothetical.** `scripts/preflight-prod.js` could not be parsed from **15 September
+> to 22 September**, and `npm run check` reported green throughout — including several runs in the
+> session that was about to use it before a production migration.
+
+**Swept 22 Sep:** `node --check` over all 24 tracked `.js`/`.mjs` files — **0 broken.** So it was
+the only one, measured rather than assumed.
+
+**PROPOSED FIX, NOT BUILT:**
+
+```
+"check:syntax": "node --check-all-js"   # i.e. node --check over `git ls-files '*.js' '*.mjs'`
+"check": "npm run typecheck && npm run check:syntax && npm run check:schema && …"
+```
+
+No credentials, no network, about a second. It would have failed on 15 September instead of in
+front of a production migration on the 22nd. **It becomes redundant** if the scripts ever move to
+TypeScript and land inside `tsconfig.json`'s `include`.
+
+---
+
 ## 🔧 0.11 Stream the long AI calls ⬜ ⏱ 1 day
 
 *Recorded 21 September 2026. `DECISIONS.md` §100 and §92.*
@@ -593,11 +634,15 @@ statement to a customer.
 
 ---
 
-## ❓ OPEN — release timing, and it is the owner's call ⬜
+## ✅ ANSWERED — release timing ✅
 
-*`DECISIONS.md` §117.* **Release now and improve module by module, or after every module's pass.**
-Not derivable from the code: it depends on who the first ten customers are and whether they are
-being sold a finished product or helping build one. §113's baseline makes either viable.
+*`DECISIONS.md` §117, decided 22 September 2026.* **EVERY MODULE SHIPS IN THE FIRST RELEASE. NO
+COMPROMISE.** Not release-now-and-improve: the first release is the whole product, one module at a
+time until all of them pass, in the loop `HOW-WE-BUILD.md` §12 describes.
+
+**And the gate items fold into that:** credential rotation and anything else still on the GATE
+happen **once, just before launch**, rather than being scheduled and re-scheduled against a moving
+release date.
 
 ---
 
@@ -606,6 +651,19 @@ being sold a finished product or helping build one. §113's baseline makes eithe
 **Three items remain.** All are cheap right now and expensive the moment a real customer's
 documents are in the database — after that first upload it costs a maintenance window, a
 rollback plan, and a conversation with a customer about downtime.
+
+> ### ✅ PRODUCTION CATCH-UP IS DONE. KEY ROTATION IS NOT. THEY ARE NOT ONE ITEM.
+>
+> These two travelled together in the hand-offs — *"production is behind and the credentials are
+> unrotated"* — and only one of them has been settled.
+>
+> | | |
+> |---|---|
+> | **Production migration catch-up** | ✅ **DONE 22 September.** Both environments on **030**, read from `supabase_migrations.schema_migrations` on each. 029 and 030 applied after a `preflight` that printed both lists and derived the pending set |
+> | **Key rotation (item 3 below)** | ⬜ **NOT DONE.** Seven leaked credentials plus the born-rotated eighth. Nothing about the migration work touched it |
+>
+> **Rotation happens once, just before launch, with any other remaining gate items** — §117's answer
+> makes that a single pass rather than a thing to schedule repeatedly.
 
 **1. The checklist / obligation reconciliation.** *(Added 13 Sep — `DECISIONS.md` §68.)*
 Two records of "what you must do" accumulate side by side with different provenance: **235
