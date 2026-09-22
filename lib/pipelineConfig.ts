@@ -24,12 +24,13 @@
  * fired. Every consumer of this module must branch BEFORE the work, never after it.
  * ---------------------------------------------------------------------------
  *
- * ALL SIX DEFAULT TO OFF, AND THE DEFAULT IS THE PRODUCT'S BEHAVIOUR. An unset variable is not a
- * missing configuration to be warned about — it is the open baseline, which is what production
- * runs. A variable is only ever set to turn a piece back ON for a measurement.
+ * EVERY SWITCH DEFAULTS TO OFF, AND THE DEFAULT IS THE PRODUCT'S BEHAVIOUR. An unset variable is
+ * not a missing configuration to be warned about — it is the open baseline, which is what
+ * production runs. A variable is only ever set to turn a piece ON for a measurement.
  */
 
-/** The six pieces §113 switched off. Names match the environment variables exactly. */
+/** §113's six, switched OFF to reach the baseline — plus the pieces R1.2 onward measures
+ *  back ON, one at a time. Names match the environment variables exactly. */
 export type PipelineSwitch =
   | 'RESEARCH_GATE'
   | 'RESEARCH_FACTS_BLOCK'
@@ -37,6 +38,10 @@ export type PipelineSwitch =
   | 'CHECKLIST_GATE'
   | 'CHECKLIST_CRITIC'
   | 'CHECKLIST_LONG_PROMPT'
+  // R1.2 step one. NOT one of §113's six — those switch pieces OFF to reach the baseline;
+  // this is the first piece being measured back ON, and it ships only if it beats the
+  // baseline on the owner's comparison. `DECISIONS.md` §124.
+  | 'RESEARCH_PREFER_GOV'
 
 export const PIPELINE_SWITCHES: readonly PipelineSwitch[] = [
   'RESEARCH_GATE',
@@ -45,6 +50,7 @@ export const PIPELINE_SWITCHES: readonly PipelineSwitch[] = [
   'CHECKLIST_GATE',
   'CHECKLIST_CRITIC',
   'CHECKLIST_LONG_PROMPT',
+  'RESEARCH_PREFER_GOV',
 ] as const
 
 /**
@@ -70,7 +76,7 @@ export function pipelineSwitch(name: PipelineSwitch): boolean {
   return readSwitch(name)
 }
 
-/** All six, resolved now. */
+/** Every switch, resolved now. */
 export function pipelineConfig(): Record<PipelineSwitch, boolean> {
   return Object.fromEntries(
     PIPELINE_SWITCHES.map((s) => [s, readSwitch(s)]),

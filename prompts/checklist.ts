@@ -1,3 +1,5 @@
+import { pipelineSwitch } from '../lib/pipelineConfig.ts'
+
 /**
  * CHECKLIST / RESEARCH / SUBSTEPS PROMPTS
  *
@@ -210,6 +212,24 @@ CRITICAL RULES:
  * defect that removing the six fixed sections was meant to fix. They stay in the TYPE, optional,
  * because 235 stored items on production carry them and must still render.
  */
+/**
+ * R1.2 STEP ONE — SOURCE PREFERENCE. `DECISIONS.md` §124.
+ *
+ * §113's diagnosis of the old pipeline included *"search leads instead of checking, so answers
+ * mirror vendor pages"* — §106's citations made it visible: the federal claims cited containment
+ * vendors while the Oregon ones cited DEQ. This is the first piece measured back on top of the
+ * open baseline, and it is a PREFERENCE rather than a prohibition: it says what to prefer and
+ * permits the alternative with a disclosure, instead of forbidding non-government sources.
+ * A prohibition would be a fence, which is the thing §113 found subtracts.
+ *
+ * Appended AFTER the role sentence and nothing else changes. With the switch off the prompts
+ * are byte-for-byte what they were.
+ */
+export const PREFER_GOV_SOURCES =
+  'When you cite sources, prefer official ones: the regulation itself, or the government ' +
+  'agency or regulator that enforces it. Use another source only when no official one covers ' +
+  'the point, and say so.'
+
 export const OPEN_ROLE =
   'You are a compliance specialist helping the owner or manager of a small or mid-size ' +
   'business in the United States understand the rules that apply to them.'
@@ -243,6 +263,7 @@ Respond with a single JSON object and nothing else — no prose around it, no ma
 
 "must_do" is what is required. "good_to_have" is what is advisable but not required.`
 
+
 export function buildSystemPrompt(
   mode: string,
   scanResult: Record<string, unknown> | null,
@@ -252,10 +273,22 @@ export function buildSystemPrompt(
   // production runs. The long prompts below are not deleted — they are what the switch turns
   // back on, and `TODO.md` R1.2-R1.5 build up from here one measured piece at a time.
   if (options.open) {
-    if (mode === 'checklist') return OPEN_CHECKLIST_SHAPE;
+    // ONE SWITCH, BOTH MODES — the name says RESEARCH and it governs the checklist too.
+    // Deliberate: it is one sentence about how to cite, and citing differently in the two
+    // outputs of the same section would be the product contradicting itself. A second name
+    // would imply they can be set apart when there is no reason to.
+    const preferGov = pipelineSwitch('RESEARCH_PREFER_GOV');
+    if (mode === 'checklist') {
+      // After the role sentence, before the shape — the shape has to stay last, because it
+      // ends with the instruction about what must_do and good_to_have mean.
+      return preferGov
+        ? OPEN_CHECKLIST_SHAPE.replace(OPEN_ROLE, `${OPEN_ROLE}\n\n${PREFER_GOV_SOURCES}`)
+        : OPEN_CHECKLIST_SHAPE;
+    }
     // Research and substeps take the role sentence alone. Substeps expands one item of a list
     // the user is already looking at; its shape is handled by its own caller.
-    return mode === 'substeps' ? SUBSTEPS_PROMPT : OPEN_ROLE;
+    if (mode === 'substeps') return SUBSTEPS_PROMPT;
+    return preferGov ? `${OPEN_ROLE}\n\n${PREFER_GOV_SOURCES}` : OPEN_ROLE;
   }
   if (mode === 'research') return RESEARCH_PROMPT;
   if (mode === 'substeps') return SUBSTEPS_PROMPT;

@@ -1,6 +1,11 @@
 # Decision Record
-**Version:** 96 · **Updated:** 22 September 2026
-**Supersedes:** version 95 (22 Sep). Adds **§123 — RUN 1, the open baseline, both outputs.**
+**Version:** 97 · **Updated:** 22 September 2026
+**Supersedes:** version 96 (22 Sep). Adds **§124 — R1.2 step one: prefer official sources, behind
+`RESEARCH_PREFER_GOV`.** One sentence appended after the role sentence in both prompts when on,
+byte-for-byte unchanged when off. **A preference, not a prohibition** — it permits a non-official
+source with a disclosure, because a list of things not to do is the fence §113 found subtracts.
+On locally for comparison; **it reaches production only if the owner's comparison says it beats
+the current output.** Version 96: Adds **§123 — RUN 1, the open baseline, both outputs.**
 *"this section needs no barrier between Claude and an answer."* Six config switches, all default
 off; one open streaming call with search available and the model deciding; history as plain pairs
 with signed turns ignored while the gate is off; the checklist cut to a shape and nothing else;
@@ -9142,3 +9147,63 @@ owner's to judge against an incognito chat (§115); nothing here scores them.**
 
 **Reversal condition:** §113's, unchanged — a benchmark where a pipeline piece beats the
 baseline. That is the mechanism this installs, not a reversal of it.
+
+---
+
+## 124. R1.2 step one — prefer official sources, behind a switch — 22 September 2026
+
+**The first piece measured back on top of the open baseline.** §113 switched six pieces off to
+reach that baseline; this is the opposite direction, and the rule §113 installed governs it:
+**it ships only if it beats the baseline on the owner's comparison.**
+
+### What it is
+
+`RESEARCH_PREFER_GOV`, default OFF, in `lib/pipelineConfig.ts`. When ON, one sentence is appended
+**after the role sentence** in both the research and the checklist system prompts, and nothing
+else changes:
+
+> When you cite sources, prefer official ones: the regulation itself, or the government agency or
+> regulator that enforces it. Use another source only when no official one covers the point, and
+> say so.
+
+### Why this sentence and not a rule
+
+§113's diagnosis included *"search leads instead of checking, so answers mirror vendor pages"* —
+made visible by §106's citations, where **the federal claims cited containment vendors while the
+Oregon ones cited DEQ.** That is the defect this addresses.
+
+> ### IT IS A PREFERENCE, NOT A PROHIBITION.
+>
+> It says what to prefer and **permits the alternative with a disclosure**. A sentence forbidding
+> non-government sources would be a fence, and §113's whole finding is that a list of things not
+> to do narrows the model less visibly than a template does. A test asserts the wording carries no
+> prohibition verb, so that a later edit cannot quietly turn the preference into a rule.
+
+**One switch covers both modes** although the name says RESEARCH. It is one sentence about how to
+cite, and citing differently in the two outputs of the same section would be the product
+contradicting itself.
+
+### Where it sits in the checklist prompt, and why that matters
+
+**After the role sentence, before the shape** — the shape has to stay last, because it ends with
+the instruction about what `must_do` and `good_to_have` mean. A test pins that the prompt still
+ends on the format instruction.
+
+### The property the tests actually defend
+
+Not *"does the sentence appear"*. **It is that with the switch OFF the prompt is byte-for-byte
+what it was.** A comparison of on against off is worthless if turning it off also changed
+something else, and a prompt drifting by a newline is exactly the difference nothing else in the
+suite would catch. Seven tests, including every near-miss spelling of `true` — `ture`, `yes`,
+`on`, `1`, `TRUE ` — all of which must read as off.
+
+### Status
+
+**ON in `.env.local` for local comparison. NOT set on staging or production.** It ships to
+production only if the owner's comparison says it beats the current output — that is §113's
+mechanism, not an extra hurdle for this piece.
+
+**Reversal condition:** the comparison going the other way, or the sentence changing what is cited
+without changing whether the citation is right. **Preferring a government source is not the same
+as being correct**, and if the measured effect is that answers look more official rather than
+being more accurate, this is worth less than it appears.
