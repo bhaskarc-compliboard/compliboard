@@ -1,6 +1,11 @@
 # Testing
-**Version:** 16 · **Updated:** 15 September 2026
-**Supersedes:** version 15 (13 Sep). **Case A has a defect in its own precondition** — a company
+**Version:** 17 · **Updated:** 22 September 2026
+**Supersedes:** version 16 (15 Sep). Adds the **R1 manual set** — two tests each for streaming,
+stop, history, the checklist shape and background micro-steps (`DECISIONS.md` §123). The edge
+cases are where the domain work is: whether the narration withdrawal reads as a glitch, whether a
+follow-up carries the subject without repeating itself, whether checklists stored before the shape
+was cut still render, and whether closing the tab mid-generation costs a full regeneration on the
+next open. Version 16: version 15 (13 Sep). **Case A has a defect in its own precondition** — a company
 with nothing established cannot show a count MOVING, only a list being CREATED, so the case cannot
 observe what it was written for. Run for the first time on a new fixture (Test Gamma Solvents):
 **21 applies of 200 created, 0.5 s, 7 questions unblocked.** That is the fresh-company figure; **a
@@ -96,6 +101,48 @@ untested — applies to the runner as much as to anything it runs.
 **167 · 0 skipped · 0 todo**. Per file: `appliesExpression` 58 · `jurisdiction` 24 · `resolve`
 40 · `sdsExtraction` 14 · `switchDetermination` 31. **No run in this project has reported 100 or
 106.** The floor is committed so the question does not have to be re-asked.
+
+---
+
+## Manual set — R1, the open baseline (`DECISIONS.md` §123)
+
+**Two per feature: the perfect case, and the edge case where domain knowledge does work no script
+replicates.** All of these are run with every pipeline switch OFF, which is how production runs.
+
+### Streaming
+
+| | |
+|---|---|
+| **Perfect** | Ask *"SDS versus container label under OSHA HazCom"* in Ask mode. **Text must appear progressively, first words within ~2 s** — not a spinner then a finished answer. Measured 22 Sep: first text at 1279 ms, 11.3 s total. |
+| **Edge — the narration withdrawal** | Ask *"Oregon cannabis extraction lab using butane — licenses and safety"*. The model opens with *"I'll help you understand…"*, **then searches**. Watch for that opening to be **withdrawn and replaced** when the search starts. **What a script cannot judge: whether the flicker reads as a glitch or as the product thinking.** If it reads as a glitch, the fix is presentation, not the rule — the rule is right and has 10 tests behind it. |
+
+### Stop
+
+| | |
+|---|---|
+| **Perfect** | Start a long answer, stop it after a few seconds. Partial text **stays on screen** — it is not wiped — and no error appears, because the user caused it. |
+| **Edge** | Stop, then immediately ask a new question. **The new answer must not be contaminated by the aborted one** — no leftover text in the new exchange, and the stopped exchange is not re-used. Check the server log shows `AI: upstream aborted` for the FIRST request only. |
+
+### History
+
+| | |
+|---|---|
+| **Perfect** | Ask about propane storage, then ask *"what did I just ask about?"*. The answer must name propane. (Automated in `npm run check:live`.) |
+| **Edge — the thing the script cannot check** | Ask a question, then a follow-up that only makes sense in context: *"does that change if we move to Washington?"*. **A correct answer carries the subject forward without re-stating the whole first answer.** A wrong one either forgets the subject or repeats itself at length — both pass a keyword test and only a reader can tell them apart. |
+
+### Checklist shape
+
+| | |
+|---|---|
+| **Perfect** | Ask for a checklist. Items render with a name, a description, a why and a source; the must-do / good-to-have split is right. Ticking an item persists across a reload. |
+| **Edge — the stored rows** | Open a checklist **created before 22 September** (production has 11). Those items carry `cost_note` and `providers` and the current ones do not. **Both must render without a gap or a broken block.** The fields are optional in the type for exactly this reason, and nothing but looking at an old one proves it. |
+
+### Micro-steps in the background
+
+| | |
+|---|---|
+| **Perfect** | Create a checklist and **do not click anything**. Items should fill in with steps on their own, a few at a time, each showing *"steps being written"* until its steps land. Never more than three at once. |
+| **Edge — never lost, never repeated** | Create a checklist, wait until 2–3 items have steps, then **close the tab while others are still writing**. Reopen the checklist. The finished items must **not** regenerate (watch the network tab: no call for them) and the unfinished ones must **start writing again**. This is the one that would silently cost money if it were wrong — a checklist regenerating every item on every open is invisible on screen and obvious on the bill. |
 
 ---
 

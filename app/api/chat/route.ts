@@ -84,6 +84,22 @@ function topicTitle(subject: string | null, question: string, fileName: string |
   return raw.length > 120 ? `${raw.slice(0, 117)}…` : raw;
 }
 
+/**
+ * THE FUNCTION TIMEOUT, DECLARED RATHER THAN INHERITED.
+ *
+ * This route carried NO `maxDuration` until 22 September, while `substeps`, `audits`,
+ * `document-review` and `hr-audits` all set 800. Next's own documentation
+ * (`route-segment-config/maxDuration.md`) says only that *"deployment platforms can use
+ * maxDuration from the Next.js build output to add specific execution limits"* — **it names no
+ * default**, so the effective limit for this route was whatever the platform applied and was
+ * not knowable from the repository.
+ *
+ * A benchmark cannot be run against an unknown ceiling, and 800 is what the four routes that
+ * already thought about it chose. This is not a change that makes an answer fit — nothing about
+ * the answer is trimmed by it; it replaces an unknown with a stated one.
+ */
+export const maxDuration = 800
+
 export async function POST(request: NextRequest) {
   try {
     // company_id comes from the verified token, never from the body. The reference

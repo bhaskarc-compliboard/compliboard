@@ -146,6 +146,106 @@ for (const c of CASES) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// THE ROUTE, DRIVEN AS THE SIGNED-IN USER — R1 Task 7.
+//
+// The table probes above prove a grant and a policy. They do NOT prove the answer path works:
+// `/api/chat` can 500 for a caller while every row it touches is writable. So the same token
+// drives the route itself, in both modes, with the pipeline switches as the process has them.
+//
+// It needs a server. When there is none this SKIPS LOUDLY rather than failing, because
+// `npm run db:migrate` runs this check and a migration should not be blocked by a dev server
+// that is not up — but a skip that is easy to miss is how a check stops being a check, so it
+// prints as a banner and says exactly what was not tested.
+// ---------------------------------------------------------------------------
+const BASE = process.env.CHECK_LIVE_BASE_URL || 'http://localhost:3000'
+
+async function reachable() {
+  try {
+    const r = await fetch(BASE, { method: 'GET', signal: AbortSignal.timeout(2500) })
+    return r.status < 500
+  } catch { return false }
+}
+
+if (!(await reachable())) {
+  console.log(`  ${'─'.repeat(72)}`)
+  console.log(`  SKIPPED — no server at ${BASE}, so /api/chat was NOT exercised.`)
+  console.log('  The table probes above passed. The answer path is untested by this run:')
+  console.log('  start the app (npm run dev) and run npm run check:live again.')
+  console.log(`  ${'─'.repeat(72)}`)
+} else {
+  console.log(`\n  /api/chat — driven as ${FIXTURE.email} at ${BASE}\n`)
+  const auth = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
+
+  // 1. RESEARCH streams, and the stream carries sources.
+  const t0 = Date.now()
+  const res = await fetch(`${BASE}/api/chat`, {
+    method: 'POST', headers: auth,
+    body: JSON.stringify({ question: 'What is an SDS under OSHA HazCom?', mode: 'research', history: [] }),
+  })
+  const ct = res.headers.get('content-type') ?? ''
+  if (!ct.includes('x-ndjson')) {
+    console.log(`  ✗ research            did not stream — content-type ${ct || '(none)'} ${res.status}`)
+    failures++
+  } else {
+    let text = '', sources = [], sawTextEvent = false
+    const reader = res.body.getReader(); const dec = new TextDecoder(); let buf = ''
+    for (;;) {
+      const { done, value } = await reader.read(); if (done) break
+      buf += dec.decode(value, { stream: true })
+      const lines = buf.split('\n'); buf = lines.pop() ?? ''
+      for (const l of lines) {
+        if (!l.trim()) continue
+        let ev; try { ev = JSON.parse(l) } catch { continue }
+        if (ev.type === 'text') sawTextEvent = true
+        if (ev.type === 'reset') text = ''
+        if (ev.type === 'done') { text = ev.research ?? ''; sources = ev.sources ?? [] }
+      }
+    }
+    const secs = ((Date.now() - t0) / 1000).toFixed(1)
+    if (!sawTextEvent) { console.log('  ✗ research            no text events — it did not stream, it delivered'); failures++ }
+    else if (!text.trim()) { console.log('  ✗ research            streamed nothing'); failures++ }
+    else console.log(`  ✓ research            streamed ${text.length} chars, ${sources.length} source(s), ${secs}s`)
+  }
+
+  // 2. CHECKLIST returns the shape the UI reads.
+  const cl = await fetch(`${BASE}/api/chat`, {
+    method: 'POST', headers: auth,
+    body: JSON.stringify({ question: 'Starting a small auto repair shop in Oregon', mode: 'checklist', history: [] }),
+  })
+  const clJson = await cl.json().catch(() => null)
+  const items = clJson?.must_do
+  if (!cl.ok || !clJson) { console.log(`  ✗ checklist           ${cl.status} ${clJson?.error ?? ''}`); failures++ }
+  else if (!Array.isArray(items) || items.length === 0) { console.log('  ✗ checklist           no must_do array'); failures++ }
+  else {
+    const f = items[0]
+    const missing = ['name', 'description', 'why'].filter((k) => !f?.[k])
+    if (missing.length) { console.log(`  ✗ checklist           first item missing ${missing.join(', ')}`); failures++ }
+    else console.log(`  ✓ checklist           ${items.length} must_do, ${(clJson.good_to_have ?? []).length} good_to_have, shape intact`)
+  }
+
+  // 3. HISTORY — ask, then ask what was just asked. The answer must name it.
+  const hist = [{ question: 'What are the rules for storing propane cylinders outdoors?',
+                  answer: 'Propane cylinder storage outdoors is governed by NFPA 58 and local fire code.' }]
+  const fu = await fetch(`${BASE}/api/chat`, {
+    method: 'POST', headers: auth,
+    body: JSON.stringify({ question: 'What did I just ask about?', mode: 'research', history: hist }),
+  })
+  let followUp = ''
+  if ((fu.headers.get('content-type') ?? '').includes('x-ndjson')) {
+    const reader = fu.body.getReader(); const dec = new TextDecoder(); let buf = ''
+    for (;;) {
+      const { done, value } = await reader.read(); if (done) break
+      buf += dec.decode(value, { stream: true })
+      const lines = buf.split('\n'); buf = lines.pop() ?? ''
+      for (const l of lines) { if (!l.trim()) continue; let ev; try { ev = JSON.parse(l) } catch { continue }
+        if (ev.type === 'done') followUp = ev.research ?? '' }
+    }
+  }
+  if (/propane/i.test(followUp)) console.log('  ✓ history             the follow-up names propane — prior turns reached the model')
+  else { console.log(`  ✗ history             the follow-up did not name the prior subject: ${JSON.stringify(followUp.slice(0, 120))}`); failures++ }
+}
+
 console.log()
 if (failures > 0) {
   console.error(`  check:live FAILED — ${failures} problem(s). These are invisible to npm run check.\n`)

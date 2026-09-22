@@ -497,8 +497,17 @@ export async function* askAIOpenStream(
       if (text) { emittedText = true; push({ type: 'text', text }) }
     }
   })
+  const startedAt = Date.now()
   stream.on('error', (err: any) => { failed = err instanceof Error ? err : new Error(String(err)); done = true; wake?.(); wake = null })
-  stream.on('abort', (err: any) => { failed = err instanceof Error ? err : new Error('aborted'); done = true; wake?.(); wake = null })
+  stream.on('abort', (err: any) => {
+    // *** THE UPSTREAM REQUEST ENDED, AND THIS LINE IS THE EVIDENCE. ***
+    // An abort that only stops the rendering leaves the model generating and the account
+    // billing. This fires from the SDK's own abort event, so its presence in the log means the
+    // HTTP request to Anthropic was cancelled — not that we stopped reading it.
+    console.warn(`AI: upstream aborted after ${Date.now() - startedAt}ms ` +
+                 `(sdk.aborted=${(stream as { aborted?: boolean }).aborted}, err=${(err as { name?: string })?.name ?? 'none'})`)
+    failed = err instanceof Error ? err : new Error('aborted'); done = true; wake?.(); wake = null
+  })
 
   const finalPromise = stream.finalMessage()
     .then((m) => m)

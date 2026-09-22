@@ -1,6 +1,12 @@
 # Decision Record
-**Version:** 95 · **Updated:** 22 September 2026
-**Supersedes:** version 94 (22 Sep). **§117 is ANSWERED** — every module ships in the first release,
+**Version:** 96 · **Updated:** 22 September 2026
+**Supersedes:** version 95 (22 Sep). Adds **§123 — RUN 1, the open baseline, both outputs.**
+*"this section needs no barrier between Claude and an answer."* Six config switches, all default
+off; one open streaming call with search available and the model deciding; history as plain pairs
+with signed turns ignored while the gate is off; the checklist cut to a shape and nothing else;
+micro-steps in the background, three at a time, never lost and never repeated. **The narration
+rule is positional, not linguistic**, from three recorded samples. Abort reaches the SDK, proved
+from the log. Closes `TODO.md` 0.11 for this path. Version 95: **§117 is ANSWERED** — every module ships in the first release,
 no compromise, and the remaining gate items happen once just before launch. Adds **§122 — production
 is on 030**, applied 22 Sep after a pre-flight that derived the pending set as exactly 029 and 030;
 both catalogs re-read afterwards and both objects checked on production. The migration gap is closed
@@ -9000,3 +9006,127 @@ tables and a nullable column do not move that. §68 and §111.
 > together in every hand-off. **Catch-up is done. Rotation is not**, and nothing in this week's
 > database work touched it — seven leaked credentials plus the born-rotated eighth, now scheduled
 > for a single pass just before launch under §117.
+
+---
+
+## 123. RUN 1 — the open baseline, both outputs — 22 September 2026
+
+**The owner's principle, verbatim:**
+
+> ### "this section needs no barrier between Claude and an answer."
+
+In code that means: the system prompt is **one sentence of role**. No gate, no facts block, no
+scenario block, no critic, no prohibitions, no template. Web search available and **the model**
+decides. Prior messages as history.
+
+**Three things are not barriers and stay:** file parsing, citation reassembly, and — for
+checklists only — a structured output shape, because the UI has to tick, count and store items.
+**A shape is a container, not a fence.**
+
+### The six switches — `lib/pipelineConfig.ts`
+
+`RESEARCH_GATE` · `RESEARCH_FACTS_BLOCK` · `RESEARCH_LONG_PROMPT` · `CHECKLIST_GATE` ·
+`CHECKLIST_CRITIC` · `CHECKLIST_LONG_PROMPT`. All boolean, **all default OFF**, read from env.
+Production runs all off; staging runs whatever R&D is testing; **rollback is one env value.**
+
+> **OFF MEANS THE CODE PATH IS NOT ENTERED**, not entered and its output discarded. The route
+> branches *before* the gate block, not after it. A gate that runs and is ignored still costs the
+> latency, still spends the tokens, and still logs as though it decided something.
+
+The resolved state is logged **once per process**, with the raw string beside each value:
+`RESEARCH_GATE=ture` and `RESEARCH_GATE=True ` both resolve to OFF and only one of them is what
+somebody meant. Only the exact string `true` turns a piece on.
+
+### The history decision
+
+**With the gate off, signed turns are ignored.** Turn signing (§89–§91) exists so a client cannot
+edit the conversation **the gate reads**, because the gate treats a prior turn's facts as
+established. With the gate off nothing is established from history — it goes to the model as text
+and is weighed like any other context. **The signature protects nothing on this path**, and
+requiring it would refuse a conversation for failing a check with no subject. The client still
+sends `turns`, so turning `RESEARCH_GATE` back on needs no client change.
+
+History travels as plain `{question, answer}` pairs. Verified end to end: ask about propane
+storage, then *"What did I just ask about?"* — the answer names propane.
+
+### THE NARRATION RULE, AND THE EVIDENCE
+
+With search attached the model often opens by saying what it is about to do, and `reassemble`
+concatenates every text block — so that narration became the top of the answer and of what we
+store. **Three real streamed calls were recorded before any rule was written** (`lib/ai.ts`
+carries the full dump):
+
+```
+SAMPLE 1  Oregon cannabis / butane        0 text "I'll help you understand the licensing…"
+                                          1-3 server_tool_use · 4-6 web_search_tool_result
+                                          7+ text  (the answer, 35 blocks)
+SAMPLE 2  workers' comp                   0 text "I'd be happy to help you understand…"   [whole answer]
+SAMPLE 3  SDS vs container label          0 text "I'll help you understand the differences…" [whole answer]
+```
+
+> ### A text block is narration IF AND ONLY IF a `server_tool_use` appears LATER in the same
+> ### response. No tool use, nothing is dropped.
+>
+> **Positional, not linguistic.** Samples 2 and 3 open with the same words sample 1 narrates with
+> and they are the entire answer — a phrasing heuristic would have deleted both. Ten tests run
+> against the recorded sequences, and replacing the rule with a linguistic one fails four of them.
+
+**In a stream you cannot know a block was narration until the search follows it**, so the text is
+emitted and then withdrawn with a `reset` event. Buffering the opening instead would mean **not
+streaming at all** for every answer that does not search — which is most of them. Confirmed
+through the real route: the searched benchmark question fired **1** reset, the two unsearched
+fired **0**.
+
+**The limit, stated rather than discovered later:** if a model ever writes real content, *then*
+searches, this drops it. Nothing in three samples does that — pre-search text was one block
+carrying zero citations every time — and a fourth sample that breaks it is the signal to narrow
+the rule.
+
+### The checklist shape, cut
+
+`cost_note`, `providers` and `safety_alert` are **gone from the prompt**. They are slots, and
+§113's finding is that the model fills every slot it is given: the cost slot produced dollar
+ranges with nothing behind them, the provider slot produced where-to-buy sections nobody asked
+for. **They stay OPTIONAL in the type** because 235 stored items on production carry them and
+must still render. What the shape asks for is what the screen reads: a title, the two lists, and
+per item a name, a description, a why, and where it came from.
+
+### Micro-steps generate in the background
+
+The list renders; the steps are written behind it. **At most three in flight** — a twenty-item
+checklist would otherwise open twenty concurrent calls from one browser. An item shows *"steps
+being written"* until its steps land.
+
+**Never lost, never repeated**, and both hold because the enqueue condition is **absence from
+storage** rather than "did this session generate it": restored items are skipped forever, and an
+item still being written when the user leaves is picked up next time. **Micro-steps inherit the
+parent item's sources and carry none of their own** — a step is a way of doing the item above it,
+not a separate claim, and a citation of its own would be a second source for one obligation that
+could disagree with the first.
+
+### Streaming, and what it closed
+
+`askAIOpenStream` takes a system string, a messages array, an `AbortSignal` that reaches the SDK
+request, and returns a stream. This closes **`TODO.md` 0.11 for this path**: the 21333-token
+non-streaming ceiling `askAIWithCitations` has to clamp to is gone, and §92's 58.9 s of silence
+is answered by text arriving as it is written. `askAIWithCitations` is unchanged for every
+existing caller.
+
+**Abort reaches the SDK, proved rather than asserted.** Client aborts at 2001 ms; the server logs
+the SDK's own abort event — `AI: upstream aborted after 1729ms (sdk.aborted=true, err=Error)` —
+so the request to Anthropic was cancelled, not merely unread.
+
+### Measured on staging, all switches off
+
+| question | wall clock | output tokens | searches | sources |
+|---|---|---|---|---|
+| Oregon cannabis extraction / butane | **33.1 s** | 1398 | 3 | 8 |
+| "Do I need workers' comp insurance?" | **6.2 s** | 250 | 0 | 0 |
+| SDS versus container label (HazCom) | **11.3 s** | 568 | 0 | 0 |
+
+First text arrives at **1.3–2.8 s** in every case. **All three finish far inside the 800 s
+function limit**, so the extra stop condition was not reached. **The answers themselves are the
+owner's to judge against an incognito chat (§115); nothing here scores them.**
+
+**Reversal condition:** §113's, unchanged — a benchmark where a pipeline piece beats the
+baseline. That is the mechanism this installs, not a reversal of it.

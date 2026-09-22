@@ -104,6 +104,9 @@ interface ChecklistItem {
   description: string
   why?: string
   source_url?: string
+  /** The readable name of the source, beside the URL — the open shape asks for both (§123).
+   *  Optional: every item stored before 22 Sep 2026 has none. */
+  source_title?: string
   cost_note?: string
   providers?: Provider[]
   completed?: boolean
@@ -213,6 +216,8 @@ function CompliancePageInner() {
   const [loadingSteps, setLoadingSteps] = useState<Record<string, boolean>>({})
   const queueRef = React.useRef<number[]>([])
   const processingRef = React.useRef(false)
+  /** Every item index this page has begun generating steps for — the "never repeated" half. */
+  const startedRef = React.useRef<Set<number>>(new Set())
   const dataRef = React.useRef<ChecklistData | null>(null)
   // `researchData` and `researchSources` are GONE. They were two of the five singulars the
   // page held, and `exchanges` carries both per answer now — the third answer's sources are the
@@ -572,80 +577,130 @@ function CompliancePageInner() {
       setExpandedSteps(prev => ({ ...prev, [key]: stepsCache[key] }))
       return
     }
+    // The background pool is normally already writing this item. Expanding it moves it to the
+    // front of the queue so a person waiting on THIS item is served before the rest.
     prioritizeItem(itemIndex)
+    startedRef.current.add(itemIndex)
     if (!processingRef.current && data) {
-      processQueue(queueRef.current, data, currentChecklistId)
+      void processQueue(queueRef.current, data, currentChecklistId)
     }
   }
 
-  async function processQueue(queue: number[], checklistData: ChecklistData, checklistId: string | null) {
+  /**
+   * MICRO-STEPS GENERATE IN THE BACKGROUND, AT MOST THREE AT A TIME.
+   *
+   * `DECISIONS.md` §123. They used to generate one at a time, only when a person expanded an
+   * item, behind a banner — so the first click on every item waited for a model call.
+   *
+   * Now the list renders, and the steps are written behind it. The rules, and each one is a
+   * property rather than a nicety:
+   *
+   *   NEVER REPEATED — `startedRef` holds every index this page has begun, and items whose
+   *                    steps were restored from the database are never enqueued. A checklist
+   *                    reopened ten times generates each item once, not ten times.
+   *   NEVER LOST     — whatever is unfinished when the user leaves is enqueued again the next
+   *                    time the checklist opens, because the enqueue is driven by what is
+   *                    ABSENT from storage rather than by what happened in this session.
+   *   AT MOST THREE  — three workers pulling from one queue. A checklist of twenty items would
+   *                    otherwise open twenty concurrent model calls from one browser.
+   *
+   * An item with no steps yet shows "steps being written" (`loadingSteps[key]`), so the state
+   * is visible rather than looking like an item that has none.
+   */
+  const MAX_IN_FLIGHT = 3
+
+  async function processQueue(_queue: number[], checklistData: ChecklistData, checklistId: string | null) {
     if (processingRef.current) return
     processingRef.current = true
-    setShowStepsBanner(true)
 
-    while (queueRef.current.length > 0) {
-      const itemIndex = queueRef.current.shift()!
-      const key = `must-${itemIndex}`
+    const worker = async () => {
+      for (;;) {
+        const itemIndex = queueRef.current.shift()
+        if (itemIndex === undefined) return
+        const key = `must-${itemIndex}`
+        if (stepsCache[key]) continue
+        setLoadingSteps((prev) => ({ ...prev, [key]: true }))
+        try {
+          const item = checklistData.must_do[itemIndex]
+          if (!item) continue
 
-      const cached = stepsCache[key]
-      if (cached) {
-        setExpandedSteps(prev => ({ ...prev, [key]: cached }))
-        continue
-      }
+          const otherItems = checklistData.must_do
+            .filter((_, idx) => idx !== itemIndex)
+            .map((it) => '- ' + it.name)
+            .join(', ')
 
-      setLoadingSteps(prev => ({ ...prev, [key]: true }))
-
-      try {
-        const item = checklistData.must_do[itemIndex]
-        if (!item) continue
-
-        const otherItems = checklistData.must_do
-          .filter((_, idx) => idx !== itemIndex)
-          .map((it) => '- ' + it.name)
-          .join(', ')
-
-        const prompt = `Main checklist item: "${item.name}"
+          const prompt = `Main checklist item: "${item.name}"
 Description: "${item.description}"
 This is item ${itemIndex + 1} from a compliance checklist.
 Other items already covered — do NOT overlap: ${otherItems}
 
 Generate 3 to 6 specific micro-steps to complete this one item only.
 Every step must include a direct deep link (not homepage), time estimate, cost, and what to prepare.`
-        // The "flag anything the user must determine, with 1-2 clarifying questions"
-        // instruction was removed on 11 Sep with the field it wrote into. It asked
-        // questions AFTER the step was written, which is the determination gate inverted
-        // — DECISIONS.md §34. Questions come from Stage 1 now, before any of this runs.
 
-        const res = await fetch('/api/chat', {
-          method: 'POST',
-          headers: await authHeaders({ 'Content-Type': 'application/json' }),
-          body: JSON.stringify({ question: prompt, mode: 'substeps' }),
-        })
-        const json = await res.json()
-        const subItems: ChecklistItem[] = json.data?.must_do || []
+          const res = await fetch('/api/chat', {
+            method: 'POST',
+            headers: await authHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify({ question: prompt, mode: 'substeps' }),
+          })
+          const json = await res.json()
+          // MICRO-STEPS INHERIT THE PARENT'S SOURCES AND CARRY NONE OF THEIR OWN.
+          // A step is a way of doing the item above it, not a separate claim, so a citation of
+          // its own would be a second source for one obligation — and the two could disagree.
+          const subItems: ChecklistItem[] = (json.data?.must_do || []).map((sub: ChecklistItem) => ({
+            ...sub, source_url: item.source_url, source_title: item.source_title,
+          }))
 
-        setStepsCache(prev => ({ ...prev, [key]: subItems }))
+          setStepsCache((prev) => ({ ...prev, [key]: subItems }))
 
-        if (checklistId && subItems.length > 0) {
-          const saved = await saveSubItems(checklistId, itemIndex, subItems)
-          if (saved && saved.length > 0) {
-            const withIds = subItems.map((it: ChecklistItem, i: number) => ({ ...it, id: saved[i]?.id }))
-            setStepsCache(prev => ({ ...prev, [key]: withIds }))
+          if (checklistId && subItems.length > 0) {
+            const saved = await saveSubItems(checklistId, itemIndex, subItems)
+            if (saved && saved.length > 0) {
+              const withIds = subItems.map((it: ChecklistItem, i: number) => ({ ...it, id: saved[i]?.id }))
+              setStepsCache((prev) => ({ ...prev, [key]: withIds }))
+            }
           }
+        } catch (err) {
+          // One item failing must not stop the other two workers or the rest of the queue.
+          // It is left OUT of startedRef by the caller's finally below so the next open retries it.
+          console.error(`micro-steps for item ${itemIndex} failed:`, err)
+          startedRef.current.delete(itemIndex)
+        } finally {
+          setLoadingSteps((prev) => ({ ...prev, [key]: false }))
         }
-      } catch (err) {
-        console.error('Queue error:', err)
-      } finally {
-        setLoadingSteps(prev => ({ ...prev, [key]: false }))
       }
     }
+
+    await Promise.all(Array.from({ length: MAX_IN_FLIGHT }, worker))
     processingRef.current = false
-    setShowStepsBanner(false)
   }
 
   function prioritizeItem(itemIndex: number) {
     queueRef.current = [itemIndex, ...queueRef.current.filter(i => i !== itemIndex)]
   }
+
+  /**
+   * ENQUEUE WHAT IS MISSING, EVERY TIME THE CHECKLIST OPENS.
+   *
+   * The condition is ABSENCE FROM STORAGE, not "did this session generate it" — which is what
+   * makes the two promises hold at once. An item whose steps were restored by `loadChecklist`
+   * is already in `stepsCache` and is skipped forever (never repeated); an item that was still
+   * being written when the user closed the tab is in neither `stepsCache` nor `startedRef` the
+   * next time, so it is picked up (never lost).
+   */
+  useEffect(() => {
+    if (!data?.must_do?.length) return
+    const missing = data.must_do
+      .map((_, i) => i)
+      .filter((i) => !stepsCache[`must-${i}`] && !startedRef.current.has(i))
+    if (!missing.length) return
+    for (const i of missing) startedRef.current.add(i)
+    queueRef.current = [...queueRef.current, ...missing]
+    if (!processingRef.current) void processQueue(queueRef.current, data, currentChecklistId)
+    // `stepsCache` is deliberately NOT a dependency: it changes on every completed item, and
+    // re-running this on each one would re-enqueue while workers are mid-flight. The set of
+    // items is decided when a checklist arrives, and `startedRef` carries the rest.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, currentChecklistId])
 
   async function handleDeterminationSubmit(itemIndex: number, subIndex: number, sub: ChecklistItem) {
     const key = `det-${itemIndex}-${subIndex}`

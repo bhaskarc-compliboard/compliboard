@@ -1,7 +1,7 @@
 # Handoff — the state of the code
 
-**Rewritten 22 September 2026. Every figure below came from a command run today, and the command is
-shown.** Nothing here is carried over from the previous handoff, and nothing is from memory. Where a
+**Rewritten 22 September 2026, after RUN 1. Every figure below came from a command run today, and
+the command is shown.** Nothing here is carried over from the previous handoff, and nothing is from memory. Where a
 figure is not measured, it says so.
 
 **If you are the next chat: read `CLAUDE.md` first (especially §9a), then `HOW-WE-BUILD.md` §11 and
@@ -121,7 +121,13 @@ $ npm run check      # typecheck && check:schema && test && build
 
 - **No authenticated HTTP request.** A missing grant, a wrong policy or a route guard is invisible
   to all 329 tests. Use `npm run check:live`, which signs in as a real fixture.
-- **Nothing checks regulatory content.** A model checking a model produces agreement.
+- **Nothing checks regulatory content.** A model checking a model produces agreement. **R1 did
+  not change this** — the three benchmark answers were timed, not scored.
+- **`npm run check:live` now drives `/api/chat` too**, as `testgamma`, in both modes: that research
+  streams and carries sources, that the checklist shape is intact, and that a follow-up names the
+  prior subject. It needs a server at `CHECK_LIVE_BASE_URL` (default `http://localhost:3000`) and
+  **skips loudly** when there is none, so `npm run db:migrate` is not blocked by a dev server
+  being down.
 - **⚠ IT EXECUTES 2 OF THIS REPO'S 22 SCRIPTS.** `check:schema` runs
   `scripts/check-schema-contracts.js` and `test` runs `scripts/test-guard.js`; a syntax error in
   either fails the gate. **The other twenty are invisible to it** — `tsconfig.json`'s `include`
@@ -146,6 +152,9 @@ $ npm run check      # typecheck && check:schema && test && build
 | **M1.2e** the chat layout | done 21 Sep — exchanges stack, composer at the bottom clearing on send, the gate's ask is a message answered in the same box, sources per exchange. Driven over HTTP: 3 exchanges stay, sources 11 · 10, not shared |
 | **M1.9** the research answer | free-flowing, sources, search read from the gate. §105's bar met **on one question** |
 | **2.3** the critic | built; findings stored (029, **now on production too**) and shown to nobody (§97). 0 rows in either environment |
+| **R1.0** the open baseline | ✅ **22 Sep** — research and checklist run one open streaming call. One sentence of role, search the model decides on, history as plain pairs. `lib/ai.ts` `askAIOpenStream` |
+| **R1.1** the six switches | ✅ **22 Sep** — `lib/pipelineConfig.ts`. All default OFF. Off means the path is **not entered**: `/api/chat` branches before the gate block |
+| **micro-steps** | ✅ **22 Sep** — background, 3 in flight, never lost and never repeated, sources inherited from the parent item |
 
 **Built and reached by nothing:**
 
@@ -185,32 +194,28 @@ the implementation for 42.
 
 ## 8. The exact next step
 
-**The database work is finished.** Both environments are on 030, staging rebuilds from zero, the
-worksheet is authoritative, and the pre-flight runs. None of that is the product.
-
-> ### `TODO.md` **R1.0 + R1.1** — the open baseline, and the config switches that make it reversible.
+> ### RUN 2.
 >
-> **Why this and not M1's remaining rows:** §113 found the pipeline subtracting on five questions
-> out of five verticals. Everything queued behind it — M1.3's overnight extractor, M1.4's site
-> resolution, M1.5's fact display — adds more pipeline. **Building more of a thing measured as
-> harmful is the error §113 exists to stop.**
+> Run 1 shipped the open baseline (`DECISIONS.md` §123) and **deliberately did not score the
+> answers** — that is the owner's judgement against an incognito chat (§115). Run 2 starts from
+> whatever that judgement says.
 >
-> **R1.1 is not optional polish.** Without the switches, running the baseline means deleting work
-> and rollback means rewriting it. With them, the release mechanism and the experiment framework
-> are the same thing — and §117's answer (every module ships in the first release) makes that
-> mechanism the thing the release itself runs on.
+> **What Run 1 explicitly did not build, and Run 2 owns:** persistence. No turns table, no
+> lifecycle columns, **no counters** — the brief put all three in Run 2, and nothing in the
+> checklist counts anything yet.
 
-**Then, in order:** R1.2 (search that verifies rather than leads) → R1.3 (specialist behaviour and
-a specific offer) → R1.4 (company facts) → R1.5 (the gate, at a much higher bar). **Each ships only
-if it beats the step before, measured on real questions, benchmarked against an incognito chat
-(§115).**
+**Then R1.2 → R1.5, in order, each shipping only if it beats the step before, measured on real
+questions:** search that verifies rather than leads → specialist behaviour and a specific offer →
+company facts → the gate, at a much higher bar. Turning any of them on is one env value; the
+switch names are in `lib/pipelineConfig.ts`.
 
-**Do not start with:** M1.3b's extractor (needs M1.3a's retention, which is gated on §116's four
-conditions), or 7.2c's trigger (blocks only M1.6, which is behind M1.3c).
+**Run 3 rebuilds `app/compliance/page.tsx`** from `prototypes/compliance-workspace.html`. Run 1
+changed that page as little as it could — a stream reader, a history payload and an abort
+controller — because the page is being replaced, not maintained.
 
-**Still on the GATE before a real customer document:** the checklist/obligation reconciliation,
-`expires_at`, and **key rotation — the seven leaked credentials plus the born-rotated eighth.**
-Production catch-up used to sit beside rotation on that list; **it is done and rotation is not.**
+**Still on the GATE before a real customer document:** the checklist/obligation reconciliation
+(§111's hybrid is decided and **not built** — the open checklist still writes rows that link to
+no obligation), `expires_at`, and **key rotation**.
 
 ## 9. Two commands worth knowing
 

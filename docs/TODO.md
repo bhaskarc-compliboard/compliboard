@@ -1,6 +1,12 @@
 # Detailed To-Do
-**Version:** 39 · **Updated:** 22 September 2026
-**Supersedes:** version 38 (22 Sep). **PRODUCTION IS ON 030** — caught up 22 Sep after a `preflight`
+**Version:** 40 · **Updated:** 22 September 2026
+**Supersedes:** version 39 (22 Sep). **R1.0 and R1.1 are ✅ BUILT** (`DECISIONS.md` §123) — the open
+baseline ships: six config switches all default off, one open streaming call with search the model
+decides on, history as plain pairs, the checklist cut to a shape. **0.11 is CLOSED for the
+research/checklist path** and stays open for the four callers still on the clamp. Measured on
+staging: 33.1 s / 6.2 s / 11.3 s, first text at 1.3–2.8 s, all inside the 800 s limit — which
+`/api/chat` now **declares** rather than inheriting from an unknown platform default.
+Version 39: **PRODUCTION IS ON 030** — caught up 22 Sep after a `preflight`
 that derived the pending set as exactly 029 and 030. Both environments now read `applied 31, latest
 030`. **Release timing is ANSWERED (§117): every module ships in the first release, no compromise**,
 and credential rotation plus any other gate item happens **once, just before launch**. The GATE
@@ -535,7 +541,15 @@ TypeScript and land inside `tsconfig.json`'s `include`.
 
 ---
 
-## 🔧 0.11 Stream the long AI calls ⬜ ⏱ 1 day
+## 🔧 0.11 Stream the long AI calls 🟡 **CLOSED FOR THE RESEARCH/CHECKLIST PATH (22 Sep)**
+
+> **`askAIOpenStream` streams, so the SDK's 21333-token non-streaming ceiling does not apply to
+> research or checklist any more, and §92's silence is answered for them — first text arrives at
+> 1.3–2.8 s instead of a spinner over the whole call.** `DECISIONS.md` §123.
+>
+> **Still open for the other callers**, which remain on `askAIWithCitations` and its clamp:
+> `/api/audits`, `/api/document-review`, `/api/hr-audits` and the critic. The row stays 🟡 until
+> those move or are deliberately left.
 
 *Recorded 21 September 2026. `DECISIONS.md` §100 and §92.*
 
@@ -590,7 +604,20 @@ systematically under-asks on multi-fact questions.
 
 ---
 
-## 🔬 R1 — THE OPEN BASELINE, AND BUILDING BACK UP ⬜ ⚡
+## 🔬 R1 — THE OPEN BASELINE, AND BUILDING BACK UP 🟡 ⚡
+
+> ### R1.0 and R1.1 are ✅ BUILT — 22 September 2026, `DECISIONS.md` §123.
+>
+> `lib/pipelineConfig.ts` holds the six switches, all default off. `lib/ai.ts` gains
+> `askAIOpenStream` — one system sentence, history, search the model decides on, a stream, and an
+> `AbortSignal` that reaches the SDK. `/api/chat` branches to it **before** the gate block, so off
+> means the path is not entered. The checklist keeps a shape and nothing else.
+>
+> **Measured on staging with every switch off:** 33.1 s / 6.2 s / 11.3 s on the three benchmark
+> questions, first text at 1.3–2.8 s, all far inside the 800 s function limit. **The answers are
+> the owner's to judge against an incognito chat — R1 does not score them.**
+>
+> **Next: Run 2.** R1.2–R1.5 each ship only if they beat the step before.
 
 *Decided 21 September 2026. `DECISIONS.md` §113. **Research mode only. Not built.***
 
@@ -603,8 +630,8 @@ offers to help further.
 
 | # | | |
 |---|---|---|
-| **R1.0** | **THE BASELINE, IN PRODUCTION.** One call to the current Sonnet, a one-sentence role, web search available with **the model** deciding, prior messages as history. Sources and disclaimer stay. **Off: the gate, the facts block, the frame and scenario blocks, the long prompt** | 1 d |
-| **R1.1** | **EVERY PIECE BECOMES A CONFIG SWITCH.** Production all off; staging runs what R&D tests; **rollback is one config value.** The release mechanism and the experiment framework are the same thing | 1 d |
+| **R1.0** ✅ | **DONE 22 Sep (§123). THE BASELINE, IN PRODUCTION.** One call to the current Sonnet, a one-sentence role, web search available with **the model** deciding, prior messages as history. Sources and disclaimer stay. **Off: the gate, the facts block, the frame and scenario blocks, the long prompt** | 1 d |
+| **R1.1** ✅ | **DONE 22 Sep (§123). EVERY PIECE BECOMES A CONFIG SWITCH.** Production all off; staging runs what R&D tests; **rollback is one config value.** The release mechanism and the experiment framework are the same thing | 1 d |
 | **R1.2** | **Search that VERIFIES rather than leads**, preferring government sources | — |
 | **R1.3** | **Specialist behaviour, and a specific offer** of what to do next | — |
 | **R1.4** | **Company facts** | — |
