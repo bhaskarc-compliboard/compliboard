@@ -465,7 +465,16 @@ export async function POST(request: NextRequest) {
           jurisdictionLine(ctx.frame, businessState),
         ].filter(Boolean).join('\n\n');
 
-        if (establishedBlock) {
+        // THE FACTS BLOCK IS A SWITCH — `RESEARCH_FACTS_BLOCK`, one of §113's six.
+        // Telling the model what is already established is another way of narrowing what it may
+        // say. The block is BUILT above only when the gate ran, and FOLDED IN only when this is
+        // on. Off means the model never sees it.
+        //
+        // ONE SWITCH COVERS BOTH MODES, and that is deliberate rather than an omission: the
+        // block is assembled here, once, from the same `splitForAnswer` output whichever mode
+        // is running. A second name would imply the two could be set independently when they
+        // cannot — there is one block and one place it is added.
+        if (establishedBlock && pipelineSwitch('RESEARCH_FACTS_BLOCK')) {
           messageContent = Array.isArray(messageContent)
             ? ([...messageContent, { type: 'text', text: establishedBlock }] as AIContent)
             : `${establishedBlock}\n\n${messageContent}`;
@@ -512,6 +521,16 @@ export async function POST(request: NextRequest) {
       // It never regenerates. Findings are applied by severity in code — blocking withholds
       // the item and says why, which is not the same as a second attempt. DECISIONS.md §39.
       // ------------------------------------------------------------------
+      // THE CRITIC IS A SWITCH — `CHECKLIST_CRITIC`, off in production (§113, §123).
+      // Off means this call is NOT MADE: it is the most expensive call in the product
+      // (84 s average, 37-151 s), and running it to discard the result would pay all of that
+      // for nothing. Its storage and §97's "written down, not shown" are untouched — when the
+      // switch is on, everything below behaves exactly as it did.
+      if (!pipelineSwitch('CHECKLIST_CRITIC')) {
+        return NextResponse.json({ outcome: 'answer', ...data, gate: g.resolved, frame: g.frame,
+                                   followUp: g.followUp, turn: newTurn, topicId: activeTopicId || null });
+      }
+
       const critique = await criticise({
         question: userQuestion,
         answer: data,

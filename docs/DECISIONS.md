@@ -9027,6 +9027,18 @@ checklists only — a structured output shape, because the UI has to tick, count
 
 `RESEARCH_GATE` · `RESEARCH_FACTS_BLOCK` · `RESEARCH_LONG_PROMPT` · `CHECKLIST_GATE` ·
 `CHECKLIST_CRITIC` · `CHECKLIST_LONG_PROMPT`. All boolean, **all default OFF**, read from env.
+
+> **All six have a READER, checked rather than assumed** — §9a: a field nothing reads is a claim
+> nothing can check. Two of them did not when first written: `RESEARCH_FACTS_BLOCK` and
+> `CHECKLIST_CRITIC` were declared and consumed nowhere, because the open path skips the block
+> they gate. Both are now read inside the gate-on path, so turning the gate back on gets the
+> pieces one at a time rather than all of them together. `CHECKLIST_CRITIC` off means the critic
+> call is **not made** — it is the most expensive call in the product at 84 s average, and
+> running it to discard the answer would pay all of that for nothing.
+>
+> **`RESEARCH_FACTS_BLOCK` covers both modes on purpose.** The block is assembled once, from one
+> `splitForAnswer` call, whichever mode is running. A second name would imply the two could be
+> set independently when there is one block and one place it is added.
 Production runs all off; staging runs whatever R&D is testing; **rollback is one env value.**
 
 > **OFF MEANS THE CODE PATH IS NOT ENTERED**, not entered and its output discarded. The route
