@@ -1,6 +1,12 @@
 # Detailed To-Do
-**Version:** 37 · **Updated:** 22 September 2026
-**Supersedes:** version 36 (22 Sep). **0.10's step order is CORRECTED — switches now 5, expressions
+**Version:** 38 · **Updated:** 22 September 2026
+**Supersedes:** version 37 (22 Sep). **0.10 is ✅ BUILT AND EXERCISED and §98's owed reset is
+CLOSED** — the restore completed on staging, 31 migrations from zero and every data count matching
+its source. Records **§121**: `npm run preflight` could not parse (broken 15 Sep by `d0eb1f5`,
+unescaped backticks in a template), now fixed and run — pending on production is exactly
+**029_critic_findings.sql** and **030_research_sources.sql**. And the finding behind it:
+**`npm run check` executes 2 of 22 scripts**, so the other 20 can carry a syntax error
+indefinitely. Version 37: **0.10's step order is CORRECTED — switches now 5, expressions
 now 6** (`DECISIONS.md` §120). The documented order put the expressions first and they reference the
 switches, so from zero it produced **216 errors and wrote nothing**; `load-switches.js` reads
 nothing any other step produces, so the two swap cleanly. Every other adjacency was checked against
@@ -352,7 +358,7 @@ unbuilt. **6.4c is a content problem, and it is the first time this project's cr
 been one.**
 
 
-## 🔧 0.10 `npm run db:restore` — ONE COMMAND, AHEAD OF THE NEXT MIGRATION ✅ **BUILT (22 Sep) — AND ITS FIRST RUN REFUSED**
+## 🔧 0.10 `npm run db:restore` — ONE COMMAND, AHEAD OF THE NEXT MIGRATION ✅ **BUILT AND EXERCISED (22 Sep)**
 
 *Recorded 21 September 2026. `HOW-WE-BUILD.md` §4; `DECISIONS.md` §98.*
 
@@ -461,6 +467,17 @@ decided, and there is deliberately no flag that overrides it.
 The precondition for the reset was this command; the precondition for this command is a complete
 source.
 
+> ### ✅ **DONE, 22 September — the restore completed and `DECISIONS.md` §98's owed reset is CLOSED.**
+> All 31 migrations from zero, then all seven data steps, every count matching its source file.
+> Re-read from the catalog afterwards rather than copied from the run: **requirement_templates 205 ·
+> agencies 33 · industry_coverage 56 · switches 95 · edges 40 · applies_expression 199 · companies 3
+> · entities 4 · company_switches 16 · migrations 31.** `schema:doc` clean, `check:live` green.
+>
+> **It took three runs, and each failure was a real defect the incremental path had hidden** —
+> §118 (the library the seed files could no longer rebuild), §119 (a catalog parser that hunted for
+> a brace), §120 (a step order that had never been executable). None was found by anything except
+> running from zero.
+>
 > **Update 2, 22 September — the restore RAN, the schema proof landed, and step 1 crashed.**
 > All 31 migrations applied from zero (the §3.7 guarantee, proved), then `scripts/schema-doc.js`
 > died parsing the CLI's drawn-table rendering from the first `{`, which sat inside

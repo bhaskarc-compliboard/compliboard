@@ -1,7 +1,16 @@
 # STATUS
 
-**Version:** 18 · **Updated:** 15 September 2026
-**Supersedes:** version 17 (15 Sep). Sweep; every number re-read. **Both environments on 000–028,
+**Version:** 19 · **Updated:** 22 September 2026
+**Supersedes:** version 18 (15 Sep). **Staging is on 000–030 and was REBUILT FROM ZERO** — the chain
+plus the seed files reproduce the whole database, proved by running it rather than asserted
+(`DECISIONS.md` §98, now CLOSED). Counts re-read from the catalog on 22 Sep: **requirement_templates
+205 · agencies 33 · industry_coverage 56 · switches 95 · edges 40 · applies_expression 199 ·
+companies 3 · entities 4 · company_switches 16.** **Production is still on 000–028**; pending is
+exactly 029_critic_findings.sql and 030_research_sources.sql, both additive, not yet applied. The
+library worksheet is now `REQUIREMENTS.xlsx` at **205 rows** and is authoritative (§118). Three
+defects were found only by the from-zero run — §118, §119, §120 — and a fourth beside it: **`npm run
+preflight` could not parse from 15 to 22 Sep (§121), and `npm run check` executes 2 of this repo's
+22 scripts.** Version 18: version 17 (15 Sep). Sweep; every number re-read. **Both environments on 000–028,
 applied 29.** M1.2b, M1.2 and M1.2c landed — **the conversation loop is closed and reachable over
 HTTP for the first time**, with signed turns, contiguity, and four attacks refused (§89–§91).
 **288 tests.** `lib/` is down from four unreached modules to **one** (`sdsExtraction`);

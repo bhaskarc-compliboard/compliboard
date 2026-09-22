@@ -51,6 +51,19 @@ $ npx supabase db query --project-ref <SUPABASE_PROD_REF> --linked   # same quer
 `ALTER` of anything existing. **Shipping them needs `npm run preflight` then
 `npm run db:migrate:prod`, run by the owner.**
 
+> ## ✅ THE OWED RESET IS CLOSED — 22 September 2026.
+>
+> `npm run db:restore` completed on staging: **31 migrations applied from zero**, then all seven
+> data steps, every count matching its source file. Re-read from the catalog afterwards:
+> **205 · 33 · 56 · 95 · 40 · 199 · 3 · 4 · 16 · 31.** `schema:doc` clean, `check:live` green.
+> §3.7's guarantee is demonstrated rather than believed. Everything below this line is the history
+> of how it got there, kept because each of the three failed attempts found a real defect
+> (§118, §119, §120).
+>
+> **Production is still on 028.** `npm run preflight` — which was itself unparseable from 15 to 22
+> September (§121) — now runs, and the pending set is exactly **029_critic_findings.sql** and
+> **030_research_sources.sql**. Both additive. `npm run db:migrate:prod` is the owner's.
+
 **A reset is OWED for both** — `DECISIONS.md` §98. They were applied with `db:migrate`, so §3.7's
 guarantee (the chain builds a database from nothing) is unmet for them. **The precondition is
 `TODO.md` 0.10**, the one-command restore, because a reset today is eight manual steps.

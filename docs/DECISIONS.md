@@ -1,6 +1,12 @@
 # Decision Record
-**Version:** 93 · **Updated:** 22 September 2026
-**Supersedes:** version 92 (22 Sep). Adds **§120 — the documented restore order was never
+**Version:** 94 · **Updated:** 22 September 2026
+**Supersedes:** version 93 (22 Sep). **§98's owed reset is CLOSED** — `npm run db:restore` ran to
+completion on staging, all 31 migrations from zero and every data count matching its source file.
+Adds **§121 — a script the quality gate cannot see was broken for seven days.** `npm run preflight`
+could not parse; `git log` puts the break at `d0eb1f5`, 15 Sep, unescaped backticks inside a
+template. **`npm run check` executes 2 of this repo's 22 scripts** — `tsconfig.json`'s `include`
+has no `**/*.js` pattern — so a green gate said nothing about it for a week.
+Version 93: version 92 (22 Sep). Adds **§120 — the documented restore order was never
 executable.** 0.10 put the expressions at step 5 and the switches at step 6, and the expressions
 reference the switches: from zero that is **216 errors**, exactly the number of switch references
 the file contains. `load-switches.js` reads nothing any other step produces, so the two are
@@ -7372,6 +7378,32 @@ a step produces zero rows.**
 
 ---
 
+> ### ✅ CLOSED — 22 September 2026. The reset was owed, and it has been paid.
+>
+> `npm run db:restore` ran to completion on staging. **All 31 migrations applied from zero** —
+> `CLAUDE.md` §3.7's guarantee, that the chain builds a database from nothing, demonstrated rather
+> than believed for the first time since the project started. Then all seven data steps ran and
+> every count matched the file it came from.
+>
+> **Re-read from the catalog on 22 September, after the run, not copied from the run's own output:**
+>
+> ```
+> requirement_templates 205 · agencies 33 · industry_coverage 56 · switches 95 · edges 40
+> applies_expression 199 · companies 3 · entities 4 · company_switches 16 · migrations 31
+> ```
+>
+> `schema:doc` regenerated clean and `check:live` is green. **029 and 030 are no longer migrations
+> that have never been built from nothing.**
+>
+> **It took three runs, and each failure was a real defect the incremental path had hidden:**
+> the library the seed files could no longer rebuild (§118), a catalog parser that hunted for a
+> brace (§119), and a documented step order that had never been executable (§120). **None of the
+> three was found by anything except running it from zero**, which is the argument this section
+> made in advance.
+
+
+---
+
 ## 99. Two corrections found by proving the write, and a 500 that is not mine — 21 September 2026
 
 **§97's storage was built and then driven as a signed-in user through `/api/chat` checklist mode
@@ -8826,3 +8858,84 @@ carries the line numbers above as a comment so the next person does not have to 
 §98 stays as the dated record it is.
 
 **Reversal condition:** none. The dependency is a fact about what the loaders read.
+
+---
+
+## 121. A script the quality gate cannot see was broken for seven days — 22 September 2026
+
+**`npm run preflight` crashed before reading anything.** Production was not queried and nothing was
+applied.
+
+```
+scripts/preflight-prod.js:81
+console.log(`\n  Both lists are above. The subtraction is checkable without trusting this script.
+SyntaxError: missing ) after argument list
+```
+
+### Broken when written, or broken later? Later — and the commit is nameable
+
+`git log --follow` gives the file exactly two commits:
+
+| commit | when | parses as ESM? |
+|---|---|---|
+| `e87b249` | 13 Sep 11:48 — *"Make the pre-flight show its working"* | **yes** |
+| `d0eb1f5` | 15 Sep 14:04 — *"Ship four migrations, and add a check that runs as the person who will run it"* | **no** |
+
+The diff shows exactly what did it — a closing line replaced by a multi-line template containing
+**unescaped backticks**:
+
+```
++  RUN `npm run check:live` BEFORE APPLYING ANY OF THESE.
++    write, then checks anon is refused. `npm run check` cannot see a missing grant or policy —
+```
+
+The inner backtick closes the template, and `npm run check:live` is then parsed as code. Fixed by
+escaping the four inner backticks; the text on screen is unchanged.
+
+> **A measurement I got wrong first, recorded because the method is the point.** My first pass
+> checked both historical versions with `node --check` on copies in a scratch directory and
+> reported that **both parsed**. They do — *as CommonJS*. This package is `"type": "module"`, so
+> `npm run preflight` parses the file as ESM, where the same bytes fail. **The first result was an
+> artifact of where I put the file, not a fact about the file.** Re-run as `.mjs`, the history is
+> unambiguous.
+
+### What it does NOT invalidate
+
+`HOW-WE-BUILD.md` §4 records the pre-flight holding on **13 September** — a production apply
+aborted on a reported filename mismatch. **That is two days before the break, and the 13 Sep
+version parses.** The account stands. *(The repo cannot pin the hour, so "the event followed the
+11:48 commit that created the file" is an assumption, not a measurement — but no version of this
+file has ever existed that both predates the account and fails to parse.)*
+
+**Re-run on 22 September after the fix, it works**: both lists printed in full (31 on disk, 29
+applied), orphans none, and the derived pending set is exactly `029_critic_findings.sql` and
+`030_research_sources.sql`.
+
+### The general finding, which is bigger than one file
+
+> ### `npm run check` EXECUTES TWO OF THIS REPO'S TWENTY-TWO SCRIPTS.
+
+`check` is `typecheck && check:schema && test && build`. It *runs* `check-schema-contracts.js` and
+`test-guard.js`, so a syntax error in either fails the gate. **The other twenty are invisible to
+it:**
+
+- `tsconfig.json` sets `allowJs: true`, but its `include` lists `**/*.ts`, `**/*.tsx`, `**/*.mts`
+  and the `.next` type folders — **no `**/*.js` pattern at all.** `scripts/*.js` are outside the
+  program, so `tsc --noEmit` never opens them.
+- `test-guard.js` runs `node --test tests/unit/*.test.ts`. No test imports a script.
+- `next build` compiles `app/`, `lib/`, `components/` — not `scripts/`.
+
+**The proof is this session:** `npm run check` was run green many times between 15 and 22 September
+with a script in the repo that could not be parsed. A green gate said nothing about it, because the
+gate had never looked.
+
+**Swept today: `node --check` over all 24 tracked `.js`/`.mjs` files — 0 broken** after the fix. So
+this was the only one, and that is measured rather than assumed.
+
+**Proposed, NOT built** (it changes the commit gate, so it is the owner's call): a `check:syntax`
+step running `node --check` over `git ls-files '*.js' '*.mjs'`. It needs no credentials and no
+network, runs in about a second, and would have failed on 15 September instead of on 22 September in
+front of a production migration.
+
+**Reversal condition:** if scripts move to TypeScript and land inside `tsconfig.json`'s `include`,
+the separate syntax step becomes redundant.
