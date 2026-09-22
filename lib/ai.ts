@@ -427,10 +427,48 @@ export function openAnswer(content: Array<Record<string, unknown>>): AIAnswer {
   return reassemble(stripNarration(content))
 }
 
+/**
+ * REASONING EFFORT. `output_config.effort`, GA, no beta header.
+ *
+ * *** THE PARAMETER NAME AND ITS PLACE WERE READ, NOT RECALLED. *** It is
+ * `output_config: { effort }` — NESTED, not a top-level `effort` field — from
+ * `@anthropic-ai/sdk` `resources/messages/messages.d.ts`: `OutputConfig.effort` at line 829,
+ * `MessageCreateParams.output_config?: OutputConfig` at line 2052. Confirmed against the API on
+ * 22 Sep with one-token calls on `claude-sonnet-5`: `max`, `xhigh` and `high` all accepted.
+ *
+ * The five levels are the SDK's own union, in order. Default is `high` when the field is
+ * omitted, so setting `high` and omitting it are the same request.
+ *
+ * NOT the same thing as `thinking`. On this model family `thinking.budget_tokens` is removed —
+ * it returns a 400 — and thinking runs adaptively whether or not it is named. Effort is what
+ * controls depth now, which is why the old budget-token concept has nothing to set here.
+ */
+export const EFFORT_LEVELS = ['low', 'medium', 'high', 'xhigh', 'max'] as const
+export type Effort = (typeof EFFORT_LEVELS)[number]
+
+/**
+ * The effort this process runs at, from `AI_EFFORT`.
+ *
+ * Unset means the field is not sent at all, which is the API's own default (`high`). An
+ * UNRECOGNISED value is a loud warning and then the same absence — never a silent downgrade,
+ * because a typo that quietly halves the reasoning depth is indistinguishable from the model
+ * getting worse.
+ */
+export function effortFromEnv(): Effort | null {
+  const raw = String(process.env.AI_EFFORT ?? '').trim().toLowerCase()
+  if (!raw) return null
+  if ((EFFORT_LEVELS as readonly string[]).includes(raw)) return raw as Effort
+  console.warn(`AI: AI_EFFORT=${JSON.stringify(process.env.AI_EFFORT)} is not one of ` +
+               `${EFFORT_LEVELS.join(', ')} — sending no output_config.effort, which is the API default (high).`)
+  return null
+}
+
 export interface OpenCallOptions {
   task?: AITask
   model?: string
   maxTokens?: number
+  /** Overrides `AI_EFFORT` for this call. */
+  effort?: Effort
   /** Reaches the SDK request itself, so an abort stops the upstream call and the billing. */
   signal?: AbortSignal
   /** Default true. The MODEL decides whether to search; this only makes the tool available. */
@@ -457,12 +495,18 @@ export async function* askAIOpenStream(
   }
 
   const model = options.model || modelForTask(options.task ?? 'prose')
+  const effort = options.effort ?? effortFromEnv()
+  // The exact parameter, in the log, so what was SENT is recoverable from a request days later
+  // rather than inferred from the answer's length.
+  console.log(`AI: open call model=${model} ` +
+              `output_config=${effort ? JSON.stringify({ effort }) : '(omitted — API default high)'}`)
   const stream = anthropic.messages.stream(
     {
       model,
       max_tokens: options.maxTokens ?? 8000,
       system,
       messages: messages.map((m) => ({ role: m.role, content: m.content as any })),
+      ...(effort ? { output_config: { effort } } : {}),
       ...(options.enableWebSearch === false
         ? {}
         : { tools: [{ type: 'web_search_20250305', name: 'web_search' }] }),
