@@ -24,13 +24,15 @@
 
 /*
  * Tailwind v4 reads the theme from here — there is no config file to scan.
- * `--font-sans` and `--font-serif` are the variables `app/layout.tsx` puts on <body>.
+ * `--font-plex` and `--font-source-serif` are what `app/layout.tsx` puts on <body>; the theme
+ * names are the ones Tailwind generates `font-sans` and `font-serif` from. Keeping the two sets
+ * of names apart is what stops the self-reference these lines used to carry.
  */
 @theme inline {
   --color-background: var(--page);
   --color-foreground: var(--ink);
-  --font-sans: var(--font-sans);
-  --font-serif: var(--font-serif);
+  --font-sans: var(--font-plex);
+  --font-serif: var(--font-source-serif);
 }
 
 /*
@@ -41,7 +43,15 @@
 body {
   background: var(--page);
   color: var(--ink);
-  font-family: var(--font-sans);
+  /*
+   * *** `--font-plex`, NOT `--font-sans`. ***
+   * next/font defines `--font-plex` on the class it puts on <body>. The theme's `--font-sans`
+   * is declared at `:root`, where `--font-plex` does not exist — so `--font-sans` is invalid
+   * AT :root and body would inherit nothing. Reading the font's own variable, which is defined
+   * on this very element, is the only spelling that resolves. Tailwind's `font-sans` utility
+   * is unaffected: `@theme inline` inlines it to `font-family: var(--font-plex)` too.
+   */
+  font-family: var(--font-plex);
   font-size: 16px;
   line-height: 1.5;
 }

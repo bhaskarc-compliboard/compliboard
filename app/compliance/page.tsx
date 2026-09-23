@@ -93,6 +93,8 @@ export default function CompliancePage() {
   const [busy, setBusy] = useState(false)
   const [nudgeDismissed, setNudgeDismissed] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
+  /** The composer, so a click with an empty box puts the cursor there rather than doing nothing. */
+  const composerRef = useRef<HTMLTextAreaElement>(null)
 
   // ---- lists ----
   const [topics, setTopics] = useState<TopicRow[]>([])
@@ -632,10 +634,12 @@ export default function CompliancePage() {
         @media (max-width: 820px) { .hover-del { opacity: 1 !important; } }
       `}</style>
 
-      <div className="print-page mx-auto w-full max-w-3xl px-4 pb-32 sm:px-6">
+      <div className="print-page mx-auto flex min-h-full w-full max-w-3xl flex-col px-4 pb-32 sm:px-6">
         <div className="no-print pt-6">
-          <h1 className="text-2xl font-semibold tracking-tight text-gray-900">Compliance Workspace</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          {/* Serif at 28 reads heavier than sans at 24, so the weight comes off — the typeface
+              carries the emphasis. font-normal is explicit rather than inherited. */}
+          <h1 className="font-serif text-[28px] font-normal text-gray-900">Compliance Workspace</h1>
+          <p className="mt-1 text-[14px] text-gray-500">
             Research the rules that apply to you, and turn what you find into action steps.
           </p>
         </div>
@@ -645,17 +649,17 @@ export default function CompliancePage() {
             {([['ask', 'Ask a question'], ['conversations', 'Conversations'], ['checklists', 'Checklists']] as const)
               .map(([k, label]) => (
                 <button key={k} onClick={() => setTab(k)}
-                  className={`-mb-px border-b-2 pb-2.5 text-sm transition-colors ${
-                    tab === k ? 'border-emerald-600 font-medium text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-800'}`}>
+                  className={`-mb-px border-b-2 pb-2.5 text-[14px] transition-colors ${
+                    tab === k ? 'border-[var(--green)] font-medium text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-800'}`}>
                   {label}
                   {k === 'checklists' && checklists.length > 0 && (
-                    <span className="ml-1.5 rounded-full bg-gray-100 px-1.5 py-0.5 text-[11px] text-gray-600">{checklists.length}</span>
+                    <span className="ml-1.5 text-[12px] text-gray-500">{checklists.length}</span>
                   )}
                 </button>
               ))}
           </div>
           <button onClick={() => newConversation()}
-            className="mb-2 flex shrink-0 items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900">
+            className="mb-2 flex shrink-0 items-center gap-1.5 text-[14px] text-gray-500 hover:text-gray-900">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
             <span className="hidden sm:inline">New conversation</span>
           </button>
@@ -670,7 +674,7 @@ export default function CompliancePage() {
 
         {/* ================= ASK ================= */}
         {tab === 'ask' && (
-          <div className="pt-6">
+          <div className="pt-10">
             {exchanges.map((x) => (
               <div key={x.id} className="mb-8">
                 {x.file ? <FileCard file={x.file} onRetry={() => setAttachOpen(true)} /> : (
@@ -762,12 +766,13 @@ export default function CompliancePage() {
                 <div className="rounded-xl border border-gray-300 bg-white shadow-sm focus-within:border-emerald-500">
                   <div className="flex items-end gap-2 p-2.5">
                     <textarea
+                      ref={composerRef}
                       value={box}
                       onChange={(e) => setBox(e.target.value)}
                       onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); ask(box, 'research') } }}
                       rows={1}
                       placeholder="Ask about a rule, or describe a job you need the steps for…"
-                      className="max-h-36 flex-1 resize-none border-0 bg-transparent px-1.5 py-1.5 text-[15px] text-gray-900 outline-none placeholder:text-gray-400"
+                      className="max-h-36 flex-1 resize-none border-0 bg-transparent px-1.5 py-1.5 text-[16px] text-gray-900 outline-none placeholder:text-[16px] placeholder:text-gray-400"
                     />
                     {started && (
                       <>
@@ -782,7 +787,7 @@ export default function CompliancePage() {
                           </button>
                         ) : (
                           <button onClick={() => ask(box, 'research')} title="Send" aria-label="Send" disabled={!box.trim()}
-                            className="rounded-lg bg-emerald-600 p-2 text-white hover:bg-emerald-700 disabled:opacity-40">
+                            className="rounded-lg bg-[var(--green)] p-2 text-white hover:bg-[var(--green-ink)] disabled:opacity-40">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
                           </button>
                         )}
@@ -790,33 +795,56 @@ export default function CompliancePage() {
                     )}
                   </div>
 
-                  {!started && (
-                    <div className="grid grid-cols-1 gap-2 border-t border-gray-100 p-2.5 sm:grid-cols-3">
-                      <button onClick={() => ask(box, 'research')} disabled={busy || !box.trim()}
-                        className="rounded-lg bg-emerald-600 px-3 py-2 text-[13px] font-medium text-white hover:bg-emerald-700 disabled:opacity-40">
-                        Research this
-                      </button>
-                      <button onClick={() => ask(box, 'checklist')} disabled={busy || !box.trim()}
-                        className="rounded-lg border border-emerald-600 px-3 py-2 text-[13px] font-medium text-emerald-700 hover:bg-emerald-50 disabled:opacity-40">
-                        Make a checklist
-                      </button>
-                      <button onClick={() => setAttachOpen(true)} disabled={busy}
-                        className="flex items-center justify-center gap-1.5 rounded-lg border border-gray-300 px-3 py-2 text-[13px] text-gray-700 hover:bg-gray-50 disabled:opacity-40">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"><path d="M21.4 11.05 12.25 20.2a5.5 5.5 0 0 1-7.78-7.78l9.19-9.19a3.67 3.67 0 0 1 5.18 5.18l-9.2 9.2a1.83 1.83 0 0 1-2.59-2.6l8.49-8.48" /></svg>
-                        Attach a file
-                      </button>
-                    </div>
-                  )}
                 </div>
 
+                {/*
+                  THE BUTTONS ARE A SIBLING OF THE BOX, NOT INSIDE IT. One rounded card holding
+                  both the textarea and the actions read as a single heavy object; split, the
+                  box is the thing you type in and the buttons are things you press.
+
+                  *** AND THEY ARE NO LONGER DISABLED ON AN EMPTY BOX. *** `!box.trim()` in the
+                  disabled condition meant that on every first visit — the only state this screen
+                  has before a question — the primary action rendered as a pale mint rectangle at
+                  40% opacity. Nothing on the page looked like the thing to do. A click with an
+                  empty box now puts the cursor in the box, which is the answer to "what do I do
+                  here"; nothing is sent and no route is called. `busy` still disables, because
+                  during a request they genuinely cannot be pressed.
+                */}
                 {!started && (
-                  <div className="mt-3 flex flex-wrap items-center gap-2 text-[13px]">
+                  <div className="mt-2.5 grid grid-cols-1 gap-2 sm:grid-cols-3">
+                    <button
+                      onClick={() => { if (!box.trim()) { composerRef.current?.focus(); return } ask(box, 'research') }}
+                      disabled={busy}
+                      className="rounded-lg bg-[var(--green)] px-3 py-2 text-[14px] font-medium text-white hover:bg-[var(--green-ink)] disabled:opacity-40">
+                      Research this
+                    </button>
+                    <button
+                      onClick={() => { if (!box.trim()) { composerRef.current?.focus(); return } ask(box, 'checklist') }}
+                      disabled={busy}
+                      className="rounded-lg border border-[var(--green)] px-3 py-2 text-[14px] font-medium text-[var(--green)] hover:bg-[var(--green-wash)] disabled:opacity-40">
+                      Make a checklist
+                    </button>
+                    <button onClick={() => setAttachOpen(true)} disabled={busy}
+                      className="flex items-center justify-center gap-1.5 rounded-lg border border-gray-300 px-3 py-2 text-[14px] text-gray-700 hover:bg-gray-50 disabled:opacity-40">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"><path d="M21.4 11.05 12.25 20.2a5.5 5.5 0 0 1-7.78-7.78l9.19-9.19a3.67 3.67 0 0 1 5.18 5.18l-9.2 9.2a1.83 1.83 0 0 1-2.59-2.6l8.49-8.48" /></svg>
+                      Attach a file
+                    </button>
+                  </div>
+                )}
+
+                {/* Text, not chips. Three bordered pills under three bordered buttons was two
+                    rows of the same shape, and the third pill wrapped to its own line. */}
+                {!started && (
+                  <div className="mt-3 flex flex-wrap items-center gap-2 text-[14px]">
                     <span className="text-gray-400">Try:</span>
-                    {EXAMPLE_QUESTIONS.map((e) => (
-                      <button key={e.label} onClick={() => ask(e.question, 'research')}
-                        className="rounded-full border border-gray-200 px-2.5 py-1 text-gray-600 hover:border-gray-300 hover:bg-gray-50">
-                        {e.label}
-                      </button>
+                    {EXAMPLE_QUESTIONS.map((e, i) => (
+                      <React.Fragment key={e.label}>
+                        {i > 0 && <span className="text-gray-300">·</span>}
+                        <button onClick={() => ask(e.question, 'research')}
+                          className="text-gray-600 hover:text-gray-900 hover:underline">
+                          {e.label}
+                        </button>
+                      </React.Fragment>
                     ))}
                   </div>
                 )}
@@ -907,7 +935,13 @@ export default function CompliancePage() {
           </div>
         )}
 
-        <footer className="mt-12 border-t border-gray-100 pt-4">
+        {/*
+          mt-auto, not mt-12. This is the last element in a column with pb-32, so on a short page
+          it used to float in the middle with grey under it. The column now fills the available
+          height and this is pushed to the bottom of it; on a long conversation mt-auto has
+          nothing to take up and it simply follows the content, as before.
+        */}
+        <footer className="mt-auto border-t border-gray-100 pt-4">
           <p className="text-[12px] leading-relaxed text-gray-500">
             <b className="font-semibold">CompliBoard is an information tool, not professional advice.</b>{' '}
             Answers are generated by AI from current regulatory sources, and AI can make mistakes. Check
