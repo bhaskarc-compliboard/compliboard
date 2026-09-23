@@ -316,10 +316,39 @@ export async function DELETE(request: NextRequest) {
       await supabaseAdmin.from('obligation_evidence').delete().in('obligation_id', obligationIds)
     }
 
+    // WHAT WAS REMOVED IS COUNTED BEFORE IT GOES, and recorded in `job_runs` afterwards.
+    //
+    // §116's third release gate is "account deletion removes chat history immediately" and its
+    // second is "something checks what it removed". A deletion that leaves no trace cannot
+    // answer either — and after this route finishes, the company row is gone, so there is
+    // nowhere company-scoped left to write the evidence. `job_runs` is not company-scoped,
+    // which is exactly why it can hold this.
+    const removed: Record<string, number> = {}
+    for (const table of ['turns', 'topics', 'fact_proposals', 'usage_counters']) {
+      const { count } = await supabaseAdmin
+        .from(table).select('*', { count: 'exact', head: true }).eq('company_id', companyId)
+      removed[table] = count ?? 0
+    }
+
     for (const table of COMPANY_SCOPED_TABLES) {
       const { error } = await supabaseAdmin.from(table).delete().eq('company_id', companyId)
       if (error) throw new Error(`Failed clearing ${table}: ${error.message}`)
     }
+
+    // The company id is recorded rather than the name: the row outlives the company, and a name
+    // is not an identifier. It is not personal data — it is the fact that a deletion happened.
+    const startedAt = new Date().toISOString()
+    const { error: jobErr } = await supabaseAdmin.from('job_runs').insert({
+      job: 'account_delete',
+      started_at: startedAt,
+      finished_at: startedAt,
+      counts: { company_id: companyId, ...removed },
+      errors: [],
+      ok: true,
+    })
+    // A failure to record must not fail the deletion — the customer asked for their data to go,
+    // and it has. It is logged loudly instead.
+    if (jobErr) console.error(`account deletion not recorded in job_runs: ${jobErr.message}`)
 
     const { error: companyError } = await supabaseAdmin
       .from('companies').delete().eq('id', companyId)
