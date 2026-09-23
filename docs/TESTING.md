@@ -1,6 +1,13 @@
 # Testing
-**Version:** 19 · **Updated:** 23 September 2026
-**Supersedes:** version 18 (23 Sep). Adds the **R3 finish-line set** — the seven actions the owner
+**Version:** 20 · **Updated:** 23 September 2026
+**Supersedes:** version 19 (23 Sep). Adds the **FIX ROUND 1 set** — four actions, one per defect
+the owner's 22-23 September pass found and no script had caught: attach a file and see it
+classified, an answer that stops on its own, a third turn standing by its sources, and printing a
+drawer. **F3 is recorded as FAILING and stays in the set** — the fix that was asked for is in and
+proved, but asked directly whether its sources were real the model still hedges, because history
+reaches it as plain text with the tool-use blocks stripped. `AUDIT-CHECKS.md`'s rule applies: a
+check is recorded with the answer on the day it was run, including where that answer is bad.
+Version 19: version 18 (23 Sep). Adds the **R3 finish-line set** — the seven actions the owner
 runs before the research/checklist section ships, plus three that fail quietly: stopping an
 answer, deleting a conversation, and the 820px layout where **Delete must be visible without a
 hover** because touch has no hover. The note at the end says what `check:live` proves and what it

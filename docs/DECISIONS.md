@@ -1,6 +1,16 @@
 # Decision Record
-**Version:** 99 · **Updated:** 23 September 2026
-**Supersedes:** version 98 (23 Sep). Adds **§126 — RUN 3, the page rebuilt from the prototype.**
+**Version:** 100 · **Updated:** 23 September 2026
+**Supersedes:** version 99 (23 Sep). Adds **§127 — FIX ROUND 1, the owner's 22-23 September test
+pass.** Nine defects found by USING the product, **every one with a green `npm run check` behind
+it**. A stream that ends is not a stream that finished. "Bucket not found" was neither of the two
+proposed causes — it was a wrong name in code — and checking it found that **no migration creates
+the bucket at all** (037; recorded beside §98 and §118 as the same class). History now carries its
+sources on every replay path, **and that is not sufficient**: asserting the provenance in the
+appended heading made the third turn deny categorically, because history is replayed as plain text
+with the tool-use blocks stripped, so the two real fixes are the owner's call. A citation marker
+is rewritten into an inline link so a table survives it. R1.3 ships behind `RESEARCH_SPECIALIST`,
+default off. The summary's "the specialist" came from the transcript's own label as much as from
+the prompt. Version 99: version 98 (23 Sep). Adds **§126 — RUN 3, the page rebuilt from the prototype.**
 Markdown is rendered (remark-gfm, a new dependency), citation markers open a card, junk source
 titles fall back to a URL-derived name, and the working state is driven by real stream events
 rather than a timer. A row decides "cleared" from whether turns exist, never from the date, so it
