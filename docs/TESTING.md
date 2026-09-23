@@ -1,6 +1,11 @@
 # Testing
-**Version:** 17 · **Updated:** 22 September 2026
-**Supersedes:** version 16 (15 Sep). Adds the **R1 manual set** — two tests each for streaming,
+**Version:** 18 · **Updated:** 23 September 2026
+**Supersedes:** version 17 (22 Sep). Adds the **R2 manual set** — two tests each for a conversation
+that survives a reload, stop, the nightly summariser, the nightly deleter and conversion with
+scope (`DECISIONS.md` §125). The edge cases are where the domain work is: whether a cleared
+transcript reads as the product working or as loss, whether a fact proposal is a fact about THIS
+business rather than a true statement about the regulation, and the backstop, which only fails
+when something else is already broken. Version 17: version 16 (15 Sep). Adds the **R1 manual set** — two tests each for streaming,
 stop, history, the checklist shape and background micro-steps (`DECISIONS.md` §123). The edge
 cases are where the domain work is: whether the narration withdrawal reads as a glitch, whether a
 follow-up carries the subject without repeating itself, whether checklists stored before the shape
@@ -101,6 +106,48 @@ untested — applies to the runner as much as to anything it runs.
 **167 · 0 skipped · 0 todo**. Per file: `appliesExpression` 58 · `jurisdiction` 24 · `resolve`
 40 · `sdsExtraction` 14 · `switchDetermination` 31. **No run in this project has reported 100 or
 106.** The floor is committed so the question does not have to be re-asked.
+
+---
+
+## Manual set — R2, conversations that persist (`DECISIONS.md` §125)
+
+**Two per feature: the perfect case, and the edge case where domain knowledge does work no script
+replicates.**
+
+### A conversation that survives
+
+| | |
+|---|---|
+| **Perfect** | Ask a question, wait for the answer, reload the page, reopen the conversation. Both messages are there, in order, with the answer's sources. Ask a follow-up — it carries the subject. |
+| **Edge — the cleared transcript** | Open a conversation whose turns the nightly deleter has already removed. **It must say so** — "the messages were cleared 7 days after it was summarised; the summary is kept" — and show the summary. **What a script cannot judge:** whether that reads as the product working as promised or as the product having lost something. If it reads as loss, the wording is wrong, not the deletion. |
+
+### Stop
+
+| | |
+|---|---|
+| **Perfect** | Start a long answer, stop it. The partial text stays, no error appears, and the question is still in the conversation when you reload. |
+| **Edge — the count** | Stop three answers in a row, then check the counter. It must not have moved at all. **A stopped answer is not a question answered**, and this is the one place a customer would notice us counting work we did not do. |
+
+### The nightly summariser
+
+| | |
+|---|---|
+| **Perfect** | Leave a conversation idle a day. The summary should describe what was asked and concluded, in the person's own subject matter, without adding advice nobody gave. |
+| **Edge — the one that needs a compliance reader** | Check the **fact proposals** it extracted. Every one must be something the USER said about their own business, with a quote. **A proposal that restates a regulation — "OSHA requires forklift training" — is a failure even though it is true**, because it is not a fact about this company, and accepting it would put a rule into the facts the product reasons from. Only somebody who knows the difference can see it. |
+
+### The nightly deleter
+
+| | |
+|---|---|
+| **Perfect** | A topic past its `delete_after` loses its turns and keeps its summary. `job_runs` names the topic and the count. |
+| **Edge — the backstop** | Disable the summariser for a month (or backdate a topic 31 days with no summary). **The deleter must still clear it.** This is the case that only fails when something else is already broken, which is exactly why it is worth testing deliberately rather than waiting for it. |
+
+### Conversion with scope
+
+| | |
+|---|---|
+| **Perfect** | Convert a conversation twice, `discussed` then `complete`. The titles differ, and the complete one has more items, some marked as added. |
+| **Edge — the sources** | On the `discussed` checklist, open **every** source link and confirm each one appeared in the conversation. The route enforces this and reports a `dropped_for_unseen_source` count — **if that count is ever non-zero, the model reached past the conversation and the filter caught it.** Worth knowing when it happens rather than only that it was handled. |
 
 ---
 

@@ -12,100 +12,67 @@ figure is not measured, it says so.
 ## 1. Git
 
 ```
-$ git log --oneline -6
-28e6709 Close the owed reset, and fix a pre-flight that had not parsed since 15 September
-e3344f9 Load the switches before the expressions that reference them
-ac227e6 Stop schema-doc parsing from the first brace, and let the restore resume
-616a337 Make the worksheet the library again, and keep content out of migrations
-cc81821 Correct three documents that called a fixed thing broken
-e5b7bd6 Add npm run db:restore, and find that the seed files no longer rebuild the library
+$ git log --oneline -5
+4915e5d The from-zero restore refused migration 031, and it was right
+1510403 Run 2: the nightly jobs, and conversion with scope and provenance
+1821601 Run 2: conversations persist, and counters record events
+5c2994f Searching is not one round: the narration rule leaked and is corrected
+2c812e8 Add an env-controlled reasoning effort to the open call
 ```
 
----
-
-## 2. Migration state — BOTH ENVIRONMENTS ON 030. THE GAP IS CLOSED.
-
-```
-$ npx supabase db query --project-ref <staging> --linked --agent no -o json \
-    "select count(*)::int migs, max(version) latest from supabase_migrations.schema_migrations"
-  {"latest": "030", "migs": 31}
-
-$ same query against <SUPABASE_PROD_REF>
-  {"latest": "030", "migs": 31}
-```
+## 2. Migration state — STAGING 036, PRODUCTION 030. THE GAP IS BACK, BY DESIGN.
 
 | | staging | production |
 |---|---|---|
-| Latest migration | **030** | **030** |
-| Count | 31 | 31 |
-| Tables in `public` | 29 | 29 |
+| Latest migration | **036** | **030** |
+| Count | 37 | 31 |
+| Tables in `public` | 33 | 29 |
 
-**029 and 030 were applied to production on 22 September** — the owner ran `npm run preflight`
-(pending was exactly those two), then `npm run db:migrate:prod`. Their objects are on production and
-were checked, not assumed:
+**Not on production: 031–036** — `turns` and the topic lifecycle, `usage_counters`,
+`origin`/`from_topic_id`, `fact_proposals`/`job_runs`, the counter function, and
+`checklist_items.source_title`. All additive; nothing drops or alters an existing column.
+**Shipping them is `npm run preflight` then `npm run db:migrate:prod`, run by the owner.**
 
-```
-$ select count(*) from information_schema.tables
-   where table_schema='public' and table_name in ('critic_reviews','critic_findings');   -- 2
-$ select count(*) from information_schema.columns
-   where table_schema='public' and table_name='checklists' and column_name='research_sources'; -- 1, nullable
-```
-
-> ### ✅ `DECISIONS.md` §98's OWED RESET IS CLOSED.
+> ### ✅ AND THE CHAIN STILL BUILDS FROM ZERO — re-proved 23 September on 000–036.
 >
-> `npm run db:restore` ran to completion on staging on 22 September: **31 migrations applied from
-> zero**, then all seven data steps, every count matching the file it came from. **§3.7's guarantee
-> — that the chain plus the seed files rebuild a database from nothing — is demonstrated rather than
-> believed**, for the first time in the project.
+> `npm run db:restore` ran to completion: **37 migrations against an empty database**, then all
+> seven data steps, every count matching its source file.
 >
-> **It took three attempts and each failure was a real defect the incremental path had hidden:**
-> §118 (the seed files could no longer rebuild the library), §119 (a catalog parser that hunted for
-> a brace), §120 (a step order that had never been executable). **None was found by anything except
-> running from zero.**
+> **That run REFUSED migration 031 the first time, and it was right.** 031 tested its CHECK
+> constraint by violating it — `insert … select id from public.companies limit 1` — which on an
+> empty database inserts **zero rows and raises nothing**, so the probe "succeeded" and control
+> fell through to its own failure `raise`. It had applied cleanly to staging an hour earlier.
+> **§98 catching this run's own work**, and the third real defect that rule has found.
 
----
-
-## 3. Row counts, both databases, read today
+## 3. Row counts, read 23 September
 
 ```
-$ select (select count(*) from public.companies), … -- one statement per environment
+$ select (select count(*) from public.requirement_templates), … -- one statement per environment
 ```
 
 | | staging | production |
 |---|---|---|
 | `requirement_templates` | 205 | **205** |
-| — retired / split children | — | 5 / 17 |
 | — carrying `applies_expression` | 199 | **199** |
-| `agencies` | 33 | **33** |
-| `industry_coverage` | 56 | **56** |
-| `switches` | 95 | **95** |
-| — `depends_on_switch` edges | 40 | **40** |
-| `companies` | 3 | **10** |
-| `profiles` | 4 | **4** |
-| `entities` | 4 | **10** |
+| `agencies` · `industry_coverage` · `switches` | 33 · 56 · 95 | **33 · 56 · 95** |
+| `companies` · `profiles` · `entities` | 3 · 4 · 4 | **10 · 4 · 10** |
 | `company_switches` | 16 | **0** |
 | `documents` | 0 | **38** |
 | `checklists` / `checklist_items` | 0 / 0 | **11 / 235** |
 | `obligations` | 0 | **0** |
-| `topics` | 0 | **0** |
-| `critic_reviews` / `critic_findings` | 0 / 0 | **0 / 0** |
+| `turns` · `topics` · `usage_counters` | 0 · 0 · 0 | *(table does not exist)* |
+| `fact_proposals` · `job_runs` | 0 · 0 | *(table does not exist)* |
 
-**The library is byte-for-byte the same shape on both** — 205 rows, 5 retired, 17 children, 199
-expressions, 95 switches, 40 edges.
+> **Staging's conversation tables are empty because the from-zero restore ran after the proofs.**
+> Everything in §125 was driven on staging and passed — a conversation saved and reopened, the
+> summariser and deleter run end to end, account deletion proved on a throwaway fixture — and then
+> the restore wiped it, which is what a restore does. The proofs are in §125 and in `check:live`,
+> which re-creates them on demand.
 
 > ### **Production still has 235 AI-written checklist rows and ZERO computed obligations.**
 >
-> Unchanged by any of this week's work, and still the thing that matters most. The deterministic
-> spine `CLAUDE.md` §1 calls the whole point of the product **has never produced a row a customer
-> has seen.** §68, and §111 decided the fix (a checklist is a hybrid, linked to the obligations it
-> satisfies) — **not built.**
-
-**Staging is a freshly rebuilt database.** It holds the library, the three test companies (Test
-Alpha Chemical, Test Beta Cannabis, Test Gamma Solvents), four profiles, four sites and the 16
-multi-site facts — and nothing else. Every document, checklist, topic, obligation and critic row on
-staging was destroyed by the reset, deliberately and with nothing outside staging referencing them.
-
----
+> Unchanged by Runs 1 and 2, and still the thing that matters most. §68, and §111 decided the fix
+> — **not built**, and deliberately not touched by this run.
 
 ## 4. What `npm run check` covers — AND THE 20 SCRIPTS IT DOES NOT
 
@@ -194,28 +161,28 @@ the implementation for 42.
 
 ## 8. The exact next step
 
-> ### RUN 2.
+> ### RUN 3 — the page.
 >
-> Run 1 shipped the open baseline (`DECISIONS.md` §123) and **deliberately did not score the
-> answers** — that is the owner's judgement against an incognito chat (§115). Run 2 starts from
-> whatever that judgement says.
+> `prototypes/compliance-workspace.html` is the design reference and is **read by Run 3**. Runs 1
+> and 2 deliberately did not build from it: the page got a stream reader, a history payload, an
+> abort controller and one line to keep the topic id, and nothing else.
 >
-> **What Run 1 explicitly did not build, and Run 2 owns:** persistence. No turns table, no
-> lifecycle columns, **no counters** — the brief put all three in Run 2, and nothing in the
-> checklist counts anything yet.
+> **Everything Run 3 needs on the server now exists** — a conversation that persists and reopens
+> (`GET /api/topics/<id>`), counters to display, conversion with scope, and a documents route that
+> accepts `from_topic_id`.
 
-**Then R1.2 → R1.5, in order, each shipping only if it beats the step before, measured on real
-questions:** search that verifies rather than leads → specialist behaviour and a specific offer →
-company facts → the gate, at a much higher bar. Turning any of them on is one env value; the
-switch names are in `lib/pipelineConfig.ts`.
+**What Run 2 did NOT finish, and Run 3 or later owns:**
 
-**Run 3 rebuilds `app/compliance/page.tsx`** from `prototypes/compliance-workspace.html`. Run 1
-changed that page as little as it could — a stream reader, a history payload and an abort
-controller — because the page is being replaced, not maintained.
-
-**Still on the GATE before a real customer document:** the checklist/obligation reconciliation
-(§111's hybrid is decided and **not built** — the open checklist still writes rows that link to
-no obligation), `expires_at`, and **key rotation**.
+- **The client half of Task 5.** `documents.from_topic_id` exists and `/api/documents` accepts it
+  with the same ownership check the folder gets, but **nothing sends it yet** — the research
+  upload still parses a file inline without creating a document row. That is page work.
+- **A history list, a summary view, a proposals screen.** All four nightly artifacts —
+  summaries, `fact_proposals`, `job_runs`, counters — are written and **read by nothing on
+  screen**. §9a's rule: a thing is done when something real uses it, and these are half done.
+- **§111's hybrid.** Still deferred. `origin` records provenance; nothing links an item to an
+  obligation.
+- **Gate 4, the privacy policy.** Three of §116's four retention gates are built; this one is the
+  owner's and cannot be built here.
 
 ## 9. Two commands worth knowing
 

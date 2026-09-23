@@ -1,6 +1,12 @@
 # Decision Record
-**Version:** 97 · **Updated:** 22 September 2026
-**Supersedes:** version 96 (22 Sep). Adds **§124 — R1.2 step one: prefer official sources, behind
+**Version:** 98 · **Updated:** 23 September 2026
+**Supersedes:** version 97 (22 Sep). Adds **§125 — RUN 2, conversations that persist and the
+nightly jobs.** Supersedes **§110** (7 days from summarising, not 15 from the conversation) and
+closes three of **§116**'s four release gates. Turns, counters that record events rather than
+inventory, conversion with a `discussed` guarantee enforced in code, and two cron-protected jobs
+with a **30-day backstop** so a summariser outage cannot make transcripts permanent. The from-zero
+restore refused migration 031's own verify block — a zero-row probe raises nothing — which is §98
+catching this run's work. Version 97: Adds **§124 — R1.2 step one: prefer official sources, behind
 `RESEARCH_PREFER_GOV`.** One sentence appended after the role sentence in both prompts when on,
 byte-for-byte unchanged when off. **A preference, not a prohibition** — it permits a non-official
 source with a disclosure, because a list of things not to do is the fence §113 found subtracts.
@@ -9236,3 +9242,118 @@ mechanism, not an extra hurdle for this piece.
 without changing whether the citation is right. **Preferring a government source is not the same
 as being correct**, and if the measured effect is that answers look more official rather than
 being more accurate, this is worth less than it appears.
+
+---
+
+## 125. RUN 2 — conversations that persist, and the nightly jobs — 22-23 September 2026
+
+**A conversation used to live for the length of the browser tab.** `topics` recorded that one had
+happened; nothing recorded what was said. This is the run that writes it down, ages it, reads it
+overnight, and clears it.
+
+### What this supersedes, named rather than implied
+
+| | Was | Is |
+|---|---|---|
+| **§110** | transcripts kept **15 days** from the conversation | **7 days from SUMMARISING.** The clock starts when the summary exists, because the summary is what makes the transcript disposable |
+| **§116** | chat history **deferred** out of the first release behind four gates | **Three of the four gates are BUILT** (§117: every module ships). The fourth — the privacy policy — is the owner's |
+| **§110** | — | **Summaries and checklists are kept until the user deletes them.** Only the transcript is disposable |
+
+### The turns table, and the two columns that stay separate
+
+`summarised_at` says the summary exists; `delete_after` says the transcript may go. **One combined
+`expires_at` would either delete transcripts that were never summarised, or keep them forever
+during a summariser outage.** Both halves are visible instead.
+
+**A new turn clears `idle_at` and `delete_after` and moves `last_turn_at`.** An active
+conversation is never summarised or deleted under someone — a person returning on day six is not
+cleared on day seven.
+
+**A title is the first question, verbatim,** until a summary exists. A model-written title costs a
+call and a wait before the first answer and gets it wrong often enough to be worse than the words
+the person typed.
+
+**A stopped answer is not a question answered.** The question is saved and marked `stopped`; no
+assistant row is written; the counter does not move.
+
+### Counters record events, not inventory
+
+> ### THEY NEVER GO DOWN, AND ARE NEVER DERIVED FROM ROWS THAT CAN BE DELETED.
+
+Transcripts are cleared after seven days and checklists can be deleted. A `count(*)` would fall on
+both and tell a customer who asked forty questions that they asked six. Micro-steps are not
+counted — they expand an item of a checklist already counted.
+
+The increment is a database function because PostgREST cannot express `col = col + 1`, and two
+answers completing together would otherwise produce +1 instead of +2. **Its `EXECUTE` is revoked
+from `PUBLIC` in the same migration** — the thing migration 013 did not do and migration 019 had
+to come back for (`AUDIT-CHECKS.md` check 22).
+
+### Conversion: scope, and a guarantee that is enforced rather than asked for
+
+`scope=discussed` promises **every item's source is one the conversation already cited**. The
+prompt asks for that; the prompt is a request. So after the call every item's `source_url` is
+compared against the URLs actually cited in the topic's turns, and **an item citing anything else
+is dropped and counted in the response.**
+
+> **Dropping rather than blanking the source is the stricter and the honest choice.** An item with
+> its source removed still claims to have been discussed, and now has nothing behind it.
+
+`scope=complete` adds what the conversation did not reach, marked `origin = 'added'` with its own
+sources. **Measured on staging:** discussed produced 16 items, all `origin=conversation`, none
+citing an outside source; complete produced 29, of which 2 were added and cite their own.
+
+**§111 stays deferred.** Nothing here links an item to an obligation. `origin` is provenance, not
+authority.
+
+### The nightly jobs — Vercel Cron, two protected routes, no worker
+
+**They refuse when `CRON_SECRET` is UNSET, not when it mismatches.** The tempting shape —
+`if (secret && given !== secret) refuse` — opens the route to everyone on a deploy where the secret
+was never set, and looks exactly like a route that is working. They answer **404, not 401**, so an
+anonymous caller cannot confirm the route exists, and the comparison is length-safe.
+
+**One `job_runs` row per run**, opened before the work and closed after, so a crash leaves a row
+with a null `finished_at` rather than an absence indistinguishable from "cron never fired". That is
+§116's second gate — *did it run, and what did it remove* — answerable from the database.
+
+**The summariser never writes `company_switches`** (§108). Candidate facts land in
+`fact_proposals` with the quote they came from, copied at write time because the turn it points at
+will be deleted. **A user's own summary is never overwritten unless turns are newer than it** —
+proved both ways on staging: intact after a run, re-summarised after a new turn, and the three
+facts from that turn landed as proposals.
+
+**One topic failing does not stop the others.** Each is its own try/catch and its own entry in
+`errors`; a run that processed 40 of 41 topics is a successful run with one recorded error.
+
+### THE BACKSTOP, which is the part that makes the promise real
+
+> ### The deleter also clears any transcript older than 30 days with NO SUMMARY AT ALL.
+>
+> Without it, **a summariser outage makes transcripts permanent.** Nothing would ever stamp
+> `delete_after`, so nothing would ever be due, and every nightly run would report success at
+> deleting the zero rows it found while the retention promise on screen quietly became false.
+>
+> **A retention promise that depends on another job having run is not a retention promise.**
+
+### What the from-zero restore caught — in my own migration
+
+Migration 031 tested its CHECK constraint by violating it, which §3.7 asks for. The probe was
+`insert … select id from public.companies limit 1` — and **on an empty database that inserts zero
+rows, which raises nothing.** The probe "succeeded", control fell through to the failure `raise`,
+and the migration refused itself on a fresh chain after passing on a populated one an hour earlier.
+
+**§98's argument arriving at this run's own work.** Fixed by guarding on a company existing; the
+other five new migrations were audited for the same shape and were already guarded. The restore
+then completed: **37 migrations from zero, all eight steps, every count matching its source.**
+
+### A gap Run 1 left, found by running the code
+
+The checklist shape asks for `source_title` and `ChecklistItem` declares it — **and the column was
+never added.** Every write since has silently dropped it, because PostgREST ignores unknown keys on
+an insert rather than refusing. It surfaced only when a route named the field explicitly. Migration
+036.
+
+**Reversal condition:** the 7 days, if customers are found returning to conversations later than
+that. Nothing else here is a preference — the backstop, the enforcement and the counters are
+properties, and losing any of them makes a statement on screen false.

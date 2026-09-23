@@ -1,6 +1,12 @@
 # Detailed To-Do
-**Version:** 40 · **Updated:** 22 September 2026
-**Supersedes:** version 39 (22 Sep). **R1.0 and R1.1 are ✅ BUILT** (`DECISIONS.md` §123) — the open
+**Version:** 41 · **Updated:** 23 September 2026
+**Supersedes:** version 40 (22 Sep). **RUN 2 is built** (`DECISIONS.md` §125): conversations
+persist as `turns`, counters record events, conversion carries scope and provenance, and two
+cron-protected nightly jobs summarise and clear. **Three of §116's four retention gates are
+DONE** — the deletion job, the `job_runs` record of what it removed, and immediate removal on
+account deletion; **the privacy policy is the fourth and is the owner's.** Retention is **7 days
+from summarising** (superseding §110's 15). The from-zero restore refused migration 031's own
+verify block and was right — a zero-row probe raises nothing. Version 40: **R1.0 and R1.1 are ✅ BUILT** (`DECISIONS.md` §123) — the open
 baseline ships: six config switches all default off, one open streaming call with search the model
 decides on, history as plain pairs, the checklist cut to a shape. **0.11 is CLOSED for the
 research/checklist path** and stays open for the four callers still on the clamp. Measured on
@@ -646,18 +652,26 @@ repo behind a switch.
 
 ---
 
-## 🔒 GATED — chat history does not ship in the first release ⬜
+## 🔓 THE RETENTION GATES — THREE OF FOUR ARE BUILT 🟡
 
-*`DECISIONS.md` §116. §110 stands; these are RELEASE GATES, not follow-ups.*
+*`DECISIONS.md` §116, closed out by §125 on 23 September. §117 decided every module ships in the
+first release, so these stopped being a reason to defer and became work.*
+**Retention is 7 DAYS FROM SUMMARISING, not §110's 15 from the conversation.**
 
-**All four must be true before the 15-day history is shown to anyone:**
+| # | Gate | |
+|---|---|---|
+| 1 | **The deletion job exists** | ✅ `/api/jobs/delete`, Vercel Cron nightly. Clears turns; keeps the topic and its summary. Proved on staging: 3 turns gone, summary intact, `delete_after` cleared |
+| 2 | **Something checks that it ran, and what it removed** | ✅ `job_runs`, one row per run, opened before the work and closed after — so a crash leaves a visible null `finished_at` rather than an absence. Counts are **by topic id**, because a total cannot answer a customer asking about their own conversation |
+| 3 | **Account deletion removes chat history immediately** | ✅ `turns`, `topics`, `fact_proposals` and `usage_counters` are named **explicitly** in `/api/account` DELETE rather than left to the cascade. Proved on a throwaway fixture: zero rows in all four, company gone, login gone |
+| 4 | **The privacy policy says so** | ⬜ **THE OWNER'S.** Nothing in the code can do this one, and it is the one that makes the other three honest |
 
-1. the day-16 deletion job exists · 2. **something checks that it ran, and what it removed** ·
-3. account deletion removes chat history **immediately** · 4. the **privacy policy** says so.
-
-**Until then conversations live for the length of the page, as they do today — no history list, and
-therefore no promise to break.** A retention promise on screen with nothing enforcing it is a false
-statement to a customer.
+> ### ⚠ AND THE BACKSTOP, WHICH IS NOT ONE OF THE FOUR AND MATTERS AS MUCH.
+>
+> The deleter also clears any transcript older than **30 days with no summary at all**. Without it
+> a summariser outage makes transcripts **permanent** — nothing stamps `delete_after`, nothing is
+> ever due, and every run reports success at deleting the zero rows it found while the promise on
+> screen quietly becomes false. **A retention promise that depends on another job having run is not
+> a retention promise.**
 
 ---
 
