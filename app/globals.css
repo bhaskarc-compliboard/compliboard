@@ -1,28 +1,47 @@
 @import "tailwindcss";
 
+/*
+ * THE TOKENS. One theme, one green.
+ *
+ * These are the agreed colours and the radius, defined here so `DESIGN.md` has something real to
+ * point at. **Nothing is converted to them in this pass** — the pages adopt them screen by
+ * screen, because a sweeping find-and-replace would change screens nobody has looked at yet.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --page:        #F7F8FA;
+  --surface:     #FFFFFF;
+  --ink:         #14171A;
+  --ink-soft:    #5B6470;
+  --ink-faint:   #8A929C;
+  --line:        #E6E9ED;
+  --green:       #2F7D52;
+  --green-ink:   #256541;
+  --green-wash:  #EAF3ED;
+  --amber:       #B7791F;
+  --amber-wash:  #FDF6E7;
+  --radius:      10px;
 }
 
+/*
+ * Tailwind v4 reads the theme from here — there is no config file to scan.
+ * `--font-sans` and `--font-serif` are the variables `app/layout.tsx` puts on <body>.
+ */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-background: var(--page);
+  --color-foreground: var(--ink);
+  --font-sans: var(--font-sans);
+  --font-serif: var(--font-serif);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+/*
+ * NO DARK BLOCK. A `prefers-color-scheme: dark` rule used to flip the page to near-black for
+ * anyone with dark mode on, and no dark theme has been designed — so it was not a theme, it was
+ * an accident that happened to some users and not others. This product has one theme.
+ */
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--page);
+  color: var(--ink);
+  font-family: var(--font-sans);
   font-size: 16px;
   line-height: 1.5;
 }
