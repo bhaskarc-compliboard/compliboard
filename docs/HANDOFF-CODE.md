@@ -20,18 +20,18 @@ b76e306 Fix round 1 C+D+E: history keeps its sources, tables keep their shape, a
 a5587af Run 3: the page, rebuilt from the prototype
 ```
 
-## 2. Migration state — STAGING 037, PRODUCTION 030
+## 2. Migration state — STAGING 038, PRODUCTION 030
 
 ```
 $ npm run preflight          # READ-ONLY. Prints both lists and derives the difference.
-  INPUT 1 — supabase/migrations/, every file (38)
+  INPUT 1 — supabase/migrations/, every file (39)
   INPUT 2 — supabase_migrations.schema_migrations on dsfwmafnphdlfogetsus, every row (31)
-  PENDING COUNT: 7
+  PENDING COUNT: 8
 ```
 
-**Not on production: 031–037** — `turns` and the topic lifecycle, `usage_counters`,
+**Not on production: 031–038** — `turns` and the topic lifecycle, `usage_counters`,
 `origin`/`from_topic_id`, `fact_proposals`/`job_runs`, the counter function,
-`checklist_items.source_title`, and **037, the storage bucket**. All additive; nothing drops or
+`checklist_items.source_title`, **037, the storage bucket**, and **038, the cost ledger**. All additive; nothing drops or
 alters an existing column. **Shipping them is `npm run preflight` then `npm run db:migrate:prod`,
 run by the owner.**
 
@@ -69,9 +69,9 @@ current.**
 
 ```
 $ npm run check      # typecheck && check:schema && test && build
-  check-schema-contracts: ok — 137 files, 34 relations (33 tables + 1 view).
-  tests 440 · pass 440 · fail 0
-  test-guard: 440 tests, 0 skipped, 0 todo, floor 440. OK
+  check-schema-contracts: ok — 140 files, 35 relations (34 tables + 1 view).
+  tests 449 · pass 449 · fail 0
+  test-guard: 449 tests, 0 skipped, 0 todo, floor 449. OK
   ✓ Compiled successfully
 ```
 
@@ -99,6 +99,35 @@ and behave"*. None of those nine was that question.
 > depending on whether the sync had run. TypeScript's globber has `*`, `?` and `**` and **no
 > character classes**, which is why the first attempt (`* [0-9].*`) silently matched nothing.
 
+## 4a. THE COST LEDGER — read this before spending anything
+
+`ai_calls` (migration 038) records every model call **at the call**, with the prices it was
+costed at. `npm run cost` splits it by task and by model, and **names what it is missing** every
+run: tasks that have never written a row, rows whose model is not in the price table, and the
+fact that an aborted stream writes nothing because there are no token counts to write.
+
+The first hours of data (`DECISIONS.md` §128 J):
+
+```
+research 84% · checklist 12% · convert 4% · summarise 0.05%
+
+INPUT  62.2%   what we SEND: prompt + history + search results
+OUTPUT 34.9%   what comes back, reasoning tokens included
+SEARCH  2.9%
+```
+
+> ### THE TWO NUMBERS TO KEEP IN MIND BEFORE CHANGING ANYTHING ABOUT ANSWERS
+>
+> **2.03 visible characters per billed output token.** Plain prose is about 4, so roughly half
+> the output bill is reasoning you never see, and any estimate from visible text understates by
+> about twofold.
+>
+> **~4,500 input tokens per source retrieved.** A source is not paid for once: it is replayed as
+> input on every later turn of that conversation.
+
+**⚠ `config/pricing.ts` has NOT been verified against the published price list.** Every figure
+here scales linearly with its four numbers. Check them first.
+
 ## 5. The three commands that cost money, and when to run them
 
 ```
@@ -107,22 +136,28 @@ npm run check:live    signs in as a real staging fixture and writes as that user
                       `sources`, the known gap in §6. Everything else is green.
 npm run golden        the determination-gate golden cases (the gate is off everywhere).
 npm run golden:facts  the owner's five questions, with the facts each answer must contain.
+                      THREE runs each by default, with a fact-stability table — one run of a
+                      presence check on model prose is an anecdote. Prices every run.
                       On demand. NEVER in `npm run check` — every case is a real searching answer.
-  -- seattle                    one case
-  -- --effort medium --runs 3   the effort comparison (§127 H)
+  -- seattle                          one case
+  -- --model claude-sonnet-5          compare a model WITHOUT changing any default
+  -- --effort medium --runs 3         the effort comparison (§127 H)
+npm run cost          READ-ONLY. Where the money went, by task and by model, and what the
+                      total does not include.
+npm run check:live -- --only sources  ONE block of check:live. A full run is ~$4 of real calls.
 ```
 
 ## 6. Open defects — where each lives
 
 | | Where | Note |
 |---|---|---|
-| **A third turn will not stand by its own citations** | `lib/historySources.ts`; `check:live` step `sources` | **The fix asked for is in and works** — history carries its numbered sources on all three replay paths. Asked *directly* whether the sources were real, the model still hedges, because history is replayed as plain text and the `server_tool_use` blocks are not stored. §127 C has the measured wordings and the two ways to close it, **both of which are the owner's call** |
+| **A third turn will not reliably stand by its own citations** | `prompts/checklist.ts` `PROVENANCE_SENTENCE`; `check:live` step `sources` | **Improved, not closed.** With `RESEARCH_PROVENANCE` on, 2 of 3 runs stand by their sources; before it, 0 of 3 did. The remaining case still says it wrote them from memory. The structural cause is unchanged — the tool-use blocks are not stored — and the real fix is to store and replay them. §128 |
+| **6 of 10 ledger tasks have never written a row** | `npm run cost` prints them every run | `substeps`, `gate`, `critique`, `audit`, `document_review`, `other`. A call site with no `ledger:` argument is a call nobody is counting, so every total is a floor, not a total |
 | **The company's industry never reaches the answer** | `lib/determinationGate.ts` — `grep -n industry` returns nothing | The gate puts state/county/city in `known` and not the industry. §105 defers it |
 | **A fact answered to the gate is lost one turn later** | `app/api/chat/route.ts`, `factsFromGate()` | The `answering` fact is labelled `user_set` and stored nowhere, so the filter drops the only copy. **Gate is off everywhere; this is dormant** |
 | **Enum values arrive as free text** | same path | `hazwaste_generator_category` allows `none\|vsqg\|sqg\|lqg`; the value carried was `"small quantity generator"`. Dormant for the same reason |
 | **Citations discarded for every non-research caller** | `lib/ai.ts` — `askAI` returns `.text` only | `/api/audits` runs web search on two calls and drops its sources |
 | **`expires_at` set by nothing** | `company_switches` | An expired fact must read `unknown`; a stale `false` is a false green. On the GATE |
-| **`lib/answerDisplay.ts` has no callers** | `grep -rn answerDisplay app lib components` returns only the file itself | Orphaned by Run 3's `AnswerBody`. ~20 tests still run against it, so the suite is partly testing code nothing uses. **Not deleted** — that is a decision, not a fix |
 | **`outcome: 'ask'` is not rendered** | `components/archive/GateAskCard.tsx` | Both gate switches are off; turning either on leaves the question unrendered. **R1.5** |
 
 ## 7. The exact next step
@@ -143,7 +178,7 @@ prompts before and after.
 ## 8. Commands worth knowing
 
 ```
-npm run check        typecheck · schema contracts · 440 tests · build.  Green as of 1d61f28.
+npm run check        typecheck · schema contracts · 449 tests · build.  Green as of e2922c0.
 npm run check:live   signs in as a real staging fixture. Needs CHECK_LIVE_PASSWORD.
 npm run schema:doc   regenerates docs/SCHEMA.md from the live catalog. Runs inside db:migrate.
 npm run db:restore   rebuilds STAGING from zero — reset, then the data steps, printing

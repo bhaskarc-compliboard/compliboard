@@ -1,6 +1,15 @@
 # Decision Record
-**Version:** 100 · **Updated:** 23 September 2026
-**Supersedes:** version 99 (23 Sep). Adds **§127 — FIX ROUND 1, the owner's 22-23 September test
+**Version:** 101 · **Updated:** 23 September 2026
+**Supersedes:** version 100 (23 Sep). Adds **§128 — the owner's decisions on Fix Round 1, and
+where the money goes.** Effort is `medium` by default for research and checklist; a typo in
+`AI_EFFORT` now falls back to medium rather than buying the expensive tier. `RESEARCH_PROVENANCE`
+moves the sources sentence into the SYSTEM prompt, which is the only place it cannot be disowned
+— two of three runs then stand by their citations, against none before. **The check itself was
+wrong twice before it was right**, both times calling correct behaviour a defect. And the cost
+ledger: `ai_calls` writes a row at every call **with the prices it was costed at**, because a
+total recomputed later is not what anything cost. The first 58 rows say research is 84% of the
+bill and, more usefully, that **input is 62% of it** — what we send, not what comes back. Opus 5
+costs **6.5×** Sonnet 5 per answer and finds one more golden fact in four. Version 100: version 99 (23 Sep). Adds **§127 — FIX ROUND 1, the owner's 22-23 September test
 pass.** Nine defects found by USING the product, **every one with a green `npm run check` behind
 it**. A stream that ends is not a stream that finished. "Bucket not found" was neither of the two
 proposed causes — it was a wrong name in code — and checking it found that **no migration creates
@@ -9734,3 +9743,179 @@ at the request level: three calls logged `{"effort":"high"}` and three `{"effort
 **Reversal condition:** F is reversed by unsetting the switch — that is what it is for. C's
 neutral heading is reversed the moment the tool-use blocks are stored, which removes the reason
 for it. Nothing else here is a preference; they are defects, and the tests are the record.
+
+---
+
+## 128. THE OWNER'S DECISIONS ON FIX ROUND 1, AND WHERE THE MONEY GOES — 23 September 2026
+
+Four decisions taken on §127's findings, then the cost work that followed from the effort one.
+
+### 1. Effort is `medium` for research and checklist
+
+`DEFAULT_EFFORT` in `lib/ai.ts`, not only in `.env.local`, so the code default and the
+environment agree rather than one silently overriding the other. It governs `askAIOpenStream`
+and nothing else, so the gate, the critic and the audits are untouched.
+
+**An unreadable `AI_EFFORT` now falls back to `medium`, not to the API's `high`.** A typo must
+not silently buy the expensive tier — which is what the previous behaviour did.
+
+### 2. `RESEARCH_PROVENANCE` — and the sentence had to move to the SYSTEM prompt
+
+§127 C established that the model would not vouch for the sources of its own earlier turns, and
+that **no wording inside the assistant turn could fix it**: history is replayed as plain text
+with the `web_search_tool_result` blocks stripped, so a claim sitting in its own turn is one it
+can inspect and disown.
+
+The sentence is now in the system prompt, after the role:
+
+> Numbered sources in earlier answers in this conversation came from web searches run at the
+> time; treat them as real.
+
+**It is permitted only because it is true.** `reassemble()` builds `sources` solely from the
+citations the API attaches to search-grounded blocks, so a stored source is by construction a
+page the tool returned. This tells the model a fact about data it cannot see; it does not ask it
+to assume something convenient.
+
+**Three runs through `check:live`'s own step, switch on — two stood by their sources, one did not:**
+
+| Run | Verdict | What turn three said |
+|---|---|---|
+| 1 | ✓ | *"Yes — I re-checked the main ones just now and they hold up. But three of them weren't the best sources I could have given you…"* |
+| 2 | ✓ | *"Yes — they were real search results, but two details in my last answer were more precise than the sources supported."* |
+| 3 | ✗ | *"I can't personally vouch for them, because I didn't run a search in this conversation — those two answers were written from memory."* |
+
+Before the switch, three runs denied categorically. **It is better and it is not reliable**, and
+the step stays in `check:live` recording that.
+
+> ### THE CHECKER WAS WRONG TWICE BEFORE IT WAS RIGHT, AND BOTH WAYS FLATTERED NOBODY.
+>
+> **First**, it failed a run whose previous answer genuinely had **zero sources** — the model
+> said *"the second answer cited nothing, I wrote it from memory"*, **which was true**, and the
+> check scored a correct answer as the defect. It now SKIPS when the previous answer cited
+> nothing: a question with no subject cannot be passed or failed.
+>
+> **Second**, it failed three runs that opened *"Yes, they hold up"* and went on to caveat two
+> citations, on a regex catching "not" within sixty characters of "verify". **A caveat is not a
+> denial** — an answer distinguishing what it verified from what it did not is the product
+> working. It also demanded the answer repeat a *hostname*, when "PHMSA administers it" names
+> the source perfectly well.
+>
+> It now fails on the recorded denial, passes on an affirmation, and prints anything else for a
+> person to read. `AUDIT-CHECKS.md` check 14's rule — a checker weaker or wronger than its
+> assertion — arriving in the harness written to enforce it.
+
+### 3. `lib/answerDisplay.ts` deleted, with its 18 tests
+
+Orphaned by Run 3's `AnswerBody`. The test-guard floor refused the shrink until it was lowered
+deliberately in writing, which is exactly what that guard is for.
+
+### 4. Golden facts run three times per question
+
+A single run of a presence check on a model's prose is an anecdote. The runner prints a **fact
+stability table** — a hit rate per fact — because a mean hides the difference between 3/3 and 2/3.
+
+---
+
+## J — WHERE THE MONEY GOES
+
+### J.1 The ledger
+
+`ai_calls` (migration 038), one row per call, **written at the call**: company, task, model,
+effort, input and output tokens, searches, wall clock, and a cost.
+
+> ### THE PRICES GO ON THE ROW, AND THAT IS THE WHOLE DIFFERENCE BETWEEN A LEDGER AND A REPORT.
+>
+> `price_input_per_m`, `price_output_per_m` and `price_per_search` are copied from
+> `config/pricing.ts` onto each row. If a price changes, or the owner corrects one they had
+> wrong, **every historical total would otherwise move silently** — and the only question this
+> table exists to answer is a question about the past.
+
+`cost_usd` is nullable. **NULL means "not priced", never "free"** — a model missing from the
+price table records its tokens and no cost, because inventing a number for it would put a
+fiction in the one place meant to be fact.
+
+**⚠ `config/pricing.ts` was NOT verified against the published price list by this session.**
+Every figure below scales linearly with those four numbers. They are the first thing to check.
+
+### J.2 The $5.33 session, reconstructed
+
+**No logs survive** — that session's output went to a terminal, not to disk. So the
+reconstruction is from the rows it left plus ratios measured today on the same task shapes.
+
+**Measured** (topic `9055d102`, 15:00–15:35): 5 questions, **4 answers**, 32,395 characters of
+answer text, 34 sources, one 31-item checklist, one 1,252-character summary.
+
+**Calibration, from 50 paired research calls today** — and the first number is a finding in its
+own right:
+
+| | |
+|---|---|
+| **2.03 visible characters per billed output token** | Plain prose is ~4. **About half the output bill is reasoning tokens you never see**, so estimating cost from visible text understates it roughly twofold |
+| **~4,506 input tokens per source retrieved** | Search results are injected into context and billed as input |
+
+| Task | in ≈ | out ≈ | est. cost | how |
+|---|---|---|---|---|
+| research | 153,204 | 15,958 | **$3.60** | 4 answers, 34 sources — estimated |
+| convert | 1,014 | 4,730 | **$0.38** | measured today, scaled by item count |
+| summarise | 1,200 | 250 | **$0.04** | measured today, repriced at Opus 5, its tier then |
+| **TOTAL** | | | **$4.02** | against **$5.33** actually billed |
+
+**Research is ~90% of it.** The $1.31 gap is unaccounted and the honest candidates are named:
+that session ran at effort `high` (the calibration is from `medium`, so the output side is a
+lower bound), one question produced no answer and a stopped stream still bills upstream, and
+micro-steps calls are not in the estimate at all.
+
+### The finding a per-task split hides
+
+Across the 58 calls in the ledger's first hours:
+
+| | | |
+|---|---|---|
+| **input** | **$16.19** | **62.2%** — what we SEND: prompt, history, and search results |
+| output | $9.08 | 34.9% — what comes back, reasoning included |
+| search | $0.75 | 2.9% |
+
+**The expensive half is the half we control.** Every source retrieved is ~4,500 tokens of input
+on every subsequent turn that replays it.
+
+### J.3 Routing by task
+
+`AI_MODEL_SUBSTEPS` and `AI_MODEL_SUMMARY`, both defaulting to `claude-sonnet-5`. Micro-steps
+expand an item already on screen and a summary reads a transcript that already exists; neither
+decides what the law requires and neither searches. They were on the research tier only because
+no other tier existed.
+
+| task | tier | resolved | set by |
+|---|---|---|---|
+| research | prose | `claude-opus-5` | `AI_MODEL_PROSE` |
+| checklist | judgement | `claude-opus-5` | `AI_MODEL_JUDGEMENT` |
+| **substeps** | **substeps** | **`claude-sonnet-5`** | **code default** |
+| **summarise** | **summary** | **`claude-sonnet-5`** | **code default** |
+| convert | judgement | `claude-opus-5` | `AI_MODEL_JUDGEMENT` |
+| gate | judgement | `claude-opus-5` | `AI_MODEL_JUDGEMENT` |
+| critic | critique | `claude-opus-5` | code default |
+
+### J.4 Opus 5 against Sonnet 5 — same question, same switches, same effort
+
+Three runs each, Seattle, `medium`, `RESEARCH_PREFER_GOV` + `RESEARCH_SPECIALIST` +
+`RESEARCH_PROVENANCE` all on. **No default model was changed.**
+
+| | Opus 5 medium | Sonnet 5 medium |
+|---|---|---|
+| golden facts | **11 / 12** (3.7 per run) | **8 / 12** (2.7 per run) |
+| per-run facts | 4/4 · 4/4 · 3/4 | 2/4 · 2/4 · 4/4 |
+| wall clock, mean | 50.7s | **24.2s** |
+| output tokens, mean | 3,446 | 2,253 |
+| **cost per run, mean** | **$0.7573** | **$0.1161** |
+
+**Opus 5 costs 6.5× as much and finds one more fact per run.** Stability differs too: Opus held
+3/3 on three of the four facts and 2/3 on the fourth; **Sonnet held 2/3 on all four**, which is
+the shape of a model that is close but not settled.
+
+For reference, §127 H's Opus 5 `medium` runs (two switches, before provenance, uncosted) scored
+the same 3.3–3.7 range, so the switch did not move the fact count either way.
+
+**Reversal condition:** decisions 1 and 2 are reversed by their own switch or constant — that is
+what they are for. The ledger is not reversible in the same sense: if `config/pricing.ts` turns
+out to be wrong, the fix is to correct it going forward, because past rows deliberately keep the
+prices they were costed at.
