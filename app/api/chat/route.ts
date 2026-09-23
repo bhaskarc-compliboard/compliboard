@@ -20,11 +20,14 @@
 import { askAI, askAIJson, askAIWithCitations, askAIOpenStream,
          type AIContent, type OpenMessage } from '@/lib/ai';
 import { pipelineSwitch, logPipelineConfigOnce } from '@/lib/pipelineConfig';
+import { nextPosition, saveUserTurn, saveAssistantTurn, markTurnStopped, loadTurns,
+         setTitleIfFirst, titleFromQuestion, bumpCounter } from '@/lib/conversation';
 import { extractJsonText } from '@/lib/ai';
 import { buildSystemPrompt } from '@/prompts/checklist';
 import { NextRequest, NextResponse } from "next/server";
 import { parseDocumentToBlocks } from '@/lib/documentContent';
-import { requireCompany } from '@/lib/auth';
+import { requireCompany, supabaseAdmin } from '@/lib/auth';
+
 import { verifyTurns, sealTurn, BadConversation, type SealedTurn } from '@/lib/turnSigning';
 import type { PriorTurn } from '@/lib/gateContext';
 import { gate, type GateAnswering } from '@/lib/determinationGate';
@@ -223,6 +226,36 @@ export async function POST(request: NextRequest) {
       // like any other context. So the signature protects nothing here, and requiring it would
       // refuse a conversation for failing a check that has no subject. A client may still send
       // `turns`; they are not read. When RESEARCH_GATE is ON, the path below is unchanged.
+      // ------------------------------------------------------------------
+      // HISTORY COMES FROM THE DATABASE WHEN THE CLIENT HAS NONE.
+      //
+      // The client sends the exchanges it is holding, which works while the page is open. It
+      // has none after a reload — and "reopen a conversation and carry on" is the whole point
+      // of persisting turns. Measured before this existed: a follow-up on a reopened topic
+      // answered *"I don't have the earlier part of our conversation"*.
+      //
+      // The client's own history WINS when it has some, because it is the conversation the
+      // person is looking at; the stored turns are the fallback, not an override. A stopped
+      // turn is skipped — it has no answer, and a user message with no assistant reply after
+      // it would leave the array ending on two user messages, which the API refuses.
+      // ------------------------------------------------------------------
+      if (!history.length && topicId) {
+        try {
+          const stored = await loadTurns(db, topicId);
+          const pairs: Array<{ question?: string; answer?: string }> = [];
+          for (let i = 0; i < stored.length; i++) {
+            const t = stored[i];
+            if (t.role !== 'user' || t.stopped) continue;
+            const next = stored[i + 1];
+            if (next && next.role === 'assistant') pairs.push({ question: t.text, answer: next.text });
+          }
+          history = pairs;
+        } catch (e) {
+          // A conversation that cannot be reloaded still answers the question in front of it.
+          console.error('could not load stored turns for history:', e);
+        }
+      }
+
       const messages: OpenMessage[] = [];
       for (const h of history) {
         const q = String(h?.question ?? '').trim();
@@ -246,7 +279,12 @@ export async function POST(request: NextRequest) {
       if (mode === 'checklist') {
         let raw = '';
         for await (const ev of askAIOpenStream(system, messages,
-                     { task: 'judgement', maxTokens: 8000, signal: request.signal })) {
+                     // 16000, not 8000. Run 1 measured `stop_reason = max_tokens` on BOTH Opus 5 route runs of
+          // the Seattle question — 9,767 output tokens against an 8,000 cap, so the answer was cut
+          // off mid-sentence. Thinking tokens count toward this, which is why the old cap was
+          // reached sooner than the visible length suggested. Streaming removed the SDK's
+          // non-streaming ceiling (TODO 0.11), so there is nothing else in the way.
+          { task: 'judgement', maxTokens: 16000, signal: request.signal })) {
           if (ev.type === 'text') raw += ev.text;
           else if (ev.type === 'reset') raw = '';
           else if (ev.type === 'done') raw = ev.answer.text;
@@ -265,20 +303,65 @@ export async function POST(request: NextRequest) {
             { error: 'The checklist came back in a shape we could not read. Please try again.' },
             { status: 502 });
         }
+        try { await bumpCounter(supabaseAdmin, companyId, 'checklists_created'); }
+        catch (e) { console.error('checklist counter not incremented:', e); }
         return NextResponse.json({ outcome: 'answer', ...data, topicId: topicId || null });
       }
 
-      // ---- RESEARCH: stream to the client -----------------------------------------------
+      // ---- RESEARCH: stream to the client, and write the exchange down ------------------
+      //
+      // THE QUESTION IS SAVED BEFORE THE ANSWER IS KNOWN, and that ordering is the point: a
+      // conversation the user stopped, or that failed, must still show what was asked. Saving
+      // both at the end would lose exactly the exchanges worth looking at afterwards.
+      //
+      // THE TOPIC IS OPENED HERE, on the open path, because the gate block that used to own
+      // topic creation is not entered any more. A client that sends `topicId` is continuing a
+      // conversation; one that does not is starting one. A failure to open a topic must NOT
+      // fail the answer — the person asked a question, and losing the transcript is a smaller
+      // harm than losing the reply — so it degrades to an unsaved exchange and says so in the
+      // log.
+      let convoTopicId: string | null = topicId || null;
+      let userTurnId: string | null = null;
+      let answerPosition = 0;
+      try {
+        if (!convoTopicId) {
+          const { data: created, error: topicErr } = await db
+            .from('topics')
+            .insert({ company_id: companyId, title: titleFromQuestion(userQuestion) })
+            .select('id').single();
+          if (topicErr) throw new Error(topicErr.message);
+          convoTopicId = created.id as string;
+        }
+        const pos = await nextPosition(db, convoTopicId);
+        userTurnId = await saveUserTurn(db, { topicId: convoTopicId, companyId, text: userQuestion, position: pos });
+        answerPosition = pos + 1;
+        await setTitleIfFirst(db, convoTopicId, userQuestion);
+      } catch (e) {
+        console.error('conversation not persisted (the answer still runs):', e);
+        convoTopicId = null;
+      }
+
       const encoder = new TextEncoder();
       const body = new ReadableStream({
         async start(controller) {
           const send = (o: unknown) => controller.enqueue(encoder.encode(JSON.stringify(o) + '\n'));
+          let completed = false;
           try {
             for await (const ev of askAIOpenStream(system, messages,
-                         { task: 'prose', maxTokens: 8000, signal: request.signal })) {
+                         { task: 'prose', maxTokens: 16000, signal: request.signal })) {
               if (ev.type === 'done') {
+                completed = true;
                 send({ type: 'done', research: ev.answer.text, sources: ev.answer.sources,
+                       topicId: convoTopicId,
                        stopReason: ev.stopReason, outputTokens: ev.outputTokens });
+                if (convoTopicId) {
+                  await saveAssistantTurn(db, { topicId: convoTopicId, companyId,
+                    text: ev.answer.text, sources: ev.answer.sources, position: answerPosition });
+                }
+                // THE COUNTER MOVES HERE AND NOWHERE ELSE — on a completed stream. A stopped
+                // answer is not a question answered.
+                try { await bumpCounter(supabaseAdmin, companyId, 'questions_answered'); }
+                catch (e) { console.error('counter not incremented:', e); }
               } else {
                 send(ev);
               }
@@ -293,6 +376,13 @@ export async function POST(request: NextRequest) {
               send({ type: 'error', message: 'The answer stopped part-way through. Please try again.' });
             }
           } finally {
+            // A STOPPED ANSWER: the question stays and is marked, no assistant row is written,
+            // and the counter does not move. The transcript then shows a question that was
+            // asked and abandoned, which is what happened.
+            if (!completed && userTurnId) {
+              try { await markTurnStopped(supabaseAdmin, userTurnId); }
+              catch (e) { console.error('could not mark the turn stopped:', e); }
+            }
             controller.close();
           }
         },

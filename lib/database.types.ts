@@ -221,6 +221,7 @@ export type Database = {
           id: string
           is_determination: boolean | null
           name: string
+          origin: string | null
           parent_item_index: number | null
           pre_completed: boolean | null
           providers: Json | null
@@ -247,6 +248,7 @@ export type Database = {
           id?: string
           is_determination?: boolean | null
           name: string
+          origin?: string | null
           parent_item_index?: number | null
           pre_completed?: boolean | null
           providers?: Json | null
@@ -273,6 +275,7 @@ export type Database = {
           id?: string
           is_determination?: boolean | null
           name?: string
+          origin?: string | null
           parent_item_index?: number | null
           pre_completed?: boolean | null
           providers?: Json | null
@@ -308,6 +311,7 @@ export type Database = {
           company_id: string | null
           converted_to_checklist_id: string | null
           created_at: string | null
+          from_topic_id: string | null
           id: string
           question: string
           research_answer: string | null
@@ -320,6 +324,7 @@ export type Database = {
           company_id?: string | null
           converted_to_checklist_id?: string | null
           created_at?: string | null
+          from_topic_id?: string | null
           id?: string
           question: string
           research_answer?: string | null
@@ -332,6 +337,7 @@ export type Database = {
           company_id?: string | null
           converted_to_checklist_id?: string | null
           created_at?: string | null
+          from_topic_id?: string | null
           id?: string
           question?: string
           research_answer?: string | null
@@ -353,6 +359,13 @@ export type Database = {
             columns: ["converted_to_checklist_id"]
             isOneToOne: false
             referencedRelation: "checklists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checklists_from_topic_fk"
+            columns: ["from_topic_id"]
+            isOneToOne: false
+            referencedRelation: "topics"
             referencedColumns: ["id"]
           },
         ]
@@ -930,6 +943,7 @@ export type Database = {
           file_type: string
           file_url: string
           folder_id: string | null
+          from_topic_id: string | null
           id: string
           is_recurring: boolean | null
           name: string
@@ -944,6 +958,7 @@ export type Database = {
           file_type: string
           file_url: string
           folder_id?: string | null
+          from_topic_id?: string | null
           id?: string
           is_recurring?: boolean | null
           name: string
@@ -958,6 +973,7 @@ export type Database = {
           file_type?: string
           file_url?: string
           folder_id?: string | null
+          from_topic_id?: string | null
           id?: string
           is_recurring?: boolean | null
           name?: string
@@ -985,6 +1001,13 @@ export type Database = {
             columns: ["folder_id"]
             isOneToOne: false
             referencedRelation: "company_folders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_from_topic_fk"
+            columns: ["from_topic_id"]
+            isOneToOne: false
+            referencedRelation: "topics"
             referencedColumns: ["id"]
           },
         ]
@@ -1054,6 +1077,67 @@ export type Database = {
             columns: ["parent_entity_id"]
             isOneToOne: false
             referencedRelation: "entities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fact_proposals: {
+        Row: {
+          company_id: string
+          created_at: string
+          from_turn_id: string | null
+          id: string
+          proposed_value: string
+          quote: string | null
+          status: string
+          switch_key: string
+          topic_id: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          from_turn_id?: string | null
+          id?: string
+          proposed_value: string
+          quote?: string | null
+          status?: string
+          switch_key: string
+          topic_id: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          from_turn_id?: string | null
+          id?: string
+          proposed_value?: string
+          quote?: string | null
+          status?: string
+          switch_key?: string
+          topic_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fact_proposals_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fact_proposals_from_turn_id_fkey"
+            columns: ["from_turn_id"]
+            isOneToOne: false
+            referencedRelation: "turns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fact_proposals_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "topics"
             referencedColumns: ["id"]
           },
         ]
@@ -1151,6 +1235,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      job_runs: {
+        Row: {
+          counts: Json
+          errors: Json
+          finished_at: string | null
+          id: string
+          job: string
+          ok: boolean | null
+          started_at: string
+        }
+        Insert: {
+          counts?: Json
+          errors?: Json
+          finished_at?: string | null
+          id?: string
+          job: string
+          ok?: boolean | null
+          started_at?: string
+        }
+        Update: {
+          counts?: Json
+          errors?: Json
+          finished_at?: string | null
+          id?: string
+          job?: string
+          ok?: boolean | null
+          started_at?: string
+        }
+        Relationships: []
       }
       jobs: {
         Row: {
@@ -1921,10 +2035,16 @@ export type Database = {
           closed_at: string | null
           company_id: string
           created_at: string
+          delete_after: string | null
+          extracted_at: string | null
           id: string
+          idle_at: string | null
+          last_turn_at: string | null
           opened_at: string
           status: Database["public"]["Enums"]["topic_status"]
+          summarised_at: string | null
           summary: string | null
+          summary_source: string | null
           title: string
           updated_at: string
         }
@@ -1932,10 +2052,16 @@ export type Database = {
           closed_at?: string | null
           company_id: string
           created_at?: string
+          delete_after?: string | null
+          extracted_at?: string | null
           id?: string
+          idle_at?: string | null
+          last_turn_at?: string | null
           opened_at?: string
           status?: Database["public"]["Enums"]["topic_status"]
+          summarised_at?: string | null
           summary?: string | null
+          summary_source?: string | null
           title: string
           updated_at?: string
         }
@@ -1943,10 +2069,16 @@ export type Database = {
           closed_at?: string | null
           company_id?: string
           created_at?: string
+          delete_after?: string | null
+          extracted_at?: string | null
           id?: string
+          idle_at?: string | null
+          last_turn_at?: string | null
           opened_at?: string
           status?: Database["public"]["Enums"]["topic_status"]
+          summarised_at?: string | null
           summary?: string | null
+          summary_source?: string | null
           title?: string
           updated_at?: string
         }
@@ -1955,6 +2087,89 @@ export type Database = {
             foreignKeyName: "topics_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      turns: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          position: number
+          role: string
+          sources: Json | null
+          stopped: boolean
+          text: string
+          topic_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          position: number
+          role: string
+          sources?: Json | null
+          stopped?: boolean
+          text: string
+          topic_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          position?: number
+          role?: string
+          sources?: Json | null
+          stopped?: boolean
+          text?: string
+          topic_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "turns_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "turns_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      usage_counters: {
+        Row: {
+          checklists_created: number
+          company_id: string
+          created_at: string
+          questions_answered: number
+          updated_at: string
+        }
+        Insert: {
+          checklists_created?: number
+          company_id: string
+          created_at?: string
+          questions_answered?: number
+          updated_at?: string
+        }
+        Update: {
+          checklists_created?: number
+          company_id?: string
+          created_at?: string
+          questions_answered?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "usage_counters_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
@@ -1988,6 +2203,10 @@ export type Database = {
       close_and_replace_obligations: {
         Args: { p_company_id: string; p_obligations: Json }
         Returns: Json
+      }
+      increment_usage_counter: {
+        Args: { p_company_id: string; p_field: string }
+        Returns: undefined
       }
       substance_inventory: {
         Args: { p_entity_id: string; p_list: string }

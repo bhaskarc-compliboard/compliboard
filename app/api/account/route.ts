@@ -187,6 +187,16 @@ async function listCompanyObjects(companyId: string): Promise<string[]> {
 // customer asked for. Those three are why this loop exists at all rather than relying on
 // the cascade.
 const COMPANY_SCOPED_TABLES = [
+  // ---- THE CONVERSATION TABLES, Run 2 (`DECISIONS.md` §125) ----
+  // Named explicitly even though all four cascade from `companies`, because §116's third
+  // release gate is "account deletion removes chat history IMMEDIATELY" and this route's whole
+  // argument is that a reviewer can see what is destroyed. A cascade is invisible here; these
+  // are the rows a customer means when they ask for their conversations to be gone.
+  // Children first: proposals point at turns, turns point at topics.
+  'fact_proposals',
+  'turns',
+  'topics',
+  'usage_counters',
   'checklists',
   'corrections',        // SET NULL — would survive as an orphan if not deleted here
   'obligations',
@@ -222,9 +232,6 @@ const DELETED_BY_CASCADE_OR_PARENT = [
                            // for anything the site delete misses. Its third FK, cas_number
                            // -> regulated_substances, is ON DELETE RESTRICT and points at
                            // shared reference data, so it cannot block a company delete.
-  'topics',                // cascades with the company: company_id -> companies ON DELETE
-                           // CASCADE, read from pg_constraint rather than assumed. It is its
-                           // own leaf — nothing references `topics`, and it holds no facts of
                            // its own (DECISIONS.md §78: a hypothetical is never stored), so
                            // there is nothing for the cascade to strand. Migration 028.
   'critic_reviews',        // cascades with the company: company_id -> companies ON DELETE

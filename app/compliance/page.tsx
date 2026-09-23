@@ -935,6 +935,10 @@ Give them a specific direct answer — exactly what they need to do, which speci
               else if (ev.type === 'done') {
                 acc = String(ev.research ?? acc)
                 fill({ text: acc, sources: (ev.sources as ResearchSource[]) ?? [], pending: false })
+                // The route opens a topic on the first question and hands its id back here.
+                // Keeping it is what makes the NEXT question a follow-up on the same
+                // conversation rather than a new one — Run 2, `DECISIONS.md` §125.
+                if (ev.topicId) setTopicId(String(ev.topicId))
               } else if (ev.type === 'error') {
                 setErrorMsg(String(ev.message ?? 'That request could not be completed.'))
               }

@@ -3,8 +3,8 @@
 **GENERATED — do not edit.** `node --env-file=.env.local scripts/schema-doc.js`, and it runs
 inside `npm run db:migrate`, so it cannot be stale by more than one migration.
 
-**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-09-22 17:58 UTC
-**Migrations applied:** 31 — `000` to `030`
+**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-09-23 03:44 UTC
+**Migrations applied:** 36 — `000` to `035`
 
 *Every figure here was read from the catalog of that database. Nothing is copied from the
 migration files, which say what was intended rather than what is there — and the two have
@@ -29,8 +29,8 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 
 **Compliance Workspace (M1) — research, conversations, checklists**
 
-- `topics` — 0 rows · touched by route chat, script check-live
-- `checklists` — 0 rows · touched by route account, route link-research, route substeps, screen compliance, screen dashboard
+- `topics` — 2 rows · touched by route chat, lib conversation, script check-live
+- `checklists` — 1 rows · touched by route account, route link-research, route substeps, screen compliance, screen dashboard
 - `checklist_items` — 0 rows · touched by route account/export, route account, route substeps, screen compliance
 - `critic_reviews` — 0 rows · touched by lib criticRecord
 - `critic_findings` — 0 rows · touched by lib criticRecord
@@ -79,6 +79,8 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 **Worker queue**
 
 - `jobs` — 0 rows · **no code reads or writes it**
+
+**Not assigned to a module above:** `fact_proposals`, `job_runs`, `turns`, `usage_counters`
 
 ---
 
@@ -269,11 +271,16 @@ One row per audit run. A frozen snapshot of results as checked that day — reus
 | `pre_completed` | boolean | yes | `false` |
 | `source` | text | yes | — |
 | `company_id` | uuid | no | — |
+| `origin` | text | yes | — |
 
 **Points at:**
 
 - `checklist_id` → `checklists` — ON DELETE CASCADE
 - `company_id` → `companies` — ON DELETE CASCADE
+
+**Constraints:**
+
+- `checklist_items_origin_is_known` — `CHECK (((origin IS NULL) OR (origin = ANY (ARRAY['conversation'::text, 'added'::text]))))`
 
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
@@ -294,7 +301,7 @@ One row per audit run. A frozen snapshot of results as checked that day — reus
 
 ### `checklists`
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 1 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route account`, `route link-research`, `route substeps`, `screen compliance`, `screen dashboard`
 
@@ -310,11 +317,13 @@ One row per audit run. A frozen snapshot of results as checked that day — reus
 | `research_answer` | text | yes | — |
 | `converted_to_checklist_id` | uuid | yes | — |
 | `research_sources` | jsonb | yes | — |
+| `from_topic_id` | uuid | yes | — |
 
 **Points at:**
 
 - `company_id` → `companies` — ON DELETE CASCADE
 - `converted_to_checklist_id` → `checklists` — ON DELETE NO ACTION
+- `from_topic_id` → `topics` — ON DELETE SET NULL
 - `user_id` → `auth.users` — ON DELETE CASCADE
 
 **Pointed at by:**
@@ -337,7 +346,7 @@ One row per audit run. A frozen snapshot of results as checked that day — reus
 | `checklists_select` | SELECT | authenticated | `(company_id = auth_company_id())` | — |
 | `checklists_update` | UPDATE | authenticated | `(company_id = auth_company_id())` | `(company_id = auth_company_id())` |
 
-**Indexes:** `checklists_pkey`
+**Indexes:** `checklists_pkey`, `idx_checklists_from_topic`
 
 ### `companies`
 
@@ -378,6 +387,7 @@ One row per audit run. A frozen snapshot of results as checked that day — reus
 - `document_reviews.company_id` — ON DELETE CASCADE
 - `documents.company_id` — ON DELETE CASCADE
 - `entities.company_id` — ON DELETE CASCADE
+- `fact_proposals.company_id` — ON DELETE CASCADE
 - `hr_audits.company_id` — ON DELETE NO ACTION
 - `jobs.company_id` — ON DELETE CASCADE
 - `obligation_evidence.company_id` — ON DELETE CASCADE
@@ -385,6 +395,8 @@ One row per audit run. A frozen snapshot of results as checked that day — reus
 - `profiles.company_id` — ON DELETE NO ACTION
 - `switch_determinations.company_id` — ON DELETE CASCADE
 - `topics.company_id` — ON DELETE CASCADE
+- `turns.company_id` — ON DELETE CASCADE
+- `usage_counters.company_id` — ON DELETE CASCADE
 
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
@@ -803,12 +815,14 @@ One row per criticise() call, INCLUDING reviews that found nothing — that is t
 | `uploaded_at` | timestamp with time zone | yes | `timezone('utc'::text, now())` |
 | `folder_id` | uuid | yes | — |
 | `entity_id` | uuid | yes | — |
+| `from_topic_id` | uuid | yes | — |
 
 **Points at:**
 
 - `company_id` → `companies` — ON DELETE CASCADE
 - `entity_id` → `entities` — ON DELETE SET NULL
 - `folder_id` → `company_folders` — ON DELETE SET NULL
+- `from_topic_id` → `topics` — ON DELETE SET NULL
 - `user_id` → `auth.users` — ON DELETE CASCADE
 
 **Pointed at by:**
@@ -834,7 +848,7 @@ One row per criticise() call, INCLUDING reviews that found nothing — that is t
 | `documents_select` | SELECT | authenticated | `(company_id = auth_company_id())` | — |
 | `documents_update` | UPDATE | authenticated | `(company_id = auth_company_id())` | `(company_id = auth_company_id())` |
 
-**Indexes:** `documents_id_company`, `documents_pkey`, `idx_documents_entity`
+**Indexes:** `documents_id_company`, `documents_pkey`, `idx_documents_entity`, `idx_documents_from_topic`
 
 ### `entities`
 
@@ -895,6 +909,54 @@ One row per criticise() call, INCLUDING reviews that found nothing — that is t
 **Triggers:** `set_updated_at` (BEFORE → `set_updated_at`)
 
 **Indexes:** `entities_pkey`, `idx_entities_company`, `idx_entities_jurisdiction`, `idx_entities_one_primary`, `idx_entities_parent`
+
+### `fact_proposals`
+
+Candidate company facts read out of a conversation overnight. PROPOSED, never written to company_switches — DECISIONS.md §108. The quote is copied because the turn it came from is cleared after 7 days.
+
+**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+
+**Read or written by: NOTHING in app/, lib/ or scripts/.**
+
+| Column | Type | Null | Default |
+|---|---|---|---|
+| `id` | uuid | no | `gen_random_uuid()` |
+| `company_id` | uuid | no | — |
+| `topic_id` | uuid | no | — |
+| `switch_key` | text | no | — |
+| `proposed_value` | text | no | — |
+| `from_turn_id` | uuid | yes | — |
+| `quote` | text | yes | — |
+| `status` | text | no | `'proposed'::text` |
+| `created_at` | timestamp with time zone | no | `now()` |
+| `updated_at` | timestamp with time zone | no | `now()` |
+
+**Points at:**
+
+- `company_id` → `companies` — ON DELETE CASCADE
+- `from_turn_id` → `turns` — ON DELETE SET NULL
+- `topic_id` → `topics` — ON DELETE CASCADE
+
+**Constraints:**
+
+- `fact_proposals_status_check` — `CHECK ((status = ANY (ARRAY['proposed'::text, 'accepted'::text, 'rejected'::text])))`
+
+**Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
+
+- `anon` — **nothing**
+- `authenticated` — **nothing**
+- `service_role` — **nothing**
+
+**RLS policies:**
+
+| Policy | For | Roles | USING | WITH CHECK |
+|---|---|---|---|---|
+| `fact_proposals_select_own_company` | SELECT | authenticated | `(company_id = auth_company_id())` | — |
+| `fact_proposals_update_own_company` | UPDATE | authenticated | `(company_id = auth_company_id())` | `(company_id = auth_company_id())` |
+
+**Triggers:** `set_updated_at_fact_proposals` (BEFORE → `set_updated_at`)
+
+**Indexes:** `fact_proposals_pkey`, `idx_fact_proposals_company_status`, `idx_fact_proposals_topic`
 
 ### `hr_audits`
 
@@ -983,6 +1045,38 @@ industry x jurisdiction x agency -> how far we have got. Reads the same way to t
 **Triggers:** `set_updated_at` (BEFORE → `set_updated_at`)
 
 **Indexes:** `idx_industry_coverage_agency`, `idx_industry_coverage_lookup`, `industry_coverage_pkey`, `industry_coverage_unique`
+
+### `job_runs`
+
+One row per nightly run. Answers release gate 2 — did it run, and what did it remove (DECISIONS.md §116, §125). Operational, not tenant data: closed to authenticated.
+
+**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+
+**Read or written by: NOTHING in app/, lib/ or scripts/.**
+
+| Column | Type | Null | Default |
+|---|---|---|---|
+| `id` | uuid | no | `gen_random_uuid()` |
+| `job` | text | no | — |
+| `started_at` | timestamp with time zone | no | `now()` |
+| `finished_at` | timestamp with time zone | yes | — |
+| `counts` | jsonb | no | `'{}'::jsonb` |
+| `errors` | jsonb | no | `'[]'::jsonb` |
+| `ok` | boolean | yes | — |
+
+**Constraints:**
+
+- `job_runs_job_check` — `CHECK ((job = ANY (ARRAY['summarise'::text, 'delete'::text, 'account_delete'::text])))`
+
+**Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
+
+- `anon` — **nothing**
+- `authenticated` — **nothing**
+- `service_role` — **nothing**
+
+**RLS is enabled and there are NO policies** — so no role without a bypass can see a row.
+
+**Indexes:** `idx_job_runs_job_started`, `job_runs_pkey`
 
 ### `jobs`
 
@@ -1107,8 +1201,8 @@ industry x jurisdiction x agency -> how far we have got. Reads the same way to t
 **Points at:**
 
 - `added_by` → `auth.users` — ON DELETE SET NULL
-- `company_id` → `companies` — ON DELETE CASCADE
 - `company_id` → `documents` — ON DELETE CASCADE
+- `company_id` → `companies` — ON DELETE CASCADE
 - `document_id` → `documents` — ON DELETE CASCADE
 - `document_id` → `documents` — ON DELETE CASCADE
 - `entity_id` → `entities` — ON DELETE CASCADE
@@ -1548,9 +1642,9 @@ The ~59 facts about a company that determine which requirements apply. Reference
 
 One exploration. The transcript is disposable (WORKSPACE.md §6.4); the summary is what survives. Holds NO facts — a hypothetical is never stored (DECISIONS.md §78) and a real fact goes to company_switches. Migration 028.
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 2 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route chat`, `script check-live`
+**Read or written by:** `route chat`, `lib conversation`, `script check-live`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -1563,14 +1657,28 @@ One exploration. The transcript is disposable (WORKSPACE.md §6.4); the summary 
 | `summary` | text | yes | — |
 | `created_at` | timestamp with time zone | no | `now()` |
 | `updated_at` | timestamp with time zone | no | `now()` |
+| `idle_at` | timestamp with time zone | yes | — |
+| `summarised_at` | timestamp with time zone | yes | — |
+| `summary_source` | text | yes | — |
+| `extracted_at` | timestamp with time zone | yes | — |
+| `delete_after` | timestamp with time zone | yes | — |
+| `last_turn_at` | timestamp with time zone | yes | — |
 
 **Points at:**
 
 - `company_id` → `companies` — ON DELETE CASCADE
 
+**Pointed at by:**
+
+- `checklists.from_topic_id` — ON DELETE SET NULL
+- `documents.from_topic_id` — ON DELETE SET NULL
+- `fact_proposals.topic_id` — ON DELETE CASCADE
+- `turns.topic_id` — ON DELETE CASCADE
+
 **Constraints:**
 
 - `topics_closed_has_a_time` — `CHECK ((((status = 'closed'::topic_status) AND (closed_at IS NOT NULL)) OR ((status = 'open'::topic_status) AND (closed_at IS NULL))))`
+- `topics_summary_source_is_known` — `CHECK (((summary_source IS NULL) OR (summary_source = ANY (ARRAY['user'::text, 'nightly'::text]))))`
 - `topics_title_is_not_blank` — `CHECK ((length(btrim(title)) > 0))`
 
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
@@ -1589,7 +1697,96 @@ One exploration. The transcript is disposable (WORKSPACE.md §6.4); the summary 
 
 **Triggers:** `set_updated_at` (BEFORE → `set_updated_at`)
 
-**Indexes:** `idx_topics_company_status`, `topics_pkey`
+**Indexes:** `idx_topics_company_status`, `idx_topics_delete_after`, `idx_topics_last_turn`, `topics_pkey`
+
+### `turns`
+
+One message in a conversation. Cleared 7 days after the topic is summarised (DECISIONS.md §125, superseding §110's 15 days); the topic row and its summary survive.
+
+**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+
+**Read or written by:** `lib conversation`
+
+| Column | Type | Null | Default |
+|---|---|---|---|
+| `id` | uuid | no | `gen_random_uuid()` |
+| `topic_id` | uuid | no | — |
+| `company_id` | uuid | no | — |
+| `position` | integer | no | — |
+| `role` | text | no | — |
+| `text` | text | no | — |
+| `sources` | jsonb | yes | — |
+| `stopped` | boolean | no | `false` |
+| `created_at` | timestamp with time zone | no | `now()` |
+
+**Points at:**
+
+- `company_id` → `companies` — ON DELETE CASCADE
+- `topic_id` → `topics` — ON DELETE CASCADE
+
+**Pointed at by:**
+
+- `fact_proposals.from_turn_id` — ON DELETE SET NULL
+
+**Constraints:**
+
+- `turns_role_check` — `CHECK ((role = ANY (ARRAY['user'::text, 'assistant'::text])))`
+
+**Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
+
+- `anon` — **nothing**
+- `authenticated` — **nothing**
+- `service_role` — **nothing**
+
+**RLS policies:**
+
+| Policy | For | Roles | USING | WITH CHECK |
+|---|---|---|---|---|
+| `turns_insert_own_company` | INSERT | authenticated | — | `(company_id = auth_company_id())` |
+| `turns_select_own_company` | SELECT | authenticated | `(company_id = auth_company_id())` | — |
+
+**Indexes:** `idx_turns_company_created`, `idx_turns_topic`, `idx_turns_topic_position`, `turns_pkey`
+
+### `usage_counters`
+
+Events, not inventory. Never decremented, never derived from row counts — transcripts are cleared after 7 days and checklists can be deleted, and neither rewrites what happened. DECISIONS.md §125.
+
+**Rows:** 1 · **RLS:** enabled · **Primary key:** `company_id`
+
+**Read or written by:** `lib conversation`
+
+| Column | Type | Null | Default |
+|---|---|---|---|
+| `company_id` | uuid | no | — |
+| `questions_answered` | integer | no | `0` |
+| `checklists_created` | integer | no | `0` |
+| `created_at` | timestamp with time zone | no | `now()` |
+| `updated_at` | timestamp with time zone | no | `now()` |
+
+**Points at:**
+
+- `company_id` → `companies` — ON DELETE CASCADE
+
+**Constraints:**
+
+- `usage_counters_checklists_created_check` — `CHECK ((checklists_created >= 0))`
+- `usage_counters_questions_answered_check` — `CHECK ((questions_answered >= 0))`
+
+**Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
+
+- `anon` — **nothing**
+- `authenticated` — **nothing**
+- `service_role` — **nothing**
+
+**RLS policies:**
+
+| Policy | For | Roles | USING | WITH CHECK |
+|---|---|---|---|---|
+| `usage_counters_select_own_company` | SELECT | authenticated | `(company_id = auth_company_id())` | — |
+
+**Triggers:** `set_updated_at_usage_counters` (BEFORE → `set_updated_at`)
+
+**Indexes:** `usage_counters_pkey`
 
 ---
 
@@ -1659,6 +1856,12 @@ caller holds the service role and RLS will not check it for them. DECISIONS.md �
 
 Gives every new company a primary site, in the same statement that creates the company. TODO 1.6: a default site for everyone, including single-site customers, so that nothing downstream ever has to ask whether a company has sites. A trigger rather than route code because /api/signup is three inserts with no transaction, and a site created by the third one is a site that can silently fail to exist.
 
+### `increment_usage_counter(p_company_id uuid, p_field text)`
+
+**Returns** `void` · **security invoker**
+
+Atomic +1 on a usage counter. Counters record events and never go down (DECISIONS.md §125). service_role only.
+
 ### `set_updated_at()`
 
 **Returns** `trigger` · **security invoker**
@@ -1689,6 +1892,7 @@ filtered HERE so no consumer can forget it (CLAUDE.md §3.2). A corrected link
 | `company_chemicals` | `set_updated_at` | BEFORE | `set_updated_at` |
 | `company_switches` | `set_updated_at` | BEFORE | `set_updated_at` |
 | `entities` | `set_updated_at` | BEFORE | `set_updated_at` |
+| `fact_proposals` | `set_updated_at_fact_proposals` | BEFORE | `set_updated_at` |
 | `industry_coverage` | `set_updated_at` | BEFORE | `set_updated_at` |
 | `jobs` | `set_updated_at` | BEFORE | `set_updated_at` |
 | `library_candidates` | `set_updated_at` | BEFORE | `set_updated_at` |
@@ -1698,6 +1902,7 @@ filtered HERE so no consumer can forget it (CLAUDE.md §3.2). A corrected link
 | `standard_templates` | `set_updated_at` | BEFORE | `set_updated_at` |
 | `switches` | `set_updated_at` | BEFORE | `set_updated_at` |
 | `topics` | `set_updated_at` | BEFORE | `set_updated_at` |
+| `usage_counters` | `set_updated_at_usage_counters` | BEFORE | `set_updated_at` |
 
 ## Migrations applied, in order
 
@@ -1733,4 +1938,9 @@ filtered HERE so no consumer can forget it (CLAUDE.md §3.2). A corrected link
 028
 029
 030
+031
+032
+033
+034
+035
 ```
