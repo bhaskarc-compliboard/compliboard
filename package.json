@@ -18,6 +18,7 @@
     "check:schema": "node scripts/check-schema-contracts.js",
     "golden": "node --env-file=.env.local scripts/run-golden.js",
     "golden:facts": "node --env-file=.env.local scripts/golden-facts.js",
+    "cost": "node --env-file=.env.local scripts/cost-report.js",
     "expressions": "node --env-file=.env.local scripts/load-expressions.js",
     "test": "node scripts/test-guard.js",
     "mutation": "node scripts/mutation-check.js",

@@ -32,7 +32,8 @@
 import { askAIOpenStream } from '../lib/ai.ts'
 import { buildSystemPrompt } from '../prompts/checklist.ts'
 import { describePipelineConfig } from '../lib/pipelineConfig.ts'
-import { EFFORT_LEVELS } from '../lib/ai.ts'
+import { EFFORT_LEVELS, modelForTask } from '../lib/ai.ts'
+import { estimateCost } from '../lib/costLedger.ts'
 
 const args = process.argv.slice(2)
 const verbose = args.includes('--verbose')
@@ -41,13 +42,20 @@ const flagValue = (name, fallback) => {
   return i >= 0 && args[i + 1] ? args[i + 1] : fallback
 }
 const effortArg = flagValue('--effort', null)
+// `--model` compares one model against another on the same questions. It does NOT change any
+// default: the resolved model is printed at the top of every run, so the output says what was
+// actually asked rather than what the environment happened to hold.
+const modelArg = flagValue('--model', null)
 // *** THREE RUNS PER QUESTION, NOT ONE — the owner's decision, 23 September. ***
 // One run of a presence check on a model's prose is an anecdote. Measured on the same Seattle
 // question with nothing changed between runs: 4/4, 3/4, 3/4 — and the misses were DIFFERENT
 // facts. A single run would have reported any one of those three as the result.
 const DEFAULT_RUNS = 3
 const runs = Number(flagValue('--runs', String(DEFAULT_RUNS)))
-const only = args.find((a) => !a.startsWith('--') && a !== effortArg && a !== String(runs))
+// Every flag VALUE must be excluded here, or `--model claude-sonnet-5` is read as a case-id
+// filter and the run silently matches no case.
+const flagValues = new Set([effortArg, modelArg, String(runs)].filter(Boolean))
+const only = args.find((a) => !a.startsWith('--') && !flagValues.has(a))
 
 if (effortArg && !EFFORT_LEVELS.includes(effortArg)) {
   console.error(`\n  --effort must be one of ${EFFORT_LEVELS.join(', ')} — got ${JSON.stringify(effortArg)}\n`)
@@ -135,14 +143,24 @@ export const CASES = [
 async function runOnce(c) {
   const system = buildSystemPrompt('research', null, { open: true })
   const started = Date.now()
-  let answer = null, stopReason = null, outputTokens = null, error = null, searches = 0
+  let answer = null, stopReason = null, outputTokens = null, inputTokens = null, error = null, searches = 0
   for await (const ev of askAIOpenStream(system, [{ role: 'user', content: c.question }],
-                                         { maxTokens: 16000, ...(effortArg ? { effort: effortArg } : {}) })) {
+                                         { maxTokens: 16000,
+                                           ...(effortArg ? { effort: effortArg } : {}),
+                                           ...(modelArg ? { model: modelArg } : {}) })) {
     if (ev.type === 'searching') searches++
-    else if (ev.type === 'done') { answer = ev.answer; stopReason = ev.stopReason; outputTokens = ev.outputTokens }
+    else if (ev.type === 'done') {
+      answer = ev.answer; stopReason = ev.stopReason
+      outputTokens = ev.outputTokens; inputTokens = ev.inputTokens
+      searches = ev.searches ?? searches
+    }
     else if (ev.type === 'error') error = ev.message
   }
   const ms = Date.now() - started
+  // Priced here rather than read back from the ledger, so the report stands on its own even
+  // against a database that has not applied migration 038.
+  const cost = estimateCost({ model: modelArg || modelForTask('prose'),
+    inputTokens: inputTokens ?? 0, outputTokens: outputTokens ?? 0, searches })
   // `AIAnswer` is `{ text, sources }`. The name `research` belongs to the ROUTE's NDJSON event,
   // not to the library — reading it here returned undefined and reported every fact as missing
   // on a perfectly good answer. Caught on the first run of this file.
@@ -156,7 +174,7 @@ async function runOnce(c) {
     const verdict = found ? (expected ? 'FIXED' : 'PASS') : (expected ? 'KNOWN' : 'FAIL')
     return { ...f, found, expected, verdict }
   })
-  return { c, text, ms, stopReason, outputTokens, searches, error, results }
+  return { c, text, ms, stopReason, outputTokens, inputTokens, searches, error, results, cost }
 }
 
 // ---------------------------------------------------------------------------
@@ -165,7 +183,7 @@ async function runOnce(c) {
 const cases = CASES.filter((c) => !only || c.id.startsWith(only))
 if (!cases.length) { console.error(`\n  No case id starts with "${only}". Known: ${CASES.map((c) => c.id).join(', ')}\n`); process.exit(1) }
 
-console.log(`\n  Model   : ${process.env.AI_MODEL_PROSE || '(lib/ai.ts default for task=prose)'}`)
+console.log(`\n  Model   : ${modelArg || modelForTask('prose')}${modelArg ? '   (--model override; no default changed)' : ''}`)
 console.log(`  Effort  : ${effortArg ?? `${process.env.AI_EFFORT || '(unset — API default high)'} (from the environment)`}`)
 console.log(`  Cases   : ${cases.length}${runs > 1 ? ` × ${runs} runs` : ''}`)
 console.log(`  ${describePipelineConfig()}\n`)
@@ -181,10 +199,12 @@ for (const c of cases) {
     const r = await runOnce(c)
     console.log(line)
     console.log(`  ${c.id}${runs > 1 ? `  run ${i}/${runs}` : ''}   ${(r.ms / 1000).toFixed(1)}s   ` +
-      `${r.outputTokens ?? '?'} output tokens   ${r.searches} search(es)   stop=${r.stopReason ?? '?'}`)
+      `in=${r.inputTokens ?? '?'} out=${r.outputTokens ?? '?'}   ${r.searches} search(es)   ` +
+      `${r.cost.costUsd === null ? 'UNPRICED' : `$${r.cost.costUsd.toFixed(4)}`}   stop=${r.stopReason ?? '?'}`)
     if (r.error) { console.log(`    ERROR: ${r.error}`) }
     for (const f of r.results) factRuns.push({ caseId: c.id, factId: f.id, found: f.found })
     timings.push({ id: c.id, run: i, ms: r.ms, outputTokens: r.outputTokens,
+      inputTokens: r.inputTokens, costUsd: r.cost.costUsd,
       passed: r.results.filter((x) => x.verdict === 'PASS' || x.verdict === 'FIXED').length,
       total: r.results.length })
     for (const f of r.results) {
@@ -228,15 +248,18 @@ if (runs > 1) {
   console.log('  per run: wall clock · output tokens · facts')
   for (const t of timings) {
     console.log(`    ${t.id.padEnd(22)} run ${t.run}   ${(t.ms / 1000).toFixed(1)}s`.padEnd(48) +
-      `${String(t.outputTokens ?? '?').padStart(6)} tokens   ${t.passed}/${t.total} facts`)
+      `${String(t.outputTokens ?? '?').padStart(6)} out   ${t.passed}/${t.total} facts   ` +
+      `${t.costUsd === null ? 'UNPRICED' : `$${t.costUsd.toFixed(4)}`}`)
   }
   const byCase = [...new Set(timings.map((t) => t.id))]
   for (const id of byCase) {
     const rows = timings.filter((t) => t.id === id)
     const avg = (xs) => xs.reduce((a, b) => a + b, 0) / xs.length
+    const costs = rows.map((r) => r.costUsd).filter((c) => c !== null)
     console.log(`    ${id.padEnd(22)} MEAN    ${(avg(rows.map((r) => r.ms)) / 1000).toFixed(1)}s`.padEnd(48) +
-      `${String(Math.round(avg(rows.map((r) => r.outputTokens ?? 0)))).padStart(6)} tokens   ` +
-      `${avg(rows.map((r) => r.passed)).toFixed(1)}/${rows[0].total} facts`)
+      `${String(Math.round(avg(rows.map((r) => r.outputTokens ?? 0)))).padStart(6)} out   ` +
+      `${avg(rows.map((r) => r.passed)).toFixed(1)}/${rows[0].total} facts   ` +
+      `${costs.length ? `$${avg(costs).toFixed(4)}` : 'UNPRICED'}`)
   }
 }
 console.log(line + '\n')

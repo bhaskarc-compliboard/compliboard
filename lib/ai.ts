@@ -416,7 +416,10 @@ export type OpenStreamEvent =
   | { type: 'text'; text: string }
   | { type: 'reset' }
   | { type: 'searching'; query: string | null }
-  | { type: 'done'; answer: AIAnswer; stopReason: string | null; outputTokens: number | null }
+  // `inputTokens` and `searches` are here for the cost report (§128 J): output tokens alone
+  // cannot price a call, and on these answers the input side is the larger half of the bill.
+  | { type: 'done'; answer: AIAnswer; stopReason: string | null; outputTokens: number | null
+      inputTokens: number | null; searches: number }
   | { type: 'error'; message: string }
 
 /**
@@ -688,5 +691,7 @@ export async function* askAIOpenStream(
     answer: openAnswer(final.content as unknown as Array<Record<string, unknown>>),
     stopReason: (final as any).stop_reason ?? null,
     outputTokens: (final as any).usage?.output_tokens ?? null,
+    inputTokens: (final as any).usage?.input_tokens ?? null,
+    searches,
   }
 }
