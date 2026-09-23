@@ -634,7 +634,7 @@ export default function CompliancePage() {
         @media (max-width: 820px) { .hover-del { opacity: 1 !important; } }
       `}</style>
 
-      <div className="print-page mx-auto w-full max-w-3xl px-4 pb-32 sm:px-6">
+      <div className="print-page mx-auto w-full max-w-[var(--measure)] px-4 pb-32 sm:px-6">
         <div className="no-print pt-6">
           {/* Serif at 28 reads heavier than sans at 24, so the weight comes off — the typeface
               carries the emphasis. font-normal is explicit rather than inherited. */}
@@ -821,36 +821,50 @@ export default function CompliancePage() {
                 </div>
 
                 {/*
-                  THE BUTTONS ARE A SIBLING OF THE BOX, NOT INSIDE IT. One rounded card holding
-                  both the textarea and the actions read as a single heavy object; split, the
-                  box is the thing you type in and the buttons are things you press.
+                  ATTACHING IS NOT A THIRD OUTCOME. Research and checklist are two things the
+                  answer can be; attaching is something you do BEFORE you ask. Giving it equal
+                  width and a border said the three were alternatives, which is false — and it
+                  disagreed with the docked composer, where attach has always been a paperclip.
 
-                  *** AND THEY ARE NO LONGER DISABLED ON AN EMPTY BOX. *** `!box.trim()` in the
-                  disabled condition meant that on every first visit — the only state this screen
-                  has before a question — the primary action rendered as a pale mint rectangle at
-                  40% opacity. Nothing on the page looked like the thing to do. A click with an
-                  empty box now puts the cursor in the box, which is the answer to "what do I do
-                  here"; nothing is sent and no route is called. `busy` still disables, because
-                  during a request they genuinely cannot be pressed.
+                  The gaps carry the grouping: 24px from the box, then 16px to the buttons, so
+                  this line reads as belonging to the box above rather than to the row below.
                 */}
                 {!started && (
-                  <div className="mt-6 grid grid-cols-1 gap-2 sm:grid-cols-3">
+                  <button onClick={() => setAttachOpen(true)} disabled={busy}
+                    className="mt-6 flex items-center gap-2 text-[14px] text-gray-500 hover:text-gray-800 disabled:opacity-40">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"><path d="M21.4 11.05 12.25 20.2a5.5 5.5 0 0 1-7.78-7.78l9.19-9.19a3.67 3.67 0 0 1 5.18 5.18l-9.2 9.2a1.83 1.83 0 0 1-2.59-2.6l8.49-8.48" /></svg>
+                    Attach a lease, a policy, a permit, or anything you want checked against the rules.
+                  </button>
+                )}
+
+                {/*
+                  THE BUTTONS ARE A SIBLING OF THE BOX, NOT INSIDE IT. One rounded card holding
+                  both the textarea and the actions read as a single heavy object; split, the
+                  box is the thing you type in and the buttons are things you press. They size to
+                  themselves and sit left: stretched across three columns they read as a segmented
+                  control, one choice of three, which they are not.
+
+                  *** AND THEY ARE NOT DISABLED ON AN EMPTY BOX. *** `!box.trim()` in the disabled
+                  condition meant that on every first visit — the only state this screen has
+                  before a question — the primary action rendered as a pale mint rectangle at 40%
+                  opacity. Nothing on the page looked like the thing to do. A click with an empty
+                  box puts the cursor in the box, which is the answer to "what do I do here";
+                  nothing is sent and no route is called. `busy` still disables, because during a
+                  request they genuinely cannot be pressed.
+                */}
+                {!started && (
+                  <div className="mt-4 flex flex-wrap gap-2">
                     <button
                       onClick={() => { if (!box.trim()) { composerRef.current?.focus(); return } ask(box, 'research') }}
                       disabled={busy}
-                      className="rounded-lg bg-[var(--green)] px-3 py-2 text-[14px] font-medium text-white hover:bg-[var(--green-ink)] disabled:opacity-40">
+                      className="rounded-lg bg-[var(--green)] px-5 py-2.5 text-[14px] font-medium text-white hover:bg-[var(--green-ink)] disabled:opacity-40">
                       Research this
                     </button>
                     <button
                       onClick={() => { if (!box.trim()) { composerRef.current?.focus(); return } ask(box, 'checklist') }}
                       disabled={busy}
-                      className="rounded-lg border border-[var(--green)] px-3 py-2 text-[14px] font-medium text-[var(--green)] hover:bg-[var(--green-wash)] disabled:opacity-40">
+                      className="rounded-lg border border-[var(--green)] px-5 py-2.5 text-[14px] font-medium text-[var(--green)] hover:bg-[var(--green-wash)] disabled:opacity-40">
                       Make a checklist
-                    </button>
-                    <button onClick={() => setAttachOpen(true)} disabled={busy}
-                      className="flex items-center justify-center gap-1.5 rounded-lg border border-gray-300 px-3 py-2 text-[14px] text-gray-700 hover:bg-gray-50 disabled:opacity-40">
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"><path d="M21.4 11.05 12.25 20.2a5.5 5.5 0 0 1-7.78-7.78l9.19-9.19a3.67 3.67 0 0 1 5.18 5.18l-9.2 9.2a1.83 1.83 0 0 1-2.59-2.6l8.49-8.48" /></svg>
-                      Attach a file
                     </button>
                   </div>
                 )}

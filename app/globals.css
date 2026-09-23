@@ -20,6 +20,10 @@
   --amber:       #B7791F;
   --amber-wash:  #FDF6E7;
   --radius:      10px;
+  /* The reading column. One number, defined once — the workspace was max-w-3xl (768px) and
+     audits and hr are max-w-6xl (1152px), and every page is going here. Only /compliance
+     uses it so far; the rest move in their own passes. */
+  --measure:     775px;
 }
 
 /*
