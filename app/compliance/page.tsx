@@ -634,7 +634,7 @@ export default function CompliancePage() {
         @media (max-width: 820px) { .hover-del { opacity: 1 !important; } }
       `}</style>
 
-      <div className="print-page mx-auto flex min-h-full w-full max-w-3xl flex-col px-4 pb-32 sm:px-6">
+      <div className="print-page mx-auto w-full max-w-3xl px-4 pb-32 sm:px-6">
         <div className="no-print pt-6">
           {/* Serif at 28 reads heavier than sans at 24, so the weight comes off — the typeface
               carries the emphasis. font-normal is explicit rather than inherited. */}
@@ -674,7 +674,7 @@ export default function CompliancePage() {
 
         {/* ================= ASK ================= */}
         {tab === 'ask' && (
-          <div className="pt-10">
+          <div className="pt-6">
             {exchanges.map((x) => (
               <div key={x.id} className="mb-8">
                 {x.file ? <FileCard file={x.file} onRetry={() => setAttachOpen(true)} /> : (
@@ -763,8 +763,8 @@ export default function CompliancePage() {
               ? 'no-print fixed inset-x-0 bottom-0 z-20 border-t border-gray-200 bg-white/95 backdrop-blur'
               : 'no-print'}>
               <div className={started ? 'mx-auto w-full max-w-3xl px-4 py-3 sm:px-6' : ''}>
-                <div className="rounded-xl border border-gray-300 bg-white shadow-sm focus-within:border-emerald-500">
-                  <div className="flex items-end gap-2 p-2.5">
+                <div className="rounded-xl border border-gray-300 bg-white focus-within:border-emerald-500">
+                  <div className="flex items-end gap-2 p-3.5">
                     <textarea
                       ref={composerRef}
                       value={box}
@@ -772,7 +772,7 @@ export default function CompliancePage() {
                       onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); ask(box, 'research') } }}
                       rows={1}
                       placeholder="Ask about a rule, or describe a job you need the steps for…"
-                      className="max-h-36 flex-1 resize-none border-0 bg-transparent px-1.5 py-1.5 text-[16px] text-gray-900 outline-none placeholder:text-[16px] placeholder:text-gray-400"
+                      className="max-h-36 min-h-[64px] flex-1 resize-none border-0 bg-transparent px-1.5 py-1.5 text-[16px] text-gray-900 outline-none placeholder:text-[16px] placeholder:text-gray-400"
                     />
                     {started && (
                       <>
@@ -795,6 +795,29 @@ export default function CompliancePage() {
                     )}
                   </div>
 
+                  {/*
+                    THE EXAMPLES LIVE IN THE BOX. Under it they were a second row of bordered
+                    shapes beneath a row of bordered buttons, and the third wrapped to its own
+                    line. Inside the empty box they read as things you could have typed — which
+                    is why this shows `e.question`, the whole sentence, and not `e.label`. The
+                    label was written for a chip.
+
+                    They go the moment there is text: the box is then doing its own job.
+
+                    px-3.5 on the container and px-1.5 on the button mirrors the textarea's own
+                    inset exactly, so an example starts on the same pixel as the placeholder it
+                    is standing in for.
+                  */}
+                  {!started && !box.trim() && (
+                    <div className="px-3.5 pb-3.5">
+                      {EXAMPLE_QUESTIONS.map((e) => (
+                        <button key={e.label} onClick={() => ask(e.question, 'research')}
+                          className="block w-full truncate px-1.5 py-1 text-left text-[14px] text-gray-400 hover:text-gray-700">
+                          {e.question}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/*
@@ -811,7 +834,7 @@ export default function CompliancePage() {
                   during a request they genuinely cannot be pressed.
                 */}
                 {!started && (
-                  <div className="mt-2.5 grid grid-cols-1 gap-2 sm:grid-cols-3">
+                  <div className="mt-6 grid grid-cols-1 gap-2 sm:grid-cols-3">
                     <button
                       onClick={() => { if (!box.trim()) { composerRef.current?.focus(); return } ask(box, 'research') }}
                       disabled={busy}
@@ -832,22 +855,6 @@ export default function CompliancePage() {
                   </div>
                 )}
 
-                {/* Text, not chips. Three bordered pills under three bordered buttons was two
-                    rows of the same shape, and the third pill wrapped to its own line. */}
-                {!started && (
-                  <div className="mt-3 flex flex-wrap items-center gap-2 text-[14px]">
-                    <span className="text-gray-400">Try:</span>
-                    {EXAMPLE_QUESTIONS.map((e, i) => (
-                      <React.Fragment key={e.label}>
-                        {i > 0 && <span className="text-gray-300">·</span>}
-                        <button onClick={() => ask(e.question, 'research')}
-                          className="text-gray-600 hover:text-gray-900 hover:underline">
-                          {e.label}
-                        </button>
-                      </React.Fragment>
-                    ))}
-                  </div>
-                )}
               </div>
             </div>
           </div>
@@ -935,19 +942,6 @@ export default function CompliancePage() {
           </div>
         )}
 
-        {/*
-          mt-auto, not mt-12. This is the last element in a column with pb-32, so on a short page
-          it used to float in the middle with grey under it. The column now fills the available
-          height and this is pushed to the bottom of it; on a long conversation mt-auto has
-          nothing to take up and it simply follows the content, as before.
-        */}
-        <footer className="mt-auto border-t border-gray-100 pt-4">
-          <p className="text-[12px] leading-relaxed text-gray-500">
-            <b className="font-semibold">CompliBoard is an information tool, not professional advice.</b>{' '}
-            Answers are generated by AI from current regulatory sources, and AI can make mistakes. Check
-            anything important against the source it cites, or with someone qualified, before acting on it.
-          </p>
-        </footer>
       </div>
 
       {working && (
