@@ -34,5 +34,16 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules"]
+  // *** THE SECOND ENTRY IS NOT TIDINESS — IT KEEPS `npm run check` DETERMINISTIC. ***
+  // A file-sync tool on this machine duplicates generated files as `routes.d 2.ts`,
+  // `cache-life.d 3.ts` and so on — 936 of them, all under `.next/`, which is gitignored and
+  // rebuilt. They are copies of Next's own generated type files, so `tsc` sees each global
+  // declared twice and fails with TS6200/TS2300 on code nobody wrote. The quality gate then
+  // flips red and green depending on whether the sync has run, which is worse than either.
+  //
+  // `?` matches ONE character and is all TypeScript's globber has — it supports `*`, `?` and
+  // `**` and NOT character classes, so `* [0-9].*` silently matches nothing. Scoped to
+  // `.next/` on purpose: every duplicate is there, it is generated, and a pattern this loose
+  // must not be able to hide a real source file somebody named with a space.
+  "exclude": ["node_modules", ".next/**/* ?.*", ".next/**/* ??.*"]
 }

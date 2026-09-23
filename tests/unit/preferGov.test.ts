@@ -10,14 +10,24 @@ import test, { describe } from 'node:test'
 import assert from 'node:assert/strict'
 import { buildSystemPrompt, OPEN_ROLE, OPEN_CHECKLIST_SHAPE, PREFER_GOV_SOURCES } from '../../prompts/checklist.ts'
 
-/** The switch is read at the decision point, so setting it here is enough. */
+/**
+ * The switch is read at the decision point, so setting it here is enough.
+ *
+ * *** IT ALSO CLEARS R1.3. *** These assertions are about ONE switch's effect. If
+ * `RESEARCH_SPECIALIST` were set in the ambient environment — and it is, in `.env.local` —
+ * every "unchanged" assertion here would be measuring two switches and calling it one.
+ */
 function withSwitch<T>(value: string | undefined, fn: () => T): T {
   const before = process.env.RESEARCH_PREFER_GOV
+  const beforeSpecialist = process.env.RESEARCH_SPECIALIST
+  delete process.env.RESEARCH_SPECIALIST
   if (value === undefined) delete process.env.RESEARCH_PREFER_GOV
   else process.env.RESEARCH_PREFER_GOV = value
   try { return fn() } finally {
     if (before === undefined) delete process.env.RESEARCH_PREFER_GOV
     else process.env.RESEARCH_PREFER_GOV = before
+    if (beforeSpecialist === undefined) delete process.env.RESEARCH_SPECIALIST
+    else process.env.RESEARCH_SPECIALIST = beforeSpecialist
   }
 }
 

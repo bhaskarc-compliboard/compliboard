@@ -7351,6 +7351,15 @@ different login, not a box on the answer page.**
 
 ## 98. The chain rebuilds the schema, not the database — 21 September 2026
 
+> ### THE THIRD MEMBER OF THIS CLASS IS A STORAGE BUCKET — §127, 23 September 2026.
+>
+> `company-documents` is created by no migration. Migration 002 writes four policies **against a
+> bucket the chain does not build**, so a from-zero database has the policies and nothing for
+> them to apply to, and the first upload fails with `Bucket not found`. Same shape as this
+> section one layer down: the chain rebuilds the schema, and the bucket is not in the schema.
+> Migration 037 puts it there. Both live databases already had it, so on staging and production
+> it is a no-op — it exists for the next database built from this chain.
+
 **`npm run db:reset` produces a correct, EMPTY database. That is not what "rebuildable from
 source" has been taken to mean in this project, and the difference was never written down.**
 
@@ -8665,6 +8674,15 @@ finished product or are helping build one.
 
 ## 118. The worksheet is the library, and content never goes in a migration — 22 September 2026
 
+> ### AND THE SAME CLASS AGAIN, IN STORAGE — §127, 23 September 2026.
+>
+> This section's rule is that **content never goes in a migration**. The `company-documents`
+> bucket looked like content by that rule — migration 000 says so in its own words, *"a ROW in
+> `storage.buckets`, i.e. data, not structure"* — and was left out. It is not content: it is the
+> container, it is named in code, and migration 002's policies are written against it. Migration
+> 037 deliberately revises 000 on this one row, and says why in its header. The distinction this
+> section draws still holds; the bucket was simply on the wrong side of it.
+
 **The owner's decision, on `TODO.md` 6.3c: THE WORKSHEET IS AUTHORITATIVE, regenerated from the
 live library.** And with it a standing rule, which is the half that stops this recurring:
 
@@ -9444,3 +9462,191 @@ owner's pass before this ships.
 
 **Reversal condition:** none for the rebuild. The prototype is the agreed design; a change to it
 is a change to the design, not a reversal of this.
+
+---
+
+## 127. FIX ROUND 1 — the owner's 22-23 September test pass — 23 September 2026
+
+**Nine defects found by using the product, not by running it.** Every one had a green
+`npm run check` behind it. That is the finding this section is really about: the gate answers
+*"does the code build and behave"*, and none of these nine were about that.
+
+### A — an answer stopped, and nothing said so
+
+On 22 September a hazmat question returned four lines, ended mid-sentence at *"Pin that"*, and
+**stopped with no message**. The owner opened a new conversation to carry on.
+
+The evidence, and the two halves agree:
+
+```
+turns row 4e981a5f   position 1 · role=user · stopped=TRUE · NO assistant row
+dev log 05:39        no ERROR, no exception — nothing threw
+```
+
+**The server knew the answer had not completed. The client did not.**
+`app/compliance/page.tsx:241` read:
+
+```ts
+x.phase !== 'done' && x.phase !== 'failed' ? { ...x, phase: 'done' } : x
+```
+
+A reader that finished **without a `done` event** fell out of the loop, threw nothing, and the
+partial text was marked complete — shown with its action buttons and no warning.
+
+> ### A STREAM THAT ENDS IS NOT A STREAM THAT FINISHED.
+> The only thing that means finished is the `done` event. A dropped connection, a killed
+> upstream and a proxy timeout all end the reader just as quietly as success does.
+
+The loop is now `lib/answerStream.ts`, extracted so it can be tested against a stream that stops
+early without a browser or a real network failure — eleven tests, one of which reproduces the old
+rule and shows it calling a truncated stream `done`. Any outcome that is not `done` now renders a
+visible line saying the answer stopped early, a **Try again** button, and a composer returned to
+ready. Nothing is saved for it, and the line says so.
+
+### B — "Bucket not found" was NEITHER of the two proposed causes
+
+The brief offered two: never created on staging, or dropped by `db:restore`. **Both were wrong,**
+and the databases say so:
+
+```
+staging      company-documents   created 2026-09-09 20:07:02+00
+production   company-documents   created 2026-06-03 18:55:13+00
+```
+
+The bucket was there the whole time on both. **The cause was a wrong name in code** — Run 3's
+rewritten `onFilePicked` wrote `storage.from('documents')` where the bucket is
+`company-documents`. `lib/storage.ts` now holds the name once, so a sixth spelling cannot happen.
+
+Checking it, though, found a real defect underneath: **no migration creates the bucket.**
+Migration 002 writes four storage policies against a bucket the chain does not build, so a
+from-zero database gets the policies and nothing for them to apply to — and the first upload
+fails with exactly the error the owner saw, for a different reason. Migration 037 creates it
+idempotently and verifies it is private and policied. It **deliberately revises migration 000**,
+which called the bucket *"a ROW in `storage.buckets`, i.e. data, not structure"*; a bucket is the
+container, it is named in code, and its policies are in the chain. **Same class as §98 and
+§118**, recorded in both.
+
+### C — history must carry its sources, and that is NOT SUFFICIENT
+
+A third turn wrote: *"My previous two answers carried numbered citation markers, but I didn't
+actually retrieve and verify those sources in this conversation."* **False** — both came from real
+searches — and the nightly summariser then wrote the false claim into the summary, where it
+outlives the transcript that would disprove it.
+
+The cause was plain: history was replayed as text still carrying `[1]` and `[2]` with **no list
+of what they referred to**. The model was being accurate about the context it had. Every path that
+replays a conversation now appends the numbered list — the page's own history, the chat route's
+stored-turn fallback, and **both summarisers**, which is where the falsehood got archived.
+
+**That fixed the stated defect and did not fix the question.** Measured on the same three-turn
+sequence, same switches, changing only the heading of the appended list:
+
+| Heading | What turn three then said |
+|---|---|
+| *"Sources cited in this answer:"* | *"I ran the searches **this time**. … Assume I made it up."* — hedged about two claims |
+| *"Sources retrieved by web search while writing this answer…"* | *"**I did not run any searches before those two answers.** I wrote them from memory and then appended source lists formatted to look like retrieved citations."* |
+
+**Asserting the provenance made the denial categorical, and the reason bounds what any wording
+can achieve.** History is replayed as plain assistant **text**. The `server_tool_use` and
+`web_search_tool_result` blocks from the original exchange are not stored and cannot be replayed,
+so the transcript contains no evidence that a search ever happened. A provenance sentence sitting
+inside the model's own turn is a claim it can inspect and disown — and it does.
+
+So the neutral heading is kept and **pinned by test**, and the remaining gap is the owner's to
+decide, not mine to close unilaterally. Two ways to close it:
+
+1. **A line of system prompt** stating that earlier turns in this conversation were produced with
+   search enabled and their sources are listed under each. Said by the operator rather than by
+   the model about itself. This is a §3.1 prompt change.
+2. **Store and replay the tool-use blocks**, so the evidence is actually in the context. Larger,
+   and the honest fix.
+
+`npm run check:live` runs the three-turn sequence every time and prints the model's own words.
+**It currently FAILS, and it stays in.** `AUDIT-CHECKS.md`'s standard is that a check is recorded
+with the answer on the day it was run, including where that answer is bad.
+
+### D — a citation marker in a table cell cut the table in half
+
+`AnswerBody` split the answer on `[n]` and handed each piece to the markdown renderer separately.
+That is fine in a paragraph and wrong in a table, because **a table is a block and half a block is
+not a table.** The real roofing answer, rendered through the old path:
+
+```
+<table> count: 1     <tr> count: 3  (a header and three rows)     literal pipes in the prose: 5
+```
+
+`lib/citations.ts` rewrites each marker into an ordinary inline markdown link — `[1]` becomes
+`[1](#cb-cite-1)` — before parsing. A link is legal inside a table cell, a heading and a list
+item, so the block survives; `AnswerBody` renders one markdown tree and turns links with that
+href into the source card. Same fixtures, after:
+
+```
+roofing     <table>=1  <tr>=4 (expected 4)  markers=2  leaked pipes=0
+wastewater  <table>=1  <tr>=5 (expected 5)  markers=3  leaked pipes=0
+```
+
+Fixtures are the roofing answer and the two wastewater answers from the test pass, pulled out of
+`turns` on staging, plus the control: the wastewater answer whose tables carry no markers, which
+must come back byte-identical. What is **not** rewritten is as important: a fenced code block, an
+inline code span, and anything already link syntax.
+
+The same render found a second defect and fixed it: every element carried
+`node="[object Object]"`, react-markdown's mdast node spread into the DOM.
+
+### E — print, and a title nobody could read
+
+A drawer is `position: fixed` in a 560px column over the page, so **Download printed the drawer
+clipped at one page AND the whole page behind it.** `printDrawer()` stamps a class on `<body>`
+for the duration of the dialog; the page is hidden and the drawer becomes the document, with a
+print-only header naming **the company, the title and the date**. A printed compliance page with
+no company and no date is not evidence of anything. *"steps being written…"* is a progress note
+and is now `no-print`.
+
+The source-title cleaner had a gap of exactly one condition. Rule 3 required a `[_-]` **and no
+whitespace**, so a file name whose separators had already become spaces walked straight through:
+
+| Reached the screen as | Now shows |
+|---|---|
+| `2017 labor standards ord quick chart 11 15 17` | Labor standards ord quick chart |
+| `registration process brochure 04 06 2018 final` | Registration process brochure final |
+| `J:\SHARED\PERMITS\Forms\Baseline Monitoring Report.doc Rev. 02/27/01w` | Baseline monitoring report |
+
+**The guard is capitalisation, and it is what keeps the rule safe.** A date run alone would
+condemn `6-2-30: CATEGORICAL INDUSTRIAL USER REPORTING REQUIREMENTS` and `Fall Protection in
+Construction OSHA 3146-05R 2015` — both real, both good titles. A person who titled a page
+capitalised it; a file name that lost its underscores did not. Five real titles are in the suite
+asserting they survive.
+
+### F — R1.3, behind `RESEARCH_SPECIALIST`
+
+Four sentences, verbatim from the owner, appended after the role sentence and after
+`PREFER_GOV_SOURCES` when that is also on. Same standing as §124: **on locally for comparison,
+unset in production, and it ships only if the owner's comparison says it beats the baseline.**
+No prohibition verb — every sentence says what to do.
+
+With the switch off the prompts are byte-identical, asserted for both modes and for all four
+combinations of the two switches, which are independent and ordered: who you are, how to cite,
+how to answer. R1.2's own tests now clear `RESEARCH_SPECIALIST` before asserting, or they would
+have been measuring two switches and calling it one.
+
+### I — the summary named a third party, and the CAUSE WAS THE DATA
+
+The summary read *"the specialist laid out…"*. The person reading it is the person who had the
+conversation; telling them what a third party said turns their own record into a report about
+someone else.
+
+It came from two places and fixing only the prompt would have left it half done: the prompt
+opened *"a conversation between a compliance specialist and the owner"*, **and the transcript
+labels every answer `SPECIALIST:`** — built in both summarise routes. The label is the strongest
+signal in the input and no instruction outweighs the data. Both now read `ANSWER:`. Measured on
+the same conversation, before and after:
+
+> **BEFORE** — "…When you questioned the citations, **the specialist** acknowledged the first two
+> answers were written from memory…"
+>
+> **AFTER** — "…Note that part of **the second answer** was unreliable: the claimed fee increase
+> and electronic-only payment mandate were never finalized…"
+
+**Reversal condition:** F is reversed by unsetting the switch — that is what it is for. C's
+neutral heading is reversed the moment the tool-use blocks are stored, which removes the reason
+for it. Nothing else here is a preference; they are defects, and the tests are the record.

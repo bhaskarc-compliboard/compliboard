@@ -17,6 +17,7 @@
     "db:reset": "node --env-file=.env.local scripts/db-migrate.js --reset && node --env-file=.env.local scripts/db-types.js && node --env-file=.env.local scripts/schema-doc.js",
     "check:schema": "node scripts/check-schema-contracts.js",
     "golden": "node --env-file=.env.local scripts/run-golden.js",
+    "golden:facts": "node --env-file=.env.local scripts/golden-facts.js",
     "expressions": "node --env-file=.env.local scripts/load-expressions.js",
     "test": "node scripts/test-guard.js",
     "mutation": "node scripts/mutation-check.js",

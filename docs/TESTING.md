@@ -113,6 +113,32 @@ untested — applies to the runner as much as to anything it runs.
 
 ---
 
+## Manual set — FIX ROUND 1, the owner's 22-23 September pass (`DECISIONS.md` §127)
+
+**Four actions, one per defect that the test pass found and that no script had caught.** Each
+one is here because the failure was *silent*: the product carried on as though nothing was
+wrong, which is the class `CLAUDE.md` §5 exists to keep out.
+
+**Setup:** signed in on staging, `npm run dev` pointed at staging.
+
+| # | Action | Steps | What must be true |
+|---|---|---|---|
+| **F1** | **Attach a file, and see it classified** | Paperclip → choose a real PDF → send | A file card appears **in the conversation** naming what it was read as and **"Saved to Documents → …"**. Open Documents in another tab: **the file is there.** If the upload fails, the failure appears **in the conversation at the point of the attach** — never as a banner at the top of the page — and asserts **nothing** about the contents |
+| **F2** | **An answer that stops on its own** | Ask something long. While it is writing, kill the dev server (or pull the network) | The answer **stops with a visible line saying it stopped early**, offering **Try again**, and the composer returns to ready. What arrived stays on screen. **A half-answer must never be shown with its action buttons as though it were finished** — that was the 22 September defect, and nothing on screen said so |
+| **F3** | **A third turn standing by its sources** | Ask something that searches. Ask a follow-up. Then ask *"were the sources in your last answer real?"* | The answer **does not disown its own citations.** ⚠️ **This is the one that is not yet fixed** — see the note below; run it and read what comes back rather than assuming |
+| **F4** | **Print a drawer** | Open a checklist (or a conversation summary) in the drawer → **Download** | The printed page contains **only that drawer's content**, with a header naming **the company, the title and the date**. The tabs, the other conversations and the composer are **not** on it. Citation markers print **inline** as `[n]`, not on their own lines. **"steps being written…" never appears** |
+
+> ### F3 IS RECORDED AS FAILING, AND IT STAYS IN THE SET.
+>
+> The fix that was asked for — every earlier answer carries its numbered sources — is in and
+> proved: the model no longer says the markers point at nothing. But asked directly whether the
+> sources were real, it still hedges, because **history reaches it as plain text and the
+> tool-use blocks that would show a search happened are not stored.** `AUDIT-CHECKS.md`'s rule
+> applies: a check is recorded with the answer on the day it was run, **including where that
+> answer is bad.** `npm run check:live` runs it every time and prints the model's own words.
+
+---
+
 ## Manual set — R3, THE FINISH LINE (`DECISIONS.md` §126)
 
 **These ten are the owner's pass before the section ships.** The first seven are the finish-line

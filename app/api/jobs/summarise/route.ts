@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
 
         const transcript = turns
           .map((t) => appendSources(
-            `${t.role === 'user' ? 'USER' : 'SPECIALIST'}${t.stopped ? ' (stopped)' : ''}: ${t.text}`,
+            `${t.role === 'user' ? 'USER' : 'ANSWER'}${t.stopped ? ' (stopped)' : ''}: ${t.text}`,
             t.sources as Source[] | null,
           ))
           .join('\n\n')

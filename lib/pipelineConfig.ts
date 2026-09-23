@@ -42,6 +42,9 @@ export type PipelineSwitch =
   // this is the first piece being measured back ON, and it ships only if it beats the
   // baseline on the owner's comparison. `DECISIONS.md` §124.
   | 'RESEARCH_PREFER_GOV'
+  // R1.3. Same standing as RESEARCH_PREFER_GOV: measured back on, ships only if the owner's
+  // comparison says so. `DECISIONS.md` §128.
+  | 'RESEARCH_SPECIALIST'
 
 export const PIPELINE_SWITCHES: readonly PipelineSwitch[] = [
   'RESEARCH_GATE',
@@ -51,6 +54,7 @@ export const PIPELINE_SWITCHES: readonly PipelineSwitch[] = [
   'CHECKLIST_CRITIC',
   'CHECKLIST_LONG_PROMPT',
   'RESEARCH_PREFER_GOV',
+  'RESEARCH_SPECIALIST',
 ] as const
 
 /**

@@ -234,6 +234,27 @@ export const OPEN_ROLE =
   'You are a compliance specialist helping the owner or manager of a small or mid-size ' +
   'business in the United States understand the rules that apply to them.'
 
+/**
+ * R1.3 — HOW THE SPECIALIST ANSWERS. `DECISIONS.md` §128, `TODO.md` R1.3.
+ *
+ * Four sentences, quoted verbatim from the owner's brief and not paraphrased. Like
+ * `PREFER_GOV_SOURCES` this is a piece measured back ON TOP of the open baseline, not part of
+ * it: it ships only if the owner's comparison says it beats the baseline.
+ *
+ * *** IT CONTAINS NO PROHIBITION VERB, AND THAT IS THE POINT §113 TURNS ON. *** Each sentence
+ * says what to do — answer, name the missing fact, write plainly, offer the next step — rather
+ * than what not to do. `tests/unit/preferGov.test.ts` holds that rule for both blocks.
+ *
+ * Appended AFTER the role sentence, and after `PREFER_GOV_SOURCES` when that switch is also on,
+ * so the order on screen is: who you are, how to cite, how to answer. With the switch off the
+ * prompts are byte-for-byte what they were.
+ */
+export const RESEARCH_SPECIALIST_BLOCK =
+  "Answer what was asked, then say what they didn't ask but need to know. Where the answer " +
+  "depends on a fact you don't have, say which fact and what each answer would mean, rather " +
+  'than assuming. Write for a busy owner: plain sentences, the most important thing first, ' +
+  'and only as long as it needs to be. End with one specific offer of what you could do next.'
+
 /** The shape, and nothing else. Field names match `lib/answerSchema.ts`. */
 export const OPEN_CHECKLIST_SHAPE = `${OPEN_ROLE}
 
@@ -278,17 +299,26 @@ export function buildSystemPrompt(
     // outputs of the same section would be the product contradicting itself. A second name
     // would imply they can be set apart when there is no reason to.
     const preferGov = pipelineSwitch('RESEARCH_PREFER_GOV');
+    const specialist = pipelineSwitch('RESEARCH_SPECIALIST');
+
+    // The head of the prompt, built once for both modes: the role sentence, then whichever of
+    // the two measured blocks are on, in a fixed order. With both switches off this is
+    // `OPEN_ROLE` and nothing else — the same string, byte for byte, that it was before either
+    // switch existed, which is what the off-means-identical tests assert.
+    const head = [OPEN_ROLE,
+      preferGov ? PREFER_GOV_SOURCES : null,
+      specialist ? RESEARCH_SPECIALIST_BLOCK : null,
+    ].filter(Boolean).join('\n\n');
+
     if (mode === 'checklist') {
       // After the role sentence, before the shape — the shape has to stay last, because it
       // ends with the instruction about what must_do and good_to_have mean.
-      return preferGov
-        ? OPEN_CHECKLIST_SHAPE.replace(OPEN_ROLE, `${OPEN_ROLE}\n\n${PREFER_GOV_SOURCES}`)
-        : OPEN_CHECKLIST_SHAPE;
+      return head === OPEN_ROLE ? OPEN_CHECKLIST_SHAPE : OPEN_CHECKLIST_SHAPE.replace(OPEN_ROLE, head);
     }
     // Research and substeps take the role sentence alone. Substeps expands one item of a list
     // the user is already looking at; its shape is handled by its own caller.
     if (mode === 'substeps') return SUBSTEPS_PROMPT;
-    return preferGov ? `${OPEN_ROLE}\n\n${PREFER_GOV_SOURCES}` : OPEN_ROLE;
+    return head;
   }
   if (mode === 'research') return RESEARCH_PROMPT;
   if (mode === 'substeps') return SUBSTEPS_PROMPT;
