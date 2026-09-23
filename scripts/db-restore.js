@@ -312,6 +312,12 @@ rule("=");
 console.log("  WHAT IS ON STAGING NOW, AND WHAT THE SOURCES WILL REBUILD");
 rule("=");
 
+// THE BUCKET IS CHECKED SEPARATELY FROM THE TABLES, because it lives in the `storage` schema
+// and a reset does not touch it — which is exactly why its absence would go unnoticed until an
+// upload failed (§127). It is counted here so a restore can say it is there.
+const bucketCount = () => scalar(
+  "select count(*) from storage.buckets where id = 'company-documents'");
+
 const LIBRARY = [
   ["requirement_templates", "select count(*) from public.requirement_templates", EXPECT.requirements],
   ["  with an expression", "select count(*) from public.requirement_templates where applies_expression is not null", EXPECT.expressions],
@@ -327,6 +333,15 @@ const FIXTURES = [
 ];
 
 let unrebuildable = [];
+{
+  // Printed before the library, because nothing the product stores works without it.
+  let b = -1
+  try { b = bucketCount() } catch { /* unreadable */ }
+  console.log("  STORAGE")
+  console.log(`    company-documents bucket  ${b === 1 ? 'present' : b === 0 ? 'MISSING — migration 037 creates it' : 'unreadable'}`)
+  console.log("")
+}
+
 console.log("  LIBRARY — rebuilt from supabase/seed-data/");
 for (const [label, sql, expect] of LIBRARY) {
   const now = scalar(sql);
@@ -590,6 +605,7 @@ console.log(`  RESTORE COMPLETE — ${REF} (staging)`);
 rule("=");
 console.log(FROM === 1
   ? `\n  All ${STEPS.length} steps ran and every count matched its source file.\n`
+    + `  storage: company-documents bucket ${(() => { try { return bucketCount() === 1 ? 'present' : 'MISSING' } catch { return 'unreadable' } })()} (migration 037)\n`
   : `\n  Steps ${FROM}-${STEPS.length} ran and every count matched its source file. Steps 1-${FROM - 1} were skipped,\n` +
     `  and their own checks were re-read and passed before this started.\n`);
 console.log("  What this did NOT rebuild, because nothing seeds it: documents, checklists,");

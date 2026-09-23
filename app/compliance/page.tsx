@@ -25,6 +25,8 @@ import AppLayout from '@/components/AppLayout'
 import { AnswerBody, SourceList, type AnswerSource } from '@/components/AnswerBody'
 import { EXAMPLE_QUESTIONS } from '@/config/examples'
 import { displaySource } from '@/lib/sourceTitle'
+import { readAnswerStream, ndjsonLines } from '@/lib/answerStream'
+import { DOCUMENTS_BUCKET } from '@/lib/storage'
 import {
   conversationStatus, progressLabel, progressPercent, friendlyDate,
 } from '@/lib/conversationStatus'
@@ -38,10 +40,10 @@ interface Exchange {
   text: string
   sources: AnswerSource[]
   /** What the answer is doing right now, driven by the REAL stream events — never a timer. */
-  phase: 'sending' | 'searching' | 'writing' | 'done' | 'stopped' | 'failed'
+  phase: 'sending' | 'searching' | 'writing' | 'done' | 'stopped' | 'stopped_early' | 'failed'
   searches: number
   error?: string
-  file?: { name: string; kind: string; classification: string | null; folder: string | null; unreadable: boolean }
+  file?: { name: string; kind: string; classification: string | null; folder: string | null; unreadable: boolean; failure?: string }
 }
 
 interface TopicRow {
@@ -202,43 +204,25 @@ export default function CompliancePage() {
         return
       }
 
-      const reader = res.body!.getReader()
-      const decoder = new TextDecoder()
-      let buffer = ''
-      let acc = ''
-      let searches = 0
-      for (;;) {
-        const { done, value } = await reader.read()
-        if (done) break
-        buffer += decoder.decode(value, { stream: true })
-        const lines = buffer.split('\n')
-        buffer = lines.pop() ?? ''
-        for (const line of lines) {
-          if (!line.trim()) continue
-          let ev: { type: string; [k: string]: unknown }
-          try { ev = JSON.parse(line) } catch { continue }
-          if (ev.type === 'searching') {
-            searches++
-            patch(id, { phase: 'searching', searches })
-          } else if (ev.type === 'text') {
-            acc += String(ev.text ?? '')
-            patch(id, { text: acc, phase: 'writing' })
-          } else if (ev.type === 'reset') {
-            // The narration rule reaching the screen: what was shown was the model saying what
-            // it was about to look up, and a search has now started. `lib/ai.ts` stripNarration.
-            acc = ''
-            patch(id, { text: '', phase: 'searching' })
-          } else if (ev.type === 'done') {
-            acc = String(ev.research ?? acc)
-            patch(id, { text: acc, sources: (ev.sources as AnswerSource[]) ?? [], phase: 'done' })
-            if (ev.topicId) setTopicId(String(ev.topicId))
-          } else if (ev.type === 'error') {
-            patch(id, { phase: 'failed', error: String(ev.message ?? 'The answer stopped part-way through.') })
-          }
-        }
+      // THE STREAM IS READ THROUGH `lib/answerStream.ts`, WHICH KNOWS THE DIFFERENCE BETWEEN
+      // A STREAM THAT ENDED AND A STREAM THAT FINISHED. The old loop here marked anything that
+      // did not throw as `done`, which is how the 22 Sep hazmat answer showed four lines ending
+      // mid-sentence with no message at all (`DECISIONS.md` §127).
+      const outcome = await readAnswerStream(
+        ndjsonLines(res.body!.getReader()),
+        (p) => patch(id, { text: p.text, searches: p.searches, phase: p.phase }),
+        () => controller.signal.aborted,
+      )
+      if (outcome.kind === 'done') {
+        patch(id, { text: outcome.text, sources: outcome.sources, phase: 'done' })
+        if (outcome.topicId) setTopicId(outcome.topicId)
+      } else if (outcome.kind === 'stopped_by_user') {
+        patch(id, { text: outcome.text, phase: 'stopped' })
+      } else if (outcome.kind === 'stopped_early') {
+        patch(id, { text: outcome.text, phase: 'stopped_early' })
+      } else {
+        patch(id, { text: outcome.text, phase: 'failed', error: outcome.message })
       }
-      setExchanges((prev) => prev.map((x) =>
-        x.id === id && x.phase !== 'done' && x.phase !== 'failed' ? { ...x, phase: 'done' } : x))
     } catch (err) {
       if ((err as { name?: string })?.name === 'AbortError') {
         // The person stopped it. Keep what arrived; say nothing that sounds like a fault.
@@ -268,18 +252,50 @@ export default function CompliancePage() {
   }
 
   // ------------------------------------------------------------------ uploads
+  /**
+   * A FILE ATTACHED IN THE CONVERSATION — Run 2 Task 5's client half, corrected in Fix Round 1.
+   *
+   * Storage → the existing `/api/documents` row → the existing `/api/document-review`
+   * classification. No parallel store, and none of those three routes is changed.
+   *
+   * *** TWO THINGS HERE WERE WRONG IN RUN 3 AND ARE FIXED, BOTH MINE. ***
+   *   · The bucket was named `documents`; it is `company-documents`. `lib/storage.ts` now holds
+   *     the name once so a sixth spelling cannot happen.
+   *   · `/api/document-review` takes **multipart/form-data with the file itself**, not JSON. It
+   *     answered 500 — `Content-Type was not one of "multipart/form-data"` — and the page read
+   *     that as "we could not read your file", which blamed the document for our own mistake.
+   *
+   * EVERY FAILURE APPEARS IN THE CONVERSATION, at the point of the attach, never as a banner at
+   * the top of the page: the person attached a file at a place in the conversation, and that is
+   * where the answer about it belongs.
+   */
   async function onFilePicked(file: File) {
     setAttachOpen(false)
-    if (!companyId) { setNotice('We could not tell which company you are signed in to. Reload the page and try again.'); return }
-    setWorking(`Uploading ${file.name}…`)
     const id = `f${Date.now()}`
-    try {
-      // 1. Storage, under the company prefix migration 002 scopes the bucket by.
-      const path = `${companyId}/compliance/${Date.now()}-${file.name.replace(/[^\w.\-]/g, '_')}`
-      const { error: upErr } = await supabase.storage.from('documents').upload(path, file)
-      if (upErr) throw new Error(upErr.message)
+    const card = (patchCard: Partial<NonNullable<Exchange['file']>>, note?: string) =>
+      setExchanges((prev) => [...prev, {
+        id, question: `Attached ${file.name}`, text: note ?? '', sources: [], phase: 'done' as const, searches: 0,
+        file: {
+          name: file.name,
+          kind: (file.name.split('.').pop() ?? 'file').toUpperCase(),
+          classification: null, folder: null, unreadable: false, ...patchCard,
+        },
+      }])
 
-      // 2. THE EXISTING DOCUMENTS PATH, UNCHANGED — plus where it came in (Run 2 Task 5).
+    if (!companyId) {
+      card({ unreadable: true, failure: 'We could not tell which company you are signed in to, so the file was not saved. Reload the page and try again.' })
+      return
+    }
+
+    setWorking(`Uploading ${file.name}…`)
+    try {
+      const path = `${companyId}/compliance/${Date.now()}-${file.name.replace(/[^\w.\-]/g, '_')}`
+      const { error: upErr } = await supabase.storage.from(DOCUMENTS_BUCKET).upload(path, file)
+      if (upErr) {
+        card({ unreadable: true, failure: `We could not upload ${file.name} — the transfer did not complete on our side. Try again, or add it from the Documents screen.` })
+        return
+      }
+
       const docRes = await fetch('/api/documents', {
         method: 'POST',
         headers: await authHeaders({ 'Content-Type': 'application/json' }),
@@ -289,36 +305,47 @@ export default function CompliancePage() {
         }),
       })
       if (!docRes.ok) {
-        const j = await docRes.json().catch(() => null)
-        throw new Error(j?.error ?? 'the document could not be saved')
+        card({ unreadable: true, failure: `${file.name} reached us but could not be saved to your documents. Try again, or add it from the Documents screen.` })
+        return
       }
 
-      // 3. The existing classification path.
+      // `/api/documents` answers `{ success: true }` and no id, so the row is read back by its
+      // path — RLS-scoped, so this can only find the caller's own.
+      const { data: doc } = await supabase
+        .from('documents').select('id, folder_id').eq('file_url', path).maybeSingle()
+
       setWorking(`Reading ${file.name}…`)
+      const fd = new FormData()
+      fd.append('file', file)
+      fd.append('document_name', file.name)
+      if (doc?.id) fd.append('document_id', String(doc.id))
       const revRes = await fetch('/api/document-review', {
-        method: 'POST',
-        headers: await authHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ file_url: path, name: file.name }),
+        method: 'POST', headers: await authHeaders(), body: fd,
       })
       const review = await revRes.json().catch(() => null)
-      const unreadable = !revRes.ok || Boolean(review?.document_failed) || Boolean(review?.extraction_failed)
 
-      setExchanges((prev) => [...prev, {
-        id, question: `Attached ${file.name}`, text: '', sources: [], phase: 'done', searches: 0,
-        file: {
-          name: file.name,
-          kind: (file.name.split('.').pop() ?? 'file').toUpperCase(),
-          classification: unreadable ? null : (review?.document_type ?? review?.classification ?? null),
-          folder: review?.folder ?? null,
-          unreadable,
-        },
-      }])
-      setNotice(null)
+      if (!revRes.ok) {
+        // §5.1 — the file IS saved, so say so; assert NOTHING about contents nobody read; and
+        // offer the way on. An unsupported type is our limit, not the person's error.
+        const unsupported = /unsupported file type/i.test(String(review?.error ?? ''))
+        card({
+          unreadable: true,
+          failure: unsupported
+            ? `It is saved to Documents, but we cannot read ${(file.name.split('.').pop() ?? 'that').toUpperCase()} files yet, so there is nothing we can tell you about what is in it. A PDF or a Word file we can read.`
+            : `It is saved to Documents, but we could not read it well enough to rely on. A photo taken square-on in good light would do it, or the original PDF if you have one.`,
+        })
+        return
+      }
+
+      card({
+        classification: review?.review?.document_type ?? review?.data?.document_type ?? null,
+        // The folder is only named when the document actually has one. Naming a folder nothing
+        // put it in would be the product asserting a filing that did not happen.
+        folder: doc?.folder_id ? (review?.data?.folder_name ?? null) : null,
+      })
     } catch (e) {
-      // §5.1 — say what WE could not do, never imply the file was the person's mistake, and
-      // always offer the next step.
-      setNotice(`We could not save ${file.name}. The upload did not complete on our side — try again, and if it keeps failing you can add it from the Documents screen.`)
       console.error('upload failed:', e)
+      card({ unreadable: true, failure: `Something went wrong saving ${file.name} on our side. Try again, or add it from the Documents screen.` })
     } finally {
       setWorking(null)
     }
@@ -624,6 +651,15 @@ export default function CompliancePage() {
                   </div>
                 )}
 
+                {x.phase === 'stopped_early' && (
+                  <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] text-amber-900">
+                    <b className="font-semibold">This answer stopped early.</b>{' '}
+                    The connection to the model ended before the answer was finished, so what is above
+                    is incomplete. Nothing was saved for it.
+                    <button onClick={() => ask(x.question, 'research')}
+                      className="ml-2 font-medium underline hover:no-underline">Try again</button>
+                  </div>
+                )}
                 {x.phase === 'stopped' && (
                   <p className="mt-2 text-[13px] text-gray-500">
                     Stopped. {x.text ? 'What arrived is above — ' : ''}Ask again, or change the question.
@@ -1011,8 +1047,7 @@ function FileCard({ file, onRetry }: { file: NonNullable<Exchange['file']>; onRe
             {/* §5.1: the failure is OURS, nothing is asserted about contents nobody read, and a
                 way forward is offered. */}
             <p className="mt-1 text-[13px] leading-relaxed text-amber-900">
-              We could not read this one well enough to rely on it. A photo taken square-on in good
-              light would do it, or the original PDF if you have one. It is saved to Documents either way.
+              {file.failure ?? 'We could not read this one well enough to rely on it. A photo taken square-on in good light would do it, or the original PDF if you have one. It is saved to Documents either way.'}
             </p>
             <button onClick={onRetry} className="mt-2 text-[12.5px] font-medium text-emerald-700 underline">
               Upload a clearer copy
