@@ -9657,6 +9657,69 @@ the same conversation, before and after:
 > **AFTER** — "…Note that part of **the second answer** was unreliable: the claimed fee increase
 > and electronic-only payment mandate were never finalized…"
 
+### G — five golden facts, and the one that was supposed to fail
+
+`scripts/golden-facts.js`, `npm run golden:facts`. **On demand, never in `npm run check`** —
+every case is a real web-searching answer on the prose model. The five questions are **the
+owner's own, copied out of `topics` on staging**, not paraphrases.
+
+Run once on `claude-opus-5`, effort `high`, `RESEARCH_PREFER_GOV` and `RESEARCH_SPECIALIST` both on:
+
+| Case | Wall | Output tokens | Facts |
+|---|---|---|---|
+| `seattle-restaurant` | 109.5s | 5,902 | ✅ 14 days · ✅ 1 hour/40 hours · ✅ tier across both locations · ✅ plan review |
+| `california-hospice` | 93.6s | 6,407 | ✅ travel between patients is hours worked |
+| `texas-roofing` | 109.0s | 7,586 | ✅ 6 feet |
+| `oregon-butane` | 68.8s | 4,991 | ✅ the moratorium / HB 4121 |
+| `ohio-hazmat` | 66.5s | 4,494 | 🆕 **MCS-150** · ✅ hazmat registration |
+
+**8 passed · 0 failed · 1 newly passing.**
+
+> ### THE EXPECTED FAILURE PASSED, AND IT STAYS ON THE LIST ANYWAY.
+>
+> `ohio-hazmat` missed MCS-150 on 22 September; on 23 September it named it. **One observation.**
+> These are presence checks on a model's prose and they vary run to run — see H, where the same
+> Seattle question scored 4/4, 3/4 and 3/4 at one effort level with nothing changed between runs.
+> Flipping the expectation on a single pass would trade a quiet known gap for a suite that goes
+> red at random. **Passing is never silent** — the runner prints `🆕 FIXED` and says to update the
+> list — so neither state hides. Flip it when it has passed across several runs.
+
+**The harness's own first run was wrong, and that is worth recording.** It read `answer.research`
+and reported every fact missing on a perfectly good answer. `research` is the name of the field in
+the ROUTE's NDJSON event; `AIAnswer` is `{ text, sources }`. A checker that reports FAIL on
+`undefined` is the failure mode `run-golden.js`'s own header warns about, arriving from the other
+direction.
+
+### H — effort `high` against `medium`, three runs each
+
+Same question, same switches, same model. Nothing changed but `output_config.effort`, confirmed
+at the request level: three calls logged `{"effort":"high"}` and three `{"effort":"medium"}`.
+
+| | run 1 | run 2 | run 3 | **mean** |
+|---|---|---|---|---|
+| **high** — wall | 102.2s | 73.4s | 62.9s | **79.5s** |
+| **high** — output tokens | 7,784 | 4,862 | 4,472 | **5,706** |
+| **high** — facts | 3/4 | 4/4 | 3/4 | **3.3/4** |
+| **medium** — wall | 42.5s | 42.2s | 51.5s | **45.4s** |
+| **medium** — output tokens | 3,047 | 3,203 | 3,664 | **3,305** |
+| **medium** — facts | 4/4 | 3/4 | 3/4 | **3.3/4** |
+
+**Medium was 43% faster and used 42% fewer output tokens, and scored the same on facts.**
+
+> ### BUT THE FACT SCORES DO NOT SEPARATE THE TWO LEVELS, AND SHOULD NOT BE READ AS IF THEY DO.
+>
+> Each level varies by a whole fact between its own runs, and the misses are **different facts
+> each time** — `high` dropped the accrual rate once and the tier rule once; `medium` dropped the
+> 14-day food-handler deadline twice. Three runs against a ±1 spread cannot tell 3.3 from 3.3.
+>
+> The misses are **real omissions, not a brittle checker**: a seventh run at medium covered the
+> deadline and the check passed on the ordinary wording — *"A worker can work up to 14 days before
+> getting the card if you provide food safety training in the meantime[1]"*.
+>
+> **What these six runs do establish is the cost side, and it is not marginal:** the same question,
+> answered to the same measured standard, for a little over half the time and well under two
+> thirds of the output. **Nothing was changed. The owner decides.**
+
 **Reversal condition:** F is reversed by unsetting the switch — that is what it is for. C's
 neutral heading is reversed the moment the tool-use blocks are stored, which removes the reason
 for it. Nothing else here is a preference; they are defects, and the tests are the record.
