@@ -144,20 +144,6 @@ export default function AppLayout({ children, title, didYouKnow }: AppLayoutProp
           )
         })}
       </nav>
-
-      <div className="px-3 py-4 border-t border-gray-100 space-y-1">
-        {companyName && (
-          <div className="px-3 py-2 mb-1">
-            <p className="text-xs text-gray-400 mb-0.5">Logged in as</p>
-            <p className="text-sm font-semibold text-green-700 truncate">{companyName}</p>
-          </div>
-        )}
-        <button
-          onClick={handleLogout}
-          className="w-full flex items-center px-3 py-2.5 rounded-xl text-sm text-gray-500 hover:bg-red-50 hover:text-red-600 transition-all">
-          <span>Log out</span>
-        </button>
-      </div>
     </div>
   )
 
@@ -193,6 +179,22 @@ export default function AppLayout({ children, title, didYouKnow }: AppLayoutProp
             onClick={() => { setShowFeedback(true); setShowReferral(false) }}
             className="text-sm text-gray-500 hover:text-green-700 transition-colors px-2 py-1.5 rounded-lg hover:bg-gray-50">
             <span>Feedback</span>
+          </button>
+
+          {/*
+            IDENTITY LIVES IN THE HEADER, NOT AT THE FOOT OF THE SIDEBAR.
+            Who you are signed in as is true on every page regardless of where you are, which is
+            what a header is for — and the sidebar's bottom block is space the navigation needs.
+            Log out belongs beside the name rather than under the nav.
+          */}
+          <div className="h-4 w-px bg-gray-200" />
+          {companyName && (
+            <span className="text-sm text-gray-600 hidden sm:block">{companyName}</span>
+          )}
+          <button
+            onClick={handleLogout}
+            className="text-sm text-gray-500 hover:text-red-600 transition-colors px-2 py-1.5 rounded-lg hover:bg-red-50">
+            <span>Log out</span>
           </button>
         </div>
       </header>
