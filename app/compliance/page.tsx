@@ -75,6 +75,15 @@ export default function CompliancePage() {
   const [tab, setTab] = useState<Tab>('ask')
   const [companyId, setCompanyId] = useState<string | null>(null)
   const [companyName, setCompanyName] = useState<string | null>(null)
+  /**
+   * THE FILE JUST ATTACHED, WAITING FOR THE QUESTION THAT GOES WITH IT — §129.
+   *
+   * An attach almost always comes BEFORE the question about it, and until Fix Round 2 the file
+   * went to Documents and nowhere else: the next research call carried no trace of it and the
+   * model said no file had come through. Only the ID is held, not the `File` — the route loads
+   * the bytes from storage, so this still works after a reload and on a reopened conversation.
+   */
+  const [pendingDoc, setPendingDoc] = useState<{ id: string; name: string } | null>(null)
 
   // ---- the conversation on screen ----
   const [exchanges, setExchanges] = useState<Exchange[]>([])
@@ -199,8 +208,17 @@ export default function CompliancePage() {
           // never retrieved — which is false, and the summariser then archives the claim (§127).
           history: exchanges.filter((x) => x.phase === 'done' && x.text && !x.file)
             .map((x) => ({ question: x.question, answer: x.text, sources: x.sources })),
+          // The attachment travels with the question it belongs to (§129). Sent once: the
+          // route persists the link on the turn, and later turns are served from that.
+          documentId: pendingDoc?.id ?? null,
         }),
       })
+
+      // The route saves the user turn — with the document link on it — before it streams, so
+      // once the response is here the attachment is persisted and this can be cleared. Clearing
+      // it before the request would lose the link if the send failed; never clearing it would
+      // attach the same file to every later question.
+      if (res.ok) setPendingDoc(null)
 
       // The checklist path answers with one JSON body, not a stream.
       if (!(res.headers.get('content-type') ?? '').includes('x-ndjson')) {
@@ -347,6 +365,11 @@ export default function CompliancePage() {
         })
         return
       }
+
+      // *** THE LINE THE REBUILT PAGE WAS MISSING (§129). *** Uploading the file and filing it
+      // is not attaching it to the conversation. Holding the id here is what makes the next
+      // research call carry the document.
+      if (doc?.id) setPendingDoc({ id: String(doc.id), name: file.name })
 
       card({
         classification: review?.review?.document_type ?? review?.data?.document_type ?? null,
@@ -1088,7 +1111,15 @@ function FileCard({ file, onRetry }: { file: NonNullable<Exchange['file']>; onRe
           </>
         ) : (
           <p className="mt-1 text-[13px] text-gray-600">
-            {file.classification ? <>Read as a <b className="font-medium">{file.classification}</b>. </> : null}
+            {/*
+              *** NO ARTICLE. *** This read "Read as a {classification}", and the classification
+              comes from the model — "Employee Handbook Addendum", "Insurance Certificate",
+              "SDS". Any fixed article is wrong for half of them, and the owner saw
+              "Read as a Employee Handbook Addendum" on production. Choosing a/an by first
+              letter would still be wrong for "an SDS" (a consonant that reads as a vowel) and
+              for "a US EPA permit". A colon needs no article and cannot be wrong.
+            */}
+            {file.classification ? <>Read as: <b className="font-medium">{file.classification}</b>. </> : null}
             Saved to Documents{file.folder ? ` → ${file.folder}` : ''}.
           </p>
         )}

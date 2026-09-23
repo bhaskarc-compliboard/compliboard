@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
 
         const { data: turns, error: tErr } = await supabaseAdmin
           .from('turns')
-          .select('id, position, role, text, stopped, sources')
+          .select('id, position, role, text, stopped, sources, document_id, document_name')
           .eq('topic_id', topic.id).order('position', { ascending: true })
         if (tErr) throw new Error(`turns: ${tErr.message}`)
 
@@ -101,7 +101,10 @@ export async function POST(request: NextRequest) {
 
         const transcript = turns
           .map((t) => appendSources(
-            `${t.role === 'user' ? 'USER' : 'ANSWER'}${t.stopped ? ' (stopped)' : ''}: ${t.text}`,
+            `${t.role === 'user' ? 'USER' : 'ANSWER'}${t.stopped ? ' (stopped)' : ''}` +
+            // An attachment is part of what the conversation was about, and the summary
+            // is what outlives the transcript. §129.
+            `${t.document_name ? ` [attached the file: ${t.document_name}]` : ''}: ${t.text}`,
             t.sources as Source[] | null,
           ))
           .join('\n\n')

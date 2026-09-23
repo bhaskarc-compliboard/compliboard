@@ -1,6 +1,9 @@
 # Testing
-**Version:** 20 · **Updated:** 23 September 2026
-**Supersedes:** version 19 (23 Sep). Adds the **FIX ROUND 1 set** — four actions, one per defect
+**Version:** 21 · **Updated:** 23 September 2026
+**Supersedes:** version 20 (23 Sep). Adds the **FIX ROUND 2 set** — attach a file and ask about
+it, and the file card's wording. The important half is asking a SECOND question: the first
+version of that fix carried the document on the attach turn only, and a later turn then retracted
+a correct finding. One question would not have caught it. Version 20: version 19 (23 Sep). Adds the **FIX ROUND 1 set** — four actions, one per defect
 the owner's 22-23 September pass found and no script had caught: attach a file and see it
 classified, an answer that stops on its own, a third turn standing by its sources, and printing a
 drawer. **F3 is recorded as FAILING and stays in the set** — the fix that was asked for is in and
@@ -117,6 +120,29 @@ untested — applies to the runner as much as to anything it runs.
 **167 · 0 skipped · 0 todo**. Per file: `appliesExpression` 58 · `jurisdiction` 24 · `resolve`
 40 · `sdsExtraction` 14 · `switchDetermination` 31. **No run in this project has reported 100 or
 106.** The floor is committed so the question does not have to be re-asked.
+
+---
+
+## Manual set — FIX ROUND 2, the first production test (`DECISIONS.md` §129)
+
+**Two actions. Both were found by using the product on production, not by any script here.**
+
+**Setup:** signed in on staging, `npm run dev` pointed at staging. **Migration 039 must be
+applied** — without it the attachment link cannot be saved and R2-1 fails at the last step.
+
+| # | Action | Steps | What must be true |
+|---|---|---|---|
+| **R2-1** | **Attach a file, then ask about it** | Paperclip → `tests/fixtures/Harbor-Kitchen-Employee-Policy-2026.pdf` → then ask *"check this policy against Seattle's paid sick leave rules"* | The answer **is about the document**: it names the policy's own errors — the 30-day card window, cards "per establishment", the 180-day wait, the 24-hour carryover, find-your-own-cover, the tip credit, $20.76 — and works the tier from **both** locations (25 + 31). It must never say no file came through. **Then ask a second question about the file**: the answer must still know it, and must not retract what it said the first time |
+| **R2-2** | **The file card's wording** | Attach anything the model classifies with a vowel-initial type | The card reads **"Read as: Employee Handbook Addendum"** — no article. "Read as a Employee Handbook Addendum" is the bug |
+
+> ### THE SECOND HALF OF R2-1 IS THE PART THAT WAS GOT WRONG ONCE.
+>
+> The first fix carried the document on the attach turn only and gave later turns the stored
+> review summary. Measured, it made turn two say *"I can't confirm that the policy contained a
+> waiting period at all. I shouldn't have stated it as one of its errors"* — **retracting a true
+> finding**. Asking a *second* question is what catches that, and one question does not.
+
+`npm run check:live -- --only attachment` runs R2-1 end to end and prints the answer.
 
 ---
 

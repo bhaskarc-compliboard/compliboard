@@ -3,8 +3,8 @@
 **GENERATED — do not edit.** `node --env-file=.env.local scripts/schema-doc.js`, and it runs
 inside `npm run db:migrate`, so it cannot be stale by more than one migration.
 
-**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-09-23 17:26 UTC
-**Migrations applied:** 39 — `000` to `038`
+**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-09-23 19:29 UTC
+**Migrations applied:** 40 — `000` to `039`
 
 *Every figure here was read from the catalog of that database. Nothing is copied from the
 migration files, which say what was intended rather than what is there — and the two have
@@ -29,9 +29,9 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 
 **Compliance Workspace (M1) — research, conversations, checklists**
 
-- `topics` — 30 rows · touched by route chat, route checklists/from-topic, route documents, route jobs/delete, route jobs/summarise, +5 more
-- `checklists` — 12 rows · touched by route account, route checklists/from-topic, route link-research, route substeps, screen compliance, +1 more
-- `checklist_items` — 187 rows · touched by route account/export, route account, route checklists/from-topic, route substeps, screen compliance, +1 more
+- `topics` — 53 rows · touched by route chat, route checklists/from-topic, route documents, route jobs/delete, route jobs/summarise, +5 more
+- `checklists` — 14 rows · touched by route account, route checklists/from-topic, route link-research, route substeps, screen compliance, +1 more
+- `checklist_items` — 215 rows · touched by route account/export, route account, route checklists/from-topic, route substeps, screen compliance, +1 more
 - `critic_reviews` — 0 rows · touched by lib criticRecord
 - `critic_findings` — 0 rows · touched by lib criticRecord
 
@@ -151,9 +151,9 @@ END)`
 
 One row per model call, written at the call. Prices are copied onto the row so a later change to config/pricing.ts cannot rewrite what a past call cost. cost_usd NULL = the model was not in the price table, which is not the same as free. DECISIONS.md §128 J.
 
-**Rows:** 11 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 59 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `lib costLedger`
+**Read or written by:** `lib costLedger`, `script cost-report`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -292,7 +292,7 @@ One row per audit run. A frozen snapshot of results as checked that day — reus
 
 ### `checklist_items`
 
-**Rows:** 187 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 215 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route account/export`, `route account`, `route checklists/from-topic`, `route substeps`, `screen compliance`, `script check-live`
 
@@ -353,7 +353,7 @@ One row per audit run. A frozen snapshot of results as checked that day — reus
 
 ### `checklists`
 
-**Rows:** 12 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 14 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route account`, `route checklists/from-topic`, `route link-research`, `route substeps`, `screen compliance`, `screen dashboard`
 
@@ -885,6 +885,7 @@ One row per criticise() call, INCLUDING reviews that found nothing — that is t
 - `obligation_evidence.document_id` — ON DELETE CASCADE
 - `obligation_evidence.document_id` — ON DELETE CASCADE
 - `switch_determinations.document_id` — ON DELETE SET NULL
+- `turns.document_id` — ON DELETE SET NULL
 
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
@@ -1695,7 +1696,7 @@ The ~59 facts about a company that determine which requirements apply. Reference
 
 One exploration. The transcript is disposable (WORKSPACE.md §6.4); the summary is what survives. Holds NO facts — a hypothetical is never stored (DECISIONS.md §78) and a real fact goes to company_switches. Migration 028.
 
-**Rows:** 30 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 53 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route chat`, `route checklists/from-topic`, `route documents`, `route jobs/delete`, `route jobs/summarise`, `route topics/[id]`, `route topics/[id]/summarise`, `screen compliance`, `lib conversation`, `script check-live`
 
@@ -1756,7 +1757,7 @@ One exploration. The transcript is disposable (WORKSPACE.md §6.4); the summary 
 
 One message in a conversation. Cleared 7 days after the topic is summarised (DECISIONS.md §125, superseding §110's 15 days); the topic row and its summary survive.
 
-**Rows:** 97 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 188 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route jobs/delete`, `route jobs/summarise`, `route topics/[id]`, `screen compliance`, `lib conversation`, `script check-live`
 
@@ -1771,10 +1772,13 @@ One message in a conversation. Cleared 7 days after the topic is summarised (DEC
 | `sources` | jsonb | yes | — |
 | `stopped` | boolean | no | `false` |
 | `created_at` | timestamp with time zone | no | `now()` |
+| `document_id` | uuid | yes | — |
+| `document_name` | text | yes | — |
 
 **Points at:**
 
 - `company_id` → `companies` — ON DELETE CASCADE
+- `document_id` → `documents` — ON DELETE SET NULL
 - `topic_id` → `topics` — ON DELETE CASCADE
 
 **Pointed at by:**
@@ -1798,7 +1802,7 @@ One message in a conversation. Cleared 7 days after the topic is summarised (DEC
 | `turns_insert_own_company` | INSERT | authenticated | — | `(company_id = auth_company_id())` |
 | `turns_select_own_company` | SELECT | authenticated | `(company_id = auth_company_id())` | — |
 
-**Indexes:** `idx_turns_company_created`, `idx_turns_topic`, `idx_turns_topic_position`, `turns_pkey`
+**Indexes:** `idx_turns_company_created`, `idx_turns_topic`, `idx_turns_topic_document`, `idx_turns_topic_position`, `turns_pkey`
 
 ### `usage_counters`
 
@@ -1999,4 +2003,5 @@ filtered HERE so no consumer can forget it (CLAUDE.md §3.2). A corrected link
 036
 037
 038
+039
 ```

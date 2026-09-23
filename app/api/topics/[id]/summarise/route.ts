@@ -60,7 +60,10 @@ export async function POST(
 
     const transcript = turns
       .map((t) => appendSources(
-        `${t.role === 'user' ? 'USER' : 'ANSWER'}${t.stopped ? ' (stopped)' : ''}: ${t.text}`,
+        `${t.role === 'user' ? 'USER' : 'ANSWER'}${t.stopped ? ' (stopped)' : ''}` +
+        // An attachment is part of what the conversation was about, and the summary
+        // is what outlives the transcript. §129.
+        `${t.document_name ? ` [attached the file: ${t.document_name}]` : ''}: ${t.text}`,
         t.sources,
       ))
       .join('\n\n')

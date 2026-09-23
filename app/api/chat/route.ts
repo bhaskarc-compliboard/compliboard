@@ -21,6 +21,7 @@ import { askAI, askAIJson, askAIWithCitations, askAIOpenStream,
          type AIContent, type OpenMessage } from '@/lib/ai';
 import { pipelineSwitch, logPipelineConfigOnce } from '@/lib/pipelineConfig';
 import { appendSources } from '@/lib/historySources';
+import { loadAttachedDocument, describeAttachments, loadTopicAttachments } from '@/lib/attachedDocument';
 import type { Source } from '@/lib/ai';
 import { nextPosition, saveUserTurn, saveAssistantTurn, markTurnStopped, loadTurns,
          setTitleIfFirst, titleFromQuestion, bumpCounter } from '@/lib/conversation';
@@ -132,6 +133,7 @@ export async function POST(request: NextRequest) {
     // THE OPEN BASELINE'S CONVERSATION MEMORY — plain text pairs, not signed turns.
     // R1.0: prior messages go to the model as history. `DECISIONS.md` §123.
     let history: Array<{ question?: string; answer?: string; sources?: Source[] }> = [];
+    let documentId = '';
 
     if (contentType.includes('multipart/form-data')) {
       const formData = await request.formData();
@@ -146,6 +148,7 @@ export async function POST(request: NextRequest) {
       if (answeringRaw) {
         try { answering = JSON.parse(answeringRaw) as GateAnswering; } catch { answering = null; }
       }
+      documentId = (formData.get('documentId') as string) || '';
       const file = formData.get('file') as File | null;
 
       if (file) {
@@ -163,6 +166,10 @@ export async function POST(request: NextRequest) {
       topicId = body.topicId || '';
       sealedTurns = body.turns;
       history = Array.isArray(body.history) ? body.history : [];
+      // THE ATTACHMENT. The page uploads the file first (so it lands in Documents whatever
+      // happens next) and sends its id with the question — not the bytes, which it no longer
+      // holds after a reload. §129.
+      documentId = typeof body.documentId === 'string' ? body.documentId : '';
     }
 
     const userQuestion = question.trim() ||
@@ -183,6 +190,42 @@ export async function POST(request: NextRequest) {
     // Filled from the gate below, then folded into what the generating call sees.
     let establishedBlock = '';
 
+    // ------------------------------------------------------------------
+    // THE ATTACHED DOCUMENT — Fix Round 2 (1), `DECISIONS.md` §129.
+    //
+    // Loaded by ID from storage rather than re-posted as bytes, because the page does not hold
+    // the File after a reload and "reopen a conversation and carry on" has to keep working.
+    // `lib/attachedDocument.ts` has the reasoning and says what the model receives.
+    // ------------------------------------------------------------------
+    let attached: Awaited<ReturnType<typeof loadAttachedDocument>> = null;
+    if (documentId) {
+      attached = await loadAttachedDocument(db, companyId, documentId);
+      if (attached) {
+        console.log(`chat: carrying attached document ${attached.name} as ${attached.kind} blocks`);
+      }
+    }
+
+    // What earlier attachments in this topic should say to this turn — the name and what the
+    // review made of it. Empty string when there are none.
+    const priorAttachments = topicId ? await describeAttachments(db, topicId) : '';
+
+    // ...AND THE DOCUMENTS THEMSELVES, on every turn of the conversation, not only the one they
+    // were attached to. Measured: with only the review summary, a later turn RETRACTED a correct
+    // finding because the summary did not contain it. `lib/attachedDocument.ts` has the exchange.
+    let carried: Awaited<ReturnType<typeof loadTopicAttachments>> = { documents: [], omitted: 0 };
+    if (topicId && mode === 'research') {
+      carried = await loadTopicAttachments(db, companyId, topicId, attached?.id);
+      if (carried.documents.length) {
+        console.log(`chat: carrying ${carried.documents.length} earlier attachment(s) from topic ${topicId}` +
+          (carried.omitted ? ` (${carried.omitted} omitted by the cap)` : ''));
+      }
+    }
+    const carriedBlocks = carried.documents.flatMap((d) => d.blocks);
+    const omittedNote = carried.omitted
+      ? `\n\n${carried.omitted} earlier attachment(s) are not included in this message because `
+        + `only the ${3} most recent are carried. Say so if the question depends on them.`
+      : '';
+
     if (fileBuffer && fileName) {
       const parsed = await parseDocumentToBlocks(fileBuffer, fileName, fileType);
       if (!parsed.ok) {
@@ -198,8 +241,33 @@ export async function POST(request: NextRequest) {
         ...parsed.blocks,
         { type: 'text', text: 'File name: ' + fileName + '\n\nUser question: ' + userQuestion },
       ] as AIContent;
+    } else if (attached || carriedBlocks.length) {
+      // The same shape the multipart branch builds, from documents already in storage: the file
+      // just attached (if any) first, then the ones attached earlier in this conversation.
+      const blocks = [...(attached?.blocks ?? []), ...carriedBlocks];
+      documentBlocks = blocks as AIContent;
+      messageContent = [
+        ...blocks,
+        { type: 'text', text:
+          (attached ? `The user has just attached this file: ${attached.name}\n\n` : '') +
+          (priorAttachments ? `${priorAttachments}${omittedNote}\n\n` : '') +
+          `User question: ${userQuestion}` },
+      ] as AIContent;
+    } else if (priorAttachments) {
+      // The documents could not be loaded but the conversation had them. The model must not
+      // answer as though nothing was ever attached — that is the defect, one turn later.
+      messageContent = `${priorAttachments}\n\nUser question: ${userQuestion}`;
     } else {
       messageContent = userQuestion;
+    }
+    // A named attachment that could not be re-read is said out loud rather than dropped: §5.1
+    // forbids asserting anything about a document nobody read, and silence here would let the
+    // model answer as though the file did not exist.
+    if (documentId && !attached) {
+      messageContent = typeof messageContent === 'string'
+        ? `The user attached a file to this conversation, but it could not be read back just ` +
+          `now. Say so rather than answering as though nothing was attached.\n\n${messageContent}`
+        : messageContent;
     }
 
     // ==================================================================
@@ -351,7 +419,17 @@ export async function POST(request: NextRequest) {
           convoTopicId = created.id as string;
         }
         const pos = await nextPosition(db, convoTopicId);
-        userTurnId = await saveUserTurn(db, { topicId: convoTopicId, companyId, text: userQuestion, position: pos });
+        userTurnId = await saveUserTurn(db, { topicId: convoTopicId, companyId, text: userQuestion, position: pos,
+          // THE LINK, PERSISTED (§129). `document_name` is a copy so the transcript still reads
+          // correctly after the document is deleted — migration 039.
+          documentId: attached?.id ?? null, documentName: attached?.name ?? null });
+        // The attach usually happens BEFORE the first question, so the document row was written
+        // with no topic. Backfill it now that the topic exists, so Documents can show what
+        // conversation a file came from. Failure here must not fail the answer.
+        if (attached) {
+          await db.from('documents').update({ from_topic_id: convoTopicId })
+            .eq('id', attached.id).is('from_topic_id', null)
+        }
         answerPosition = pos + 1;
         await setTitleIfFirst(db, convoTopicId, userQuestion);
       } catch (e) {

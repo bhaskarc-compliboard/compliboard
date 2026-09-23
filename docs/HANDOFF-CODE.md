@@ -20,18 +20,25 @@ b76e306 Fix round 1 C+D+E: history keeps its sources, tables keep their shape, a
 a5587af Run 3: the page, rebuilt from the prototype
 ```
 
-## 2. Migration state — STAGING 038, PRODUCTION 030
+## 2. Migration state — STAGING 039, PRODUCTION 030
 
 ```
 $ npm run preflight          # READ-ONLY. Prints both lists and derives the difference.
-  INPUT 1 — supabase/migrations/, every file (39)
+  INPUT 1 — supabase/migrations/, every file (40)
   INPUT 2 — supabase_migrations.schema_migrations on dsfwmafnphdlfogetsus, every row (31)
-  PENDING COUNT: 8
+  PENDING COUNT: 9
 ```
 
-**Not on production: 031–038** — `turns` and the topic lifecycle, `usage_counters`,
+**Not on production: 031–039** — `turns` and the topic lifecycle, `usage_counters`,
 `origin`/`from_topic_id`, `fact_proposals`/`job_runs`, the counter function,
-`checklist_items.source_title`, **037, the storage bucket**, and **038, the cost ledger**. All additive; nothing drops or
+`checklist_items.source_title`, **037, the storage bucket**, **038, the cost ledger**, and **039, the attachment link**.
+
+> ### ⚠ 039 IS REQUIRED BY THE CODE THAT SHIPS WITH IT.
+>
+> Fix Round 2 makes an attached file part of the conversation, and the link lives on
+> `turns.document_id` / `turns.document_name`. **Apply 039 before or with that code**, or every
+> attach fails to persist and the next turn forgets the file again — the exact bug being fixed.
+> It is additive: two nullable columns and an index, safe to apply ahead of the deploy. All additive; nothing drops or
 alters an existing column. **Shipping them is `npm run preflight` then `npm run db:migrate:prod`,
 run by the owner.**
 
@@ -69,9 +76,9 @@ current.**
 
 ```
 $ npm run check      # typecheck && check:schema && test && build
-  check-schema-contracts: ok — 140 files, 35 relations (34 tables + 1 view).
-  tests 449 · pass 449 · fail 0
-  test-guard: 449 tests, 0 skipped, 0 todo, floor 449. OK
+  check-schema-contracts: ok — 142 files, 35 relations (34 tables + 1 view).
+  tests 457 · pass 457 · fail 0
+  test-guard: 457 tests, 0 skipped, 0 todo, floor 457. OK
   ✓ Compiled successfully
 ```
 
@@ -148,7 +155,8 @@ npm run golden:facts  the owner's five questions, with the facts each answer mus
   -- --effort medium --runs 3         the effort comparison (§127 H)
 npm run cost          READ-ONLY. Where the money went, by task and by model, and what the
                       total does not include.
-npm run check:live -- --only sources  ONE block of check:live. A full run is ~$4 of real calls.
+npm run check:live -- --only sources      ONE block of check:live. A full run is real calls.
+npm run check:live -- --only attachment  attach a PDF and ask about it (Fix Round 2).
 ```
 
 ## 6. Open defects — where each lives
@@ -182,7 +190,7 @@ prompts before and after.
 ## 8. Commands worth knowing
 
 ```
-npm run check        typecheck · schema contracts · 449 tests · build.  Green as of e2922c0.
+npm run check        typecheck · schema contracts · 457 tests · build.  Green as of this commit.
 npm run check:live   signs in as a real staging fixture. Needs CHECK_LIVE_PASSWORD.
 npm run schema:doc   regenerates docs/SCHEMA.md from the live catalog. Runs inside db:migrate.
 npm run db:restore   rebuilds STAGING from zero — reset, then the data steps, printing

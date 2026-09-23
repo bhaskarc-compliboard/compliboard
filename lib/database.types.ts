@@ -2158,6 +2158,8 @@ export type Database = {
         Row: {
           company_id: string
           created_at: string
+          document_id: string | null
+          document_name: string | null
           id: string
           position: number
           role: string
@@ -2169,6 +2171,8 @@ export type Database = {
         Insert: {
           company_id: string
           created_at?: string
+          document_id?: string | null
+          document_name?: string | null
           id?: string
           position: number
           role: string
@@ -2180,6 +2184,8 @@ export type Database = {
         Update: {
           company_id?: string
           created_at?: string
+          document_id?: string | null
+          document_name?: string | null
           id?: string
           position?: number
           role?: string
@@ -2194,6 +2200,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "turns_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
             referencedColumns: ["id"]
           },
           {

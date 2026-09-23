@@ -35,6 +35,10 @@ export interface TurnRow {
   sources: Source[] | null
   stopped: boolean
   created_at: string
+  /** The document attached to this turn, if any — migration 039, §129. */
+  document_id: string | null
+  /** A copy of its name, kept so the transcript survives the document's deletion. */
+  document_name: string | null
 }
 
 /**
@@ -70,11 +74,17 @@ export async function nextPosition(db: Db, topicId: string): Promise<number> {
 
 /** The question, saved when it arrives — before the answer is known, and whatever happens to it. */
 export async function saveUserTurn(
-  db: Db, args: { topicId: string; companyId: string; text: string; position: number },
+  db: Db, args: { topicId: string; companyId: string; text: string; position: number
+                  documentId?: string | null; documentName?: string | null },
 ): Promise<string> {
   const { data, error } = await db.from('turns').insert({
     topic_id: args.topicId, company_id: args.companyId,
     position: args.position, role: 'user', text: args.text,
+    // The attachment, if this turn carried one (migration 039, §129). The NAME is stored
+    // beside the id on purpose: deleting the document sets the id null and the transcript has
+    // to keep saying what was attached.
+    document_id: args.documentId ?? null,
+    document_name: args.documentName ?? null,
   }).select('id').single()
   if (error) throw new Error(`saveUserTurn: ${error.message}`)
   await touchTopic(db, args.topicId)
@@ -143,7 +153,7 @@ export async function setTitleIfFirst(db: Db, topicId: string, question: string)
 export async function loadTurns(db: Db, topicId: string): Promise<TurnRow[]> {
   const { data, error } = await db
     .from('turns')
-    .select('id, position, role, text, sources, stopped, created_at')
+    .select('id, position, role, text, sources, stopped, created_at, document_id, document_name')
     .eq('topic_id', topicId).order('position', { ascending: true })
   if (error) throw new Error(`loadTurns(${topicId}): ${error.message}`)
   return (data ?? []) as TurnRow[]

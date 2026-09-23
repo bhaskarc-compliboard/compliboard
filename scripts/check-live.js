@@ -440,6 +440,113 @@ if (!(await reachable())) {
     }
   })()
 
+  // ---- FIX ROUND 2 (1): AN ATTACHED FILE MUST REACH THE MODEL --------------------------
+  //
+  // On production the owner attached a policy PDF, watched it classify and file correctly, then
+  // asked about it and was told no file had come through. The upload worked; nothing carried the
+  // document into the research call. This drives the whole path as a real signed-in user:
+  // upload -> documents row -> review -> ask, with the fixture the answer can be checked against.
+  //
+  // *** THE ASSERTIONS COME FROM THE FIXTURE, NOT FROM THE BRIEF. *** Every one is a statement
+  // the PDF actually makes (25 at Ballard, 31 at Fremont, 30-day card window, per-establishment
+  // cards, 180-day wait, 24-hour carryover, find-your-own-cover, tip credit, $20.76) and each is
+  // deliberately wrong in it. An answer that does not reach the document cannot produce them.
+  if (want('attachment')) await (async () => {
+    const { readFileSync } = await import('node:fs')
+    const FIXTURE = 'tests/fixtures/Harbor-Kitchen-Employee-Policy-2026.pdf'
+    let bytes
+    try { bytes = readFileSync(FIXTURE) } catch {
+      console.log(`  ✗ attachment          fixture missing: ${FIXTURE}`); failures++; return
+    }
+    const file = new File([bytes], 'Harbor-Kitchen-Employee-Policy-2026.pdf', { type: 'application/pdf' })
+    const path = `${companyId}/compliance/${Date.now()}-check-live-harbor-kitchen.pdf`
+
+    const { error: upErr } = await asUser.storage.from('company-documents').upload(path, file)
+    if (upErr) { console.log(`  ✗ attachment          upload refused: ${upErr.message}`); failures++; return }
+
+    const docRes = await fetch(`${BASE}/api/documents`, { method: 'POST', headers: auth,
+      body: JSON.stringify({ name: file.name, file_url: path, file_type: 'application/pdf', file_size: bytes.length }) })
+    if (!docRes.ok) { console.log(`  ✗ attachment          /api/documents -> ${docRes.status}`); failures++; return }
+    const { data: docRow } = await asUser.from('documents').select('id').eq('file_url', path).maybeSingle()
+    if (!docRow?.id) { console.log('  ✗ attachment          the document row could not be read back'); failures++; return }
+
+    // The review, exactly as the page runs it — it is what later turns are served from.
+    const fd = new FormData()
+    fd.append('file', file)
+    fd.append('document_name', file.name)
+    fd.append('document_id', String(docRow.id))
+    const revRes = await fetch(`${BASE}/api/document-review`, {
+      method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: fd })
+    const review = await revRes.json().catch(() => null)
+    if (!revRes.ok) { console.log(`  ✗ attachment          /api/document-review -> ${revRes.status} ${review?.error ?? ''}`); failures++; return }
+    console.log(`  ✓ attachment/review   read as ${JSON.stringify(review?.review?.document_type ?? review?.data?.document_type ?? '?')}`)
+
+    // THE QUESTION. A fresh conversation, the document id travelling with it.
+    const askRes = await fetch(`${BASE}/api/chat`, { method: 'POST', headers: auth,
+      body: JSON.stringify({ question: "check this policy against Seattle's paid sick leave rules",
+                             mode: 'research', history: [], topicId: '', documentId: String(docRow.id) }) })
+    if (!(askRes.headers.get('content-type') ?? '').includes('x-ndjson')) {
+      console.log(`  ✗ attachment          /api/chat did not stream: ${askRes.status}`); failures++; return
+    }
+    let done = null
+    const rd = askRes.body.getReader(); const dec3 = new TextDecoder(); let b3 = ''
+    for (;;) { const { done: fin, value } = await rd.read(); if (fin) break
+      b3 += dec3.decode(value, { stream: true }); const ls = b3.split('\n'); b3 = ls.pop() ?? ''
+      for (const l of ls) { if (!l.trim()) continue; let e; try { e = JSON.parse(l) } catch { continue }
+        if (e.type === 'done') done = e } }
+    const said = String(done?.research ?? '')
+
+    if (!said.trim()) { console.log('  ✗ attachment          the answer was empty'); failures++; return }
+
+    // 1. DID IT SEE THE DOCUMENT AT ALL? The failure mode being tested says "no file".
+    const denies = /(no file|nothing was attached|didn.t receive|did not receive|haven.t received|no document|unable to see|cannot see (any|the) (file|document))/i.test(said)
+    if (denies) {
+      console.log(`  ✗ attachment          the answer says no file arrived: ${JSON.stringify(said.slice(0, 160))}`); failures++
+    }
+
+    // 2. THE TIER. The policy claims Tier 1 from one location's headcount; the employer is one
+    // company with 25 + 31 = 56, which is Tier 2. Getting this right requires reading the PDF.
+    const tier2 = /tier\s*2/i.test(said)
+    const counts = /\b56\b/.test(said) || (/\b25\b/.test(said) && /\b31\b/.test(said))
+    if (!tier2 || !counts) {
+      console.log(`  ✗ attachment/tier     tier 2 named: ${tier2 ? 'yes' : 'NO'} · headcount (56, or 25 and 31): ${counts ? 'yes' : 'NO'}`); failures++
+    } else {
+      console.log('  ✓ attachment/tier     Tier 2, counted across both locations (25 + 31 = 56)')
+    }
+
+    // 3. THE ERRORS. Each is a claim the fixture makes and each is wrong.
+    const ERRORS = [
+      ['30-day card window',      /\b30[- ]day/i],
+      ['cards are per-establishment', /(per[- ]establishment|per[- ]location|new card|transfer)/i],
+      ['180-day waiting period',  /\b180[- ]day/i],
+      ['24-hour carryover',       /\b24[- ]hours?\b/i],
+      ['find-your-own-cover',     /(find (a )?(co-?worker|replacement|cover)|shift coverage|own cover)/i],
+      ['tip credit',              /tip credit|tips? .{0,30}credited/i],
+      ['the minimum wage figure', /20\.76/],
+    ]
+    const found = ERRORS.filter(([, re]) => re.test(said))
+    if (found.length < 5) {
+      console.log(`  ✗ attachment/errors   named ${found.length} of the policy's errors, needs 5: ` +
+        `${found.map(([n]) => n).join(', ') || '(none)'}`); failures++
+    } else {
+      console.log(`  ✓ attachment/errors   named ${found.length} of 7: ${found.map(([n]) => n).join(', ')}`)
+    }
+
+    // 4. THE LINK IS PERSISTED — migration 039. Without it the next turn forgets the file.
+    const { data: linked } = await asUser.from('turns')
+      .select('position, role, document_id, document_name').eq('topic_id', done?.topicId ?? '')
+      .not('document_name', 'is', null)
+    if (!linked?.length) {
+      console.log('  ✗ attachment/persist  no turn carries the document — a later turn will forget it'); failures++
+    } else {
+      console.log(`  ✓ attachment/persist  turn ${linked[0].position} carries ${JSON.stringify(linked[0].document_name)}`)
+    }
+
+    console.log(`      ┌─ the answer ───────────────────────────────────────────────────`)
+    for (const l of said.split('\n')) console.log(`      │ ${l}`)
+    console.log(`      └────────────────────────────────────────────────────────────────`)
+  })()
+
   // ---- RUN 3: the routes the rebuilt page depends on ------------------------------------
   //
   // The PAGE itself is proved by the manual set in TESTING.md — a script cannot judge whether a

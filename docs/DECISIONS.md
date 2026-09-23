@@ -1,5 +1,12 @@
 # Decision Record
-**Version:** 101 · **Updated:** 23 September 2026
+**Version:** 102 · **Updated:** 23 September 2026
+**Supersedes:** version 101 (23 Sep). Adds **§129 — FIX ROUND 2**, two bugs from the owner's
+first test on production. An attached file reached Documents and never reached the model: the old
+page sent the file WITH the question, the rebuilt page's `onFilePicked` ends at `card(…)`, and
+`/api/chat` never lost the ability to read a file — it stopped being given one. The document now
+travels by ID and is carried on **every** turn of the conversation, which reverses this section's
+own first design: sending only the review summary on later turns made a turn **retract a correct
+finding**. **Migration 039 is additive and production needs it before the code ships.**
 **Supersedes:** version 100 (23 Sep). **§128's prices were corrected by the owner the same day**
 — Opus 5 is $5/$25 per million, not $15/$75; Sonnet 5 is $2/$10, not $3/$15. Every cost figure
 written before that is an overestimate of ~2.8×, the ledger rows were deliberately NOT repriced,
@@ -9964,3 +9971,131 @@ the same 3.3–3.7 range, so the switch did not move the fact count either way.
 what they are for. The ledger is not reversible in the same sense: if `config/pricing.ts` turns
 out to be wrong, the fix is to correct it going forward, because past rows deliberately keep the
 prices they were costed at.
+
+---
+
+## 129. FIX ROUND 2 — an attached file never reached the model — 23 September 2026
+
+Two bugs from the owner's first test on production. **Item 1 needs migration 039 on production
+before the code ships**; item 2 does not.
+
+### 1 — the file reached Documents and never reached the model
+
+The owner attached a policy PDF in a research conversation. The card rendered, the `documents`
+row and its review were written, the Documents screen showed the full scan — and the next
+question got *"no file has come through"*. Everything on screen was right; the model's context
+was empty.
+
+**The two lines.**
+
+The old page sent the file WITH the question, in the same `/api/chat` call:
+
+```
+app/compliance/page.tsx @ a5587af^   (before the Run 3 rebuild)
+  const fileToSend = answerFile ?? uploadedFile
+  if (fileToSend) {
+    const formData = new FormData()
+    formData.append('file', fileToSend)
+    …
+    res = await fetch('/api/chat', { method: 'POST', body: formData, … })
+```
+
+The rebuilt page uploads, files, reviews, renders — and stops:
+
+```
+app/compliance/page.tsx   `onFilePicked`, last statement
+  card({ classification: review?.review?.document_type ?? …, folder: … })
+```
+
+**`/api/chat` never lost the ability to read a file. It stopped being given one.** The route's
+multipart branch and `parseDocumentToBlocks` were untouched by the rebuild and still work — the
+one call site that used them went away.
+
+### What the model receives now
+
+**The document itself, as a native block.** For a PDF that is the **raw PDF, base64, as a
+`document` block** — not extracted text. It is the same representation `lib/documentReview.ts`
+already sends, so the conversation reads exactly what the review read. The fixture parses as
+`kind: pdf`, one document block.
+
+**Sent by ID, not re-posted as bytes.** The page holds the document's id, not the `File`; the
+route loads it from storage as the caller. That is what makes it survive a reload and work on a
+reopened conversation, which re-posting the bytes could not.
+
+> ### AND IT IS CARRIED ON EVERY LATER TURN, WHICH IS THE OPPOSITE OF THE FIRST DESIGN.
+>
+> The first version sent only the review's summary on later turns, to save input tokens
+> (§128 J put input at ~59% of the bill). **Measured on this fixture, two turns:**
+>
+> | turn | |
+> |---|---|
+> | 1 — *"What is this document?"* | named the 180-day waiting period as an error |
+> | 2 — *"what did it get wrong about the waiting period?"* | *"That item does not appear in the list of problems identified in the document, and I can't confirm … that the policy contained a waiting period at all. I shouldn't have stated it as one of its errors."* |
+>
+> **It retracted a true finding.** The review's `gaps` array is lossy and the model reasonably
+> read the injected list as definitive. A conversation that tells the customer its own correct
+> answer was a mistake is worse than an expensive one.
+>
+> So the document travels with the conversation, capped at three, and the review text is now
+> introduced as *"an earlier automated review described it as…"* under a heading that says the
+> files themselves are attached and the notes are **not a complete list**. With the fix, the same
+> turn 2 answers: *"the addendum says … after 180 days … Seattle's ordinance caps the wait on use
+> at 90 days, so 180 is double the legal maximum"* — no retraction.
+>
+> **The cost is real and is not hidden:** every research turn in a topic with an attachment
+> re-sends that document. This fixture is 4.4 KB. A long scanned PDF is thousands of input tokens
+> per page, per turn. A size threshold is deliberately NOT invented here — the right one is a
+> product decision, and a silently truncated document is the failure this section exists to end.
+
+### Migration 039 — additive, and production needs it
+
+`turns.document_id` (`ON DELETE SET NULL`) and `turns.document_name`.
+
+> ### TWO COLUMNS, BECAUSE A TRANSCRIPT MUST SURVIVE THE DOCUMENT'S DELETION.
+> `document_name` is a COPY. *"You attached Harbor-Kitchen-Employee-Policy-2026.pdf and I found
+> seven problems in it"* stays true after the file is removed from Documents. With only a foreign
+> key, deleting the document would silently rewrite history to *"you attached nothing"* — hence
+> SET NULL rather than CASCADE, and hence the copy.
+
+Both columns are nullable and every existing row is valid with both NULL, which is exactly what a
+turn with no attachment is. The verify block **reads the delete rule out of `pg_constraint`**
+rather than trusting the DDL, because CASCADE here would mean deleting a document erases the
+conversation about it.
+
+### The test, and what it proves
+
+`npm run check:live -- --only attachment` drives the whole path as `testgamma`: upload →
+`documents` row → review → ask, with `tests/fixtures/Harbor-Kitchen-Employee-Policy-2026.pdf`.
+
+**Every assertion is a statement the fixture actually makes**, read out of the PDF rather than
+taken from the brief — 25 at Ballard, 31 at Fremont, a 30-day card window, cards "issued per
+establishment", a 180-day wait, 24-hour carryover, find-your-own-cover, a tip credit, $20.76.
+Each is deliberately wrong in it, and an answer that never reached the document cannot produce
+them.
+
+```
+✓ attachment/review   read as "Employee Handbook Addendum"
+✓ attachment/tier     Tier 2, counted across both locations (25 + 31 = 56)
+✓ attachment/errors   named 7 of 7
+✓ attachment/persist  turn 1 carries "Harbor-Kitchen-Employee-Policy-2026.pdf"
+```
+
+> **One honest qualification on the tier.** The check requires "Tier 2" and the arithmetic, and
+> both are present — but the answer is more careful than the brief was: it notes that Seattle
+> counts **FTE, not headcount**, so 56 people could still average under 49 FTE, and it names the
+> fact it would need to settle it. That is the product working as §3.3 intends, and the check is
+> worded to accept it rather than to demand a flat assertion that would be less true.
+
+### 2 — "Read as a Employee Handbook Addendum"
+
+One site, `app/compliance/page.tsx`, now **"Read as: {classification}"**.
+
+No article is used rather than choosing between *a* and *an*, because choosing correctly is not a
+vowel test: *an SDS* starts with a consonant and *a US EPA permit* starts with a vowel. A colon
+cannot be wrong. The classification comes from the model and is unbounded, so any fixed article
+is wrong for some of its output.
+
+**Reversal condition:** none for either. Both are defects; the tests are the record. The carry
+rule is the one thing here that is a judgement — if re-sending documents proves too expensive on
+real files, the reversal is a size threshold or an explicit "re-attach" control, and the
+measurement to justify it is already in `ai_calls`.
