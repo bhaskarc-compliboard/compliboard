@@ -45,6 +45,9 @@ export type PipelineSwitch =
   // R1.3. Same standing as RESEARCH_PREFER_GOV: measured back on, ships only if the owner's
   // comparison says so. `DECISIONS.md` §128.
   | 'RESEARCH_SPECIALIST'
+  // Fix Round 1 C. The one piece here that is not about answer QUALITY: it is about whether the
+  // model will stand behind the sources of its own earlier turns. `DECISIONS.md` §128.
+  | 'RESEARCH_PROVENANCE'
 
 export const PIPELINE_SWITCHES: readonly PipelineSwitch[] = [
   'RESEARCH_GATE',
@@ -55,6 +58,7 @@ export const PIPELINE_SWITCHES: readonly PipelineSwitch[] = [
   'CHECKLIST_LONG_PROMPT',
   'RESEARCH_PREFER_GOV',
   'RESEARCH_SPECIALIST',
+  'RESEARCH_PROVENANCE',
 ] as const
 
 /**

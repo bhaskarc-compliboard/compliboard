@@ -41,7 +41,12 @@ const flagValue = (name, fallback) => {
   return i >= 0 && args[i + 1] ? args[i + 1] : fallback
 }
 const effortArg = flagValue('--effort', null)
-const runs = Number(flagValue('--runs', '1'))
+// *** THREE RUNS PER QUESTION, NOT ONE — the owner's decision, 23 September. ***
+// One run of a presence check on a model's prose is an anecdote. Measured on the same Seattle
+// question with nothing changed between runs: 4/4, 3/4, 3/4 — and the misses were DIFFERENT
+// facts. A single run would have reported any one of those three as the result.
+const DEFAULT_RUNS = 3
+const runs = Number(flagValue('--runs', String(DEFAULT_RUNS)))
 const only = args.find((a) => !a.startsWith('--') && a !== effortArg && a !== String(runs))
 
 if (effortArg && !EFFORT_LEVELS.includes(effortArg)) {
@@ -168,6 +173,8 @@ console.log(`  ${describePipelineConfig()}\n`)
 const line = '  ' + '─'.repeat(90)
 let pass = 0, fail = 0, known = 0, fixed = 0
 const timings = []
+/** One row per fact per run, so the summary can report a hit rate rather than a mean. */
+const factRuns = []
 
 for (const c of cases) {
   for (let i = 1; i <= runs; i++) {
@@ -176,6 +183,7 @@ for (const c of cases) {
     console.log(`  ${c.id}${runs > 1 ? `  run ${i}/${runs}` : ''}   ${(r.ms / 1000).toFixed(1)}s   ` +
       `${r.outputTokens ?? '?'} output tokens   ${r.searches} search(es)   stop=${r.stopReason ?? '?'}`)
     if (r.error) { console.log(`    ERROR: ${r.error}`) }
+    for (const f of r.results) factRuns.push({ caseId: c.id, factId: f.id, found: f.found })
     timings.push({ id: c.id, run: i, ms: r.ms, outputTokens: r.outputTokens,
       passed: r.results.filter((x) => x.verdict === 'PASS' || x.verdict === 'FIXED').length,
       total: r.results.length })
@@ -193,6 +201,28 @@ for (const c of cases) {
 
 console.log(line)
 console.log(`  ${pass} passed · ${fail} FAILED · ${known} known-missing (expected) · ${fixed} newly passing`)
+
+// ---------------------------------------------------------------------------
+// THE SPREAD, WHICH IS THE POINT OF RUNNING MORE THAN ONCE.
+//
+// A fact that passes 3 of 3 and a fact that passes 2 of 3 are different findings and a mean
+// hides the difference. This prints every fact's hit rate and names the ones that are not
+// stable — those are where the answer is a coin toss, which nobody can tell from one run.
+// ---------------------------------------------------------------------------
+if (runs > 1) {
+  console.log(line)
+  console.log(`  FACT STABILITY over ${runs} run(s) — anything not ${runs}/${runs} is not settled`)
+  for (const c of cases) {
+    for (const f of c.facts) {
+      const hits = factRuns.filter((r) => r.caseId === c.id && r.factId === f.id)
+      const got = hits.filter((r) => r.found).length
+      const expected = (c.expectedFail ?? []).includes(f.id)
+      const mark = got === hits.length ? '  ' : got === 0 ? '✗ ' : '~ '
+      console.log(`  ${mark}${String(got)}/${hits.length}  ${c.id.padEnd(20)} ${f.id}` +
+        (expected ? '   (expectedFail)' : ''))
+    }
+  }
+}
 if (runs > 1) {
   console.log(line)
   console.log('  per run: wall clock · output tokens · facts')

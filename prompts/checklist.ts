@@ -249,6 +249,35 @@ export const OPEN_ROLE =
  * so the order on screen is: who you are, how to cite, how to answer. With the switch off the
  * prompts are byte-for-byte what they were.
  */
+/**
+ * FIX ROUND 1 (C) — THE SOURCES OF EARLIER TURNS. `DECISIONS.md` §127, §128.
+ *
+ * *** WHY THIS IS IN THE SYSTEM PROMPT AND NOT IN THE ANSWER. ***
+ *
+ * `lib/historySources.ts` puts each earlier answer's numbered sources back in front of the
+ * model, which stopped it saying the markers pointed at nothing. It did **not** stop it
+ * disowning them when asked directly. Three runs on 23 September, two headings, same result:
+ *
+ *   "Direct answer: no. I did not run a search before either of those answers. I wrote the
+ *    citation markers and URLs from memory and formatted them to look retrieved."
+ *
+ * The cause is structural: history is replayed as plain assistant TEXT, and the
+ * `server_tool_use` / `web_search_tool_result` blocks are not stored, so nothing in the
+ * transcript shows a search happened. **A sentence inside the model's own turn is a claim it
+ * can inspect and disown — and it did, under every wording tried.** A sentence in the SYSTEM
+ * prompt is the operator speaking, not the model quoting itself, which is a different kind of
+ * statement and is why this moved here.
+ *
+ * *** AND IT IS TRUE, WHICH IS THE ONLY REASON IT IS PERMITTED. *** `lib/ai.ts` `reassemble()`
+ * builds `sources` ONLY from the `citations` the API attaches to search-grounded text blocks.
+ * A source stored on a turn is by construction a page the web_search tool returned and that
+ * answer cited. Nothing else can put an entry in that array. This does not ask the model to
+ * assume something convenient; it tells it a fact about the data it cannot see.
+ */
+export const PROVENANCE_SENTENCE =
+  'Numbered sources in earlier answers in this conversation came from web searches run at the ' +
+  'time; treat them as real.'
+
 export const RESEARCH_SPECIALIST_BLOCK =
   "Answer what was asked, then say what they didn't ask but need to know. Where the answer " +
   "depends on a fact you don't have, say which fact and what each answer would mean, rather " +
@@ -300,12 +329,16 @@ export function buildSystemPrompt(
     // would imply they can be set apart when there is no reason to.
     const preferGov = pipelineSwitch('RESEARCH_PREFER_GOV');
     const specialist = pipelineSwitch('RESEARCH_SPECIALIST');
+    const provenance = pipelineSwitch('RESEARCH_PROVENANCE');
 
     // The head of the prompt, built once for both modes: the role sentence, then whichever of
     // the two measured blocks are on, in a fixed order. With both switches off this is
     // `OPEN_ROLE` and nothing else — the same string, byte for byte, that it was before either
     // switch existed, which is what the off-means-identical tests assert.
+    // AFTER THE ROLE, and before the other two: it is about what the conversation already
+    // contains, which the model needs settled before it is told how to cite or how to answer.
     const head = [OPEN_ROLE,
+      provenance ? PROVENANCE_SENTENCE : null,
       preferGov ? PREFER_GOV_SOURCES : null,
       specialist ? RESEARCH_SPECIALIST_BLOCK : null,
     ].filter(Boolean).join('\n\n');

@@ -20,7 +20,9 @@ import { buildSystemPrompt, OPEN_ROLE, OPEN_CHECKLIST_SHAPE, PREFER_GOV_SOURCES 
 function withSwitch<T>(value: string | undefined, fn: () => T): T {
   const before = process.env.RESEARCH_PREFER_GOV
   const beforeSpecialist = process.env.RESEARCH_SPECIALIST
+  const beforeProvenance = process.env.RESEARCH_PROVENANCE
   delete process.env.RESEARCH_SPECIALIST
+  delete process.env.RESEARCH_PROVENANCE
   if (value === undefined) delete process.env.RESEARCH_PREFER_GOV
   else process.env.RESEARCH_PREFER_GOV = value
   try { return fn() } finally {
@@ -28,6 +30,8 @@ function withSwitch<T>(value: string | undefined, fn: () => T): T {
     else process.env.RESEARCH_PREFER_GOV = before
     if (beforeSpecialist === undefined) delete process.env.RESEARCH_SPECIALIST
     else process.env.RESEARCH_SPECIALIST = beforeSpecialist
+    if (beforeProvenance === undefined) delete process.env.RESEARCH_PROVENANCE
+    else process.env.RESEARCH_PROVENANCE = beforeProvenance
   }
 }
 

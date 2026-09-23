@@ -18,11 +18,14 @@ import {
 /** Both switches, always set together, so no assertion depends on the ambient environment. */
 function withSwitches<T>(gov: boolean, specialist: boolean, fn: () => T): T {
   const b1 = process.env.RESEARCH_PREFER_GOV, b2 = process.env.RESEARCH_SPECIALIST
+  const b3 = process.env.RESEARCH_PROVENANCE
+  delete process.env.RESEARCH_PROVENANCE   // R1.3's assertions are about R1.2 and R1.3 only
   if (gov) process.env.RESEARCH_PREFER_GOV = 'true'; else delete process.env.RESEARCH_PREFER_GOV
   if (specialist) process.env.RESEARCH_SPECIALIST = 'true'; else delete process.env.RESEARCH_SPECIALIST
   try { return fn() } finally {
     if (b1 === undefined) delete process.env.RESEARCH_PREFER_GOV; else process.env.RESEARCH_PREFER_GOV = b1
     if (b2 === undefined) delete process.env.RESEARCH_SPECIALIST; else process.env.RESEARCH_SPECIALIST = b2
+    if (b3 === undefined) delete process.env.RESEARCH_PROVENANCE; else process.env.RESEARCH_PROVENANCE = b3
   }
 }
 
@@ -42,6 +45,7 @@ describe('RESEARCH_SPECIALIST — off', () => {
   test('anything but the exact string "true" is off — a typo does not silently enable it', () => {
     const b = process.env.RESEARCH_SPECIALIST
     delete process.env.RESEARCH_PREFER_GOV
+    delete process.env.RESEARCH_PROVENANCE
     try {
       for (const v of ['ture', 'yes', 'on', '1', 'TRUE ', '']) {
         process.env.RESEARCH_SPECIALIST = v

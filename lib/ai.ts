@@ -22,7 +22,24 @@ export type AIContent = string | any[]
  *   default   — everything not yet classified, so an unrouted call is loud in a grep and
  *               not silently downgraded.
  */
-export type AITask = 'judgement' | 'critique' | 'prose' | 'default'
+import { recordAICall, describeCost, type LedgerTask } from './costLedger.ts'
+
+export type AITask = 'judgement' | 'critique' | 'prose' | 'default' | 'substeps' | 'summary'
+
+/**
+ * What a caller passes so its call lands in the cost ledger (`DECISIONS.md` §128 J).
+ *
+ * *** IT IS OPTIONAL, AND AN OMITTED LEDGER IS A CALL THAT IS NOT COUNTED. *** That is a real
+ * hole and it is deliberate rather than hidden: wiring it into every historical call site at
+ * once would have touched the audits, the gate and document review in the same change as the
+ * measurement. `scripts/cost-report.js` prints which tasks have never written a row, so the
+ * hole is visible in the output rather than discovered by a total that looks too small.
+ */
+export interface LedgerRef {
+  /** From the verified session, never from a client parameter. Null for a script. */
+  companyId: string | null
+  task: LedgerTask
+}
 
 export interface AskAIOptions {
   maxTokens?: number
@@ -30,6 +47,8 @@ export interface AskAIOptions {
   model?: string
   /** What this call is for. Routes to a tier — see AITask. */
   task?: AITask
+  /** Records this call in the cost ledger. Omitted = not counted; see LedgerRef. */
+  ledger?: LedgerRef
   /** Lower = more consistent/deterministic, higher = more varied.
    *  Default (unset) uses the API's own default, which favors variety —
    *  fine for conversational answers, too loose for yes/no judgment calls.
@@ -63,6 +82,13 @@ const TASK_MODELS: Record<AITask, () => string> = {
   judgement: () => process.env.AI_MODEL_JUDGEMENT || process.env.AI_MODEL || 'claude-sonnet-4-5',
   // Narrative expansion. Nothing here decides applicability.
   prose:     () => process.env.AI_MODEL_PROSE     || process.env.AI_MODEL || 'claude-sonnet-4-5',
+  // *** ELABORATION, NOT RESEARCH — `DECISIONS.md` §128 J.3. ***
+  // Micro-steps expand one item of a checklist the customer is already looking at, and a summary
+  // reads a transcript that already exists. Neither decides what the law requires and neither
+  // searches; both were running on the research tier because there was no other tier to put them
+  // on. Defaulting them to Sonnet 5 is the owner's decision, made from the ledger.
+  substeps:  () => process.env.AI_MODEL_SUBSTEPS  || process.env.AI_MODEL || 'claude-sonnet-5',
+  summary:   () => process.env.AI_MODEL_SUMMARY   || process.env.AI_MODEL || 'claude-sonnet-5',
   default:   () => process.env.AI_MODEL           || 'claude-sonnet-4-5',
 }
 
@@ -255,6 +281,11 @@ export async function askAIWithCitations(
       console.warn(`AI: dropping temperature=${options.temperature} — ${model} does not accept it. The model is deterministic by default, so the intent is preserved.`)
     }
 
+    // Accumulated ACROSS retries: a truncated first attempt was paid for, and a ledger that
+    // records only the attempt that succeeded understates every call that had to retry.
+    let ledgerIn = 0, ledgerOut = 0, ledgerSearches = 0
+    const ledgerStarted = Date.now()
+
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
       const message = await anthropic.messages.create({
         // A literal `model` wins, then the task tier, then the single AI_MODEL. Before
@@ -274,6 +305,13 @@ export async function askAIWithCitations(
       // that forced it.
       const answer = reassemble(message.content as unknown as Array<Record<string, unknown>>)
 
+      // Counted from the RESPONSE, not from whether the tool was offered: `enableWebSearch` only
+      // makes the tool available and the model decides. Billing follows what it did.
+      ledgerIn += (message as any).usage?.input_tokens ?? 0
+      ledgerOut += (message as any).usage?.output_tokens ?? 0
+      ledgerSearches += (message.content as Array<{ type?: string }> ?? [])
+        .filter((b) => b?.type === 'web_search_tool_result').length
+
       // stop_reason is the deterministic signal for truncation — not a guess.
       // If the response was genuinely cut off by the token budget, retry with
       // a bigger one automatically rather than surface a broken result and
@@ -284,6 +322,15 @@ export async function askAIWithCitations(
         continue
       }
 
+      if (options.ledger) {
+        const row = {
+          companyId: options.ledger.companyId, task: options.ledger.task,
+          model, effort: null, inputTokens: ledgerIn, outputTokens: ledgerOut,
+          searches: ledgerSearches, wallMs: Date.now() - ledgerStarted,
+        }
+        console.log(describeCost(row))
+        void recordAICall(row)      // not awaited: bookkeeping never delays the answer
+      }
       return answer
     }
     return { text: '', sources: [] }
@@ -475,13 +522,35 @@ export type Effort = (typeof EFFORT_LEVELS)[number]
  * because a typo that quietly halves the reasoning depth is indistinguishable from the model
  * getting worse.
  */
+/**
+ * *** THE DEFAULT IS `medium`, AND IT IS A DELIBERATE DEFAULT RATHER THAN THE API's. ***
+ *
+ * The API's own default is `high`. The owner's decision on Fix Round 1 H moved research and
+ * checklist to `medium`, on six measured runs of the same question, same switches, same model:
+ *
+ *   high     mean 79.5s · 5,706 output tokens · 3.3/4 golden facts
+ *   medium   mean 45.4s · 3,305 output tokens · 3.3/4 golden facts
+ *
+ * **43% faster and 42% fewer output tokens.** The fact scores did NOT separate the two levels —
+ * each varied by a whole fact between its own runs — so this buys a measured cost saving against
+ * an unmeasured quality difference, which is the trade the owner made knowingly (`DECISIONS.md`
+ * §128).
+ *
+ * `effortFromEnv` governs `askAIOpenStream` and nothing else, so this moves research and
+ * checklist and leaves the gate, the critic and the audits exactly where they were.
+ *
+ * An unreadable value falls back to this default too — NOT to the API's — because a typo
+ * silently buying the expensive tier is the failure this is meant to make impossible.
+ */
+export const DEFAULT_EFFORT: Effort = 'medium'
+
 export function effortFromEnv(): Effort | null {
   const raw = String(process.env.AI_EFFORT ?? '').trim().toLowerCase()
-  if (!raw) return null
+  if (!raw) return DEFAULT_EFFORT
   if ((EFFORT_LEVELS as readonly string[]).includes(raw)) return raw as Effort
   console.warn(`AI: AI_EFFORT=${JSON.stringify(process.env.AI_EFFORT)} is not one of ` +
-               `${EFFORT_LEVELS.join(', ')} — sending no output_config.effort, which is the API default (high).`)
-  return null
+               `${EFFORT_LEVELS.join(', ')} — falling back to ${DEFAULT_EFFORT}.`)
+  return DEFAULT_EFFORT
 }
 
 export interface OpenCallOptions {
@@ -494,6 +563,8 @@ export interface OpenCallOptions {
   signal?: AbortSignal
   /** Default true. The MODEL decides whether to search; this only makes the tool available. */
   enableWebSearch?: boolean
+  /** Records this call in the cost ledger. Omitted = not counted; see LedgerRef. */
+  ledger?: LedgerRef
 }
 
 /**
@@ -547,6 +618,7 @@ export async function* askAIOpenStream(
 
   let sawToolUse = false
   let emittedText = false
+  let searches = 0   // for the ledger: what the model actually ran, not what was offered
 
   stream.on('streamEvent', (event: any) => {
     if (event.type === 'content_block_start') {
@@ -555,6 +627,7 @@ export async function* askAIOpenStream(
         // THE NARRATION RULE, applied live. Anything already shown was narration: withdraw it.
         if (!sawToolUse && emittedText) push({ type: 'reset' })
         sawToolUse = true
+        searches++
         push({ type: 'searching', query: typeof b.input?.query === 'string' ? b.input.query : null })
       }
     } else if (event.type === 'content_block_delta' && event.delta?.type === 'text_delta') {
@@ -589,6 +662,26 @@ export async function* askAIOpenStream(
   const final = await finalPromise
   if (failed) { yield { type: 'error', message: (failed as Error).message }; return }
   if (!final) { yield { type: 'error', message: 'The model returned no message.' }; return }
+
+  // *** THE LEDGER ROW IS WRITTEN HERE, ON THE COMPLETED STREAM, AND NOWHERE ELSE. ***
+  // A stream that failed or was aborted still cost something upstream, but `finalMessage()`
+  // gives no usage for it — there is no honest number to write, so no row is written and the
+  // reconciliation in §128 J.2 is explicit that aborted answers are missing from the ledger.
+  // Inventing a cost for a call whose token counts nobody has would be the exact failure this
+  // table exists to end.
+  if (options.ledger) {
+    const row = {
+      companyId: options.ledger.companyId, task: options.ledger.task, model,
+      effort: effort ?? null,
+      inputTokens: (final as any).usage?.input_tokens ?? 0,
+      outputTokens: (final as any).usage?.output_tokens ?? 0,
+      // Counted from the stream's own `searching` events — what the model actually ran.
+      searches,
+      wallMs: Date.now() - startedAt,
+    }
+    console.log(describeCost(row))
+    void recordAICall(row)
+  }
 
   yield {
     type: 'done',

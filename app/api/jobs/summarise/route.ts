@@ -109,7 +109,8 @@ export async function POST(request: NextRequest) {
         const result = await askAIJson<Summarised>(
           SUMMARISE_PROMPT,
           `Conversation title: ${topic.title ?? '(none)'}\n\n${transcript}`,
-          { maxTokens: 4000, task: 'judgement' },
+          { maxTokens: 4000, task: 'summary',
+            ledger: { companyId: topic.company_id as string, task: 'summarise' } },
         )
 
         const summary = String(result?.summary ?? '').trim()

@@ -301,7 +301,8 @@ export async function POST(request: NextRequest) {
           // off mid-sentence. Thinking tokens count toward this, which is why the old cap was
           // reached sooner than the visible length suggested. Streaming removed the SDK's
           // non-streaming ceiling (TODO 0.11), so there is nothing else in the way.
-          { task: 'judgement', maxTokens: 16000, signal: request.signal })) {
+          { task: 'judgement', maxTokens: 16000, signal: request.signal,
+            ledger: { companyId, task: 'checklist' } })) {
           if (ev.type === 'text') raw += ev.text;
           else if (ev.type === 'reset') raw = '';
           else if (ev.type === 'done') raw = ev.answer.text;
@@ -365,7 +366,8 @@ export async function POST(request: NextRequest) {
           let completed = false;
           try {
             for await (const ev of askAIOpenStream(system, messages,
-                         { task: 'prose', maxTokens: 16000, signal: request.signal })) {
+                         { task: 'prose', maxTokens: 16000, signal: request.signal,
+                           ledger: { companyId, task: 'research' } })) {
               if (ev.type === 'done') {
                 completed = true;
                 send({ type: 'done', research: ev.answer.text, sources: ev.answer.sources,
@@ -608,7 +610,8 @@ export async function POST(request: NextRequest) {
         // arrives split across many text blocks, one per cited span; `reassemble` joins them
         // into continuous text, numbers the citations and returns the list behind the markers.
         const answer = await askAIWithCitations(systemPrompt, messageContent,
-          { maxTokens: 6000, task: 'prose', enableWebSearch: g.needsWebSearch });
+          { maxTokens: 6000, task: 'prose', enableWebSearch: g.needsWebSearch,
+            ledger: { companyId, task: 'research' } });
         return NextResponse.json({ outcome: 'answer', research: answer.text, sources: answer.sources, gate: g.resolved, frame: g.frame, followUp: g.followUp, turn: newTurn, topicId: activeTopicId || null });
       }
 
@@ -616,7 +619,8 @@ export async function POST(request: NextRequest) {
       // this route carried until 11 Sep. The shared extractor tolerates narration around
       // the object, which the local version did not — lib/ai.ts is the only place that
       // logic should live.
-      const data = await askAIJson<ChecklistAnswer>(systemPrompt, messageContent, { maxTokens: 6000, task: 'judgement' });
+      const data = await askAIJson<ChecklistAnswer>(systemPrompt, messageContent,
+        { maxTokens: 6000, task: 'judgement', ledger: { companyId, task: 'checklist' } });
 
       // ------------------------------------------------------------------
       // STAGE 5 — the critic pass. A FRESH call that sees only the output.
@@ -676,7 +680,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ outcome: 'answer', data: kept, gate: g.resolved, frame: g.frame, followUp: g.followUp, turn: newTurn, topicId: activeTopicId || null });
     }
 
-    const data = await askAIJson<unknown>(systemPrompt, messageContent, { maxTokens: 6000, task: 'prose' });
+    // SUBSTEPS: elaboration of an item already on screen, on its own tier (§128 J.3).
+    const data = await askAIJson<unknown>(systemPrompt, messageContent,
+      { maxTokens: 6000, task: 'substeps', ledger: { companyId, task: 'substeps' } });
     return NextResponse.json({ outcome: 'answer', data });
   } catch (error) {
     console.error("Full error:", error);

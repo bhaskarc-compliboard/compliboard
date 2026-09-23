@@ -39,7 +39,7 @@ export async function POST(
 ) {
   const authed = await requireCompany(request)
   if (!authed.ok) return authed.response
-  const { db } = authed.auth
+  const { db, companyId } = authed.auth
 
   const { id } = await context.params
   if (!id) return NextResponse.json({ error: 'No conversation id given.' }, { status: 400 })
@@ -71,7 +71,7 @@ export async function POST(
     const result = await askAIJson<{ summary?: string }>(
       SUMMARISE_PROMPT,
       `Conversation title: ${topic.title ?? '(none)'}\n\n${transcript}`,
-      { maxTokens: 4000, task: 'judgement' },
+      { maxTokens: 4000, task: 'summary', ledger: { companyId, task: 'summarise' } },
     )
     const summary = String(result?.summary ?? '').trim()
     if (!summary) throw new Error('the model returned no summary')

@@ -217,6 +217,16 @@ const COMPANY_SCOPED_TABLES = [
 // Tables with a company_id that this loop deliberately does NOT name, each with the
 // reason. A table may only be here if something else genuinely removes its rows.
 const DELETED_BY_CASCADE_OR_PARENT = [
+  'ai_calls',              // cascades with the company: company_id -> companies ON DELETE
+                           // CASCADE, read from pg_constraint on 23 Sep rather than assumed —
+                           //   conname ai_calls_company_id_fkey · confdeltype = c (cascade)
+                           // NAMED HERE RATHER THAN IN THE LOOP, and the distinction is the
+                           // same one critic_findings draws: these are not the tenant's rows.
+                           // The cost ledger is OUR measurement of what we spent serving them
+                           // (§128 J), and `authenticated` holds SELECT and nothing else on it.
+                           // Sweeping it in the tenant loop would say a customer's deletion is
+                           // a customer deleting their own data; the cascade is the honest
+                           // mechanism, and it still leaves nothing behind.
   'checklist_items',       // deleted above by checklist_id, before its parent goes
   'obligation_evidence',   // deleted above by obligation_id, before its parent goes
   'switch_determinations', // cascades with the company: company_id -> companies ON DELETE

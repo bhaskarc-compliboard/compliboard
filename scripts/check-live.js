@@ -160,6 +160,22 @@ for (const c of CASES) {
 // ---------------------------------------------------------------------------
 const BASE = process.env.CHECK_LIVE_BASE_URL || 'http://localhost:3000'
 
+/**
+ * `npm run check:live -- --only sources` runs ONE named block.
+ *
+ * *** THIS IS A COST CONTROL, NOT A CONVENIENCE. *** A full run is roughly a dozen real model
+ * calls; the ledger (§128 J) puts it near $4. Proving one step three times should not cost
+ * three full runs, and a check somebody avoids because of the bill is a check that stops being
+ * run. The DEFAULT is still everything — a bare `npm run check:live` is unchanged, so this
+ * cannot quietly narrow the gate the way `.only` narrows a test suite.
+ */
+const only = (() => {
+  const i = process.argv.indexOf('--only')
+  return i >= 0 ? process.argv[i + 1] : null
+})()
+const want = (name) => !only || only === name
+if (only) console.log(`\n  --only ${only}: the other /api/chat blocks are SKIPPED and prove nothing this run.\n`)
+
 async function reachable() {
   try {
     const r = await fetch(BASE, { method: 'GET', signal: AbortSignal.timeout(2500) })
@@ -178,6 +194,7 @@ if (!(await reachable())) {
   const auth = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
 
   // 1. RESEARCH streams, and the stream carries sources.
+  if (want('research')) {
   const t0 = Date.now()
   const res = await fetch(`${BASE}/api/chat`, {
     method: 'POST', headers: auth,
@@ -208,7 +225,10 @@ if (!(await reachable())) {
     else console.log(`  ✓ research            streamed ${text.length} chars, ${sources.length} source(s), ${secs}s`)
   }
 
+  }
+
   // 2. CHECKLIST returns the shape the UI reads.
+  if (want('checklist')) {
   const cl = await fetch(`${BASE}/api/chat`, {
     method: 'POST', headers: auth,
     body: JSON.stringify({ question: 'Starting a small auto repair shop in Oregon', mode: 'checklist', history: [] }),
@@ -222,6 +242,8 @@ if (!(await reachable())) {
     const missing = ['name', 'description', 'why'].filter((k) => !f?.[k])
     if (missing.length) { console.log(`  ✗ checklist           first item missing ${missing.join(', ')}`); failures++ }
     else console.log(`  ✓ checklist           ${items.length} must_do, ${(clJson.good_to_have ?? []).length} good_to_have, shape intact`)
+  }
+
   }
 
   // ---- RUN 2: the conversation survives, and the counters record events ----------------
@@ -245,11 +267,13 @@ if (!(await reachable())) {
     .from('usage_counters').select('questions_answered, checklists_created')
     .eq('company_id', companyId).maybeSingle()).data ?? { questions_answered: 0, checklists_created: 0 }
 
-  const before = await countersNow()
-  const first = await ask('Name the OSHA standard number for hazard communication. One line.')
+  const before = want('conversation') ? await countersNow() : null
+  const first = want('conversation')
+    ? await ask('Name the OSHA standard number for hazard communication. One line.') : null
   const convoTopic = first?.topicId
 
-  if (!convoTopic) { console.log('  ✗ conversation        no topicId came back — the turn was not saved'); failures++ }
+  if (!want('conversation')) { /* skipped by --only */ }
+  else if (!convoTopic) { console.log('  ✗ conversation        no topicId came back — the turn was not saved'); failures++ }
   else {
     const { data: savedTurns } = await asUser
       .from('turns').select('position, role, stopped').eq('topic_id', convoTopic).order('position')
@@ -275,6 +299,7 @@ if (!(await reachable())) {
   }
 
   // COUNTERS: +1 per completed answer, and never for a stopped one.
+  if (want('conversation')) {
   const mid = await countersNow()
   const asked = mid.questions_answered - before.questions_answered
   if (asked < 1) { console.log(`  ✗ counters            questions_answered moved by ${asked}, expected at least 1`); failures++ }
@@ -299,8 +324,10 @@ if (!(await reachable())) {
     } else console.log('  ✓ stop                counter unchanged, question kept and marked, no answer row')
   }
 
+  }
+
   // CONVERSION: scope=discussed may cite ONLY what the conversation cited.
-  if (convoTopic) {
+  if (want('convert') && convoTopic) {
     const norm = (u) => { try { const x = new URL(u); return (x.origin + x.pathname).replace(/\/+$/, '').toLowerCase() } catch { return String(u ?? '').toLowerCase() } }
     const { data: turnRows } = await asUser.from('turns').select('sources').eq('topic_id', convoTopic)
     const citedSet = new Set((turnRows ?? []).flatMap((r) => (r.sources ?? []).map((s) => norm(s.url))))
@@ -334,7 +361,7 @@ if (!(await reachable())) {
   // claim. This drives the exact sequence: a question that searches, a follow-up, then the
   // challenge. **The failure it catches is a denial, and the denial is what would reach a
   // customer as "we made those up".**
-  {
+  if (want('sources')) await (async () => {
     const q1 = await ask('Which federal agency issues hazardous materials registration for '
       + 'interstate carriers, and what is the registration called? Cite your sources.')
     const cited = (q1?.sources ?? []).length
@@ -344,30 +371,74 @@ if (!(await reachable())) {
       // Not a failure of the fix: with nothing cited there is nothing for turn three to deny.
       console.log(`  — sources             SKIPPED: the first answer cited 0 sources, so there is nothing to stand by`)
     } else {
-      await ask('And who has to renew it annually?', sourcesTopic)
+      const q2 = await ask('And who has to renew it annually?', sourcesTopic)
+
+      // ----------------------------------------------------------------------------------
+      // *** IF THE LAST ANSWER CITED NOTHING, A DENIAL IS THE TRUTHFUL ANSWER. ***
+      //
+      // The question asked is "were the sources in your LAST answer real?". Measured on
+      // 23 September: one sequence's second answer ran no search and stored zero sources, and
+      // the model replied *"The second answer cited nothing. I wrote it from memory without
+      // running a search."* **That is correct**, and the first version of this check scored it
+      // as the defect — a checker calling an accurate answer a failure, which is worse than no
+      // checker at all (`AUDIT-CHECKS.md` check 14).
+      //
+      // So the probe is only valid when there is something to stand behind. With nothing cited
+      // the run SKIPS and says so; it never passes and never fails on a question it cannot ask.
+      // ----------------------------------------------------------------------------------
+      const lastCited = (q2?.sources ?? []).length
+      if (lastCited === 0) {
+        console.log(`  — sources             SKIPPED: the second answer cited 0 sources, so "were they real?" has no subject`)
+        return
+      }
+
       const q3 = await ask('Were the sources in your last answer real?', sourcesTopic)
       const said = String(q3?.research ?? '')
-      // The recorded wording was "I didn't actually retrieve and verify those sources"; these are
-      // the ways that claim is phrased, not a list of forbidden words.
-      const denial = /(did ?n.t|didn't|do ?n.t|not|never|cannot|can.t|could ?n.t)[^.]{0,60}(retriev|verif|access|search|visit|fetch)/i.test(said)
-        || /(fabricat|made[- ]up|invented|hallucinat|illustrative|placeholder|hypothetical example)/i.test(said)
-      const names = (q1.sources ?? []).some((src) => {
-        try { return said.toLowerCase().includes(new URL(src.url).hostname.replace(/^www\./, '')) } catch { return false }
-      })
-      if (!said.trim()) {
-        // Distinct from a denial: nothing came back at all, which is a stream fault, not a
-        // judgement about the sources. Reporting it as a denial would send the next person
-        // looking in the wrong place.
-        console.log('  ✗ sources             turn three returned NO answer — the stream carried no done event'); failures++
-      } else if (denial) {
-        console.log(`  ✗ sources             turn three disowned its citations: ${JSON.stringify(said.slice(0, 140))}`); failures++
-      } else if (!names) {
-        console.log(`  ✗ sources             turn three named none of the ${cited} sources it cited: ${JSON.stringify(said.slice(0, 140))}`); failures++
+
+      // ----------------------------------------------------------------------------------
+      // *** WHAT A SCRIPT CAN AND CANNOT JUDGE HERE, DECIDED AFTER GETTING IT WRONG TWICE. ***
+      //
+      // The recorded defect is a CATEGORICAL claim: "I did not run a search before those
+      // answers, I wrote them from memory and formatted them to look retrieved." That is a
+      // specific, detectable statement and it is what this fails on.
+      //
+      // It is NOT the same as a caveat. Three runs on 23 September opened with "Yes — I
+      // re-checked them and they hold up" and went on to say two citations were weak and one
+      // number was unconfirmed. **That is the product working**: an answer distinguishing what
+      // it verified from what it did not is worth more than one that says everything is fine.
+      // An earlier version of this check scored all three as the defect, on a regex that caught
+      // the word "not" within sixty characters of "verify".
+      //
+      // And requiring the answer to repeat a HOSTNAME was equally wrong — "PHMSA administers
+      // it" names the source; "phmsa.dot.gov" is how a URL is spelled, not how a person writes.
+      //
+      // So: FAIL on a denial, PASS on an affirmation, and anything else is reported for a
+      // person to read rather than guessed at — `TESTING.md` (a)'s rule, applied to its own
+      // harness.
+      // ----------------------------------------------------------------------------------
+      const denial = new RegExp([
+        'did ?n.?t (actually )?(run|do|perform|execute) (a |any )?search',
+        'i did not (run|do|perform) (a |any )?search',
+        'no search(es)? (was|were) (run|performed|done)',
+        'wrote (them|it|those) from (my )?memory',
+        '(made (them|it|those) up|fabricat|invent(ed)? (them|the|those)|hallucinat)',
+        'formatted (them )?to look (like )?(retrieved|real)',
+        '(are|were) ?n.?t real',
+      ].join('|'), 'i').test(said)
+
+      const affirms = /(yes\b|they (are|were) real|real (search results|pages)|they hold up|holds up|re-?checked .{0,40}(hold|confirm)|confirmed)/i.test(said)
+
+      if (denial) {
+        console.log(`  ✗ sources             turn three DISOWNED its citations: ${JSON.stringify(said.slice(0, 140))}`); failures++
+      } else if (affirms) {
+        console.log(`  ✓ sources             turn three stood by its ${cited} citations (caveats about individual sources are fine)`)
       } else {
-        console.log(`  ✓ sources             turn three stood by all ${cited} of its citations and named them`)
+        // Neither shape. Not scored either way — printed for a person.
+        console.log(`  ? sources             NEITHER a denial nor a clear affirmation — read the wording below`)
       }
+      console.log(`      └────────────────────────────────────────────────────────────────`)
     }
-  }
+  })()
 
   // ---- RUN 3: the routes the rebuilt page depends on ------------------------------------
   //

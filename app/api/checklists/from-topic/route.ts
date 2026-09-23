@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
     const data = await askAIJson<Converted>(
       scope === 'complete' ? CONVERT_COMPLETE : CONVERT_DISCUSSED,
       `${transcript}${sourceList}`,
-      { maxTokens: 16000, task: 'judgement' },
+      { maxTokens: 16000, task: 'judgement', ledger: { companyId, task: 'convert' } },
     )
 
     // ---- ENFORCEMENT ----

@@ -17,7 +17,11 @@
 import { execFileSync } from 'node:child_process'
 import { readdirSync, readFileSync } from 'node:fs'
 
-const FLOOR = 444
+// 444 -> 426 on 23 Sep: `lib/answerDisplay.ts` and its 18 tests were DELETED on the owner's
+// decision. Run 3's `AnswerBody` replaced it and `grep -rn answerDisplay app lib components`
+// returned only the file itself — the suite was exercising code nothing shipped. Lowering the
+// floor is exactly the deliberate act this guard exists to force somebody to make in writing.
+const FLOOR = 449
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

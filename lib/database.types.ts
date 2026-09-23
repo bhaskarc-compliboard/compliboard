@@ -74,6 +74,65 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_calls: {
+        Row: {
+          company_id: string | null
+          cost_usd: number | null
+          created_at: string
+          effort: string | null
+          id: string
+          input_tokens: number
+          model: string
+          output_tokens: number
+          price_input_per_m: number | null
+          price_output_per_m: number | null
+          price_per_search: number | null
+          searches: number
+          task: string
+          wall_ms: number
+        }
+        Insert: {
+          company_id?: string | null
+          cost_usd?: number | null
+          created_at?: string
+          effort?: string | null
+          id?: string
+          input_tokens?: number
+          model: string
+          output_tokens?: number
+          price_input_per_m?: number | null
+          price_output_per_m?: number | null
+          price_per_search?: number | null
+          searches?: number
+          task: string
+          wall_ms?: number
+        }
+        Update: {
+          company_id?: string | null
+          cost_usd?: number | null
+          created_at?: string
+          effort?: string | null
+          id?: string
+          input_tokens?: number
+          model?: string
+          output_tokens?: number
+          price_input_per_m?: number | null
+          price_output_per_m?: number | null
+          price_per_search?: number | null
+          searches?: number
+          task?: string
+          wall_ms?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_calls_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audits: {
         Row: {
           company_id: string
