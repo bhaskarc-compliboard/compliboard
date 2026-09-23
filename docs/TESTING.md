@@ -1,6 +1,10 @@
 # Testing
-**Version:** 18 · **Updated:** 23 September 2026
-**Supersedes:** version 17 (22 Sep). Adds the **R2 manual set** — two tests each for a conversation
+**Version:** 19 · **Updated:** 23 September 2026
+**Supersedes:** version 18 (23 Sep). Adds the **R3 finish-line set** — the seven actions the owner
+runs before the research/checklist section ships, plus three that fail quietly: stopping an
+answer, deleting a conversation, and the 820px layout where **Delete must be visible without a
+hover** because touch has no hover. The note at the end says what `check:live` proves and what it
+cannot: it covers the routes, not whether an answer reads as an answer. Version 18: Adds the **R2 manual set** — two tests each for a conversation
 that survives a reload, stop, the nightly summariser, the nightly deleter and conversion with
 scope (`DECISIONS.md` §125). The edge cases are where the domain work is: whether a cleared
 transcript reads as the product working or as loss, whether a fact proposal is a fact about THIS
@@ -106,6 +110,43 @@ untested — applies to the runner as much as to anything it runs.
 **167 · 0 skipped · 0 todo**. Per file: `appliesExpression` 58 · `jurisdiction` 24 · `resolve`
 40 · `sdsExtraction` 14 · `switchDetermination` 31. **No run in this project has reported 100 or
 106.** The floor is committed so the question does not have to be re-asked.
+
+---
+
+## Manual set — R3, THE FINISH LINE (`DECISIONS.md` §126)
+
+**These ten are the owner's pass before the section ships.** The first seven are the finish-line
+actions; the last three are the ones most likely to be wrong and least likely to be noticed.
+
+**Setup:** signed in as a real user on staging, `npm run dev` pointed at staging, every pipeline
+switch off.
+
+| # | Action | Steps | What must be true |
+|---|---|---|---|
+| **1** | **Ask and get a sourced answer** | Open Compliance Workspace. Type *"Do we need to file a Tier II report for our Oregon plant?"* → **Research this** | Text appears **progressively**, not all at once. The answer has **no raw `\|` pipes and no stray `*`** — tables are tables, bold is bold. Each `[n]` opens a card with a title, a domain and a working link. The sources list under the answer shows a domain beside each title, and **no source reads as a bare domain or a broken PDF header** |
+| **2** | **Continue the conversation** | Ask a follow-up that only makes sense in context: *"does that change if we move up a generator category?"* | The answer carries the subject **without restating the first answer**. The composer is now docked at the bottom; the three buttons and the examples are gone |
+| **3** | **Upload a file and ask about it** | Paperclip → choose a PDF → ask *"check this for errors"* | A file card appears saying what it was read as and **"Saved to Documents → …"**. Open the Documents screen in another tab: **the file is there.** If it could not be read, the card says so in our voice and offers a clearer copy — and asserts **nothing** about the contents |
+| **4** | **Convert to a checklist** | Under an answer → **Turn this into a checklist** → **Just what we discussed** | The scope sheet shows both options. The new checklist opens **in the drawer over the conversation**, not on a new screen. Every item is tagged **from this conversation**, and every source on it appeared in the conversation |
+| **5** | **Summarise** | Under an answer → **Summarise this** | The summary drawer opens with a summary of what was asked and concluded. Go to **Conversations**: the row now reads **Summarised** |
+| **6** | **Tick items, and reload** | Open a checklist → tick three items → **reload the browser** → reopen it | The three are still ticked and the progress reads **"3 of N done"**. This is the one people assume works |
+| **7** | **Find and reopen a past conversation** | **Conversations** tab → click a row → **Open the conversation** | The whole back-and-forth is there in order, with each answer's own sources, and you can carry on from it |
+
+### And three that fail quietly
+
+| # | Action | Steps | What must be true |
+|---|---|---|---|
+| **8** | **Stop an answer** | Ask something long. When text starts, press the **stop square** | Text **stops within a second or so**. What arrived stays on screen. No error appears — you did this. Go to Conversations: the question is there, and the checklist/questions counter did **not** move |
+| **9** | **Delete a conversation** | Conversations → hover a row → **Delete** → confirm | It goes from the list and does not come back on reload. If a checklist was made from it, **the checklist is still there** — clearing a transcript must never take the checklist with it |
+| **10** | **The 820px layout** | Narrow the window below 820px, or open it on a phone | **Delete is visible without hovering** — touch has no hover, and a row whose only destructive action needs a hover is unreachable. Nothing scrolls sideways. The docked composer clears the bottom of the screen |
+
+> ### WHAT A SCRIPT CANNOT JUDGE, AND WHY THESE ARE MANUAL
+>
+> `npm run check:live` proves the **routes**: that a conversation saves and reloads, that the
+> counters behave, that `discussed` cites only what the conversation cited, that summarise marks
+> the summary as the user's, and that delete removes the turns. It cannot judge **whether the
+> answer reads as an answer** — whether the markdown looks right, whether a source title is
+> recognisable, whether the stop feels immediate, or whether a cleared transcript reads as the
+> product working rather than as loss. Those are 1, 3, 8 and 10, and they are why this set exists.
 
 ---
 

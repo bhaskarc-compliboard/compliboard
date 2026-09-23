@@ -326,6 +326,47 @@ if (!(await reachable())) {
     }
   }
 
+  // ---- RUN 3: the routes the rebuilt page depends on ------------------------------------
+  //
+  // The PAGE itself is proved by the manual set in TESTING.md — a script cannot judge whether a
+  // drawer reads well. What a script CAN prove is that the routes the page calls behave, and
+  // these are the three the rebuild added a caller for.
+  if (convoTopic) {
+    // GET /api/topics/<id> — the page reopens a conversation with this.
+    const g = await fetch(`${BASE}/api/topics/${convoTopic}`, { headers: auth })
+    const gj = await g.json().catch(() => null)
+    if (!g.ok || !Array.isArray(gj?.turns)) { console.log(`  ✗ topic GET           ${g.status}`); failures++ }
+    else console.log(`  ✓ topic GET           ${gj.turns.length} turns, transcript_cleared=${gj.transcript_cleared}`)
+
+    // POST /api/topics/<id>/summarise — "Summarise this". It must mark the summary as the
+    // user's, or tonight's job would replace a summary somebody deliberately asked for.
+    const sres = await fetch(`${BASE}/api/topics/${convoTopic}/summarise`, { method: 'POST', headers: auth })
+    const sj = await sres.json().catch(() => null)
+    if (!sres.ok || !sj?.summary) { console.log(`  ✗ summarise           ${sres.status} ${sj?.error ?? ''}`); failures++ }
+    else {
+      const { data: t } = await asUser.from('topics').select('summary_source').eq('id', convoTopic).maybeSingle()
+      if (t?.summary_source !== 'user') { console.log(`  ✗ summarise           summary_source is ${t?.summary_source}, expected user`); failures++ }
+      else console.log(`  ✓ summarise           ${sj.summary.length} chars, summary_source=user`)
+    }
+  }
+
+  // DELETE /api/topics/<id> — the Delete on a conversation row. Proved on a throwaway topic so
+  // the one above survives for the rest of this run.
+  {
+    const { data: tmp } = await asUser.from('topics').insert({ company_id: companyId, title: 'check:live delete probe' }).select('id').single()
+    await asUser.from('turns').insert([
+      { topic_id: tmp.id, company_id: companyId, position: 1, role: 'user', text: 'probe' },
+      { topic_id: tmp.id, company_id: companyId, position: 2, role: 'assistant', text: 'probe' },
+    ])
+    const d = await fetch(`${BASE}/api/topics/${tmp.id}`, { method: 'DELETE', headers: auth })
+    const dj = await d.json().catch(() => null)
+    const { count: left } = await asUser.from('turns').select('*', { count: 'exact', head: true }).eq('topic_id', tmp.id)
+    const { count: topicLeft } = await asUser.from('topics').select('*', { count: 'exact', head: true }).eq('id', tmp.id)
+    if (!d.ok || left !== 0 || topicLeft !== 0) {
+      console.log(`  ✗ topic DELETE        ${d.status}, ${left} turns and ${topicLeft} topic rows left behind`); failures++
+    } else console.log(`  ✓ topic DELETE        removed the topic and its ${dj?.turns_deleted ?? '?'} turns`)
+  }
+
   // 3. HISTORY — ask, then ask what was just asked. The answer must name it.
   const hist = [{ question: 'What are the rules for storing propane cylinders outdoors?',
                   answer: 'Propane cylinder storage outdoors is governed by NFPA 58 and local fire code.' }]
