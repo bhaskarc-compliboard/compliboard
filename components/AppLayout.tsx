@@ -10,14 +10,17 @@ interface AppLayoutProps {
   didYouKnow?: { icon: string; text: string }
 }
 
+// *** NO ICONS. *** Multicolour OS emoji put seven uncontrolled colour schemes into a product
+// whose rule is one green, used only where it means something — and they render differently on
+// Mac and Windows, so the nav was a different object on each. Text only; no icon library.
 const NAV_ITEMS = [
-  { icon: '📊', label: 'Dashboard', href: '/dashboard' },
-  { icon: '🛡️', label: 'Audits', href: '/audits' },
-  { icon: '📋', label: 'Compliance Workspace', href: '/compliance' },
-  { icon: '👥', label: 'HR Workspace', href: '/hr' },
-  { icon: '📁', label: 'Company Documents', href: '/documents' },
-  { icon: '📅', label: 'Calendar', href: '/calendar' },
-  { icon: '⚙️', label: 'My Account', href: '/account', soon: false },
+  { label: 'Dashboard', href: '/dashboard' },
+  { label: 'Audits', href: '/audits' },
+  { label: 'Compliance Workspace', href: '/compliance' },
+  { label: 'HR Workspace', href: '/hr' },
+  { label: 'Company Documents', href: '/documents' },
+  { label: 'Calendar', href: '/calendar' },
+  { label: 'My Account', href: '/account', soon: false },
 ]
 
 export default function AppLayout({ children, title, didYouKnow }: AppLayoutProps) {
@@ -124,14 +127,13 @@ export default function AppLayout({ children, title, didYouKnow }: AppLayoutProp
                   setSidebarOpen(false)
                 }
               }}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all ${
+              className={`w-full flex items-center px-3 py-2.5 rounded-xl text-sm transition-all ${
                 isActive
                   ? 'bg-green-50 text-green-800 font-medium'
                   : item.soon
                   ? 'text-gray-300 cursor-not-allowed'
                   : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 cursor-pointer'
               }`}>
-              <span className="text-base">{item.icon}</span>
               <span className="flex-1 text-left">{item.label}</span>
               {item.soon && (
                 <span className="text-xs px-1.5 py-0.5 rounded-md bg-gray-100 text-gray-400">
@@ -152,8 +154,7 @@ export default function AppLayout({ children, title, didYouKnow }: AppLayoutProp
         )}
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-500 hover:bg-red-50 hover:text-red-600 transition-all">
-          <span>🚪</span>
+          className="w-full flex items-center px-3 py-2.5 rounded-xl text-sm text-gray-500 hover:bg-red-50 hover:text-red-600 transition-all">
           <span>Log out</span>
         </button>
       </div>
@@ -184,13 +185,13 @@ export default function AppLayout({ children, title, didYouKnow }: AppLayoutProp
           <button
             onClick={() => { setShowReferral(true); setShowFeedback(false) }}
             className="text-sm text-gray-500 hover:text-green-700 transition-colors px-2 py-1.5 rounded-lg hover:bg-gray-50 hidden sm:flex items-center gap-1.5">
-            <span>🔗</span>
             <span>Refer a friend</span>
           </button>
+          {/* Same classes as Refer a friend. One boxed button beside one plain button implied a
+              difference in importance that is not there. Feedback stays visible at every width. */}
           <button
             onClick={() => { setShowFeedback(true); setShowReferral(false) }}
-            className="text-sm px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:border-green-500 hover:text-green-700 transition-colors flex items-center gap-1.5">
-            <span>💬</span>
+            className="text-sm text-gray-500 hover:text-green-700 transition-colors px-2 py-1.5 rounded-lg hover:bg-gray-50">
             <span>Feedback</span>
           </button>
         </div>
@@ -253,7 +254,6 @@ export default function AppLayout({ children, title, didYouKnow }: AppLayoutProp
             </div>
             {feedbackSent ? (
               <div className="text-center py-6">
-                <div className="text-3xl mb-2">✅</div>
                 <p className="text-sm font-medium text-gray-900">Thank you for your feedback</p>
                 <p className="text-xs text-gray-500 mt-1">We read every message</p>
               </div>
@@ -306,21 +306,19 @@ export default function AppLayout({ children, title, didYouKnow }: AppLayoutProp
               <span className="text-sm text-gray-600 flex-1">compliboard.com</span>
               <button onClick={copyLink}
                 className="text-xs px-3 py-1.5 rounded-lg bg-white border border-gray-200 text-gray-600 hover:border-green-500 hover:text-green-700 transition-colors whitespace-nowrap">
-                {copied ? '✓ Copied' : '📋 Copy link'}
+                {copied ? 'Copied' : 'Copy link'}
               </button>
             </div>
             <div className="space-y-2">
               <button onClick={shareEmail}
-                className="w-full flex items-center gap-3 p-3 rounded-xl border border-gray-200 text-sm text-gray-600 hover:border-green-500 hover:text-green-700 hover:bg-green-50 transition-colors">
-                <span className="text-lg">📧</span>
+                className="w-full flex items-center p-3 rounded-xl border border-gray-200 text-sm text-gray-600 hover:border-green-500 hover:text-green-700 hover:bg-green-50 transition-colors">
                 <div className="text-left">
                   <p className="font-medium">Send via email</p>
                   <p className="text-xs text-gray-400">Opens your email with a message ready to send</p>
                 </div>
               </button>
               <button onClick={shareLinkedIn}
-                className="w-full flex items-center gap-3 p-3 rounded-xl border border-gray-200 text-sm text-gray-600 hover:border-blue-500 hover:text-blue-700 hover:bg-blue-50 transition-colors">
-                <span className="text-lg">🔗</span>
+                className="w-full flex items-center p-3 rounded-xl border border-gray-200 text-sm text-gray-600 hover:border-blue-500 hover:text-blue-700 hover:bg-blue-50 transition-colors">
                 <div className="text-left">
                   <p className="font-medium">Share on LinkedIn</p>
                   <p className="text-xs text-gray-400">Share with your professional network</p>
