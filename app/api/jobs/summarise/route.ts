@@ -25,6 +25,11 @@ import { requireCronSecret, startJobRun } from '@/lib/jobAuth'
 import { supabaseAdmin } from '@/lib/auth'
 import { askAIJson } from '@/lib/ai'
 import { SUMMARISE_PROMPT } from '@/prompts/summarise'
+// THE SUMMARY IS ARCHIVED; THE TRANSCRIPT IS NOT. A turn that says its own citations were
+// never retrieved (§127) would be summarised as fact and outlive the evidence that refutes it,
+// so each answer reaches the summariser with the sources its `[n]` markers point at.
+import { appendSources } from '@/lib/historySources'
+import type { Source } from '@/lib/ai'
 
 export const maxDuration = 800
 
@@ -83,7 +88,7 @@ export async function POST(request: NextRequest) {
 
         const { data: turns, error: tErr } = await supabaseAdmin
           .from('turns')
-          .select('id, position, role, text, stopped')
+          .select('id, position, role, text, stopped, sources')
           .eq('topic_id', topic.id).order('position', { ascending: true })
         if (tErr) throw new Error(`turns: ${tErr.message}`)
 
@@ -95,7 +100,10 @@ export async function POST(request: NextRequest) {
         }
 
         const transcript = turns
-          .map((t) => `${t.role === 'user' ? 'USER' : 'SPECIALIST'}${t.stopped ? ' (stopped)' : ''}: ${t.text}`)
+          .map((t) => appendSources(
+            `${t.role === 'user' ? 'USER' : 'SPECIALIST'}${t.stopped ? ' (stopped)' : ''}: ${t.text}`,
+            t.sources as Source[] | null,
+          ))
           .join('\n\n')
 
         const result = await askAIJson<Summarised>(

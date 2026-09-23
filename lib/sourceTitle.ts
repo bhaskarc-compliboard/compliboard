@@ -80,6 +80,29 @@ export function isJunkTitle(title: string, url: string): boolean {
   // …and the extension-bearing form, with or without a date: `guidance_v2.pdf`.
   if (/^[\w-]+\.(pdf|docx?|xlsx?|html?)$/i.test(t)) return true
 
+  // ------------------------------------------------------------------------------------
+  // 3b. THE SAME FILE NAME WITH ITS SEPARATORS ALREADY TURNED INTO SPACES — Fix Round 1 (E).
+  //
+  // The rule above requires `[_-]` AND no whitespace, so it saw none of these. All three are
+  // real, all three reached the screen, and all three are in `tests/unit/sourceTitle.test.ts`:
+  //
+  //   "2017 labor standards ord quick chart 11 15 17"     seattle.gov  (the owner's example)
+  //   "registration process brochure 04 06 2018 final"    phmsa.dot.gov
+  //   "J:\SHARED\PERMITS\Forms\Baseline Monitoring Report.doc Rev. 02/27/01w"   sandiego.gov
+  //
+  // *** THE GUARD IS THE CAPITALISATION, AND IT IS WHAT KEEPS THIS SAFE. *** A date run alone
+  // would condemn real titles: "6-2-30: CATEGORICAL INDUSTRIAL USER REPORTING REQUIREMENTS"
+  // and "Fall Protection in Construction OSHA 3146-05R 2015" both carry number runs and are
+  // perfectly good titles. A page that a person wrote a title for capitalises it. A file name
+  // that lost its underscores does not — so this fires only on an all-lowercase string.
+  const dateRun = /\b\d{1,4}[ _-]\d{1,2}[ _-]\d{2,4}\b/.test(t)
+  const noCapitals = t === t.toLowerCase()
+  if (dateRun && noCapitals) return true
+
+  // 3c. A FILESYSTEM PATH THAT ESCAPED INTO THE TITLE — a drive letter or a UNC share. The
+  // document's own properties leak these; they name a folder on somebody's PC, not a subject.
+  if (/^[a-z]:\\/i.test(t) || /\\\\/.test(t) || (t.includes('\\') && /\.(doc|docx|pdf|xls|xlsx)\b/i.test(t))) return true
+
   return false
 }
 
@@ -92,6 +115,14 @@ function humanise(segment: string): string {
     .filter((w) => w && !/^\d+$/.test(w))       // bare numbers carry no subject
   if (!words.length) return ''
   const text = words.join(' ').replace(/\s+/g, ' ').trim()
+    // A segment can hold spaces of its own — `2017 labor standards ord_quick chart_11-15-17` —
+    // so the bare-number filter above never sees the year or the trailing stamp. Strip a leading
+    // year and any trailing run of numbers, or the derived title repeats what made the original
+    // unreadable (Fix Round 1 E).
+    .replace(/^(19|20)\d{2}\s+/, '')
+    .replace(/[\s_-]+\d{1,4}(?:[\s_-]+\d{1,4})*$/, '')
+    .trim()
+  if (!text) return ''
   return text.charAt(0).toUpperCase() + text.slice(1)
 }
 

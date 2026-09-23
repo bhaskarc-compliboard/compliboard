@@ -20,6 +20,8 @@
 import { askAI, askAIJson, askAIWithCitations, askAIOpenStream,
          type AIContent, type OpenMessage } from '@/lib/ai';
 import { pipelineSwitch, logPipelineConfigOnce } from '@/lib/pipelineConfig';
+import { appendSources } from '@/lib/historySources';
+import type { Source } from '@/lib/ai';
 import { nextPosition, saveUserTurn, saveAssistantTurn, markTurnStopped, loadTurns,
          setTitleIfFirst, titleFromQuestion, bumpCounter } from '@/lib/conversation';
 import { extractJsonText } from '@/lib/ai';
@@ -129,7 +131,7 @@ export async function POST(request: NextRequest) {
     let topicId = '';
     // THE OPEN BASELINE'S CONVERSATION MEMORY — plain text pairs, not signed turns.
     // R1.0: prior messages go to the model as history. `DECISIONS.md` §123.
-    let history: Array<{ question?: string; answer?: string }> = [];
+    let history: Array<{ question?: string; answer?: string; sources?: Source[] }> = [];
 
     if (contentType.includes('multipart/form-data')) {
       const formData = await request.formData();
@@ -239,15 +241,29 @@ export async function POST(request: NextRequest) {
       // turn is skipped — it has no answer, and a user message with no assistant reply after
       // it would leave the array ending on two user messages, which the API refuses.
       // ------------------------------------------------------------------
+      //
+      // *** AND EVERY EARLIER ANSWER CARRIES ITS SOURCES. ***
+      //
+      // On 23 September a third turn said: *"My previous two answers carried numbered citation
+      // markers, but I didn't actually retrieve and verify those sources in this conversation."*
+      // **That was false** — both answers came from real searches — and the nightly summariser
+      // then wrote the false claim into the summary, where it outlives the transcript.
+      //
+      // The cause: history was passed back as plain text still carrying `[1]`, `[2]` markers and
+      // **no list of what they pointed at**. A model reading its own earlier turn saw numbered
+      // references to sources that were nowhere in its context, and said so — correctly, about
+      // the context it had. The fix is to give the markers something to refer to.
       if (!history.length && topicId) {
         try {
           const stored = await loadTurns(db, topicId);
-          const pairs: Array<{ question?: string; answer?: string }> = [];
+          const pairs: Array<{ question?: string; answer?: string; sources?: Source[] }> = [];
           for (let i = 0; i < stored.length; i++) {
             const t = stored[i];
             if (t.role !== 'user' || t.stopped) continue;
             const next = stored[i + 1];
-            if (next && next.role === 'assistant') pairs.push({ question: t.text, answer: next.text });
+            if (next && next.role === 'assistant') {
+              pairs.push({ question: t.text, answer: next.text, sources: next.sources ?? [] });
+            }
           }
           history = pairs;
         } catch (e) {
@@ -259,7 +275,8 @@ export async function POST(request: NextRequest) {
       const messages: OpenMessage[] = [];
       for (const h of history) {
         const q = String(h?.question ?? '').trim();
-        const a = String(h?.answer ?? '').trim();
+        const withSources = appendSources(String(h?.answer ?? '').trim(), h?.sources);
+        const a = withSources;
         // Both halves or neither: a user turn with no assistant reply would make the array
         // end on two user messages, which the API refuses.
         if (!q || !a) continue;

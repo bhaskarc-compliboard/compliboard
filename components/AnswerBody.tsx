@@ -11,59 +11,53 @@
  *      rather than being a number with nothing behind it (§106).
  *   3. **Junk titles are replaced** — `lib/sourceTitle.ts`, which has the reasoning and the tests.
  *
- * *** THE MARKERS ARE SPLIT OUT BEFORE MARKDOWN RUNS, NOT AFTER. *** Letting markdown render
- * first and then walking the DOM for `[1]` would also rewrite a `[1]` inside a code block or a
- * URL. Splitting the text first means only real markers become buttons, and the surrounding
- * prose is still handed to the renderer whole.
+ * *** THE MARKDOWN IS PARSED WHOLE, AND THE MARKER TRAVELS INSIDE IT. *** Run 3 split the text
+ * on `[n]` and rendered each piece separately, which cut any table containing a marker in half —
+ * Fix Round 1 (D). `lib/citations.ts` now rewrites each marker into an inline markdown link
+ * (`[1](#cb-cite-1)`) BEFORE parsing, so block structure survives, and the `a` component below
+ * turns links with that href into the source card. Walking the rendered DOM instead would also
+ * rewrite a `[1]` inside a code block; rewriting the source keeps that distinction.
  */
 import React, { useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { displaySource } from '@/lib/sourceTitle'
+import { markCitations, citationNumber } from '@/lib/citations'
 
 export interface AnswerSource { n: number; title: string; url: string }
 
-/** The markdown components, so prose reads like prose and a table reads like a table. */
-const MD = {
-  p: (p: React.HTMLAttributes<HTMLParagraphElement>) => <p className="mb-3 leading-relaxed" {...p} />,
-  ul: (p: React.HTMLAttributes<HTMLUListElement>) => <ul className="mb-3 list-disc space-y-1 pl-5" {...p} />,
-  ol: (p: React.HTMLAttributes<HTMLOListElement>) => <ol className="mb-3 list-decimal space-y-1 pl-5" {...p} />,
-  li: (p: React.HTMLAttributes<HTMLLIElement>) => <li className="leading-relaxed" {...p} />,
-  strong: (p: React.HTMLAttributes<HTMLElement>) => <strong className="font-semibold text-gray-900" {...p} />,
-  h1: (p: React.HTMLAttributes<HTMLHeadingElement>) => <h3 className="mt-5 mb-2 text-base font-semibold text-gray-900" {...p} />,
-  h2: (p: React.HTMLAttributes<HTMLHeadingElement>) => <h3 className="mt-5 mb-2 text-base font-semibold text-gray-900" {...p} />,
-  h3: (p: React.HTMLAttributes<HTMLHeadingElement>) => <h4 className="mt-4 mb-2 text-sm font-semibold text-gray-900" {...p} />,
-  // A table needs its own horizontal scroll: a wide one must not push the whole page sideways.
-  table: (p: React.HTMLAttributes<HTMLTableElement>) => (
-    <div className="mb-3 overflow-x-auto"><table className="w-full border-collapse text-[13px]" {...p} /></div>
-  ),
-  th: (p: React.HTMLAttributes<HTMLTableCellElement>) => (
-    <th className="border border-gray-200 bg-gray-50 px-2.5 py-1.5 text-left font-semibold" {...p} />
-  ),
-  td: (p: React.HTMLAttributes<HTMLTableCellElement>) => (
-    <td className="border border-gray-200 px-2.5 py-1.5 align-top" {...p} />
-  ),
-  code: (p: React.HTMLAttributes<HTMLElement>) => (
-    <code className="rounded bg-gray-100 px-1 py-0.5 text-[12.5px]" {...p} />
-  ),
-  a: (p: React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
-    <a className="text-emerald-700 underline underline-offset-2" target="_blank" rel="noopener noreferrer" {...p} />
-  ),
-}
+/**
+ * The markdown components, so prose reads like prose and a table reads like a table.
+ *
+ * *** EVERY ONE DROPS `node`. *** react-markdown passes the mdast node as a prop; spreading it
+ * into a DOM element put `node="[object Object]"` on every tag in the answer — invalid HTML and
+ * a React warning per element. Found while fixing the table (D).
+ */
+type MdProps<T> = T & { node?: unknown }
+const drop = <T,>({ node: _node, ...rest }: MdProps<T>) => rest as T
 
-/** Splits on citation markers so only real `[n]` become buttons. */
-function segments(text: string): Array<{ type: 'md'; text: string } | { type: 'cite'; n: number }> {
-  const out: Array<{ type: 'md'; text: string } | { type: 'cite'; n: number }> = []
-  const re = /\[(\d{1,2})\]/g
-  let last = 0
-  let m: RegExpExecArray | null
-  while ((m = re.exec(text))) {
-    if (m.index > last) out.push({ type: 'md', text: text.slice(last, m.index) })
-    out.push({ type: 'cite', n: Number(m[1]) })
-    last = m.index + m[0].length
-  }
-  if (last < text.length) out.push({ type: 'md', text: text.slice(last) })
-  return out
+const MD = {
+  p: (p: MdProps<React.HTMLAttributes<HTMLParagraphElement>>) => <p className="mb-3 leading-relaxed" {...drop(p)} />,
+  ul: (p: MdProps<React.HTMLAttributes<HTMLUListElement>>) => <ul className="mb-3 list-disc space-y-1 pl-5" {...drop(p)} />,
+  ol: (p: MdProps<React.HTMLAttributes<HTMLOListElement>>) => <ol className="mb-3 list-decimal space-y-1 pl-5" {...drop(p)} />,
+  li: (p: MdProps<React.HTMLAttributes<HTMLLIElement>>) => <li className="leading-relaxed" {...drop(p)} />,
+  strong: (p: MdProps<React.HTMLAttributes<HTMLElement>>) => <strong className="font-semibold text-gray-900" {...drop(p)} />,
+  h1: (p: MdProps<React.HTMLAttributes<HTMLHeadingElement>>) => <h3 className="mt-5 mb-2 text-base font-semibold text-gray-900" {...drop(p)} />,
+  h2: (p: MdProps<React.HTMLAttributes<HTMLHeadingElement>>) => <h3 className="mt-5 mb-2 text-base font-semibold text-gray-900" {...drop(p)} />,
+  h3: (p: MdProps<React.HTMLAttributes<HTMLHeadingElement>>) => <h4 className="mt-4 mb-2 text-sm font-semibold text-gray-900" {...drop(p)} />,
+  // A table needs its own horizontal scroll: a wide one must not push the whole page sideways.
+  table: (p: MdProps<React.HTMLAttributes<HTMLTableElement>>) => (
+    <div className="mb-3 overflow-x-auto"><table className="w-full border-collapse text-[13px]" {...drop(p)} /></div>
+  ),
+  th: (p: MdProps<React.HTMLAttributes<HTMLTableCellElement>>) => (
+    <th className="border border-gray-200 bg-gray-50 px-2.5 py-1.5 text-left font-semibold" {...drop(p)} />
+  ),
+  td: (p: MdProps<React.HTMLAttributes<HTMLTableCellElement>>) => (
+    <td className="border border-gray-200 px-2.5 py-1.5 align-top" {...drop(p)} />
+  ),
+  code: (p: MdProps<React.HTMLAttributes<HTMLElement>>) => (
+    <code className="rounded bg-gray-100 px-1 py-0.5 text-[12.5px]" {...drop(p)} />
+  ),
 }
 
 function CiteMarker({ n, source }: { n: number; source?: AnswerSource }) {
@@ -100,13 +94,26 @@ function CiteMarker({ n, source }: { n: number; source?: AnswerSource }) {
 
 export function AnswerBody({ text, sources }: { text: string; sources: AnswerSource[] }) {
   const byN = new Map(sources.map((s) => [s.n, s]))
+
+  // The one place a link is inspected: a citation href becomes the marker, anything else stays
+  // an ordinary link. Defined here because it needs the sources this answer carries.
+  const components = {
+    ...MD,
+    a: (p: MdProps<React.AnchorHTMLAttributes<HTMLAnchorElement>>) => {
+      const n = citationNumber(p.href)
+      if (n !== null) return <CiteMarker n={n} source={byN.get(n)} />
+      return (
+        <a className="text-emerald-700 underline underline-offset-2"
+           target="_blank" rel="noopener noreferrer" {...drop(p)} />
+      )
+    },
+  }
+
   return (
     <div className="text-[15px] text-gray-800">
-      {segments(text).map((seg, i) =>
-        seg.type === 'cite'
-          ? <CiteMarker key={i} n={seg.n} source={byN.get(seg.n)} />
-          : <ReactMarkdown key={i} remarkPlugins={[remarkGfm]} components={MD as never}>{seg.text}</ReactMarkdown>,
-      )}
+      <ReactMarkdown remarkPlugins={[remarkGfm]} components={components as never}>
+        {markCitations(text)}
+      </ReactMarkdown>
     </div>
   )
 }

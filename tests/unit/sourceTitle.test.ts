@@ -95,3 +95,58 @@ describe('hostOf', () => {
   test('strips www', () => { assert.equal(hostOf('https://www.osha.gov/a/b'), 'osha.gov') })
   test('survives a malformed url', () => { assert.equal(hostOf('epa.gov/x'), 'epa.gov') })
 })
+
+describe('a file name whose separators became spaces — Fix Round 1 (E)', () => {
+  // *** ALL THREE ARE REAL, PULLED OUT OF `turns.sources` ON STAGING. *** The old rule 3
+  // required a `[_-]` AND no whitespace, so a name that had already had its underscores turned
+  // into spaces walked straight through and reached the screen as the link's label.
+  const JUNK: Array<[string, string, string]> = [
+    ['2017 labor standards ord quick chart 11 15 17',
+      'https://www.seattle.gov/documents/departments/laborstandards/2017%20labor%20standards%20ord_quick%20chart_11-15-17.pdf',
+      'Labor standards ord quick chart'],
+    ['registration process brochure 04 06 2018 final',
+      'https://www.phmsa.dot.gov/sites/phmsa.dot.gov/files/docs/registration/6196/registration-process-brochure-04-06-2018-final.pdf',
+      'Registration process brochure final'],
+    ['J:\\SHARED\\PERMITS\\Forms\\Baseline Monitoring Report.doc Rev. 02/27/01w',
+      'https://www.sandiego.gov/sites/default/files/2024-11/baseline-monitoring-report.pdf',
+      'Baseline monitoring report'],
+  ]
+
+  for (const [title, url, expected] of JUNK) {
+    test(`replaced: ${title.slice(0, 44)}`, () => {
+      assert.equal(isJunkTitle(title, url), true)
+      const shown = displaySource(title, url)
+      assert.equal(shown.title, expected)
+      assert.equal(shown.derived, true)
+    })
+  }
+
+  test('the derived title does not simply repeat the date stamp', () => {
+    const shown = displaySource(JUNK[0][0], JUNK[0][1])
+    assert.ok(!/\d/.test(shown.title), `numbers survived: ${shown.title}`)
+  })
+})
+
+describe('and the titles that must NOT be thrown away', () => {
+  // *** THE COST OF OVER-REACHING IS A CORRECT TITLE DESTROYED. *** Each of these is real and
+  // each carries a number run that a date-only rule would condemn. The guard is capitalisation:
+  // a person who titled a page capitalised it; a file name that lost its underscores did not.
+  const KEEP: Array<[string, string]> = [
+    ['6-2-30: CATEGORICAL INDUSTRIAL USER REPORTING REQUIREMENTS:',
+      'https://codelibrary.amlegal.com/codes/masoncityia/latest/masoncity_ia/0-0-0-3222'],
+    ['Fall Protection in Construction OSHA 3146-05R 2015',
+      'https://www.osha.gov/sites/default/files/publications/OSHA3146.pdf'],
+    ['Seattle Paid Sick Leave Laws and Requirements for 2026',
+      'https://www.sixfifty.com/blog/seattle-paid-sick-leave-laws-and-requirements/'],
+    ['Hazmat Registration Brochure 2025 2026',
+      'https://www.phmsa.dot.gov/sites/phmsa.dot.gov/files/2025-04/Hazmat-Registration-Brochure-2025-2026.pdf'],
+    ['Internal Revenue Bulletin: 2026-29 | Internal Revenue Service', 'https://www.irs.gov/irb/2026-29_irb'],
+  ]
+
+  for (const [title, url] of KEEP) {
+    test(`kept: ${title.slice(0, 44)}`, () => {
+      assert.equal(isJunkTitle(title, url), false)
+      assert.equal(displaySource(title, url).title, title)
+    })
+  }
+})

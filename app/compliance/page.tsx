@@ -74,6 +74,7 @@ export default function CompliancePage() {
 
   const [tab, setTab] = useState<Tab>('ask')
   const [companyId, setCompanyId] = useState<string | null>(null)
+  const [companyName, setCompanyName] = useState<string | null>(null)
 
   // ---- the conversation on screen ----
   const [exchanges, setExchanges] = useState<Exchange[]>([])
@@ -112,7 +113,14 @@ export default function CompliancePage() {
   useEffect(() => {
     (async () => {
       const { data: prof } = await supabase.from('profiles').select('company_id').maybeSingle()
-      if (prof?.company_id) setCompanyId(prof.company_id as string)
+      if (prof?.company_id) {
+        setCompanyId(prof.company_id as string)
+        // The printed header names the company. An id on a page handed to an inspector is worth
+        // nothing; if the name cannot be read the header simply omits that line (Fix Round 1 E).
+        const { data: co } = await supabase
+          .from('companies').select('name').eq('id', prof.company_id as string).maybeSingle()
+        if (co?.name) setCompanyName(co.name as string)
+      }
     })()
   }, [supabase])
 
@@ -186,8 +194,11 @@ export default function CompliancePage() {
         signal: controller.signal,
         body: JSON.stringify({
           question: q, mode, topicId,
+          // Each earlier answer carries the sources its `[n]` markers point at. Without them a
+          // later turn reads its own markers as references to nothing and says the sources were
+          // never retrieved — which is false, and the summariser then archives the claim (§127).
           history: exchanges.filter((x) => x.phase === 'done' && x.text && !x.file)
-            .map((x) => ({ question: x.question, answer: x.text })),
+            .map((x) => ({ question: x.question, answer: x.text, sources: x.sources })),
         }),
       })
 
@@ -574,12 +585,31 @@ export default function CompliancePage() {
         @media print {
           .no-print { display: none !important; }
           .sources-print a::after { content: " — " attr(href); font-size: 10px; color: #444; word-break: break-all; }
+
+          /* ----------------------------------------------------------------------------
+           * DOWNLOAD FROM A DRAWER PRINTS THE DRAWER, AND NOTHING ELSE — Fix Round 1 (E).
+           *
+           * A drawer is \`position: fixed\` in a 560px column over the page. Printing it gave
+           * a clipped strip of the drawer AND the whole page behind it — the tab bar, the
+           * other conversations, the composer. \`printDrawer()\` stamps this class on <body>
+           * for the duration of the print dialog: the page is hidden, and the drawer stops
+           * being a panel and becomes the document.
+           * -------------------------------------------------------------------------- */
+          body.printing-drawer .print-page { display: none !important; }
+          body.printing-drawer .print-drawer {
+            position: static !important; max-width: none !important; width: 100% !important;
+            border: 0 !important; box-shadow: none !important; display: block !important;
+          }
+          /* The body scrolls on screen; on paper it must run to as many pages as it needs. */
+          body.printing-drawer .print-drawer .drawer-body {
+            overflow: visible !important; padding: 0 !important; flex: none !important;
+          }
         }
         /* Touch has no hover, so Delete is always visible on a narrow screen. */
         @media (max-width: 820px) { .hover-del { opacity: 1 !important; } }
       `}</style>
 
-      <div className="mx-auto w-full max-w-3xl px-4 pb-32 sm:px-6">
+      <div className="print-page mx-auto w-full max-w-3xl px-4 pb-32 sm:px-6">
         <div className="no-print pt-6">
           <h1 className="text-2xl font-semibold tracking-tight text-gray-900">Compliance Workspace</h1>
           <p className="mt-1 text-sm text-gray-500">
@@ -877,6 +907,7 @@ export default function CompliancePage() {
       {summaryDrawer && (
         <Drawer title={summaryDrawer.title ?? 'Conversation'}
           sub={`${friendlyDate(summaryDrawer.last_turn_at ?? summaryDrawer.created_at)} · ${conversationStatus(summaryDrawer, summaryDrawer.turnCount > 0).label}`}
+          company={companyName}
           onClose={() => setSummaryDrawer(null)}
           footer={
             <>
@@ -893,7 +924,7 @@ export default function CompliancePage() {
                   Open the checklist
                 </button>
               )}
-              <button onClick={() => window.print()}
+              <button onClick={printDrawer}
                 className="ml-auto rounded-lg border border-gray-300 px-3 py-1.5 text-[13px] text-gray-700 hover:bg-gray-50">
                 Download
               </button>
@@ -919,10 +950,11 @@ export default function CompliancePage() {
       {listDrawer && (
         <Drawer title={listDrawer.row.title ?? 'Checklist'}
           sub={`${friendlyDate(listDrawer.row.created_at)} · ${listDrawer.row.fromConversation} from the conversation · ${listDrawer.row.added} newly checked`}
+          company={companyName}
           onClose={() => setListDrawer(null)}
           footer={
             <>
-              <button onClick={() => window.print()}
+              <button onClick={printDrawer}
                 className="rounded-lg border border-gray-300 px-3 py-1.5 text-[13px] text-gray-700 hover:bg-gray-50">Download</button>
               <button onClick={() => deleteChecklist(listDrawer.row.id)}
                 className="ml-auto rounded-lg px-3 py-1.5 text-[13px] text-gray-400 hover:text-red-600">Delete</button>
@@ -962,8 +994,9 @@ export default function CompliancePage() {
                           </a>
                         )}
                       </div>
+                      {/* A progress note, never part of the printed checklist (Fix Round 1 E). */}
                       {stepsPending[key] && !subs && (
-                        <p className="mt-2 text-[12px] italic text-gray-400">steps being written…</p>
+                        <p className="no-print mt-2 text-[12px] italic text-gray-400">steps being written…</p>
                       )}
                       {subs && subs.length > 0 && (
                         <ol className="mt-2 list-decimal space-y-1 border-l-2 border-gray-100 pl-5">
@@ -1064,12 +1097,47 @@ function FileCard({ file, onRetry }: { file: NonNullable<Exchange['file']>; onRe
   )
 }
 
-function Drawer({ title, sub, children, footer, onClose }: {
-  title: string; sub?: string; children: React.ReactNode; footer?: React.ReactNode; onClose: () => void
+/**
+ * PRINTING A DRAWER PRINTS THE DRAWER — Fix Round 1 (E).
+ *
+ * `window.print()` from inside a drawer printed the drawer's 560px fixed column AND the whole
+ * page behind it — tabs, the other conversations, the composer. The drawer is `position: fixed`,
+ * so it also clipped at the first page. This stamps a class on <body> for the duration of the
+ * dialog; the print rules in the page's <style> hide `.print-page` and let `.print-drawer` flow
+ * as an ordinary document.
+ *
+ * `afterprint` is the honest place to take the class off — `print()` returns before the dialog
+ * closes in some browsers — but the listener is removed either way so a second print is clean.
+ */
+function printDrawer() {
+  const body = document.body
+  const done = () => { body.classList.remove('printing-drawer'); window.removeEventListener('afterprint', done) }
+  window.addEventListener('afterprint', done)
+  body.classList.add('printing-drawer')
+  window.print()
+  // A belt-and-braces removal: if `afterprint` never fires, the class must not survive the page.
+  setTimeout(done, 1000)
+}
+
+function Drawer({ title, sub, children, footer, onClose, company }: {
+  title: string; sub?: string; children: React.ReactNode; footer?: React.ReactNode
+  onClose: () => void; company?: string | null
 }) {
   return (
-    <aside className="fixed inset-y-0 right-0 z-50 flex w-full max-w-[560px] flex-col border-l border-gray-200 bg-white shadow-2xl">
-      <header className="flex items-start justify-between gap-4 px-6 pt-5">
+    <aside className="print-drawer fixed inset-y-0 right-0 z-50 flex w-full max-w-[560px] flex-col border-l border-gray-200 bg-white shadow-2xl">
+      {/*
+        THE PRINTED HEADER. On screen this is not there at all; on paper it is the only thing
+        that says whose document this is and when it was taken. A printed compliance page with
+        no company and no date is not evidence of anything.
+      */}
+      <div className="hidden print:block border-b border-gray-300 pb-2 mb-4">
+        {company && <p className="text-[13px] font-semibold text-gray-900">{company}</p>}
+        <p className="text-[15px] font-medium text-gray-900">{title}</p>
+        <p className="text-[11px] text-gray-600">
+          {sub ? `${sub} · ` : ''}Printed {new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })} · CompliBoard
+        </p>
+      </div>
+      <header className="no-print flex items-start justify-between gap-4 px-6 pt-5">
         <div className="min-w-0">
           <h2 className="text-lg font-medium leading-snug text-gray-900">{title}</h2>
           {sub && <p className="mt-0.5 text-[12.5px] text-gray-500">{sub}</p>}
@@ -1078,7 +1146,7 @@ function Drawer({ title, sub, children, footer, onClose }: {
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
         </button>
       </header>
-      <div className="flex-1 overflow-y-auto px-6 py-4">{children}</div>
+      <div className="drawer-body flex-1 overflow-y-auto px-6 py-4">{children}</div>
       {footer && <footer className="no-print flex items-center gap-2 border-t border-gray-200 px-6 py-3">{footer}</footer>}
     </aside>
   )

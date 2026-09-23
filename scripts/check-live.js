@@ -326,6 +326,49 @@ if (!(await reachable())) {
     }
   }
 
+  // ---- FIX ROUND 1 (C): A THIRD TURN MUST STAND BY ITS OWN CITATIONS --------------------
+  //
+  // On 23 September a third turn said its earlier citation markers were not real sources it had
+  // retrieved. They were. History was replayed as text carrying `[1]` with no list behind it, so
+  // the model read numbered references to nothing and said so — and the summariser archived the
+  // claim. This drives the exact sequence: a question that searches, a follow-up, then the
+  // challenge. **The failure it catches is a denial, and the denial is what would reach a
+  // customer as "we made those up".**
+  {
+    const q1 = await ask('Which federal agency issues hazardous materials registration for '
+      + 'interstate carriers, and what is the registration called? Cite your sources.')
+    const cited = (q1?.sources ?? []).length
+    const sourcesTopic = q1?.topicId
+    if (!sourcesTopic) { console.log('  ✗ sources/turn1       no topicId — the searching turn was not saved'); failures++ }
+    else if (cited === 0) {
+      // Not a failure of the fix: with nothing cited there is nothing for turn three to deny.
+      console.log(`  — sources             SKIPPED: the first answer cited 0 sources, so there is nothing to stand by`)
+    } else {
+      await ask('And who has to renew it annually?', sourcesTopic)
+      const q3 = await ask('Were the sources in your last answer real?', sourcesTopic)
+      const said = String(q3?.research ?? '')
+      // The recorded wording was "I didn't actually retrieve and verify those sources"; these are
+      // the ways that claim is phrased, not a list of forbidden words.
+      const denial = /(did ?n.t|didn't|do ?n.t|not|never|cannot|can.t|could ?n.t)[^.]{0,60}(retriev|verif|access|search|visit|fetch)/i.test(said)
+        || /(fabricat|made[- ]up|invented|hallucinat|illustrative|placeholder|hypothetical example)/i.test(said)
+      const names = (q1.sources ?? []).some((src) => {
+        try { return said.toLowerCase().includes(new URL(src.url).hostname.replace(/^www\./, '')) } catch { return false }
+      })
+      if (!said.trim()) {
+        // Distinct from a denial: nothing came back at all, which is a stream fault, not a
+        // judgement about the sources. Reporting it as a denial would send the next person
+        // looking in the wrong place.
+        console.log('  ✗ sources             turn three returned NO answer — the stream carried no done event'); failures++
+      } else if (denial) {
+        console.log(`  ✗ sources             turn three disowned its citations: ${JSON.stringify(said.slice(0, 140))}`); failures++
+      } else if (!names) {
+        console.log(`  ✗ sources             turn three named none of the ${cited} sources it cited: ${JSON.stringify(said.slice(0, 140))}`); failures++
+      } else {
+        console.log(`  ✓ sources             turn three stood by all ${cited} of its citations and named them`)
+      }
+    }
+  }
+
   // ---- RUN 3: the routes the rebuilt page depends on ------------------------------------
   //
   // The PAGE itself is proved by the manual set in TESTING.md — a script cannot judge whether a
