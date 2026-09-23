@@ -13,7 +13,7 @@
  * route follows, so ids cannot be probed by watching which error comes back.
  */
 import { NextRequest, NextResponse } from 'next/server'
-import { requireCompany } from '@/lib/auth'
+import { requireCompany, supabaseAdmin } from '@/lib/auth'
 import { loadTurns } from '@/lib/conversation'
 
 export async function GET(
@@ -57,6 +57,55 @@ export async function GET(
     console.error('GET /api/topics/[id] failed:', e)
     return NextResponse.json(
       { error: 'That conversation could not be opened. Please try again.' },
+      { status: 500 },
+    )
+  }
+}
+
+/**
+ * DELETE /api/topics/<id> — the conversation, and everything in it.
+ *
+ * *** OWNERSHIP IS CHECKED AS THE CALLER; THE DELETE RUNS AS THE SERVICE ROLE. ***
+ * `authenticated` holds INSERT, SELECT and UPDATE on `topics` and deliberately **no DELETE**
+ * (migration 028), and no DELETE on `turns` either (031) — a user cannot quietly remove part of
+ * a transcript the kept summary still describes. Deleting the WHOLE conversation is a different
+ * act, and it is the customer's right, so it happens here as one named statement after RLS has
+ * already decided they may see the row.
+ *
+ * `turns` and `fact_proposals` carry `topic_id … ON DELETE CASCADE`, so they go with it. The
+ * checklist made from it does NOT: `checklists.from_topic_id` is ON DELETE SET NULL (migration
+ * 033), because the checklist is the kept artifact and the transcript is the disposable one.
+ */
+export async function DELETE(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> },
+) {
+  const authed = await requireCompany(request)
+  if (!authed.ok) return authed.response
+  const { db } = authed.auth
+
+  const { id } = await context.params
+  if (!id) return NextResponse.json({ error: 'No conversation id given.' }, { status: 400 })
+
+  try {
+    // RLS decides this. A topic belonging to another company is a 404, not a 403.
+    const { data: topic, error } = await db.from('topics').select('id').eq('id', id).maybeSingle()
+    if (error) throw new Error(error.message)
+    if (!topic) return NextResponse.json({ error: 'That conversation was not found.' }, { status: 404 })
+
+    // Counted before it goes, so the response can say what was removed rather than only that
+    // something was.
+    const { count: turnCount } = await db
+      .from('turns').select('*', { count: 'exact', head: true }).eq('topic_id', id)
+
+    const { error: delErr } = await supabaseAdmin.from('topics').delete().eq('id', id)
+    if (delErr) throw new Error(delErr.message)
+
+    return NextResponse.json({ deleted: true, turns_deleted: turnCount ?? 0 })
+  } catch (e) {
+    console.error('DELETE /api/topics/[id] failed:', e)
+    return NextResponse.json(
+      { error: 'That conversation could not be deleted. Please try again.' },
       { status: 500 },
     )
   }
