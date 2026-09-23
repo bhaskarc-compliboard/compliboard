@@ -115,3 +115,39 @@ describe('the events in between', () => {
     assert.equal(out.text, '')
   })
 })
+
+describe('the upstream is killed mid-stream — MEASURED, not imagined', () => {
+  // A destroyed socket makes the reader THROW; it does not end quietly. Proved against a real
+  // truncated HTTP response with a proxy that destroys the connection after the answer starts.
+  async function* throwsAfter(lines: string[]) {
+    for (const l of lines) yield l
+    throw Object.assign(new Error('terminated'), { name: 'TypeError' })
+  }
+
+  test('a thrown read with nothing from the server is stopped_early, NOT failed', async () => {
+    const out = await readAnswerStream(throwsAfter([
+      ev({ type: 'text', text: '## The short version\n\nIf your cr' }),
+    ]), noop, () => false)
+    assert.equal(out.kind, 'stopped_early')
+    assert.equal(out.text, '## The short version\n\nIf your cr')
+  })
+
+  test('…because `failed` has no Try again button, and this case needs one', async () => {
+    const out = await readAnswerStream(throwsAfter([ev({ type: 'text', text: 'partial' })]), noop, () => false)
+    assert.notEqual(out.kind, 'failed')
+  })
+
+  test('a thrown read AFTER the server sent an error keeps the server\'s message', async () => {
+    const out = await readAnswerStream(throwsAfter([
+      ev({ type: 'text', text: 'partial' }),
+      ev({ type: 'error', message: 'The search tool is unavailable.' }),
+    ]), noop, () => false)
+    assert.equal(out.kind, 'failed')
+    assert.equal((out as { message: string }).message, 'The search tool is unavailable.')
+  })
+
+  test('a thrown read while the user is stopping is still stopped_by_user', async () => {
+    const out = await readAnswerStream(throwsAfter([ev({ type: 'text', text: 'partial' })]), noop, () => true)
+    assert.equal(out.kind, 'stopped_by_user')
+  })
+})

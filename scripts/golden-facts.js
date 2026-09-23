@@ -102,8 +102,17 @@ export const CASES = [
   },
   {
     id: 'ohio-hazmat',
-    // *** THE RECORDED MISS. *** 22 September: the answer covered the hazmat registration,
-    // training and placarding and never mentioned updating the MCS-150. Kept, not dropped.
+    // *** THE RECORDED MISS — AND IT PASSED ON 23 SEPTEMBER. *** 22 September: the answer
+    // covered the hazmat registration, training and placarding and never mentioned updating the
+    // MCS-150. On 23 Sep, on claude-opus-5 at effort high with RESEARCH_PREFER_GOV and
+    // RESEARCH_SPECIALIST both ON, it named it — the runner reported 🆕 FIXED.
+    //
+    // **It stays on this list on ONE observation, deliberately.** These are presence checks on a
+    // model's prose and they vary run to run: the same Seattle question passed all four facts in
+    // one run and missed `accrual-1-per-40` in the next, same switches, same effort. Flipping the
+    // expectation on a single pass would trade a quiet known gap for a suite that goes red at
+    // random. Passing is never silent — it prints as FIXED every time — so neither state hides.
+    // Flip it when it has passed across several runs, and say in the commit which runs.
     expectedFail: ['mcs-150'],
     question: "We're a small freight company in Ohio thinking about adding hazmat loads. What would we need before hauling our first hazmat shipment?",
     facts: [

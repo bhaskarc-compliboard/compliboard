@@ -97,7 +97,19 @@ export async function readAnswerStream(
     if (wasAbortedByUser() || (err as { name?: string })?.name === 'AbortError') {
       return { kind: 'stopped_by_user', text }
     }
-    return { kind: 'failed', text, message: 'The answer could not be completed.' }
+    // *** A DEAD SOCKET IS `stopped_early`, NOT `failed`, AND THIS WAS MEASURED. ***
+    //
+    // Killing the upstream mid-stream — a proxy that destroys the connection after the answer
+    // has started — does not end the reader quietly. It makes `read()` THROW, so the first
+    // version of this landed here and returned `failed`, which the page renders as "The answer
+    // could not be completed" with **no Try again button**. The brief's rule is that any stream
+    // ending without `end_turn` says the answer stopped early and offers Try again, and a
+    // dropped connection is the plainest case of that.
+    //
+    // `failed` is kept for the one thing it means: the SERVER said it failed and gave a reason
+    // worth showing. That arrives as an `error` event and is handled below.
+    if (failure) return { kind: 'failed', text, message: failure }
+    return { kind: 'stopped_early', text }
   }
 
   if (failure) return { kind: 'failed', text, message: failure }
