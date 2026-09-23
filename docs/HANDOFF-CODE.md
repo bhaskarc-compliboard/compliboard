@@ -1,6 +1,6 @@
 # Handoff — the state of the code
 
-**Rewritten 22 September 2026, after RUN 1. Every figure below came from a command run today, and
+**Rewritten 23 September 2026, after RUN 3. Every figure below came from a command run today, and
 the command is shown.** Nothing here is carried over from the previous handoff, and nothing is from memory. Where a
 figure is not measured, it says so.
 
@@ -122,6 +122,8 @@ $ npm run check      # typecheck && check:schema && test && build
 | **R1.0** the open baseline | ✅ **22 Sep** — research and checklist run one open streaming call. One sentence of role, search the model decides on, history as plain pairs. `lib/ai.ts` `askAIOpenStream` |
 | **R1.1** the six switches | ✅ **22 Sep** — `lib/pipelineConfig.ts`. All default OFF. Off means the path is **not entered**: `/api/chat` branches before the gate block |
 | **micro-steps** | ✅ **22 Sep** — background, 3 in flight, never lost and never repeated, sources inherited from the parent item |
+| **Run 2** conversations + jobs | ✅ **23 Sep** — `turns`, counters, conversion with scope, two cron jobs with a 30-day backstop (§125) |
+| **Run 3** the page | 🟡 **23 Sep** — rebuilt from the prototype (§126). Code-complete; **the ten manual actions in `TESTING.md` have NOT been run** |
 
 **Built and reached by nothing:**
 
@@ -161,28 +163,35 @@ the implementation for 42.
 
 ## 8. The exact next step
 
-> ### RUN 3 — the page.
+> ### THE TESTING PHASE. The research/checklist section is code-complete and unsigned-off.
 >
-> `prototypes/compliance-workspace.html` is the design reference and is **read by Run 3**. Runs 1
-> and 2 deliberately did not build from it: the page got a stream reader, a history payload, an
-> abort controller and one line to keep the topic id, and nothing else.
+> **`docs/TESTING.md`'s R3 finish-line set — ten manual actions, run by the owner.** Seven are
+> the finish-line actions (ask · continue · upload · convert · summarise · tick and reload ·
+> reopen a past conversation); three are the ones that fail quietly (stop an answer · delete a
+> conversation · the 820px layout).
 >
-> **Everything Run 3 needs on the server now exists** — a conversation that persists and reopens
-> (`GET /api/topics/<id>`), counters to display, conversion with scope, and a documents route that
-> accepts `from_topic_id`.
+> **Nothing in this repository claims they have been run.** `npm run check:live` proves the
+> routes — a conversation saved and reopened, counters, stop, both conversion scopes, topic GET,
+> summarise marking `summary_source=user`, DELETE removing the turns. **It cannot judge whether
+> an answer reads as an answer**, and that is the whole point of the manual set.
 
-**What Run 2 did NOT finish, and Run 3 or later owns:**
+**Then, and only on what the pass finds:** §113's R1.2–R1.5, each shipping only if it beats the
+step before on real questions, benchmarked against an incognito chat (§115).
 
-- **The client half of Task 5.** `documents.from_topic_id` exists and `/api/documents` accepts it
-  with the same ownership check the folder gets, but **nothing sends it yet** — the research
-  upload still parses a file inline without creating a document row. That is page work.
-- **A history list, a summary view, a proposals screen.** All four nightly artifacts —
-  summaries, `fact_proposals`, `job_runs`, counters — are written and **read by nothing on
-  screen**. §9a's rule: a thing is done when something real uses it, and these are half done.
-- **§111's hybrid.** Still deferred. `origin` records provenance; nothing links an item to an
+**Known limitations, recorded rather than left to be discovered:**
+
+- **`outcome: 'ask'` is not handled by the rebuilt page.** `RESEARCH_GATE` / `CHECKLIST_GATE` are
+  off everywhere and turning either on would leave the gate's question unrendered.
+  `components/archive/GateAskCard.tsx` is the piece; **R1.5** is when it is re-earned.
+- **The nightly artifacts are still mostly unread on screen.** Fact proposals now have a banner
+  on the Conversations tab (§126) — but `job_runs` and the usage counters are written and
+  displayed nowhere.
+- **§111's hybrid.** Untouched. `origin` records provenance; nothing links an item to an
   obligation.
 - **Gate 4, the privacy policy.** Three of §116's four retention gates are built; this one is the
-  owner's and cannot be built here.
+  owner's.
+- **Production is on 030.** Migrations 031–036 are additive and unapplied there — `npm run
+  preflight` then `db:migrate:prod`, the owner's to run.
 
 ## 9. Two commands worth knowing
 

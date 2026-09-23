@@ -1,6 +1,12 @@
 # Decision Record
-**Version:** 98 · **Updated:** 23 September 2026
-**Supersedes:** version 97 (22 Sep). Adds **§125 — RUN 2, conversations that persist and the
+**Version:** 99 · **Updated:** 23 September 2026
+**Supersedes:** version 98 (23 Sep). Adds **§126 — RUN 3, the page rebuilt from the prototype.**
+Markdown is rendered (remark-gfm, a new dependency), citation markers open a card, junk source
+titles fall back to a URL-derived name, and the working state is driven by real stream events
+rather than a timer. A row decides "cleared" from whether turns exist, never from the date, so it
+cannot claim a deletion that has not happened. `GateAskCard` is archived with the limitation
+recorded: **the page does not handle `outcome: 'ask'`, so the gate cannot simply be switched back
+on before R1.5.** Version 98: Adds **§125 — RUN 2, conversations that persist and the
 nightly jobs.** Supersedes **§110** (7 days from summarising, not 15 from the conversation) and
 closes three of **§116**'s four release gates. Turns, counters that record events rather than
 inventory, conversion with a `discussed` guarantee enforced in code, and two cron-protected jobs
@@ -9357,3 +9363,84 @@ an insert rather than refusing. It surfaced only when a route named the field ex
 **Reversal condition:** the 7 days, if customers are found returning to conversations later than
 that. Nothing else here is a preference — the backstop, the enforcement and the counters are
 properties, and losing any of them makes a statement on screen false.
+
+---
+
+## 126. RUN 3 — the page, rebuilt from the prototype — 23 September 2026
+
+**`prototypes/compliance-workspace.html` was the spec, and where it and the page differed it
+won.** The tabs, the docking composer, the drawers, the row pattern and the vocabulary are its.
+Where it was silent — auth, storage paths, how an item persists — the old page's behaviour is kept.
+
+**Rebuilt rather than patched**, because the layout, tabs, drawers and vocabulary all changed at
+once. Two tabs are gone: *Create action items* and *Saved*.
+
+### What was wrong before, and is not now
+
+| | |
+|---|---|
+| **Markdown was not rendered** | Run 1's answers showed raw `\|` pipes and stray asterisks. `react-markdown` **plus `remark-gfm`** — the plugin is what turns a pipe table into a table; react-markdown alone leaves the pipes. A new dependency, small, and named here because §8 says stack additions are flagged |
+| **Citation markers had nothing behind them** | `[n]` now opens a card with title, domain and link. **The markers are split out of the text BEFORE markdown runs** — walking the rendered DOM for `[n]` would also rewrite a number inside a code block or a URL |
+| **Junk source titles reached the screen** | A bare domain, an OCR'd PDF header, a date-stamped file name. `lib/sourceTitle.ts` replaces them **from the URL path, never from the page's contents** — deriving from the path transforms something the source said; writing from the contents would be the product asserting what a document is called |
+| **The working state was a timer** | The prototype animated four fixed steps every 520 ms. **That is a fiction** (§5.1) — it reports nothing. The words now come from the stream: `searching` events counted as they arrive, `writing` when text starts |
+
+### The OCR detector took two passes, and the second is the interesting one
+
+A one-or-two-letter fragment catches `FO D SAFETY`. It does **not** catch `HAZAR OUS WASTE`,
+where the piece left behind is three letters — and widening to three would have caught **EPA,
+DOT, GHS and SDS**, real acronyms in real titles. So it also matches a short list of English
+suffixes that can only be the tail of a broken word. **There is a test asserting those four
+acronyms survive**, because that is the regression the wider rule would have caused.
+
+> It is a heuristic and says so. It errs towards **leaving titles alone**: the cost of a miss is
+> one ugly title, and the cost of over-reaching is a correct title thrown away.
+
+### A row must not claim a deletion that has not happened
+
+`conversationStatus` decides *"back-and-forth cleared"* from **whether turns exist**, not from
+whether `delete_after` has passed. The date says when the transcript MAY go; the nightly deleter
+says when it DID. Between the due date and the next 03:30 run the conversation is still open, and
+a row reading "cleared" would hide a working **Open the conversation** button for up to a day.
+
+**The drawer footer follows the same rule** — *Open the conversation* only while turns exist,
+*Open the checklist* only if one was made. A button that cannot do what it says is worse than an
+absent one.
+
+### Touch has no hover
+
+`Delete` appears on hover on a row, and is **always visible below 820px**. A destructive action
+whose only affordance is a hover is unreachable on a phone — not hidden, unreachable.
+
+### Fact proposals write through the user's own path
+
+*Save it* posts to **`/api/switches/answer`** — the same route a person answering a direct
+question uses. **Never the service role, never from a job** (§108). *Not now* sets the status to
+`rejected` rather than deleting: "we looked and said no" is worth keeping, and a deleted proposal
+would be proposed again on the next nightly run. The screen says "Not now"; the column says
+`rejected`, which is migration 034's own vocabulary.
+
+### What is archived, and the limitation that comes with it
+
+**`components/GateAskCard.tsx` → `components/archive/`.** Only the old page used it. Archived
+rather than deleted for §113's reason: a piece behind a switch must be there when the switch is
+turned back on.
+
+> ### ⚠ THE REBUILT PAGE DOES NOT HANDLE `outcome: 'ask'`.
+>
+> With `RESEARCH_GATE` or `CHECKLIST_GATE` on, the route answers with a question and the page
+> renders nothing useful for it. Both are off in production and on staging and have been since
+> Run 1. **Re-wiring it is part of R1.5**, which revisits the gate at a much higher bar — the
+> gate is not simply switched back on before then. Recorded here so it is a known limitation
+> rather than a surprise.
+
+### What proves what
+
+`npm run check:live` covers the **routes**: a conversation saved and reopened, counters, stop,
+both conversion scopes, `GET /api/topics/<id>`, summarise marking `summary_source=user`, and
+DELETE removing the turns. **It cannot judge whether an answer reads as an answer** — the
+markdown, the source titles, whether stop feels immediate, whether a cleared transcript reads as
+the product working or as loss. Those are `TESTING.md`'s ten manual actions, and they are the
+owner's pass before this ships.
+
+**Reversal condition:** none for the rebuild. The prototype is the agreed design; a change to it
+is a change to the design, not a reversal of this.
