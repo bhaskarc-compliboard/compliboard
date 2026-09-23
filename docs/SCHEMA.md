@@ -3,7 +3,7 @@
 **GENERATED — do not edit.** `node --env-file=.env.local scripts/schema-doc.js`, and it runs
 inside `npm run db:migrate`, so it cannot be stale by more than one migration.
 
-**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-09-23 19:29 UTC
+**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-09-23 20:04 UTC
 **Migrations applied:** 40 — `000` to `039`
 
 *Every figure here was read from the catalog of that database. Nothing is copied from the
@@ -29,9 +29,9 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 
 **Compliance Workspace (M1) — research, conversations, checklists**
 
-- `topics` — 53 rows · touched by route chat, route checklists/from-topic, route documents, route jobs/delete, route jobs/summarise, +5 more
-- `checklists` — 14 rows · touched by route account, route checklists/from-topic, route link-research, route substeps, screen compliance, +1 more
-- `checklist_items` — 215 rows · touched by route account/export, route account, route checklists/from-topic, route substeps, screen compliance, +1 more
+- `topics` — 63 rows · touched by route chat, route checklists/from-topic, route documents, route jobs/delete, route jobs/summarise, +5 more
+- `checklists` — 16 rows · touched by route account, route checklists/from-topic, route link-research, route substeps, screen compliance, +1 more
+- `checklist_items` — 243 rows · touched by route account/export, route account, route checklists/from-topic, route substeps, screen compliance, +1 more
 - `critic_reviews` — 0 rows · touched by lib criticRecord
 - `critic_findings` — 0 rows · touched by lib criticRecord
 
@@ -50,8 +50,8 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 
 **Documents and evidence**
 
-- `documents` — 2 rows · touched by route audits, route document-review, route documents, route folders, route hr, +3 more
-- `document_reviews` — 1 rows · touched by route audits, route document-review, lib documentReview
+- `documents` — 6 rows · touched by route audits, route chat, route document-review, route documents, route folders, +6 more
+- `document_reviews` — 5 rows · touched by route audits, route document-review, lib attachedDocument, lib documentReview
 - `company_folders` — 0 rows · touched by route document-review, route documents, route folders
 - `company_templates` — 0 rows · touched by route audits
 - `standard_templates` — 0 rows · touched by route audits
@@ -151,7 +151,7 @@ END)`
 
 One row per model call, written at the call. Prices are copied onto the row so a later change to config/pricing.ts cannot rewrite what a past call cost. cost_usd NULL = the model was not in the price table, which is not the same as free. DECISIONS.md §128 J.
 
-**Rows:** 59 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 78 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `lib costLedger`, `script cost-report`
 
@@ -292,7 +292,7 @@ One row per audit run. A frozen snapshot of results as checked that day — reus
 
 ### `checklist_items`
 
-**Rows:** 215 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 243 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route account/export`, `route account`, `route checklists/from-topic`, `route substeps`, `screen compliance`, `script check-live`
 
@@ -353,7 +353,7 @@ One row per audit run. A frozen snapshot of results as checked that day — reus
 
 ### `checklists`
 
-**Rows:** 14 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 16 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route account`, `route checklists/from-topic`, `route link-research`, `route substeps`, `screen compliance`, `screen dashboard`
 
@@ -794,9 +794,9 @@ One row per criticise() call, INCLUDING reviews that found nothing — that is t
 
 ### `document_reviews`
 
-**Rows:** 1 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 5 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route audits`, `route document-review`, `lib documentReview`
+**Read or written by:** `route audits`, `route document-review`, `lib attachedDocument`, `lib documentReview`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -850,9 +850,9 @@ One row per criticise() call, INCLUDING reviews that found nothing — that is t
 
 ### `documents`
 
-**Rows:** 2 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 6 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route audits`, `route document-review`, `route documents`, `route folders`, `route hr`, `route hr-audits`, `screen compliance`, `lib storage`
+**Read or written by:** `route audits`, `route chat`, `route document-review`, `route documents`, `route folders`, `route hr`, `route hr-audits`, `screen compliance`, `lib attachedDocument`, `lib storage`, `script check-live`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -1696,7 +1696,7 @@ The ~59 facts about a company that determine which requirements apply. Reference
 
 One exploration. The transcript is disposable (WORKSPACE.md §6.4); the summary is what survives. Holds NO facts — a hypothetical is never stored (DECISIONS.md §78) and a real fact goes to company_switches. Migration 028.
 
-**Rows:** 53 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 63 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route chat`, `route checklists/from-topic`, `route documents`, `route jobs/delete`, `route jobs/summarise`, `route topics/[id]`, `route topics/[id]/summarise`, `screen compliance`, `lib conversation`, `script check-live`
 
@@ -1757,9 +1757,9 @@ One exploration. The transcript is disposable (WORKSPACE.md §6.4); the summary 
 
 One message in a conversation. Cleared 7 days after the topic is summarised (DECISIONS.md §125, superseding §110's 15 days); the topic row and its summary survive.
 
-**Rows:** 188 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 219 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route jobs/delete`, `route jobs/summarise`, `route topics/[id]`, `screen compliance`, `lib conversation`, `script check-live`
+**Read or written by:** `route jobs/delete`, `route jobs/summarise`, `route topics/[id]`, `screen compliance`, `lib attachedDocument`, `lib conversation`, `script check-live`
 
 | Column | Type | Null | Default |
 |---|---|---|---|

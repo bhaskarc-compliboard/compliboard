@@ -2692,6 +2692,23 @@ rebuild (Phase 1) for the versioning columns.
 
 **Findings not yet written up in the detail M2 and M3 have.** What is known:
 
+- ⬜ **THE REVIEW PATH WRITES NO COST LEDGER ROW, AND IT IS THE MOST EXPENSIVE CALL WE MAKE.**
+  `lib/documentReview.ts` calls `askAIJson` with **no `ledger:` argument** — verified,
+  `grep -n ledger lib/documentReview.ts` returns nothing — so every document scan is missing
+  from `ai_calls` and from every figure `npm run cost` prints. **The owner measured a two-page
+  PDF scan at $1.10 on live on 23 September** (owner's figure, not reproduced here). For scale,
+  that single call is more than the whole `convert` task's recorded spend to date.
+
+  Two things follow and they are separate pieces of work:
+  1. **Pass `ledger: { companyId, task: 'document_review' }`** so the calls are counted. Small,
+     and it is the prerequisite for saying anything true about what Documents costs.
+  2. **Then ask why a two-page scan costs $1.10 at all.** §128 J measured input at ~58% of the
+     bill; a PDF goes to the model whole, and the review runs **twice per document** (the row
+     above). Do not tune the prompt before the ledger can show which half the money is in.
+
+  Five other tasks also write nothing — `substeps`, `gate`, `critique`, `audit`, `other` — so
+  `npm run cost` totals are **a floor, not a total**, and it says so every run.
+
 - ⬜ **Review runs inline, per request, and the same document gets reviewed twice.**
   `lib/documentReview.ts` is called from the manual Review button *and* from the audit
   engine's auto-index step. It is a multi-second model call with a whole PDF in the

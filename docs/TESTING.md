@@ -1,6 +1,18 @@
 # Testing
-**Version:** 21 · **Updated:** 23 September 2026
-**Supersedes:** version 20 (23 Sep). Adds the **FIX ROUND 2 set** — attach a file and ask about
+**Version:** 22 · **Updated:** 23 September 2026
+**Supersedes:** version 21 (23 Sep). Current as of the production ship: migration 039 is on both
+databases, and the three manual sets below — R3's ten, Fix Round 1's four, Fix Round 2's two —
+**are all still unclaimed.**
+
+> ### ⚠ AND THE RESEARCH SECTION IS NOW LIVE ON PRODUCTION WITH NONE OF THEM RUN.
+>
+> Every earlier version of this file could say the manual pass was the gate before shipping.
+> It is not that any more: the code shipped. **Sixteen actions across three sets, and nothing in
+> this repository claims a person has done one of them.** That is not an argument for skipping
+> them — it is the reason they matter more now than when they were written, because a failure
+> they would catch is in front of customers rather than behind a flag.
+
+Version 21: version 20 (23 Sep). Adds the **FIX ROUND 2 set** — attach a file and ask about
 it, and the file card's wording. The important half is asking a SECOND question: the first
 version of that fix carried the document on the attach turn only, and a later turn then retracted
 a correct finding. One question would not have caught it. Version 20: version 19 (23 Sep). Adds the **FIX ROUND 1 set** — four actions, one per defect
@@ -127,8 +139,9 @@ untested — applies to the runner as much as to anything it runs.
 
 **Two actions. Both were found by using the product on production, not by any script here.**
 
-**Setup:** signed in on staging, `npm run dev` pointed at staging. **Migration 039 must be
-applied** — without it the attachment link cannot be saved and R2-1 fails at the last step.
+**Setup:** signed in on staging, `npm run dev` pointed at staging. **Migration 039 is applied on
+both databases as of 23 September** (40 applied, latest 039, `preflight` PENDING COUNT: 0) — it is
+what makes the attachment link persist, and without it R2-1 fails at the last step.
 
 | # | Action | Steps | What must be true |
 |---|---|---|---|

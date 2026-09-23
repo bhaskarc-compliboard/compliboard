@@ -1,11 +1,19 @@
 # Handoff — the state of the code
 
-**Rewritten 23 September 2026, after FIX ROUND 1. Every figure below came from a command run
-today, and the command is shown.** Nothing is carried over from the previous handoff and nothing
-is from memory. Where a figure is not measured, it says so.
+**Rewritten 23 September 2026, after Fix Round 2 shipped to production. Every figure below came
+from a command run today, and the command is shown.** Nothing is carried over from the previous
+handoff and nothing is from memory. Where a figure is not measured, it says so.
 
 **If you are the next chat: read `CLAUDE.md` first (especially §9a), then `HOW-WE-BUILD.md` §11
 and §12, then `docs/SCHEMA.md` for the database. This file is state, not method.**
+
+> ### ⚠ TWO HANDOFFS THIS FILE WAS MEANT TO DEFER TO ARE NOT IN THE REPOSITORY.
+>
+> `docs/HANDOFF-LAYOUT.md` and `docs/HANDOFF-DOCUMENTS.md` were described as placed and **do not
+> exist** — not in `docs/`, nowhere under the repository, nothing untracked, working tree clean.
+> So §8's next steps are **this file's own reading of the state**, not the two handoffs' plan,
+> and the parked list they were to supply is not in `TODO.md`. When they land, §8 and `TODO.md`
+> need a second pass. Said here rather than silently filled in.
 
 ---
 
@@ -13,66 +21,78 @@ and §12, then `docs/SCHEMA.md` for the database. This file is state, not method
 
 ```
 $ git log --oneline -5
-1d61f28 Fix round 1 F+I+G: R1.3 behind a switch, a summary that speaks to its reader, and five golden facts
-b76e306 Fix round 1 C+D+E: history keeps its sources, tables keep their shape, and a drawer prints itself
-3c56843 Fix round 1 A+B: a stream that ends is not a stream that finished
-4f2f08f Record Run 3, and say plainly that the screen is unproven
-a5587af Run 3: the page, rebuilt from the prototype
+ede8996 Fix round 2: an attached file is part of the conversation, and "Read as:" needs no article
+8a4b8bc Corrected prices: Opus 5 is $5/$25, not $15/$75 — every cost figure was ~2.8x too high
+2f91730 Record §128: four decisions, the cost ledger, and the model comparison
+e2922c0 Section J: a cost ledger written at the call, and the model comparison it makes possible
+6ca3d1d Owner's decisions 1-4: medium by default, a provenance switch, the orphan gone, three runs
 ```
 
-## 2. Migration state — STAGING 039, PRODUCTION 030
+One branch, `main`, tracking `origin/main`.
+
+## 2. Migration state — 039 ON BOTH. THE GAP IS CLOSED.
 
 ```
 $ npm run preflight          # READ-ONLY. Prints both lists and derives the difference.
   INPUT 1 — supabase/migrations/, every file (40)
-  INPUT 2 — supabase_migrations.schema_migrations on dsfwmafnphdlfogetsus, every row (31)
-  PENDING COUNT: 9
+  INPUT 2 — supabase_migrations.schema_migrations on dsfwmafnphdlfogetsus, every row (40)
+  PENDING COUNT: 0
+
+$ …schema_migrations on amzsavsrabrlcprltpom (staging)
+  applied 40, latest 039
 ```
 
-**Not on production: 031–039** — `turns` and the topic lifecycle, `usage_counters`,
-`origin`/`from_topic_id`, `fact_proposals`/`job_runs`, the counter function,
-`checklist_items.source_title`, **037, the storage bucket**, **038, the cost ledger**, and **039, the attachment link**.
+**Nothing is pending on either database.** The 031–039 gap that stood through Runs 1–3 and both
+fix rounds was closed by the owner after Fix Round 2. The last three are worth naming because
+they are recent and each exists for a reason a reader will otherwise ask about:
 
-> ### ⚠ 039 IS REQUIRED BY THE CODE THAT SHIPS WITH IT.
->
-> Fix Round 2 makes an attached file part of the conversation, and the link lives on
-> `turns.document_id` / `turns.document_name`. **Apply 039 before or with that code**, or every
-> attach fails to persist and the next turn forgets the file again — the exact bug being fixed.
-> It is additive: two nullable columns and an index, safe to apply ahead of the deploy. All additive; nothing drops or
-alters an existing column. **Shipping them is `npm run preflight` then `npm run db:migrate:prod`,
-run by the owner.**
+| | |
+|---|---|
+| **037** | The `company-documents` bucket. Migration 002 wrote four storage policies against a bucket **no migration created**, so a from-zero build got the policies and nothing for them to apply to. A no-op on both live databases; it exists for the next database built from this chain (§127 B, recorded beside §98 and §118). |
+| **038** | `ai_calls`, the cost ledger. Stores **the prices each call was costed at**, so correcting `config/pricing.ts` cannot rewrite what a past call cost (§128 J). |
+| **039** | `turns.document_id` / `turns.document_name`. The link that makes an attached file part of the conversation. The name is a **copy**, so a transcript still reads correctly after the document is deleted (§129). |
 
-> ### 037 IS A NO-OP ON BOTH LIVE DATABASES, AND IT STILL BELONGS IN THE CHAIN.
->
-> `company-documents` exists on staging since 2026-09-09 and on production since 2026-06-03. What
-> 037 fixes is the **from-zero** case: migration 002 writes four storage policies against a bucket
-> no migration creates, so a database built from this chain gets the policies and nothing for them
-> to apply to, and the first upload fails with `Bucket not found`. §127, recorded beside §98 and
-> §118 as the same class.
+## 3. Production
 
-## 3. Row counts, read 23 September
+**The research section is live on production.** Deployment facts below are the owner's, recorded
+as such — **this session has no way to read Vercel**, and it did not try.
 
-Staging, read with the service role:
+- **No staging deployment exists.** One environment on Vercel: Production, from `main`.
+- **Vercel Production variables are set. By name only** — this file never carries a value:
+  `NEXT_PUBLIC_SUPABASE_URL` · `NEXT_PUBLIC_SUPABASE_ANON_KEY` · `SUPABASE_SERVICE_ROLE_KEY` ·
+  `ANTHROPIC_API_KEY` · `CRON_SECRET` · `RESEND_API_KEY` · `FEEDBACK_EMAIL`
+- **Deliberately NOT set in Production**, and that is what makes production the open baseline:
+  `RESEARCH_GATE` · `RESEARCH_FACTS_BLOCK` · `RESEARCH_LONG_PROMPT` · `CHECKLIST_GATE` ·
+  `CHECKLIST_CRITIC` · `CHECKLIST_LONG_PROMPT` · `RESEARCH_PREFER_GOV` ·
+  `RESEARCH_SPECIALIST` · `RESEARCH_PROVENANCE`. Every switch defaults OFF and an unset variable
+  IS the product's behaviour (`lib/pipelineConfig.ts`). The last three are ON in `.env.local`
+  only, for the owner's comparison, and ship only if that comparison says so.
+- **Model and effort:** `AI_MODEL_PROSE` / `AI_MODEL_JUDGEMENT` are unset in Production, so both
+  fall back to the code default. `AI_EFFORT` is unset and `lib/ai.ts` `DEFAULT_EFFORT` is
+  **`medium`** — a code default, not an environment one, so the two cannot disagree (§128).
+- **Cron:** `vercel.json` schedules `/api/jobs/summarise` at 03:00 and `/api/jobs/delete` at
+  03:30. Both refuse when `CRON_SECRET` is **unset** and answer 404, so the route cannot be
+  confirmed to exist by probing it.
+
+## 4. Row counts, staging, read today
 
 ```
-topics 20 · turns 65 · checklists 8 · checklist_items 126 · usage_counters 1
-fact_proposals 0 · job_runs 1 · documents 2 · companies 3
-buckets: company-documents (public=false)
+requirement_templates 205 (200 live) · agencies 33 · switches 95 · industry_coverage 56
+companies 3 · obligations 0
+topics 63 · turns 217 (4 carrying a document) · checklists 16 · checklist_items 243
+documents 6 · document_reviews 5 · ai_calls 78 · fact_proposals 0 · job_runs 1 · usage_counters 1
 ```
 
-Production's row counts are **not in this handoff**, and that is deliberate:
-`SUPABASE_PROD_URL` and `SUPABASE_PROD_SERVICE_ROLE_KEY` are **blank** in `.env.local` — which
-`CLAUDE.md` §3.8 says is the better default — so the only production access from this machine is
-`npm run preflight` and the Supabase CLI with `SUPABASE_PROD_REF`. The last measured production
-counts are in `DECISIONS.md` §126's handoff and are now a day old. **Do not quote them as
-current.**
+Production row counts are **not in this handoff**: `SUPABASE_PROD_URL` and
+`SUPABASE_PROD_SERVICE_ROLE_KEY` are **blank** in `.env.local`, which `CLAUDE.md` §3.8 says is the
+better default, so the only production access from this machine is `npm run preflight` and the
+Supabase CLI with `SUPABASE_PROD_REF`. Do not quote the figures in §126's handoff as current.
 
-> ### **Production still has 235 AI-written checklist rows and ZERO computed obligations.**
->
-> Unchanged by Runs 1–3 and by this fix round, and still the thing that matters most. §68, and
-> §111 decided the fix — **not built**, and deliberately not touched.
+> ### **Production still has AI-written checklist rows and ZERO computed obligations.**
+> Unchanged by every run so far. §68, and §111 decided the fix — **not built**, and deliberately
+> not touched.
 
-## 4. What `npm run check` covers — AND WHAT IT DOES NOT
+## 5. What `npm run check` covers — and what it does not
 
 ```
 $ npm run check      # typecheck && check:schema && test && build
@@ -82,125 +102,116 @@ $ npm run check      # typecheck && check:schema && test && build
   ✓ Compiled successfully
 ```
 
-**Fix round 1 is the clearest evidence yet of what this gate cannot see.** Nine defects, found by
-the owner using the product. **Every one of them had a green `npm run check` behind it** — an
-answer that stopped silently, a table cut in half, a drawer that printed the page behind it, a
-summary that named a character the product does not have. The gate answers *"does the code build
-and behave"*. None of those nine was that question.
+**Both fix rounds are the evidence of what this gate cannot see.** Eleven defects across them,
+every one found by a person using the product, every one with a green `npm run check` behind it:
+an answer that stopped silently, a table cut in half by its own citation, a drawer that printed
+the page behind it, a summary that named a character the product does not have, and a file that
+reached Documents and never reached the model. The gate answers *"does the code build and
+behave"*. None of those was that question.
 
-- **No authenticated HTTP request.** A missing grant, a wrong policy or a route guard is invisible
-  to all 440 tests. `npm run check:live` signs in as a real fixture.
+- **No authenticated HTTP request.** A missing grant, a wrong policy or a route guard is
+  invisible to all 457 tests. `npm run check:live` signs in as a real fixture.
 - **Nothing checks regulatory content.** A model checking a model produces agreement.
   `npm run golden:facts` is a **presence check on plain text**, not a verification.
-- **⚠ IT EXECUTES 2 OF THIS REPO'S SCRIPTS** — `check-schema-contracts.js` and `test-guard.js`.
-  `tsconfig.json`'s `include` has no `**/*.js` pattern, so the rest are invisible to it.
-  `scripts/preflight-prod.js` sat unparseable from 15 to 22 September while the gate said green
-  (§121). The proposed fix is a `check:syntax` step; **not built**, because it changes the commit
-  gate.
+- **⚠ It executes 2 of this repository's scripts.** `tsconfig.json`'s `include` has no
+  `**/*.js` pattern, so the rest are invisible to it — `scripts/preflight-prod.js` sat
+  unparseable for seven days while the gate said green (§121). The fix is a `check:syntax` step;
+  **not built**, because it changes the commit gate.
 
-> ### `tsconfig.json` NOW EXCLUDES `.next/**/* ?.*`, AND THE REASON MATTERS TO THE NEXT PERSON.
->
-> A file-sync tool on this machine duplicates generated files — `routes.d 2.ts`,
-> `cache-life.d 3.ts`, **936 of them**, all under `.next/`. `tsc` then sees Next's own globals
-> declared twice and fails with TS6200 on code nobody wrote, so the gate flipped red and green
-> depending on whether the sync had run. TypeScript's globber has `*`, `?` and `**` and **no
-> character classes**, which is why the first attempt (`* [0-9].*`) silently matched nothing.
-
-## 4a. THE COST LEDGER — read this before spending anything
+## 6. The cost ledger — read this before spending anything
 
 `ai_calls` (migration 038) records every model call **at the call**, with the prices it was
-costed at. `npm run cost` splits it by task and by model, and **names what it is missing** every
-run: tasks that have never written a row, rows whose model is not in the price table, and the
-fact that an aborted stream writes nothing because there are no token counts to write.
-
-The first hours of data (`DECISIONS.md` §128 J):
+costed at. `npm run cost` splits it and **names what it is missing** every run.
 
 ```
-research 84.5% · checklist 11.9% · convert 3.5% · summarise 0.1%
+$ npm run cost
+  COST LEDGER — 78 call(s)          prices verified 2026-09-23
+  task          calls   input tok  output tok  searches    stored  at current   share
+  research         66     1234567      121286        84    $24.53      $10.04   83.7%
+  checklist         3      153007       23536        10     $3.54       $1.45   12.1%
+  convert           6        5981       18553         0     $1.14       $0.49    4.1%
+  summarise         3        3466         451         0     $0.02       $0.01    0.1%
+  TOTAL            78     1397021      163826        94    $29.22      $12.00
 
-INPUT  58.7%   what we SEND: prompt + history + search results
-OUTPUT 33.1%   what comes back, reasoning tokens included
-SEARCH  8.2%
+  INPUT  58.1%   what we SEND: prompt + history + search results
+  OUTPUT 34.1%   what comes back, reasoning tokens included
+  SEARCH  7.8%
 ```
 
-> ### THE TWO NUMBERS TO KEEP IN MIND BEFORE CHANGING ANYTHING ABOUT ANSWERS
+**"stored" against "at current" is not a price change — it is a correction.** The first version of
+`config/pricing.ts` was wrong: Opus 5 was listed at $15/$75 per million and is **$5/$25**; Sonnet 5
+was $3/$15 and is **$2/$10**. Owner-verified 23 Sep. Rows are **not repriced** — a row keeps the
+price it was costed at, by design — so the stored figure for those 59 rows is a number **nobody
+was charged**. Quote the corrected column.
+
+> ### THE TWO NUMBERS TO CARRY AROUND
 >
 > **2.03 visible characters per billed output token.** Plain prose is about 4, so roughly half
-> the output bill is reasoning you never see, and any estimate from visible text understates by
-> about twofold.
+> the output bill is reasoning you never see.
 >
 > **~4,500 input tokens per source retrieved.** A source is not paid for once: it is replayed as
 > input on every later turn of that conversation.
 
-**`config/pricing.ts` was verified by the owner on 23 September 2026** — and the first version of
-it was wrong by ~2.8×, which is why it was flagged rather than trusted. Past ledger rows keep the
-prices they were costed at, so `npm run cost` prints a **stored** and an **at current prices**
-column whenever they differ, and says whether the difference was a vendor price change or a
-correction to this table. Those are different facts: one records what was spent, the other
-records a number nobody was charged.
+> ### ⛔ AND THE LARGEST KNOWN HOLE IN EVERY FIGURE ABOVE
+>
+> **`lib/documentReview.ts` passes no `ledger:` argument** — `grep -n ledger
+> lib/documentReview.ts` returns nothing — so **every document scan is missing from this table.**
+> **The owner measured a two-page PDF scan at $1.10 on live on 23 September** (the owner's
+> figure; not reproduced by this session). That one call is more than the entire `convert` task's
+> recorded spend.
+>
+> Six of ten tasks have never written a row — `substeps`, `gate`, `critique`, `audit`,
+> `document_review`, `other` — so **these totals are a floor, not a total**, and `npm run cost`
+> says so every run. `TODO.md` M4 carries it as two separate pieces of work: count the calls
+> first, then ask why a two-page scan costs $1.10. **This is where the Documents chat starts.**
 
-## 5. The three commands that cost money, and when to run them
-
-```
-npm run check:live    signs in as a real staging fixture and writes as that user.
-                      Needs CHECK_LIVE_PASSWORD. Last run 23 Sep: 16 steps pass, 1 fails —
-                      `sources`, the known gap in §6. Everything else is green.
-npm run golden        the determination-gate golden cases (the gate is off everywhere).
-npm run golden:facts  the owner's five questions, with the facts each answer must contain.
-                      THREE runs each by default, with a fact-stability table — one run of a
-                      presence check on model prose is an anecdote. Prices every run.
-                      On demand. NEVER in `npm run check` — every case is a real searching answer.
-  -- seattle                          one case
-  -- --model claude-sonnet-5          compare a model WITHOUT changing any default
-  -- --effort medium --runs 3         the effort comparison (§127 H)
-npm run cost          READ-ONLY. Where the money went, by task and by model, and what the
-                      total does not include.
-npm run check:live -- --only sources      ONE block of check:live. A full run is real calls.
-npm run check:live -- --only attachment  attach a PDF and ask about it (Fix Round 2).
-```
-
-## 6. Open defects — where each lives
+## 7. Open defects
 
 | | Where | Note |
 |---|---|---|
-| **A third turn will not reliably stand by its own citations** | `prompts/checklist.ts` `PROVENANCE_SENTENCE`; `check:live` step `sources` | **Improved, not closed.** With `RESEARCH_PROVENANCE` on, 2 of 3 runs stand by their sources; before it, 0 of 3 did. The remaining case still says it wrote them from memory. The structural cause is unchanged — the tool-use blocks are not stored — and the real fix is to store and replay them. §128 |
-| **6 of 10 ledger tasks have never written a row** | `npm run cost` prints them every run | `substeps`, `gate`, `critique`, `audit`, `document_review`, `other`. A call site with no `ledger:` argument is a call nobody is counting, so every total is a floor, not a total |
-| **The company's industry never reaches the answer** | `lib/determinationGate.ts` — `grep -n industry` returns nothing | The gate puts state/county/city in `known` and not the industry. §105 defers it |
-| **A fact answered to the gate is lost one turn later** | `app/api/chat/route.ts`, `factsFromGate()` | The `answering` fact is labelled `user_set` and stored nowhere, so the filter drops the only copy. **Gate is off everywhere; this is dormant** |
-| **Enum values arrive as free text** | same path | `hazwaste_generator_category` allows `none\|vsqg\|sqg\|lqg`; the value carried was `"small quantity generator"`. Dormant for the same reason |
-| **Citations discarded for every non-research caller** | `lib/ai.ts` — `askAI` returns `.text` only | `/api/audits` runs web search on two calls and drops its sources |
-| **`expires_at` set by nothing** | `company_switches` | An expired fact must read `unknown`; a stale `false` is a false green. On the GATE |
+| **Document scans are uncounted and expensive** | `lib/documentReview.ts` | See §6. The single biggest unknown in what this product costs to run |
+| **A third turn will not reliably stand by its citations** | `prompts/checklist.ts` `PROVENANCE_SENTENCE` | With `RESEARCH_PROVENANCE` on, 2 of 3 runs stand by their sources; before it, 0 of 3. The structural cause is unchanged — the tool-use blocks are not stored — and the real fix is to store and replay them (§128) |
+| **Re-sending an attachment on every turn is unbounded in cost** | `lib/attachedDocument.ts`, `MAX_CARRIED_DOCUMENTS = 3` | Correct but expensive on long PDFs. A size threshold was deliberately **not** invented; the measurement to justify one is in `ai_calls` (§129) |
 | **`outcome: 'ask'` is not rendered** | `components/archive/GateAskCard.tsx` | Both gate switches are off; turning either on leaves the question unrendered. **R1.5** |
+| **The company's industry never reaches the answer** | `lib/determinationGate.ts` | The gate puts state/county/city in `known` and not the industry. §105 defers it. Dormant — the gate is off |
+| **Citations discarded for every non-research caller** | `lib/ai.ts` — `askAI` returns `.text` only | `/api/audits` runs web search on two calls and drops its sources |
+| **`expires_at` set by nothing** | `company_switches` | An expired fact must read `unknown`; a stale `false` is a false green |
 
-## 7. The exact next step
+## 8. The next steps — THIS FILE'S READING, not the two handoffs'
 
-> ### THE OWNER'S PASS. The research/checklist section is code-complete and unsigned-off.
->
-> **`docs/TESTING.md`'s R3 finish-line set (ten actions) and the FIX ROUND 1 set (four).** The
-> four are: **attach a file and see it classified · an answer that stops on its own · a third
-> turn standing by its sources · print a drawer.** Each is there because the failure was silent.
->
-> **Nothing in this repository claims either set has been run.**
+`HANDOFF-LAYOUT.md` and `HANDOFF-DOCUMENTS.md` are absent (see the banner at the top), so what
+follows is derived from the state above and must be reconciled with them when they arrive.
 
-**Then, on what the pass finds:** R1.2 (`RESEARCH_PREFER_GOV`) and R1.3 (`RESEARCH_SPECIALIST`)
-are both ON in `.env.local` and **unset in production**. Each ships only if the owner's comparison
-says it beats the step before, benchmarked against an incognito chat (§115). §127 F prints both
-prompts before and after.
+1. **The owner's manual passes are still not claimed to have been run.** `TESTING.md` carries
+   three sets now — R3's ten finish-line actions, Fix Round 1's four, and Fix Round 2's two.
+   **Nothing in this repository says any of them has been done by a person**, and the research
+   section is now live on production, so that gap is in front of customers rather than behind a
+   flag.
+2. **Documents, starting from the ledger gap in §6.** Count the calls before tuning anything.
+3. **The three research switches await the owner's comparison** (§128). They are on locally and
+   unset in production; each ships only on that comparison, against an incognito chat (§115).
+4. **R1.5 before either gate is switched on**, because the page cannot render `outcome: 'ask'`.
 
-## 8. Commands worth knowing
+## 9. Commands worth knowing
 
 ```
-npm run check        typecheck · schema contracts · 457 tests · build.  Green as of this commit.
-npm run check:live   signs in as a real staging fixture. Needs CHECK_LIVE_PASSWORD.
-npm run schema:doc   regenerates docs/SCHEMA.md from the live catalog. Runs inside db:migrate.
-npm run db:restore   rebuilds STAGING from zero — reset, then the data steps, printing
-                     got-vs-expected after each. Refuses production four ways. `-- --from N`
-                     resumes and re-checks every skipped step first.
-npm run preflight    READ-ONLY. Prints migrations on disk and applied on production in full,
-                     then derives the pending set in front of you.
+npm run check         typecheck · schema contracts · 457 tests · build. Green as of this commit.
+npm run check:live    signs in as a real staging fixture and writes as that user.
+  -- --only sources      the third-turn citation step alone
+  -- --only attachment   attach a PDF and ask about it (Fix Round 2)
+npm run cost          READ-ONLY. Where the money went, and what the total does not include.
+npm run golden:facts  the owner's five questions, three runs each, priced.
+  -- --model claude-sonnet-5   compare a model WITHOUT changing any default
+npm run schema:doc    regenerates docs/SCHEMA.md from the live catalog. Runs inside db:migrate.
+npm run db:restore    rebuilds STAGING from zero. Refuses production four ways.
+npm run preflight     READ-ONLY. Both migration lists, and the pending set derived in front of you.
 ```
 
 **The staging fixtures are `testalpha@`, `testalpha2@`, `testbeta@`, `testgamma@example.com`.**
 Gamma is the empty one — chemical manufacturing, Oregon. All four are in
 `scripts/fixtures/staging-testdata.js`, which `scripts/seed-staging-testdata.js` and
 `scripts/db-restore.js` both import so the count has one definition.
+
+**The test fixture for attachments is `tests/fixtures/Harbor-Kitchen-Employee-Policy-2026.pdf`** —
+a deliberately wrong staff policy, and every assertion in `check:live --only attachment` is a
+statement the PDF actually makes.

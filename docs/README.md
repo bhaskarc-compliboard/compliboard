@@ -1,6 +1,9 @@
 # docs/
-**Version:** 8 · **Updated:** 22 September 2026
-**Supersedes:** version 7 (15 Sep). One correction, and it reversed a rule: the seed-data entry said
+**Version:** 9 · **Updated:** 23 September 2026
+**Supersedes:** version 8 (22 Sep). Indexes **`HANDOFF-LAYOUT.md` and `HANDOFF-DOCUMENTS.md` as
+EXPECTED AND NOT PRESENT.** Both were described as placed in `docs/`; neither exists. They are
+listed rather than omitted because the drift this index exists to prevent runs both ways — a file
+nobody can find, and a file everybody assumes is there. Version 8: version 7 (15 Sep). One correction, and it reversed a rule: the seed-data entry said
 the database was the source of truth once a worksheet was loaded. **`DECISIONS.md` §118 decided the
 opposite** — the worksheet is authoritative and requirement content never goes in a migration. The
 worksheet is now `supabase/seed-data/REQUIREMENTS.xlsx`, dateless and 205 rows.
@@ -188,6 +191,19 @@ migration state of both environments from their own history tables, what is buil
 and reached by nothing, open defects with where each lives, what `npm run check` does and does not
 cover, what was decided and not built, and the exact next step. **Every figure carries the command
 that produced it.**
+
+### `HANDOFF-LAYOUT.md` and `HANDOFF-DOCUMENTS.md` — ⛔ EXPECTED, NOT PRESENT
+
+Two per-area handoffs, each the starting brief for its own chat: the layout/navigation work and
+the Documents module. **Neither is in this folder as of 23 September 2026** — checked by `find`
+across the repository, with a clean working tree and nothing untracked.
+
+They are listed here anyway, and deliberately, because **this index exists to stop a document
+being findable only by `ls`** — and the opposite failure is just as bad: a file named in a brief,
+absent from disk, and nobody noticing that the work which depends on it was done without it.
+`HANDOFF-CODE.md` §8 carries the same warning, and its next-steps list is that file's own reading
+rather than theirs. **When these land: re-read them, reconcile `HANDOFF-CODE.md` §8, and record
+`HANDOFF-DOCUMENTS.md` §8's parked list into `TODO.md` as unticked rows.**
 
 ### `RESEARCH-ANSWER.md`
 
