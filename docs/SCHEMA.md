@@ -3,8 +3,8 @@
 **GENERATED — do not edit.** `node --env-file=.env.local scripts/schema-doc.js`, and it runs
 inside `npm run db:migrate`, so it cannot be stale by more than one migration.
 
-**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-09-23 03:44 UTC
-**Migrations applied:** 36 — `000` to `035`
+**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-09-23 04:02 UTC
+**Migrations applied:** 37 — `000` to `036`
 
 *Every figure here was read from the catalog of that database. Nothing is copied from the
 migration files, which say what was intended rather than what is there — and the two have
@@ -29,9 +29,9 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 
 **Compliance Workspace (M1) — research, conversations, checklists**
 
-- `topics` — 2 rows · touched by route chat, lib conversation, script check-live
-- `checklists` — 1 rows · touched by route account, route link-research, route substeps, screen compliance, screen dashboard
-- `checklist_items` — 0 rows · touched by route account/export, route account, route substeps, screen compliance
+- `topics` — 6 rows · touched by route chat, route checklists/from-topic, route jobs/delete, route jobs/summarise, route topics/[id], +2 more
+- `checklists` — 3 rows · touched by route account, route checklists/from-topic, route link-research, route substeps, screen compliance, +1 more
+- `checklist_items` — 0 rows · touched by route account/export, route account, route checklists/from-topic, route substeps, screen compliance
 - `critic_reviews` — 0 rows · touched by lib criticRecord
 - `critic_findings` — 0 rows · touched by lib criticRecord
 
@@ -243,7 +243,7 @@ One row per audit run. A frozen snapshot of results as checked that day — reus
 
 **Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route account/export`, `route account`, `route substeps`, `screen compliance`
+**Read or written by:** `route account/export`, `route account`, `route checklists/from-topic`, `route substeps`, `screen compliance`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -272,6 +272,7 @@ One row per audit run. A frozen snapshot of results as checked that day — reus
 | `source` | text | yes | — |
 | `company_id` | uuid | no | — |
 | `origin` | text | yes | — |
+| `source_title` | text | yes | — |
 
 **Points at:**
 
@@ -301,9 +302,9 @@ One row per audit run. A frozen snapshot of results as checked that day — reus
 
 ### `checklists`
 
-**Rows:** 1 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 3 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route account`, `route link-research`, `route substeps`, `screen compliance`, `screen dashboard`
+**Read or written by:** `route account`, `route checklists/from-topic`, `route link-research`, `route substeps`, `screen compliance`, `screen dashboard`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -916,7 +917,7 @@ Candidate company facts read out of a conversation overnight. PROPOSED, never wr
 
 **Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by: NOTHING in app/, lib/ or scripts/.**
+**Read or written by:** `route jobs/summarise`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -1050,9 +1051,9 @@ industry x jurisdiction x agency -> how far we have got. Reads the same way to t
 
 One row per nightly run. Answers release gate 2 — did it run, and what did it remove (DECISIONS.md §116, §125). Operational, not tenant data: closed to authenticated.
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 4 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by: NOTHING in app/, lib/ or scripts/.**
+**Read or written by:** `lib jobAuth`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -1642,9 +1643,9 @@ The ~59 facts about a company that determine which requirements apply. Reference
 
 One exploration. The transcript is disposable (WORKSPACE.md §6.4); the summary is what survives. Holds NO facts — a hypothetical is never stored (DECISIONS.md §78) and a real fact goes to company_switches. Migration 028.
 
-**Rows:** 2 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 6 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route chat`, `lib conversation`, `script check-live`
+**Read or written by:** `route chat`, `route checklists/from-topic`, `route jobs/delete`, `route jobs/summarise`, `route topics/[id]`, `lib conversation`, `script check-live`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -1703,9 +1704,9 @@ One exploration. The transcript is disposable (WORKSPACE.md §6.4); the summary 
 
 One message in a conversation. Cleared 7 days after the topic is summarised (DECISIONS.md §125, superseding §110's 15 days); the topic row and its summary survive.
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 12 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `lib conversation`
+**Read or written by:** `route jobs/delete`, `route jobs/summarise`, `lib conversation`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -1751,7 +1752,7 @@ One message in a conversation. Cleared 7 days after the topic is summarised (DEC
 
 Events, not inventory. Never decremented, never derived from row counts — transcripts are cleared after 7 days and checklists can be deleted, and neither rewrites what happened. DECISIONS.md §125.
 
-**Rows:** 1 · **RLS:** enabled · **Primary key:** `company_id`
+**Rows:** 2 · **RLS:** enabled · **Primary key:** `company_id`
 
 **Read or written by:** `lib conversation`
 
@@ -1943,4 +1944,5 @@ filtered HERE so no consumer can forget it (CLAUDE.md §3.2). A corrected link
 033
 034
 035
+036
 ```

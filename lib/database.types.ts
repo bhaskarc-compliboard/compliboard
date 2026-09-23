@@ -230,6 +230,7 @@ export type Database = {
           search_hint: string | null
           sort_order: number | null
           source: string | null
+          source_title: string | null
           source_url: string | null
           time_estimate: string | null
           what_you_need: string | null
@@ -257,6 +258,7 @@ export type Database = {
           search_hint?: string | null
           sort_order?: number | null
           source?: string | null
+          source_title?: string | null
           source_url?: string | null
           time_estimate?: string | null
           what_you_need?: string | null
@@ -284,6 +286,7 @@ export type Database = {
           search_hint?: string | null
           sort_order?: number | null
           source?: string | null
+          source_title?: string | null
           source_url?: string | null
           time_estimate?: string | null
           what_you_need?: string | null
