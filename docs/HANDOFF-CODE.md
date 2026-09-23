@@ -109,11 +109,11 @@ fact that an aborted stream writes nothing because there are no token counts to 
 The first hours of data (`DECISIONS.md` §128 J):
 
 ```
-research 84% · checklist 12% · convert 4% · summarise 0.05%
+research 84.5% · checklist 11.9% · convert 3.5% · summarise 0.1%
 
-INPUT  62.2%   what we SEND: prompt + history + search results
-OUTPUT 34.9%   what comes back, reasoning tokens included
-SEARCH  2.9%
+INPUT  58.7%   what we SEND: prompt + history + search results
+OUTPUT 33.1%   what comes back, reasoning tokens included
+SEARCH  8.2%
 ```
 
 > ### THE TWO NUMBERS TO KEEP IN MIND BEFORE CHANGING ANYTHING ABOUT ANSWERS
@@ -125,8 +125,12 @@ SEARCH  2.9%
 > **~4,500 input tokens per source retrieved.** A source is not paid for once: it is replayed as
 > input on every later turn of that conversation.
 
-**⚠ `config/pricing.ts` has NOT been verified against the published price list.** Every figure
-here scales linearly with its four numbers. Check them first.
+**`config/pricing.ts` was verified by the owner on 23 September 2026** — and the first version of
+it was wrong by ~2.8×, which is why it was flagged rather than trusted. Past ledger rows keep the
+prices they were costed at, so `npm run cost` prints a **stored** and an **at current prices**
+column whenever they differ, and says whether the difference was a vendor price change or a
+correction to this table. Those are different facts: one records what was spent, the other
+records a number nobody was charged.
 
 ## 5. The three commands that cost money, and when to run them
 

@@ -147,7 +147,15 @@ async function runOnce(c) {
   for await (const ev of askAIOpenStream(system, [{ role: 'user', content: c.question }],
                                          { maxTokens: 16000,
                                            ...(effortArg ? { effort: effortArg } : {}),
-                                           ...(modelArg ? { model: modelArg } : {}) })) {
+                                           ...(modelArg ? { model: modelArg } : {}),
+                                           // *** THESE RUNS GO IN THE LEDGER TOO (§128 J.1). ***
+                                           // They were not, and the price correction on 23 Sep
+                                           // then had to be applied to a model comparison by
+                                           // reconstructing its input tokens from its printed
+                                           // cost. `companyId: null` is correct and allowed by
+                                           // migration 038: a script has no tenant, and a call
+                                           // with no tenant still cost money.
+                                           ledger: { companyId: null, task: 'research' } })) {
     if (ev.type === 'searching') searches++
     else if (ev.type === 'done') {
       answer = ev.answer; stopReason = ev.stopReason

@@ -1,6 +1,10 @@
 # Decision Record
 **Version:** 101 · **Updated:** 23 September 2026
-**Supersedes:** version 100 (23 Sep). Adds **§128 — the owner's decisions on Fix Round 1, and
+**Supersedes:** version 100 (23 Sep). **§128's prices were corrected by the owner the same day**
+— Opus 5 is $5/$25 per million, not $15/$75; Sonnet 5 is $2/$10, not $3/$15. Every cost figure
+written before that is an overestimate of ~2.8×, the ledger rows were deliberately NOT repriced,
+and the reconstruction of the $5.33 session **no longer holds**: at correct prices it accounts
+for $1.32 of it, not $4.02. Adds **§128 — the owner's decisions on Fix Round 1, and
 where the money goes.** Effort is `medium` by default for research and checklist; a typo in
 `AI_EFFORT` now falls back to medium rather than buying the expensive tier. `RESEARCH_PROVENANCE`
 moves the sources sentence into the SYSTEM prompt, which is the only place it cannot be disowned
@@ -9834,8 +9838,23 @@ effort, input and output tokens, searches, wall clock, and a cost.
 price table records its tokens and no cost, because inventing a number for it would put a
 fiction in the one place meant to be fact.
 
-**⚠ `config/pricing.ts` was NOT verified against the published price list by this session.**
-Every figure below scales linearly with those four numbers. They are the first thing to check.
+> ### ⚠ AND THE PRICES BELOW WERE WRONG. CORRECTED BY THE OWNER, 23 SEPTEMBER 2026.
+>
+> The table was flagged in `config/pricing.ts` as unverified, and it was: **Opus 5 was listed at
+> $15/$75 per million and is $5/$25; Sonnet 5 was listed at $3/$15 and is $2/$10.** Sonnet 4.5
+> and Haiku 4.5 were right. `claude-opus-5-5` ($4/$20) and the bare `claude-haiku-4-5` alias were
+> added — an id that resolves at the API and prices as null here would record its tokens with no
+> cost, which is the quiet way a total goes wrong.
+>
+> **Every J figure written before this is an overestimate of about 2.8×**, and the conclusions
+> that moved are marked below. `PRICES_VERIFIED_ON` now carries the date and `PRICE_CORRECTIONS`
+> records what changed and **that it was a correction rather than a vendor price change** — a
+> row costed at a superseded-but-real price recorded what was actually spent; a row costed from
+> a wrong table records a number nobody was ever charged. `npm run cost` prints which it is.
+>
+> **The rows were NOT repriced.** Migration 038 stores the price on the row on purpose, and that
+> decision holds even when the stored price was mistaken: the fix is a note, which is what this
+> is, plus the corrected column the report now prints beside the stored one.
 
 ### J.2 The $5.33 session, reconstructed
 
@@ -9853,12 +9872,27 @@ own right:
 | **2.03 visible characters per billed output token** | Plain prose is ~4. **About half the output bill is reasoning tokens you never see**, so estimating cost from visible text understates it roughly twofold |
 | **~4,506 input tokens per source retrieved** | Search results are injected into context and billed as input |
 
-| Task | in ≈ | out ≈ | est. cost | how |
-|---|---|---|---|---|
-| research | 153,204 | 15,958 | **$3.60** | 4 answers, 34 sources — estimated |
-| convert | 1,014 | 4,730 | **$0.38** | measured today, scaled by item count |
-| summarise | 1,200 | 250 | **$0.04** | measured today, repriced at Opus 5, its tier then |
-| **TOTAL** | | | **$4.02** | against **$5.33** actually billed |
+| Task | in ≈ | out ≈ | at the WRONG prices | **at the corrected prices** | how |
+|---|---|---|---|---|---|
+| research | 153,204 | 15,958 | $3.60 | **$1.18** | 4 answers, 34 sources — estimated |
+| convert | 1,014 | 4,730 | $0.38 | **$0.13** | measured, scaled by item count |
+| summarise | 1,200 | 250 | $0.04 | **$0.01** | measured, repriced at Opus 5, its tier then |
+| **TOTAL** | | | $4.02 | **$1.32** | against **$5.33** actually billed |
+
+> ### THE CORRECTION BREAKS THIS RECONSTRUCTION, AND SAYING SO IS THE POINT.
+>
+> At the wrong prices the estimate came to $4.02 against $5.33 billed — 75% accounted for, which
+> read as a good reconstruction with a modest gap. **At the corrected prices it comes to $1.32,
+> which accounts for a quarter of the bill.** The shape of the estimate did not change; the
+> conclusion drawn from it did, and the earlier one was luck.
+>
+> So the honest statement is now: **the $5.33 is NOT reconstructed.** The split by task is still
+> informative — research dominates either way — but the absolute figures do not reach the bill,
+> and the candidates named below (effort `high`, a stopped answer, uncounted micro-steps) now
+> have to account for **$4.01 rather than $1.31**, which is far more than they plausibly do.
+> Something else in that session spent money that these rows do not show. **The ledger exists so
+> that this question is never again answered by reconstruction**, and `scripts/golden-facts.js`
+> now writes rows for the same reason.
 
 **Research is ~90% of it.** The $1.31 gap is unaccounted and the honest candidates are named:
 that session ran at effort `high` (the calibration is from `medium`, so the output side is a
@@ -9869,11 +9903,16 @@ micro-steps calls are not in the estimate at all.
 
 Across the 58 calls in the ledger's first hours:
 
+At the corrected prices, across 59 calls:
+
 | | | |
 |---|---|---|
-| **input** | **$16.19** | **62.2%** — what we SEND: prompt, history, and search results |
-| output | $9.08 | 34.9% — what comes back, reasoning included |
-| search | $0.75 | 2.9% |
+| **input** | **$5.51** | **58.7%** — what we SEND: prompt, history, and search results |
+| output | $3.11 | 33.1% — what comes back, reasoning included |
+| search | $0.77 | 8.2% — unchanged by the correction, so its share nearly tripled |
+
+Stored on the rows: $26.61. **At the corrected prices the same calls are $9.39** — the token
+counts are measured and right; the money on those rows was an estimate that was wrong.
 
 **The expensive half is the half we control.** Every source retrieved is ~4,500 tokens of input
 on every subsequent turn that replays it.
@@ -9906,9 +9945,15 @@ Three runs each, Seattle, `medium`, `RESEARCH_PREFER_GOV` + `RESEARCH_SPECIALIST
 | per-run facts | 4/4 · 4/4 · 3/4 | 2/4 · 2/4 · 4/4 |
 | wall clock, mean | 50.7s | **24.2s** |
 | output tokens, mean | 3,446 | 2,253 |
-| **cost per run, mean** | **$0.7573** | **$0.1161** |
+| cost per run at the wrong prices | $0.7573 | $0.1161 |
+| **cost per run, CORRECTED** | **$0.2658** | **$0.0841** |
 
-**Opus 5 costs 6.5× as much and finds one more fact per run.** Stability differs too: Opus held
+Repriced from the recorded token counts — the same runs, not new ones. Three of the six had
+their input tokens derived from the printed cost, and each derivation was checked by
+recomputing the original figure from it.
+
+**Opus 5 costs 3.2× as much and finds one more fact per run** — at the wrong prices it read as
+6.5×, so the correction roughly halves the penalty for choosing Opus. Stability differs too: Opus held
 3/3 on three of the four facts and 2/3 on the fourth; **Sonnet held 2/3 on all four**, which is
 the shape of a model that is close but not settled.
 
