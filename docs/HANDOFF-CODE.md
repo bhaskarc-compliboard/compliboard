@@ -103,7 +103,8 @@ and behave"*. None of those nine was that question.
 
 ```
 npm run check:live    signs in as a real staging fixture and writes as that user.
-                      Needs CHECK_LIVE_PASSWORD. Currently FAILS on one step by design — see §6.
+                      Needs CHECK_LIVE_PASSWORD. Last run 23 Sep: 16 steps pass, 1 fails —
+                      `sources`, the known gap in §6. Everything else is green.
 npm run golden        the determination-gate golden cases (the gate is off everywhere).
 npm run golden:facts  the owner's five questions, with the facts each answer must contain.
                       On demand. NEVER in `npm run check` — every case is a real searching answer.

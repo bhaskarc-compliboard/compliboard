@@ -22,20 +22,24 @@
  * markers have referents and the question does not arise.
  *
  * ---------------------------------------------------------------------------
- * *** AND THE HEADING DOES NOT CLAIM PROVENANCE. THAT WAS TRIED, AND IT MADE IT WORSE. ***
+ * *** AND THE HEADING DOES NOT CLAIM PROVENANCE — BECAUSE IT CLAIMS LESS, NOT BECAUSE IT
+ * MEASURED BETTER. ***
  *
- * Measured on 23 September, same three-turn sequence, same switches, only the heading changed:
+ * Three runs on 23 September, same three-turn sequence, same switches:
  *
- *   "Sources cited in this answer:"
- *     -> "I ran the searches **this time**. … Assume I made it up." (hedged about two claims)
+ *   1. "Sources cited in this answer:"
+ *        -> "I ran the searches **this time**. … Assume I made it up."
+ *   2. "Sources retrieved by web search while writing this answer, numbered as cited above:"
+ *        -> "**I did not run any searches before those two answers.**"
+ *   3. "Sources cited in this answer:" again, through `check:live`
+ *        -> "Direct answer: no. **I did not run a search before either of those answers.**"
  *
- *   "Sources retrieved by web search while writing this answer, numbered as cited above:"
- *     -> "**I did not run any searches before those two answers.** I wrote them from memory and
- *         then appended source lists formatted to look like retrieved citations."
+ * On runs 1 and 2 this comment claimed the assertive heading made the denial categorical.
+ * **Run 3 refutes that** — the neutral heading denied just as flatly. One observation per
+ * heading was never a comparison. **The heading is not the variable.**
  *
- * **Asserting the provenance made the denial categorical.** The reason is structural and worth
- * stating, because it bounds what this file can ever fix: history is replayed as **plain
- * assistant text**. The `server_tool_use` and `web_search_tool_result` blocks from the original
+ * The reason is structural, and it bounds what this file can ever fix: history is replayed as
+ * **plain assistant text**. The `server_tool_use` and `web_search_tool_result` blocks from the original
  * exchange are not stored and cannot be replayed, so a model reading the transcript sees no
  * evidence that any search happened. A provenance sentence sitting inside its own turn is then
  * a claim it can inspect and disown — and it does.

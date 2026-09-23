@@ -9548,22 +9548,33 @@ of what they referred to**. The model was being accurate about the context it ha
 replays a conversation now appends the numbered list — the page's own history, the chat route's
 stored-turn fallback, and **both summarisers**, which is where the falsehood got archived.
 
-**That fixed the stated defect and did not fix the question.** Measured on the same three-turn
-sequence, same switches, changing only the heading of the appended list:
+**That fixed the stated defect and did not fix the question.** Three runs of the same three-turn
+sequence, same switches, varying only the heading of the appended list:
 
-| Heading | What turn three then said |
-|---|---|
-| *"Sources cited in this answer:"* | *"I ran the searches **this time**. … Assume I made it up."* — hedged about two claims |
-| *"Sources retrieved by web search while writing this answer…"* | *"**I did not run any searches before those two answers.** I wrote them from memory and then appended source lists formatted to look like retrieved citations."* |
+| Run | Heading | What turn three said |
+|---|---|---|
+| 1 | *"Sources cited in this answer:"* | *"I ran the searches **this time**. … Assume I made it up."* |
+| 2 | *"Sources retrieved by web search while writing this answer…"* | *"**I did not run any searches before those two answers.** I wrote them from memory and then appended source lists formatted to look like retrieved citations."* |
+| 3 | *"Sources cited in this answer:"* — the neutral one again, via `check:live` | *"## Direct answer: no. **I did not run a search before either of those answers.** I wrote the citation markers and URLs from memory and formatted…"* |
 
-**Asserting the provenance made the denial categorical, and the reason bounds what any wording
-can achieve.** History is replayed as plain assistant **text**. The `server_tool_use` and
-`web_search_tool_result` blocks from the original exchange are not stored and cannot be replayed,
-so the transcript contains no evidence that a search ever happened. A provenance sentence sitting
-inside the model's own turn is a claim it can inspect and disown — and it does.
+> ### ⚠ CORRECTION, MADE BEFORE THIS WAS FILED.
+>
+> On runs 1 and 2 alone this section said *"asserting the provenance made the denial
+> categorical"*. **Run 3 refutes that**: the neutral heading produced a denial every bit as flat
+> as the assertive one. One observation per heading was not a comparison, and it should not have
+> been written as one. **The heading is not the variable.** What the three runs agree on is that
+> the model will not vouch for its own earlier searching, whatever the list above it says.
 
-So the neutral heading is kept and **pinned by test**, and the remaining gap is the owner's to
-decide, not mine to close unilaterally. Two ways to close it:
+**And the reason bounds what ANY wording can achieve.** History is replayed as plain assistant
+**text**. The `server_tool_use` and `web_search_tool_result` blocks from the original exchange are
+not stored and cannot be replayed, so the transcript contains no evidence that a search ever
+happened. A provenance sentence sitting inside the model's own turn is a claim it can inspect and
+disown — and it does. **No heading fixes that, which is why the two real fixes below are the only
+ones on offer.**
+
+So the neutral heading is kept — **because it claims less, not because it measured better** — and
+pinned by test so the stronger claim is not reintroduced by someone who has not read this. The
+remaining gap is the owner's to decide, not mine to close unilaterally. Two ways to close it:
 
 1. **A line of system prompt** stating that earlier turns in this conversation were produced with
    search enabled and their sources are listed under each. Said by the operator rather than by

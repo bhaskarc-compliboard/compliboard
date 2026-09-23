@@ -143,6 +143,19 @@ wrong, which is the class `CLAUDE.md` §5 exists to keep out.
 > tool-use blocks that would show a search happened are not stored.** `AUDIT-CHECKS.md`'s rule
 > applies: a check is recorded with the answer on the day it was run, **including where that
 > answer is bad.** `npm run check:live` runs it every time and prints the model's own words.
+>
+> **The answer on 23 September 2026, verbatim from the run:**
+>
+> ```
+> ✗ sources    turn three disowned its citations: "## Direct answer: no\n\nI did not run a
+>              search before either of those answers. I wrote the citation markers and URLs
+>              from memory and formatted"
+>
+> check:live FAILED — 1 problem(s). These are invisible to npm run check.
+> ```
+>
+> Every other step in that run passed — research, checklist, conversation, reload, continue,
+> counters, stop, both conversion scopes, topic GET, summarise, DELETE and history.
 
 ---
 
