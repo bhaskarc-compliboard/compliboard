@@ -26,7 +26,8 @@ export async function POST(request: NextRequest) {
     const { companyId, userId, db } = authed.auth
 
     const body = await request.json()
-    const { name, file_url, file_type, file_size, folder_id, is_recurring, recurrence_period } = body
+    const { name, file_url, file_type, file_size, folder_id, is_recurring, recurrence_period,
+            from_topic_id } = body
 
     if (!name || !file_url) {
       return NextResponse.json({ error: 'Missing name or file_url' }, { status: 400 })
@@ -36,6 +37,22 @@ export async function POST(request: NextRequest) {
     // 002). Refuse to record a row pointing at another company's prefix.
     if (String(file_url).split('/')[0] !== companyId) {
       return NextResponse.json({ error: 'File path does not belong to your company' }, { status: 403 })
+    }
+
+    // A conversation, if given, must be one of this company's. THE SAME OWNERSHIP CHECK THE
+    // FOLDER GETS, for the same reason: `from_topic_id` comes from the request body, and a
+    // value taken from a client is never trusted to name a row this caller may touch
+    // (`CLAUDE.md` §3.6). 404 rather than 403 so ids cannot be probed.
+    //
+    // This is Run 2 Task 5's server half — a file uploaded from a conversation goes through
+    // THIS path, unchanged, and only records where it came in. There is no parallel store.
+    // The client that sends it is Run 3's work; the column and the check are ready for it.
+    if (from_topic_id) {
+      const { data: topic } = await db
+        .from('topics').select('id').eq('id', from_topic_id).maybeSingle()
+      if (!topic) {
+        return NextResponse.json({ error: 'That conversation was not found.' }, { status: 404 })
+      }
     }
 
     // A destination folder, if given, must be one of this company's folders.
@@ -61,6 +78,7 @@ export async function POST(request: NextRequest) {
         file_type,
         file_size,
         folder_id: folder_id || null,
+        from_topic_id: from_topic_id || null,
         is_recurring,
         recurrence_period,
       })

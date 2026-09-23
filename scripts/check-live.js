@@ -224,6 +224,108 @@ if (!(await reachable())) {
     else console.log(`  ✓ checklist           ${items.length} must_do, ${(clJson.good_to_have ?? []).length} good_to_have, shape intact`)
   }
 
+  // ---- RUN 2: the conversation survives, and the counters record events ----------------
+  //
+  // These drive the real routes as the fixture user. The properties are the ones that would
+  // fail silently: a conversation that reloads empty, a counter that drifts, a stopped answer
+  // counted as an answer, a "discussed" checklist citing a source nobody saw.
+  const ask = async (question, topicId) => {
+    const res = await fetch(`${BASE}/api/chat`, { method: 'POST', headers: auth,
+      body: JSON.stringify({ question, mode: 'research', history: [], topicId: topicId ?? '' }) })
+    if (!(res.headers.get('content-type') ?? '').includes('x-ndjson')) return null
+    let done = null
+    const rd = res.body.getReader(); const dec2 = new TextDecoder(); let b = ''
+    for (;;) { const { done: fin, value } = await rd.read(); if (fin) break
+      b += dec2.decode(value, { stream: true }); const ls = b.split('\n'); b = ls.pop() ?? ''
+      for (const l of ls) { if (!l.trim()) continue; let e; try { e = JSON.parse(l) } catch { continue }
+        if (e.type === 'done') done = e } }
+    return done
+  }
+  const countersNow = async () => (await asUser
+    .from('usage_counters').select('questions_answered, checklists_created')
+    .eq('company_id', companyId).maybeSingle()).data ?? { questions_answered: 0, checklists_created: 0 }
+
+  const before = await countersNow()
+  const first = await ask('Name the OSHA standard number for hazard communication. One line.')
+  const convoTopic = first?.topicId
+
+  if (!convoTopic) { console.log('  ✗ conversation        no topicId came back — the turn was not saved'); failures++ }
+  else {
+    const { data: savedTurns } = await asUser
+      .from('turns').select('position, role, stopped').eq('topic_id', convoTopic).order('position')
+    if ((savedTurns ?? []).length < 2) { console.log(`  ✗ conversation        ${savedTurns?.length ?? 0} turns saved, expected 2`); failures++ }
+    else console.log(`  ✓ conversation        ${savedTurns.length} turns saved and readable back`)
+
+    // SURVIVES A RELOAD: the GET route is what the page uses to reopen it.
+    const re = await fetch(`${BASE}/api/topics/${convoTopic}`, { headers: auth })
+    const reJson = await re.json().catch(() => null)
+    if (!re.ok || !(reJson?.turns?.length >= 2)) { console.log(`  ✗ reload              GET /api/topics/<id> -> ${re.status}`); failures++ }
+    else console.log(`  ✓ reload              GET returns ${reJson.turns.length} turns, title ${JSON.stringify(String(reJson.topic?.title ?? '').slice(0, 34))}`)
+
+    // A FOLLOW-UP ON A REOPENED CONVERSATION continues it — sending NO client history, which is
+    // the state after a page reload. It also clears idle_at.
+    await asUser // stand the topic down as the summariser would find it
+      .from('topics').update({ idle_at: new Date().toISOString() }).eq('id', convoTopic)
+    const follow = await ask('What did I just ask about?', convoTopic)
+    const carried = /hazard communication|1910\.1200|hazcom/i.test(follow?.research ?? '')
+    const { data: after } = await asUser.from('topics').select('idle_at, last_turn_at').eq('id', convoTopic).single()
+    if (!carried) { console.log(`  ✗ continue            the follow-up did not carry the subject: ${JSON.stringify((follow?.research ?? '').slice(0, 90))}`); failures++ }
+    else if (after.idle_at !== null) { console.log('  ✗ continue            idle_at was not cleared by a new turn'); failures++ }
+    else console.log('  ✓ continue            reopened, carried the subject, idle_at cleared')
+  }
+
+  // COUNTERS: +1 per completed answer, and never for a stopped one.
+  const mid = await countersNow()
+  const asked = mid.questions_answered - before.questions_answered
+  if (asked < 1) { console.log(`  ✗ counters            questions_answered moved by ${asked}, expected at least 1`); failures++ }
+  else console.log(`  ✓ counters            questions_answered +${asked} across ${asked} completed answer(s)`)
+
+  const ctl = new AbortController()
+  setTimeout(() => ctl.abort(), 1500)
+  try {
+    await fetch(`${BASE}/api/chat`, { method: 'POST', headers: auth, signal: ctl.signal,
+      body: JSON.stringify({ question: 'Give me an exhaustive history of OSHA rulemaking since 1971.', mode: 'research', history: [], topicId: convoTopic ?? '' }) })
+      .then((r) => r.body.getReader().read())
+  } catch { /* the abort is the point */ }
+  await new Promise((r) => setTimeout(r, 2500))
+  const afterStop = await countersNow()
+  if (afterStop.questions_answered !== mid.questions_answered) {
+    console.log(`  ✗ stop                a stopped answer moved the counter ${mid.questions_answered} -> ${afterStop.questions_answered}`); failures++
+  } else {
+    const { data: t } = await asUser.from('turns').select('role, stopped').eq('topic_id', convoTopic).order('position')
+    const last = (t ?? [])[t.length - 1]
+    if (!last || last.role !== 'user' || !last.stopped) {
+      console.log(`  ✗ stop                the stopped question was not marked (last turn: ${last?.role}/${last?.stopped})`); failures++
+    } else console.log('  ✓ stop                counter unchanged, question kept and marked, no answer row')
+  }
+
+  // CONVERSION: scope=discussed may cite ONLY what the conversation cited.
+  if (convoTopic) {
+    const norm = (u) => { try { const x = new URL(u); return (x.origin + x.pathname).replace(/\/+$/, '').toLowerCase() } catch { return String(u ?? '').toLowerCase() } }
+    const { data: turnRows } = await asUser.from('turns').select('sources').eq('topic_id', convoTopic)
+    const citedSet = new Set((turnRows ?? []).flatMap((r) => (r.sources ?? []).map((s) => norm(s.url))))
+
+    for (const scope of ['discussed', 'complete']) {
+      const res = await fetch(`${BASE}/api/checklists/from-topic`, { method: 'POST', headers: auth,
+        body: JSON.stringify({ topicId: convoTopic, scope }) })
+      const j = await res.json().catch(() => null)
+      if (!res.ok) { console.log(`  ✗ convert ${scope.padEnd(10)} ${res.status} ${j?.error ?? ''}`); failures++; continue }
+      const { data: items } = await asUser
+        .from('checklist_items').select('origin, source_url').eq('checklist_id', j.checklistId)
+      const outside = (items ?? []).filter((i) => i.source_url && !citedSet.has(norm(i.source_url)))
+      const origins = (items ?? []).reduce((m, i) => ((m[i.origin ?? 'null'] = (m[i.origin ?? 'null'] || 0) + 1), m), {})
+      if (scope === 'discussed') {
+        if (outside.length) { console.log(`  ✗ convert discussed   ${outside.length} item(s) cite a source the conversation never used`); failures++ }
+        else if (origins.added) { console.log(`  ✗ convert discussed   ${origins.added} item(s) marked 'added' in a discussed-only checklist`); failures++ }
+        else console.log(`  ✓ convert discussed   ${items.length} items, all origin=conversation, 0 unseen sources`)
+      } else {
+        if (!origins.conversation || !origins.added) {
+          console.log(`  ✗ convert complete    expected both origins, got ${JSON.stringify(origins)}`); failures++
+        } else console.log(`  ✓ convert complete    ${items.length} items, ${origins.conversation} conversation + ${origins.added} added`)
+      }
+    }
+  }
+
   // 3. HISTORY — ask, then ask what was just asked. The answer must name it.
   const hist = [{ question: 'What are the rules for storing propane cylinders outdoors?',
                   answer: 'Propane cylinder storage outdoors is governed by NFPA 58 and local fire code.' }]

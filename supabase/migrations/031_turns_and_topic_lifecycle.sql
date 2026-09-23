@@ -140,6 +140,7 @@ do $$
 declare
   n int;
   v text;
+  probe uuid;
 begin
   -- anon holds nothing.
   foreach v in array array['SELECT', 'INSERT', 'UPDATE', 'DELETE'] loop
@@ -173,20 +174,32 @@ begin
 
   -- THE CHECK CONSTRAINT IS TESTED BY VIOLATING IT. §3.7: a constraint nobody has tried to
   -- break is a comment.
-  begin
-    insert into public.topics (company_id, title, summary_source)
-    select id, '__mig031_probe__', 'nightly-ish' from public.companies limit 1;
-    raise exception 'MIGRATION 031 FAILED: summary_source accepted a value outside (user, nightly).';
-  exception
-    when check_violation then null;
-    when others then
-      -- No companies on this database (a fresh chain) — nothing to probe against, and that is
-      -- not a failure. Any other error is.
-      if sqlerrm not like '%null value%' and sqlerrm not like '%violates not-null%' then
-        raise;
-      end if;
-  end;
-  delete from public.topics where title = '__mig031_probe__';
+  --
+  -- *** THE GUARD BELOW EXISTS BECAUSE THE FIRST VERSION FAILED THE FROM-ZERO RESTORE. ***
+  -- It probed with `insert ... select id from public.companies limit 1`, which on an EMPTY
+  -- database inserts ZERO ROWS — and a zero-row insert raises nothing at all. So the probe
+  -- "succeeded", control fell through to the failure `raise` below it, and migration 031
+  -- refused itself on a fresh chain while passing on a populated one.
+  --
+  -- That is §98's own argument arriving at this migration: applying incrementally proves a
+  -- migration worked once, from one starting state. The empty database is a different state,
+  -- and it is the one the chain has to build from.
+  select id into probe from public.companies limit 1;
+  if probe is not null then
+    begin
+      insert into public.topics (company_id, title, summary_source)
+      values (probe, '__mig031_probe__', 'nightly-ish');
+      raise exception 'MIGRATION 031 FAILED: summary_source accepted a value outside (user, nightly).';
+    exception when check_violation then null;
+    end;
+    delete from public.topics where title = '__mig031_probe__';
+  else
+    -- A fresh chain has no company to hang a topic off. The constraint is still asserted to
+    -- EXIST, which is the half that can be checked without a row.
+    if not exists (select 1 from pg_constraint where conname = 'topics_summary_source_is_known') then
+      raise exception 'MIGRATION 031 FAILED: the summary_source constraint was not created.';
+    end if;
+  end if;
 
   raise notice 'MIGRATION 031 OK: turns created (anon 0, authenticated SELECT+INSERT only, 2 policies), 6 lifecycle columns on topics, summary_source constraint refuses an unknown value.';
 end $$;
