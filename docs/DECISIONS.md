@@ -9081,12 +9081,41 @@ SAMPLE 2  workers' comp                   0 text "I'd be happy to help you under
 SAMPLE 3  SDS vs container label          0 text "I'll help you understand the differences…" [whole answer]
 ```
 
-> ### A text block is narration IF AND ONLY IF a `server_tool_use` appears LATER in the same
-> ### response. No tool use, nothing is dropped.
+> ### A text block is narration IF AND ONLY IF a `server_tool_use` appears ANYWHERE AFTER IT.
+> ### The answer is the text that follows the LAST search. No tool use, nothing is dropped.
 >
 > **Positional, not linguistic.** Samples 2 and 3 open with the same words sample 1 narrates with
-> and they are the entire answer — a phrasing heuristic would have deleted both. Ten tests run
+> and they are the entire answer — a phrasing heuristic would have deleted both. Fifteen tests run
 > against the recorded sequences, and replacing the rule with a linguistic one fails four of them.
+
+> ### ⚠ CORRECTED 22 Sep — THE FIRST VERSION SHIPPED AND LEAKED. SEARCHING IS NOT ONE ROUND.
+>
+> The rule first written here read *"before the FIRST `server_tool_use`"*. **Two more sequences
+> were recorded on `claude-opus-5` at `effort: max`** — the same Seattle restaurant question,
+> twice — and the second one narrates **three times**:
+>
+> ```
+>  1  text  "I'll research the current requirements across federal, state, county…"
+>  2-5  server_tool_use · 6-9 result
+> 11  text  "Let me check the Seattle-specific city requirements and employer obligations."
+> 12-15 server_tool_use · 16-19 result
+> 21  text  "Let me verify the employer registration requirements and a couple of remaining local items."
+> 22,23 server_tool_use
+> 27+ text  the answer — "Opening a restaurant in Seattle means clearing four layers…"
+> ```
+>
+> **Blocks 11 and 21 sit after the first search, so the first version kept them** and the answer a
+> customer read began *"Let me check the Seattle-specific city requirements…"*. The model searches,
+> writes a line about what it will look at next, and searches again.
+>
+> **Three verbs for one behaviour across the five samples — "I'll help", "I'll look up", "Let me
+> check", "Let me verify", "I'll research" — which is the second argument for being positional.**
+> A regression test reproduces the old rule against sample 5 and asserts that it leaks, so the
+> defect cannot come back unnoticed.
+>
+> **Checked, because the wider rule drops more:** in both recorded Seattle dumps, **zero** cited
+> text blocks precede the last search (25 and 65 citations respectively all fall after it), so
+> nothing cited is lost. Driven through the route afterwards, the answer carried **32 sources**.
 
 **In a stream you cannot know a block was narration until the search follows it**, so the text is
 emitted and then withdrawn with a `reset` event. Buffering the opening instead would mean **not

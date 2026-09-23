@@ -1,0 +1,67 @@
+[
+  {
+    "type": "thinking",
+    "thinking": ""
+  },
+  {
+    "type": "text",
+    "text": "I'll look up the current requirements for you.",
+    "citations": []
+  },
+  {
+    "type": "server_tool_use",
+    "name": "web_search"
+  },
+  {
+    "type": "server_tool_use",
+    "name": "web_search"
+  },
+  {
+    "type": "web_search_tool_result"
+  },
+  {
+    "type": "web_search_tool_result"
+  },
+  {
+    "type": "thinking",
+    "thinking": ""
+  },
+  {
+    "type": "server_tool_use",
+    "name": "web_search"
+  },
+  {
+    "type": "server_tool_use",
+    "name": "web_search"
+  },
+  {
+    "type": "web_search_tool_result"
+  },
+  {
+    "type": "web_search_tool_result"
+  },
+  {
+    "type": "thinking",
+    "thinking": ""
+  },
+  {
+    "type": "text",
+    "text": "Opening a restaurant in Seattle means clearing four layers of government \u2014 federal, Washington State, King Cou",
+    "citations": []
+  },
+  {
+    "type": "text",
+    "text": "Seattle's Department of Construction and Inspections notes that a new business in a space it did not previousl",
+    "citations": [
+      {
+        "url": "https://businesslicenseguide.com/seattle-wa-business-license-guide/",
+        "title": "Seattle WA Business License Guide 2026"
+      }
+    ]
+  },
+  {
+    "type": "text",
+    "text": "\n2. **Get health department plan review approved before you start construction.** ",
+    "citations": []
+  }
+]

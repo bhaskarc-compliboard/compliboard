@@ -1,0 +1,123 @@
+[
+  {
+    "type": "thinking",
+    "thinking": ""
+  },
+  {
+    "type": "text",
+    "text": "I'll research the current requirements across federal, state, county, and city levels for you.",
+    "citations": []
+  },
+  {
+    "type": "server_tool_use",
+    "name": "web_search"
+  },
+  {
+    "type": "server_tool_use",
+    "name": "web_search"
+  },
+  {
+    "type": "server_tool_use",
+    "name": "web_search"
+  },
+  {
+    "type": "server_tool_use",
+    "name": "web_search"
+  },
+  {
+    "type": "web_search_tool_result"
+  },
+  {
+    "type": "web_search_tool_result"
+  },
+  {
+    "type": "web_search_tool_result"
+  },
+  {
+    "type": "web_search_tool_result"
+  },
+  {
+    "type": "thinking",
+    "thinking": ""
+  },
+  {
+    "type": "text",
+    "text": "Let me check the Seattle-specific city requirements and employer obligations.",
+    "citations": []
+  },
+  {
+    "type": "server_tool_use",
+    "name": "web_search"
+  },
+  {
+    "type": "server_tool_use",
+    "name": "web_search"
+  },
+  {
+    "type": "server_tool_use",
+    "name": "web_search"
+  },
+  {
+    "type": "server_tool_use",
+    "name": "web_search"
+  },
+  {
+    "type": "web_search_tool_result"
+  },
+  {
+    "type": "web_search_tool_result"
+  },
+  {
+    "type": "web_search_tool_result"
+  },
+  {
+    "type": "web_search_tool_result"
+  },
+  {
+    "type": "thinking",
+    "thinking": ""
+  },
+  {
+    "type": "text",
+    "text": "Let me verify the employer registration requirements and a couple of remaining local items.",
+    "citations": []
+  },
+  {
+    "type": "server_tool_use",
+    "name": "web_search"
+  },
+  {
+    "type": "server_tool_use",
+    "name": "web_search"
+  },
+  {
+    "type": "web_search_tool_result"
+  },
+  {
+    "type": "web_search_tool_result"
+  },
+  {
+    "type": "thinking",
+    "thinking": ""
+  },
+  {
+    "type": "text",
+    "text": "Opening a restaurant in Seattle means clearing four layers of regulation at once \u2014 federal, Washington State, ",
+    "citations": []
+  },
+  {
+    "type": "text",
+    "text": "The City of Seattle is divided into different zoning categories, and businesses are limited in where they can ",
+    "citations": [
+      {
+        "url": "https://www.seattle.gov/sdci/permits/common-projects/new-businesses",
+        "title": "New Businesses - SDCI | seattle.gov"
+      }
+    ]
+  },
+  {
+    "type": "text",
+    "text": " Critically, ",
+    "citations": []
+  }
+]

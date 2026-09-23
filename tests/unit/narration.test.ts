@@ -1,19 +1,37 @@
 /**
  * THE NARRATION RULE — `DECISIONS.md` §123, `lib/ai.ts` `stripNarration`.
  *
- * *** EVERY FIXTURE BELOW IS A RECORDED SEQUENCE, NOT AN INVENTED ONE. *** The three samples
- * were dumped on 22 September 2026 from real streamed calls with `web_search_20250305`
- * attached and the one-sentence system prompt — block types in order, with each text block's
- * length, citation count and opening characters. The block dump is reproduced in `lib/ai.ts`
- * above `stripNarration`.
+ * *** EVERY FIXTURE BELOW IS A RECORDED SEQUENCE, NOT AN INVENTED ONE. *** Five samples, all
+ * dumped on 22 September 2026 from real streamed calls with `web_search_20250305` attached and
+ * the one-sentence system prompt. 1-3 on `claude-sonnet-4-5`, 4 and 5 on `claude-opus-5` at
+ * `effort: max`. The full block dumps are reproduced in `lib/ai.ts` above `stripNarration`.
  *
  * The rule under test is POSITIONAL, not linguistic: a text block is narration if and only if a
- * `server_tool_use` appears later in the same response. Samples 2 and 3 are the reason — their
- * openings read exactly like sample 1's narration and they are the whole answer.
+ * `server_tool_use` appears ANYWHERE AFTER IT — the answer is the text following the LAST search.
+ *
+ * Two things that rule has to survive at once:
+ *   · samples 2 and 3 open with the same words samples 1, 4 and 5 narrate with, and are the
+ *     whole answer — so a phrasing heuristic deletes them;
+ *   · sample 5 narrates THREE times, twice after the first search — so a first-search rule
+ *     leaks. That version shipped, and the regression test below pins it.
  */
 import test, { describe } from 'node:test'
 import assert from 'node:assert/strict'
 import { stripNarration, openAnswer } from '../../lib/ai.ts'
+import { readFileSync } from 'node:fs'
+
+/**
+ * SAMPLES 4 AND 5 — the same Seattle question, twice, on `claude-opus-5` at `effort: max`.
+ *
+ * These are loaded from JSON captured off the wire, not typed out here. Each block keeps its
+ * TYPE and its position; text blocks keep their opening 110 characters and citation count.
+ * Nothing is invented — the fixtures are truncated recordings, and the long answer tails are
+ * cut after the first few answer blocks to stay readable.
+ */
+const load = (n: string) =>
+  JSON.parse(readFileSync(new URL(`../fixtures/${n}`, import.meta.url), 'utf8')) as Array<Record<string, unknown>>
+const SAMPLE_4 = load('narration-seattle-a.json')   // two search rounds
+const SAMPLE_5 = load('narration-seattle-b.json')   // THREE search rounds — broke the first rule
 
 /** SAMPLE 1 — searched. Block 0 is narration; 1-3 tool use; 4-6 results; 7+ the answer. */
 const SAMPLE_1 = [
@@ -79,6 +97,62 @@ describe('stripNarration — the positional rule', () => {
 
   test('an empty response is returned unchanged rather than throwing', () => {
     assert.deepEqual(stripNarration([]), [])
+  })
+})
+
+describe('SAMPLES 4 and 5 — searching is not ONE round', () => {
+  test('SAMPLE 4: the opening block is dropped and the answer starts after the last search', () => {
+    const kept = stripNarration(SAMPLE_4)
+    const texts = kept.filter((b) => b.type === 'text').map((b) => b.text as string)
+    assert.ok(!texts.some((t) => t.startsWith("I'll look up the current requirements")),
+      'the opening narration is gone')
+    assert.ok(texts[0].startsWith('Opening a restaurant in Seattle'), 'the answer starts at the real answer')
+  })
+
+  test('SAMPLE 5: ALL THREE narration blocks go, including the two after the first search', () => {
+    const kept = stripNarration(SAMPLE_5)
+    const texts = kept.filter((b) => b.type === 'text').map((b) => b.text as string)
+    for (const leak of [
+      "I'll research the current requirements",
+      'Let me check the Seattle-specific city requirements',
+      'Let me verify the employer registration requirements',
+    ]) {
+      assert.ok(!texts.some((t) => t.startsWith(leak)), `still leaking: ${leak}`)
+    }
+    assert.ok(texts[0].startsWith('Opening a restaurant in Seattle'))
+  })
+
+  test('THE REGRESSION: a first-tool-use rule keeps sample 5 leaking — this is what shipped', () => {
+    // The rule as it was: drop text blocks before the FIRST server_tool_use.
+    const firstToolUse = SAMPLE_5.findIndex((b) => b.type === 'server_tool_use')
+    const oldRule = SAMPLE_5.filter((b, i) => !(i < firstToolUse && b.type === 'text'))
+    const oldTexts = oldRule.filter((b) => b.type === 'text').map((b) => b.text as string)
+    assert.ok(oldTexts.some((t) => t.startsWith('Let me check the Seattle-specific city requirements')),
+      'the old rule must be shown to leak, or this test is not pinning anything')
+    // And the shipped rule must not.
+    const newTexts = stripNarration(SAMPLE_5).filter((b) => b.type === 'text').map((b) => b.text as string)
+    assert.ok(!newTexts.some((t) => t.startsWith('Let me check')))
+  })
+
+  test('every text block kept sits after the LAST server_tool_use', () => {
+    for (const [name, sample] of [['4', SAMPLE_4], ['5', SAMPLE_5]] as const) {
+      let last = -1
+      sample.forEach((b, i) => { if (b.type === 'server_tool_use') last = i })
+      const keptIdx = sample
+        .map((b, i) => ({ b, i }))
+        .filter(({ b }) => b.type === 'text')
+        .filter(({ b }) => stripNarration(sample).includes(b))
+        .map(({ i }) => i)
+      assert.ok(keptIdx.every((i) => i > last), `sample ${name}: a kept text block precedes the last search`)
+    }
+  })
+
+  test('the rule holds on ALL FIVE — nothing dropped where no search happened', () => {
+    assert.equal(stripNarration(SAMPLE_2).length, SAMPLE_2.length)
+    assert.equal(stripNarration(SAMPLE_3).length, SAMPLE_3.length)
+    assert.equal(stripNarration(SAMPLE_1).length, SAMPLE_1.length - 1)
+    assert.ok(stripNarration(SAMPLE_4).length < SAMPLE_4.length)
+    assert.ok(stripNarration(SAMPLE_5).length < SAMPLE_5.length)
   })
 })
 

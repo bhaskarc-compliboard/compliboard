@@ -375,51 +375,72 @@ export type OpenStreamEvent =
 /**
  * *** THE NARRATION RULE, AND THE EVIDENCE IT CAME FROM. ***
  *
- * With web search available the model often opens by saying what it is about to do. That
- * narration is not the answer, and concatenating every text block — which `reassemble` does —
- * puts it at the top of what the customer reads and what we store.
+ * With web search available the model often says what it is about to do. That narration is not
+ * the answer, and concatenating every text block — which `reassemble` does — puts it at the top
+ * of what the customer reads and what we store.
  *
- * THREE SAMPLES, recorded 22 Sep from real streamed calls with the tool attached, one system
- * sentence, no other context. Block sequences, in order:
+ * FIVE RECORDED SEQUENCES, 22 Sep 2026, real streamed calls with the tool attached and the one
+ * sentence of role. Samples 1-3 on `claude-sonnet-4-5`; 4 and 5 on `claude-opus-5` at
+ * `effort: max`.
  *
- *   SAMPLE 1  "Oregon cannabis extraction lab using butane — licenses and safety"
- *     0  text                    len=126  cites=0  "I'll help you understand the licensing and safety requiremen"
- *     1  server_tool_use                           query="Oregon cannabis extraction lab butane license requ…"
- *     2  server_tool_use                           query="Oregon cannabis butane extraction safety regulatio…"
- *     3  server_tool_use                           query="Oregon OLCC cannabis processor license extraction"
- *     4  web_search_tool_result  results=9
- *     5  web_search_tool_result  results=9
- *     6  web_search_tool_result  results=9
- *     7  text                    len=198  cites=0  "Based on my research, here's what you need to know about ope"
- *     8  text                    len=185  cites=1  "The processing of marijuana items is subject to regulation b"
- *     …  (35 more text blocks, the answer)
+ *   SAMPLE 1  "Oregon cannabis extraction lab using butane"        — searched once
+ *     0  text            len=126  "I'll help you understand the licensing and safety requiremen…"
+ *     1-3 server_tool_use · 4-6 web_search_tool_result
+ *     7+ text  (the answer, 35 blocks)
  *
- *   SAMPLE 2  "Do I need workers' comp insurance?"        — no search
- *     0  text                    len=1194 cites=0  "I'd be happy to help you understand whether you need workers"
+ *   SAMPLE 2  "Do I need workers' comp insurance?"                 — no search
+ *     0  text            len=1194 "I'd be happy to help you understand whether you need workers…"   [whole answer]
  *
- *   SAMPLE 3  "SDS versus container label under OSHA HazCom" — no search
- *     0  text                    len=3355 cites=0  "I'll help you understand the differences between Safety Data"
+ *   SAMPLE 3  "SDS versus container label under OSHA HazCom"       — no search
+ *     0  text            len=3355 "I'll help you understand the differences between Safety Data…"  [whole answer]
  *
- * **Samples 2 and 3 are why the rule cannot be "drop an opening block that sounds like
- * narration".** Those openings read exactly like sample 1's — *"I'll help you understand…"* —
- * and they are the entire answer. A phrasing heuristic would have deleted both.
+ *   SAMPLE 4  "small restaurant in Seattle — licenses and permits" — TWO search rounds
+ *     0  thinking · 1 text len=46 "I'll look up the current requirements for you."
+ *     2,3 server_tool_use · 4,5 result · 6 thinking · 7,8 server_tool_use · 9,10 result
+ *     12+ text  (the answer, from "Opening a restaurant in Seattle means clearing four layers…")
  *
- * > ### THE RULE: a text block is narration IF AND ONLY IF a `server_tool_use` block appears
- * > ### LATER in the same response. No tool use, nothing is dropped.
+ *   SAMPLE 5  the same question again                             — THREE search rounds
+ *     1   text len=94 "I'll research the current requirements across federal, state, county…"
+ *     2-5   server_tool_use · 6-9 result
+ *     11  text len=77 "Let me check the Seattle-specific city requirements and employer obligations."
+ *     12-15 server_tool_use · 16-19 result
+ *     21  text len=93 "Let me verify the employer registration requirements and a couple of remaining local items."
+ *     22,23 server_tool_use
+ *     27+ text  (the answer, from "Opening a restaurant in Seattle means clearing four layers…")
  *
- * It is positional, not linguistic, so it cannot be fooled by how a sentence is worded.
+ * *** SAMPLE 5 BROKE THE FIRST VERSION OF THIS RULE, WHICH SHIPPED. *** That version read
+ * *"narration is a text block before the FIRST `server_tool_use`"*, and against sample 5 it
+ * dropped block 1 and kept blocks 11 and 21 — so the answer a customer read began *"Let me check
+ * the Seattle-specific city requirements…"*. **Searching is not one round.** The model searches,
+ * writes a line about what it will look at next, and searches again; every one of those lines sits
+ * after the first tool use.
+ *
+ * > ### THE RULE: a text block is narration IF AND ONLY IF a `server_tool_use` appears ANYWHERE
+ * > ### AFTER IT. The answer is the text that follows the LAST search. No tool use, nothing is
+ * > ### dropped.
+ *
+ * **Still positional, not linguistic**, and samples 2 and 3 are still why: they open with the same
+ * words samples 1, 4 and 5 narrate with — *"I'll help you understand…"* — and they are the entire
+ * answer. A phrasing heuristic would delete both. It would also have missed sample 5's block 11,
+ * which says "Let me check" where sample 4 says "I'll look up" and the first Seattle run said
+ * "Let me verify" — three verbs for one behaviour.
  *
  * **The limit, stated rather than discovered later:** if a model ever writes real answer content,
- * *then* searches, this drops that content. Nothing in three samples does that — in all three the
- * pre-search text is a single block carrying **zero citations** — but it is the assumption this
- * rests on, and a fourth sample that breaks it is the signal to make the rule narrower.
+ * *then* searches again, this drops that content. In all five samples every pre-search text block
+ * carries **zero citations** and is one or two sentences of intent, while every answer block after
+ * the last search is longer or cited — but that is a description of five recordings, not a
+ * guarantee, and a sample that breaks it is the signal to narrow the rule rather than widen it.
  */
 export function stripNarration(
   content: Array<Record<string, unknown>>,
 ): Array<Record<string, unknown>> {
-  const firstToolUse = content.findIndex((b) => b.type === 'server_tool_use')
-  if (firstToolUse === -1) return content
-  return content.filter((b, i) => !(i < firstToolUse && b.type === 'text'))
+  // The LAST search, not the first. `findLastIndex` rather than `findIndex` is the whole fix.
+  let lastToolUse = -1
+  for (let i = 0; i < content.length; i++) {
+    if (content[i].type === 'server_tool_use') lastToolUse = i
+  }
+  if (lastToolUse === -1) return content
+  return content.filter((b, i) => !(i < lastToolUse && b.type === 'text'))
 }
 
 /** The open answer: narration removed, then the existing reassembly — prose joined, citations numbered. */
