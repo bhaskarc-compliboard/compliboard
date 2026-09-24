@@ -1,9 +1,10 @@
 # docs/
-**Version:** 9 · **Updated:** 23 September 2026
-**Supersedes:** version 8 (22 Sep). Indexes **`HANDOFF-LAYOUT.md` and `HANDOFF-DOCUMENTS.md` as
-EXPECTED AND NOT PRESENT.** Both were described as placed in `docs/`; neither exists. They are
-listed rather than omitted because the drift this index exists to prevent runs both ways — a file
-nobody can find, and a file everybody assumes is there. Version 8: version 7 (15 Sep). One correction, and it reversed a rule: the seed-data entry said
+**Version:** 10 · **Updated:** 24 September 2026
+**Supersedes:** version 9 (23 Sep). **Both handoffs are present and indexed as such.** Version 9
+listed them as expected-and-not-present, which was true when it was written and stopped being
+true within the hour: they were placed while that check ran.
+Version 9: indexed `HANDOFF-LAYOUT.md` and `HANDOFF-DOCUMENTS.md` as expected and not present.
+Version 8: version 7 (15 Sep). One correction, and it reversed a rule: the seed-data entry said
 the database was the source of truth once a worksheet was loaded. **`DECISIONS.md` §118 decided the
 opposite** — the worksheet is authoritative and requirement content never goes in a migration. The
 worksheet is now `supabase/seed-data/REQUIREMENTS.xlsx`, dateless and 205 rows.
@@ -192,18 +193,19 @@ and reached by nothing, open defects with where each lives, what `npm run check`
 cover, what was decided and not built, and the exact next step. **Every figure carries the command
 that produced it.**
 
-### `HANDOFF-LAYOUT.md` and `HANDOFF-DOCUMENTS.md` — ⛔ EXPECTED, NOT PRESENT
+### `HANDOFF-LAYOUT.md` and `HANDOFF-DOCUMENTS.md`
 
-Two per-area handoffs, each the starting brief for its own chat: the layout/navigation work and
-the Documents module. **Neither is in this folder as of 23 September 2026** — checked by `find`
-across the repository, with a clean working tree and nothing untracked.
+Two per-area handoffs, each the starting brief for its own chat: the layout pass on the
+Compliance Workspace, and the Documents module. Both written 23 September 2026 and both in this
+folder.
 
-They are listed here anyway, and deliberately, because **this index exists to stop a document
-being findable only by `ls`** — and the opposite failure is just as bad: a file named in a brief,
-absent from disk, and nobody noticing that the work which depends on it was done without it.
-`HANDOFF-CODE.md` §8 carries the same warning, and its next-steps list is that file's own reading
-rather than theirs. **When these land: re-read them, reconcile `HANDOFF-CODE.md` §8, and record
-`HANDOFF-DOCUMENTS.md` §8's parked list into `TODO.md` as unticked rows.**
+`HANDOFF-LAYOUT.md` is the brief the layout pass was run from; `docs/DESIGN.md` is what came out
+of it. `HANDOFF-DOCUMENTS.md` §8 carries a parked list from the research section — prompt caching
+and a search cap, the Sonnet 5 prompt phase, provenance, micro-steps ledger rows, the agency card,
+credential rotation and the privacy-policy line.
+
+**Still owed:** `HANDOFF-CODE.md` §8 has not been reconciled with them, and that parked list is
+not yet in `TODO.md` as unticked rows.
 
 ### `RESEARCH-ANSWER.md`
 

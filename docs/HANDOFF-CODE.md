@@ -7,13 +7,16 @@ handoff and nothing is from memory. Where a figure is not measured, it says so.
 **If you are the next chat: read `CLAUDE.md` first (especially §9a), then `HOW-WE-BUILD.md` §11
 and §12, then `docs/SCHEMA.md` for the database. This file is state, not method.**
 
-> ### ⚠ TWO HANDOFFS THIS FILE WAS MEANT TO DEFER TO ARE NOT IN THE REPOSITORY.
+> ### THE TWO HANDOFFS ARE HERE — AND §8 HAS NOT YET BEEN RECONCILED WITH THEM.
 >
-> `docs/HANDOFF-LAYOUT.md` and `docs/HANDOFF-DOCUMENTS.md` were described as placed and **do not
-> exist** — not in `docs/`, nowhere under the repository, nothing untracked, working tree clean.
-> So §8's next steps are **this file's own reading of the state**, not the two handoffs' plan,
-> and the parked list they were to supply is not in `TODO.md`. When they land, §8 and `TODO.md`
-> need a second pass. Said here rather than silently filled in.
+> `docs/HANDOFF-LAYOUT.md` and `docs/HANDOFF-DOCUMENTS.md` **are in `docs/`** (both written
+> 23 September). An earlier version of this file said they did not exist; they were placed while
+> that check was running and were swept into an unrelated commit, which is why this banner said
+> otherwise for a day.
+>
+> **What is still owed:** §8's next steps below are this file's own reading of the state, not
+> their plan, and `HANDOFF-DOCUMENTS.md` §8's parked list is still not in `TODO.md`. Read the two
+> handoffs directly until that second pass happens.
 
 ---
 
@@ -179,8 +182,9 @@ was charged**. Quote the corrected column.
 
 ## 8. The next steps — THIS FILE'S READING, not the two handoffs'
 
-`HANDOFF-LAYOUT.md` and `HANDOFF-DOCUMENTS.md` are absent (see the banner at the top), so what
-follows is derived from the state above and must be reconciled with them when they arrive.
+`HANDOFF-LAYOUT.md` and `HANDOFF-DOCUMENTS.md` are now in `docs/` (see the banner at the top).
+What follows was derived from the state above **before** they were read, and has not yet been
+reconciled with them — where they disagree, they win.
 
 1. **The owner's manual passes are still not claimed to have been run.** `TESTING.md` carries
    three sets now — R3's ten finish-line actions, Fix Round 1's four, and Fix Round 2's two.
