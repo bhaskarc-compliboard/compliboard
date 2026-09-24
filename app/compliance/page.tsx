@@ -648,7 +648,7 @@ export default function CompliancePage() {
         `--measure` stays defined in `globals.css` for `DESIGN.md` to point at; the number that
         has to survive a stale cache is written here.
       */}
-      <div className="print-page mx-auto w-full max-w-[775px] px-4 pb-32 sm:px-6">
+      <div className="print-page mx-auto w-full max-w-[775px] px-4 pb-12 sm:px-6">
         <div className="no-print pt-6">
           {/* Serif at 28 reads heavier than sans at 24, so the weight comes off — the typeface
               carries the emphasis. font-normal is explicit rather than inherited. */}
@@ -698,7 +698,7 @@ export default function CompliancePage() {
                     question you have ever asked is not a state. */}
                 {x.file ? <FileCard file={x.file} onRetry={() => setAttachOpen(true)} /> : (
                   <div className="mb-5 flex justify-end">
-                    <p className="max-w-[85%] rounded-2xl bg-gray-100 px-4 py-3 text-[16px] leading-relaxed text-gray-900">{x.question}</p>
+                    <p className="max-w-[85%] rounded-2xl bg-gray-200 px-4 py-3 text-[16px] leading-relaxed text-gray-900">{x.question}</p>
                   </div>
                 )}
 
@@ -789,11 +789,15 @@ export default function CompliancePage() {
 
             <div ref={bottomRef} />
 
-            {/* The composer: centred before the first question, docked to the bottom after. */}
-            <div className={started
-              ? 'no-print fixed inset-x-0 bottom-0 z-20 border-t border-gray-200 bg-white/95 backdrop-blur'
-              : 'no-print'}>
-              <div className={started ? 'mx-auto w-full max-w-[775px] px-4 py-3 sm:px-6' : ''}>
+            {/*
+              THE COMPOSER IS THE LAST THING IN THE CONVERSATION, NOT A BAR BOLTED TO THE WINDOW.
+              It was `fixed inset-x-0 bottom-0` with its own border and blur, so it floated over
+              the footer band and covered the disclaimer — and it needed pb-32 on the page to
+              reserve room for itself. Now it simply follows the last exchange, inside the page
+              column, which means it lines up with the answers instead of spanning past them.
+            */}
+            <div className="no-print mt-8">
+              <div>
                 <div className="rounded-xl border border-gray-300 bg-white focus-within:border-emerald-500">
                   <div className="flex items-end gap-2 p-3.5">
                     <textarea
