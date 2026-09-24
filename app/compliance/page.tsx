@@ -599,6 +599,25 @@ export default function CompliancePage() {
     await loadProposals()
   }
 
+  /**
+   * GROUP BY THE DAY, RATHER THAN PRINTING IT ON EVERY ROW.
+   *
+   * Both lists repeated "Yesterday" down the whole column — a line per row saying the same
+   * thing, which is a date you cannot scan and a line you cannot use. The rows keep the order
+   * they arrived in; this only buckets consecutive rows that share the label `friendlyDate`
+   * already produces, so a list that is not sorted by date still renders truthfully.
+   */
+  function groupByDay<T>(rows: T[], dateOf: (row: T) => string): Array<{ day: string; rows: T[] }> {
+    const out: Array<{ day: string; rows: T[] }> = []
+    for (const row of rows) {
+      const day = dateOf(row)
+      const last = out[out.length - 1]
+      if (last && last.day === day) last.rows.push(row)
+      else out.push({ day, rows: [row] })
+    }
+    return out
+  }
+
   // ------------------------------------------------------------------ render
   const proposal = proposals[0] ?? null
   const answered = exchanges.filter((x) => x.phase === 'done' && !x.file).length
@@ -929,7 +948,7 @@ export default function CompliancePage() {
               </div>
             )}
 
-            <p className="mb-4 text-[13px] leading-relaxed text-gray-500">
+            <p className="mb-4 text-[14px] leading-relaxed text-gray-500">
               Summaries are kept until you delete them. The full back-and-forth is cleared 7 days after a
               conversation is summarised. Anything you uploaded stays in Documents.
             </p>
@@ -937,25 +956,37 @@ export default function CompliancePage() {
             {topics.length === 0 ? (
               <Empty title="No conversations yet" note="Ask a question and it will appear here." />
             ) : (
-              <div className="divide-y divide-gray-100 border-y border-gray-100">
-                {topics.map((t) => {
-                  const st = conversationStatus(t, t.turnCount > 0)
-                  return (
-                    <div key={t.id} className="group flex items-center gap-3 py-3">
-                      <button onClick={() => setSummaryDrawer(t)} className="min-w-0 flex-1 text-left">
-                        <p className="truncate text-[14px] text-gray-900">{t.title ?? 'Untitled conversation'}</p>
-                        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-gray-500">
-                          <span>{friendlyDate(t.last_turn_at ?? t.created_at)}</span>
-                          <span className={st.state === 'not_summarised' ? 'text-amber-700' : 'text-emerald-700'}>{st.label}</span>
-                        </div>
-                      </button>
-                      <button onClick={(e) => { e.stopPropagation(); deleteConversation(t) }}
-                        className="hover-del shrink-0 text-[12.5px] text-gray-400 opacity-0 transition-opacity hover:text-red-600 focus:opacity-100 group-hover:opacity-100">
-                        Delete
-                      </button>
+              <div>
+                {groupByDay(topics, (t) => friendlyDate(t.last_turn_at ?? t.created_at)).map((g, gi) => (
+                  <div key={g.day + gi} className={gi === 0 ? '' : 'mt-6'}>
+                    <p className="mb-1 text-[12px] font-medium uppercase tracking-wide text-gray-400">{g.day}</p>
+                    <div className="divide-y divide-gray-100 border-y border-gray-100">
+                      {g.rows.map((t) => {
+                        const st = conversationStatus(t, t.turnCount > 0)
+                        return (
+                          <div key={t.id} className="group flex items-center gap-3 py-3">
+                            <button onClick={() => setSummaryDrawer(t)} className="min-w-0 flex-1 text-left">
+                              <p className="truncate text-[16px] text-gray-900">{t.title ?? 'Untitled conversation'}</p>
+                              {/* NO COLOUR HERE. Amber is reserved for a real attention state and
+                                  "not summarised yet" is the normal condition of anything asked
+                                  today; green for a routine fact is the same mistake the other way. */}
+                              <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-gray-500">
+                                <span>{st.label}</span>
+                              </div>
+                            </button>
+                            {/* Always visible. It was opacity-0 until you hovered a row that gave
+                                no sign it was hoverable. The fixed w-14 means every title in the
+                                list truncates at the same x. */}
+                            <button onClick={(e) => { e.stopPropagation(); deleteConversation(t) }}
+                              className="hover-del w-14 shrink-0 text-right text-[12px] text-gray-300 hover:text-red-600">
+                              Delete
+                            </button>
+                          </div>
+                        )
+                      })}
                     </div>
-                  )
-                })}
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -967,23 +998,34 @@ export default function CompliancePage() {
             {checklists.length === 0 ? (
               <Empty title="No checklists yet" note="Ask a question, then turn the answer into a checklist." />
             ) : (
-              <div className="divide-y divide-gray-100 border-y border-gray-100">
-                {checklists.map((c) => (
-                  <div key={c.id} className="group flex items-center gap-3 py-3">
-                    <button onClick={() => openChecklist(c.id)} className="min-w-0 flex-1 text-left">
-                      <p className="truncate text-[14px] text-gray-900">{c.title ?? 'Untitled checklist'}</p>
-                      <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-gray-500">
-                        <span>{friendlyDate(c.created_at)}</span>
-                        <span className="text-emerald-700">{progressLabel(c.total, c.done)}</span>
-                        {(c.fromConversation > 0 || c.added > 0) && (
-                          <span>{c.fromConversation} from the conversation · {c.added} newly checked</span>
-                        )}
-                      </div>
-                    </button>
-                    <button onClick={(e) => { e.stopPropagation(); deleteChecklist(c.id) }}
-                      className="hover-del shrink-0 text-[12.5px] text-gray-400 opacity-0 transition-opacity hover:text-red-600 focus:opacity-100 group-hover:opacity-100">
-                      Delete
-                    </button>
+              <div>
+                {groupByDay(checklists, (c) => friendlyDate(c.created_at)).map((g, gi) => (
+                  <div key={g.day + gi} className={gi === 0 ? '' : 'mt-6'}>
+                    <p className="mb-1 text-[12px] font-medium uppercase tracking-wide text-gray-400">{g.day}</p>
+                    <div className="divide-y divide-gray-100 border-y border-gray-100">
+                      {g.rows.map((c) => (
+                        <div key={c.id} className="group flex items-center gap-3 py-3">
+                          <button onClick={() => openChecklist(c.id)} className="min-w-0 flex-1 text-left">
+                            <p className="truncate text-[16px] text-gray-900">{c.title ?? 'Untitled checklist'}</p>
+                            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-gray-500">
+                              {/* GREEN ONLY WHEN IT IS ACTUALLY DONE. Every row was green,
+                                  including rows at zero, which made the colour mean "this is a
+                                  checklist" rather than "this is finished". */}
+                              <span className={c.total > 0 && c.done === c.total ? 'text-[var(--green)]' : undefined}>
+                                {progressLabel(c.total, c.done)}
+                              </span>
+                              {(c.fromConversation > 0 || c.added > 0) && (
+                                <span>{c.fromConversation} from the conversation · {c.added} newly checked</span>
+                              )}
+                            </div>
+                          </button>
+                          <button onClick={(e) => { e.stopPropagation(); deleteChecklist(c.id) }}
+                            className="hover-del w-14 shrink-0 text-right text-[12px] text-gray-300 hover:text-red-600">
+                            Delete
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 ))}
               </div>
