@@ -962,6 +962,12 @@ export default function CompliancePage() {
                     <p className="mb-1 text-[12px] font-medium uppercase tracking-wide text-gray-400">{g.day}</p>
                     <div className="divide-y divide-gray-100 border-y border-gray-100">
                       {/*
+                        A LIST IS SCANNED; THE DRAWER IS WORKED FROM. The title is 14px and
+                        medium — separated from the meta line by weight and colour rather than
+                        by size, which is how Finder, Drive and Dropbox set a filename. The
+                        checklist drawer's item name stays 16px on purpose: that is reading
+                        text, and the two are allowed to differ.
+
                         THE ROW HAS TO LOOK CLICKABLE. Grey text on a grey page with no response
                         to the pointer gave no sign that a row opened anything. `-mx-3` with a
                         matching `px-3` lets the hover fill sit slightly proud of the text
@@ -973,13 +979,13 @@ export default function CompliancePage() {
                       {g.rows.map((t) => {
                         const st = conversationStatus(t, t.turnCount > 0)
                         return (
-                          <div key={t.id} className="group -mx-3 flex cursor-pointer items-center gap-3 rounded-lg px-3 py-3 transition-colors hover:bg-white">
+                          <div key={t.id} className="group -mx-3 flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 transition-colors hover:bg-white">
                             <button onClick={() => setSummaryDrawer(t)} className="min-w-0 flex-1 text-left">
-                              <p className="truncate text-[16px] text-gray-900 group-hover:text-[var(--green)]">{t.title ?? 'Untitled conversation'}</p>
+                              <p className="truncate text-[14px] font-medium text-gray-900 group-hover:text-[var(--green)]">{t.title ?? 'Untitled conversation'}</p>
                               {/* NO COLOUR HERE. Amber is reserved for a real attention state and
                                   "not summarised yet" is the normal condition of anything asked
                                   today; green for a routine fact is the same mistake the other way. */}
-                              <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-gray-500">
+                              <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-gray-500">
                                 <span>{st.label}</span>
                               </div>
                             </button>
@@ -1013,10 +1019,10 @@ export default function CompliancePage() {
                     <p className="mb-1 text-[12px] font-medium uppercase tracking-wide text-gray-400">{g.day}</p>
                     <div className="divide-y divide-gray-100 border-y border-gray-100">
                       {g.rows.map((c) => (
-                        <div key={c.id} className="group -mx-3 flex cursor-pointer items-center gap-3 rounded-lg px-3 py-3 transition-colors hover:bg-white">
+                        <div key={c.id} className="group -mx-3 flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 transition-colors hover:bg-white">
                           <button onClick={() => openChecklist(c.id)} className="min-w-0 flex-1 text-left">
-                            <p className="truncate text-[16px] text-gray-900 group-hover:text-[var(--green)]">{c.title ?? 'Untitled checklist'}</p>
-                            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-gray-500">
+                            <p className="truncate text-[14px] font-medium text-gray-900 group-hover:text-[var(--green)]">{c.title ?? 'Untitled checklist'}</p>
+                            <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-gray-500">
                               {/* GREEN ONLY WHEN IT IS ACTUALLY DONE. Every row was green,
                                   including rows at zero, which made the colour mean "this is a
                                   checklist" rather than "this is finished". */}
