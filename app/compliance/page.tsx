@@ -634,7 +634,21 @@ export default function CompliancePage() {
         @media (max-width: 820px) { .hover-del { opacity: 1 !important; } }
       `}</style>
 
-      <div className="print-page mx-auto w-full max-w-[var(--measure)] px-4 pb-32 sm:px-6">
+      {/*
+        775 AS A LITERAL, NOT `max-w-[var(--measure)]`, AND THE REASON IS A TRAP WORTH KNOWING.
+        The token route looks identical and silently did nothing on localhost: Tailwind
+        regenerated the utility `.max-w-[var(--measure)]{max-width:var(--measure)}` — it scans
+        this file for classes — while the dev server kept serving a stale `globals.css` whose
+        `:root` block still ended at `--radius`. So the rule referenced a variable that did not
+        exist, the declaration was discarded, and the column ran the full 1290px.
+
+        *** IT FAILS OPEN. *** An undefined custom property in a `max-width` does not fall back
+        to something sensible or warn; it removes the constraint. The production build had the
+        token and was fine, so this only ever appears in the one place we actually look at it.
+        `--measure` stays defined in `globals.css` for `DESIGN.md` to point at; the number that
+        has to survive a stale cache is written here.
+      */}
+      <div className="print-page mx-auto w-full max-w-[775px] px-4 pb-32 sm:px-6">
         <div className="no-print pt-6">
           {/* Serif at 28 reads heavier than sans at 24, so the weight comes off — the typeface
               carries the emphasis. font-normal is explicit rather than inherited. */}
@@ -772,7 +786,7 @@ export default function CompliancePage() {
                       onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); ask(box, 'research') } }}
                       rows={1}
                       placeholder="Ask about a rule, or describe a job you need the steps for…"
-                      className="max-h-36 min-h-[64px] flex-1 resize-none border-0 bg-transparent px-1.5 py-1.5 text-[16px] text-gray-900 outline-none placeholder:text-[16px] placeholder:text-gray-400"
+                      className="max-h-36 flex-1 resize-none border-0 bg-transparent px-1.5 py-1.5 text-[16px] text-gray-900 outline-none placeholder:text-[16px] placeholder:text-gray-400"
                     />
                     {started && (
                       <>
@@ -809,10 +823,10 @@ export default function CompliancePage() {
                     is standing in for.
                   */}
                   {!started && !box.trim() && (
-                    <div className="px-3.5 pb-3.5">
+                    <div className="mt-2 px-3.5 pb-3.5">
                       {EXAMPLE_QUESTIONS.map((e) => (
                         <button key={e.label} onClick={() => ask(e.question, 'research')}
-                          className="block w-full truncate px-1.5 py-1 text-left text-[14px] text-gray-400 hover:text-gray-700">
+                          className="block w-full truncate px-1.5 py-0.5 text-left text-[14px] text-gray-400 hover:text-gray-700">
                           {e.question}
                         </button>
                       ))}
