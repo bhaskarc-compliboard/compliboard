@@ -691,39 +691,54 @@ export default function CompliancePage() {
           <div className="pt-6">
             {exchanges.map((x) => (
               <div key={x.id} className="mb-8">
+                {/* The question was `text-[15px] font-medium` and nothing else, so in a long
+                    thread it read as a slightly bold paragraph and vanished. Right-aligned in a
+                    grey bubble it is findable when scrolling back. GREY, not green: green is
+                    carrying state on this page — the active tab, the primary action — and every
+                    question you have ever asked is not a state. */}
                 {x.file ? <FileCard file={x.file} onRetry={() => setAttachOpen(true)} /> : (
-                  <p className="mb-3 text-[15px] font-medium text-gray-900">{x.question}</p>
+                  <div className="mb-5 flex justify-end">
+                    <p className="max-w-[85%] rounded-2xl bg-gray-100 px-4 py-3 text-[16px] leading-relaxed text-gray-900">{x.question}</p>
+                  </div>
                 )}
 
                 {(x.phase === 'sending' || x.phase === 'searching' || (x.phase === 'writing' && !x.text)) && (
                   <Working phase={x.phase} searches={x.searches} onStop={stop} />
                 )}
 
+                {/* NO CARD. The thing you read was inside a bordered white rectangle on a grey
+                    page, which framed it as a widget rather than as the answer. The prose, its
+                    sources and its actions now sit on the page itself. */}
                 {x.text && (
-                  <div className="rounded-xl border border-gray-200 bg-white p-5">
+                  <>
                     <AnswerBody text={x.text} sources={x.sources} />
                     <div className="sources-print"><SourceList sources={x.sources} /></div>
-                    {x.phase === 'done' && !x.file && topicId && (
-                      <div className="no-print mt-4 flex flex-wrap gap-2 border-t border-gray-100 pt-3">
+                    {/* ONLY UNDER THE LAST EXCHANGE. Repeated per answer, a four-turn thread
+                        carried twelve of these. An older answer does not need its own download
+                        button and is still reachable from the Conversations drawer. */}
+                    {x.phase === 'done' && !x.file && topicId && x.id === exchanges[exchanges.length - 1]?.id && (
+                      <div className="no-print mt-4 flex flex-wrap items-center gap-3">
                         <button onClick={() => setScopeFor(topicId)}
-                          className="rounded-lg bg-emerald-600 px-3 py-1.5 text-[13px] font-medium text-white hover:bg-emerald-700">
+                          className="rounded-lg border border-[var(--green)] px-3.5 py-1.5 text-[14px] font-medium text-[var(--green)] hover:bg-[var(--green-wash)]">
                           Turn this into a checklist
                         </button>
                         <button onClick={() => summarise(topicId)}
-                          className="rounded-lg border border-gray-300 px-3 py-1.5 text-[13px] text-gray-700 hover:bg-gray-50">
+                          className="px-1 text-[14px] text-gray-600 hover:text-gray-900 hover:underline">
                           Summarise this
                         </button>
                         <button onClick={() => window.print()}
-                          className="rounded-lg border border-gray-300 px-3 py-1.5 text-[13px] text-gray-700 hover:bg-gray-50">
+                          className="px-1 text-[14px] text-gray-600 hover:text-gray-900 hover:underline">
                           Download
                         </button>
                       </div>
                     )}
-                  </div>
+                  </>
                 )}
 
+                {/* The amber stays — a stopped answer IS an attention state — but a filled box
+                    on a page that no longer has any other boxes shouts. A left rule carries it. */}
                 {x.phase === 'stopped_early' && (
-                  <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] text-amber-900">
+                  <div className="mt-2 border-l-2 border-amber-400 pl-3 text-[14px] text-amber-900">
                     <b className="font-semibold">This answer stopped early.</b>{' '}
                     The connection to the model ended before the answer was finished, so what is above
                     is incomplete. Nothing was saved for it.
@@ -732,26 +747,28 @@ export default function CompliancePage() {
                   </div>
                 )}
                 {x.phase === 'stopped' && (
-                  <p className="mt-2 text-[13px] text-gray-500">
+                  <p className="mt-2 text-[14px] text-gray-500">
                     Stopped. {x.text ? 'What arrived is above — ' : ''}Ask again, or change the question.
                   </p>
                 )}
                 {x.phase === 'failed' && (
-                  <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] text-amber-900">
+                  <div className="mt-2 border-l-2 border-amber-400 pl-3 text-[14px] text-amber-900">
                     {x.error} You can ask again, or rephrase the question.
                   </div>
                 )}
               </div>
             ))}
 
+            {/* Unboxed for the same reason as the answer: on a page with no cards left, a card
+                is the loudest thing on it. A hairline says "this is a new thought" quietly. */}
             {showNudge && (
-              <div className="no-print mb-8 rounded-xl border border-gray-200 bg-gray-50 p-4">
-                <p className="text-[14px] leading-relaxed text-gray-800">
+              <div className="no-print mb-8 border-t border-gray-200 pt-4">
+                <p className="text-[14px] leading-relaxed text-gray-600">
                   <b className="font-semibold">This one has covered a fair bit.</b>{' '}
                   Want me to wrap it up as a summary and start fresh? The new conversation carries the
                   summary forward, so nothing gets lost.
                 </p>
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="mt-3 flex flex-wrap items-center gap-3">
                   <button
                     onClick={async () => {
                       const t = topicId
@@ -759,11 +776,11 @@ export default function CompliancePage() {
                       const { data } = await supabase.from('topics').select('summary').eq('id', t).maybeSingle()
                       newConversation((data as { summary?: string } | null)?.summary ?? undefined)
                     }}
-                    className="rounded-lg bg-emerald-600 px-3 py-1.5 text-[13px] font-medium text-white hover:bg-emerald-700">
+                    className="rounded-lg border border-[var(--green)] px-3.5 py-1.5 text-[14px] font-medium text-[var(--green)] hover:bg-[var(--green-wash)]">
                     Wrap up and start fresh
                   </button>
                   <button onClick={() => setNudgeDismissed(true)}
-                    className="rounded-lg border border-gray-300 px-3 py-1.5 text-[13px] text-gray-700 hover:bg-gray-50">
+                    className="px-1 text-[14px] text-gray-600 hover:text-gray-900 hover:underline">
                     Keep going
                   </button>
                 </div>
@@ -776,7 +793,7 @@ export default function CompliancePage() {
             <div className={started
               ? 'no-print fixed inset-x-0 bottom-0 z-20 border-t border-gray-200 bg-white/95 backdrop-blur'
               : 'no-print'}>
-              <div className={started ? 'mx-auto w-full max-w-3xl px-4 py-3 sm:px-6' : ''}>
+              <div className={started ? 'mx-auto w-full max-w-[775px] px-4 py-3 sm:px-6' : ''}>
                 <div className="rounded-xl border border-gray-300 bg-white focus-within:border-emerald-500">
                   <div className="flex items-end gap-2 p-3.5">
                     <textarea
