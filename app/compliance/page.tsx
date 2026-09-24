@@ -19,7 +19,7 @@
  *     answering a question uses. Never the service role, never from a job (§108).
  * ---------------------------------------------------------------------------
  */
-import React, { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react'
 import { createClient, authHeaders } from '@/lib/supabase'
 import AppLayout from '@/components/AppLayout'
 import { AnswerBody, SourceList, type AnswerSource } from '@/components/AnswerBody'
@@ -119,6 +119,34 @@ export default function CompliancePage() {
   const stepRunning = useRef(false)
 
   const started = exchanges.length > 0
+
+  /**
+   * THE COMPOSER GROWS WITH WHAT YOU TYPE.
+   *
+   * Two problems that looked like one. `rows={1}` with `max-h-36` and nothing resizing it meant
+   * that past two lines the box scrolled and **the beginning of your own question went out of
+   * sight**. And the three examples vanish the moment there is text, so the box collapsed from
+   * about 130px to a single line — it shrank exactly when you were giving it more.
+   *
+   * `min-h-[92px]` holds the floor at roughly the height the examples give it, so typing grows
+   * the box from there instead of dropping it to one line first. `max-h-36` is kept: past that
+   * it scrolls, which is right — a composer must not eat the page — but by then you have seen
+   * what you wrote.
+   *
+   * *** KEYED ON `box`, NOT ON KEYSTROKES. *** Clicking an example sets the state directly and
+   * fires no `onChange`, so an onChange-only handler would leave the box the wrong size for the
+   * text now in it. A layout effect runs before paint, so the box is never briefly wrong.
+   *
+   * `height = 'auto'` first is what makes it shrink as well as grow: `scrollHeight` of an
+   * element already stretched to fit its content is that stretched height, so without the reset
+   * the box would ratchet upwards and never come back down after a delete.
+   */
+  useLayoutEffect(() => {
+    const el = composerRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${el.scrollHeight}px`
+  }, [box])
 
   // ------------------------------------------------------------------ loading
   useEffect(() => {
@@ -864,7 +892,7 @@ export default function CompliancePage() {
                       onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); ask(box, 'research') } }}
                       rows={1}
                       placeholder="Ask about a rule, or describe a job you need the steps for…"
-                      className="max-h-36 flex-1 resize-none border-0 bg-transparent px-1.5 py-1.5 text-[16px] text-gray-900 outline-none placeholder:text-[16px] placeholder:text-gray-400"
+                      className="max-h-36 min-h-[92px] flex-1 resize-none border-0 bg-transparent px-1.5 py-1.5 text-[16px] text-gray-900 outline-none placeholder:text-[16px] placeholder:text-gray-400"
                     />
                     {started && (
                       <>
