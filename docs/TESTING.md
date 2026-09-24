@@ -1,6 +1,11 @@
 # Testing
-**Version:** 22 · **Updated:** 23 September 2026
-**Supersedes:** version 21 (23 Sep). Current as of the production ship: migration 039 is on both
+**Version:** 23 · **Updated:** 24 September 2026
+**Supersedes:** version 22 (23 Sep). Adds the **Layout pass set** — nine actions across the
+conversation view, the checklist drawer, the summary drawer and the two lists, written against
+`docs/DESIGN.md`. Two warnings sit at the top of it and both were paid for: **`.env.local` runs
+Haiku**, so answer quality on a laptop is not the product's and these tests judge position rather
+than prose; and **hard-reload first**, because a stale bundle makes every row look right and do
+nothing, which cost two rounds during the pass. Version 22: version 21 (23 Sep). Current as of the production ship: migration 039 is on both
 databases, and the three manual sets below — R3's ten, Fix Round 1's four, Fix Round 2's two —
 **are all still unclaimed.**
 
@@ -132,6 +137,67 @@ untested — applies to the runner as much as to anything it runs.
 **167 · 0 skipped · 0 todo**. Per file: `appliesExpression` 58 · `jurisdiction` 24 · `resolve`
 40 · `sdsExtraction` 14 · `switchDetermination` 31. **No run in this project has reported 100 or
 106.** The floor is committed so the question does not have to be re-asked.
+
+---
+
+## Manual set — Layout pass — Compliance Workspace, 24 Sep 2026 (`docs/DESIGN.md`)
+
+**Nine actions across four areas.** The layout pass rebuilt the Compliance Workspace screen by
+screen; `docs/DESIGN.md` is the template that came out of it. **These tests check where things
+sit on the page, never how good an answer reads.**
+
+> ### ⚠ `.env.local` RUNS HAIKU BY DESIGN. ANSWER QUALITY ON THE LAPTOP IS NOT THE PRODUCT'S.
+>
+> `CLAUDE.md` §3.4a: prose, judgement, substeps and summary all point at `claude-haiku-4-5`
+> locally, and those variables are **unset in production**, which runs Opus 5 and Sonnet 5. So a
+> thin or wrong answer here is not a finding. **Judge position, weight, colour and spacing.** To
+> ask whether an answer is any good, run `npm run golden:facts -- --model claude-opus-5`.
+
+> ### ⚠ AND BEFORE ANY OF THESE: HARD-RELOAD. Cmd+Shift+R.
+>
+> A stale bundle makes every row look correct and do nothing — the markup is new, the handlers
+> are old. **This cost two rounds during the pass**, one of them spent diagnosing a regression
+> that did not exist in the code. If something here fails, hard-reload once before reporting it.
+
+**Setup:** signed in on staging, `npm run dev` pointed at staging.
+
+### A — Conversation view
+
+| # | Action | Steps | What must be true |
+|---|---|---|---|
+| **A1** | **Ask a question and read the answer** | Ask anything, wait for the answer to finish | The answer has **no box around it** and runs the full column width. Your question sits in a **grey block on the right**. Under the last answer — **and only the last** — there is one outlined green button and two plain text actions. Scroll to the bottom: the composer is **part of the page, below the last answer**, not a bar floating over the footer |
+| **A2** | **A conversation of several turns** | Ask a second and a third question in the same conversation, then a fourth | The action row is under the **newest answer only**; earlier answers have none. After four answers the wrap-up nudge appears as **plain text with a hairline above it**, not as a grey card |
+
+### B — Checklist drawer
+
+| # | Action | Steps | What must be true |
+|---|---|---|---|
+| **B1** | **Open a checklist** | Checklists tab → open one | Items are **rows with hairlines between them**, not bordered cards. Run your eye down the left edge: **every checkbox sits at the same x**. Tick one — it turns green and the progress bar moves |
+| **B2** | **Print a long one** | Open a checklist with **twenty or more items** → **Download** | Every item is on the paper, page breaks **do not cut an item in half**, the **company name and date** are at the top, and **no button** appears in the printed output |
+| **B3** | **The first open, while steps are still being written** | Make a new checklist and open it **for the first time**, while its micro-steps are still generating | The **"steps being written…"** note shows on screen. Press **Download while it is still showing**: the note is **not on the paper**. Open the same checklist again — the note is gone, the steps are there, and **no further model calls are made** |
+
+> ### B3 CAN ONLY BE TESTED ON A FIRST OPEN, WHICH IS WHY IT IS WORDED THAT WAY.
+>
+> Micro-steps now persist (`DECISIONS.md` §130). The note appears only on the first open of a
+> checklist that has none, so a second open cannot produce it. Testing it later is not a weaker
+> version of this test — it is not this test at all.
+>
+> The "no further model calls" half is checkable rather than a matter of faith: `npm run cost`
+> before and after the second open, and the `substeps` count must not move.
+
+### C — Summary drawer
+
+| # | Action | Steps | What must be true |
+|---|---|---|---|
+| **C1** | **Open a summarised conversation** | Conversations tab → a row marked summarised | The summary is **in the serif**. The footer has **"Open the conversation" as an outlined green button** and the rest as plain text. Press **Download**: the summary prints **alone, with no page behind it** |
+| **C2** | **One whose transcript has been cleared** | Open a conversation summarised more than 7 days ago, so its `turnCount` is 0 | **"Open the conversation" is absent**, the note about cleared messages shows, and **Download still works** |
+
+### D — The lists
+
+| # | Action | Steps | What must be true |
+|---|---|---|---|
+| **D1** | **Scan both lists** | Conversations tab, then Checklists tab | Rows are **grouped under a day heading with the date shown once**, not on every row. Hovering a row **lifts it to white and turns its title green**. Clicking the title opens its drawer. **Delete is visible without hovering** |
+| **D2** | **A single-row group with a long title** | Find a day group with one row, and a title long enough to truncate | The **group heading still appears**, the long title **ends in an ellipsis**, and **Delete sits at the same x** as every other row's |
 
 ---
 
