@@ -1068,18 +1068,18 @@ export default function CompliancePage() {
               {/* HONEST TO WHAT EXISTS: "Open the conversation" only while turns are there. */}
               {summaryDrawer.turnCount > 0 && (
                 <button onClick={() => openConversation(summaryDrawer)}
-                  className="rounded-lg bg-emerald-600 px-3 py-1.5 text-[13px] font-medium text-white hover:bg-emerald-700">
+                  className="rounded-lg border border-[var(--green)] px-3.5 py-1.5 text-[14px] font-medium text-[var(--green)] hover:bg-[var(--green-wash)]">
                   Open the conversation
                 </button>
               )}
               {summaryDrawer.checklistId && (
                 <button onClick={() => { const id = summaryDrawer.checklistId!; setSummaryDrawer(null); openChecklist(id) }}
-                  className="rounded-lg border border-gray-300 px-3 py-1.5 text-[13px] text-gray-700 hover:bg-gray-50">
+                  className="text-[14px] text-gray-600 hover:text-gray-900 hover:underline">
                   Open the checklist
                 </button>
               )}
               <button onClick={printDrawer}
-                className="ml-auto rounded-lg border border-gray-300 px-3 py-1.5 text-[13px] text-gray-700 hover:bg-gray-50">
+                className="ml-auto text-[14px] text-gray-600 hover:text-gray-900 hover:underline">
                 Download
               </button>
             </>
@@ -1109,53 +1109,68 @@ export default function CompliancePage() {
           footer={
             <>
               <button onClick={printDrawer}
-                className="rounded-lg border border-gray-300 px-3 py-1.5 text-[13px] text-gray-700 hover:bg-gray-50">Download</button>
+                className="rounded-lg border border-[var(--green)] px-3.5 py-1.5 text-[14px] font-medium text-[var(--green)] hover:bg-[var(--green-wash)]">Download</button>
               <button onClick={() => deleteChecklist(listDrawer.row.id)}
-                className="ml-auto rounded-lg px-3 py-1.5 text-[13px] text-gray-400 hover:text-red-600">Delete</button>
+                className="ml-auto text-[14px] text-gray-400 hover:text-red-600">Delete</button>
             </>
           }>
           <div className="mb-4">
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
-              <div className="h-full bg-emerald-500 transition-all"
+              <div className="h-full bg-[var(--green)] transition-all"
                 style={{ width: `${progressPercent(listDrawer.row.total, listDrawer.row.done)}%` }} />
             </div>
             <p className="mt-1.5 text-[12px] text-gray-500">{progressLabel(listDrawer.row.total, listDrawer.row.done)}</p>
           </div>
-          <div className="space-y-3">
+          {/*
+            ROWS, NOT CARDS. Twenty bordered cards in a narrow column is the disease we took off
+            the answer, twenty times over: every card drew a box around one line, and because
+            each checkbox sat inside its own card nothing lined up.
+
+            *** THE COLUMN OF CHECKBOXES IS THE POINT. *** The checkbox is the first child at a
+            fixed size, so every one sits at the same x and every text block indents to the same
+            left margin — that is what makes a list you can run your eye down. The hairlines
+            separate the rows; the fade still marks what is done.
+          */}
+          <div className="divide-y divide-gray-100 border-t border-gray-100">
             {listDrawer.items.map((item, i) => {
               const key = `${listDrawer.row.id}-${i}`
               const subs = steps[key]
               return (
-                <div key={item.id} className={`rounded-lg border p-3 ${item.completed ? 'border-gray-100 bg-gray-50 opacity-70' : 'border-gray-200'}`}>
-                  <div className="flex items-start gap-2.5">
+                <div key={item.id} className={`py-4 ${item.completed ? 'opacity-60' : ''}`}>
+                  <div className="flex items-start gap-3">
                     <button onClick={() => toggleItem(item)} aria-label="Mark done"
                       className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 text-[11px] ${
-                        item.completed ? 'border-emerald-500 bg-emerald-500 text-white' : 'border-gray-300 hover:border-emerald-400'}`}>
+                        item.completed ? 'border-[var(--green)] bg-[var(--green)] text-white' : 'border-gray-300 hover:border-[var(--green)]'}`}>
                       {item.completed && '✓'}
                     </button>
                     <div className="min-w-0 flex-1">
-                      <p className="text-[14px] font-medium text-gray-900">{item.name}</p>
-                      {item.description && <p className="mt-0.5 text-[13px] leading-relaxed text-gray-600">{item.description}</p>}
-                      <div className="mt-2 flex flex-wrap items-center gap-2 text-[11.5px]">
+                      <p className="text-[16px] font-medium text-gray-900">{item.name}</p>
+                      {item.description && <p className="mt-1 text-[15px] leading-relaxed text-gray-600">{item.description}</p>}
+                      {/* Two coloured pills per item was forty boxes on top of the twenty. Where
+                          an item came from is an ordinary fact, not a state, so both values read
+                          the same and neither is green. */}
+                      <div className="mt-2 flex flex-wrap items-center gap-2 text-[12px]">
                         {item.origin && (
-                          <span className={`rounded px-1.5 py-0.5 ${item.origin === 'conversation' ? 'bg-emerald-50 text-emerald-800' : 'bg-gray-100 text-gray-600'}`}>
+                          <span className="text-gray-500">
                             {item.origin === 'conversation' ? 'from this conversation' : 'newly checked'}
                           </span>
                         )}
+                        {item.origin && item.source_url && <span className="text-gray-300">·</span>}
                         {item.source_url && (
-                          <a href={item.source_url} target="_blank" rel="noopener noreferrer" className="text-gray-500 underline">
+                          <a href={item.source_url} target="_blank" rel="noopener noreferrer"
+                             className="text-gray-500 hover:text-gray-800 hover:underline">
                             {displaySource(item.source_title ?? '', item.source_url).title}
                           </a>
                         )}
                       </div>
                       {/* A progress note, never part of the printed checklist (Fix Round 1 E). */}
                       {stepsPending[key] && !subs && (
-                        <p className="no-print mt-2 text-[12px] italic text-gray-400">steps being written…</p>
+                        <p className="no-print mt-2 text-[13px] italic text-gray-400">steps being written…</p>
                       )}
                       {subs && subs.length > 0 && (
                         <ol className="mt-2 list-decimal space-y-1 border-l-2 border-gray-100 pl-5">
                           {subs.map((s, n) => (
-                            <li key={s.id ?? n} className="text-[12.5px] leading-relaxed text-gray-600">{s.name}</li>
+                            <li key={s.id ?? n} className="text-[14px] leading-relaxed text-gray-600">{s.name}</li>
                           ))}
                         </ol>
                       )}
@@ -1281,12 +1296,17 @@ function printDrawer() {
   setTimeout(done, 1000)
 }
 
+/**
+ * *** 720 WIDE, NOT 560. *** Both drawers hold reading text — a checklist you work down and a
+ * one-paragraph summary — and at 560 the summary was a narrow column of serif. `w-full` keeps
+ * it filling the screen on anything narrower, so this only widens where there is room.
+ */
 function Drawer({ title, sub, children, footer, onClose, company }: {
   title: string; sub?: string; children: React.ReactNode; footer?: React.ReactNode
   onClose: () => void; company?: string | null
 }) {
   return (
-    <aside className="print-drawer fixed inset-y-0 right-0 z-50 flex w-full max-w-[560px] flex-col border-l border-gray-200 bg-white shadow-2xl">
+    <aside className="print-drawer fixed inset-y-0 right-0 z-50 flex w-full max-w-[720px] flex-col border-l border-gray-200 bg-white shadow-2xl">
       {/*
         THE PRINTED HEADER. On screen this is not there at all; on paper it is the only thing
         that says whose document this is and when it was taken. A printed compliance page with
