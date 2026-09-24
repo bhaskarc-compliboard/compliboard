@@ -197,6 +197,41 @@ constantly and must not require a code change.
 
 Record token usage on every call.
 
+### 3.4a ⚡ Build and test on the cheapest model. The real model judges OUTPUT.
+
+**Standing rule, 24 September 2026.** A build session spends its calls on SHAPE — does a table
+render, does an answer have headings, does a checklist come back with items, does the stream
+stop cleanly. Haiku answers all of that for a fraction of the price. Use the expensive model
+when the question is **"is this answer any good"**, and not before.
+
+`.env.local` therefore points `AI_MODEL_PROSE`, `AI_MODEL_JUDGEMENT`, `AI_MODEL_SUBSTEPS` and
+`AI_MODEL_SUMMARY` at `claude-haiku-4-5`. **Production is untouched by this: those variables are
+UNSET there, so it runs the code defaults — Opus 5 and Sonnet 5.** An unset variable is the
+product's behaviour; a set one is a local decision (`lib/pipelineConfig.ts` says the same about
+switches).
+
+The one deliberate exception is a quality read:
+
+```
+npm run golden:facts -- --model claude-opus-5
+```
+
+**No test hardcodes a model.** Every script resolves through `modelForTask()`, so changing one
+environment variable moves all of them. `scripts/run-golden.js` used to fall back to a literal
+`claude-sonnet-4-5` while reading `AI_MODEL` — a variable none of the task tiers use — and so
+ran on a model nobody had selected.
+
+> ### AND THE TRAP THAT COMES WITH IT: `effort` IS REFUSED BELOW THE 5 FAMILY.
+> `claude-haiku-4-5` returns **400 — "This model does not support the effort parameter"** for
+> every level. It is `temperature` pointing the other way (§3.4's note): the 5 family refuses
+> `temperature`, everything below it refuses `output_config.effort`. `lib/ai.ts`
+> `modelAcceptsEffort()` drops the parameter rather than sending it, or switching to Haiku would
+> 400 every research and checklist call.
+
+`DEV_MAX_SEARCHES` caps `web_search.max_uses` whenever `NODE_ENV` is not `production`. A source
+retrieved is ~4,500 input tokens replayed on every later turn (`DECISIONS.md` §128 J); building
+a layout needs the shape of an answer, not its breadth.
+
 ### 3.5 Secrets
 
 Never write an API key, password, or token into a code file. All secrets in environment

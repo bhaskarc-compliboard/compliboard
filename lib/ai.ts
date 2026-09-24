@@ -126,6 +126,42 @@ export function modelAcceptsTemperature(model: string): boolean {
   return !/^claude-[a-z]+-5(?:[.-]|$)/.test(model)
 }
 
+/**
+ * *** AND THE MIRROR IMAGE: `output_config.effort` IS REJECTED BY MODELS BELOW THE 5 FAMILY. ***
+ *
+ * Probed on 24 September with one-token calls, not recalled:
+ *
+ *   claude-haiku-4-5 + effort=low|medium|high|xhigh|max
+ *     -> 400 invalid_request_error: "This model does not support the effort parameter."
+ *
+ * So it is the temperature trap pointing the other way. `temperature` is refused by the 5
+ * family and accepted below it; `effort` is accepted by the 5 family and refused below it.
+ * Setting `AI_MODEL_PROSE=claude-haiku-4-5` — which the standing build-on-the-cheap-model rule
+ * does — would otherwise 400 EVERY research and checklist call, because `DEFAULT_EFFORT` is
+ * `medium` and the open call sends it unconditionally.
+ *
+ * Dropped rather than errored, for the same reason temperature is: effort asks for more
+ * reasoning, and a model that has no such control is simply answering at its own depth. The
+ * intent survives; only the knob is gone. Logged per call so it is greppable.
+ */
+export function modelAcceptsEffort(model: string): boolean {
+  return /^claude-[a-z]+-5(?:[.-]|$)/.test(model)
+}
+
+/**
+ * A cap on how many searches one answer may run, OUTSIDE PRODUCTION ONLY.
+ *
+ * A single research answer can run four or more searches, and §128 J measured every retrieved
+ * source at ~4,500 input tokens replayed on each later turn. While building the layout there is
+ * no reason to pay for real breadth — the answer only has to have the right SHAPE. Unset or
+ * unreadable means no cap, and production never reads this at all.
+ */
+export function devMaxSearches(): number | null {
+  if (process.env.NODE_ENV === 'production') return null
+  const raw = Number(process.env.DEV_MAX_SEARCHES)
+  return Number.isInteger(raw) && raw > 0 ? raw : null
+}
+
 /** One thing the answer cited. Deduplicated by URL — one source, one number. */
 export interface Source {
   n: number
@@ -296,7 +332,10 @@ export async function askAIWithCitations(
         system: systemPrompt,
         messages: [{ role: 'user', content: content as any }],
         ...(sendTemperature ? { temperature: options.temperature } : {}),
-        ...(options.enableWebSearch ? { tools: [{ type: 'web_search_20250305', name: 'web_search' }] } : {}),
+        ...(options.enableWebSearch
+          ? { tools: [{ type: 'web_search_20250305', name: 'web_search',
+                        ...(devMaxSearches() ? { max_uses: devMaxSearches() } : {}) }] }
+          : {}),
       } as any)
 
       // With tools enabled, the response can include search/tool-use blocks before the actual
@@ -590,11 +629,17 @@ export async function* askAIOpenStream(
   }
 
   const model = options.model || modelForTask(options.task ?? 'prose')
-  const effort = options.effort ?? effortFromEnv()
+  const wantedEffort = options.effort ?? effortFromEnv()
+  const effort = wantedEffort && modelAcceptsEffort(model) ? wantedEffort : null
+  if (wantedEffort && !effort) {
+    console.warn(`AI: dropping effort=${wantedEffort} — ${model} does not accept it. The model answers at its own depth, so the intent is preserved.`)
+  }
+  const searchCap = devMaxSearches()
   // The exact parameter, in the log, so what was SENT is recoverable from a request days later
   // rather than inferred from the answer's length.
   console.log(`AI: open call model=${model} ` +
-              `output_config=${effort ? JSON.stringify({ effort }) : '(omitted — API default high)'}`)
+              `output_config=${effort ? JSON.stringify({ effort }) : '(omitted)'}` +
+              `${searchCap ? ` web_search.max_uses=${searchCap}` : ''}`)
   const stream = anthropic.messages.stream(
     {
       model,
@@ -604,7 +649,8 @@ export async function* askAIOpenStream(
       ...(effort ? { output_config: { effort } } : {}),
       ...(options.enableWebSearch === false
         ? {}
-        : { tools: [{ type: 'web_search_20250305', name: 'web_search' }] }),
+        : { tools: [{ type: 'web_search_20250305', name: 'web_search',
+                      ...(searchCap ? { max_uses: searchCap } : {}) }] }),
     },
     // The AbortSignal goes to the REQUEST, not just to our reading of it. Without this an
     // abort stops the rendering and leaves the upstream call running and billing.

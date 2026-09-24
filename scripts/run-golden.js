@@ -32,6 +32,15 @@ import { createHash } from 'crypto'
 import { createClient } from '@supabase/supabase-js'
 import Anthropic from '@anthropic-ai/sdk'
 import { buildGateContext } from '../lib/gateContext.ts'
+// *** THE MODEL COMES FROM THE ENVIRONMENT, NOT FROM A LITERAL HERE. ***
+// This file used to fall back to 'claude-sonnet-4-5' in three places while reading AI_MODEL —
+// which is not one of the four task variables — so it ignored AI_MODEL_JUDGEMENT entirely and
+// ran the gate on a model nobody had selected. The gate is a judgement task; it resolves like
+// every other judgement call. `npm run golden:facts -- --model …` is the ONE deliberate
+// exception, for when the owner wants a quality read on the expensive model.
+import { modelForTask } from '../lib/ai.ts'
+
+const GOLDEN_MODEL = modelForTask('judgement')
 
 const CASE_DIR = 'tests/golden'
 const GATE_SRC = 'lib/determinationGate.js'.replace('.js', '.ts')
@@ -204,7 +213,7 @@ async function runCase(file) {
 
   const started = Date.now()
   const msg = await anthropic.messages.create({
-    model: process.env.AI_MODEL || 'claude-sonnet-4-5',
+    model: GOLDEN_MODEL,
     max_tokens: c.gate.max_tokens ?? 1500,
     temperature: c.gate.temperature ?? 0.1,
     system: prompt,
@@ -229,7 +238,7 @@ async function runCase(file) {
   if (record) {
     c.run = {
       run_at: new Date().toISOString().slice(0, 10),
-      model: process.env.AI_MODEL || 'claude-sonnet-4-5',
+      model: GOLDEN_MODEL,
       temperature: c.gate.temperature ?? 0.1,
       max_tokens: c.gate.max_tokens ?? 1500,
       web_search: false,
@@ -256,7 +265,7 @@ const files = readdirSync(CASE_DIR).filter((f) => f.endsWith('.json')).filter((f
 if (!files.length) die(`No case files matching "${only ?? ''}" in ${CASE_DIR}/`)
 
 console.log(`\n  Target : ${ref}   (staging — there is no production target for this command)`)
-console.log(`  Model  : ${process.env.AI_MODEL || 'claude-sonnet-4-5'}`)
+console.log(`  Model  : ${GOLDEN_MODEL}`)
 console.log(`  Cases  : ${files.length}${record ? '   (--record: results written back into the case files)' : ''}\n`)
 
 let pass = 0, fail = 0, human = 0, skip = 0

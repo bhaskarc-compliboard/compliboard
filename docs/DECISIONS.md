@@ -1,6 +1,11 @@
 # Decision Record
 **Version:** 102 · **Updated:** 23 September 2026
-**Supersedes:** version 101 (23 Sep). Adds **§129 — FIX ROUND 2**, two bugs from the owner's
+**Supersedes:** version 101 (23 Sep). Adds **§130 — build on the cheapest model, and the
+micro-steps that kept buying themselves.** `.env.local` runs Haiku for prose, judgement, substeps
+and summary; production is unset and therefore unchanged. **Haiku refuses `output_config.effort`
+with a 400** — `temperature` in a mirror — so `modelAcceptsEffort()` drops it. And the $2 of
+`substeps` nobody ordered: a generated micro-step never reached storage, so every page load
+re-bought them. Fixed by persisting them, proved by three opens showing 7 calls then 0 then 0. Adds **§129 — FIX ROUND 2**, two bugs from the owner's
 first test on production. An attached file reached Documents and never reached the model: the old
 page sent the file WITH the question, the rebuilt page's `onFilePicked` ends at `card(…)`, and
 `/api/chat` never lost the ability to read a file — it stopped being given one. The document now
@@ -10099,3 +10104,80 @@ is wrong for some of its output.
 rule is the one thing here that is a judgement — if re-sending documents proves too expensive on
 real files, the reversal is a size threshold or an explicit "re-attach" control, and the
 measurement to justify it is already in `ai_calls`.
+
+---
+
+## 130. BUILD ON THE CHEAPEST MODEL, AND THE MICRO-STEPS THAT KEPT BUYING THEMSELVES — 24 September 2026
+
+Two things, and the second is why the first was asked for.
+
+### The rule
+
+**Build and test on the cheapest model. The real model is for judging output only.**
+`CLAUDE.md` §3.4a. `.env.local` points `AI_MODEL_PROSE`, `AI_MODEL_JUDGEMENT`,
+`AI_MODEL_SUBSTEPS` and `AI_MODEL_SUMMARY` at `claude-haiku-4-5`; production is untouched because
+those variables are **unset** there and it runs the code defaults.
+
+A build session asks *"does this render"*, not *"is this true"*. The expensive model answers the
+second question, and `npm run golden:facts -- --model claude-opus-5` is the one place that asks it.
+
+> ### THE TRAP: `effort` IS REFUSED BELOW THE 5 FAMILY, AND IT IS `temperature` IN A MIRROR.
+>
+> Probed with one-token calls rather than recalled:
+>
+> ```
+> claude-haiku-4-5 + output_config.effort = low|medium|high|xhigh|max
+>   -> 400 invalid_request_error: "This model does not support the effort parameter."
+> ```
+>
+> There is no "lowest level it accepts" — it accepts none. §3.4 already records that the 5 family
+> **refuses `temperature`**; this is the same fact from the other side. `DEFAULT_EFFORT` is
+> `medium` and the open call sent it unconditionally, so pointing the models at Haiku would have
+> **400'd every research and checklist call**. `modelAcceptsEffort()` drops it, exactly as
+> temperature is dropped, and logs that it did.
+
+`DEV_MAX_SEARCHES=2` caps `web_search.max_uses` whenever `NODE_ENV` is not production. Every
+source retrieved is ~4,500 input tokens replayed on each later turn (§128 J).
+
+**No test hardcodes a model.** `scripts/run-golden.js` fell back to a literal `claude-sonnet-4-5`
+in three places while reading `AI_MODEL` — a variable no task tier uses — so it ran the gate on a
+model nobody had chosen. It resolves through `modelForTask('judgement')` now.
+
+### Why it was asked for: micro-steps that regenerated on every page load
+
+During the 23-24 September layout passes, **`substeps` went from zero ledger rows to 65 and cost
+about $2 — in sessions that created no checklist and asked no question.**
+
+The enqueue is `app/compliance/page.tsx:494`, the last statement of `openChecklist`, and it was
+never the bug. The bug was one layer down:
+
+> ### A GENERATED MICRO-STEP NEVER REACHED STORAGE.
+> `runStepQueue` ended at `setSteps(...)` — React state — and nothing wrote the rows back to
+> `checklist_items`. So `loaded`, which `openChecklist` reads from the database on every open,
+> was empty every time; every item looked missing every time; and `stepStarted` is a `useRef`
+> that dies with the page. **Opening a checklist after a reload re-bought all of it.**
+
+The comment above `queueSteps` had claimed "never repeated, never lost" since Run 1. It was true
+of the queue and false of the system, because the thing the queue consulted was never written.
+
+**The fix is persistence, not another guard.** Steps are inserted as `checklist_items` rows with
+`parent_item_index` set — the shape `openChecklist` already reads back — so the three existing
+guards finally do what they always claimed. A failed write logs and clears `stepStarted`, so the
+item can be retried rather than stranded with steps nobody can see again.
+
+**Proved by opening the same checklist three times, each on a fresh page load:**
+
+| | substeps calls | ledger total | sub-steps in storage |
+|---|---|---|---|
+| start | — | 166 | 0 |
+| open #1 | **7** (one per item) | 173 | **41** |
+| open #2 | **0** | 173 | 41 |
+| open #3 | **0** | 173 | 41 |
+
+Those seven ran on `claude-haiku-4-5` at about **$0.007 each**. Every `substeps` call writes an
+`ai_calls` row — company, model, tokens, cost — so the next time this happens the ledger says so
+on the day rather than two design passes later.
+
+**Reversal condition:** the model rule is reversed by unsetting four variables — that is what it
+is for. The persistence fix is not a preference and is not reversible: a generated step that is
+not written down is a step that will be bought again.

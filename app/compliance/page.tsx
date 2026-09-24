@@ -520,9 +520,25 @@ export default function CompliancePage() {
   }
 
   /**
-   * MICRO-STEPS IN THE BACKGROUND — Run 1's rules, unchanged: at most three in flight, never
-   * repeated, never lost. The queue is built from what is ABSENT from storage each time a
-   * checklist opens, so steps already saved are skipped forever and unfinished ones resume.
+   * MICRO-STEPS IN THE BACKGROUND — at most three in flight, never repeated, never lost.
+   *
+   * *** THEY WERE REPEATED, AND IT COST ABOUT $2 IN A SESSION THAT BUILT NO CHECKLIST. ***
+   *
+   * The rule was always "build the queue from what is ABSENT from storage", and the queue did
+   * exactly that. The defect was one layer down: **a generated step never reached storage.**
+   * `runStepQueue` ended at `setSteps(...)`, which is React state, and nothing wrote the rows
+   * back to `checklist_items`. So `loaded` — read from the database on every open — was empty
+   * every time, every item looked missing every time, and `stepStarted` is a `useRef` that dies
+   * with the page. Opening a checklist after a reload regenerated all of it.
+   *
+   * During the 23-24 September layout passes the harness opened checklist drawers repeatedly
+   * across fresh page loads, and each open re-bought the same micro-steps. `substeps` went from
+   * 0 ledger rows to 65.
+   *
+   * The fix is persistence, not a new guard: the steps are written as `checklist_items` rows
+   * with `parent_item_index` set, which is the shape `openChecklist` already reads back. The
+   * three existing guards then do what they always claimed — `loaded` stops an item that has
+   * them, `stepStarted` stops one in flight, and neither survives being wrong.
    */
   function queueSteps(checklistId: string, items: ItemRow[], loaded: Record<string, ItemRow[]>) {
     const missing = items
@@ -559,6 +575,28 @@ export default function CompliancePage() {
             ...s, source_url: job.item.source_url, source_title: job.item.source_title, origin: job.item.origin,
           }))
           setSteps((prev) => ({ ...prev, [key]: subs }))
+
+          // *** WRITE THEM DOWN. *** Without this the next page load regenerates them, which is
+          // the whole defect. `parent_item_index` is what `openChecklist` reads back as `loaded`.
+          if (subs.length && companyId) {
+            const { error } = await supabase.from('checklist_items').insert(
+              subs.map((sub, n) => ({
+                checklist_id: job.checklistId,
+                company_id: companyId,
+                name: String(sub.name ?? '').trim().slice(0, 500),
+                description: String(sub.description ?? '').trim() || null,
+                why: String((sub as { why?: string }).why ?? '').trim() || null,
+                source_url: job.item.source_url, source_title: job.item.source_title,
+                origin: job.item.origin, category: job.item.category,
+                parent_item_index: job.index, sort_order: n,
+              })))
+            // A failed write must not lose the steps on screen — but it MUST allow a retry,
+            // or the item is stuck with steps nobody can see again.
+            if (error) {
+              console.error(`micro-steps: generated but not saved for ${key}: ${error.message}`)
+              stepStarted.current.delete(key)
+            }
+          }
         } catch {
           // One item failing must not stop the other two. Let the next open retry it.
           stepStarted.current.delete(key)

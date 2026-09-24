@@ -70,6 +70,17 @@ as such — **this session has no way to read Vercel**, and it did not try.
   `RESEARCH_SPECIALIST` · `RESEARCH_PROVENANCE`. Every switch defaults OFF and an unset variable
   IS the product's behaviour (`lib/pipelineConfig.ts`). The last three are ON in `.env.local`
   only, for the owner's comparison, and ship only if that comparison says so.
+> ### ⚠ `.env.local` IS HAIKU. PRODUCTION IS OPUS 5 / SONNET 5, BY DESIGN.
+>
+> The standing rule (`CLAUDE.md` §3.4a, `DECISIONS.md` §130) points `AI_MODEL_PROSE`,
+> `AI_MODEL_JUDGEMENT`, `AI_MODEL_SUBSTEPS` and `AI_MODEL_SUMMARY` at `claude-haiku-4-5` **on a
+> development machine only**. Those four variables are **unset in Vercel Production**, so it runs
+> the code defaults. Do not read a local answer's quality as the product's:
+> `npm run golden:facts -- --model claude-opus-5` is how you ask that question.
+>
+> Haiku **refuses `output_config.effort`** (400), so `lib/ai.ts` drops it below the 5 family.
+> `DEV_MAX_SEARCHES=2` caps searches whenever `NODE_ENV` is not production.
+
 - **Model and effort:** `AI_MODEL_PROSE` / `AI_MODEL_JUDGEMENT` are unset in Production, so both
   fall back to the code default. `AI_EFFORT` is unset and `lib/ai.ts` `DEFAULT_EFFORT` is
   **`medium`** — a code default, not an environment one, so the two cannot disagree (§128).
