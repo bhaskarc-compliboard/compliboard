@@ -19,10 +19,28 @@
 //
 // THE LEDGER ROW IS WRITTEN INSIDE `runDocumentScan`, task `document_scan`, with the company
 // from the verified session. Nothing here writes one, because a second one would double-count.
+//
+// *** TWO CLIENTS, AND THE SPLIT IS THE POINT. ***
+// Everything the CALLER is entitled to do runs on `authed.db`, under RLS: finding the document,
+// checking it is theirs, reading their company, fetching the file, setting documents.status.
+//
+// The scan itself is written with `supabaseAdmin`, and that is deliberate rather than
+// convenient. Migration 040 grants `authenticated` SELECT on document_scans, document_gaps,
+// document_conditions, document_deadlines and company_labels and INSERT on none of them — read
+// back with has_table_privilege rather than taken from the grant list (§3.6). That is not an
+// omission to correct: **a signed-in user must not be able to author a reading.** These rows say
+// what a model concluded from a document, and the product's whole claim is that they came from
+// reading the file. Granting INSERT would let anyone with a session POST a fabricated compliance
+// reading for their own company straight at PostgREST, and RLS cannot express "only the server
+// may write this" — a WITH CHECK on auth_company_id() would happily pass it.
+//
+// So this is §3.6's named-statement exception, and the name is: the scan this server just
+// produced, for a document whose ownership was already proved on `authed.db` above, under the
+// company id from the verified token and never from the body.
 
 import { NextRequest, NextResponse } from 'next/server'
-import { requireCompany } from '@/lib/auth'
-import { runDocumentScan, saveScan, buildScanContext } from '@/lib/documentScan'
+import { requireCompany, supabaseAdmin } from '@/lib/auth'
+import { runDocumentScan, saveScan, buildScanContext, failedScan } from '@/lib/documentScan'
 
 const BUCKET = 'company-documents'
 
@@ -71,15 +89,12 @@ export async function POST(request: NextRequest) {
       // The file is not where its row says it is. That IS a product failure and it is said out
       // loud on the row rather than thrown, because the document still exists and still needs a
       // status somebody can act on.
-      await db.from('documents').update({ status: 'could_not_read' }).eq('id', documentId)
-      return NextResponse.json({
-        scan_id: null,
-        status: 'could_not_read',
-        could_not_read: {
-          reason: 'We could not fetch the stored file for this document.',
-          way_forward: 'Upload it again — the record is here but the file is not.',
-        },
-      })
+      const reason = 'We could not fetch the stored file for this document.'
+      const wayForward = 'Upload it again — the record is here but the file is not.'
+      // Written as a scan so the reason is ON THE ROW and survives a reload.
+      const { scanId } = await saveScan(supabaseAdmin, failedScan(reason, wayForward),
+        { documentId, companyId, entityId: doc.entity_id ?? null })
+      return NextResponse.json({ scan_id: scanId, status: 'could_not_read', could_not_read: { reason, way_forward: wayForward } })
     }
 
     const context = await buildScanContext(db, company, documentId)
@@ -93,7 +108,7 @@ export async function POST(request: NextRequest) {
 
     // `saveScan` writes the scan, its gaps, conditions, deadlines and fact proposals, upserts any
     // new labels, and sets documents.status to read or could_not_read from the scan's own status.
-    const { scanId } = await saveScan(db, scan, {
+    const { scanId } = await saveScan(supabaseAdmin, scan, {
       documentId,
       companyId,
       entityId: doc.entity_id ?? null,
@@ -115,14 +130,18 @@ export async function POST(request: NextRequest) {
     // row stuck on `reading` forever and a page that spins. The technical detail goes to the
     // log, not to the customer (§5, two messages, two audiences).
     console.error('document-scan:', error)
-    await db.from('documents').update({ status: 'could_not_read' }).eq('id', documentId)
-    return NextResponse.json({
-      scan_id: null,
-      status: 'could_not_read',
-      could_not_read: {
-        reason: "We couldn't finish reading this document — something went wrong at our end, not with your file.",
-        way_forward: 'It has been saved. Try reading it again in a moment.',
-      },
-    })
+    const reason = "We couldn't read this file — it did not arrive as something we can open. "
+      + 'That is our end of it, not a problem with what you sent.'
+    const wayForward = 'A PDF exported from the original, or a straight-on photo in good light, would do it.'
+    // Same as above: the row carries the reason, not just this response.
+    let scanId: string | null = null
+    try {
+      ({ scanId } = await saveScan(supabaseAdmin, failedScan(reason, wayForward),
+        { documentId, companyId, entityId: doc.entity_id ?? null }))
+    } catch (saveError) {
+      console.error('document-scan: could not even record the failure:', saveError)
+      await db.from('documents').update({ status: 'could_not_read' }).eq('id', documentId)
+    }
+    return NextResponse.json({ scan_id: scanId, status: 'could_not_read', could_not_read: { reason, way_forward: wayForward } })
   }
 }

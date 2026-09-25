@@ -1519,3 +1519,76 @@ Whether the reading is **right**. Both tests pass on a scan that identifies the 
 handbook, dates it wrongly and invents its conditions — the row renders, the status
 computes and the cost row is written. That is what the golden documents are for
 (`npm run golden:docs`), and even they only say the output moved.
+
+---
+
+## Documents — the page (Run 3, commit 2)
+
+Four tests. The first is the perfect case; the other three are the ones that catch the
+failure this page is built to avoid — **a row disappearing because it has no value in the
+column you grouped by.** A list that silently drops what it cannot classify is the
+omniscient status tracker with a display filter on it, and it looks completely correct.
+
+Run signed in, against staging, on `/documents`, with the seven golden fixtures uploaded
+through the page itself (`tests/golden/documents/fixtures/`).
+
+### 1. The perfect case — Group by Status puts the seven fixtures in the right groups
+
+With Group by on **Status** (the default), the seven land as:
+
+| group | which fixtures | why |
+|---|---|---|
+| Needs work | `01-eap-chemical`, `04-fsp-food` | the scan returned `gaps_found` |
+| Expiring within 90 days | `02-acdp-chemical` | a permit whose own date is 15 Nov 2026 |
+| Current | `03-olcc-cannabis` | a licence, and its date is March 2027 |
+| Recorded | `06a`, `06b` | records |
+| On file | `05-sds-supplier` | somebody else's document |
+
+1. The group **order** must be Needs work, Expiring, Expired, Could not read, Not yet read,
+   Current, Recorded, On file — the operator's question, not the alphabet. An empty group
+   is not shown; a group with rows in it is never skipped.
+2. Amber on Needs work, Expiring, Expired and Could not read; **grey on everything else.**
+   If Current or Recorded is coloured, the one green/amber rule has been broken and the
+   colour has stopped meaning attention.
+3. Each row's title is the scan's, not the filename. The filename is on the meta line.
+
+### 2. Group by Agency — a document with two agencies appears under both
+
+`04-fsp-food` comes back with **FDA** and **Oregon Department of Agriculture**.
+
+1. Switch Group by to **Agency**. That one document must appear **under both headings**.
+   A row is not assigned to one agency; it has agencies, and each is a way of finding it.
+2. The two rows are the same document: expanding either shows the same summary.
+3. Counts beside the group headings therefore do **not** sum to the number of documents,
+   and that is correct. If you ever want them to, the grouping has been made exclusive and
+   the second agency has been thrown away.
+
+### 3. The edge case — an unread document appears in "No agency yet", not nowhere
+
+1. Upload any file and, **while it is still reading**, switch Group by to **Agency**.
+2. The uploading document has no agency yet. It must appear under a last group headed
+   **"No agency yet"** — never dropped, never silently filtered.
+3. The same holds for Subject, Kind and Site ("No subject yet", "No kind yet", "No site
+   yet") and for Folder ("Not in a folder"). The empty group is always last and always
+   present when it has rows.
+4. Its status word reads **Reading…** while the scan is in flight and **Queued** if the
+   page was reloaded and this browser is no longer the one scanning it.
+
+### 4. Folder narrows, and Group by still applies on top
+
+1. Make a folder from the **Folder** dropdown. Move two documents into it with **Move to…**
+   on a row's expanded area.
+2. Pick that folder in **Folder**. The list must show only those two — and must **still be
+   grouped** by whatever Group by says.
+3. Folder rows and agency rows must never appear in the same list. If selecting a folder
+   changed the grouping, or if a folder heading appeared next to an agency heading, the two
+   controls have been mixed and the same file will be shown twice.
+4. **Connect your drive** is greyed and does nothing. It is in the menu because the shape of
+   the page is the promise; it is inert because it is not built.
+
+### What none of these four can tell you
+
+Whether the **reading** behind a row is right. Every one of these passes on a scan that
+identified the permit as a handbook: the row renders, the group is computed from what the
+scan said, and the colour is correct for a status that is wrong. `npm run golden:docs` is
+the test for that, and even it only says the output moved.

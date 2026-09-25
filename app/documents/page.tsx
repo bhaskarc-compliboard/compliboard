@@ -1,48 +1,162 @@
 'use client'
 
-import { useState, useEffect, useRef, Suspense } from 'react'
+/**
+ * DOCUMENTS — one table, folder as a filter, group by anything.
+ *
+ * *** A DOCUMENT HAS PROPERTIES, NOT A PLACE. *** A folder is where a person put a file; it is
+ * set by the user and never touched by the scan. Everything else — agency, subject, kind, site,
+ * status, the date that matters — is set by the scan. So a file lives in one folder and has many
+ * properties, and any property can be the one you group by. This is Excel: one table, filter
+ * narrows, group arranges. The Windows-style folder tree that used to be here is gone, and so
+ * are the grid/list toggle and the log tab.
+ *
+ * Folder and Group by never mix in one list. Agency rows and folder rows in the same list show
+ * the same file twice and read as a mistake.
+ *
+ * *** STATUS FIRST, BECAUSE THE OPERATOR'S QUESTION WALKING IN IS "WHAT NEEDS ME TODAY". ***
+ * The page opens grouped by status and the group order is that question: Needs work, Expiring,
+ * Expired, Could not read, Not yet read, then the routine words.
+ *
+ * *** NOTHING IS DROPPED FOR HAVING NO VALUE. *** Under any grouping, rows with nothing in that
+ * column sit in their own last group — "No agency yet" — never filtered out. A list computed
+ * from the rows that happen to have a value is the omniscient status tracker with a display
+ * filter on it.
+ *
+ * WIDTH IS 900, not the 775 of a reading surface: this row carries a title, an agency, a kind, a
+ * site, a date and a status, and that needs a third column. `DESIGN.md` §3.
+ *
+ * WHAT IS NOT HERE, ON PURPOSE (Run 4 and later): the report drawer, pinned views, the
+ * "what we'd expect and don't see" line, and the To confirm queue. Clicking a row expands the
+ * scan's own summary inline as a placeholder, and that is all this run claims.
+ */
+
+import { useState, useEffect, useRef, useMemo, Suspense } from 'react'
 import { createClient, authHeaders } from '@/lib/supabase'
 import AppLayout from '@/components/AppLayout'
-import AIDisclaimer from '@/components/AIDisclaimer'
-import { useRouter, useSearchParams } from 'next/navigation'
 import { ACCEPTED_FILE_TYPES } from '@/lib/acceptedFiles'
 
-interface Document {
-  id: string
-  name: string
-  file_url: string
-  file_type: string
-  file_size: number
+interface IndexRow {
+  document_id: string
+  title: string
+  file_name: string
+  kind: string | null
+  agencies: string[]
+  subjects: string[]
+  issuer: string | null
+  site_name: string | null
+  entity_id: string | null
+  folder_name: string | null
   folder_id: string | null
-  is_recurring: boolean
-  recurrence_period: string | null
+  doc_date: string | null
+  doc_date_kind: string | null
+  significant_date: string | null
+  significant_date_kind: string | null
+  scanned_at: string | null
   uploaded_at: string
+  scan_status: string | null
+  document_status: string
+  could_not_read_reason: string | null
+  summary: string | null
+  version_of: string | null
+  scan_id: string | null
+  open_gap_count: number
+  display_status: string
 }
 
-interface Folder {
-  id: string
-  name: string
-  parent_id: string | null
-  sort_order: number
-  section: string
-}
+interface Folder { id: string; name: string; parent_id: string | null; sort_order: number }
+interface Site { id: string; name: string; is_primary: boolean }
 
-const RECURRENCE_OPTIONS = [
-  { value: 'monthly', label: 'Monthly' },
-  { value: 'quarterly', label: 'Quarterly' },
-  { value: 'annually', label: 'Annually' },
+type GroupBy = 'status' | 'agency' | 'subject' | 'kind' | 'site' | 'folder' | 'none'
+
+/**
+ * THE STATUS VOCABULARY, IN THE ORDER THE PAGE SHOWS IT.
+ *
+ * The order is the operator's question, not the alphabet. Amber is attention, never information
+ * (`DESIGN.md` §2) — which is why Current, Recorded and On file are grey. There is no green word
+ * for a document that is merely fine, and there is no "compliant": the database refuses that
+ * value on `document_scans.status` (migration 040).
+ */
+const STATUS_ORDER: string[] = [
+  'needs_work', 'expiring', 'expired', 'could_not_read', 'not_yet_read',
+  'current', 'recorded', 'on_file',
 ]
 
-function getFileIcon(fileType: string, name: string): string {
-  if (name.match(/\.(xlsx|xls|csv)$/i)) return '📊'
-  if (fileType.includes('pdf') || name.endsWith('.pdf')) return '📄'
-  if (fileType.includes('image')) return '🖼️'
-  return '📎'
+const STATUS_GROUP_LABEL: Record<string, string> = {
+  needs_work: 'Needs work',
+  expiring: 'Expiring within 90 days',
+  expired: 'Expired',
+  could_not_read: 'Could not read',
+  not_yet_read: 'Not yet read',
+  current: 'Current',
+  recorded: 'Recorded',
+  on_file: 'On file',
 }
+
+const STATUS_WORD: Record<string, string> = {
+  needs_work: 'Needs work',
+  expiring: 'Expiring',
+  expired: 'Expired',
+  could_not_read: 'Could not read',
+  not_yet_read: 'Queued',
+  current: 'Current',
+  recorded: 'Recorded',
+  on_file: 'On file',
+}
+
+const AMBER_STATUSES = new Set(['needs_work', 'expiring', 'expired', 'could_not_read'])
+
+/** What the date under the status word is called. The scan says which kind of date it is. */
+const DATE_LABEL: Record<string, string> = {
+  expiry: 'Expires',
+  revised_on: 'Revised',
+  revised: 'Revised',
+  last_entry: 'Last entry',
+  serviced: 'Serviced',
+  renewal: 'Renewal',
+  effective: 'Effective',
+  issued: 'Issued',
+}
+
+const KIND_LABEL: Record<string, string> = {
+  permit: 'Permit',
+  certificate: 'Certificate',
+  program: 'Program',
+  policy: 'Policy',
+  record: 'Record',
+  supplier_document: 'Supplier document',
+  other: 'Other',
+}
+
+const EMPTY_GROUP: Record<GroupBy, string> = {
+  status: 'No status yet',
+  agency: 'No agency yet',
+  subject: 'No subject yet',
+  kind: 'No kind yet',
+  site: 'No site yet',
+  folder: 'Not in a folder',
+  none: '',
+}
+
+const COLLAPSE_AT = 8
+
+function fmtDate(iso: string | null): string {
+  if (!iso) return ''
+  const d = new Date(iso.length === 10 ? `${iso}T00:00:00` : iso)
+  if (Number.isNaN(d.getTime())) return ''
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+}
+function fmtShort(iso: string | null): string {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ''
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+}
+const asArray = (v: unknown): string[] =>
+  Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string' && !!x.trim()) : []
 
 export default function DocumentsPage() {
   return (
-    <Suspense fallback={<div className="p-8 text-sm text-gray-400">Loading...</div>}>
+    <Suspense fallback={<div className="p-8 text-[14px] text-gray-400">Loading…</div>}>
       <DocumentsPageContent />
     </Suspense>
   )
@@ -50,972 +164,493 @@ export default function DocumentsPage() {
 
 function DocumentsPageContent() {
   const supabase = createClient()
-  const router = useRouter()
-  const searchParams = useSearchParams()
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const paneContainerRef = useRef<HTMLDivElement>(null)
+  const folderInputRef = useRef<HTMLInputElement>(null)
 
-  const [activeTab, setActiveTab] = useState<'files' | 'log'>('files')
-  const [documents, setDocuments] = useState<Document[]>([])
-  const [allDocuments, setAllDocuments] = useState<Document[]>([])
+  const [rows, setRows] = useState<IndexRow[]>([])
   const [folders, setFolders] = useState<Folder[]>([])
+  const [sites, setSites] = useState<Site[]>([])
   const [loading, setLoading] = useState(true)
-  const [userId, setUserId] = useState<string | null>(null)
-  const [companyId, setCompanyId] = useState<string | null>(null)
-  const [primaryIndustry, setPrimaryIndustry] = useState<string>('other')
-  const [deleting, setDeleting] = useState<string | null>(null)
+  const [error, setError] = useState('')
 
-  // Two-pane folder tree navigation
-  const [selectedFolderId, setSelectedFolderId] = useState<string>('unfiled')
-  const [expandedDivisions, setExpandedDivisions] = useState<Set<string>>(new Set())
-  const [paneWidth, setPaneWidth] = useState(220)
-  const [resizing, setResizing] = useState(false)
-  const [sortField, setSortField] = useState<'name' | 'date'>('name')
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
+  const [folderFilter, setFolderFilter] = useState<string>('all')
+  const [groupBy, setGroupBy] = useState<GroupBy>('status')
+  const [siteFilter, setSiteFilter] = useState<string>('all')
 
-  // Upload state
-  const [showUpload, setShowUpload] = useState(false)
-  const [showUploadMenu, setShowUploadMenu] = useState(false)
-  const [files, setFiles] = useState<File[]>([])
-  const [uploadProgress, setUploadProgress] = useState<string>('')
-  const [isRecurring, setIsRecurring] = useState(false)
-  const [recurrencePeriod, setRecurrencePeriod] = useState('annually')
-  const [uploading, setUploading] = useState(false)
-  const [uploadError, setUploadError] = useState('')
-  const [documentReviews, setDocumentReviews] = useState<any[]>([])
-  const [pendingDates, setPendingDates] = useState<{title: string; date: string; description: string; is_recurring: boolean; recurrence_period: string | null}[]>([])
-  const [selectedDates, setSelectedDates] = useState<Set<number>>(new Set())
-  const [addingToCalendar, setAddingToCalendar] = useState(false)
-  const [calendarSuccess, setCalendarSuccess] = useState('')
-
-  // Folder management
-  const [newFolderParentId, setNewFolderParentId] = useState<string | null | undefined>(undefined)
+  const [folderMenuOpen, setFolderMenuOpen] = useState(false)
   const [newFolderName, setNewFolderName] = useState('')
   const [creatingFolder, setCreatingFolder] = useState(false)
   const [renamingId, setRenamingId] = useState<string | null>(null)
   const [renameValue, setRenameValue] = useState('')
-  const [folderError, setFolderError] = useState('')
 
-  // Move file
-  const [movingDocId, setMovingDocId] = useState<string | null>(null)
-  const [moreMenuDocId, setMoreMenuDocId] = useState<string | null>(null)
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [detail, setDetail] = useState<Record<string, { gaps: number; deadlines: number; facts: number }>>({})
+  const [showAll, setShowAll] = useState<Set<string>>(new Set())
 
-  // Audit state
-  const [expandedAuditId, setExpandedAuditId] = useState<string | null>(null)
-  const [viewingReviewId, setViewingReviewId] = useState<string | null>(null)
-  const [reviewFilter, setReviewFilter] = useState<'all' | 'expired' | 'expiring' | 'current'>('all')
+  const [uploading, setUploading] = useState(false)
+  const [progress, setProgress] = useState('')
+  /** Documents this browser is scanning right now, so the row says Reading… rather than Queued. */
+  const [readingIds, setReadingIds] = useState<Set<string>>(new Set())
 
-  // Restore remembered pane width and expanded divisions
-  useEffect(() => {
-    const savedWidth = localStorage.getItem('cb-docs-pane-width')
-    if (savedWidth) setPaneWidth(Number(savedWidth))
-    const savedExpanded = localStorage.getItem('cb-docs-expanded-divisions')
-    if (savedExpanded) {
-      try { setExpandedDivisions(new Set(JSON.parse(savedExpanded))) } catch {}
-    }
-  }, [])
+  const [sortKey, setSortKey] = useState<'title' | 'kind' | 'site' | 'date' | 'status'>('title')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
 
-  useEffect(() => {
-    localStorage.setItem('cb-docs-expanded-divisions', JSON.stringify(Array.from(expandedDivisions)))
-  }, [expandedDivisions])
-
-  // Pane resize drag handling
-  useEffect(() => {
-    function onMouseMove(e: MouseEvent) {
-      if (!resizing || !paneContainerRef.current) return
-      const rect = paneContainerRef.current.getBoundingClientRect()
-      const newWidth = Math.min(360, Math.max(160, e.clientX - rect.left))
-      setPaneWidth(newWidth)
-    }
-    function onMouseUp() {
-      setResizing(false)
-    }
-    if (resizing) {
-      window.addEventListener('mousemove', onMouseMove)
-      window.addEventListener('mouseup', onMouseUp)
-    }
-    return () => {
-      window.removeEventListener('mousemove', onMouseMove)
-      window.removeEventListener('mouseup', onMouseUp)
-    }
-  }, [resizing])
-
-  useEffect(() => {
-    if (!resizing) localStorage.setItem('cb-docs-pane-width', String(paneWidth))
-  }, [resizing, paneWidth])
-
-  useEffect(() => {
-    async function loadData() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-      setUserId(user.id)
-
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('company_id')
-        .eq('id', user.id)
-        .single()
-
-      if (profile?.company_id) {
-        setCompanyId(profile.company_id)
-        await loadFolders(profile.company_id)
-        await loadDocumentReviews(profile.company_id)
-
-        // If we arrived via a direct link to a specific review (e.g. from an
-        // Audit result), open it in the panel instead of navigating away.
-        const reviewParam = searchParams.get('review')
-        if (reviewParam) {
-          setViewingReviewId(reviewParam)
-        }
-
-        const { data: company } = await supabase
-          .from('companies')
-          .select('industry')
-          .eq('id', profile.company_id)
-          .single()
-        if (company?.industry) setPrimaryIndustry(company.industry)
-      }
-
-      await loadDocuments('unfiled')
-      await loadAllDocuments()
+  async function load() {
+    try {
+      const res = await fetch('/api/documents/index', { headers: await authHeaders() })
+      if (!res.ok) { setError('We could not load your documents just now.'); return }
+      const json = await res.json()
+      setRows((json.documents ?? []).map((r: IndexRow) => ({
+        ...r, agencies: asArray(r.agencies), subjects: asArray(r.subjects),
+      })))
+      setFolders(json.folders ?? [])
+      setSites(json.sites ?? [])
+      setError('')
+    } catch {
+      setError('We could not load your documents just now.')
+    } finally {
       setLoading(false)
     }
-    loadData()
-  }, [])
-
-  async function loadFolders(cid: string) {
-    const res = await fetch('/api/folders', { headers: await authHeaders() })
-    const json = await res.json()
-    if (json.data) setFolders(json.data)
   }
+  useEffect(() => { load() }, [])   // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function loadAllDocuments() {
-    const res = await fetch('/api/documents', { headers: await authHeaders() })
-    const json = await res.json()
-    if (json.data) setAllDocuments(json.data)
-  }
-
-  async function loadDocuments(folderId: string) {
-    const res = await fetch(`/api/documents?folder_id=${folderId}`, { headers: await authHeaders() })
-    const json = await res.json()
-    if (json.data) setDocuments(json.data)
-  }
-
-  async function loadDocumentReviews(cid: string) {
-    const res = await fetch('/api/document-review', { headers: await authHeaders() })
-    const json = await res.json()
-    if (json.data) setDocumentReviews(json.data)
-  }
-
-  async function selectFolder(folderId: string) {
-    if (!userId) return
-    setSelectedFolderId(folderId)
-    setViewingReviewId(null)
-    await loadDocuments(folderId)
-  }
-
-  function toggleDivision(id: string) {
-    setExpandedDivisions(prev => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
-  }
-
-  function toggleSort(field: 'name' | 'date') {
-    if (sortField === field) {
-      setSortDir(d => d === 'asc' ? 'desc' : 'asc')
-    } else {
-      setSortField(field)
-      setSortDir('asc')
-    }
-  }
-
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const selected = Array.from(e.target.files || [])
-    setFiles(selected)
-    setUploadError('')
-  }
-
-  async function handleUpload(targetFolderId: string | null) {
-    if (files.length === 0 || !companyId || !userId) return
+  // ---------------------------------------------------------------------------
+  // UPLOAD. One file at a time, and one scan at a time — never in parallel.
+  // ---------------------------------------------------------------------------
+  async function onFilesPicked(picked: FileList | null) {
+    if (!picked || picked.length === 0) return
+    const files = Array.from(picked)
     setUploading(true)
-    setUploadError('')
+    setError('')
     try {
+      const { data: { user } } = await supabase.auth.getUser()
+      const { data: profile } = await supabase.from('profiles').select('company_id').eq('id', user?.id ?? '').single()
+      const companyId = profile?.company_id
+      if (!companyId) throw new Error('No company on this account.')
+
       for (let i = 0; i < files.length; i++) {
         const file = files[i]
-        setUploadProgress(`Uploading ${i + 1} of ${files.length}: ${file.name}`)
-        const fileExt = file.name.split('.').pop()
-        const fileName = `${Date.now()}-${file.name}`
-        const folderPath = targetFolderId || 'unfiled'
-        const filePath = `${companyId}/${folderPath}/${fileName}`
-        const { error: uploadErr } = await supabase.storage.from('company-documents').upload(filePath, file)
-        if (uploadErr) throw uploadErr
+        setProgress(`Uploading ${i + 1} of ${files.length}: ${file.name}`)
+        const targetFolder = folderFilter === 'all' ? null : folderFilter
+        const path = `${companyId}/${targetFolder ?? 'unfiled'}/${Date.now()}-${file.name.replace(/[^\w.\-]/g, '_')}`
+        const { error: upErr } = await supabase.storage.from('company-documents').upload(path, file)
+        if (upErr) throw upErr
+
         const dbRes = await fetch('/api/documents', {
           method: 'POST',
           headers: await authHeaders({ 'Content-Type': 'application/json' }),
           body: JSON.stringify({
-            name: file.name,
-            file_url: filePath, file_type: file.type || fileExt || 'unknown',
-            file_size: file.size, folder_id: targetFolderId,
-            is_recurring: isRecurring, recurrence_period: isRecurring ? recurrencePeriod : null,
+            name: file.name, file_url: path,
+            file_type: file.type || 'application/octet-stream',
+            file_size: file.size, folder_id: targetFolder,
           }),
         })
-        if (!dbRes.ok) throw new Error(`Failed to save ${file.name}`)
-        const { id: newDocId } = await dbRes.json()
+        if (!dbRes.ok) throw new Error(`We could not save ${file.name}.`)
+        const { id } = await dbRes.json()
+        await load()
 
-        // *** SCANNED ONE AT A TIME, NEVER IN PARALLEL. ***
-        // Each scan is one model call of 20 to 100 seconds against a whole PDF. Firing a folder
-        // of thirty at once would open thirty concurrent calls, hit the rate limit, and give
-        // the person a page where nothing resolves and the failures are not the documents'
-        // fault. Sequential is slower and is what the row statuses describe truthfully.
-        //
-        // A scan that fails does NOT fail the upload. The file is stored and the row exists;
-        // the reading is a separate thing that can be retried. This is why the route never
-        // returns 500 for a reading it could not produce.
-        if (newDocId) {
-          setUploadProgress(`Reading ${i + 1} of ${files.length}: ${file.name}`)
+        // *** ONE AFTER ANOTHER. *** Each scan is a model call of 20 to 100 seconds over a whole
+        // PDF. Thirty at once would rate-limit, and the failures would not be the documents'
+        // fault. A scan that fails does not fail the upload: the file is stored and the row is
+        // there, and the reading can be asked for again.
+        if (id) {
+          setReadingIds((s) => new Set(s).add(id))
+          setProgress(`Reading ${i + 1} of ${files.length}: ${file.name}`)
           try {
             await fetch('/api/document-scan', {
               method: 'POST',
               headers: await authHeaders({ 'Content-Type': 'application/json' }),
-              body: JSON.stringify({ document_id: newDocId }),
+              body: JSON.stringify({ document_id: id }),
             })
-          } catch (scanErr) {
-            console.error('document-scan:', scanErr)
+          } catch (e) {
+            console.error('document-scan:', e)
+          } finally {
+            setReadingIds((s) => { const n = new Set(s); n.delete(id); return n })
           }
-          await loadDocuments(selectedFolderId)
-          await loadAllDocuments()
+          await load()
         }
       }
-      await loadDocuments(selectedFolderId)
-      await loadAllDocuments()
-
-      setFiles([])
-      setUploadProgress('')
-      setIsRecurring(false)
-      setShowUpload(false)
-      if (fileInputRef.current) fileInputRef.current.value = ''
-
-      // *** THE SEPARATE DATE-EXTRACTION CALL IS GONE. ***
-      // It was a SECOND model call over the same file, on a route with no auth check and no
-      // ledger row, and it asked a question the scan already answers: the scan returns the
-      // dates a document sets, each with the line it came from. One file, read once — the
-      // vision's rule. `/api/extract-dates` itself stays until Run 5, because the calendar
-      // still calls it.
-    } catch (err) {
-      setUploadError(err instanceof Error ? err.message : 'Upload failed')
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Upload failed.')
     } finally {
       setUploading(false)
-      setUploadProgress('')
+      setProgress('')
+      if (fileInputRef.current) fileInputRef.current.value = ''
+      if (folderInputRef.current) folderInputRef.current.value = ''
     }
   }
 
-  async function handleCreateFolder(section: string, parentId: string | null) {
-    if (!newFolderName.trim() || !companyId) return
+  async function expand(row: IndexRow) {
+    if (expandedId === row.document_id) { setExpandedId(null); return }
+    setExpandedId(row.document_id)
+    if (detail[row.document_id] || !row.scan_id) return
+    // Counts only. The report itself is the drawer, and the drawer is Run 4.
+    const [g, d, f] = await Promise.all([
+      supabase.from('document_gaps').select('id', { count: 'exact', head: true })
+        .eq('document_id', row.document_id).eq('status', 'open'),
+      supabase.from('document_deadlines').select('id', { count: 'exact', head: true })
+        .eq('document_id', row.document_id),
+      supabase.from('fact_proposals').select('id', { count: 'exact', head: true })
+        .eq('document_id', row.document_id),
+    ])
+    setDetail((prev) => ({
+      ...prev,
+      [row.document_id]: { gaps: g.count ?? 0, deadlines: d.count ?? 0, facts: f.count ?? 0 },
+    }))
+  }
+
+  async function createFolder() {
+    const name = newFolderName.trim()
+    if (!name) return
     setCreatingFolder(true)
-    setFolderError('')
     try {
-      const res = await fetch('/api/folders', {
+      await fetch('/api/folders', {
         method: 'POST',
         headers: await authHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({
-          name: newFolderName.trim(),
-          parent_id: parentId,
-          sort_order: folders.filter(f => f.parent_id === parentId).length,
-          section,
-        }),
+        body: JSON.stringify({ name, parent_id: null }),
       })
-      const json = await res.json()
-      if (!res.ok) throw new Error(json.error)
-      await loadFolders(companyId)
-      if (parentId) setExpandedDivisions(prev => new Set(prev).add(parentId))
       setNewFolderName('')
-      setNewFolderParentId(undefined)
-    } catch (err) {
-      setFolderError(err instanceof Error ? err.message : 'Failed to create folder')
-    } finally {
-      setCreatingFolder(false)
-    }
+      await load()
+    } finally { setCreatingFolder(false) }
   }
 
-  async function handleRenameFolder(id: string) {
-    if (!renameValue.trim() || !companyId) return
-    try {
-      await fetch('/api/folders', { method: 'PATCH', headers: await authHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify({ id, name: renameValue.trim() }) })
-      await loadFolders(companyId)
-      setRenamingId(null)
-      setRenameValue('')
-    } catch (err) { console.error(err) }
+  async function renameFolder(id: string) {
+    const name = renameValue.trim()
+    setRenamingId(null)
+    if (!name) return
+    await fetch('/api/folders', {
+      method: 'PATCH',
+      headers: await authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ id, name }),
+    })
+    await load()
   }
 
-  async function handleDeleteFolder(id: string, name: string) {
-    if (!confirm(`Delete folder "${name}"?`)) return
-    if (!companyId) return
-    const res = await fetch(`/api/folders?id=${id}`, { method: 'DELETE', headers: await authHeaders() })
-    const json = await res.json()
-    if (!res.ok) { alert(json.error); return }
-    await loadFolders(companyId)
-    if (selectedFolderId === id) await selectFolder('unfiled')
-  }
-
-  async function handleDeleteDoc(doc: Document) {
-    if (!confirm(`Delete ${doc.name}?`)) return
-    setDeleting(doc.id)
-    try {
-      await fetch(`/api/documents?id=${doc.id}`, { method: 'DELETE', headers: await authHeaders() })
-      setDocuments(prev => prev.filter(d => d.id !== doc.id))
-      setAllDocuments(prev => prev.filter(d => d.id !== doc.id))
-    } catch (error) { console.error(error) }
-    finally { setDeleting(null) }
-  }
-
-  async function handleMoveDocument(docId: string, targetFolderId: string | null) {
+  async function moveTo(documentId: string, folderId: string | null) {
     await fetch('/api/documents', {
       method: 'PATCH',
       headers: await authHeaders({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify({ id: docId, folder_id: targetFolderId }),
+      body: JSON.stringify({ id: documentId, folder_id: folderId }),
     })
-    setMovingDocId(null)
-    if (userId) {
-      await loadDocuments(selectedFolderId)
-      await loadAllDocuments()
-    }
+    await load()
   }
 
-  async function handleDownload(doc: Document) {
-    const { data } = await supabase.storage.from('company-documents').createSignedUrl(doc.file_url, 60)
-    if (data?.signedUrl) window.open(data.signedUrl, '_blank')
-  }
+  // ---------------------------------------------------------------------------
+  // FILTER, THEN GROUP. Folder narrows; Group by arranges. They never mix.
+  // ---------------------------------------------------------------------------
+  const olderVersionCount = useMemo(() => {
+    const counts: Record<string, number> = {}
+    for (const r of rows) if (r.version_of) counts[r.version_of] = (counts[r.version_of] ?? 0) + 1
+    return counts
+  }, [rows])
 
-  async function handleAddToCalendar() {
-    if (!companyId || !userId) return
-    setAddingToCalendar(true)
-    try {
-      const toAdd = pendingDates.filter((_, i) => selectedDates.has(i))
-      for (const d of toAdd) {
-        await fetch('/api/calendar', {
-          method: 'POST',
-          headers: await authHeaders({ 'Content-Type': 'application/json' }),
-          body: JSON.stringify({
-            title: d.title,
-            description: d.description,
-            due_date: d.date,
-            category: 'compliance',
-            is_recurring: d.is_recurring,
-            recurrence_period: d.recurrence_period,
-          }),
-        })
-      }
-      setCalendarSuccess(`Added ${toAdd.length} date${toAdd.length !== 1 ? 's' : ''} to your calendar.`)
-      setTimeout(() => {
-        setPendingDates([])
-        setSelectedDates(new Set())
-        setCalendarSuccess('')
-      }, 3000)
-    } catch (err) {
-      console.error('Calendar error:', err)
-    } finally {
-      setAddingToCalendar(false)
-    }
-  }
-
-
-
-  const tabs = [
-    { key: 'files', label: 'Company Files' },
-    { key: 'log', label: 'Document Reviews' },
-  ] as const
-
-  function countFilesRecursive(folderId: string): number {
-    const direct = allDocuments.filter(d => d.folder_id === folderId).length
-    const childFolders = folders.filter(f => f.parent_id === folderId)
-    const nested = childFolders.reduce((sum, child) => sum + countFilesRecursive(child.id), 0)
-    return direct + nested
-  }
-
-  const unfiledCount = allDocuments.filter(d => d.folder_id === null).length
-  const divisions = folders.filter(f => f.section === 'files' && f.parent_id === null)
-  const selectedFolderName = selectedFolderId === 'unfiled' ? 'Unfiled' : (folders.find(f => f.id === selectedFolderId)?.name || 'Unfiled')
-
-  const sortedDocuments = [...documents].sort((a, b) => {
-    const cmp = sortField === 'name'
-      ? a.name.localeCompare(b.name)
-      : new Date(a.uploaded_at).getTime() - new Date(b.uploaded_at).getTime()
-    return sortDir === 'asc' ? cmp : -cmp
-  })
-
-  const moveTargets = [
-    { id: null as string | null, name: 'Unfiled' },
-    ...folders.filter(f => f.section === 'files').map(f => ({ id: f.id as string | null, name: f.name })),
-  ].sort((a, b) => (a.id === null ? -1 : b.id === null ? 1 : a.name.localeCompare(b.name)))
-
-  const reviewFilterCounts = {
-    all: documentReviews.length,
-    expired: documentReviews.filter(r => r.is_current === false).length,
-    expiring: documentReviews.filter(r => r.expiring_soon).length,
-    current: documentReviews.filter(r => r.is_current === true && !r.expiring_soon).length,
-  }
-
-  const filteredReviews = documentReviews.filter(r => {
-    if (reviewFilter === 'expired') return r.is_current === false
-    if (reviewFilter === 'expiring') return r.expiring_soon
-    if (reviewFilter === 'current') return r.is_current === true && !r.expiring_soon
+  const filtered = useMemo(() => rows.filter((r) => {
+    if (folderFilter !== 'all' && r.folder_id !== folderFilter) return false
+    if (siteFilter !== 'all' && r.entity_id !== siteFilter) return false
     return true
-  })
+  }), [rows, folderFilter, siteFilter])
 
-  const sortedReviews = [...filteredReviews].sort((a, b) => {
-    const urgency = (r: any) => (r.is_current === false ? 0 : r.expiring_soon ? 1 : 2)
-    const ua = urgency(a)
-    const ub = urgency(b)
-    if (ua !== ub) return ua - ub
-    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-  })
+  /**
+   * ONE ROW CAN LAND IN SEVERAL GROUPS, and that is deliberate: a document answering to both
+   * OSHA and DEQ appears under each. The vision's own example. Counting rows is therefore not
+   * counting documents under those two groupings, which is why no total sits beside the control.
+   */
+  const groups = useMemo(() => {
+    if (groupBy === 'none') return []
+    const map = new Map<string, IndexRow[]>()
+    const push = (k: string, r: IndexRow) => { if (!map.has(k)) map.set(k, []); map.get(k)!.push(r) }
 
-  function renderReviewDetail(review: any) {
+    for (const r of filtered) {
+      if (groupBy === 'status') push(r.display_status, r)
+      else if (groupBy === 'agency') {
+        if (r.agencies.length) r.agencies.forEach((a) => push(a, r)); else push('', r)
+      } else if (groupBy === 'subject') {
+        if (r.subjects.length) r.subjects.forEach((a) => push(a, r)); else push('', r)
+      } else if (groupBy === 'kind') push(r.kind ? (KIND_LABEL[r.kind] ?? r.kind) : '', r)
+      else if (groupBy === 'site') push(r.site_name ?? '', r)
+      else if (groupBy === 'folder') push(r.folder_name ?? '', r)
+    }
+
+    const entries = [...map.entries()]
+    if (groupBy === 'status') {
+      entries.sort((a, b) => STATUS_ORDER.indexOf(a[0]) - STATUS_ORDER.indexOf(b[0]))
+      return entries.map(([k, v]) => ({ key: k, label: STATUS_GROUP_LABEL[k] ?? k, rows: v }))
+    }
+    // Named groups alphabetically; the empty one always last, never dropped.
+    entries.sort((a, b) => (a[0] === '' ? 1 : b[0] === '' ? -1 : a[0].localeCompare(b[0])))
+    return entries.map(([k, v]) => ({ key: k || '__none__', label: k || EMPTY_GROUP[groupBy], rows: v }))
+  }, [filtered, groupBy])
+
+  const flat = useMemo(() => {
+    if (groupBy !== 'none') return []
+    const val = (r: IndexRow) => ({
+      title: r.title ?? '', kind: r.kind ?? '', site: r.site_name ?? '',
+      date: r.significant_date ?? r.doc_date ?? '', status: r.display_status,
+    })[sortKey] ?? ''
+    return [...filtered].sort((a, b) => {
+      const c = String(val(a)).localeCompare(String(val(b)))
+      return sortDir === 'asc' ? c : -c
+    })
+  }, [filtered, groupBy, sortKey, sortDir])
+
+  const folderCount = (id: string) => rows.filter((r) => r.folder_id === id).length
+  const statusWord = (r: IndexRow) =>
+    r.display_status === 'not_yet_read' && (readingIds.has(r.document_id) || r.document_status === 'reading')
+      ? 'Reading…'
+      : (STATUS_WORD[r.display_status] ?? r.display_status)
+
+  // ---------------------------------------------------------------------------
+  // RENDER
+  // ---------------------------------------------------------------------------
+  function Row({ r }: { r: IndexRow }) {
+    const amber = AMBER_STATUSES.has(r.display_status)
+    const older = olderVersionCount[r.document_id] ?? 0
+    const dateLabel = r.significant_date_kind
+      ? (DATE_LABEL[r.significant_date_kind] ?? r.significant_date_kind) : ''
+    const meta = [
+      r.file_name,
+      r.folder_name,
+      r.scanned_at ? `read ${fmtShort(r.scanned_at)}` : null,
+      older ? `${older} older version${older === 1 ? '' : 's'}` : null,
+    ].filter(Boolean).join(' · ')
+    const open = expandedId === r.document_id
+    const d = detail[r.document_id]
+
     return (
-      <>
-        <p className="text-sm text-gray-600 italic">{review.summary}</p>
-
-        <div className="grid grid-cols-2 gap-3">
-          {review.issued_by && (
-            <div>
-              <p className="text-xs font-medium text-gray-400">Issued by</p>
-              <p className="text-xs text-gray-700">{review.issued_by}</p>
-            </div>
-          )}
-          {review.expiry_date && (
-            <div>
-              <p className="text-xs font-medium text-gray-400">Expires</p>
-              <p className={`text-xs font-medium ${review.expiring_soon ? 'text-amber-600' : review.is_current ? 'text-gray-700' : 'text-red-500'}`}>
-                {new Date(review.expiry_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-                {review.days_until_expiry !== null && review.days_until_expiry >= 0 && ` (${review.days_until_expiry} days)`}
+      <div className="border-b border-gray-100 last:border-b-0">
+        <div onClick={() => expand(r)}
+          className="group -mx-3 flex cursor-pointer items-start gap-4 rounded-lg px-3 py-2.5 hover:bg-white">
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[13px] text-gray-900 group-hover:text-[var(--green)]">{r.title}</p>
+            <p className="mt-0.5 truncate text-[12px] text-gray-500">{meta}</p>
+            {r.display_status === 'could_not_read' && (
+              // *** SAID OUT LOUD, ON THE ROW. *** Never a log line, never dropped from a count,
+              // and never a claim about contents nobody read — only what we could not do and
+              // what would fix it. `CLAUDE.md` §5.1.
+              <p className="mt-1 text-[12px] text-[var(--amber)]">
+                {r.could_not_read_reason || 'We could not read this clearly enough to rely on.'}{' '}
+                <button onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click() }}
+                  className="text-gray-600 underline hover:text-gray-900">Upload a clearer copy</button>
               </p>
-            </div>
-          )}
-          {review.renewal_date && (
-            <div>
-              <p className="text-xs font-medium text-gray-400">Renewal deadline</p>
-              <p className="text-xs text-gray-700">{new Date(review.renewal_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
-            </div>
-          )}
-          {review.coverage && (
-            <div className="col-span-2">
-              <p className="text-xs font-medium text-gray-400">Coverage</p>
-              <p className="text-xs text-gray-700">{review.coverage}</p>
-            </div>
-          )}
+            )}
+          </div>
+
+          <div className="w-[230px] shrink-0">
+            <p className="truncate text-[12px] text-gray-600">{r.agencies.join(' · ') || '—'}</p>
+            <p className="mt-0.5 truncate text-[12px] text-gray-400">
+              {[r.kind ? (KIND_LABEL[r.kind] ?? r.kind) : null, r.site_name].filter(Boolean).join(' · ') || ' '}
+            </p>
+          </div>
+
+          <div className="w-[160px] shrink-0 text-right">
+            <p className={`text-[13px] ${amber ? 'text-[var(--amber)]' : 'text-gray-500'}`}>{statusWord(r)}</p>
+            {r.significant_date && (
+              <p className="mt-0.5 text-[12px] text-gray-400">{dateLabel} {fmtDate(r.significant_date)}</p>
+            )}
+          </div>
         </div>
 
-        {review.gaps?.length > 0 && (
-          <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-amber-600 mb-2">⚠️ Gaps & Concerns</p>
-            <div className="space-y-1">
-              {review.gaps.map((gap: string, i: number) => (
-                <div key={i} className="flex items-start gap-2">
-                  <span className="text-xs text-amber-500 mt-0.5 flex-shrink-0">!</span>
-                  <p className="text-xs text-gray-700">{gap}</p>
-                </div>
-              ))}
+        {open && (
+          // A PLACEHOLDER, AND LABELLED AS ONE. The report is the drawer and the drawer is Run 4.
+          <div className="-mx-3 mb-2 rounded-lg bg-white px-3 pb-3 pt-1">
+            {r.summary
+              ? <p className="font-serif text-[17px] leading-relaxed text-gray-800">{r.summary}</p>
+              : <p className="text-[13px] text-gray-400">No reading yet.</p>}
+            <div className="mt-2 flex flex-wrap items-center gap-4 text-[12px] text-gray-500">
+              <span>{d ? d.gaps : r.open_gap_count} gap{(d ? d.gaps : r.open_gap_count) === 1 ? '' : 's'}</span>
+              <span>{d ? d.deadlines : '—'} deadline{d && d.deadlines === 1 ? '' : 's'}</span>
+              <span>{d ? d.facts : '—'} fact{d && d.facts === 1 ? '' : 's'}</span>
+              <span className="text-gray-300">|</span>
+              <label className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                Move to…
+                <select value={r.folder_id ?? ''} onChange={(e) => moveTo(r.document_id, e.target.value || null)}
+                  className="rounded border border-gray-200 bg-white px-1.5 py-0.5 text-[12px] text-gray-700">
+                  <option value="">Not in a folder</option>
+                  {folders.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
+                </select>
+              </label>
             </div>
           </div>
         )}
-
-        {review.action_items?.length > 0 && (
-          <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-blue-600 mb-2">📋 Action Items</p>
-            <div className="space-y-1">
-              {review.action_items.map((item: string, i: number) => (
-                <div key={i} className="flex items-start gap-2">
-                  <span className="text-xs text-blue-500 mt-0.5 flex-shrink-0">→</span>
-                  <p className="text-xs text-gray-700">{item}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div className="pt-2 flex items-center gap-3 border-t border-gray-100">
-          
-          <span className="text-gray-200">·</span>
-          <button onClick={async () => {
-            if (!confirm('Delete this review?')) return
-            await fetch(`/api/document-review?id=${review.id}`, { method: 'DELETE', headers: await authHeaders() })
-            setDocumentReviews(prev => prev.filter(r => r.id !== review.id))
-            if (viewingReviewId === review.id) setViewingReviewId(null)
-            if (expandedAuditId === review.id) setExpandedAuditId(null)
-          }} className="text-xs text-gray-400 hover:text-red-500 transition-colors">Delete review</button>
-        </div>
-        <AIDisclaimer variant="short" className="mt-2" />
-      </>
+      </div>
     )
   }
 
+  const controlClass =
+    'rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-[14px] text-gray-700 hover:border-gray-300'
+
   return (
-    <AppLayout title="Company Documents" didYouKnow={activeTab === 'log' ? { icon: '🔍', text: 'Every file you review gets a real compliance check — CompliBoard cites the specific regulation it checked against and gives you a fix for anything missing.' } : { icon: '📂', text: 'Upload your compliance documents once. CompliBoard reads them, extracts renewal dates, and adds them to your calendar automatically. Every month, CompliBoard checks if your documents are still current and alerts you 30 days before anything expires.' }}>
-      <div className="max-w-6xl mx-auto px-6 py-8">
+    <AppLayout>
+      <input ref={fileInputRef} type="file" multiple accept={ACCEPTED_FILE_TYPES} className="hidden"
+        onChange={(e) => onFilesPicked(e.target.files)} />
+      {/* A whole folder. `webkitdirectory` is not in React's typings; the cast is the only way a
+          browser offers a folder picker at all. */}
+      <input ref={folderInputRef} type="file" multiple className="hidden"
+        {...({ webkitdirectory: '', directory: '' } as Record<string, string>)}
+        onChange={(e) => onFilesPicked(e.target.files)} />
 
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-semibold text-gray-900 mb-1">Company Documents</h1>
-            <p className="text-sm text-gray-400">Your compliance files and document reviews</p>
-          </div>
-          {activeTab === 'files' && (
-            <div className="relative">
-              <button onClick={() => setShowUploadMenu(!showUploadMenu)}
-                className="flex items-center gap-2 bg-green-700 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors">
-                + Upload file / Connect drive
-              </button>
-              {showUploadMenu && (
-                <>
-                  <div className="fixed inset-0 z-10" onClick={() => setShowUploadMenu(false)} />
-                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden z-20">
-                    <button onClick={() => { setShowUpload(true); setShowUploadMenu(false) }}
-                      className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2">
-                      <span>💻</span> From computer
-                    </button>
-                    <div className="w-full text-left px-4 py-3 text-sm text-gray-400 flex items-center gap-2 cursor-not-allowed border-t border-gray-50">
-                      <span>☁️</span> Google Drive — soon
-                    </div>
-                    <div className="w-full text-left px-4 py-3 text-sm text-gray-400 flex items-center gap-2 cursor-not-allowed border-t border-gray-50">
-                      <span>☁️</span> OneDrive — soon
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
+      <div className="print-page mx-auto w-full max-w-[900px] px-4 pb-16 sm:px-6">
+        <div className="no-print pt-6">
+          <h1 className="font-serif text-[28px] font-normal text-gray-900">Documents</h1>
+          <p className="mt-1 text-[14px] text-gray-500">
+            Everything you hold, read and grouped by what it is — not by where you filed it.
+          </p>
         </div>
 
-        <div className="flex items-center gap-6 mb-6 border-b border-gray-200">
-          {tabs.map(tab => (
-            <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-              className={`text-sm pb-3 font-medium transition-colors border-b-2 -mb-px ${activeTab === tab.key ? 'border-green-600 text-green-700' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
-              {tab.label}
+        {/* CONTROLS. Folder narrows, Group by arranges, and the two never mix in one list. */}
+        <div className="no-print mt-5 flex flex-wrap items-center gap-3 border-b border-gray-200 pb-4">
+          <div className="relative">
+            <button onClick={() => setFolderMenuOpen((v) => !v)} className={controlClass}>
+              Folder: {folderFilter === 'all'
+                ? `All files (${rows.length})`
+                : (folders.find((f) => f.id === folderFilter)?.name ?? 'All files')} ▾
             </button>
-          ))}
+            {folderMenuOpen && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setFolderMenuOpen(false)} />
+                <div className="absolute z-20 mt-1 w-72 rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
+                  <button onClick={() => { setFolderFilter('all'); setFolderMenuOpen(false) }}
+                    className="flex w-full items-center justify-between px-3 py-1.5 text-left text-[14px] text-gray-700 hover:bg-gray-50">
+                    <span>All files</span><span className="text-[12px] text-gray-400">{rows.length}</span>
+                  </button>
+                  {folders.map((f) => (
+                    <div key={f.id} className="flex items-center gap-1 px-3 py-1.5 hover:bg-gray-50">
+                      {renamingId === f.id ? (
+                        <input autoFocus value={renameValue} onChange={(e) => setRenameValue(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === 'Enter') renameFolder(f.id); if (e.key === 'Escape') setRenamingId(null) }}
+                          onBlur={() => renameFolder(f.id)}
+                          className="w-full rounded border border-gray-200 px-1.5 py-0.5 text-[14px]" />
+                      ) : (
+                        <>
+                          <button onClick={() => { setFolderFilter(f.id); setFolderMenuOpen(false) }}
+                            className="flex flex-1 items-center justify-between text-left text-[14px] text-gray-700">
+                            <span className="truncate">{f.name}</span>
+                            <span className="ml-2 text-[12px] text-gray-400">{folderCount(f.id)}</span>
+                          </button>
+                          <button onClick={() => { setRenamingId(f.id); setRenameValue(f.name) }}
+                            className="text-[12px] text-gray-400 hover:text-gray-700">rename</button>
+                        </>
+                      )}
+                    </div>
+                  ))}
+                  <div className="my-1 border-t border-gray-100" />
+                  <div className="flex items-center gap-1.5 px-3 py-1.5">
+                    <input value={newFolderName} onChange={(e) => setNewFolderName(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') createFolder() }}
+                      placeholder="New folder"
+                      className="w-full rounded border border-gray-200 px-1.5 py-1 text-[14px]" />
+                    <button onClick={createFolder} disabled={creatingFolder || !newFolderName.trim()}
+                      className="text-[14px] text-[var(--green)] disabled:text-gray-300">Add</button>
+                  </div>
+                  {/* Drive connection is its own run. Shown because the page's shape is the
+                      promise; greyed and inert because it does not work yet. */}
+                  <div className="cursor-not-allowed px-3 py-1.5 text-[14px] text-gray-300" title="Not connected yet">
+                    Connect your drive
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
+          <label className="flex items-center gap-1.5 text-[14px] text-gray-500">
+            Group by
+            <select value={groupBy}
+              onChange={(e) => { setGroupBy(e.target.value as GroupBy); setShowAll(new Set()) }}
+              className={controlClass}>
+              <option value="status">Status</option>
+              <option value="agency">Agency</option>
+              <option value="subject">Subject</option>
+              <option value="kind">Kind</option>
+              <option value="site">Site</option>
+              <option value="folder">Folder</option>
+              <option value="none">None</option>
+            </select>
+          </label>
+
+          {/* Only when there is a choice to make. */}
+          {sites.length > 1 && (
+            <label className="flex items-center gap-1.5 text-[14px] text-gray-500">
+              Site
+              <select value={siteFilter} onChange={(e) => setSiteFilter(e.target.value)} className={controlClass}>
+                <option value="all">All sites</option>
+                {sites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </select>
+            </label>
+          )}
+
+          <div className="ml-auto flex items-center gap-3">
+            {progress && <span className="text-[12px] text-gray-500">{progress}</span>}
+            <button onClick={() => fileInputRef.current?.click()} disabled={uploading}
+              className="rounded-md bg-[var(--green)] px-5 py-2.5 text-[14px] font-medium text-white hover:opacity-90 disabled:opacity-50">
+              {uploading ? 'Working…' : 'Add files'}
+            </button>
+            <button onClick={() => folderInputRef.current?.click()} disabled={uploading}
+              className="text-[14px] text-gray-600 underline hover:text-gray-900 disabled:text-gray-300">
+              Add a folder
+            </button>
+          </div>
         </div>
+
+        {error && <p className="mt-4 text-[13px] text-[var(--amber)]">{error}</p>}
 
         {loading ? (
-          <div className="flex items-center justify-center h-40">
-            <p className="text-sm text-gray-400">Loading...</p>
-          </div>
+          <p className="mt-8 text-[14px] text-gray-400">Loading…</p>
+        ) : rows.length === 0 ? (
+          <p className="mt-8 text-[14px] text-gray-500">
+            Nothing here yet. Add a file and we will read it and tell you what it is.
+          </p>
+        ) : groupBy === 'none' ? (
+          <table className="mt-5 w-full">
+            <thead>
+              <tr className="border-b border-gray-200 text-left">
+                {([['title', 'Document'], ['kind', 'Kind'], ['site', 'Site'], ['date', 'Date'], ['status', 'Status']] as const)
+                  .map(([k, label]) => (
+                    <th key={k} className="pb-2 text-[12px] font-medium uppercase tracking-wide text-gray-400">
+                      <button onClick={() => { setSortKey(k); setSortDir(sortKey === k && sortDir === 'asc' ? 'desc' : 'asc') }}
+                        className="hover:text-gray-700">
+                        {label}{sortKey === k ? (sortDir === 'asc' ? ' ↑' : ' ↓') : ''}
+                      </button>
+                    </th>
+                  ))}
+              </tr>
+            </thead>
+            <tbody>
+              {flat.map((r) => (
+                <tr key={r.document_id} className="border-b border-gray-100 hover:bg-white">
+                  <td className="py-2.5 text-[13px] text-gray-900">
+                    <button onClick={() => expand(r)} className="text-left hover:text-[var(--green)]">{r.title}</button>
+                    <span className="block text-[12px] text-gray-500">{r.file_name}</span>
+                  </td>
+                  <td className="py-2.5 text-[12px] text-gray-600">{r.kind ? (KIND_LABEL[r.kind] ?? r.kind) : '—'}</td>
+                  <td className="py-2.5 text-[12px] text-gray-600">{r.site_name ?? '—'}</td>
+                  <td className="py-2.5 text-[12px] text-gray-600">{fmtDate(r.significant_date) || '—'}</td>
+                  <td className={`py-2.5 text-[13px] ${AMBER_STATUSES.has(r.display_status) ? 'text-[var(--amber)]' : 'text-gray-500'}`}>
+                    {statusWord(r)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         ) : (
-          <>
-            {activeTab === 'files' && (
-              <div ref={paneContainerRef} className="flex items-start">
-
-                {/* LEFT PANE — folder tree */}
-                <div style={{ width: paneWidth, flexShrink: 0 }} className="pr-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Folders</p>
-                    <button onClick={() => { setNewFolderParentId(null); setNewFolderName('') }}
-                      className="text-gray-400 hover:text-green-700 transition-colors text-sm leading-none" title="New division">+</button>
-                  </div>
-
-                  {newFolderParentId === null && (
-                    <div className="mb-2 flex items-center gap-1">
-                      <input type="text" autoFocus
-                        className="flex-1 border border-gray-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-green-500"
-                        placeholder="Division name" value={newFolderName}
-                        onChange={(e) => setNewFolderName(e.target.value)}
-                        onKeyDown={(e) => { if (e.key === 'Enter') handleCreateFolder('files', null); if (e.key === 'Escape') setNewFolderParentId(undefined) }}
-                      />
-                      <button onClick={() => handleCreateFolder('files', null)} disabled={creatingFolder || !newFolderName.trim()}
-                        className="text-xs px-2 py-1 rounded bg-green-700 text-white disabled:opacity-50">✓</button>
-                      <button onClick={() => setNewFolderParentId(undefined)} className="text-gray-400 hover:text-gray-600 text-sm">×</button>
-                    </div>
-                  )}
-                  {folderError && newFolderParentId === null && <p className="text-xs text-red-600 mb-2">{folderError}</p>}
-
-                  <button onClick={() => selectFolder('unfiled')}
-                    className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm transition-colors mb-0.5 ${selectedFolderId === 'unfiled' ? 'bg-green-50 text-green-700 font-medium' : 'text-gray-700 hover:bg-gray-50'}`}>
-                    <span>📄</span>
-                    <span className="flex-1 text-left truncate">Unfiled{unfiledCount > 0 ? ` (${unfiledCount})` : ''}</span>
-                  </button>
-
-                  {divisions.map(div => {
-                    const isExpanded = expandedDivisions.has(div.id)
-                    const subfolders = folders.filter(f => f.parent_id === div.id)
-                    const isSelected = selectedFolderId === div.id
-                    const isRenaming = renamingId === div.id
-                    return (
-                      <div key={div.id} className="group">
-                        {isRenaming ? (
-                          <div className="flex items-center gap-1 px-2 py-1">
-                            <input type="text" autoFocus
-                              className="flex-1 border border-gray-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-green-500"
-                              value={renameValue} onChange={(e) => setRenameValue(e.target.value)}
-                              onKeyDown={(e) => { if (e.key === 'Enter') handleRenameFolder(div.id); if (e.key === 'Escape') setRenamingId(null) }}
-                            />
-                            <button onClick={() => handleRenameFolder(div.id)} className="text-xs px-2 py-1 rounded bg-green-700 text-white">✓</button>
-                            <button onClick={() => setRenamingId(null)} className="text-gray-400 hover:text-gray-600 text-sm">×</button>
-                          </div>
-                        ) : (
-                          <div className={`flex items-center gap-1 px-2 py-1.5 rounded-lg transition-colors ${isSelected ? 'bg-green-50' : 'hover:bg-gray-50'}`}>
-                            <button onClick={() => toggleDivision(div.id)} className="text-gray-300 hover:text-gray-500 text-[10px] w-3 flex-shrink-0">
-                              {isExpanded ? '▾' : '▸'}
-                            </button>
-                            <button onClick={() => selectFolder(div.id)}
-                              className={`flex-1 flex items-center gap-2 text-left text-sm min-w-0 ${isSelected ? 'text-green-700 font-medium' : 'text-gray-700'}`}>
-                              <span>📁</span>
-                              <span className="truncate">{div.name}{countFilesRecursive(div.id) > 0 ? ` (${countFilesRecursive(div.id)})` : ''}</span>
-                            </button>
-                            <button onClick={() => { setNewFolderParentId(div.id); setNewFolderName(''); setExpandedDivisions(prev => new Set(prev).add(div.id)) }}
-                              className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-green-700 transition-opacity text-sm leading-none flex-shrink-0" title="New folder">+</button>
-                          </div>
-                        )}
-
-                        {newFolderParentId === div.id && (
-                          <div className="flex items-center gap-1 pl-6 pr-2 py-1">
-                            <input type="text" autoFocus
-                              className="flex-1 border border-gray-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-green-500"
-                              placeholder="Folder name" value={newFolderName}
-                              onChange={(e) => setNewFolderName(e.target.value)}
-                              onKeyDown={(e) => { if (e.key === 'Enter') handleCreateFolder('files', div.id); if (e.key === 'Escape') setNewFolderParentId(undefined) }}
-                            />
-                            <button onClick={() => handleCreateFolder('files', div.id)} disabled={creatingFolder || !newFolderName.trim()}
-                              className="text-xs px-2 py-1 rounded bg-green-700 text-white disabled:opacity-50">✓</button>
-                            <button onClick={() => setNewFolderParentId(undefined)} className="text-gray-400 hover:text-gray-600 text-sm">×</button>
-                          </div>
-                        )}
-                        {folderError && newFolderParentId === div.id && <p className="text-xs text-red-600 pl-6 mb-1">{folderError}</p>}
-
-                        {isExpanded && subfolders.map(sf => {
-                          const sfSelected = selectedFolderId === sf.id
-                          const sfRenaming = renamingId === sf.id
-                          return (
-                            <div key={sf.id} className="group/sf">
-                              {sfRenaming ? (
-                                <div className="flex items-center gap-1 pl-6 pr-2 py-1">
-                                  <input type="text" autoFocus
-                                    className="flex-1 border border-gray-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-green-500"
-                                    value={renameValue} onChange={(e) => setRenameValue(e.target.value)}
-                                    onKeyDown={(e) => { if (e.key === 'Enter') handleRenameFolder(sf.id); if (e.key === 'Escape') setRenamingId(null) }}
-                                  />
-                                  <button onClick={() => handleRenameFolder(sf.id)} className="text-xs px-2 py-1 rounded bg-green-700 text-white">✓</button>
-                                  <button onClick={() => setRenamingId(null)} className="text-gray-400 hover:text-gray-600 text-sm">×</button>
-                                </div>
-                              ) : (
-                                <div className={`flex items-center gap-1 pl-6 pr-2 py-1.5 rounded-lg transition-colors ${sfSelected ? 'bg-green-50' : 'hover:bg-gray-50'}`}>
-                                  <button onClick={() => selectFolder(sf.id)}
-                                    className={`flex-1 flex items-center gap-2 text-left text-sm min-w-0 ${sfSelected ? 'text-green-700 font-medium' : 'text-gray-600'}`}>
-                                    <span className="truncate">{sf.name}{countFilesRecursive(sf.id) > 0 ? ` (${countFilesRecursive(sf.id)})` : ''}</span>
-                                  </button>
-                                  <div className="opacity-0 group-hover/sf:opacity-100 transition-opacity flex items-center gap-1.5 flex-shrink-0">
-                                    <button onClick={() => { setRenamingId(sf.id); setRenameValue(sf.name) }} className="text-gray-400 hover:text-green-700 text-xs">Rename</button>
-                                    <button onClick={() => handleDeleteFolder(sf.id, sf.name)} className="text-gray-400 hover:text-red-500 text-xs">Delete</button>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          )
-                        })}
-                      </div>
-                    )
-                  })}
-                </div>
-
-                {/* Resize divider */}
-                <div
-                  onMouseDown={() => setResizing(true)}
-                  className="w-px bg-gray-200 hover:bg-green-400 active:bg-green-500 cursor-col-resize flex-shrink-0 self-stretch"
-                  style={{ minHeight: '200px' }}
-                />
-
-                {/* RIGHT PANE — file list */}
-                <div className="flex-1 min-w-0 pl-4">
-                  {showUpload && (
-                    <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <h2 className="text-sm font-semibold text-gray-900">Upload files</h2>
-                          <span className="text-xs text-green-600">→ {selectedFolderName}</span>
-                        </div>
-                        <button onClick={() => { setShowUpload(false); setFiles([]) }} className="text-gray-400 hover:text-gray-600 text-lg leading-none">×</button>
-                      </div>
-                      <div className="space-y-3">
-                        <div>
-                          <input ref={fileInputRef} type="file" multiple accept={ACCEPTED_FILE_TYPES} onChange={handleFileChange} className="hidden" id="file-upload" />
-                          {files.length === 0 ? (
-                            <label htmlFor="file-upload" className="flex items-center gap-3 w-full border border-dashed border-gray-300 rounded-xl px-4 py-4 cursor-pointer hover:border-green-500 hover:bg-green-50 transition-colors">
-                              <span className="text-2xl">📎</span>
-                              <div>
-                                <p className="text-sm text-gray-600">Click to select files</p>
-                                <p className="text-xs text-gray-400">PDF, Word, PowerPoint, Excel, CSV, images · Select multiple</p>
-                              </div>
-                            </label>
-                          ) : (
-                            <div className="space-y-2">
-                              {files.map((f, i) => (
-                                <div key={i} className="flex items-center gap-3 p-3 bg-green-50 border border-green-200 rounded-xl">
-                                  <span className="text-xl">{getFileIcon(f.type, f.name)}</span>
-                                  <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium text-green-800 truncate">{f.name}</p>
-                                  </div>
-                                </div>
-                              ))}
-                              <button onClick={() => { setFiles([]); if (fileInputRef.current) fileInputRef.current.value = '' }}
-                                className="text-xs text-gray-400 hover:text-red-500 transition-colors">
-                                Clear all
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-6">
-                          <div className="flex items-center gap-2">
-                            <div onClick={() => setIsRecurring(!isRecurring)} className={`w-8 h-5 rounded-full cursor-pointer transition-colors relative flex-shrink-0 ${isRecurring ? 'bg-green-600' : 'bg-gray-200'}`}>
-                              <div className={`w-3 h-3 bg-white rounded-full absolute top-1 transition-all ${isRecurring ? 'left-4' : 'left-1'}`} />
-                            </div>
-                            <label className="text-xs text-gray-600 cursor-pointer" onClick={() => setIsRecurring(!isRecurring)}>Recurring</label>
-                            {isRecurring && (
-                              <select className="border border-gray-200 rounded-lg px-2 py-1 text-xs text-gray-800 focus:outline-none bg-gray-50" value={recurrencePeriod} onChange={(e) => setRecurrencePeriod(e.target.value)}>
-                                {RECURRENCE_OPTIONS.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-                              </select>
-                            )}
-                          </div>
-                          
-                        </div>
-                        {uploadError && <p className="text-sm text-red-600">{uploadError}</p>}
-                        {uploadProgress && <p className="text-sm text-green-700">{uploadProgress}</p>}
-                        <button onClick={() => handleUpload(selectedFolderId === 'unfiled' ? null : selectedFolderId)} disabled={files.length === 0 || uploading}
-                          className="w-full bg-green-700 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50">
-                          {uploading ? uploadProgress || 'Uploading...' : `Upload ${files.length > 1 ? files.length + ' files' : 'file'} →`}
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {sortedDocuments.length === 0 ? (
-                    <div className="text-center py-12">
-                      <p className="text-sm text-gray-400">No files in {selectedFolderName}</p>
-                      <p className="text-xs text-gray-400 mt-1">Use the Upload button to add files here</p>
-                    </div>
-                  ) : (
-                    <div className="bg-white rounded-xl overflow-hidden">
-                      <div className="flex items-center gap-3 px-5 py-2 border-b border-gray-100">
-                        <span className="flex-shrink-0" style={{ width: '28px' }} />
-                        <button onClick={() => toggleSort('name')} className="text-xs font-medium text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0">
-                          Name {sortField === 'name' && (sortDir === 'asc' ? '▲' : '▼')}
-                        </button>
-                        <div className="flex-1" />
-                        <button onClick={() => toggleSort('date')} className="text-xs font-medium text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0 w-20 text-right">
-                          Date {sortField === 'date' && (sortDir === 'asc' ? '▲' : '▼')}
-                        </button>
-                      </div>
-                      <div className="divide-y divide-gray-50">
-                        {sortedDocuments.map((doc) => {
-                          const review = documentReviews.find(r => r.document_id === doc.id)
-                          return (
-                            <div key={doc.id} className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
-                              <span className="text-lg flex-shrink-0">{getFileIcon(doc.file_type, doc.name)}</span>
-                              <p className="text-sm text-gray-900 truncate flex-shrink-0" style={{ maxWidth: '380px' }}>{doc.name}</p>
-                              {doc.is_recurring && <span className="text-xs text-green-600 flex-shrink-0">🔄 {doc.recurrence_period}</span>}
-
-                              <div className="relative flex-shrink-0">
-                                <button onClick={() => setMoreMenuDocId(moreMenuDocId === doc.id ? null : doc.id)}
-                                  className="text-gray-400 hover:text-gray-700 text-xs px-1 leading-none transition-colors">▾</button>
-                                {moreMenuDocId === doc.id && (
-                                  <>
-                                    <div className="fixed inset-0 z-10" onClick={() => setMoreMenuDocId(null)} />
-                                    <div className="absolute left-0 mt-1 w-40 bg-white rounded-xl border border-gray-200 shadow-lg z-20 overflow-hidden">
-
-                                      <button onClick={() => handleDownload(doc)}
-                                        className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 transition-colors border-t border-gray-50">
-                                        Download
-                                      </button>
-                                      <button onClick={() => { setMoreMenuDocId(null); setMovingDocId(doc.id) }}
-                                        className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 transition-colors border-t border-gray-50">
-                                        Move
-                                      </button>
-                                      <button onClick={() => handleDeleteDoc(doc)} disabled={deleting === doc.id}
-                                        className="w-full text-left px-3 py-2 text-xs text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50 border-t border-gray-50">
-                                        {deleting === doc.id ? 'Deleting...' : 'Delete'}
-                                      </button>
-                                    </div>
-                                  </>
-                                )}
-                                {movingDocId === doc.id && (
-                                  <>
-                                    <div className="fixed inset-0 z-10" onClick={() => setMovingDocId(null)} />
-                                    <div className="absolute left-0 mt-1 w-48 max-h-64 overflow-y-auto bg-white rounded-xl border border-gray-200 shadow-lg z-20">
-                                      {moveTargets.map(t => (
-                                        <button key={t.id ?? 'unfiled'} onClick={() => handleMoveDocument(doc.id, t.id)}
-                                          className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 transition-colors truncate">
-                                          {t.name}
-                                        </button>
-                                      ))}
-                                    </div>
-                                  </>
-                                )}
-                              </div>
-
-                              <div className="flex-1" />
-
-                              {review && (
-                                <button onClick={() => setViewingReviewId(review.id)}
-                                  className="text-xs text-green-600 font-medium hover:text-green-800 hover:underline transition-colors whitespace-nowrap flex-shrink-0">
-                                  ✓ Reviewed — View report
-                                </button>
-                              )}
-                              <span className="text-xs text-gray-400 flex-shrink-0 w-20 text-right">{new Date(doc.uploaded_at).toLocaleDateString()}</span>
-                            </div>
-                          )
-                        })}
-                      </div>
-                      <p className="text-xs text-gray-400 text-center py-3 border-t border-gray-50">
-                        {sortedDocuments.length} file{sortedDocuments.length !== 1 ? 's' : ''} · Stored securely and only accessible by your account
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* COMPLIANCE LOG TAB */}
-            {activeTab === 'log' && (
-              <div>
-                {documentReviews.length === 0 ? (
-                  <div className="bg-white rounded-xl p-12 text-center">
-                    <p className="text-4xl mb-4">🔍</p>
-                    <p className="text-base font-medium text-gray-700 mb-1">No document reviews yet</p>
-                    <p className="text-sm text-gray-400 mb-6">Go to Company Files and click Review on any file</p>
-                    <button onClick={() => setActiveTab('files')}
-                      className="inline-flex items-center gap-2 bg-green-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors">
-                      Go to Company Files
+          <div className="mt-5">
+            {groups.map((g) => {
+              const opened = showAll.has(g.key)
+              const visible = opened ? g.rows : g.rows.slice(0, COLLAPSE_AT)
+              return (
+                <section key={g.key} className="mb-7">
+                  <h2 className="mb-1.5 text-[12px] font-medium uppercase tracking-wide text-gray-400">
+                    {g.label} <span className="ml-1 text-gray-300">{g.rows.length}</span>
+                  </h2>
+                  <div>{visible.map((r) => <Row key={`${g.key}-${r.document_id}`} r={r} />)}</div>
+                  {g.rows.length > COLLAPSE_AT && !opened && (
+                    <button onClick={() => setShowAll((s) => new Set(s).add(g.key))}
+                      className="mt-1.5 text-[12px] text-gray-600 underline hover:text-gray-900">
+                      Show all {g.rows.length}
                     </button>
-                  </div>
-                ) : (
-                  <div>
-                    <div className="flex items-center gap-2 mb-4">
-                      {(['all', 'expired', 'expiring', 'current'] as const).map(f => (
-                        <button key={f} onClick={() => setReviewFilter(f)}
-                          className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${reviewFilter === f ? 'border-green-500 bg-green-50 text-green-700' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>
-                          {f === 'all' ? 'All' : f === 'expired' ? 'Expired' : f === 'expiring' ? 'Expiring soon' : 'Current'} ({reviewFilterCounts[f]})
-                        </button>
-                      ))}
-                    </div>
-
-                    {sortedReviews.length === 0 ? (
-                      <div className="bg-white rounded-xl p-12 text-center">
-                        <p className="text-sm text-gray-400">No reviews match this filter</p>
-                      </div>
-                    ) : (
-                      <div className="bg-white rounded-xl overflow-hidden">
-                        <div className="divide-y divide-gray-50">
-                          {sortedReviews.map((review) => {
-                            const isExpanded = expandedAuditId === review.id
-                            return (
-                              <div key={review.id}>
-                                <div className="px-5 py-4 flex items-center gap-4 cursor-pointer hover:bg-gray-50 transition-colors" onClick={() => setExpandedAuditId(isExpanded ? null : review.id)}>
-                                  <span className="text-2xl flex-shrink-0">📄</span>
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2">
-                                      <p className="text-sm font-semibold text-gray-900 truncate">{review.document_name}</p>
-                                      {review.is_current === true && <span className="text-xs text-green-600 font-medium flex-shrink-0">✓ Current</span>}
-                                      {review.is_current === false && <span className="text-xs text-red-500 font-medium flex-shrink-0">⚠ Expired</span>}
-                                      {review.expiring_soon && <span className="text-xs text-amber-600 font-medium flex-shrink-0">⏰ Expiring soon</span>}
-                                    </div>
-                                    <p className="text-xs text-gray-400 mt-0.5">
-                                      {review.document_type && `${review.document_type} · `}
-                                      {review.division_name && `${review.division_name} · `}
-                                      {new Date(review.created_at).toLocaleDateString()}
-                                    </p>
-                                  </div>
-                                  <span className="text-gray-300 text-xs flex-shrink-0">{isExpanded ? '▼' : '▶'}</span>
-                                </div>
-
-                                {isExpanded && (
-                                  <div className="border-t border-gray-100 px-5 py-4 space-y-4">
-                                    {renderReviewDetail(review)}
-                                  </div>
-                                )}
-                              </div>
-                            )
-                          })}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-          </>
-        )}
-
-        {/* Review slide-in panel — opened from a file row's "View report" link */}
-        {viewingReviewId && (() => {
-          const review = documentReviews.find(r => r.id === viewingReviewId)
-          if (!review) return null
-          return (
-            <>
-              <div className="fixed inset-0 bg-black/10 z-30" onClick={() => setViewingReviewId(null)} />
-              <div className="fixed top-0 right-0 h-full w-full sm:w-[420px] bg-white border-l border-gray-200 shadow-xl z-40 overflow-y-auto p-6">
-                <div className="flex items-start justify-between gap-3 mb-4">
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 truncate">{review.document_name}</p>
-                    <div className="flex items-center gap-2 mt-1">
-                      {review.is_current === true && <span className="text-xs text-green-600 font-medium">✓ Current</span>}
-                      {review.is_current === false && <span className="text-xs text-red-500 font-medium">⚠ Expired</span>}
-                      {review.expiring_soon && <span className="text-xs text-amber-600 font-medium">⏰ Expiring soon</span>}
-                    </div>
-                  </div>
-                  <button onClick={() => setViewingReviewId(null)} className="text-gray-400 hover:text-gray-600 text-lg leading-none flex-shrink-0">×</button>
-                </div>
-                <div className="space-y-4">
-                  {renderReviewDetail(review)}
-                </div>
-              </div>
-            </>
-          )
-        })()}
-
-        {/* Date extraction confirmation card */}
-        {pendingDates.length > 0 && (
-          <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 w-full max-w-lg z-50 px-4">
-            <div className="bg-white rounded-2xl border border-green-200 shadow-xl p-5">
-              <div className="flex items-center justify-between mb-3">
-                <div>
-                  <p className="text-sm font-semibold text-gray-900">📅 Dates found in your document</p>
-                  <p className="text-xs text-gray-400 mt-0.5">Select which dates to add to your compliance calendar</p>
-                </div>
-                <button onClick={() => { setPendingDates([]); setSelectedDates(new Set()) }} className="text-gray-400 hover:text-gray-600 text-lg">×</button>
-              </div>
-              <div className="space-y-2 mb-4">
-                {pendingDates.map((d, i) => (
-                  <div key={i} onClick={() => {
-                    const next = new Set(selectedDates)
-                    if (next.has(i)) next.delete(i)
-                    else next.add(i)
-                    setSelectedDates(next)
-                  }} className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${selectedDates.has(i) ? 'border-green-400 bg-green-50' : 'border-gray-200 bg-gray-50'}`}>
-                    <div className={`w-4 h-4 rounded border flex-shrink-0 mt-0.5 flex items-center justify-center ${selectedDates.has(i) ? 'bg-green-600 border-green-600' : 'border-gray-300'}`}>
-                      {selectedDates.has(i) && <span className="text-white text-xs">✓</span>}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-800">{d.title}</p>
-                      <p className="text-xs text-green-700 font-medium">{new Date(d.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">{d.description}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              {calendarSuccess ? (
-                <p className="text-sm text-green-700 font-medium text-center py-2">✅ {calendarSuccess}</p>
-              ) : (
-                <div className="flex gap-2">
-                  <button onClick={handleAddToCalendar} disabled={selectedDates.size === 0 || addingToCalendar}
-                    className="flex-1 bg-green-700 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-50">
-                    {addingToCalendar ? 'Adding...' : `Add ${selectedDates.size} date${selectedDates.size !== 1 ? 's' : ''} to calendar →`}
-                  </button>
-                  <button onClick={() => { setPendingDates([]); setSelectedDates(new Set()) }}
-                    className="px-4 py-2.5 rounded-xl text-sm text-gray-500 border border-gray-200 hover:border-gray-300 transition-colors">
-                    Skip
-                  </button>
-                </div>
-              )}
-            </div>
+                  )}
+                </section>
+              )
+            })}
           </div>
         )}
       </div>

@@ -304,6 +304,28 @@ export async function buildScanContext(
   }
 }
 
+/**
+ * A READING WE COULD NOT PRODUCE, IN THE SHAPE OF A READING.
+ *
+ * *** THE REASON HAS TO LAND ON A ROW, NOT ONLY IN A RESPONSE BODY. *** The route used to
+ * return its reason in JSON and set `documents.status = 'could_not_read'` without writing a
+ * scan, so `could_not_read_reason` stayed null and the page fell back to generic wording the
+ * moment anybody reloaded. Found on 25 September by uploading a file that is not a PDF: the row
+ * said "Could not read" and could not say why, which is half of §5.1 — we admitted the failure
+ * and lost the part that tells somebody what to do about it.
+ *
+ * Every field is the empty version of itself. Nothing here asserts anything about a document
+ * nobody read.
+ */
+export function failedScan(reason: string, wayForward: string, model = '(not called)'): DocumentScan {
+  return {
+    ...normaliseScan({ status: 'could_not_read', could_not_read: { reason, way_forward: wayForward } }, ''),
+    raw_text: '', json_parsed: false, model, cited_sources: 0, searches: null,
+    prompt_sha256: '', quotes_checked: 0, quotes_verified: 0, extracted_text: '',
+    started_at: new Date().toISOString(),
+  }
+}
+
 export interface RunScanInput {
   buffer: ArrayBuffer
   fileName: string

@@ -196,11 +196,23 @@ describe('the failure no extractor can fix — and what replaced the extractor f
     assert.equal(SCAN_JSON_SCHEMA.type, 'object')
   })
 
-  test('the schema compels no content: nothing is required, so a field it cannot read stays null', () => {
-    // A schema that forced every field would make the model invent a doc_date rather than
-    // return null. The syntax is enforced; the content is not.
-    assert.equal((SCAN_JSON_SCHEMA as Record<string, unknown>).required, undefined)
-    const gaps = (SCAN_JSON_SCHEMA.properties as any).gaps.items
-    assert.equal(gaps.required, undefined)
+  test('the schema compels an ANSWER, not a value — every field required, most of them emptyable', () => {
+    // The design changed under the API's own limits (see the note in prompts/document-scan.ts):
+    // "nothing required" is not expressible — 54 optional parameters against a limit of 24 — and
+    // neither is `null`, at 30 union types. So every field is required and the empty answer is
+    // "". `normaliseScan`'s `str()` turns "" into null before anything is stored, so the row is
+    // the same either way. What must NOT happen is a required field with no empty member.
+    const props = SCAN_JSON_SCHEMA.properties as Record<string, Record<string, unknown>>
+    assert.deepEqual(SCAN_JSON_SCHEMA.required, Object.keys(props),
+      'every top-level field is required, so the model answers each question')
+    assert.equal(SCAN_JSON_SCHEMA.additionalProperties, false)
+
+    // An emptyable field is a bare string: "" is a legal value and means "I could not tell".
+    assert.deepEqual(props.summary, { type: 'string' })
+    assert.deepEqual(props.significant_date, { type: 'string' })
+
+    // The two that may not be empty carry their own honest escape inside the enum instead.
+    assert.ok((props.status.enum as string[]).includes('could_not_read'))
+    assert.ok(((props.identity.properties as Record<string, Record<string, unknown>>).kind.enum as string[]).includes('other'))
   })
 })

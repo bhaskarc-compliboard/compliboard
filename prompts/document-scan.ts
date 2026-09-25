@@ -202,111 +202,103 @@ when you worked it out.`
  *     "quote": "Cool cooked beans from 135°F to 70°F…" vs. "The blast chiller operator…"
  *
  * No extractor recovers that: the string ends at the second quote. A schema removes the class.
- * Measured accepted alongside the server-side web_search tool on claude-haiku-4-5 before being
- * wired in — `npm run probe:structured`.
  *
- * NOTHING IS `required` AND `additionalProperties` IS OPEN. A schema that forces every field
- * would make the model invent a `doc_date` it could not read rather than return null, and the
- * one thing this product must not do is fill a gap with a guess. `normaliseScan` already
- * defaults every field it does not get. The schema is here to fix the SYNTAX, not to compel
- * content.
+ * *** THREE RULES THE API IMPOSES, AND THEY CHANGED THE DESIGN TWICE. ***
+ * All three were found by sending the REAL schema rather than the probe's — the probe's
+ * schemas happened to satisfy the first and were small enough to miss the other two, so it
+ * reported the mechanism usable and it is, but not for the shape this started as. Seven
+ * documents went through the page before the first one showed up:
+ *
+ *   400 For 'object' type, 'additionalProperties' must be explicitly set to false
+ *   400 Schemas contains too many optional parameters (54) … limit: 24
+ *   400 Too many parameters with union types (30 …). Reduce the number of nullable params.
+ *
+ * The first costs nothing: forbidding EXTRA keys is not forbidding an empty one.
+ *
+ * The second ruled out "nothing required, so a field the model cannot read is simply absent".
+ * So every field is required — which does NOT mean "invent a value". It means answer the
+ * question, and an empty answer is permitted.
+ *
+ * The third ruled out expressing that empty answer as `null`. So every optional string is
+ * plain `string` and the model returns `""`. That is not a loss: `normaliseScan`'s `str()`
+ * maps `""` — and the literal `"null"` — to null before anything is stored, so the row is
+ * byte-identical to what the nullable version would have written. What it cannot map is a
+ * model that writes "N/A" or "unknown" instead of leaving it empty; that would be stored as a
+ * string and is the one thing to watch for in the output.
+ *
+ * `identity.kind` and `status` are enums with no empty member, because both already carry the
+ * honest escape: `other`, and `could_not_read`.
  */
-const nullableString = { type: ['string', 'null'] as const }
-const stringArray = { type: 'array' as const, items: { type: 'string' as const } }
+/** An answer that may be empty. `""` becomes null in `normaliseScan` — see the note above. */
+const nul = { type: 'string' } as const
+const str = { type: 'string' } as const
+const bool = { type: 'boolean' } as const
+const strArray = { type: 'array', items: { type: 'string' } } as const
 
-export const SCAN_JSON_SCHEMA: Record<string, unknown> = {
-  type: 'object',
-  properties: {
-    identity: {
-      type: 'object',
-      properties: {
-        kind: { type: 'string', enum: ['permit', 'certificate', 'program', 'policy', 'record', 'supplier_document', 'other'] },
-        title: nullableString,
-        issuer: nullableString,
-        agencies: stringArray,
-        subjects: stringArray,
-        site: nullableString,
-        jurisdiction: stringArray,
-        doc_date: nullableString,
-        doc_date_kind: nullableString,
-        page_refs: { type: 'object', additionalProperties: { type: 'string' } },
-      },
-    },
-    summary: nullableString,
-    status: { type: 'string', enum: ['current', 'expiring', 'expired', 'no_gaps_found', 'gaps_found', 'recorded', 'not_judged', 'could_not_read'] },
-    significant_date: nullableString,
-    significant_date_kind: nullableString,
-    freshness_note: nullableString,
-    gaps: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          title: { type: 'string' },
-          description: nullableString,
-          fix: nullableString,
-          citation: nullableString,
-          citation_url: nullableString,
-          locator: nullableString,
-          draftable: { type: 'boolean' },
-          basis: { type: 'string', enum: ['read', 'inferred'] },
-          quote: nullableString,
-        },
-      },
-    },
-    conditions: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          title: { type: 'string' },
-          condition_ref: nullableString,
-          evidence_expected: nullableString,
-        },
-      },
-    },
-    deadlines: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          title: { type: 'string' },
-          due_on: nullableString,
-          source_line: nullableString,
-          recurs: { type: 'boolean' },
-        },
-      },
-    },
-    facts: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          key: { type: 'string' },
-          value: { type: 'string' },
-          basis: { type: 'string', enum: ['read', 'inferred'] },
-          quote: nullableString,
-          locator: nullableString,
-          as_of: nullableString,
-          affects: nullableString,
-        },
-      },
-    },
-    version_of: {
-      type: 'object',
-      properties: { title: nullableString, confidence: nullableString },
-    },
-    expected_missing: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: { title: { type: 'string' }, why: nullableString, basis: nullableString },
-      },
-    },
-    confidence_notes: nullableString,
-    could_not_read: {
-      type: 'object',
-      properties: { reason: nullableString, way_forward: nullableString },
-    },
+/** Closed, and every property required — the two things the API insists on. */
+const obj = (properties: Record<string, unknown>) => ({
+  type: 'object' as const,
+  additionalProperties: false as const,
+  properties,
+  required: Object.keys(properties),
+})
+
+export const SCAN_JSON_SCHEMA: Record<string, unknown> = obj({
+  identity: obj({
+    kind: { type: 'string', enum: ['permit', 'certificate', 'program', 'policy', 'record', 'supplier_document', 'other'] },
+    title: nul,
+    issuer: nul,
+    agencies: strArray,
+    subjects: strArray,
+    site: nul,
+    jurisdiction: strArray,
+    doc_date: nul,
+    doc_date_kind: nul,
+  }),
+  summary: nul,
+  status: { type: 'string', enum: ['current', 'expiring', 'expired', 'no_gaps_found', 'gaps_found', 'recorded', 'not_judged', 'could_not_read'] },
+  significant_date: nul,
+  significant_date_kind: nul,
+  freshness_note: nul,
+  gaps: {
+    type: 'array',
+    items: obj({
+      title: str,
+      description: nul,
+      fix: nul,
+      citation: nul,
+      citation_url: nul,
+      locator: nul,
+      draftable: bool,
+      basis: { type: 'string', enum: ['read', 'inferred'] },
+      quote: nul,
+    }),
   },
-}
+  conditions: {
+    type: 'array',
+    items: obj({ title: str, condition_ref: nul, evidence_expected: nul }),
+  },
+  deadlines: {
+    type: 'array',
+    items: obj({ title: str, due_on: nul, source_line: nul, recurs: bool }),
+  },
+  facts: {
+    type: 'array',
+    items: obj({
+      key: str,
+      value: str,
+      basis: { type: 'string', enum: ['read', 'inferred'] },
+      quote: nul,
+      locator: nul,
+      as_of: nul,
+      affects: nul,
+    }),
+  },
+  version_of: obj({ title: nul, confidence: nul }),
+  expected_missing: {
+    type: 'array',
+    items: obj({ title: str, why: nul, basis: nul }),
+  },
+  confidence_notes: nul,
+  could_not_read: obj({ reason: nul, way_forward: nul }),
+})

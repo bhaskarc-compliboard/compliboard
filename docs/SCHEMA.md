@@ -3,8 +3,8 @@
 **GENERATED — do not edit.** `node --env-file=.env.local scripts/schema-doc.js`, and it runs
 inside `npm run db:migrate`, so it cannot be stale by more than one migration.
 
-**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-09-25 18:49 UTC
-**Migrations applied:** 44 — `000` to `043`
+**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-09-25 19:05 UTC
+**Migrations applied:** 45 — `000` to `044`
 
 *Every figure here was read from the catalog of that database. Nothing is copied from the
 migration files, which say what was intended rather than what is there — and the two have
@@ -50,9 +50,9 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 
 **Documents and evidence**
 
-- `documents` — 0 rows · touched by route audits, route chat, route document-review, route documents, route folders, +9 more
+- `documents` — 7 rows · touched by route audits, route chat, route document-review, route document-scan, route documents, +10 more
 - `document_reviews` — 0 rows · touched by route audits, route document-review, lib attachedDocument, lib documentReview
-- `company_folders` — 0 rows · touched by route document-review, route documents, route folders
+- `company_folders` — 0 rows · touched by route document-review, route documents/index, route documents, route folders
 - `company_templates` — 0 rows · touched by route audits
 - `standard_templates` — 0 rows · touched by route audits
 
@@ -68,9 +68,9 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 
 **Tenancy and accounts**
 
-- `companies` — 6 rows · touched by route account/export, route account, route audits, route document-review, route hr, +16 more
+- `companies` — 6 rows · touched by route account/export, route account, route audits, route document-review, route document-scan, +16 more
 - `profiles` — 4 rows · touched by route account/export, route account, route signup, screen audits, screen calendar, +9 more
-- `entities` — 6 rows · touched by route switches/answer, route switches/ask, lib agencyScope, lib determinationGate, lib documentScan, +7 more
+- `entities` — 6 rows · touched by route documents/index, route switches/answer, route switches/ask, lib agencyScope, lib determinationGate, +8 more
 
 **Calendar**
 
@@ -414,7 +414,7 @@ One row per audit run. A frozen snapshot of results as checked that day — reus
 
 **Rows:** 6 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route account/export`, `route account`, `route audits`, `route document-review`, `route hr`, `route obligations`, `route signup`, `screen audits`, `screen compliance`, `screen dashboard`, `screen documents`, `screen hr`, `lib agencyScope`, `lib obligationWriter`, `script check-prompt-determinism`, `script resolve-dryrun`, `script run-golden-docs`, `script run-golden`, `script scan-document`, `script seed-multisite-fixture`, `script seed-staging-testdata`
+**Read or written by:** `route account/export`, `route account`, `route audits`, `route document-review`, `route document-scan`, `route hr`, `route obligations`, `route signup`, `screen audits`, `screen compliance`, `screen dashboard`, `screen hr`, `lib agencyScope`, `lib obligationWriter`, `script check-prompt-determinism`, `script resolve-dryrun`, `script run-golden-docs`, `script run-golden`, `script scan-document`, `script seed-multisite-fixture`, `script seed-staging-testdata`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -544,7 +544,7 @@ What one SITE holds, by CAS where identified. Tenant data. Replaces four boolean
 
 **Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route document-review`, `route documents`, `route folders`
+**Read or written by:** `route document-review`, `route documents/index`, `route documents`, `route folders`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -885,7 +885,7 @@ One row per criticise() call, INCLUDING reviews that found nothing — that is t
 
 **Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `lib documentScan`
+**Read or written by:** `screen documents`, `lib documentScan`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -926,7 +926,7 @@ One row per criticise() call, INCLUDING reviews that found nothing — that is t
 
 **Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `lib documentScan`
+**Read or written by:** `screen documents`, `lib documentScan`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -1112,9 +1112,9 @@ One row per criticise() call, INCLUDING reviews that found nothing — that is t
 
 ### `documents`
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 7 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route audits`, `route chat`, `route document-review`, `route documents`, `route folders`, `route hr`, `route hr-audits`, `screen compliance`, `lib attachedDocument`, `lib documentScan`, `lib storage`, `script check-live`, `script run-golden-docs`, `script scan-document`
+**Read or written by:** `route audits`, `route chat`, `route document-review`, `route document-scan`, `route documents`, `route folders`, `route hr`, `route hr-audits`, `screen compliance`, `lib attachedDocument`, `lib documentScan`, `lib storage`, `script check-live`, `script run-golden-docs`, `script scan-document`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -1187,7 +1187,7 @@ One row per criticise() call, INCLUDING reviews that found nothing — that is t
 
 **Rows:** 6 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route switches/answer`, `route switches/ask`, `lib agencyScope`, `lib determinationGate`, `lib documentScan`, `lib obligationWriter`, `script check-live`, `script resolve-dryrun`, `script run-golden-docs`, `script run-golden`, `script seed-multisite-fixture`, `script seed-staging-testdata`
+**Read or written by:** `route documents/index`, `route switches/answer`, `route switches/ask`, `lib agencyScope`, `lib determinationGate`, `lib documentScan`, `lib obligationWriter`, `script check-live`, `script resolve-dryrun`, `script run-golden-docs`, `script run-golden`, `script seed-multisite-fixture`, `script seed-staging-testdata`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -1250,7 +1250,7 @@ Candidate company facts read out of a conversation overnight. PROPOSED, never wr
 
 **Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route jobs/summarise`, `screen compliance`, `lib documentScan`
+**Read or written by:** `route jobs/summarise`, `screen compliance`, `screen documents`, `lib documentScan`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -2300,4 +2300,5 @@ filtered HERE so no consumer can forget it (CLAUDE.md §3.2). A corrected link
 041
 042
 043
+044
 ```
