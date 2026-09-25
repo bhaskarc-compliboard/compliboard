@@ -104,11 +104,12 @@ describe('the task list matches the CHECK constraint', () => {
     // The migration's CHECK is the authority; this asserts the TypeScript union has not drifted
     // from it. A task the code writes and the constraint refuses is a row silently lost — and
     // this test earned its place by catching exactly that when `document_scan` was added to the
-    // code. Migration 038 wrote the original list; **migration 040 owns it now**, having dropped
-    // and recreated the constraint to add `document_scan`.
+    // code — and again when `document_draft` was. Migration 038 wrote the original list;
+    // **migration 050 owns it now**, having dropped and recreated the constraint to add
+    // `document_draft` beside `document_scan`.
     const inMigration = [
       'research', 'checklist', 'substeps', 'convert', 'summarise',
-      'gate', 'critique', 'audit', 'document_review', 'document_scan', 'other',
+      'gate', 'critique', 'audit', 'document_review', 'document_scan', 'document_draft', 'other',
     ]
     assert.deepEqual([...LEDGER_TASKS].sort(), inMigration.sort())
   })

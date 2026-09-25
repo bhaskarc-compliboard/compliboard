@@ -24,7 +24,7 @@ export type AIContent = string | any[]
  */
 import { recordAICall, describeCost, type LedgerTask } from './costLedger.ts'
 
-export type AITask = 'judgement' | 'critique' | 'prose' | 'default' | 'substeps' | 'summary' | 'document_scan'
+export type AITask = 'judgement' | 'critique' | 'prose' | 'default' | 'substeps' | 'summary' | 'document_scan' | 'document_draft'
 
 /**
  * What a caller passes so its call lands in the cost ledger (`DECISIONS.md` §128 J).
@@ -118,6 +118,10 @@ const TASK_MODELS: Record<AITask, () => string> = {
   // model nobody had chosen. This one is named, so it can be pointed anywhere without moving
   // everything else, and it falls back to the judgement tier rather than to `default`.
   document_scan: () => process.env.AI_MODEL_DOCUMENT_SCAN || TASK_MODELS.judgement(),
+  // *** DRAFTING IS PROSE, NOT JUDGEMENT. *** Writing the missing section of an emergency plan
+  // in the document's own voice decides nothing about what the law requires — the gap already
+  // said what is missing and why. It is the cheapest tier that can write, which is the point.
+  document_draft: () => process.env.AI_MODEL_DOCUMENT_DRAFT || TASK_MODELS.prose(),
   default:   () => process.env.AI_MODEL           || 'claude-sonnet-4-5',
 }
 

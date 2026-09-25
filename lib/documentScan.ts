@@ -379,6 +379,16 @@ export async function buildScanContext(
     : { data: [] }
   // Newest per field. Ordered so the same state gives the same prompt string, like everything
   // else here — and `created_at desc, id desc` for the same tie-break reason as migration 045.
+  // WHAT THE COMPANY HAS CONFIRMED ABOUT ITSELF (migration 050). Shown to the next scan so it
+  // does not propose a fact somebody has already answered, and so it reads the document against
+  // what is known rather than against nothing.
+  //
+  // *** THE RESEARCH PROMPT DOES NOT READ THESE IN THIS RUN. *** Only the scan does. Wiring them
+  // into research is a change to what feeds an answer (§3.1) and belongs in its own run with its
+  // own measurement.
+  const { data: confirmedFacts } = await db.from('company_facts')
+    .select('key, value, basis').eq('company_id', company.id).order('key')
+
   const { data: corrections } = documentId
     ? await db.from('document_corrections').select('field, new_value, reason, created_at, id')
         .eq('document_id', documentId).order('created_at', { ascending: false }).order('id', { ascending: false })
@@ -404,6 +414,11 @@ export async function buildScanContext(
       .map((d: { title: string; kind: string | null }) => ({ title: d.title, kind: d.kind })),
     dismissedGaps: (dismissed ?? []).map((g: { title: string; dismissed_reason: string | null }) =>
       ({ title: g.title, reason: g.dismissed_reason })),
+    confirmedFacts: (confirmedFacts ?? []).map((f: { key: string; value: unknown; basis: string }) => ({
+      key: f.key,
+      value: typeof f.value === 'string' ? f.value : JSON.stringify(f.value ?? '').replace(/^"|"$/g, ''),
+      basis: f.basis,
+    })),
     corrections: (() => {
       const seen = new Set<string>()
       const out: Array<{ field: string; value: string; reason: string | null }> = []
@@ -578,7 +593,9 @@ export async function saveScan(
     doc_date: scan.identity.doc_date, doc_date_kind: scan.identity.doc_date_kind,
     page_refs: scan.identity.page_refs,
     summary: scan.summary, status: scan.status,
-    significant_date: scan.significant_date, significant_date_kind: scan.significant_date_kind,
+    // significant_date and its kind are NOT written: migration 049 computes them in the view
+    // from the kind, the deadlines and the document date, so a corrected rule reaches every
+    // document already scanned and a corrected KIND moves the date with it.
     freshness_note: scan.freshness_note,
     expected_missing: scan.expected_missing,
     version_of_title: scan.version_of.title, version_confidence: scan.version_of.confidence,
@@ -629,6 +646,10 @@ export async function saveScan(
       switch_key: f.key.slice(0, 120), proposed_value: String(f.value).slice(0, 500),
       quote: f.quote ? f.quote.slice(0, 2000) : null, locator: f.locator,
       basis: f.basis,
+      // ...and the same for `affects` until migration 051. The prompt asks for "one line saying
+      // what it affects" on every fact, and the queue that has to show it found the answer had
+      // never reached a column.
+      affects: f.affects,
       // COMPUTED AND THEN DISCARDED UNTIL MIGRATION 047. `verifyQuote` has run on every fact
       // since Run 1 and its answer never reached a column, so the drawer had nothing to show a
       // person about to confirm a claim on the strength of a quote.

@@ -29,6 +29,8 @@ export interface ScanPromptContext {
    * Rendered as plain sentences below; no instruction sentence of the prompt changes.
    */
   corrections: Array<{ field: string; value: string; reason: string | null }>
+  /** What this company has already confirmed about itself. Rendered as plain lines below. */
+  confirmedFacts: Array<{ key: string; value: string; basis: string }>
 }
 
 const list = (xs: string[]) => (xs.length ? xs.map((x) => `  - ${x}`).join('\n') : '  (none yet)')
@@ -53,6 +55,13 @@ export function scanPrompt(ctx: ScanPromptContext): string {
     ? `\nThe person who owns this document has told us the following about it. They are right and
 you are not; take these as given:
 ${ctx.corrections.map((c) => `  - the ${c.field} is ${c.value}${c.reason ? ` — they said: ${c.reason}` : ''}`).join('\n')}\n`
+    : ''
+
+  // Confirmed facts, so the scan does not propose again what somebody has already answered.
+  const confirmed = ctx.confirmedFacts.length
+    ? `\nThis company has already confirmed the following about itself. Take these as given and do
+not propose them again:
+${ctx.confirmedFacts.map((f) => `  - ${f.key.replace(/_/g, ' ')}: ${f.value}${f.basis === 'inferred' ? ' (inferred)' : ''}`).join('\n')}\n`
     : ''
 
   const dismissed = ctx.dismissedGaps.length
@@ -89,7 +98,7 @@ when the document needs one this list does not cover.
 
 WHAT THIS COMPANY ALREADY HOLDS
 ${existing}
-${corrected}${dismissed}
+${confirmed}${corrected}${dismissed}
 You have a web_search tool. Use your own judgment. Things that are stable and well established
 you already know — answer directly. A specific threshold, a current form version, a citation that
 may have changed, a renewal rule — check it rather than trusting memory.

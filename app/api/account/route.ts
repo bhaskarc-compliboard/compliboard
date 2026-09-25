@@ -235,6 +235,13 @@ const DELETED_BY_CASCADE_OR_PARENT = [
   // documents ON DELETE CASCADE, both read from pg_constraint on 25 Sep, so the row is gone twice
   // over. Found by check-schema-contracts refusing the commit, which is what it is for.
   'document_corrections',
+  // ...and the seventh (migration 050). company_facts is what a PERSON confirmed about their own
+  // company, so it is the most "theirs" of anything on this list — and it still belongs here,
+  // because company_id -> companies ON DELETE CASCADE (confdeltype = c, read from pg_constraint
+  // on 25 Sep) takes it with the company. Named rather than swept in the tenant loop for the same
+  // reason as the rest: the loop is the customer deleting their own rows, and this list is what
+  // the cascade already removes.
+  'company_facts',
   'ai_calls',              // cascades with the company: company_id -> companies ON DELETE
                            // CASCADE, read from pg_constraint on 23 Sep rather than assumed —
                            //   conname ai_calls_company_id_fkey · confdeltype = c (cascade)

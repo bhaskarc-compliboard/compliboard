@@ -390,6 +390,8 @@ export type Database = {
           company_id: string | null
           converted_to_checklist_id: string | null
           created_at: string | null
+          document_gap_id: string | null
+          document_id: string | null
           from_topic_id: string | null
           id: string
           question: string
@@ -403,6 +405,8 @@ export type Database = {
           company_id?: string | null
           converted_to_checklist_id?: string | null
           created_at?: string | null
+          document_gap_id?: string | null
+          document_id?: string | null
           from_topic_id?: string | null
           id?: string
           question: string
@@ -416,6 +420,8 @@ export type Database = {
           company_id?: string | null
           converted_to_checklist_id?: string | null
           created_at?: string | null
+          document_gap_id?: string | null
+          document_id?: string | null
           from_topic_id?: string | null
           id?: string
           question?: string
@@ -438,6 +444,27 @@ export type Database = {
             columns: ["converted_to_checklist_id"]
             isOneToOne: false
             referencedRelation: "checklists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checklists_document_gap_id_fkey"
+            columns: ["document_gap_id"]
+            isOneToOne: false
+            referencedRelation: "document_gaps"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checklists_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "document_index_v"
+            referencedColumns: ["document_id"]
+          },
+          {
+            foreignKeyName: "checklists_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
             referencedColumns: ["id"]
           },
           {
@@ -575,6 +602,71 @@ export type Database = {
             columns: ["entity_id"]
             isOneToOne: false
             referencedRelation: "entities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      company_facts: {
+        Row: {
+          basis: string
+          company_id: string
+          confirmed_at: string
+          confirmed_by: string | null
+          id: string
+          key: string
+          source_document_id: string | null
+          source_proposal_id: string | null
+          value: Json | null
+        }
+        Insert: {
+          basis?: string
+          company_id: string
+          confirmed_at?: string
+          confirmed_by?: string | null
+          id?: string
+          key: string
+          source_document_id?: string | null
+          source_proposal_id?: string | null
+          value?: Json | null
+        }
+        Update: {
+          basis?: string
+          company_id?: string
+          confirmed_at?: string
+          confirmed_by?: string | null
+          id?: string
+          key?: string
+          source_document_id?: string | null
+          source_proposal_id?: string | null
+          value?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_facts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_facts_source_document_id_fkey"
+            columns: ["source_document_id"]
+            isOneToOne: false
+            referencedRelation: "document_index_v"
+            referencedColumns: ["document_id"]
+          },
+          {
+            foreignKeyName: "company_facts_source_document_id_fkey"
+            columns: ["source_document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_facts_source_proposal_id_fkey"
+            columns: ["source_proposal_id"]
+            isOneToOne: false
+            referencedRelation: "fact_proposals"
             referencedColumns: ["id"]
           },
         ]
@@ -1165,6 +1257,9 @@ export type Database = {
           description: string | null
           dismissed_reason: string | null
           document_id: string
+          draft_ai_call_id: string | null
+          draft_created_at: string | null
+          draft_text: string | null
           draftable: boolean
           fix: string | null
           id: string
@@ -1185,6 +1280,9 @@ export type Database = {
           description?: string | null
           dismissed_reason?: string | null
           document_id: string
+          draft_ai_call_id?: string | null
+          draft_created_at?: string | null
+          draft_text?: string | null
           draftable?: boolean
           fix?: string | null
           id?: string
@@ -1205,6 +1303,9 @@ export type Database = {
           description?: string | null
           dismissed_reason?: string | null
           document_id?: string
+          draft_ai_call_id?: string | null
+          draft_created_at?: string | null
+          draft_text?: string | null
           draftable?: boolean
           fix?: string | null
           id?: string
@@ -1236,6 +1337,13 @@ export type Database = {
             columns: ["document_id"]
             isOneToOne: false
             referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_gaps_draft_ai_call_id_fkey"
+            columns: ["draft_ai_call_id"]
+            isOneToOne: false
+            referencedRelation: "ai_calls"
             referencedColumns: ["id"]
           },
           {
@@ -1393,8 +1501,6 @@ export type Database = {
           raw_text: string | null
           scanned_at: string
           searches: number | null
-          significant_date: string | null
-          significant_date_kind: string | null
           site_scope: string | null
           status: string | null
           subjects: Json
@@ -1431,8 +1537,6 @@ export type Database = {
           raw_text?: string | null
           scanned_at?: string
           searches?: number | null
-          significant_date?: string | null
-          significant_date_kind?: string | null
           site_scope?: string | null
           status?: string | null
           subjects?: Json
@@ -1469,8 +1573,6 @@ export type Database = {
           raw_text?: string | null
           scanned_at?: string
           searches?: number | null
-          significant_date?: string | null
-          significant_date_kind?: string | null
           site_scope?: string | null
           status?: string | null
           subjects?: Json
@@ -1694,6 +1796,7 @@ export type Database = {
       }
       fact_proposals: {
         Row: {
+          affects: string | null
           basis: string
           company_id: string
           created_at: string
@@ -1712,6 +1815,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          affects?: string | null
           basis?: string
           company_id: string
           created_at?: string
@@ -1730,6 +1834,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          affects?: string | null
           basis?: string
           company_id?: string
           created_at?: string

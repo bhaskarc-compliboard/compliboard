@@ -21,11 +21,15 @@ import { MODEL_PRICES, PRICE_PER_SEARCH, type ModelPrice } from '../config/prici
 /** The tasks migration 038's CHECK constraint allows. Kept in step with it by hand and by test. */
 export type LedgerTask =
   | 'research' | 'checklist' | 'substeps' | 'convert' | 'summarise'
-  | 'gate' | 'critique' | 'audit' | 'document_review' | 'document_scan' | 'other'
+  | 'gate' | 'critique' | 'audit' | 'document_review' | 'document_scan' | 'document_draft' | 'other'
 
 export const LEDGER_TASKS: readonly LedgerTask[] = [
   'research', 'checklist', 'substeps', 'convert', 'summarise',
-  'gate', 'critique', 'audit', 'document_review', 'document_scan', 'other',
+  'gate', 'critique', 'audit', 'document_review', 'document_scan',
+  // Writing the missing section of a document, from a gap. The one action in the report drawer
+  // that costs money, and the only model call Run 5 adds to the drawer itself.
+  'document_draft',
+  'other',
 ] as const
 
 export interface CallUsage {
