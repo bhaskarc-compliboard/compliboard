@@ -1,0 +1,404 @@
+{
+  "case": "01-eap-chemical",
+  "run": 1,
+  "run_date": "2026-09-25",
+  "model": "claude-haiku-4-5",
+  "searches": 0,
+  "prompt_sha256": "04e54c4523cb93115a7aac35ec4238d5702fb0b356e157739ad87f2551d804a3",
+  "scan_id": "835d91fd-aa46-4361-9dd0-25dbe78e2a26",
+  "ai_call_id": "b51dd0e4-2d31-4d0d-a844-9bab4a61ccbf",
+  "wall_ms": 41175,
+  "cost_usd": 0.033493,
+  "input_tokens": 12813,
+  "output_tokens": 4136,
+  "json_parsed": true,
+  "compliant_found_in": [],
+  "alternative_pass": false,
+  "verdicts": {
+    "kind": {
+      "verdict": "NEAR",
+      "detail": "identity.kind = \"policy\" — the spec names this a near miss, reported not failed"
+    },
+    "agency-osha": {
+      "verdict": "PASS",
+      "detail": "identity.agencies = [oregon osha]"
+    },
+    "site-portland": {
+      "verdict": "PASS",
+      "detail": "identity.site = \"portland\""
+    },
+    "doc-date": {
+      "verdict": "PASS",
+      "detail": "identity.doc_date = 2021-02-01"
+    },
+    "doc-date-kind": {
+      "verdict": "PASS",
+      "detail": "identity.doc_date_kind = \"revised\""
+    },
+    "jurisdiction-oregon": {
+      "verdict": "PASS",
+      "detail": "identity.jurisdiction = [oregon | federal]"
+    },
+    "status": {
+      "verdict": "PASS",
+      "detail": "status = \"gaps_found\""
+    },
+    "gap-reporting": {
+      "verdict": "FAIL",
+      "detail": "no item matched. gaps held: Missing emergency contact information | Missing incident commander identification an | Incomplete chemical inventory and hazard ide | Missing procedures for persons with disabili | Incomplete accountability procedures for con | Missing procedures for shelter-in-place dura | Missing procedures for external coordination | Missing verification that evacuation maps ar | Missing documentation of drill performance a"
+    },
+    "gap-critical-operations": {
+      "verdict": "FAIL",
+      "detail": "no item matched. gaps held: Missing emergency contact information | Missing incident commander identification an | Incomplete chemical inventory and hazard ide | Missing procedures for persons with disabili | Incomplete accountability procedures for con | Missing procedures for shelter-in-place dura | Missing procedures for external coordination | Missing verification that evacuation maps ar | Missing documentation of drill performance a"
+    },
+    "gap-contact-name": {
+      "verdict": "FAIL",
+      "detail": "no item matched. gaps held: Missing emergency contact information | Missing incident commander identification an | Incomplete chemical inventory and hazard ide | Missing procedures for persons with disabili | Incomplete accountability procedures for con | Missing procedures for shelter-in-place dura | Missing procedures for external coordination | Missing verification that evacuation maps ar | Missing documentation of drill performance a"
+    },
+    "deadline-annual-review": {
+      "verdict": "PASS",
+      "detail": "deadlines: \"Annual review of emergency action plan by facilities lead\" [annual, january, review, plan]"
+    },
+    "deadline-drills": {
+      "verdict": "PASS",
+      "detail": "deadlines: \"Evacuation drill — spring and autumn\" [drill, twice, year, evacuation]"
+    },
+    "fact-42-employees": {
+      "verdict": "PASS",
+      "detail": "facts: \"employee_count_portland\" [42, employees, portland]"
+    },
+    "label-consistency": {
+      "verdict": "CROSS",
+      "detail": "judged across the three runs, below"
+    },
+    "no-false-alarm-gap": {
+      "verdict": "FAIL",
+      "detail": "gaps: \"Missing procedures for persons with disabilities or mobility limitations / The plan does not address how employees, contractors, or visitors with mobility limitations, hearing loss, or visual impairme\"  ||  gaps: \"Missing documentation of drill performance and findings / Section 4 states 'Evacuation drills are held twice a year, in spring and autumn,' but the plan does not require recording the date, time, numb\"",
+      "quotes": [
+        {
+          "where": "gaps",
+          "text": "Missing procedures for persons with disabilities or mobility limitations / The plan does not address how employees, contractors, or visitors with mobility limitations, hearing loss, or visual impairments will be identified and assisted during evacuation. / Add a section describing how the facility identifies individuals who may need assistance and their designated evacuation buddy or warden, how hearing-impaired individuals will receive alarm signals (visual alternative), and how mobility-limited individuals will evacuate safely. / Oregon OSHA, 1910.38(c) — emergency action plan must ensure procedures meet the needs of all employees / not in the document"
+        },
+        {
+          "where": "gaps",
+          "text": "Missing documentation of drill performance and findings / Section 4 states 'Evacuation drills are held twice a year, in spring and autumn,' but the plan does not require recording the date, time, number of participants, time to complete evacuation, or problems encountered. / Add a requirement to document each drill: date, time, area evacuated (full building or specific area), number of participants, time to reach assembly point, names of any unaccounted persons, any problems with exits, alarms, or procedures, and corrective actions taken. / Oregon OSHA, 1910.38(d) — emergency action plan must include procedures for conducting emergency drills and reviewing/updating the plan based on drill results / section 4 / Evacuation drills are held twice a year, in spring and autumn"
+        }
+      ]
+    },
+    "no-false-evacuation-gap": {
+      "verdict": "FAIL",
+      "detail": "gaps: \"Missing incident commander identification and authority / Section 4 mentions 'the incident coordinator at the assembly point' and section 5 refers to 'the incident coordinator' but does not state who \"  ||  gaps: \"Incomplete accountability procedures for contractors and visitors / Section 1 states the plan 'applies to... contractors and visitors while on site' and section 4 mentions 'the visitor log,' but the p\"  ||  gaps: \"Missing verification that evacuation maps are current and accurate / Section 6 states 'The facilities lead reviews the plan every January and updates the evacuation maps whenever the building layout c\"",
+      "quotes": [
+        {
+          "where": "gaps",
+          "text": "Missing incident commander identification and authority / Section 4 mentions 'the incident coordinator at the assembly point' and section 5 refers to 'the incident coordinator' but does not state who this person is, how they are designated, whether there is a backup, or what specific authority and duties they have beyond reporting to the fire department. / Specify the incident commander role: name the job title(s) eligible to fill this role, state whether a backup is designated, list their specific duties (e.g., authority to shelter in place, to direct evacuation, to decide re-entry), and how they are identified during an emergency. / Oregon OSHA, 1910.38(c) — emergency action plan must include procedures for escape routes and procedures, designation of rescue and medical duties / sections 4 and 5 / the incident coordinator at the assembly point"
+        },
+        {
+          "where": "gaps",
+          "text": "Incomplete accountability procedures for contractors and visitors / Section 1 states the plan 'applies to... contractors and visitors while on site' and section 4 mentions 'the visitor log,' but the plan does not explain how contractors and visitors are briefed on evacuation procedures, how they are accounted for at assembly, or who ensures they do not re-enter. / Add procedures stating that all contractors and visitors must sign in and receive a brief safety orientation including assembly point location before accessing the facility, and that floor wardens verify contractors and visitors are accounted for at assembly before re-entry is allowed. / Oregon OSHA, 1910.38(c) and (d) — emergency action plan must include procedures for all persons on site / sections 1 and 4 / applies to all 42 employees at the Portland facility, including warehouse, drivers, laboratory and office staff, and to contractors and visitors while on site"
+        },
+        {
+          "where": "gaps",
+          "text": "Missing verification that evacuation maps are current and accurate / Section 6 states 'The facilities lead reviews the plan every January and updates the evacuation maps whenever the building layout changes,' but does not specify verification that exit doors are accessible, marked, lit, and clear of obstacles. / Add a procedure requiring the facilities lead to inspect all exit routes monthly: verify doors are unlocked and unobstructed, emergency lighting functions, exit signs are illuminated and visible, and that the building layout matches the posted evacuation maps. / Oregon OSHA, 1910.36 and 1910.37 — exit routes must be clearly marked, kept clear, and regularly maintained / section 6 / updates the evacuation maps whenever the building layout changes"
+        }
+      ]
+    },
+    "no-false-headcount-gap": {
+      "verdict": "FAIL",
+      "detail": "gaps: \"Missing procedures for external coordination with emergency responders / The plan mentions passing information to the fire department but does not describe what information must be shared (e.g., numbe\"",
+      "quotes": [
+        {
+          "where": "gaps",
+          "text": "Missing procedures for external coordination with emergency responders / The plan mentions passing information to the fire department but does not describe what information must be shared (e.g., number unaccounted for, nature of chemical involved, injuries), who provides it, or whether there is a designated liaison. / Add a section describing the incident commander's responsibility to provide fire department with: headcount of evacuated employees, number and names of unaccounted persons (if any), nature of emergency (fire, chemical release, other), chemicals involved (if known), and location and extent of damage or release. / Oregon OSHA, 1910.38(c) — emergency action plan must include procedures for ensuring emergency responders have information needed / section 4 / who passes the information to the fire department on arrival"
+        }
+      ]
+    },
+    "no-false-rescue-gap": {
+      "verdict": "FAIL",
+      "detail": "gaps: \"Missing incident commander identification and authority / Section 4 mentions 'the incident coordinator at the assembly point' and section 5 refers to 'the incident coordinator' but does not state who \"",
+      "quotes": [
+        {
+          "where": "gaps",
+          "text": "Missing incident commander identification and authority / Section 4 mentions 'the incident coordinator at the assembly point' and section 5 refers to 'the incident coordinator' but does not state who this person is, how they are designated, whether there is a backup, or what specific authority and duties they have beyond reporting to the fire department. / Specify the incident commander role: name the job title(s) eligible to fill this role, state whether a backup is designated, list their specific duties (e.g., authority to shelter in place, to direct evacuation, to decide re-entry), and how they are identified during an emergency. / Oregon OSHA, 1910.38(c) — emergency action plan must include procedures for escape routes and procedures, designation of rescue and medical duties / sections 4 and 5 / the incident coordinator at the assembly point"
+        }
+      ]
+    },
+    "freshness-five-years": {
+      "verdict": "PASS",
+      "detail": "[5 years, 2021]"
+    },
+    "fact-alarm-monitored": {
+      "verdict": "PASS",
+      "detail": "facts: \"alarm_monitoring_service\" [cascade fire, monitored, alarm]"
+    },
+    "conditions-none-expected": {
+      "verdict": "PASS",
+      "detail": "none"
+    },
+    "alarm-test-deadline": {
+      "verdict": "PASS",
+      "detail": "deadlines: \"Monthly alarm system test (first Monday of each month)\" [alarm, monday, monthly, test]"
+    }
+  },
+  "scan": {
+    "identity": {
+      "kind": "policy",
+      "title": "Emergency Action Plan",
+      "issuer": null,
+      "agencies": [
+        "Oregon OSHA"
+      ],
+      "subjects": [
+        "Emergency preparedness",
+        "Workplace safety",
+        "Fire evacuation",
+        "Chemical release response"
+      ],
+      "site": "Portland",
+      "jurisdiction": [
+        "Oregon",
+        "federal"
+      ],
+      "doc_date": "2021-02-01",
+      "doc_date_kind": "revised",
+      "page_refs": {
+        "doc_date": "page 1",
+        "issuer": "null — document is self-issued"
+      }
+    },
+    "summary": "This is an Emergency Action Plan for Cascade Specialty Chemicals' Portland facility covering fire, chemical release, medical emergency, earthquake, and other emergencies. It applies to all 42 employees, contractors, and visitors, and describes alarm signals, evacuation routes and procedures, employee accounting, rescue and medical response, and training requirements. The plan is a workplace safety policy required under Oregon OSHA regulations for facilities handling hazardous chemicals.",
+    "status": "gaps_found",
+    "significant_date": "2021-02-01",
+    "significant_date_kind": "revised_on",
+    "freshness_note": "The plan was last revised in February 2021, now 5.5 years old as of September 2026. Section 6 states the facilities lead reviews it every January, so a review should have occurred in January 2026. Request confirmation that the January 2026 review was completed and any updates made.",
+    "gaps": [
+      {
+        "title": "Missing emergency contact information",
+        "description": "The plan does not list emergency contact numbers (fire department, poison control, emergency medical services, company management, etc.) in one accessible location. Section 5 mentions calling emergency medical services but does not specify how or provide the number.",
+        "fix": "Add a section or appendix with a list of emergency contact numbers prominently displayed, including 911, local fire department non-emergency, poison control, hospital emergency departments, company incident commander contact, and facility manager contact.",
+        "citation": "Oregon OSHA, 1910.38(e)(1) — emergency action plan must include procedures for reporting fires and emergencies",
+        "citation_url": "https://www.oregon.gov/deq/aq/Pages/OSHA-General-Industry.aspx",
+        "locator": "not in the document",
+        "draftable": true,
+        "quote": null,
+        "quote_verified": null
+      },
+      {
+        "title": "Missing incident commander identification and authority",
+        "description": "Section 4 mentions 'the incident coordinator at the assembly point' and section 5 refers to 'the incident coordinator' but does not state who this person is, how they are designated, whether there is a backup, or what specific authority and duties they have beyond reporting to the fire department.",
+        "fix": "Specify the incident commander role: name the job title(s) eligible to fill this role, state whether a backup is designated, list their specific duties (e.g., authority to shelter in place, to direct evacuation, to decide re-entry), and how they are identified during an emergency.",
+        "citation": "Oregon OSHA, 1910.38(c) — emergency action plan must include procedures for escape routes and procedures, designation of rescue and medical duties",
+        "citation_url": null,
+        "locator": "sections 4 and 5",
+        "draftable": true,
+        "quote": "the incident coordinator at the assembly point",
+        "quote_verified": null
+      },
+      {
+        "title": "Incomplete chemical inventory and hazard identification",
+        "description": "The plan mentions that 'an SDS for the product is brought to the responders' (section 5) but does not identify what chemicals are stored, in what quantities, where they are stored, or what specific hazards they present. This information is needed to ensure the plan addresses the actual risks at the facility.",
+        "fix": "Create and maintain an attachment listing all hazardous chemicals stored, their locations, approximate quantities, primary hazards (flammability, toxicity, reactivity), and corresponding SDS locations. Update quarterly or when inventory changes.",
+        "citation": "Oregon OSHA, 1910.38(a)(2) — emergency action plan must be tailored to the specific emergency hazards of the workplace",
+        "citation_url": null,
+        "locator": "not in the document",
+        "draftable": true,
+        "quote": "the SDS for the product is brought to the responders",
+        "quote_verified": null
+      },
+      {
+        "title": "Missing procedures for persons with disabilities or mobility limitations",
+        "description": "The plan does not address how employees, contractors, or visitors with mobility limitations, hearing loss, or visual impairments will be identified and assisted during evacuation.",
+        "fix": "Add a section describing how the facility identifies individuals who may need assistance and their designated evacuation buddy or warden, how hearing-impaired individuals will receive alarm signals (visual alternative), and how mobility-limited individuals will evacuate safely.",
+        "citation": "Oregon OSHA, 1910.38(c) — emergency action plan must ensure procedures meet the needs of all employees",
+        "citation_url": null,
+        "locator": "not in the document",
+        "draftable": true,
+        "quote": null,
+        "quote_verified": null
+      },
+      {
+        "title": "Incomplete accountability procedures for contractors and visitors",
+        "description": "Section 1 states the plan 'applies to... contractors and visitors while on site' and section 4 mentions 'the visitor log,' but the plan does not explain how contractors and visitors are briefed on evacuation procedures, how they are accounted for at assembly, or who ensures they do not re-enter.",
+        "fix": "Add procedures stating that all contractors and visitors must sign in and receive a brief safety orientation including assembly point location before accessing the facility, and that floor wardens verify contractors and visitors are accounted for at assembly before re-entry is allowed.",
+        "citation": "Oregon OSHA, 1910.38(c) and (d) — emergency action plan must include procedures for all persons on site",
+        "citation_url": null,
+        "locator": "sections 1 and 4",
+        "draftable": true,
+        "quote": "applies to all 42 employees at the Portland facility, including warehouse, drivers, laboratory and office staff, and to contractors and visitors while on site",
+        "quote_verified": null
+      },
+      {
+        "title": "Missing procedures for shelter-in-place duration and all-clear",
+        "description": "Section 3 describes shelter-in-place procedure (moving indoors and shutting ventilation) but does not state how long employees should shelter, how the all-clear decision is made during shelter-in-place, or who communicates it.",
+        "fix": "Add procedure stating that shelter-in-place duration is determined by facilities lead and fire department (when they arrive), and that all-clear is communicated by a specific signal (e.g., announcement, all-clear horn pattern) so employees know when it is safe to resume work.",
+        "citation": "Oregon OSHA, 1910.38(c) — emergency action plan must include procedures for all types of emergencies addressed",
+        "citation_url": null,
+        "locator": "section 3",
+        "draftable": true,
+        "quote": "the facilities lead shuts down the building ventilation from the mechanical room panel",
+        "quote_verified": null
+      },
+      {
+        "title": "Missing procedures for external coordination with emergency responders",
+        "description": "The plan mentions passing information to the fire department but does not describe what information must be shared (e.g., number unaccounted for, nature of chemical involved, injuries), who provides it, or whether there is a designated liaison.",
+        "fix": "Add a section describing the incident commander's responsibility to provide fire department with: headcount of evacuated employees, number and names of unaccounted persons (if any), nature of emergency (fire, chemical release, other), chemicals involved (if known), and location and extent of damage or release.",
+        "citation": "Oregon OSHA, 1910.38(c) — emergency action plan must include procedures for ensuring emergency responders have information needed",
+        "citation_url": null,
+        "locator": "section 4",
+        "draftable": true,
+        "quote": "who passes the information to the fire department on arrival",
+        "quote_verified": null
+      },
+      {
+        "title": "Missing verification that evacuation maps are current and accurate",
+        "description": "Section 6 states 'The facilities lead reviews the plan every January and updates the evacuation maps whenever the building layout changes,' but does not specify verification that exit doors are accessible, marked, lit, and clear of obstacles.",
+        "fix": "Add a procedure requiring the facilities lead to inspect all exit routes monthly: verify doors are unlocked and unobstructed, emergency lighting functions, exit signs are illuminated and visible, and that the building layout matches the posted evacuation maps.",
+        "citation": "Oregon OSHA, 1910.36 and 1910.37 — exit routes must be clearly marked, kept clear, and regularly maintained",
+        "citation_url": null,
+        "locator": "section 6",
+        "draftable": true,
+        "quote": "updates the evacuation maps whenever the building layout changes",
+        "quote_verified": null
+      },
+      {
+        "title": "Missing documentation of drill performance and findings",
+        "description": "Section 4 states 'Evacuation drills are held twice a year, in spring and autumn,' but the plan does not require recording the date, time, number of participants, time to complete evacuation, or problems encountered.",
+        "fix": "Add a requirement to document each drill: date, time, area evacuated (full building or specific area), number of participants, time to reach assembly point, names of any unaccounted persons, any problems with exits, alarms, or procedures, and corrective actions taken.",
+        "citation": "Oregon OSHA, 1910.38(d) — emergency action plan must include procedures for conducting emergency drills and reviewing/updating the plan based on drill results",
+        "citation_url": null,
+        "locator": "section 4",
+        "draftable": true,
+        "quote": "Evacuation drills are held twice a year, in spring and autumn",
+        "quote_verified": null
+      }
+    ],
+    "conditions": [],
+    "deadlines": [
+      {
+        "title": "Annual review of emergency action plan by facilities lead",
+        "due_on": null,
+        "source_line": "The facilities lead reviews the plan every January and updates the evacuation maps whenever the building layout changes (section 6, page 5)",
+        "recurs": true
+      },
+      {
+        "title": "Monthly alarm system test (first Monday of each month)",
+        "due_on": null,
+        "source_line": "The alarm is tested on the first Monday of each month by the facilities lead (section 2, page 2)",
+        "recurs": true
+      },
+      {
+        "title": "Evacuation drill — spring and autumn",
+        "due_on": null,
+        "source_line": "Evacuation drills are held twice a year, in spring and autumn (section 4, page 4)",
+        "recurs": true
+      },
+      {
+        "title": "Annual training for floor wardens and first-aid responders",
+        "due_on": null,
+        "source_line": "Floor wardens and first-aid responders are trained annually (section 6, page 5)",
+        "recurs": true
+      }
+    ],
+    "facts": [
+      {
+        "key": "employee_count_portland",
+        "value": "42",
+        "quote": "all 42 employees at the Portland facility",
+        "locator": "section 1, page 2",
+        "as_of": "2021-02-01",
+        "affects": "Determines scope of plan, training, and accountability procedures; affects sized drills and assembly point capacity.",
+        "quote_verified": null
+      },
+      {
+        "key": "facility_address",
+        "value": "4410 NW Front Avenue, Portland, Oregon 97210",
+        "quote": "Portland Facility, 4410 NW Front Avenue, Portland, Oregon 97210",
+        "locator": "page 1",
+        "as_of": "2021-02-01",
+        "affects": "Identifies the single facility covered by this plan; determines applicable local emergency responder jurisdictions.",
+        "quote_verified": null
+      },
+      {
+        "key": "alarm_monitoring_service",
+        "value": "Cascade Fire & Safety",
+        "quote": "The alarm is monitored 24 hours a day by Cascade Fire & Safety under a service contract",
+        "locator": "section 2, page 2",
+        "as_of": "2021-02-01",
+        "affects": "Identifies responsible party for alarm system monitoring and maintenance; affects backup procedures if service fails.",
+        "quote_verified": null
+      },
+      {
+        "key": "assembly_point_location",
+        "value": "Far north end of visitor parking lot, beside flagpole, at least 150 feet from building",
+        "quote": "The assembly point is the far north end of the visitor parking lot, beside the flagpole, at least 150 feet from the building",
+        "locator": "section 3, page 3",
+        "as_of": "2021-02-01",
+        "affects": "Determines where all evacuated employees and visitors gather; affects accountability procedures and emergency responder coordination.",
+        "quote_verified": null
+      },
+      {
+        "key": "first_aid_responders_per_shift",
+        "value": "2",
+        "quote": "trained first-aid responders (two per shift, named on the warden roster)",
+        "locator": "section 5, page 4",
+        "as_of": "2021-02-01",
+        "affects": "Ensures medical response capacity during all operational hours; affects scope of first aid training requirements.",
+        "quote_verified": null
+      },
+      {
+        "key": "shelter_in_place_locations",
+        "value": "Interior conference room or laboratory corridor",
+        "quote": "Employees move to the interior conference room or the laboratory corridor, close doors, and the facilities lead shuts down the building ventilation from the mechanical room panel",
+        "locator": "section 3, page 3",
+        "as_of": "2021-02-01",
+        "affects": "Designates safe refuge areas for chemical release or outdoor hazard scenarios; affects training and facility layout verification.",
+        "quote_verified": null
+      }
+    ],
+    "version_of": {
+      "title": null,
+      "confidence": "high"
+    },
+    "expected_missing": [
+      {
+        "title": "Chemical inventory and SDS filing system",
+        "why": "A chemical distribution company must maintain and quickly access Safety Data Sheets; emergency responders will request chemical information.",
+        "basis": "Similar companies in chemical distribution hold detailed chemical inventories with SDS cross-references."
+      },
+      {
+        "title": "Emergency response procedures for major hazmat releases",
+        "why": "OSHA and EPA regulations require detailed procedures for large chemical spills, cleanup, reporting to environmental agencies, and regulatory notification.",
+        "basis": "Chemical distribution facilities typically hold procedures specific to hazmat release, environmental notification, and spill response."
+      },
+      {
+        "title": "Business continuity and recovery procedures",
+        "why": "After an emergency, the facility must know how to resume operations, restore records, contact customers, and manage logistics.",
+        "basis": "Similar mid-size distribution companies hold recovery and continuity plans separate from or integrated with the emergency action plan."
+      },
+      {
+        "title": "Incident investigation and reporting procedures",
+        "why": "OSHA requires reporting of serious injuries and incidents; the company must document what occurred, notify insurers, and preserve evidence.",
+        "basis": "Standard workplace safety practice includes post-incident investigation and reporting procedures."
+      },
+      {
+        "title": "Personal protective equipment (PPE) and rescue equipment location and maintenance",
+        "why": "For chemical handling facilities, the plan should specify where emergency eyewash and shower are located (mentioned in section 5), when they are inspected, and what rescue equipment (ropes, harnesses) is available.",
+        "basis": "Chemical distribution companies typically maintain detailed records of safety equipment location and inspection schedules."
+      }
+    ],
+    "confidence_notes": "I am confident in the document's title, kind, issuer, and date. I am confident that this is a policy document required under Oregon OSHA rules (federal OSHA standard 1910.38) and applies to the Portland facility. I am confident in identifying the gaps listed because they are standard elements of emergency action plans required by Oregon OSHA 1910.38(c) or by best practice for chemical handlers. I am less confident about specific Oregon state regulations that may add requirements beyond federal OSHA (Oregon may have additional provisions); I have not verified the current version of Oregon OSHA's guidance against this document. The fact that this was last revised in February 2021 and the instruction states facilities lead reviews it every January suggests the plan should have been reviewed in January 2026—I cannot verify whether this occurred from the document alone. The document does not state the chemical inventory, so I cannot verify whether the plan is appropriate for the actual hazards present.",
+    "could_not_read": {
+      "reason": null,
+      "way_forward": null
+    },
+    "raw_text": "```json\n{\n  \"identity\": {\n    \"kind\": \"policy\",\n    \"title\": \"Emergency Action Plan\",\n    \"issuer\": null,\n    \"agencies\": [\n      \"Oregon OSHA\"\n    ],\n    \"subjects\": [\n      \"Emergency preparedness\",\n      \"Workplace safety\",\n      \"Fire evacuation\",\n      \"Chemical release response\"\n    ],\n    \"site\": \"Portland\",\n    \"jurisdiction\": [\n      \"Oregon\",\n      \"federal\"\n    ],\n    \"doc_date\": \"2021-02-01\",\n    \"doc_date_kind\": \"revised\",\n    \"page_refs\": {\n      \"doc_date\": \"page 1\",\n      \"issuer\": \"null — document is self-issued\"\n    }\n  },\n  \"summary\": \"This is an Emergency Action Plan for Cascade Specialty Chemicals' Portland facility covering fire, chemical release, medical emergency, earthquake, and other emergencies. It applies to all 42 employees, contractors, and visitors, and describes alarm signals, evacuation routes and procedures, employee accounting, rescue and medical response, and training requirements. The plan is a workplace safety policy required under Oregon OSHA regulations for facilities handling hazardous chemicals.\",\n  \"status\": \"gaps_found\",\n  \"significant_date\": \"2021-02-01\",\n  \"significant_date_kind\": \"revised_on\",\n  \"freshness_note\": \"The plan was last revised in February 2021, now 5.5 years old as of September 2026. Section 6 states the facilities lead reviews it every January, so a review should have occurred in January 2026. Request confirmation that the January 2026 review was completed and any updates made.\",\n  \"gaps\": [\n    {\n      \"title\": \"Missing emergency contact information\",\n      \"description\": \"The plan does not list emergency contact numbers (fire department, poison control, emergency medical services, company management, etc.) in one accessible location. Section 5 mentions calling emergency medical services but does not specify how or provide the number.\",\n      \"fix\": \"Add a section or appendix with a list of emergency contact numbers prominently displayed, including 911, local fire department non-emergency, poison control, hospital emergency departments, company incident commander contact, and facility manager contact.\",\n      \"citation\": \"Oregon OSHA, 1910.38(e)(1) — emergency action plan must include procedures for reporting fires and emergencies\",\n      \"citation_url\": \"https://www.oregon.gov/deq/aq/Pages/OSHA-General-Industry.aspx\",\n      \"locator\": \"not in the document\",\n      \"draftable\": true,\n      \"quote\": null\n    },\n    {\n      \"title\": \"Missing incident commander identification and authority\",\n      \"description\": \"Section 4 mentions 'the incident coordinator at the assembly point' and section 5 refers to 'the incident coordinator' but does not state who this person is, how they are designated, whether there is a backup, or what specific authority and duties they have beyond reporting to the fire department.\",\n      \"fix\": \"Specify the incident commander role: name the job title(s) eligible to fill this role, state whether a backup is designated, list their specific duties (e.g., authority to shelter in place, to direct evacuation, to decide re-entry), and how they are identified during an emergency.\",\n      \"citation\": \"Oregon OSHA, 1910.38(c) — emergency action plan must include procedures for escape routes and procedures, designation of rescue and medical duties\",\n      \"citation_url\": null,\n      \"locator\": \"sections 4 and 5\",\n      \"draftable\": true,\n      \"quote\": \"the incident coordinator at the assembly point\"\n    },\n    {\n      \"title\": \"Incomplete chemical inventory and hazard identification\",\n      \"description\": \"The plan mentions that 'an SDS for the product is brought to the responders' (section 5) but does not identify what chemicals are stored, in what quantities, where they are stored, or what specific hazards they present. This information is needed to ensure the plan addresses the actual risks at the facility.\",\n      \"fix\": \"Create and maintain an attachment listing all hazardous chemicals stored, their locations, approximate quantities, primary hazards (flammability, toxicity, reactivity), and corresponding SDS locations. Update quarterly or when inventory changes.\",\n      \"citation\": \"Oregon OSHA, 1910.38(a)(2) — emergency action plan must be tailored to the specific emergency hazards of the workplace\",\n      \"citation_url\": null,\n      \"locator\": \"not in the document\",\n      \"draftable\": true,\n      \"quote\": \"the SDS for the product is brought to the responders\"\n    },\n    {\n      \"title\": \"Missing procedures for persons with disabilities or mobility limitations\",\n      \"description\": \"The plan does not address how employees, contractors, or visitors with mobility limitations, hearing loss, or visual impairments will be identified and assisted during evacuation.\",\n      \"fix\": \"Add a section describing how the facility identifies individuals who may need assistance and their designated evacuation buddy or warden, how hearing-impaired individuals will receive alarm signals (visual alternative), and how mobility-limited individuals will evacuate safely.\",\n      \"citation\": \"Oregon OSHA, 1910.38(c) — emergency action plan must ensure procedures meet the needs of all employees\",\n      \"citation_url\": null,\n      \"locator\": \"not in the document\",\n      \"draftable\": true,\n      \"quote\": null\n    },\n    {\n      \"title\": \"Incomplete accountability procedures for contractors and visitors\",\n      \"description\": \"Section 1 states the plan 'applies to... contractors and visitors while on site' and section 4 mentions 'the visitor log,' but the plan does not explain how contractors and visitors are briefed on evacuation procedures, how they are accounted for at assembly, or who ensures they do not re-enter.\",\n      \"fix\": \"Add procedures stating that all contractors and visitors must sign in and receive a brief safety orientation including assembly point location before accessing the facility, and that floor wardens verify contractors and visitors are accounted for at assembly before re-entry is allowed.\",\n      \"citation\": \"Oregon OSHA, 1910.38(c) and (d) — emergency action plan must include procedures for all persons on site\",\n      \"citation_url\": null,\n      \"locator\": \"sections 1 and 4\",\n      \"draftable\": true,\n      \"quote\": \"applies to all 42 employees at the Portland facility, including warehouse, drivers, laboratory and office staff, and to contractors and visitors while on site\"\n    },\n    {\n      \"title\": \"Missing procedures for shelter-in-place duration and all-clear\",\n      \"description\": \"Section 3 describes shelter-in-place procedure (moving indoors and shutting ventilation) but does not state how long employees should shelter, how the all-clear decision is made during shelter-in-place, or who communicates it.\",\n      \"fix\": \"Add procedure stating that shelter-in-place duration is determined by facilities lead and fire department (when they arrive), and that all-clear is communicated by a specific signal (e.g., announcement, all-clear horn pattern) so employees know when it is safe to resume work.\",\n      \"citation\": \"Oregon OSHA, 1910.38(c) — emergency action plan must include procedures for all types of emergencies addressed\",\n      \"citation_url\": null,\n      \"locator\": \"section 3\",\n      \"draftable\": true,\n      \"quote\": \"the facilities lead shuts down the building ventilation from the mechanical room panel\"\n    },\n    {\n      \"title\": \"Missing procedures for external coordination with emergency responders\",\n      \"description\": \"The plan mentions passing information to the fire department but does not describe what information must be shared (e.g., number unaccounted for, nature of chemical involved, injuries), who provides it, or whether there is a designated liaison.\",\n      \"fix\": \"Add a section describing the incident commander's responsibility to provide fire department with: headcount of evacuated employees, number and names of unaccounted persons (if any), nature of emergency (fire, chemical release, other), chemicals involved (if known), and location and extent of damage or release.\",\n      \"citation\": \"Oregon OSHA, 1910.38(c) — emergency action plan must include procedures for ensuring emergency responders have information needed\",\n      \"citation_url\": null,\n      \"locator\": \"section 4\",\n      \"draftable\": true,\n      \"quote\": \"who passes the information to the fire department on arrival\"\n    },\n    {\n      \"title\": \"Missing verification that evacuation maps are current and accurate\",\n      \"description\": \"Section 6 states 'The facilities lead reviews the plan every January and updates the evacuation maps whenever the building layout changes,' but does not specify verification that exit doors are accessible, marked, lit, and clear of obstacles.\",\n      \"fix\": \"Add a procedure requiring the facilities lead to inspect all exit routes monthly: verify doors are unlocked and unobstructed, emergency lighting functions, exit signs are illuminated and visible, and that the building layout matches the posted evacuation maps.\",\n      \"citation\": \"Oregon OSHA, 1910.36 and 1910.37 — exit routes must be clearly marked, kept clear, and regularly maintained\",\n      \"citation_url\": null,\n      \"locator\": \"section 6\",\n      \"draftable\": true,\n      \"quote\": \"updates the evacuation maps whenever the building layout changes\"\n    },\n    {\n      \"title\": \"Missing documentation of drill performance and findings\",\n      \"description\": \"Section 4 states 'Evacuation drills are held twice a year, in spring and autumn,' but the plan does not require recording the date, time, number of participants, time to complete evacuation, or problems encountered.\",\n      \"fix\": \"Add a requirement to document each drill: date, time, area evacuated (full building or specific area), number of participants, time to reach assembly point, names of any unaccounted persons, any problems with exits, alarms, or procedures, and corrective actions taken.\",\n      \"citation\": \"Oregon OSHA, 1910.38(d) — emergency action plan must include procedures for conducting emergency drills and reviewing/updating the plan based on drill results\",\n      \"citation_url\": null,\n      \"locator\": \"section 4\",\n      \"draftable\": true,\n      \"quote\": \"Evacuation drills are held twice a year, in spring and autumn\"\n    }\n  ],\n  \"conditions\": [],\n  \"deadlines\": [\n    {\n      \"title\": \"Annual review of emergency action plan by facilities lead\",\n      \"due_on\": null,\n      \"source_line\": \"The facilities lead reviews the plan every January and updates the evacuation maps whenever the building layout changes (section 6, page 5)\",\n      \"recurs\": true\n    },\n    {\n      \"title\": \"Monthly alarm system test (first Monday of each month)\",\n      \"due_on\": null,\n      \"source_line\": \"The alarm is tested on the first Monday of each month by the facilities lead (section 2, page 2)\",\n      \"recurs\": true\n    },\n    {\n      \"title\": \"Evacuation drill — spring and autumn\",\n      \"due_on\": null,\n      \"source_line\": \"Evacuation drills are held twice a year, in spring and autumn (section 4, page 4)\",\n      \"recurs\": true\n    },\n    {\n      \"title\": \"Annual training for floor wardens and first-aid responders\",\n      \"due_on\": null,\n      \"source_line\": \"Floor wardens and first-aid responders are trained annually (section 6, page 5)\",\n      \"recurs\": true\n    }\n  ],\n  \"facts\": [\n    {\n      \"key\": \"employee_count_portland\",\n      \"value\": \"42\",\n      \"quote\": \"all 42 employees at the Portland facility\",\n      \"locator\": \"section 1, page 2\",\n      \"as_of\": \"2021-02-01\",\n      \"affects\": \"Determines scope of plan, training, and accountability procedures; affects sized drills and assembly point capacity.\"\n    },\n    {\n      \"key\": \"facility_address\",\n      \"value\": \"4410 NW Front Avenue, Portland, Oregon 97210\",\n      \"quote\": \"Portland Facility, 4410 NW Front Avenue, Portland, Oregon 97210\",\n      \"locator\": \"page 1\",\n      \"as_of\": \"2021-02-01\",\n      \"affects\": \"Identifies the single facility covered by this plan; determines applicable local emergency responder jurisdictions.\"\n    },\n    {\n      \"key\": \"alarm_monitoring_service\",\n      \"value\": \"Cascade Fire & Safety\",\n      \"quote\": \"The alarm is monitored 24 hours a day by Cascade Fire & Safety under a service contract\",\n      \"locator\": \"section 2, page 2\",\n      \"as_of\": \"2021-02-01\",\n      \"affects\": \"Identifies responsible party for alarm system monitoring and maintenance; affects backup procedures if service fails.\"\n    },\n    {\n      \"key\": \"assembly_point_location\",\n      \"value\": \"Far north end of visitor parking lot, beside flagpole, at least 150 feet from building\",\n      \"quote\": \"The assembly point is the far north end of the visitor parking lot, beside the flagpole, at least 150 feet from the building\",\n      \"locator\": \"section 3, page 3\",\n      \"as_of\": \"2021-02-01\",\n      \"affects\": \"Determines where all evacuated employees and visitors gather; affects accountability procedures and emergency responder coordination.\"\n    },\n    {\n      \"key\": \"first_aid_responders_per_shift\",\n      \"value\": \"2\",\n      \"quote\": \"trained first-aid responders (two per shift, named on the warden roster)\",\n      \"locator\": \"section 5, page 4\",\n      \"as_of\": \"2021-02-01\",\n      \"affects\": \"Ensures medical response capacity during all operational hours; affects scope of first aid training requirements.\"\n    },\n    {\n      \"key\": \"shelter_in_place_locations\",\n      \"value\": \"Interior conference room or laboratory corridor\",\n      \"quote\": \"Employees move to the interior conference room or the laboratory corridor, close doors, and the facilities lead shuts down the building ventilation from the mechanical room panel\",\n      \"locator\": \"section 3, page 3\",\n      \"as_of\": \"2021-02-01\",\n      \"affects\": \"Designates safe refuge areas for chemical release or outdoor hazard scenarios; affects training and facility layout verification.\"\n    }\n  ],\n  \"version_of\": {\n    \"title\": null,\n    \"confidence\": \"high\"\n  },\n  \"expected_missing\": [\n    {\n      \"title\": \"Chemical inventory and SDS filing system\",\n      \"why\": \"A chemical distribution company must maintain and quickly access Safety Data Sheets; emergency responders will request chemical information.\",\n      \"basis\": \"Similar companies in chemical distribution hold detailed chemical inventories with SDS cross-references.\"\n    },\n    {\n      \"title\": \"Emergency response procedures for major hazmat releases\",\n      \"why\": \"OSHA and EPA regulations require detailed procedures for large chemical spills, cleanup, reporting to environmental agencies, and regulatory notification.\",\n      \"basis\": \"Chemical distribution facilities typically hold procedures specific to hazmat release, environmental notification, and spill response.\"\n    },\n    {\n      \"title\": \"Business continuity and recovery procedures\",\n      \"why\": \"After an emergency, the facility must know how to resume operations, restore records, contact customers, and manage logistics.\",\n      \"basis\": \"Similar mid-size distribution companies hold recovery and continuity plans separate from or integrated with the emergency action plan.\"\n    },\n    {\n      \"title\": \"Incident investigation and reporting procedures\",\n      \"why\": \"OSHA requires reporting of serious injuries and incidents; the company must document what occurred, notify insurers, and preserve evidence.\",\n      \"basis\": \"Standard workplace safety practice includes post-incident investigation and reporting procedures.\"\n    },\n    {\n      \"title\": \"Personal protective equipment (PPE) and rescue equipment location and maintenance\",\n      \"why\": \"For chemical handling facilities, the plan should specify where emergency eyewash and shower are located (mentioned in section 5), when they are inspected, and what rescue equipment (ropes, harnesses) is available.\",\n      \"basis\": \"Chemical distribution companies typically maintain detailed records of safety equipment location and inspection schedules.\"\n    }\n  ],\n  \"confidence_notes\": \"I am confident in the document's title, kind, issuer, and date. I am confident that this is a policy document required under Oregon OSHA rules (federal OSHA standard 1910.38) and applies to the Portland facility. I am confident in identifying the gaps listed because they are standard elements of emergency action plans required by Oregon OSHA 1910.38(c) or by best practice for chemical handlers. I am less confident about specific Oregon state regulations that may add requirements beyond federal OSHA (Oregon may have additional provisions); I have not verified the current version of Oregon OSHA's guidance against this document. The fact that this was last revised in February 2021 and the instruction states facilities lead reviews it every January suggests the plan should have been reviewed in January 2026—I cannot verify whether this occurred from the document alone. The document does not state the chemical inventory, so I cannot verify whether the plan is appropriate for the actual hazards present.\",\n  \"could_not_read\": {\n    \"reason\": null,\n    \"way_forward\": null\n  }\n}\n```",
+    "json_parsed": true,
+    "model": "claude-haiku-4-5",
+    "searches": 0,
+    "prompt_sha256": "04e54c4523cb93115a7aac35ec4238d5702fb0b356e157739ad87f2551d804a3",
+    "quotes_checked": 0,
+    "quotes_verified": 0,
+    "extracted_text": "",
+    "started_at": "2026-09-25T17:39:38.277Z"
+  }
+}

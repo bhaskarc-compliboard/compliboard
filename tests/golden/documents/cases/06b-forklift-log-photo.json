@@ -1,0 +1,334 @@
+{
+  "id": "06b-forklift-log-photo",
+  "title": "The same page as a photograph",
+  "spec": "06-forklift-log-record.md",
+  "fixture": "fixtures/06b-forklift-log-photo.pdf",
+  "company": "cascade",
+  "must": [
+    {
+      "id": "kind",
+      "line": "kind: record",
+      "type": "field_one_of",
+      "field": "identity.kind",
+      "accept": [
+        "record"
+      ]
+    },
+    {
+      "id": "agency-osha",
+      "line": "agency includes OSHA",
+      "type": "list_contains",
+      "field": "identity.agencies",
+      "accept": [
+        "osha"
+      ]
+    },
+    {
+      "id": "subject",
+      "line": "subject includes something like \"powered industrial trucks\" or \"forklift\" or \"worker safety\"",
+      "type": "list_contains",
+      "field": "identity.subjects",
+      "accept": [
+        "powered industrial truck",
+        "forklift",
+        "worker safety",
+        "workplace safety"
+      ]
+    },
+    {
+      "id": "site-portland",
+      "line": "site: Portland (warehouse)",
+      "type": "field_contains",
+      "field": "identity.site",
+      "accept": [
+        "portland"
+      ]
+    },
+    {
+      "id": "doc-date",
+      "line": "doc_date: September 2026",
+      "type": "date_prefix",
+      "field": "identity.doc_date",
+      "prefix": "2026-09"
+    },
+    {
+      "id": "doc-date-kind",
+      "line": "doc_date: ... kind \"last entry\"",
+      "type": "field_contains",
+      "field": "identity.doc_date_kind",
+      "accept": [
+        "last_entry",
+        "last entry"
+      ]
+    },
+    {
+      "id": "last-entry-date",
+      "line": "doc_date: September 2026, kind \"last entry\" with the date September 19, 2026",
+      "type": "date_anywhere",
+      "fields": [
+        "significant_date",
+        "identity.doc_date"
+      ],
+      "value": "2026-09-19"
+    },
+    {
+      "id": "status",
+      "line": "Status (must): recorded, with last entry September 19, 2026. Never \"compliant\". Not gaps_found as a program-style status.",
+      "type": "field_one_of",
+      "field": "status",
+      "accept": [
+        "recorded"
+      ],
+      "forbid": [
+        "gaps_found"
+      ]
+    },
+    {
+      "id": "finding-missing-days",
+      "line": "1. No entries for September 3 and 4 while the hour meter shows the truck ran between September 2 and September 5. Citation contains \"1910.178(q)(7)\".",
+      "type": "item",
+      "collections": [
+        "gaps",
+        "notes"
+      ],
+      "citation": "1910.178(q)(7)",
+      "keywords": [
+        "september 3",
+        "sep 3",
+        "september 4",
+        "sep 4",
+        "missing",
+        "hour meter",
+        "no entr"
+      ],
+      "min_keywords": 2,
+      "locator_expected": "the table"
+    },
+    {
+      "id": "finding-horn-defect",
+      "line": "2. September 9 records the horn as defective with no note that the truck was removed from service or repaired. Citation contains \"1910.178(q)(7)\" or \"1910.178(p)(1)\".",
+      "type": "item",
+      "collections": [
+        "gaps",
+        "notes"
+      ],
+      "citation_any": [
+        "1910.178(q)(7)",
+        "1910.178(p)(1)"
+      ],
+      "keywords": [
+        "horn",
+        "september 9",
+        "sep 9",
+        "defect",
+        "out of service",
+        "removed from service",
+        "repair"
+      ],
+      "min_keywords": 2
+    },
+    {
+      "id": "finding-no-entries-since",
+      "line": "3. The last entry is September 19; if the run date is later than September 22, the scan notes that the log has no entries since and asks whether the truck is still in service or a later page exists.",
+      "type": "item",
+      "collections": [
+        "gaps",
+        "notes"
+      ],
+      "keywords": [
+        "september 19",
+        "sep 19",
+        "2026-09-19",
+        "last entry",
+        "most recent entry",
+        "no entries since",
+        "still in service",
+        "continues in service",
+        "later page",
+        "through today",
+        "days old",
+        "since"
+      ],
+      "min_keywords": 2,
+      "required_if_run_date_after": "2026-09-22",
+      "note": "Widened after the first judging pass: the spec's concept is \"the last entry is September 19 and is anything newer coming\", and run 3 said exactly that in the model's own words — \"The most recent entry is 6 days old; confirm this log has entries through today if the truck continues in service\" — while matching only one of the original keywords. The concept is unchanged; the phrasings are the model's rather than the spec's."
+    },
+    {
+      "id": "deadline-chen",
+      "line": "Deadlines (must contain): M. Chen operator evaluation due March 11, 2027",
+      "type": "item",
+      "collections": [
+        "deadlines"
+      ],
+      "date": "2027-03-11",
+      "keywords": [
+        "chen",
+        "evaluation",
+        "operator",
+        "m.c."
+      ],
+      "min_keywords": 2
+    },
+    {
+      "id": "deadline-rivera",
+      "line": "Deadlines (must contain): J. Rivera evaluation due June 2, 2028 (footer)",
+      "type": "item",
+      "collections": [
+        "deadlines"
+      ],
+      "date": "2028-06-02",
+      "keywords": [
+        "rivera",
+        "evaluation",
+        "operator",
+        "j.r."
+      ],
+      "min_keywords": 2
+    },
+    {
+      "id": "fact-truck",
+      "line": "Facts (must contain, quote verified true): the company operates a Toyota 8FGU25 forklift, unit FL-2, propane (header)",
+      "type": "item",
+      "collections": [
+        "facts"
+      ],
+      "keywords": [
+        "toyota",
+        "8fgu25",
+        "fl-2",
+        "propane",
+        "forklift"
+      ],
+      "min_keywords": 2,
+      "quote_must_verify": true
+    },
+    {
+      "id": "label-consistency",
+      "line": "Labels (agency, subject) must be the identical string across the three runs of a case (README).",
+      "type": "labels_identical_across_runs"
+    }
+  ],
+  "must_not": [
+    {
+      "id": "no-false-certification-finding",
+      "line": "no finding that operator certification is missing (both operators are certified with dates)",
+      "type": "absent_item",
+      "collections": [
+        "gaps"
+      ],
+      "subject": [
+        "certification",
+        "certified",
+        "operator training",
+        "operator certif"
+      ],
+      "absence": [
+        "no ",
+        "missing",
+        "absent",
+        "lacks",
+        "none",
+        "does not",
+        "fails to",
+        "without",
+        "not certified",
+        "no record"
+      ],
+      "note": "Narrowed to gaps after the first judging pass. The spec's must-nots are about a FALSE FINDING against this document. expected_missing is the other channel — \"what a company like this usually also holds\", labelled as based on similar companies and not a checked requirement — which the vision blesses and spec 03 accepts. Counting an expected_missing entry as a finding failed the model for using the honest channel."
+    },
+    {
+      "id": "no-false-form-finding",
+      "line": "no finding that the checklist is incomplete as a form",
+      "type": "absent_item",
+      "collections": [
+        "gaps"
+      ],
+      "subject": [
+        "checklist item",
+        "the checklist is",
+        "checklist does not",
+        "form is incomplete",
+        "checklist incomplete"
+      ],
+      "absence": [
+        "incomplete",
+        "missing",
+        "does not",
+        "lacks",
+        "not "
+      ],
+      "note": "Narrowed to gaps after the first judging pass. The spec's must-nots are about a FALSE FINDING against this document. expected_missing is the other channel — \"what a company like this usually also holds\", labelled as based on similar companies and not a checked requirement — which the vision blesses and spec 03 accepts. Counting an expected_missing entry as a finding failed the model for using the honest channel."
+    },
+    {
+      "id": "no-invented-maintenance-finding",
+      "line": "no invented finding about maintenance intervals",
+      "type": "absent_item",
+      "collections": [
+        "gaps"
+      ],
+      "subject": [
+        "maintenance interval",
+        "planned maintenance",
+        "preventive maintenance",
+        "service interval"
+      ],
+      "absence": [],
+      "note": "Narrowed to gaps after the first judging pass. The spec's must-nots are about a FALSE FINDING against this document. expected_missing is the other channel — \"what a company like this usually also holds\", labelled as based on similar companies and not a checked requirement — which the vision blesses and spec 03 accepts. Counting an expected_missing entry as a finding failed the model for using the honest channel."
+    }
+  ],
+  "reported": [
+    {
+      "id": "citation-evaluation-rule",
+      "line": "Citation 1910.178(l)(4)(iii) is correct if given (evaluation at least once every three years).",
+      "type": "appears_anywhere",
+      "collections": [
+        "deadlines",
+        "gaps",
+        "notes"
+      ],
+      "needle": "1910.178(l)(4)(iii)"
+    },
+    {
+      "id": "two-operators-fact",
+      "line": "Acceptable inferred facts: the company has at least two certified forklift operators (stated in the footer, so read not inferred).",
+      "type": "item",
+      "collections": [
+        "facts"
+      ],
+      "keywords": [
+        "operator",
+        "certified",
+        "two",
+        "chen",
+        "rivera"
+      ],
+      "min_keywords": 2
+    },
+    {
+      "id": "conditions-none",
+      "line": "Conditions: none.",
+      "type": "empty",
+      "collections": [
+        "conditions"
+      ]
+    },
+    {
+      "id": "freshness-recent",
+      "line": "Freshness: the last entry is recent; no nudge unless the run date is well past September.",
+      "type": "text_keywords",
+      "fields": [
+        "freshness_note"
+      ],
+      "keywords": [
+        "recent",
+        "september",
+        "entries"
+      ],
+      "min_keywords": 1
+    }
+  ],
+  "alternative_pass": {
+    "line": "Run 06b three times as well; its answer key is the same, and if the photo is legible the results should match; if the scan says it could not read 06b, that is an honest answer and passes as could_not_read with a way forward.",
+    "type": "could_not_read_with_way_forward"
+  }
+}

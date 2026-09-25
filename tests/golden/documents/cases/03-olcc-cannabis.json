@@ -1,0 +1,285 @@
+{
+  "id": "03-olcc-cannabis",
+  "title": "Marijuana producer licence, cannabis grower, Oregon",
+  "spec": "03-olcc-cannabis.md",
+  "fixture": "fixtures/03-olcc-cannabis.pdf",
+  "company": "evergreen",
+  "must": [
+    {
+      "id": "kind",
+      "line": "kind: certificate or permit (either)",
+      "type": "field_one_of",
+      "field": "identity.kind",
+      "accept": [
+        "certificate",
+        "permit"
+      ]
+    },
+    {
+      "id": "issuer-olcc",
+      "line": "issuer / agency: OLCC (accept \"Oregon Liquor and Cannabis Commission\", \"OLCC\")",
+      "type": "field_contains",
+      "field": "identity.issuer",
+      "accept": [
+        "olcc",
+        "oregon liquor and cannabis commission"
+      ],
+      "near_miss": [
+        "oregon liquor control commission"
+      ]
+    },
+    {
+      "id": "agency-olcc",
+      "line": "issuer / agency: OLCC; the label string identical across the three runs",
+      "type": "list_contains",
+      "field": "identity.agencies",
+      "accept": [
+        "olcc",
+        "oregon liquor and cannabis commission"
+      ],
+      "near_miss": [
+        "oregon liquor control commission"
+      ]
+    },
+    {
+      "id": "site-bailey-hill",
+      "line": "site: Bailey Hill (accept the address)",
+      "type": "field_contains",
+      "field": "identity.site",
+      "accept": [
+        "bailey hill",
+        "2210"
+      ]
+    },
+    {
+      "id": "doc-date",
+      "line": "doc_date: issued March 3, 2026 (current term)",
+      "type": "date_equals",
+      "field": "identity.doc_date",
+      "value": "2026-03-03"
+    },
+    {
+      "id": "expiry",
+      "line": "expiry March 2, 2027",
+      "type": "date_anywhere",
+      "fields": [
+        "significant_date"
+      ],
+      "collections": [
+        "deadlines"
+      ],
+      "value": "2027-03-02"
+    },
+    {
+      "id": "jurisdiction-oregon",
+      "line": "jurisdiction: Oregon",
+      "type": "list_contains",
+      "field": "identity.jurisdiction",
+      "accept": [
+        "oregon"
+      ]
+    },
+    {
+      "id": "status",
+      "line": "Status (must): current (before December 2, 2026) or expiring (within 90 days) depending on the run date; never \"compliant\".",
+      "type": "status_by_date",
+      "expiry": "2027-03-02",
+      "expiring_window_days": 90
+    },
+    {
+      "id": "no-gaps",
+      "line": "Gaps (must): none. Any gap is a false finding.",
+      "type": "empty",
+      "collections": [
+        "gaps"
+      ]
+    },
+    {
+      "id": "deadline-renewal",
+      "line": "renewal application due 20 days before expiry, that is February 10, 2027 (condition 2). The scan must state February 10, 2027 or \"20 days before March 2, 2027\"; either passes.",
+      "type": "item",
+      "collections": [
+        "deadlines"
+      ],
+      "date_or_text": [
+        "2027-02-10",
+        "20 days before"
+      ],
+      "keywords": [
+        "renewal",
+        "application",
+        "20 days",
+        "february 10"
+      ],
+      "min_keywords": 2
+    },
+    {
+      "id": "deadline-expiry",
+      "line": "expiry March 2, 2027",
+      "type": "item",
+      "collections": [
+        "deadlines"
+      ],
+      "date": "2027-03-02",
+      "keywords": [
+        "expir",
+        "license",
+        "licence",
+        "term"
+      ],
+      "min_keywords": 1
+    },
+    {
+      "id": "condition-1",
+      "line": "premises-only, not transferable (1)",
+      "type": "item",
+      "collections": [
+        "conditions"
+      ],
+      "keywords": [
+        "premises",
+        "transferable",
+        "transfer",
+        "location"
+      ],
+      "min_keywords": 2,
+      "condition_ref_expected": "1"
+    },
+    {
+      "id": "condition-3",
+      "line": "Cannabis Tracking System and worker permits for every employee handling product (3)",
+      "type": "item",
+      "collections": [
+        "conditions"
+      ],
+      "keywords": [
+        "cannabis tracking system",
+        "cts",
+        "worker permit",
+        "employee",
+        "track"
+      ],
+      "min_keywords": 2,
+      "condition_ref_expected": "3"
+    },
+    {
+      "id": "condition-4",
+      "line": "video surveillance with 90-day retention (4)",
+      "type": "item",
+      "collections": [
+        "conditions"
+      ],
+      "keywords": [
+        "video",
+        "surveillance",
+        "90 day",
+        "90-day",
+        "recording"
+      ],
+      "min_keywords": 2,
+      "condition_ref_expected": "4"
+    },
+    {
+      "id": "condition-5",
+      "line": "report ownership or premises changes before they take effect (5)",
+      "type": "item",
+      "collections": [
+        "conditions"
+      ],
+      "keywords": [
+        "ownership",
+        "premises",
+        "change",
+        "report",
+        "financial interest",
+        "before"
+      ],
+      "min_keywords": 2,
+      "condition_ref_expected": "5"
+    },
+    {
+      "id": "fact-canopy",
+      "line": "Facts (must contain, quote verified true): canopy limit \"10,000 square feet\" (page 1)",
+      "type": "item",
+      "collections": [
+        "facts"
+      ],
+      "keywords": [
+        "10,000",
+        "square feet",
+        "canopy"
+      ],
+      "min_keywords": 2,
+      "quote_must_verify": true
+    },
+    {
+      "id": "fact-tier-ii",
+      "line": "Facts (must contain, quote verified true): licence type Tier II indoor",
+      "type": "item",
+      "collections": [
+        "facts"
+      ],
+      "keywords": [
+        "tier ii",
+        "tier 2",
+        "indoor",
+        "producer"
+      ],
+      "min_keywords": 2,
+      "quote_must_verify": true
+    },
+    {
+      "id": "label-consistency",
+      "line": "the label string identical across the three runs",
+      "type": "labels_identical_across_runs"
+    }
+  ],
+  "must_not": [],
+  "reported": [
+    {
+      "id": "title-producer-license",
+      "line": "The title should contain \"producer\" and \"license\" or \"licence\".",
+      "type": "text_keywords",
+      "fields": [
+        "identity.title"
+      ],
+      "keywords": [
+        "producer",
+        "license",
+        "licence"
+      ],
+      "min_keywords": 2
+    },
+    {
+      "id": "inferred-employees",
+      "line": "Acceptable inferred fact: the company has employees who handle marijuana items (only if marked inferred).",
+      "type": "item",
+      "collections": [
+        "facts"
+      ],
+      "keywords": [
+        "employee",
+        "handle",
+        "marijuana",
+        "inferred"
+      ],
+      "min_keywords": 2
+    },
+    {
+      "id": "expected-missing",
+      "line": "Expected-missing (correct if present, labelled as based on similar companies): worker permits for each employee, a surveillance system record, Metrc/CTS records. Not required.",
+      "type": "item",
+      "collections": [
+        "expected_missing"
+      ],
+      "keywords": [
+        "worker permit",
+        "surveillance",
+        "metrc",
+        "cts",
+        "tracking"
+      ],
+      "min_keywords": 1
+    }
+  ]
+}

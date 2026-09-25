@@ -355,8 +355,19 @@ export async function askAIWithCitations(
       // makes the tool available and the model decides. Billing follows what it did.
       ledgerIn += (message as any).usage?.input_tokens ?? 0
       ledgerOut += (message as any).usage?.output_tokens ?? 0
-      ledgerSearches += (message.content as Array<{ type?: string }> ?? [])
-        .filter((b) => b?.type === 'web_search_tool_result').length
+      // *** THE API'S OWN COUNT, NOT THE BLOCK COUNT. ***
+      // A search the `max_uses` cap refuses still produces a `web_search_tool_result` block —
+      // one carrying `{"type":"web_search_tool_result_error","error_code":"max_uses_exceeded"}`
+      // instead of results. Counting blocks therefore BILLS THE REFUSALS. Measured twice on
+      // 25 September with max_uses=2: the model issued 3 `server_tool_use`, the third came back
+      // as that error, and `usage.server_tool_use.web_search_requests` said 2 — which is the
+      // number Anthropic charges the per-search fee on, and so the number `lib/costLedger.ts`
+      // must multiply. `scripts/probe-search-count.js` prints all three side by side.
+      // The `+=` stays: a retry is real extra spend, and both attempts are on the same row.
+      const apiSearches = (message as any).usage?.server_tool_use?.web_search_requests
+      ledgerSearches += typeof apiSearches === 'number' ? apiSearches
+        : (message.content as Array<{ type?: string }> ?? [])
+            .filter((b) => b?.type === 'web_search_tool_result').length
 
       // stop_reason is the deterministic signal for truncation — not a guess.
       // If the response was genuinely cut off by the token budget, retry with
@@ -743,8 +754,13 @@ export async function* askAIOpenStream(
       effort: effort ?? null,
       inputTokens: (final as any).usage?.input_tokens ?? 0,
       outputTokens: (final as any).usage?.output_tokens ?? 0,
-      // Counted from the stream's own `searching` events — what the model actually ran.
-      searches,
+      // *** BILLED SEARCHES, WHICH IS NOT THE SAME AS SEARCHES THE USER WATCHED GO OUT. ***
+      // `searches` above counts `server_tool_use` blocks, because that is what drives the
+      // "Searching: …" line on screen and the user genuinely saw those queries issued. But a
+      // query the `max_uses` cap refuses is issued and never runs, and Anthropic does not
+      // charge for it: `usage.server_tool_use.web_search_requests` is the billed number.
+      // The screen keeps the attempted count; the ledger takes the billed one.
+      searches: (final as any).usage?.server_tool_use?.web_search_requests ?? searches,
       wallMs: Date.now() - startedAt,
     }
     console.log(describeCost(row))
