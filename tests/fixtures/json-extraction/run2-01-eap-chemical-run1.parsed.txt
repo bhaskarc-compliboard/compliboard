@@ -1,0 +1,221 @@
+```json
+{
+  "identity": {
+    "kind": "policy",
+    "title": "Emergency Action Plan",
+    "issuer": null,
+    "agencies": [
+      "Oregon OSHA"
+    ],
+    "subjects": [
+      "emergency_preparedness",
+      "evacuation_procedures",
+      "workplace_safety"
+    ],
+    "site": "Portland",
+    "jurisdiction": [
+      "Oregon",
+      "federal"
+    ],
+    "doc_date": "2021-02-01",
+    "doc_date_kind": "revised",
+    "page_refs": {
+      "doc_date": "page 1",
+      "issuer": "company_document"
+    }
+  },
+  "summary": "This is an Emergency Action Plan for Cascade Specialty Chemicals' Portland facility covering procedures for fires, chemical releases, medical emergencies, earthquakes and other crises affecting all 42 Portland employees. The plan specifies alarm signals, evacuation routes and assembly points, employee accounting procedures, rescue and first aid duties, and annual training requirements. It is kept in the front office and warehouse break room and available to all employees on request.",
+  "status": "gaps_found",
+  "significant_date": "2021-02-01",
+  "significant_date_kind": "revised_on",
+  "freshness_note": "This document was last revised in February 2021, nearly five and a half years old as of September 2026. The plan requires annual review every January by the facilities lead. An updated version should be requested to ensure it reflects current personnel, layout changes, and current regulatory expectations.",
+  "gaps": [
+    {
+      "title": "Plan not submitted to emergency responders",
+      "description": "OSHA 1910.38(a) requires that the emergency action plan be reviewed with each employee and with state and local emergency responders. The document states the plan is reviewed with employees but does not state whether it has been provided to the Portland Fire Bureau or other emergency responders who would respond to the facility.",
+      "fix": "Provide a copy of the plan to the local fire department and emergency services for the Portland area, and document this submission. Update the plan to confirm this has been done.",
+      "citation": "29 CFR 1910.38(a)",
+      "citation_url": "https://www.osha.gov/laws-regs/regulations/1910/38",
+      "locator": "not in the document",
+      "draftable": true,
+      "quote": null
+    },
+    {
+      "title": "Procedure for non-routine emergencies unclear",
+      "description": "The plan covers fire, chemical release, medical emergency, and earthquake, but does not specify procedures for other emergencies mentioned in the opening sentence ('or other emergency'). It is unclear how employees would respond to threats not specifically addressed, such as active threats, flooding, or hazardous weather other than general shelter-in-place.",
+      "fix": "Expand the plan to define procedures for additional hazard types likely at the facility, or clarify that the shelter-in-place procedure applies to all outdoor hazards and the evacuation procedure applies to all indoor emergencies.",
+      "citation": "29 CFR 1910.38(a) requires procedures for all potential emergencies",
+      "citation_url": "https://www.osha.gov/laws-regs/regulations/1910/38",
+      "locator": "Section 1, Purpose and scope, page 2",
+      "draftable": true,
+      "quote": "a fire, chemical release, medical emergency, earthquake or other emergency"
+    },
+    {
+      "title": "Location of emergency contact numbers not specified",
+      "description": "The plan does not specify where emergency contact numbers, incident coordinator contact information, or other critical emergency contacts are posted or maintained. Employees need immediate access to these numbers during an emergency.",
+      "fix": "Add a section or reference specifying where emergency contact numbers and incident coordinator information are posted, and ensure this information is maintained with the plan copies in the front office and warehouse break room.",
+      "citation": "29 CFR 1910.38(b) requires employees have access to emergency procedures information",
+      "citation_url": "https://www.osha.gov/laws-regs/regulations/1910/38",
+      "locator": "not in the document",
+      "draftable": true,
+      "quote": null
+    },
+    {
+      "title": "Incident coordinator duties and contact method not defined",
+      "description": "The plan names an 'incident coordinator' who receives unaccounted-for reports and coordinates with the fire department, but does not specify who this person is, how they are designated, how they are contacted during evacuation, or what their other responsibilities are.",
+      "fix": "Define the incident coordinator role, name the position(s) or individual(s) responsible, specify their contact method (radio, phone, location), and include this in the warden roster in Appendix B.",
+      "citation": null,
+      "citation_url": null,
+      "locator": "Section 4, page 4",
+      "draftable": true,
+      "quote": "the incident coordinator at the assembly point, who passes the information to the fire department on arrival"
+    },
+    {
+      "title": "Sheltering guidance lacks detail",
+      "description": "For shelter-in-place situations, the plan specifies moving to two interior rooms and closing doors, and that the facilities lead shuts down ventilation. It does not specify how long to shelter, how to communicate with emergency services while sheltering, how to know when it is safe to leave, or what supplies or equipment should be available in these spaces.",
+      "fix": "Expand the shelter-in-place section to address duration, communication with emergency responders, exit criteria, and what equipment or supplies (water, first aid) should be available. Reference the SDS for specific chemicals that might require sheltering.",
+      "citation": "29 CFR 1910.38(a) requires procedures for potential emergencies",
+      "citation_url": "https://www.osha.gov/laws-regs/regulations/1910/38",
+      "locator": "Section 3, Evacuation procedures, page 3",
+      "draftable": true,
+      "quote": "employees move to the interior conference room or the laboratory corridor, close doors, and the facilities lead shuts down the building ventilation"
+    },
+    {
+      "title": "Accountability method does not account for off-site personnel",
+      "description": "The plan requires accounting for employees using the daily sign-in sheet and visitor log, but does not address how drivers or other employees who may be off-site will be accounted for or contacted during an emergency. The facility employs drivers and warehouse staff who may be away from the building.",
+      "fix": "Add a procedure for accounting for and contacting off-site employees, such as drivers. Specify a process for calling in or texting a designated location or person to confirm safety if not present at the facility.",
+      "citation": null,
+      "citation_url": null,
+      "locator": "Section 4, Accounting for employees after evacuation, page 4",
+      "draftable": true,
+      "quote": "each floor warden takes a headcount of the people from their area against the daily sign-in sheet and the visitor log"
+    },
+    {
+      "title": "Missing confirmation of emergency equipment maintenance",
+      "description": "The plan mentions first-aid kits, an AED, emergency shower, and eyewash stations, but does not specify a maintenance or inspection schedule for these items. OSHA requires these to be functional and ready.",
+      "fix": "Add a maintenance and inspection schedule for the AED, first-aid kit, emergency shower, eyewash station, and fire alarm system. Specify responsibility (facilities lead) and frequency (e.g., monthly for emergency shower/eyewash, per manufacturer for AED).",
+      "citation": "29 CFR 1910.38(a) requires emergency equipment be ready for use",
+      "citation_url": "https://www.osha.gov/laws-regs/regulations/1910/38",
+      "locator": "not in the document; referenced in Section 5, page 4",
+      "draftable": true,
+      "quote": null
+    },
+    {
+      "title": "Plan revision date is stale",
+      "description": "The plan was last revised in February 2021. OSHA requires that plans be reviewed and updated as needed and at minimum annually when building layout or operations change. Nearly five and a half years have passed without documented review or revision, and the plan itself requires annual review by the facilities lead in January.",
+      "fix": "Conduct a comprehensive review of the plan in January 2026 or January 2027 (as required by the plan itself). Update it to reflect any changes in personnel, building layout, responsibilities, or procedures. Document the review and revision date. Establish a tracking system to ensure annual review occurs.",
+      "citation": "29 CFR 1910.38(a) requires plans be reviewed and updated",
+      "citation_url": "https://www.osha.gov/laws-regs/regulations/1910/38",
+      "locator": "Section 6, Training and review, page 5",
+      "draftable": true,
+      "quote": "The facilities lead reviews the plan every January"
+    }
+  ],
+  "conditions": [],
+  "deadlines": [
+    {
+      "title": "Monthly fire alarm system test",
+      "due_on": null,
+      "source_line": "The alarm is tested on the first Monday of each month by the facilities lead",
+      "recurs": true
+    },
+    {
+      "title": "Annual floor warden and first-aid responder training",
+      "due_on": null,
+      "source_line": "Floor wardens and first-aid responders are trained annually",
+      "recurs": true
+    },
+    {
+      "title": "Evacuation drill — spring",
+      "due_on": null,
+      "source_line": "Evacuation drills are held twice a year, in spring and autumn",
+      "recurs": true
+    },
+    {
+      "title": "Evacuation drill — autumn",
+      "due_on": null,
+      "source_line": "Evacuation drills are held twice a year, in spring and autumn",
+      "recurs": true
+    },
+    {
+      "title": "Annual plan review and map update",
+      "due_on": null,
+      "source_line": "The facilities lead reviews the plan every January and updates the evacuation maps whenever the building layout changes",
+      "recurs": true
+    }
+  ],
+  "facts": [
+    {
+      "key": "employees_at_portland_facility",
+      "value": "42",
+      "quote": "applies to all 42 employees at the Portland facility",
+      "locator": "Section 1, Purpose and scope, page 2",
+      "as_of": "2021-02-01",
+      "affects": "Determines scope of plan, training requirements, and accountability procedures"
+    },
+    {
+      "key": "employee_categories",
+      "value": "warehouse, drivers, laboratory, office staff, contractors, visitors",
+      "quote": "includes warehouse, drivers, laboratory and office staff, and to contractors and visitors while on site",
+      "locator": "Section 1, Purpose and scope, page 2",
+      "as_of": "2021-02-01",
+      "affects": "Determines which groups receive plan orientation and who must be accounted for during evacuation"
+    },
+    {
+      "key": "fire_alarm_monitoring",
+      "value": "24 hours a day by Cascade Fire & Safety under service contract",
+      "quote": "The alarm is monitored 24 hours a day by Cascade Fire & Safety under a service contract",
+      "locator": "Section 2, Alarm system, page 2",
+      "as_of": "2021-02-01",
+      "affects": "Ensures alarm system reliability and fire department notification during emergencies"
+    },
+    {
+      "key": "assembly_point_distance",
+      "value": "at least 150 feet from the building",
+      "quote": "at least 150 feet from the building",
+      "locator": "Section 3, Evacuation procedures, page 3",
+      "as_of": "2021-02-01",
+      "affects": "Ensures safe distance from hazards during evacuation"
+    },
+    {
+      "key": "first_aid_responders_per_shift",
+      "value": "two per shift",
+      "quote": "trained first-aid responders (two per shift, named on the warden roster)",
+      "locator": "Section 5, Rescue and medical duties, page 4",
+      "as_of": "2021-02-01",
+      "affects": "Ensures adequate trained personnel for medical response at all times of operation"
+    }
+  ],
+  "version_of": {
+    "title": null,
+    "confidence": "high"
+  },
+  "expected_missing": [
+    {
+      "title": "Chemical Hygiene Plan or Laboratory Safety Plan",
+      "why": "Company operates a laboratory and handles chemicals; OSHA requires a written chemical hygiene plan for labs",
+      "basis": "Similar companies with laboratory operations"
+    },
+    {
+      "title": "Hazardous Chemical Inventory or Storage Map",
+      "why": "Chemical distributor must maintain inventory of hazardous materials; Emergency Action Plan should reference or include this for responders",
+      "basis": "Similar chemical distribution and storage facilities"
+    },
+    {
+      "title": "Spill Response Procedure or Secondary Containment Plan",
+      "why": "Chemical distributor handling hazardous materials should have spill cleanup and containment procedures",
+      "basis": "Similar chemical distribution companies"
+    },
+    {
+      "title": "Driver safety or vehicle emergency procedures",
+      "why": "Company employs drivers; plan should address procedures for chemical releases or accidents involving company vehicles",
+      "basis": "Similar companies with driver staff"
+    }
+  ],
+  "confidence_notes": "High confidence on the document's contents and identity. High confidence that this is a policy document required under OSHA 1910.38. High confidence on the gaps identified regarding plan age, incident coordinator definition, and accountability for off-site personnel. Medium confidence on the citation of specific maintenance and emergency responder notification requirements — these are standard OSHA expectations but the exact regulatory language is confirmed only by spot-checking. The judgment that this plan has not been updated annually as required by its own terms is based on the February 2021 revision date and the current date of September 2026. No parts of the document were unreadable or unclear.",
+  "could_not_read": {
+    "reason": null,
+    "way_forward": null
+  }
+}
+```

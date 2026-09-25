@@ -447,7 +447,23 @@ async function toPdf(port, html, landscape) {
     marginTop: 0, marginBottom: 0, marginLeft: 0, marginRight: 0,
   })
   ws.close()
-  return Buffer.from(data, 'base64')
+  return pinDates(Buffer.from(data, 'base64'))
+}
+
+/**
+ * *** THE SAME SPEC MUST RENDER TO THE SAME BYTES. ***
+ * Chrome stamps /CreationDate and /ModDate with the wall clock, so re-rendering a fixture whose
+ * text has not changed still produces a different file — and a committed binary that churns on
+ * every render is one nobody can tell a real change from. Measured: two renders of 01 differed
+ * in exactly 8 bytes, all of them the timestamp. Pinned to the date the specs were written.
+ */
+function pinDates(pdf) {
+  const FIXED = "D:20260925000000+00'00'"
+  const s = pdf.toString('latin1').replace(/\/(CreationDate|ModDate) \(D:[^)]*\)/g, (_m, k) => {
+    const out = `/${k} (${FIXED})`
+    return out
+  })
+  return Buffer.from(s, 'latin1')
 }
 
 async function toJpeg(port, html, clip) {
@@ -580,7 +596,7 @@ await withChrome(async (port) => {
       <div class="light"></div><div class="glare"></div>
     </body></html>`
     const jpeg = await toJpeg(port, photo, { x: 0, y: 0, width: 1500, height: 1160, scale: 1 })
-    const pdf = pdfOfJpeg(jpeg, 792, 612)   // one Letter-landscape page of pure image
+    const pdf = pdfOfJpeg(jpeg, 792, 612)   // one Letter-landscape page of pure image (no dates in it)
     writeFileSync(`${OUT}/${PHOTO.file}`, pdf)
     rows.push({ id: PHOTO.id, file: PHOTO.file, pages: pdfPageCount(pdf), want: 1,
       bytes: pdf.length, chars: 0, photo: true })

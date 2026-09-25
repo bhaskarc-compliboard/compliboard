@@ -161,6 +161,7 @@ Answer with one JSON object and nothing else — no prose around it, no markdown
       "citation_url": "a link, or null",
       "locator": "where in the document, or 'not in the document'",
       "draftable": true,
+      "basis": "read | inferred",
       "quote": "the words from the document this is about, or null"
     }
   ],
@@ -171,7 +172,7 @@ Answer with one JSON object and nothing else — no prose around it, no markdown
     { "title": "what is due", "due_on": "YYYY-MM-DD or null", "source_line": "the line it came from", "recurs": false }
   ],
   "facts": [
-    { "key": "short_snake_case_name", "value": "the value", "quote": "word for word from the document", "locator": "section or page", "as_of": "YYYY-MM-DD or null", "affects": "one line on what this changes" }
+    { "key": "short_snake_case_name", "value": "the value", "basis": "read | inferred", "quote": "word for word from the document", "locator": "section or page", "as_of": "YYYY-MM-DD or null", "affects": "one line on what this changes" }
   ],
   "version_of": { "title": "a title from the list above, or null", "confidence": "high | medium | low" },
   "expected_missing": [
@@ -182,5 +183,8 @@ Answer with one JSON object and nothing else — no prose around it, no markdown
 }
 
 Use null where you cannot tell, and an empty array where there is nothing. An empty array is a
-real answer and is better than a guess.`
+real answer and is better than a guess.
+
+On every gap and every fact, basis is "read" when the words are in the document and "inferred"
+when you worked it out.`
 }

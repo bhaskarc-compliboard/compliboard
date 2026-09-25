@@ -1,0 +1,119 @@
+```json
+{
+  "identity": {
+    "kind": "supplier_document",
+    "title": "Safety Data Sheet — Sodium Hydroxide Solution, 50%",
+    "issuer": "Northwest Alkali Products, Inc.",
+    "agencies": [
+      "Oregon OSHA"
+    ],
+    "subjects": [
+      "workplace_safety"
+    ],
+    "site": null,
+    "jurisdiction": [
+      "federal",
+      "Oregon"
+    ],
+    "doc_date": "2024-03-18",
+    "doc_date_kind": "revised",
+    "page_refs": {
+      "doc_date": "page 1, Section 16",
+      "issuer": "page 1, Section 1"
+    }
+  },
+  "summary": "This is a Safety Data Sheet (SDS) for sodium hydroxide solution 50% prepared by the supplier Northwest Alkali Products, Inc., in compliance with OSHA's Hazard Communication Standard (29 CFR 1910.1200). It is a supplier's document, not Cascade Specialty Chemicals' own document—it does not represent a standard, policy, or permit that Cascade holds, but rather is provided by the vendor to inform Cascade's handling and storage of this chemical. Cascade's responsibility is to ensure this SDS is available to its workers and that operations comply with the precautions and exposure limits it specifies.",
+    "status": "not_judged",
+    "significant_date": null,
+    "significant_date_kind": null,
+    "freshness_note": "The SDS was revised on March 18, 2024, which is current as of today (September 25, 2026). No expiry date is set for an SDS; however, it should be reviewed periodically to ensure it remains accurate and reflects any changes to the product or regulations.",
+    "gaps": [],
+    "conditions": [],
+    "deadlines": [],
+    "facts": [
+      {
+        "key": "product_name",
+        "value": "Sodium Hydroxide Solution, 50% (w/w)",
+        "quote": "Sodium Hydroxide Solution, 50% (w/w)",
+        "locator": "Section 1, Identification",
+        "as_of": "2024-03-18",
+        "affects": "Identifies the chemical Cascade receives and must handle according to the hazards described"
+      },
+      {
+        "key": "supplier_name_and_address",
+        "value": "Northwest Alkali Products, Inc., 7200 N Lombard Street, Portland, Oregon 97203",
+        "quote": "Northwest Alkali Products, Inc., 7200 N Lombard Street, Portland, Oregon 97203",
+        "locator": "Section 1, Identification",
+        "as_of": "2024-03-18",
+        "affects": "Supplier contact for technical questions or emergencies; also indicates the product source"
+      },
+      {
+        "key": "osha_pel_sodium_hydroxide",
+        "value": "2 mg/m³ (TWA)",
+        "quote": "OSHA PEL 2 mg/m³ (TWA)",
+        "locator": "Section 8, Exposure Controls / Personal Protection",
+        "as_of": "2024-03-18",
+        "affects": "Establishes the airborne exposure limit Cascade must maintain during handling and storage; relevant for workplace safety planning"
+      },
+      {
+        "key": "hazard_classification",
+        "value": "Skin corrosion Category 1A (H314); Serious eye damage Category 1 (H318); Corrosive to metals Category 1 (H290)",
+        "quote": "Skin corrosion, Category 1A (H314); Serious eye damage, Category 1 (H318); Corrosive to metals, Category 1 (H290)",
+        "locator": "Section 2, Hazard Identification",
+        "as_of": "2024-03-18",
+        "affects": "Defines the acute hazards requiring personal protective equipment, engineering controls, and emergency preparedness"
+      },
+      {
+        "key": "emergency_eyewash_safety_shower_requirement",
+        "value": "Emergency eyewash and safety shower within 10 seconds of work areas",
+        "quote": "emergency eyewash and safety shower within 10 seconds of work areas",
+        "locator": "Section 8, Exposure Controls / Personal Protection",
+        "as_of": "2024-03-18",
+        "affects": "Specifies facility infrastructure Cascade must maintain at the Portland site where this chemical is handled"
+      },
+      {
+        "key": "storage_container_material",
+        "value": "Polyethylene, lined steel, or stainless steel",
+        "quote": "Store in a cool, dry, well-ventilated area in the original corrosion-resistant container (polyethylene, lined steel, or stainless steel)",
+        "locator": "Section 7, Handling and Storage",
+        "as_of": "2024-03-18",
+        "affects": "Restricts the types of containers Cascade can use for storing this chemical"
+      },
+      {
+        "key": "rcra_hazardous_waste_designation",
+        "value": "Unneutralised product is a corrosive hazardous waste (RCRA D002)",
+        "quote": "Unneutralised product is a corrosive hazardous waste (RCRA D002)",
+        "locator": "Section 13, Disposal Considerations",
+        "as_of": "2024-03-18",
+        "affects": "Indicates that waste sodium hydroxide disposal must follow hazardous waste regulations; affects Cascade's disposal practices and costs"
+      }
+    ],
+    "version_of": {
+      "title": null,
+      "confidence": "low"
+    },
+    "expected_missing": [
+      {
+        "title": "Container labels bearing hazard information",
+        "why": "Cascade must label all containers with GHS pictograms, signal words, and hazard statements per OSHA HCS",
+        "basis": "OSHA 29 CFR 1910.1200(f) requires labeling at the point of use; chemical distributors typically ensure incoming containers are labeled but secondary containers must be labeled by Cascade"
+      },
+      {
+        "title": "Hazard Communication Program and training records",
+        "why": "Cascade must maintain records showing all employees handling this chemical have been trained on the hazards and the SDS",
+        "basis": "OSHA 29 CFR 1910.1200(h) requires employers to train employees on the chemical's hazards; this SDS is a tool, but training documentation is separate"
+      },
+      {
+        "title": "Material compatibility assessment for Cascade's storage and handling equipment",
+        "why": "The SDS notes corrosion to metals; Cascade must verify its pumps, lines, tanks, and tools are compatible with this product",
+        "basis": "Section 7 notes the chemical is corrosive to metals; preventing accidental release is an employer responsibility under OSHA Process Safety Management if applicable"
+      }
+    ],
+    "confidence_notes": "High confidence on all identity and factual elements—this is a standard SDS issued by the supplier on a stated date and version. This is a supplier document and is not subject to gaps analysis. No defects in the SDS itself are apparent; it follows the GHS format required by OSHA 29 CFR 1910.1200. The document is clearly readable. The only uncertainty is whether Cascade's own operations and labeling fully implement the hazards and precautions described—that is Cascade's responsibility, not the supplier's, and is not in scope for this document review. Cascade should verify that employees are trained on this SDS and that workplace controls (eyewash/shower, ventilation, protective equipment, container materials) are in place.",
+    "could_not_read": {
+      "reason": null,
+      "way_forward": null
+    }
+  }
+}
+```

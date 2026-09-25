@@ -429,21 +429,53 @@ export function extractJsonText(raw: string): string {
   const firstBrace = cleaned.indexOf('{')
   const firstBracket = cleaned.indexOf('[')
   const start = firstBrace === -1 ? firstBracket : (firstBracket === -1 ? firstBrace : Math.min(firstBrace, firstBracket))
-  // *** `>= 0`, NOT `> 0`, AND THE DIFFERENCE IS ONE CHARACTER AND THREE 500s. ***
+
+  // *** A BALANCED SCAN, NOT `lastIndexOf`. ***
   //
-  // `> 0` only trimmed when there was narration BEFORE the JSON. When the model opens with a
-  // ```json fence, `cleaned` starts with `{` after the fences come off, `start` is 0, and this
-  // block was skipped entirely — so prose written AFTER the closing brace was never removed and
-  // `JSON.parse` choked on it. The model does that often: it answers in JSON and then adds a
-  // paragraph of advice.
+  // The previous version took everything from the first opener to the LAST closer in the
+  // string. That is right whenever the model's own braces balance, and wrong the moment they
+  // do not — and the way they fail is always the same: one extra `}` after the object is
+  // already complete. Measured over Documents Run 2, five of eighteen stored answers ended
   //
-  // Measured on three stored responses (25 Sep): two failed to parse and both parse with this,
-  // and one that already parsed comes out byte-identical, because for a clean response
-  // `slice(0, length)` is the whole string. It explains the storm_water scans failing 3 for 3,
-  // the 500 on the old review path in the D-0 measurement, and `check:live`'s attachment step.
+  //     "could_not_read": { "reason": null, "way_forward": null }
+  //       }
+  //     }
+  //
+  // with one closer too many. `lastIndexOf` swept that stray brace in, `JSON.parse` refused
+  // the whole thing, and five complete, correct readings — kind, status, gaps, facts, every
+  // top-level key present — were thrown away and charged for. 28% of the answers bought.
+  //
+  // Walking to the FIRST opener's matching closer ends at the end of the value and ignores
+  // whatever follows, whether that is a stray brace, a closing fence, or a paragraph of advice.
+  // Strings are honoured so a `}` inside `"way_forward"` text cannot close the object, and
+  // backslash escapes are honoured so a `\"` inside a string cannot end it — a quote inside a
+  // quoted regulatory sentence is common and would otherwise unbalance the count.
+  //
+  // Text that already parsed is unaffected: for a response whose braces balance, the matching
+  // closer IS the last one, so this produces the identical slice.
   if (start >= 0) {
-    const isObject = cleaned[start] === '{'
-    const end = isObject ? cleaned.lastIndexOf('}') : cleaned.lastIndexOf(']')
+    const open = cleaned[start]
+    const close = open === '{' ? '}' : ']'
+    let depth = 0
+    let inString = false
+    let escaped = false
+    let end = -1
+    for (let i = start; i < cleaned.length; i++) {
+      const ch = cleaned[i]
+      if (escaped) { escaped = false; continue }
+      if (ch === '\\') { if (inString) escaped = true; continue }
+      if (ch === '"') { inString = !inString; continue }
+      if (inString) continue
+      if (ch === open) depth++
+      else if (ch === close) {
+        depth--
+        if (depth === 0) { end = i; break }
+      }
+    }
+    // An unterminated value — the model was cut off mid-object — has no matching closer. Fall
+    // back to the old sweep rather than returning nothing, so a truncated answer still reaches
+    // `JSON.parse` and fails there with its own message, the way it did before.
+    if (end === -1) end = cleaned.lastIndexOf(close)
     if (end > start) {
       cleaned = cleaned.slice(start, end + 1)
     }

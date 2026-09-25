@@ -1,0 +1,117 @@
+I need to search for the current OSHA requirements for powered industrial truck (forklift) pre-shift inspections to properly evaluate this log against the governing standard.```json
+{
+  "identity": {
+    "kind": "record",
+    "title": "Powered Industrial Truck Pre-Shift Inspection Log",
+    "issuer": null,
+    "agencies": ["OSHA"],
+    "subjects": ["workplace_safety"],
+    "site": "Portland",
+    "jurisdiction": ["federal", "Oregon"],
+    "doc_date": "2026-09-17",
+    "doc_date_kind": "last_entry",
+    "page_refs": {
+      "doc_date": "page 1, last data row",
+      "title": "page 1, header"
+    }
+  },
+  "summary": "This is an inspection log for a Toyota powered industrial truck (forklift) model BFGU25, unit FL-2 operated at Cascade's Portland warehouse in September 2026. The log documents daily pre-shift inspections performed under OSHA 29 CFR 1910.178(q)(7), with operators recording the condition of safety-critical items including tires, forks, hydraulics, lights, brakes, steering, and propane tank before each shift. A defect found on September 9 (horn not working) and a note on September 15 (tank changed) show how the company tracks problems and maintenance.",
+    "status": "recorded",
+    "significant_date": "2026-09-17",
+    "significant_date_kind": "last_entry",
+    "freshness_note": "This log covers September 2026 and is current as of today (2026-09-25). It should continue as a rolling record with new entries each operating day. No action needed for age.",
+    "gaps": [],
+    "conditions": [
+      {
+        "title": "Examine truck before each shift; do not use if defect affects safety",
+        "condition_ref": "OSHA 29 CFR 1910.178(q)(7)",
+        "evidence_expected": "This log itself, showing daily inspection records with date, shift, operator name, each safety item checked, any defects noted, and action taken"
+      },
+      {
+        "title": "Report and correct defects immediately",
+        "condition_ref": "OSHA 29 CFR 1910.178(q)(7)",
+        "evidence_expected": "Defect notation in log (as shown: 'Horn not working' on Sep 9) and follow-up record showing repair or removal from service"
+      },
+      {
+        "title": "For trucks used around the clock, inspect after each shift",
+        "condition_ref": "OSHA 29 CFR 1910.178(q)(7)",
+        "evidence_expected": "Log entries matching shift changes; this log shows 'Day' shift only, so inspection frequency may be correct for single-shift operation, or additional night/swing shift logs should exist"
+      }
+    ],
+    "deadlines": [],
+    "facts": [
+      {
+        "key": "truck_model_and_unit",
+        "value": "Toyota BFGU25, unit FL-2, propane-powered",
+        "quote": "Truck: Toyota BFGU25, unit FL-2, propane",
+        "locator": "page 1, header",
+        "as_of": "2026-09-01",
+        "affects": "Determines which inspection checklist items apply and which fuel/engine rules govern the truck"
+      },
+      {
+        "key": "inspection_month",
+        "value": "September 2026",
+        "quote": "Month: September 2026",
+        "locator": "page 1, header",
+        "as_of": "2026-09-25",
+        "affects": "Shows inspection is current and ongoing"
+      },
+      {
+        "key": "shift_type",
+        "value": "Day shift only",
+        "quote": "Shift: Day",
+        "locator": "page 1, all data rows",
+        "as_of": "2026-09-17",
+        "affects": "If the truck operates only during day shift, once-daily inspection before shift satisfies OSHA 1910.178(q)(7); if 24/7 operation, additional shift inspection logs needed"
+      },
+      {
+        "key": "defect_found",
+        "value": "Horn not working",
+        "quote": "Horn not working",
+        "locator": "page 1, Sep 9 row, Notes column",
+        "as_of": "2026-09-09",
+        "affects": "Requires documentation of corrective action taken; unclear from this log whether truck was removed from service or repaired"
+      },
+      {
+        "key": "maintenance_performed",
+        "value": "Tank changed",
+        "quote": "Tank changed",
+        "locator": "page 1, Sep 15 row, Notes column",
+        "as_of": "2026-09-15",
+        "affects": "Propane tank replacement is maintenance; separate maintenance log should document this event"
+      }
+    ],
+    "version_of": {
+      "title": "Powered Industrial Truck Pre-Shift Inspection Log",
+      "confidence": "high"
+    },
+    "expected_missing": [
+      {
+        "title": "Operator certification records",
+        "why": "OSHA 1910.178(l) requires written certification that each operator is competent; log shows operator initials (M.C., J.R.) but certification docs should be filed separately",
+        "basis": "Similar companies maintain operator training and certification files distinct from daily inspection logs"
+      },
+      {
+        "title": "Maintenance and repair log",
+        "why": "Notes like 'Horn not working' and 'Tank changed' suggest maintenance events; detailed repair/maintenance records should document what was done, when, and by whom",
+        "basis": "Similar companies track maintenance separately to show preventive care and corrective action history"
+      },
+      {
+        "title": "Defect corrective action documentation",
+        "why": "Sep 9 horn defect is noted but no record shown of whether truck was removed from service, when fixed, or who fixed it; OSHA 1910.178(q)(7) requires defects be 'immediately reported and corrected'",
+        "basis": "Regulatory compliance requires evidence that unsafe equipment was taken out of service until repaired"
+      },
+      {
+        "title": "Night or swing shift inspection logs",
+        "why": "If this facility operates beyond day shift, separate logs for those shifts should exist; this log covers day shift only",
+        "basis": "If a single truck is used 24/7 or across multiple shifts, OSHA 1910.178(q)(7) requires inspection after each shift"
+      }
+    ],
+    "confidence_notes": "High confidence on what this log is, what it records, and which OSHA rule governs it. The log format and entries are clear and well-organized. Confidence is lower on: (1) whether a defect on Sep 9 was properly handled—the log notes it but does not show what action was taken or when—and (2) whether this is the only truck at the site or whether additional inspection logs exist for other shifts or vehicles, which is not stated in the document itself. The log is a record and has no gaps in its own structure; the gaps listed under 'expected_missing' are companion documents that should exist alongside it, not flaws in this document.",
+    "could_not_read": {
+      "reason": null,
+      "way_forward": null
+    }
+  }
+}
+```

@@ -1,0 +1,163 @@
+```json
+{
+  "identity": {
+    "kind": "other",
+    "title": "Compilation of AI-Generated Guidance on Stormwater Permits and Spill Containment for Outdoor Solvent Storage",
+    "issuer": null,
+    "agencies": [
+      "Oregon DEQ"
+    ],
+    "subjects": [
+      "stormwater_permitting",
+      "spill_containment",
+      "hazardous_materials_storage"
+    ],
+    "site": null,
+    "jurisdiction": [
+      "Oregon",
+      "federal"
+    ],
+    "doc_date": "2026-07-01",
+    "doc_date_kind": "effective",
+    "page_refs": {
+      "doc_date": "page 1",
+      "issuer": "not authored by issuer"
+    }
+  },
+  "summary": "This is a compilation of responses from three AI systems (ChatGPT, Gemini, Claude) and a formatted summary from CompliBoard, all addressing whether outdoor solvent drum storage in Hillsboro, Oregon requires a stormwater permit and spill containment. The document is not an official compliance instrument but rather educational material about Oregon DEQ's 1200-Z Industrial Stormwater General Permit (effective July 1, 2026) and state fire code requirements for secondary containment of hazardous materials. It explains that outdoor solvent storage does trigger permit requirements and containment obligations.",
+    "status": "not_judged",
+    "significant_date": "2026-07-01",
+    "significant_date_kind": "effective",
+    "freshness_note": "The document references Oregon DEQ's 1200-Z permit effective July 1, 2026, which is current as of the knowledge date (September 25, 2026). However, this is a compiled guidance document with multiple AI-generated responses, not an official agency document. The underlying permit is current, but the document itself is of unknown publication date.",
+    "gaps": [],
+    "conditions": [],
+    "deadlines": [],
+    "facts": [
+      {
+        "key": "permit_effective_date",
+        "value": "July 1, 2026",
+        "quote": "Oregon DEQ's current 1200-Z Industrial Stormwater General Permit took effect July 1, 2026.",
+        "locator": "page 1 (ChatGPT section)",
+        "as_of": "2026-07-01",
+        "affects": "All industrial stormwater permits issued on or after this date must comply with the new 1200-Z permit text, not the prior 2021 version."
+      },
+      {
+        "key": "permit_number",
+        "value": "1200-Z General NPDES Permit",
+        "quote": "The Oregon Department of Environmental Quality (DEQ) regulates stormwater runoff from industrial sites under the 1200-Z General NPDES Permit.",
+        "locator": "page 2 (Gemini section)",
+        "as_of": "2026-07-01",
+        "affects": "Industrial facilities must register under this specific permit if they fall within covered activities."
+      },
+      {
+        "key": "secondary_containment_standard",
+        "value": "110% of largest container or 10% of aggregate volume",
+        "quote": "Your secondary containment system must be capable of holding the greater of 110% of the volume of your largest drum or 10% of the total aggregate volume of all containers on the pad.",
+        "locator": "page 3 (Gemini section)",
+        "as_of": "2026-09-25",
+        "affects": "The pad's containment berm or pallet must meet this sizing standard to be legally compliant under fire code and environmental rules."
+      },
+      {
+        "key": "no_exposure_certification_not_available",
+        "value": "Outdoor uncovered drums do not qualify for exemption",
+        "quote": "Because your solvent drums are outdoors and exposed to precipitation, your site does not qualify for a 'No Exposure' exclusion.",
+        "locator": "page 2 (Gemini section)",
+        "as_of": "2026-09-25",
+        "affects": "Hillsboro site must obtain stormwater coverage; no exemption pathway available under current operations."
+      },
+      {
+        "key": "rainwater_treatment_requirement",
+        "value": "Accumulated rainwater in containment treated as potentially contaminated",
+        "quote": "Accumulated rainwater inside a solvent containment basin is considered potentially contaminated industrial wastewater. You cannot drain it into a storm sewer.",
+        "locator": "page 3 (Gemini section)",
+        "as_of": "2026-09-25",
+        "affects": "Any water collected in the containment pad must be tested and hauled off-site for disposal, not released to storm drains."
+      },
+      {
+        "key": "permit_fee",
+        "value": "Approximately $565/year",
+        "quote": "Permit fee: approximately $565/year (subject to change)",
+        "locator": "page 7 (CompliBoard section)",
+        "as_of": "2026-09-25",
+        "affects": "Annual operating cost for 1200-Z permit coverage."
+      },
+      {
+        "key": "civil_penalty_ceiling_oregon",
+        "value": "Up to $25,000 per day per violation",
+        "quote": "Civil penalties: Up to $25,000 per day per violation under Oregon law",
+        "locator": "page 9 (CompliBoard section)",
+        "as_of": "2026-09-25",
+        "affects": "Potential enforcement cost if stormwater permit requirements are violated."
+      },
+      {
+        "key": "federal_penalty_ceiling",
+        "value": "Up to $59,973 per day",
+        "quote": "Federal fines: EPA can also enforce, with penalties up to $59,973 per day (yes, per day)",
+        "locator": "page 9 (CompliBoard section)",
+        "as_of": "2026-09-25",
+        "affects": "EPA stormwater enforcement can result in significant daily penalties."
+      }
+    ],
+    "version_of": {
+      "title": null,
+      "confidence": "low"
+    },
+    "expected_missing": [
+      {
+        "title": "Official Oregon DEQ 1200-Z Permit text and sector-specific requirements tables",
+        "why": "This document synthesizes guidance but does not contain the actual regulatory permit document needed to determine exact applicability and conditions.",
+        "basis": "Similar chemical manufacturers would retain the actual permit issued by DEQ after filing a Notice of Intent."
+      },
+      {
+        "title": "Stormwater Pollution Control Plan (SWPCP)",
+        "why": "The document repeatedly states that an SWPCP must be developed and filed, but the document does not contain a template or example.",
+        "basis": "All covered facilities under 1200-Z must have a site-specific SWPCP; this is a required deliverable, not optional guidance."
+      },
+      {
+        "title": "Notice of Intent (NOI) form and submission evidence",
+        "why": "The document directs the user to file an NOI but does not include the form or proof of filing.",
+        "basis": "Required step to activate stormwater permit coverage; a completed and filed NOI would normally be retained as evidence of registration."
+      },
+      {
+        "title": "Fire code inspection or approval letter from Hillsboro Fire & Rescue",
+        "why": "Secondary containment must meet Oregon Fire Code; local fire marshal approval is mentioned as necessary but not included.",
+        "basis": "Fire code compliance is a separate permitting track; facilities typically retain fire inspection reports or approval letters."
+      },
+      {
+        "title": "SIC code determination or facility activity classification",
+        "why": "Multiple sources in the document note that permit applicability depends on SIC code, but do not provide Test Gamma Solvents' actual code or sector classification.",
+        "basis": "The company's SIC code determines whether it is covered by the 1200-Z permit; this is a prerequisite fact not stated in the document."
+      },
+      {
+        "title": "Hillsboro city stormwater discharge requirements or local ordinance",
+        "why": "Document mentions Clean Water Services (CWS) as the local water resource management district but does not reference any local Hillsboro requirements.",
+        "basis": "Most cities impose additional local stormwater rules; Hillsboro likely has adopted local standards in addition to state 1200-Z rules."
+      }
+    ],
+    "confidence_notes": "High confidence: The document accurately cites Oregon DEQ's 1200-Z General Permit effective July 1, 2026, and correctly describes the general stormwater and spill containment obligations for outdoor solvent storage. The factual claims about permit requirements, containment sizing (110%), and penalty thresholds are consistent across all four sources (ChatGPT, Gemini, Claude, CompliBoard) and align with publicly available regulatory guidance. Medium-to-low confidence: The document does not establish whether Test Gamma Solvents' specific SIC code or industrial activity is actually covered by 1200-Z—that determination requires filing and DEQ review. The document also does not contain the company's actual facility details (drainage path, volume stored, solvent type, whether petroleum or hazardous waste) needed to determine whether SPCC or RCRA secondary containment rules also apply. The document is educational material composed of AI-generated responses, not an official agency publication, and should not be treated as definitive regulatory interpretation. No search was performed because the document's core claims (permit effective date, general requirements, penalty amounts) are stable regulatory facts established by Oregon DEQ and EPA; however, a user acting on this document should consult the actual 1200-Z permit text and their regional DEQ office for site-specific determinations.",
+    "could_not_read": {
+      "reason": null,
+      "way_forward": null
+    }
+}
+```
+
+---
+
+### **Key Notes for the Business Owner:**
+
+This document is **not a compliance instrument you hold**—it is a compilation of AI-generated educational responses about what rules apply to you, plus a formatted summary (CompliBoard). You do not own this document; you will own (1) a Notice of Intent filed with DEQ, (2) a Stormwater Pollution Control Plan (SWPCP), and (3) fire code approval or inspection records.
+
+**What you must do:**
+1. Confirm your facility's SIC code with DEQ (via Your DEQ Online) to verify 1200-Z coverage applies.
+2. Install secondary containment (berm or pallet) sized for 110% of your largest drum *plus* rainwater storage capacity.
+3. File a Notice of Intent (NOI) with Oregon DEQ; this triggers permit coverage.
+4. Develop a written SWPCP describing your pad, drums, containment, and spill response procedures.
+5. Contact Hillsboro Fire & Rescue to confirm fire code compliance for the containment design.
+
+**What is wrong with this document:**
+It is not authored by an agency and cannot substitute for the official 1200-Z permit text or a site-specific regulatory determination. It assumes facts about your facility (solvent type, volume, drainage path) that are not yet established and are needed to determine whether SPCC (40 CFR 112) or RCRA (40 CFR 264/265) rules also apply.
+
+**Dates that matter:**
+- **July 1, 2026**: Effective date of the new 1200-Z permit (current).
+- **Immediately**: You should stop uncovered outdoor storage and file your NOI.

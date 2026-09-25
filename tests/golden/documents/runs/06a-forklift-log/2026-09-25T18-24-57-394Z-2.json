@@ -1,0 +1,317 @@
+{
+  "case": "06a-forklift-log",
+  "run": 2,
+  "run_date": "2026-09-25",
+  "model": "claude-haiku-4-5",
+  "searches": 0,
+  "prompt_sha256": "19fb45283e4d08537f56fd0d958aa374e33174f724d27200882a062868c0f330",
+  "scan_id": "01b94c95-a1d8-4c7e-ab36-a62c19837076",
+  "ai_call_id": "cc9354c5-b48c-4713-b7a3-60937c1d73bd",
+  "wall_ms": 44639,
+  "cost_usd": 0.053076000000000005,
+  "input_tokens": 23351,
+  "output_tokens": 3945,
+  "json_parsed": true,
+  "compliant_found_in": [],
+  "alternative_pass": false,
+  "verdicts": {
+    "kind": {
+      "verdict": "PASS",
+      "detail": "identity.kind = \"record\""
+    },
+    "agency-osha": {
+      "verdict": "PASS",
+      "detail": "identity.agencies = [oregon osha]"
+    },
+    "subject": {
+      "verdict": "PASS",
+      "detail": "identity.subjects = [workplace safety]"
+    },
+    "site-portland": {
+      "verdict": "PASS",
+      "detail": "identity.site = \"portland\""
+    },
+    "doc-date": {
+      "verdict": "PASS",
+      "detail": "identity.doc_date = 2026-09-18"
+    },
+    "doc-date-kind": {
+      "verdict": "PASS",
+      "detail": "identity.doc_date_kind = \"last entry\""
+    },
+    "last-entry-date": {
+      "verdict": "PASS",
+      "detail": "significant_date = 2026-09-18"
+    },
+    "status": {
+      "verdict": "PASS",
+      "detail": "status = \"recorded\""
+    },
+    "finding-missing-days": {
+      "verdict": "PASS",
+      "detail": "gaps: \"Missing inspection records for September 3–6 and 12–13\" [september 3, sep 3, missing, hour meter]"
+    },
+    "finding-horn-defect": {
+      "verdict": "PASS",
+      "detail": "gaps: \"Defect on September 9 not resolved before continued operation\" [horn, september 9, sep 9, defect, repair]"
+    },
+    "finding-no-entries-since": {
+      "verdict": "FAIL",
+      "detail": "no item matched. gaps/notes held: Missing inspection records for September 3–6 | Defect on September 9 not resolved before co | Supervisor review signature not completed | No retention/retention policy stated in the  | summary | freshness_note | confidence_notes | expected_missing | expected_missing | expected_missing | expected_missing"
+    },
+    "deadline-chen": {
+      "verdict": "PASS",
+      "detail": "deadlines: \"M. Chen forklift certification evaluation due\" [chen, evaluation]"
+    },
+    "deadline-rivera": {
+      "verdict": "PASS",
+      "detail": "deadlines: \"J. Rivera forklift certification evaluation due\" [rivera, evaluation]"
+    },
+    "fact-truck": {
+      "verdict": "PASS",
+      "detail": "facts: \"truck_model_and_unit\" [toyota, 8fgu25, fl-2, propane]"
+    },
+    "label-consistency": {
+      "verdict": "CROSS",
+      "detail": "judged across the three runs, below"
+    },
+    "no-false-certification-finding": {
+      "verdict": "PASS",
+      "detail": "not raised",
+      "soft": []
+    },
+    "no-false-form-finding": {
+      "verdict": "PASS",
+      "detail": "not raised",
+      "soft": []
+    },
+    "no-invented-maintenance-finding": {
+      "verdict": "PASS",
+      "detail": "not raised",
+      "soft": []
+    },
+    "citation-evaluation-rule": {
+      "verdict": "FAIL",
+      "detail": "\"1910.178(l)(4)(iii)\" not in deadlines, gaps, notes"
+    },
+    "two-operators-fact": {
+      "verdict": "PASS",
+      "detail": "facts: \"two_certified_operators\" [operator, certified, two, chen, rivera]"
+    },
+    "conditions-none": {
+      "verdict": "FAIL",
+      "detail": "4: \"Inspect truck before each shift; do not place in service if defect aff\"; \"Immediately report and correct defects found during inspection\"; \"Maintain checklist covering tires, forks, mast, horn, lights, seatbelt\"; \"Operators must be trained and evaluated in forklift operation\""
+    },
+    "freshness-recent": {
+      "verdict": "PASS",
+      "detail": "[september]"
+    }
+  },
+  "scan": {
+    "identity": {
+      "kind": "record",
+      "title": "Powered Industrial Truck Pre-Shift Inspection Log",
+      "issuer": null,
+      "agencies": [
+        "Oregon OSHA"
+      ],
+      "subjects": [
+        "workplace_safety"
+      ],
+      "site": "Portland",
+      "jurisdiction": [
+        "federal",
+        "Oregon"
+      ],
+      "doc_date": "2026-09-18",
+      "doc_date_kind": "last_entry",
+      "page_refs": {
+        "doc_date": "page 1",
+        "issuer": "not in document"
+      }
+    },
+    "summary": "This is an inspection log for a Toyota 8FGU25 propane forklift, documenting pre-shift safety checks performed in September 2026. The log records pass/fail status for 12 safety-critical components on each inspection date, with operator names and notes. <cite index=\"2-1,2-2\">The requirement cited (OSHA 29 CFR 1910.178(q)(7)) mandates that industrial trucks be examined before being placed in service and shall not be placed in service if the examination shows any condition adversely affecting safety, with such examination made at least daily.</cite>",
+    "status": "recorded",
+    "significant_date": "2026-09-18",
+    "significant_date_kind": "last_entry",
+    "freshness_note": "This log covers September 1–18, 2026, ending just seven days before today (2026-09-25). It is current but represents an incomplete calendar month; the company should be maintaining an active, running log that extends through the current date.",
+    "gaps": [
+      {
+        "title": "Missing inspection records for September 3–6 and 12–13",
+        "description": "The log shows inspections on Sep 1, 2, 7, 8, 9, 10, 11, 14, 15, 16, 17, 18, but the hour meter rises from 4,819 (Sep 2) to 4,834 (Sep 7), proving the truck operated on Sep 3, 4, 5, 6. Similarly, hours rise from 4,866 (Sep 14) to 4,873 (Sep 15), indicating operation on intervening days. No inspections are recorded for these dates. <cite index=\"8-8,8-9\">OSHA 1910.178(q)(7) requires trucks be examined before being placed in service and such examination shall be made at least daily.</cite>",
+        "fix": "Obtain the missing inspection records from those dates, or document why the truck was not operated (e.g., weekend, holiday, breakdown). If records are genuinely missing, conduct a retroactive documented review and ensure supervisors confirm equipment safety. Establish a system to flag missing entries immediately.",
+        "citation": "OSHA 29 CFR 1910.178(q)(7)",
+        "citation_url": "https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.178",
+        "locator": "page 2, note: 'The hour meter rises between Sep 2 (4,819) and Sep 7 (4,834), which shows the truck ran on the missing days.'",
+        "draftable": false,
+        "basis": "read",
+        "quote": "The hour meter rises between Sep 2 (4,819) and Sep 7 (4,834), which shows the truck ran on the missing days.",
+        "quote_verified": null
+      },
+      {
+        "title": "Defect on September 9 not resolved before continued operation",
+        "description": "On September 9, operator M.C. marked the horn as defective ('X') with the note \"Horn not working.\" <cite index=\"8-11\">OSHA 1910.178(q)(7) requires that defects when found shall be immediately reported and corrected.</cite> The log shows the horn passed inspection ('✓') on September 10 (next day), suggesting the truck may have been operated on September 10 before the defect was confirmed repaired, or the repair was not documented. There is no evidence of when the horn was repaired.",
+        "fix": "Document the time the defect was reported, the action taken to repair it, the date/time of repair completion, and verification that the truck was not used between defect discovery and repair completion. This should be added as a note in the defect line or in a separate maintenance log cross-referenced to the inspection log.",
+        "citation": "OSHA 29 CFR 1910.178(q)(7) and 1910.178(p)(4) (conditions requiring removal from service)",
+        "citation_url": "https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.178",
+        "locator": "page 1, Sep 9 row and Sep 10 row",
+        "draftable": true,
+        "basis": "inferred",
+        "quote": "Sep 9: Horn marked 'X' with note 'Horn not working'; Sep 10: Horn marked '✓' with no explanatory note",
+        "quote_verified": null
+      },
+      {
+        "title": "Supervisor review signature not completed",
+        "description": "The log includes a line for \"Supervisor review: ____________________ Date: __________\" (page 2), but both fields are blank. <cite index=\"4-4\">OSHA guidance indicates that the problem should be recorded on a log and reported to a supervisor immediately.</cite> While federal OSHA does not explicitly mandate written supervisor sign-off on inspection logs, Oregon OSHA or the company's own safety policy may require this. The lack of a supervisor signature means there is no third-party verification that the log has been reviewed or that defects and gaps have been addressed.",
+        "fix": "Have a supervisor designated in the Emergency Action Plan sign and date the log monthly (or after the last entry in a period). Include a note of any follow-up actions taken in response to defects or gaps.",
+        "citation": "Oregon OSHA may have additional requirements; see company policy",
+        "citation_url": null,
+        "locator": "page 2, bottom of table",
+        "draftable": true,
+        "basis": "read",
+        "quote": "Supervisor review: ____________________ Date: __________",
+        "quote_verified": null
+      },
+      {
+        "title": "No retention/retention policy stated in the log",
+        "description": "The document does not state how long inspection records will be kept. <cite index=\"8-7\">Federal OSHA does not require written records to be retained for a specific period</cite>, but Oregon OSHA or the company's own safety policy may require retention. Without a stated retention policy, there is no assurance that old logs will not be discarded and no audit trail for regulatory inspections.",
+        "fix": "Add a header or footer note stating the retention period (e.g., 'Records retained for 3 years' or 'Records retained per Oregon OSHA requirements'). Ensure logs are stored in a secure location accessible to management and regulators.",
+        "citation": "Company policy and Oregon OSHA rules (not verified in federal baseline)",
+        "citation_url": null,
+        "locator": "not in document",
+        "draftable": true,
+        "basis": "inferred",
+        "quote": null,
+        "quote_verified": null
+      }
+    ],
+    "conditions": [
+      {
+        "title": "Inspect truck before each shift; do not place in service if defect affects safety",
+        "condition_ref": "OSHA 29 CFR 1910.178(q)(7)",
+        "evidence_expected": "Pre-shift inspection log with date, time, operator name, all checklist items marked pass/fail, and supervisor review"
+      },
+      {
+        "title": "Immediately report and correct defects found during inspection",
+        "condition_ref": "OSHA 29 CFR 1910.178(q)(7)",
+        "evidence_expected": "Inspection log note describing the defect (as seen Sep 9 'Horn not working'), maintenance work order or repair log, and follow-up inspection confirming repair"
+      },
+      {
+        "title": "Maintain checklist covering tires, forks, mast, horn, lights, seatbelt, brakes, steering, propane tank, fire extinguisher, data plate, and overhead guard",
+        "condition_ref": "OSHA 1910.178(q)(7) and site-specific safety standards",
+        "evidence_expected": "Inspection log with columns for each required component, as shown in this document"
+      },
+      {
+        "title": "Operators must be trained and evaluated in forklift operation",
+        "condition_ref": "OSHA 29 CFR 1910.178(l)",
+        "evidence_expected": "Training records with certification date and evaluation expiration date for each operator; log shows M. Chen (certified 2024-03-11, due 2027-03-11) and J. Rivera (certified 2025-06-02, due 2028-06-02)"
+      }
+    ],
+    "deadlines": [
+      {
+        "title": "M. Chen forklift certification evaluation due",
+        "due_on": "2027-03-11",
+        "source_line": "Page 2: 'M. Chen (certified 2024-03-11, evaluation due 2027-03-11)'",
+        "recurs": true
+      },
+      {
+        "title": "J. Rivera forklift certification evaluation due",
+        "due_on": "2028-06-02",
+        "source_line": "Page 2: 'J. Rivera (certified 2025-06-02, evaluation due 2028-06-02)'",
+        "recurs": true
+      }
+    ],
+    "facts": [
+      {
+        "key": "truck_model_and_unit",
+        "value": "Toyota 8FGU25, unit FL-2, propane",
+        "quote": "Truck: Toyota 8FGU25, unit FL-2, propane",
+        "locator": "page 1, header",
+        "as_of": "2026-09-18",
+        "affects": "Identifies the specific equipment being inspected; propane type affects which checklist items apply (tank mount, pressure relief, hose integrity)",
+        "basis": "read",
+        "quote_verified": null
+      },
+      {
+        "key": "truck_operates_on_day_shift_only",
+        "value": "All entries marked 'Day' shift; truck does not operate round-the-clock",
+        "quote": "Shift: Day (repeated for all entries Sep 1–18)",
+        "locator": "page 1–2, Shift column",
+        "as_of": "2026-09-18",
+        "affects": "OSHA 1910.178(q)(7) requires daily inspection for single-shift operations and after-each-shift inspection for round-the-clock. This truck requires at least one inspection per day.",
+        "basis": "read",
+        "quote_verified": null
+      },
+      {
+        "key": "truck_hour_meter_operating_range",
+        "value": "Hour meter reads 4,812 to 4,893 over the 18-day period (81 hours total)",
+        "quote": "Sep 1: 4,812 hours; Sep 18: 4,893 hours",
+        "locator": "page 1–2, Hours column",
+        "as_of": "2026-09-18",
+        "affects": "Allows calculation of truck utilization and reveals dates when truck was operated but not inspected (gap on Sep 3–6, 12–13 inferred from non-linear hour increases)",
+        "basis": "read",
+        "quote_verified": null
+      },
+      {
+        "key": "two_certified_operators",
+        "value": "M. Chen and J. Rivera; both within valid training period as of Sep 2026",
+        "quote": "M.C. = M. Chen (certified 2024-03-11, evaluation due 2027-03-11) · J.R. = J. Rivera (certified 2025-06-02, evaluation due 2028-06-02)",
+        "locator": "page 2, operator legend",
+        "as_of": "2026-09-18",
+        "affects": "Both operators hold current certifications under OSHA 1910.178(l). M. Chen's certification will expire in March 2027 and needs renewal before then.",
+        "basis": "read",
+        "quote_verified": null
+      },
+      {
+        "key": "one_defect_on_record",
+        "value": "Horn malfunction on September 9, 2026",
+        "quote": "Sep 9, Horn: X, Notes: 'Horn not working'",
+        "locator": "page 1, Sep 9 row",
+        "as_of": "2026-09-09",
+        "affects": "Defect reported but not tracked for resolution or repair completion; no maintenance record provided. This is a safety-critical component (warning device) under OSHA standards.",
+        "basis": "read",
+        "quote_verified": null
+      }
+    ],
+    "version_of": {
+      "title": null,
+      "confidence": "low"
+    },
+    "expected_missing": [
+      {
+        "title": "Maintenance Work Order or Repair Log for September 9 Horn Defect",
+        "why": "When a defect is found during inspection, documentation of repair work (who fixed it, when, what was done, test results) should be maintained alongside the inspection log.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Monthly or Periodic Supervisor Safety Review Memorandum",
+        "why": "Although not mandated by federal OSHA, a supervisor's documented review of monthly inspection logs, with sign-off on any defects or trends, is common in warehouses and manufacturing.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Detailed Operator Training and Certification Files",
+        "why": "OSHA 1910.178(l) requires operators to be trained and evaluated; the log lists certification dates and expiry dates but not the training curriculum, method, or evaluation results.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Propane Tank Inspection or Hydrostatic Test Certificate",
+        "why": "Propane forklifts require periodic inspection and testing of the propane tank; a separate certificate or record is typically maintained by the supplier or maintenance contractor.",
+        "basis": "similar companies, not a checked requirement"
+      }
+    ],
+    "confidence_notes": "High confidence: The document structure, checklist items, and reference to OSHA 29 CFR 1910.178(q)(7) are clearly stated and accurate. The missing inspection dates (Sep 3–6, 12–13) are inferred with high confidence from the hour meter readings, which increase non-linearly. The defect on Sep 9 is explicitly recorded. Moderate confidence: The full implications of the horn defect—whether the truck was used after the defect was found on Sep 9 and before repair verification—cannot be determined from the log alone; this would require checking the separate maintenance records or truck use log, which were not provided. I cannot verify what Oregon OSHA requires beyond the federal baseline (e.g., supervisor sign-off, retention periods, or specific incident reporting). I have not independently checked Oregon OSHA regulations; recommendations on those points are based on common practice. Low confidence: I cannot confirm whether Sep 3–6 and 12–13 were weekends, holidays, or maintenance days—the document does not state this, and the inferred interpretation rests on the assumption that the hour meter is accurate and the truck was not borrowed or transferred.",
+    "could_not_read": {
+      "reason": null,
+      "way_forward": null
+    },
+    "raw_text": "I need to verify the OSHA requirement cited in this document to give you an accurate assessment.```json\n{\n  \"identity\": {\n    \"kind\": \"record\",\n    \"title\": \"Powered Industrial Truck Pre-Shift Inspection Log\",\n    \"issuer\": null,\n    \"agencies\": [\"Oregon OSHA\"],\n    \"subjects\": [\"workplace_safety\"],\n    \"site\": \"Portland\",\n    \"jurisdiction\": [\"federal\", \"Oregon\"],\n    \"doc_date\": \"2026-09-18\",\n    \"doc_date_kind\": \"last_entry\",\n    \"page_refs\": {\n      \"doc_date\": \"page 1\",\n      \"issuer\": \"not in document\"\n    }\n  },\n  \"summary\": \"This is an inspection log for a Toyota 8FGU25 propane forklift, documenting pre-shift safety checks performed in September 2026. The log records pass/fail status for 12 safety-critical components on each inspection date, with operator names and notes. <cite index=\\\"2-1,2-2\\\">The requirement cited (OSHA 29 CFR 1910.178(q)(7)) mandates that industrial trucks be examined before being placed in service and shall not be placed in service if the examination shows any condition adversely affecting safety, with such examination made at least daily.</cite>\",\n    \"status\": \"recorded\",\n  \"significant_date\": \"2026-09-18\",\n  \"significant_date_kind\": \"last_entry\",\n  \"freshness_note\": \"This log covers September 1–18, 2026, ending just seven days before today (2026-09-25). It is current but represents an incomplete calendar month; the company should be maintaining an active, running log that extends through the current date.\",\n  \"gaps\": [\n    {\n      \"title\": \"Missing inspection records for September 3–6 and 12–13\",\n      \"description\": \"The log shows inspections on Sep 1, 2, 7, 8, 9, 10, 11, 14, 15, 16, 17, 18, but the hour meter rises from 4,819 (Sep 2) to 4,834 (Sep 7), proving the truck operated on Sep 3, 4, 5, 6. Similarly, hours rise from 4,866 (Sep 14) to 4,873 (Sep 15), indicating operation on intervening days. No inspections are recorded for these dates. <cite index=\\\"8-8,8-9\\\">OSHA 1910.178(q)(7) requires trucks be examined before being placed in service and such examination shall be made at least daily.</cite>\",\n      \"fix\": \"Obtain the missing inspection records from those dates, or document why the truck was not operated (e.g., weekend, holiday, breakdown). If records are genuinely missing, conduct a retroactive documented review and ensure supervisors confirm equipment safety. Establish a system to flag missing entries immediately.\",\n      \"citation\": \"OSHA 29 CFR 1910.178(q)(7)\",\n      \"citation_url\": \"https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.178\",\n      \"locator\": \"page 2, note: 'The hour meter rises between Sep 2 (4,819) and Sep 7 (4,834), which shows the truck ran on the missing days.'\",\n      \"draftable\": false,\n      \"basis\": \"read\",\n      \"quote\": \"The hour meter rises between Sep 2 (4,819) and Sep 7 (4,834), which shows the truck ran on the missing days.\"\n    },\n    {\n      \"title\": \"Defect on September 9 not resolved before continued operation\",\n      \"description\": \"On September 9, operator M.C. marked the horn as defective ('X') with the note \\\"Horn not working.\\\" <cite index=\\\"8-11\\\">OSHA 1910.178(q)(7) requires that defects when found shall be immediately reported and corrected.</cite> The log shows the horn passed inspection ('✓') on September 10 (next day), suggesting the truck may have been operated on September 10 before the defect was confirmed repaired, or the repair was not documented. There is no evidence of when the horn was repaired.\",\n      \"fix\": \"Document the time the defect was reported, the action taken to repair it, the date/time of repair completion, and verification that the truck was not used between defect discovery and repair completion. This should be added as a note in the defect line or in a separate maintenance log cross-referenced to the inspection log.\",\n      \"citation\": \"OSHA 29 CFR 1910.178(q)(7) and 1910.178(p)(4) (conditions requiring removal from service)\",\n      \"citation_url\": \"https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.178\",\n      \"locator\": \"page 1, Sep 9 row and Sep 10 row\",\n      \"draftable\": true,\n      \"basis\": \"inferred\",\n      \"quote\": \"Sep 9: Horn marked 'X' with note 'Horn not working'; Sep 10: Horn marked '✓' with no explanatory note\"\n    },\n    {\n      \"title\": \"Supervisor review signature not completed\",\n      \"description\": \"The log includes a line for \\\"Supervisor review: ____________________ Date: __________\\\" (page 2), but both fields are blank. <cite index=\\\"4-4\\\">OSHA guidance indicates that the problem should be recorded on a log and reported to a supervisor immediately.</cite> While federal OSHA does not explicitly mandate written supervisor sign-off on inspection logs, Oregon OSHA or the company's own safety policy may require this. The lack of a supervisor signature means there is no third-party verification that the log has been reviewed or that defects and gaps have been addressed.\",\n      \"fix\": \"Have a supervisor designated in the Emergency Action Plan sign and date the log monthly (or after the last entry in a period). Include a note of any follow-up actions taken in response to defects or gaps.\",\n      \"citation\": \"Oregon OSHA may have additional requirements; see company policy\",\n      \"citation_url\": null,\n      \"locator\": \"page 2, bottom of table\",\n      \"draftable\": true,\n      \"basis\": \"read\",\n      \"quote\": \"Supervisor review: ____________________ Date: __________\"\n    },\n    {\n      \"title\": \"No retention/retention policy stated in the log\",\n      \"description\": \"The document does not state how long inspection records will be kept. <cite index=\\\"8-7\\\">Federal OSHA does not require written records to be retained for a specific period</cite>, but Oregon OSHA or the company's own safety policy may require retention. Without a stated retention policy, there is no assurance that old logs will not be discarded and no audit trail for regulatory inspections.\",\n      \"fix\": \"Add a header or footer note stating the retention period (e.g., 'Records retained for 3 years' or 'Records retained per Oregon OSHA requirements'). Ensure logs are stored in a secure location accessible to management and regulators.\",\n      \"citation\": \"Company policy and Oregon OSHA rules (not verified in federal baseline)\",\n      \"citation_url\": null,\n      \"locator\": \"not in document\",\n      \"draftable\": true,\n      \"basis\": \"inferred\",\n      \"quote\": null\n    }\n  ],\n  \"conditions\": [\n    {\n      \"title\": \"Inspect truck before each shift; do not place in service if defect affects safety\",\n      \"condition_ref\": \"OSHA 29 CFR 1910.178(q)(7)\",\n      \"evidence_expected\": \"Pre-shift inspection log with date, time, operator name, all checklist items marked pass/fail, and supervisor review\"\n    },\n    {\n      \"title\": \"Immediately report and correct defects found during inspection\",\n      \"condition_ref\": \"OSHA 29 CFR 1910.178(q)(7)\",\n      \"evidence_expected\": \"Inspection log note describing the defect (as seen Sep 9 'Horn not working'), maintenance work order or repair log, and follow-up inspection confirming repair\"\n    },\n    {\n      \"title\": \"Maintain checklist covering tires, forks, mast, horn, lights, seatbelt, brakes, steering, propane tank, fire extinguisher, data plate, and overhead guard\",\n      \"condition_ref\": \"OSHA 1910.178(q)(7) and site-specific safety standards\",\n      \"evidence_expected\": \"Inspection log with columns for each required component, as shown in this document\"\n    },\n    {\n      \"title\": \"Operators must be trained and evaluated in forklift operation\",\n      \"condition_ref\": \"OSHA 29 CFR 1910.178(l)\",\n      \"evidence_expected\": \"Training records with certification date and evaluation expiration date for each operator; log shows M. Chen (certified 2024-03-11, due 2027-03-11) and J. Rivera (certified 2025-06-02, due 2028-06-02)\"\n    }\n  ],\n  \"deadlines\": [\n    {\n      \"title\": \"M. Chen forklift certification evaluation due\",\n      \"due_on\": \"2027-03-11\",\n      \"source_line\": \"Page 2: 'M. Chen (certified 2024-03-11, evaluation due 2027-03-11)'\",\n      \"recurs\": true\n    },\n    {\n      \"title\": \"J. Rivera forklift certification evaluation due\",\n      \"due_on\": \"2028-06-02\",\n      \"source_line\": \"Page 2: 'J. Rivera (certified 2025-06-02, evaluation due 2028-06-02)'\",\n      \"recurs\": true\n    }\n  ],\n  \"facts\": [\n    {\n      \"key\": \"truck_model_and_unit\",\n      \"value\": \"Toyota 8FGU25, unit FL-2, propane\",\n      \"basis\": \"read\",\n      \"quote\": \"Truck: Toyota 8FGU25, unit FL-2, propane\",\n      \"locator\": \"page 1, header\",\n      \"as_of\": \"2026-09-18\",\n      \"affects\": \"Identifies the specific equipment being inspected; propane type affects which checklist items apply (tank mount, pressure relief, hose integrity)\"\n    },\n    {\n      \"key\": \"truck_operates_on_day_shift_only\",\n      \"value\": \"All entries marked 'Day' shift; truck does not operate round-the-clock\",\n      \"basis\": \"read\",\n      \"quote\": \"Shift: Day (repeated for all entries Sep 1–18)\",\n      \"locator\": \"page 1–2, Shift column\",\n      \"as_of\": \"2026-09-18\",\n      \"affects\": \"OSHA 1910.178(q)(7) requires daily inspection for single-shift operations and after-each-shift inspection for round-the-clock. This truck requires at least one inspection per day.\"\n    },\n    {\n      \"key\": \"truck_hour_meter_operating_range\",\n      \"value\": \"Hour meter reads 4,812 to 4,893 over the 18-day period (81 hours total)\",\n      \"basis\": \"read\",\n      \"quote\": \"Sep 1: 4,812 hours; Sep 18: 4,893 hours\",\n      \"locator\": \"page 1–2, Hours column\",\n      \"as_of\": \"2026-09-18\",\n      \"affects\": \"Allows calculation of truck utilization and reveals dates when truck was operated but not inspected (gap on Sep 3–6, 12–13 inferred from non-linear hour increases)\"\n    },\n    {\n      \"key\": \"two_certified_operators\",\n      \"value\": \"M. Chen and J. Rivera; both within valid training period as of Sep 2026\",\n      \"basis\": \"read\",\n      \"quote\": \"M.C. = M. Chen (certified 2024-03-11, evaluation due 2027-03-11) · J.R. = J. Rivera (certified 2025-06-02, evaluation due 2028-06-02)\",\n      \"locator\": \"page 2, operator legend\",\n      \"as_of\": \"2026-09-18\",\n      \"affects\": \"Both operators hold current certifications under OSHA 1910.178(l). M. Chen's certification will expire in March 2027 and needs renewal before then.\"\n    },\n    {\n      \"key\": \"one_defect_on_record\",\n      \"value\": \"Horn malfunction on September 9, 2026\",\n      \"basis\": \"read\",\n      \"quote\": \"Sep 9, Horn: X, Notes: 'Horn not working'\",\n      \"locator\": \"page 1, Sep 9 row\",\n      \"as_of\": \"2026-09-09\",\n      \"affects\": \"Defect reported but not tracked for resolution or repair completion; no maintenance record provided. This is a safety-critical component (warning device) under OSHA standards.\"\n    }\n  ],\n  \"version_of\": {\n    \"title\": null,\n    \"confidence\": \"low\"\n  },\n  \"expected_missing\": [\n    {\n      \"title\": \"Maintenance Work Order or Repair Log for September 9 Horn Defect\",\n      \"why\": \"When a defect is found during inspection, documentation of repair work (who fixed it, when, what was done, test results) should be maintained alongside the inspection log.\",\n      \"basis\": \"similar companies, not a checked requirement\"\n    },\n    {\n      \"title\": \"Monthly or Periodic Supervisor Safety Review Memorandum\",\n      \"why\": \"Although not mandated by federal OSHA, a supervisor's documented review of monthly inspection logs, with sign-off on any defects or trends, is common in warehouses and manufacturing.\",\n      \"basis\": \"similar companies, not a checked requirement\"\n    },\n    {\n      \"title\": \"Detailed Operator Training and Certification Files\",\n      \"why\": \"OSHA 1910.178(l) requires operators to be trained and evaluated; the log lists certification dates and expiry dates but not the training curriculum, method, or evaluation results.\",\n      \"basis\": \"similar companies, not a checked requirement\"\n    },\n    {\n      \"title\": \"Propane Tank Inspection or Hydrostatic Test Certificate\",\n      \"why\": \"Propane forklifts require periodic inspection and testing of the propane tank; a separate certificate or record is typically maintained by the supplier or maintenance contractor.\",\n      \"basis\": \"similar companies, not a checked requirement\"\n    }\n  ],\n  \"confidence_notes\": \"High confidence: The document structure, checklist items, and reference to OSHA 29 CFR 1910.178(q)(7) are clearly stated and accurate. The missing inspection dates (Sep 3–6, 12–13) are inferred with high confidence from the hour meter readings, which increase non-linearly. The defect on Sep 9 is explicitly recorded. Moderate confidence: The full implications of the horn defect—whether the truck was used after the defect was found on Sep 9 and before repair verification—cannot be determined from the log alone; this would require checking the separate maintenance records or truck use log, which were not provided. I cannot verify what Oregon OSHA requires beyond the federal baseline (e.g., supervisor sign-off, retention periods, or specific incident reporting). I have not independently checked Oregon OSHA regulations; recommendations on those points are based on common practice. Low confidence: I cannot confirm whether Sep 3–6 and 12–13 were weekends, holidays, or maintenance days—the document does not state this, and the inferred interpretation rests on the assumption that the hour meter is accurate and the truck was not borrowed or transferred.\",\n  \"could_not_read\": {\n    \"reason\": null,\n    \"way_forward\": null\n  }\n}\n```",
+    "json_parsed": true,
+    "model": "claude-haiku-4-5",
+    "searches": 0,
+    "prompt_sha256": "19fb45283e4d08537f56fd0d958aa374e33174f724d27200882a062868c0f330",
+    "quotes_checked": 0,
+    "quotes_verified": 0,
+    "extracted_text": "",
+    "started_at": "2026-09-25T18:24:12.010Z"
+  }
+}

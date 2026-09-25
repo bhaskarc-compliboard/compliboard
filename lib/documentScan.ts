@@ -27,10 +27,36 @@ import { askAIWithCitations, extractJsonText, modelForTask, type AIContent } fro
 import { parseDocumentToBlocks } from './documentContent.ts'
 import { scanPrompt, type ScanPromptContext } from '../prompts/document-scan.ts'
 
+/** A Supabase client, loosely typed: these scripts run outside Next's generated-types world. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Db = { from: (t: string) => any }
+
 // ---------------------------------------------------------------------------
 // THE SHAPE. Migration 040's tables follow this, not the other way round.
 // ---------------------------------------------------------------------------
 export type ScanKind = 'permit' | 'certificate' | 'program' | 'policy' | 'record' | 'supplier_document' | 'other'
+
+/**
+ * DID THE MODEL READ THIS, OR WORK IT OUT?
+ *
+ * `read` — the words are in the document. `inferred` — the model concluded it.
+ *
+ * The prompt has always asked for the distinction and there was nowhere to put the answer, so
+ * Documents Run 2 had to look for the WORD "inferred" somewhere in an item's prose. Three of the
+ * six golden answer keys turn on it: an SDS says nothing about what the company does with the
+ * chemical, so "the company holds an SDS for sodium hydroxide" is a fair proposal and "the
+ * company uses sodium hydroxide" is not. Migration 041 carries the column.
+ *
+ * Anything the model does not say is `read`, which is the value that OVERSTATES a claim. That is
+ * deliberate and it is the direction that gets noticed: an inference wrongly labelled as read is
+ * a proposal a person will read the quote for and reject. The other way round is invisible.
+ */
+export type ScanBasis = 'read' | 'inferred'
+const BASES: ScanBasis[] = ['read', 'inferred']
+const basisOf = (v: unknown): ScanBasis => {
+  const s = typeof v === 'string' ? v.trim().toLowerCase() : ''
+  return (BASES as string[]).includes(s) ? (s as ScanBasis) : 'read'
+}
 export type ScanStatus =
   | 'current' | 'expiring' | 'expired'
   | 'no_gaps_found' | 'gaps_found'
@@ -52,6 +78,8 @@ export interface ScanGap {
   title: string; description: string | null; fix: string | null
   citation: string | null; citation_url: string | null; locator: string | null
   draftable: boolean; quote: string | null
+  /** Whether the gap is read off the document or worked out from it. */
+  basis: ScanBasis
   /** Set by us, never by the model — see `verifyQuote`. */
   quote_verified: boolean | null
 }
@@ -60,6 +88,8 @@ export interface ScanDeadline { title: string; due_on: string | null; source_lin
 export interface ScanFact {
   key: string; value: string; quote: string | null; locator: string | null
   as_of: string | null; affects: string | null
+  /** Whether the fact is read off the document or worked out from it. */
+  basis: ScanBasis
   quote_verified: boolean | null
 }
 export interface ScanExpectedMissing { title: string; why: string | null; basis: string | null }
@@ -84,7 +114,19 @@ export interface DocumentScan {
   raw_text: string
   json_parsed: boolean
   model: string
-  searches: number
+  /**
+   * How many DISTINCT sources the answer cited, deduplicated by URL by `reassemble()`.
+   * *** THIS IS NOT THE NUMBER OF SEARCHES *** and was stored under that name until migration
+   * 042: an answer can search twice and cite one page, or search and cite nothing at all.
+   */
+  cited_sources: number
+  /**
+   * How many web searches Anthropic BILLED, read back off the `ai_calls` row — which takes it
+   * from `usage.server_tool_use.web_search_requests` rather than counting result blocks, because
+   * a search the `max_uses` cap refuses still produces one. Null when the ledger row could not
+   * be found in time; null means "not recorded", never "none ran".
+   */
+  searches: number | null
   prompt_sha256: string
   quotes_checked: number
   quotes_verified: number
@@ -140,7 +182,7 @@ export function verifyQuote(quote: string | null, extractedText: string): boolea
 
 /** Fill the shape from whatever the model returned, without trusting any of it. */
 export function normaliseScan(parsed: Record<string, unknown>, extractedText: string): Omit<DocumentScan,
-  'raw_text' | 'json_parsed' | 'model' | 'searches' | 'prompt_sha256' | 'quotes_checked'
+  'raw_text' | 'json_parsed' | 'model' | 'searches' | 'cited_sources' | 'prompt_sha256' | 'quotes_checked'
   | 'quotes_verified' | 'extracted_text' | 'started_at'> {
   const id = (parsed.identity ?? {}) as Record<string, unknown>
   const cnr = (parsed.could_not_read ?? {}) as Record<string, unknown>
@@ -174,6 +216,7 @@ export function normaliseScan(parsed: Record<string, unknown>, extractedText: st
       description: str(g?.description), fix: str(g?.fix),
       citation: str(g?.citation), citation_url: str(g?.citation_url),
       locator: str(g?.locator), draftable: g?.draftable === true,
+      basis: basisOf(g?.basis),
       quote: str(g?.quote),
       quote_verified: verifyQuote(str(g?.quote), extractedText),
     })),
@@ -189,6 +232,7 @@ export function normaliseScan(parsed: Record<string, unknown>, extractedText: st
       key: str(f?.key) ?? 'unnamed_fact', value: str(f?.value) ?? '',
       quote: str(f?.quote), locator: str(f?.locator),
       as_of: date(f?.as_of), affects: str(f?.affects),
+      basis: basisOf(f?.basis),
       quote_verified: verifyQuote(str(f?.quote), extractedText),
     })),
     version_of: { title: str(vo.title), confidence: str(vo.confidence) },
@@ -197,6 +241,66 @@ export function normaliseScan(parsed: Record<string, unknown>, extractedText: st
     })),
     confidence_notes: str(parsed.confidence_notes),
     could_not_read: { reason: str(cnr.reason), way_forward: str(cnr.way_forward) },
+  }
+}
+
+/**
+ * THE CONTEXT THE PROMPT IS BUILT FROM — one copy, and every query ordered.
+ *
+ * *** EVERY QUERY HERE CARRIES AN `order`, AND THAT IS THE POINT OF THE FUNCTION. ***
+ * PostgREST returns rows in whatever order Postgres yields them when no ORDER BY is given, and
+ * that order is not stable: an UPDATE rewrites a row and moves it in the heap. The label list,
+ * the "already holds" list and the dismissed gaps are all rendered into the prompt as lines, so
+ * an unordered query means the same state produces a DIFFERENT PROMPT STRING on the next call.
+ *
+ * That makes `prompt_sha256` — which exists to be a tripwire, so that a changed prompt loudly
+ * invalidates every stored expectation — fire on nothing having changed. Documents Run 2 saw it:
+ * case 05's run 3 hashed differently from runs 1 and 2 with no label, document or wording change
+ * between them. A tripwire that goes off by itself is one nobody reads.
+ *
+ * It lives here rather than in each script because there were two copies of it and they had
+ * already drifted — `scripts/scan-document.js` built the context ONCE before its loop, so its
+ * run 2 never saw the label its run 1 had just written, which is the whole mechanism the
+ * per-company label list exists for. `CLAUDE.md` §3.4's rule about not reimplementing at a call
+ * site is the same rule.
+ */
+export async function buildScanContext(
+  db: Db,
+  company: { id: string; name: string; industry: string | null; city?: string | null; state: string | null },
+  documentId: string | null,
+): Promise<ScanPromptContext> {
+  const { data: sites } = await db.from('entities')
+    .select('name, address, state').eq('company_id', company.id).order('name')
+  const { data: labels } = await db.from('company_labels')
+    .select('kind, label').eq('company_id', company.id).order('kind').order('label')
+  const { data: existing } = await db.from('document_scans')
+    .select('title, kind, document_id').eq('company_id', company.id).eq('is_current', true)
+    .order('title').limit(40)
+  const { data: dismissed } = documentId
+    ? await db.from('document_gaps').select('title, dismissed_reason')
+        .eq('document_id', documentId).eq('status', 'dismissed').order('title')
+    : { data: [] }
+
+  return {
+    company: {
+      name: company.name,
+      industry: company.industry,
+      address: [company.city, company.state].filter(Boolean).join(', ') || null,
+      state: company.state,
+    },
+    sites: (sites ?? []).map((s: Record<string, string | null>) =>
+      ({ name: s.name as string, address: s.address, state: s.state })),
+    agencyLabels: (labels ?? []).filter((l: { kind: string }) => l.kind === 'agency')
+      .map((l: { label: string }) => l.label),
+    subjectLabels: (labels ?? []).filter((l: { kind: string }) => l.kind === 'subject')
+      .map((l: { label: string }) => l.label),
+    // The document being scanned is NOT in its own "what this company already holds" list: on a
+    // real upload it has not been read yet, and offering it as a version of itself is nonsense.
+    existingDocuments: (existing ?? [])
+      .filter((d: { title: string | null; document_id: string }) => d.title && d.document_id !== documentId)
+      .map((d: { title: string; kind: string | null }) => ({ title: d.title, kind: d.kind })),
+    dismissedGaps: (dismissed ?? []).map((g: { title: string; dismissed_reason: string | null }) =>
+      ({ title: g.title, reason: g.dismissed_reason })),
   }
 }
 
@@ -222,7 +326,7 @@ export async function runDocumentScan(input: RunScanInput): Promise<DocumentScan
     return {
       ...normaliseScan({ status: 'could_not_read', could_not_read: {
         reason: parsed.failure.message, way_forward: 'A PDF or a Word file we can read.' } }, ''),
-      raw_text: '', json_parsed: false, model: '(not called)', searches: 0,
+      raw_text: '', json_parsed: false, model: '(not called)', searches: 0, cited_sources: 0,
       prompt_sha256: '', quotes_checked: 0, quotes_verified: 0, extracted_text: '',
       started_at: new Date().toISOString(),
     }
@@ -263,7 +367,7 @@ export async function runDocumentScan(input: RunScanInput): Promise<DocumentScan
       ...normaliseScan({ status: 'could_not_read', could_not_read: {
         reason: 'the reading came back in a form we could not use',
         way_forward: 'Read it again — this is usually temporary.' } }, extractedText),
-      raw_text: raw, json_parsed: false, model, searches: answer.sources.length,
+      raw_text: raw, json_parsed: false, model, cited_sources: answer.sources.length, searches: null,
       prompt_sha256: promptSha, quotes_checked: 0, quotes_verified: 0,
       extracted_text: extractedText, started_at: startedAt,
     }
@@ -273,7 +377,7 @@ export async function runDocumentScan(input: RunScanInput): Promise<DocumentScan
   const checked = [...shape.gaps, ...shape.facts].filter((x) => x.quote_verified !== null)
   return {
     ...shape,
-    raw_text: raw, json_parsed: true, model, searches: answer.sources.length,
+    raw_text: raw, json_parsed: true, model, cited_sources: answer.sources.length, searches: null,
     prompt_sha256: promptSha,
     quotes_checked: checked.length,
     quotes_verified: checked.filter((x) => x.quote_verified === true).length,
@@ -284,7 +388,6 @@ export async function runDocumentScan(input: RunScanInput): Promise<DocumentScan
 // ---------------------------------------------------------------------------
 // WRITING IT DOWN
 // ---------------------------------------------------------------------------
-type Db = { from: (t: string) => any }
 
 /**
  * Persist one scan. Lives here rather than in the script so a route can reuse it unchanged.
@@ -306,12 +409,14 @@ export async function saveScan(
   // over a second; if it is still not there the scan is saved with a null ai_call_id rather
   // than delayed, because the reading matters more than the link to its receipt.
   let aiCallId: string | null = null
+  let billedSearches: number | null = null
   for (let attempt = 0; attempt < 5 && !aiCallId; attempt++) {
     if (attempt) await new Promise((r) => setTimeout(r, 250))
     const { data: call } = await db.from('ai_calls')
-      .select('id').eq('company_id', companyId).eq('task', 'document_scan')
+      .select('id, searches').eq('company_id', companyId).eq('task', 'document_scan')
       .gte('created_at', scan.started_at).order('created_at', { ascending: false }).limit(1).maybeSingle()
     aiCallId = call?.id ?? null
+    billedSearches = call?.searches ?? null
   }
   if (!aiCallId) console.warn('document scan: saved with no ai_calls link — the ledger write had not landed')
 
@@ -336,7 +441,13 @@ export async function saveScan(
     could_not_read_reason: scan.could_not_read.reason,
     raw_text: scan.raw_text, json_parsed: scan.json_parsed,
     quotes_checked: scan.quotes_checked, quotes_verified: scan.quotes_verified,
-    model: scan.model, searches: scan.searches, prompt_sha256: scan.prompt_sha256,
+    model: scan.model, cited_sources: scan.cited_sources,
+    // THE BILLED COUNT, OFF THE LEDGER ROW — not counted here a second time. `ai_calls.searches`
+    // is written by lib/ai.ts from the API's own usage block; reading it back is the only way
+    // the two numbers cannot disagree. Null when the ledger write had not landed, which is
+    // "not recorded" and not "none".
+    searches: billedSearches,
+    prompt_sha256: scan.prompt_sha256,
     ai_call_id: aiCallId, is_current: true,
   }).select('id').single()
   if (error) throw new Error(`document_scans: ${error.message}`)
@@ -348,6 +459,7 @@ export async function saveScan(
       title: g.title, description: g.description, fix: g.fix,
       citation: g.citation, citation_url: g.citation_url, locator: g.locator,
       draftable: g.draftable, quote: g.quote, quote_verified: g.quote_verified,
+      basis: g.basis,
     })))
     if (e) throw new Error(`document_gaps: ${e.message}`)
   }
@@ -371,6 +483,7 @@ export async function saveScan(
       company_id: companyId, document_id: documentId, topic_id: null, source: 'document',
       switch_key: f.key.slice(0, 120), proposed_value: String(f.value).slice(0, 500),
       quote: f.quote ? f.quote.slice(0, 2000) : null, locator: f.locator,
+      basis: f.basis,
     })))
     if (e) throw new Error(`fact_proposals: ${e.message}`)
   }

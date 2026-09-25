@@ -5,125 +5,433 @@
   "fixture": "fixtures/04-fsp-food.pdf",
   "company": "willamette",
   "must": [
-    { "id": "kind",
+    {
+      "id": "kind",
       "line": "kind: program (accept \"plan\" in the title; kind must not be permit or record)",
-      "type": "field_one_of", "field": "identity.kind", "accept": ["program"], "forbid": ["permit", "record"] },
-    { "id": "agency-fda",
+      "type": "field_one_of",
+      "field": "identity.kind",
+      "accept": [
+        "program"
+      ],
+      "forbid": [
+        "permit",
+        "record"
+      ]
+    },
+    {
+      "id": "agency-fda",
       "line": "agency includes FDA; the Oregon Department of Agriculture may also appear and is correct",
-      "type": "list_contains", "field": "identity.agencies", "accept": ["fda", "food and drug administration"] },
-    { "id": "site-salem",
+      "type": "list_contains",
+      "field": "identity.agencies",
+      "accept": [
+        "fda",
+        "food and drug administration"
+      ]
+    },
+    {
+      "id": "site-salem",
       "line": "site: Salem",
-      "type": "field_contains", "field": "identity.site", "accept": ["salem"] },
-    { "id": "doc-date",
+      "type": "field_contains",
+      "field": "identity.site",
+      "accept": [
+        "salem"
+      ]
+    },
+    {
+      "id": "doc-date",
       "line": "doc_date: effective May 12, 2025",
-      "type": "date_equals", "field": "identity.doc_date", "value": "2025-05-12" },
-    { "id": "jurisdiction-federal",
+      "type": "date_equals",
+      "field": "identity.doc_date",
+      "value": "2025-05-12"
+    },
+    {
+      "id": "jurisdiction-federal",
       "line": "jurisdiction: Federal (FDA), Oregon",
-      "type": "list_contains", "field": "identity.jurisdiction", "accept": ["federal", "united states", "us", "fda"] },
-    { "id": "jurisdiction-oregon",
+      "type": "list_contains",
+      "field": "identity.jurisdiction",
+      "accept": [
+        "federal",
+        "united states",
+        "us",
+        "fda"
+      ]
+    },
+    {
+      "id": "jurisdiction-oregon",
       "line": "jurisdiction: Federal (FDA), Oregon",
-      "type": "list_contains", "field": "identity.jurisdiction", "accept": ["oregon"] },
-    { "id": "status",
+      "type": "list_contains",
+      "field": "identity.jurisdiction",
+      "accept": [
+        "oregon"
+      ]
+    },
+    {
+      "id": "status",
       "line": "Status (must): gaps_found. Never \"compliant\".",
-      "type": "field_one_of", "field": "status", "accept": ["gaps_found"] },
-
-    { "id": "gap-recall-plan",
+      "type": "field_one_of",
+      "field": "status",
+      "accept": [
+        "gaps_found"
+      ]
+    },
+    {
+      "id": "gap-recall-plan",
       "line": "1. No written recall plan. Citation contains \"117.139\" or \"117.126\".",
-      "type": "item", "collections": ["gaps"], "citation_any": ["117.139", "117.126"],
-      "keywords": ["recall", "written", "plan"], "min_keywords": 2,
-      "locator_expected": "not in the document" },
-    { "id": "gap-cook-validation",
+      "type": "item",
+      "collections": [
+        "gaps"
+      ],
+      "citation_any": [
+        "117.139",
+        "117.126"
+      ],
+      "keywords": [
+        "recall",
+        "written",
+        "plan"
+      ],
+      "min_keywords": 2,
+      "locator_expected": "not in the document"
+    },
+    {
+      "id": "gap-cook-validation",
       "line": "2. No validation of the cook step as a process preventive control. Citation contains \"117.160\".",
-      "type": "item", "collections": ["gaps"], "citation": "117.160",
-      "keywords": ["validat", "cook", "process preventive control", "lethality", "212"], "min_keywords": 2,
-      "locator_expected": "section 4 or 7" },
-    { "id": "gap-reanalysis",
+      "type": "item",
+      "collections": [
+        "gaps"
+      ],
+      "citation": "117.160",
+      "keywords": [
+        "validat",
+        "cook",
+        "process preventive control",
+        "lethality",
+        "212"
+      ],
+      "min_keywords": 2,
+      "locator_expected": "section 4 or 7"
+    },
+    {
+      "id": "gap-reanalysis",
       "line": "3. No reanalysis schedule. Citation contains \"117.170\".",
-      "type": "item", "collections": ["gaps"], "citation": "117.170",
-      "keywords": ["reanalys", "three years", "3 years", "schedule"], "min_keywords": 2 },
-
-    { "id": "deadline-thermometer",
+      "type": "item",
+      "collections": [
+        "gaps"
+      ],
+      "citation": "117.170",
+      "keywords": [
+        "reanalys",
+        "three years",
+        "3 years",
+        "schedule"
+      ],
+      "min_keywords": 2
+    },
+    {
+      "id": "deadline-thermometer",
       "line": "Deadlines (must contain): weekly thermometer calibration (section 7)",
-      "type": "item", "collections": ["deadlines"],
-      "keywords": ["thermometer", "calibrat", "weekly", "probe"], "min_keywords": 2 },
-    { "id": "deadline-product-testing",
+      "type": "item",
+      "collections": [
+        "deadlines"
+      ],
+      "keywords": [
+        "thermometer",
+        "calibrat",
+        "weekly",
+        "probe"
+      ],
+      "min_keywords": 2
+    },
+    {
+      "id": "deadline-product-testing",
       "line": "Deadlines (must contain): monthly finished-product testing (section 7)",
-      "type": "item", "collections": ["deadlines"],
-      "keywords": ["finished product", "finished-product", "monthly", "listeria", "test"], "min_keywords": 2 },
-    { "id": "deadline-metal-detector",
+      "type": "item",
+      "collections": [
+        "deadlines"
+      ],
+      "keywords": [
+        "finished product",
+        "finished-product",
+        "monthly",
+        "listeria",
+        "test"
+      ],
+      "min_keywords": 2
+    },
+    {
+      "id": "deadline-metal-detector",
       "line": "Deadlines (must contain): annual metal detector service (section 7)",
-      "type": "item", "collections": ["deadlines"],
-      "keywords": ["metal detector", "annual", "service", "manufacturer"], "min_keywords": 2 },
-    { "id": "deadline-training",
+      "type": "item",
+      "collections": [
+        "deadlines"
+      ],
+      "keywords": [
+        "metal detector",
+        "annual",
+        "service",
+        "manufacturer"
+      ],
+      "min_keywords": 2
+    },
+    {
+      "id": "deadline-training",
       "line": "Deadlines (must contain): annual employee training (section 10)",
-      "type": "item", "collections": ["deadlines"],
-      "keywords": ["training", "annual", "employee", "hygiene"], "min_keywords": 2 },
-
-    { "id": "fact-28-employees",
+      "type": "item",
+      "collections": [
+        "deadlines"
+      ],
+      "keywords": [
+        "training",
+        "annual",
+        "employee",
+        "hygiene"
+      ],
+      "min_keywords": 2
+    },
+    {
+      "id": "fact-28-employees",
       "line": "Facts (must contain, quote verified true): \"28 production employees\" (section 1)",
-      "type": "item", "collections": ["facts"],
-      "keywords": ["28", "production employees", "employees"], "min_keywords": 2, "quote_must_verify": true },
-    { "id": "fact-rte-product",
+      "type": "item",
+      "collections": [
+        "facts"
+      ],
+      "keywords": [
+        "28",
+        "production employees",
+        "employees"
+      ],
+      "min_keywords": 2,
+      "quote_must_verify": true
+    },
+    {
+      "id": "fact-rte-product",
       "line": "Facts (must contain, quote verified true): the product is ready-to-eat hummus and bean dips (section 1)",
-      "type": "item", "collections": ["facts"],
-      "keywords": ["ready-to-eat", "ready to eat", "hummus", "bean dip"], "min_keywords": 2, "quote_must_verify": true },
-    { "id": "fact-pcqi",
+      "type": "item",
+      "collections": [
+        "facts"
+      ],
+      "keywords": [
+        "ready-to-eat",
+        "ready to eat",
+        "hummus",
+        "bean dip"
+      ],
+      "min_keywords": 2,
+      "quote_must_verify": true
+    },
+    {
+      "id": "fact-pcqi",
       "line": "Facts (must contain, quote verified true): the PCQI is Dana Whitfield (title page)",
-      "type": "item", "collections": ["facts"],
-      "keywords": ["pcqi", "dana whitfield", "whitfield", "preventive controls qualified individual"],
-      "min_keywords": 2, "quote_must_verify": true },
-
-    { "id": "label-consistency",
+      "type": "item",
+      "collections": [
+        "facts"
+      ],
+      "keywords": [
+        "pcqi",
+        "dana whitfield",
+        "whitfield",
+        "preventive controls qualified individual"
+      ],
+      "min_keywords": 2,
+      "quote_must_verify": true
+    },
+    {
+      "id": "label-consistency",
       "line": "Labels (agency, subject) must be the identical string across the three runs of a case (README).",
-      "type": "labels_identical_across_runs" }
+      "type": "labels_identical_across_runs"
+    }
   ],
   "must_not": [
-    { "id": "no-false-hazard-analysis-gap",
+    {
+      "id": "no-false-hazard-analysis-gap",
       "line": "no gap claiming there is no hazard analysis",
-      "type": "absent_item", "collections": ["gaps"],
-      "subject": ["hazard analysis"],
-      "absence": ["no ", "not ", "missing", "absent", "lacks", "none", "does not", "fails to", "without"] },
-    { "id": "no-false-allergen-gap",
+      "type": "absent_item",
+      "collections": [
+        "gaps"
+      ],
+      "subject": [
+        "hazard analysis"
+      ],
+      "absence": [
+        "no ",
+        "not ",
+        "missing",
+        "absent",
+        "lacks",
+        "none",
+        "does not",
+        "fails to",
+        "without"
+      ]
+    },
+    {
+      "id": "no-false-allergen-gap",
       "line": "no gap claiming there is no allergen control",
-      "type": "absent_item", "collections": ["gaps"],
-      "subject": ["allergen control", "allergen preventive control", "allergen program"],
-      "absence": ["no ", "not ", "missing", "absent", "lacks", "none", "does not", "fails to", "without"] },
-    { "id": "no-false-pcqi-gap",
+      "type": "absent_item",
+      "collections": [
+        "gaps"
+      ],
+      "subject": [
+        "allergen control",
+        "allergen preventive control",
+        "allergen program"
+      ],
+      "absence": [
+        "no ",
+        "not ",
+        "missing",
+        "absent",
+        "lacks",
+        "none",
+        "does not",
+        "fails to",
+        "without"
+      ]
+    },
+    {
+      "id": "no-false-pcqi-gap",
       "line": "no gap claiming there is no PCQI",
-      "type": "absent_item", "collections": ["gaps"],
-      "subject": ["pcqi", "preventive controls qualified individual"],
-      "absence": ["no ", "missing", "absent", "lacks", "none", "does not", "fails to", "without", "not identified", "not named", "not designated"] },
-    { "id": "no-false-supply-chain-gap",
+      "type": "absent_item",
+      "collections": [
+        "gaps"
+      ],
+      "subject": [
+        "pcqi",
+        "preventive controls qualified individual"
+      ],
+      "absence": [
+        "no ",
+        "missing",
+        "absent",
+        "lacks",
+        "none",
+        "does not",
+        "fails to",
+        "without",
+        "not identified",
+        "not named",
+        "not designated"
+      ]
+    },
+    {
+      "id": "no-false-supply-chain-gap",
       "line": "no gap claiming there is no supply-chain program",
-      "type": "absent_item", "collections": ["gaps"],
-      "subject": ["supply-chain program", "supply chain program"],
-      "absence": ["no ", "missing", "absent", "lacks", "none", "does not", "fails to", "without", "not established"] },
-    { "id": "no-false-monitoring-gap",
+      "type": "absent_item",
+      "collections": [
+        "gaps"
+      ],
+      "subject": [
+        "supply-chain program",
+        "supply chain program"
+      ],
+      "absence": [
+        "no ",
+        "missing",
+        "absent",
+        "lacks",
+        "none",
+        "does not",
+        "fails to",
+        "without",
+        "not established"
+      ]
+    },
+    {
+      "id": "no-false-monitoring-gap",
       "line": "no gap claiming monitoring or corrective actions are missing",
-      "type": "absent_item", "collections": ["gaps"],
-      "subject": ["monitoring procedure", "corrective action"],
-      "absence": ["no ", "missing", "absent", "lacks", "none", "does not", "fails to", "without", "not established", "not described"] }
+      "type": "absent_item",
+      "collections": [
+        "gaps"
+      ],
+      "subject": [
+        "monitoring procedure",
+        "corrective action"
+      ],
+      "absence": [
+        "no ",
+        "missing",
+        "absent",
+        "lacks",
+        "none",
+        "does not",
+        "fails to",
+        "without",
+        "not established",
+        "not described"
+      ]
+    }
   ],
   "reported": [
-    { "id": "agency-oda",
+    {
+      "id": "agency-oda",
       "line": "the Oregon Department of Agriculture may also appear and is correct",
-      "type": "list_contains", "field": "identity.agencies", "accept": ["oda", "oregon department of agriculture"] },
-    { "id": "fix-cook-validation-detail",
+      "type": "list_contains",
+      "field": "identity.agencies",
+      "accept": [
+        "oda",
+        "oregon department of agriculture"
+      ]
+    },
+    {
+      "id": "fix-cook-validation-detail",
       "line": "The fix should mention validating that 212°F for 60 minutes achieves the intended lethality, with a scientific basis or a study, within 90 days of first production.",
-      "type": "item", "collections": ["gaps"],
-      "keywords": ["212", "60 minutes", "lethality", "scientific", "study", "90 days"], "min_keywords": 2 },
-    { "id": "fix-reanalysis-detail",
+      "type": "item",
+      "collections": [
+        "gaps"
+      ],
+      "keywords": [
+        "212",
+        "60 minutes",
+        "lethality",
+        "scientific",
+        "study",
+        "90 days"
+      ],
+      "min_keywords": 2
+    },
+    {
+      "id": "fix-reanalysis-detail",
       "line": "The fix should mention reanalysis at least every three years and whenever a change creates a new hazard.",
-      "type": "item", "collections": ["gaps"],
-      "keywords": ["three years", "3 years", "new hazard", "change"], "min_keywords": 2 },
-    { "id": "freshness-no-nudge",
+      "type": "item",
+      "collections": [
+        "gaps"
+      ],
+      "keywords": [
+        "three years",
+        "3 years",
+        "new hazard",
+        "change"
+      ],
+      "min_keywords": 2
+    },
+    {
+      "id": "freshness-no-nudge",
       "line": "Freshness: no nudge (the document is under two years old at the run date).",
-      "type": "field_empty", "field": "freshness_note" },
-    { "id": "conditions-none-expected",
+      "type": "field_empty",
+      "field": "freshness_note"
+    },
+    {
+      "id": "conditions-none-expected",
       "line": "Conditions: none expected.",
-      "type": "empty", "collections": ["conditions"] },
-    { "id": "inferred-fda-registered",
+      "type": "empty",
+      "collections": [
+        "conditions"
+      ]
+    },
+    {
+      "id": "inferred-fda-registered",
       "line": "Acceptable inferred facts: the plant is FDA-registered (inferred; must be marked inferred).",
-      "type": "item", "collections": ["facts"], "keywords": ["fda", "registered", "inferred"], "min_keywords": 2 }
+      "type": "item",
+      "collections": [
+        "facts"
+      ],
+      "keywords": [
+        "fda",
+        "registered"
+      ],
+      "min_keywords": 2,
+      "basis": "inferred",
+      "note": "basis is read off the column (migration 041), not looked for in the prose."
+    }
   ]
 }

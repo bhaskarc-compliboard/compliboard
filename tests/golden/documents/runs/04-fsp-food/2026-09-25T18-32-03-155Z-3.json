@@ -1,0 +1,182 @@
+{
+  "case": "04-fsp-food",
+  "run": 3,
+  "run_date": "2026-09-25",
+  "model": "claude-haiku-4-5",
+  "searches": 0,
+  "prompt_sha256": "d50b18c308d19527713f308a777dc185e8e789015c0c1f45d588650a4b6002e2",
+  "scan_id": "cb76c214-d3ae-4327-97a3-7a3e726528c9",
+  "ai_call_id": "1d395077-92f8-4125-bae0-967ebe3951d9",
+  "wall_ms": 65381,
+  "cost_usd": 0.048230999999999996,
+  "input_tokens": 16691,
+  "output_tokens": 6308,
+  "json_parsed": false,
+  "compliant_found_in": [],
+  "alternative_pass": false,
+  "verdicts": {
+    "kind": {
+      "verdict": "FAIL",
+      "detail": "identity.kind = \"null\""
+    },
+    "agency-fda": {
+      "verdict": "FAIL",
+      "detail": "identity.agencies = [empty]"
+    },
+    "site-salem": {
+      "verdict": "FAIL",
+      "detail": "identity.site = \"null\""
+    },
+    "doc-date": {
+      "verdict": "FAIL",
+      "detail": "identity.doc_date = null, wanted 2025-05-12"
+    },
+    "jurisdiction-federal": {
+      "verdict": "FAIL",
+      "detail": "identity.jurisdiction = [empty]"
+    },
+    "jurisdiction-oregon": {
+      "verdict": "FAIL",
+      "detail": "identity.jurisdiction = [empty]"
+    },
+    "status": {
+      "verdict": "FAIL",
+      "detail": "status = \"could not read\""
+    },
+    "gap-recall-plan": {
+      "verdict": "FAIL",
+      "detail": "no item matched. gaps held: (nothing)"
+    },
+    "gap-cook-validation": {
+      "verdict": "FAIL",
+      "detail": "no item matched. gaps held: (nothing)"
+    },
+    "gap-reanalysis": {
+      "verdict": "FAIL",
+      "detail": "no item matched. gaps held: (nothing)"
+    },
+    "deadline-thermometer": {
+      "verdict": "FAIL",
+      "detail": "no item matched. deadlines held: (nothing)"
+    },
+    "deadline-product-testing": {
+      "verdict": "FAIL",
+      "detail": "no item matched. deadlines held: (nothing)"
+    },
+    "deadline-metal-detector": {
+      "verdict": "FAIL",
+      "detail": "no item matched. deadlines held: (nothing)"
+    },
+    "deadline-training": {
+      "verdict": "FAIL",
+      "detail": "no item matched. deadlines held: (nothing)"
+    },
+    "fact-28-employees": {
+      "verdict": "FAIL",
+      "detail": "no item matched. facts held: (nothing)"
+    },
+    "fact-rte-product": {
+      "verdict": "FAIL",
+      "detail": "no item matched. facts held: (nothing)"
+    },
+    "fact-pcqi": {
+      "verdict": "FAIL",
+      "detail": "no item matched. facts held: (nothing)"
+    },
+    "label-consistency": {
+      "verdict": "CROSS",
+      "detail": "judged across the three runs, below"
+    },
+    "no-false-hazard-analysis-gap": {
+      "verdict": "PASS",
+      "detail": "not raised",
+      "soft": []
+    },
+    "no-false-allergen-gap": {
+      "verdict": "PASS",
+      "detail": "not raised",
+      "soft": []
+    },
+    "no-false-pcqi-gap": {
+      "verdict": "PASS",
+      "detail": "not raised",
+      "soft": []
+    },
+    "no-false-supply-chain-gap": {
+      "verdict": "PASS",
+      "detail": "not raised",
+      "soft": []
+    },
+    "no-false-monitoring-gap": {
+      "verdict": "PASS",
+      "detail": "not raised",
+      "soft": []
+    },
+    "agency-oda": {
+      "verdict": "FAIL",
+      "detail": "identity.agencies = [empty]"
+    },
+    "fix-cook-validation-detail": {
+      "verdict": "FAIL",
+      "detail": "no item matched. gaps held: (nothing)"
+    },
+    "fix-reanalysis-detail": {
+      "verdict": "FAIL",
+      "detail": "no item matched. gaps held: (nothing)"
+    },
+    "freshness-no-nudge": {
+      "verdict": "PASS",
+      "detail": "null"
+    },
+    "conditions-none-expected": {
+      "verdict": "PASS",
+      "detail": "none"
+    },
+    "inferred-fda-registered": {
+      "verdict": "FAIL",
+      "detail": "no item matched. facts held: (nothing)"
+    }
+  },
+  "scan": {
+    "identity": {
+      "kind": null,
+      "title": null,
+      "issuer": null,
+      "agencies": [],
+      "subjects": [],
+      "site": null,
+      "jurisdiction": [],
+      "doc_date": null,
+      "doc_date_kind": null,
+      "page_refs": {}
+    },
+    "summary": null,
+    "status": "could_not_read",
+    "significant_date": null,
+    "significant_date_kind": null,
+    "freshness_note": null,
+    "gaps": [],
+    "conditions": [],
+    "deadlines": [],
+    "facts": [],
+    "version_of": {
+      "title": null,
+      "confidence": null
+    },
+    "expected_missing": [],
+    "confidence_notes": null,
+    "could_not_read": {
+      "reason": "the reading came back in a form we could not use",
+      "way_forward": "Read it again — this is usually temporary."
+    },
+    "raw_text": "```json\n{\n  \"identity\": {\n    \"kind\": \"program\",\n    \"title\": \"Food Safety Plan for Ready-to-Eat Hummus and Bean Dips\",\n    \"issuer\": null,\n    \"agencies\": [\n      \"FDA\",\n      \"Oregon Department of Agriculture\"\n    ],\n    \"subjects\": [\n      \"hazard_analysis\",\n      \"preventive_controls\",\n      \"process_controls\",\n      \"sanitation\",\n      \"allergen_controls\",\n      \"supplier_program\"\n    ],\n    \"site\": \"Salem\",\n    \"jurisdiction\": [\n      \"Oregon\",\n      \"federal\"\n    ],\n    \"doc_date\": \"2025-05-12\",\n    \"doc_date_kind\": \"effective\",\n    \"page_refs\": {\n      \"doc_date\": \"page 1\",\n      \"issuer\": \"internal document, no external issuer\"\n    }\n  },\n  \"summary\": \"This is a preventive controls-based food safety plan for a refrigerated ready-to-eat hummus and bean dip manufacturer in Oregon, prepared under FDA FSMA rules by a Preventive Controls Qualified Individual. The plan documents the company's hazard analysis, preventive controls, monitoring, corrective actions, verification, and supply-chain program for controlling biological, chemical, allergen, and physical hazards in its production process.\",\n  \"status\": \"gaps_found\",\n  \"significant_date\": \"2025-05-12\",\n  \"significant_date_kind\": \"effective\",\n  \"freshness_note\": \"Document is current as of 2025-05-12 (effective date). As of 2026-09-25, this is 16 months old. No renewal trigger date is specified in the document; under FDA rules, food safety plans must be reanalyzed every three years or when there is a significant change to the facility or products. The company should verify whether a reanalysis is due.\",\n  \"gaps\": [\n    {\n      \"title\": \"No reanalysis schedule or trigger specified\",\n      \"description\": \"The plan does not state when it will be reanalyzed. Under 21 CFR 117.186(e), the food safety plan must be reanalyzed and reassessed at least every three years or when there is a significant change. There is no date for the next reanalysis or a statement of the conditions that would trigger one.\",\n      \"fix\": \"Add a statement at the end of section 7 (Verification) or in a new section specifying that the plan will be reanalyzed by May 12, 2028, or immediately if there is a change to the facility, equipment, ingredients, suppliers, process, products, or intended use.\",\n      \"citation\": \"21 CFR 117.186(e)\",\n      \"citation_url\": \"https://www.ecfr.gov/current/title-21/section-117.186\",\n      \"locator\": \"not in the document\",\n      \"draftable\": true,\n      \"basis\": \"inferred\",\n      \"quote\": null\n    },\n    {\n      \"title\": \"No written procedures for supplier approval and monitoring\",\n      \"description\": \"Section 8 states that tahini and dry beans are received only from approved suppliers with third-party audit and certificate of analysis, and that the approved supplier list is maintained by the quality manager. However, there is no written procedure describing how suppliers are initially approved, how often audits must be current (what is 'current'?), how often certificates of analysis must be reviewed, what standards the audits must meet, or what action is taken if a supplier fails to provide required documentation.\",\n      \"fix\": \"Add a formal supplier approval procedure (or reference one if it exists in a separate document held by the company) that includes: (1) minimum criteria for supplier selection; (2) frequency and recency requirements for third-party audits (e.g., audit must be no more than one year old); (3) process for receiving and reviewing certificates of analysis; (4) documentation of approval decision and date; (5) re-approval intervals; and (6) action taken if documentation is missing or inadequate.\",\n      \"citation\": \"21 CFR 117.80 (supply-chain program)\",\n      \"citation_url\": \"https://www.ecfr.gov/current/title-21/section-117.80\",\n      \"locator\": \"Section 8, page 6\",\n      \"draftable\": true,\n      \"basis\": \"inferred\",\n      \"quote\": \"Tahini and dry beans are received only from approved suppliers who provide a current third-party audit certificate and a certificate of analysis for each lot.\"\n    },\n    {\n      \"title\": \"No specification of which third-party audit standard applies\",\n      \"description\": \"The plan requires a 'current third-party audit certificate' from suppliers but does not specify which audit standard (e.g., GFSI-recognized standards such as SQF, BRC, FSSC 22000) or what audit scope is acceptable. This makes it unclear what level of assurance the company is obtaining.\",\n      \"fix\": \"Specify in the supplier approval procedure which recognized audit standards are acceptable (e.g., 'SQF, BRC, FSSC 22000, or equivalent GFSI-recognized standard'). If only certain standards are accepted, name them.\",\n      \"citation\": \"21 CFR 117.80(b) implies reliance on third-party audits but does not mandate a specific standard\",\n      \"citation_url\": \"https://www.ecfr.gov/current/title-21/section-117.80\",\n      \"locator\": \"Section 8, page 6\",\n      \"draftable\": true,\n      \"basis\": \"inferred\",\n      \"quote\": \"current third-party audit certificate\"\n    },\n    {\n      \"title\": \"No written allergen control plan detail for non-sesame products\",\n      \"description\": \"Section 4 describes control of sesame allergen (labeling review, scheduling, washdown) but the plan does not identify all allergens in the ingredient list (lemon juice, garlic, tahini/sesame) or state control procedures for products that do not contain sesame but may contact sesame during cross-contact. The ingredient list includes tahini (sesame) but the plan does not address potential cross-contact risks for non-sesame bean dips if the same equipment is used.\",\n      \"fix\": \"Add an allergen control matrix or section that lists all allergens in each product (sesame in hummus from tahini; none declared in bean dips based on the ingredient list), identifies which production runs may pose cross-contact risk, and specifies the sanitation and segregation controls for each allergen. Document what constitutes an adequate washdown (ATP threshold) before running a non-sesame product after sesame products.\",\n      \"citation\": \"21 CFR 117.80(a)(2) and FSMA guidance on allergen controls\",\n      \"citation_url\": \"https://www.fda.gov/media/82259/download\",\n      \"locator\": \"Section 4, page 4; Section 1, page 2\",\n      \"draftable\": true,\n      \"basis\": \"inferred\",\n      \"quote\": \"Products are labeled with the allergen statement 'Contains: sesame' for all hummus items.\"\n    },\n    {\n      \"title\": \"Cooling time limit discrepancy between sections\",\n      \"description\": \"Section 4 states the critical limit for cooling is '135°F to 70°F in 2 hours; 70°F to 41°F in 4 hours' (total 6 hours from 135°F to 41°F). However, section 5 instructs the blast chiller operator to record temperature at '2 hours and at 6 hours,' implying a single 6-hour measurement interval rather than two checkpoints (at 2 hours for the 70°F target and at 6 hours for the 41°F target). This could allow a batch that reaches 70°F at 2 hours to then fail to cool to 41°F by hour 6 and still be recorded as compliant if only the 6-hour temperature is checked.\",\n      \"fix\": \"Clarify the cooling log form and monitoring procedure to require two temperature readings: one at exactly 2 hours to verify 70°F has been reached, and a second at exactly 6 hours to verify 41°F has been reached. If a reading is out of specification, the batch must be immediately isolated and discarded per the corrective action (section 6).\",\n      \"citation\": \"21 CFR 117.165(c) (monitoring)\",\n      \"citation_url\": \"https://www.ecfr.gov/current/title-21/section-117.165\",\n      \"locator\": \"Section 4, page 4 (critical limit); Section 5, page 5 (monitoring)\",\n      \"draftable\": true,\n      \"basis\": \"read\",\n      \"quote\": \"Cool cooked beans from 135°F to 70°F within 2 hours and to 41°F within a further 4 hours in the blast chiller\" vs. \"The blast chiller operator records the temperature at 2 hours and at 6 hours on the cooling log.\"\n    },\n    {\n      \"title\": \"No written procedure for handling out-of-specification thermometer calibration results\",\n      \"description\": \"Section 7 states that probe thermometers are calibrated in ice water and boiling water weekly, but there is no corrective action procedure if a thermometer fails calibration (e.g., if it reads outside acceptable limits such as ±0.5°F of the known reference). This could mean an out-of-calibration thermometer is discovered only during calibration, after it has already been used to monitor multiple cook batches.\",\n      \"fix\": \"Add to section 6 (Corrective actions) a procedure stating: 'If a probe thermometer fails calibration, it is immediately removed from service. All cook batches monitored with that thermometer since the last successful calibration are reviewed; if the recorded temperature may have been ±[X]°F below the actual temperature, the batch is re-cooked to the critical limit or discarded. The cause is investigated and documented.'\",\n      \"citation\": \"21 CFR 117.165(c)(2) (monitoring with proper equipment)\",\n      \"citation_url\": \"https://www.ecfr.gov/current/title-21/section-117.165\",\n      \"locator\": \"Section 7, page 6; Section 6, page 5\",\n      \"draftable\": true,\n      \"basis\": \"inferred\",\n      \"quote\": \"Probe thermometers are calibrated in ice water and boiling water weekly\"\n    },\n    {\n      \"title\": \"No PCQI signature or sign-off of the plan\",\n      \"description\": \"The plan states 'Prepared by: Dana Whitfield, Quality Manager, Preventive Controls Qualified Individual (PCQI certificate, FSPCA course, March 2024)' and 'Approved by: Plant Manager' on page 1, but does not specify a date of approval or whether the PCQI has signed off on the plan itself (as opposed to records). Under FSMA, the PCQI must oversee the development of the plan.\",\n      \"fix\": \"Add a dated signature line for the PCQI to the cover page to confirm that the plan has been reviewed and approved by the PCQI. Example: 'Reviewed and approved by: Dana Whitfield, PCQI, [date]'.\",\n      \"citation\": \"21 CFR 117.186(d) (PCQI must oversee the development and implementation of the food safety plan)\",\n      \"citation_url\": \"https://www.ecfr.gov/current/title-21/section-117.186\",\n      \"locator\": \"Page 1\",\n      \"draftable\": true,\n      \"basis\": \"inferred\",\n      \"quote\": \"Approved by: Plant Manager\"\n    }\n  ],\n  \"conditions\": [],\n  \"deadlines\": [\n    {\n      \"title\": \"Plan becomes effective (no condition precedent; this is when controls must be in place)\",\n      \"due_on\": \"2025-05-12\",\n      \"source_line\": \"Page 1: 'Effective date: May 12, 2025'\",\n      \"recurs\": false\n    },\n    {\n      \"title\": \"Probe thermometers must be calibrated (recurring)\",\n      \"due_on\": null,\n      \"source_line\": \"Section 7, page 6: 'Probe thermometers are calibrated in ice water and boiling water weekly'\",\n      \"recurs\": true\n    },\n    {\n      \"title\": \"Metal detector must be serviced by manufacturer (recurring)\",\n      \"due_on\": null,\n      \"source_line\": \"Section 7, page 6: 'the metal detector is serviced by the manufacturer annually'\",\n      \"recurs\": true\n    },\n    {\n      \"title\": \"Finished product testing for Listeria monocytogenes (recurring)\",\n      \"due_on\": null,\n      \"source_line\": \"Section 7, page 6: 'Finished product is tested for Listeria monocytogenes monthly by an accredited laboratory'\",\n      \"recurs\": true\n    },\n    {\n      \"title\": \"Environmental monitoring results must be reviewed and trended (recurring)\",\n      \"due_on\": null,\n      \"source_line\": \"Section 7, page 6: 'Environmental monitoring results are trended quarterly'\",\n      \"recurs\": true\n    },\n    {\n      \"title\": \"PCQI reviews records within seven working days (recurring for each batch/event)\",\n      \"due_on\": null,\n      \"source_line\": \"Section 7, page 6: 'The PCQI reviews the cook, cooling, sanitation, allergen and metal detection records within seven working days of their creation'; Section 6, page 5: 'All corrective actions are recorded on the corrective action log and reviewed by the PCQI within seven days'\",\n      \"recurs\": true\n    },\n    {\n      \"title\": \"Production employees must receive food hygiene training (recurring)\",\n      \"due_on\": null,\n      \"source_line\": \"Section 10, page 7: 'All production employees receive food hygiene training at hire and annually'\",\n      \"recurs\": true\n    },\n    {\n      \"title\": \"Records retention (no expiry, but define archive date per retention rule)\",\n      \"due_on\": null,\n      \"source_line\": \"Section 9, page 7: 'All records named in this plan are kept at the Salem plant for at least two years from the date of the record'\",\n      \"recurs\": false\n    }\n  ],\n  \"facts\": [\n    {\n      \"key\": \"product_type\",\n      \"value\": \"Refrigerated ready-to-eat hummus and bean dips\",\n      \"basis\": \"read\",\n      \"quote\": \"refrigerated ready-to-eat hummus and bean dips in 8-ounce and 16-ounce sealed plastic tubs\",\n      \"locator\": \"Section 1, page 2\",\n      \"as_of\": \"2025-05-12\",\n      \"affects\": \"Determines which hazards apply (Listeria growth in refrigerated RTE product, sesame allergen, etc.); determines shelf life and storage requirements\"\n    },\n    {\n      \"key\": \"production_employees\",\n      \"value\": \"28\",\n      \"basis\": \"read\",\n      \"quote\": \"28 production employees\",\n      \"locator\": \"Section 1, page 2\",\n      \"as_of\": \"2025-05-12\",\n      \"affects\": \"Affects the scale of training and monitoring required; may affect applicability of FSMA requirements (facilities with <$1 million in annual food sales have limited exemptions, but size alone does not trigger exemptions)\"\n    },\n    {\n      \"key\": \"operating_schedule\",\n      \"value\": \"One shift, five days a week\",\n      \"basis\": \"read\",\n      \"quote\": \"one shift, five days a week\",\n      \"locator\": \"Section 1, page 2\",\n      \"as_of\": \"2025-05-12\",\n      \"affects\": \"Affects whether environmental monitoring and sanitation can be conducted daily or weekly; affects availability of staff to perform monitoring and corrective actions\"\n    },\n    {\n      \"key\": \"shelf_life\",\n      \"value\": \"45 days refrigerated\",\n      \"basis\": \"read\",\n      \"quote\": \"Shelf life is 45 days refrigerated\",\n      \"locator\": \"Section 1, page 2\",\n      \"as_of\": \"2025-05-12\",\n      \"affects\": \"Determines whether accelerated testing or challenge studies are needed to validate shelf life and safety during distribution; affects the critical limit for refrigerated storage (41°F)\"\n    },\n    {\n      \"key\": \"storage_temperature\",\n      \"value\": \"At or below 41°F\",\n      \"basis\": \"read\",\n      \"quote\": \"held refrigerated at or below 41°F\",\n      \"locator\": \"Section 1, page 2\",\n      \"as_of\": \"2025-05-12\",\n      \"affects\": \"Defines the critical limit for preventing Listeria monocytogenes growth; must be monitored throughout storage and distribution\"\n    },\n    {\n      \"key\": \"cook_process_parameter\",\n      \"value\": \"212°F for 60 minutes minimum in kettle\",\n      \"basis\": \"read\",\n      \"quote\": \"soaking and cooking of beans (kettle, 212°F, 60 minutes minimum)\",\n      \"locator\": \"Section 2, page 2\",\n      \"as_of\": \"2025-05-12\",\n      \"affects\": \"Establishes the critical limit for the cook step (process control); must be monitored with a calibrated thermometer for each batch\"\n    },\n    {\n      \"key\": \"cooling_critical_limit\",\n      \"value\": \"135°F to 70°F within 2 hours; 70°F to 41°F within 4 hours\",\n      \"basis\": \"read\",\n      \"quote\": \"Cool cooked beans from 135°F to 70°F within 2 hours and to 41°F within a further 4 hours in the blast chiller\",\n      \"locator\": \"Section 4, page 4\",\n      \"as_of\": \"2025-05-12\",\n      \"affects\": \"Establishes the critical limit for cooling to prevent outgrowth of Clostridium perfringens and Bacillus cereus; must be monitored and recorded\"\n    },\n    {\n      \"key\": \"pcqi_qualification\",\n      \"value\": \"FSPCA course completed March 2024; PCQI certificate held\",\n      \"basis\": \"read\",\n      \"quote\": \"Dana Whitfield, Quality Manager, Preventive Controls Qualified Individual (PCQI certificate, FSPCA course, March 2024)\",\n      \"locator\": \"Page 1\",\n      \"as_of\": \"2025-05-12\",\n      \"affects\": \"Confirms that the PCQI meets the training requirement under 21 CFR 117.186(a)(1); FSPCA certificate is valid for three years, so certification was valid as of 2025-05-12 and will remain valid until March 2027\"\n    },\n    {\n      \"key\": \"allergen_declaration\",\n      \"value\": \"All hummus items labeled 'Contains: sesame'\",\n      \"basis\": \"read\",\n      \"quote\": \"Products are labeled with the allergen statement 'Contains: sesame' for all hummus items\",\n      \"locator\": \"Section 1, page 2\",\n      \"as_of\": \"2025-05-12\",\n      \"affects\": \"Sesame allergen is identified as a hazard requiring preventive control; labeling must match formulation; cross-contact must be prevented for bean dips\"\n    },\n    {\n      \"key\": \"sales_geography\",\n      \"value\": \"Oregon, Washington, and Idaho\",\n      \"basis\": \"read\",\n      \"quote\": \"for retail sale in Oregon, Washington and Idaho\",\n      \"locator\": \"Section 1, page 2\",\n      \"as_of\": \"2025-05-12\",\n      \"affects\": \"All three states are subject to FDA FSMA rules under their own food safety laws; multistate distribution may trigger FDA inspection authority and recall obligations\"\n    },\n    {\n      \"key\": \"metal_detection_sensitivity\",\n      \"value\": \"Reject at 2.0 mm ferrous, 2.5 mm non-ferrous, 3.0 mm stainless\",\n      \"basis\": \"read\",\n      \"quote\": \"Reject at 2.0 mm ferrous, 2.5 mm non-ferrous, 3.0 mm stainless test pieces\",\n      \"locator\": \"Section 4, page 4\",\n      \"as_of\": \"2025-05-12\",\n      \"affects\": \"Establishes the sensitivity threshold for the metal detection process control; must be verified at start-up, every two hours, and end-of-run with test pieces\"\n    },\n    {\n      \"key\": \"environmental_monitoring_frequency\",\n      \"value\": \"Weekly swabs, 10 sites, zones 1 and 2 for Listeria spp.\",\n      \"basis\": \"read\",\n      \"quote\": \"Listeria spp. swabs, 10 sites weekly, zone 1 and 2\",\n      \"locator\": \"Section 4, page 4\",\n      \"as_of\": \"2025-05-12\",\n      \"affects\": \"Defines the sanitation verification strategy; results must be trended quarterly to detect patterns or trends in contamination\"\n    },\n    {\n      \"key\": \"record_retention_period\",\n      \"value\": \"At least two years from date of record\",\n      \"basis\": \"read\",\n      \"quote\": \"kept at the Salem plant for at least two years from the date of the record\",\n      \"locator\": \"Section 9, page 7\",\n      \"as_of\": \"2025-05-12\",\n      \"affects\": \"Records must be retained and available for FDA and Oregon Department of Agriculture inspection; meets minimum FSMA requirement\"\n    }\n  ],\n  \"version_of\": {\n    \"title\": null,\n    \"confidence\": \"high\"\n  },\n  \"expected_missing\": [\n    {\n      \"title\": \"Food Safety Plan Validation Study Report\",\n      \"why\": \"FSMA requires that the cook step be validated to confirm it achieves the intended effect (e.g., reduction of Salmonella); the plan states the cook is the kill step but does not reference a validation study showing that 212°F for 60 minutes achieves a defined log reduction\",\n      \"basis\": \"similar companies, not a checked requirement\"\n    },\n    {\n      \"title\": \"HACCP Prerequisite Program or Good Manufacturing Practices (GMP) Policy\",\n      \"why\": \"The plan references sanitation and environmental monitoring but does not provide a standalone GMP or sanitation SOP; facilities must have written GMPs in place; this may exist separately\",\n      \"basis\": \"similar companies, not a checked requirement\"\n    },\n    {\n      \"title\": \"Supplier approval documentation and approval record\",\n      \"why\": \"Section 8 mentions an approved supplier list but does not provide evidence of how suppliers are evaluated or approved; a company this size would typically maintain an approval file or spreadsheet\",\n      \"basis\": \"similar companies, not a checked requirement\"\n    },\n    {\n      \"title\": \"Corrective Action Log or record of past corrective actions\",\n      \"why\": \"Section 6 describes corrective actions and states they are recorded on a corrective action log and reviewed by the PCQI, but the log itself is not included in this document; it should be kept on file for at least two years\",\n      \"basis\": \"similar companies, not a checked requirement\"\n    },\n    {\n      \"title\": \"Environmental Monitoring Results and Trend Analysis\",\n      \"why\": \"Section 7 states that environmental monitoring results are trended quarterly, but the actual swab records or trend summary is not in the plan; this would be a separate record maintained at the facility\",\n      \"basis\": \"similar companies, not a checked requirement\"\n    },\n    {\n      \"title\": \"Listeria monocytogenes Monthly Testing Results\",\n      \"why\": \"Section 7 states finished product is tested monthly for Listeria by an accredited laboratory, but the actual test reports are not in the plan; these should be filed at the facility\",\n      \"basis\": \"similar companies, not a checked requirement\"\n    },\n    {\n      \"title\": \"Recall Plan\",\n      \"why\": \"FSMA requires establishments to have a written recall plan (21 CFR 117.190); this plan does not include one\",\n      \"basis\": \"FDA FSMA requirement, not just similar company practice\"\n    },\n    {\n      \"title\": \"Traceability records or lot-coding system\",\n      \"why\": \"The plan mentions date coding but does not describe the lot-coding scheme, batch numbering, or traceability procedures needed to identify and recall product in the event of contamination\",\n      \"basis\": \"similar companies, not a checked requirement\"\n    }\n  ],\n  \"confidence_notes\": \"I read the document carefully and can identify the structure, contents, and intent with high confidence. The document is clearly organized and references are straightforward. However, I have moderate confidence in the completeness assessment because (1) the plan may reference other documents (e.g., SOPs, monitoring logs, supplier approval files) that are kept separately; (2) I did not search for the current version of FDA FSMA regulations to confirm whether any rules have changed since the plan's effective date (May 2025) or whether the plan meets all current requirements; (3) I inferred some gaps (e.g., lack of a written supplier approval procedure, thermometer calibration failure response) based on best practice and FSMA guidance, not direct inspection experience; (4) the cooling log discrepancy (gap 5) is a reading that may reflect a misunderstanding on my part if the log form itself has separate columns for 2-hour and 6-hour readings that are not visible in the plan text. I would recommend the company verify with FDA or their quality consultant whether my gaps are material or already addressed in documents not shown here.\",\n  \"could_not_read\": {\n    \"reason\": null,\n    \"way_forward\": null\n  }\n}\n```",
+    "json_parsed": false,
+    "model": "claude-haiku-4-5",
+    "searches": 0,
+    "prompt_sha256": "d50b18c308d19527713f308a777dc185e8e789015c0c1f45d588650a4b6002e2",
+    "quotes_checked": 0,
+    "quotes_verified": 0,
+    "extracted_text": "",
+    "started_at": "2026-09-25T18:30:57.079Z"
+  }
+}

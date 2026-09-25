@@ -5,6 +5,8 @@
 //   npm run golden:docs -- 04               one case, by case-id prefix
 //   npm run golden:docs -- --times 1        fewer runs (the specs ask for three)
 //   npm run golden:docs -- 06 --times 3     both forklift cases
+//   npm run golden:docs -- --seed-only       put the three companies back, scan nothing
+//   npm run golden:docs -- --from-runs       re-judge what is on disk, no model call
 //
 // WHAT IT ANSWERS. For each fixture, does the scan contain every "must" its spec states, in
 // every run? It does not, and cannot, tell you an answer got BETTER — that is a person reading
@@ -30,7 +32,7 @@
 
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync } from 'node:fs'
 import { createClient } from '@supabase/supabase-js'
-import { runDocumentScan, saveScan } from '../lib/documentScan.ts'
+import { runDocumentScan, saveScan, buildScanContext } from '../lib/documentScan.ts'
 import { modelForTask } from '../lib/ai.ts'
 
 const PROD_REF = 'dsfwmafnphdlfogetsus'
@@ -45,6 +47,10 @@ const times = Number(flagIndex >= 0 && args[flagIndex + 1] ? args[flagIndex + 1]
 const only = args.filter((a, i) => !a.startsWith('--') && i !== flagIndex + 1)[0]
 // Re-judge the runs already on disk instead of buying new ones. No model call, no database.
 const fromRuns = args.includes('--from-runs')
+// Seed the three companies and stop. `npm run db:reset` replays the chain from 000 onto an empty
+// database, and the golden companies are data, not schema — this puts them back without buying
+// twenty-one model calls to do it.
+const seedOnly = args.includes('--seed-only')
 if (!Number.isInteger(times) || times < 1) die('--times must be a positive integer.')
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -148,6 +154,10 @@ function matchItem(check, cols) {
       if (check.date && !hasDate(text, check.date)) continue
       if (check.date_or_text && !check.date_or_text.some((v) =>
         /^\d{4}-\d{2}-\d{2}$/.test(v) ? hasDate(text, v) : sq.includes(squash(v)))) continue
+      // *** THE FIELD, NOT THE WORD. *** Before migration 041 there was nowhere to record
+      // whether an item was read or worked out, so "is this marked inferred?" had to be asked
+      // of the item's prose. It is a column now and this reads it.
+      if (check.basis && (item.basis ?? 'read') !== check.basis) continue
       const hit = kws.filter((k) => text.includes(k))
       if (hit.length >= min) return { ok: true, where: name, item, hit }
     }
@@ -242,7 +252,13 @@ function evaluate(check, scan, ctx) {
       const hard = [], soft = []
       for (const name of check.collections) for (const item of cols[name] ?? []) {
         const title = norm(item.title ?? item.key ?? item.field ?? '')
-        const text = norm(ITEM_TEXT(item))
+        // `fields` narrows the search to named fields. A fact's `key` IS its subject —
+        // "supplier_contact", "osha_pel" — so a must-not about what a fact is ABOUT reads the
+        // key, not the whole item: the quote of a legitimate company fact will mention the
+        // chemical by name without the fact being about the chemical.
+        const text = check.fields
+          ? norm(check.fields.map((f) => item[f]).filter(Boolean).join(' / '))
+          : norm(ITEM_TEXT(item))
         const subjectHere = check.subject.find((s) => text.includes(norm(s)))
         if (!subjectHere) continue
         const absentHere = !check.absence.length
@@ -282,12 +298,35 @@ function evaluate(check, scan, ctx) {
         : { verdict: 'FAIL', detail: `only [${hit.join(', ') || 'nothing'}] of the spec's words appear` }
     }
     case 'every_item_marked_inferred': {
+      // Reads `basis` (migration 041), not the word "inferred" somewhere in the prose. An item
+      // that names no basis counts as `read`, which is the same default the column carries.
       const all = check.collections.flatMap((c) => cols[c] ?? [])
-      const bad = all.filter((i) => !/infer/i.test(ITEM_TEXT(i)))
+      const bad = all.filter((i) => (i.basis ?? 'read') !== 'inferred')
       return bad.length === 0
-        ? { verdict: 'PASS', detail: `${all.length} fact(s), all marked inferred` }
-        : { verdict: 'FAIL', detail: bad.map((b) => `"${ITEM_TEXT(b).slice(0, 180)}"`).join('  ||  '),
+        ? { verdict: 'PASS', detail: `${all.length} fact(s), every one basis=inferred` }
+        : { verdict: 'FAIL',
+            detail: `${bad.length} of ${all.length} carry basis=read: `
+              + bad.map((b) => `"${String(b.key ?? b.title ?? '').slice(0, 40)}"`).join(', '),
             quotes: bad.map((b) => ({ where: 'facts', text: ITEM_TEXT(b) })) }
+    }
+    // "Acceptable, not required — but if it is there it must carry this basis." Spec 05: a
+    // company fact drawn from holding an SDS is a fair proposal, and the SDS does not say it,
+    // so it is inferred; the same sentence offered as read fails the run. Absent entirely: pass.
+    case 'basis_if_present': {
+      const hits = []
+      for (const name of check.collections) for (const item of cols[name] ?? []) {
+        const text = norm(check.fields
+          ? check.fields.map((f) => item[f]).filter(Boolean).join(' / ')
+          : ITEM_TEXT(item))
+        const hit = check.keywords.map(norm).filter((k) => text.includes(k))
+        if (hit.length >= (check.min_keywords ?? 2)) hits.push({ item, hit })
+      }
+      if (!hits.length) return { verdict: 'PASS', detail: 'no such fact was proposed — the spec does not require one' }
+      const wrong = hits.filter((h) => (h.item.basis ?? 'read') !== check.basis)
+      return wrong.length === 0
+        ? { verdict: 'PASS', detail: `${hits.length} such fact(s), every one basis=${check.basis}` }
+        : { verdict: 'FAIL',
+            detail: wrong.map((w) => `"${String(w.item.key ?? w.item.title ?? '')}" is basis=${w.item.basis ?? 'read'}, must be ${check.basis}`).join('  ||  ') }
     }
     case 'labels_identical_across_runs':
       return { verdict: 'CROSS', detail: 'judged across the three runs, below' }
@@ -382,24 +421,8 @@ async function uploadFixture(co, caseFile) {
   return { documentId: row.id, bytes, name }
 }
 
-async function buildContext(co, documentId) {
-  const { data: sites } = await db.from('entities').select('name, address, state').eq('company_id', co.id)
-  const { data: labels } = await db.from('company_labels').select('kind, label').eq('company_id', co.id)
-  // The document being scanned is NOT in its own "what this company already holds" list: on a
-  // real upload it has not been read yet. Without this it is offered as a version of itself.
-  const { data: existing } = await db.from('document_scans')
-    .select('title, kind, document_id').eq('company_id', co.id).eq('is_current', true).limit(40)
-  return {
-    company: { name: co.name, industry: co.industry,
-               address: [co.city, co.state].filter(Boolean).join(', ') || null, state: co.state },
-    sites: (sites ?? []).map((s) => ({ name: s.name, address: s.address, state: s.state })),
-    agencyLabels: (labels ?? []).filter((l) => l.kind === 'agency').map((l) => l.label),
-    subjectLabels: (labels ?? []).filter((l) => l.kind === 'subject').map((l) => l.label),
-    existingDocuments: (existing ?? []).filter((d) => d.title && d.document_id !== documentId)
-      .map((d) => ({ title: d.title, kind: d.kind })),
-    dismissedGaps: [],
-  }
-}
+/** One ordered copy, in lib/documentScan.ts, so this runner and `npm run scan` cannot drift. */
+const buildContext = (co, documentId) => buildScanContext(db, co, documentId)
 
 // ---------------------------------------------------------------------------
 // MAIN
@@ -417,13 +440,17 @@ console.log(`  Cases    : ${caseFiles.length} x ${times} run(s)`)
 if (fromRuns) console.log(`  --from-runs: re-judging the stored runs in ${RUNS}/ — no model call, no database write`)
 console.log('')
 
-const needed = fromRuns ? [] : [...new Set(caseFiles.map((c) => c.company))]
+const needed = fromRuns ? [] : [...new Set(seedOnly ? Object.keys(COMPANIES) : caseFiles.map((c) => c.company))]
 const companies = {}
 for (const k of needed) {
   companies[k] = await seedCompany(k)
   const wiped = await resetCompany(companies[k])
   console.log(`  seeded ${companies[k].name}  (site "${companies[k].site.name}")`
     + (wiped ? `  — cleared ${wiped} document(s) from the last suite run` : ''))
+}
+if (seedOnly) {
+  console.log(`\n  --seed-only: ${needed.length} compan${needed.length === 1 ? 'y' : 'ies'} exist with their site. No document was uploaded and no model was called.\n`)
+  process.exit(0)
 }
 
 /**
@@ -455,7 +482,16 @@ if (fromRuns) {
   for (const c of caseFiles) {
     const dir = `${RUNS}/${c.id}`
     if (!existsSync(dir)) { console.log(`  ${c.id}: no stored runs`); continue }
-    const stored = readdirSync(dir).filter((f) => f.endsWith('.json')).sort().slice(-times)
+    // One entry per run, newest `times` of them — and where `npm run golden:docs:reparse` has
+    // written a `.reparsed.json` beside a run that the extractor used to throw away, that
+    // sibling is read instead. The original stays on disk untouched: the failure is evidence
+    // and deleting it would hide what the extractor cost.
+    const byRun = new Map()
+    for (const f of readdirSync(dir).filter((f) => f.endsWith('.json')).sort()) {
+      const base = f.replace(/\.reparsed\.json$/, '.json')
+      if (f.endsWith('.reparsed.json') || !byRun.has(base)) byRun.set(base, f)
+    }
+    const stored = [...byRun.entries()].sort(([a], [b]) => (a < b ? -1 : 1)).map(([, f]) => f).slice(-times)
     const specText = specDocumentText(c.spec)
     const runs = stored.map((f, i) => {
       const d = JSON.parse(readFileSync(`${dir}/${f}`, 'utf8'))
@@ -498,7 +534,8 @@ for (const c of (fromRuns ? [] : caseFiles)) {
     mkdirSync(`${RUNS}/${c.id}`, { recursive: true })
     const stamp = new Date().toISOString().replace(/[:.]/g, '-')
     writeFileSync(`${RUNS}/${c.id}/${stamp}-${n}.json`, JSON.stringify({
-      case: c.id, run: n, run_date: TODAY, model: scan.model, searches: scan.searches,
+      case: c.id, run: n, run_date: TODAY, model: scan.model,
+      searches: scan.searches, cited_sources: scan.cited_sources,
       prompt_sha256: scan.prompt_sha256, scan_id: scanId, ai_call_id: aiCallId,
       wall_ms: wall, cost_usd: call?.cost_usd ?? null,
       input_tokens: call?.input_tokens ?? null, output_tokens: call?.output_tokens ?? null,
@@ -508,7 +545,8 @@ for (const c of (fromRuns ? [] : caseFiles)) {
 
     runs.push({ n, scan, call, wall, verdicts, compliant, altPass })
     process.stdout.write(`  ${c.id}  run ${n}/${times}  ${(wall / 1000).toFixed(1)}s  `
-      + `${scan.searches} search${scan.searches === 1 ? '' : 'es'}  `
+      + `${scan.searches ?? '?'} search${scan.searches === 1 ? '' : 'es'}  `
+      + `${scan.cited_sources} source${scan.cited_sources === 1 ? '' : 's'}  `
       + `$${call?.cost_usd == null ? '?' : Number(call.cost_usd).toFixed(4)}  ${scan.status}\n`)
   }
   results.push({ c, co, runs })
@@ -584,7 +622,8 @@ for (const { c, co, runs } of results) {
   const total = costs.reduce((a, b) => a + (b ?? 0), 0)
   console.log(`    cost of runs  : $${total.toFixed(4)}  (${costs.map((x) => x == null ? '?' : '$' + x.toFixed(4)).join(' + ')})`)
   console.log(`    model         : ${runs[0].scan.model}`)
-  console.log(`    searches      : ${runs.map((r) => r.scan.searches).join(', ')}`)
+  console.log(`    searches      : ${runs.map((r) => r.scan.searches ?? '?').join(', ')}   (billed, from the ledger row)`)
+  console.log(`    cited sources : ${runs.map((r) => r.scan.cited_sources ?? '?').join(', ')}   (distinct URLs in the answer)`)
   console.log(`    json parsed   : ${runs.map((r) => r.scan.json_parsed).join(', ')}`)
 
   // Reported, never failed.

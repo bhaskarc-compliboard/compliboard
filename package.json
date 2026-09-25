@@ -20,6 +20,8 @@
     "golden:facts": "node --env-file=.env.local scripts/golden-facts.js",
     "golden:docs": "node --env-file=.env.local scripts/run-golden-docs.js",
     "golden:docs:render": "node scripts/render-golden-docs.js",
+    "golden:docs:reparse": "node --env-file=.env.local scripts/reparse-golden-runs.js",
+    "check:determinism": "node --env-file=.env.local scripts/check-prompt-determinism.js",
     "probe:searches": "node --env-file=.env.local scripts/probe-search-count.js",
     "cost": "node --env-file=.env.local scripts/cost-report.js",
     "scan": "node --env-file=.env.local scripts/scan-document.js",

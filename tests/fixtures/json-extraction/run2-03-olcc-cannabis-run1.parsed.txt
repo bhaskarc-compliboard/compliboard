@@ -1,0 +1,155 @@
+I'll analyze this document systematically.```json
+{
+  "identity": {
+    "kind": "permit",
+    "title": "Recreational Marijuana Producer License — Tier II Indoor",
+    "issuer": "Oregon Liquor and Cannabis Commission",
+    "agencies": [
+      "Oregon Liquor and Cannabis Commission"
+    ],
+    "subjects": [
+      "cannabis_cultivation",
+      "licensing"
+    ],
+    "site": "Bailey Hill",
+    "jurisdiction": [
+      "Oregon",
+      "federal"
+    ],
+    "doc_date": "2026-03-03",
+    "doc_date_kind": "issued",
+    "page_refs": {
+      "doc_date": "page 1, bottom",
+      "issuer": "page 1, header"
+    }
+  },
+  "summary": "This is a recreational marijuana producer license issued by the Oregon Liquor and Cannabis Commission authorizing Evergreen Botanicals, LLC to produce marijuana at its Eugene location. The license is valid for the current term of March 3, 2026 to March 2, 2027, permits up to 10,000 square feet of mature plant canopy in an indoor facility, and carries five conditions that the company must meet to remain authorized.",
+  "status": "current",
+  "significant_date": "2027-03-02",
+  "significant_date_kind": "expiry",
+  "freshness_note": "License is current as of today (2026-09-25). Expiration is in 159 days on March 2, 2027. A renewal application and fee must be received by the Commission no later than 20 days before expiration (by February 10, 2027).",
+  "gaps": [],
+  "conditions": [
+    {
+      "title": "Premises exclusivity",
+      "condition_ref": "1",
+      "evidence_expected": "License document itself, which names the specific premises (2210 Bailey Hill Road, Eugene, Oregon 97405) and is non-transferable"
+    },
+    {
+      "title": "Annual renewal",
+      "condition_ref": "2",
+      "evidence_expected": "Submitted renewal application and proof of payment of renewal fee to OLCC, received no later than 20 days before expiration date; license may continue operating while renewal is being considered if complete application was submitted timely"
+    },
+    {
+      "title": "Marijuana tracking and worker permits",
+      "condition_ref": "3",
+      "evidence_expected": "Record of all marijuana items in Cannabis Tracking System; current marijuana worker permits for all employees who handle marijuana items"
+    },
+    {
+      "title": "Video surveillance",
+      "condition_ref": "4",
+      "evidence_expected": "<cite index=\"12-1\">Video surveillance recordings in Commission-approved format, with date and time embedded, kept for at least 90 days, backed up off-site in real time, and available immediately upon request</cite>; notification to Commission within 48 hours of any equipment failure or system outage lasting 30 minutes or more"
+    },
+    {
+      "title": "Ownership and financial interest changes",
+      "condition_ref": "5",
+      "evidence_expected": "Written notification to OLCC before any change in ownership, premises, or persons with financial interest takes effect"
+    }
+  ],
+  "deadlines": [
+    {
+      "title": "Renewal application and fee due",
+      "due_on": "2027-02-10",
+      "source_line": "Condition 2: 'A renewal application and the renewal fee must be received by the Commission no later than 20 days before the expiration date'",
+      "recurs": true
+    },
+    {
+      "title": "License expiration",
+      "due_on": "2027-03-02",
+      "source_line": "Expiration date: March 2, 2027",
+      "recurs": false
+    }
+  ],
+  "facts": [
+    {
+      "key": "license_number",
+      "value": "020-1004763A8B2",
+      "quote": "License number: 020-1004763A8B2",
+      "locator": "page 1, top of license detail box",
+      "as_of": "2026-03-03",
+      "affects": "This is the identifier for all official correspondence and compliance matters with OLCC"
+    },
+    {
+      "key": "licensed_premises",
+      "value": "2210 Bailey Hill Road, Eugene, Oregon 97405",
+      "quote": "Licensed premises: 2210 Bailey Hill Road, Eugene, Oregon 97405",
+      "locator": "page 1, top of license detail box",
+      "as_of": "2026-03-03",
+      "affects": "Only this address is authorized for marijuana production under this license; operations at any other location are unlawful"
+    },
+    {
+      "key": "license_type",
+      "value": "Producer — Tier II, Indoor",
+      "quote": "License type: Producer — Tier II, Indoor",
+      "locator": "page 1, top of license detail box",
+      "as_of": "2026-03-03",
+      "affects": "Determines the regulatory framework that applies, including the canopy limit and applicable operating procedures"
+    },
+    {
+      "key": "canopy_limit",
+      "value": "10,000 square feet mature plant canopy",
+      "quote": "Canopy limit: 10,000 square feet mature plant canopy",
+      "locator": "page 1, top of license detail box",
+      "as_of": "2026-03-03",
+      "affects": "The company cannot cultivate more than this amount of mature plant canopy at the licensed premises; exceeding this limit is a violation"
+    },
+    {
+      "key": "original_issue_date",
+      "value": "2022-03-03",
+      "quote": "Original issue date: March 3, 2022",
+      "locator": "page 1, top of license detail box",
+      "as_of": "2026-03-03",
+      "affects": "Shows this is a renewal of a continuously-held license, not a new initial grant"
+    },
+    {
+      "key": "current_term",
+      "value": "March 3, 2026 to March 2, 2027",
+      "quote": "Current term: March 3, 2026 to March 2, 2027",
+      "locator": "page 1, top of license detail box",
+      "as_of": "2026-03-03",
+      "affects": "Defines the period during which this license is valid; operations outside this term are unlawful"
+    }
+  ],
+  "version_of": {
+    "title": null,
+    "confidence": "high"
+  },
+  "expected_missing": [
+    {
+      "title": "Cannabis Tracking System (CTS) registration confirmation",
+      "why": "Condition 3 requires tracking of all marijuana items in CTS, but evidence of registration is not typically issued as a separate document",
+      "basis": "similar companies hold CTS registrations separately from the license"
+    },
+    {
+      "title": "Worker permit roster",
+      "why": "Condition 3 requires current marijuana worker permits for all employees, but these are issued by the Commission separately and must be kept current by the company",
+      "basis": "Oregon OLCC issues worker permits as separate credentials"
+    },
+    {
+      "title": "Video surveillance system specifications and placement diagram",
+      "why": "Condition 4 references OAR 845-025-1450 which requires specific technical standards and placement, but the license itself does not detail these",
+      "basis": "cannabis operators typically maintain separate documentation of camera placement and system configuration to satisfy technical requirements"
+    },
+    {
+      "title": "Ownership structure and financial interest disclosure",
+      "why": "Condition 5 requires reporting changes in ownership or financial interest, which assumes some baseline ownership/financial structure is on file with the Commission",
+      "basis": "Oregon cannabis licensing requires initial financial interest documentation at application"
+    }
+  ],
+  "confidence_notes": "High confidence on the permit's core elements: it is a valid, current OLCC Recreational Marijuana Producer License issued March 3, 2026, expiring March 2, 2027. The five conditions are clear and directly stated. The renewal deadline of February 10, 2027 is calculated from the explicit 20-day requirement. Condition 4 on video surveillance was verified against current OAR 845-025-1450 rules; the rules have been updated recently to require off-site real-time backup, and the 90-day retention period in the license matches current regulations. I found no gaps in the permit itself—permits are agency documents and do not contain gaps to fix. The company must simply meet the stated conditions and renew in time. I did not search for general information about Oregon cannabis licensing procedures beyond what was necessary to verify the specific regulatory citations.",
+  "could_not_read": {
+    "reason": null,
+    "way_forward": null
+  }
+}
+```

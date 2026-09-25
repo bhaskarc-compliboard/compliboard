@@ -63,17 +63,17 @@
     },
     {
       "id": "last-entry-date",
-      "line": "doc_date: September 2026, kind \"last entry\" with the date September 19, 2026",
+      "line": "doc_date: September 2026, kind \"last entry\" with the date September 18, 2026",
       "type": "date_anywhere",
       "fields": [
         "significant_date",
         "identity.doc_date"
       ],
-      "value": "2026-09-19"
+      "value": "2026-09-18"
     },
     {
       "id": "status",
-      "line": "Status (must): recorded, with last entry September 19, 2026. Never \"compliant\". Not gaps_found as a program-style status.",
+      "line": "Status (must): recorded, with last entry September 18, 2026. Never \"compliant\". Not gaps_found as a program-style status.",
       "type": "field_one_of",
       "field": "status",
       "accept": [
@@ -85,7 +85,7 @@
     },
     {
       "id": "finding-missing-days",
-      "line": "1. No entries for September 3 and 4 while the hour meter shows the truck ran between September 2 and September 5. Citation contains \"1910.178(q)(7)\".",
+      "line": "1. No entries for September 3 and 4 while the hour meter shows the truck ran between September 2 and September 7. A finding that also names weekend dates as missing is an over-reach and is reported, not failed. Locator: the table. Citation contains \"1910.178(q)(7)\".",
       "type": "item",
       "collections": [
         "gaps",
@@ -129,16 +129,16 @@
     },
     {
       "id": "finding-no-entries-since",
-      "line": "3. The last entry is September 19; if the run date is later than September 22, the scan notes that the log has no entries since and asks whether the truck is still in service or a later page exists.",
+      "line": "3. The last entry is September 18; if the run date is later than September 21, the scan notes that the log has no entries since and asks whether the truck is still in service or a later page exists.",
       "type": "item",
       "collections": [
         "gaps",
         "notes"
       ],
       "keywords": [
-        "september 19",
-        "sep 19",
-        "2026-09-19",
+        "september 18",
+        "sep 18",
+        "2026-09-18",
         "last entry",
         "most recent entry",
         "no entries since",
@@ -150,7 +150,7 @@
         "since"
       ],
       "min_keywords": 2,
-      "required_if_run_date_after": "2026-09-22",
+      "required_if_run_date_after": "2026-09-21",
       "note": "Widened after the first judging pass: the spec's concept is \"the last entry is September 19 and is anything newer coming\", and run 3 said exactly that in the model's own words — \"The most recent entry is 6 days old; confirm this log has entries through today if the truck continues in service\" — while matching only one of the original keywords. The concept is unchanged; the phrasings are the model's rather than the spec's."
     },
     {
@@ -302,7 +302,8 @@
         "chen",
         "rivera"
       ],
-      "min_keywords": 2
+      "min_keywords": 2,
+      "basis": "read"
     },
     {
       "id": "conditions-none",

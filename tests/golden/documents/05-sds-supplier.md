@@ -92,7 +92,9 @@ Deadlines (must): none. An SDS sets no deadline for the company. A line noting t
 
 Conditions (must): none.
 
-Facts: the only acceptable facts are marked inferred, such as "the company holds an SDS for sodium hydroxide 50%" or "the company may store or handle sodium hydroxide 50%". A fact stated as read, such as "the company uses sodium hydroxide", fails the run: the SDS does not say that. The supplier's address, phone and CHEMTREC number are not facts about the company.
+Facts (must not): no fact whose subject is the supplier (its name, address, phone, CHEMTREC number, revision history) or the chemical's own properties (classification, hazard statements, exposure limits, physical data, transport class). Those are facts about the document, not about the company, and the prompt's rule is that only facts about the company that would change what applies to it are proposed. Any such fact fails the run, whatever its basis.
+
+Facts (acceptable, not required): a fact about the company drawn from holding this SDS, such as "the company holds an SDS for sodium hydroxide 50%" or "the company may store or handle sodium hydroxide 50%". The SDS does not say either, so such a fact must carry basis: inferred; the same fact with basis: read fails the run.
 
 Summary (must, in some words): this is the supplier's document, kept for the company's Hazard Communication program; nothing in it is the company's to fix; what matters is that it is the current version and is available to employees.
 

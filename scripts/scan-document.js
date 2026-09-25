@@ -14,7 +14,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { readFileSync, existsSync } from 'node:fs'
 import { basename, extname } from 'node:path'
-import { runDocumentScan, saveScan } from '../lib/documentScan.ts'
+import { runDocumentScan, saveScan, buildScanContext } from '../lib/documentScan.ts'
 import { estimateCost } from '../lib/costLedger.ts'
 
 const PROD_REF = 'dsfwmafnphdlfogetsus'
@@ -88,29 +88,23 @@ if (docArg) {
 }
 
 // ---- the context the model is given ------------------------------------------------------
-const { data: sites } = await db.from('entities').select('name, address, state').eq('company_id', company.id)
-const { data: labels } = await db.from('company_labels').select('kind, label').eq('company_id', company.id)
-const { data: existing } = await db.from('document_scans')
-  .select('title, kind').eq('company_id', company.id).eq('is_current', true).limit(40)
-const { data: dismissed } = await db.from('document_gaps')
-  .select('title, dismissed_reason').eq('document_id', documentId).eq('status', 'dismissed')
-
-const context = {
-  company: { name: company.name, industry: company.industry,
-             address: [company.city, company.state].filter(Boolean).join(', ') || null, state: company.state },
-  sites: (sites ?? []).map((s) => ({ name: s.name, address: s.address, state: s.state })),
-  agencyLabels: (labels ?? []).filter((l) => l.kind === 'agency').map((l) => l.label),
-  subjectLabels: (labels ?? []).filter((l) => l.kind === 'subject').map((l) => l.label),
-  existingDocuments: (existing ?? []).filter((d) => d.title).map((d) => ({ title: d.title, kind: d.kind })),
-  dismissedGaps: (dismissed ?? []).map((g) => ({ title: g.title, reason: g.dismissed_reason })),
-}
-console.log(`  Context  : ${context.sites.length} site(s), ${context.agencyLabels.length} agency label(s), ` +
-  `${context.subjectLabels.length} subject label(s), ${context.existingDocuments.length} document(s) on file, ` +
-  `${context.dismissedGaps.length} dismissed gap(s)\n`)
+// *** BUILT INSIDE THE LOOP, ONCE PER RUN. *** It used to be built once, here, before the loop —
+// so with `--times 3` run 2 was shown the label list as it stood BEFORE run 1 wrote to it, and
+// the per-company label list could not do the one job it exists for. Measured on 25 September:
+// run 1 of a batch wrote "Oregon DEQ" and run 2, never having been shown it, wrote
+// "Oregon Department of Environmental Quality" — two groups on the customer's screen for one
+// agency, which is exactly the trap the prompt's reuse sentence is there to prevent.
+// `buildScanContext` also orders every query, so the same state gives the same prompt_sha256.
 
 // ---- run ------------------------------------------------------------------------------
 const runs = []
 for (let i = 1; i <= times; i++) {
+  const context = await buildScanContext(db, company, documentId)
+  if (i === 1) {
+    console.log(`  Context  : ${context.sites.length} site(s), ${context.agencyLabels.length} agency label(s), `
+      + `${context.subjectLabels.length} subject label(s), ${context.existingDocuments.length} document(s) on file, `
+      + `${context.dismissedGaps.length} dismissed gap(s)  — rebuilt before every run\n`)
+  }
   const t0 = Date.now()
   const scan = await runDocumentScan({ buffer: fileBuf, fileName, fileType, companyId: company.id, context })
   const wall = Date.now() - t0

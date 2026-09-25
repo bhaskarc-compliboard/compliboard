@@ -5,69 +5,231 @@
   "fixture": "fixtures/05-sds-supplier.pdf",
   "company": "cascade",
   "must": [
-    { "id": "kind",
+    {
+      "id": "kind",
       "line": "kind: supplier_document",
-      "type": "field_one_of", "field": "identity.kind", "accept": ["supplier_document"] },
-    { "id": "issuer-supplier",
+      "type": "field_one_of",
+      "field": "identity.kind",
+      "accept": [
+        "supplier_document"
+      ]
+    },
+    {
+      "id": "issuer-supplier",
       "line": "issuer: Northwest Alkali Products (the supplier), not the company under scan",
-      "type": "field_contains", "field": "identity.issuer", "accept": ["northwest alkali"] },
-    { "id": "agency-osha",
+      "type": "field_contains",
+      "field": "identity.issuer",
+      "accept": [
+        "northwest alkali"
+      ]
+    },
+    {
+      "id": "agency-osha",
       "line": "agency: OSHA (HazCom) is the natural label; DOT may appear from section 14 and is acceptable. The label string identical across runs.",
-      "type": "list_contains", "field": "identity.agencies", "accept": ["osha", "dot", "department of transportation"] },
-    { "id": "site-not-invented",
+      "type": "list_contains",
+      "field": "identity.agencies",
+      "accept": [
+        "osha",
+        "dot",
+        "department of transportation"
+      ]
+    },
+    {
+      "id": "site-not-invented",
       "line": "site: company-wide or unassigned; the scan must not invent a site from the supplier's Portland address",
-      "type": "field_one_of", "field": "identity.site", "accept": ["company_wide", "company-wide", ""], "allow_null": true },
-    { "id": "doc-date",
+      "type": "field_one_of",
+      "field": "identity.site",
+      "accept": [
+        "company_wide",
+        "company-wide",
+        ""
+      ],
+      "allow_null": true
+    },
+    {
+      "id": "doc-date",
       "line": "doc_date: revised March 18, 2024",
-      "type": "date_equals", "field": "identity.doc_date", "value": "2024-03-18" },
-    { "id": "doc-date-kind",
+      "type": "date_equals",
+      "field": "identity.doc_date",
+      "value": "2024-03-18"
+    },
+    {
+      "id": "doc-date-kind",
       "line": "doc_date: revised March 18, 2024, kind \"revised\"",
-      "type": "field_contains", "field": "identity.doc_date_kind", "accept": ["revised"] },
-
-    { "id": "status",
+      "type": "field_contains",
+      "field": "identity.doc_date_kind",
+      "accept": [
+        "revised"
+      ]
+    },
+    {
+      "id": "status",
       "line": "Status (must): not_judged (or the equivalent the schema uses for supplier documents). Never \"compliant\", never gaps_found.",
-      "type": "field_one_of", "field": "status", "accept": ["not_judged"], "forbid": ["gaps_found"] },
-
-    { "id": "no-gaps",
+      "type": "field_one_of",
+      "field": "status",
+      "accept": [
+        "not_judged"
+      ],
+      "forbid": [
+        "gaps_found"
+      ]
+    },
+    {
+      "id": "no-gaps",
       "line": "Gaps (must): none. Any gap is a false finding, including a gap about the SDS's own content.",
-      "type": "empty", "collections": ["gaps"] },
-    { "id": "no-deadlines",
+      "type": "empty",
+      "collections": [
+        "gaps"
+      ]
+    },
+    {
+      "id": "no-deadlines",
       "line": "Deadlines (must): none. An SDS sets no deadline for the company.",
-      "type": "empty", "collections": ["deadlines"] },
-    { "id": "no-conditions",
+      "type": "empty",
+      "collections": [
+        "deadlines"
+      ]
+    },
+    {
+      "id": "no-conditions",
       "line": "Conditions (must): none.",
-      "type": "empty", "collections": ["conditions"] },
-
-    { "id": "facts-only-inferred",
-      "line": "Facts: the only acceptable facts are marked inferred, such as \"the company holds an SDS for sodium hydroxide 50%\" or \"the company may store or handle sodium hydroxide 50%\". A fact stated as read, such as \"the company uses sodium hydroxide\", fails the run.",
-      "type": "every_item_marked_inferred", "collections": ["facts"] },
-
-    { "id": "summary-supplier-document",
+      "type": "empty",
+      "collections": [
+        "conditions"
+      ]
+    },
+    {
+      "id": "summary-supplier-document",
       "line": "Summary (must, in some words): this is the supplier's document, kept for the company's Hazard Communication program; nothing in it is the company's to fix; what matters is that it is the current version and is available to employees.",
-      "type": "text_keywords", "fields": ["summary"],
-      "keywords": ["supplier", "hazard communication", "hazcom", "not the company", "nothing", "fix",
-                   "current version", "available to employees", "employees"],
-      "min_keywords": 3 },
-
-    { "id": "label-consistency",
+      "type": "text_keywords",
+      "fields": [
+        "summary"
+      ],
+      "keywords": [
+        "supplier",
+        "hazard communication",
+        "hazcom",
+        "not the company",
+        "nothing",
+        "fix",
+        "current version",
+        "available to employees",
+        "employees"
+      ],
+      "min_keywords": 3
+    },
+    {
+      "id": "label-consistency",
       "line": "The label string identical across runs.",
-      "type": "labels_identical_across_runs" }
+      "type": "labels_identical_across_runs"
+    },
+    {
+      "id": "company-fact-is-inferred",
+      "line": "Facts (acceptable, not required): a fact about the company drawn from holding this SDS, such as \"the company holds an SDS for sodium hydroxide 50%\" or \"the company may store or handle sodium hydroxide 50%\". The SDS does not say either, so such a fact must carry basis: inferred; the same fact with basis: read fails the run.",
+      "type": "basis_if_present",
+      "collections": [
+        "facts"
+      ],
+      "keywords": [
+        "holds an sds",
+        "holds a current sds",
+        "company holds",
+        "may store",
+        "may handle",
+        "stores or handles",
+        "store or handle",
+        "uses sodium hydroxide",
+        "handles sodium hydroxide"
+      ],
+      "min_keywords": 1,
+      "basis": "inferred"
+    }
   ],
   "must_not": [
-    { "id": "no-supplier-contact-facts",
-      "line": "The supplier's address, phone and CHEMTREC number are not facts about the company.",
-      "type": "absent_item", "collections": ["facts"],
-      "subject": ["chemtrec", "7200 n lombard", "lombard street", "555-0140", "1-800-424-9300", "emergency telephone"],
-      "absence": [] }
+    {
+      "id": "no-supplier-or-chemical-facts",
+      "line": "Facts (must not): no fact whose subject is the supplier (its name, address, phone, CHEMTREC number, revision history) or the chemical's own properties (classification, hazard statements, exposure limits, physical data, transport class). Those are facts about the document, not about the company. Any such fact fails the run, whatever its basis.",
+      "type": "absent_item",
+      "collections": [
+        "facts"
+      ],
+      "fields": [
+        "key"
+      ],
+      "subject": [
+        "supplier",
+        "chemtrec",
+        "manufacturer",
+        "revision",
+        "classification",
+        "hazard statement",
+        "hazard statements",
+        "signal word",
+        "composition",
+        "cas number",
+        "ingredient",
+        "exposure limit",
+        "exposure limits",
+        "pel",
+        "tlv",
+        "rel",
+        "physical propert",
+        "boiling",
+        "freezing",
+        "specific gravity",
+        "vapour pressure",
+        "vapor pressure",
+        "transport",
+        "un number",
+        "un1824",
+        "packing group",
+        "hazard class",
+        "reportable quantity",
+        "rcra",
+        "cercla",
+        "tsca",
+        "product identifier",
+        "product identity",
+        "first aid",
+        "ppe",
+        "eyewash",
+        "waste"
+      ],
+      "absence": [],
+      "note": "Matched on the fact's `key`, which is its subject. A legitimate company fact quotes the SDS and will name the chemical; that does not make the chemical its subject."
+    }
   ],
   "reported": [
-    { "id": "hazcom-accessible-note",
+    {
+      "id": "hazcom-accessible-note",
       "line": "A line noting that HazCom requires the SDS to be readily accessible is fine as an expected-missing or a note, not as a deadline.",
-      "type": "text_keywords", "fields": ["summary", "confidence_notes", "freshness_note"],
-      "keywords": ["readily accessible", "accessible", "available to employees"], "min_keywords": 1 },
-    { "id": "freshness-2024",
+      "type": "text_keywords",
+      "fields": [
+        "summary",
+        "confidence_notes",
+        "freshness_note"
+      ],
+      "keywords": [
+        "readily accessible",
+        "accessible",
+        "available to employees"
+      ],
+      "min_keywords": 1
+    },
+    {
+      "id": "freshness-2024",
       "line": "Freshness: the revision is from 2024; a nudge that a newer SDS revision may exist is acceptable, not required.",
-      "type": "text_keywords", "fields": ["freshness_note"],
-      "keywords": ["2024", "newer", "revision", "current"], "min_keywords": 1 }
+      "type": "text_keywords",
+      "fields": [
+        "freshness_note"
+      ],
+      "keywords": [
+        "2024",
+        "newer",
+        "revision",
+        "current"
+      ],
+      "min_keywords": 1
+    }
   ]
 }

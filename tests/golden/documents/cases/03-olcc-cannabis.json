@@ -260,10 +260,11 @@
       "keywords": [
         "employee",
         "handle",
-        "marijuana",
-        "inferred"
+        "marijuana"
       ],
-      "min_keywords": 2
+      "min_keywords": 2,
+      "basis": "inferred",
+      "note": "basis is read off the column (migration 041), not looked for in the prose."
     },
     {
       "id": "expected-missing",

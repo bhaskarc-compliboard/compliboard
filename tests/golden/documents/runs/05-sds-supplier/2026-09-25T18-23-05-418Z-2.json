@@ -1,0 +1,283 @@
+{
+  "case": "05-sds-supplier",
+  "run": 2,
+  "run_date": "2026-09-25",
+  "model": "claude-haiku-4-5",
+  "searches": 0,
+  "prompt_sha256": "de5fe88851ace3dfe689c4ed47824d19ab1d559b33815239ed63f758678dba7b",
+  "scan_id": "d4e6db73-26ce-4fbe-b63f-74a24b572362",
+  "ai_call_id": "f8579434-60ae-45f4-95b6-cace05f59b35",
+  "wall_ms": 23327,
+  "cost_usd": 0.02338,
+  "input_tokens": 12205,
+  "output_tokens": 2235,
+  "json_parsed": true,
+  "compliant_found_in": [],
+  "alternative_pass": false,
+  "verdicts": {
+    "kind": {
+      "verdict": "PASS",
+      "detail": "identity.kind = \"supplier document\""
+    },
+    "issuer-supplier": {
+      "verdict": "PASS",
+      "detail": "identity.issuer = \"northwest alkali products, inc.\""
+    },
+    "agency-osha": {
+      "verdict": "FAIL",
+      "detail": "identity.agencies = [empty]"
+    },
+    "site-not-invented": {
+      "verdict": "PASS",
+      "detail": "identity.site = null"
+    },
+    "doc-date": {
+      "verdict": "PASS",
+      "detail": "identity.doc_date = 2024-03-18"
+    },
+    "doc-date-kind": {
+      "verdict": "PASS",
+      "detail": "identity.doc_date_kind = \"revised\""
+    },
+    "status": {
+      "verdict": "PASS",
+      "detail": "status = \"not judged\""
+    },
+    "no-gaps": {
+      "verdict": "PASS",
+      "detail": "none"
+    },
+    "no-deadlines": {
+      "verdict": "PASS",
+      "detail": "none"
+    },
+    "no-conditions": {
+      "verdict": "PASS",
+      "detail": "none"
+    },
+    "facts-only-inferred": {
+      "verdict": "FAIL",
+      "detail": "9 of 9 carry basis=read: \"product_identifier\", \"hazard_classifications\", \"osha_pel\", \"required_ppe\", \"emergency_eyewash_shower_requirement\", \"hazardous_waste_classification\", \"dot_reportable_quantity\", \"supplier_contact\", \"emergency_contact_chemtrec\"",
+      "quotes": [
+        {
+          "where": "facts",
+          "text": "product_identifier / Sodium Hydroxide Solution, 50% (w/w) / Product identifier: Sodium Hydroxide Solution, 50% (w/w) / Section 1, page 1 / 2024-03-18 / Identifies the chemical that Cascade must manage, label, store, and handle in accordance with OSHA HCS and this SDS. / read"
+        },
+        {
+          "where": "facts",
+          "text": "hazard_classifications / Skin corrosion Category 1A (H314); Serious eye damage Category 1 (H318); Corrosive to metals Category 1 (H290) / Classification: Skin corrosion, Category 1A (H314); Serious eye damage, Category 1 (H318); Corrosive to metals, Category 1 (H290) / Section 2, page 1 / 2024-03-18 / Cascade must ensure labels, hazard communication, and training reflect these severe acute hazards; affects PPE selection and emergency response. / read"
+        },
+        {
+          "where": "facts",
+          "text": "osha_pel / 2 mg/m³ (TWA); ACGIH TLV 2 mg/m³ (ceiling); NIOSH REL 2 mg/m³ (ceiling) / Sodium hydroxide — OSHA PEL 2 mg/m³ (TWA); ACGIH TLV 2 mg/m³ (ceiling); NIOSH REL 2 mg/m³ (ceiling) / Section 8, page 3 / 2024-03-18 / Cascade must ensure work area monitoring and ventilation do not exceed these exposure limits; affects engineering controls requirement. / read"
+        },
+        {
+          "where": "facts",
+          "text": "required_ppe / Chemical splash goggles and face shield; Neoprene, nitrile or butyl rubber gloves, chemical-resistant apron or suit, rubber boots; NIOSH-approved respirator with particulate filter where mist exceeds limits / Eye and face protection: Chemical splash goggles and face shield. Skin protection: Neoprene, nitrile or butyl rubber gloves, chemical-resistant apron or suit, rubber boots. Respiratory protection: Where mist exceeds exposure limits, a NIOSH-approved respirator with particulate filter. / Section 8, page 3 / 2024-03-18 / Cascade must provide and require this PPE for all employees and contractors handling this chemical; affects safety program and procurement. / read"
+        },
+        {
+          "where": "facts",
+          "text": "emergency_eyewash_shower_requirement / Emergency eyewash and safety shower within 10 seconds of work areas / emergency eyewash and safety shower within 10 seconds of work areas / Section 8, page 3 / 2024-03-18 / Cascade must install and maintain eyewash and shower stations within 10 seconds of any location where this chemical is handled or stored. / read"
+        },
+        {
+          "where": "facts",
+          "text": "hazardous_waste_classification / Unneutralised product is a corrosive hazardous waste (RCRA D002) / Unneutralised product is a corrosive hazardous waste (RCRA D002) / Section 13, page 4 / 2024-03-18 / Cascade must manage disposal as hazardous waste; spent or spilled product must be treated and disposed under RCRA rules, affecting waste handling and cost. / read"
+        },
+        {
+          "where": "facts",
+          "text": "dot_reportable_quantity / 1,000 lb (sodium hydroxide) / DOT reportable quantity (RQ): 1,000 lb (sodium hydroxide) / Section 14, page 4 / 2024-03-18 / Cascade must report spills or releases exceeding 1,000 lb to EPA and DOT; affects emergency response and regulatory notification procedures. / read"
+        },
+        {
+          "where": "facts",
+          "text": "supplier_contact / Northwest Alkali Products, Inc., 7200 N Lombard Street, Portland, Oregon 97203 / Supplier: Northwest Alkali Products, Inc., 7200 N Lombard Street, Portland, Oregon 97203 / Section 1, page 1 / 2024-03-18 / Cascade can contact supplier for product information or issues; important for procurement and vendor communication. / read"
+        },
+        {
+          "where": "facts",
+          "text": "emergency_contact_chemtrec / CHEMTREC 1-800-424-9300 (24 hours) / Emergency telephone: CHEMTREC 1-800-424-9300 (24 hours) / Section 1, page 1 / 2024-03-18 / Cascade must make this number available to emergency responders and employees in case of chemical emergency. / read"
+        }
+      ]
+    },
+    "summary-supplier-document": {
+      "verdict": "FAIL",
+      "detail": "only [supplier, hazard communication] of the spec's words appear"
+    },
+    "label-consistency": {
+      "verdict": "CROSS",
+      "detail": "judged across the three runs, below"
+    },
+    "no-supplier-contact-facts": {
+      "verdict": "FAIL",
+      "detail": "facts: \"supplier_contact / Northwest Alkali Products, Inc., 7200 N Lombard Street, Portland, Oregon 97203 / Supplier: Northwest Alkali Products, Inc., 7200 N Lombard Street, Portland, Oregon 97203 / Section 1, page 1 / 2024-03-1\"  ||  facts: \"emergency_contact_chemtrec / CHEMTREC 1-800-424-9300 (24 hours) / Emergency telephone: CHEMTREC 1-800-424-9300 (24 hours) / Section 1, page 1 / 2024-03-18 / Cascade must make this number available to emergency responders\"",
+      "quotes": [
+        {
+          "where": "facts",
+          "text": "supplier_contact / Northwest Alkali Products, Inc., 7200 N Lombard Street, Portland, Oregon 97203 / Supplier: Northwest Alkali Products, Inc., 7200 N Lombard Street, Portland, Oregon 97203 / Section 1, page 1 / 2024-03-18 / Cascade can contact supplier for product information or issues; important for procurement and vendor communication. / read"
+        },
+        {
+          "where": "facts",
+          "text": "emergency_contact_chemtrec / CHEMTREC 1-800-424-9300 (24 hours) / Emergency telephone: CHEMTREC 1-800-424-9300 (24 hours) / Section 1, page 1 / 2024-03-18 / Cascade must make this number available to emergency responders and employees in case of chemical emergency. / read"
+        }
+      ],
+      "soft": []
+    },
+    "hazcom-accessible-note": {
+      "verdict": "FAIL",
+      "detail": "only [nothing] of the spec's words appear"
+    },
+    "freshness-2024": {
+      "verdict": "PASS",
+      "detail": "[2024, current]"
+    }
+  },
+  "scan": {
+    "identity": {
+      "kind": "supplier_document",
+      "title": "Safety Data Sheet: Sodium Hydroxide Solution, 50%",
+      "issuer": "Northwest Alkali Products, Inc.",
+      "agencies": [],
+      "subjects": [
+        "workplace_safety"
+      ],
+      "site": null,
+      "jurisdiction": [
+        "federal"
+      ],
+      "doc_date": "2024-03-18",
+      "doc_date_kind": "revised",
+      "page_refs": {
+        "doc_date": "page 1",
+        "issuer": "page 1"
+      }
+    },
+    "summary": "This is a Safety Data Sheet (SDS) prepared by the supplier, Northwest Alkali Products, Inc., for sodium hydroxide solution 50% (w/w). It describes the product's hazards, safe handling, personal protective equipment, and emergency response procedures under the OSHA Hazard Communication Standard. The document is the supplier's responsibility and does not commit Cascade Specialty Chemicals to any specific action—it is the product information sheet that must accompany the chemical when distributed.",
+    "status": "not_judged",
+    "significant_date": null,
+    "significant_date_kind": null,
+    "freshness_note": "Revised March 18, 2024, which is current within 2.5 years as of today (September 25, 2026). The document notes changes from version 4.0 (August 2, 2021), showing active maintenance by the supplier.",
+    "gaps": [],
+    "conditions": [],
+    "deadlines": [],
+    "facts": [
+      {
+        "key": "product_identifier",
+        "value": "Sodium Hydroxide Solution, 50% (w/w)",
+        "quote": "Product identifier: Sodium Hydroxide Solution, 50% (w/w)",
+        "locator": "Section 1, page 1",
+        "as_of": "2024-03-18",
+        "affects": "Identifies the chemical that Cascade must manage, label, store, and handle in accordance with OSHA HCS and this SDS.",
+        "basis": "read",
+        "quote_verified": null
+      },
+      {
+        "key": "hazard_classifications",
+        "value": "Skin corrosion Category 1A (H314); Serious eye damage Category 1 (H318); Corrosive to metals Category 1 (H290)",
+        "quote": "Classification: Skin corrosion, Category 1A (H314); Serious eye damage, Category 1 (H318); Corrosive to metals, Category 1 (H290)",
+        "locator": "Section 2, page 1",
+        "as_of": "2024-03-18",
+        "affects": "Cascade must ensure labels, hazard communication, and training reflect these severe acute hazards; affects PPE selection and emergency response.",
+        "basis": "read",
+        "quote_verified": null
+      },
+      {
+        "key": "osha_pel",
+        "value": "2 mg/m³ (TWA); ACGIH TLV 2 mg/m³ (ceiling); NIOSH REL 2 mg/m³ (ceiling)",
+        "quote": "Sodium hydroxide — OSHA PEL 2 mg/m³ (TWA); ACGIH TLV 2 mg/m³ (ceiling); NIOSH REL 2 mg/m³ (ceiling)",
+        "locator": "Section 8, page 3",
+        "as_of": "2024-03-18",
+        "affects": "Cascade must ensure work area monitoring and ventilation do not exceed these exposure limits; affects engineering controls requirement.",
+        "basis": "read",
+        "quote_verified": null
+      },
+      {
+        "key": "required_ppe",
+        "value": "Chemical splash goggles and face shield; Neoprene, nitrile or butyl rubber gloves, chemical-resistant apron or suit, rubber boots; NIOSH-approved respirator with particulate filter where mist exceeds limits",
+        "quote": "Eye and face protection: Chemical splash goggles and face shield. Skin protection: Neoprene, nitrile or butyl rubber gloves, chemical-resistant apron or suit, rubber boots. Respiratory protection: Where mist exceeds exposure limits, a NIOSH-approved respirator with particulate filter.",
+        "locator": "Section 8, page 3",
+        "as_of": "2024-03-18",
+        "affects": "Cascade must provide and require this PPE for all employees and contractors handling this chemical; affects safety program and procurement.",
+        "basis": "read",
+        "quote_verified": null
+      },
+      {
+        "key": "emergency_eyewash_shower_requirement",
+        "value": "Emergency eyewash and safety shower within 10 seconds of work areas",
+        "quote": "emergency eyewash and safety shower within 10 seconds of work areas",
+        "locator": "Section 8, page 3",
+        "as_of": "2024-03-18",
+        "affects": "Cascade must install and maintain eyewash and shower stations within 10 seconds of any location where this chemical is handled or stored.",
+        "basis": "read",
+        "quote_verified": null
+      },
+      {
+        "key": "hazardous_waste_classification",
+        "value": "Unneutralised product is a corrosive hazardous waste (RCRA D002)",
+        "quote": "Unneutralised product is a corrosive hazardous waste (RCRA D002)",
+        "locator": "Section 13, page 4",
+        "as_of": "2024-03-18",
+        "affects": "Cascade must manage disposal as hazardous waste; spent or spilled product must be treated and disposed under RCRA rules, affecting waste handling and cost.",
+        "basis": "read",
+        "quote_verified": null
+      },
+      {
+        "key": "dot_reportable_quantity",
+        "value": "1,000 lb (sodium hydroxide)",
+        "quote": "DOT reportable quantity (RQ): 1,000 lb (sodium hydroxide)",
+        "locator": "Section 14, page 4",
+        "as_of": "2024-03-18",
+        "affects": "Cascade must report spills or releases exceeding 1,000 lb to EPA and DOT; affects emergency response and regulatory notification procedures.",
+        "basis": "read",
+        "quote_verified": null
+      },
+      {
+        "key": "supplier_contact",
+        "value": "Northwest Alkali Products, Inc., 7200 N Lombard Street, Portland, Oregon 97203",
+        "quote": "Supplier: Northwest Alkali Products, Inc., 7200 N Lombard Street, Portland, Oregon 97203",
+        "locator": "Section 1, page 1",
+        "as_of": "2024-03-18",
+        "affects": "Cascade can contact supplier for product information or issues; important for procurement and vendor communication.",
+        "basis": "read",
+        "quote_verified": null
+      },
+      {
+        "key": "emergency_contact_chemtrec",
+        "value": "CHEMTREC 1-800-424-9300 (24 hours)",
+        "quote": "Emergency telephone: CHEMTREC 1-800-424-9300 (24 hours)",
+        "locator": "Section 1, page 1",
+        "as_of": "2024-03-18",
+        "affects": "Cascade must make this number available to emergency responders and employees in case of chemical emergency.",
+        "basis": "read",
+        "quote_verified": null
+      }
+    ],
+    "version_of": {
+      "title": null,
+      "confidence": null
+    },
+    "expected_missing": [
+      {
+        "title": "Sodium hydroxide solution product Safety Data Sheet with additional Oregon-specific hazard communication supplements",
+        "why": "Oregon OSHA may require supplemental hazard communication labeling or notification beyond federal OSHA HCS requirements",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Internal label template or inventory record showing that Cascade has received and filed this SDS",
+        "why": "OSHA HCS 29 CFR 1910.1200(g)(6) requires employers to maintain SDS for all hazardous chemicals in the workplace",
+        "basis": "similar companies, not a checked requirement"
+      }
+    ],
+    "confidence_notes": "High confidence in all identity, date, and factual data read directly from the document. This is a supplier document issued by Northwest Alkali Products under federal OSHA HCS, so it is the supplier's responsibility to maintain accuracy. Cascade's responsibility is to have the SDS on file, ensure employees are trained on it, and follow its recommendations for handling, storage, PPE, and emergency response. No gaps found because a supplier SDS is not judged against a standard—it is informational. The question of whether Cascade is meeting the SDS's recommendations is separate from whether the SDS itself is complete or correct; that is Cascade's responsibility as the employer and user. I did not search web sources because this is a straightforward supplier document review; OSHA HCS rules are stable and well-established, and the SDS contents are self-evident.",
+    "could_not_read": {
+      "reason": null,
+      "way_forward": null
+    },
+    "raw_text": "```json\n{\n  \"identity\": {\n    \"kind\": \"supplier_document\",\n    \"title\": \"Safety Data Sheet: Sodium Hydroxide Solution, 50%\",\n    \"issuer\": \"Northwest Alkali Products, Inc.\",\n    \"agencies\": [],\n    \"subjects\": [\"workplace_safety\"],\n    \"site\": null,\n    \"jurisdiction\": [\"federal\"],\n    \"doc_date\": \"2024-03-18\",\n    \"doc_date_kind\": \"revised\",\n    \"page_refs\": {\n      \"doc_date\": \"page 1\",\n      \"issuer\": \"page 1\"\n    }\n  },\n  \"summary\": \"This is a Safety Data Sheet (SDS) prepared by the supplier, Northwest Alkali Products, Inc., for sodium hydroxide solution 50% (w/w). It describes the product's hazards, safe handling, personal protective equipment, and emergency response procedures under the OSHA Hazard Communication Standard. The document is the supplier's responsibility and does not commit Cascade Specialty Chemicals to any specific action—it is the product information sheet that must accompany the chemical when distributed.\",\n  \"status\": \"not_judged\",\n  \"significant_date\": null,\n  \"significant_date_kind\": null,\n  \"freshness_note\": \"Revised March 18, 2024, which is current within 2.5 years as of today (September 25, 2026). The document notes changes from version 4.0 (August 2, 2021), showing active maintenance by the supplier.\",\n  \"gaps\": [],\n  \"conditions\": [],\n  \"deadlines\": [],\n  \"facts\": [\n    {\n      \"key\": \"product_identifier\",\n      \"value\": \"Sodium Hydroxide Solution, 50% (w/w)\",\n      \"basis\": \"read\",\n      \"quote\": \"Product identifier: Sodium Hydroxide Solution, 50% (w/w)\",\n      \"locator\": \"Section 1, page 1\",\n      \"as_of\": \"2024-03-18\",\n      \"affects\": \"Identifies the chemical that Cascade must manage, label, store, and handle in accordance with OSHA HCS and this SDS.\"\n    },\n    {\n      \"key\": \"hazard_classifications\",\n      \"value\": \"Skin corrosion Category 1A (H314); Serious eye damage Category 1 (H318); Corrosive to metals Category 1 (H290)\",\n      \"basis\": \"read\",\n      \"quote\": \"Classification: Skin corrosion, Category 1A (H314); Serious eye damage, Category 1 (H318); Corrosive to metals, Category 1 (H290)\",\n      \"locator\": \"Section 2, page 1\",\n      \"as_of\": \"2024-03-18\",\n      \"affects\": \"Cascade must ensure labels, hazard communication, and training reflect these severe acute hazards; affects PPE selection and emergency response.\"\n    },\n    {\n      \"key\": \"osha_pel\",\n      \"value\": \"2 mg/m³ (TWA); ACGIH TLV 2 mg/m³ (ceiling); NIOSH REL 2 mg/m³ (ceiling)\",\n      \"basis\": \"read\",\n      \"quote\": \"Sodium hydroxide — OSHA PEL 2 mg/m³ (TWA); ACGIH TLV 2 mg/m³ (ceiling); NIOSH REL 2 mg/m³ (ceiling)\",\n      \"locator\": \"Section 8, page 3\",\n      \"as_of\": \"2024-03-18\",\n      \"affects\": \"Cascade must ensure work area monitoring and ventilation do not exceed these exposure limits; affects engineering controls requirement.\"\n    },\n    {\n      \"key\": \"required_ppe\",\n      \"value\": \"Chemical splash goggles and face shield; Neoprene, nitrile or butyl rubber gloves, chemical-resistant apron or suit, rubber boots; NIOSH-approved respirator with particulate filter where mist exceeds limits\",\n      \"basis\": \"read\",\n      \"quote\": \"Eye and face protection: Chemical splash goggles and face shield. Skin protection: Neoprene, nitrile or butyl rubber gloves, chemical-resistant apron or suit, rubber boots. Respiratory protection: Where mist exceeds exposure limits, a NIOSH-approved respirator with particulate filter.\",\n      \"locator\": \"Section 8, page 3\",\n      \"as_of\": \"2024-03-18\",\n      \"affects\": \"Cascade must provide and require this PPE for all employees and contractors handling this chemical; affects safety program and procurement.\"\n    },\n    {\n      \"key\": \"emergency_eyewash_shower_requirement\",\n      \"value\": \"Emergency eyewash and safety shower within 10 seconds of work areas\",\n      \"basis\": \"read\",\n      \"quote\": \"emergency eyewash and safety shower within 10 seconds of work areas\",\n      \"locator\": \"Section 8, page 3\",\n      \"as_of\": \"2024-03-18\",\n      \"affects\": \"Cascade must install and maintain eyewash and shower stations within 10 seconds of any location where this chemical is handled or stored.\"\n    },\n    {\n      \"key\": \"hazardous_waste_classification\",\n      \"value\": \"Unneutralised product is a corrosive hazardous waste (RCRA D002)\",\n      \"basis\": \"read\",\n      \"quote\": \"Unneutralised product is a corrosive hazardous waste (RCRA D002)\",\n      \"locator\": \"Section 13, page 4\",\n      \"as_of\": \"2024-03-18\",\n      \"affects\": \"Cascade must manage disposal as hazardous waste; spent or spilled product must be treated and disposed under RCRA rules, affecting waste handling and cost.\"\n    },\n    {\n      \"key\": \"dot_reportable_quantity\",\n      \"value\": \"1,000 lb (sodium hydroxide)\",\n      \"basis\": \"read\",\n      \"quote\": \"DOT reportable quantity (RQ): 1,000 lb (sodium hydroxide)\",\n      \"locator\": \"Section 14, page 4\",\n      \"as_of\": \"2024-03-18\",\n      \"affects\": \"Cascade must report spills or releases exceeding 1,000 lb to EPA and DOT; affects emergency response and regulatory notification procedures.\"\n    },\n    {\n      \"key\": \"supplier_contact\",\n      \"value\": \"Northwest Alkali Products, Inc., 7200 N Lombard Street, Portland, Oregon 97203\",\n      \"basis\": \"read\",\n      \"quote\": \"Supplier: Northwest Alkali Products, Inc., 7200 N Lombard Street, Portland, Oregon 97203\",\n      \"locator\": \"Section 1, page 1\",\n      \"as_of\": \"2024-03-18\",\n      \"affects\": \"Cascade can contact supplier for product information or issues; important for procurement and vendor communication.\"\n    },\n    {\n      \"key\": \"emergency_contact_chemtrec\",\n      \"value\": \"CHEMTREC 1-800-424-9300 (24 hours)\",\n      \"basis\": \"read\",\n      \"quote\": \"Emergency telephone: CHEMTREC 1-800-424-9300 (24 hours)\",\n      \"locator\": \"Section 1, page 1\",\n      \"as_of\": \"2024-03-18\",\n      \"affects\": \"Cascade must make this number available to emergency responders and employees in case of chemical emergency.\"\n    }\n  ],\n  \"version_of\": null,\n  \"expected_missing\": [\n    {\n      \"title\": \"Sodium hydroxide solution product Safety Data Sheet with additional Oregon-specific hazard communication supplements\",\n      \"why\": \"Oregon OSHA may require supplemental hazard communication labeling or notification beyond federal OSHA HCS requirements\",\n      \"basis\": \"similar companies, not a checked requirement\"\n    },\n    {\n      \"title\": \"Internal label template or inventory record showing that Cascade has received and filed this SDS\",\n      \"why\": \"OSHA HCS 29 CFR 1910.1200(g)(6) requires employers to maintain SDS for all hazardous chemicals in the workplace\",\n      \"basis\": \"similar companies, not a checked requirement\"\n    }\n  ],\n  \"confidence_notes\": \"High confidence in all identity, date, and factual data read directly from the document. This is a supplier document issued by Northwest Alkali Products under federal OSHA HCS, so it is the supplier's responsibility to maintain accuracy. Cascade's responsibility is to have the SDS on file, ensure employees are trained on it, and follow its recommendations for handling, storage, PPE, and emergency response. No gaps found because a supplier SDS is not judged against a standard—it is informational. The question of whether Cascade is meeting the SDS's recommendations is separate from whether the SDS itself is complete or correct; that is Cascade's responsibility as the employer and user. I did not search web sources because this is a straightforward supplier document review; OSHA HCS rules are stable and well-established, and the SDS contents are self-evident.\",\n  \"could_not_read\": {\n    \"reason\": null,\n    \"way_forward\": null\n  }\n}\n```",
+    "json_parsed": true,
+    "model": "claude-haiku-4-5",
+    "searches": 0,
+    "prompt_sha256": "de5fe88851ace3dfe689c4ed47824d19ab1d559b33815239ed63f758678dba7b",
+    "quotes_checked": 0,
+    "quotes_verified": 0,
+    "extracted_text": "",
+    "started_at": "2026-09-25T18:22:41.517Z"
+  }
+}

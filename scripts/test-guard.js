@@ -17,11 +17,16 @@
 import { execFileSync } from 'node:child_process'
 import { readdirSync, readFileSync } from 'node:fs'
 
+// 473 -> 489 on 25 Sep: tests/unit/extractJsonText.test.ts, 16 tests covering the balanced-brace
+// scan. Ten of them are real model responses copied verbatim into tests/fixtures/json-extraction/
+// — the five answers Documents Run 2 discarded, the two Run 1 discarded, and three that always
+// parsed and must keep coming out byte-identical.
+//
 // 444 -> 426 on 23 Sep: `lib/answerDisplay.ts` and its 18 tests were DELETED on the owner's
 // decision. Run 3's `AnswerBody` replaced it and `grep -rn answerDisplay app lib components`
 // returned only the file itself — the suite was exercising code nothing shipped. Lowering the
 // floor is exactly the deliberate act this guard exists to force somebody to make in writing.
-const FLOOR = 473
+const FLOOR = 489
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

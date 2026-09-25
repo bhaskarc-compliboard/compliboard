@@ -1064,6 +1064,7 @@ export type Database = {
       }
       document_gaps: {
         Row: {
+          basis: string
           citation: string | null
           citation_url: string | null
           company_id: string
@@ -1083,6 +1084,7 @@ export type Database = {
           title: string
         }
         Insert: {
+          basis?: string
           citation?: string | null
           citation_url?: string | null
           company_id: string
@@ -1102,6 +1104,7 @@ export type Database = {
           title: string
         }
         Update: {
+          basis?: string
           citation?: string | null
           citation_url?: string | null
           company_id?: string
@@ -1251,6 +1254,7 @@ export type Database = {
         Row: {
           agencies: Json
           ai_call_id: string | null
+          cited_sources: number
           company_id: string
           confidence_notes: string | null
           could_not_read_reason: string | null
@@ -1274,7 +1278,7 @@ export type Database = {
           quotes_verified: number
           raw_text: string | null
           scanned_at: string
-          searches: number
+          searches: number | null
           significant_date: string | null
           significant_date_kind: string | null
           site_scope: string | null
@@ -1288,6 +1292,7 @@ export type Database = {
         Insert: {
           agencies?: Json
           ai_call_id?: string | null
+          cited_sources?: number
           company_id: string
           confidence_notes?: string | null
           could_not_read_reason?: string | null
@@ -1311,7 +1316,7 @@ export type Database = {
           quotes_verified?: number
           raw_text?: string | null
           scanned_at?: string
-          searches?: number
+          searches?: number | null
           significant_date?: string | null
           significant_date_kind?: string | null
           site_scope?: string | null
@@ -1325,6 +1330,7 @@ export type Database = {
         Update: {
           agencies?: Json
           ai_call_id?: string | null
+          cited_sources?: number
           company_id?: string
           confidence_notes?: string | null
           could_not_read_reason?: string | null
@@ -1348,7 +1354,7 @@ export type Database = {
           quotes_verified?: number
           raw_text?: string | null
           scanned_at?: string
-          searches?: number
+          searches?: number | null
           significant_date?: string | null
           significant_date_kind?: string | null
           site_scope?: string | null
@@ -1557,6 +1563,7 @@ export type Database = {
       }
       fact_proposals: {
         Row: {
+          basis: string
           company_id: string
           created_at: string
           document_id: string | null
@@ -1572,6 +1579,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          basis?: string
           company_id: string
           created_at?: string
           document_id?: string | null
@@ -1587,6 +1595,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          basis?: string
           company_id?: string
           created_at?: string
           document_id?: string | null
