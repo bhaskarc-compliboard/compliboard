@@ -217,6 +217,17 @@ const COMPANY_SCOPED_TABLES = [
 // Tables with a company_id that this loop deliberately does NOT name, each with the
 // reason. A table may only be here if something else genuinely removes its rows.
 const DELETED_BY_CASCADE_OR_PARENT = [
+  // THE FIVE DOCUMENT-SCAN TABLES (migration 040). Every one cascades with the company:
+  // company_id -> companies ON DELETE CASCADE, confdeltype = c on all five, read from
+  // pg_constraint on 25 Sep rather than assumed. They are named here rather than in the loop
+  // for the reason critic_findings is: these are OUR reading of a customer's file, not the
+  // customer's own rows, and sweeping them in the tenant loop would say otherwise. The cascade
+  // still leaves nothing behind.
+  'document_scans',
+  'document_gaps',
+  'document_conditions',
+  'document_deadlines',
+  'company_labels',
   'ai_calls',              // cascades with the company: company_id -> companies ON DELETE
                            // CASCADE, read from pg_constraint on 23 Sep rather than assumed —
                            //   conname ai_calls_company_id_fkey · confdeltype = c (cascade)

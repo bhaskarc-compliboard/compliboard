@@ -1,0 +1,393 @@
+/**
+ * THE DOCUMENT SCAN — Documents Run 1, the open baseline.
+ *
+ * One document, one open model call, and everything it found written down. This is the contract
+ * three later sections read: Audits checks evidence that lives in documents, the Calendar takes
+ * its dates from permits and certificates, HR reads handbooks and records.
+ *
+ * ---------------------------------------------------------------------------
+ * WHAT THIS IS NOT. It is not a replacement for `lib/documentReview.ts`, and nothing is rewired
+ * to it in this run. The old review still serves the Review button, the attach flow and the audit
+ * engine, and `document_reviews` is untouched. Two readings of one document can coexist; which
+ * one the product uses is a later decision, made when this one has been judged.
+ *
+ * *** IT DOES NOT CARRY ITS OWN COPY OF THE FORMAT BRANCHING. *** `documentReview.ts` decides
+ * PDF/image/Word/PowerPoint for itself, which is why Excel, CSV and text — formats every picker
+ * accepts — fail on that path. This calls `parseDocumentToBlocks`, which is the one place that
+ * knows how to turn a file into blocks, and gets those three formats for free.
+ *
+ * *** A PAID ANSWER IS NEVER DISCARDED. *** If the JSON does not parse, the text still cost money
+ * and still contains the reading. It is kept on the scan row, the scan is stored
+ * `could_not_read`, and the caller gets a normal return — never a 500. Measured on 25 September:
+ * the OLD path throws on roughly one Haiku call in five and the money is simply gone.
+ * ---------------------------------------------------------------------------
+ */
+import { createHash } from 'node:crypto'
+import { askAIWithCitations, extractJsonText, modelForTask, type AIContent } from './ai.ts'
+import { parseDocumentToBlocks } from './documentContent.ts'
+import { scanPrompt, type ScanPromptContext } from '../prompts/document-scan.ts'
+
+// ---------------------------------------------------------------------------
+// THE SHAPE. Migration 040's tables follow this, not the other way round.
+// ---------------------------------------------------------------------------
+export type ScanKind = 'permit' | 'certificate' | 'program' | 'policy' | 'record' | 'supplier_document' | 'other'
+export type ScanStatus =
+  | 'current' | 'expiring' | 'expired'
+  | 'no_gaps_found' | 'gaps_found'
+  | 'recorded' | 'not_judged' | 'could_not_read'
+
+export interface ScanIdentity {
+  kind: ScanKind | null
+  title: string | null
+  issuer: string | null
+  agencies: string[]
+  subjects: string[]
+  site: string | null
+  jurisdiction: string[]
+  doc_date: string | null
+  doc_date_kind: string | null
+  page_refs: Record<string, string>
+}
+export interface ScanGap {
+  title: string; description: string | null; fix: string | null
+  citation: string | null; citation_url: string | null; locator: string | null
+  draftable: boolean; quote: string | null
+  /** Set by us, never by the model — see `verifyQuote`. */
+  quote_verified: boolean | null
+}
+export interface ScanCondition { title: string; condition_ref: string | null; evidence_expected: string | null }
+export interface ScanDeadline { title: string; due_on: string | null; source_line: string | null; recurs: boolean }
+export interface ScanFact {
+  key: string; value: string; quote: string | null; locator: string | null
+  as_of: string | null; affects: string | null
+  quote_verified: boolean | null
+}
+export interface ScanExpectedMissing { title: string; why: string | null; basis: string | null }
+
+export interface DocumentScan {
+  identity: ScanIdentity
+  summary: string | null
+  status: ScanStatus
+  significant_date: string | null
+  significant_date_kind: string | null
+  freshness_note: string | null
+  gaps: ScanGap[]
+  conditions: ScanCondition[]
+  deadlines: ScanDeadline[]
+  facts: ScanFact[]
+  version_of: { title: string | null; confidence: string | null }
+  expected_missing: ScanExpectedMissing[]
+  confidence_notes: string | null
+  could_not_read: { reason: string | null; way_forward: string | null }
+
+  // --- how it was produced, for the row and the report's quiet last line ---
+  raw_text: string
+  json_parsed: boolean
+  model: string
+  searches: number
+  prompt_sha256: string
+  quotes_checked: number
+  quotes_verified: number
+  /** The text we extracted from the file, when the format allows it. '' when it does not. */
+  extracted_text: string
+  /** When the model call began — used to find its `ai_calls` row. */
+  started_at: string
+}
+
+const KINDS: ScanKind[] = ['permit', 'certificate', 'program', 'policy', 'record', 'supplier_document', 'other']
+const STATUSES: ScanStatus[] = ['current', 'expiring', 'expired', 'no_gaps_found', 'gaps_found', 'recorded', 'not_judged', 'could_not_read']
+
+const str = (v: unknown): string | null => {
+  const s = typeof v === 'string' ? v.trim() : v == null ? '' : String(v).trim()
+  return s && s.toLowerCase() !== 'null' ? s : null
+}
+const arr = (v: unknown): string[] =>
+  Array.isArray(v) ? v.map((x) => str(x)).filter((x): x is string => !!x) : []
+/** A date the database will accept, or null. The model is asked for YYYY-MM-DD and mostly obliges. */
+const date = (v: unknown): string | null => {
+  const s = str(v)
+  return s && /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : null
+}
+
+/**
+ * IS THIS QUOTE ACTUALLY IN THE DOCUMENT?
+ *
+ * Compared on letters and digits only: the model reflows whitespace, turns a hyphen into an
+ * en-dash and straightens quotation marks, and none of that makes a quote invented. What it
+ * cannot do is produce words the file does not contain.
+ *
+ * *** A QUOTE THAT FAILS IS KEPT AND FLAGGED, NOT DROPPED. *** The vision's contract table says
+ * "a quote not found in the document is discarded"; the Run 1 brief says keep and flag. Keeping
+ * it is what the vision's own standing rule asks for — "close, never delete" — and a dropped
+ * quote is a finding that vanishes with no trace of why. Flagged, a person can see the model
+ * paraphrased and judge it. Returns null when there is no text to check against, which is not
+ * the same as false.
+ */
+export function verifyQuote(quote: string | null, extractedText: string): boolean | null {
+  if (!quote) return null
+  if (!extractedText) return null
+  // *** TAGS COME OUT BEFORE THE COMPARISON. *** `parseDocumentToBlocks` returns Word as HTML —
+  // deliberately, because a handbook's meaning often lives in its tables — so a sentence split
+  // across two paragraphs arrives as `…a shift,</p><p>write it…`. Stripping punctuation alone
+  // left the tag letters behind and turned a real quote into `ashiftppwriteit`, which matched
+  // nothing. Measured on the .docx fixture: a quote that IS in the file was reported unverified
+  // until this line existed.
+  const norm = (s: string) => s.replace(/<[^>]*>/g, ' ').toLowerCase().replace(/[^a-z0-9]+/g, '')
+  const q = norm(quote)
+  if (q.length < 8) return null
+  return norm(extractedText).includes(q)
+}
+
+/** Fill the shape from whatever the model returned, without trusting any of it. */
+export function normaliseScan(parsed: Record<string, unknown>, extractedText: string): Omit<DocumentScan,
+  'raw_text' | 'json_parsed' | 'model' | 'searches' | 'prompt_sha256' | 'quotes_checked'
+  | 'quotes_verified' | 'extracted_text' | 'started_at'> {
+  const id = (parsed.identity ?? {}) as Record<string, unknown>
+  const cnr = (parsed.could_not_read ?? {}) as Record<string, unknown>
+  const vo = (parsed.version_of ?? {}) as Record<string, unknown>
+
+  const kindRaw = str(id.kind)
+  const statusRaw = str(parsed.status)
+
+  return {
+    identity: {
+      kind: kindRaw && (KINDS as string[]).includes(kindRaw) ? (kindRaw as ScanKind) : null,
+      title: str(id.title),
+      issuer: str(id.issuer),
+      agencies: arr(id.agencies),
+      subjects: arr(id.subjects),
+      site: str(id.site),
+      jurisdiction: arr(id.jurisdiction),
+      doc_date: date(id.doc_date),
+      doc_date_kind: str(id.doc_date_kind),
+      page_refs: (id.page_refs && typeof id.page_refs === 'object' ? id.page_refs : {}) as Record<string, string>,
+    },
+    summary: str(parsed.summary),
+    // An unrecognised status is NOT quietly turned into something valid — it becomes
+    // `not_judged`, which says we did not get a status we could use.
+    status: statusRaw && (STATUSES as string[]).includes(statusRaw) ? (statusRaw as ScanStatus) : 'not_judged',
+    significant_date: date(parsed.significant_date),
+    significant_date_kind: str(parsed.significant_date_kind),
+    freshness_note: str(parsed.freshness_note),
+    gaps: (Array.isArray(parsed.gaps) ? parsed.gaps : []).map((g: Record<string, unknown>) => ({
+      title: str(g?.title) ?? str(g?.description) ?? 'Untitled gap',
+      description: str(g?.description), fix: str(g?.fix),
+      citation: str(g?.citation), citation_url: str(g?.citation_url),
+      locator: str(g?.locator), draftable: g?.draftable === true,
+      quote: str(g?.quote),
+      quote_verified: verifyQuote(str(g?.quote), extractedText),
+    })),
+    conditions: (Array.isArray(parsed.conditions) ? parsed.conditions : []).map((c: Record<string, unknown>) => ({
+      title: str(c?.title) ?? 'Untitled condition',
+      condition_ref: str(c?.condition_ref), evidence_expected: str(c?.evidence_expected),
+    })),
+    deadlines: (Array.isArray(parsed.deadlines) ? parsed.deadlines : []).map((d: Record<string, unknown>) => ({
+      title: str(d?.title) ?? 'Untitled deadline',
+      due_on: date(d?.due_on), source_line: str(d?.source_line), recurs: d?.recurs === true,
+    })),
+    facts: (Array.isArray(parsed.facts) ? parsed.facts : []).map((f: Record<string, unknown>) => ({
+      key: str(f?.key) ?? 'unnamed_fact', value: str(f?.value) ?? '',
+      quote: str(f?.quote), locator: str(f?.locator),
+      as_of: date(f?.as_of), affects: str(f?.affects),
+      quote_verified: verifyQuote(str(f?.quote), extractedText),
+    })),
+    version_of: { title: str(vo.title), confidence: str(vo.confidence) },
+    expected_missing: (Array.isArray(parsed.expected_missing) ? parsed.expected_missing : []).map((e: Record<string, unknown>) => ({
+      title: str(e?.title) ?? 'Untitled', why: str(e?.why), basis: str(e?.basis),
+    })),
+    confidence_notes: str(parsed.confidence_notes),
+    could_not_read: { reason: str(cnr.reason), way_forward: str(cnr.way_forward) },
+  }
+}
+
+export interface RunScanInput {
+  buffer: ArrayBuffer
+  fileName: string
+  fileType: string
+  companyId: string
+  context: ScanPromptContext
+}
+
+/**
+ * Read one document. One call, search on and uncapped as in production.
+ *
+ * `DEV_MAX_SEARCHES` still applies in dev because it is enforced inside `lib/ai.ts` for every
+ * caller; that is the point of it living there rather than here.
+ */
+export async function runDocumentScan(input: RunScanInput): Promise<DocumentScan> {
+  const parsed = await parseDocumentToBlocks(input.buffer, input.fileName, input.fileType)
+  if (!parsed.ok) {
+    // We never reached the model, so there is no cost row and no reading. Said out loud, with
+    // the way forward, rather than answered around.
+    return {
+      ...normaliseScan({ status: 'could_not_read', could_not_read: {
+        reason: parsed.failure.message, way_forward: 'A PDF or a Word file we can read.' } }, ''),
+      raw_text: '', json_parsed: false, model: '(not called)', searches: 0,
+      prompt_sha256: '', quotes_checked: 0, quotes_verified: 0, extracted_text: '',
+      started_at: new Date().toISOString(),
+    }
+  }
+
+  // The same parser again for TEXT, where the format has any — this is what quotes are checked
+  // against. A PDF goes to the model whole as a document block and yields no text here, so its
+  // quotes come back unverifiable (null) rather than false.
+  const extractedText = parsed.blocks
+    .filter((b) => (b as { type?: string }).type === 'text')
+    .map((b) => String((b as { text?: string }).text ?? ''))
+    .join('\n')
+
+  const startedAt = new Date().toISOString()
+  const system = scanPrompt(input.context)
+  const promptSha = createHash('sha256').update(system).digest('hex')
+  const model = modelForTask('document_scan')
+
+  const content: AIContent = [
+    ...parsed.blocks,
+    { type: 'text', text: `File name: ${input.fileName}\n\nRead this document.` },
+  ] as AIContent
+
+  const answer = await askAIWithCitations(system, content, {
+    task: 'document_scan',
+    maxTokens: 16000,
+    enableWebSearch: true,
+    ledger: { companyId: input.companyId, task: 'document_scan' },
+  })
+
+  const raw = answer.text ?? ''
+  let obj: Record<string, unknown> | null = null
+  try { obj = JSON.parse(extractJsonText(raw)) as Record<string, unknown> } catch { obj = null }
+
+  if (!obj) {
+    // THE MONEY IS SPENT AND THE READING IS IN THE TEXT. Keep it.
+    return {
+      ...normaliseScan({ status: 'could_not_read', could_not_read: {
+        reason: 'the reading came back in a form we could not use',
+        way_forward: 'Read it again — this is usually temporary.' } }, extractedText),
+      raw_text: raw, json_parsed: false, model, searches: answer.sources.length,
+      prompt_sha256: promptSha, quotes_checked: 0, quotes_verified: 0,
+      extracted_text: extractedText, started_at: startedAt,
+    }
+  }
+
+  const shape = normaliseScan(obj, extractedText)
+  const checked = [...shape.gaps, ...shape.facts].filter((x) => x.quote_verified !== null)
+  return {
+    ...shape,
+    raw_text: raw, json_parsed: true, model, searches: answer.sources.length,
+    prompt_sha256: promptSha,
+    quotes_checked: checked.length,
+    quotes_verified: checked.filter((x) => x.quote_verified === true).length,
+    extracted_text: extractedText, started_at: startedAt,
+  }
+}
+
+// ---------------------------------------------------------------------------
+// WRITING IT DOWN
+// ---------------------------------------------------------------------------
+type Db = { from: (t: string) => any }
+
+/**
+ * Persist one scan. Lives here rather than in the script so a route can reuse it unchanged.
+ *
+ * *** IT WRITES NOTHING TO `company_switches`, `calendar_events` OR `document_reviews`. ***
+ * Facts go to `fact_proposals` for a person to confirm (§108: nothing about a company is written
+ * silently). A deadline becomes a calendar event only when a person says so. And the old review
+ * table is not this scan's business.
+ */
+export async function saveScan(
+  db: Db, scan: DocumentScan, args: { documentId: string; companyId: string; entityId?: string | null },
+): Promise<{ scanId: string | null; aiCallId: string | null }> {
+  const { documentId, companyId } = args
+
+  // The ledger row this call wrote. `recordAICall` is deliberately not awaited inside lib/ai.ts
+  // — bookkeeping must never delay an answer — so it is found by time rather than by id.
+  // AND IT IS POLLED, BRIEFLY, BECAUSE THE WRITE IS NOT AWAITED. Querying once right after the
+  // call found the row about a third of the time — the insert was still in flight. Five tries
+  // over a second; if it is still not there the scan is saved with a null ai_call_id rather
+  // than delayed, because the reading matters more than the link to its receipt.
+  let aiCallId: string | null = null
+  for (let attempt = 0; attempt < 5 && !aiCallId; attempt++) {
+    if (attempt) await new Promise((r) => setTimeout(r, 250))
+    const { data: call } = await db.from('ai_calls')
+      .select('id').eq('company_id', companyId).eq('task', 'document_scan')
+      .gte('created_at', scan.started_at).order('created_at', { ascending: false }).limit(1).maybeSingle()
+    aiCallId = call?.id ?? null
+  }
+  if (!aiCallId) console.warn('document scan: saved with no ai_calls link — the ledger write had not landed')
+
+  // Only the newest scan of a document is current.
+  await db.from('document_scans').update({ is_current: false }).eq('document_id', documentId)
+
+  const { data: row, error } = await db.from('document_scans').insert({
+    document_id: documentId, company_id: companyId,
+    kind: scan.identity.kind, title: scan.identity.title, issuer: scan.identity.issuer,
+    agencies: scan.identity.agencies, subjects: scan.identity.subjects,
+    entity_id: args.entityId ?? null,
+    site_scope: scan.identity.site === 'company_wide' ? 'company_wide' : scan.identity.site ? 'site' : 'unknown',
+    jurisdiction: scan.identity.jurisdiction,
+    doc_date: scan.identity.doc_date, doc_date_kind: scan.identity.doc_date_kind,
+    page_refs: scan.identity.page_refs,
+    summary: scan.summary, status: scan.status,
+    significant_date: scan.significant_date, significant_date_kind: scan.significant_date_kind,
+    freshness_note: scan.freshness_note,
+    expected_missing: scan.expected_missing,
+    version_of_title: scan.version_of.title, version_confidence: scan.version_of.confidence,
+    confidence_notes: scan.confidence_notes,
+    could_not_read_reason: scan.could_not_read.reason,
+    raw_text: scan.raw_text, json_parsed: scan.json_parsed,
+    quotes_checked: scan.quotes_checked, quotes_verified: scan.quotes_verified,
+    model: scan.model, searches: scan.searches, prompt_sha256: scan.prompt_sha256,
+    ai_call_id: aiCallId, is_current: true,
+  }).select('id').single()
+  if (error) throw new Error(`document_scans: ${error.message}`)
+  const scanId = row.id as string
+
+  if (scan.gaps.length) {
+    const { error: e } = await db.from('document_gaps').insert(scan.gaps.map((g, i) => ({
+      scan_id: scanId, document_id: documentId, company_id: companyId, ordinal: i + 1,
+      title: g.title, description: g.description, fix: g.fix,
+      citation: g.citation, citation_url: g.citation_url, locator: g.locator,
+      draftable: g.draftable, quote: g.quote, quote_verified: g.quote_verified,
+    })))
+    if (e) throw new Error(`document_gaps: ${e.message}`)
+  }
+  if (scan.conditions.length) {
+    const { error: e } = await db.from('document_conditions').insert(scan.conditions.map((c, i) => ({
+      scan_id: scanId, document_id: documentId, company_id: companyId, ordinal: i + 1,
+      title: c.title, condition_ref: c.condition_ref, evidence_expected: c.evidence_expected,
+    })))
+    if (e) throw new Error(`document_conditions: ${e.message}`)
+  }
+  if (scan.deadlines.length) {
+    const { error: e } = await db.from('document_deadlines').insert(scan.deadlines.map((d) => ({
+      scan_id: scanId, document_id: documentId, company_id: companyId,
+      title: d.title, due_on: d.due_on, source_line: d.source_line, recurs: d.recurs,
+    })))
+    if (e) throw new Error(`document_deadlines: ${e.message}`)
+  }
+  // PROPOSED, NEVER WRITTEN (§108).
+  if (scan.facts.length) {
+    const { error: e } = await db.from('fact_proposals').insert(scan.facts.map((f) => ({
+      company_id: companyId, document_id: documentId, topic_id: null, source: 'document',
+      switch_key: f.key.slice(0, 120), proposed_value: String(f.value).slice(0, 500),
+      quote: f.quote ? f.quote.slice(0, 2000) : null, locator: f.locator,
+    })))
+    if (e) throw new Error(`fact_proposals: ${e.message}`)
+  }
+  // Any label this document needed that the company did not already have.
+  const labels = [
+    ...scan.identity.agencies.map((l) => ({ kind: 'agency', label: l })),
+    ...scan.identity.subjects.map((l) => ({ kind: 'subject', label: l })),
+  ]
+  if (labels.length) {
+    await db.from('company_labels')
+      .upsert(labels.map((l) => ({ company_id: companyId, ...l })),
+              { onConflict: 'company_id,kind,label', ignoreDuplicates: true })
+  }
+
+  await db.from('documents')
+    .update({ status: scan.status === 'could_not_read' ? 'could_not_read' : 'read' })
+    .eq('id', documentId)
+
+  return { scanId, aiCallId }
+}

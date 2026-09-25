@@ -24,7 +24,7 @@ export type AIContent = string | any[]
  */
 import { recordAICall, describeCost, type LedgerTask } from './costLedger.ts'
 
-export type AITask = 'judgement' | 'critique' | 'prose' | 'default' | 'substeps' | 'summary'
+export type AITask = 'judgement' | 'critique' | 'prose' | 'default' | 'substeps' | 'summary' | 'document_scan'
 
 /**
  * What a caller passes so its call lands in the cost ledger (`DECISIONS.md` §128 J).
@@ -89,6 +89,13 @@ const TASK_MODELS: Record<AITask, () => string> = {
   // on. Defaulting them to Sonnet 5 is the owner's decision, made from the ledger.
   substeps:  () => process.env.AI_MODEL_SUBSTEPS  || process.env.AI_MODEL || 'claude-sonnet-5',
   summary:   () => process.env.AI_MODEL_SUMMARY   || process.env.AI_MODEL || 'claude-sonnet-5',
+  // *** READING A DOCUMENT IS A JUDGEMENT TASK, AND IT GETS ITS OWN NAME. ***
+  // The old review passes no task at all, so it lands on `default` — which no AI_MODEL_* variable
+  // can steer, and which on production resolves to sonnet-4-5 because the bare AI_MODEL is not
+  // among the Vercel variables. That is how the most expensive call in the product ended up on a
+  // model nobody had chosen. This one is named, so it can be pointed anywhere without moving
+  // everything else, and it falls back to the judgement tier rather than to `default`.
+  document_scan: () => process.env.AI_MODEL_DOCUMENT_SCAN || TASK_MODELS.judgement(),
   default:   () => process.env.AI_MODEL           || 'claude-sonnet-4-5',
 }
 

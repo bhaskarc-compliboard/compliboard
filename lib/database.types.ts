@@ -211,6 +211,7 @@ export type Database = {
           completed_at: string | null
           created_at: string | null
           description: string | null
+          document_id: string | null
           due_date: string
           entity_id: string | null
           id: string
@@ -226,6 +227,7 @@ export type Database = {
           completed_at?: string | null
           created_at?: string | null
           description?: string | null
+          document_id?: string | null
           due_date: string
           entity_id?: string | null
           id?: string
@@ -241,6 +243,7 @@ export type Database = {
           completed_at?: string | null
           created_at?: string | null
           description?: string | null
+          document_id?: string | null
           due_date?: string
           entity_id?: string | null
           id?: string
@@ -255,6 +258,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_events_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
             referencedColumns: ["id"]
           },
           {
@@ -607,6 +617,38 @@ export type Database = {
           },
         ]
       }
+      company_labels: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          kind: string
+          label: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          kind: string
+          label: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          label?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_labels_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       company_switches: {
         Row: {
           basis: Json | null
@@ -894,6 +936,214 @@ export type Database = {
           },
         ]
       }
+      document_conditions: {
+        Row: {
+          company_id: string
+          condition_ref: string | null
+          created_at: string
+          document_id: string
+          evidence_expected: string | null
+          id: string
+          ordinal: number
+          scan_id: string
+          title: string
+        }
+        Insert: {
+          company_id: string
+          condition_ref?: string | null
+          created_at?: string
+          document_id: string
+          evidence_expected?: string | null
+          id?: string
+          ordinal: number
+          scan_id: string
+          title: string
+        }
+        Update: {
+          company_id?: string
+          condition_ref?: string | null
+          created_at?: string
+          document_id?: string
+          evidence_expected?: string | null
+          id?: string
+          ordinal?: number
+          scan_id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_conditions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_conditions_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_conditions_scan_id_fkey"
+            columns: ["scan_id"]
+            isOneToOne: false
+            referencedRelation: "document_scans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_deadlines: {
+        Row: {
+          calendar_event_id: string | null
+          company_id: string
+          created_at: string
+          document_id: string
+          due_on: string | null
+          id: string
+          recurs: boolean
+          scan_id: string
+          source_line: string | null
+          title: string
+        }
+        Insert: {
+          calendar_event_id?: string | null
+          company_id: string
+          created_at?: string
+          document_id: string
+          due_on?: string | null
+          id?: string
+          recurs?: boolean
+          scan_id: string
+          source_line?: string | null
+          title: string
+        }
+        Update: {
+          calendar_event_id?: string | null
+          company_id?: string
+          created_at?: string
+          document_id?: string
+          due_on?: string | null
+          id?: string
+          recurs?: boolean
+          scan_id?: string
+          source_line?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_deadlines_calendar_event_id_fkey"
+            columns: ["calendar_event_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_deadlines_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_deadlines_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_deadlines_scan_id_fkey"
+            columns: ["scan_id"]
+            isOneToOne: false
+            referencedRelation: "document_scans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_gaps: {
+        Row: {
+          citation: string | null
+          citation_url: string | null
+          company_id: string
+          created_at: string
+          description: string | null
+          dismissed_reason: string | null
+          document_id: string
+          draftable: boolean
+          fix: string | null
+          id: string
+          locator: string | null
+          ordinal: number
+          quote: string | null
+          quote_verified: boolean | null
+          scan_id: string
+          status: string
+          title: string
+        }
+        Insert: {
+          citation?: string | null
+          citation_url?: string | null
+          company_id: string
+          created_at?: string
+          description?: string | null
+          dismissed_reason?: string | null
+          document_id: string
+          draftable?: boolean
+          fix?: string | null
+          id?: string
+          locator?: string | null
+          ordinal: number
+          quote?: string | null
+          quote_verified?: boolean | null
+          scan_id: string
+          status?: string
+          title: string
+        }
+        Update: {
+          citation?: string | null
+          citation_url?: string | null
+          company_id?: string
+          created_at?: string
+          description?: string | null
+          dismissed_reason?: string | null
+          document_id?: string
+          draftable?: boolean
+          fix?: string | null
+          id?: string
+          locator?: string | null
+          ordinal?: number
+          quote?: string | null
+          quote_verified?: boolean | null
+          scan_id?: string
+          status?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_gaps_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_gaps_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_gaps_scan_id_fkey"
+            columns: ["scan_id"]
+            isOneToOne: false
+            referencedRelation: "document_scans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_reviews: {
         Row: {
           action_items: Json | null
@@ -997,6 +1247,149 @@ export type Database = {
           },
         ]
       }
+      document_scans: {
+        Row: {
+          agencies: Json
+          ai_call_id: string | null
+          company_id: string
+          confidence_notes: string | null
+          could_not_read_reason: string | null
+          doc_date: string | null
+          doc_date_kind: string | null
+          document_id: string
+          effort: string | null
+          entity_id: string | null
+          expected_missing: Json
+          freshness_note: string | null
+          id: string
+          is_current: boolean
+          issuer: string | null
+          json_parsed: boolean
+          jurisdiction: Json
+          kind: string | null
+          model: string | null
+          page_refs: Json
+          prompt_sha256: string | null
+          quotes_checked: number
+          quotes_verified: number
+          raw_text: string | null
+          scanned_at: string
+          searches: number
+          significant_date: string | null
+          significant_date_kind: string | null
+          site_scope: string | null
+          status: string | null
+          subjects: Json
+          summary: string | null
+          title: string | null
+          version_confidence: string | null
+          version_of_title: string | null
+        }
+        Insert: {
+          agencies?: Json
+          ai_call_id?: string | null
+          company_id: string
+          confidence_notes?: string | null
+          could_not_read_reason?: string | null
+          doc_date?: string | null
+          doc_date_kind?: string | null
+          document_id: string
+          effort?: string | null
+          entity_id?: string | null
+          expected_missing?: Json
+          freshness_note?: string | null
+          id?: string
+          is_current?: boolean
+          issuer?: string | null
+          json_parsed?: boolean
+          jurisdiction?: Json
+          kind?: string | null
+          model?: string | null
+          page_refs?: Json
+          prompt_sha256?: string | null
+          quotes_checked?: number
+          quotes_verified?: number
+          raw_text?: string | null
+          scanned_at?: string
+          searches?: number
+          significant_date?: string | null
+          significant_date_kind?: string | null
+          site_scope?: string | null
+          status?: string | null
+          subjects?: Json
+          summary?: string | null
+          title?: string | null
+          version_confidence?: string | null
+          version_of_title?: string | null
+        }
+        Update: {
+          agencies?: Json
+          ai_call_id?: string | null
+          company_id?: string
+          confidence_notes?: string | null
+          could_not_read_reason?: string | null
+          doc_date?: string | null
+          doc_date_kind?: string | null
+          document_id?: string
+          effort?: string | null
+          entity_id?: string | null
+          expected_missing?: Json
+          freshness_note?: string | null
+          id?: string
+          is_current?: boolean
+          issuer?: string | null
+          json_parsed?: boolean
+          jurisdiction?: Json
+          kind?: string | null
+          model?: string | null
+          page_refs?: Json
+          prompt_sha256?: string | null
+          quotes_checked?: number
+          quotes_verified?: number
+          raw_text?: string | null
+          scanned_at?: string
+          searches?: number
+          significant_date?: string | null
+          significant_date_kind?: string | null
+          site_scope?: string | null
+          status?: string | null
+          subjects?: Json
+          summary?: string | null
+          title?: string | null
+          version_confidence?: string | null
+          version_of_title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_scans_ai_call_id_fkey"
+            columns: ["ai_call_id"]
+            isOneToOne: false
+            referencedRelation: "ai_calls"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_scans_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_scans_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_scans_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documents: {
         Row: {
           company_id: string | null
@@ -1010,8 +1403,12 @@ export type Database = {
           is_recurring: boolean | null
           name: string
           recurrence_period: string | null
+          source: string
+          status: string
           uploaded_at: string | null
           user_id: string | null
+          version_confirmed: boolean
+          version_of: string | null
         }
         Insert: {
           company_id?: string | null
@@ -1025,8 +1422,12 @@ export type Database = {
           is_recurring?: boolean | null
           name: string
           recurrence_period?: string | null
+          source?: string
+          status?: string
           uploaded_at?: string | null
           user_id?: string | null
+          version_confirmed?: boolean
+          version_of?: string | null
         }
         Update: {
           company_id?: string | null
@@ -1040,8 +1441,12 @@ export type Database = {
           is_recurring?: boolean | null
           name?: string
           recurrence_period?: string | null
+          source?: string
+          status?: string
           uploaded_at?: string | null
           user_id?: string | null
+          version_confirmed?: boolean
+          version_of?: string | null
         }
         Relationships: [
           {
@@ -1070,6 +1475,13 @@ export type Database = {
             columns: ["from_topic_id"]
             isOneToOne: false
             referencedRelation: "topics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_version_of_fkey"
+            columns: ["version_of"]
+            isOneToOne: false
+            referencedRelation: "documents"
             referencedColumns: ["id"]
           },
         ]
@@ -1147,37 +1559,46 @@ export type Database = {
         Row: {
           company_id: string
           created_at: string
+          document_id: string | null
           from_turn_id: string | null
           id: string
+          locator: string | null
           proposed_value: string
           quote: string | null
+          source: string
           status: string
           switch_key: string
-          topic_id: string
+          topic_id: string | null
           updated_at: string
         }
         Insert: {
           company_id: string
           created_at?: string
+          document_id?: string | null
           from_turn_id?: string | null
           id?: string
+          locator?: string | null
           proposed_value: string
           quote?: string | null
+          source?: string
           status?: string
           switch_key: string
-          topic_id: string
+          topic_id?: string | null
           updated_at?: string
         }
         Update: {
           company_id?: string
           created_at?: string
+          document_id?: string | null
           from_turn_id?: string | null
           id?: string
+          locator?: string | null
           proposed_value?: string
           quote?: string | null
+          source?: string
           status?: string
           switch_key?: string
-          topic_id?: string
+          topic_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1186,6 +1607,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fact_proposals_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
             referencedColumns: ["id"]
           },
           {

@@ -3,8 +3,8 @@
 **GENERATED — do not edit.** `node --env-file=.env.local scripts/schema-doc.js`, and it runs
 inside `npm run db:migrate`, so it cannot be stale by more than one migration.
 
-**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-09-23 20:04 UTC
-**Migrations applied:** 40 — `000` to `039`
+**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-09-25 16:42 UTC
+**Migrations applied:** 41 — `000` to `040`
 
 *Every figure here was read from the catalog of that database. Nothing is copied from the
 migration files, which say what was intended rather than what is there — and the two have
@@ -29,9 +29,9 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 
 **Compliance Workspace (M1) — research, conversations, checklists**
 
-- `topics` — 63 rows · touched by route chat, route checklists/from-topic, route documents, route jobs/delete, route jobs/summarise, +5 more
-- `checklists` — 16 rows · touched by route account, route checklists/from-topic, route link-research, route substeps, screen compliance, +1 more
-- `checklist_items` — 243 rows · touched by route account/export, route account, route checklists/from-topic, route substeps, screen compliance, +1 more
+- `topics` — 73 rows · touched by route chat, route checklists/from-topic, route documents, route jobs/delete, route jobs/summarise, +5 more
+- `checklists` — 20 rows · touched by route account, route checklists/from-topic, route link-research, route substeps, screen compliance, +1 more
+- `checklist_items` — 330 rows · touched by route account/export, route account, route checklists/from-topic, route substeps, screen compliance, +1 more
 - `critic_reviews` — 0 rows · touched by lib criticRecord
 - `critic_findings` — 0 rows · touched by lib criticRecord
 
@@ -50,8 +50,8 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 
 **Documents and evidence**
 
-- `documents` — 6 rows · touched by route audits, route chat, route document-review, route documents, route folders, +6 more
-- `document_reviews` — 5 rows · touched by route audits, route document-review, lib attachedDocument, lib documentReview
+- `documents` — 8 rows · touched by route audits, route chat, route document-review, route documents, route folders, +6 more
+- `document_reviews` — 9 rows · touched by route audits, route document-review, lib attachedDocument, lib documentReview
 - `company_folders` — 0 rows · touched by route document-review, route documents, route folders
 - `company_templates` — 0 rows · touched by route audits
 - `standard_templates` — 0 rows · touched by route audits
@@ -80,7 +80,7 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 
 - `jobs` — 0 rows · **no code reads or writes it**
 
-**Not assigned to a module above:** `ai_calls`, `fact_proposals`, `job_runs`, `turns`, `usage_counters`
+**Not assigned to a module above:** `ai_calls`, `company_labels`, `document_conditions`, `document_deadlines`, `document_gaps`, `document_scans`, `fact_proposals`, `job_runs`, `turns`, `usage_counters`
 
 ---
 
@@ -151,7 +151,7 @@ END)`
 
 One row per model call, written at the call. Prices are copied onto the row so a later change to config/pricing.ts cannot rewrite what a past call cost. cost_usd NULL = the model was not in the price table, which is not the same as free. DECISIONS.md §128 J.
 
-**Rows:** 78 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 294 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `lib costLedger`, `script cost-report`
 
@@ -176,12 +176,16 @@ One row per model call, written at the call. Prices are copied onto the row so a
 
 - `company_id` → `companies` — ON DELETE CASCADE
 
+**Pointed at by:**
+
+- `document_scans.ai_call_id` — ON DELETE SET NULL
+
 **Constraints:**
 
 - `ai_calls_input_tokens_check` — `CHECK ((input_tokens >= 0))`
 - `ai_calls_output_tokens_check` — `CHECK ((output_tokens >= 0))`
 - `ai_calls_searches_check` — `CHECK ((searches >= 0))`
-- `ai_calls_task_check` — `CHECK ((task = ANY (ARRAY['research'::text, 'checklist'::text, 'substeps'::text, 'convert'::text, 'summarise'::text, 'gate'::text, 'critique'::text, 'audit'::text, 'document_review'::text, 'other'::text])))`
+- `ai_calls_task_check` — `CHECK ((task = ANY (ARRAY['research'::text, 'checklist'::text, 'substeps'::text, 'convert'::text, 'summarise'::text, 'gate'::text, 'critique'::text, 'audit'::text, 'document_review'::text, 'document_scan'::text, 'other'::text])))`
 - `ai_calls_wall_ms_check` — `CHECK ((wall_ms >= 0))`
 
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
@@ -266,12 +270,18 @@ One row per audit run. A frozen snapshot of results as checked that day — reus
 | `completed_at` | timestamp with time zone | yes | — |
 | `created_at` | timestamp with time zone | yes | `timezone('utc'::text, now())` |
 | `entity_id` | uuid | yes | — |
+| `document_id` | uuid | yes | — |
 
 **Points at:**
 
 - `company_id` → `companies` — ON DELETE CASCADE
+- `document_id` → `documents` — ON DELETE SET NULL
 - `entity_id` → `entities` — ON DELETE SET NULL
 - `user_id` → `auth.users` — ON DELETE CASCADE
+
+**Pointed at by:**
+
+- `document_deadlines.calendar_event_id` — ON DELETE SET NULL
 
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
@@ -292,7 +302,7 @@ One row per audit run. A frozen snapshot of results as checked that day — reus
 
 ### `checklist_items`
 
-**Rows:** 243 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 330 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route account/export`, `route account`, `route checklists/from-topic`, `route substeps`, `screen compliance`, `script check-live`
 
@@ -353,7 +363,7 @@ One row per audit run. A frozen snapshot of results as checked that day — reus
 
 ### `checklists`
 
-**Rows:** 16 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 20 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route account`, `route checklists/from-topic`, `route link-research`, `route substeps`, `screen compliance`, `screen dashboard`
 
@@ -432,12 +442,17 @@ One row per audit run. A frozen snapshot of results as checked that day — reus
 - `checklists.company_id` — ON DELETE CASCADE
 - `company_chemicals.company_id` — ON DELETE CASCADE
 - `company_folders.company_id` — ON DELETE CASCADE
+- `company_labels.company_id` — ON DELETE CASCADE
 - `company_switches.company_id` — ON DELETE CASCADE
 - `company_templates.company_id` — ON DELETE CASCADE
 - `corrections.company_id` — ON DELETE SET NULL
 - `critic_findings.company_id` — ON DELETE CASCADE
 - `critic_reviews.company_id` — ON DELETE CASCADE
+- `document_conditions.company_id` — ON DELETE CASCADE
+- `document_deadlines.company_id` — ON DELETE CASCADE
+- `document_gaps.company_id` — ON DELETE CASCADE
 - `document_reviews.company_id` — ON DELETE CASCADE
+- `document_scans.company_id` — ON DELETE CASCADE
 - `documents.company_id` — ON DELETE CASCADE
 - `entities.company_id` — ON DELETE CASCADE
 - `fact_proposals.company_id` — ON DELETE CASCADE
@@ -567,6 +582,42 @@ What one SITE holds, by CAS where identified. Tenant data. Replaces four boolean
 | `company_folders_update` | UPDATE | authenticated | `(company_id = auth_company_id())` | `(company_id = auth_company_id())` |
 
 **Indexes:** `company_folders_pkey`
+
+### `company_labels`
+
+**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+
+**Read or written by: NOTHING in app/, lib/ or scripts/.**
+
+| Column | Type | Null | Default |
+|---|---|---|---|
+| `id` | uuid | no | `gen_random_uuid()` |
+| `company_id` | uuid | no | — |
+| `kind` | text | no | — |
+| `label` | text | no | — |
+| `created_at` | timestamp with time zone | no | `now()` |
+
+**Points at:**
+
+- `company_id` → `companies` — ON DELETE CASCADE
+
+**Constraints:**
+
+- `company_labels_kind_check` — `CHECK ((kind = ANY (ARRAY['agency'::text, 'subject'::text])))`
+
+**Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
+
+- `anon` — **nothing**
+- `authenticated` — **nothing**
+- `service_role` — **nothing**
+
+**RLS policies:**
+
+| Policy | For | Roles | USING | WITH CHECK |
+|---|---|---|---|---|
+| `company_labels_select_own` | SELECT | authenticated | `(company_id = auth_company_id())` | — |
+
+**Indexes:** `company_labels_company_id_kind_label_key`, `company_labels_pkey`, `idx_company_labels_company_kind`
 
 ### `company_switches`
 
@@ -792,9 +843,139 @@ One row per criticise() call, INCLUDING reviews that found nothing — that is t
 
 **Indexes:** `critic_reviews_pkey`, `idx_critic_reviews_company_created`
 
+### `document_conditions`
+
+**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+
+**Read or written by: NOTHING in app/, lib/ or scripts/.**
+
+| Column | Type | Null | Default |
+|---|---|---|---|
+| `id` | uuid | no | `gen_random_uuid()` |
+| `scan_id` | uuid | no | — |
+| `document_id` | uuid | no | — |
+| `company_id` | uuid | no | — |
+| `ordinal` | integer | no | — |
+| `title` | text | no | — |
+| `condition_ref` | text | yes | — |
+| `evidence_expected` | text | yes | — |
+| `created_at` | timestamp with time zone | no | `now()` |
+
+**Points at:**
+
+- `company_id` → `companies` — ON DELETE CASCADE
+- `document_id` → `documents` — ON DELETE CASCADE
+- `scan_id` → `document_scans` — ON DELETE CASCADE
+
+**Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
+
+- `anon` — **nothing**
+- `authenticated` — **nothing**
+- `service_role` — **nothing**
+
+**RLS policies:**
+
+| Policy | For | Roles | USING | WITH CHECK |
+|---|---|---|---|---|
+| `document_conditions_select_own` | SELECT | authenticated | `(company_id = auth_company_id())` | — |
+
+**Indexes:** `document_conditions_pkey`, `idx_document_conditions_document`
+
+### `document_deadlines`
+
+**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+
+**Read or written by: NOTHING in app/, lib/ or scripts/.**
+
+| Column | Type | Null | Default |
+|---|---|---|---|
+| `id` | uuid | no | `gen_random_uuid()` |
+| `scan_id` | uuid | no | — |
+| `document_id` | uuid | no | — |
+| `company_id` | uuid | no | — |
+| `title` | text | no | — |
+| `due_on` | date | yes | — |
+| `source_line` | text | yes | — |
+| `recurs` | boolean | no | `false` |
+| `calendar_event_id` | uuid | yes | — |
+| `created_at` | timestamp with time zone | no | `now()` |
+
+**Points at:**
+
+- `calendar_event_id` → `calendar_events` — ON DELETE SET NULL
+- `company_id` → `companies` — ON DELETE CASCADE
+- `document_id` → `documents` — ON DELETE CASCADE
+- `scan_id` → `document_scans` — ON DELETE CASCADE
+
+**Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
+
+- `anon` — **nothing**
+- `authenticated` — **nothing**
+- `service_role` — **nothing**
+
+**RLS policies:**
+
+| Policy | For | Roles | USING | WITH CHECK |
+|---|---|---|---|---|
+| `document_deadlines_select_own` | SELECT | authenticated | `(company_id = auth_company_id())` | — |
+| `document_deadlines_update_own` | UPDATE | authenticated | `(company_id = auth_company_id())` | `(company_id = auth_company_id())` |
+
+**Indexes:** `document_deadlines_pkey`, `idx_document_deadlines_document`
+
+### `document_gaps`
+
+**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+
+**Read or written by: NOTHING in app/, lib/ or scripts/.**
+
+| Column | Type | Null | Default |
+|---|---|---|---|
+| `id` | uuid | no | `gen_random_uuid()` |
+| `scan_id` | uuid | no | — |
+| `document_id` | uuid | no | — |
+| `company_id` | uuid | no | — |
+| `ordinal` | integer | no | — |
+| `title` | text | no | — |
+| `description` | text | yes | — |
+| `fix` | text | yes | — |
+| `citation` | text | yes | — |
+| `citation_url` | text | yes | — |
+| `locator` | text | yes | — |
+| `draftable` | boolean | no | `false` |
+| `quote` | text | yes | — |
+| `quote_verified` | boolean | yes | — |
+| `status` | text | no | `'open'::text` |
+| `dismissed_reason` | text | yes | — |
+| `created_at` | timestamp with time zone | no | `now()` |
+
+**Points at:**
+
+- `company_id` → `companies` — ON DELETE CASCADE
+- `document_id` → `documents` — ON DELETE CASCADE
+- `scan_id` → `document_scans` — ON DELETE CASCADE
+
+**Constraints:**
+
+- `document_gaps_status_check` — `CHECK ((status = ANY (ARRAY['open'::text, 'closed'::text, 'dismissed'::text])))`
+
+**Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
+
+- `anon` — **nothing**
+- `authenticated` — **nothing**
+- `service_role` — **nothing**
+
+**RLS policies:**
+
+| Policy | For | Roles | USING | WITH CHECK |
+|---|---|---|---|---|
+| `document_gaps_select_own` | SELECT | authenticated | `(company_id = auth_company_id())` | — |
+| `document_gaps_update_own` | UPDATE | authenticated | `(company_id = auth_company_id())` | `(company_id = auth_company_id())` |
+
+**Indexes:** `document_gaps_pkey`, `idx_document_gaps_company`, `idx_document_gaps_document_status`
+
 ### `document_reviews`
 
-**Rows:** 5 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 9 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route audits`, `route document-review`, `lib attachedDocument`, `lib documentReview`
 
@@ -848,9 +1029,87 @@ One row per criticise() call, INCLUDING reviews that found nothing — that is t
 
 **Indexes:** `document_reviews_pkey`, `idx_document_reviews_entity`
 
+### `document_scans`
+
+**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+
+**Read or written by: NOTHING in app/, lib/ or scripts/.**
+
+| Column | Type | Null | Default |
+|---|---|---|---|
+| `id` | uuid | no | `gen_random_uuid()` |
+| `document_id` | uuid | no | — |
+| `company_id` | uuid | no | — |
+| `kind` | text | yes | — |
+| `title` | text | yes | — |
+| `issuer` | text | yes | — |
+| `agencies` | jsonb | no | `'[]'::jsonb` |
+| `subjects` | jsonb | no | `'[]'::jsonb` |
+| `entity_id` | uuid | yes | — |
+| `site_scope` | text | yes | — |
+| `jurisdiction` | jsonb | no | `'[]'::jsonb` |
+| `doc_date` | date | yes | — |
+| `doc_date_kind` | text | yes | — |
+| `page_refs` | jsonb | no | `'{}'::jsonb` |
+| `summary` | text | yes | — |
+| `status` | text | yes | — |
+| `significant_date` | date | yes | — |
+| `significant_date_kind` | text | yes | — |
+| `freshness_note` | text | yes | — |
+| `expected_missing` | jsonb | no | `'[]'::jsonb` |
+| `version_of_title` | text | yes | — |
+| `version_confidence` | text | yes | — |
+| `confidence_notes` | text | yes | — |
+| `could_not_read_reason` | text | yes | — |
+| `raw_text` | text | yes | — |
+| `json_parsed` | boolean | no | `true` |
+| `quotes_checked` | integer | no | `0` |
+| `quotes_verified` | integer | no | `0` |
+| `model` | text | yes | — |
+| `effort` | text | yes | — |
+| `prompt_sha256` | text | yes | — |
+| `searches` | integer | no | `0` |
+| `ai_call_id` | uuid | yes | — |
+| `scanned_at` | timestamp with time zone | no | `now()` |
+| `is_current` | boolean | no | `true` |
+
+**Points at:**
+
+- `ai_call_id` → `ai_calls` — ON DELETE SET NULL
+- `company_id` → `companies` — ON DELETE CASCADE
+- `document_id` → `documents` — ON DELETE CASCADE
+- `entity_id` → `entities` — ON DELETE SET NULL
+
+**Pointed at by:**
+
+- `document_conditions.scan_id` — ON DELETE CASCADE
+- `document_deadlines.scan_id` — ON DELETE CASCADE
+- `document_gaps.scan_id` — ON DELETE CASCADE
+
+**Constraints:**
+
+- `document_scans_doc_date_kind_check` — `CHECK ((doc_date_kind = ANY (ARRAY['issued'::text, 'revised'::text, 'last_entry'::text, 'effective'::text, 'unknown'::text])))`
+- `document_scans_kind_check` — `CHECK ((kind = ANY (ARRAY['permit'::text, 'certificate'::text, 'program'::text, 'policy'::text, 'record'::text, 'supplier_document'::text, 'other'::text])))`
+- `document_scans_site_scope_check` — `CHECK ((site_scope = ANY (ARRAY['company_wide'::text, 'site'::text, 'unknown'::text])))`
+- `document_scans_status_check` — `CHECK ((status = ANY (ARRAY['current'::text, 'expiring'::text, 'expired'::text, 'no_gaps_found'::text, 'gaps_found'::text, 'recorded'::text, 'not_judged'::text, 'could_not_read'::text])))`
+
+**Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
+
+- `anon` — **nothing**
+- `authenticated` — **nothing**
+- `service_role` — **nothing**
+
+**RLS policies:**
+
+| Policy | For | Roles | USING | WITH CHECK |
+|---|---|---|---|---|
+| `document_scans_select_own` | SELECT | authenticated | `(company_id = auth_company_id())` | — |
+
+**Indexes:** `document_scans_pkey`, `idx_document_scans_company_scanned`, `idx_document_scans_document_current`
+
 ### `documents`
 
-**Rows:** 6 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 8 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route audits`, `route chat`, `route document-review`, `route documents`, `route folders`, `route hr`, `route hr-audits`, `screen compliance`, `lib attachedDocument`, `lib storage`, `script check-live`
 
@@ -869,6 +1128,10 @@ One row per criticise() call, INCLUDING reviews that found nothing — that is t
 | `folder_id` | uuid | yes | — |
 | `entity_id` | uuid | yes | — |
 | `from_topic_id` | uuid | yes | — |
+| `status` | text | no | `'uploaded'::text` |
+| `source` | text | no | `'upload'::text` |
+| `version_of` | uuid | yes | — |
+| `version_confirmed` | boolean | no | `false` |
 
 **Points at:**
 
@@ -877,15 +1140,28 @@ One row per criticise() call, INCLUDING reviews that found nothing — that is t
 - `folder_id` → `company_folders` — ON DELETE SET NULL
 - `from_topic_id` → `topics` — ON DELETE SET NULL
 - `user_id` → `auth.users` — ON DELETE CASCADE
+- `version_of` → `documents` — ON DELETE SET NULL
 
 **Pointed at by:**
 
+- `calendar_events.document_id` — ON DELETE SET NULL
+- `document_conditions.document_id` — ON DELETE CASCADE
+- `document_deadlines.document_id` — ON DELETE CASCADE
+- `document_gaps.document_id` — ON DELETE CASCADE
 - `document_reviews.document_id` — ON DELETE CASCADE
+- `document_scans.document_id` — ON DELETE CASCADE
+- `documents.version_of` — ON DELETE SET NULL
+- `fact_proposals.document_id` — ON DELETE CASCADE
 - `obligation_evidence.company_id` — ON DELETE CASCADE
 - `obligation_evidence.document_id` — ON DELETE CASCADE
 - `obligation_evidence.document_id` — ON DELETE CASCADE
 - `switch_determinations.document_id` — ON DELETE SET NULL
 - `turns.document_id` — ON DELETE SET NULL
+
+**Constraints:**
+
+- `documents_source_check` — `CHECK ((source = ANY (ARRAY['upload'::text, 'conversation'::text, 'drive'::text])))`
+- `documents_status_check` — `CHECK ((status = ANY (ARRAY['uploaded'::text, 'reading'::text, 'read'::text, 'could_not_read'::text])))`
 
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
@@ -939,6 +1215,7 @@ One row per criticise() call, INCLUDING reviews that found nothing — that is t
 - `company_chemicals.entity_id` — ON DELETE CASCADE
 - `company_switches.entity_id` — ON DELETE CASCADE
 - `document_reviews.entity_id` — ON DELETE SET NULL
+- `document_scans.entity_id` — ON DELETE SET NULL
 - `documents.entity_id` — ON DELETE SET NULL
 - `entities.parent_entity_id` — ON DELETE SET NULL
 - `obligation_evidence.entity_id` — ON DELETE CASCADE
@@ -976,7 +1253,7 @@ Candidate company facts read out of a conversation overnight. PROPOSED, never wr
 |---|---|---|---|
 | `id` | uuid | no | `gen_random_uuid()` |
 | `company_id` | uuid | no | — |
-| `topic_id` | uuid | no | — |
+| `topic_id` | uuid | yes | — |
 | `switch_key` | text | no | — |
 | `proposed_value` | text | no | — |
 | `from_turn_id` | uuid | yes | — |
@@ -984,15 +1261,21 @@ Candidate company facts read out of a conversation overnight. PROPOSED, never wr
 | `status` | text | no | `'proposed'::text` |
 | `created_at` | timestamp with time zone | no | `now()` |
 | `updated_at` | timestamp with time zone | no | `now()` |
+| `document_id` | uuid | yes | — |
+| `locator` | text | yes | — |
+| `source` | text | no | `'conversation'::text` |
 
 **Points at:**
 
 - `company_id` → `companies` — ON DELETE CASCADE
+- `document_id` → `documents` — ON DELETE CASCADE
 - `from_turn_id` → `turns` — ON DELETE SET NULL
 - `topic_id` → `topics` — ON DELETE CASCADE
 
 **Constraints:**
 
+- `fact_proposals_one_source` — `CHECK ((((topic_id IS NOT NULL) AND (document_id IS NULL)) OR ((topic_id IS NULL) AND (document_id IS NOT NULL))))`
+- `fact_proposals_source_check` — `CHECK ((source = ANY (ARRAY['conversation'::text, 'document'::text])))`
 - `fact_proposals_status_check` — `CHECK ((status = ANY (ARRAY['proposed'::text, 'accepted'::text, 'rejected'::text])))`
 
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
@@ -1696,7 +1979,7 @@ The ~59 facts about a company that determine which requirements apply. Reference
 
 One exploration. The transcript is disposable (WORKSPACE.md §6.4); the summary is what survives. Holds NO facts — a hypothetical is never stored (DECISIONS.md §78) and a real fact goes to company_switches. Migration 028.
 
-**Rows:** 63 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 73 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route chat`, `route checklists/from-topic`, `route documents`, `route jobs/delete`, `route jobs/summarise`, `route topics/[id]`, `route topics/[id]/summarise`, `screen compliance`, `lib conversation`, `script check-live`
 
@@ -1757,7 +2040,7 @@ One exploration. The transcript is disposable (WORKSPACE.md §6.4); the summary 
 
 One message in a conversation. Cleared 7 days after the topic is summarised (DECISIONS.md §125, superseding §110's 15 days); the topic row and its summary survive.
 
-**Rows:** 219 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 250 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route jobs/delete`, `route jobs/summarise`, `route topics/[id]`, `screen compliance`, `lib attachedDocument`, `lib conversation`, `script check-live`
 
@@ -2004,4 +2287,5 @@ filtered HERE so no consumer can forget it (CLAUDE.md §3.2). A corrected link
 037
 038
 039
+040
 ```

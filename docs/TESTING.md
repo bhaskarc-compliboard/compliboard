@@ -1,6 +1,11 @@
 # Testing
-**Version:** 23 · **Updated:** 24 September 2026
-**Supersedes:** version 22 (23 Sep). Adds the **Layout pass set** — nine actions across the
+**Version:** 24 · **Updated:** 25 September 2026
+**Supersedes:** version 23 (24 Sep). Adds the **Documents Run 1 set** — three documents run from
+`npm run scan`, because Run 1 builds the scan and its tables and there is no screen yet. The set
+carries two warnings: `.env.local` runs Haiku with search capped at 2, so these judge the SHAPE
+of a scan and not the reading; and **D1-3, the unreadable file, is the one that matters most** —
+if it ever returns gaps or facts, the scan has started answering around a document nobody read,
+which is the audit engine's standing defect arriving in a new place. Version 23: version 22 (23 Sep). Adds the **Layout pass set** — nine actions across the
 conversation view, the checklist drawer, the summary drawer and the two lists, written against
 `docs/DESIGN.md`. Two warnings sit at the top of it and both were paid for: **`.env.local` runs
 Haiku**, so answer quality on a laptop is not the product's and these tests judge position rather
@@ -137,6 +142,50 @@ untested — applies to the runner as much as to anything it runs.
 **167 · 0 skipped · 0 todo**. Per file: `appliesExpression` 58 · `jurisdiction` 24 · `resolve`
 40 · `sdsExtraction` 14 · `switchDetermination` 31. **No run in this project has reported 100 or
 106.** The floor is committed so the question does not have to be re-asked.
+
+---
+
+## Manual set — Documents Run 1, the scan and its contract, 25 Sep 2026
+
+**Three documents, run from a script — there is no screen yet.** Run 1 builds the scan and the
+tables it writes; the page and the drawer come later. So these are run with `npm run scan` and
+judged by reading the JSON it prints and the rows it wrote.
+
+> ### ⚠ `.env.local` RUNS HAIKU, AND `DEV_MAX_SEARCHES` CAPS SEARCH AT 2.
+>
+> What a Haiku scan *says* is not what the product will say — `CLAUDE.md` §3.4a. **Judge the
+> SHAPE**: did it come back at all, are the fields filled, is an unreadable file said out loud,
+> is a quote checked against the file. To judge the reading itself, point it at the real model:
+> `AI_MODEL_DOCUMENT_SCAN=claude-opus-5 npm run scan -- <file>`.
+
+**Setup:** staging, `.env.local` as shipped. Nothing here touches production; the script refuses
+the production ref by construction.
+
+| # | Action | Steps | What must be true |
+|---|---|---|---|
+| **D1-1** | **A policy with real gaps** | `npm run scan -- tests/fixtures/Harbor-Kitchen-Employee-Policy-2026.pdf --times 3` | Three scans complete. Each prints a full JSON, a cost row with a model, tokens, searches and a dollar figure, and a quote line. `kind` is a policy or program, not a permit. **Gaps are found** — this document has planted errors. The variance table prints at the end: `kind`, `title`, `status` and `significant_date` should hold across all three; **the gap count will not**, and that is the finding, not a fault |
+| **D1-2** | **A permit-shaped document** | `npm run scan -- tests/golden/storm_water.pdf --times 3` | Three scans complete. The variance table shows **most fields identical** across the three — this document is far more stable than D1-1, and the contrast is the point. Check the cost row is present on every run |
+| **D1-3** | **A file nobody can read** | `npm run scan -- tests/fixtures/unreadable-blurred-page.pdf` | `status` is **`could_not_read`**. `could_not_read.reason` says plainly that the page is blank or illegible, and `way_forward` says what would fix it. **`gaps` and `facts` are empty** — nothing is invented about a document nobody read. `documents.status` is set to `could_not_read` |
+
+> ### WHAT D1-3 IS REALLY TESTING, AND WHY IT IS NOT OPTIONAL.
+>
+> The audit engine's standing defect is that it drops a document it cannot read with a console
+> line and computes a readiness number from the rest. The whole point of the Documents section is
+> that this stops. **An unreadable file is a status, said out loud, with the way forward** — never
+> a log line, never silently missing from a count. If D1-3 ever produces gaps or facts, the scan
+> has started answering around a document it did not read, and that is the most serious thing
+> that can go wrong here.
+
+**Two more things worth running when the scan changes**, both proved once on 25 September:
+
+- **A Word file** — `npm run scan -- tests/fixtures/kitchen-rota-notice.docx`. It exercises the
+  shared parser (`parseDocumentToBlocks`), which the OLD review path does not use, and it is the
+  only fixture with extractable text, so it is the only one where the **quote check actually
+  runs**. Expect `2 of 2 checked quotes found word-for-word`.
+- **A broken parse** — break `JSON.parse` in `lib/documentScan.ts`, scan anything, and the run
+  must **not throw**: `status` `could_not_read`, the reason *"the reading came back in a form we
+  could not use"*, and the whole answer kept in `document_scans.raw_text`. A paid answer is never
+  discarded.
 
 ---
 

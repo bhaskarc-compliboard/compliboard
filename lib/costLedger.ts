@@ -21,11 +21,11 @@ import { MODEL_PRICES, PRICE_PER_SEARCH, type ModelPrice } from '../config/prici
 /** The tasks migration 038's CHECK constraint allows. Kept in step with it by hand and by test. */
 export type LedgerTask =
   | 'research' | 'checklist' | 'substeps' | 'convert' | 'summarise'
-  | 'gate' | 'critique' | 'audit' | 'document_review' | 'other'
+  | 'gate' | 'critique' | 'audit' | 'document_review' | 'document_scan' | 'other'
 
 export const LEDGER_TASKS: readonly LedgerTask[] = [
   'research', 'checklist', 'substeps', 'convert', 'summarise',
-  'gate', 'critique', 'audit', 'document_review', 'other',
+  'gate', 'critique', 'audit', 'document_review', 'document_scan', 'other',
 ] as const
 
 export interface CallUsage {
@@ -81,17 +81,35 @@ export interface LedgerRow extends CallUsage {
 /**
  * Write one row. Never throws.
  *
- * `supabaseAdmin` is imported LAZILY: `lib/ai.ts` is imported by unit tests that have no
- * Supabase credentials, and a top-level import here would make every one of them construct a
- * client at module load. Service role is correct and is a named statement (`CLAUDE.md` §3.6) —
- * `authenticated` holds no INSERT on this table on purpose, because a ledger the measured party
- * can write is not a measurement.
+ * *** IT BUILDS ITS OWN CLIENT RATHER THAN IMPORTING `supabaseAdmin`. *** It used to import
+ * `./auth.ts` lazily, and that file imports `next/server` — which resolves under Next's bundler
+ * and NOWHERE ELSE. Every call made from a plain Node script therefore logged its cost line and
+ * then failed to write the row, with the failure swallowed by the catch below exactly as
+ * designed. Found on 25 September when `npm run scan` produced cost lines and no `ai_calls`
+ * rows. The client is built here, from the same two variables, with no Next dependency.
+ *
+ * Service role is correct and is a named statement (`CLAUDE.md` §3.6): `authenticated` holds no
+ * INSERT on this table on purpose, because a ledger the measured party can write is not a
+ * measurement. Built lazily and cached so importing this module for a unit test — which has no
+ * credentials — does not construct anything.
  */
+type LedgerDb = { from: (t: string) => { insert: (rows: unknown) => Promise<{ error: { message: string } | null }> } }
+let cached: LedgerDb | null = null
+async function ledgerClient(): Promise<LedgerDb> {
+  if (cached) return cached
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!url || !key) throw new Error('no Supabase credentials for the cost ledger')
+  // A dynamic import, not `require`: this file is an ES module and `require` is not defined in
+  // one — which is how the first attempt at this fix failed, swallowed by the same catch.
+  const { createClient } = await import('@supabase/supabase-js')
+  cached = createClient(url, key, { auth: { persistSession: false } }) as unknown as LedgerDb
+  return cached
+}
 export async function recordAICall(row: LedgerRow): Promise<void> {
   try {
     const cost = estimateCost(row)
-    const { supabaseAdmin } = await import('./auth.ts')
-    const { error } = await supabaseAdmin.from('ai_calls').insert({
+    const { error } = await (await ledgerClient()).from('ai_calls').insert({
       company_id: row.companyId,
       task: row.task,
       model: row.model,
