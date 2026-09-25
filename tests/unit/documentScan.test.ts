@@ -7,6 +7,7 @@
 import test, { describe } from 'node:test'
 import assert from 'node:assert/strict'
 import { verifyQuote, normaliseScan } from '../../lib/documentScan.ts'
+ import { extractJsonText } from '../../lib/ai.ts'
 
 describe('a quote is checked against the document', () => {
   const text = 'The rota for next month is on the noticeboard by the walk-in.'
@@ -76,5 +77,29 @@ describe('what comes back is never trusted as given', () => {
     assert.equal(s.gaps.length, 1)
     assert.equal(s.gaps[0].quote, 'not in the document at all here')
     assert.equal(s.gaps[0].quote_verified, false)
+  })
+})
+
+describe('extractJsonText survives prose AFTER the JSON', () => {
+  // The model answers in JSON and then adds a paragraph. Before 25 September the extractor only
+  // trimmed narration BEFORE the object, so a response that opened with the JSON kept whatever
+  // followed it and JSON.parse failed. Three 500s came from this one character.
+  test('a fenced object with a trailing paragraph parses', () => {
+    const raw = '```json\n{"a": 1}\n```\n\nAnd one more thing you should know about this document.'
+    assert.deepEqual(JSON.parse(extractJsonText(raw)), { a: 1 })
+  })
+
+  test('narration before AND after still parses', () => {
+    const raw = 'Let me read this.\n{"a": 1}\nHope that helps.'
+    assert.deepEqual(JSON.parse(extractJsonText(raw)), { a: 1 })
+  })
+
+  test('a clean response is returned unchanged — the fix is a no-op where it always worked', () => {
+    const raw = '{"a": 1, "b": [2, 3]}'
+    assert.equal(extractJsonText(raw), raw)
+  })
+
+  test('an array answer still works', () => {
+    assert.deepEqual(JSON.parse(extractJsonText('```json\n[1,2]\n```\ntrailing words')), [1, 2])
   })
 })

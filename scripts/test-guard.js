@@ -21,7 +21,7 @@ import { readdirSync, readFileSync } from 'node:fs'
 // decision. Run 3's `AnswerBody` replaced it and `grep -rn answerDisplay app lib components`
 // returned only the file itself — the suite was exercising code nothing shipped. Lowering the
 // floor is exactly the deliberate act this guard exists to force somebody to make in writing.
-const FLOOR = 469
+const FLOOR = 473
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

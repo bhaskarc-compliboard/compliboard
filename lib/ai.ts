@@ -418,7 +418,19 @@ export function extractJsonText(raw: string): string {
   const firstBrace = cleaned.indexOf('{')
   const firstBracket = cleaned.indexOf('[')
   const start = firstBrace === -1 ? firstBracket : (firstBracket === -1 ? firstBrace : Math.min(firstBrace, firstBracket))
-  if (start > 0) {
+  // *** `>= 0`, NOT `> 0`, AND THE DIFFERENCE IS ONE CHARACTER AND THREE 500s. ***
+  //
+  // `> 0` only trimmed when there was narration BEFORE the JSON. When the model opens with a
+  // ```json fence, `cleaned` starts with `{` after the fences come off, `start` is 0, and this
+  // block was skipped entirely — so prose written AFTER the closing brace was never removed and
+  // `JSON.parse` choked on it. The model does that often: it answers in JSON and then adds a
+  // paragraph of advice.
+  //
+  // Measured on three stored responses (25 Sep): two failed to parse and both parse with this,
+  // and one that already parsed comes out byte-identical, because for a clean response
+  // `slice(0, length)` is the whole string. It explains the storm_water scans failing 3 for 3,
+  // the 500 on the old review path in the D-0 measurement, and `check:live`'s attachment step.
+  if (start >= 0) {
     const isObject = cleaned[start] === '{'
     const end = isObject ? cleaned.lastIndexOf('}') : cleaned.lastIndexOf(']')
     if (end > start) {
