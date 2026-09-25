@@ -79,3 +79,28 @@ describe('chooseSignificantDate', () => {
     assert.deepEqual(chooseSignificantDate(null, null, null, []), { date: null, kind: null })
   })
 })
+
+describe('chooseSignificantDate — the two the golden fixtures caught', () => {
+  test('a deadline that MENTIONS the expiry does not beat the one that is it', () => {
+    // Golden case 02, verbatim from the scan: the renewal deadline's source line is condition
+    // 1.3, "…no later than 120 days before the expiration date, that is, on or before July 18",
+    // so matching the source line put 18 July on the permit's row instead of 15 November.
+    const got = chooseSignificantDate('permit', '2021-09-01', 'issued', [
+      dl('Renewal application submission deadline (MISSED)', '2026-07-18', false,
+         'The permittee shall submit a complete application for renewal no later than 120 days before the expiration date'),
+      dl('Permit expiration (CRITICAL)', '2026-11-15', false, 'condition 1.2'),
+    ])
+    assert.deepEqual(got, { date: '2026-11-15', kind: 'expiry' })
+  })
+
+  test('a permit whose scan read no expiry falls back to its own date, NOT labelled expiry', () => {
+    // Golden case 03: the only deadline the scan recorded was a recurring renewal. The fallback
+    // is the issue date, and it must not be called an expiry — an issue date is always in the
+    // past, and a view comparing it to today would call a licence valid until 2027 "Expired".
+    const got = chooseSignificantDate('certificate', '2026-03-03', 'issued', [
+      dl('Annual license renewal application and fee submission', '2027-02-10', true),
+    ])
+    assert.deepEqual(got, { date: '2026-03-03', kind: 'issued' })
+    assert.notEqual(got.kind, 'expiry')
+  })
+})

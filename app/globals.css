@@ -63,3 +63,34 @@ body {
 *, *::before, *::after {
   box-sizing: border-box;
 }
+
+/* ---------------------------------------------------------------------------
+ * PRINT. `DESIGN.md` §5 calls these product-wide rules, and until Documents Run 4 every one of
+ * them lived inside `app/compliance/page.tsx`'s own <style> block — so they applied on exactly
+ * one screen. The report drawer was lifted into `components/Drawer.tsx` to be shared, its
+ * Download button called `printDrawer()`, and the print came out as the whole Documents page
+ * with the scrim, the header, the footer and a 720px panel floating over it. Measured in a
+ * browser with print media emulated: `.print-page` still `display: block`, `.print-drawer` still
+ * `position: fixed`, scrim still painted.
+ *
+ * A printed compliance page is evidence, so this is not cosmetic. One copy, here, for every
+ * screen that has a drawer. The compliance page keeps its own identical block; the rules are
+ * idempotent and removing them is a change to a file this run does not own.
+ * ------------------------------------------------------------------------- */
+@media print {
+  .no-print { display: none !important; }
+
+  /* A drawer is `position: fixed` in a 720px column over the page. Printing it gave a clipped
+     strip of the drawer AND the whole page behind it. `printDrawer()` stamps this class on
+     <body> for the duration of the dialog: the page is hidden, and the drawer stops being a
+     panel and becomes the document. */
+  body.printing-drawer .print-page { display: none !important; }
+  body.printing-drawer .print-drawer {
+    position: static !important; max-width: none !important; width: 100% !important;
+    border: 0 !important; box-shadow: none !important; display: block !important;
+  }
+  /* The body scrolls on screen; on paper it must run to as many pages as it needs. */
+  body.printing-drawer .print-drawer .drawer-body {
+    overflow: visible !important; padding: 0 !important; flex: none !important;
+  }
+}

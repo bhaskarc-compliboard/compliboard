@@ -220,12 +220,24 @@ export function chooseSignificantDate(
   const dated = deadlines.filter((d) => !!d.due_on)
 
   if (kind === 'permit' || kind === 'certificate') {
-    // The expiry, named as such where the model said so; otherwise the latest dated deadline,
-    // which for a permit is the one that ends it. Never a recurring report date.
-    const named = dated.find((d) => /expir|expiry|expires/i.test(`${d.title} ${d.source_line ?? ''}`) && !d.recurs)
+    // *** THE TITLE ONLY, NOT THE SOURCE LINE. *** Measured on golden case 02: the renewal
+    // deadline's source line is condition 1.3, "no later than 120 days before the expiration
+    // date", so matching the source line made the deadline that MENTIONS the expiry beat the one
+    // that IS it — and the permit's row read 18 July instead of 15 November. A deadline that
+    // refers to the expiry is not the expiry.
+    const named = dated.filter((d) => !d.recurs && /expir/i.test(d.title))
+      .sort((a, b) => (a.due_on! < b.due_on! ? 1 : -1))[0]
+    // Otherwise the latest non-recurring dated deadline: on a permit that is the one that ends
+    // it. A recurring report date never is.
     const fallback = dated.filter((d) => !d.recurs).sort((a, b) => (a.due_on! < b.due_on! ? 1 : -1))[0]
     const pick = named ?? fallback
     if (pick) return { date: pick.due_on, kind: 'expiry' }
+    // *** AND IF THE SCAN READ NO EXPIRY AT ALL, THIS IS NOT AN EXPIRY. *** The fallback is the
+    // document's own date and it keeps its own kind — `issued`, usually. That matters downstream:
+    // an issue date is always in the past, so a view that treats any past date on a permit as
+    // expiry would report every such permit as Expired. Golden case 03, a licence valid until
+    // March 2027, read "Expired" for exactly that reason until the view was taught to require
+    // significant_date_kind = 'expiry' (migration 048).
     return { date: docDate, kind: docDate ? (docDateKind ?? 'issued') : null }
   }
 
@@ -617,6 +629,10 @@ export async function saveScan(
       switch_key: f.key.slice(0, 120), proposed_value: String(f.value).slice(0, 500),
       quote: f.quote ? f.quote.slice(0, 2000) : null, locator: f.locator,
       basis: f.basis,
+      // COMPUTED AND THEN DISCARDED UNTIL MIGRATION 047. `verifyQuote` has run on every fact
+      // since Run 1 and its answer never reached a column, so the drawer had nothing to show a
+      // person about to confirm a claim on the strength of a quote.
+      quote_verified: f.quote_verified,
     })))
     if (e) throw new Error(`fact_proposals: ${e.message}`)
   }

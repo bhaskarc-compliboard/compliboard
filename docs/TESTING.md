@@ -1592,3 +1592,95 @@ Whether the **reading** behind a row is right. Every one of these passes on a sc
 identified the permit as a handbook: the row renders, the group is computed from what the
 scan said, and the colour is correct for a status that is wrong. `npm run golden:docs` is
 the test for that, and even it only says the output moved.
+
+---
+
+## Documents — the report drawer (Run 4)
+
+Nine tests. The first three are the perfect cases — a program, a permit, and a document
+we could not read. The other six are the ones worth your time, because each is a place
+where the product either keeps what a person told it or quietly loses it, and losing it
+looks identical to working.
+
+Run signed in, against staging, on `/documents`, with the seven golden fixtures uploaded
+through the page.
+
+### 1. The program drawer — 01-eap-chemical
+
+Click the row. The drawer must show, in order: **Status** (Needs work, with the gap count
+and `Revised 1 February 2021`), **What this says** in the serif, **the freshness nudge** in
+amber wash saying how many years old it is with *Add a newer version* and *This is the
+latest*, **What this document is** as two columns with a page reference beside any field
+the scan gave one for, **Gaps** numbered with description, fix, citation and locator,
+**Dates this document sets**, **Facts we found**, **Versions** if there is a chain, and the
+quiet last line naming the model and the source count.
+
+The date must read **Revised February 2021**, not a renewal date. Before Run 4 it read
+*Renewal 1 January 2026* — a date that appears nowhere in the document — because the model
+chose which date mattered. `chooseSignificantDate` chooses it now.
+
+### 2. The permit drawer — 02-acdp-chemical
+
+1. **Deadlines** must list the renewal and the expiry with their source lines, and a past
+   non-recurring one must read **Passed** in amber.
+2. **Conditions to keep** must be there with their condition numbers.
+3. **There must be no Gaps section at all** — not an empty one. A permit is the agency's
+   document; an empty "Gaps" heading says we judged it and found it clean, which is not
+   what happened.
+
+### 3. The could_not_read drawer
+
+Upload a file that is not a readable PDF. Its drawer must show **the reason, the way
+forward, and "Upload a clearer copy"** — and nothing else. No empty identity table, no
+zero-gap heading. Eight blank sections assert that we looked; we did not.
+
+### 4. "Not right" on a gap survives a reload and lowers the count
+
+1. On 01's drawer, click **Not right** on a gap. Save must stay disabled until a reason is
+   typed — the sentence is what the next scan is shown, and an empty one teaches it nothing.
+2. Save. The gap moves under **Dismissed** with the reason beneath it, struck through.
+3. Reload. It is still dismissed, still showing the reason, and the row's gap count in the
+   Status line is **one lower**. A dismissed gap that still counts keeps a document in
+   Needs work forever.
+
+### 5. Add to calendar
+
+1. On a deadline with a date, click **Add to calendar**.
+2. The line changes to **In your calendar** at once, and still says so after a reload.
+3. In `/calendar` the event is there, and its `document_id` names this document. A calendar
+   event that cannot say which document set it is a date nobody can check.
+
+### 6. Read it again
+
+1. Note the current reading. Click **Read it again** in the footer.
+2. A **second** `document_scans` row appears. The first keeps all of its data and its
+   `is_current` becomes false — nothing is overwritten, because what the model said on a
+   given day is the evidence.
+3. The drawer shows the new one when it returns.
+
+### 7. A correction changes the row and the drawer at once, and survives a re-scan
+
+1. On 01, **Not right? Change what this is** → set Kind from Policy to Program. Save.
+2. The drawer shows Program immediately; close it and the **row** shows Program too.
+3. **Read it again.** The correction must still win — the view prefers it over whatever the
+   new scan says, and the next scan is told about it so it does not repeat the mistake.
+   If a re-scan can undo a person, the correction was never worth offering.
+
+### 8. "This is the latest" hides the nudge, and stays hidden
+
+1. On 01, click **This is the latest** in the amber nudge.
+2. The nudge goes. Reload: it is still gone. `latest_confirmed_at` is a timestamp, not a
+   boolean, because null means nobody has answered — which is not the same as "no".
+
+### 9. Download prints the drawer, not the page
+
+**Download** in the footer. The print preview must show the drawer as an ordinary document
+with a header carrying **company, title and date**, and none of the page behind it, no
+scrim, no close button, no footer buttons. A printed compliance page with no company and
+no date is not evidence of anything.
+
+### What none of these nine can tell you
+
+Whether the **reading** is right. Every one passes on a drawer that renders a wrong kind,
+an invented citation and a date read off the wrong line perfectly. `npm run golden:docs` is
+the test for that, and even it only says the output moved.

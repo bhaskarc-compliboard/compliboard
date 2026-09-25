@@ -1703,6 +1703,7 @@ export type Database = {
           locator: string | null
           proposed_value: string
           quote: string | null
+          quote_verified: boolean | null
           rejected_reason: string | null
           source: string
           status: string
@@ -1720,6 +1721,7 @@ export type Database = {
           locator?: string | null
           proposed_value: string
           quote?: string | null
+          quote_verified?: boolean | null
           rejected_reason?: string | null
           source?: string
           status?: string
@@ -1737,6 +1739,7 @@ export type Database = {
           locator?: string | null
           proposed_value?: string
           quote?: string | null
+          quote_verified?: boolean | null
           rejected_reason?: string | null
           source?: string
           status?: string

@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
     const { name, file_url, file_type, file_size, folder_id, is_recurring, recurrence_period,
-            from_topic_id } = body
+            from_topic_id, version_of, version_confirmed } = body
 
     if (!name || !file_url) {
       return NextResponse.json({ error: 'Missing name or file_url' }, { status: 400 })
@@ -37,6 +37,15 @@ export async function POST(request: NextRequest) {
     // 002). Refuse to record a row pointing at another company's prefix.
     if (String(file_url).split('/')[0] !== companyId) {
       return NextResponse.json({ error: 'File path does not belong to your company' }, { status: 403 })
+    }
+
+    // A document this one supersedes, if given, must be one of this company's — same check and
+    // same 404-not-403 as the folder and the conversation below.
+    if (version_of) {
+      const { data: older } = await db.from('documents').select('id').eq('id', version_of).maybeSingle()
+      if (!older) {
+        return NextResponse.json({ error: 'That document was not found.' }, { status: 404 })
+      }
     }
 
     // A conversation, if given, must be one of this company's. THE SAME OWNERSHIP CHECK THE
@@ -87,6 +96,13 @@ export async function POST(request: NextRequest) {
         recurrence_period,
         status: 'uploaded',
         source: 'upload',
+        // *** ONLY WHEN THE PERSON SAID SO. *** This is set by "Add a newer version" in the
+        // report drawer, which is a human naming the older document — so the match is confirmed
+        // from the start. A match the SCAN proposes is a different thing and is written by
+        // saveScan with version_confirmed false, for somebody to agree to. The id is checked
+        // below rather than trusted from the body.
+        version_of: version_of || null,
+        version_confirmed: version_of ? version_confirmed === true : false,
       })
       .select('id')
       .single()

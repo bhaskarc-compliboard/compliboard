@@ -25,15 +25,19 @@
  * WIDTH IS 900, not the 775 of a reading surface: this row carries a title, an agency, a kind, a
  * site, a date and a status, and that needs a third column. `DESIGN.md` §3.
  *
- * WHAT IS NOT HERE, ON PURPOSE (Run 4 and later): the report drawer, pinned views, the
- * "what we'd expect and don't see" line, and the To confirm queue. Clicking a row expands the
- * scan's own summary inline as a placeholder, and that is all this run claims.
+ * CLICKING A ROW OPENS THE REPORT (`components/DocumentReport.tsx`), Run 4. Run 3's inline
+ * accordion is gone: a report is read, and reading happens in the drawer.
+ *
+ * WHAT IS NOT HERE, ON PURPOSE (Run 5 and later): pinned views, the "what we'd expect and don't
+ * see" line, and the To confirm queue — and none of them as disabled controls, because a greyed
+ * button that never lights up is a promise the product is not keeping.
  */
 
 import { useState, useEffect, useRef, useMemo, Suspense } from 'react'
 import { createClient, authHeaders } from '@/lib/supabase'
 import AppLayout from '@/components/AppLayout'
 import { ACCEPTED_FILE_TYPES } from '@/lib/acceptedFiles'
+import DocumentReport from '@/components/DocumentReport'
 
 interface IndexRow {
   document_id: string
@@ -183,8 +187,13 @@ function DocumentsPageContent() {
   const [renamingId, setRenamingId] = useState<string | null>(null)
   const [renameValue, setRenameValue] = useState('')
 
-  const [expandedId, setExpandedId] = useState<string | null>(null)
-  const [detail, setDetail] = useState<Record<string, { gaps: number; deadlines: number; facts: number }>>({})
+  // THE DRAWER REPLACES RUN 3'S INLINE EXPANSION. An accordion that grows a row was the
+  // placeholder while the report had nowhere to live; a report is read, and reading happens in
+  // the drawer at 720 (`DESIGN.md` §4), over the page rather than inside the list.
+  const [openDoc, setOpenDoc] = useState<string | null>(null)
+  const [companyName, setCompanyName] = useState<string | null>(null)
+  /** Set when "Add a newer version" opened the picker, so the next upload links to this one. */
+  const [versionOf, setVersionOf] = useState<string | null>(null)
   const [showAll, setShowAll] = useState<Set<string>>(new Set())
 
   const [uploading, setUploading] = useState(false)
@@ -213,6 +222,19 @@ function DocumentsPageContent() {
     }
   }
   useEffect(() => { load() }, [])   // eslint-disable-line react-hooks/exhaustive-deps
+
+  // The drawer's print header carries the company, because a printed compliance page with no
+  // company on it is not evidence of anything (`DESIGN.md` §5).
+  useEffect(() => {
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { data: p } = await supabase.from('profiles').select('company_id').eq('id', user.id).single()
+      if (!p?.company_id) return
+      const { data: c } = await supabase.from('companies').select('name').eq('id', p.company_id).single()
+      setCompanyName(c?.name ?? null)
+    })()
+  }, [])   // eslint-disable-line react-hooks/exhaustive-deps
 
   // ---------------------------------------------------------------------------
   // UPLOAD. One file at a time, and one scan at a time — never in parallel.
@@ -243,6 +265,9 @@ function DocumentsPageContent() {
             name: file.name, file_url: path,
             file_type: file.type || 'application/octet-stream',
             file_size: file.size, folder_id: targetFolder,
+            // Set only when "Add a newer version" opened the picker. The match is the person's,
+            // not the model's, so it is confirmed from the start.
+            ...(versionOf ? { version_of: versionOf, version_confirmed: true } : {}),
           }),
         })
         if (!dbRes.ok) throw new Error(`We could not save ${file.name}.`)
@@ -275,29 +300,13 @@ function DocumentsPageContent() {
     } finally {
       setUploading(false)
       setProgress('')
+      setVersionOf(null)
       if (fileInputRef.current) fileInputRef.current.value = ''
       if (folderInputRef.current) folderInputRef.current.value = ''
     }
   }
 
-  async function expand(row: IndexRow) {
-    if (expandedId === row.document_id) { setExpandedId(null); return }
-    setExpandedId(row.document_id)
-    if (detail[row.document_id] || !row.scan_id) return
-    // Counts only. The report itself is the drawer, and the drawer is Run 4.
-    const [g, d, f] = await Promise.all([
-      supabase.from('document_gaps').select('id', { count: 'exact', head: true })
-        .eq('document_id', row.document_id).eq('status', 'open'),
-      supabase.from('document_deadlines').select('id', { count: 'exact', head: true })
-        .eq('document_id', row.document_id),
-      supabase.from('fact_proposals').select('id', { count: 'exact', head: true })
-        .eq('document_id', row.document_id),
-    ])
-    setDetail((prev) => ({
-      ...prev,
-      [row.document_id]: { gaps: g.count ?? 0, deadlines: d.count ?? 0, facts: f.count ?? 0 },
-    }))
-  }
+
 
   async function createFolder() {
     const name = newFolderName.trim()
@@ -413,12 +422,9 @@ function DocumentsPageContent() {
       r.scanned_at ? `read ${fmtShort(r.scanned_at)}` : null,
       older ? `${older} older version${older === 1 ? '' : 's'}` : null,
     ].filter(Boolean).join(' · ')
-    const open = expandedId === r.document_id
-    const d = detail[r.document_id]
-
     return (
       <div className="border-b border-gray-100 last:border-b-0">
-        <div onClick={() => expand(r)}
+        <div onClick={() => setOpenDoc(r.document_id)}
           className="group -mx-3 flex cursor-pointer items-start gap-4 rounded-lg px-3 py-2.5 hover:bg-white">
           <div className="min-w-0 flex-1">
             <p className="truncate text-[13px] text-gray-900 group-hover:text-[var(--green)]">{r.title}</p>
@@ -442,6 +448,17 @@ function DocumentsPageContent() {
             </p>
           </div>
 
+          {/* "Move to…" STAYS ON THE ROW rather than moving into the drawer. Filing is a
+              list action — you do it while looking at several documents — and the drawer is
+              for reading one. `e.stopPropagation()` so choosing a folder does not also open it. */}
+          <div className="w-[150px] shrink-0" onClick={(e) => e.stopPropagation()}>
+            <select value={r.folder_id ?? ''} onChange={(e) => moveTo(r.document_id, e.target.value || null)}
+              className="w-full rounded border border-transparent bg-transparent px-1 py-0.5 text-[12px] text-gray-400 hover:border-gray-200 hover:text-gray-700">
+              <option value="">Move to…</option>
+              {folders.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
+            </select>
+          </div>
+
           <div className="w-[160px] shrink-0 text-right">
             <p className={`text-[13px] ${amber ? 'text-[var(--amber)]' : 'text-gray-500'}`}>{statusWord(r)}</p>
             {r.significant_date && (
@@ -450,28 +467,6 @@ function DocumentsPageContent() {
           </div>
         </div>
 
-        {open && (
-          // A PLACEHOLDER, AND LABELLED AS ONE. The report is the drawer and the drawer is Run 4.
-          <div className="-mx-3 mb-2 rounded-lg bg-white px-3 pb-3 pt-1">
-            {r.summary
-              ? <p className="font-serif text-[17px] leading-relaxed text-gray-800">{r.summary}</p>
-              : <p className="text-[13px] text-gray-400">No reading yet.</p>}
-            <div className="mt-2 flex flex-wrap items-center gap-4 text-[12px] text-gray-500">
-              <span>{d ? d.gaps : r.open_gap_count} gap{(d ? d.gaps : r.open_gap_count) === 1 ? '' : 's'}</span>
-              <span>{d ? d.deadlines : '—'} deadline{d && d.deadlines === 1 ? '' : 's'}</span>
-              <span>{d ? d.facts : '—'} fact{d && d.facts === 1 ? '' : 's'}</span>
-              <span className="text-gray-300">|</span>
-              <label className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-                Move to…
-                <select value={r.folder_id ?? ''} onChange={(e) => moveTo(r.document_id, e.target.value || null)}
-                  className="rounded border border-gray-200 bg-white px-1.5 py-0.5 text-[12px] text-gray-700">
-                  <option value="">Not in a folder</option>
-                  {folders.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
-                </select>
-              </label>
-            </div>
-          </div>
-        )}
       </div>
     )
   }
@@ -618,7 +613,7 @@ function DocumentsPageContent() {
               {flat.map((r) => (
                 <tr key={r.document_id} className="border-b border-gray-100 hover:bg-white">
                   <td className="py-2.5 text-[13px] text-gray-900">
-                    <button onClick={() => expand(r)} className="text-left hover:text-[var(--green)]">{r.title}</button>
+                    <button onClick={() => setOpenDoc(r.document_id)} className="text-left hover:text-[var(--green)]">{r.title}</button>
                     <span className="block text-[12px] text-gray-500">{r.file_name}</span>
                   </td>
                   <td className="py-2.5 text-[12px] text-gray-600">{r.kind ? (KIND_LABEL[r.kind] ?? r.kind) : '—'}</td>
@@ -654,6 +649,20 @@ function DocumentsPageContent() {
           </div>
         )}
       </div>
+
+      {/* z-[45] scrim, then the drawer at z-50 — the order AppLayout's sticky header needs. */}
+      {openDoc && (
+        <>
+          <div className="no-print fixed inset-0 z-[45] bg-gray-900/30" onClick={() => setOpenDoc(null)} />
+          <DocumentReport
+            documentId={openDoc}
+            companyName={companyName}
+            onClose={() => setOpenDoc(null)}
+            onChanged={load}
+            onPickFile={(v) => { setVersionOf(v ?? null); fileInputRef.current?.click() }}
+          />
+        </>
+      )}
     </AppLayout>
   )
 }
