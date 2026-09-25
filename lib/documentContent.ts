@@ -43,7 +43,29 @@ export type DocumentParseFailure = {
 }
 
 export type DocumentParseResult =
-  | { ok: true; blocks: ContentBlock[]; kind: DocumentKind }
+  | {
+      ok: true
+      blocks: ContentBlock[]
+      kind: DocumentKind
+      /**
+       * THE FILE'S TEXT, WHEN WE CAN GET IT — and it is not the same thing as the blocks.
+       *
+       * For everything but PDF and image the two are the same string: the block IS the text.
+       * For a PDF they are different and that difference is the point. The PDF goes to the model
+       * whole, as a native document block, because it reads layout and scanned pages better than
+       * any extraction would. But nothing downstream could then check a quote against the file,
+       * so `verifyQuote` returned null for every fact on every PDF this product has ever read —
+       * 73 proposals, 73 nulls, and a "quote not found in the file" warning that could not fire.
+       *
+       * So a PDF is parsed a second time, for text only. The text is NOT sent to the model and
+       * never becomes a block: it exists to be compared against.
+       *
+       * Empty for an image, and empty for a PDF that is a photograph of a page — which is the
+       * honest answer there. No text to check against is not the same as a quote being wrong,
+       * and `verifyQuote` keeps returning null rather than false for exactly that reason.
+       */
+      text: string
+    }
   | { ok: false; failure: DocumentParseFailure }
 
 export type DocumentKind = 'pdf' | 'image' | 'excel' | 'csv' | 'text' | 'word' | 'powerpoint'
@@ -68,6 +90,25 @@ export function describeUnsupported(name: string, ext: string): DocumentParseFai
     message:
       `"${name}" is a ${ext ? '.' + ext : 'file of unknown'} format, which cannot be read here. ` +
       `${ACCEPTED_FILE_TYPES_PROSE} can be. Re-upload it as a PDF to include it.`,
+  }
+}
+
+/**
+ * A PDF'S TEXT, FOR CHECKING QUOTES AGAINST — never for sending to the model.
+ *
+ * Returns '' rather than throwing. Three real cases produce no text and none of them is a
+ * failure: a scanned page (an image inside a PDF wrapper), an encrypted file, and a generator
+ * that writes glyphs with no text layer. In every one of those the document still goes to the
+ * model whole and is read; only the quote check goes quiet, which is what it did before.
+ */
+async function pdfText(nodeBuffer: Buffer): Promise<string> {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const out = await (officeParser as any).parseOffice(nodeBuffer)
+    const text = typeof out === 'string' ? out : String(out?.toText?.() ?? '')
+    return text.trim() ? text : ''
+  } catch {
+    return ''
   }
 }
 
@@ -96,12 +137,19 @@ export async function parseDocumentToBlocks(
     return {
       ok: true, kind: 'pdf',
       blocks: [{ type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: nodeBuffer.toString('base64') } }],
+      // Extraction NEVER decides whether the file can be read. A PDF we cannot pull text out of
+      // is still a PDF the model reads perfectly well, so a throw here returns '' and the file
+      // goes on exactly as before — the only thing lost is the quote check, which is what was
+      // being lost anyway. `officeparser` is already a dependency of this module.
+      text: await pdfText(nodeBuffer),
     }
   }
   if (imageMedia) {
     return {
       ok: true, kind: 'image',
       blocks: [{ type: 'image', source: { type: 'base64', media_type: imageMedia, data: nodeBuffer.toString('base64') } }],
+      // A photograph has no text to extract. Quotes against it stay unverifiable, not false.
+      text: '',
     }
   }
 
@@ -111,23 +159,22 @@ export async function parseDocumentToBlocks(
     for (const sheetName of workbook.SheetNames) {
       text += `Sheet: ${sheetName}\n${XLSX.utils.sheet_to_csv(workbook.Sheets[sheetName])}\n\n`
     }
-    return { ok: true, kind: 'excel', blocks: [{ type: 'text', text }] }
+    return { ok: true, kind: 'excel', blocks: [{ type: 'text', text }], text }
   }
   if (isCSV || isText) {
-    return {
-      ok: true, kind: isCSV ? 'csv' : 'text',
-      blocks: [{ type: 'text', text: new TextDecoder().decode(buffer) }],
-    }
+    const text = new TextDecoder().decode(buffer)
+    return { ok: true, kind: isCSV ? 'csv' : 'text', blocks: [{ type: 'text', text }], text }
   }
   if (isWord) {
     // HTML rather than raw text: it preserves table structure, and a handbook's or an
     // SDS's meaning often lives in its tables.
     const result = await mammoth.convertToHtml({ buffer: nodeBuffer })
-    return { ok: true, kind: 'word', blocks: [{ type: 'text', text: result.value }] }
+    return { ok: true, kind: 'word', blocks: [{ type: 'text', text: result.value }], text: result.value }
   }
   if (isPowerPoint) {
     const ast = await (officeParser as any).parseOffice(nodeBuffer)
-    return { ok: true, kind: 'powerpoint', blocks: [{ type: 'text', text: ast.toText() }] }
+    const text = ast.toText()
+    return { ok: true, kind: 'powerpoint', blocks: [{ type: 'text', text }], text }
   }
 
   return { ok: false, failure: describeUnsupported(fileName, ext) }

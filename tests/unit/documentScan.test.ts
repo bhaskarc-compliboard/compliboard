@@ -103,3 +103,35 @@ describe('extractJsonText survives prose AFTER the JSON', () => {
     assert.deepEqual(JSON.parse(extractJsonText('```json\n[1,2]\n```\ntrailing words')), [1, 2])
   })
 })
+
+describe('same_as_gap_id — the one id the model is asked for, Run 6', () => {
+  // Run 5 carried a checklist across a re-scan by matching gap TITLES, and Run 5 also measured
+  // that the model renames every finding between two readings of the same file. So the scan is
+  // now shown the open gaps with their ids and names its own predecessor. That id reaches a
+  // database UPDATE, which is why it is read back through `normaliseScan` rather than trusted.
+
+  const scanWith = (sameAs: unknown) => normaliseScan({
+    identity: { kind: 'program' },
+    gaps: [{ title: 'No reporting procedure', same_as_gap_id: sameAs }],
+  }, '')
+
+  test('an id the model gave is carried onto the shape', () => {
+    assert.equal(scanWith('7a5e0a10-1111-4222-8333-444444444444').gaps[0].same_as_gap_id,
+      '7a5e0a10-1111-4222-8333-444444444444')
+  })
+
+  test('THE EMPTY ANSWER IS NULL, not the empty string', () => {
+    // The JSON schema cannot express a nullable string here (the API caps union types), so the
+    // model answers "" for "this is a new finding". Anything that reaches `saveScan` as "" and
+    // is then compared against a list of ids would be a silent no-match rather than a stated one.
+    assert.equal(scanWith('').gaps[0].same_as_gap_id, null)
+    assert.equal(scanWith(undefined).gaps[0].same_as_gap_id, null)
+    assert.equal(scanWith('null').gaps[0].same_as_gap_id, null)
+  })
+
+  test('a gap with no same_as at all is a new finding, not an error', () => {
+    const scan = normaliseScan({ identity: { kind: 'program' }, gaps: [{ title: 'Something else' }] }, '')
+    assert.equal(scan.gaps[0].same_as_gap_id, null)
+    assert.equal(scan.gaps[0].title, 'Something else')
+  })
+})

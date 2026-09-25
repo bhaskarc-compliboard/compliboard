@@ -82,6 +82,19 @@ export interface ScanGap {
   basis: ScanBasis
   /** Set by us, never by the model — see `verifyQuote`. */
   quote_verified: boolean | null
+  /**
+   * THE OPEN GAP THIS IS THE SAME FINDING AS, NAMED BY THE MODEL — Run 6.
+   *
+   * The scan is shown this document's open gaps with their ids, and each new gap says which of
+   * them it replaces, or nothing. It is the only thing in the reading the model is asked to
+   * identify by id, and it exists because Run 5 measured what the alternative costs: matching
+   * gaps by title carried nothing across a re-scan of 01, because Haiku renamed all five
+   * findings between two readings of the same unchanged file.
+   *
+   * An id the model invents or copies from another document is not trusted: `saveScan` only
+   * acts on one that is in the list it was given. The title matcher stays as the fallback.
+   */
+  same_as_gap_id: string | null
 }
 export interface ScanCondition { title: string; condition_ref: string | null; evidence_expected: string | null }
 export interface ScanDeadline { title: string; due_on: string | null; source_line: string | null; recurs: boolean }
@@ -304,6 +317,7 @@ function normaliseScanRaw(parsed: Record<string, unknown>, extractedText: string
       basis: basisOf(g?.basis),
       quote: str(g?.quote),
       quote_verified: verifyQuote(str(g?.quote), extractedText),
+      same_as_gap_id: str(g?.same_as_gap_id),
     })),
     conditions: (Array.isArray(parsed.conditions) ? parsed.conditions : []).map((c: Record<string, unknown>) => ({
       title: str(c?.title) ?? 'Untitled condition',
@@ -377,6 +391,15 @@ export async function buildScanContext(
     ? await db.from('document_gaps').select('title, dismissed_reason')
         .eq('document_id', documentId).eq('status', 'dismissed').order('title')
     : { data: [] }
+  // THE GAPS THAT ARE STILL OPEN ON THIS DOCUMENT, WITH THEIR IDS — Run 6.
+  //
+  // Shown to the scan so a new reading can say which old finding each of its gaps IS, rather
+  // than leaving us to guess from the wording. Ordered by id so the same state renders the same
+  // prompt string, like everything else in this function.
+  const { data: openGaps } = documentId
+    ? await db.from('document_gaps').select('id, title, citation')
+        .eq('document_id', documentId).eq('status', 'open').order('id')
+    : { data: [] }
   // Newest per field. Ordered so the same state gives the same prompt string, like everything
   // else here — and `created_at desc, id desc` for the same tie-break reason as migration 045.
   // WHAT THE COMPANY HAS CONFIRMED ABOUT ITSELF (migration 050). Shown to the next scan so it
@@ -414,6 +437,8 @@ export async function buildScanContext(
       .map((d: { title: string; kind: string | null }) => ({ title: d.title, kind: d.kind })),
     dismissedGaps: (dismissed ?? []).map((g: { title: string; dismissed_reason: string | null }) =>
       ({ title: g.title, reason: g.dismissed_reason })),
+    openGaps: (openGaps ?? []).map((g: { id: string; title: string; citation: string | null }) =>
+      ({ id: g.id, title: g.title, citation: g.citation })),
     confirmedFacts: (confirmedFacts ?? []).map((f: { key: string; value: unknown; basis: string }) => ({
       key: f.key,
       value: typeof f.value === 'string' ? f.value : JSON.stringify(f.value ?? '').replace(/^"|"$/g, ''),
@@ -485,13 +510,17 @@ export async function runDocumentScan(input: RunScanInput): Promise<DocumentScan
     }
   }
 
-  // The same parser again for TEXT, where the format has any — this is what quotes are checked
-  // against. A PDF goes to the model whole as a document block and yields no text here, so its
-  // quotes come back unverifiable (null) rather than false.
-  const extractedText = parsed.blocks
-    .filter((b) => (b as { type?: string }).type === 'text')
-    .map((b) => String((b as { text?: string }).text ?? ''))
-    .join('\n')
+  // *** THE TEXT TO CHECK QUOTES AGAINST, AND UNTIL RUN 6 IT WAS EMPTY FOR EVERY PDF. ***
+  //
+  // This used to be built from the parser's TEXT BLOCKS, and a PDF has none: it goes to the model
+  // whole, as a document block. So `verifyQuote` had nothing to compare against on every single
+  // document this product has ever read — 73 fact proposals, 73 nulls, and `quotes_checked = 0`
+  // on all nine scans. The column migration 047 added was correct and its input was empty.
+  //
+  // `parseDocumentToBlocks` now extracts a PDF's text alongside sending the file, and hands it
+  // back separately from the blocks. Still '' for a photograph of a page, which keeps the verdict
+  // null there — no text to check against is not the same as a quote being wrong.
+  const extractedText = parsed.text
 
   const startedAt = new Date().toISOString()
   const structured = scanStructuredOutput()
@@ -602,6 +631,11 @@ export async function saveScan(
     confidence_notes: scan.confidence_notes,
     could_not_read_reason: scan.could_not_read.reason,
     raw_text: scan.raw_text, json_parsed: scan.json_parsed,
+    // THE TEXT THE QUOTES WERE CHECKED AGAINST (migration 052). Stored, not recomputed: a quote
+    // verified against a file the customer later replaced must still be explainable. Null rather
+    // than '' when the format yielded none, because null is the column's own word for "there was
+    // nothing to check against" and matches what quote_verified says on the same rows.
+    extracted_text: scan.extracted_text || null,
     quotes_checked: scan.quotes_checked, quotes_verified: scan.quotes_verified,
     model: scan.model, cited_sources: scan.cited_sources,
     // THE BILLED COUNT, OFF THE LEDGER ROW — not counted here a second time. `ai_calls.searches`
@@ -616,24 +650,40 @@ export async function saveScan(
   const scanId = row.id as string
 
   // *** WHAT A PERSON ALREADY DID SURVIVES A RE-SCAN. ***
-  // A checklist made from a gap points at that gap's row, and a re-scan writes NEW gap rows —
-  // so without this the link would dangle the first time somebody asked us to read the document
-  // again, and a fortnight of ticked items would be sitting on a gap nothing shows any more.
+  // A checklist made from a gap points at that gap's row and a draft is written onto it, and a
+  // re-scan writes NEW gap rows — so without this the link would dangle the first time somebody
+  // asked us to read the document again, and a fortnight of ticked items would be sitting on a
+  // gap nothing shows any more.
   //
-  // MATCHED ON TITLE (case-insensitive, punctuation and spacing ignored) OR CITATION. Both,
-  // because Documents Run 2 measured the model renaming the same finding between runs while
-  // keeping the rule number, and occasionally the reverse. Either is enough; neither is
-  // guessed at beyond that — a gap that matches nothing keeps its checklist on the OLD row,
-  // which the report still shows under "From earlier readings" rather than orphaning it.
+  // *** THE MODEL NAMES ITS OWN PREDECESSOR NOW (RUN 6), AND THE TITLE MATCHER IS THE FALLBACK. ***
+  // Run 5 matched on title (case-insensitive, punctuation ignored) or citation, and Run 5 also
+  // measured what that is worth: re-scanning 01-eap-chemical renamed all five findings, so the
+  // matcher found nothing and the checklist stayed on a row the current report no longer lists.
+  // The scan is now shown the open gaps with their ids and says which one each new gap IS.
+  //
+  // THE ID IS NOT TRUSTED BECAUSE IT LOOKS LIKE AN ID. Only one that appears in the list we gave
+  // this scan is acted on — a model that invents a uuid, or repeats one from another document,
+  // must not be able to reach a row. Where it names nothing, the string matcher runs.
+  //
+  // Everything a person put on the old gap moves: the checklist link, and the draft with the
+  // date it was written and the ledger row behind it. The old row is then CLOSED as superseded
+  // and points at its replacement — never deleted (migration 040's own rule), so a gap somebody
+  // dismissed or drafted against stays readable.
+  //
+  // ALL of the document's open gaps are loaded, not only the ones carrying a checklist: a gap
+  // with a draft on it and no checklist has work on it too, and one with neither still has to be
+  // closed rather than left open for `open_gap_count` to keep counting.
   const { data: priorLinks } = await db.from('checklists')
     .select('id, document_gap_id').eq('document_id', documentId).not('document_gap_id', 'is', null)
   const carry = (priorLinks ?? []) as Array<{ id: string; document_gap_id: string }>
-  let priorGaps: Array<{ id: string; title: string; citation: string | null }> = []
-  if (carry.length) {
-    const { data } = await db.from('document_gaps')
-      .select('id, title, citation').in('id', carry.map((c) => c.document_gap_id))
-    priorGaps = (data ?? []) as typeof priorGaps
+  const { data: priorOpen } = await db.from('document_gaps')
+    .select('id, title, citation, draft_text, draft_created_at, draft_ai_call_id')
+    .eq('document_id', documentId).eq('status', 'open')
+  type PriorGap = {
+    id: string; title: string; citation: string | null
+    draft_text: string | null; draft_created_at: string | null; draft_ai_call_id: string | null
   }
+  const priorGaps = (priorOpen ?? []) as PriorGap[]
   const key = (s: string | null) => String(s ?? '').toLowerCase().replace(/[^a-z0-9]/g, '')
 
   if (scan.gaps.length) {
@@ -646,18 +696,43 @@ export async function saveScan(
     })))
     if (e) throw new Error(`document_gaps: ${e.message}`)
 
-    if (carry.length && priorGaps.length) {
-      const { data: fresh } = await db.from('document_gaps')
-        .select('id, title, citation').eq('scan_id', scanId)
-      for (const link of carry) {
-        const old = priorGaps.find((p) => p.id === link.document_gap_id)
-        if (!old) continue
-        const match = (fresh ?? []).find((n: { title: string; citation: string | null }) =>
-          key(n.title) === key(old.title)
-          || (!!old.citation && !!n.citation && key(n.citation) === key(old.citation)))
-        // No match: the link stays where it is. The old gap row is not deleted — nothing in this
-        // module deletes a gap — so the checklist is still reachable, and the report lists it.
-        if (match) await db.from('checklists').update({ document_gap_id: match.id }).eq('id', link.id)
+    if (priorGaps.length) {
+      const { data: freshRows } = await db.from('document_gaps')
+        .select('id, title, citation, ordinal').eq('scan_id', scanId).order('ordinal')
+      const fresh = (freshRows ?? []) as Array<{ id: string; title: string; citation: string | null; ordinal: number }>
+      // The model's answer, by position: scan.gaps[i] became the row with ordinal i + 1.
+      const namedBy = new Map<string, string>()   // old gap id → new gap id
+      const allowed = new Set(priorGaps.map((p) => p.id))
+      scan.gaps.forEach((g, i) => {
+        const oldId = g.same_as_gap_id
+        if (!oldId || !allowed.has(oldId) || namedBy.has(oldId)) return
+        const row = fresh.find((f) => f.ordinal === i + 1)
+        if (row) namedBy.set(oldId, row.id)
+      })
+
+      for (const old of priorGaps) {
+        // The model's answer first; the string matcher only where it named nothing.
+        const successorId = namedBy.get(old.id)
+          ?? fresh.find((n) =>
+               key(n.title) === key(old.title)
+               || (!!old.citation && !!n.citation && key(n.citation) === key(old.citation)))?.id
+        // No successor: NOTHING HAPPENS TO THE OLD ROW. It stays open and keeps its checklist,
+        // and the report still lists it under "From earlier readings". Closing a finding because
+        // the next reading did not mention it would be the product deciding a gap went away.
+        if (!successorId) continue
+
+        for (const link of carry.filter((c) => c.document_gap_id === old.id)) {
+          await db.from('checklists').update({ document_gap_id: successorId }).eq('id', link.id)
+        }
+        if (old.draft_text) {
+          await db.from('document_gaps').update({
+            draft_text: old.draft_text,
+            draft_created_at: old.draft_created_at,
+            draft_ai_call_id: old.draft_ai_call_id,
+          }).eq('id', successorId)
+        }
+        await db.from('document_gaps')
+          .update({ status: 'superseded', superseded_by: successorId }).eq('id', old.id)
       }
     }
   }

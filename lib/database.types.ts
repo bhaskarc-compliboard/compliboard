@@ -1269,6 +1269,7 @@ export type Database = {
           quote_verified: boolean | null
           scan_id: string
           status: string
+          superseded_by: string | null
           title: string
         }
         Insert: {
@@ -1292,6 +1293,7 @@ export type Database = {
           quote_verified?: boolean | null
           scan_id: string
           status?: string
+          superseded_by?: string | null
           title: string
         }
         Update: {
@@ -1315,6 +1317,7 @@ export type Database = {
           quote_verified?: boolean | null
           scan_id?: string
           status?: string
+          superseded_by?: string | null
           title?: string
         }
         Relationships: [
@@ -1358,6 +1361,13 @@ export type Database = {
             columns: ["scan_id"]
             isOneToOne: false
             referencedRelation: "document_scans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_gaps_superseded_by_fkey"
+            columns: ["superseded_by"]
+            isOneToOne: false
+            referencedRelation: "document_gaps"
             referencedColumns: ["id"]
           },
         ]
@@ -1486,6 +1496,7 @@ export type Database = {
           effort: string | null
           entity_id: string | null
           expected_missing: Json
+          extracted_text: string | null
           freshness_note: string | null
           id: string
           is_current: boolean
@@ -1522,6 +1533,7 @@ export type Database = {
           effort?: string | null
           entity_id?: string | null
           expected_missing?: Json
+          extracted_text?: string | null
           freshness_note?: string | null
           id?: string
           is_current?: boolean
@@ -1558,6 +1570,7 @@ export type Database = {
           effort?: string | null
           entity_id?: string | null
           expected_missing?: Json
+          extracted_text?: string | null
           freshness_note?: string | null
           id?: string
           is_current?: boolean

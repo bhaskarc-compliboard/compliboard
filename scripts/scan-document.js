@@ -103,7 +103,7 @@ for (let i = 1; i <= times; i++) {
   if (i === 1) {
     console.log(`  Context  : ${context.sites.length} site(s), ${context.agencyLabels.length} agency label(s), `
       + `${context.subjectLabels.length} subject label(s), ${context.existingDocuments.length} document(s) on file, `
-      + `${context.dismissedGaps.length} dismissed gap(s)  — rebuilt before every run\n`)
+      + `${context.dismissedGaps.length} dismissed gap(s), ${context.openGaps.length} open gap(s) it can name  — rebuilt before every run\n`)
   }
   const t0 = Date.now()
   const scan = await runDocumentScan({ buffer: fileBuf, fileName, fileType, companyId: company.id, context })

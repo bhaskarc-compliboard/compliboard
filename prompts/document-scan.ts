@@ -25,6 +25,14 @@ export interface ScanPromptContext {
   /** Gaps a person has already dismissed on THIS document, with their reasons. */
   dismissedGaps: Array<{ title: string; reason: string | null }>
   /**
+   * Gaps still OPEN on this document from an earlier reading, with their ids — Run 6.
+   *
+   * Rendered as plain lines below, like the dismissed ones. The ids are there so the answer can
+   * say which old finding each new gap is, which is the only thing in the whole reading that is
+   * identified by id rather than by words.
+   */
+  openGaps: Array<{ id: string; title: string; citation: string | null }>
+  /**
    * What a person has told us the scan got wrong about THIS document, newest per field.
    * Rendered as plain sentences below; no instruction sentence of the prompt changes.
    */
@@ -70,6 +78,18 @@ them again:
 ${ctx.dismissedGaps.map((g) => `  - ${g.title}${g.reason ? ` — they said: ${g.reason}` : ''}`).join('\n')}\n`
     : ''
 
+  // *** THE ONLY IDS IN THE PROMPT, AND THEY EXIST TO BE HANDED BACK. ***
+  // A person may have a checklist or a draft hanging off one of these. When a gap in this
+  // reading is the same finding as one of them, saying so keeps their work attached to it.
+  // Matching on the wording alone does not work: Run 5 re-read one unchanged document and every
+  // one of its five findings came back under a different name.
+  const openGaps = ctx.openGaps.length
+    ? `\nFROM AN EARLIER READING OF THIS DOCUMENT, still open:
+${ctx.openGaps.map((g) => `  - ${g.id} — ${g.title}${g.citation ? ` (${g.citation})` : ''}`).join('\n')}
+Where a gap you are raising is the same finding as one of these, put that id in same_as_gap_id.
+Where it is not, leave same_as_gap_id empty.\n`
+    : ''
+
   return `You are reading one compliance document for the owner or manager of a small or mid-size
 business in the United States. Tell them what it is, what it says, what it proves, when it
 matters, what is wrong with it against the rules that govern it, and how sure you are.
@@ -98,7 +118,7 @@ when the document needs one this list does not cover.
 
 WHAT THIS COMPANY ALREADY HOLDS
 ${existing}
-${confirmed}${corrected}${dismissed}
+${confirmed}${corrected}${dismissed}${openGaps}
 You have a web_search tool. Use your own judgment. Things that are stable and well established
 you already know — answer directly. A specific threshold, a current form version, a citation that
 may have changed, a renewal rule — check it rather than trusting memory.
@@ -186,7 +206,8 @@ Answer with one JSON object and nothing else — no prose around it, no markdown
       "locator": "where in the document, or 'not in the document'",
       "draftable": true,
       "basis": "read | inferred",
-      "quote": "the words from the document this is about, or null"
+      "quote": "the words from the document this is about, or null",
+      "same_as_gap_id": "the id of the open gap above this is the same finding as, or empty"
     }
   ],
   "conditions": [
@@ -296,6 +317,7 @@ export const SCAN_JSON_SCHEMA: Record<string, unknown> = obj({
       draftable: bool,
       basis: { type: 'string', enum: ['read', 'inferred'] },
       quote: nul,
+      same_as_gap_id: nul,
     }),
   },
   conditions: {
