@@ -52,10 +52,32 @@ export async function GET(request: NextRequest) {
       .eq('company_id', companyId)
       .order('name')
 
+    // WHAT WE'D EXPECT AND DON'T SEE — Documents Run 6.
+    //
+    // Every scan has answered this since Run 1 and nothing has ever read the answer: the
+    // `expected_missing` column on `document_scans` holds what a company like this one usually
+    // also holds, and the prompt requires each entry to say plainly that it is based on similar
+    // companies rather than on a checked requirement.
+    //
+    // Only the CURRENT scan of each document, because an entry from a superseded reading is a
+    // guess about a document we have since read again.
+    //
+    // *** THE AGENCY IS NOT TAKEN FROM HERE. *** These rows carry the scan's own agencies, and a
+    // person may have corrected them; `document_index_v` above is the row that knows. So this
+    // returns the entries by document id and the page groups them under whatever agency the
+    // index row says — otherwise the line would appear under the agency somebody corrected away.
+    const { data: expected } = await db
+      .from('document_scans')
+      .select('document_id, expected_missing')
+      .eq('company_id', companyId)
+      .eq('is_current', true)
+      .order('document_id')
+
     return NextResponse.json({
       documents: data ?? [],
       folders: folders ?? [],
       sites: sites ?? [],
+      expected: expected ?? [],
     })
   } catch (error) {
     console.error('documents/index:', error)

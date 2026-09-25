@@ -651,7 +651,21 @@ export default function DocumentReport({ documentId, companyName, onClose, onCha
                   </p>
                 )}
                 {/* KEPT AND FLAGGED, NEVER DROPPED. A paraphrase a person can see is worth more
-                    than a quote that vanished with no trace of why. */}
+                    than a quote that vanished with no trace of why.
+
+                    *** AND THE POSITIVE IS SHOWN NOW TOO — Run 6. *** Until this run the check
+                    returned null for every document, because the text it compared against was
+                    empty on any PDF, so there was only one state to draw and nothing to
+                    distinguish. There are three states now and a verified row must not look like
+                    an unchecked one (§6). Grey, not green: the words being in the file says
+                    nothing about whether the fact is right, and a green tick would imply it did.
+
+                    NULL DRAWS NOTHING, deliberately. A photograph of a page has no text to check
+                    against, and saying either sentence about it would be a claim we cannot
+                    support in either direction. */}
+                {f.quote && f.quote_verified === true && (
+                  <p className="text-[12px] text-gray-400">these words are in the file</p>
+                )}
                 {f.quote_verified === false && (
                   <p className="text-[12px] text-[var(--amber)]">quote not found in the file</p>
                 )}

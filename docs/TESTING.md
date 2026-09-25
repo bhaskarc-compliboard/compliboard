@@ -1786,3 +1786,103 @@ runs is not an edge case — Documents Run 2 measured exactly that.
 Whether the checklist is the *right* work, or the draft is text a regulator would accept.
 Both are a model's output against a gap that was itself a model's output. The golden
 documents test the reading; nothing here tests the advice, and nothing yet does.
+
+---
+
+## Documents — closing what Run 5 exposed (Run 6)
+
+Six tests. Two of them cost a model call; the rest are free. The one worth doing first is the
+fourth, because it is the only one that can tell you whether a person's work survives the
+product changing its mind about a document.
+
+Run signed in, against staging, with the golden fixtures uploaded to the Cascade company.
+
+### 1. A PDF's facts carry a verdict; a photograph's still do not
+
+Re-read `01-eap-chemical.pdf` from the drawer. Open the report and look at the facts: each one
+that carries a quote now reads **these words are in the file** or **quote not found in the file**.
+Before Run 6 every one of them said neither, on every document, because the text a quote is
+checked against was built from the parser's text blocks and a PDF has none.
+
+Then open `06b-forklift-log-photo.pdf`, the same page as a photograph. Its facts show **neither**
+line, and that is the pass. There is no text in a photograph to check against, and saying "not
+found in the file" about a file we could not read the words of would be an accusation we cannot
+support. Null is not false.
+
+Check `document_scans.extracted_text` for both: text for the first, null for the second.
+
+### 2. A file attached in the workspace scans through the new path
+
+Attach a document in the Compliance Workspace. The card underneath it reads
+**Read as: &lt;kind&gt; — &lt;title&gt;**, then the agency and the status, then the scan's summary —
+all of it off `document_index_v`, the same row the Documents page shows.
+
+**Now open the Documents page without re-scanning anything.** The file is there, read, with the
+same kind, the same agency and the same status word. That is the test: until Run 6 the attach
+flow used a reading nothing else could see, so the conversation card said it had read the file
+while the Documents page showed it as Queued for ever.
+
+Attach something unreadable too — a photograph of a wall, or a `.zip` renamed to `.pdf`. The card
+says what we could not do and what would fix it, in the scan's own words, and the file is still
+saved and still attached to the conversation.
+
+### 3. A fact proposed by two documents is one question
+
+Find a key two documents propose — `facility_address` on the Cascade fixtures does it. In
+**To confirm** it appears **once**, with both documents listed under it and the quote each one
+came from. The line above the queue says how many readings sit behind the three on screen.
+
+One **Confirm** settles it: `company_facts` gets one row, and **both** proposals read accepted.
+Reload — the key is gone from the queue, not showing again with its second source.
+
+Then the disagreement. Make two sources say different things (correct one, or scan a document
+that states another figure). The key shows **the sources do not agree**, there is no plain
+Confirm button, and instead there is one button per value. Pick one: that value is stored and
+every proposal for the key is settled. The product must never choose here on its own — not by
+recency, not by the longer quote.
+
+### 4. A re-scan carries a checklist to the gap the model named as the same
+
+Make a checklist from a gap on `01-eap-chemical.pdf`, tick an item, then **Read it again**.
+
+- Where the new scan **named** the old gap in `same_as_gap_id`, the checklist is on the new gap
+  with its progress intact, and the old row reads `status = 'superseded'` with `superseded_by`
+  pointing at its replacement.
+- Where it named nothing and the titles do not match either, the old gap stays **open** and
+  still carries its checklist, and the report lists it under **From earlier readings**.
+
+Both are correct outcomes. What must never happen is the third one: the old gap closed with its
+checklist left pointing at it. Check `open_gap_count` on the row afterwards — before Run 6 it
+counted every gap from every reading, so a twice-read document showed more open gaps than it has.
+
+### 5. The expected line appears under one grouping and nowhere else
+
+On Documents, **Group by: Agency**. Under at least one agency there is an amber-wash line
+beginning **"What we'd expect and don't see:"** and ending **"Based on what similar companies
+hold, not on a checked requirement."**
+
+Now switch to Kind, Site, Folder, Status and None. The line is **gone** from all of them. It is a
+claim about a regulator's usual paperwork; under any other grouping it would be a different
+sentence, and a false one.
+
+An agency whose scans proposed nothing shows no line at all — not an empty one, and not "nothing
+expected", which would be a claim.
+
+### 6. The site filter narrows, and keeps what belongs to everybody
+
+With two sites on the company, the **Site** control appears. Choose one: the list narrows to that
+site's documents **plus every company-wide document** — the handbook, the corporate policy, the
+SDS. Those have no `entity_id`, and they belong to every site rather than to none.
+
+Correct a document's site in the drawer's correction form and the filter follows it immediately,
+because `document_index_v` reads the correction rather than the scan.
+
+The control is absent entirely for a company with one site: a filter with one option is a control
+that cannot do anything.
+
+### What none of these six can tell you
+
+Whether a quote the check verified is being used to support the thing it is quoted for, or
+whether the expected-and-don't-see list is the right list. Both are a model's judgement about a
+document, and the verification here is mechanical: these tests say the machinery carries the
+answer, never that the answer is good.

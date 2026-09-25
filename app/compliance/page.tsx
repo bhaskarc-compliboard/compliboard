@@ -45,7 +45,12 @@ interface Exchange {
   phase: 'sending' | 'searching' | 'writing' | 'done' | 'stopped' | 'stopped_early' | 'failed'
   searches: number
   error?: string
-  file?: { name: string; kind: string; classification: string | null; folder: string | null; unreadable: boolean; failure?: string }
+  file?: {
+    name: string; kind: string; classification: string | null; folder: string | null
+    unreadable: boolean; failure?: string
+    /** From `document_index_v` after the scan — Run 6. The card says what the list says. */
+    title?: string | null; agency?: string | null; status?: string | null; summary?: string | null
+  }
 }
 
 interface TopicRow {
@@ -351,13 +356,29 @@ export default function CompliancePage() {
   /**
    * A FILE ATTACHED IN THE CONVERSATION — Run 2 Task 5's client half, corrected in Fix Round 1.
    *
-   * Storage → the existing `/api/documents` row → the existing `/api/document-review`
-   * classification. No parallel store, and none of those three routes is changed.
+   * Storage → the existing `/api/documents` row → the reading. No parallel store.
+   *
+   * *** THE READING IS `/api/document-scan` NOW, NOT `/api/document-review` — Run 6. ***
+   * Two readings of one document have coexisted since Run 1 and this was the last place in the
+   * product still on the old one. It mattered here more than anywhere: a file attached in a
+   * conversation was classified by a path whose answer nothing else reads, so the Documents page
+   * showed it as "Queued" — never read — while this card claimed to have read it. Now the same
+   * scan runs whichever door the file comes in by, and the card is read back off
+   * `document_index_v`, which is the row the Documents page and the report drawer both show.
+   * One file, one reading, one set of words about it.
+   *
+   * It also sends JSON and a document id rather than the file a second time: the scan fetches
+   * the stored copy itself, so the upload is not paid for twice.
+   *
+   * *** A READING THAT FAILED IS NOT AN HTTP FAILURE. *** `/api/document-scan` answers 200 with
+   * `status: 'could_not_read'` and a reason written for a person, which is the whole point of
+   * that route (§5.1). So the branch below reads the STATUS, not `res.ok`, and shows the scan's
+   * own sentence instead of the generic one this page used to guess at.
    *
    * *** TWO THINGS HERE WERE WRONG IN RUN 3 AND ARE FIXED, BOTH MINE. ***
    *   · The bucket was named `documents`; it is `company-documents`. `lib/storage.ts` now holds
    *     the name once so a sixth spelling cannot happen.
-   *   · `/api/document-review` takes **multipart/form-data with the file itself**, not JSON. It
+   *   · The old review route took **multipart/form-data with the file itself**, not JSON. It
    *     answered 500 — `Content-Type was not one of "multipart/form-data"` — and the page read
    *     that as "we could not read your file", which blamed the document for our own mistake.
    *
@@ -410,39 +431,60 @@ export default function CompliancePage() {
       const { data: doc } = await supabase
         .from('documents').select('id, folder_id').eq('file_url', path).maybeSingle()
 
-      setWorking(`Reading ${file.name}…`)
-      const fd = new FormData()
-      fd.append('file', file)
-      fd.append('document_name', file.name)
-      if (doc?.id) fd.append('document_id', String(doc.id))
-      const revRes = await fetch('/api/document-review', {
-        method: 'POST', headers: await authHeaders(), body: fd,
-      })
-      const review = await revRes.json().catch(() => null)
+      if (!doc?.id) {
+        card({ unreadable: true, failure: `${file.name} is saved, but we could not find its record again to read it. Open it from the Documents screen and it will be read there.` })
+        return
+      }
 
-      if (!revRes.ok) {
+      setWorking(`Reading ${file.name}…`)
+      const scanRes = await fetch('/api/document-scan', {
+        method: 'POST',
+        headers: await authHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ document_id: String(doc.id) }),
+      })
+      const scan = await scanRes.json().catch(() => null)
+
+      // *** THE LINE THE REBUILT PAGE WAS MISSING (§129). *** Uploading the file and filing it
+      // is not attaching it to the conversation. Holding the id here is what makes the next
+      // research call carry the document — and it happens whether or not the reading worked,
+      // because a document nobody could read is still the document being asked about.
+      setPendingDoc({ id: String(doc.id), name: file.name })
+
+      if (!scanRes.ok || scan?.status === 'could_not_read') {
         // §5.1 — the file IS saved, so say so; assert NOTHING about contents nobody read; and
-        // offer the way on. An unsupported type is our limit, not the person's error.
-        const unsupported = /unsupported file type/i.test(String(review?.error ?? ''))
+        // offer the way on. The scan writes that sentence itself, per document, and it is better
+        // than anything this page could guess: it names the actual obstacle.
+        const said = scan?.could_not_read
         card({
           unreadable: true,
-          failure: unsupported
-            ? `It is saved to Documents, but we cannot read ${(file.name.split('.').pop() ?? 'that').toUpperCase()} files yet, so there is nothing we can tell you about what is in it. A PDF or a Word file we can read.`
+          failure: said?.reason
+            ? `It is saved to Documents, but ${said.reason.charAt(0).toLowerCase()}${said.reason.slice(1)}${said.way_forward ? ` ${said.way_forward}` : ''}`
             : `It is saved to Documents, but we could not read it well enough to rely on. A photo taken square-on in good light would do it, or the original PDF if you have one.`,
         })
         return
       }
 
-      // *** THE LINE THE REBUILT PAGE WAS MISSING (§129). *** Uploading the file and filing it
-      // is not attaching it to the conversation. Holding the id here is what makes the next
-      // research call carry the document.
-      if (doc?.id) setPendingDoc({ id: String(doc.id), name: file.name })
+      // THE CARD SAYS WHAT THE LIST SAYS. Read back off `document_index_v` — the same row the
+      // Documents page groups by and the report drawer opens — rather than off the scan's
+      // response, so a correction made later changes both places and neither can drift. The
+      // view is `security_invoker`, so this reads only the caller's own documents.
+      const { data: indexed } = await supabase
+        .from('document_index_v')
+        .select('title, kind, agencies, display_status, summary, folder_name')
+        .eq('document_id', String(doc.id)).maybeSingle()
 
+      const agencies = Array.isArray(indexed?.agencies)
+        ? (indexed.agencies as unknown[]).filter((a): a is string => typeof a === 'string' && !!a.trim())
+        : []
       card({
-        classification: review?.review?.document_type ?? review?.data?.document_type ?? null,
+        classification: indexed?.kind ? (FILE_KIND_LABEL[indexed.kind] ?? indexed.kind) : null,
+        title: indexed?.title ?? null,
+        agency: agencies.join(' · ') || null,
+        status: indexed?.display_status ? (FILE_STATUS_WORD[indexed.display_status] ?? null) : null,
+        summary: indexed?.summary ?? null,
         // The folder is only named when the document actually has one. Naming a folder nothing
         // put it in would be the product asserting a filing that did not happen.
-        folder: doc?.folder_id ? (review?.data?.folder_name ?? null) : null,
+        folder: doc?.folder_id ? (indexed?.folder_name ?? null) : null,
       })
     } catch (e) {
       console.error('upload failed:', e)
@@ -1361,6 +1403,27 @@ function Working({ phase, searches, onStop }: { phase: string; searches: number;
   )
 }
 
+/**
+ * THE WORDS THE DOCUMENTS PAGE USES, FOR THE CARD THAT NOW READS THE SAME ROW — Run 6.
+ *
+ * Deliberately the same strings as `app/documents/page.tsx`. A file attached in a conversation
+ * and the same file on the Documents list are one row in `document_index_v`; two vocabularies
+ * for it would be two products. Kept short here rather than shared, because the Documents page
+ * owns the full vocabulary (eight statuses, seven kinds) and this card shows the subset a scan
+ * can return for a file somebody just attached.
+ */
+const FILE_KIND_LABEL: Record<string, string> = {
+  permit: 'Permit', certificate: 'Certificate', program: 'Program', policy: 'Policy',
+  record: 'Record', supplier_document: 'Supplier document', other: 'Other',
+}
+/** The four that ask something of somebody. The rest are information and stay grey. */
+const FILE_ATTENTION = new Set(['Needs work', 'Expiring', 'Expired', 'Could not read'])
+const FILE_STATUS_WORD: Record<string, string> = {
+  needs_work: 'Needs work', expiring: 'Expiring', expired: 'Expired',
+  could_not_read: 'Could not read', not_yet_read: 'Queued',
+  current: 'Current', recorded: 'Recorded', on_file: 'On file',
+}
+
 function FileCard({ file, onRetry }: { file: NonNullable<Exchange['file']>; onRetry: () => void }) {
   return (
     <div className={`mb-3 flex items-start gap-3 rounded-xl border p-3 ${file.unreadable ? 'border-amber-200 bg-amber-50' : 'border-gray-200 bg-white'}`}>
@@ -1379,18 +1442,38 @@ function FileCard({ file, onRetry }: { file: NonNullable<Exchange['file']>; onRe
             </button>
           </>
         ) : (
-          <p className="mt-1 text-[13px] text-gray-600">
-            {/*
-              *** NO ARTICLE. *** This read "Read as a {classification}", and the classification
-              comes from the model — "Employee Handbook Addendum", "Insurance Certificate",
-              "SDS". Any fixed article is wrong for half of them, and the owner saw
-              "Read as a Employee Handbook Addendum" on production. Choosing a/an by first
-              letter would still be wrong for "an SDS" (a consonant that reads as a vowel) and
-              for "a US EPA permit". A colon needs no article and cannot be wrong.
-            */}
-            {file.classification ? <>Read as: <b className="font-medium">{file.classification}</b>. </> : null}
-            Saved to Documents{file.folder ? ` → ${file.folder}` : ''}.
-          </p>
+          <>
+            <p className="mt-1 text-[13px] text-gray-600">
+              {/*
+                *** NO ARTICLE. *** This read "Read as a {classification}", and the
+                classification came from the model — "Employee Handbook Addendum", "Insurance
+                Certificate", "SDS". Any fixed article is wrong for half of them, and the owner
+                saw "Read as a Employee Handbook Addendum" on production. Choosing a/an by first
+                letter would still be wrong for "an SDS" (a consonant that reads as a vowel) and
+                for "a US EPA permit". A colon needs no article and cannot be wrong.
+
+                The classification is now the KIND — one of seven words the database will accept
+                — with the title beside it, because the scan gives both and the list shows both.
+              */}
+              {file.classification ? <>Read as: <b className="font-medium">{file.classification}</b>{file.title ? <> — {file.title}</> : null}. </> : null}
+              Saved to Documents{file.folder ? ` → ${file.folder}` : ''}.
+            </p>
+            {/* Agency and status, in the Documents page's own words. Amber is attention and
+                never information (`DESIGN.md` §2), so only the four statuses that ask something
+                of somebody are coloured. */}
+            {(file.agency || file.status) && (
+              <p className="mt-0.5 text-[12px] text-gray-500">
+                {file.agency}
+                {file.agency && file.status ? ' · ' : ''}
+                {file.status && (
+                  <span className={FILE_ATTENTION.has(file.status) ? 'text-[var(--amber)]' : ''}>{file.status}</span>
+                )}
+              </p>
+            )}
+            {file.summary && (
+              <p className="mt-1.5 text-[13px] leading-relaxed text-gray-600">{file.summary}</p>
+            )}
+          </>
         )}
       </div>
     </div>

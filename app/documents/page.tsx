@@ -28,9 +28,12 @@
  * CLICKING A ROW OPENS THE REPORT (`components/DocumentReport.tsx`), Run 4. Run 3's inline
  * accordion is gone: a report is read, and reading happens in the drawer.
  *
- * WHAT IS NOT HERE, ON PURPOSE (Run 5 and later): pinned views, the "what we'd expect and don't
- * see" line, and the To confirm queue — and none of them as disabled controls, because a greyed
- * button that never lights up is a promise the product is not keeping.
+ * THE "WHAT WE'D EXPECT AND DON'T SEE" LINE IS UNDER AGENCY AND NOWHERE ELSE (Run 6). It is a
+ * claim about a regulator's usual paperwork, and it is only true of an agency — see `expectedFor`
+ * below for why each other grouping would turn it into a different and wrong sentence.
+ *
+ * WHAT IS STILL NOT HERE, ON PURPOSE: pinned views — not as a disabled control either, because a
+ * greyed button that never lights up is a promise the product is not keeping.
  */
 
 import { useState, useEffect, useRef, useMemo, Suspense } from 'react'
@@ -69,6 +72,8 @@ interface IndexRow {
 
 interface Folder { id: string; name: string; parent_id: string | null; sort_order: number }
 interface Site { id: string; name: string; is_primary: boolean }
+/** `expected_missing` off each document's CURRENT scan — Run 6. Shape written by the scan. */
+interface ExpectedRow { document_id: string; expected_missing: unknown }
 
 type GroupBy = 'status' | 'agency' | 'subject' | 'kind' | 'site' | 'folder' | 'none'
 
@@ -174,6 +179,7 @@ function DocumentsPageContent() {
   const [rows, setRows] = useState<IndexRow[]>([])
   const [folders, setFolders] = useState<Folder[]>([])
   const [sites, setSites] = useState<Site[]>([])
+  const [expected, setExpected] = useState<ExpectedRow[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -214,6 +220,7 @@ function DocumentsPageContent() {
       })))
       setFolders(json.folders ?? [])
       setSites(json.sites ?? [])
+      setExpected(json.expected ?? [])
       setError('')
     } catch {
       setError('We could not load your documents just now.')
@@ -355,7 +362,13 @@ function DocumentsPageContent() {
 
   const filtered = useMemo(() => rows.filter((r) => {
     if (folderFilter !== 'all' && r.folder_id !== folderFilter) return false
-    if (siteFilter !== 'all' && r.entity_id !== siteFilter) return false
+    // *** A COMPANY-WIDE DOCUMENT BELONGS TO EVERY SITE — Run 6. ***
+    // `entity_id` null is not "no site", it is "all of them": an employee handbook, a corporate
+    // policy, an SDS the company holds. Filtering those out left somebody standing at the
+    // Hillsboro plant being shown a list with the handbook missing from it, which reads as the
+    // handbook not existing. The scan already draws this distinction — `site_scope` is
+    // company_wide, site or unknown — and it was only the filter that did not.
+    if (siteFilter !== 'all' && r.entity_id !== null && r.entity_id !== siteFilter) return false
     return true
   }), [rows, folderFilter, siteFilter])
 
@@ -401,6 +414,57 @@ function DocumentsPageContent() {
       return sortDir === 'asc' ? c : -c
     })
   }, [filtered, groupBy, sortKey, sortDir])
+
+  /**
+   * WHAT WE'D EXPECT AND DON'T SEE, UNDER EACH AGENCY — Run 6.
+   *
+   * Every scan has answered this since Run 1 and nothing has ever shown the answer. The prompt
+   * asks "for a company like this one, what would usually sit alongside this document and is not
+   * in the list" and requires each entry to say it is based on similar companies rather than on
+   * a checked requirement — so the line ends by saying exactly that, in the product's own voice
+   * rather than trusting the model to keep saying it.
+   *
+   * *** UNDER AGENCY ONLY, AND THAT IS NOT A LAYOUT DECISION. *** "What we'd expect and don't
+   * see" is a claim about a REGULATOR's usual paperwork. Under Kind it would read as a list of
+   * documents of that kind; under Folder, as a comment on somebody's filing; under Status, as a
+   * claim that a missing document has a status. The sentence is only true of an agency, so it is
+   * only shown there.
+   *
+   * DEDUPLICATED BY WORDING, because seven documents answering to OSHA each propose a hazard
+   * communication program and the same sentence four times is noise. Case, spacing and trailing
+   * punctuation ignored; the first spelling wins, and the order is the document order so it does
+   * not reshuffle between loads.
+   *
+   * NOTHING WHEN THERE IS NOTHING. An empty state is a message and "nothing found" is a claim
+   * (§5.1) — a group whose scans proposed no entries gets no line at all, not a line saying we
+   * expected nothing.
+   */
+  const expectedByDocument = useMemo(() => {
+    const map = new Map<string, string[]>()
+    for (const e of expected) {
+      const items = Array.isArray(e.expected_missing) ? e.expected_missing : []
+      const titles = items
+        .map((i) => (i && typeof i === 'object' ? String((i as { title?: unknown }).title ?? '') : String(i ?? '')))
+        .map((t) => t.trim())
+        .filter(Boolean)
+      if (titles.length) map.set(e.document_id, titles)
+    }
+    return map
+  }, [expected])
+
+  const expectedFor = (groupRows: IndexRow[]): string[] => {
+    const seen = new Set<string>()
+    const out: string[] = []
+    for (const r of groupRows) {
+      for (const t of expectedByDocument.get(r.document_id) ?? []) {
+        const k = t.toLowerCase().replace(/[^a-z0-9]/g, '')
+        if (seen.has(k)) continue
+        seen.add(k)
+        out.push(t)
+      }
+    }
+    return out
+  }
 
   const folderCount = (id: string) => rows.filter((r) => r.folder_id === id).length
   const statusWord = (r: IndexRow) =>
@@ -631,11 +695,25 @@ function DocumentsPageContent() {
             {groups.map((g) => {
               const opened = showAll.has(g.key)
               const visible = opened ? g.rows : g.rows.slice(0, COLLAPSE_AT)
+              // Only under Agency, and only when the scans actually proposed something.
+              const missing = groupBy === 'agency' ? expectedFor(g.rows) : []
               return (
                 <section key={g.key} className="mb-7">
                   <h2 className="mb-1.5 text-[12px] font-medium uppercase tracking-wide text-gray-400">
                     {g.label} <span className="ml-1 text-gray-300">{g.rows.length}</span>
                   </h2>
+                  {missing.length > 0 && (
+                    // The amber wash, not amber text: this asks for attention without claiming
+                    // anything is wrong. Amber is attention and never information (`DESIGN.md`
+                    // §2), and the last sentence is the whole reason this is allowed to exist —
+                    // it is what similar companies hold, not a requirement anybody checked.
+                    <p className="mb-2 rounded-lg bg-[var(--amber-wash)] px-3 py-2 text-[12px] leading-relaxed text-gray-700">
+                      What we&rsquo;d expect and don&rsquo;t see: {missing.join('; ')}.{' '}
+                      <span className="text-gray-500">
+                        Based on what similar companies hold, not on a checked requirement.
+                      </span>
+                    </p>
+                  )}
                   <div>{visible.map((r) => <Row key={`${g.key}-${r.document_id}`} r={r} />)}</div>
                   {g.rows.length > COLLAPSE_AT && !opened && (
                     <button onClick={() => setShowAll((s) => new Set(s).add(g.key))}

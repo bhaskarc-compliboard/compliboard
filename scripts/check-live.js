@@ -470,16 +470,25 @@ if (!(await reachable())) {
     const { data: docRow } = await asUser.from('documents').select('id').eq('file_url', path).maybeSingle()
     if (!docRow?.id) { console.log('  ✗ attachment          the document row could not be read back'); failures++; return }
 
-    // The review, exactly as the page runs it — it is what later turns are served from.
-    const fd = new FormData()
-    fd.append('file', file)
-    fd.append('document_name', file.name)
-    fd.append('document_id', String(docRow.id))
-    const revRes = await fetch(`${BASE}/api/document-review`, {
-      method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: fd })
-    const review = await revRes.json().catch(() => null)
-    if (!revRes.ok) { console.log(`  ✗ attachment          /api/document-review -> ${revRes.status} ${review?.error ?? ''}`); failures++; return }
-    console.log(`  ✓ attachment/review   read as ${JSON.stringify(review?.review?.document_type ?? review?.data?.document_type ?? '?')}`)
+    // The reading, exactly as the page runs it — it is what later turns are served from.
+    // `/api/document-scan` since Run 6, not the old review: the attach flow moved, and a check
+    // that still drove the route the page no longer calls would pass while the page was broken.
+    const scanRes = await fetch(`${BASE}/api/document-scan`, {
+      method: 'POST', headers: auth, body: JSON.stringify({ document_id: String(docRow.id) }) })
+    const scan = await scanRes.json().catch(() => null)
+    if (!scanRes.ok) { console.log(`  ✗ attachment          /api/document-scan -> ${scanRes.status} ${scan?.error ?? ''}`); failures++; return }
+    if (scan?.status === 'could_not_read') {
+      console.log(`  ✗ attachment          the scan could not read the fixture: ${scan?.could_not_read?.reason ?? ''}`); failures++; return }
+
+    // AND THE CARD IS READ OFF THE INDEX ROW, so this checks the row the page will show rather
+    // than the scan's own response. A scan that wrote nothing the view can see is the failure
+    // this line exists to catch.
+    const { data: indexed } = await asUser.from('document_index_v')
+      .select('title, kind, agencies, display_status').eq('document_id', String(docRow.id)).maybeSingle()
+    if (!indexed) { console.log('  ✗ attachment          document_index_v had no row for the scanned file'); failures++; return }
+    if (!indexed.kind && indexed.display_status === 'not_yet_read') {
+      console.log('  ✗ attachment          the index row still reads not_yet_read after the scan'); failures++; return }
+    console.log(`  ✓ attachment/scan     read as ${JSON.stringify(indexed.kind ?? '?')} · ${JSON.stringify(indexed.title ?? '?')} · ${indexed.display_status}`)
 
     // THE QUESTION. A fresh conversation, the document id travelling with it.
     const askRes = await fetch(`${BASE}/api/chat`, { method: 'POST', headers: auth,

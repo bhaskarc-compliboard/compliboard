@@ -1,5 +1,23 @@
 // AI review of one uploaded document: dates, coverage, gaps, action items.
 //
+// *** THE OLD READING. NOTHING IN THE PRODUCT POSTS HERE ANY MORE — Documents Run 6. ***
+//
+// Two readings of one document have coexisted since Documents Run 1. The Documents page moved
+// to `/api/document-scan` in Run 3, the report drawer in Run 4, and the compliance page's
+// attach flow — the last caller of this POST — in Run 6. A file attached in a conversation was
+// being classified by a path whose answer nothing else reads, so the Documents page showed it
+// as never read while the conversation card claimed to have read it.
+//
+// WHAT STILL USES THE OLD READING, AND IT IS NOT THIS ROUTE. The audit engine calls
+// `reviewDocument()` directly from `app/api/audits/route.ts` (its auto-indexing step), and the
+// dashboard reads the `document_reviews` rows through the GET below. So `document_reviews` is
+// live data and this file is not dead code — but the POST here has no caller in the app, and
+// deleting it is a decision about the audit engine, which is not this run's to make.
+//
+// DO NOT WIRE ANYTHING NEW TO THE POST. `/api/document-scan` is the reading: it writes the rows
+// `document_index_v` is built from, it never 500s for a reading it could not produce, and it
+// handles Excel, CSV and text, which this path has never been able to read.
+//
 // CONVERTED OFF THE SERVICE-ROLE KEY (§0.9). Every query runs through `authed.db`, which
 // acts as the caller under RLS, and that client is passed down into reviewDocument() so
 // the review row is written under RLS too — the insert lives in that shared module, not
