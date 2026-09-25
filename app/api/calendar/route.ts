@@ -36,9 +36,18 @@ export async function POST(request: NextRequest) {
     const { companyId, userId, db } = authed.auth
 
     const body = await request.json()
-    const { title, description, due_date, category, is_recurring, recurrence_period } = body
+    const { title, description, due_date, category, is_recurring, recurrence_period,
+            document_id } = body
     if (!title || !due_date) {
       return NextResponse.json({ error: 'Missing title or due_date' }, { status: 400 })
+    }
+
+    // A document id from the body is a client value and is never trusted to name a row this
+    // caller may touch (§3.6). Read through `db`, which acts as the caller under RLS, so
+    // another company's document simply is not there. 404 rather than 403 so ids cannot be probed.
+    if (document_id) {
+      const { data: doc } = await db.from('documents').select('id').eq('id', document_id).maybeSingle()
+      if (!doc) return NextResponse.json({ error: 'Document not found' }, { status: 404 })
     }
 
     const { data, error } = await db
@@ -47,6 +56,10 @@ export async function POST(request: NextRequest) {
         company_id: companyId,
         user_id: userId,
         title, description, due_date, category, is_recurring, recurrence_period,
+        // WHERE THE DATE CAME FROM. Migration 040 added the column; this is the first caller to
+        // fill it. A calendar event that cannot say which document set it is a date nobody can
+        // check. Ownership of the document is proved below, not taken from the body.
+        document_id: document_id || null,
       })
       .select()
       .single()

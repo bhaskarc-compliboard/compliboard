@@ -228,6 +228,13 @@ const DELETED_BY_CASCADE_OR_PARENT = [
   'document_conditions',
   'document_deadlines',
   'company_labels',
+  // ...and the sixth (migration 045), for the same reason and with a sharper edge: a correction
+  // is what a PERSON told us the model got wrong, so it is the closest thing here to the
+  // customer's own words. It still belongs on this side of the list, because it cannot outlive
+  // the document it corrects — company_id -> companies ON DELETE CASCADE and document_id ->
+  // documents ON DELETE CASCADE, both read from pg_constraint on 25 Sep, so the row is gone twice
+  // over. Found by check-schema-contracts refusing the commit, which is what it is for.
+  'document_corrections',
   'ai_calls',              // cascades with the company: company_id -> companies ON DELETE
                            // CASCADE, read from pg_constraint on 23 Sep rather than assumed —
                            //   conname ai_calls_company_id_fkey · confdeltype = c (cascade)

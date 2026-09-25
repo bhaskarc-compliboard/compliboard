@@ -185,6 +185,25 @@ export function modelAcceptsEffort(model: string): boolean {
  * no reason to pay for real breadth — the answer only has to have the right SHAPE. Unset or
  * unreadable means no cap, and production never reads this at all.
  */
+/**
+ * IS THE SCAN'S SHAPE ENFORCED BY THE API, OR ASKED FOR IN PROSE?
+ *
+ * *** ON BY DEFAULT, AND A SWITCH BECAUSE THE BAKE-OFF HAS TO BE ABLE TO MEASURE IT. ***
+ * The schema landed in Run 3 and four of seven golden fixtures lost their agency in the same
+ * change, and one program turned `current`. Nobody has established whether that was the schema
+ * constraining the model or Haiku being Haiku, and the only way to find out is to run the same
+ * documents both ways. A change you cannot turn off is a change you cannot attribute.
+ *
+ * `AI_SCAN_STRUCTURED=false` sends no `output_config` at all and leaves `extractJsonText` as the
+ * mechanism, which is exactly what Runs 1 and 2 ran on. Anything else — unset, "true", nonsense
+ * — is on, because the safe default is the one where the JSON is valid at the source.
+ *
+ * Production reads this like any other variable; unset there means on.
+ */
+export function scanStructuredOutput(): boolean {
+  return (process.env.AI_SCAN_STRUCTURED ?? '').trim().toLowerCase() !== 'false'
+}
+
 export function devMaxSearches(): number | null {
   if (process.env.NODE_ENV === 'production') return null
   const raw = Number(process.env.DEV_MAX_SEARCHES)

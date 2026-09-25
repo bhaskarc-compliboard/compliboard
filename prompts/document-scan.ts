@@ -24,6 +24,11 @@ export interface ScanPromptContext {
   existingDocuments: Array<{ title: string; kind: string | null }>
   /** Gaps a person has already dismissed on THIS document, with their reasons. */
   dismissedGaps: Array<{ title: string; reason: string | null }>
+  /**
+   * What a person has told us the scan got wrong about THIS document, newest per field.
+   * Rendered as plain sentences below; no instruction sentence of the prompt changes.
+   */
+  corrections: Array<{ field: string; value: string; reason: string | null }>
 }
 
 const list = (xs: string[]) => (xs.length ? xs.map((x) => `  - ${x}`).join('\n') : '  (none yet)')
@@ -39,6 +44,16 @@ export function scanPrompt(ctx: ScanPromptContext): string {
   const existing = ctx.existingDocuments.length
     ? ctx.existingDocuments.map((d) => `  - ${d.title}${d.kind ? ` (${d.kind})` : ''}`).join('\n')
     : '  (nothing else on file yet)'
+
+  // *** A CORRECTION OUTRANKS THE MODEL AND THE NEXT SCAN IS TOLD SO. ***
+  // Without this, a person corrects "policy" to "permit", the document is re-scanned, and the
+  // model calls it a policy again — which reads as the product not having listened. The view
+  // would still show the correction, so the disagreement would be invisible and permanent.
+  const corrected = ctx.corrections.length
+    ? `\nThe person who owns this document has told us the following about it. They are right and
+you are not; take these as given:
+${ctx.corrections.map((c) => `  - the ${c.field} is ${c.value}${c.reason ? ` — they said: ${c.reason}` : ''}`).join('\n')}\n`
+    : ''
 
   const dismissed = ctx.dismissedGaps.length
     ? `\nSomeone has already looked at this document and said these are not problems. Do not raise
@@ -74,7 +89,7 @@ when the document needs one this list does not cover.
 
 WHAT THIS COMPANY ALREADY HOLDS
 ${existing}
-${dismissed}
+${corrected}${dismissed}
 You have a web_search tool. Use your own judgment. Things that are stable and well established
 you already know — answer directly. A specific threshold, a current form version, a citation that
 may have changed, a renewal rule — check it rather than trusting memory.

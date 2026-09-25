@@ -1015,6 +1015,64 @@ export type Database = {
           },
         ]
       }
+      document_corrections: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string | null
+          document_id: string
+          field: string
+          id: string
+          new_value: Json | null
+          old_value: Json | null
+          reason: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          document_id: string
+          field: string
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+          reason?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          document_id?: string
+          field?: string
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_corrections_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_corrections_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "document_index_v"
+            referencedColumns: ["document_id"]
+          },
+          {
+            foreignKeyName: "document_corrections_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_deadlines: {
         Row: {
           calendar_event_id: string | null
@@ -1470,6 +1528,7 @@ export type Database = {
           from_topic_id: string | null
           id: string
           is_recurring: boolean | null
+          latest_confirmed_at: string | null
           name: string
           recurrence_period: string | null
           source: string
@@ -1489,6 +1548,7 @@ export type Database = {
           from_topic_id?: string | null
           id?: string
           is_recurring?: boolean | null
+          latest_confirmed_at?: string | null
           name: string
           recurrence_period?: string | null
           source?: string
@@ -1508,6 +1568,7 @@ export type Database = {
           from_topic_id?: string | null
           id?: string
           is_recurring?: boolean | null
+          latest_confirmed_at?: string | null
           name?: string
           recurrence_period?: string | null
           source?: string
@@ -1642,6 +1703,7 @@ export type Database = {
           locator: string | null
           proposed_value: string
           quote: string | null
+          rejected_reason: string | null
           source: string
           status: string
           switch_key: string
@@ -1658,6 +1720,7 @@ export type Database = {
           locator?: string | null
           proposed_value: string
           quote?: string | null
+          rejected_reason?: string | null
           source?: string
           status?: string
           switch_key: string
@@ -1674,6 +1737,7 @@ export type Database = {
           locator?: string | null
           proposed_value?: string
           quote?: string | null
+          rejected_reason?: string | null
           source?: string
           status?: string
           switch_key?: string
@@ -2798,6 +2862,7 @@ export type Database = {
         Row: {
           agencies: Json | null
           company_id: string | null
+          correction_count: number | null
           could_not_read_reason: string | null
           display_status: string | null
           doc_date: string | null
@@ -2810,6 +2875,7 @@ export type Database = {
           folder_name: string | null
           issuer: string | null
           kind: string | null
+          latest_confirmed_at: string | null
           open_gap_count: number | null
           scan_id: string | null
           scan_status: string | null
@@ -2821,6 +2887,7 @@ export type Database = {
           summary: string | null
           title: string | null
           uploaded_at: string | null
+          version_confirmed: boolean | null
           version_of: string | null
         }
         Relationships: [
@@ -2829,13 +2896,6 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "documents_entity_id_fkey"
-            columns: ["entity_id"]
-            isOneToOne: false
-            referencedRelation: "entities"
             referencedColumns: ["id"]
           },
           {

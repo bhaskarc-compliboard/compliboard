@@ -23,7 +23,7 @@
  * ---------------------------------------------------------------------------
  */
 import { createHash } from 'node:crypto'
-import { askAIWithCitations, extractJsonText, modelForTask, type AIContent } from './ai.ts'
+import { askAIWithCitations, extractJsonText, modelForTask, scanStructuredOutput, type AIContent } from './ai.ts'
 import { parseDocumentToBlocks } from './documentContent.ts'
 import { scanPrompt, SCAN_JSON_SCHEMA, type ScanPromptContext } from '../prompts/document-scan.ts'
 
@@ -134,6 +134,13 @@ export interface DocumentScan {
   extracted_text: string
   /** When the model call began — used to find its `ai_calls` row. */
   started_at: string
+  /**
+   * Which way the shape was obtained: `schema` means the API enforced it via
+   * `output_config.format`; `prose` means the prompt asked and `extractJsonText` did the work.
+   * Recorded so a stored answer can be attributed to a path months later — the bake-off compares
+   * the two and a run whose method nobody wrote down cannot be put on either side of it.
+   */
+  structured: boolean
 }
 
 const KINDS: ScanKind[] = ['permit', 'certificate', 'program', 'policy', 'record', 'supplier_document', 'other']
@@ -180,9 +187,73 @@ export function verifyQuote(quote: string | null, extractedText: string): boolea
   return norm(extractedText).includes(q)
 }
 
+/**
+ * THE DATE THAT MATTERS, CHOSEN IN CODE FROM THE KIND — NEVER THE MODEL'S PICK.
+ *
+ * *** THIS IS THE ONE FIELD THE WHOLE PAGE HANGS OFF. *** `document_index_v` computes expiring
+ * and expired from it, the row prints it on the right, and the Calendar will read it next. The
+ * model returned `significant_date` and `significant_date_kind` as free choices and they came
+ * back wrong in ways nobody would notice from one document: case 01, an Emergency Action Plan
+ * revised February 2021, was stored as "Renewal 1 January 2026" — a date that appears nowhere in
+ * it. On screen that reads as a live obligation, on a document five years out of date.
+ *
+ * `CLAUDE.md` §3.2 already says readiness and coverage are computed in code and never by AI.
+ * This is the same rule one field further down: WHICH date matters is a property of the KIND of
+ * document, and kind is a small enum. There is nothing here for a model to decide.
+ *
+ *   permit, certificate   the expiry — the renewal deadline, because that is the day it stops
+ *                         being worth anything
+ *   program, policy       its own revision date, so freshness is measurable
+ *   record                the last entry, because a log's worth is how recent it is
+ *   supplier_document     the supplier's revision date — is this the current sheet
+ *   other                 its own date, whatever kind that is
+ *
+ * The model's dates stay the INPUTS: `doc_date` is read off the document and the deadlines are
+ * read out of its text. This only decides which of them is promoted to the row.
+ */
+export function chooseSignificantDate(
+  kind: ScanKind | null,
+  docDate: string | null,
+  docDateKind: string | null,
+  deadlines: ScanDeadline[],
+): { date: string | null; kind: string | null } {
+  const dated = deadlines.filter((d) => !!d.due_on)
+
+  if (kind === 'permit' || kind === 'certificate') {
+    // The expiry, named as such where the model said so; otherwise the latest dated deadline,
+    // which for a permit is the one that ends it. Never a recurring report date.
+    const named = dated.find((d) => /expir|expiry|expires/i.test(`${d.title} ${d.source_line ?? ''}`) && !d.recurs)
+    const fallback = dated.filter((d) => !d.recurs).sort((a, b) => (a.due_on! < b.due_on! ? 1 : -1))[0]
+    const pick = named ?? fallback
+    if (pick) return { date: pick.due_on, kind: 'expiry' }
+    return { date: docDate, kind: docDate ? (docDateKind ?? 'issued') : null }
+  }
+
+  if (kind === 'program' || kind === 'policy') {
+    // Its own date, and the KIND of that date is whatever the document said it was — a plan is
+    // "revised", a food safety plan is "effective". Both are the same question: how old is this.
+    const k = docDateKind && /revis|effective/i.test(docDateKind) ? docDateKind : 'revised'
+    return { date: docDate, kind: docDate ? k : null }
+  }
+
+  if (kind === 'record') {
+    // The last entry. `doc_date` on a log IS the last entry when the scan read one; otherwise
+    // the latest dated thing in it.
+    if (docDate) return { date: docDate, kind: 'last_entry' }
+    const latest = dated.sort((a, b) => (a.due_on! < b.due_on! ? 1 : -1))[0]
+    return latest ? { date: latest.due_on, kind: 'last_entry' } : { date: null, kind: null }
+  }
+
+  if (kind === 'supplier_document') {
+    return { date: docDate, kind: docDate ? 'revised' : null }
+  }
+
+  return { date: docDate, kind: docDate ? (docDateKind ?? null) : null }
+}
+
 /** Fill the shape from whatever the model returned, without trusting any of it. */
-export function normaliseScan(parsed: Record<string, unknown>, extractedText: string): Omit<DocumentScan,
-  'raw_text' | 'json_parsed' | 'model' | 'searches' | 'cited_sources' | 'prompt_sha256' | 'quotes_checked'
+function normaliseScanRaw(parsed: Record<string, unknown>, extractedText: string): Omit<DocumentScan,
+  'raw_text' | 'json_parsed' | 'model' | 'searches' | 'cited_sources' | 'structured' | 'prompt_sha256' | 'quotes_checked'
   | 'quotes_verified' | 'extracted_text' | 'started_at'> {
   const id = (parsed.identity ?? {}) as Record<string, unknown>
   const cnr = (parsed.could_not_read ?? {}) as Record<string, unknown>
@@ -208,8 +279,10 @@ export function normaliseScan(parsed: Record<string, unknown>, extractedText: st
     // An unrecognised status is NOT quietly turned into something valid — it becomes
     // `not_judged`, which says we did not get a status we could use.
     status: statusRaw && (STATUSES as string[]).includes(statusRaw) ? (statusRaw as ScanStatus) : 'not_judged',
-    significant_date: date(parsed.significant_date),
-    significant_date_kind: str(parsed.significant_date_kind),
+    // Placeholders. Overwritten below by `chooseSignificantDate` once the kind, the doc date
+    // and the deadlines are all normalised — the model's own pick is deliberately discarded.
+    significant_date: null,
+    significant_date_kind: null,
     freshness_note: str(parsed.freshness_note),
     gaps: (Array.isArray(parsed.gaps) ? parsed.gaps : []).map((g: Record<string, unknown>) => ({
       title: str(g?.title) ?? str(g?.description) ?? 'Untitled gap',
@@ -242,6 +315,18 @@ export function normaliseScan(parsed: Record<string, unknown>, extractedText: st
     confidence_notes: str(parsed.confidence_notes),
     could_not_read: { reason: str(cnr.reason), way_forward: str(cnr.way_forward) },
   }
+}
+
+/**
+ * The shape, with the one field the model does not get to choose put in by code.
+ * Every caller uses this; `normaliseScanRaw` is not exported.
+ */
+export function normaliseScan(parsed: Record<string, unknown>, extractedText: string) {
+  const shape = normaliseScanRaw(parsed, extractedText)
+  const chosen = chooseSignificantDate(
+    shape.identity.kind, shape.identity.doc_date, shape.identity.doc_date_kind, shape.deadlines,
+  )
+  return { ...shape, significant_date: chosen.date, significant_date_kind: chosen.kind }
 }
 
 /**
@@ -280,6 +365,12 @@ export async function buildScanContext(
     ? await db.from('document_gaps').select('title, dismissed_reason')
         .eq('document_id', documentId).eq('status', 'dismissed').order('title')
     : { data: [] }
+  // Newest per field. Ordered so the same state gives the same prompt string, like everything
+  // else here — and `created_at desc, id desc` for the same tie-break reason as migration 045.
+  const { data: corrections } = documentId
+    ? await db.from('document_corrections').select('field, new_value, reason, created_at, id')
+        .eq('document_id', documentId).order('created_at', { ascending: false }).order('id', { ascending: false })
+    : { data: [] }
 
   return {
     company: {
@@ -301,6 +392,17 @@ export async function buildScanContext(
       .map((d: { title: string; kind: string | null }) => ({ title: d.title, kind: d.kind })),
     dismissedGaps: (dismissed ?? []).map((g: { title: string; dismissed_reason: string | null }) =>
       ({ title: g.title, reason: g.dismissed_reason })),
+    corrections: (() => {
+      const seen = new Set<string>()
+      const out: Array<{ field: string; value: string; reason: string | null }> = []
+      for (const c of (corrections ?? []) as Array<{ field: string; new_value: unknown; reason: string | null }>) {
+        if (seen.has(c.field)) continue          // the list is newest-first, so the first wins
+        seen.add(c.field)
+        const v = Array.isArray(c.new_value) ? c.new_value.join(', ') : String(c.new_value ?? '')
+        if (v) out.push({ field: c.field, value: v, reason: c.reason })
+      }
+      return out.sort((a, b) => a.field.localeCompare(b.field))
+    })(),
   }
 }
 
@@ -321,6 +423,7 @@ export function failedScan(reason: string, wayForward: string, model = '(not cal
   return {
     ...normaliseScan({ status: 'could_not_read', could_not_read: { reason, way_forward: wayForward } }, ''),
     raw_text: '', json_parsed: false, model, cited_sources: 0, searches: null,
+    structured: scanStructuredOutput(),
     prompt_sha256: '', quotes_checked: 0, quotes_verified: 0, extracted_text: '',
     started_at: new Date().toISOString(),
   }
@@ -349,6 +452,7 @@ export async function runDocumentScan(input: RunScanInput): Promise<DocumentScan
       ...normaliseScan({ status: 'could_not_read', could_not_read: {
         reason: parsed.failure.message, way_forward: 'A PDF or a Word file we can read.' } }, ''),
       raw_text: '', json_parsed: false, model: '(not called)', searches: 0, cited_sources: 0,
+      structured: scanStructuredOutput(),
       prompt_sha256: '', quotes_checked: 0, quotes_verified: 0, extracted_text: '',
       started_at: new Date().toISOString(),
     }
@@ -363,6 +467,7 @@ export async function runDocumentScan(input: RunScanInput): Promise<DocumentScan
     .join('\n')
 
   const startedAt = new Date().toISOString()
+  const structured = scanStructuredOutput()
   const system = scanPrompt(input.context)
   const promptSha = createHash('sha256').update(system).digest('hex')
   const model = modelForTask('document_scan')
@@ -376,9 +481,10 @@ export async function runDocumentScan(input: RunScanInput): Promise<DocumentScan
     task: 'document_scan',
     maxTokens: 16000,
     enableWebSearch: true,
-    // The shape is enforced by the API, not asked for in prose. `extractJsonText` below stays
-    // as the fallback for anything the schema does not cover and for the day it is turned off.
-    outputSchema: SCAN_JSON_SCHEMA,
+    // The shape is enforced by the API, not asked for in prose — unless AI_SCAN_STRUCTURED is
+    // "false", in which case nothing is sent and `extractJsonText` below is the mechanism again.
+    // Which path ran is recorded on the scan so a stored answer can be attributed later.
+    ...(structured ? { outputSchema: SCAN_JSON_SCHEMA } : {}),
     ledger: { companyId: input.companyId, task: 'document_scan' },
   })
 
@@ -393,6 +499,7 @@ export async function runDocumentScan(input: RunScanInput): Promise<DocumentScan
         reason: 'the reading came back in a form we could not use',
         way_forward: 'Read it again — this is usually temporary.' } }, extractedText),
       raw_text: raw, json_parsed: false, model, cited_sources: answer.sources.length, searches: null,
+      structured,
       prompt_sha256: promptSha, quotes_checked: 0, quotes_verified: 0,
       extracted_text: extractedText, started_at: startedAt,
     }
@@ -403,6 +510,7 @@ export async function runDocumentScan(input: RunScanInput): Promise<DocumentScan
   return {
     ...shape,
     raw_text: raw, json_parsed: true, model, cited_sources: answer.sources.length, searches: null,
+    structured,
     prompt_sha256: promptSha,
     quotes_checked: checked.length,
     quotes_verified: checked.filter((x) => x.quote_verified === true).length,

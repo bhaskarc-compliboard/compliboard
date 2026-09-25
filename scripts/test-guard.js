@@ -17,6 +17,11 @@
 import { execFileSync } from 'node:child_process'
 import { readdirSync, readFileSync } from 'node:fs'
 
+// 493 -> 504 on 25 Sep: two for the AI_SCAN_STRUCTURED switch (a near miss like "flase" must
+// leave the schema ON, never quietly drop it) and nine for chooseSignificantDate, which took the
+// one field the page hangs off away from the model after it dated a 2021 plan "Renewal 1 January
+// 2026" — a date that appears nowhere in the document.
+//
 // 489 -> 493 on 25 Sep: four more in extractJsonText.test.ts for the one failure no extractor
 // can fix — an unescaped quote inside a string value — and for the JSON schema that replaced
 // the extractor as the mechanism on the scan path.
@@ -30,7 +35,7 @@ import { readdirSync, readFileSync } from 'node:fs'
 // decision. Run 3's `AnswerBody` replaced it and `grep -rn answerDisplay app lib components`
 // returned only the file itself — the suite was exercising code nothing shipped. Lowering the
 // floor is exactly the deliberate act this guard exists to force somebody to make in writing.
-const FLOOR = 493
+const FLOOR = 504
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))
