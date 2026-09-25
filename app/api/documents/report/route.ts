@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
       // against a gap weeks later — "checklist made 17 Sep · 2 of 5 done" is the vision's own
       // example and the reason the link is on the gap.
       db.from('checklists')
-        .select('id, title, created_at, document_gap_id, checklist_items(id, completed)')
+        .select('id, title, created_at, document_gap_id, checklist_items(id, completed, parent_item_index)')
         .eq('company_id', companyId).eq('document_id', documentId)
         .order('created_at', { ascending: false }),
     ])
@@ -86,7 +86,12 @@ export async function GET(request: NextRequest) {
       sites: sites.data ?? [],
       labels: labels.data ?? [],
       checklists: (lists.data ?? []).map((c: Record<string, unknown>) => {
-        const items = (c.checklist_items ?? []) as Array<{ completed: boolean }>
+        // Only the top-level items. `/api/substeps` breaks one item into children that live
+        // in this same table under a `parent_item_index`, and the checklist page has always
+        // counted parents only — a report saying "3 of 19" beside a page saying "3 of 7" is
+        // two numbers for one thing.
+        const items = ((c.checklist_items ?? []) as Array<{ completed: boolean; parent_item_index: number | null }>)
+          .filter((i) => i.parent_item_index === null)
         return {
           id: c.id, title: c.title, created_at: c.created_at,
           document_gap_id: c.document_gap_id,
