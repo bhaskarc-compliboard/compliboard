@@ -95,9 +95,24 @@ export async function GET(request: NextRequest) {
 
     const keys = [...byKey.entries()].map(([key, group]) => {
       // Newest source first inside a key, so "the value" below is the newest reading of it.
+      //
+      // *** ONE SOURCE PER PLACE, NOT PER READING. *** Re-scanning a document writes a fresh set
+      // of proposals and does not retract the old ones, so the second reading of a file that
+      // still says "42 employees" leaves two identical rows. The same document listed twice
+      // saying the same thing is not corroboration, it is the same sentence read twice — and on
+      // screen it would read as two independent sources agreeing. Collapsed on (where it came
+      // from + what it says), newest kept; a document that CHANGED its answer between readings
+      // keeps both, because that is a real disagreement and the person should see it.
+      const seen = new Set<string>()
       const sources = group
         .slice()
         .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))
+        .filter((r) => {
+          const place = `${r.document_id ?? r.topic_id ?? ''}|${String(r.proposed_value ?? '').trim().toLowerCase()}`
+          if (seen.has(place)) return false
+          seen.add(place)
+          return true
+        })
         .map((r) => ({
           proposal_id: r.id,
           value: r.proposed_value,

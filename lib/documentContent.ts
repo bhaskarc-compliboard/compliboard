@@ -103,11 +103,28 @@ export function describeUnsupported(name: string, ext: string): DocumentParseFai
  */
 async function pdfText(nodeBuffer: Buffer): Promise<string> {
   try {
+    // *** THE `fileType` HINT IS NOT OPTIONAL HERE, AND LEAVING IT OUT FAILS ONLY IN NEXT. ***
+    // officeparser sniffs the format from the buffer's magic bytes using a detection library the
+    // bundler does not carry into the server build, so the same call that returns 4,003
+    // characters from a plain `node` script throws inside a route:
+    //
+    //   [OfficeParser]: Auto-detection of file type from buffer failed … Please provide the
+    //   'fileType' hint in your configuration
+    //
+    // Found by probing the route rather than by reading the scan's output, because the catch
+    // below turns it into an empty string and an empty string is exactly what this function
+    // returned before it existed. A test that passes outside the server and fails inside it is
+    // the reason `console.warn` is here too: a quiet '' looks identical to a scanned page.
+    //
+    // We already know the format — this branch is only reached for a PDF — so the hint costs
+    // nothing and removes the guess.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const out = await (officeParser as any).parseOffice(nodeBuffer)
+    const out = await (officeParser as any).parseOffice(nodeBuffer, { fileType: 'pdf' })
     const text = typeof out === 'string' ? out : String(out?.toText?.() ?? '')
     return text.trim() ? text : ''
-  } catch {
+  } catch (e) {
+    console.warn('pdf text extraction failed; quotes on this document cannot be checked:',
+      e instanceof Error ? e.message : e)
     return ''
   }
 }
@@ -172,7 +189,13 @@ export async function parseDocumentToBlocks(
     return { ok: true, kind: 'word', blocks: [{ type: 'text', text: result.value }], text: result.value }
   }
   if (isPowerPoint) {
-    const ast = await (officeParser as any).parseOffice(nodeBuffer)
+    // The same hint as `pdfText` above, and for the same reason: auto-detection from a buffer
+    // does not survive the server build. `.ppt` is the old binary format, which officeparser
+    // does not list as supported at all — it is left to fail as it always has rather than be
+    // given a hint that claims it is something it is not.
+    const ast = ext === 'pptx'
+      ? await (officeParser as any).parseOffice(nodeBuffer, { fileType: 'pptx' })
+      : await (officeParser as any).parseOffice(nodeBuffer)
     const text = ast.toText()
     return { ok: true, kind: 'powerpoint', blocks: [{ type: 'text', text }], text }
   }

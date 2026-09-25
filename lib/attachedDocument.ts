@@ -117,7 +117,7 @@ export async function loadAttachedDocument(
 /**
  * What earlier attachments in this conversation should say to a later turn.
  *
- * One line per attached document: its name, what it was read as, and what the review found.
+ * One line per attached document: its name, what it was read as, and what the reading found.
  * Returns '' when the topic has no attachments, so a caller can append unconditionally.
  *
  * *** IT NAMES THE DOCUMENT EVEN WHEN THE ROW IS GONE. *** `turns.document_name` is a copy kept
@@ -135,12 +135,29 @@ export async function describeAttachments(db: Db, topicId: string): Promise<stri
         lines.push(`- ${name} — attached earlier in this conversation. It has since been removed from Documents, so its contents are no longer available.`)
         continue
       }
-      const { data: review } = await db.from('document_reviews')
-        .select('document_type, summary')
-        .eq('document_id', t.document_id)
-        .order('created_at', { ascending: false }).limit(1).maybeSingle()
-      lines.push(`- ${name}` + (review?.document_type ? ` (read as: ${review.document_type})` : '')
-        + (review?.summary ? `\n  An earlier automated review described it as: ${String(review.summary).trim()}` : ''))
+      // *** THE SCAN FIRST, THE OLD REVIEW AS A FALLBACK — Documents Run 6. ***
+      //
+      // This read `document_reviews` only, and Run 6 moved the attach flow off the route that
+      // writes those rows. Left alone, the line would quietly have lost its contents for every
+      // newly attached file: the same sentence with the two informative clauses missing. That is
+      // a change to what feeds the prompt (§3.1) made by accident and in the wrong direction, so
+      // the same two facts are read from the new reading instead — the kind it was read as and
+      // the summary — and the review row still answers for documents attached before this run.
+      const { data: scan } = await db.from('document_scans')
+        .select('kind, title, summary')
+        .eq('document_id', t.document_id).eq('is_current', true).maybeSingle()
+      let readAs = scan?.title ?? scan?.kind ?? null
+      let summary = scan?.summary ?? null
+      if (!readAs && !summary) {
+        const { data: review } = await db.from('document_reviews')
+          .select('document_type, summary')
+          .eq('document_id', t.document_id)
+          .order('created_at', { ascending: false }).limit(1).maybeSingle()
+        readAs = review?.document_type ?? null
+        summary = review?.summary ?? null
+      }
+      lines.push(`- ${name}` + (readAs ? ` (read as: ${readAs})` : '')
+        + (summary ? `\n  An earlier automated review described it as: ${String(summary).trim()}` : ''))
     }
     // *** THE WORDING MATTERS AND WAS CHANGED AFTER A MEASURED FAILURE. *** An earlier version
     // said "Problems found in it: …" from the review's `gaps`, and the model read that list as
