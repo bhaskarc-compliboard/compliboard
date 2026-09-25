@@ -920,6 +920,19 @@ export default function CompliancePage() {
             */}
             <div className="no-print mt-8">
               <div>
+                {/* WHAT IS COMING WITH THE QUESTION, SAID ON SCREEN — Documents Run 5.
+                    `pendingDoc` was set by the paperclip and read only when sending, so arriving
+                    from "Research this" filled the composer and attached the document with no
+                    sign of it anywhere. An attachment nobody can see is one they cannot remove
+                    and will not trust. The paperclip's own flow already draws a card in the
+                    conversation; this is the line for a document attached before there is one. */}
+                {pendingDoc && (
+                  <p className="mb-1.5 text-[12px] text-gray-500">
+                    Asking about <span className="text-gray-700">{pendingDoc.name}</span>
+                    <button onClick={() => setPendingDoc(null)}
+                      className="ml-2 text-gray-400 underline hover:text-gray-700">remove</button>
+                  </p>
+                )}
                 <div className="rounded-xl border border-gray-300 bg-white focus-within:border-emerald-500">
                   <div className="flex items-end gap-2 p-3.5">
                     <textarea

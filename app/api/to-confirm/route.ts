@@ -148,7 +148,11 @@ export async function POST(request: NextRequest) {
     const { error: fErr } = await supabaseAdmin.from('company_facts').upsert({
       company_id: companyId,
       key: p.switch_key,
-      value: JSON.stringify(p.proposed_value),
+      // *** NOT `JSON.stringify`. *** `value` is jsonb and supabase-js already serialises what
+      // it is given, so stringifying first stored the string INSIDE a JSON string —
+      // "\"4410 NW Front Avenue\"" rather than "4410 NW Front Avenue". Caught by reading the
+      // row back after the first confirmation rather than trusting the 200.
+      value: p.proposed_value,
       basis: p.basis ?? 'read',
       source_document_id: p.document_id ?? null,
       source_proposal_id: proposalId,
