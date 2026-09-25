@@ -44,7 +44,13 @@ export async function POST(request: NextRequest) {
       { type: 'text', text: `File name: ${fileName || file.name}\n\nExtract all important compliance dates from this document.` },
     ]
 
-    const result = await askAIJson(EXTRACT_PROMPT, messageContent, { maxTokens: 1000 })
+    // `companyId: null` is deliberate: this route has no session to take one from (TODO 0.8b),
+    // and a tenant id guessed from a client value would be worse than none. The call still cost
+    // money, so it is recorded with no tenant rather than not recorded.
+    const result = await askAIJson(EXTRACT_PROMPT, messageContent, {
+      maxTokens: 1000,
+      ledger: { companyId: null, task: 'other' },
+    })
 
     return NextResponse.json(result)
   } catch (error) {

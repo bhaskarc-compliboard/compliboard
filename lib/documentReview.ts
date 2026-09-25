@@ -70,7 +70,15 @@ export async function reviewDocument(input: ReviewDocumentInput) {
     throw new Error('Unsupported file type for review')
   }
 
-  const review = await askAIJson(reviewPrompt(), messageContent, { maxTokens: 6000, enableWebSearch: true })
+  // MEASUREMENT ONLY — the call itself is unchanged. `companyId` is the caller's, taken from
+  // the verified session in both call sites (`/api/document-review` and the audit engine's
+  // auto-index loop, each via `requireCompany`), never from a client value. Until now this path
+  // wrote no `ai_calls` row at all, so the most expensive call in the product was the one the
+  // cost report could not see (`DECISIONS.md` §128 J, `HANDOFF-DOCUMENTS.md` §4).
+  const review = await askAIJson(reviewPrompt(), messageContent, {
+    maxTokens: 6000, enableWebSearch: true,
+    ledger: { companyId, task: 'document_review' },
+  })
 
   const { data, error } = await client
     .from('document_reviews')
