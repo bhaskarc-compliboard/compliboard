@@ -264,6 +264,13 @@ export type Database = {
             foreignKeyName: "calendar_events_document_id_fkey"
             columns: ["document_id"]
             isOneToOne: false
+            referencedRelation: "document_index_v"
+            referencedColumns: ["document_id"]
+          },
+          {
+            foreignKeyName: "calendar_events_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
             referencedRelation: "documents"
             referencedColumns: ["id"]
           },
@@ -982,8 +989,22 @@ export type Database = {
             foreignKeyName: "document_conditions_document_id_fkey"
             columns: ["document_id"]
             isOneToOne: false
+            referencedRelation: "document_index_v"
+            referencedColumns: ["document_id"]
+          },
+          {
+            foreignKeyName: "document_conditions_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
             referencedRelation: "documents"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_conditions_scan_id_fkey"
+            columns: ["scan_id"]
+            isOneToOne: false
+            referencedRelation: "document_index_v"
+            referencedColumns: ["scan_id"]
           },
           {
             foreignKeyName: "document_conditions_scan_id_fkey"
@@ -1050,8 +1071,22 @@ export type Database = {
             foreignKeyName: "document_deadlines_document_id_fkey"
             columns: ["document_id"]
             isOneToOne: false
+            referencedRelation: "document_index_v"
+            referencedColumns: ["document_id"]
+          },
+          {
+            foreignKeyName: "document_deadlines_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
             referencedRelation: "documents"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_deadlines_scan_id_fkey"
+            columns: ["scan_id"]
+            isOneToOne: false
+            referencedRelation: "document_index_v"
+            referencedColumns: ["scan_id"]
           },
           {
             foreignKeyName: "document_deadlines_scan_id_fkey"
@@ -1135,8 +1170,22 @@ export type Database = {
             foreignKeyName: "document_gaps_document_id_fkey"
             columns: ["document_id"]
             isOneToOne: false
+            referencedRelation: "document_index_v"
+            referencedColumns: ["document_id"]
+          },
+          {
+            foreignKeyName: "document_gaps_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
             referencedRelation: "documents"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_gaps_scan_id_fkey"
+            columns: ["scan_id"]
+            isOneToOne: false
+            referencedRelation: "document_index_v"
+            referencedColumns: ["scan_id"]
           },
           {
             foreignKeyName: "document_gaps_scan_id_fkey"
@@ -1233,6 +1282,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_reviews_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "document_index_v"
+            referencedColumns: ["document_id"]
           },
           {
             foreignKeyName: "document_reviews_document_id_fkey"
@@ -1384,6 +1440,13 @@ export type Database = {
             foreignKeyName: "document_scans_document_id_fkey"
             columns: ["document_id"]
             isOneToOne: false
+            referencedRelation: "document_index_v"
+            referencedColumns: ["document_id"]
+          },
+          {
+            foreignKeyName: "document_scans_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
             referencedRelation: "documents"
             referencedColumns: ["id"]
           },
@@ -1482,6 +1545,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "topics"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_version_of_fkey"
+            columns: ["version_of"]
+            isOneToOne: false
+            referencedRelation: "document_index_v"
+            referencedColumns: ["document_id"]
           },
           {
             foreignKeyName: "documents_version_of_fkey"
@@ -1617,6 +1687,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fact_proposals_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "document_index_v"
+            referencedColumns: ["document_id"]
           },
           {
             foreignKeyName: "fact_proposals_document_id_fkey"
@@ -1974,8 +2051,22 @@ export type Database = {
             foreignKeyName: "obligation_evidence_document_id_fkey"
             columns: ["document_id"]
             isOneToOne: false
+            referencedRelation: "document_index_v"
+            referencedColumns: ["document_id"]
+          },
+          {
+            foreignKeyName: "obligation_evidence_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
             referencedRelation: "documents"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "obligation_evidence_document_same_company"
+            columns: ["document_id", "company_id"]
+            isOneToOne: false
+            referencedRelation: "document_index_v"
+            referencedColumns: ["document_id", "company_id"]
           },
           {
             foreignKeyName: "obligation_evidence_document_same_company"
@@ -2445,6 +2536,13 @@ export type Database = {
             foreignKeyName: "switch_determinations_document_id_fkey"
             columns: ["document_id"]
             isOneToOne: false
+            referencedRelation: "document_index_v"
+            referencedColumns: ["document_id"]
+          },
+          {
+            foreignKeyName: "switch_determinations_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
             referencedRelation: "documents"
             referencedColumns: ["id"]
           },
@@ -2643,6 +2741,13 @@ export type Database = {
             foreignKeyName: "turns_document_id_fkey"
             columns: ["document_id"]
             isOneToOne: false
+            referencedRelation: "document_index_v"
+            referencedColumns: ["document_id"]
+          },
+          {
+            foreignKeyName: "turns_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
             referencedRelation: "documents"
             referencedColumns: ["id"]
           },
@@ -2689,6 +2794,73 @@ export type Database = {
       }
     }
     Views: {
+      document_index_v: {
+        Row: {
+          agencies: Json | null
+          company_id: string | null
+          could_not_read_reason: string | null
+          display_status: string | null
+          doc_date: string | null
+          doc_date_kind: string | null
+          document_id: string | null
+          document_status: string | null
+          entity_id: string | null
+          file_name: string | null
+          folder_id: string | null
+          folder_name: string | null
+          issuer: string | null
+          kind: string | null
+          open_gap_count: number | null
+          scan_id: string | null
+          scan_status: string | null
+          scanned_at: string | null
+          significant_date: string | null
+          significant_date_kind: string | null
+          site_name: string | null
+          subjects: Json | null
+          summary: string | null
+          title: string | null
+          uploaded_at: string | null
+          version_of: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "company_folders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_version_of_fkey"
+            columns: ["version_of"]
+            isOneToOne: false
+            referencedRelation: "document_index_v"
+            referencedColumns: ["document_id"]
+          },
+          {
+            foreignKeyName: "documents_version_of_fkey"
+            columns: ["version_of"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       obligation_evidence_state: {
         Row: {
           company_id: string | null

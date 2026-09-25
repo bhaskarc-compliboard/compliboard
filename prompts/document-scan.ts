@@ -188,3 +188,125 @@ real answer and is better than a guess.
 On every gap and every fact, basis is "read" when the words are in the document and "inferred"
 when you worked it out.`
 }
+
+/**
+ * THE SAME SHAPE AGAIN, AS A JSON SCHEMA — `output_config.format`, Documents Run 3.
+ *
+ * *** THIS AND THE JSON BLOCK ABOVE MUST SAY THE SAME THING. *** They are two statements of one
+ * contract and they sit in one file so a change to either is a change somebody can see. The
+ * block above is what the model reads; this is what the API enforces.
+ *
+ * WHY IT EXISTS. Asking for JSON in prose gets JSON with prose around it, an extra closing
+ * brace, or — Documents Run 2b, case 04 run 3 — an unescaped quotation mark inside a string:
+ *
+ *     "quote": "Cool cooked beans from 135°F to 70°F…" vs. "The blast chiller operator…"
+ *
+ * No extractor recovers that: the string ends at the second quote. A schema removes the class.
+ * Measured accepted alongside the server-side web_search tool on claude-haiku-4-5 before being
+ * wired in — `npm run probe:structured`.
+ *
+ * NOTHING IS `required` AND `additionalProperties` IS OPEN. A schema that forces every field
+ * would make the model invent a `doc_date` it could not read rather than return null, and the
+ * one thing this product must not do is fill a gap with a guess. `normaliseScan` already
+ * defaults every field it does not get. The schema is here to fix the SYNTAX, not to compel
+ * content.
+ */
+const nullableString = { type: ['string', 'null'] as const }
+const stringArray = { type: 'array' as const, items: { type: 'string' as const } }
+
+export const SCAN_JSON_SCHEMA: Record<string, unknown> = {
+  type: 'object',
+  properties: {
+    identity: {
+      type: 'object',
+      properties: {
+        kind: { type: 'string', enum: ['permit', 'certificate', 'program', 'policy', 'record', 'supplier_document', 'other'] },
+        title: nullableString,
+        issuer: nullableString,
+        agencies: stringArray,
+        subjects: stringArray,
+        site: nullableString,
+        jurisdiction: stringArray,
+        doc_date: nullableString,
+        doc_date_kind: nullableString,
+        page_refs: { type: 'object', additionalProperties: { type: 'string' } },
+      },
+    },
+    summary: nullableString,
+    status: { type: 'string', enum: ['current', 'expiring', 'expired', 'no_gaps_found', 'gaps_found', 'recorded', 'not_judged', 'could_not_read'] },
+    significant_date: nullableString,
+    significant_date_kind: nullableString,
+    freshness_note: nullableString,
+    gaps: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          title: { type: 'string' },
+          description: nullableString,
+          fix: nullableString,
+          citation: nullableString,
+          citation_url: nullableString,
+          locator: nullableString,
+          draftable: { type: 'boolean' },
+          basis: { type: 'string', enum: ['read', 'inferred'] },
+          quote: nullableString,
+        },
+      },
+    },
+    conditions: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          title: { type: 'string' },
+          condition_ref: nullableString,
+          evidence_expected: nullableString,
+        },
+      },
+    },
+    deadlines: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          title: { type: 'string' },
+          due_on: nullableString,
+          source_line: nullableString,
+          recurs: { type: 'boolean' },
+        },
+      },
+    },
+    facts: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          key: { type: 'string' },
+          value: { type: 'string' },
+          basis: { type: 'string', enum: ['read', 'inferred'] },
+          quote: nullableString,
+          locator: nullableString,
+          as_of: nullableString,
+          affects: nullableString,
+        },
+      },
+    },
+    version_of: {
+      type: 'object',
+      properties: { title: nullableString, confidence: nullableString },
+    },
+    expected_missing: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: { title: { type: 'string' }, why: nullableString, basis: nullableString },
+      },
+    },
+    confidence_notes: nullableString,
+    could_not_read: {
+      type: 'object',
+      properties: { reason: nullableString, way_forward: nullableString },
+    },
+  },
+}

@@ -60,6 +60,28 @@ export interface AskAIOptions {
    *  This is a server-side tool: Anthropic runs the search and returns the
    *  final answer in this same call, no second round-trip needed. */
   enableWebSearch?: boolean
+  /**
+   * A JSON schema the answer must conform to — `output_config.format`, structured outputs.
+   *
+   * *** THIS MAKES THE JSON VALID AT THE SOURCE, WHICH IS WHERE IT SHOULD HAVE BEEN. ***
+   * `extractJsonText` exists because a model asked for JSON in prose sometimes writes prose
+   * around it, an extra closing brace, or — Documents Run 2b, case 04 run 3 — an unescaped
+   * quotation mark inside a string value:
+   *
+   *     "quote": "Cool cooked beans from 135°F to 70°F…" vs. "The blast chiller operator…"
+   *
+   * That one is unrecoverable by any extractor: the string ends at the second quote and what
+   * follows is a syntax error. A schema removes the class rather than the instance.
+   *
+   * Measured before use (`npm run probe:structured`, 25 Sep, claude-haiku-4-5): accepted alone,
+   * accepted ALONGSIDE the server-side web_search tool, and accepted with a scan-shaped schema
+   * carrying nested objects, arrays of objects and nullable fields. The raw text came back as
+   * bare JSON in all three.
+   *
+   * `extractJsonText` stays on every path regardless. It is now a fallback rather than the
+   * mechanism, and a fallback that is never exercised is one nobody finds out has rotted.
+   */
+  outputSchema?: Record<string, unknown>
 }
 
 /**
@@ -339,6 +361,11 @@ export async function askAIWithCitations(
         system: systemPrompt,
         messages: [{ role: 'user', content: content as any }],
         ...(sendTemperature ? { temperature: options.temperature } : {}),
+        // `output_config` carries the schema. `effort` is not sent from this path at all
+        // (see the note above §`modelAcceptsEffort`), so the two never have to be merged here.
+        ...(options.outputSchema
+          ? { output_config: { format: { type: 'json_schema', schema: options.outputSchema } } }
+          : {}),
         ...(options.enableWebSearch
           ? { tools: [{ type: 'web_search_20250305', name: 'web_search',
                         ...(devMaxSearches() ? { max_uses: devMaxSearches() } : {}) }] }

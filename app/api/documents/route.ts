@@ -68,7 +68,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const { error } = await db
+    // `status` and `source` are stated rather than left to their defaults (migration 040 sets
+    // 'uploaded' and 'upload'). A default is what happens when nobody said; these two are the
+    // start of the document's life and the page reads status on the very next line, so the
+    // write says what it means.
+    const { data: inserted, error } = await db
       .from('documents')
       .insert({
         company_id: companyId,
@@ -81,10 +85,16 @@ export async function POST(request: NextRequest) {
         from_topic_id: from_topic_id || null,
         is_recurring,
         recurrence_period,
+        status: 'uploaded',
+        source: 'upload',
       })
+      .select('id')
+      .single()
 
     if (error) throw error
-    return NextResponse.json({ success: true })
+    // THE ID COMES BACK NOW. The caller's next step is to ask for this document to be scanned,
+    // and it cannot name it otherwise. `success` stays for the callers that only checked that.
+    return NextResponse.json({ success: true, id: inserted.id })
   } catch (error) {
     console.error('Document insert error:', error)
     return NextResponse.json(

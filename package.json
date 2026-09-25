@@ -23,6 +23,7 @@
     "golden:docs:reparse": "node --env-file=.env.local scripts/reparse-golden-runs.js",
     "check:determinism": "node --env-file=.env.local scripts/check-prompt-determinism.js",
     "probe:searches": "node --env-file=.env.local scripts/probe-search-count.js",
+    "probe:structured": "node --env-file=.env.local scripts/probe-structured-output.js",
     "cost": "node --env-file=.env.local scripts/cost-report.js",
     "scan": "node --env-file=.env.local scripts/scan-document.js",
     "expressions": "node --env-file=.env.local scripts/load-expressions.js",

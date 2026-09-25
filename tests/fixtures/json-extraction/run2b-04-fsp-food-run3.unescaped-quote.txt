@@ -1,0 +1,337 @@
+```json
+{
+  "identity": {
+    "kind": "program",
+    "title": "Food Safety Plan for Ready-to-Eat Hummus and Bean Dips",
+    "issuer": null,
+    "agencies": [
+      "FDA",
+      "Oregon Department of Agriculture"
+    ],
+    "subjects": [
+      "hazard_analysis",
+      "preventive_controls",
+      "process_controls",
+      "sanitation",
+      "allergen_controls",
+      "supplier_program"
+    ],
+    "site": "Salem",
+    "jurisdiction": [
+      "Oregon",
+      "federal"
+    ],
+    "doc_date": "2025-05-12",
+    "doc_date_kind": "effective",
+    "page_refs": {
+      "doc_date": "page 1",
+      "issuer": "internal document, no external issuer"
+    }
+  },
+  "summary": "This is a preventive controls-based food safety plan for a refrigerated ready-to-eat hummus and bean dip manufacturer in Oregon, prepared under FDA FSMA rules by a Preventive Controls Qualified Individual. The plan documents the company's hazard analysis, preventive controls, monitoring, corrective actions, verification, and supply-chain program for controlling biological, chemical, allergen, and physical hazards in its production process.",
+  "status": "gaps_found",
+  "significant_date": "2025-05-12",
+  "significant_date_kind": "effective",
+  "freshness_note": "Document is current as of 2025-05-12 (effective date). As of 2026-09-25, this is 16 months old. No renewal trigger date is specified in the document; under FDA rules, food safety plans must be reanalyzed every three years or when there is a significant change to the facility or products. The company should verify whether a reanalysis is due.",
+  "gaps": [
+    {
+      "title": "No reanalysis schedule or trigger specified",
+      "description": "The plan does not state when it will be reanalyzed. Under 21 CFR 117.186(e), the food safety plan must be reanalyzed and reassessed at least every three years or when there is a significant change. There is no date for the next reanalysis or a statement of the conditions that would trigger one.",
+      "fix": "Add a statement at the end of section 7 (Verification) or in a new section specifying that the plan will be reanalyzed by May 12, 2028, or immediately if there is a change to the facility, equipment, ingredients, suppliers, process, products, or intended use.",
+      "citation": "21 CFR 117.186(e)",
+      "citation_url": "https://www.ecfr.gov/current/title-21/section-117.186",
+      "locator": "not in the document",
+      "draftable": true,
+      "basis": "inferred",
+      "quote": null
+    },
+    {
+      "title": "No written procedures for supplier approval and monitoring",
+      "description": "Section 8 states that tahini and dry beans are received only from approved suppliers with third-party audit and certificate of analysis, and that the approved supplier list is maintained by the quality manager. However, there is no written procedure describing how suppliers are initially approved, how often audits must be current (what is 'current'?), how often certificates of analysis must be reviewed, what standards the audits must meet, or what action is taken if a supplier fails to provide required documentation.",
+      "fix": "Add a formal supplier approval procedure (or reference one if it exists in a separate document held by the company) that includes: (1) minimum criteria for supplier selection; (2) frequency and recency requirements for third-party audits (e.g., audit must be no more than one year old); (3) process for receiving and reviewing certificates of analysis; (4) documentation of approval decision and date; (5) re-approval intervals; and (6) action taken if documentation is missing or inadequate.",
+      "citation": "21 CFR 117.80 (supply-chain program)",
+      "citation_url": "https://www.ecfr.gov/current/title-21/section-117.80",
+      "locator": "Section 8, page 6",
+      "draftable": true,
+      "basis": "inferred",
+      "quote": "Tahini and dry beans are received only from approved suppliers who provide a current third-party audit certificate and a certificate of analysis for each lot."
+    },
+    {
+      "title": "No specification of which third-party audit standard applies",
+      "description": "The plan requires a 'current third-party audit certificate' from suppliers but does not specify which audit standard (e.g., GFSI-recognized standards such as SQF, BRC, FSSC 22000) or what audit scope is acceptable. This makes it unclear what level of assurance the company is obtaining.",
+      "fix": "Specify in the supplier approval procedure which recognized audit standards are acceptable (e.g., 'SQF, BRC, FSSC 22000, or equivalent GFSI-recognized standard'). If only certain standards are accepted, name them.",
+      "citation": "21 CFR 117.80(b) implies reliance on third-party audits but does not mandate a specific standard",
+      "citation_url": "https://www.ecfr.gov/current/title-21/section-117.80",
+      "locator": "Section 8, page 6",
+      "draftable": true,
+      "basis": "inferred",
+      "quote": "current third-party audit certificate"
+    },
+    {
+      "title": "No written allergen control plan detail for non-sesame products",
+      "description": "Section 4 describes control of sesame allergen (labeling review, scheduling, washdown) but the plan does not identify all allergens in the ingredient list (lemon juice, garlic, tahini/sesame) or state control procedures for products that do not contain sesame but may contact sesame during cross-contact. The ingredient list includes tahini (sesame) but the plan does not address potential cross-contact risks for non-sesame bean dips if the same equipment is used.",
+      "fix": "Add an allergen control matrix or section that lists all allergens in each product (sesame in hummus from tahini; none declared in bean dips based on the ingredient list), identifies which production runs may pose cross-contact risk, and specifies the sanitation and segregation controls for each allergen. Document what constitutes an adequate washdown (ATP threshold) before running a non-sesame product after sesame products.",
+      "citation": "21 CFR 117.80(a)(2) and FSMA guidance on allergen controls",
+      "citation_url": "https://www.fda.gov/media/82259/download",
+      "locator": "Section 4, page 4; Section 1, page 2",
+      "draftable": true,
+      "basis": "inferred",
+      "quote": "Products are labeled with the allergen statement 'Contains: sesame' for all hummus items."
+    },
+    {
+      "title": "Cooling time limit discrepancy between sections",
+      "description": "Section 4 states the critical limit for cooling is '135°F to 70°F in 2 hours; 70°F to 41°F in 4 hours' (total 6 hours from 135°F to 41°F). However, section 5 instructs the blast chiller operator to record temperature at '2 hours and at 6 hours,' implying a single 6-hour measurement interval rather than two checkpoints (at 2 hours for the 70°F target and at 6 hours for the 41°F target). This could allow a batch that reaches 70°F at 2 hours to then fail to cool to 41°F by hour 6 and still be recorded as compliant if only the 6-hour temperature is checked.",
+      "fix": "Clarify the cooling log form and monitoring procedure to require two temperature readings: one at exactly 2 hours to verify 70°F has been reached, and a second at exactly 6 hours to verify 41°F has been reached. If a reading is out of specification, the batch must be immediately isolated and discarded per the corrective action (section 6).",
+      "citation": "21 CFR 117.165(c) (monitoring)",
+      "citation_url": "https://www.ecfr.gov/current/title-21/section-117.165",
+      "locator": "Section 4, page 4 (critical limit); Section 5, page 5 (monitoring)",
+      "draftable": true,
+      "basis": "read",
+      "quote": "Cool cooked beans from 135°F to 70°F within 2 hours and to 41°F within a further 4 hours in the blast chiller" vs. "The blast chiller operator records the temperature at 2 hours and at 6 hours on the cooling log."
+    },
+    {
+      "title": "No written procedure for handling out-of-specification thermometer calibration results",
+      "description": "Section 7 states that probe thermometers are calibrated in ice water and boiling water weekly, but there is no corrective action procedure if a thermometer fails calibration (e.g., if it reads outside acceptable limits such as ±0.5°F of the known reference). This could mean an out-of-calibration thermometer is discovered only during calibration, after it has already been used to monitor multiple cook batches.",
+      "fix": "Add to section 6 (Corrective actions) a procedure stating: 'If a probe thermometer fails calibration, it is immediately removed from service. All cook batches monitored with that thermometer since the last successful calibration are reviewed; if the recorded temperature may have been ±[X]°F below the actual temperature, the batch is re-cooked to the critical limit or discarded. The cause is investigated and documented.'",
+      "citation": "21 CFR 117.165(c)(2) (monitoring with proper equipment)",
+      "citation_url": "https://www.ecfr.gov/current/title-21/section-117.165",
+      "locator": "Section 7, page 6; Section 6, page 5",
+      "draftable": true,
+      "basis": "inferred",
+      "quote": "Probe thermometers are calibrated in ice water and boiling water weekly"
+    },
+    {
+      "title": "No PCQI signature or sign-off of the plan",
+      "description": "The plan states 'Prepared by: Dana Whitfield, Quality Manager, Preventive Controls Qualified Individual (PCQI certificate, FSPCA course, March 2024)' and 'Approved by: Plant Manager' on page 1, but does not specify a date of approval or whether the PCQI has signed off on the plan itself (as opposed to records). Under FSMA, the PCQI must oversee the development of the plan.",
+      "fix": "Add a dated signature line for the PCQI to the cover page to confirm that the plan has been reviewed and approved by the PCQI. Example: 'Reviewed and approved by: Dana Whitfield, PCQI, [date]'.",
+      "citation": "21 CFR 117.186(d) (PCQI must oversee the development and implementation of the food safety plan)",
+      "citation_url": "https://www.ecfr.gov/current/title-21/section-117.186",
+      "locator": "Page 1",
+      "draftable": true,
+      "basis": "inferred",
+      "quote": "Approved by: Plant Manager"
+    }
+  ],
+  "conditions": [],
+  "deadlines": [
+    {
+      "title": "Plan becomes effective (no condition precedent; this is when controls must be in place)",
+      "due_on": "2025-05-12",
+      "source_line": "Page 1: 'Effective date: May 12, 2025'",
+      "recurs": false
+    },
+    {
+      "title": "Probe thermometers must be calibrated (recurring)",
+      "due_on": null,
+      "source_line": "Section 7, page 6: 'Probe thermometers are calibrated in ice water and boiling water weekly'",
+      "recurs": true
+    },
+    {
+      "title": "Metal detector must be serviced by manufacturer (recurring)",
+      "due_on": null,
+      "source_line": "Section 7, page 6: 'the metal detector is serviced by the manufacturer annually'",
+      "recurs": true
+    },
+    {
+      "title": "Finished product testing for Listeria monocytogenes (recurring)",
+      "due_on": null,
+      "source_line": "Section 7, page 6: 'Finished product is tested for Listeria monocytogenes monthly by an accredited laboratory'",
+      "recurs": true
+    },
+    {
+      "title": "Environmental monitoring results must be reviewed and trended (recurring)",
+      "due_on": null,
+      "source_line": "Section 7, page 6: 'Environmental monitoring results are trended quarterly'",
+      "recurs": true
+    },
+    {
+      "title": "PCQI reviews records within seven working days (recurring for each batch/event)",
+      "due_on": null,
+      "source_line": "Section 7, page 6: 'The PCQI reviews the cook, cooling, sanitation, allergen and metal detection records within seven working days of their creation'; Section 6, page 5: 'All corrective actions are recorded on the corrective action log and reviewed by the PCQI within seven days'",
+      "recurs": true
+    },
+    {
+      "title": "Production employees must receive food hygiene training (recurring)",
+      "due_on": null,
+      "source_line": "Section 10, page 7: 'All production employees receive food hygiene training at hire and annually'",
+      "recurs": true
+    },
+    {
+      "title": "Records retention (no expiry, but define archive date per retention rule)",
+      "due_on": null,
+      "source_line": "Section 9, page 7: 'All records named in this plan are kept at the Salem plant for at least two years from the date of the record'",
+      "recurs": false
+    }
+  ],
+  "facts": [
+    {
+      "key": "product_type",
+      "value": "Refrigerated ready-to-eat hummus and bean dips",
+      "basis": "read",
+      "quote": "refrigerated ready-to-eat hummus and bean dips in 8-ounce and 16-ounce sealed plastic tubs",
+      "locator": "Section 1, page 2",
+      "as_of": "2025-05-12",
+      "affects": "Determines which hazards apply (Listeria growth in refrigerated RTE product, sesame allergen, etc.); determines shelf life and storage requirements"
+    },
+    {
+      "key": "production_employees",
+      "value": "28",
+      "basis": "read",
+      "quote": "28 production employees",
+      "locator": "Section 1, page 2",
+      "as_of": "2025-05-12",
+      "affects": "Affects the scale of training and monitoring required; may affect applicability of FSMA requirements (facilities with <$1 million in annual food sales have limited exemptions, but size alone does not trigger exemptions)"
+    },
+    {
+      "key": "operating_schedule",
+      "value": "One shift, five days a week",
+      "basis": "read",
+      "quote": "one shift, five days a week",
+      "locator": "Section 1, page 2",
+      "as_of": "2025-05-12",
+      "affects": "Affects whether environmental monitoring and sanitation can be conducted daily or weekly; affects availability of staff to perform monitoring and corrective actions"
+    },
+    {
+      "key": "shelf_life",
+      "value": "45 days refrigerated",
+      "basis": "read",
+      "quote": "Shelf life is 45 days refrigerated",
+      "locator": "Section 1, page 2",
+      "as_of": "2025-05-12",
+      "affects": "Determines whether accelerated testing or challenge studies are needed to validate shelf life and safety during distribution; affects the critical limit for refrigerated storage (41°F)"
+    },
+    {
+      "key": "storage_temperature",
+      "value": "At or below 41°F",
+      "basis": "read",
+      "quote": "held refrigerated at or below 41°F",
+      "locator": "Section 1, page 2",
+      "as_of": "2025-05-12",
+      "affects": "Defines the critical limit for preventing Listeria monocytogenes growth; must be monitored throughout storage and distribution"
+    },
+    {
+      "key": "cook_process_parameter",
+      "value": "212°F for 60 minutes minimum in kettle",
+      "basis": "read",
+      "quote": "soaking and cooking of beans (kettle, 212°F, 60 minutes minimum)",
+      "locator": "Section 2, page 2",
+      "as_of": "2025-05-12",
+      "affects": "Establishes the critical limit for the cook step (process control); must be monitored with a calibrated thermometer for each batch"
+    },
+    {
+      "key": "cooling_critical_limit",
+      "value": "135°F to 70°F within 2 hours; 70°F to 41°F within 4 hours",
+      "basis": "read",
+      "quote": "Cool cooked beans from 135°F to 70°F within 2 hours and to 41°F within a further 4 hours in the blast chiller",
+      "locator": "Section 4, page 4",
+      "as_of": "2025-05-12",
+      "affects": "Establishes the critical limit for cooling to prevent outgrowth of Clostridium perfringens and Bacillus cereus; must be monitored and recorded"
+    },
+    {
+      "key": "pcqi_qualification",
+      "value": "FSPCA course completed March 2024; PCQI certificate held",
+      "basis": "read",
+      "quote": "Dana Whitfield, Quality Manager, Preventive Controls Qualified Individual (PCQI certificate, FSPCA course, March 2024)",
+      "locator": "Page 1",
+      "as_of": "2025-05-12",
+      "affects": "Confirms that the PCQI meets the training requirement under 21 CFR 117.186(a)(1); FSPCA certificate is valid for three years, so certification was valid as of 2025-05-12 and will remain valid until March 2027"
+    },
+    {
+      "key": "allergen_declaration",
+      "value": "All hummus items labeled 'Contains: sesame'",
+      "basis": "read",
+      "quote": "Products are labeled with the allergen statement 'Contains: sesame' for all hummus items",
+      "locator": "Section 1, page 2",
+      "as_of": "2025-05-12",
+      "affects": "Sesame allergen is identified as a hazard requiring preventive control; labeling must match formulation; cross-contact must be prevented for bean dips"
+    },
+    {
+      "key": "sales_geography",
+      "value": "Oregon, Washington, and Idaho",
+      "basis": "read",
+      "quote": "for retail sale in Oregon, Washington and Idaho",
+      "locator": "Section 1, page 2",
+      "as_of": "2025-05-12",
+      "affects": "All three states are subject to FDA FSMA rules under their own food safety laws; multistate distribution may trigger FDA inspection authority and recall obligations"
+    },
+    {
+      "key": "metal_detection_sensitivity",
+      "value": "Reject at 2.0 mm ferrous, 2.5 mm non-ferrous, 3.0 mm stainless",
+      "basis": "read",
+      "quote": "Reject at 2.0 mm ferrous, 2.5 mm non-ferrous, 3.0 mm stainless test pieces",
+      "locator": "Section 4, page 4",
+      "as_of": "2025-05-12",
+      "affects": "Establishes the sensitivity threshold for the metal detection process control; must be verified at start-up, every two hours, and end-of-run with test pieces"
+    },
+    {
+      "key": "environmental_monitoring_frequency",
+      "value": "Weekly swabs, 10 sites, zones 1 and 2 for Listeria spp.",
+      "basis": "read",
+      "quote": "Listeria spp. swabs, 10 sites weekly, zone 1 and 2",
+      "locator": "Section 4, page 4",
+      "as_of": "2025-05-12",
+      "affects": "Defines the sanitation verification strategy; results must be trended quarterly to detect patterns or trends in contamination"
+    },
+    {
+      "key": "record_retention_period",
+      "value": "At least two years from date of record",
+      "basis": "read",
+      "quote": "kept at the Salem plant for at least two years from the date of the record",
+      "locator": "Section 9, page 7",
+      "as_of": "2025-05-12",
+      "affects": "Records must be retained and available for FDA and Oregon Department of Agriculture inspection; meets minimum FSMA requirement"
+    }
+  ],
+  "version_of": {
+    "title": null,
+    "confidence": "high"
+  },
+  "expected_missing": [
+    {
+      "title": "Food Safety Plan Validation Study Report",
+      "why": "FSMA requires that the cook step be validated to confirm it achieves the intended effect (e.g., reduction of Salmonella); the plan states the cook is the kill step but does not reference a validation study showing that 212°F for 60 minutes achieves a defined log reduction",
+      "basis": "similar companies, not a checked requirement"
+    },
+    {
+      "title": "HACCP Prerequisite Program or Good Manufacturing Practices (GMP) Policy",
+      "why": "The plan references sanitation and environmental monitoring but does not provide a standalone GMP or sanitation SOP; facilities must have written GMPs in place; this may exist separately",
+      "basis": "similar companies, not a checked requirement"
+    },
+    {
+      "title": "Supplier approval documentation and approval record",
+      "why": "Section 8 mentions an approved supplier list but does not provide evidence of how suppliers are evaluated or approved; a company this size would typically maintain an approval file or spreadsheet",
+      "basis": "similar companies, not a checked requirement"
+    },
+    {
+      "title": "Corrective Action Log or record of past corrective actions",
+      "why": "Section 6 describes corrective actions and states they are recorded on a corrective action log and reviewed by the PCQI, but the log itself is not included in this document; it should be kept on file for at least two years",
+      "basis": "similar companies, not a checked requirement"
+    },
+    {
+      "title": "Environmental Monitoring Results and Trend Analysis",
+      "why": "Section 7 states that environmental monitoring results are trended quarterly, but the actual swab records or trend summary is not in the plan; this would be a separate record maintained at the facility",
+      "basis": "similar companies, not a checked requirement"
+    },
+    {
+      "title": "Listeria monocytogenes Monthly Testing Results",
+      "why": "Section 7 states finished product is tested monthly for Listeria by an accredited laboratory, but the actual test reports are not in the plan; these should be filed at the facility",
+      "basis": "similar companies, not a checked requirement"
+    },
+    {
+      "title": "Recall Plan",
+      "why": "FSMA requires establishments to have a written recall plan (21 CFR 117.190); this plan does not include one",
+      "basis": "FDA FSMA requirement, not just similar company practice"
+    },
+    {
+      "title": "Traceability records or lot-coding system",
+      "why": "The plan mentions date coding but does not describe the lot-coding scheme, batch numbering, or traceability procedures needed to identify and recall product in the event of contamination",
+      "basis": "similar companies, not a checked requirement"
+    }
+  ],
+  "confidence_notes": "I read the document carefully and can identify the structure, contents, and intent with high confidence. The document is clearly organized and references are straightforward. However, I have moderate confidence in the completeness assessment because (1) the plan may reference other documents (e.g., SOPs, monitoring logs, supplier approval files) that are kept separately; (2) I did not search for the current version of FDA FSMA regulations to confirm whether any rules have changed since the plan's effective date (May 2025) or whether the plan meets all current requirements; (3) I inferred some gaps (e.g., lack of a written supplier approval procedure, thermometer calibration failure response) based on best practice and FSMA guidance, not direct inspection experience; (4) the cooling log discrepancy (gap 5) is a reading that may reflect a misunderstanding on my part if the log form itself has separate columns for 2-hour and 6-hour readings that are not visible in the plan text. I would recommend the company verify with FDA or their quality consultant whether my gaps are material or already addressed in documents not shown here.",
+  "could_not_read": {
+    "reason": null,
+    "way_forward": null
+  }
+}
+```

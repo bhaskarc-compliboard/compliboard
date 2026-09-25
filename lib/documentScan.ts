@@ -25,7 +25,7 @@
 import { createHash } from 'node:crypto'
 import { askAIWithCitations, extractJsonText, modelForTask, type AIContent } from './ai.ts'
 import { parseDocumentToBlocks } from './documentContent.ts'
-import { scanPrompt, type ScanPromptContext } from '../prompts/document-scan.ts'
+import { scanPrompt, SCAN_JSON_SCHEMA, type ScanPromptContext } from '../prompts/document-scan.ts'
 
 /** A Supabase client, loosely typed: these scripts run outside Next's generated-types world. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -354,6 +354,9 @@ export async function runDocumentScan(input: RunScanInput): Promise<DocumentScan
     task: 'document_scan',
     maxTokens: 16000,
     enableWebSearch: true,
+    // The shape is enforced by the API, not asked for in prose. `extractJsonText` below stays
+    // as the fallback for anything the schema does not cover and for the day it is turned off.
+    outputSchema: SCAN_JSON_SCHEMA,
     ledger: { companyId: input.companyId, task: 'document_scan' },
   })
 

@@ -1468,3 +1468,54 @@ perfectly, counts correctly and reads normally — `DECISIONS.md` §33 records s
 were. The only defences are the mapping table being readable by a person and the projection
 being read by target before it was applied. **No manual test recovers that**, which is why
 the review happened before the write rather than after.
+
+---
+
+## Documents — the scan on the upload path (Run 3, commit 1)
+
+Two tests, the perfect case and the edge case, and the edge case is the one worth your
+time: **a file the product cannot read must say so, in its own words, on the row.** The
+audit engine used to drop such a file with a console line and compute readiness from the
+rest; the whole point of `could_not_read` as a status is that it cannot be dropped.
+
+Both are run signed in, against staging, on `/documents`.
+
+### 1. The perfect case — a single PDF uploads, scans, and lands with a status
+
+1. **Add files**, pick `tests/golden/documents/fixtures/02-acdp-chemical.pdf`, upload.
+2. While it runs the row's status word must move **Queued → Reading… → a real word**. It
+   must not sit on Queued and it must not jump straight to the end: `/api/document-scan`
+   sets `documents.status = 'reading'` *before* the model call precisely so the row is
+   honest while the work is in flight.
+3. When it settles the row must read **Expiring** in amber with **Expires 15 November
+   2026** under it — that permit's own date, 51 days out at the time of writing, and the
+   90-day window is computed in SQL by `document_index_v`, not by the page.
+4. The title on the row must be the scan's — **"Standard Air Contaminant Discharge
+   Permit"** — not `02-acdp-chemical.pdf`. The filename belongs on the meta line.
+5. **One** `ai_calls` row must appear with task `document_scan`:
+   `npm run cost -- --since <today>`. Two would mean the old date-extraction call is still
+   firing; zero would mean the scan never ran and the status word is a lie.
+
+### 2. The edge case — an unreadable file lands as could_not_read, with its reason
+
+Take any PDF the parser cannot turn into a document block — `tests/fixtures/`'s blurred
+page is the one to hand — or rename a `.zip` to `.pdf`, which is faster and tests the same
+branch.
+
+1. Upload it. The upload itself **must succeed**: the file is stored and the row exists.
+   A reading we could not produce is not a reason to lose somebody's file.
+2. The row must read **Could not read** in amber, and under it **the reason in plain
+   words**, saying it is our problem and what would fix it. If it says nothing, or says
+   something about the document's contents, that is the §5.1 failure this status exists to
+   end — nothing may be asserted about a document that was never read.
+3. The page must not show an error banner and the network tab must show **200**, not 500.
+   `/api/document-scan` returns a reading, and "we could not read it" is a reading.
+4. `documents.status` in the database must be `could_not_read` — not `reading`. A row
+   stuck on `reading` is a page that spins forever.
+
+### What neither of these can tell you
+
+Whether the reading is **right**. Both tests pass on a scan that identifies the permit as a
+handbook, dates it wrongly and invents its conditions — the row renders, the status
+computes and the cost row is written. That is what the golden documents are for
+(`npm run golden:docs`), and even they only say the output moved.

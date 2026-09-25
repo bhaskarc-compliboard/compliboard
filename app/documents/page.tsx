@@ -82,9 +82,6 @@ function DocumentsPageContent() {
   const [recurrencePeriod, setRecurrencePeriod] = useState('annually')
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState('')
-  const [extractDates, setExtractDates] = useState(true)
-  const [extractingDates, setExtractingDates] = useState<string | null>(null)
-  const [scanningDoc, setScanningDoc] = useState<string | null>(null)
   const [documentReviews, setDocumentReviews] = useState<any[]>([])
   const [pendingDates, setPendingDates] = useState<{title: string; date: string; description: string; is_recurring: boolean; recurrence_period: string | null}[]>([])
   const [selectedDates, setSelectedDates] = useState<Set<number>>(new Set())
@@ -266,37 +263,47 @@ function DocumentsPageContent() {
           }),
         })
         if (!dbRes.ok) throw new Error(`Failed to save ${file.name}`)
+        const { id: newDocId } = await dbRes.json()
+
+        // *** SCANNED ONE AT A TIME, NEVER IN PARALLEL. ***
+        // Each scan is one model call of 20 to 100 seconds against a whole PDF. Firing a folder
+        // of thirty at once would open thirty concurrent calls, hit the rate limit, and give
+        // the person a page where nothing resolves and the failures are not the documents'
+        // fault. Sequential is slower and is what the row statuses describe truthfully.
+        //
+        // A scan that fails does NOT fail the upload. The file is stored and the row exists;
+        // the reading is a separate thing that can be retried. This is why the route never
+        // returns 500 for a reading it could not produce.
+        if (newDocId) {
+          setUploadProgress(`Reading ${i + 1} of ${files.length}: ${file.name}`)
+          try {
+            await fetch('/api/document-scan', {
+              method: 'POST',
+              headers: await authHeaders({ 'Content-Type': 'application/json' }),
+              body: JSON.stringify({ document_id: newDocId }),
+            })
+          } catch (scanErr) {
+            console.error('document-scan:', scanErr)
+          }
+          await loadDocuments(selectedFolderId)
+          await loadAllDocuments()
+        }
       }
       await loadDocuments(selectedFolderId)
       await loadAllDocuments()
 
-      // Save reference before clearing state
-      const uploadedFiles = [...files]
       setFiles([])
       setUploadProgress('')
       setIsRecurring(false)
       setShowUpload(false)
       if (fileInputRef.current) fileInputRef.current.value = ''
 
-      // Extract dates if user opted in
-      if (extractDates) {
-        const lastFile = uploadedFiles[uploadedFiles.length - 1]
-        if (lastFile) {
-          try {
-            const fd = new FormData()
-            fd.append('file', lastFile)
-            fd.append('file_name', lastFile.name)
-            const dateRes = await fetch('/api/extract-dates', { method: 'POST', body: fd })
-            const dateJson = await dateRes.json()
-            if (dateJson.dates_found && dateJson.dates_found.length > 0) {
-              setPendingDates(dateJson.dates_found)
-              setSelectedDates(new Set(dateJson.dates_found.map((_: any, i: number) => i)))
-            }
-          } catch (err) {
-            console.error('Date extraction error:', err)
-          }
-        }
-      }
+      // *** THE SEPARATE DATE-EXTRACTION CALL IS GONE. ***
+      // It was a SECOND model call over the same file, on a route with no auth check and no
+      // ledger row, and it asked a question the scan already answers: the scan returns the
+      // dates a document sets, each with the line it came from. One file, read once — the
+      // vision's rule. `/api/extract-dates` itself stays until Run 5, because the calendar
+      // still calls it.
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : 'Upload failed')
     } finally {
@@ -414,74 +421,7 @@ function DocumentsPageContent() {
     }
   }
 
-  async function handleScanDocument(doc: Document) {
-    if (!companyId || !userId) return
-    setScanningDoc(doc.id)
-    try {
-      const { data: urlData } = await supabase.storage.from('company-documents').createSignedUrl(doc.file_url, 60)
-      if (!urlData?.signedUrl) throw new Error('Could not get file URL')
-      const fileRes = await fetch(urlData.signedUrl)
-      const blob = await fileRes.blob()
-      const file = new File([blob], doc.name, { type: doc.file_type })
-      const fd = new FormData()
-      fd.append('file', file)
-      fd.append('document_id', doc.id)
-      fd.append('document_name', doc.name)
-      fd.append('folder_id', doc.folder_id || '')
-      const folder = folders.find(f => f.id === doc.folder_id)
-      const division = folder?.parent_id ? folders.find(f => f.id === folder.parent_id) : folder
-      fd.append('folder_name', folder?.name || '')
-      fd.append('division_name', division?.name || '')
-      const res = await fetch('/api/document-review', { method: 'POST', body: fd, headers: await authHeaders() })
-      const json = await res.json()
-      if (json.data) {
-        setDocumentReviews(prev => [json.data, ...prev.filter(r => r.document_id !== doc.id)])
-        if (activeTab === 'files') {
-          setViewingReviewId(json.data.id)
-        } else {
-          setExpandedAuditId(json.data.id)
-        }
-      } else {
-        alert('Could not complete review. File type may not be supported.')
-      }
-    } catch (err) {
-      console.error('Scan error:', err)
-      alert('Scan failed. Please try again.')
-    } finally {
-      setScanningDoc(null)
-    }
-  }
 
-  async function handleExtractDates(doc: Document) {
-    if (!companyId || !userId) return
-    setExtractingDates(doc.id)
-    try {
-      const { data } = await supabase.storage.from('company-documents').createSignedUrl(doc.file_url, 60)
-      if (!data?.signedUrl) throw new Error('Could not get file URL')
-      const fileRes = await fetch(data.signedUrl)
-      const blob = await fileRes.blob()
-      const file = new File([blob], doc.name, { type: doc.file_type })
-      const fd = new FormData()
-      fd.append('file', file)
-      fd.append('file_name', doc.name)
-      const dateRes = await fetch('/api/extract-dates', { method: 'POST', body: fd })
-      const dateJson = await dateRes.json()
-      if (dateJson.dates_found && dateJson.dates_found.length > 0) {
-        setPendingDates(dateJson.dates_found)
-        setSelectedDates(new Set(dateJson.dates_found.map((_: any, i: number) => i)))
-      } else if (dateJson.extraction_failed) {
-        // Never read — say that, rather than reporting on contents nobody saw.
-        // CLAUDE.md §5.1.
-        alert(dateJson.extraction_failed.message)
-      } else {
-        alert('No compliance dates found in this document.')
-      }
-    } catch (err) {
-      console.error('Date extraction error:', err)
-    } finally {
-      setExtractingDates(null)
-    }
-  }
 
   const tabs = [
     { key: 'files', label: 'Company Files' },
@@ -597,13 +537,7 @@ function DocumentsPageContent() {
         )}
 
         <div className="pt-2 flex items-center gap-3 border-t border-gray-100">
-          <button onClick={() => {
-            const doc = documents.find(d => d.id === review.document_id) || allDocuments.find(d => d.id === review.document_id)
-            if (doc) handleScanDocument(doc)
-          }} disabled={scanningDoc === review.document_id}
-            className="text-xs text-green-700 hover:text-green-800 font-medium transition-colors disabled:opacity-50">
-            {scanningDoc === review.document_id ? '⟳ Re-scanning...' : '↺ Re-scan document'}
-          </button>
+          
           <span className="text-gray-200">·</span>
           <button onClick={async () => {
             if (!confirm('Delete this review?')) return
@@ -841,12 +775,7 @@ function DocumentsPageContent() {
                               </select>
                             )}
                           </div>
-                          <div className="flex items-center gap-2">
-                            <div onClick={() => setExtractDates(!extractDates)} className={`w-8 h-5 rounded-full cursor-pointer transition-colors relative flex-shrink-0 ${extractDates ? 'bg-green-600' : 'bg-gray-200'}`}>
-                              <div className={`w-3 h-3 bg-white rounded-full absolute top-1 transition-all ${extractDates ? 'left-4' : 'left-1'}`} />
-                            </div>
-                            <label className="text-xs text-gray-600 cursor-pointer" onClick={() => setExtractDates(!extractDates)}>Extract dates</label>
-                          </div>
+                          
                         </div>
                         {uploadError && <p className="text-sm text-red-600">{uploadError}</p>}
                         {uploadProgress && <p className="text-sm text-green-700">{uploadProgress}</p>}
@@ -891,14 +820,7 @@ function DocumentsPageContent() {
                                   <>
                                     <div className="fixed inset-0 z-10" onClick={() => setMoreMenuDocId(null)} />
                                     <div className="absolute left-0 mt-1 w-40 bg-white rounded-xl border border-gray-200 shadow-lg z-20 overflow-hidden">
-                                      <button onClick={() => handleExtractDates(doc)} disabled={extractingDates === doc.id}
-                                        className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50">
-                                        {extractingDates === doc.id ? 'Extracting...' : 'Extract dates'}
-                                      </button>
-                                      <button onClick={() => handleScanDocument(doc)} disabled={scanningDoc === doc.id}
-                                        className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 border-t border-gray-50">
-                                        {scanningDoc === doc.id ? 'Reviewing...' : 'Review'}
-                                      </button>
+
                                       <button onClick={() => handleDownload(doc)}
                                         className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 transition-colors border-t border-gray-50">
                                         Download

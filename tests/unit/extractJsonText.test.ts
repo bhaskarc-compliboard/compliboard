@@ -29,6 +29,7 @@ import test, { describe } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { extractJsonText } from '../../lib/ai.ts'
+import { SCAN_JSON_SCHEMA } from '../../prompts/document-scan.ts'
 
 const DIR = 'tests/fixtures/json-extraction'
 const raw = (name: string) => readFileSync(`${DIR}/${name}`, 'utf8')
@@ -160,5 +161,46 @@ describe('extractJsonText — the behaviours the balanced scan must not lose', (
     const out = extractJsonText('{"identity":{"kind":"permit"')
     assert.ok(out.startsWith('{'), 'something is still returned for a cut-off answer')
     assert.throws(() => JSON.parse(out))
+  })
+})
+
+describe('the failure no extractor can fix — and what replaced the extractor for it', () => {
+  // Documents Run 2b, case 04 run 3. The model wrote two quoted sentences joined by "vs." inside
+  // ONE string value, without escaping the inner quotes:
+  //
+  //     "quote": "Cool cooked beans from 135°F…" vs. "The blast chiller operator records…"
+  //
+  // The string ends at the second quote and `vs.` is a syntax error from there on. There is no
+  // slice of this text that parses, so the balanced scan cannot help and neither could any
+  // other extractor: the bytes are not JSON. Documents Run 3 therefore sends the shape as
+  // `output_config.format` (a json_schema) so the API enforces it, and keeps `extractJsonText`
+  // as the fallback rather than the mechanism.
+  const FIXTURE = 'run2b-04-fsp-food-run3.unescaped-quote.txt'
+
+  test('the fixture still does not parse, and that is the honest result', () => {
+    const text = extractJsonText(raw(FIXTURE))
+    assert.ok(text.startsWith('{'), 'a slice is still returned, so the caller gets its own error')
+    assert.throws(() => JSON.parse(text), /JSON/)
+  })
+
+  test('extractJsonText does not throw on it — the caller decides what a bad answer means', () => {
+    // lib/documentScan.ts keeps the paid text and stores could_not_read; it must never 500.
+    assert.doesNotThrow(() => extractJsonText(raw(FIXTURE)))
+  })
+
+  test('the scan schema declares every key of the contract the prompt asks for', () => {
+    const props = SCAN_JSON_SCHEMA.properties as Record<string, unknown>
+    for (const k of SCAN_KEYS) {
+      assert.ok(k in props, `SCAN_JSON_SCHEMA is missing "${k}" — the schema and the prompt's JSON block must say the same thing`)
+    }
+    assert.equal(SCAN_JSON_SCHEMA.type, 'object')
+  })
+
+  test('the schema compels no content: nothing is required, so a field it cannot read stays null', () => {
+    // A schema that forced every field would make the model invent a doc_date rather than
+    // return null. The syntax is enforced; the content is not.
+    assert.equal((SCAN_JSON_SCHEMA as Record<string, unknown>).required, undefined)
+    const gaps = (SCAN_JSON_SCHEMA.properties as any).gaps.items
+    assert.equal(gaps.required, undefined)
   })
 })

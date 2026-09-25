@@ -98,6 +98,16 @@ content, composer and the footer's contents all share those two edges.
 Alignment on two edges instead of four is most of what makes a page look
 deliberate.
 
+**Width, as an addition from the Documents section.** Reading surfaces
+stay at 775; working surfaces — Documents, then Audits and Calendar —
+are 900, because a row that carries a title, agency, kind, site, date
+and status needs a third column and Group by None becomes a real table.
+With the 224px sidebar this leaves 78px of margin at 1280, 121 at 1366
+and 158 at 1440. The drawer stays at 720.
+
+*The layout chat owns this file. This paragraph is the Documents
+section's one addition to it.*
+
 **No boxes.** This is the rule that did the most work. Answers, list
 rows, checklist items, nudges and status notes all sit directly on the
 page. Separation comes from hairlines (`divide-y divide-gray-100`) and

@@ -10181,3 +10181,9 @@ on the day rather than two design passes later.
 **Reversal condition:** the model rule is reversed by unsetting four variables — that is what it
 is for. The persistence fix is not a preference and is not reversible: a generated step that is
 not written down is a step that will be bought again.
+
+---
+
+## 131. DOCUMENTS, RUNS D-0 TO 2b — 25 September 2026
+
+Documents, Runs D-0 to 2b (25 Sep 2026). The document scan is a new path, lib/documentScan.ts, one open model call with its own task 'document_scan' and variable AI_MODEL_DOCUMENT_SCAN falling back to the judgement tier; the old review path is untouched and still feeds the audit engine and the compliance attach card until they are rewired. Migrations 040 to 042 carry the contract: documents.status and source, document_scans, document_gaps, document_conditions, document_deadlines, company_labels, fact_proposals with document_id and a one-source CHECK, calendar_events.document_id, basis read-or-inferred on gaps and facts, and cited_sources distinct from billed searches. Measured: a scan's cost is almost entirely search rounds re-billing the context, not the document; one paid answer in five was being discarded by extractJsonText, fixed by a balanced-brace scan with the discarded answers as regression fixtures; the ledger counted refused searches, fixed to the API's billed count; a quote the model paraphrased is kept and flagged, never dropped; label feedback works only when one company's scans run one after another. Golden documents: six specs with answer keys written by the chat, seven fixtures rendered from their text and verified against the PDF text layer, judged by must-contain and must-not, never by count. Haiku's quality results are recorded and not acted on; the model bake-off comes after the module works.
