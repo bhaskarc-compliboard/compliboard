@@ -32,9 +32,13 @@ export async function GET(request: NextRequest) {
 
     // Ordered, every one of them. An unordered list re-shuffles when an unrelated row is
     // updated, and a report a person is reading must not rearrange itself.
-    const [scan, gaps, conditions, deadlines, facts, corrections, versions, sites, labels] = await Promise.all([
+    const [scan, gaps, conditions, deadlines, facts, corrections, versions, sites, labels, lists] = await Promise.all([
       scanId ? db.from('document_scans').select('*').eq('id', scanId).maybeSingle() : { data: null },
-      db.from('document_gaps').select('*').eq('document_id', documentId).order('ordinal'),
+      // EVERY gap row for this document, not only the current scan's. A gap from an earlier
+      // reading that still carries somebody's checklist has to stay reachable — the route sorts
+      // them into "now" and "from earlier readings" below.
+      db.from('document_gaps').select('*').eq('document_id', documentId)
+        .order('scan_id').order('ordinal'),
       db.from('document_conditions').select('*').eq('document_id', documentId).order('ordinal'),
       db.from('document_deadlines').select('*').eq('document_id', documentId).order('due_on', { nullsFirst: false }).order('title'),
       db.from('fact_proposals').select('*').eq('document_id', documentId).order('created_at').order('id'),
@@ -46,6 +50,13 @@ export async function GET(request: NextRequest) {
         .eq('company_id', companyId).order('uploaded_at', { ascending: false }),
       db.from('entities').select('id, name').eq('company_id', companyId).order('name'),
       db.from('company_labels').select('kind, label').eq('company_id', companyId).order('kind').order('label'),
+      // Checklists made from this document, with their items, so the report can show progress
+      // against a gap weeks later — "checklist made 17 Sep · 2 of 5 done" is the vision's own
+      // example and the reason the link is on the gap.
+      db.from('checklists')
+        .select('id, title, created_at, document_gap_id, checklist_items(id, completed)')
+        .eq('company_id', companyId).eq('document_id', documentId)
+        .order('created_at', { ascending: false }),
     ])
 
     const all = versions.data ?? []
@@ -54,10 +65,19 @@ export async function GET(request: NextRequest) {
       v.document_id === row.version_of ||
       v.version_of === documentId)
 
+    // Gaps belonging to the CURRENT scan are the report's gaps. Anything older is shown only
+    // when a person has work attached to it, because a superseded finding with nothing hanging
+    // off it is noise, and one with a checklist on it is a fortnight of somebody's afternoons.
+    const allGaps = (gaps.data ?? []) as Array<Record<string, unknown>>
+    const current = allGaps.filter((g) => g.scan_id === scanId)
+    const listedGapIds = new Set((lists.data ?? []).map((c: Record<string, unknown>) => c.document_gap_id))
+    const earlier = allGaps.filter((g) => g.scan_id !== scanId && listedGapIds.has(g.id))
+
     return NextResponse.json({
       row,
       scan: scan.data ?? null,
-      gaps: gaps.data ?? [],
+      gaps: current,
+      earlierGaps: earlier,
       conditions: conditions.data ?? [],
       deadlines: deadlines.data ?? [],
       facts: facts.data ?? [],
@@ -65,6 +85,17 @@ export async function GET(request: NextRequest) {
       versions: chain,
       sites: sites.data ?? [],
       labels: labels.data ?? [],
+      checklists: (lists.data ?? []).map((c: Record<string, unknown>) => {
+        const items = (c.checklist_items ?? []) as Array<{ completed: boolean }>
+        return {
+          id: c.id, title: c.title, created_at: c.created_at,
+          document_gap_id: c.document_gap_id,
+          // Read LIVE off the items rather than stored on the checklist: progress that is
+          // written down is progress that goes stale the moment somebody ticks something.
+          done: items.filter((i) => i.completed).length,
+          total: items.length,
+        }
+      }),
     })
   } catch (error) {
     console.error('documents/report:', error)

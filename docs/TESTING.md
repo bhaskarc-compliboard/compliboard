@@ -1684,3 +1684,105 @@ no date is not evidence of anything.
 Whether the **reading** is right. Every one passes on a drawer that renders a wrong kind,
 an invented citation and a date read off the wrong line perfectly. `npm run golden:docs` is
 the test for that, and even it only says the output moved.
+
+---
+
+## Documents — what a person does with a report (Run 5)
+
+Ten tests. Four of them are about a model call and cost money; the other six are free.
+The ones worth your time are the last three, because each is a place where a thing a
+person did could quietly be lost — a checklist orphaned by a re-scan, a fact confirmed in
+one screen and still pending in another, a draft silently replaced under their cursor.
+
+Run signed in, against staging, on `/documents` with the seven golden fixtures uploaded.
+
+### 1. A checklist from one gap
+
+Open 01-eap-chemical, click **Make a checklist** on a gap. The gap then shows
+**"<title> · checklist made <date> · 0 of N done"**, linking to the checklist. Open it: it
+says where it came from, and the items read as things to do on a Tuesday — "Write the
+missing reporting procedure", not "Ensure compliance with 1910.38". Tick one item and
+reopen the report: the line reads **1 of N done**, because the progress is read live off
+the items rather than stored.
+
+### 2. A checklist for all the gaps
+
+**Make a checklist for all N gaps** — the drawer's one outlined button. The result has one
+section per open gap, each item naming the gap it came from. A dismissed gap must not
+appear: it is closed, and making work out of it would undo the dismissal.
+
+### 3. A draft under a draftable gap
+
+On a gap the scan marked `draftable`, **Draft this section**. The draft appears under the
+gap in the serif, above the line saying nothing has been written into your file.
+
+**Read it for the blanks.** Anything only you have — a name, a phone number, a headcount —
+must appear as `[name of the plan coordinator]`, not as a plausible invention. A draft that
+has quietly filled in a coordinator's name is the failure this test exists to catch, because
+nobody would know to check it.
+
+Then confirm the file is untouched: **Open the file** in the footer and read it. The draft
+is not in it and never will be.
+
+### 4. A second draft replaces the first and says so
+
+**Draft it again** on the same gap. The new text replaces the old, and a line at the top of
+the drawer reads **"This draft replaced the one that was here before."** Swapping the text
+silently under somebody half way through copying it is the thing this prevents.
+
+### 5. Research this
+
+**Research this** on a gap opens the Compliance Workspace with the composer already holding
+the gap's title and fix, and the document attached below it. Send it: the answer must show
+the document was carried. Reload the workspace afterwards — the composer must **not**
+re-fill, because the parameters are consumed on arrival.
+
+### 6. To confirm shows the count and the three
+
+The sidebar reads **To confirm** with a count. The page shows **three at a time** with
+*Show more*, and a line stating the order: *"Ranked by what each answer unblocks: the ones
+we can say something about first, then what we read in a document, then the newest."*
+Check the order matches: a proposal with an "affects" line above one without; a document
+proposal above a conversation one; newest first within that.
+
+### 7. Confirm a fact whose key names a switch
+
+Find a proposal whose line ends *"answers one of the questions we ask about your company"*.
+Confirm it. The message reads **"Confirmed, and recorded against the question it answers."**
+In the database, `company_switches` has the row and `switch_determinations` has the
+determination behind it — written by `/api/switches/answer`, the same path a person
+answering in the workspace uses, not a second copy of it.
+
+### 8. Confirm a fact whose key names nothing
+
+Confirm one without that line. `company_facts` gets one row carrying the proposal and the
+document it came from. Confirm a **different** proposal with the same key: there is still
+one row, now holding the newer value — one answer per question, not a history nobody can
+resolve at read time.
+
+Open the report drawer for that document: the fact reads **Confirmed** there too.
+
+### 9. Not right, with a reason, in either place
+
+Reject a proposal from the To confirm page with a reason. Open the document's drawer: it
+reads **"Not right — you said: …"**. Do the reverse — reject from the drawer, then load To
+confirm — and it is gone from the queue. One row, two doors.
+
+### 10. A re-scan keeps a gap's checklist when the gap comes back
+
+With a checklist on a gap of 01, click **Read it again**.
+
+- **When the new scan raises the same gap** — matched on its title, case-insensitively, or
+  on its citation — the checklist link appears on the new gap, with its progress intact.
+- **When it does not** the checklist is not orphaned: the old gap is still on the report
+  under **From earlier readings**, with its checklist and progress, so the work somebody
+  did survives a reading that changed its mind.
+
+Check both. The second is the one that matters, because a model that renames a gap between
+runs is not an edge case — Documents Run 2 measured exactly that.
+
+### What none of these ten can tell you
+
+Whether the checklist is the *right* work, or the draft is text a regulator would accept.
+Both are a model's output against a gap that was itself a model's output. The golden
+documents test the reading; nothing here tests the advice, and nothing yet does.

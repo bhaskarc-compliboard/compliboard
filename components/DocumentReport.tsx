@@ -25,6 +25,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { authHeaders } from '@/lib/supabase'
 import { Drawer, printDrawer } from '@/components/Drawer'
+import { DRAFT_NOTICE } from '@/prompts/document-draft'
 
 /* ── the shapes, as the report route returns them ─────────────────────────── */
 interface Row {
@@ -43,6 +44,11 @@ interface Gap {
   citation: string | null; citation_url: string | null; locator: string | null
   basis: string; quote: string | null; quote_verified: boolean | null
   status: string; dismissed_reason: string | null
+  draftable: boolean; draft_text: string | null; draft_created_at: string | null
+}
+interface ChecklistLink {
+  id: string; title: string; created_at: string
+  document_gap_id: string | null; done: number; total: number
 }
 interface Condition { id: string; title: string; condition_ref: string | null; evidence_expected: string | null }
 interface Deadline {
@@ -65,9 +71,11 @@ interface Scan {
 }
 interface Report {
   row: Row; scan: Scan | null; gaps: Gap[]; conditions: Condition[]; deadlines: Deadline[]
+  earlierGaps: Gap[]
   facts: Fact[]; corrections: Array<{ field: string; new_value: unknown; reason: string | null }>
   versions: Version[]; sites: Array<{ id: string; name: string }>
   labels: Array<{ kind: string; label: string }>
+  checklists: ChecklistLink[]
 }
 
 const KIND_LABEL: Record<string, string> = {
@@ -148,6 +156,10 @@ export default function DocumentReport({ documentId, companyName, onClose, onCha
   const [reasonFor, setReasonFor] = useState<string | null>(null)
   const [edit, setEdit] = useState<{ kind: string; agencies: string; subjects: string; site: string; doc_date: string }>(
     { kind: '', agencies: '', subjects: '', site: '', doc_date: '' })
+  /** The gap a model call is running for, so only that row says "Working…". */
+  const [working, setWorking] = useState<string | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
+  const [copied, setCopied] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     const res = await fetch(`/api/documents/report?document_id=${documentId}`, { headers: await authHeaders() })
@@ -178,6 +190,62 @@ export default function DocumentReport({ documentId, companyName, onClose, onCha
     } finally { setBusy(false) }
   }
 
+  /**
+   * *** THE SAME ROUTE THE To confirm PAGE USES. ***
+   * A fact confirmed here and the same fact confirmed there are one row changing state, so
+   * neither place can disagree with the other and nobody confirms twice. It also means the
+   * destination logic — a key naming a switch goes through the declared-fact path, anything else
+   * to company_facts — lives once rather than in whichever screen was written first.
+   */
+  async function verdictOnFact(factId: string, verdict: 'accepted' | 'rejected', reason?: string) {
+    setBusy(true); setNotice(null)
+    try {
+      const res = await fetch('/api/to-confirm', {
+        method: 'POST', headers: await authHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ proposal_id: factId, verdict, reason }),
+      })
+      const j = await res.json().catch(() => null)
+      if (!res.ok) { setNotice(j?.error ?? 'We could not save that just now.'); return }
+      if (verdict === 'accepted') {
+        setNotice(j.wrote === 'company_switches'
+          ? 'Confirmed, and recorded against the question it answers.'
+          : 'Confirmed.')
+      }
+      await load(); onChanged()
+    } finally { setBusy(false) }
+  }
+
+  async function runChecklist(what: { gap_id?: string; all?: boolean }) {
+    setWorking(what.gap_id ?? 'all'); setNotice(null)
+    try {
+      const res = await fetch('/api/document-checklist', {
+        method: 'POST', headers: await authHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ document_id: documentId, ...what }),
+      })
+      const j = await res.json().catch(() => null)
+      // §5.1: a refusal is a sentence a person can act on, not a silent nothing.
+      if (!res.ok) { setNotice(j?.error ?? 'We could not make a checklist just now.'); return }
+      setNotice(`Checklist made: ${j.title} — ${j.counts.must_do} to do, ${j.counts.good_to_have} worth doing.`)
+      await load(); onChanged()
+    } finally { setWorking(null) }
+  }
+
+  async function runDraft(gapId: string) {
+    setWorking(`draft-${gapId}`); setNotice(null)
+    try {
+      const res = await fetch('/api/document-draft', {
+        method: 'POST', headers: await authHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ document_id: documentId, gap_id: gapId }),
+      })
+      const j = await res.json().catch(() => null)
+      if (!res.ok) { setNotice(j?.error ?? 'We could not write that draft just now.'); return }
+      // SAID OUT LOUD WHEN IT REPLACED SOMETHING, rather than swapping the text under somebody
+      // who may have been half way through copying it.
+      setNotice(j.replaced ? 'This draft replaced the one that was here before.' : null)
+      await load()
+    } finally { setWorking(null) }
+  }
+
   if (!r) {
     return <Drawer title="Reading…" onClose={onClose} company={companyName}>
       <p className="text-[14px] text-gray-400">Opening the report.</p>
@@ -201,6 +269,14 @@ export default function DocumentReport({ documentId, companyName, onClose, onCha
 
   const footer = (
     <>
+      {/* THE ONE OUTLINED BUTTON, and the only one this run has. DESIGN.md §4: one primary or
+          outlined action, everything else a text action. */}
+      {isProgram && openGaps.length > 0 && (
+        <button disabled={!!working} onClick={() => runChecklist({ all: true })}
+          className="rounded-lg border border-[var(--green)] px-3.5 py-1.5 text-[14px] font-medium text-[var(--green)] hover:bg-[var(--green-wash)] disabled:border-gray-200 disabled:text-gray-300">
+          {working === 'all' ? 'Working…' : `Make a checklist for all ${openGaps.length} gaps`}
+        </button>
+      )}
       <button onClick={async () => {
         const j = await act({ action: 'file_url' })
         if (j?.url) window.open(j.url, '_blank', 'noopener')
@@ -256,6 +332,10 @@ export default function DocumentReport({ documentId, companyName, onClose, onCha
 
   return (
     <Drawer title={row.title} sub={sub} company={companyName} onClose={onClose} footer={footer}>
+      {notice && (
+        <p className="mb-4 rounded-lg bg-[var(--green-wash)] px-3 py-2 text-[13px] text-gray-800">{notice}</p>
+      )}
+
       {/* 1 ── status and the date that matters, on one line */}
       <Section title="Status">
         <p className="text-[14px]">
@@ -396,7 +476,7 @@ export default function DocumentReport({ documentId, companyName, onClose, onCha
       </Section>
 
       {/* 5 ── gaps, for programs and policies only */}
-      {isProgram && (openGaps.length > 0 || dismissed.length > 0) && (
+      {isProgram && (openGaps.length > 0 || dismissed.length > 0 || (r.earlierGaps ?? []).length > 0) && (
         <Section title="Gaps">
           <ol className="space-y-4">
             {openGaps.map((g, i) => (
@@ -413,16 +493,80 @@ export default function DocumentReport({ documentId, companyName, onClose, onCha
                   {g.citation && g.locator && ' · '}
                   {g.locator}
                 </p>
+                {/* THE CHECKLIST MADE FROM THIS GAP, with its progress read live off the items.
+                    "checklist made 17 Sep · 2 of 5 done" weeks later is the point of the link. */}
+                {r.checklists.filter((c) => c.document_gap_id === g.id).map((c) => (
+                  <p key={c.id} className="mt-1 text-[12px] text-gray-500">
+                    <a href={`/compliance?checklist=${c.id}`} className="underline hover:text-gray-800">{c.title}</a>
+                    {' '}· checklist made {fmt(c.created_at)} · {c.done} of {c.total} done
+                  </p>
+                ))}
+
+                {g.draft_text && (
+                  <div className="mt-2 rounded-lg bg-gray-50 p-3">
+                    <p className="text-[12px] text-gray-500">{DRAFT_NOTICE}</p>
+                    <pre className="mt-2 whitespace-pre-wrap font-serif text-[15px] leading-relaxed text-gray-800">{g.draft_text}</pre>
+                    <div className="mt-2 flex items-center gap-3 text-[12px]">
+                      <button onClick={() => { navigator.clipboard?.writeText(g.draft_text ?? ''); setCopied(g.id) }}
+                        className="text-[var(--green)]">{copied === g.id ? 'Copied' : 'Copy'}</button>
+                      <span className="text-gray-400">drafted {fmt(g.draft_created_at)}</span>
+                    </div>
+                  </div>
+                )}
+
                 {reasonFor === g.id ? (
                   <ReasonBox label="Why is this not right?" onCancel={() => setReasonFor(null)}
                     onSave={async (reason) => { await act({ action: 'dismiss_gap', gap_id: g.id, reason }); setReasonFor(null) }} />
                 ) : (
-                  <button onClick={() => setReasonFor(g.id)}
-                    className="mt-1 text-[12px] text-gray-500 underline hover:text-gray-800">Not right</button>
+                  <div className="mt-1.5 flex flex-wrap items-center gap-3 text-[12px]">
+                    {/* E in the design puts the actions under the gap they belong to. */}
+                    <button disabled={!!working} onClick={() => runChecklist({ gap_id: g.id })}
+                      className="text-gray-600 underline hover:text-gray-900 disabled:text-gray-300">
+                      {working === g.id ? 'Working…' : 'Make a checklist'}
+                    </button>
+                    {/* ONLY WHEN THE SCAN SAID THE TEXT COULD BE WRITTEN. A gap needing their
+                        floor plan is not one we can draft, and offering it would be a promise
+                        the route then refuses. */}
+                    {g.draftable && (
+                      <button disabled={!!working} onClick={() => runDraft(g.id)}
+                        className="text-gray-600 underline hover:text-gray-900 disabled:text-gray-300">
+                        {working === `draft-${g.id}` ? 'Writing…' : (g.draft_text ? 'Draft it again' : 'Draft this section')}
+                      </button>
+                    )}
+                    <button onClick={() => {
+                      const q = [g.title, g.fix].filter(Boolean).join('. ')
+                      window.location.href = `/compliance?ask=${encodeURIComponent(q)}&document=${documentId}`
+                    }} className="text-gray-600 underline hover:text-gray-900">Research this</button>
+                    <button onClick={() => setReasonFor(g.id)}
+                      className="text-gray-500 underline hover:text-gray-800">Not right</button>
+                  </div>
                 )}
               </li>
             ))}
           </ol>
+          {/* A GAP FROM AN EARLIER READING THAT STILL CARRIES WORK. The new scan did not raise
+              it — the model changed its mind, or renamed it past matching — and the checklist
+              somebody has been working through does not vanish because of that. */}
+          {(r.earlierGaps ?? []).length > 0 && (
+            <div className="mt-5">
+              <h4 className="text-[12px] font-medium uppercase tracking-wide text-gray-400">From earlier readings</h4>
+              <ul className="mt-2 space-y-2">
+                {r.earlierGaps.map((g) => (
+                  <li key={g.id}>
+                    <p className="text-[13px] text-gray-600">{g.title}</p>
+                    {r.checklists.filter((c) => c.document_gap_id === g.id).map((c) => (
+                      <p key={c.id} className="text-[12px] text-gray-500">
+                        <a href={`/compliance?checklist=${c.id}`} className="underline hover:text-gray-800">{c.title}</a>
+                        {' '}· checklist made {fmt(c.created_at)} · {c.done} of {c.total} done
+                      </p>
+                    ))}
+                    <p className="text-[12px] text-gray-400">The latest reading did not raise this.</p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           {dismissed.length > 0 && (
             // CLOSED, NEVER DELETED, WITH THE REASON. The next scan is shown these so it does
             // not raise them again, and a person can see what was decided and why.
@@ -514,10 +658,10 @@ export default function DocumentReport({ documentId, companyName, onClose, onCha
                 {f.status === 'proposed' ? (
                   reasonFor === f.id ? (
                     <ReasonBox label="Why is this not right?" onCancel={() => setReasonFor(null)}
-                      onSave={async (reason) => { await act({ action: 'fact', fact_id: f.id, verdict: 'rejected', reason }); setReasonFor(null) }} />
+                      onSave={async (reason) => { await verdictOnFact(f.id, 'rejected', reason); setReasonFor(null) }} />
                   ) : (
                     <div className="mt-1 flex items-center gap-3">
-                      <button disabled={busy} onClick={() => act({ action: 'fact', fact_id: f.id, verdict: 'accepted' })}
+                      <button disabled={busy} onClick={() => verdictOnFact(f.id, 'accepted')}
                         className="text-[12px] text-[var(--green)] disabled:text-gray-300">Confirm</button>
                       <button onClick={() => setReasonFor(f.id)}
                         className="text-[12px] text-gray-500 underline hover:text-gray-800">Not right</button>

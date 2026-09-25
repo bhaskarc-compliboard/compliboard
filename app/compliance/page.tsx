@@ -87,6 +87,41 @@ export default function CompliancePage() {
    */
   const [pendingDoc, setPendingDoc] = useState<{ id: string; name: string } | null>(null)
 
+  /**
+   * ARRIVING FROM A GAP — Documents Run 5, and this is the whole change to this page.
+   *
+   * "Research this" on a gap in the report drawer opens the workspace with the gap as the
+   * question and the document attached, because retyping the gap and re-finding the file is the
+   * work the link exists to save.
+   *
+   * Two URL parameters, read once on load: `?ask=` fills the composer, `?document=` attaches by
+   * id through the SAME `pendingDoc` the paperclip sets, so the research call carries it by the
+   * path that already exists. Nothing else here changes — no new state, no new attach flow, no
+   * change to how a question is sent.
+   *
+   * `window.location.search` rather than `useSearchParams()` deliberately: the hook would need
+   * this page wrapped in a Suspense boundary it does not have, and restructuring the workspace's
+   * top level is not this run's to do. The layout chat owns this file.
+   */
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const ask = params.get('ask')
+    const documentId = params.get('document')
+    if (!ask && !documentId) return
+    if (ask) setBox(ask)
+    if (documentId) {
+      (async () => {
+        const res = await fetch('/api/documents/index', { headers: await authHeaders() })
+        if (!res.ok) return
+        const json = await res.json()
+        const row = (json.documents ?? []).find((d: { document_id: string }) => d.document_id === documentId)
+        if (row) setPendingDoc({ id: documentId, name: row.file_name ?? row.title })
+      })()
+    }
+    // The parameters are consumed: a reload should not re-fill a composer somebody has cleared.
+    window.history.replaceState({}, '', window.location.pathname)
+  }, [])
+
   // ---- the conversation on screen ----
   const [exchanges, setExchanges] = useState<Exchange[]>([])
   const [topicId, setTopicId] = useState('')

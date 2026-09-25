@@ -615,6 +615,27 @@ export async function saveScan(
   if (error) throw new Error(`document_scans: ${error.message}`)
   const scanId = row.id as string
 
+  // *** WHAT A PERSON ALREADY DID SURVIVES A RE-SCAN. ***
+  // A checklist made from a gap points at that gap's row, and a re-scan writes NEW gap rows —
+  // so without this the link would dangle the first time somebody asked us to read the document
+  // again, and a fortnight of ticked items would be sitting on a gap nothing shows any more.
+  //
+  // MATCHED ON TITLE (case-insensitive, punctuation and spacing ignored) OR CITATION. Both,
+  // because Documents Run 2 measured the model renaming the same finding between runs while
+  // keeping the rule number, and occasionally the reverse. Either is enough; neither is
+  // guessed at beyond that — a gap that matches nothing keeps its checklist on the OLD row,
+  // which the report still shows under "From earlier readings" rather than orphaning it.
+  const { data: priorLinks } = await db.from('checklists')
+    .select('id, document_gap_id').eq('document_id', documentId).not('document_gap_id', 'is', null)
+  const carry = (priorLinks ?? []) as Array<{ id: string; document_gap_id: string }>
+  let priorGaps: Array<{ id: string; title: string; citation: string | null }> = []
+  if (carry.length) {
+    const { data } = await db.from('document_gaps')
+      .select('id, title, citation').in('id', carry.map((c) => c.document_gap_id))
+    priorGaps = (data ?? []) as typeof priorGaps
+  }
+  const key = (s: string | null) => String(s ?? '').toLowerCase().replace(/[^a-z0-9]/g, '')
+
   if (scan.gaps.length) {
     const { error: e } = await db.from('document_gaps').insert(scan.gaps.map((g, i) => ({
       scan_id: scanId, document_id: documentId, company_id: companyId, ordinal: i + 1,
@@ -624,6 +645,21 @@ export async function saveScan(
       basis: g.basis,
     })))
     if (e) throw new Error(`document_gaps: ${e.message}`)
+
+    if (carry.length && priorGaps.length) {
+      const { data: fresh } = await db.from('document_gaps')
+        .select('id, title, citation').eq('scan_id', scanId)
+      for (const link of carry) {
+        const old = priorGaps.find((p) => p.id === link.document_gap_id)
+        if (!old) continue
+        const match = (fresh ?? []).find((n: { title: string; citation: string | null }) =>
+          key(n.title) === key(old.title)
+          || (!!old.citation && !!n.citation && key(n.citation) === key(old.citation)))
+        // No match: the link stays where it is. The old gap row is not deleted — nothing in this
+        // module deletes a gap — so the checklist is still reachable, and the report lists it.
+        if (match) await db.from('checklists').update({ document_gap_id: match.id }).eq('id', link.id)
+      }
+    }
   }
   if (scan.conditions.length) {
     const { error: e } = await db.from('document_conditions').insert(scan.conditions.map((c, i) => ({

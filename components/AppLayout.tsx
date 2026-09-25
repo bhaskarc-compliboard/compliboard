@@ -19,6 +19,10 @@ const NAV_ITEMS = [
   { label: 'Compliance Workspace', href: '/compliance' },
   { label: 'HR Workspace', href: '/hr' },
   { label: 'Company Documents', href: '/documents' },
+  // THE COUNT IS PART OF THE ITEM. "To confirm" with nothing waiting is a door nobody opens;
+  // "To confirm 3" is the one thing on this nav that asks for a minute rather than offering a
+  // place to go. WORKSPACE.md §7.5 gives the queue its own home rather than a dashboard panel.
+  { label: 'To confirm', href: '/to-confirm', badge: 'toConfirm' as const },
   { label: 'Calendar', href: '/calendar' },
   { label: 'My Account', href: '/account', soon: false },
 ]
@@ -37,6 +41,21 @@ export default function AppLayout({ children, title, didYouKnow }: AppLayoutProp
   const [copied, setCopied] = useState(false)
   const [companyName, setCompanyName] = useState('')
   const [toast, setToast] = useState<string | null>(null)
+  const [toConfirm, setToConfirm] = useState<number | null>(null)
+
+  // Read once per page load. A live count would mean polling every screen in the product for a
+  // number that changes when the person themselves changes it.
+  useEffect(() => {
+    (async () => {
+      try {
+        const { authHeaders } = await import('@/lib/supabase')
+        const res = await fetch('/api/to-confirm', { headers: await authHeaders() })
+        if (!res.ok) return
+        const j = await res.json()
+        setToConfirm(j.count ?? 0)
+      } catch { /* the nav must render whether or not this answers */ }
+    })()
+  }, [pathname])
 
   useEffect(() => {
     async function loadCompany() {
@@ -135,6 +154,12 @@ export default function AppLayout({ children, title, didYouKnow }: AppLayoutProp
                   : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 cursor-pointer'
               }`}>
               <span className="flex-1 text-left">{item.label}</span>
+              {/* A COUNT, NOT A DOT. "3" says how much work; a dot says only that something
+                  happened, which is the kind of badge people learn to ignore. Nothing is shown
+                  at zero — an empty queue should not ask for attention. */}
+              {item.badge === 'toConfirm' && !!toConfirm && (
+                <span className="rounded-md bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600">{toConfirm}</span>
+              )}
               {item.soon && (
                 <span className="text-xs px-1.5 py-0.5 rounded-md bg-gray-100 text-gray-400">
                   Soon
