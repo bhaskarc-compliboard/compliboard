@@ -3,15 +3,19 @@
 **Date written:** 26 September 2026
 **Target:** production (`dsfwmafnphdlfogetsus`)
 **Status when written:** NOT PUSHED. Nothing in this note has been applied to production.
-**Last production push:** migration `039_turns_attached_document.sql`, commit `ede8996`
+**Last production push:** the deployed code is `origin/main` at commit `fa60e9c`; the last
+migration applied is `039_turns_attached_document.sql`, which landed in commit `ede8996`
 (23 September). Established by `npm run preflight`, which printed production's 40 applied
-migrations in full and subtracted the 54 on disk.
+migrations in full and subtracted the files on disk, and by `git status -sb`: **21 commits
+ahead of `origin/main`**, and a push to `main` is what deploys (`RELEASE.md`).
 
-> **`docs/RELEASE.md` does not exist in this repository.** Nothing anywhere references it —
-> not `CLAUDE.md`, not `docs/README.md`, not `package.json`. The preflight section below is
-> therefore **incomplete by instruction**: the owner chose to hold it until the file is
-> provided rather than have a release procedure guessed at. What has been run is recorded; what
-> RELEASE.md may additionally require has not been.
+**`docs/RELEASE.md` is the procedure.** It was added to the repository on the morning of 26
+September, after this note was first drafted; §6 below follows it step by step. Two things in
+it change what this release has to do, and both are called out where they belong: **migrations
+go first, then variables, then the code push** (§6), and **four `AI_MODEL_*` variables are set
+on Vercel Production**, which contradicts `CLAUDE.md` §3.4a and makes the scan's production
+model something the owner must read off the dashboard rather than something this note can
+state (§3).
 
 ---
 
@@ -66,7 +70,7 @@ preceded Documents; the rest are Documents Runs 1 to 7.
 
 ---
 
-## 2. Migrations 040 to 053, and what their verify blocks do to production data
+## 2. Migrations 040 to 054, and what their verify blocks do to production data
 
 Fourteen pending, plus `054` added by this preflight (§4 below). **Every one of them runs a
 `DO` block that writes rows and then removes them.** That is worth stating plainly because
@@ -116,7 +120,7 @@ status is `uploaded`. That is the point of it.
 
 | Variable | Production needs it? | Notes |
 |---|---|---|
-| `AI_MODEL_DOCUMENT_SCAN` | **No — leave unset** | Optional. Unset falls back to the judgement tier, `claude-sonnet-4-5`. An unset variable is the product's behaviour; a set one is a local decision (`CLAUDE.md` §3.4a). Local builds point it at Haiku |
+| `AI_MODEL_DOCUMENT_SCAN` | **No — leave unset** | Optional. Unset falls back to **the judgement tier**, and see the conflict below: what that resolves to on production is not knowable from this repository. Local builds point it at Haiku (`CLAUDE.md` §3.4a) |
 | `AI_MODEL_DOCUMENT_DRAFT` | **No — leave unset** | Optional. Unset falls back to the prose tier |
 | `AI_SCAN_STRUCTURED` | **No — leave unset** | Default is on. Only the exact string `false` turns the JSON schema off; the prose path loses about one answer in five to an unparseable brace (Documents Run 2b). It exists so the two can be compared, not as a switch to throw |
 | `NOTIFY_TEST_TO` | **NO — MUST NOT EXIST** | Staging only. If it is set on production, **every customer's batch email goes to that address instead of to them.** Check it is absent before the push and after |
@@ -128,6 +132,28 @@ status is `uploaded`. That is the point of it.
 `AI_MODEL_DOCUMENT_SCAN`, `AI_MODEL_DOCUMENT_DRAFT`, `AI_SCAN_STRUCTURED` and
 `NEXT_PUBLIC_APP_URL` were added to `.env.example` by this preflight; three of the four existed
 in code and had never been written down.
+
+### ⚠ Two documents disagree about production's models, and the scan's model depends on it
+
+`RELEASE.md` lists `AI_MODEL_PROSE`, `AI_MODEL_JUDGEMENT`, `AI_MODEL_SUBSTEPS` and
+`AI_MODEL_SUMMARY` among the nine variables **set on Vercel Production on 23 September**.
+`CLAUDE.md` §3.4a says the opposite in as many words: *"Production is untouched by this: those
+variables are UNSET there, so it runs the code defaults."*
+
+They cannot both be right, and the scan resolves as:
+
+```
+AI_MODEL_DOCUMENT_SCAN  ||  AI_MODEL_JUDGEMENT  ||  AI_MODEL  ||  'claude-sonnet-4-5'
+```
+
+So **what model reads a customer's document on production is not knowable from this
+repository.** If `AI_MODEL_JUDGEMENT` is set to Haiku on Vercel — which is what it is set to
+locally — every scan in this release runs on Haiku, and this note's cost figures and the smoke
+test's model assertion are both wrong.
+
+**Before the push: open the Vercel dashboard, read the value of `AI_MODEL_JUDGEMENT`, and
+correct whichever of the two documents is out of date.** Smoke test step 6 asserts against
+whatever that value turns out to be, not against an assumption.
 
 ---
 
@@ -174,43 +200,122 @@ The two existing crons are unchanged: `summarise` at 03:00, `delete` at 03:30.
 
 ---
 
-## 6. Preflight
+## 6. Preflight, and the procedure `RELEASE.md` sets out
 
-**HELD — `docs/RELEASE.md` is not in the repository, so its list could not be followed.** What
-follows is the four steps this brief named plus the repo's own read-only production preflight.
-It is not a claim that the release procedure is complete.
+### The one rule, and the one place this release strains it
+
+> **Migrations first, then variables, then code.** Every migration is additive, so the old code
+> ignores new tables and nothing changes for customers when a migration lands.
+
+Fourteen of the fifteen are additive in exactly that sense. **054 is not** — it runs
+`update public.documents set status = 'held'` against live rows. So between step 2 and step 5
+production runs the *old* code against 38 documents carrying a status the old code has never
+seen.
+
+**That is safe here, and it was checked rather than assumed.** `documents.status` is added by
+migration 040, so it does not exist on production today; and the deployed tree
+(`origin/main`, `fa60e9c`) reads it nowhere — `git grep status origin/main -- app/documents/page.tsx`
+returns nothing, and every `status` in the deployed API routes is an HTTP code. The column is
+created by 040 with `default 'uploaded'` on all 38 rows and flipped to `held` by 054, and
+nothing deployed looks at it in between.
+
+### The three things that must be true before a release
+
+| | |
+|---|---|
+| 1. `npm run check` green | **Yes** — `check-schema-contracts: ok — 171 files, 44 relations (42 tables + 2 views)`; `test-guard: 509 tests, 0 skipped, 0 todo, floor 509`; `Compiled successfully` |
+| 2. `npm run check:live` on staging with every pending migration applied | **Ran. Green on production's configuration; 2 failures on the local build tier** — see below |
+| 3. The owner's manual tests from `docs/TESTING.md` for this feature | **Owner's to do.** The Documents sets are in `TESTING.md`: Run 5's ten, Run 6's six plus three addendum, Run 7's seven |
+
+### `check:live` — what it actually said
+
+Against staging with all 55 migrations applied, on the laptop's own configuration
+(`AI_MODEL_* = claude-haiku-4-5`, `DEV_MAX_SEARCHES=2`):
+
+```
+✓ switch_determinations  authenticated can write   ✓ anon refused (42501)
+✓ topics                 authenticated can write   ✓ anon refused (42501)
+✓ company_chemicals      authenticated can write   ✓ anon refused (42501)
+✓ research · ✓ checklist · ✓ conversation · ✓ reload · ✓ continue · ✓ counters · ✓ stop
+✓ convert discussed · ✓ convert complete
+✓ attachment/scan   read as "policy" · "Harbor Kitchen — Ballard Employee Handbook
+                    Addendum…" · needs_work
+✗ attachment/tier   tier 2 named: NO · headcount (56, or 25 and 31): NO
+✗ attachment/errors named 3 of the policy's errors, needs 5
+✓ attachment/persist · ✓ topic GET · ✓ summarise · ✓ topic DELETE · ✓ history
+check:live FAILED — 2 problem(s).
+```
+
+**Every tenancy, grant, policy and wiring assertion passed**, which is what this gate exists
+for — §63 and §80 were a missing grant and a missing policy. The two failures are assertions
+about the *quality* of a research answer.
+
+**So the same step was re-run with the `AI_MODEL_*` variables unset and no search cap — that
+is, on production's own configuration:**
+
+```
+✓ attachment/scan    read as "policy" · "Harbor Kitchen — Ballard Employee Handbook Addendum…"
+✓ attachment/tier    Tier 2, counted across both locations (25 + 31 = 56)
+✓ attachment/errors  named 6 of 7: 30-day card window, 180-day waiting period, 24-hour
+                     carryover, find-your-own-cover, tip credit, the minimum wage figure
+✓ attachment/persist turn 1 carries "Harbor-Kitchen-Employee-Policy-2026.pdf"
+```
+
+**All four pass.** The two failures were an artefact of the Haiku build tier and
+`DEV_MAX_SEARCHES=2`, exactly as `CLAUDE.md` §3.4a predicts ("use the expensive model when the
+question is *is this answer any good*"). They were carried as an open item through Runs 6 and 7
+and this settles them.
+
+*It also depends on the conflict in §3: if `AI_MODEL_JUDGEMENT` really is set to Haiku on
+Vercel, then production's configuration is the first run, not the second.*
+
+### The rest of the preflight
 
 | Step | Result |
 |---|---|
-| `npm run check` | **Pass.** `check-schema-contracts: ok — 171 files, 44 relations (42 tables + 2 views)`; `test-guard: 509 tests, 0 skipped, 0 todo, floor 509`; `Compiled successfully` |
-| `npm run preflight` (read-only, production) | **Pass.** Printed production's 40 applied migrations and the 54 on disk in full, and derived `PENDING COUNT: 14`. Nothing applied |
+| `npm run preflight` (read-only, production) | **Pass.** Printed production's 40 applied migrations and the 54 then on disk in full, derived `PENDING COUNT: 14`. Nothing applied. **Re-run it after 054 and expect 15** |
 | From-zero chain, `000` → `054` | **Pass.** Replayed against an emptied staging schema; 55 migrations recorded, `max(version) = 054`, `EXIT=0`. Types and `docs/SCHEMA.md` regenerated: 42 tables, 30 enums, 7 functions, 2 views, 16 triggers, 55 migrations |
-| `npm run db:restore` | Run, to leave staging usable |
-| `npm run golden:docs -- --seed-only` | **NOT RUN — held with the rest of the preflight** |
-| `npm run check:live` against staging | **NOT RUN — held with the rest of the preflight.** This is the one that matters most for a release: `npm run check` makes no authenticated request, and three defects have reached production through that gap (`DECISIONS.md` §63, §80). `npm run preflight` prints the same warning itself |
-| Whatever else `RELEASE.md` lists | **UNKNOWN — the file does not exist** |
+| `npm run db:restore` | **Pass**, `EXIT=0` — staging left usable |
+| `npm run golden:docs -- --seed-only` | **Pass** — three companies with their sites. No document uploaded, no model called |
 
 ### A note on how the from-zero result was established
 
 Twice during this work `npm run db:reset` **appeared to run and did nothing**: the pty
 automation never matched the confirmation prompt, the command sat there, and the only way to
-tell was to query `supabase_migrations.schema_migrations` afterwards. Both times the reported
-result above was taken from the database, not from the command's exit. A release note that
-said "the chain builds from zero" on the strength of a command that never typed RESET would be
-exactly the failure `HOW-WE-BUILD.md` §3 is about.
+tell was to query `supabase_migrations.schema_migrations` afterwards. Both times the result
+above was taken from the database, not from the command's exit. A release note that said "the
+chain builds from zero" on the strength of a command that never typed RESET would be exactly
+the failure `HOW-WE-BUILD.md` §3 is about.
+
+### The procedure, with this release's specifics
+
+1. **`npm run preflight`.** The pending list must be exactly `040` … `054`, fifteen files, and nothing else. If it names anything unexpected, stop.
+2. **`npm run db:migrate:prod`**, type `PRODUCTION`. Fifteen migrations. Expect the notices each verify block raises; the ones that matter are `MIGRATION 052 OK`, `053 OK`, `054 OK`. It regenerates `lib/database.types.ts` from production afterwards.
+3. **Variables.** One new one is **required**: `NEXT_PUBLIC_APP_URL`, the site's public origin with no trailing slash. It is a `NEXT_PUBLIC_*` variable, so it is **inlined at build time** — it must exist on Vercel *before* the push that builds the new code, which is why this step comes before step 5 and not after. While you are there: **read `AI_MODEL_JUDGEMENT`** (§3) and **confirm `NOTIFY_TEST_TO` does not exist**.
+4. **`git status --porcelain && npm run typecheck`.** Commit `lib/database.types.ts` if step 2 changed it.
+5. **`git push`.** 21 commits. Watch Vercel until green.
+6. **Prove it on the live site** — §7 below is that step, written out for this feature.
+
+### Release gates still owed (from `RELEASE.md`, unchanged by this release)
+
+- Credential rotation (`docs/HANDOFF-CODE.md`, `TODO.md`).
+- The privacy-policy line stating that transcripts are cleared 7 days after summarising.
+
+Neither is introduced or resolved by Documents rev 1.
 
 ---
 
 ## 7. Smoke test, to run on production after the push
 
-Ten minutes, in order. Stop at the first one that fails.
+This is `RELEASE.md` step 6 — "prove it on the live site" — written out for this feature. Ten
+minutes, in order. Stop at the first one that fails.
 
 1. **Upload one golden fixture** through the Documents page — `tests/golden/documents/fixtures/01-eap-chemical.pdf` is the one with known planted gaps. One file, so it is read in the page.
 2. **Watch the row.** It should go **Queued → Reading… → Needs work**, with the status changing while you look at it. If it sits on Queued, the scan route is not being reached; if it sits on Reading…, the scan is running or has been killed.
 3. **Open the drawer.** It should show the kind, the agency, the date that matters, a summary in the serif, and a list of gaps with citations. The footer should offer *Open the file*, *Read it again*, *Download* and *Delete this file*.
 4. **Confirm one fact.** In *Facts we found, please confirm*, press **Confirm** on one. The message should say either "Confirmed" or "Confirmed, and recorded against the question it answers."
 5. **Check the To confirm count.** The sidebar should carry a number, and it should be one lower than before step 4. Open the page: three at a time, with the ranking line printed.
-6. **Check the ledger.** `select task, model, input_tokens, output_tokens, searches, cost_usd from ai_calls order by created_at desc limit 3` — there should be exactly one new `document_scan` row, and **the model must read `claude-sonnet-4-5`, not `claude-haiku-4-5`**. Haiku there means an `AI_MODEL_*` variable leaked into production. Expect roughly $0.15.
+6. **Check the ledger.** `select task, model, input_tokens, output_tokens, searches, cost_usd from ai_calls order by created_at desc limit 3` — there should be exactly one new `document_scan` row, and **its model must equal whatever `AI_MODEL_JUDGEMENT` is set to on Vercel** (§3: two documents disagree about whether it is set at all). If that variable is absent the answer is `claude-sonnet-4-5` and the row should cost roughly $0.15 — 29k in, 3.5k out and about one search, measured. If the row says `claude-haiku-4-5` and you expected Sonnet, a build variable has leaked; if it says Sonnet and you expected Haiku, `CLAUDE.md` §3.4a is the document that is out of date.
 7. **Check the sweep ran.** Within five minutes: `select job, started_at, finished_at, ok, counts from job_runs where job = 'scan_documents' order by started_at desc limit 1`. There should be a row, `ok = true`, `finished_at` set, and `counts` showing zeros — it has nothing to do, because the 38 are held.
 8. **Check the 38 are still held.** `select status, count(*) from documents group by status` — 38 `held`, one `read` (the fixture), nothing `uploaded`.
 9. **Check no email went out.** `select id, notified_at from document_batches order by created_at desc limit 3` — the fixture's batch should be `done` with `notified_at` **null**, because one file is the live path.
