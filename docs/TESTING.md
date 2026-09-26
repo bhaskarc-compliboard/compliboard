@@ -1886,3 +1886,44 @@ Whether a quote the check verified is being used to support the thing it is quot
 whether the expected-and-don't-see list is the right list. Both are a model's judgement about a
 document, and the verification here is mechanical: these tests say the machinery carries the
 answer, never that the answer is good.
+
+### 7. Delete a document that has a checklist
+
+Open a document you made a checklist from. In the drawer footer, **Delete this file** —
+faint, 12px, the quietest thing there, because it is the only irreversible action on this
+screen. It asks first, and the question says what survives:
+
+> **Delete this file and its reading?**
+> Checklists made from it stay, with their link to it removed.
+
+Confirm. The drawer closes and the row is gone from the list.
+
+**Now open the checklist.** It is still there, it still has its items and its progress, and it
+no longer names a document. That is the test — the sentence in the dialog is a promise, and
+the schema is what keeps it: `checklists.document_id`, `calendar_events.document_id` and
+`company_facts.source_document_id` are `on delete set null`, while the scans, gaps, deadlines,
+conditions and proposals cascade away with the file.
+
+Check the bucket too: the stored file is gone, and the path deleted came off the row the
+server had already proved was yours, never off the request.
+
+### 8. The headings, on both screens
+
+On Documents, group by **Agency** — the headings are the darker grey of body text. Same for
+Subject, Kind, Site and Folder. Switch to **Status**: they go light again, because the rows
+underneath already carry that word in their own right-hand column.
+
+In the drawer, every heading that names a part of the report is dark — *What this document is,
+Gaps, Dates this document sets, Conditions to keep, Facts we found, Versions* — and **Status**
+is the one that stays light. All of them are the same 12px uppercase: the difference is weight,
+not a second heading style.
+
+### 9. No row carries a form control
+
+On Documents, look down the list under any grouping. There is **no dropdown on any row** —
+"Move to…" is gone. The rows are three columns: what it is, what it answers to, where it
+stands.
+
+Filing now lives once, in the drawer: **Filed in ▾** under the title. Change it there and the
+list reflects it when the drawer closes. It does not print — where a document is filed is not
+part of the evidence.

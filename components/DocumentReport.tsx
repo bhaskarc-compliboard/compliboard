@@ -108,10 +108,23 @@ const yearsSince = (iso: string | null) => {
 const isPast = (iso: string | null) => !!iso && iso < new Date().toISOString().slice(0, 10)
 
 /* ── small pieces ─────────────────────────────────────────────────────────── */
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+/**
+ * A SECTION HEADING, AND ITS COLOUR CARRIES A DISTINCTION — Run 6 addendum.
+ *
+ * A heading that NAMES a part of the report — Gaps, Conditions to keep, Facts we found — is
+ * structure: it tells you where you are, and you read down from it. A heading that carries a
+ * STATE or a DATE is itself information, and the thing under it repeats it.
+ *
+ * So the naming ones take the darker grey of body text and the state ones stay light. Same
+ * 12px uppercase either way: this is weight, not a second heading style. `DESIGN.md` §4.
+ */
+function Section({ title, children, tone = 'name' }: {
+  title: string; children: React.ReactNode; tone?: 'name' | 'state'
+}) {
   return (
     <section className="mt-6 border-t border-gray-100 pt-4 first:mt-0 first:border-t-0 first:pt-0">
-      <h3 className="mb-2 text-[12px] font-medium uppercase tracking-wide text-gray-400">{title}</h3>
+      <h3 className={`mb-2 text-[12px] font-medium uppercase tracking-wide ${
+        tone === 'state' ? 'text-gray-400' : 'text-gray-700'}`}>{title}</h3>
       {children}
     </section>
   )
@@ -140,13 +153,64 @@ function ReasonBox({ label, onCancel, onSave }: {
   )
 }
 
+/**
+ * WHERE THIS FILE IS FILED, AND THE ONE PLACE IT CAN BE CHANGED.
+ *
+ * A folder is where a person put a file; everything else on this screen is what the scan
+ * found. That makes filing the odd one out and the reason it reads as a line of prose with a
+ * control in it rather than as another row of the identity grid: "Filed in ▾ Permits".
+ *
+ * It does not print — where a document is filed is not part of the evidence.
+ */
+function FilingLine({ row, folders, onMove, onChanged }: {
+  row: Row
+  folders: Array<{ id: string; name: string }>
+  onMove: (documentId: string, folderId: string | null) => Promise<void> | void
+  onChanged: () => void
+}) {
+  const [saving, setSaving] = useState(false)
+  return (
+    <p className="no-print -mt-1 mb-4 flex items-center gap-1.5 text-[12px] text-gray-500">
+      Filed in
+      <select
+        value={row.folder_id ?? ''}
+        disabled={saving}
+        onChange={async (e) => {
+          setSaving(true)
+          try { await onMove(row.document_id, e.target.value || null); onChanged() }
+          finally { setSaving(false) }
+        }}
+        className="rounded border border-transparent bg-transparent px-1 py-0.5 text-[12px] text-gray-700 hover:border-gray-200 disabled:text-gray-300">
+        <option value="">Nothing yet</option>
+        {folders.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
+      </select>
+    </p>
+  )
+}
+
 /* ── the drawer ───────────────────────────────────────────────────────────── */
-export default function DocumentReport({ documentId, companyName, onClose, onChanged, onPickFile }: {
+export default function DocumentReport({
+  documentId, companyName, onClose, onChanged, onPickFile, folders, onMove,
+}: {
   documentId: string
   companyName: string | null
   onClose: () => void
   /** The page reloads its index when something here changes a value it shows. */
   onChanged: () => void
+  /**
+   * FILING LIVES HERE NOW, ONCE — Run 6 addendum, reversing Run 4.
+   *
+   * Run 4 kept "Move to…" on the row, reasoning that filing is a list action you do while
+   * looking at several documents. In practice it put a form control in every row of a reading
+   * surface: a list of documents with a dropdown on each line reads as a form, and the thing
+   * you are scanning for — the title, the agency, the status — competes with a widget nobody
+   * touches most days. The list is back to three columns and the control is here.
+   *
+   * The folder list and the move itself belong to the page, which already holds both; passing
+   * them in avoids a second query for a list the caller has in hand.
+   */
+  folders: Array<{ id: string; name: string }>
+  onMove: (documentId: string, folderId: string | null) => Promise<void> | void
   /** Opens the page's own file picker — used by "Upload a clearer copy" and "Add a newer version". */
   onPickFile: (versionOf?: string) => void
 }) {
@@ -160,6 +224,8 @@ export default function DocumentReport({ documentId, companyName, onClose, onCha
   const [working, setWorking] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [copied, setCopied] = useState<string | null>(null)
+  /** The delete confirmation, shown in the drawer rather than as a browser dialog. */
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   const load = useCallback(async () => {
     const res = await fetch(`/api/documents/report?document_id=${documentId}`, { headers: await authHeaders() })
@@ -295,13 +361,71 @@ export default function DocumentReport({ documentId, companyName, onClose, onCha
       </button>
       <button onClick={printDrawer}
         className="ml-auto text-[14px] text-gray-600 hover:text-gray-900 hover:underline">Download</button>
+      {/* DESTRUCTIVE, AND IT LOOKS IT — 12px and faint (`DESIGN.md` §1, §4). It is the only
+          irreversible action in the product's reading surface, so it is the quietest thing in
+          the footer and it asks first. */}
+      <button onClick={() => setConfirmDelete(true)}
+        className="text-[12px] text-gray-400 hover:text-gray-700 hover:underline">Delete this file</button>
     </>
   )
+
+  /**
+   * THE CONFIRMATION, AND IT SAYS WHAT SURVIVES — Run 6 addendum.
+   *
+   * Not `window.confirm`: a browser dialog cannot say the second sentence, and the second
+   * sentence is the whole point. Somebody who made a checklist from this document's gaps three
+   * weeks ago is entitled to know, BEFORE they press the button, that the checklist is not about
+   * to go with it. The schema already guarantees it — `checklists.document_id`,
+   * `calendar_events.document_id` and `company_facts.source_document_id` are all `on delete set
+   * null`, while the scans, gaps, deadlines, conditions and proposals cascade — so this sentence
+   * is a description of what happens, not a promise somebody has to keep in code.
+   *
+   * The server proves ownership before it touches anything: `/api/documents` DELETE loads the
+   * row through the caller's own client, compares its company to the session's, answers 404
+   * rather than 403 so ids cannot be probed, and takes the storage path off the row it just
+   * authorised rather than off the request.
+   */
+  const deletePanel = confirmDelete ? (
+    <div className="no-print absolute inset-0 z-10 flex items-center justify-center bg-gray-900/30 px-6"
+      onClick={() => setConfirmDelete(false)}>
+      <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
+        <p className="text-[15px] font-medium text-gray-900">Delete this file and its reading?</p>
+        <p className="mt-1.5 text-[13px] leading-relaxed text-gray-600">
+          Checklists made from it stay, with their link to it removed.
+        </p>
+        <div className="mt-4 flex items-center gap-4">
+          <button disabled={busy} onClick={async () => {
+            setBusy(true)
+            try {
+              const res = await fetch(`/api/documents?id=${documentId}`, {
+                method: 'DELETE', headers: await authHeaders(),
+              })
+              if (!res.ok) {
+                const j = await res.json().catch(() => null)
+                setConfirmDelete(false)
+                setNotice(j?.error ?? 'We could not delete that just now. Nothing was removed.')
+                return
+              }
+              // The row is gone, so there is nothing left for this drawer to show.
+              onChanged()
+              onClose()
+            } finally { setBusy(false) }
+          }} className="rounded-lg bg-[var(--amber)] px-3.5 py-1.5 text-[14px] font-medium text-white hover:opacity-90 disabled:opacity-50">
+            {busy ? 'Deleting…' : 'Delete'}
+          </button>
+          <button onClick={() => setConfirmDelete(false)}
+            className="text-[14px] text-gray-600 hover:text-gray-900">Keep it</button>
+        </div>
+      </div>
+    </div>
+  ) : null
 
   /* ── a document we could not read: the reason, the way forward, nothing else ── */
   if (row.display_status === 'could_not_read') {
     return (
       <Drawer title={row.title} sub={sub} company={companyName} onClose={onClose} footer={footer}>
+        {deletePanel}
+        <FilingLine row={row} folders={folders} onMove={onMove} onChanged={onChanged} />
         <p className="text-[13px] text-[var(--amber)]">Could not read</p>
         <p className="mt-3 font-serif text-[17px] leading-relaxed text-gray-800">
           {row.could_not_read_reason
@@ -332,12 +456,17 @@ export default function DocumentReport({ documentId, companyName, onClose, onCha
 
   return (
     <Drawer title={row.title} sub={sub} company={companyName} onClose={onClose} footer={footer}>
+      {deletePanel}
       {notice && (
         <p className="mb-4 rounded-lg bg-[var(--green-wash)] px-3 py-2 text-[13px] text-gray-800">{notice}</p>
       )}
 
+      {/* THE HEADER AREA'S ONE CONTROL — filing, which is the only thing about a document that
+          is the person's choice rather than the reading's finding. */}
+      <FilingLine row={row} folders={folders} onMove={onMove} onChanged={onChanged} />
+
       {/* 1 ── status and the date that matters, on one line */}
-      <Section title="Status">
+      <Section title="Status" tone="state">
         <p className="text-[14px]">
           <span className={AMBER.has(row.display_status) ? 'text-[var(--amber)]' : 'text-gray-700'}>
             {STATUS_WORD[row.display_status] ?? row.display_status}

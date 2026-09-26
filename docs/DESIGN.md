@@ -145,6 +145,15 @@ are always visible in a fixed `w-14` slot at `text-gray-300`, so every
 title truncates at the same x — a control hidden until hover is a
 control nobody finds.
 
+**A heading that carries a name takes the darker grey of body text; a
+heading that carries a state or a date stays light.** Same 12px
+uppercase either way — this is weight, not a second heading style. A
+name (Oregon DEQ, Permits, Portland, Gaps, Facts we found) is structure
+you read down from; a state or a date is information, and the rows
+underneath already repeat it. *(Added in Documents Run 6 at the owner's
+direction. The layout chat owns this file — this line is recorded here
+so the rule is in one place, not so this run takes the pen.)*
+
 **Drawers.** `fixed inset-y-0 right-0 w-full max-w-[720px] z-50`, scrim
 at `z-[45]` above the sticky header. 720 rather than 560 because these
 hold reading text. Footer follows the button vocabulary.

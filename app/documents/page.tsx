@@ -512,16 +512,12 @@ function DocumentsPageContent() {
             </p>
           </div>
 
-          {/* "Move to…" STAYS ON THE ROW rather than moving into the drawer. Filing is a
-              list action — you do it while looking at several documents — and the drawer is
-              for reading one. `e.stopPropagation()` so choosing a folder does not also open it. */}
-          <div className="w-[150px] shrink-0" onClick={(e) => e.stopPropagation()}>
-            <select value={r.folder_id ?? ''} onChange={(e) => moveTo(r.document_id, e.target.value || null)}
-              className="w-full rounded border border-transparent bg-transparent px-1 py-0.5 text-[12px] text-gray-400 hover:border-gray-200 hover:text-gray-700">
-              <option value="">Move to…</option>
-              {folders.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
-            </select>
-          </div>
+          {/* *** NO FORM CONTROL ON A ROW — Run 6 addendum, reversing Run 4. ***
+              "Move to…" sat here on the reasoning that filing is a list action. What it
+              actually produced was a dropdown on every line of a reading surface: the list
+              read as a form, and the things somebody scans a list FOR — the title, the
+              agency, the status — competed with a widget nobody touches most days. Filing
+              lives once, in the drawer's header area. Three columns again. */}
 
           <div className="w-[160px] shrink-0 text-right">
             <p className={`text-[13px] ${amber ? 'text-[var(--amber)]' : 'text-gray-500'}`}>{statusWord(r)}</p>
@@ -699,8 +695,16 @@ function DocumentsPageContent() {
               const missing = groupBy === 'agency' ? expectedFor(g.rows) : []
               return (
                 <section key={g.key} className="mb-7">
-                  <h2 className="mb-1.5 text-[12px] font-medium uppercase tracking-wide text-gray-400">
-                    {g.label} <span className="ml-1 text-gray-300">{g.rows.length}</span>
+                  {/* *** A HEADING THAT NAMES SOMETHING IS DARKER THAN ONE THAT STATES SOMETHING. ***
+                      Grouped by Agency, Subject, Kind, Site or Folder, the heading is the NAME of
+                      the thing the rows belong to — Oregon DEQ, Permits, Portland — and you read
+                      down from it. Grouped by Status it is a state, and every row underneath
+                      repeats it in its own right-hand column; a dark heading there would be the
+                      same word twice, louder the first time. Same 12px uppercase either way: this
+                      is weight, not a second heading style. `DESIGN.md` §4. */}
+                  <h2 className={`mb-1.5 text-[12px] font-medium uppercase tracking-wide ${
+                    groupBy === 'status' ? 'text-gray-400' : 'text-gray-700'}`}>
+                    {g.label} <span className="ml-1 font-normal text-gray-300">{g.rows.length}</span>
                   </h2>
                   {missing.length > 0 && (
                     // The amber wash, not amber text: this asks for attention without claiming
@@ -737,6 +741,11 @@ function DocumentsPageContent() {
             companyName={companyName}
             onClose={() => setOpenDoc(null)}
             onChanged={load}
+            // Filing moved off the row and into the drawer (Run 6 addendum). The list and the
+            // action both already live here, so the drawer is handed them rather than fetching
+            // a list this page is holding.
+            folders={folders}
+            onMove={moveTo}
             onPickFile={(v) => { setVersionOf(v ?? null); fileInputRef.current?.click() }}
           />
         </>
