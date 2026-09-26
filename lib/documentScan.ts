@@ -412,6 +412,16 @@ export async function buildScanContext(
   const { data: confirmedFacts } = await db.from('company_facts')
     .select('key, value, basis').eq('company_id', company.id).order('key')
 
+  // EVERY FACT KEY THIS COMPANY'S DOCUMENTS HAVE USED — Run 7, and it is the label list one
+  // table across. Run 6 measured five keys for one address across four documents, which is five
+  // questions in the To confirm queue about a fact the customer has one answer to. Both statuses
+  // count: an accepted key is the name that stuck, and a still-pending one is a name already put
+  // in front of the person. Rejected and withdrawn are left out — those are names we should not
+  // encourage. Ordered, like everything else here, so the same state gives the same prompt.
+  const { data: usedKeys } = await db.from('fact_proposals')
+    .select('switch_key').eq('company_id', company.id)
+    .in('status', ['proposed', 'accepted']).order('switch_key')
+
   const { data: corrections } = documentId
     ? await db.from('document_corrections').select('field, new_value, reason, created_at, id')
         .eq('document_id', documentId).order('created_at', { ascending: false }).order('id', { ascending: false })
@@ -439,6 +449,10 @@ export async function buildScanContext(
       ({ title: g.title, reason: g.dismissed_reason })),
     openGaps: (openGaps ?? []).map((g: { id: string; title: string; citation: string | null }) =>
       ({ id: g.id, title: g.title, citation: g.citation })),
+    factKeys: [...new Set([
+      ...(usedKeys ?? []).map((k: { switch_key: string }) => k.switch_key),
+      ...(confirmedFacts ?? []).map((f: { key: string }) => f.key),
+    ].filter(Boolean))].sort(),
     confirmedFacts: (confirmedFacts ?? []).map((f: { key: string; value: unknown; basis: string }) => ({
       key: f.key,
       value: typeof f.value === 'string' ? f.value : JSON.stringify(f.value ?? '').replace(/^"|"$/g, ''),
@@ -710,12 +724,14 @@ export async function saveScan(
         if (row) namedBy.set(oldId, row.id)
       })
 
+      const pairedOff = new Set<string>()
       for (const old of priorGaps) {
         // The model's answer first; the string matcher only where it named nothing.
         const successorId = namedBy.get(old.id)
           ?? fresh.find((n) =>
                key(n.title) === key(old.title)
                || (!!old.citation && !!n.citation && key(n.citation) === key(old.citation)))?.id
+        if (successorId) pairedOff.add(old.id)
         // No successor: NOTHING HAPPENS TO THE OLD ROW. It stays open and keeps its checklist,
         // and the report still lists it under "From earlier readings". Closing a finding because
         // the next reading did not mention it would be the product deciding a gap went away.
@@ -732,7 +748,21 @@ export async function saveScan(
           }).eq('id', successorId)
         }
         await db.from('document_gaps')
-          .update({ status: 'superseded', superseded_by: successorId }).eq('id', old.id)
+          .update({ status: 'superseded', superseded_by: successorId, not_seen_at: null })
+          .eq('id', old.id)
+      }
+
+      // *** AND THE ONES THIS READING PASSED OVER — Run 7. ***
+      //
+      // A gap the new scan neither raised nor named in `same_as_gap_id` is the case nothing
+      // handled. It STAYS OPEN and it is marked, because a reading that failed to mention a
+      // missing evacuation procedure is not evidence that the procedure now exists. NOTHING
+      // CLOSES A GAP WITHOUT A PERSON — dismissing it is a person's act with a reason on the
+      // row, and the next scan is shown that reason. This column only lets the row say out
+      // loud what would otherwise be an invisible difference between two readings.
+      for (const old of priorGaps) {
+        if (pairedOff.has(old.id)) continue
+        await db.from('document_gaps').update({ not_seen_at: new Date().toISOString() }).eq('id', old.id)
       }
     }
   }
@@ -750,6 +780,38 @@ export async function saveScan(
     })))
     if (e) throw new Error(`document_deadlines: ${e.message}`)
   }
+  // *** A PROPOSAL THE LATEST READING NO LONGER MAKES IS WITHDRAWN — Run 7. ***
+  //
+  // The scan proposes "42 employees"; the document is edited and read again; the new reading
+  // does not mention employees at all. Until now the old proposal stayed `proposed` for ever
+  // and the person was asked to confirm something the current reading of the file does not say.
+  //
+  // WITHDRAWN IS NOT REJECTED, and the difference matters in both directions. Rejected is a
+  // person saying "that is wrong", and the next scan is shown it so the claim is not made again.
+  // Withdrawn is us saying "we no longer read this in the file" — nobody was wrong, so it
+  // teaches the next scan nothing, and it is not deleted either: the drawer shows it as "no
+  // longer proposed by the latest reading", which is information a person may want to act on.
+  //
+  // MATCHED ON THE KEY, not the value. A reading that now says 38 instead of 42 is a CHANGED
+  // proposal, not a withdrawn one — the new row is inserted below, the queue shows both under
+  // one key, and the person settles it (Run 6). Only a key this reading is silent about is
+  // withdrawn. And only ever this document's own proposals: another document's reading of the
+  // same key is not ours to retract.
+  //
+  // It runs before the insert so a key the new scan DOES restate is not withdrawn and then
+  // re-proposed in the same breath.
+  {
+    const freshKeys = new Set(scan.facts.map((f) => f.key.slice(0, 120)))
+    const { data: pending } = await db.from('fact_proposals')
+      .select('id, switch_key').eq('document_id', documentId).eq('status', 'proposed')
+    const stale = ((pending ?? []) as Array<{ id: string; switch_key: string }>)
+      .filter((p) => !freshKeys.has(p.switch_key))
+    if (stale.length) {
+      await db.from('fact_proposals')
+        .update({ status: 'withdrawn' }).in('id', stale.map((p) => p.id))
+    }
+  }
+
   // PROPOSED, NEVER WRITTEN (§108).
   if (scan.facts.length) {
     const { error: e } = await db.from('fact_proposals').insert(scan.facts.map((f) => ({

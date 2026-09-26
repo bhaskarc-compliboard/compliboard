@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
     const { name, file_url, file_type, file_size, folder_id, is_recurring, recurrence_period,
-            from_topic_id, version_of, version_confirmed } = body
+            from_topic_id, version_of, version_confirmed, batch_id } = body
 
     if (!name || !file_url) {
       return NextResponse.json({ error: 'Missing name or file_url' }, { status: 400 })
@@ -64,6 +64,19 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // A batch, if given, must be one of this company's — the same ownership check and the same
+    // 404-not-403 as the folder and the conversation. A batch id from a request body is not
+    // trusted to name a row this caller may write into (§3.6): without this, a caller could
+    // file their upload into another company's batch and the email about it would go to
+    // somebody else.
+    if (batch_id) {
+      const { data: batch } = await db
+        .from('document_batches').select('id').eq('id', batch_id).maybeSingle()
+      if (!batch) {
+        return NextResponse.json({ error: 'That upload was not found.' }, { status: 404 })
+      }
+    }
+
     // A destination folder, if given, must be one of this company's folders.
     if (folder_id) {
       const { data: folder } = await db
@@ -96,6 +109,10 @@ export async function POST(request: NextRequest) {
         recurrence_period,
         status: 'uploaded',
         source: 'upload',
+        // The upload this file arrived in (migration 053). Null for a file added one at a time
+        // from anywhere else — the conversation attach path, for instance, which is one file by
+        // definition and has its own card to answer with.
+        batch_id: batch_id || null,
         // *** ONLY WHEN THE PERSON SAID SO. *** This is set by "Add a newer version" in the
         // report drawer, which is a human naming the older document — so the match is confirmed
         // from the start. A match the SCAN proposes is a different thing and is written by

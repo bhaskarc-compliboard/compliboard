@@ -352,6 +352,11 @@ once.
   order, from one starting state — the first from-zero run on 11 Sep found two collisions
   that had been invisible for months. The reset refuses `--production` by flag and again by
   ref; there is no combination of arguments that resets production.
+  **Claude Code may run `npm run db:reset` and `npm run db:restore` on staging under a pty**
+  (both ask for a typed confirmation and there is no bypass flag, by design), because a
+  migration is not done until the chain builds from empty and a rule that is expensive to obey
+  is a rule that gets skipped. **The production guard is never automated, by anyone** —
+  `npm run db:migrate:prod` and its typed confirmation stay a human action.
 - `npm run db:migrate` pushes migrations **and** regenerates TypeScript types. Never run
   one without the other — types must always reflect the live schema so a wrong column
   name is a compile error, not a runtime 400. If type generation fails, fix it and run

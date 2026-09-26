@@ -3,8 +3,8 @@
 **GENERATED — do not edit.** `node --env-file=.env.local scripts/schema-doc.js`, and it runs
 inside `npm run db:migrate`, so it cannot be stale by more than one migration.
 
-**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-09-25 22:04 UTC
-**Migrations applied:** 53 — `000` to `052`
+**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-09-26 01:58 UTC
+**Migrations applied:** 54 — `000` to `053`
 
 *Every figure here was read from the catalog of that database. Nothing is copied from the
 migration files, which say what was intended rather than what is there — and the two have
@@ -50,7 +50,7 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 
 **Documents and evidence**
 
-- `documents` — 0 rows · touched by route audits, route calendar, route chat, route document-actions, route document-draft, +13 more
+- `documents` — 0 rows · touched by route audits, route calendar, route chat, route document-actions, route document-draft, +15 more
 - `document_reviews` — 0 rows · touched by route audits, route document-review, lib attachedDocument, lib documentReview
 - `company_folders` — 0 rows · touched by route document-review, route documents/index, route documents, route folders
 - `company_templates` — 0 rows · touched by route audits
@@ -68,7 +68,7 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 
 **Tenancy and accounts**
 
-- `companies` — 0 rows · touched by route account/export, route account, route audits, route document-draft, route document-review, +18 more
+- `companies` — 0 rows · touched by route account/export, route account, route audits, route document-draft, route document-review, +19 more
 - `profiles` — 0 rows · touched by route account/export, route account, route signup, screen audits, screen calendar, +9 more
 - `entities` — 0 rows · touched by route document-actions, route documents/index, route documents/report, route switches/answer, route switches/ask, +10 more
 
@@ -80,7 +80,7 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 
 - `jobs` — 0 rows · **no code reads or writes it**
 
-**Not assigned to a module above:** `ai_calls`, `company_facts`, `company_labels`, `document_conditions`, `document_corrections`, `document_deadlines`, `document_gaps`, `document_scans`, `fact_proposals`, `job_runs`, `turns`, `usage_counters`
+**Not assigned to a module above:** `ai_calls`, `company_facts`, `company_labels`, `document_batches`, `document_conditions`, `document_corrections`, `document_deadlines`, `document_gaps`, `document_scans`, `fact_proposals`, `job_runs`, `turns`, `usage_counters`
 
 ---
 
@@ -419,7 +419,7 @@ One row per audit run. A frozen snapshot of results as checked that day — reus
 
 **Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route account/export`, `route account`, `route audits`, `route document-draft`, `route document-review`, `route document-scan`, `route hr`, `route obligations`, `route signup`, `screen audits`, `screen compliance`, `screen dashboard`, `screen documents`, `screen hr`, `lib agencyScope`, `lib obligationWriter`, `script check-prompt-determinism`, `script resolve-dryrun`, `script run-golden-docs`, `script run-golden`, `script scan-document`, `script seed-multisite-fixture`, `script seed-staging-testdata`
+**Read or written by:** `route account/export`, `route account`, `route audits`, `route document-draft`, `route document-review`, `route document-scan`, `route hr`, `route jobs/scan-documents`, `route obligations`, `route signup`, `screen audits`, `screen compliance`, `screen dashboard`, `screen documents`, `screen hr`, `lib agencyScope`, `lib obligationWriter`, `script check-prompt-determinism`, `script resolve-dryrun`, `script run-golden-docs`, `script run-golden`, `script scan-document`, `script seed-multisite-fixture`, `script seed-staging-testdata`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -454,6 +454,7 @@ One row per audit run. A frozen snapshot of results as checked that day — reus
 - `corrections.company_id` — ON DELETE SET NULL
 - `critic_findings.company_id` — ON DELETE CASCADE
 - `critic_reviews.company_id` — ON DELETE CASCADE
+- `document_batches.company_id` — ON DELETE CASCADE
 - `document_conditions.company_id` — ON DELETE CASCADE
 - `document_corrections.company_id` — ON DELETE CASCADE
 - `document_deadlines.company_id` — ON DELETE CASCADE
@@ -895,6 +896,57 @@ One row per criticise() call, INCLUDING reviews that found nothing — that is t
 
 **Indexes:** `critic_reviews_pkey`, `idx_critic_reviews_company_created`
 
+### `document_batches`
+
+One upload, however many files were in it. Exists so a folder drop can be answered once — an email and a banner — rather than file by file. notified_at and dismissed_at are proof, so neither the email nor the banner can arrive twice.
+
+**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+
+**Read or written by:** `route document-batches`, `route documents/index`, `route documents`, `route jobs/scan-documents`
+
+| Column | Type | Null | Default |
+|---|---|---|---|
+| `id` | uuid | no | `gen_random_uuid()` |
+| `company_id` | uuid | no | — |
+| `created_by` | uuid | yes | — |
+| `created_at` | timestamp with time zone | no | `now()` |
+| `file_count` | integer | no | `0` |
+| `done_count` | integer | no | `0` |
+| `status` | text | no | `'queued'::text` |
+| `summary` | jsonb | yes | — |
+| `notified_at` | timestamp with time zone | yes | — |
+| `dismissed_at` | timestamp with time zone | yes | — |
+
+**Points at:**
+
+- `company_id` → `companies` — ON DELETE CASCADE
+- `created_by` → `auth.users` — ON DELETE SET NULL
+
+**Pointed at by:**
+
+- `documents.batch_id` — ON DELETE SET NULL
+
+**Constraints:**
+
+- `document_batches_done_count_check` — `CHECK ((done_count >= 0))`
+- `document_batches_file_count_check` — `CHECK ((file_count >= 0))`
+- `document_batches_status_check` — `CHECK ((status = ANY (ARRAY['queued'::text, 'reading'::text, 'done'::text])))`
+
+**Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
+
+- `anon` — **nothing**
+- `authenticated` — **nothing**
+- `service_role` — **nothing**
+
+**RLS policies:**
+
+| Policy | For | Roles | USING | WITH CHECK |
+|---|---|---|---|---|
+| `document_batches_select` | SELECT | authenticated | `(company_id = auth_company_id())` | — |
+| `document_batches_update` | UPDATE | authenticated | `(company_id = auth_company_id())` | `(company_id = auth_company_id())` |
+
+**Indexes:** `document_batches_pkey`, `idx_document_batches_company_created`, `idx_document_batches_open`
+
 ### `document_conditions`
 
 **Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
@@ -1048,6 +1100,7 @@ One row per correction a person makes to what a document IS. Newest per field wi
 | `draft_created_at` | timestamp with time zone | yes | — |
 | `draft_ai_call_id` | uuid | yes | — |
 | `superseded_by` | uuid | yes | — |
+| `not_seen_at` | timestamp with time zone | yes | — |
 
 **Points at:**
 
@@ -1142,7 +1195,7 @@ One row per correction a person makes to what a document IS. Newest per field wi
 
 **Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route documents/report`, `lib documentScan`
+**Read or written by:** `route documents/index`, `route documents/report`, `lib attachedDocument`, `lib documentScan`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -1220,7 +1273,7 @@ One row per correction a person makes to what a document IS. Newest per field wi
 
 **Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route audits`, `route calendar`, `route chat`, `route document-actions`, `route document-draft`, `route document-review`, `route document-scan`, `route documents`, `route folders`, `route hr`, `route hr-audits`, `screen compliance`, `lib attachedDocument`, `lib documentScan`, `lib storage`, `script check-live`, `script run-golden-docs`, `script scan-document`
+**Read or written by:** `route audits`, `route calendar`, `route chat`, `route document-actions`, `route document-draft`, `route document-review`, `route document-scan`, `route documents`, `route folders`, `route hr`, `route hr-audits`, `route jobs/scan-documents`, `screen compliance`, `lib attachedDocument`, `lib documentBatch`, `lib documentScan`, `lib storage`, `script check-live`, `script run-golden-docs`, `script scan-document`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -1242,9 +1295,12 @@ One row per correction a person makes to what a document IS. Newest per field wi
 | `version_of` | uuid | yes | — |
 | `version_confirmed` | boolean | no | `false` |
 | `latest_confirmed_at` | timestamp with time zone | yes | — |
+| `batch_id` | uuid | yes | — |
+| `reading_since` | timestamp with time zone | yes | — |
 
 **Points at:**
 
+- `batch_id` → `document_batches` — ON DELETE SET NULL
 - `company_id` → `companies` — ON DELETE CASCADE
 - `entity_id` → `entities` — ON DELETE SET NULL
 - `folder_id` → `company_folders` — ON DELETE SET NULL
@@ -1291,7 +1347,7 @@ One row per correction a person makes to what a document IS. Newest per field wi
 | `documents_select` | SELECT | authenticated | `(company_id = auth_company_id())` | — |
 | `documents_update` | UPDATE | authenticated | `(company_id = auth_company_id())` | `(company_id = auth_company_id())` |
 
-**Indexes:** `documents_id_company`, `documents_pkey`, `idx_documents_entity`, `idx_documents_from_topic`
+**Indexes:** `documents_id_company`, `documents_pkey`, `idx_documents_batch`, `idx_documents_entity`, `idx_documents_from_topic`, `idx_documents_queued`
 
 ### `entities`
 
@@ -1398,7 +1454,7 @@ Candidate company facts read out of a conversation overnight. PROPOSED, never wr
 - `fact_proposals_basis_check` — `CHECK ((basis = ANY (ARRAY['read'::text, 'inferred'::text])))`
 - `fact_proposals_one_source` — `CHECK ((((topic_id IS NOT NULL) AND (document_id IS NULL)) OR ((topic_id IS NULL) AND (document_id IS NOT NULL))))`
 - `fact_proposals_source_check` — `CHECK ((source = ANY (ARRAY['conversation'::text, 'document'::text])))`
-- `fact_proposals_status_check` — `CHECK ((status = ANY (ARRAY['proposed'::text, 'accepted'::text, 'rejected'::text])))`
+- `fact_proposals_status_check` — `CHECK ((status = ANY (ARRAY['proposed'::text, 'accepted'::text, 'rejected'::text, 'withdrawn'::text])))`
 
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
@@ -1525,7 +1581,7 @@ One row per nightly run. Answers release gate 2 — did it run, and what did it 
 
 **Constraints:**
 
-- `job_runs_job_check` — `CHECK ((job = ANY (ARRAY['summarise'::text, 'delete'::text, 'account_delete'::text])))`
+- `job_runs_job_check` — `CHECK ((job = ANY (ARRAY['summarise'::text, 'delete'::text, 'account_delete'::text, 'scan_documents'::text])))`
 
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
@@ -2426,4 +2482,5 @@ filtered HERE so no consumer can forget it (CLAUDE.md §3.2). A corrected link
 050
 051
 052
+053
 ```

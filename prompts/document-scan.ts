@@ -39,6 +39,16 @@ export interface ScanPromptContext {
   corrections: Array<{ field: string; value: string; reason: string | null }>
   /** What this company has already confirmed about itself. Rendered as plain lines below. */
   confirmedFacts: Array<{ key: string; value: string; basis: string }>
+  /**
+   * Fact keys already in use for this company, from every document read so far — Run 7.
+   *
+   * The same problem the agency and subject label lists exist for, one table across. Run 6
+   * measured it: one address came back as `facility_address`, `facility_location`,
+   * `facility_location_portland`, `warehouse_location` and `location` from four documents, so
+   * the To confirm queue asked five questions about one fact. Shown the same way the labels
+   * are, with the same reuse sentence.
+   */
+  factKeys: string[]
 }
 
 const list = (xs: string[]) => (xs.length ? xs.map((x) => `  - ${x}`).join('\n') : '  (none yet)')
@@ -115,6 +125,13 @@ ${list(ctx.subjectLabels)}
 Reuse these exactly where they fit — "Oregon DEQ" and "Department of Environmental Quality" are
 the same agency and become two groups on their screen if you write both. Add a new label only
 when the document needs one this list does not cover.
+
+FACT KEYS ALREADY IN USE FOR THIS COMPANY
+${list(ctx.factKeys)}
+
+Reuse these exactly where they fit — "facility_address" and "facility_location" are the same
+question and become two questions on their screen if you write both. Add a new key only when the
+fact you found is one this list does not cover.
 
 WHAT THIS COMPANY ALREADY HOLDS
 ${existing}

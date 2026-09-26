@@ -72,7 +72,7 @@ export interface JobRecorder {
 
 type Db = { from: (t: string) => any }
 
-export async function startJobRun(admin: Db, job: 'summarise' | 'delete' | 'account_delete'): Promise<JobRecorder> {
+export async function startJobRun(admin: Db, job: 'summarise' | 'delete' | 'account_delete' | 'scan_documents'): Promise<JobRecorder> {
   const { data, error } = await admin.from('job_runs').insert({ job }).select('id').single()
   if (error) throw new Error(`could not open a job_runs row for ${job}: ${error.message}`)
   const id = data.id as string

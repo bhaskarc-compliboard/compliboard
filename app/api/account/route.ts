@@ -242,6 +242,14 @@ const DELETED_BY_CASCADE_OR_PARENT = [
   // reason as the rest: the loop is the customer deleting their own rows, and this list is what
   // the cascade already removes.
   'company_facts',
+  // ...and the eighth (migration 053). A batch is the record of an upload — how many files
+  // arrived together, what they came to, whether we emailed about it. It is OUR bookkeeping
+  // about serving them rather than a row they wrote, and it cascades: company_id -> companies
+  // ON DELETE CASCADE, confdeltype = c, read from pg_constraint on 26 Sep. Its documents
+  // survive it by design (batch_id is ON DELETE SET NULL) and are deleted on their own account
+  // by the tenant loop, so nothing is orphaned either way. Found by check-schema-contracts
+  // refusing the commit, which is the third time that gate has caught this exact omission.
+  'document_batches',
   'ai_calls',              // cascades with the company: company_id -> companies ON DELETE
                            // CASCADE, read from pg_constraint on 23 Sep rather than assumed —
                            //   conname ai_calls_company_id_fkey · confdeltype = c (cascade)

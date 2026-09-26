@@ -1035,6 +1035,53 @@ export type Database = {
           },
         ]
       }
+      document_batches: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string | null
+          dismissed_at: string | null
+          done_count: number
+          file_count: number
+          id: string
+          notified_at: string | null
+          status: string
+          summary: Json | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          dismissed_at?: string | null
+          done_count?: number
+          file_count?: number
+          id?: string
+          notified_at?: string | null
+          status?: string
+          summary?: Json | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          dismissed_at?: string | null
+          done_count?: number
+          file_count?: number
+          id?: string
+          notified_at?: string | null
+          status?: string
+          summary?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_batches_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_conditions: {
         Row: {
           company_id: string
@@ -1264,6 +1311,7 @@ export type Database = {
           fix: string | null
           id: string
           locator: string | null
+          not_seen_at: string | null
           ordinal: number
           quote: string | null
           quote_verified: boolean | null
@@ -1288,6 +1336,7 @@ export type Database = {
           fix?: string | null
           id?: string
           locator?: string | null
+          not_seen_at?: string | null
           ordinal: number
           quote?: string | null
           quote_verified?: boolean | null
@@ -1312,6 +1361,7 @@ export type Database = {
           fix?: string | null
           id?: string
           locator?: string | null
+          not_seen_at?: string | null
           ordinal?: number
           quote?: string | null
           quote_verified?: boolean | null
@@ -1634,6 +1684,7 @@ export type Database = {
       }
       documents: {
         Row: {
+          batch_id: string | null
           company_id: string | null
           entity_id: string | null
           file_size: number | null
@@ -1645,6 +1696,7 @@ export type Database = {
           is_recurring: boolean | null
           latest_confirmed_at: string | null
           name: string
+          reading_since: string | null
           recurrence_period: string | null
           source: string
           status: string
@@ -1654,6 +1706,7 @@ export type Database = {
           version_of: string | null
         }
         Insert: {
+          batch_id?: string | null
           company_id?: string | null
           entity_id?: string | null
           file_size?: number | null
@@ -1665,6 +1718,7 @@ export type Database = {
           is_recurring?: boolean | null
           latest_confirmed_at?: string | null
           name: string
+          reading_since?: string | null
           recurrence_period?: string | null
           source?: string
           status?: string
@@ -1674,6 +1728,7 @@ export type Database = {
           version_of?: string | null
         }
         Update: {
+          batch_id?: string | null
           company_id?: string | null
           entity_id?: string | null
           file_size?: number | null
@@ -1685,6 +1740,7 @@ export type Database = {
           is_recurring?: boolean | null
           latest_confirmed_at?: string | null
           name?: string
+          reading_since?: string | null
           recurrence_period?: string | null
           source?: string
           status?: string
@@ -1694,6 +1750,13 @@ export type Database = {
           version_of?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "documents_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "document_batches"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "documents_company_id_fkey"
             columns: ["company_id"]
