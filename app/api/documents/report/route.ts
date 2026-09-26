@@ -65,13 +65,22 @@ export async function GET(request: NextRequest) {
       v.document_id === row.version_of ||
       v.version_of === documentId)
 
-    // Gaps belonging to the CURRENT scan are the report's gaps. Anything older is shown only
-    // when a person has work attached to it, because a superseded finding with nothing hanging
-    // off it is noise, and one with a checklist on it is a fortnight of somebody's afternoons.
+    // Gaps belonging to the CURRENT scan are the report's gaps. An older one is shown when a
+    // person has work attached to it — a superseded finding with nothing hanging off it is
+    // noise, and one with a checklist on it is a fortnight of somebody's afternoons — AND,
+    // since Run 7, when it is STILL OPEN.
+    //
+    // *** THE SECOND CASE IS THE ONE THAT MATTERS. *** A gap the latest reading neither raised
+    // nor named is not closed: a reading that failed to mention a missing evacuation procedure
+    // is not evidence the procedure exists. `saveScan` marks it `not_seen_at` and leaves it
+    // open, and a finding left open that the report does not show is a finding we have quietly
+    // dropped. Superseded and dismissed rows are excluded — those were answered, one by the
+    // next reading and one by a person.
     const allGaps = (gaps.data ?? []) as Array<Record<string, unknown>>
     const current = allGaps.filter((g) => g.scan_id === scanId)
     const listedGapIds = new Set((lists.data ?? []).map((c: Record<string, unknown>) => c.document_gap_id))
-    const earlier = allGaps.filter((g) => g.scan_id !== scanId && listedGapIds.has(g.id))
+    const earlier = allGaps.filter((g) =>
+      g.scan_id !== scanId && (listedGapIds.has(g.id) || g.status === 'open'))
 
     return NextResponse.json({
       row,

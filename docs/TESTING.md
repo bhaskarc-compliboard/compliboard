@@ -1927,3 +1927,101 @@ stands.
 Filing now lives once, in the drawer: **Filed in ▾** under the title. Change it there and the
 list reflects it when the drawer closes. It does not print — where a document is filed is not
 part of the evidence.
+
+---
+
+## Documents — a folder, a sweep, an email (Run 7)
+
+Seven tests, plus Run 6's addendum four above. Two of them cost real money; the rest are free.
+The ones worth your time are the third and fourth, because both are about what happens when
+something goes wrong in the middle of work nobody is watching.
+
+Run signed in, against staging, with `NOTIFY_TEST_TO` set so the email reaches you.
+
+### 1. Two files are read while you watch, and no email arrives
+
+Add two files from the Documents page. They scan one after another in the page, exactly as
+before — `Reading 1 of 2`, then `Reading 2 of 2` — and the rows fill in as each returns.
+
+When the second returns, the banner appears at the top: **"We've read your 2 documents"** with
+the counts and the titles behind them. **No email.** Somebody who watched the files go in does
+not need to be told by email that they went in. Check `document_batches`: `status = done`,
+`done_count = 2`, `summary` populated, `notified_at` **null**.
+
+Dismiss the banner. Reload — it stays gone, because the dismissal is a row and not browser
+state.
+
+### 2. Eight files go to the background
+
+Add eight (the seven fixtures plus one). The page says **"8 files uploaded — reading them in the
+background"** and returns immediately; every row says **Queued**.
+
+Now watch without touching anything. Rows turn **Queued → Reading… → their status**, roughly one
+every minute, because the page polls the index every ten seconds while anything is in flight and
+the sweep reads them one after another. **Close the tab half way through and reopen it** — the
+remaining files still get read. That is the whole reason four is the threshold.
+
+When the last one lands the banner appears with the counts, and **the email arrives**. Read it:
+every line in it is a row you can find on the page. Subject `We've read your 8 documents`. Record
+the Resend id from the sweep's response. `notified_at` is set, and a second sweep does not send
+it again.
+
+### 3. One document throwing does not stop the sweep
+
+Queue several documents and make one of them fail — the quickest honest way is to delete the
+stored file out of the bucket while its row still says `uploaded`, which is a real failure the
+product has to survive.
+
+The sweep continues to the end. Check the `job_runs` row: `ok = true`, `counts` showing what was
+read, and **`errors` naming that document by id**. A run that read seven of eight is a successful
+run with one recorded error, not a failed sweep. The failed document reads `could_not_read` on
+the page with a reason, never a blank row and never a silent omission.
+
+### 4. Two companies are read company by company, never interleaved
+
+Queue a batch for two different companies at once, then run the sweep.
+
+Assert it from `document_scans.scanned_at`: order every scan by time and the company ids must
+come out in **runs** — all of one company's, then all of the other's — never alternating. This
+is not tidiness. Every scan is built from the readings before it, so a company's documents read
+out of order see less than they should, and Run 6 measured what that produces: five different
+key names for one address.
+
+### 5. A re-scan withdraws a proposal the new reading does not restate
+
+Note a pending fact on a document, then **Read it again**. If the new reading does not restate
+that key, the proposal reads **"No longer proposed by the latest reading"** in the drawer and is
+**gone from To confirm**.
+
+It must **not** say "Not right". That is the person saying we were wrong, and it teaches the next
+scan something. This is us saying the file no longer says it, which teaches nothing and is not
+the person's fault. And the row is still there: a proposal that silently disappeared from the
+queue is a change nobody can see.
+
+A key the new reading restates with a **different value** must survive as a disagreement, not be
+withdrawn — that is Run 6's two-values-one-key case, and withdrawing it would hide the change.
+
+### 6. A gap the latest reading passed over stays open and says so
+
+After a re-scan, look for a gap the new reading neither raised nor named in `same_as_gap_id`. It
+appears under **From earlier readings** with:
+
+> Not seen in the latest reading. Still open — we do not close a finding because a reading
+> stopped mentioning it.
+
+Check the row: `status` is still **open** and `not_seen_at` is set. The amber is deliberate: this
+one asks something of a person, where a superseded gap in the same list does not.
+
+### 7. The expected line truncates and expands
+
+Group by Agency. A group whose scans proposed more than three entries shows the first three and
+**"and N more"**. Click it: the rest appear in place, with **show fewer** to close it again. The
+count is always visible — a truncation that hides how much it truncated is the product deciding
+what you get to see.
+
+### What none of these can tell you
+
+Whether the sweep's ordering produced a *better* reading of document eight than reading it first
+would have. The mechanism is testable and the benefit is not: it rests on the claim that a scan
+shown the labels and keys already in use reuses them, and the only evidence for that is Run 6's
+measurement of what happens when it is not shown them.

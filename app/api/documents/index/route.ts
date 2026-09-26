@@ -73,11 +73,40 @@ export async function GET(request: NextRequest) {
       .eq('is_current', true)
       .order('document_id')
 
+    // THE BANNER, AND WHETHER ANYTHING IS STILL IN FLIGHT — Documents Run 7.
+    //
+    // One query answers both. The banner is the newest finished batch nobody has dismissed; the
+    // in-flight batches are what makes the page poll. Both are read here rather than from the
+    // browser because the page already asks this route for everything else it draws, and a
+    // second round trip per poll — every ten seconds, for as long as a folder takes — is the
+    // kind of cost that only shows up in somebody else's bill.
+    const { data: batches } = await db
+      .from('document_batches')
+      .select('id, status, file_count, done_count, summary, notified_at, dismissed_at, created_at')
+      .eq('company_id', companyId)
+      .order('created_at', { ascending: false })
+      .limit(10)
+
+    const all = (batches ?? []) as Array<Record<string, unknown>>
+    const banner = all.find((b) => b.status === 'done' && !b.dismissed_at && b.summary) ?? null
+    const working = all.filter((b) => b.status !== 'done')
+
+    // *** THE PAGE POLLS ON THE DOCUMENTS, NOT ON THE BATCHES. *** A document can be queued
+    // without a batch — a re-read asked for from the drawer, a row recovered by the sweep — and
+    // a page that stopped refreshing because no batch was open would leave those rows saying
+    // Queued for ever with no way to find out otherwise.
+    const rows = (data ?? []) as Array<Record<string, unknown>>
+    const inFlight = rows.filter((r) =>
+      r.document_status === 'uploaded' || r.document_status === 'reading').length
+
     return NextResponse.json({
       documents: data ?? [],
       folders: folders ?? [],
       sites: sites ?? [],
       expected: expected ?? [],
+      banner,
+      working,
+      in_flight: inFlight,
     })
   } catch (error) {
     console.error('documents/index:', error)

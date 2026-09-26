@@ -45,6 +45,8 @@ interface Gap {
   basis: string; quote: string | null; quote_verified: boolean | null
   status: string; dismissed_reason: string | null
   draftable: boolean; draft_text: string | null; draft_created_at: string | null
+  /** Set when a later reading neither raised this finding nor named it — Run 7. */
+  not_seen_at: string | null
 }
 interface ChecklistLink {
   id: string; title: string; created_at: string
@@ -689,7 +691,20 @@ export default function DocumentReport({
                         {' '}· checklist made {fmt(c.created_at)} · {c.done} of {c.total} done
                       </p>
                     ))}
-                    <p className="text-[12px] text-gray-400">The latest reading did not raise this.</p>
+                    {/* *** STILL OPEN, AND SAID SO — Run 7. ***
+                        Two different things share this list and they must not read the same.
+                        A superseded gap was answered by the next reading and is here only
+                        because somebody's checklist is attached to it. One still `open` with
+                        `not_seen_at` is a finding the latest reading passed over in silence,
+                        and it is STILL OPEN: nothing closes a gap without a person. */}
+                    {g.status === 'open' && g.not_seen_at ? (
+                      <p className="text-[12px] text-[var(--amber)]">
+                        Not seen in the latest reading. Still open — we do not close a finding
+                        because a reading stopped mentioning it.
+                      </p>
+                    ) : (
+                      <p className="text-[12px] text-gray-400">The latest reading did not raise this.</p>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -812,7 +827,14 @@ export default function DocumentReport({
                   )
                 ) : (
                   <p className="mt-0.5 text-[12px] text-gray-400">
-                    {f.status === 'accepted' ? 'Confirmed' : 'Not right'}
+                    {/* *** WITHDRAWN IS NOT REJECTED, AND THE WORDING KEEPS THEM APART — Run 7. ***
+                        "Not right" is the person saying we were wrong, and the next scan is
+                        shown it. This is US saying the latest reading of the file no longer
+                        says it — nobody was wrong, and the row stays so the change is visible
+                        rather than a proposal that silently disappeared from the queue. */}
+                    {f.status === 'accepted' ? 'Confirmed'
+                      : f.status === 'withdrawn' ? 'No longer proposed by the latest reading'
+                      : 'Not right'}
                     {f.rejected_reason ? ` — you said: ${f.rejected_reason}` : ''}
                   </p>
                 )}
