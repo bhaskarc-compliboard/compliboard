@@ -63,18 +63,41 @@ export async function summariseBatch(db: Db, batchId: string): Promise<BatchSumm
     return { total: 0, read: 0, needs_work: 0, expiring: 0, expired: 0, could_not_read: 0, attention: [], fine: [] }
   }
   const { data: rows } = await db.from('document_index_v')
-    .select('document_id, title, display_status, could_not_read_reason')
+    .select('document_id, title, file_name, display_status, could_not_read_reason')
     .in('document_id', ids).order('title')
-  const list = (rows ?? []) as Array<{
-    title: string; display_status: string; could_not_read_reason: string | null
+  const raw = (rows ?? []) as Array<{
+    title: string; file_name: string; display_status: string; could_not_read_reason: string | null
   }>
+
+  // *** TWO DOCUMENTS WITH ONE TITLE NEED THE FILE NAME, OR THE EMAIL CONTRADICTS ITSELF. ***
+  // Measured on the first real batch: 06a and 06b are the same forklift log, one clean and one
+  // photographed, and the scan titled both "Powered Industrial Truck Pre-Shift Inspection Log —
+  // Portland Warehouse". The email then listed that title under "needs attention" AND under
+  // "nothing to do", which reads as the product disagreeing with itself rather than as two
+  // files. The title is the scan's; the file name is the customer's, and it is the thing they
+  // will recognise.
+  const seen = new Map<string, number>()
+  for (const r of raw) seen.set(r.title, (seen.get(r.title) ?? 0) + 1)
+  const list = raw.map((r) => ({
+    ...r,
+    title: (seen.get(r.title) ?? 0) > 1 ? `${r.title} (${r.file_name})` : r.title,
+  }))
 
   const count = (s: string) => list.filter((r) => r.display_status === s).length
   // ATTENTION IS THE FOUR AMBER STATUSES, and "could not read" is one of them. An unreadable
   // file is a status said out loud, never dropped from a count (§5.1).
   const attention = list
     .filter((r) => ['needs_work', 'expiring', 'expired', 'could_not_read'].includes(r.display_status))
-    .map((r) => ({ title: r.title, status: r.display_status, reason: r.could_not_read_reason }))
+    // *** THE REASON BELONGS ONLY TO could_not_read. *** `could_not_read_reason` is written by
+    // the scan whether or not the reading failed — the model answers the "why could you not
+    // read this" question even when it could, so a perfectly readable plan carries the sentence
+    // "The document was readable." Printed beside "needs work" that is nonsense in an email,
+    // and an email that contains one nonsense line is one a person stops reading.
+    .map((r) => ({
+      title: r.title,
+      status: r.display_status,
+      reason: r.display_status === 'could_not_read' ? r.could_not_read_reason : null,
+    }))
 
   return {
     total: list.length,

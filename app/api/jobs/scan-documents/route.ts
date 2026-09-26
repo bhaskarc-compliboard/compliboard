@@ -22,15 +22,16 @@
  * 2. **A COMPANY IS CLAIMED, NOT JUST A DOCUMENT.** The cadence is every five minutes and a run
  *    may last longer than that, so two sweeps can be alive at once. Claiming document by
  *    document would let two runs interleave one company's files and undo rule 1. So the run
- *    takes a company's whole queue in a single compare-and-set — `status = 'reading' where
- *    status = 'uploaded'` — and a second run then sees nothing queued for that company and
- *    moves on.
+ *    takes a company's whole queue in a single compare-and-set on `reading_since`, and a second
+ *    run then sees nothing unclaimed for that company and moves on. The claim is deliberately
+ *    NOT the status: the status is what the page shows, and eight rows saying "Reading…" while
+ *    one of them is being read would be the product describing work that is not happening.
  *
  * 3. **STUCK ROWS ARE RECOVERED AT THE TOP OF EVERY RUN.** A function killed mid-scan leaves
  *    rows saying `reading` for ever, and a row that lies about being in progress is worse than
  *    one that admits it is waiting. Anything claimed longer ago than `STUCK_AFTER_MS` and still
- *    unread goes back to `uploaded`. Guarded on `status = 'reading'` so a scan that finishes
- *    between the SELECT and the UPDATE is not clobbered (`CLAUDE.md` §4).
+ *    unread has its claim released. Guarded on the claim still being old, so a run that picked
+ *    the row up between the SELECT and the UPDATE is not robbed of it (`CLAUDE.md` §4).
  *
  * 4. **ONE DOCUMENT FAILING MUST NOT STOP THE SWEEP.** Every document is its own try/catch and
  *    its own entry in `job_runs.errors`. A run that read 29 of 30 is a successful run with one
@@ -101,18 +102,24 @@ export async function sweep(appUrl: string) {
   const run = await startJobRun(supabaseAdmin, 'scan_documents')
   const errors: Array<{ document: string; error: string }> = []
   let recovered = 0, read = 0, couldNotRead = 0, companies = 0, batchesFinished = 0, notified = 0
+  // WHAT WENT OUT, ON THE RUN'S OWN ROW. `job_runs` answers "did it run and what did it touch"
+  // (§116's release gate), and an email is the most consequential thing this job does — the one
+  // action a customer sees. The provider's id is the only thing that can settle "did it arrive"
+  // with Resend weeks later, so it is recorded rather than logged and lost.
+  const sent: Array<{ batch: string; to: string; id: string | null; error?: string }> = []
   let stoppedForTime = false
 
   try {
     // ---- RULE 3: recover anything abandoned, before anything else ----
     const stuckBefore = new Date(Date.now() - STUCK_AFTER_MS).toISOString()
     const { data: stuck } = await supabaseAdmin.from('documents')
-      .select('id').eq('status', 'reading').lt('reading_since', stuckBefore)
+      .select('id').in('status', ['uploaded', 'reading']).lt('reading_since', stuckBefore)
     for (const d of (stuck ?? []) as Array<{ id: string }>) {
-      // Guarded on the status we read, so a scan that finished in between is not clobbered.
+      // Guarded on the claim still being old, so a run that picked the row up between the
+      // SELECT and the UPDATE is not robbed of it (`CLAUDE.md` §4).
       const { data: back } = await supabaseAdmin.from('documents')
         .update({ status: 'uploaded', reading_since: null })
-        .eq('id', d.id).eq('status', 'reading').select('id')
+        .eq('id', d.id).lt('reading_since', stuckBefore).select('id')
       if (back?.length) recovered++
     }
 
@@ -123,17 +130,25 @@ export async function sweep(appUrl: string) {
       // RULE 1: the oldest queued document decides which company is next, so a folder that
       // landed at nine is finished before one that landed at ten.
       const { data: next } = await supabaseAdmin.from('documents')
-        .select('company_id').eq('status', 'uploaded')
+        .select('company_id').eq('status', 'uploaded').is('reading_since', null)
         .order('uploaded_at', { ascending: true }).limit(1).maybeSingle()
       if (!next) break
       const companyId = next.company_id as string
 
       // RULE 2: claim the whole company's queue in one statement. A second run overlapping this
-      // one now sees nothing queued here and moves to another company, which is what keeps one
-      // company's documents strictly one after another across runs as well as within one.
+      // one now sees nothing unclaimed here and moves to another company, which is what keeps
+      // one company's documents strictly one after another across runs as well as within one.
+      //
+      // *** THE CLAIM IS `reading_since`, NOT `status`, AND THAT IS NOT A DETAIL. ***
+      // Writing `status = 'reading'` across the whole queue puts "Reading…" on eight rows when
+      // one document is being read and seven are waiting — the product describing work that is
+      // not happening. Measured on the first eight-file run: every row went to Reading… at
+      // second zero and stayed there for six minutes. The status is what the page shows, so it
+      // stays `uploaded` — Queued — until this run actually starts that document. The claim is
+      // bookkeeping and lives in a column nobody is shown.
       const { data: claimed } = await supabaseAdmin.from('documents')
-        .update({ status: 'reading', reading_since: new Date().toISOString() })
-        .eq('company_id', companyId).eq('status', 'uploaded')
+        .update({ reading_since: new Date().toISOString() })
+        .eq('company_id', companyId).eq('status', 'uploaded').is('reading_since', null)
         .select('id, company_id, name, file_url, file_type, entity_id, batch_id, uploaded_at')
       const queue = ((claimed ?? []) as QueuedDoc[])
         .sort((a, b) => a.uploaded_at.localeCompare(b.uploaded_at))
@@ -148,13 +163,15 @@ export async function sweep(appUrl: string) {
         // not be able to carry the run past its ceiling.
         if (Date.now() - startedAt > BUDGET_MS - RESERVE_MS) {
           stoppedForTime = true
-          // Hand the rest back so the next run picks them up rather than rule 3 waiting out
-          // fifteen minutes for them.
-          await supabaseAdmin.from('documents')
-            .update({ status: 'uploaded', reading_since: null })
-            .eq('id', doc.id).eq('status', 'reading')
+          // Hand the claim back so the next run picks it up rather than rule 3 waiting out
+          // fifteen minutes for it. The status never moved, so the row has been saying Queued
+          // all along and goes on saying it — which is what it is.
+          await supabaseAdmin.from('documents').update({ reading_since: null }).eq('id', doc.id)
           continue
         }
+        // NOW it is being read, and now the row says so. One row at a time says Reading…,
+        // because one document at a time is being read.
+        await supabaseAdmin.from('documents').update({ status: 'reading' }).eq('id', doc.id)
         try {
           if (!company) throw new Error('the company row could not be read')
           const { data: blob, error: dlError } = await supabaseAdmin.storage.from(BUCKET).download(doc.file_url)
@@ -187,15 +204,29 @@ export async function sweep(appUrl: string) {
         } catch (e) {
           // RULE 4. This document failed; the next one still runs.
           errors.push({ document: doc.id, error: e instanceof Error ? e.message : String(e) })
-          // It must not stay claimed. `could_not_read` rather than back to `uploaded`: a
-          // document that threw will throw again, and a row that cycles through the queue for
-          // ever is a failure nobody sees. A person can ask for it to be read again.
-          await supabaseAdmin.from('documents')
-            .update({ status: 'could_not_read', reading_since: null }).eq('id', doc.id)
+          // *** AND THE REASON GOES ON THE ROW, NOT ONLY IN job_runs. ***
+          // Setting the status alone left `could_not_read_reason` null, so the page, the drawer
+          // and the batch email all said "Could not read" with nothing after it — §5.1's exact
+          // failure, and the one migration 044 and `failedScan` exist to prevent. Found by
+          // reading the banner after the injected-throw test rather than by reading the code.
+          // The technical detail stays in job_runs above; this is the sentence for a person.
+          try {
+            await saveScan(supabaseAdmin, failedScan(
+              'Something went wrong at our end while reading this one.',
+              'Ask for it to be read again — this is usually temporary.',
+            ), { documentId: doc.id, companyId, entityId: doc.entity_id })
+          } catch {
+            // Even the record of the failure failed. The status is the last thing we can say.
+            await supabaseAdmin.from('documents').update({ status: 'could_not_read' }).eq('id', doc.id)
+          }
+          // `could_not_read` rather than back to `uploaded`: a document that threw will throw
+          // again, and a row that cycles through the queue for ever is a failure nobody sees.
+          // A person can ask for it to be read again.
           couldNotRead++
         } finally {
-          await supabaseAdmin.from('documents').update({ reading_since: null })
-            .eq('id', doc.id).not('status', 'eq', 'reading')
+          // The claim is released whatever happened. `saveScan` has already moved the status to
+          // read or could_not_read; if something threw before that, the catch above set it.
+          await supabaseAdmin.from('documents').update({ reading_since: null }).eq('id', doc.id)
         }
       }
 
@@ -206,6 +237,11 @@ export async function sweep(appUrl: string) {
           const finished = await finishBatchIfDone(batchId, appUrl)
           if (finished.done) batchesFinished++
           if (finished.notified) notified++
+          const r = finished.resend as
+            { ok?: boolean; id?: string | null; to?: string; error?: string } | undefined
+          if (r && (r.id || r.error)) {
+            sent.push({ batch: batchId, to: r.to ?? '', id: r.id ?? null, ...(r.error ? { error: r.error } : {}) })
+          }
         } catch (e) {
           errors.push({ document: `batch:${batchId}`, error: e instanceof Error ? e.message : String(e) })
         }
@@ -217,7 +253,7 @@ export async function sweep(appUrl: string) {
 
   const counts = {
     companies, read, could_not_read: couldNotRead, recovered,
-    batches_finished: batchesFinished, notified,
+    batches_finished: batchesFinished, notified, sent,
     stopped_for_time: stoppedForTime,
     wall_ms: Date.now() - startedAt,
   }
