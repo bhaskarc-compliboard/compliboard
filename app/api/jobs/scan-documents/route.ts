@@ -37,6 +37,12 @@
  *    its own entry in `job_runs.errors`. A run that read 29 of 30 is a successful run with one
  *    recorded error, not a failed sweep — the summariser's rule 2, and the same reasoning.
  *
+ * 4a. **`held` IS NOT IN THE QUEUE, AND NOTHING HERE HAS TO KNOW THAT.** The queue is
+ *    `status = 'uploaded'` and nothing else, so the documents migration 054 set aside — the 38
+ *    that were on production before any of this existed — are skipped by construction rather
+ *    than by a rule this file has to remember. A person asking for one with "Read it again"
+ *    puts it through `/api/document-scan`, which does not consult the queue at all.
+ *
  * 5. **IT STOPS BEFORE THE FUNCTION DOES.** A scan is 20 to 120 seconds. The run stops STARTING
  *    documents once there is not comfortably room for another, and leaves the rest queued for
  *    the next run — five minutes away. A sweep killed by the platform mid-scan is rule 3's
@@ -86,7 +92,7 @@ interface QueuedDoc {
 export async function POST(request: NextRequest) {
   const auth = requireCronSecret(request)
   if (!auth.ok) return auth.response
-  return sweep(new URL(request.url).origin)
+  return sweep()
 }
 
 /**
@@ -97,7 +103,7 @@ export async function POST(request: NextRequest) {
  * tick. It is the same function either way — a second code path for "the urgent case" would be
  * a second thing to keep correct.
  */
-export async function sweep(appUrl: string) {
+export async function sweep() {
   const startedAt = Date.now()
   const run = await startJobRun(supabaseAdmin, 'scan_documents')
   const errors: Array<{ document: string; error: string }> = []
@@ -234,7 +240,7 @@ export async function sweep(appUrl: string) {
       const batchIds = [...new Set(queue.map((d) => d.batch_id).filter(Boolean))] as string[]
       for (const batchId of batchIds) {
         try {
-          const finished = await finishBatchIfDone(batchId, appUrl)
+          const finished = await finishBatchIfDone(batchId)
           if (finished.done) batchesFinished++
           if (finished.notified) notified++
           const r = finished.resend as
@@ -272,7 +278,7 @@ export async function sweep(appUrl: string) {
  * live path differs in exactly one way — no email — and that is a flag, not a second function.
  */
 export async function finishBatchIfDone(
-  batchId: string, appUrl: string, opts: { email?: boolean } = { email: true },
+  batchId: string, opts: { email?: boolean } = { email: true },
 ): Promise<{ done: boolean; notified: boolean; resend?: unknown }> {
   const { data: batch } = await supabaseAdmin.from('document_batches')
     .select('id, company_id, created_by, status, notified_at, file_count').eq('id', batchId).maybeSingle()
@@ -318,7 +324,7 @@ export async function finishBatchIfDone(
     return { done: true, notified: false, resend: { skipped: 'no recipient on the uploading login' } }
   }
 
-  const sent = await notifyBatch({ to, companyName: company?.name ?? null, summary, appUrl })
+  const sent = await notifyBatch({ to, companyName: company?.name ?? null, summary })
   if (sent.ok) {
     await supabaseAdmin.from('document_batches')
       .update({ notified_at: new Date().toISOString() }).eq('id', batchId)

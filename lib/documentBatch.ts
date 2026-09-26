@@ -147,10 +147,24 @@ export async function notifyBatch(args: {
   to: string
   companyName: string | null
   summary: BatchSummary
-  appUrl: string
 }): Promise<{ ok: true; id: string | null; to: string; subject: string; text: string }
         | { ok: false; error: string; to: string; subject: string; text: string }> {
-  const { summary: s, appUrl } = args
+  const { summary: s } = args
+
+  // *** THE LINK COMES FROM THE ENVIRONMENT, AND WITHOUT IT NOTHING IS SENT. ***
+  //
+  // It used to be the request's own origin, which is right in a browser and wrong in every
+  // other caller of this function. The sweep runs from Vercel Cron, whose request origin is
+  // whatever internal hostname the platform used; `after()` on a local dev server makes it
+  // `http://localhost:3000`. Either way the customer gets a link that does not work, from an
+  // email whose only job is to get them back to the page.
+  //
+  // *** A WRONG LINK IS WORSE THAN NO EMAIL. *** An email that does not arrive is a feature
+  // that looks unfinished. An email that arrives with a dead link is a product that looks
+  // broken, and it is the first thing this customer will have received from us. So an unset
+  // variable refuses the send, loudly in the log, and the batch is left un-notified — the
+  // banner still carries the whole summary, so nobody is left with nothing.
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? '').trim().replace(/\/+$/, '')
   const override = (process.env.NOTIFY_TEST_TO ?? '').trim()
   const to = override || args.to
 
@@ -182,8 +196,18 @@ export async function notifyBatch(args: {
 
   // The key is read here rather than at module scope so an unset key is a failure of THIS send,
   // reported and recorded, instead of a module that throws on import and takes the sweep with it.
+  if (!appUrl) {
+    console.error('BATCH EMAIL NOT SENT: NEXT_PUBLIC_APP_URL is not set, so the link in it '
+      + 'would not have worked. Set it to the site\'s public origin, e.g. '
+      + 'https://app.compliboard.com. The banner on the Documents page still shows this summary.')
+    return { ok: false, error: 'NEXT_PUBLIC_APP_URL is not set', to, subject, text }
+  }
+
   const key = process.env.RESEND_API_KEY
-  if (!key) return { ok: false, error: 'RESEND_API_KEY is not set', to, subject, text }
+  if (!key) {
+    console.error('BATCH EMAIL NOT SENT: RESEND_API_KEY is not set.')
+    return { ok: false, error: 'RESEND_API_KEY is not set', to, subject, text }
+  }
 
   try {
     const resend = new Resend(key)

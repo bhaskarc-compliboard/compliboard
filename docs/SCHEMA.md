@@ -3,8 +3,8 @@
 **GENERATED — do not edit.** `node --env-file=.env.local scripts/schema-doc.js`, and it runs
 inside `npm run db:migrate`, so it cannot be stale by more than one migration.
 
-**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-09-26 01:58 UTC
-**Migrations applied:** 54 — `000` to `053`
+**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-09-26 16:39 UTC
+**Migrations applied:** 55 — `000` to `054`
 
 *Every figure here was read from the catalog of that database. Nothing is copied from the
 migration files, which say what was intended rather than what is there — and the two have
@@ -1330,7 +1330,7 @@ One row per correction a person makes to what a document IS. Newest per field wi
 **Constraints:**
 
 - `documents_source_check` — `CHECK ((source = ANY (ARRAY['upload'::text, 'conversation'::text, 'drive'::text])))`
-- `documents_status_check` — `CHECK ((status = ANY (ARRAY['uploaded'::text, 'reading'::text, 'read'::text, 'could_not_read'::text])))`
+- `documents_status_check` — `CHECK ((status = ANY (ARRAY['uploaded'::text, 'reading'::text, 'read'::text, 'could_not_read'::text, 'held'::text])))`
 
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
@@ -1716,8 +1716,8 @@ One row per nightly run. Answers release gate 2 — did it run, and what did it 
 **Points at:**
 
 - `added_by` → `auth.users` — ON DELETE SET NULL
-- `company_id` → `documents` — ON DELETE CASCADE
 - `company_id` → `companies` — ON DELETE CASCADE
+- `company_id` → `documents` — ON DELETE CASCADE
 - `document_id` → `documents` — ON DELETE CASCADE
 - `document_id` → `documents` — ON DELETE CASCADE
 - `entity_id` → `entities` — ON DELETE CASCADE
@@ -2483,4 +2483,5 @@ filtered HERE so no consumer can forget it (CLAUDE.md §3.2). A corrected link
 051
 052
 053
+054
 ```

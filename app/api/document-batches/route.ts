@@ -77,7 +77,7 @@ export async function PATCH(request: NextRequest) {
       // every document is already settled; this computes the summary and marks the batch done.
       // `email: false` is the whole difference between the two paths: somebody who watched the
       // files go in does not need to be told by email that they went in.
-      const res = await finishBatchIfDone(id, new URL(request.url).origin, { email: false })
+      const res = await finishBatchIfDone(id, { email: false })
       return NextResponse.json({ ok: true, ...res })
     }
 
@@ -89,9 +89,8 @@ export async function PATCH(request: NextRequest) {
 
     // The response goes first; the sweep runs after it. A folder upload must not hold the
     // browser open for the length of thirty scans.
-    const origin = new URL(request.url).origin
     after(async () => {
-      try { await sweep(origin) } catch (e) { console.error('kicked sweep failed:', e) }
+      try { await sweep() } catch (e) { console.error('kicked sweep failed:', e) }
     })
     return NextResponse.json({ ok: true, queued: true, company_id: companyId })
   } catch (error) {

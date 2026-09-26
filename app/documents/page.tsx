@@ -580,10 +580,16 @@ function DocumentsPageContent() {
   }
 
   const folderCount = (id: string) => rows.filter((r) => r.folder_id === id).length
-  const statusWord = (r: IndexRow) =>
-    r.display_status === 'not_yet_read' && (readingIds.has(r.document_id) || r.document_status === 'reading')
-      ? 'Reading…'
-      : (STATUS_WORD[r.display_status] ?? r.display_status)
+  const statusWord = (r: IndexRow) => {
+    if (r.display_status === 'not_yet_read'
+        && (readingIds.has(r.document_id) || r.document_status === 'reading')) return 'Reading…'
+    // *** HELD IS NOT QUEUED, AND MUST NOT SAY SO (migration 054). ***
+    // These are the files that were already here when the sweep arrived. Nothing is going to
+    // read them on its own, so "Queued" would be a promise the product is not keeping — the
+    // exact shape of the anti-pattern this page exists to avoid.
+    if (r.document_status === 'held') return 'Not read yet'
+    return STATUS_WORD[r.display_status] ?? r.display_status
+  }
 
   // ---------------------------------------------------------------------------
   // RENDER
@@ -606,6 +612,15 @@ function DocumentsPageContent() {
           <div className="min-w-0 flex-1">
             <p className="truncate text-[13px] text-gray-900 group-hover:text-[var(--green)]">{r.title}</p>
             <p className="mt-0.5 truncate text-[12px] text-gray-500">{meta}</p>
+            {/* WHAT TO DO ABOUT IT, ON THE ROW. An empty state is a message (§5.1) and
+                "Not read yet" on its own leaves somebody waiting for something that is not
+                coming. These two are the only ways to have it read, so they are named. */}
+            {r.document_status === 'held' && (
+              <p className="mt-1 text-[12px] text-gray-500">
+                Not read yet — press Add files to read new ones, or open this and press
+                {' '}<span className="text-gray-700">Read it again</span>.
+              </p>
+            )}
             {r.display_status === 'could_not_read' && (
               // *** SAID OUT LOUD, ON THE ROW. *** Never a log line, never dropped from a count,
               // and never a claim about contents nobody read — only what we could not do and
