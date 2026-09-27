@@ -73,15 +73,14 @@
     },
     {
       "id": "status",
-      "line": "Status (must): recorded, with last entry September 18, 2026. Never \"compliant\". Not gaps_found as a program-style status.",
+      "line": "Status (must): recorded OR gaps_found — a record with findings in it is EXPECTED to read gaps_found until the contract carries a separate findings flag. Never \"compliant\".",
       "type": "field_one_of",
       "field": "status",
       "accept": [
-        "recorded"
-      ],
-      "forbid": [
+        "recorded",
         "gaps_found"
-      ]
+      ],
+      "corrected": "2026-09-27: was accept [\"recorded\"], forbid [\"gaps_found\"]. Six of seven configurations returned gaps_found and failed; the only one that passed was the model that found the fewest problems in the log. ScanStatus makes one field answer two unrelated questions — what kind of conclusion this is, and whether gaps were found — and a record with gaps has to answer both. \"compliant\" is still failed, by the README rule, in code."
     },
     {
       "id": "finding-missing-days",

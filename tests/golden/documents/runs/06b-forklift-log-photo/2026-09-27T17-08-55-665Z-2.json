@@ -297,5 +297,105 @@
     "quotes_verified": 0,
     "extracted_text": "",
     "started_at": "2026-09-27T17:07:51.460Z"
-  }
+  },
+  "verdicts_rejudged": {
+    "kind": {
+      "verdict": "PASS",
+      "detail": "identity.kind = \"record\""
+    },
+    "agency-osha": {
+      "verdict": "PASS",
+      "detail": "identity.agencies = [oregon osha]"
+    },
+    "subject": {
+      "verdict": "PASS",
+      "detail": "identity.subjects = [powered industrial trucks]"
+    },
+    "site-portland": {
+      "verdict": "PASS",
+      "detail": "identity.site = \"portland\""
+    },
+    "doc-date": {
+      "verdict": "PASS",
+      "detail": "identity.doc_date = 2026-09-17"
+    },
+    "doc-date-kind": {
+      "verdict": "PASS",
+      "detail": "identity.doc_date_kind = \"last entry\""
+    },
+    "status": {
+      "verdict": "PASS",
+      "detail": "status = \"gaps found\""
+    },
+    "finding-missing-days": {
+      "verdict": "PASS",
+      "detail": "gaps: \"No visible entries after Sep 17\" [hour meter, no entr]"
+    },
+    "finding-horn-defect": {
+      "verdict": "PASS",
+      "detail": "gaps: \"Horn defect with no record of taking the truck out of service or repai\" [horn, sep 9, defect, out of service, repair]"
+    },
+    "finding-no-entries-since": {
+      "verdict": "FAIL",
+      "detail": "no item matched. gaps/notes held: Horn defect with no record of taking the tru | No visible entries after Sep 17 | No entries for Sep 3 and Sep 4, but the hour | Operators listed by initials only, with no s | summary | freshness_note | confidence_notes | expected_missing | expected_missing | expected_missing | expected_missing | expected_missing | expected_missing"
+    },
+    "fact-truck": {
+      "verdict": "PASS",
+      "detail": "facts: \"powered_industrial_trucks\" [toyota, 8fgu25, fl-2, propane, forklift]"
+    },
+    "label-consistency": {
+      "verdict": "CROSS",
+      "detail": "judged across the three runs, below"
+    },
+    "no-false-certification-finding": {
+      "verdict": "PASS",
+      "detail": "not raised as such; 1 item(s) mention it — read below",
+      "soft": [
+        {
+          "where": "gaps",
+          "text": "Operators listed by initials only, with no signature or supervisor review / Each entry names the operator only by initials ('M.C.', 'J.R.'). There is no full name, signature, or supervisor sign-off anywhere on the page, so it is hard to tie an entry to a trained, evaluated operator. / Add a key at the top or bottom of the form that matches initials to full names. Add a line for a supervisor to review and sign weekly or monthly. Check that M.C. and J.R. are on your operator training and evaluation records. / page 1, Operator column. No signature or review block in the document. / read / M.C. / c03bb742-42f3-4b15-91a7-8224a4dfb4dd"
+        }
+      ]
+    },
+    "no-false-form-finding": {
+      "verdict": "PASS",
+      "detail": "not raised",
+      "soft": []
+    },
+    "no-invented-maintenance-finding": {
+      "verdict": "PASS",
+      "detail": "not raised",
+      "soft": []
+    },
+    "citation-evaluation-rule": {
+      "verdict": "FAIL",
+      "detail": "\"1910.178(l)(4)(iii)\" not in deadlines, gaps, notes"
+    },
+    "two-operators-fact": {
+      "verdict": "FAIL",
+      "detail": "no item matched. facts held: powered_industrial_trucks | certified_forklift_operators | site_operations"
+    },
+    "conditions-none": {
+      "verdict": "PASS",
+      "detail": "none"
+    },
+    "freshness-recent": {
+      "verdict": "PASS",
+      "detail": "[september]"
+    },
+    "last-entry-date": {
+      "verdict": "FAIL",
+      "detail": "2026-09-18 appears in none of significant_date, identity.doc_date"
+    },
+    "deadline-chen": {
+      "verdict": "FAIL",
+      "detail": "no item matched. deadlines held: Examine FL-2 before each shift it is used an | Close out the September 2026 log and start O"
+    },
+    "deadline-rivera": {
+      "verdict": "FAIL",
+      "detail": "no item matched. deadlines held: Examine FL-2 before each shift it is used an | Close out the September 2026 log and start O"
+    }
+  },
+  "rejudged_at": "2026-09-27T19:31:36.778Z",
+  "rejudged_case_sha256": "be1aa5f59b1a660ec9f06dfff574e456ac80e832453cd1fbec9f226f5ecdcfa0"
 }

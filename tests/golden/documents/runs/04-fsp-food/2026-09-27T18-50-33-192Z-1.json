@@ -603,5 +603,170 @@
     "quotes_verified": 14,
     "extracted_text": "WILLAMETTE VALLEY FOODS, INC.\nFOOD SAFETY PLAN\nReady-to-eat hummus and bean dips\nSalem Plant, 1850 Fairgrounds Road NE, Salem, Oregon 97301\nEffective date: May 12, 2025\nPrepared by: Dana Whitfield, Quality Manager, Preventive Controls Qualified Individual\n(PCQI certificate, FSPCA course, March 2024)\nApproved by: Plant Manager\n1. Facility and product description\nWillamette Valley Foods produces refrigerated ready-to-eat hummus and bean dips in 8-ounce and 16-\nounce sealed plastic tubs for retail sale in Oregon, Washington and Idaho. The Salem plant operates one\nshift, five days a week, with 28 production employees. Products are made from cooked chickpeas or black\nbeans, tahini, lemon juice, garlic, olive oil, salt and spices, blended, filled, sealed, coded and held\nrefrigerated at or below 41°F. Shelf life is 45 days refrigerated. Products are labeled with the allergen\nstatement \"Contains: sesame\" for all hummus items.\n2. Process flow\nReceiving of dry beans, tahini and other ingredients → dry storage or refrigerated storage → soaking and\ncooking of beans (kettle, 212°F, 60 minutes minimum) → cooling in the blast chiller → blending with\nother ingredients → filling and sealing → date coding → metal detection → refrigerated storage →\nshipping.\n3. Hazard analysis\nStep Hazard Type Requires a Justification\npreventive\ncontrol?\nReceiving Sesame allergen Allergen Yes Undeclared allergen if mislabeled; cross-\ntahini contact with bean dips made without\ntahini\nReceiving dry Foreign material (stones, metal) Physical Yes Field debris in dry beans, controlled at\nbeans metal detection and by supplier screening\nCooking of Survival of vegetative pathogens Biological Yes Cook step is the kill step for the finished\nbeans (Salmonella, Listeria monocytogenes) product\nCooling Growth of Clostridium perfringens Biological Yes Slow cooling of a cooked legume allows\nand Bacillus cereus spore-former outgrowth\nBlending and Listeria monocytogenes from the Biological Yes RTE product exposed to the environment\nfilling environment after the kill step\nRefrigerated Growth of Listeria monocytogenes Biological Yes Refrigerated RTE product with a 45-day\nstorage shelf life\nDate coding None significant — No —\nMetal detection Metal fragments Physical Yes Final screen for metal from equipment\nand ingredients\n4. Preventive controls\nHazard Preventive control Type Critical limit or parameter\nVegetative Cook beans in the kettle to an internal temperature of at Process Minimum 212°F for 60 minutes, measured\npathogens at cook least 212°F for at least 60 minutes with a calibrated probe thermometer\nSpore-former Cool cooked beans from 135°F to 70°F within 2 hours Process 135°F to 70°F in 2 hours; 70°F to 41°F in\ngrowth at cooling and to 41°F within a further 4 hours in the blast chiller 4 hours\nListeria in the Sanitation of food-contact surfaces before each Sanitation ATP swab pass before start-up; Listeria\nRTE environment production run and between products; environmental spp. swabs, 10 sites weekly, zone 1 and 2\nmonitoring swabs weekly\nSesame allergen Allergen labeling review for every label at receipt and at Allergen Label matches the formulation sheet;\nprinting; product scheduling with hummus items last in washdown verified by ATP swab before\nthe day, followed by full washdown the next non-sesame product\nMetal Metal detection of every sealed tub Process Reject at 2.0 mm ferrous, 2.5 mm non-\nferrous, 3.0 mm stainless test pieces\n5. Monitoring\nThe kettle operator records the internal temperature and the time at the start and end of each cook batch\non the cook log. The blast chiller operator records the temperature at 2 hours and at 6 hours on the cooling\nlog. The sanitation lead records the ATP swab result before each start-up. The line lead runs the three\nmetal test pieces through the detector at start-up, every two hours, and at the end of the run, and records\nthe result. The quality technician reviews every label lot against the formulation sheet at receipt and signs\nthe label log.\n6. Corrective actions\nIf a cook batch does not reach 212°F for 60 minutes, the batch is re-cooked to the critical limit or\ndiscarded, and the cause is recorded. If cooling exceeds the time limits, the batch is discarded. If an ATP\nswab fails, the surface is re-cleaned and re-swabbed before production starts. If a Listeria spp. swab is\npositive, the site is cleaned and re-swabbed, adjacent sites are added, and product made on that line since\nthe last negative swab is held pending investigation. If the metal detector fails a test piece, all product\nsince the last passing test is re-run through the detector. If a label does not match the formulation, the lot\nis quarantined and not used. All corrective actions are recorded on the corrective action log and reviewed\nby the PCQI within seven days.\n7. Verification\nThe PCQI reviews the cook, cooling, sanitation, allergen and metal detection records within seven\nworking days of their creation. Probe thermometers are calibrated in ice water and boiling water weekly,\nand the metal detector is serviced by the manufacturer annually. Finished product is tested for Listeria\nmonocytogenes monthly by an accredited laboratory. Environmental monitoring results are trended\nquarterly.\n8. Supply-chain program\nTahini and dry beans are received only from approved suppliers who provide a current third-party audit\ncertificate and a certificate of analysis for each lot. The approved supplier list is maintained by the quality\nmanager.\n9. Records\nAll records named in this plan are kept at the Salem plant for at least two years from the date of the record\nand are available to FDA and the Oregon Department of Agriculture on request. Records are reviewed and\nsigned by the PCQI as described in section 7.\n10. Training\nAll production employees receive food hygiene training at hire and annually. The PCQI holds a current\nFSPCA certificate. Sanitation and line leads are trained on the monitoring procedures in this plan.",
     "started_at": "2026-09-27T18:49:15.489Z"
-  }
+  },
+  "verdicts_rejudged": {
+    "kind": {
+      "verdict": "FAIL",
+      "detail": "identity.kind = \"policy\""
+    },
+    "agency-fda": {
+      "verdict": "PASS",
+      "detail": "identity.agencies = [fda | oregon department of agriculture]"
+    },
+    "site-salem": {
+      "verdict": "PASS",
+      "detail": "identity.site = \"salem\""
+    },
+    "doc-date": {
+      "verdict": "PASS",
+      "detail": "identity.doc_date = 2025-05-12"
+    },
+    "jurisdiction-federal": {
+      "verdict": "PASS",
+      "detail": "identity.jurisdiction = [federal | oregon]"
+    },
+    "jurisdiction-oregon": {
+      "verdict": "PASS",
+      "detail": "identity.jurisdiction = [federal | oregon]"
+    },
+    "status": {
+      "verdict": "PASS",
+      "detail": "status = \"gaps found\""
+    },
+    "gap-recall-plan": {
+      "verdict": "FAIL",
+      "detail": "no item matched. gaps held: Recall plan not described | Allergen control for tahini receipt not full | Listeria environmental monitoring frequency  | No written procedure for PCQI review timelin | No direct supplier audit or testing requirem | Definition of 'approved suppliers' not in th | Blast chiller temperature monitoring may mis | No description of corrective action effectiv"
+    },
+    "gap-cook-validation": {
+      "verdict": "FAIL",
+      "detail": "no item matched. gaps held: Recall plan not described | Allergen control for tahini receipt not full | Listeria environmental monitoring frequency  | No written procedure for PCQI review timelin | No direct supplier audit or testing requirem | Definition of 'approved suppliers' not in th | Blast chiller temperature monitoring may mis | No description of corrective action effectiv"
+    },
+    "gap-reanalysis": {
+      "verdict": "FAIL",
+      "detail": "no item matched. gaps held: Recall plan not described | Allergen control for tahini receipt not full | Listeria environmental monitoring frequency  | No written procedure for PCQI review timelin | No direct supplier audit or testing requirem | Definition of 'approved suppliers' not in th | Blast chiller temperature monitoring may mis | No description of corrective action effectiv"
+    },
+    "deadline-thermometer": {
+      "verdict": "PASS",
+      "detail": "deadlines: \"Probe thermometer calibration\" [thermometer, calibrat, weekly, probe]"
+    },
+    "deadline-product-testing": {
+      "verdict": "PASS",
+      "detail": "deadlines: \"Finished product testing for Listeria monocytogenes\" [finished product, monthly, listeria, test]"
+    },
+    "deadline-metal-detector": {
+      "verdict": "PASS",
+      "detail": "deadlines: \"Metal detector annual service by manufacturer\" [metal detector, annual, service, manufacturer]"
+    },
+    "deadline-training": {
+      "verdict": "FAIL",
+      "detail": "no item matched. deadlines held: PCQI review of corrective action log | PCQI review of cook, cooling, sanitation, al | Probe thermometer calibration | Metal detector annual service by manufacture | Finished product testing for Listeria monocy | Quarterly trending of environmental monitori | Record retention (minimum)"
+    },
+    "fact-28-employees": {
+      "verdict": "PASS",
+      "detail": "facts: \"production_employees\" [28, production employees, employees]"
+    },
+    "fact-rte-product": {
+      "verdict": "PASS",
+      "detail": "facts: \"distribution_states\" [ready-to-eat, hummus, bean dip]"
+    },
+    "fact-pcqi": {
+      "verdict": "PASS",
+      "detail": "facts: \"pcqi_qualification\" [pcqi, dana whitfield, whitfield, preventive controls qualified individual]"
+    },
+    "label-consistency": {
+      "verdict": "CROSS",
+      "detail": "judged across the three runs, below"
+    },
+    "no-false-hazard-analysis-gap": {
+      "verdict": "PASS",
+      "detail": "not raised",
+      "soft": []
+    },
+    "no-false-allergen-gap": {
+      "verdict": "PASS",
+      "detail": "not raised as such; 2 item(s) mention it — read below",
+      "soft": [
+        {
+          "where": "gaps",
+          "text": "Allergen control for tahini receipt not fully detailed / The plan identifies sesame allergen (from tahini) as a hazard requiring preventive control, and section 8 says tahini comes only from approved suppliers with audit certificates. However, the plan does not specify what the receiving inspection procedure is, what to do if a tahini shipment is mislabeled or the label does not match the purchase order, or how the incoming tahini is verified to be free of undeclared sesame before it enters production. / Add to section 4 (Preventive Controls) or section 8 (Supply-chain program) a description of the incoming tahini verification procedure: inspect the label against the purchase order and certificate of analysis, verify the sesame allergen declaration, and confirm it matches the expected product. Document this on a receiving log. / 21 CFR 121.126 requires controls for allergen hazards to include verification of supplier controls / https://www.ecfr.gov/current/title-21/section-121.126 / section 4, Sesame allergen row, or section 8 / inferred / Tahini and dry beans are received only from approved suppliers who provide a current third-party audit certificate and a certificate of analysis for each lot."
+        },
+        {
+          "where": "gaps",
+          "text": "No direct supplier audit or testing requirement specified / Section 8 requires suppliers to provide a 'current third-party audit certificate' but does not define what 'current' means (e.g., audit valid within 12 months, 24 months?). It also does not state whether the company performs any direct testing of tahini or dry beans (e.g., allergen verification, pathogen testing) or relies entirely on the supplier certificate of analysis. / Define 'current' as 'audit certificate dated within the past 12 months' or reference the FSMA audit frequency rule. State whether tahini lots are spot-checked for sesame allergen content (e.g., by ELISA or mass spectrometry) or verified only by label review and supplier certificate. If no direct testing, state that and justify reliance on supplier controls. / 21 CFR 121.126(a) requires allergen controls to include verification that suppliers have controls in place; 21 CFR 121.86 addresses supplier verification generally. / https://www.ecfr.gov/current/title-21/section-121.86 / section 8, Supply-chain program / inferred / Tahini and dry beans are received only from approved suppliers who provide a current third-party audit certificate and a certificate of analysis for each lot."
+        }
+      ]
+    },
+    "no-false-pcqi-gap": {
+      "verdict": "PASS",
+      "detail": "not raised as such; 1 item(s) mention it — read below",
+      "soft": [
+        {
+          "where": "gaps",
+          "text": "No written procedure for PCQI review timeline / Section 6 states that corrective actions are reviewed by the PCQI within seven days, and section 7 states that records are reviewed within seven working days. However, there is no detail on what triggers a review of records outside the routine seven-day cycle (e.g., if a Listeria spp. swab is positive, does the PCQI review immediately or wait until the routine cycle?). The plan should specify whether corrective action investigations are started the same day or if there is flexibility. / Clarify in section 6 or 7 that corrective action investigations for biological hazards (Listeria, cook failures) start the same working day, while routine record reviews happen within 7 working days. Specify the role of the PCQI in directing investigation and when affected product is released or discarded. / 21 CFR 121.160 requires the plan to describe corrective actions and verification. / https://www.ecfr.gov/current/title-21/section-121.160 / section 6, Corrective actions; section 7, Verification / inferred / All corrective actions are recorded on the corrective action log and reviewed by the PCQI within seven days."
+        }
+      ]
+    },
+    "no-false-supply-chain-gap": {
+      "verdict": "PASS",
+      "detail": "not raised as such; 3 item(s) mention it — read below",
+      "soft": [
+        {
+          "where": "gaps",
+          "text": "Allergen control for tahini receipt not fully detailed / The plan identifies sesame allergen (from tahini) as a hazard requiring preventive control, and section 8 says tahini comes only from approved suppliers with audit certificates. However, the plan does not specify what the receiving inspection procedure is, what to do if a tahini shipment is mislabeled or the label does not match the purchase order, or how the incoming tahini is verified to be free of undeclared sesame before it enters production. / Add to section 4 (Preventive Controls) or section 8 (Supply-chain program) a description of the incoming tahini verification procedure: inspect the label against the purchase order and certificate of analysis, verify the sesame allergen declaration, and confirm it matches the expected product. Document this on a receiving log. / 21 CFR 121.126 requires controls for allergen hazards to include verification of supplier controls / https://www.ecfr.gov/current/title-21/section-121.126 / section 4, Sesame allergen row, or section 8 / inferred / Tahini and dry beans are received only from approved suppliers who provide a current third-party audit certificate and a certificate of analysis for each lot."
+        },
+        {
+          "where": "gaps",
+          "text": "No direct supplier audit or testing requirement specified / Section 8 requires suppliers to provide a 'current third-party audit certificate' but does not define what 'current' means (e.g., audit valid within 12 months, 24 months?). It also does not state whether the company performs any direct testing of tahini or dry beans (e.g., allergen verification, pathogen testing) or relies entirely on the supplier certificate of analysis. / Define 'current' as 'audit certificate dated within the past 12 months' or reference the FSMA audit frequency rule. State whether tahini lots are spot-checked for sesame allergen content (e.g., by ELISA or mass spectrometry) or verified only by label review and supplier certificate. If no direct testing, state that and justify reliance on supplier controls. / 21 CFR 121.126(a) requires allergen controls to include verification that suppliers have controls in place; 21 CFR 121.86 addresses supplier verification generally. / https://www.ecfr.gov/current/title-21/section-121.86 / section 8, Supply-chain program / inferred / Tahini and dry beans are received only from approved suppliers who provide a current third-party audit certificate and a certificate of analysis for each lot."
+        },
+        {
+          "where": "gaps",
+          "text": "Definition of 'approved suppliers' not in the plan / Section 8 says tahini and beans come from 'approved suppliers' and that 'the approved supplier list is maintained by the quality manager.' However, the plan does not describe the criteria for approval, who reviews and approves suppliers, or how often the list is updated. This is important for FDA compliance and traceability. / Add a statement that approved suppliers are screened based on third-party audit certificate score (e.g., 'A' rating or higher), location, and commodity-specific hazards; that the quality manager maintains and updates the list; and that the list is reviewed at least annually. Consider adding a statement that if a supplier's audit lapses or a batch fails testing, the supplier is removed from the list until re-qualified. / 21 CFR 121.86 requires supplier verification that includes review of food safety audit results. / https://www.ecfr.gov/current/title-21/section-121.86 / section 8, Supply-chain program / inferred / The approved supplier list is maintained by the quality manager."
+        }
+      ]
+    },
+    "no-false-monitoring-gap": {
+      "verdict": "PASS",
+      "detail": "not raised as such; 3 item(s) mention it — read below",
+      "soft": [
+        {
+          "where": "gaps",
+          "text": "No written procedure for PCQI review timeline / Section 6 states that corrective actions are reviewed by the PCQI within seven days, and section 7 states that records are reviewed within seven working days. However, there is no detail on what triggers a review of records outside the routine seven-day cycle (e.g., if a Listeria spp. swab is positive, does the PCQI review immediately or wait until the routine cycle?). The plan should specify whether corrective action investigations are started the same day or if there is flexibility. / Clarify in section 6 or 7 that corrective action investigations for biological hazards (Listeria, cook failures) start the same working day, while routine record reviews happen within 7 working days. Specify the role of the PCQI in directing investigation and when affected product is released or discarded. / 21 CFR 121.160 requires the plan to describe corrective actions and verification. / https://www.ecfr.gov/current/title-21/section-121.160 / section 6, Corrective actions; section 7, Verification / inferred / All corrective actions are recorded on the corrective action log and reviewed by the PCQI within seven days."
+        },
+        {
+          "where": "gaps",
+          "text": "Blast chiller temperature monitoring may miss early-phase cooling / Section 5 states the blast chiller operator records temperature at 2 hours and at 6 hours on the cooling log. However, section 4 specifies the critical limit is '135°F to 70°F in 2 hours; 70°F to 41°F in 4 hours.' The monitoring procedure does not ensure the product actually reaches 70°F at the 2-hour mark—only that a reading is taken at 2 hours. If the product is still above 70°F at 2 hours, the procedure as written does not clearly require rejection, although section 6 says 'If cooling exceeds the time limits, the batch is discarded.' / Clarify in section 5 that the operator records the temperature at the 2-hour point and verifies it is at or below 70°F. If not, the batch is flagged as a corrective action. Consider adding a more frequent check (e.g., at 1 hour and 2 hours) to catch slow cooling earlier, or specify that a continuous temperature data logger is used to confirm the cooling curve meets the critical limit. / 21 CFR 121.135(a) requires monitoring procedures that ensure critical limits are met during production; 21 CFR 121.140 requires preventive measures for biological hazards. / https://www.ecfr.gov/current/title-21/section-121.135 / section 5, Monitoring; section 4, Spore-former growth at cooling / inferred / The blast chiller operator records the temperature at 2 hours and at 6 hours on the cooling log."
+        },
+        {
+          "where": "gaps",
+          "text": "No description of corrective action effectiveness testing / Section 6 describes what to do if monitoring fails (e.g., re-cook, re-clean, hold product), but does not state whether re-tests are required to confirm the corrective action was effective. For example, if an ATP swab fails before start-up, the surface is re-cleaned and re-swabbed, but the plan does not explicitly require the re-swab to pass before production starts. / Add to section 6 that after each corrective action, a re-test is performed (e.g., ATP swab re-tested, product re-run through metal detector with a test piece) and must pass before production resumes or product is released. This confirms the corrective action was effective. / 21 CFR 121.140(a) requires corrective actions to be effective in ensuring the food is safe. / https://www.ecfr.gov/current/title-21/section-121.140 / section 6, Corrective actions / inferred / If an ATP swab fails, the surface is re-cleaned and re-swabbed before production starts."
+        }
+      ]
+    },
+    "agency-oda": {
+      "verdict": "PASS",
+      "detail": "identity.agencies = [fda | oregon department of agriculture]"
+    },
+    "fix-cook-validation-detail": {
+      "verdict": "FAIL",
+      "detail": "no item matched. gaps held: Recall plan not described | Allergen control for tahini receipt not full | Listeria environmental monitoring frequency  | No written procedure for PCQI review timelin | No direct supplier audit or testing requirem | Definition of 'approved suppliers' not in th | Blast chiller temperature monitoring may mis | No description of corrective action effectiv"
+    },
+    "fix-reanalysis-detail": {
+      "verdict": "FAIL",
+      "detail": "no item matched. gaps held: Recall plan not described | Allergen control for tahini receipt not full | Listeria environmental monitoring frequency  | No written procedure for PCQI review timelin | No direct supplier audit or testing requirem | Definition of 'approved suppliers' not in th | Blast chiller temperature monitoring may mis | No description of corrective action effectiv"
+    },
+    "freshness-no-nudge": {
+      "verdict": "FAIL",
+      "detail": "\"The plan is dated May 12, 2025, and is now 16 months old as of September 27, 2026. FSMA pl\""
+    },
+    "conditions-none-expected": {
+      "verdict": "FAIL",
+      "detail": "15: \"Cook beans to minimum internal temperature of 212°F for at least 60 mi\"; \"Cool cooked beans from 135°F to 70°F within 2 hours and to 41°F within\"; \"Sanitize food-contact surfaces before each production run and between \"; \"Conduct environmental Listeria spp. monitoring weekly at 10 sites in f\"; \"Review and verify that product label matches the formulation sheet bef\"; \"Run metal test pieces (2.0 mm ferrous, 2.5 mm non-ferrous, 3.0 mm stai\"; \"Receive tahini and dry beans only from approved suppliers providing cu\"; \"Calibrate probe thermometers in ice water and boiling water weekly\"; \"Service metal detector by manufacturer annually\"; \"Test finished product for Listeria monocytogenes monthly by an accredi\"; \"Trend environmental monitoring results quarterly and review by PCQI\"; \"Keep all records at Salem plant for at least two years and make availa\"; \"Provide food hygiene training to all production employees at hire and \"; \"PCQI maintains current FSPCA certificate and reviews records within se\"; \"Sanitation and line leads trained on the monitoring procedures in this\""
+    },
+    "inferred-fda-registered": {
+      "verdict": "FAIL",
+      "detail": "no item matched. facts held: facility_address | production_employees | operating_schedule | product_shelf_life | cook_temperature | cooling_protocol | allergen_statement | pcqi_qualification | metal_detection_sensitivity | distribution_states"
+    }
+  },
+  "rejudged_at": "2026-09-27T19:31:36.848Z",
+  "rejudged_case_sha256": "b68b70979e78c509b8cd422ccb50b306aa981bf7c36976fc2647055c6e1bb56a"
 }

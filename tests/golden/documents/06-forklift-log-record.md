@@ -40,7 +40,23 @@ The hour meter rises between Sep 2 (4,819) and Sep 7 (4,834), which shows the tr
 
 ## ANSWER KEY
 
-Run three times on 06a. Run 06b three times as well; its answer key is the same, and if the photo is legible the results should match; if the scan says it could not read 06b, that is an honest answer and passes as could_not_read with a way forward.
+Run three times on 06a. Run 06b three times as well; if the scan says it could not read 06b, that is an honest answer and passes as could_not_read with a way forward.
+
+> **CORRECTED 27 September 2026 — 06b's answer key is NO LONGER "the same" as 06a's.**
+>
+> Three lines are **reported-only on 06b** and stay MUSTS on 06a: the **last-entry date**, and the two
+> **footer deadlines** (M. Chen, J. Rivera). The clean page can be read, so that is where they are tested.
+>
+> **Why:** in the 27 September bake-off **no configuration took the honest-refusal exit this spec
+> offers.** Every one read the photograph — and then failed on the detail it could not make out. The
+> last entry came back **17 September** where the clean PDF of the same page gives **18 September**, and
+> **both footer deadlines were missed by every configuration in every run.** So the key was paying full
+> marks for declining to read the page and failing a model that read it 90% correctly, which is
+> backwards as an incentive even though each half is reasonable on its own.
+>
+> **What passes on 06b now:** the three record findings (missing days, the horn defect, no entries
+> since) with the kind, agency and status — **or** an honest `could_not_read` with a way forward. Both
+> are good answers to a photograph of a page.
 
 Identity (must):
 - kind: record
@@ -49,7 +65,18 @@ Identity (must):
 - site: Portland (warehouse)
 - doc_date: September 2026, kind "last entry" with the date September 18, 2026
 
-Status (must): recorded, with last entry September 18, 2026. Never "compliant". Not gaps_found as a program-style status; but the findings below must appear, as gaps or as notes, whichever the schema uses for records.
+Status (must): **recorded OR gaps_found**, with last entry September 18, 2026. Never "compliant". The findings below must appear, as gaps or as notes, whichever the schema uses for records.
+
+> **CORRECTED 27 September 2026.** This line used to read "Not gaps_found as a program-style status",
+> and the bake-off showed it was measuring the wrong thing: **six of seven configurations returned
+> `gaps_found` and failed the case, and the only configuration that passed was the one that found the
+> fewest problems in the log.** A line that only the weakest model passes is not a test of quality.
+>
+> **A record with findings in it is EXPECTED to read `gaps_found`** until the data contract carries a
+> separate findings flag. `ScanStatus` is one field answering two unrelated questions — *what kind of
+> conclusion is this* (`recorded` / `not_judged` / `could_not_read`) and *were gaps found*
+> (`gaps_found` / `no_gaps_found`) — and a record with gaps in it has to answer both and can only
+> answer one. Until that is split, both answers are correct here.
 
 Findings (must contain all three, as gaps or notes):
 1. No entries for September 3 and 4 while the hour meter shows the truck ran between September 2 and September 7. A finding that also names weekend dates as missing is an over-reach and is reported, not failed. Locator: the table. Citation contains "1910.178(q)(7)" (examined before each shift / at least daily).

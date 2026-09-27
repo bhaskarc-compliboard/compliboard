@@ -267,5 +267,111 @@
     "quotes_verified": 3,
     "extracted_text": "CASCADE SPECIALTY CHEMICALS, LLC\nEMERGENCY ACTION PLAN\nPortland Facility, 4410 NW Front Avenue, Portland, Oregon 97210\nRevised February 2021\n1. Purpose and scope\nThis Emergency Action Plan describes what employees of Cascade Specialty Chemicals do when there is\na fire, chemical release, medical emergency, earthquake or other emergency at the Portland facility. It\napplies to all 42 employees at the Portland facility, including warehouse, drivers, laboratory and office\nstaff, and to contractors and visitors while on site. The plan is kept in the front office and in the warehouse\nbreak room, and a copy is available to any employee on request.\n2. Alarm system\nThe building has a monitored fire alarm system with audible horns and strobe lights in the warehouse,\nlaboratory, loading dock and offices. The alarm is monitored 24 hours a day by Cascade Fire & Safety\nunder a service contract. Manual pull stations are located at each exit door. The alarm is tested on the first\nMonday of each month by the facilities lead. A continuous horn means evacuate. Three short horns\nrepeated means shelter in place because of an outdoor hazard.\n3. Evacuation procedures\nWhen the continuous alarm sounds, all employees stop work, secure nothing that requires more than a\nfew seconds, and leave by the nearest marked exit. Exit routes are posted on the evacuation maps at each\nexit door and in Appendix A. Warehouse staff leave by the east dock doors or the north pedestrian door.\nLaboratory staff leave by the laboratory's own exterior door on the south wall. Office staff leave by the\nmain entrance or the west stairwell. Do not use the freight lift. Do not return for belongings.\nThe assembly point is the far north end of the visitor parking lot, beside the flagpole, at least 150 feet\nfrom the building. Employees assigned as floor wardens (one per area, listed on the warden roster posted\nbeside each evacuation map) sweep their area, close doors behind them, and report to the assembly point.\nFor a chemical release outdoors or a hazard that makes leaving the building unsafe, the shelter-in-place\nsignal sounds. Employees move to the interior conference room or the laboratory corridor, close doors,\nand the facilities lead shuts down the building ventilation from the mechanical room panel.\n4. Accounting for employees after evacuation\nAt the assembly point each floor warden takes a headcount of the people from their area against the daily\nsign-in sheet and the visitor log, which the receptionist brings out. Any person unaccounted for is reported\nat once to the incident coordinator at the assembly point, who passes the information to the fire\ndepartment on arrival. No one re-enters the building until the fire department or the incident coordinator\ngives the all-clear. Evacuation drills are held twice a year, in spring and autumn.\n5. Rescue and medical duties\nEmployees do not attempt rescue inside the building. First aid is given at the assembly point by the\ntrained first-aid responders (two per shift, named on the warden roster), who bring the first-aid kit and the\nAED from the front office. An employee exposed to a chemical is taken to the emergency shower and\neyewash at the loading dock if it can be reached safely, or to the assembly point, and the SDS for the\nproduct is brought to the responders. Emergency medical services are called for any injury beyond minor\nfirst aid.\n6. Training and review\nEvery new employee is walked through this plan, the exit routes for their work area and the assembly\npoint on their first day. Floor wardens and first-aid responders are trained annually. The plan is reviewed\nwith all employees whenever it is changed and whenever an employee's responsibilities under it change.\nThe facilities lead reviews the plan every January and updates the evacuation maps whenever the building\nlayout changes.\nAppendix A: Evacuation maps (warehouse, laboratory, offices)\nAppendix B: Floor warden and first-aid responder roster (posted beside each evacuation map)",
     "started_at": "2026-09-27T18:08:07.965Z"
-  }
+  },
+  "verdicts_rejudged": {
+    "kind": {
+      "verdict": "PASS",
+      "detail": "identity.kind = \"program\""
+    },
+    "agency-osha": {
+      "verdict": "PASS",
+      "detail": "identity.agencies = [oregon osha]"
+    },
+    "site-portland": {
+      "verdict": "PASS",
+      "detail": "identity.site = \"portland\""
+    },
+    "doc-date": {
+      "verdict": "PASS",
+      "detail": "identity.doc_date = 2021-02-01"
+    },
+    "doc-date-kind": {
+      "verdict": "PASS",
+      "detail": "identity.doc_date_kind = \"revised\""
+    },
+    "jurisdiction-oregon": {
+      "verdict": "PASS",
+      "detail": "identity.jurisdiction = [oregon]"
+    },
+    "status": {
+      "verdict": "PASS",
+      "detail": "status = \"gaps found\""
+    },
+    "gap-reporting": {
+      "verdict": "PASS",
+      "detail": "gaps: \"No stated procedure for reporting an emergency\" [report, reporting, fire, emergency, procedure]"
+    },
+    "gap-critical-operations": {
+      "verdict": "FAIL",
+      "detail": "no item matched. gaps held: No stated procedure for reporting an emergen | No procedure for shutting down or securing c | No named contact for questions about the pla"
+    },
+    "gap-contact-name": {
+      "verdict": "PASS",
+      "detail": "gaps: \"No named contact for questions about the plan or employee duties\" [name, job title, contact, more information]"
+    },
+    "deadline-annual-review": {
+      "verdict": "PASS",
+      "detail": "deadlines: \"Annual plan review by facilities lead\" [annual, january, review, plan]"
+    },
+    "deadline-drills": {
+      "verdict": "PASS",
+      "detail": "deadlines: \"Evacuation drills\" [drill, twice, year, evacuation]"
+    },
+    "fact-42-employees": {
+      "verdict": "PASS",
+      "detail": "facts: \"site_employee_count\" [42, employees, portland]"
+    },
+    "label-consistency": {
+      "verdict": "CROSS",
+      "detail": "judged across the three runs, below"
+    },
+    "no-false-alarm-gap": {
+      "verdict": "PASS",
+      "detail": "not raised as such; 1 item(s) mention it — read below",
+      "soft": [
+        {
+          "where": "gaps",
+          "text": "No stated procedure for reporting an emergency / The plan describes the alarm signals and notes that manual pull stations exist at each exit door, but it never states the actual procedure an employee follows to report a fire, chemical release, or other emergency (e.g., who to call, what number, or the sequence of pulling an alarm and notifying a specific person). / Add a short subsection stating exactly how an employee reports an emergency: e.g., pull the nearest manual station and/or call 911, then notify the facilities lead or incident coordinator by radio/phone. / OAR 437-002-0042(2)(c) / https://secure.sos.state.or.us/oard/view.action?ruleNumber=437-002-0042 / Section 2 (Alarm system) / read / Manual pull stations are located at each exit door. / e6610039-f9e2-46a1-8606-0f15448a433a"
+        }
+      ]
+    },
+    "no-false-evacuation-gap": {
+      "verdict": "PASS",
+      "detail": "not raised as such; 1 item(s) mention it — read below",
+      "soft": [
+        {
+          "where": "gaps",
+          "text": "No procedure for shutting down or securing critical equipment before evacuating / Section 3 instructs employees to 'secure nothing that requires more than a few seconds' before evacuating, but the plan gives no procedure for safely shutting down or securing any critical chemical-handling equipment (transfer pumps, reactors, tanks) before leaving, which the rule requires the plan to address one way or another. / Identify any equipment that needs emergency shutdown before evacuation, assign a specific role to perform it, and describe the steps — or state explicitly that no equipment requires pre-evacuation shutdown and why. / OAR 437-002-0042(2)(d) / https://secure.sos.state.or.us/oard/view.action?ruleNumber=437-002-0042 / Section 3 (Evacuation procedures) / read / secure nothing that requires more than a few seconds / 7a1bbcf6-ec67-4903-8b57-3101f4af1ae0"
+        }
+      ]
+    },
+    "no-false-headcount-gap": {
+      "verdict": "PASS",
+      "detail": "not raised",
+      "soft": []
+    },
+    "no-false-rescue-gap": {
+      "verdict": "PASS",
+      "detail": "not raised",
+      "soft": []
+    },
+    "freshness-five-years": {
+      "verdict": "PASS",
+      "detail": "[five years, 2021]"
+    },
+    "fact-alarm-monitored": {
+      "verdict": "FAIL",
+      "detail": "no item matched. facts held: site_employee_count"
+    },
+    "conditions-none-expected": {
+      "verdict": "PASS",
+      "detail": "none"
+    },
+    "alarm-test-deadline": {
+      "verdict": "PASS",
+      "detail": "deadlines: \"Monthly alarm test\" [alarm, monday, monthly, test]"
+    }
+  },
+  "rejudged_at": "2026-09-27T19:31:36.688Z",
+  "rejudged_case_sha256": "ccb362cd02f1be246f6f131453f22e2f248ac1f3d3bb0b4f5e632c7eb14dd2a7"
 }

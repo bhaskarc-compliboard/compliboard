@@ -145,5 +145,93 @@
     "quotes_verified": 0,
     "extracted_text": "OREGON LIQUOR AND CANNABIS COMMISSION\n9079 SE McLoughlin Blvd, Portland, Oregon 97222\nRECREATIONAL MARIJUANA PRODUCER LICENSE\nLicense number: 020-1004763A8B2\nLicensee: Evergreen Botanicals, LLC\nTrade name: Evergreen Botanicals\nLicensed premises: 2210 Bailey Hill Road, Eugene, Oregon 97405\nLicense type: Producer — Tier II, Indoor\nCanopy limit: 10,000 square feet mature plant canopy\nOriginal issue date: March 3, 2022\nCurrent term: March 3, 2026 to March 2, 2027\nExpiration date: March 2, 2027\nThis license is issued under ORS 475C and the rules of the Commission in OAR chapter 845, division 25, and\nauthorizes the licensee to produce marijuana at the licensed premises named above, subject to those rules and to the\nconditions below.\nConditions of this license:\n1. The license is valid only for the premises named above and is not transferable to any other location or person.\n2. The license must be renewed annually. A renewal application and the renewal fee must be received by the\nCommission no later than 20 days before the expiration date. A licensee that has submitted a complete renewal\napplication before that date may continue to operate until the Commission acts on it.\n3. All marijuana items at the premises must be tracked in the Cannabis Tracking System, and every employee who\nhandles marijuana items must hold a current marijuana worker permit issued by the Commission.\n4. Video surveillance meeting OAR 845-025-1450 must be maintained at the premises and recordings kept for at\nleast 90 days.\n5. Any change in ownership, in the premises, or in the persons with a financial interest in the licensee must be\nreported to the Commission before it takes effect.\nThis license must be displayed at the licensed premises where it can be seen by the public.\nIssued by the Oregon Liquor and Cannabis Commission\nDate of issue for the current term: March 3, 2026\nAuthorized signature: ____________________ Licensing Director",
     "started_at": "2026-09-27T19:04:20.747Z"
-  }
+  },
+  "verdicts_rejudged": {
+    "kind": {
+      "verdict": "FAIL",
+      "detail": "identity.kind = \"null\""
+    },
+    "issuer-olcc": {
+      "verdict": "FAIL",
+      "detail": "identity.issuer = \"null\""
+    },
+    "agency-olcc": {
+      "verdict": "FAIL",
+      "detail": "identity.agencies = [empty]"
+    },
+    "site-bailey-hill": {
+      "verdict": "FAIL",
+      "detail": "identity.site = \"null\""
+    },
+    "doc-date": {
+      "verdict": "FAIL",
+      "detail": "identity.doc_date = null, wanted 2026-03-03"
+    },
+    "expiry": {
+      "verdict": "FAIL",
+      "detail": "2027-03-02 appears in none of significant_date, deadlines"
+    },
+    "jurisdiction-oregon": {
+      "verdict": "FAIL",
+      "detail": "identity.jurisdiction = [empty]"
+    },
+    "status": {
+      "verdict": "FAIL",
+      "detail": "status = could_not_read, the run date makes it current (156 days to 2027-03-02)"
+    },
+    "no-gaps": {
+      "verdict": "PASS",
+      "detail": "none"
+    },
+    "deadline-renewal": {
+      "verdict": "FAIL",
+      "detail": "no item matched. deadlines held: (nothing)"
+    },
+    "deadline-expiry": {
+      "verdict": "FAIL",
+      "detail": "no item matched. deadlines held: (nothing)"
+    },
+    "condition-1": {
+      "verdict": "FAIL",
+      "detail": "no item matched. conditions held: (nothing)"
+    },
+    "condition-3": {
+      "verdict": "FAIL",
+      "detail": "no item matched. conditions held: (nothing)"
+    },
+    "condition-4": {
+      "verdict": "FAIL",
+      "detail": "no item matched. conditions held: (nothing)"
+    },
+    "condition-5": {
+      "verdict": "FAIL",
+      "detail": "no item matched. conditions held: (nothing)"
+    },
+    "fact-canopy": {
+      "verdict": "FAIL",
+      "detail": "no item matched. facts held: (nothing)"
+    },
+    "fact-tier-ii": {
+      "verdict": "FAIL",
+      "detail": "no item matched. facts held: (nothing)"
+    },
+    "label-consistency": {
+      "verdict": "CROSS",
+      "detail": "judged across the three runs, below"
+    },
+    "title-producer-license": {
+      "verdict": "FAIL",
+      "detail": "only [nothing] of the spec's words appear"
+    },
+    "inferred-employees": {
+      "verdict": "FAIL",
+      "detail": "no item matched. facts held: (nothing)"
+    },
+    "expected-missing": {
+      "verdict": "FAIL",
+      "detail": "no item matched. expected_missing held: (nothing)"
+    }
+  },
+  "rejudged_at": "2026-09-27T19:31:36.809Z",
+  "rejudged_case_sha256": "4e7f25aea233887fa5ba53e64a96f86b8e789b1fa9bfbe860c8ec120bdc559fb"
 }

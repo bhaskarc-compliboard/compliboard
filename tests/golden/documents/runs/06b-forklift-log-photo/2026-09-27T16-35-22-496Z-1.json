@@ -338,5 +338,105 @@
     "quotes_verified": 0,
     "extracted_text": "",
     "started_at": "2026-09-27T16:33:45.882Z"
-  }
+  },
+  "verdicts_rejudged": {
+    "kind": {
+      "verdict": "PASS",
+      "detail": "identity.kind = \"record\""
+    },
+    "agency-osha": {
+      "verdict": "PASS",
+      "detail": "identity.agencies = [oregon osha | osha]"
+    },
+    "subject": {
+      "verdict": "PASS",
+      "detail": "identity.subjects = [powered industrial trucks | employee training]"
+    },
+    "site-portland": {
+      "verdict": "PASS",
+      "detail": "identity.site = \"portland\""
+    },
+    "doc-date": {
+      "verdict": "PASS",
+      "detail": "identity.doc_date = 2026-09-17"
+    },
+    "doc-date-kind": {
+      "verdict": "PASS",
+      "detail": "identity.doc_date_kind = \"last entry\""
+    },
+    "status": {
+      "verdict": "PASS",
+      "detail": "status = \"recorded\""
+    },
+    "finding-missing-days": {
+      "verdict": "PASS",
+      "detail": "gaps: \"Gap in entries: Sep 3 and Sep 4 have no line\" [september 3, sep 3, sep 4]"
+    },
+    "finding-horn-defect": {
+      "verdict": "PASS",
+      "detail": "gaps: \"Horn defect on Sep 9 with no repair or return-to-service entry\" [horn, sep 9, defect, out of service, removed from service, repair]"
+    },
+    "finding-no-entries-since": {
+      "verdict": "PASS",
+      "detail": "notes: \"freshness_note\" [sep 18, last entry, later page]"
+    },
+    "fact-truck": {
+      "verdict": "PASS",
+      "detail": "facts: \"powered_industrial_truck_unit_fl2\" [toyota, 8fgu25, fl-2, propane]"
+    },
+    "label-consistency": {
+      "verdict": "CROSS",
+      "detail": "judged across the three runs, below"
+    },
+    "no-false-certification-finding": {
+      "verdict": "PASS",
+      "detail": "not raised as such; 1 item(s) mention it — read below",
+      "soft": [
+        {
+          "where": "gaps",
+          "text": "Operators identified by initials only / The Operator column carries \"M.C.\" and \"J.R.\" with no printed name or signature. As evidence, initials are weak — they cannot be tied to a named, evaluated operator without a separate key. / Have operators sign or print a full name, or keep a one-line key on the sheet mapping initials to names, and cross-check both against the forklift operator training/evaluation certifications. / No rule requires a written inspection record at all (see OSHA interpretation, 9 May 2000); this is a record-quality point, not a rule breach. / https://www.osha.gov/laws-regs/standardinterpretations/2000-05-09 / page 1, \"Operator\" column / read / M.C."
+        }
+      ]
+    },
+    "no-false-form-finding": {
+      "verdict": "PASS",
+      "detail": "not raised",
+      "soft": []
+    },
+    "no-invented-maintenance-finding": {
+      "verdict": "PASS",
+      "detail": "not raised",
+      "soft": []
+    },
+    "citation-evaluation-rule": {
+      "verdict": "FAIL",
+      "detail": "\"1910.178(l)(4)(iii)\" not in deadlines, gaps, notes"
+    },
+    "two-operators-fact": {
+      "verdict": "PASS",
+      "detail": "facts: \"forklift_operators_on_log\" [operator, certified, two]"
+    },
+    "conditions-none": {
+      "verdict": "PASS",
+      "detail": "none"
+    },
+    "freshness-recent": {
+      "verdict": "PASS",
+      "detail": "[september, entries]"
+    },
+    "last-entry-date": {
+      "verdict": "FAIL",
+      "detail": "2026-09-18 appears in none of significant_date, identity.doc_date"
+    },
+    "deadline-chen": {
+      "verdict": "FAIL",
+      "detail": "no item matched. deadlines held: Examine FL-2 before each shift / at least da | Close out the September 2026 sheet and start"
+    },
+    "deadline-rivera": {
+      "verdict": "FAIL",
+      "detail": "no item matched. deadlines held: Examine FL-2 before each shift / at least da | Close out the September 2026 sheet and start"
+    }
+  },
+  "rejudged_at": "2026-09-27T19:31:36.772Z",
+  "rejudged_case_sha256": "be1aa5f59b1a660ec9f06dfff574e456ac80e832453cd1fbec9f226f5ecdcfa0"
 }

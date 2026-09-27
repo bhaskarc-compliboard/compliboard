@@ -18,7 +18,7 @@ How a case is judged:
 - Every case runs three times. A case passes when every "must" holds in all three runs and every "must not" holds in all three. One run failing fails the case; the report says which run and which line.
 - "Must contain" gaps, deadlines, conditions and facts are matched by concept: the case file carries, for each, a short list of keywords and the citation fragment from the spec; a match needs the citation fragment (where the spec gives one) and at least two of the keywords, in the same item. Counts are never compared.
 - Quotes on facts are checked verbatim against the spec's DOCUMENT TEXT.
-- Labels (agency, subject) must be the identical string across the three runs of a case, and across cases of the same company.
+- Labels (agency, subject) must be the identical string across the three runs of a case, and across cases of the same company. **Order is not compared** — the lists are compared as sets. The point is that a label is not RENAMED between readings, and two readings that return the same labels in a different order have not renamed anything. *(Made explicit 27 September 2026: the runner had been comparing the arrays in order, and that was the single largest source of failures in the first bake-off — six of seven configurations lost a case to it, none of them a model error.)*
 - "Compliant" anywhere in status, summary or a gap fails the run.
 - Statuses that depend on the run date (expiring, expired, overdue) are computed by the runner from the dates in the spec and today's date.
 - Near misses the spec names (a kind of policy instead of program, the OLCC's old name) are reported, not failed.

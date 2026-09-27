@@ -19,7 +19,7 @@ SECTION 1. IDENTIFICATION
 Product identifier: Sodium Hydroxide Solution, 50% (w/w)
 Synonyms: Caustic soda solution, lye solution, NaOH 50%
 Recommended use: Industrial pH adjustment, cleaning, chemical manufacturing
-Supplier: Northwest Alkali Products, Inc., 7200 N Lombard Street, Portland, Oregon 97203 · Telephone (503) 555-0140
+Supplier: Northwest Alkali Products, Inc., 3420 Taylor Way, Tacoma, Washington 98421 · Telephone (253) 555-0140
 Emergency telephone: CHEMTREC 1-800-424-9300 (24 hours)
 
 SECTION 2. HAZARD IDENTIFICATION
@@ -81,7 +81,7 @@ Identity (must):
 - kind: supplier_document
 - issuer: Northwest Alkali Products (the supplier), not the company under scan
 - agency: OSHA (HazCom) is the natural label; DOT may appear from section 14 and is acceptable. The label string identical across runs.
-- site: company-wide or unassigned; the scan must not invent a site from the supplier's Portland address
+- site: company-wide or unassigned; the scan must not invent a site from the supplier's Tacoma address
 - doc_date: revised March 18, 2024, kind "revised"
 
 Status (must): not_judged (or the equivalent the schema uses for supplier documents). Never "compliant", never gaps_found.
@@ -92,7 +92,26 @@ Deadlines (must): none. An SDS sets no deadline for the company. A line noting t
 
 Conditions (must): none.
 
-Facts (must not): no fact whose subject is the supplier (its name, address, phone, CHEMTREC number, revision history) or the chemical's own properties (classification, hazard statements, exposure limits, physical data, transport class). Those are facts about the document, not about the company, and the prompt's rule is that only facts about the company that would change what applies to it are proposed. Any such fact fails the run, whatever its basis.
+Facts (must not): no fact whose subject is the supplier (its name, address, phone, CHEMTREC number, revision history) or the chemical's own properties (classification, hazard statements, exposure limits, physical data, transport class). Those are facts about the document, not about the company, and the prompt's rule is that only facts about the company that would change what applies to it are proposed. Any such fact fails the run, whatever its basis. **A proposal that names itself as not about the company is still a proposal and still fails** — saying so in the value does not make it a different kind of row, because a person is asked to confirm the row, not to read the caveat inside it.
+
+> **TWO CORRECTIONS, 27 September 2026, and they pull in opposite directions.**
+>
+> **The supplier has moved to Tacoma, Washington** (was 7200 N Lombard Street, Portland, Oregon). The
+> fixture is re-rendered. **The reason is that the site line could not test what it meant to test:**
+> Cascade's only site is also named "Portland", and the prompt lists it, so a model reading the
+> company's own site and a model lifting the supplier's city produced the identical string
+> `"Portland"`. **Every configuration in the 27 September bake-off failed `site-not-invented` for a
+> coincidence.** With the supplier in another state the line finally distinguishes the two behaviours,
+> and a scan that now says `site: "Tacoma"` has genuinely invented one. *It also makes the document a
+> better fixture in its own right: a Washington supplier shipping into Oregon is the ordinary case.*
+>
+> **The sentence added above goes the other way, and is deliberately the stricter reading.** Opus 5
+> proposed `emergency_shower_eyewash_location` with the value *"Supplier specification: eyewash and
+> safety shower within 10 seconds of work areas (this is the SDS's requirement, not a statement of
+> where Cascade's units are)"*. It made exactly the distinction this line is testing for — and it
+> **still fails**, because the row reaches the To confirm queue as a question about the company and a
+> person answers the question, not the parenthesis. Getting the reasoning right and writing the row
+> anyway is a near miss the product cannot act on.
 
 Facts (acceptable, not required): a fact about the company drawn from holding this SDS, such as "the company holds an SDS for sodium hydroxide 50%" or "the company may store or handle sodium hydroxide 50%". The SDS does not say either, so such a fact must carry basis: inferred; the same fact with basis: read fails the run.
 

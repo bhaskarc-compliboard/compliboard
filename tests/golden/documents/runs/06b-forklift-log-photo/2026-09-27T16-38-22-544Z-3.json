@@ -388,5 +388,110 @@
     "quotes_verified": 0,
     "extracted_text": "",
     "started_at": "2026-09-27T16:36:47.306Z"
-  }
+  },
+  "verdicts_rejudged": {
+    "kind": {
+      "verdict": "PASS",
+      "detail": "identity.kind = \"record\""
+    },
+    "agency-osha": {
+      "verdict": "PASS",
+      "detail": "identity.agencies = [oregon osha | osha]"
+    },
+    "subject": {
+      "verdict": "PASS",
+      "detail": "identity.subjects = [powered industrial trucks | employee training]"
+    },
+    "site-portland": {
+      "verdict": "PASS",
+      "detail": "identity.site = \"portland\""
+    },
+    "doc-date": {
+      "verdict": "PASS",
+      "detail": "identity.doc_date = 2026-09-17"
+    },
+    "doc-date-kind": {
+      "verdict": "PASS",
+      "detail": "identity.doc_date_kind = \"last entry\""
+    },
+    "status": {
+      "verdict": "PASS",
+      "detail": "status = \"gaps found\""
+    },
+    "finding-missing-days": {
+      "verdict": "PASS",
+      "detail": "gaps: \"Missing entries for Sep 3 and Sep 4\" [sep 3, sep 4, missing]"
+    },
+    "finding-horn-defect": {
+      "verdict": "PASS",
+      "detail": "gaps: \"Horn defect on Sep 9 with no repair or return-to-service record\" [horn, sep 9, defect, removed from service, repair]"
+    },
+    "finding-no-entries-since": {
+      "verdict": "PASS",
+      "detail": "notes: \"freshness_note\" [sep 18, last entry, since]"
+    },
+    "fact-truck": {
+      "verdict": "PASS",
+      "detail": "facts: \"powered_industrial_truck_unit_fl2\" [toyota, 8fgu25, fl-2, propane]"
+    },
+    "label-consistency": {
+      "verdict": "CROSS",
+      "detail": "judged across the three runs, below"
+    },
+    "no-false-certification-finding": {
+      "verdict": "PASS",
+      "detail": "not raised as such; 1 item(s) mention it — read below",
+      "soft": [
+        {
+          "where": "gaps",
+          "text": "Operators identified by initials only / The Operator column holds \"M.C.\" and \"J.R.\" and nothing else. Initials do not tie an inspection to a named, trained and evaluated operator, which is what you would want the log to prove if it were ever questioned. / Use full names or employee numbers, and keep a key on the form linking initials to names. Cross-check that both operators appear on the current certified operator list with in-date evaluations. / No rule requires a written inspection record; see OSHA letter of interpretation, 9 May 2000. This is a record-quality point, not a cited violation — I have not re-verified that letter's date. / page 1, \"Operator\" column / read / M.C. / 78a9af70-5f30-4194-a992-03d5679ef4a6"
+        }
+      ]
+    },
+    "no-false-form-finding": {
+      "verdict": "PASS",
+      "detail": "not raised as such; 1 item(s) mention it — read below",
+      "soft": [
+        {
+          "where": "gaps",
+          "text": "Form has no defect close-out or supervisor review field / The form's columns run Date, Shift, Hours, the checklist items, Operator, Notes. There is no corrective-action field, no date-corrected field, no return-to-service signature and no supervisor or lead review line. That structural absence is why the Sep 9 defect has nowhere to be closed out. / Revise the form to add four fields: Defect Description, Action Taken, Date Corrected, Returned to Service By (signature); plus a weekly supervisor review line at the foot of the page. / page 1, table column headings / read / Operator / a1964a19-f42b-42cc-a6b1-a996f0201150"
+        }
+      ]
+    },
+    "no-invented-maintenance-finding": {
+      "verdict": "PASS",
+      "detail": "not raised",
+      "soft": []
+    },
+    "citation-evaluation-rule": {
+      "verdict": "FAIL",
+      "detail": "\"1910.178(l)(4)(iii)\" not in deadlines, gaps, notes"
+    },
+    "two-operators-fact": {
+      "verdict": "PASS",
+      "detail": "facts: \"forklift_operators_on_log\" [operator, two]"
+    },
+    "conditions-none": {
+      "verdict": "PASS",
+      "detail": "none"
+    },
+    "freshness-recent": {
+      "verdict": "FAIL",
+      "detail": "only [nothing] of the spec's words appear"
+    },
+    "last-entry-date": {
+      "verdict": "FAIL",
+      "detail": "2026-09-18 appears in none of significant_date, identity.doc_date"
+    },
+    "deadline-chen": {
+      "verdict": "FAIL",
+      "detail": "no item matched. deadlines held: Examination of FL-2 before it is placed in s"
+    },
+    "deadline-rivera": {
+      "verdict": "FAIL",
+      "detail": "no item matched. deadlines held: Examination of FL-2 before it is placed in s"
+    }
+  },
+  "rejudged_at": "2026-09-27T19:31:36.775Z",
+  "rejudged_case_sha256": "be1aa5f59b1a660ec9f06dfff574e456ac80e832453cd1fbec9f226f5ecdcfa0"
 }

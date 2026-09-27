@@ -62,26 +62,15 @@
       ]
     },
     {
-      "id": "last-entry-date",
-      "line": "doc_date: September 2026, kind \"last entry\" with the date September 18, 2026",
-      "type": "date_anywhere",
-      "fields": [
-        "significant_date",
-        "identity.doc_date"
-      ],
-      "value": "2026-09-18"
-    },
-    {
       "id": "status",
-      "line": "Status (must): recorded, with last entry September 18, 2026. Never \"compliant\". Not gaps_found as a program-style status.",
+      "line": "Status (must): recorded OR gaps_found — a record with findings in it is EXPECTED to read gaps_found until the contract carries a separate findings flag. Never \"compliant\".",
       "type": "field_one_of",
       "field": "status",
       "accept": [
-        "recorded"
-      ],
-      "forbid": [
+        "recorded",
         "gaps_found"
-      ]
+      ],
+      "corrected": "2026-09-27: was accept [\"recorded\"], forbid [\"gaps_found\"]. Six of seven configurations returned gaps_found and failed; the only one that passed was the model that found the fewest problems in the log. ScanStatus makes one field answer two unrelated questions — what kind of conclusion this is, and whether gaps were found — and a record with gaps has to answer both. \"compliant\" is still failed, by the README rule, in code."
     },
     {
       "id": "finding-missing-days",
@@ -152,38 +141,6 @@
       "min_keywords": 2,
       "required_if_run_date_after": "2026-09-21",
       "note": "Widened after the first judging pass: the spec's concept is \"the last entry is September 19 and is anything newer coming\", and run 3 said exactly that in the model's own words — \"The most recent entry is 6 days old; confirm this log has entries through today if the truck continues in service\" — while matching only one of the original keywords. The concept is unchanged; the phrasings are the model's rather than the spec's."
-    },
-    {
-      "id": "deadline-chen",
-      "line": "Deadlines (must contain): M. Chen operator evaluation due March 11, 2027",
-      "type": "item",
-      "collections": [
-        "deadlines"
-      ],
-      "date": "2027-03-11",
-      "keywords": [
-        "chen",
-        "evaluation",
-        "operator",
-        "m.c."
-      ],
-      "min_keywords": 2
-    },
-    {
-      "id": "deadline-rivera",
-      "line": "Deadlines (must contain): J. Rivera evaluation due June 2, 2028 (footer)",
-      "type": "item",
-      "collections": [
-        "deadlines"
-      ],
-      "date": "2028-06-02",
-      "keywords": [
-        "rivera",
-        "evaluation",
-        "operator",
-        "j.r."
-      ],
-      "min_keywords": 2
     },
     {
       "id": "fact-truck",
@@ -326,6 +283,51 @@
         "entries"
       ],
       "min_keywords": 1
+    },
+    {
+      "id": "last-entry-date",
+      "line": "doc_date: September 2026, kind \"last entry\" with the date September 18, 2026",
+      "type": "date_anywhere",
+      "fields": [
+        "significant_date",
+        "identity.doc_date"
+      ],
+      "value": "2026-09-18",
+      "corrected": "2026-09-27: was a MUST. Demoted to reported-only for the photograph case. No configuration took the honest-refusal exit the spec offers; every one read the photo and then failed on the details it could not make out — the last entry came back 2026-09-17 where the clean PDF of the same page gives 2026-09-18, and both footer deadlines were missed by every configuration in every run. The spec was paying full marks for declining to read it and failing a model that read it nearly right. 06a still carries all three as MUSTS: the clean page can be read, and that is where they are tested."
+    },
+    {
+      "id": "deadline-chen",
+      "line": "Deadlines (must contain): M. Chen operator evaluation due March 11, 2027",
+      "type": "item",
+      "collections": [
+        "deadlines"
+      ],
+      "date": "2027-03-11",
+      "keywords": [
+        "chen",
+        "evaluation",
+        "operator",
+        "m.c."
+      ],
+      "min_keywords": 2,
+      "corrected": "2026-09-27: was a MUST. Demoted to reported-only for the photograph case. No configuration took the honest-refusal exit the spec offers; every one read the photo and then failed on the details it could not make out — the last entry came back 2026-09-17 where the clean PDF of the same page gives 2026-09-18, and both footer deadlines were missed by every configuration in every run. The spec was paying full marks for declining to read it and failing a model that read it nearly right. 06a still carries all three as MUSTS: the clean page can be read, and that is where they are tested."
+    },
+    {
+      "id": "deadline-rivera",
+      "line": "Deadlines (must contain): J. Rivera evaluation due June 2, 2028 (footer)",
+      "type": "item",
+      "collections": [
+        "deadlines"
+      ],
+      "date": "2028-06-02",
+      "keywords": [
+        "rivera",
+        "evaluation",
+        "operator",
+        "j.r."
+      ],
+      "min_keywords": 2,
+      "corrected": "2026-09-27: was a MUST. Demoted to reported-only for the photograph case. No configuration took the honest-refusal exit the spec offers; every one read the photo and then failed on the details it could not make out — the last entry came back 2026-09-17 where the clean PDF of the same page gives 2026-09-18, and both footer deadlines were missed by every configuration in every run. The spec was paying full marks for declining to read it and failing a model that read it nearly right. 06a still carries all three as MUSTS: the clean page can be read, and that is where they are tested."
     }
   ],
   "alternative_pass": {

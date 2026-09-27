@@ -729,5 +729,161 @@
     "quotes_verified": 26,
     "extracted_text": "CASCADE SPECIALTY CHEMICALS, LLC\nEMERGENCY ACTION PLAN\nPortland Facility, 4410 NW Front Avenue, Portland, Oregon 97210\nRevised February 2021\n1. Purpose and scope\nThis Emergency Action Plan describes what employees of Cascade Specialty Chemicals do when there is\na fire, chemical release, medical emergency, earthquake or other emergency at the Portland facility. It\napplies to all 42 employees at the Portland facility, including warehouse, drivers, laboratory and office\nstaff, and to contractors and visitors while on site. The plan is kept in the front office and in the warehouse\nbreak room, and a copy is available to any employee on request.\n2. Alarm system\nThe building has a monitored fire alarm system with audible horns and strobe lights in the warehouse,\nlaboratory, loading dock and offices. The alarm is monitored 24 hours a day by Cascade Fire & Safety\nunder a service contract. Manual pull stations are located at each exit door. The alarm is tested on the first\nMonday of each month by the facilities lead. A continuous horn means evacuate. Three short horns\nrepeated means shelter in place because of an outdoor hazard.\n3. Evacuation procedures\nWhen the continuous alarm sounds, all employees stop work, secure nothing that requires more than a\nfew seconds, and leave by the nearest marked exit. Exit routes are posted on the evacuation maps at each\nexit door and in Appendix A. Warehouse staff leave by the east dock doors or the north pedestrian door.\nLaboratory staff leave by the laboratory's own exterior door on the south wall. Office staff leave by the\nmain entrance or the west stairwell. Do not use the freight lift. Do not return for belongings.\nThe assembly point is the far north end of the visitor parking lot, beside the flagpole, at least 150 feet\nfrom the building. Employees assigned as floor wardens (one per area, listed on the warden roster posted\nbeside each evacuation map) sweep their area, close doors behind them, and report to the assembly point.\nFor a chemical release outdoors or a hazard that makes leaving the building unsafe, the shelter-in-place\nsignal sounds. Employees move to the interior conference room or the laboratory corridor, close doors,\nand the facilities lead shuts down the building ventilation from the mechanical room panel.\n4. Accounting for employees after evacuation\nAt the assembly point each floor warden takes a headcount of the people from their area against the daily\nsign-in sheet and the visitor log, which the receptionist brings out. Any person unaccounted for is reported\nat once to the incident coordinator at the assembly point, who passes the information to the fire\ndepartment on arrival. No one re-enters the building until the fire department or the incident coordinator\ngives the all-clear. Evacuation drills are held twice a year, in spring and autumn.\n5. Rescue and medical duties\nEmployees do not attempt rescue inside the building. First aid is given at the assembly point by the\ntrained first-aid responders (two per shift, named on the warden roster), who bring the first-aid kit and the\nAED from the front office. An employee exposed to a chemical is taken to the emergency shower and\neyewash at the loading dock if it can be reached safely, or to the assembly point, and the SDS for the\nproduct is brought to the responders. Emergency medical services are called for any injury beyond minor\nfirst aid.\n6. Training and review\nEvery new employee is walked through this plan, the exit routes for their work area and the assembly\npoint on their first day. Floor wardens and first-aid responders are trained annually. The plan is reviewed\nwith all employees whenever it is changed and whenever an employee's responsibilities under it change.\nThe facilities lead reviews the plan every January and updates the evacuation maps whenever the building\nlayout changes.\nAppendix A: Evacuation maps (warehouse, laboratory, offices)\nAppendix B: Floor warden and first-aid responder roster (posted beside each evacuation map)",
     "started_at": "2026-09-27T18:54:20.339Z"
-  }
+  },
+  "verdicts_rejudged": {
+    "kind": {
+      "verdict": "NEAR",
+      "detail": "identity.kind = \"policy\" — the spec names this a near miss, reported not failed"
+    },
+    "agency-osha": {
+      "verdict": "FAIL",
+      "detail": "identity.agencies = [empty]"
+    },
+    "site-portland": {
+      "verdict": "PASS",
+      "detail": "identity.site = \"portland\""
+    },
+    "doc-date": {
+      "verdict": "PASS",
+      "detail": "identity.doc_date = 2021-02-01"
+    },
+    "doc-date-kind": {
+      "verdict": "PASS",
+      "detail": "identity.doc_date_kind = \"revised\""
+    },
+    "jurisdiction-oregon": {
+      "verdict": "PASS",
+      "detail": "identity.jurisdiction = [oregon | federal]"
+    },
+    "status": {
+      "verdict": "PASS",
+      "detail": "status = \"gaps found\""
+    },
+    "gap-reporting": {
+      "verdict": "PASS",
+      "detail": "gaps: \"No emergency contact information or communication protocol\" [fire, emergency, procedure]"
+    },
+    "gap-critical-operations": {
+      "verdict": "FAIL",
+      "detail": "no item matched. gaps held: No accountability for contractors and visito | No plan for facility restart after emergency | No emergency contact information or communic | No environmental or regulatory notification  | Medical responder qualifications not documen | Unclear incident coordination during emergen | Alarm testing and service contract not docum | No emergency contact for drivers in transit | No evidence of required annual review | Missing appendices | Assembly point distance specified but not ve | No evidence of training completion | No record of evacuation drills | No hazmat-specific response procedures | No post-emergency procedures or incident rep | No procedure for persons with disabilities o | No external communication or media procedure | Plan distribution and access unclear | Shelter-in-place procedures incomplete | No mutual aid or resource-sharing agreement | No information on hazard identification and  | Missing reference to related plans or polici"
+    },
+    "gap-contact-name": {
+      "verdict": "PASS",
+      "detail": "gaps: \"No emergency contact information or communication protocol\" [name, job title, contact, more information, person]"
+    },
+    "deadline-annual-review": {
+      "verdict": "PASS",
+      "detail": "deadlines: \"Annual plan review\" [annual, january, review, plan]"
+    },
+    "deadline-drills": {
+      "verdict": "PASS",
+      "detail": "deadlines: \"Evacuation drills\" [drill, twice, year, evacuation]"
+    },
+    "fact-42-employees": {
+      "verdict": "PASS",
+      "detail": "facts: \"facility_employees\" [42, employees, portland]"
+    },
+    "label-consistency": {
+      "verdict": "CROSS",
+      "detail": "judged across the three runs, below"
+    },
+    "no-false-alarm-gap": {
+      "verdict": "PASS",
+      "detail": "not raised as such; 1 item(s) mention it — read below",
+      "soft": [
+        {
+          "where": "gaps",
+          "text": "Alarm testing and service contract not documented / Section 2 states the alarm is tested on the first Monday of each month by the facilities lead, and monitored by Cascade Fire & Safety under a service contract. However, there is no reference to records, no documentation requirement, and no evidence that testing is actually occurring. OSHA 1910.38(a) requires a functioning alarm system, and 1910.165 requires maintenance and testing; NFPA standards require documented testing records. / Add documentation requirement: (1) maintain a log of monthly alarm tests with date, time, tested function (horn only, strobe only, both), and facilities lead signature; (2) obtain and file the current Cascade Fire & Safety service contract with monitoring agreement and SLAs; (3) maintain records of any alarm failures, repairs, or service calls; (4) document that the service contract includes 24-hour monitoring and includes response time; (5) ensure testing log is available for inspection. / OSHA 29 CFR 1910.38(a); OSHA 1910.165 (employee alarm systems); NFPA 72 (National Fire Alarm Code) / https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.165 / Section 2 (alarm system) / read / The alarm is tested on the first Monday of each month by the facilities lead. / 56c52166-fb3e-41a1-b044-baefcdb6bada"
+        }
+      ]
+    },
+    "no-false-evacuation-gap": {
+      "verdict": "PASS",
+      "detail": "not raised as such; 6 item(s) mention it — read below",
+      "soft": [
+        {
+          "where": "gaps",
+          "text": "No accountability for contractors and visitors / The scope in section 1 states the plan applies to contractors and visitors while on-site, but the evacuation procedures do not explain how contractors and visitors—who may not be on the daily sign-in sheet or visitor log—are accounted for after evacuation. OSHA 1910.38(a)(4) requires procedures to account for all employees after evacuation. While contractors and visitors are in scope, there is no documented method to identify who is present or how their absence would be detected. / Add a specific procedure for how contractors and visitors are tracked before and after evacuation (e.g., sign-in/out log, escort responsibility, or sweep-team responsibility). Designate who is responsible for collecting and verifying contractor/visitor information at the assembly point. / OSHA 29 CFR 1910.38(a)(4); OAR 437-002-0042(2)(b) / https://www.law.cornell.edu/cfr/text/29/1910.38 / Section 1 (scope); Section 4 (accounting for employees after evacuation) / read / It applies to all 42 employees at the Portland facility, including warehouse, drivers, laboratory and office staff, and to contractors and visitors while on site. / 02a4e077-68fb-4cf9-9f48-5dd89c32ddc8"
+        },
+        {
+          "where": "gaps",
+          "text": "No evidence of required annual review / Section 6 states that \"the facilities lead reviews the plan every January and updates the evacuation maps whenever the building layout changes.\" However, there is no documentation requirement, no signature/date on the plan itself showing when the annual review occurred, and no mechanism to prove the review actually happened. OSHA 1910.38 (the standard itself does not specify frequency in the current text, but enforcement practice expects annual review). The document date is February 2021, with no subsequent revision date shown. / Add a review and documentation procedure: (1) designate a specific month for annual review (e.g., January); (2) create a plan review cover sheet or addendum with: review date, person conducting review, specific items reviewed (roster currency, building changes, drill results, regulatory changes), and signature/date; (3) attach the cover sheet to the plan each year; (4) if no changes are needed, document 'reviewed and no changes required' with date and signature; (5) if changes are made, revise the document and note the revision date on the title page and affected sections. / OSHA 29 CFR 1910.38(a) and (e) (training and review requirements); enforcement practice expectation of annual review / https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.38 / Section 6 (training and review) / read / The facilities lead reviews the plan every January / 5e33fee9-e360-492c-9797-5caf0685a879"
+        },
+        {
+          "where": "gaps",
+          "text": "Missing appendices / Section 6 references two appendices: (A) Evacuation maps (warehouse, laboratory, offices) and (B) Floor warden and first-aid responder roster. These appendices are not provided in the document received, so it cannot be verified that they exist, are current, or contain the required information. OSHA 1910.38 requires a written plan with all procedures. Evacuation maps and rosters are essential components. / Obtain and review the actual Appendix A (evacuation maps) and Appendix B (floor warden and first-aid responder roster) that should be attached to this plan. Verify: (1) maps show exit routes, assembly point, shelter-in-place locations, emergency shower/eyewash location; (2) rosters list names, titles, and current contact information for each floor warden (one per area) and first-aid responder (two per shift); (3) maps are up to date and match current building layout; (4) rosters reflect current staffing. / OSHA 29 CFR 1910.38(a) requires written plan with all procedures; 1910.38(c)(6) requires names or job titles of designated personnel; best practice includes posted evacuation maps / https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.38 / Not in the document (appendices are referenced but not provided) / read / Appendix A: Evacuation maps (warehouse, laboratory, offices) Appendix B: Floor warden and first-aid responder roster (posted beside each evacuation map) / 6d5c6c65-c367-4a1b-a587-aae8b2a7ae73"
+        },
+        {
+          "where": "gaps",
+          "text": "Assembly point distance specified but not verified as safe / Section 3 specifies the assembly point as \"the far north end of the visitor parking lot, beside the flagpole, at least 150 feet from the building.\" The distance of 150 feet is specified, but there is no documentation that this location has been verified as safe from secondary hazards (e.g., chemical vapor, falling debris, downwind of release location, proximity to roads with traffic). OSHA 1910.38(a)(2) requires adequate assembly points. NFPA 101 Life Safety Code and EPA shelter-in-place guidance recommend consideration of wind direction, ground contamination, and structural stability. / Add documentation of assembly point safety assessment: (1) conduct a site assessment of the visitor parking lot and flagpole location for hazards (terrain, weather exposure, proximity to facility, wind patterns); (2) verify that 150 feet is adequate for all credible emergency scenarios (fire, chemical release, earthquake); (3) identify alternative assembly points if primary location is unsafe during specific scenarios (e.g., west wind carries chemical vapor to north end); (4) document the assessment, findings, and sign-off by facilities lead; (5) review annually or when building/surrounding area changes. / OSHA 1910.38(a)(2) requires adequate assembly points; NFPA 101 Life Safety Code Section 4.7.8; EPA guidance on shelter-in-place / https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.38 / Section 3 (evacuation procedures) / read / The assembly point is the far north end of the visitor parking lot, beside the flagpole, at least 150 feet from the building. / 8001f4d9-b055-4e98-9715-3cb2bbb428dd"
+        },
+        {
+          "where": "gaps",
+          "text": "Plan distribution and access unclear / Section 1 states the plan \"is kept in the front office and in the warehouse break room, and a copy is available to any employee on request.\" However, there is no specification of whether all employees receive a copy, whether copies are posted in other areas, or how employees know where to access it. The plan may be difficult to access in an actual emergency if located only in two rooms. / Clarify plan distribution and access: (1) specify that the plan is available in physical and/or electronic form; (2) identify locations where printed copies are posted (front office, warehouse break room, laboratory); (3) state that all new employees receive a copy or link at hire; (4) if electronic, specify how to access (shared drive, intranet, printed on request); (5) note that evacuation maps (Appendix A) must be posted at each exit door and in work areas per OSHA 1910.35; (6) ensure copies are accessible during an emergency (not locked in a cabinet). / OSHA 29 CFR 1910.38(b) requires plan be available to employees for review; 1910.35 requires exit route signs and maps / https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.38 / Section 1 (purpose and scope) / read / The plan is kept in the front office and in the warehouse break room, and a copy is available to any employee on request. / c2f1ad5c-0503-44b0-bb6d-ca4e41564dec"
+        },
+        {
+          "where": "gaps",
+          "text": "Shelter-in-place procedures incomplete / Section 3 describes the shelter-in-place signal (three short horns) and actions (move to interior conference room or laboratory corridor, close doors, facilities lead shuts down ventilation). However, the procedure lacks detail: how long are employees expected to remain sheltered, what is the signal or trigger to resume normal operations, how is ventilation restarted, are there supplies (water, first aid) in the shelter area, are there communication systems to alert sheltered personnel, and how are persons who were outside the building during shelter-in-place notified to avoid returning? / Expand the shelter-in-place section with: (1) specific location names and capacities (e.g., 'interior conference room on the second floor, max 20 persons'); (2) procedures for who may enter the shelter area and in what order; (3) ventilation shutdown procedure and who is responsible; (4) communication method to inform sheltered personnel of situation and expected duration; (5) supplies maintained in shelter area (drinking water, first-aid kit, blankets for injured); (6) all-clear signal or procedure to exit shelter (when and how is it safe to leave); (7) procedure to prevent persons outside from re-entering during shelter-in-place (e.g., guard at entry, public announcement); (8) time estimate for typical shelter-in-place duration (e.g., 'until outdoor hazard disperses, typically 1-4 hours'). / OSHA 1910.38(a) requires procedures for all emergencies; EPA/FEMA shelter-in-place guidance (www.ready.gov); NFPA 1600 / https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.38 / Section 3 (evacuation procedures) / read / Employees move to the interior conference room or the laboratory corridor, close doors, and the facilities lead shuts down the building ventilation from the mechanical room panel. / cfd61e63-b270-415a-89b1-90678eb6378d"
+        }
+      ]
+    },
+    "no-false-headcount-gap": {
+      "verdict": "PASS",
+      "detail": "not raised as such; 3 item(s) mention it — read below",
+      "soft": [
+        {
+          "where": "gaps",
+          "text": "No accountability for contractors and visitors / The scope in section 1 states the plan applies to contractors and visitors while on-site, but the evacuation procedures do not explain how contractors and visitors—who may not be on the daily sign-in sheet or visitor log—are accounted for after evacuation. OSHA 1910.38(a)(4) requires procedures to account for all employees after evacuation. While contractors and visitors are in scope, there is no documented method to identify who is present or how their absence would be detected. / Add a specific procedure for how contractors and visitors are tracked before and after evacuation (e.g., sign-in/out log, escort responsibility, or sweep-team responsibility). Designate who is responsible for collecting and verifying contractor/visitor information at the assembly point. / OSHA 29 CFR 1910.38(a)(4); OAR 437-002-0042(2)(b) / https://www.law.cornell.edu/cfr/text/29/1910.38 / Section 1 (scope); Section 4 (accounting for employees after evacuation) / read / It applies to all 42 employees at the Portland facility, including warehouse, drivers, laboratory and office staff, and to contractors and visitors while on site. / 02a4e077-68fb-4cf9-9f48-5dd89c32ddc8"
+        },
+        {
+          "where": "gaps",
+          "text": "Unclear incident coordination during emergency / Section 4 describes how floor wardens report to the assembly point and pass information about unaccounted persons to \"the incident coordinator,\" but the role is not clearly defined. It is unclear whether the incident coordinator is the same as the facilities lead, whether they have backup/succession plan if unavailable, what authority they have, or how they interact with fire department personnel once they arrive. OSHA 1910.38(a)(3) and (5) require procedures for accounting for all employees and assignment of responsibility to specific individuals. / Clarify the incident coordinator role: (1) define the position (e.g., 'Facilities Lead is the incident coordinator, or if unavailable, the senior manager on site'); (2) state their primary duties (receive headcount reports from floor wardens, pass information to fire department, authorize re-entry); (3) identify backup incident coordinator with succession plan; (4) specify transition of command if fire department arrives (when does fire chief take over). / OSHA 29 CFR 1910.38(a)(3) and 1910.38(a)(5) / https://www.law.cornell.edu/cfr/text/29/1910.38 / Section 4 (accounting for employees after evacuation) / read / who passes the information to the fire department on arrival / 50e0de55-5b90-4a91-b37c-3fddb50f8d94"
+        },
+        {
+          "where": "gaps",
+          "text": "No record of evacuation drills / Section 4 states that \"evacuation drills are held twice a year, in spring and autumn,\" but there is no documentation requirement, no drill records, no scenario descriptions, no observation/findings, or no corrective actions. OSHA 1910.38 and Oregon OSHA expect documentation of drills, participant list, timing, any issues observed, and corrective actions taken. / Create and maintain an evacuation drill log: (1) for each drill, record the date, time, announced or unannounced, scenario (fire, chemical release, shelter-in-place, etc.), number of participants, duration, any personnel unable to participate and why, issues observed (exit blocked, slow reporting to assembly point, etc.), corrective actions identified, and responsible party for follow-up; (2) file the log annually; (3) review drill results in the annual plan review; (4) after drills, brief all employees on findings and lessons learned. / OSHA 29 CFR 1910.38(a); Oregon OSHA 437-002-0042; NFPA 101 and emergency management best practices / https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.38 / Section 4 (accounting for employees) / read / Evacuation drills are held twice a year, in spring and autumn. / 85ae5ff3-9b34-488e-8e49-14b403eb0f72"
+        }
+      ]
+    },
+    "no-false-rescue-gap": {
+      "verdict": "PASS",
+      "detail": "not raised as such; 4 item(s) mention it — read below",
+      "soft": [
+        {
+          "where": "gaps",
+          "text": "Medical responder qualifications not documented / Section 5 states that \"trained first-aid responders (two per shift, named on the warden roster)\" provide first aid. However, the plan does not specify what training is required (First Aid, CPR, AED certification), from what certifying body, expiration dates, or refresh schedule. OSHA 1910.38(a)(5) requires designation and training of employees performing rescue or medical duties. Best practice and standard industry expectation is American Red Cross or American Heart Association First Aid/CPR certification. / Add to section 5 or in a new appendix: (1) required certifications for first-aid responders (e.g., 'American Red Cross First Aid and CPR Certificate'); (2) minimum certification level (e.g., 'Adult CPR with AED and First Aid'); (3) renewal/expiration schedule (typically every 2 years for CPR); (4) maintain current list of certified responders with expiration dates; (5) procedure for training replacement responders. / OSHA 29 CFR 1910.38(a)(5) requires designation and training of rescue and medical personnel / https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.38 / Section 5 (rescue and medical duties) / read / trained first-aid responders (two per shift, named on the warden roster) / 491dcbf3-356e-401b-892d-b7d0b1bd3e97"
+        },
+        {
+          "where": "gaps",
+          "text": "No post-emergency procedures or incident reporting / The plan ends at evacuation and initial first aid. There are no procedures for what happens after an incident is resolved: incident documentation, injury reporting, root cause analysis, corrective actions, regulatory reporting, or communication with affected employees. OSHA 1910.38(a) implies a complete emergency management cycle; OSHA 1904 requires injury recordkeeping if an injury occurs. / Add a section on post-emergency and incident management: (1) incident documentation—who completes the incident report, what information is captured (date, time, cause, personnel involved, injuries, damage, regulatory notifications); (2) injury reporting and OSHA 1904 recordkeeping compliance; (3) root cause analysis process; (4) corrective action tracking; (5) communication with affected employees and regulatory agencies; (6) document retention and archival; (7) lessons learned review in the annual plan review cycle. / OSHA 1910.38(a) and general occupational safety best practices; OSHA 1904 (Recording and Reporting Occupational Injuries and Illnesses) / https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1904 / Not in the document / inferred / b47bab51-0fda-4a70-afc8-f8aea7afed88"
+        },
+        {
+          "where": "gaps",
+          "text": "Shelter-in-place procedures incomplete / Section 3 describes the shelter-in-place signal (three short horns) and actions (move to interior conference room or laboratory corridor, close doors, facilities lead shuts down ventilation). However, the procedure lacks detail: how long are employees expected to remain sheltered, what is the signal or trigger to resume normal operations, how is ventilation restarted, are there supplies (water, first aid) in the shelter area, are there communication systems to alert sheltered personnel, and how are persons who were outside the building during shelter-in-place notified to avoid returning? / Expand the shelter-in-place section with: (1) specific location names and capacities (e.g., 'interior conference room on the second floor, max 20 persons'); (2) procedures for who may enter the shelter area and in what order; (3) ventilation shutdown procedure and who is responsible; (4) communication method to inform sheltered personnel of situation and expected duration; (5) supplies maintained in shelter area (drinking water, first-aid kit, blankets for injured); (6) all-clear signal or procedure to exit shelter (when and how is it safe to leave); (7) procedure to prevent persons outside from re-entering during shelter-in-place (e.g., guard at entry, public announcement); (8) time estimate for typical shelter-in-place duration (e.g., 'until outdoor hazard disperses, typically 1-4 hours'). / OSHA 1910.38(a) requires procedures for all emergencies; EPA/FEMA shelter-in-place guidance (www.ready.gov); NFPA 1600 / https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.38 / Section 3 (evacuation procedures) / read / Employees move to the interior conference room or the laboratory corridor, close doors, and the facilities lead shuts down the building ventilation from the mechanical room panel. / cfd61e63-b270-415a-89b1-90678eb6378d"
+        },
+        {
+          "where": "gaps",
+          "text": "No mutual aid or resource-sharing agreement / The plan does not mention mutual aid arrangements with neighboring facilities or vendors, shared resources (e.g., equipment rental, temporary shelter, first-aid supplies), or how to request assistance from city emergency services for specialized response (hazmat, heavy rescue, medical mass care). In a significant incident, Cascade may need external resources beyond its own staff and equipment. / Add a section on resource and mutual aid: (1) identify critical resources needed in emergencies (medical supplies, temporary shelter for uninjured employees, decontamination equipment, hazmat response); (2) identify mutual aid partners (neighboring chemical companies, local fire department hazmat team, medical providers, environmental cleanup contractors); (3) establish or reference mutual aid agreements (if formal agreements exist, attach a copy); (4) provide contact information for resource providers; (5) specify the incident coordinator's authority to request external assistance. / OSHA 1910.38(a) and emergency management best practices; no specific OSHA mandate but standard practice for chemical facilities / https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.38 / Not in the document / inferred / d00a5755-4393-459f-bfc8-c22b2833e3ab"
+        }
+      ]
+    },
+    "freshness-five-years": {
+      "verdict": "PASS",
+      "detail": "[five years, 2021]"
+    },
+    "fact-alarm-monitored": {
+      "verdict": "PASS",
+      "detail": "facts: \"alarm_monitoring_service\" [cascade fire, monitored, alarm]"
+    },
+    "conditions-none-expected": {
+      "verdict": "PASS",
+      "detail": "none"
+    },
+    "alarm-test-deadline": {
+      "verdict": "PASS",
+      "detail": "deadlines: \"Alarm system testing\" [alarm, monday, test]"
+    }
+  },
+  "rejudged_at": "2026-09-27T19:31:36.698Z",
+  "rejudged_case_sha256": "ccb362cd02f1be246f6f131453f22e2f248ac1f3d3bb0b4f5e632c7eb14dd2a7"
 }

@@ -152,5 +152,100 @@
     "quotes_verified": 0,
     "extracted_text": "",
     "started_at": "2026-09-27T19:04:16.907Z"
-  }
+  },
+  "verdicts_rejudged": {
+    "kind": {
+      "verdict": "FAIL",
+      "detail": "identity.kind = \"null\""
+    },
+    "agency-osha": {
+      "verdict": "FAIL",
+      "detail": "identity.agencies = [empty]"
+    },
+    "subject": {
+      "verdict": "FAIL",
+      "detail": "identity.subjects = [empty]"
+    },
+    "site-portland": {
+      "verdict": "FAIL",
+      "detail": "identity.site = \"null\""
+    },
+    "doc-date": {
+      "verdict": "FAIL",
+      "detail": "identity.doc_date = null, wanted 2026-09-…"
+    },
+    "doc-date-kind": {
+      "verdict": "FAIL",
+      "detail": "identity.doc_date_kind = \"null\""
+    },
+    "status": {
+      "verdict": "FAIL",
+      "detail": "status = \"could not read\""
+    },
+    "finding-missing-days": {
+      "verdict": "FAIL",
+      "detail": "no item matched. gaps/notes held: could_not_read"
+    },
+    "finding-horn-defect": {
+      "verdict": "FAIL",
+      "detail": "no item matched. gaps/notes held: could_not_read"
+    },
+    "finding-no-entries-since": {
+      "verdict": "FAIL",
+      "detail": "no item matched. gaps/notes held: could_not_read"
+    },
+    "fact-truck": {
+      "verdict": "FAIL",
+      "detail": "no item matched. facts held: (nothing)"
+    },
+    "label-consistency": {
+      "verdict": "CROSS",
+      "detail": "judged across the three runs, below"
+    },
+    "no-false-certification-finding": {
+      "verdict": "PASS",
+      "detail": "not raised",
+      "soft": []
+    },
+    "no-false-form-finding": {
+      "verdict": "PASS",
+      "detail": "not raised",
+      "soft": []
+    },
+    "no-invented-maintenance-finding": {
+      "verdict": "PASS",
+      "detail": "not raised",
+      "soft": []
+    },
+    "citation-evaluation-rule": {
+      "verdict": "FAIL",
+      "detail": "\"1910.178(l)(4)(iii)\" not in deadlines, gaps, notes"
+    },
+    "two-operators-fact": {
+      "verdict": "FAIL",
+      "detail": "no item matched. facts held: (nothing)"
+    },
+    "conditions-none": {
+      "verdict": "PASS",
+      "detail": "none"
+    },
+    "freshness-recent": {
+      "verdict": "FAIL",
+      "detail": "only [nothing] of the spec's words appear"
+    },
+    "last-entry-date": {
+      "verdict": "FAIL",
+      "detail": "2026-09-18 appears in none of significant_date, identity.doc_date"
+    },
+    "deadline-chen": {
+      "verdict": "FAIL",
+      "detail": "no item matched. deadlines held: (nothing)"
+    },
+    "deadline-rivera": {
+      "verdict": "FAIL",
+      "detail": "no item matched. deadlines held: (nothing)"
+    }
+  },
+  "rejudged_at": "2026-09-27T19:31:36.792Z",
+  "rejudged_case_sha256": "be1aa5f59b1a660ec9f06dfff574e456ac80e832453cd1fbec9f226f5ecdcfa0"
 }

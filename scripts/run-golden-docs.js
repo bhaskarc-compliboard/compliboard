@@ -47,6 +47,7 @@
 // PASS for a failure. A pass earned by a bug is worse than a fail.
 
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync } from 'node:fs'
+import { createHash } from 'node:crypto'
 import { createClient } from '@supabase/supabase-js'
 import { runDocumentScan, saveScan, buildScanContext } from '../lib/documentScan.ts'
 import { modelForTask, scanStructuredOutput } from '../lib/ai.ts'
@@ -59,17 +60,22 @@ const RUNS = `${DIR}/runs`
 
 const args = process.argv.slice(2)
 const die = (m) => { console.error(`\n  ${m}\n`); process.exit(1) }
+const flagValueEarly = (name) => { const i = args.indexOf(name); return i >= 0 ? args[i + 1] : null }
 const flagIndex = args.indexOf('--times')
 const times = Number(flagIndex >= 0 && args[flagIndex + 1] ? args[flagIndex + 1] : '3')
 // *** A FLAG'S VALUE IS NOT A CASE ID. *** This used to exclude only the index after `--times`, so
 // `--model claude-opus-5` made "claude-opus-5" the case filter and the runner died with "No case
 // matching". Every value-taking flag is now excluded by name, in one list, so adding a third flag
 // cannot reintroduce it.
-const VALUE_FLAGS = ['--times', '--model', '--structured']
+const VALUE_FLAGS = ['--times', '--model', '--structured', '--since']
 const valueIndices = new Set(VALUE_FLAGS.map((f) => args.indexOf(f)).filter((i) => i >= 0).map((i) => i + 1))
 const only = args.filter((a, i) => !a.startsWith('--') && !valueIndices.has(i))[0]
 // Re-judge the runs already on disk instead of buying new ones. No model call, no database.
 const fromRuns = args.includes('--from-runs')
+// Re-judge every stored run from this date instead of the newest `--times`; and write the new
+// verdicts back beside the originals. Both only mean anything with `--from-runs`.
+const since = flagValueEarly('--since')
+const writeBack = fromRuns && !args.includes('--no-write')
 
 // ---------------------------------------------------------------------------
 // THE BAKE-OFF FLAGS. Applied to process.env BEFORE MODEL is resolved below — the order matters,
@@ -247,6 +253,17 @@ function matchItem(check, cols) {
 
 function evaluate(check, scan, ctx) {
   const cols = collections(scan)
+  // *** A LINE THE STORED RUNS' FIXTURE COULD NOT TEST IS N/A, NEVER PASS. ***
+  // `--from-runs` re-judges answers bought against an OLDER fixture. Where the fixture has since
+  // changed in a way that is the whole point of a line — case 05's supplier moved from Portland to
+  // Tacoma so `site-not-invented` could finally distinguish "read the company's only site" from
+  // "lifted the supplier's city" — judging the old answers against the new intent measures nothing.
+  // Reported as N/A with the reason, so the gap is visible in the report rather than silently passed
+  // or silently failed. It is judged normally on any run that actually reads the new fixture.
+  if (ctx.fromRuns && check.not_testable_in_stored_runs) {
+    return { verdict: 'N/A', detail: `not testable in the stored runs — ${check.not_testable_in_stored_runs}`,
+             notTestable: true }
+  }
   switch (check.type) {
     case 'field_one_of': {
       const v = norm(at(scan, check.field))
@@ -513,14 +530,17 @@ const caseFiles = ORDER.filter((id) => files.includes(`${id}.json`) && (!only ||
 if (!caseFiles.length) die(`No case matching "${only ?? ''}" in ${CASES}/`)
 
 console.log(`\n  Target   : ${url.replace(/https:\/\/([^.]+).*/, '$1')} (staging — there is no production target for this command)`)
-console.log(`  Model    : ${MODEL}${modelFlag ? '   (--model, overriding the environment for this run)' : '   (from the environment)'}`)
+console.log(`  Model    : ${fromRuns ? 'n/a — each stored run records the model it ran on' : MODEL + (modelFlag ? '   (--model, overriding the environment for this run)' : '   (from the environment)')}`)
 console.log(`  Schema   : ${STRUCTURED ? 'ON  — output_config.format carries SCAN_JSON_SCHEMA' : 'OFF — the prose path, extractJsonText recovers the object'}`
   + `${structuredFlag ? `   (--structured ${structuredFlag})` : '   (from the environment)'}`)
 // *** THIS LINE IS THE RUN'S OWN RECEIPT. *** The brief for the bake-off says a run whose header does
 // not read UNCAPPED is void, so the word is printed literally and the refusal above makes it
 // unreachable to print anything else. A header that hedged — "uncapped, as in production" — is not a
 // thing you can grep a log for six weeks later and believe.
-console.log(`  Searches : ${process.env.DEV_MAX_SEARCHES ? `CAPPED AT ${process.env.DEV_MAX_SEARCHES} — VOID` : 'UNCAPPED'}   (as production runs it)`)
+// `--from-runs` calls no model, so a cap on searches is not a property of the run — saying "VOID"
+// there would condemn a re-judge for a variable it never used.
+console.log(`  Searches : ${fromRuns ? 'n/a — no model is called; the stored runs carry their own counts'
+  : process.env.DEV_MAX_SEARCHES ? `CAPPED AT ${process.env.DEV_MAX_SEARCHES} — VOID` : 'UNCAPPED   (as production runs it)'}`)
 console.log(`  Run date : ${TODAY}   (date-dependent statuses are computed from this)`)
 console.log(`  Cases    : ${caseFiles.length} x ${times} run(s)`)
 if (fromRuns) console.log(`  --from-runs: re-judging the stored runs in ${RUNS}/ — no model call, no database write`)
@@ -577,19 +597,38 @@ if (fromRuns) {
       const base = f.replace(/\.reparsed\.json$/, '.json')
       if (f.endsWith('.reparsed.json') || !byRun.has(base)) byRun.set(base, f)
     }
-    const stored = [...byRun.entries()].sort(([a], [b]) => (a < b ? -1 : 1)).map(([, f]) => f).slice(-times)
+    // *** `--since` RE-JUDGES EVERY RUN FROM THAT DATE, NOT THE NEWEST THREE. ***
+    // Without it this takes `slice(-times)` — right for "did my matcher change fix case 04", and
+    // useless for a bake-off, where seven configurations have written 21 runs into each case
+    // directory and the newest three are all one configuration's. Added 27 September 2026 to
+    // re-judge 147 runs against corrected answer keys.
+    const all = [...byRun.entries()].sort(([a], [b]) => (a < b ? -1 : 1)).map(([, f]) => f)
+    const stored = since ? all.filter((f) => f.slice(0, 10) >= since) : all.slice(-times)
     const specText = specDocumentText(c.spec)
     const runs = stored.map((f, i) => {
       const d = JSON.parse(readFileSync(`${dir}/${f}`, 'utf8'))
       const scan = d.scan
-      return { n: i + 1, scan, call: { cost_usd: d.cost_usd }, wall: d.wall_ms,
-               verdicts: judge(c, scan, specText, { today: d.run_date ?? TODAY }),
+      const verdicts = judge(c, scan, specText, { today: d.run_date ?? TODAY, fromRuns: true })
+      // *** THE RE-JUDGED VERDICTS ARE WRITTEN BESIDE THE ORIGINALS, NEVER OVER THEM. ***
+      // `verdicts` is what the answer keys said on the day the answer was bought, and that is
+      // evidence: it is why the corrections were made, and overwriting it would delete the reason.
+      // A reader can diff the two keys in one file and see exactly which line moved and why.
+      if (writeBack) {
+        d.verdicts_rejudged = verdicts
+        d.rejudged_at = new Date().toISOString()
+        d.rejudged_case_sha256 = createHash('sha256')
+          .update(readFileSync(`${CASES}/${c.id}.json`, 'utf8')).digest('hex')
+        writeFileSync(`${dir}/${f}`, JSON.stringify(d, null, 2) + '\n')
+      }
+      return { n: d.run ?? i + 1, scan, call: { cost_usd: d.cost_usd, searches: d.searches }, wall: d.wall_ms,
+               verdicts,
                compliant: compliantCheck(scan),
                altPass: !!c.alternative_pass && scan.status === 'could_not_read'
       && !!scan.could_not_read?.way_forward && scan.json_parsed,
                file: f }
     })
-    console.log(`  ${c.id}: re-judged ${runs.length} stored run(s), no model call`)
+    console.log(`  ${c.id}: re-judged ${runs.length} stored run(s), no model call`
+      + (writeBack ? ', verdicts_rejudged written' : ''))
     results.push({ c, co: { name: COMPANIES[c.company].name }, runs })
   }
 }
@@ -612,7 +651,7 @@ for (const c of (fromRuns ? [] : caseFiles)) {
     const { data: call } = aiCallId
       ? await db.from('ai_calls').select('*').eq('id', aiCallId).maybeSingle() : { data: null }
 
-    const verdicts = judge(c, scan, specText, { today: TODAY })
+    const verdicts = judge(c, scan, specText, { today: TODAY, fromRuns: false })
     const compliant = compliantCheck(scan)
     const altPass = !!c.alternative_pass && scan.status === 'could_not_read'
       && !!scan.could_not_read?.way_forward && scan.json_parsed
@@ -657,8 +696,25 @@ for (const c of (fromRuns ? [] : caseFiles)) {
 // ---------------------------------------------------------------------------
 const MARK = { PASS: 'ok ', FAIL: 'X  ', NEAR: '~  ', 'N/A': '-  ', SKIP: 'skip', CROSS: '<->' }
 const bar = (w) => '  ' + '-'.repeat(w)
+/**
+ * THE TWO LABEL LISTS, AS SETS — corrected 27 September 2026.
+ *
+ * *** IT USED TO COMPARE THE ARRAYS IN ORDER, AND THE README NEVER ASKED FOR THAT. ***
+ * `README.md` says labels "must be the identical string across the three runs of a case" — that a
+ * label is not RENAMED between readings, which is what the label list exists to prevent. It says
+ * nothing about the order they come back in, and now says so explicitly: "order is not compared".
+ *
+ * The 27 September bake-off measured what the order-sensitive version cost: `["Oregon OSHA","OSHA"]`
+ * and `["OSHA","Oregon OSHA"]` for the same document, and the case failed. **Six of seven
+ * configurations lost at least one case to label order alone**, which made it the single largest
+ * source of FAILs in that report and none of them a model error.
+ *
+ * Sorted rather than `Set`-compared so a label returned TWICE in one run is still a difference — a
+ * reading that says ["OSHA","OSHA"] has not said the same thing as one that says ["OSHA"].
+ */
 const labelsOf = (scan) => JSON.stringify({
-  agencies: scan.identity.agencies, subjects: scan.identity.subjects,
+  agencies: [...(scan.identity.agencies ?? [])].sort(),
+  subjects: [...(scan.identity.subjects ?? [])].sort(),
 })
 
 let failedCases = 0

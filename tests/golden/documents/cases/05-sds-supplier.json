@@ -36,7 +36,7 @@
     },
     {
       "id": "site-not-invented",
-      "line": "site: company-wide or unassigned; the scan must not invent a site from the supplier's Portland address",
+      "line": "site: company-wide or unassigned; the scan must not invent a site from the supplier's Tacoma address",
       "type": "field_one_of",
       "field": "identity.site",
       "accept": [
@@ -44,7 +44,9 @@
         "company-wide",
         ""
       ],
-      "allow_null": true
+      "allow_null": true,
+      "not_testable_in_stored_runs": "The runs stored before 2026-09-28 read a fixture whose supplier was at 7200 N Lombard Street, PORTLAND — the same city as Cascade's only site. A scan reading the company's own site and a scan lifting the supplier's city both produced \"Portland\", so the line could not distinguish the behaviour it forbids from the behaviour it accepts. The supplier is in Tacoma, Washington from 2026-09-27 and the fixture is re-rendered; this line is judged again on the next run that reads it, and is N/A — never PASS — for the stored ones.",
+      "corrected": "2026-09-27: fixture changed (supplier moved to Tacoma, Washington). Line unchanged in substance."
     },
     {
       "id": "doc-date",

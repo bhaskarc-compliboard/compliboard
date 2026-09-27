@@ -62,9 +62,31 @@ Identity (must):
 Status (must): gaps_found. Never "compliant".
 
 Gaps (must contain all three, matched by concept and by a citation containing 1910.38):
-1. No procedure for reporting a fire or emergency. Citation contains "1910.38(c)(1)". Locator: "not in the document" or section 2/3.
-2. No procedure for employees who remain to operate critical operations before evacuating. Citation contains "1910.38(c)(3)". Locator: "not in the document".
-3. No name or job title of a person to contact for more information about the plan. Citation contains "1910.38(c)(6)". Locator: "not in the document" or section 6.
+> **CORRECTED 27 September 2026 — the citation may be the GOVERNING STATE rule or the federal one.**
+>
+> **Oregon runs its own OSHA state plan.** `OAR 437-002-0042` is the rule that binds an employer in
+> Portland; `29 CFR 1910.38` is the federal standard Oregon adopted. This key was written from the
+> federal standard because that is how the gaps were planted, and it accidentally became a test of
+> whether the model mentions the federal number: in the 27 September bake-off **every Opus
+> configuration found all three of these gaps in all three runs**, and `claude-opus-5-5` failed all
+> three lines for citing `OAR 437-002-0042(2)(c)` where `claude-opus-5` wrote
+> *"OAR 437-002-0042(2)(c) (Oregon OSHA), which corresponds to 29 CFR 1910.38(c)(1)"*. The line was
+> rewarding verbosity, not correctness. For a product sold in Oregon first, **the state citation is
+> the one a customer needs.**
+>
+> ### ⚠ AND THE OAR PARAGRAPH LETTER IS DELIBERATELY NOT PINNED.
+>
+> The models asserted a mapping — reporting = `(2)(c)`, critical operations = `(2)(d)`, contact =
+> `(2)(f)` — consistently, across models and runs. **Nobody has checked it against the OAR text.**
+> Writing a paragraph letter into an answer key on the strength of model output would put an
+> unverified regulatory claim in the one place this suite can never question again, which is the
+> failure `CLAUDE.md` §1 (*"AI generates, human verifies"*) and §3.3 exist to prevent. So the case
+> file requires the rule number `437-002-0042` and **not** the paragraph. **Pin the paragraphs once a
+> person has read the OAR**, and this note is the record of why they are missing.
+
+1. No procedure for reporting a fire or emergency. Citation contains "1910.38(c)(1)" OR the Oregon rule "OAR 437-002-0042". Locator: "not in the document" or section 2/3.
+2. No procedure for employees who remain to operate critical operations before evacuating. Citation contains "1910.38(c)(3)" OR the Oregon rule "OAR 437-002-0042". Locator: "not in the document".
+3. No name or job title of a person to contact for more information about the plan. Citation contains "1910.38(c)(6)" OR the Oregon rule "OAR 437-002-0042". Locator: "not in the document" or section 6.
 
 Gaps (must not): no gap claiming the alarm system is missing, no gap claiming evacuation routes are missing, no gap claiming the headcount procedure is missing, no gap claiming rescue/medical duties are missing. Any of these is a false finding and fails the run.
 

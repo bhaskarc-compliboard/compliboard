@@ -494,5 +494,141 @@
     "quotes_verified": 17,
     "extracted_text": "CASCADE SPECIALTY CHEMICALS, LLC\nEMERGENCY ACTION PLAN\nPortland Facility, 4410 NW Front Avenue, Portland, Oregon 97210\nRevised February 2021\n1. Purpose and scope\nThis Emergency Action Plan describes what employees of Cascade Specialty Chemicals do when there is\na fire, chemical release, medical emergency, earthquake or other emergency at the Portland facility. It\napplies to all 42 employees at the Portland facility, including warehouse, drivers, laboratory and office\nstaff, and to contractors and visitors while on site. The plan is kept in the front office and in the warehouse\nbreak room, and a copy is available to any employee on request.\n2. Alarm system\nThe building has a monitored fire alarm system with audible horns and strobe lights in the warehouse,\nlaboratory, loading dock and offices. The alarm is monitored 24 hours a day by Cascade Fire & Safety\nunder a service contract. Manual pull stations are located at each exit door. The alarm is tested on the first\nMonday of each month by the facilities lead. A continuous horn means evacuate. Three short horns\nrepeated means shelter in place because of an outdoor hazard.\n3. Evacuation procedures\nWhen the continuous alarm sounds, all employees stop work, secure nothing that requires more than a\nfew seconds, and leave by the nearest marked exit. Exit routes are posted on the evacuation maps at each\nexit door and in Appendix A. Warehouse staff leave by the east dock doors or the north pedestrian door.\nLaboratory staff leave by the laboratory's own exterior door on the south wall. Office staff leave by the\nmain entrance or the west stairwell. Do not use the freight lift. Do not return for belongings.\nThe assembly point is the far north end of the visitor parking lot, beside the flagpole, at least 150 feet\nfrom the building. Employees assigned as floor wardens (one per area, listed on the warden roster posted\nbeside each evacuation map) sweep their area, close doors behind them, and report to the assembly point.\nFor a chemical release outdoors or a hazard that makes leaving the building unsafe, the shelter-in-place\nsignal sounds. Employees move to the interior conference room or the laboratory corridor, close doors,\nand the facilities lead shuts down the building ventilation from the mechanical room panel.\n4. Accounting for employees after evacuation\nAt the assembly point each floor warden takes a headcount of the people from their area against the daily\nsign-in sheet and the visitor log, which the receptionist brings out. Any person unaccounted for is reported\nat once to the incident coordinator at the assembly point, who passes the information to the fire\ndepartment on arrival. No one re-enters the building until the fire department or the incident coordinator\ngives the all-clear. Evacuation drills are held twice a year, in spring and autumn.\n5. Rescue and medical duties\nEmployees do not attempt rescue inside the building. First aid is given at the assembly point by the\ntrained first-aid responders (two per shift, named on the warden roster), who bring the first-aid kit and the\nAED from the front office. An employee exposed to a chemical is taken to the emergency shower and\neyewash at the loading dock if it can be reached safely, or to the assembly point, and the SDS for the\nproduct is brought to the responders. Emergency medical services are called for any injury beyond minor\nfirst aid.\n6. Training and review\nEvery new employee is walked through this plan, the exit routes for their work area and the assembly\npoint on their first day. Floor wardens and first-aid responders are trained annually. The plan is reviewed\nwith all employees whenever it is changed and whenever an employee's responsibilities under it change.\nThe facilities lead reviews the plan every January and updates the evacuation maps whenever the building\nlayout changes.\nAppendix A: Evacuation maps (warehouse, laboratory, offices)\nAppendix B: Floor warden and first-aid responder roster (posted beside each evacuation map)",
     "started_at": "2026-09-27T16:16:34.000Z"
-  }
+  },
+  "verdicts_rejudged": {
+    "kind": {
+      "verdict": "PASS",
+      "detail": "identity.kind = \"program\""
+    },
+    "agency-osha": {
+      "verdict": "PASS",
+      "detail": "identity.agencies = [oregon osha | osha | oregon deq]"
+    },
+    "site-portland": {
+      "verdict": "PASS",
+      "detail": "identity.site = \"portland\""
+    },
+    "doc-date": {
+      "verdict": "PASS",
+      "detail": "identity.doc_date = 2021-02-01"
+    },
+    "doc-date-kind": {
+      "verdict": "PASS",
+      "detail": "identity.doc_date_kind = \"revised\""
+    },
+    "jurisdiction-oregon": {
+      "verdict": "PASS",
+      "detail": "identity.jurisdiction = [oregon | federal]"
+    },
+    "status": {
+      "verdict": "PASS",
+      "detail": "status = \"gaps found\""
+    },
+    "gap-reporting": {
+      "verdict": "PASS",
+      "detail": "gaps: \"No procedure for reporting a fire or other emergency\" [report, reporting, fire, emergency, procedure]"
+    },
+    "gap-critical-operations": {
+      "verdict": "PASS",
+      "detail": "gaps: \"No procedure for shutting down critical equipment before evacuating\" [shut down, before evacuating, stay]"
+    },
+    "gap-contact-name": {
+      "verdict": "PASS",
+      "detail": "gaps: \"No named contact for questions about the plan\" [name, job title, contact, more information, person]"
+    },
+    "deadline-annual-review": {
+      "verdict": "PASS",
+      "detail": "deadlines: \"Annual January review of the plan by the facilities lead\" [annual, january, review, plan]"
+    },
+    "deadline-drills": {
+      "verdict": "PASS",
+      "detail": "deadlines: \"Evacuation drills, twice a year (spring and autumn)\" [drill, twice, year, evacuation]"
+    },
+    "fact-42-employees": {
+      "verdict": "PASS",
+      "detail": "facts: \"employee_count_portland\" [42, employees, portland]"
+    },
+    "label-consistency": {
+      "verdict": "CROSS",
+      "detail": "judged across the three runs, below"
+    },
+    "no-false-alarm-gap": {
+      "verdict": "PASS",
+      "detail": "not raised as such; 2 item(s) mention it — read below",
+      "soft": [
+        {
+          "where": "gaps",
+          "text": "No procedure for reporting a fire or other emergency / The plan describes what the alarm means and that pull stations exist, but never says how an employee raises the alarm or calls for help — who pulls the station, who calls 911, who calls the alarm company, what an employee does if they discover a fire, spill or medical emergency. / Add a section 'Reporting an emergency' stating: pull the nearest manual pull station, call 911 from any phone, then notify the facilities lead/incident coordinator; list internal and external emergency numbers. / OAR 437-002-0042(2)(c) (Oregon OSHA), counterpart to 29 CFR 1910.38(c)(1) / https://secure.sos.state.or.us/oard/view.action?ruleNumber=437-002-0042 / not in the document — belongs before or within section 2 (Alarm system), page 2 / read / Manual pull stations are located at each exit door. / 5aa81ad1-5592-4655-b88b-c09f66ed7336"
+        },
+        {
+          "where": "gaps",
+          "text": "No procedure for shutting down critical equipment before evacuating / The plan tells everyone to leave and to \"secure nothing that requires more than a few seconds\". It does not say which operations must be shut down or made safe first — for example a transfer or filling operation in progress, a lab hood or reaction, a forklift charger — or who stays to do it and when they then leave. The one shutdown named (building ventilation) belongs to shelter-in-place, not to evacuation. / Add a short subsection to section 3 listing the critical shutdowns (product transfer pumps, lab equipment, ventilation as applicable), the job title responsible for each, and the point at which that person must evacuate regardless. / OAR 437-002-0042(2)(d) (Oregon OSHA), counterpart to 29 CFR 1910.38(c)(3) / https://secure.sos.state.or.us/oard/view.action?ruleNumber=437-002-0042 / section 3, page 3 / read / When the continuous alarm sounds, all employees stop work, secure nothing that requires more than a few seconds, and leave by the nearest marked exit. / a2ab775c-ec52-4ba4-b3a3-d82f203db3a9"
+        }
+      ]
+    },
+    "no-false-evacuation-gap": {
+      "verdict": "PASS",
+      "detail": "not raised as such; 3 item(s) mention it — read below",
+      "soft": [
+        {
+          "where": "gaps",
+          "text": "No named contact for questions about the plan / The plan never gives a name or job title for the person an employee can contact for more information about the plan or their duties under it. \"Facilities lead\", \"incident coordinator\" and \"receptionist\" are roles used in the text but none is offered as the contact, and no person is named. / Add a short block at the front or end of the plan: name and job title (and phone/extension) of the person responsible for the plan — most likely the facilities lead — as the contact for questions about the plan and about employees' duties under it. / OAR 437-002-0042(2)(f) (Oregon OSHA), counterpart to 29 CFR 1910.38(c)(6) / https://secure.sos.state.or.us/oard/view.action?ruleNumber=437-002-0042 / not in the document / read / The facilities lead reviews the plan every January and updates the evacuation maps whenever the building layout changes. / 507dc5ec-aa4a-4389-862e-87855516b133"
+        },
+        {
+          "where": "gaps",
+          "text": "Appendices A and B are referenced but not in the file / Section 3 and the end of the plan point to Appendix A (evacuation maps) and Appendix B (floor warden and first-aid responder roster). Neither is attached to the PDF, so the exit route assignments and the names of the people with duties under the plan cannot be checked. / Attach the current maps and the current roster to the plan file, dated, and keep the posted copies matching. / OAR 437-002-0042(2)(a) and (2)(e) (Oregon OSHA) — evacuation and exit route assignments, and rescue/medical duties; counterpart to 29 CFR 1910.38(c)(2) and (c)(5) / https://secure.sos.state.or.us/oard/view.action?ruleNumber=437-002-0042 / page 5, after section 6 / read / Appendix A: Evacuation maps (warehouse, laboratory, offices) / 61558a3a-26f3-4de9-bd6f-885b765e5c85"
+        },
+        {
+          "where": "gaps",
+          "text": "No revision history or record of the annual January reviews / The plan commits to a January review by the facilities lead but carries no revision table, no reviewer signature and no record that any review since February 2021 took place. / Add a revision history table (date, reviewer, what changed) at the front of the plan and back-fill it from whatever review evidence exists. / section 6, page 5 / read / The facilities lead reviews the plan every January and updates the evacuation maps whenever the building layout changes. / a69b9232-5227-4dde-a675-5ef58e7434c5"
+        }
+      ]
+    },
+    "no-false-headcount-gap": {
+      "verdict": "PASS",
+      "detail": "not raised as such; 1 item(s) mention it — read below",
+      "soft": [
+        {
+          "where": "gaps",
+          "text": "No named alternate for the roles the plan depends on / Inferred from the role structure: the plan puts the headcount, the all-clear, the ventilation shutdown and the visitor log in the hands of single roles (incident coordinator, facilities lead, receptionist) with no stand-in named for absence, night shift or vacation. / Name an alternate job title for each role in the plan, and confirm the roster covers every shift that works on site. / sections 3 and 4, pages 3–4 / inferred / Any person unaccounted for is reported at once to the incident coordinator at the assembly point, who passes the information to the fire department on arrival."
+        }
+      ]
+    },
+    "no-false-rescue-gap": {
+      "verdict": "PASS",
+      "detail": "not raised as such; 3 item(s) mention it — read below",
+      "soft": [
+        {
+          "where": "gaps",
+          "text": "No chemical spill or release response procedure / For a chemical distributor this is the largest hole. The plan covers an outdoor release (shelter in place) and first aid for someone exposed, but never says what employees do about a spill inside the warehouse or lab: whether anyone may contain or clean up a release, at what size, with what equipment and training, or whether all employees simply evacuate and leave it to the fire department. / Decide and write down the company's posture: either (a) employees evacuate and outside responders handle all releases — which is the option that lets an emergency action plan stand in place of a full emergency response plan — or (b) named trained employees may respond, which pulls in HAZWOPER responder training levels. State it explicitly and train to it. / 29 CFR 1910.120(q)(1), adopted in Oregon by OAR 437-002-0100(18) — I have confirmed that Oregon OSHA adopts 1910.120 by reference at 437-002-0100(18); the subsection lettering (q)(1) is the federal text as adopted, and 1910.120(q)(1) allows an employer whose employees evacuate to use an emergency action plan instead / https://www.ecfr.gov/current/title-29/section-1910.120#p-1910.120(q)(1) / not in the document — section 3 mentions only outdoor releases / read / For a chemical release outdoors or a hazard that makes leaving the building unsafe, the shelter-in-place signal sounds. / f976a0ae-e4f9-44d9-a358-4d97ad6e7f9a"
+        },
+        {
+          "where": "gaps",
+          "text": "Appendices A and B are referenced but not in the file / Section 3 and the end of the plan point to Appendix A (evacuation maps) and Appendix B (floor warden and first-aid responder roster). Neither is attached to the PDF, so the exit route assignments and the names of the people with duties under the plan cannot be checked. / Attach the current maps and the current roster to the plan file, dated, and keep the posted copies matching. / OAR 437-002-0042(2)(a) and (2)(e) (Oregon OSHA) — evacuation and exit route assignments, and rescue/medical duties; counterpart to 29 CFR 1910.38(c)(2) and (c)(5) / https://secure.sos.state.or.us/oard/view.action?ruleNumber=437-002-0042 / page 5, after section 6 / read / Appendix A: Evacuation maps (warehouse, laboratory, offices) / 61558a3a-26f3-4de9-bd6f-885b765e5c85"
+        },
+        {
+          "where": "gaps",
+          "text": "Plan is silent on whether employees may fight an incipient fire / The plan says employees evacuate and do not attempt rescue, but never says whether an employee may use a portable fire extinguisher on a small fire on the way out. That choice decides whether extinguisher training obligations apply to all employees or to nobody. / Add one line to section 3 stating the company's position — either total evacuation with no extinguisher use, or use of extinguishers by designated trained employees only — and match the training in section 6 to it. / OAR 437-002-0187 (Oregon OSHA, Portable Fire Extinguishers — Oregon's rule in place of 29 CFR 1910.157). I am confident this is the correct Oregon rule number for portable extinguishers; confirm the specific training subsection before drafting to it. / https://secure.sos.state.or.us/oard/view.action?ruleNumber=437-002-0187 / not in the document — section 3 or section 5 / read / Employees do not attempt rescue inside the building."
+        }
+      ]
+    },
+    "freshness-five-years": {
+      "verdict": "FAIL",
+      "detail": "only [2021] of the spec's words appear"
+    },
+    "fact-alarm-monitored": {
+      "verdict": "PASS",
+      "detail": "facts: \"fire_alarm_monitoring_vendor\" [cascade fire, monitored, alarm]"
+    },
+    "conditions-none-expected": {
+      "verdict": "PASS",
+      "detail": "none"
+    },
+    "alarm-test-deadline": {
+      "verdict": "PASS",
+      "detail": "deadlines: \"Monthly fire alarm test by the facilities lead\" [alarm, monday, monthly, test]"
+    }
+  },
+  "rejudged_at": "2026-09-27T19:31:36.670Z",
+  "rejudged_case_sha256": "ccb362cd02f1be246f6f131453f22e2f248ac1f3d3bb0b4f5e632c7eb14dd2a7"
 }
