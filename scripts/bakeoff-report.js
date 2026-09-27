@@ -462,9 +462,63 @@ for (const id of ORDER) {
 }
 p('---')
 p()
+p(`## Lines that failed on EVERY configuration`)
+p()
+p(`**This is the table that separates a model problem from a spec problem.** A must-line the best and`)
+p(`the cheapest model both fail, in every run, is not measuring the model — it is measuring the line.`)
+p(`Each of these is a candidate for the section below, and the ones that survive reading are listed there.`)
+p()
+p(`A line that failed in **all ${present.length}** configurations:`)
+p()
+p(`| Case | Line | The line, from the spec | Runs it failed in |`)
+p(`|---|---|---|---|`)
+let universal = 0
+for (const id of ORDER) {
+  if (!caseOf[id]) continue
+  const c = caseOf[id]
+  for (const ch of [...c.must, ...c.must_not]) {
+    let failedIn = 0, totalRuns = 0, failedRuns = 0
+    for (const [, , k] of present) {
+      const rs = summary[k]?.byCase.get(id) ?? []
+      if (!rs.length) continue
+      const bad = rs.filter((r) => { const v = r.verdicts?.[ch.id]; return v && BAD.has(v.verdict) })
+      totalRuns += rs.length
+      failedRuns += bad.length
+      if (bad.length) failedIn++
+    }
+    if (failedIn !== present.length || !present.length) continue
+    universal++
+    p(`| ${id} | \`${ch.id}\` | ${md(ch.line).slice(0, 190)} | ${failedRuns} of ${totalRuns} |`)
+  }
+}
+if (!universal) p(`| — | — | _no line failed on every configuration_ | — |`)
+p()
+p(`### And the mirror of it: lines no configuration failed`)
+p()
+let clean = 0, lineCount = 0
+for (const id of ORDER) {
+  if (!caseOf[id]) continue
+  for (const ch of [...caseOf[id].must, ...caseOf[id].must_not]) {
+    lineCount++
+    let anyBad = false
+    for (const [, , k] of present) {
+      for (const r of summary[k]?.byCase.get(id) ?? []) {
+        const v = r.verdicts?.[ch.id]
+        if (v && BAD.has(v.verdict)) anyBad = true
+      }
+    }
+    if (!anyBad) clean++
+  }
+}
+p(`**${clean} of ${lineCount} must-lines and must-nots held in every run of every configuration.** That`)
+p(`is the suite's real floor: the things every model gets right, which is also the part of the answer`)
+p(`key nothing in this bake-off calls into question.`)
+p()
+p('---')
+p()
 p(`## Where the spec looks wrong`)
 p()
-p(`_Filled in by hand after reading the failures above. The owner decides; nothing here is changed._`)
+p(`_Read from the tables above. The owner decides; **no case file was changed.**_`)
 p()
 p('---')
 p()
