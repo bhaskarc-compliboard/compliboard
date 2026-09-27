@@ -125,6 +125,17 @@ const STATUS_WORD: Record<string, string> = {
 }
 
 const AMBER_STATUSES = new Set(['needs_work', 'expiring', 'expired', 'could_not_read'])
+/**
+ * Amber means "this asks something of you". A document that is queued or being read asks nothing
+ * yet — so while work is in flight the row is grey, whatever the PREVIOUS reading said.
+ *
+ * It exists as one function because `statusWord` and the two colour call sites would otherwise
+ * disagree: the word would say "Reading…" in the amber of a "Needs work" the new reading has not
+ * confirmed yet. `held` is grey for the same reason it says "Not read yet".
+ */
+const isAmber = (r: { display_status: string; document_status: string }) =>
+  r.document_status !== 'uploaded' && r.document_status !== 'reading' && r.document_status !== 'held'
+  && AMBER_STATUSES.has(r.display_status)
 
 /** What the date under the status word is called. The scan says which kind of date it is. */
 const DATE_LABEL: Record<string, string> = {
@@ -581,13 +592,21 @@ function DocumentsPageContent() {
 
   const folderCount = (id: string) => rows.filter((r) => r.folder_id === id).length
   const statusWord = (r: IndexRow) => {
-    if (r.display_status === 'not_yet_read'
-        && (readingIds.has(r.document_id) || r.document_status === 'reading')) return 'Reading…'
     // *** HELD IS NOT QUEUED, AND MUST NOT SAY SO (migration 054). ***
     // These are the files that were already here when the sweep arrived. Nothing is going to
     // read them on its own, so "Queued" would be a promise the product is not keeping — the
-    // exact shape of the anti-pattern this page exists to avoid.
+    // exact shape of the anti-pattern this page exists to avoid. Checked FIRST, because `held`
+    // beats everything below it.
     if (r.document_status === 'held') return 'Not read yet'
+    // *** WORK IN FLIGHT BEATS THE READING THAT IS STILL ON THE ROW — 28 September 2026. ***
+    // A "Read it again" leaves the PREVIOUS scan current while the new one is queued, so
+    // `display_status` still reads "Needs work" or "Current" from the old reading. Before this the
+    // row said exactly what it said before the button was pressed, for up to two minutes, which is
+    // indistinguishable from the button having done nothing — and doing nothing is the defect that
+    // was actually fixed. `readingIds` stays in the test because the page's own live upload loop
+    // sets it before the row's status has moved.
+    if (readingIds.has(r.document_id) || r.document_status === 'reading') return 'Reading…'
+    if (r.document_status === 'uploaded') return 'Queued'
     return STATUS_WORD[r.display_status] ?? r.display_status
   }
 
@@ -595,7 +614,7 @@ function DocumentsPageContent() {
   // RENDER
   // ---------------------------------------------------------------------------
   function Row({ r }: { r: IndexRow }) {
-    const amber = AMBER_STATUSES.has(r.display_status)
+    const amber = isAmber(r)
     const older = olderVersionCount[r.document_id] ?? 0
     const dateLabel = r.significant_date_kind
       ? (DATE_LABEL[r.significant_date_kind] ?? r.significant_date_kind) : ''
@@ -861,7 +880,7 @@ function DocumentsPageContent() {
                   <td className="py-2.5 text-[12px] text-gray-600">{r.kind ? (KIND_LABEL[r.kind] ?? r.kind) : '—'}</td>
                   <td className="py-2.5 text-[12px] text-gray-600">{r.site_name ?? '—'}</td>
                   <td className="py-2.5 text-[12px] text-gray-600">{fmtDate(r.significant_date) || '—'}</td>
-                  <td className={`py-2.5 text-[13px] ${AMBER_STATUSES.has(r.display_status) ? 'text-[var(--amber)]' : 'text-gray-500'}`}>
+                  <td className={`py-2.5 text-[13px] ${isAmber(r) ? 'text-[var(--amber)]' : 'text-gray-500'}`}>
                     {statusWord(r)}
                   </td>
                 </tr>

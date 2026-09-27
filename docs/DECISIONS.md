@@ -10455,3 +10455,92 @@ handed, so `document_scans.searches` and `ai_calls.searches` both held 2 while t
 null. The runner now records the ledger row's own count. **A measurement suite that cannot report how
 widely the model looked is missing the number that explains its own cost**, and search is a third of
 the bill on a research answer (§128 J).
+
+---
+
+## 138. "READ IT AGAIN" RAN IN THE DRAWER'S REQUEST, SO CLOSING THE DRAWER CANCELLED IT — 28 September 2026
+
+Seen on production on 27 September.
+
+> ### THE PERSON PRESSED THE BUTTON THE PRODUCT OFFERS THEM, WALKED AWAY, AND NOTHING HAPPENED.
+
+`components/DocumentReport.tsx` POSTed `/api/document-scan` and awaited it. That route runs the whole
+reading **inside the request** — a 20-to-120-second model call — which is right for the upload path,
+where one to three files are read while somebody watches the rows fill in. It is wrong for a button
+whose whole purpose is to ask for work: closing the drawer aborted the fetch, the browser dropped the
+connection, and the document was left wherever it happened to be — the old reading still current with
+nothing to say a re-read had been asked for, or `reading` for ever if the request died after the
+status was set.
+
+### The fix is not a new mechanism. It is the one a folder upload already uses.
+
+Documents Run 7 settled this shape for thirty files and `/api/document-rescan` is the same four steps
+for one:
+
+1. the document goes back in the queue — `status = 'uploaded'`, `reading_since = null`
+2. a batch of one is created, so the page and the banner can report it
+3. `after()` from `next/server` kicks **`sweep()`** — the same function the cron route calls, not an
+   urgent copy of it
+4. the response returns at once
+
+**Nothing about the reading is in the request any more.** Measured on staging with the caller
+deliberately abandoned the moment it answered:
+
+```
+POST /api/document-rescan -> 200 in 1423ms
+--- caller has stopped listening; watching the row from the database only ---
++6s … +78s   documents.status=reading   current scan=75aaa30b  new=false
++84s         documents.status=read      current scan=f1e19e5b  new=true
+
+f1e19e5b  is_current=true   2026-09-27T21:47:43Z
+75aaa30b  is_current=false  2026-09-26T16:49:19Z
+batch: {"file_count":1,"status":"done","done_count":1,"notified_at":null}
+```
+
+**1.4 seconds to answer, 84 seconds to read, and the reading happened with nobody listening.** The old
+scan is kept at `is_current = false` — a reading is evidence, and the new one is a correction of it,
+not a replacement for it. `reading_since` is null, so the next sweep is not blocked by a stale claim.
+
+### Three things that had to move with it, and each was its own small lie
+
+**A batch of one never emails.** The sweep finishes batches with `email: true` by default, so without
+this the button would have sent the person an email about the drawer they are looking at.
+`finishBatchIfDone` now refuses to notify a batch of `file_count <= 1`. The rule is the count, not a
+new column, because the count already carries the meaning: `LIVE_SCAN_MAX` is the line between "wait
+here and it will be done" and "we will tell you when it is", and one file has never been on the far
+side of it. Written as `<= 1` so a batch whose count was never set is silent too, rather than emailing
+about nothing.
+
+**The row said what it said before.** A re-read leaves the previous scan current, so
+`display_status` still read "Needs work" or "Current" from the old reading for up to two minutes —
+*indistinguishable from the button having done nothing*, which is the defect wearing a different
+disguise. `statusWord` now puts work in flight ahead of the stored reading: `Queued`, then `Reading…`.
+
+**And it said it in amber.** The colour came from the same stale `display_status`, so the row would
+have read "Reading…" in the amber that means *this asks something of you*. A queued document asks
+nothing yet. One `isAmber()` predicate now serves the word and both colour call sites, so they cannot
+disagree.
+
+### What the drawer does now
+
+It shows the old reading — still the only reading there is — with the sub-line saying
+`Queued to be read again`, then `Reading…`, and polls the report every ten seconds until a **different
+scan is current**. Not until the status settles: a status can return to the value it already had and
+prove nothing, so the scan id is the signal. The poll runs on `document_status`, not on whether this
+drawer asked, because a folder upload, a recovered stuck row or a colleague pressing the button should
+all make an open drawer fill itself in. No attempt limit, matching the page — a queue that never
+drains is a broken sweep, and going on saying "Reading…" is more honest than stopping and implying it
+finished.
+
+### And the sweep's own comment was wrong
+
+Rule 4a said *"A person asking for one with 'Read it again' puts it through `/api/document-scan`,
+which does not consult the queue at all."* Corrected in place. It also means **a `held` document can
+now be read on request** — an explicit ask is exactly the thing that should take one of the 38 out of
+`held`, and it arrives in the queue like anything else.
+
+`/api/document-scan` is unchanged and still the live path: `check-live.js` drives it, and one to three
+files uploaded in the page are still read in the request on purpose.
+
+**Reversal condition:** none. A button that silently does nothing when the surface it lives on is
+closed is a defect, not a trade-off.

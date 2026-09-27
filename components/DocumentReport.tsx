@@ -228,6 +228,12 @@ export default function DocumentReport({
   const [copied, setCopied] = useState<string | null>(null)
   /** The delete confirmation, shown in the drawer rather than as a browser dialog. */
   const [confirmDelete, setConfirmDelete] = useState(false)
+  /**
+   * The scan id that was current when "Read it again" was pressed, or null when no re-read is in
+   * flight from THIS drawer. It is how the poll below knows the new reading has landed rather than
+   * guessing from a status that may return to the value it already had.
+   */
+  const [rereadFrom, setRereadFrom] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     const res = await fetch(`/api/documents/report?document_id=${documentId}`, { headers: await authHeaders() })
@@ -243,6 +249,42 @@ export default function DocumentReport({
     })
   }, [documentId])
   useEffect(() => { load() }, [load])
+
+  /**
+   * *** WHILE THIS DOCUMENT IS QUEUED OR BEING READ, ASK AGAIN EVERY TEN SECONDS. ***
+   *
+   * Ten seconds for the same reason the Documents page uses ten (its own note): a scan is 20 to 120
+   * seconds, so a row changes while you are looking at it without a reading costing a poll a second.
+   *
+   * *** IT READS `document_status`, NOT WHETHER THIS DRAWER ASKED FOR THE RE-READ. *** A document can
+   * be queued or reading because somebody dropped a folder in, because the sweep recovered a stuck
+   * row, or because another person at the same company pressed the button. All of those should make
+   * the open drawer fill itself in, and none of them are visible in this component's state.
+   *
+   * **`rereading` is what the footer shows** and it is deliberately narrower: it means THIS drawer
+   * asked, and the scan that was current then is still current. It clears the moment a new scan is —
+   * which is the condition the fix was written for, because the status alone can come back to the
+   * value it already had and prove nothing.
+   *
+   * There is no attempt limit, matching the page. A queue that never drains is a broken sweep, and
+   * the honest thing is to go on saying "Reading…" rather than to stop and imply it finished.
+   */
+  const inFlight = r?.row.document_status === 'uploaded' || r?.row.document_status === 'reading'
+  const rereading = !!rereadFrom && (inFlight || (r?.row.scan_id ?? null) === rereadFrom)
+  useEffect(() => {
+    if (!inFlight && !rereading) return
+    const t = setInterval(() => { load(); onChanged() }, 10_000)
+    return () => clearInterval(t)
+  }, [inFlight, rereading, load, onChanged])
+
+  // The new reading is current: stop calling it a re-read, and say so once.
+  useEffect(() => {
+    if (!rereadFrom) return
+    if (r?.row.document_status !== 'read' && r?.row.document_status !== 'could_not_read') return
+    if ((r?.row.scan_id ?? null) === rereadFrom) return
+    setRereadFrom(null)
+    setNotice('Read again — this is the new reading.')
+  }, [r?.row.document_status, r?.row.scan_id, rereadFrom])
 
   async function act(body: Record<string, unknown>) {
     setBusy(true)
@@ -327,12 +369,19 @@ export default function DocumentReport({
   const openGaps = r.gaps.filter((g) => g.status !== 'dismissed')
   const dismissed = r.gaps.filter((g) => g.status === 'dismissed')
 
+  // *** THE SUB-LINE SAYS WHEN IT WAS READ, AND NOW SAYS WHEN IT IS BEING READ. ***
+  // While a re-read is queued or running, the drawer goes on showing the OLD reading — which is the
+  // honest thing, because it is still the only reading there is — and this is the one line that tells
+  // you a newer one is coming. Without it the drawer looks identical before and after pressing the
+  // button, which is the defect this change is about wearing a different disguise.
   const sub = [
     kind ? (KIND_LABEL[kind] ?? kind) : null,
     row.agencies?.join(' · ') || null,
     row.site_name,
     row.file_name,
-    row.scanned_at ? `read ${fmt(row.scanned_at)}` : null,
+    row.document_status === 'reading' ? 'Reading…'
+      : row.document_status === 'uploaded' ? 'Queued to be read again'
+      : row.scanned_at ? `read ${fmt(row.scanned_at)}` : null,
   ].filter(Boolean).join(' · ')
 
   const footer = (
@@ -349,17 +398,34 @@ export default function DocumentReport({
         const j = await act({ action: 'file_url' })
         if (j?.url) window.open(j.url, '_blank', 'noopener')
       }} className="text-[14px] text-gray-600 hover:text-gray-900 hover:underline">Open the file</button>
-      <button disabled={busy} onClick={async () => {
+      {/* *** IT QUEUES, IT DOES NOT SCAN — 28 September 2026. ***
+          This used to POST `/api/document-scan`, which runs the whole 20-to-120-second model call
+          inside the request, and `await` it here. So closing the drawer aborted the fetch and took
+          the reading with it: the person pressed the button, walked away, and came back to the row
+          exactly as they left it. `/api/document-rescan` puts the document back in the queue and
+          hands it to the sweep, and returns in a few hundred milliseconds. The reading now happens
+          on the server whatever the browser does. `DECISIONS.md` §138. */}
+      <button disabled={busy || rereading} onClick={async () => {
         setBusy(true)
         try {
-          await fetch('/api/document-scan', {
+          const res = await fetch('/api/document-rescan', {
             method: 'POST', headers: await authHeaders({ 'Content-Type': 'application/json' }),
             body: JSON.stringify({ document_id: documentId }),
           })
+          if (!res.ok) {
+            const j = await res.json().catch(() => null)
+            setNotice(j?.error ?? 'We could not queue that document for another reading.')
+            return
+          }
+          // The scan that was current when we asked. The poll below stops when a DIFFERENT one is,
+          // which is the only reliable signal that the new reading has landed — the status alone can
+          // return to the value it already had.
+          setRereadFrom(r?.row.scan_id ?? null)
+          setNotice('Reading it again. You can close this — it will keep going.')
           await load(); onChanged()
         } finally { setBusy(false) }
       }} className="text-[14px] text-gray-600 hover:text-gray-900 hover:underline disabled:text-gray-300">
-        {busy ? 'Working…' : 'Read it again'}
+        {busy ? 'Queueing…' : rereading ? 'Reading…' : 'Read it again'}
       </button>
       <button onClick={printDrawer}
         className="ml-auto text-[14px] text-gray-600 hover:text-gray-900 hover:underline">Download</button>

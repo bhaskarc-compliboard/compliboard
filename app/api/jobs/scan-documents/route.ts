@@ -40,8 +40,16 @@
  * 4a. **`held` IS NOT IN THE QUEUE, AND NOTHING HERE HAS TO KNOW THAT.** The queue is
  *    `status = 'uploaded'` and nothing else, so the documents migration 054 set aside — the 38
  *    that were on production before any of this existed — are skipped by construction rather
- *    than by a rule this file has to remember. A person asking for one with "Read it again"
- *    puts it through `/api/document-scan`, which does not consult the queue at all.
+ *    than by a rule this file has to remember.
+ *
+ *    **CORRECTED 28 September 2026.** This paragraph used to end "A person asking for one with
+ *    'Read it again' puts it through `/api/document-scan`, which does not consult the queue at
+ *    all." That is no longer true and the reason it changed is a defect: running the scan inside
+ *    the drawer's request meant closing the drawer killed the reading. `/api/document-rescan` now
+ *    sets the document back to `uploaded`, clears `reading_since`, files it in a batch of one and
+ *    kicks this sweep with `after()` — so **"Read it again" arrives here like any other queued
+ *    document**, including a `held` one, which is how a person asks for one of the 38 to be read.
+ *    An explicit request is exactly the thing that should take a document out of `held`.
  *
  * 5. **IT STOPS BEFORE THE FUNCTION DOES.** A scan is 20 to 120 seconds. The run stops STARTING
  *    documents once there is not comfortably room for another, and leaves the rest queued for
@@ -308,6 +316,26 @@ export async function finishBatchIfDone(
   if (!won?.length) return { done: false, notified: false }
 
   if (!opts.email) return { done: true, notified: false }
+
+  // *** A BATCH OF ONE NEVER EMAILS, WHOEVER FINISHED IT — 28 September 2026. ***
+  //
+  // One document is only ever one of two things, and neither wants an email:
+  //
+  //   · a single-file upload, read in the page while the person watches (the live path already
+  //     passes `email: false`, so this changes nothing for it)
+  //   · a "Read it again" from the report drawer, which creates a batch of one and hands it to the
+  //     sweep — and the sweep finishes batches with the default `email: true`
+  //
+  // Without this, pressing "Read it again" would send that person an email telling them what they
+  // are looking at. The rule is the count and not a flag on the row because the count already says
+  // it: `LIVE_SCAN_MAX` is the line between "wait here and it will be done" and "we will tell you
+  // when it is", and one file has never been on the far side of it.
+  //
+  // *** IT IS A CEILING, NOT AN EQUALITY, AND THAT IS ON PURPOSE. *** Written as `<= 1` so a batch
+  // whose file_count was never set — 0 — is also silent rather than emailing about nothing.
+  if ((batch.file_count as number ?? 0) <= 1) {
+    return { done: true, notified: false, resend: { skipped: 'a batch of one is never emailed' } }
+  }
 
   // Who to tell. The uploader, by the login they uploaded with.
   let to = ''

@@ -2086,3 +2086,86 @@ column `document_scans` does not have, PostgREST returned an error instead of ro
 read the error as an empty result. **When a check says "nothing is there", verify the check can see
 anything at all before you believe it** — `select count(*)` on the same table with no filter takes
 five seconds and would have caught it.
+
+---
+
+## Documents — "Read it again" survives the drawer closing (28 September)
+
+**Two tests, and the first one is the defect.** Seen on production on 27 September: "Read it again"
+ran the scan *inside* the request the drawer made, so closing the drawer aborted the fetch and took
+the reading with it. The row was left wherever it happened to be and the person had no way to know
+nothing was happening. `DECISIONS.md` §138.
+
+### 1. Press it, close the drawer at once, come back a minute later
+
+Open any document that has already been read. Note the **read** date in the drawer's sub-line, and
+run this first so you have something to compare against:
+
+```sql
+select id, is_current, scanned_at from document_scans
+ where document_id = '<id>' order by scanned_at desc;
+```
+
+Press **Read it again** and **close the drawer immediately** — inside a second, before anything can
+have finished. Then navigate away from the page entirely if you like; the point is that nothing is
+listening.
+
+**While you wait, the row on the Documents page must say `Queued`, then `Reading…`.** It must not go
+on showing the status it had before you pressed the button: that is indistinguishable from the button
+having done nothing, which is the whole defect. The word must be **grey, not amber** — a queued
+document asks nothing of you yet, whatever the previous reading said.
+
+**Come back a minute or two later and open the drawer.** The new reading is there, and:
+
+- the sub-line shows a **new read date**
+- the query above returns **two rows**: the new scan `is_current = true`, and **the old scan still
+  present with `is_current = false`.** Nothing is deleted — a reading is evidence, and the old one is
+  what the new one is a correction of.
+- `select status, reading_since from documents where id = '<id>'` → `read` (or `could_not_read`), and
+  **`reading_since` null.** A leftover claim means the next sweep would skip this row for up to
+  fifteen minutes.
+- `select file_count, status, notified_at from document_batches order by created_at desc limit 1` →
+  `file_count = 1`, `status = done`, and **`notified_at` NULL. No email.** A person who pressed the
+  button is looking at the drawer; being emailed about it would be the product talking over them.
+
+**If the drawer is left OPEN instead**, it polls every ten seconds and fills itself in without being
+touched — the sub-line goes `Queued to be read again` → `Reading…` → the new read date, and the
+footer button reads `Reading…` until the new scan is current.
+
+### 2. Read it again while that company already has documents queued
+
+Upload four or more files so they go to the background sweep, and **while they are still queued**,
+open a fifth document that has already been read and press **Read it again**.
+
+**What must be true, and it is rule 1 of the sweep:** the documents are read **one after another, in
+one run, never two at once.** Assert it from the timestamps rather than by watching:
+
+```sql
+select d.name, s.scanned_at
+  from document_scans s join documents d on d.id = s.document_id
+ where s.company_id = '<company>' and s.scanned_at > now() - interval '20 minutes'
+ order by s.scanned_at;
+```
+
+The gaps between consecutive rows must each be a whole scan long — tens of seconds — not near-zero.
+Two scans a second apart mean two sweeps are interleaving one company's files, and that breaks the
+thing the ordering exists for: each reading is built from the labels and fact keys the previous ones
+wrote.
+
+**And it must not double up.** The re-read document is read **once**, not twice:
+
+```sql
+select document_id, count(*) from document_scans
+ where scanned_at > now() - interval '20 minutes' group by document_id having count(*) > 1;
+```
+
+Empty. Two sweeps are alive at once here — the one `after()` kicked and possibly the five-minute
+cron — and the company-wide claim on `reading_since` is what stops them both taking the same queue.
+A row in that result means the claim is not holding.
+
+### What neither test can tell you
+
+Whether the **new** reading is better than the old one. It is a different reading of the same file by
+the same model; `TESTING.md`'s own rule is that the golden set can only tell you the output moved. The
+thing worth a person's eyes is the case where the two readings disagree, and neither of these tests
+creates it.
