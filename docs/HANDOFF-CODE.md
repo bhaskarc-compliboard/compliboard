@@ -1,22 +1,27 @@
 # Handoff — the state of the code
 
-**Rewritten 23 September 2026, after Fix Round 2 shipped to production. Every figure below came
-from a command run today, and the command is shown.** Nothing is carried over from the previous
-handoff and nothing is from memory. Where a figure is not measured, it says so.
+**State sections rewritten 28 September 2026, after Documents rev 1 shipped to production. Every
+figure below came from a command run today, and the command is shown.** Nothing is from memory.
+Where a figure is not measured, it says so.
+
+*(§1–§4 were rewritten on 28 September. §5–§9 keep their 23 September text except where a fact in
+them was wrong; those carry dated notes. The structure is unchanged on purpose — this is the file
+the next chat trusts, and a reader who knows where §6 is should still find it there.)*
 
 **If you are the next chat: read `CLAUDE.md` first (especially §9a), then `HOW-WE-BUILD.md` §11
 and §12, then `docs/SCHEMA.md` for the database. This file is state, not method.**
 
-> ### THE TWO HANDOFFS ARE HERE — AND §8 HAS NOT YET BEEN RECONCILED WITH THEM.
+> ### BOTH HANDOFFS ARE FINISHED. THE WORK THEY BRIEFED IS ON PRODUCTION.
 >
-> `docs/HANDOFF-LAYOUT.md` and `docs/HANDOFF-DOCUMENTS.md` **are in `docs/`** (both written
-> 23 September). An earlier version of this file said they did not exist; they were placed while
-> that check was running and were swept into an unrelated commit, which is why this banner said
-> otherwise for a day.
+> *(Corrected 28 September 2026. This banner used to say §8 had not been reconciled with them.)*
 >
-> **What is still owed:** §8's next steps below are this file's own reading of the state, not
-> their plan, and `HANDOFF-DOCUMENTS.md` §8's parked list is still not in `TODO.md`. Read the two
-> handoffs directly until that second pass happens.
+> `docs/HANDOFF-LAYOUT.md` (the layout pass, finished 24 September) and `docs/HANDOFF-DOCUMENTS.md`
+> (the Documents section, released 26 September) are both **marked completed at the top** and kept.
+> Neither is a live instruction.
+>
+> **Current instead:** `docs/VISION-DOCUMENTS.md` for the module's purpose, `docs/DESIGN.md` §3 and
+> §6 for the layout template and file structure, `docs/RELEASE.md` for what Vercel holds,
+> `docs/INVENTORY-2026-09.md` for every file's state and who calls what.
 
 ---
 
@@ -24,30 +29,46 @@ and §12, then `docs/SCHEMA.md` for the database. This file is state, not method
 
 ```
 $ git log --oneline -5
-ede8996 Fix round 2: an attached file is part of the conversation, and "Read as:" needs no article
-8a4b8bc Corrected prices: Opus 5 is $5/$25, not $15/$75 — every cost figure was ~2.8x too high
-2f91730 Record §128: four decisions, the cost ledger, and the model comparison
-e2922c0 Section J: a cost ledger written at the call, and the model comparison it makes possible
-6ca3d1d Owner's decisions 1-4: medium by default, a provenance switch, the orphan gone, three runs
+2f4d380 Read it again survives closing the drawer
+5bf3b7e Bake-off part 2: six answer keys corrected, 147 answers re-judged
+f2dcbc7 The bake-off: seven configurations, 135 answers, and four answer keys that are wrong
+6301b73 Bake-off: the runs from configurations 1 to 5
+8fd5588 Bake-off report: the table that tells a spec problem from a model problem
 ```
 
 One branch, `main`, tracking `origin/main`.
 
-## 2. Migration state — 039 ON BOTH. THE GAP IS CLOSED.
+**⚠ THE LOCAL TREE IS AHEAD OF PRODUCTION.** The commit deployed is the one pushed on **26 September**
+with Documents rev 1. Everything since — the bake-off, the six answer-key corrections and the
+"Read it again" fix — is committed locally and **not pushed**. `git log origin/main..HEAD` is the list.
+A push to `main` deploys (`RELEASE.md`), so that list is also the next release's contents.
+
+## 2. Migration state — 054 ON BOTH. NOTHING PENDING.
+
+*(Rewritten 28 September 2026. This section was headed "039 ON BOTH" and had been since 23 September;
+migrations 040–054 went to production on the 26th.)*
 
 ```
+$ ls supabase/migrations/*.sql | wc -l
+55                                    # 000 … 054
+
 $ npm run preflight          # READ-ONLY. Prints both lists and derives the difference.
-  INPUT 1 — supabase/migrations/, every file (40)
-  INPUT 2 — supabase_migrations.schema_migrations on dsfwmafnphdlfogetsus, every row (40)
-  PENDING COUNT: 0
-
-$ …schema_migrations on amzsavsrabrlcprltpom (staging)
-  applied 40, latest 039
+  PENDING COUNT: 0           # production, dsfwmafnphdlfogetsus
 ```
 
-**Nothing is pending on either database.** The 031–039 gap that stood through Runs 1–3 and both
-fix rounds was closed by the owner after Fix Round 2. The last three are worth naming because
-they are recent and each exists for a reason a reader will otherwise ask about:
+**Nothing is pending on either database. Both are on `000`–`054`, 55 migrations each.** The fifteen
+that landed on 26 September are the Documents contract, and the release note
+(`docs/releases/2026-09-26-documents-rev1.md` §2) tabulates every one of them with what its verify
+block writes and removes. The four worth naming here:
+
+| | |
+|---|---|
+| **040** | The five Documents tables — `document_scans`, `document_gaps`, `document_conditions`, `document_deadlines`, `company_labels` — plus `documents.status`. **The only one of the fifteen with no `begin;`/`commit;` of its own**, so a failure part-way would leave the schema half-changed. |
+| **049** | `significant_date` is computed **in the view**, at read time, and the stored columns dropped. A derived value stored goes stale the first time you learn something. |
+| **052/053** | `document_scans.extracted_text`; `document_gaps.superseded`; `document_batches`, `documents.batch_id` and `reading_since`. These two create their **own throwaway company** for their probe rows rather than attaching them to a real customer's — the pattern to copy. |
+| **054** | The documents already on production are set to `held` and are never swept. **The only one of the fifteen that changes existing customer rows**, and the point of it. |
+
+The three from the previous release are kept below because a reader still asks about them:
 
 | | |
 |---|---|
@@ -61,41 +82,78 @@ they are recent and each exists for a reason a reader will otherwise ask about:
 as such — **this session has no way to read Vercel**, and it did not try.
 
 - **No staging deployment exists.** One environment on Vercel: Production, from `main`.
-- **Vercel Production variables are set. By name only** — this file never carries a value:
+- **⚠ `docs/RELEASE.md` IS THE AUTHORITATIVE LIST OF WHAT VERCEL HOLDS — not this file.**
+  *(Corrected 28 September 2026.)* This section used to carry its own list, and on 26 September that
+  list and `CLAUDE.md` §3.4a **contradicted each other about whether the `AI_MODEL_*` variables are
+  set at all** — which made the model that reads a customer's document unknowable from the repository
+  until somebody opened the dashboard (`DECISIONS.md` §136). Three lists is worse than two. The names
+  are below so a reader knows which knobs exist; **the values are in `RELEASE.md` only.**
   `NEXT_PUBLIC_SUPABASE_URL` · `NEXT_PUBLIC_SUPABASE_ANON_KEY` · `SUPABASE_SERVICE_ROLE_KEY` ·
-  `ANTHROPIC_API_KEY` · `CRON_SECRET` · `RESEND_API_KEY` · `FEEDBACK_EMAIL`
+  `ANTHROPIC_API_KEY` · `CRON_SECRET` · `RESEND_API_KEY` · `FEEDBACK_EMAIL` ·
+  `NEXT_PUBLIC_APP_URL` · `AI_MODEL_PROSE` · `AI_MODEL_JUDGEMENT` · `AI_MODEL_SUBSTEPS` ·
+  `AI_MODEL_SUMMARY` · `AI_MODEL_DOCUMENT_SCAN` · `AI_SCAN_STRUCTURED` · `AI_EFFORT` ·
+  `RESEARCH_PREFER_GOV` · `RESEARCH_SPECIALIST` · `RESEARCH_PROVENANCE`
+- **`NOTIFY_TEST_TO` must NOT exist in Production** and is confirmed absent. Set there, every
+  customer's batch email goes to that address instead of to them.
 - **Deliberately NOT set in Production**, and that is what makes production the open baseline:
   `RESEARCH_GATE` · `RESEARCH_FACTS_BLOCK` · `RESEARCH_LONG_PROMPT` · `CHECKLIST_GATE` ·
   `CHECKLIST_CRITIC` · `CHECKLIST_LONG_PROMPT` · `RESEARCH_PREFER_GOV` ·
   `RESEARCH_SPECIALIST` · `RESEARCH_PROVENANCE`. Every switch defaults OFF and an unset variable
   IS the product's behaviour (`lib/pipelineConfig.ts`). The last three are ON in `.env.local`
   only, for the owner's comparison, and ship only if that comparison says so.
-> ### ⚠ `.env.local` IS HAIKU. PRODUCTION IS OPUS 5 / SONNET 5, BY DESIGN.
+> ### ⚠ `.env.local` IS HAIKU. PRODUCTION IS NOT — AND IT IS NOT THE CODE DEFAULTS EITHER.
+>
+> *(Corrected 28 September 2026. This box said the four `AI_MODEL_*` variables are "unset in Vercel
+> Production, so it runs the code defaults". **They are set.** That sentence was wrong for three days
+> and is the reason `RELEASE.md` is now the single authoritative list — `DECISIONS.md` §136.)*
 >
 > The standing rule (`CLAUDE.md` §3.4a, `DECISIONS.md` §130) points `AI_MODEL_PROSE`,
 > `AI_MODEL_JUDGEMENT`, `AI_MODEL_SUBSTEPS` and `AI_MODEL_SUMMARY` at `claude-haiku-4-5` **on a
-> development machine only**. Those four variables are **unset in Vercel Production**, so it runs
-> the code defaults. Do not read a local answer's quality as the product's:
-> `npm run golden:facts -- --model claude-opus-5` is how you ask that question.
+> development machine only** — a build session asks "does this render", not "is this true".
+>
+> **Production reads a document on `claude-opus-5-5` with `AI_SCAN_STRUCTURED = false`.** That is a
+> measured choice, not a default: the bake-off ran seven configurations over the seven golden
+> documents, three runs each (`tests/golden/documents/bakeoff/2026-09-27-rejudged.md`,
+> `DECISIONS.md` §139). Do not read a local answer's quality as the product's:
+> `npm run golden:facts -- --model claude-opus-5` is how you ask that question, and
+> `npm run golden:docs -- --model <id> --structured on|off` is how you ask it about a document.
 >
 > Haiku **refuses `output_config.effort`** (400), so `lib/ai.ts` drops it below the 5 family.
 > `DEV_MAX_SEARCHES=2` caps searches whenever `NODE_ENV` is not production.
 
-- **Model and effort:** `AI_MODEL_PROSE` / `AI_MODEL_JUDGEMENT` are unset in Production, so both
-  fall back to the code default. `AI_EFFORT` is unset and `lib/ai.ts` `DEFAULT_EFFORT` is
-  **`medium`** — a code default, not an environment one, so the two cannot disagree (§128).
-- **Cron:** `vercel.json` schedules `/api/jobs/summarise` at 03:00 and `/api/jobs/delete` at
-  03:30. Both refuse when `CRON_SECRET` is **unset** and answer 404, so the route cannot be
-  confirmed to exist by probing it.
+- **Model and effort:** the `AI_MODEL_*` variables **are** set in Production — values in
+  `RELEASE.md`. `AI_EFFORT` is set; `lib/ai.ts` `DEFAULT_EFFORT` is **`medium`**, and
+  `modelAcceptsEffort()` **drops the parameter** below the 5 family, because `claude-haiku-4-5`
+  returns 400 for every level of it (§130).
+- **Cron:** `vercel.json` schedules `/api/jobs/summarise` at 03:00, `/api/jobs/delete` at 03:30 and
+  — *added 26 September* — **`/api/jobs/scan-documents` every five minutes**, the most frequent Vercel
+  Pro allows. All three refuse when `CRON_SECRET` is **unset** and answer 404, so a route cannot be
+  confirmed to exist by probing it. An empty sweep run costs almost nothing: measured five times warm
+  on staging at 88, 89, 102, 106 and 158 ms, about 30 seconds of function time a day at 288 runs.
 
 ## 4. Row counts, staging, read today
 
+*(Re-read 28 September 2026. The previous figures were from 23 September and are replaced, not
+restamped — staging was reset and reseeded for the bake-off in between, so the conversation-era counts
+are **lower** on purpose and that is not a loss.)*
+
 ```
-requirement_templates 205 (200 live) · agencies 33 · switches 95 · industry_coverage 56
-companies 3 · obligations 0
-topics 63 · turns 217 (4 carrying a document) · checklists 16 · checklist_items 243
-documents 6 · document_reviews 5 · ai_calls 78 · fact_proposals 0 · job_runs 1 · usage_counters 1
+requirement_templates 205 · agencies 33 · switches 95 · industry_coverage 56
+companies 6 · obligations 0
+topics 7 · turns 21 · checklists 2 · checklist_items 6
+documents 10 · document_scans 25 · document_gaps 88 · document_deadlines 47
+document_conditions 49 · document_corrections 0 · company_labels 18
+fact_proposals 138 · company_facts 0 · document_batches 2
+document_reviews 0 · ai_calls 153 · job_runs 1
 ```
+
+> ### `document_reviews` IS 0, AND THE DASHBOARD STILL READS IT.
+>
+> The old review path writes nothing any more — `/api/document-scan` is the reading for every door a
+> file comes in by (Run 6). But `app/dashboard/page.tsx:48` still GETs `/api/document-review`, so the
+> dashboard's review list is **a live query against a table nothing fills.** That is not dead code, it
+> is an empty state that does not say why it is empty — `CLAUDE.md` §5.1. Recorded in
+> `docs/INVENTORY-2026-09.md`; **not fixed, because fixing it is product work.**
 
 Production row counts are **not in this handoff**: `SUPABASE_PROD_URL` and
 `SUPABASE_PROD_SERVICE_ROLE_KEY` are **blank** in `.env.local`, which `CLAUDE.md` §3.8 says is the

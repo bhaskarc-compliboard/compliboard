@@ -1,4 +1,17 @@
 # Audit Checks
+
+> ### ⚠ NO CHECK IN THIS FILE HAS BEEN RE-RUN SINCE 22 September 2026.
+>
+> *(Added 28 September 2026.)* Every answer below carries the date it was last actually run, which is
+> the point of the file — **and all of those dates are now at least six days old and predate Documents
+> rev 1.** Read them as a record, not as the current state.
+>
+> **And Documents added five tables that no check here covers:** `document_scans`, `document_gaps`,
+> `document_conditions`, `document_deadlines` and `fact_proposals`. The questions this file exists to
+> ask — *is what we are telling customers actually true, where nothing else would notice* — apply
+> hardest to those, because a gap with a wrong citation reaches a customer and no test fails. The
+> bake-off (`tests/golden/documents/bakeoff/2026-09-27-rejudged.md`) answered some of it once, by
+> measurement; **it is not a check that runs.**
 **Version:** 36 · **Updated:** 22 September 2026
 **Supersedes:** version 35 (15 Sep). **Check 22's closing paragraph was an instance of check 31's
 own third failure mode** — the adjacent passage. Its table recorded `substance_inventory` CLOSED by

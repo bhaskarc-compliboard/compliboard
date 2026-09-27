@@ -10544,3 +10544,98 @@ files uploaded in the page are still read in the request on purpose.
 
 **Reversal condition:** none. A button that silently does nothing when the surface it lives on is
 closed is a defect, not a trade-off.
+
+---
+
+## 139. THE BAKE-OFF, AND PRODUCTION MOVES TO `claude-opus-5-5` WITH THE SCHEMA OFF — 28 September 2026
+
+> ### NUMBERED §139 AND NOT §138, WHICH THE BRIEF ASKED FOR, BECAUSE §138 WAS ALREADY TAKEN.
+> §138 is the drawer fix, written earlier the same day. This file is append-only and renumbering an
+> entry would break every cross-reference to it.
+
+Seven configurations over the seven golden documents, three runs each, search **uncapped** as
+production runs it. `tests/golden/documents/bakeoff/2026-09-27-rejudged.md` is the report;
+`2026-09-27.md` is the first pass, kept untouched, because the six answer-key corrections were decided
+from it.
+
+### What production now runs, and why
+
+**`AI_MODEL_DOCUMENT_SCAN = claude-opus-5-5`, `AI_SCAN_STRUCTURED = false`.** The decision table:
+
+| | opus-5-5 OFF | **opus-5-5 ON** | sonnet-5 OFF |
+|---|---|---|---|
+| Planted gaps found (6 × 3 runs) | 17 of 18 | **18 of 18** | 17 of 18 |
+| Citation contains an accepted rule | 15 of 18 | 16 of 18 | **17 of 18** |
+| False facts proposed on the SDS | 0 | 0 | 0 |
+| Must-not violations elsewhere | 2 | **0** | **0** |
+| Labels identical across runs, as sets | 5 of 7 | **7 of 7** | 6 of 7 |
+| Cost per scan | $0.2809 | $0.2158 | **$0.1632** |
+| Wall per scan | 68.0s | **59.0s** | 72.7s |
+
+`claude-opus-5` — what production ran from the 26th — cost **$0.5153 a scan**, 2.4× Opus 5.5 with the
+schema on, took 113 seconds, and was **the only Opus that invented facts about the company from a
+supplier's SDS**: nine items proposing the chemical's DOT class and CERCLA reportable quantity as facts
+about Cascade. Haiku is 13× cheaper than Opus 5 and **cited `21 CFR Part 121` — intentional
+adulteration — for Part 117 preventive-controls requirements, with zero searches.** That is §3.3 in one
+table, and it is why the cheapest row is not the answer.
+
+### The schema goes ON after the next push, not with it
+
+**The result the schema was built on does not hold.** Across all **135 answers actually bought**, on
+both paths and every model, **zero failed to parse.** `RELEASE.md` justified `AI_SCAN_STRUCTURED` with
+*"the prose path loses about one answer in five to an unparseable brace"* — measured before commit
+`b3ef548` replaced the extractor with a balanced-brace scan. The failure it was built to prevent had
+already been fixed somewhere else.
+
+So it earns its place on other grounds, and it does: with the schema **on**, Opus 5.5 was the only
+configuration with **zero must-not violations and labels identical on 7 of 7 cases**, at **$0.2158**
+against $0.2809 with it off. It is also two object shapes under Opus's compiled-grammar limit after the
+flattening (§136), and all four models accept it.
+
+**It is switched off today and goes on after the next push.** A variable change is itself a redeploy,
+and the two should not ride together — if something moves, you want to know which one moved it.
+
+### And the suite was measuring itself
+
+Six of the seven configurations failed cases on lines that were wrong. Corrected on 27 September, with
+the 147 answers re-judged against them and **no answer changed, only the questions**:
+
+1. A record's status accepts `recorded` **or** `gaps_found`. Six configurations failed both record
+   cases, and **the only one that passed was the model that found the fewest problems in the log.**
+2. A planted gap accepts the **governing state rule or the federal one**. Oregon runs its own OSHA
+   plan, so `OAR 437-002-0042` is what binds a Portland employer; the key demanded `1910.38(c)(N)` and
+   was rewarding verbosity.
+3. The photograph's date fields are reported-only — the key paid full marks for declining to read it
+   and failed every model that read it 90% right.
+4. The SDS supplier moved to **Tacoma**; Cascade's only site is also called Portland, so the
+   "did you invent a site" line failed every model for a coincidence.
+5. A proposal that names itself as not about the company **still fails**. Nothing moved, deliberately.
+6. Labels are compared as **sets**; the README now says *"order is not compared"*. That matcher was the
+   largest single source of failures in the first report, and none of them a model error.
+
+Cases passed, before → after: Opus 5 2→5, Opus 5.5 off 0→2, **Opus 5.5 on 1→4**, Sonnet 5 off 0→2,
+Sonnet 5 on 0→0, Haiku off 1→1.
+
+**Correction 2 pins the rule number and deliberately NOT the OAR paragraph.** The models asserted a
+mapping consistently and nobody has read the OAR to check it; writing it in would put an unverified
+regulatory claim in the one place this suite can never question again — §1's *"AI generates, human
+verifies"* inverted.
+
+### What the bake-off cost, and what it could not say
+
+**$31.43 over 135 answers**, 147 attempted. The last twelve were refused —
+`400 … "Your credit balance is too low"` — so **configuration 7 (Haiku, schema on) is marked INCOMPLETE
+and is not a result.** Those twelve are legible only because `refusedScan` (§136) puts the API's message
+on the row; before 26 September all twelve would have read *"the file did not arrive as something we can
+open"*, about seven documents that are perfectly readable.
+
+**It cannot say which model is best.** `Cases passed` is dominated by the four answer-key problems and
+the matcher bug, so the column that looks like a score is mostly measuring the suite. The honest
+readings are narrower: who found the planted gaps, who invented facts, who parsed, and what it cost.
+And every configuration raised gaps the specs never mention — a missing chemical-spill response
+procedure, no OERS notification step, the appendices referenced but absent — which are plausibly the
+most useful findings in the run and **which this suite scores zero either way.**
+
+**Reversal condition:** the model is one Vercel variable and is meant to be changed — that is what the
+bake-off is for, and it should be re-run when a new model ships. The answer-key corrections reverse only
+if a person reads the OAR and finds the paragraph mapping wrong.

@@ -271,6 +271,27 @@ written about what was remembered.
 
 ---
 
+### ⚡ WHEN A CHECK REPORTS AN ABSENCE, PROVE IT CAN SEE A PRESENCE FIRST
+
+Added 28 September 2026, and it is this section's standard turned on the checks themselves.
+
+A probe investigating a production defect reported **"0 scan rows"**. It was thirty seconds from
+filing *"the route's catch does not write the row"* — the exact opposite of what was true. The query
+named a column the table does not have, PostgREST returned an **error**, and the script read that
+error as an empty result.
+
+> ### A CHECK THAT CANNOT SEE ANYTHING LOOKS EXACTLY LIKE A CHECK THAT FOUND NOTHING.
+
+The two outcomes are identical on the page, and the wrong one is the one that reads as a finding. So
+before "nothing is there" is believed, and certainly before it is reported: **run the same check
+somewhere the thing IS there, or drop the filter and count rows.** Five seconds either way.
+
+This is §3's rule — a check that reports its inputs rather than its conclusion — applied one level
+down. `scripts/check-schema-contracts.js` catches this class in the app's own query strings, and
+cannot see into a throwaway script, which is precisely where it bit.
+
+---
+
 ## 3a. THE FOUND-BY-RENDERING CLASS — a defect every test passes
 
 **A defect where every layer returns correctly and the loss is in what happens between them.** No
@@ -480,6 +501,26 @@ This is the same class as writing a summary from recollection rather than from t
 **Never guess a value it does not have.** Three requirement rows claimed county jurisdiction and named no county. The correct behaviour was to flag them, not to pick a county.
 
 **Never proceed on an unverified premise.** The most instructive failure of the project: Claude Code established early that `.env.local` pointed at production, then reused that as a current fact after it had changed. The one check it ran could not have distinguished the two cases. It later said so plainly — *"stale premise, and a check that couldn't have falsified it."*
+
+**Never write to production, and never automate the guard that stops it.** Added 28 September 2026.
+`npm run db:migrate:prod` and its typed `PRODUCTION` stay a human action, always. What Claude Code
+*may* do, and should, is two narrower things:
+
+- **Reset and restore STAGING under a pty.** Both commands ask for a typed confirmation and have no
+  bypass flag, by design — and a migration is not done until the chain builds from empty, so a rule
+  that is expensive to obey is a rule that gets skipped. `CLAUDE.md` §3.7.
+- **Read production, read-only, one query per stated need, with the SQL in the report.** A question
+  about production sometimes has no answer in the repository. `CLAUDE.md` §3.7 has the four fences:
+  `SELECT` only; one query per need said out loud; the exact SQL printed, not described; and the
+  credential named, because `SUPABASE_PROD_SERVICE_ROLE_KEY` is blank on a laptop and the CLI's DB
+  connection is not the service role.
+
+> ### AND THE PTY IS ITS OWN UNVERIFIED PREMISE.
+>
+> Twice on 22 September `npm run db:reset` **appeared to run and did nothing** — the automation never
+> matched the prompt, and the only way to know was to query `schema_migrations` afterwards. **The
+> result of a reset is read from the database, never from the command's exit code.** That is this
+> section's own rule applied to the tooling: a check that cannot fail is not a check.
 
 ---
 

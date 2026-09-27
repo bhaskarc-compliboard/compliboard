@@ -215,10 +215,13 @@ when the question is **"is this answer any good"**, and not before.
 > could not settle it from the repository, because **what model reads a customer's document is not a
 > fact this codebase contains** — it is a fact about a dashboard. Reading the dashboard settled it.
 >
-> **Set on Vercel Production today, by name:** `AI_MODEL_PROSE`, `AI_MODEL_JUDGEMENT`
-> (`claude-opus-5`), `AI_MODEL_SUBSTEPS`, `AI_MODEL_SUMMARY`, `AI_MODEL_DOCUMENT_SCAN`
-> (`claude-opus-5`), and `AI_SCAN_STRUCTURED` (`false`). `AI_MODEL_JUDGEMENT` was re-added as a
-> **Config** variable rather than a secret, so it can be read back instead of only overwritten.
+> **Set on Vercel Production today, by name:** `AI_MODEL_PROSE`, `AI_MODEL_JUDGEMENT`, `AI_MODEL_SUBSTEPS`,
+> `AI_MODEL_SUMMARY`, `AI_MODEL_DOCUMENT_SCAN` and `AI_SCAN_STRUCTURED`. `AI_MODEL_JUDGEMENT` was
+> re-added as a **Config** variable rather than a secret, so it can be read back instead of only
+> overwritten. *(Corrected 28 September 2026: this paragraph named the values too, and they had already
+> moved — `AI_MODEL_DOCUMENT_SCAN` is `claude-opus-5-5` since 27 September. **The values are not
+> repeated here on purpose.** Two lists is how the contradiction this box records happened;
+> `RELEASE.md` carries the values, this file carries the names.)*
 >
 > ### `docs/RELEASE.md` IS THE AUTHORITATIVE RECORD OF WHAT VERCEL HOLDS.
 >
@@ -381,12 +384,40 @@ once.
   migration is not done until the chain builds from empty and a rule that is expensive to obey
   is a rule that gets skipped. **The production guard is never automated, by anyone** —
   `npm run db:migrate:prod` and its typed confirmation stay a human action.
+
+  > ### AND A PTY THAT NEVER TYPED THE WORD LOOKS EXACTLY LIKE A RESET THAT RAN.
+  >
+  > Twice on 22 September `npm run db:reset` **appeared to run and did nothing**: the automation never
+  > matched the confirmation prompt, the command sat there, and the only way to tell was to query
+  > `supabase_migrations.schema_migrations` afterwards. **So the result of a reset is taken from the
+  > database, never from the command's exit code.** A release note that said "the chain builds from
+  > zero" on the strength of a command that never typed RESET would be exactly the failure
+  > `HOW-WE-BUILD.md` §3 is about.
 - `npm run db:migrate` pushes migrations **and** regenerates TypeScript types. Never run
   one without the other — types must always reflect the live schema so a wrong column
   name is a compile error, not a runtime 400. If type generation fails, fix it and run
   `npm run db:types` **before writing any new queries.**
 - **Enum-like columns use Postgres `ENUM`, not `TEXT` + CHECK.** `ALTER TYPE ... ADD VALUE`
   avoids the drop-and-recreate churn that requires restating every prior value.
+- **⚡ A PRODUCTION QUERY BY CLAUDE CODE IS READ-ONLY, ONE PER STATED NEED, AND ITS SQL GOES IN THE
+  REPORT.** Added 28 September 2026. Reading production is sometimes the only way to answer a question
+  about production — *"is `extracted_text` populated on the scan that ran?"* cannot be answered from
+  the repository. So it is allowed, and it is fenced:
+
+  - **`SELECT` only.** No `INSERT`, `UPDATE`, `DELETE`, `ALTER` or `DO` block, ever, whatever a brief
+    seems to invite. A write against production is `npm run db:migrate:prod` behind a human's typed
+    confirmation and nothing else.
+  - **One query per need that has been stated out loud**, not a session of poking about. If a second
+    query is needed, say what new question made it necessary.
+  - **The exact SQL goes in the report**, not a description of it. `scripts/preflight-prod.js` exists
+    because *"I diffed the history against the directory"* is indistinguishable, on the page, from a
+    summary written from context: **a check that reports its conclusion is a summary; a check that
+    reports its inputs is a check.**
+  - **Say which credential ran it.** `SUPABASE_PROD_SERVICE_ROLE_KEY` is deliberately blank on a laptop
+    (§3.8), so a production read goes through the Supabase CLI's own DB connection — which is *not*
+    the service role. A report saying "read through the service role" when it was a superuser
+    connection describes a test nobody ran.
+
 - For catalog queries (constraint names, column lists, indexes, anything in
   `pg_constraint`, `pg_catalog`, `information_schema`) use the Supabase CLI, not the JS
   client — PostgREST does not expose system catalogs:
@@ -611,6 +642,14 @@ all along; they are here because on a long run nobody is checking but you. `HOW-
   function, a migration — read it back out of the file before you write it. Four of twelve recorded
   mistakes are a composed cross-reference; each cost one `grep`. A suffixed number (`§80a`) is the
   easiest kind to invent because it reads like a refinement.
+- **⚡ WHEN A CHECK REPORTS AN ABSENCE, PROVE IT CAN SEE A PRESENCE FIRST.** Added 28 September 2026.
+  A probe reported **"0 scan rows"** and was thirty seconds from filing "the route's catch does not
+  write the row" — the opposite of the truth. The query named a column the table does not have,
+  PostgREST returned an *error*, and the script read the error as an empty result. **A check that
+  cannot see anything looks exactly like a check that found nothing.** So before believing "nothing is
+  there": run the same check where the thing IS there, or drop the filter and count rows.
+  `scripts/check-schema-contracts.js` catches this class in the app's own queries (§3.6) and cannot see
+  into a throwaway script — which is where it bit.
 - **Show the input, not the conclusion.** Paste the query, the row, the diff, the command's output.
   *"The check passes"* is a claim; the output is evidence. A number nobody can trace back to a
   command does not go in a record.

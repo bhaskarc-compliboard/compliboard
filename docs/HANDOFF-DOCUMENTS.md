@@ -1,5 +1,22 @@
 # HANDOFF — THE DOCUMENTS SECTION
 
+> ### ✅ COMPLETED HANDOFF — 26 September 2026. KEPT, NOT DELETED.
+>
+> This brief was written on 23 September for the chat that built the Documents section. **That chat
+> finished: Documents rev 1 is on production, released 26 September.** Nothing below is a live
+> instruction any more, and the "where things stand" it describes is three weeks of work ago.
+>
+> It is kept because it is the record of what was asked for before anything existed, which is the only
+> way to judge what was delivered.
+>
+> **What to read instead:** `docs/VISION-DOCUMENTS.md` for what the module is for, **`docs/DESIGN.md`
+> §3 and §6** for the layout template and how a section's files are laid out, `DECISIONS.md`
+> §131–§139 for what was decided, and `docs/releases/2026-09-26-documents-rev1.md` for what shipped.
+>
+> *(A note on the pointer: the housekeeping brief named `docs/HANDOFF-AUDITS.md` §5 and §6 as holding
+> the template and the file structure. **That file does not exist** — see
+> `docs/INVENTORY-2026-09.md`. `DESIGN.md` is where those actually live.)*
+
 *Written 23 September 2026 by the chat that shipped the research section. Read this first, then the files in §10, then answer the owner's first message.*
 
 ---

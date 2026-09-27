@@ -1,4 +1,9 @@
 # Testing
+
+> **Every manual set in this file is kept, including the ones that test screens the product has since
+> replaced.** Those carry a 🕓 HISTORICAL banner naming what is current instead — added 28 September
+> 2026. A manual set is the record of what a person checked and when; a file that deletes the sets whose
+> screens changed is a file that cannot tell you whether anything was ever checked at all.
 **Version:** 24 · **Updated:** 25 September 2026
 **Supersedes:** version 23 (24 Sep). Adds the **Documents Run 1 set** — three documents run from
 `npm run scan`, because Run 1 builds the scan and its tables and there is no screen yet. The set
@@ -146,6 +151,15 @@ untested — applies to the runner as much as to anything it runs.
 ---
 
 ## Manual set — Documents Run 1, the scan and its contract, 25 Sep 2026
+
+> ### 🕓 HISTORICAL — kept, not current. *(Marked 28 September 2026.)*
+>
+> This set tests a surface or a path that **no longer exists in the shape described**. It is kept
+> because a manual set is the record of what was checked and when, and deleting it would delete the
+> evidence that it was. **Do not run it as a regression suite** — it will fail on wording and controls
+> that were deliberately replaced.
+>
+> Current for this area: the Run 3–7 sets below, and the two post-release sets at the end of this file. Run 1 predates the page, the drawer and the sweep, and is run "from a script — there is no screen yet"; there is a screen now.
 
 **Three documents, run from a script — there is no screen yet.** Run 1 builds the scan and the
 tables it writes; the page and the drawer come later. So these are run with `npm run scan` and
@@ -889,6 +903,15 @@ the first non-chemical company the writer had ever seen (`DECISIONS.md` §63).
 
 ## Golden document cases — specified, blocked on one decision
 
+> ### 🕓 HISTORICAL — kept, not current. *(Marked 28 September 2026.)*
+>
+> This set tests a surface or a path that **no longer exists in the shape described**. It is kept
+> because a manual set is the record of what was checked and when, and deleting it would delete the
+> evidence that it was. **Do not run it as a regression suite** — it will fail on wording and controls
+> that were deliberately replaced.
+>
+> Current for this area: `tests/golden/documents/` — the seven cases are built, run and judged, and the bake-off (`tests/golden/documents/bakeoff/2026-09-27-rejudged.md`) ran all seven over seven model configurations. The decision this set was blocked on was taken.
+
 `docs/SWITCH-DETERMINATION.md` §6 has the full shape. Summarised here because this is where
 someone looks for what a test is:
 
@@ -1472,6 +1495,15 @@ the review happened before the write rather than after.
 ---
 
 ## Documents — the scan on the upload path (Run 3, commit 1)
+
+> ### 🕓 HISTORICAL — kept, not current. *(Marked 28 September 2026.)*
+>
+> This set tests a surface or a path that **no longer exists in the shape described**. It is kept
+> because a manual set is the record of what was checked and when, and deleting it would delete the
+> evidence that it was. **Do not run it as a regression suite** — it will fail on wording and controls
+> that were deliberately replaced.
+>
+> Current for this area: **Run 7's set** for what an upload does now (three or fewer read in the page, four or more handed to the sweep with a batch and a banner), and the **28 September set** for "Read it again", which no longer runs the scan inside the request.
 
 Two tests, the perfect case and the edge case, and the edge case is the one worth your
 time: **a file the product cannot read must say so, in its own words, on the row.** The

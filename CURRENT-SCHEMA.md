@@ -1,5 +1,16 @@
 # CompliBoard — Current Production Schema
 
+> ### ⚠ SUPERSEDED 28 September 2026 — THIS IS A CAPTURE FROM 9 SEPTEMBER.
+>
+> Production is at migration **054** and carries **42 tables and 2 views**; this file describes the
+> schema as it was at migration 030-ish, before the conversation era and before every Documents table.
+>
+> **`docs/SCHEMA.md` is the current one, and it is GENERATED** — `node --env-file=.env.local
+> scripts/schema-doc.js` — so it cannot drift the way a hand-written capture does. That is the reason
+> this file is superseded rather than updated.
+>
+> `docs/INVENTORY-2026-09.md` proposes deleting it; `git log` keeps it either way.
+
 Captured **2026-09-09** from the live production Supabase project
 (the ref in `SUPABASE_PROD_REF` in `.env.local` — not reproduced here).
 

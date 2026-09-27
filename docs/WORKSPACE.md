@@ -1,5 +1,16 @@
 # The Compliance Workspace — M1
 
+> ### ⚠ ONE THING IN HERE MOVED: THE ATTACH PATH.
+>
+> *(Corrected 28 September 2026.)* Where this design says an attached file is read by the review path,
+> **it is `/api/document-scan` since Documents Run 6** — one reading per file whichever door it comes
+> in by, the Documents page or the conversation attach. The old review route's POST has no caller in
+> the app at all; `lib/documentReview.ts` is still reached, but only from the audit engine
+> (`app/api/audits/route.ts:363`), until Audits is rewired.
+>
+> Everything else in this file is current: the conversation model, fact capture, the topic lifecycle
+> and the signup classification all shipped as designed.
+
 **Version:** 8 · **Updated:** 21 September 2026
 **Supersedes:** version 7 (21 Sep). **§6.1 is narrowed again** (`DECISIONS.md` §108): facts
 inferred from free conversation are read **overnight** and **proposed**, not written when said —

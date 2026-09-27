@@ -1,4 +1,13 @@
 # The Whole Surface — phase-by-phase inventory
+
+> ### ⚠ SUPERSEDED, IN PART, 28 September 2026.
+>
+> This is the surface inventory **by phase**, last read on 15 September. `docs/INVENTORY-2026-09.md` is
+> the inventory **by file**, checked on 28 September against production at migration 054.
+>
+> They answer different questions and both are kept: this one says which phase a thing belongs to, the
+> new one says whether a file is still true and who calls it. **Where they disagree about the state of
+> something, the newer one was checked more recently.**
 **Version:** 2 · **Updated:** 15 September 2026
 **Supersedes:** version 1 (12 Sep). **Not regenerated — CHECKED, with the false rows named.** Counts mostly survive; the STATE of seven items does not, and eleven migrations landed after it was written. `STATUS.md` is the current state and `TODO.md` the current plan; this file's remaining value is its structure.
 **What this is:** every phase, module, gate item and recorded finding in one pass, in

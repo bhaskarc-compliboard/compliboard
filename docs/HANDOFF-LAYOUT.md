@@ -1,5 +1,21 @@
 # HANDOFF — LAYOUT PASS ON THE COMPLIANCE WORKSPACE PAGE
 
+> ### ✅ COMPLETED HANDOFF — 24 September 2026. KEPT, NOT DELETED.
+>
+> This brief was written on 23 September for the layout pass on the Compliance Workspace page. **That
+> pass finished** — the three frames, the opening state's four rounds, the conversation view's three,
+> the list density work — and its result is the template every surface built since has followed,
+> including the Documents table and the report drawer.
+>
+> Kept as the record of what the pass was asked to do.
+>
+> **What to read instead:** **`docs/DESIGN.md`** is the live layout template, and §7 there is the
+> standing list of what is known-open. `DECISIONS.md` §130 records the build-on-Haiku rule that came
+> out of this pass, and `docs/VISION-DOCUMENTS.md` is the next section's own vision.
+>
+> *(`docs/INVENTORY-2026-09.md` checks every `DESIGN.md` rule against the shipped Documents page. One
+> differed — amber on a queued row — and the page was brought to the rule, not the other way round.)*
+
 *Written 23 September 2026 by the chat that shipped the research section. Read this first, then the files in §8, then answer the owner's first message.*
 
 ---

@@ -1,9 +1,29 @@
 # STATUS
 
-**Version:** 24 · **Updated:** 23 September 2026
-**Supersedes:** version 23 (23 Sep). **THE RESEARCH SECTION IS LIVE ON PRODUCTION**, and both
-databases are on **000–039** — 40 migrations each, read from `supabase_migrations.schema_migrations`
-today, `npm run preflight` reporting **PENDING COUNT: 0**. Fix Round 1 (§127, §128) and Fix Round 2
+**Version:** 25 · **Updated:** 28 September 2026
+**Supersedes:** version 24 (23 Sep).
+
+> ### DOCUMENTS REV 1 IS LIVE ON PRODUCTION, AND THE MIGRATION LINE MOVED 15 FILES.
+>
+> *(Corrected 28 September 2026. Version 24 said "both databases are on **000–039** — 40 migrations
+> each … `npm run preflight` reporting **PENDING COUNT: 0**". That was true on 23 September and wrong
+> from the 26th.)*
+>
+> **Production and staging are on `000`–`054` — 55 migrations each.** Migrations 040–054 went to
+> production on **26 September** with Documents rev 1; `docs/releases/2026-09-26-documents-rev1.md` is
+> the release note and its §7 smoke test carries the outcome of every step.
+>
+> **Production reads documents on `claude-opus-5-5` with `AI_SCAN_STRUCTURED = false`.**
+> `docs/RELEASE.md`'s closing list is the authoritative record of what Vercel holds — not this file and
+> not `CLAUDE.md`, which disagreed with it for three days (`DECISIONS.md` §136).
+>
+> **New rows below:** the Documents page and its report drawer, the scan, the sweep, the batch email
+> and the To confirm queue. **Re-checked today:** the migration line, the production model, the routes
+> and who calls them (`docs/INVENTORY-2026-09.md` is the file-by-file pass). **Not re-run today:**
+> everything version 24 already listed as not re-run, and its dates are left standing rather than
+> restamped.
+
+**THE RESEARCH SECTION IS LIVE ON PRODUCTION.** Fix Round 1 (§127, §128) and Fix Round 2
 (§129) shipped with it. New rows below for the **cost ledger**, the **attachment path** and the
 **three research switches**. RLS re-counted today: **81 policies across 30 tables, 74 through
 `auth_company_id()`** — this file carried 75/27/68 since 13 Sep.
@@ -40,6 +60,10 @@ ZERO the same day** — 31 migrations against an empty database, then seven data
 matching its source file — which **CLOSES `DECISIONS.md` §98's owed reset**. Re-read from both
 catalogs today: library identical either side at **205 requirement rows (5 retired, 17 children,
 199 expressions) · 33 agencies · 56 coverage rows · 95 switches · 40 edges**; production carries
+*(Corrected 28 Sep: these counts were read on 23 September and are not restamped — production has
+since gained the rev 1 tables and at least one document. They are left as a dated reading, which is
+what this file is for.)*
+
 **10 companies · 4 profiles · 10 entities · 38 documents · 11 checklists · 235 checklist_items ·
 0 obligations · 0 company_switches**; staging carries the three test companies, 4 profiles, 4 sites
 and 16 multi-site facts and nothing else. Three defects were found **only** by running from zero
@@ -180,12 +204,15 @@ which is the exact failure this file exists to prevent.
 | **Requirements screen** (`/requirements`) | ✅ working | 13 Sep | **Rendering real persisted rows for the first time, staging only.** Test Alpha Chemical: **221 obligations — 45 `applies`, 39 `does_not_apply`, 136 `unknown`, 1 `undetermined`** — in three peer sections with **no counts in the headings**, `undetermined` at the foot of the questions section under its own heading. Every `does_not_apply` names the switch and its value: **39 of 39** match `^Ruled out by: [a-z_]+ = `. The screen found two defects nothing below it could see, both with `resolve()` correct and the loss in the read: 12 rows rendering no fact at all, then those same 12 offering a question with nothing behind it (`DECISIONS.md` §61, audit check 26). **Not exercised by a person yet** — `docs/TESTING.md` cases E–I. |
 | **Audits** (`/audits`) | 🟡 degraded | 12 Sep | **12 Sep: the critic pass now runs before the audit row is written**, on the evidence question set — the one that asks how many documents were available against how many were used. It does not fix the defect below; it makes it visible in the answer. **And the defect is now measured, not just observed:** six audits of the same 272-item ISO 9001 standard for the same company returned `satisfied` of 6, 9, 7, 15, 13 and 21 — **a 3.5× spread**, with 219 of 272 items citing no document at all in the worst run (`AUDIT-CHECKS.md` check 16). | **11 Sep: an unreadable attachment now returns 400 with the reason instead of a 500 saying "Something went wrong", and Excel and CSV are read where they previously were not.** Unchanged and still the headline defect: **Silently drops documents it cannot read.** Observed in a real run: `satisfied=2 needs_info=1` computed from **one readable document out of eight**, the other seven dropped by `if (dlError \|\| !fileData) continue` with no error and no record. Plausible numbers, wrong basis — `TODO.md` M2(a). Also `matched_documents` can contain an entry with a null `document_id`. |
 | **HR** (`/hr`) | 🟡 degraded | 11 Sep, by reading the code — **not run** | **`.docx` handbooks now reach the model.** Until 11 Sep this route accepted PDFs and images only and told the user the format was unreadable — the parsers existed all along and the restriction was a workaround for a mislabelled upload (`DECISIONS.md` §28.2). Most handbooks are `.docx`, so the module's core input was the one thing it refused. Still degraded, unchanged by this: audit reads **one** handbook while ask reads all; requirements are eleven hardcoded words with no jurisdiction or thresholds, so a handbook can pass "FMLA present" and miss both Oregon obligations; `draft_policies` ships suggested legal language unconditionally. `TODO.md` M3. **The route's own file picker is still `.pdf,image/*`** and was not widened — see the note below. |
-| **Documents** (`/documents`) | ✅ working | 11 Sep | All four methods converted to the caller's token and verified by per-table row-count comparison against the service role. **11 Sep: picker widened to the shared list, and a document that cannot be read now says so instead of reporting "no dates found" on a file nobody opened.** Debts, not breakage: review runs inline and twice per document; nothing records what a document supersedes (`TODO.md` M4). |
+| **Documents** (`/documents`) | ✅ working | **28 Sep** | **REBUILT AND RELEASED — Documents rev 1, on production since 26 September.** One table filtered by folder or site and grouped by anything; a report drawer reading ten sections off six tables; one reading per file however it arrives (`/api/document-scan`); uploads of four or more handed to the background sweep with one email and one banner; a To confirm queue where nothing about a company is written until somebody says so. **The Review button and the separate date-extraction call are gone from this page.** Read on `claude-opus-5-5`, schema off. Migrations 040–054. `DECISIONS.md` §131–§139, `docs/VISION-DOCUMENTS.md`, `tests/golden/documents/bakeoff/2026-09-27-rejudged.md`. *(Corrected 28 Sep: the debts this row listed are closed — review no longer runs inline or twice, and `document_gaps.superseded` records what a re-reading replaces. The M4 pointer is superseded; see `TODO.md`.)* Remaining debt: `ScanStatus` makes one field answer both "what kind of conclusion is this" and "were gaps found", so a record with findings has to read `gaps_found` — the bake-off's first spec correction, and a column/migration/display decision, not a bug. |
+| **Documents — the sweep** (`/api/jobs/scan-documents`) | ✅ working | **28 Sep** | Vercel Cron every five minutes, plus `after()` from `/api/document-batches` and `/api/document-rescan` so a queue starts draining in seconds rather than at the next tick. One company at a time and its documents one after another, claimed company-wide on `reading_since`. Verified 28 Sep by abandoning the caller the moment it answered: POST returned in 1.4s, the reading landed 84s later, old scan kept at `is_current = false`. `DECISIONS.md` §138. |
+| **Documents — To confirm** (`/to-confirm`) | ✅ working | 26 Sep | Fact proposals from both sources, grouped by key, one question per fact, with disagreement shown and settled by the person. Sidebar count. Nothing is written to `company_switches` or `company_facts` until confirmed. |
 | **Calendar** (`/calendar`) | ✅ working | 11 Sep | Converted and verified the same way. **11 Sep: an unreadable import now says why, instead of "No compliance dates found in this file. Make sure it contains deadline or expiry dates." — shown for documents that had been rejected before any date-finding ran** (`CLAUDE.md` §5.1, `DECISIONS.md` §27). **Its picker is still narrower than its route** — no images, though `/api/extract-dates` reads them. Debt: dates are extracted from documents rather than read from obligation cadence (`TODO.md` M5). |
 | **Dashboard** (`/dashboard`) | ❓ unknown | — | **Not exercised this session.** Reads calendar, document reviews and checklists — **not** obligations — so the empty obligations table does not affect it. That is from reading the page, not from running it. |
 | **Compliance workspace** (`/compliance`) | 🟡 degraded | 15 Sep | **M1's conversation loop is live on `/api/chat`** — the route verifies signed turns, passes them to the gate, and returns a new signed turn. **The gate also classifies each turn** (`first` / `elaboration` / `refinement` / `new_question`, with `refersToTurn` and a stated `because`) — folded into the same call rather than a third AI call (§85, §86). Run over HTTP as a signed-in user: **turn 1 with no turns sent returns a signed turn; turn 2 sends it back and the gate does not re-ask what turn 1 established.** Four attacks refused with 400 — edited value, invented turn, **a genuine turn with the one before it dropped** (§90), and replay into another topic. **Degraded on latency, and it is a PRODUCT problem rather than a defect (§92): 58.9 s first turn, 29.0 s second**, gate plus answer with no critic. **The 1,282-line page does not yet hold turns between requests**, so the loop is reachable by a request and not yet by a person. |
 | **Signup** (`/signup`) | 🟡 degraded | 11 Sep | **Was ⛔ broken in production for roughly two hours today** — migration 007 renamed `industry` → `industries[]` and `/api/industries`, the only caller, kept selecting the old name, so the dropdown came back empty and blocked signup. **Fixed and verified 11 Sep.** Still degraded: does not capture `county`, and `employee_count` is never asked for (writes NULL). |
-| **Upload** (`/upload`) | 🟡 degraded | 12 Sep | **12 Sep: now sends the session token, since `/api/chat` requires one.** `app/upload/page.tsx:89` calls `getPublicUrl` on a private bucket — **still broken**, predates this work, `TODO.md` §0.7. 11 Sep: picker widened to the shared list, and a refused file now reaches the error banner this page already had instead of a bare `catch {}` commented *"extraction failed silently"*. |
+| **Upload** (`/upload`) | 🟡 degraded — **and unreachable** | 12 Sep | *(Corrected 28 Sep: **nothing links to this page.** `grep -rn "/upload"` over `app` and `components` returns no nav item, no link and no redirect — it is reachable only by typing the URL, and `/documents` is the upload surface now. `docs/INVENTORY-2026-09.md` proposes archiving it; the defect below is real and is on a page no one can get to.)* |
+| **Upload — the original notes** | 🟡 degraded | 12 Sep | **12 Sep: now sends the session token, since `/api/chat` requires one.** `app/upload/page.tsx:89` calls `getPublicUrl` on a private bucket — **still broken**, predates this work, `TODO.md` §0.7. 11 Sep: picker widened to the shared list, and a refused file now reaches the error banner this page already had instead of a bare `catch {}` commented *"extraction failed silently"*. |
 
 ## Infrastructure
 

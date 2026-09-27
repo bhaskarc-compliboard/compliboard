@@ -1,4 +1,20 @@
 # docs/
+
+> ### ⚠ FOUR FILES THIS INDEX DOES NOT LIST. *(Added 28 September 2026.)*
+>
+> The same failure the note below records, one release later — files were added and the index did not
+> move with them.
+>
+> | File | What it is |
+> |---|---|
+> | **`VISION-DOCUMENTS.md`** | The Documents module's vision, 27 September. **The current one** — `Vision for Document Module.pdf` beside it is the owner's original and is superseded by it |
+> | **`RELEASE.md`** | How a change reaches production, and **the authoritative list of what Vercel Production holds.** When this and any other file disagree about a variable, the dashboard wins and `RELEASE.md` gets corrected |
+> | **`DESIGN.md`** | The layout template. §3 is the widths, §6 is how a new section's files are laid out |
+> | **`INVENTORY-2026-09.md`** | Every file in the repo checked against 28 September: what it is for, whether it is still true, and who calls what. `INVENTORY.md` is the older pass, organised by phase rather than by file, and both are kept |
+>
+> `releases/` also holds one dated release note per production push — `2026-09-26-documents-rev1.md`
+> is the only one so far, and its §7 carries the outcome of every smoke-test step.
+
 **Version:** 10 · **Updated:** 24 September 2026
 **Supersedes:** version 9 (23 Sep). **Both handoffs are present and indexed as such.** Version 9
 listed them as expected-and-not-present, which was true when it was written and stopped being
