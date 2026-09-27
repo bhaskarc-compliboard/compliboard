@@ -34,11 +34,37 @@ import { SCAN_JSON_SCHEMA } from '../../prompts/document-scan.ts'
 const DIR = 'tests/fixtures/json-extraction'
 const raw = (name: string) => readFileSync(`${DIR}/${name}`, 'utf8')
 
-/** Every top-level key of the document-scan contract, as `prompts/document-scan.ts` asks for it. */
+/**
+ * Every top-level key of the document-scan contract, **as the fixtures in this directory carry it.**
+ *
+ * *** THESE ARE RECORDED PAST ANSWERS AND THEIR SHAPE CANNOT BE EDITED. *** They are the five
+ * answers Documents Run 2 threw away, kept byte for byte, and they nest `version_of` and
+ * `could_not_read` because that is what the prompt asked for when they were written. On
+ * 26 September the schema flattened both — see `SCAN_KEYS_ASKED_FOR` — and the temptation was to
+ * update one list and move on. **That would have deleted the assertion that old answers still
+ * parse**, which is the only thing standing between a schema change and nine stored scans quietly
+ * reading as null. `normaliseScanRaw` reads both shapes precisely so this list stays true.
+ */
 const SCAN_KEYS = [
   'identity', 'summary', 'status', 'significant_date', 'significant_date_kind', 'freshness_note',
   'gaps', 'conditions', 'deadlines', 'facts', 'version_of', 'expected_missing',
   'confidence_notes', 'could_not_read',
+]
+
+/**
+ * Every top-level key the schema and the prompt's JSON block ask for **today** — flat where the
+ * list above is nested.
+ *
+ * The two differ by exactly the 26 September flattening: `version_of` → `version_of_title` +
+ * `version_of_confidence`, `could_not_read` → `could_not_read_reason` +
+ * `could_not_read_way_forward`. Opus 5 refused the nested shape for its compiled grammar's size
+ * (`DECISIONS.md` §136), and the database was flat all along. **The day these two lists become the
+ * same list is the day the fallback can be removed, and not before.**
+ */
+const SCAN_KEYS_ASKED_FOR = [
+  'identity', 'summary', 'status', 'significant_date', 'significant_date_kind', 'freshness_note',
+  'gaps', 'conditions', 'deadlines', 'facts', 'version_of_title', 'version_of_confidence',
+  'expected_missing', 'confidence_notes', 'could_not_read_reason', 'could_not_read_way_forward',
 ]
 
 function parsesToAScan(file: string) {
@@ -190,10 +216,45 @@ describe('the failure no extractor can fix — and what replaced the extractor f
 
   test('the scan schema declares every key of the contract the prompt asks for', () => {
     const props = SCAN_JSON_SCHEMA.properties as Record<string, unknown>
-    for (const k of SCAN_KEYS) {
+    for (const k of SCAN_KEYS_ASKED_FOR) {
       assert.ok(k in props, `SCAN_JSON_SCHEMA is missing "${k}" — the schema and the prompt's JSON block must say the same thing`)
     }
     assert.equal(SCAN_JSON_SCHEMA.type, 'object')
+  })
+
+  test('the NESTED shape is gone from the schema, and nothing in it was lost with it', () => {
+    // The flattening's two halves, asserted separately: the old keys are not asked for any more,
+    // and every field they held is still asked for under its own name. A flattening that quietly
+    // dropped `version_of_confidence` would pass the test above and lose a field.
+    const props = SCAN_JSON_SCHEMA.properties as Record<string, unknown>
+    assert.ok(!('version_of' in props), 'the nested object is what Opus 5 refused')
+    assert.ok(!('could_not_read' in props))
+    assert.deepEqual(props.version_of_title, { type: 'string' })
+    assert.deepEqual(props.version_of_confidence, { type: 'string' })
+    assert.deepEqual(props.could_not_read_reason, { type: 'string' })
+    assert.deepEqual(props.could_not_read_way_forward, { type: 'string' })
+  })
+
+  test('the schema is SMALL ENOUGH — 7 object shapes, counted, because Opus 5 refused 9', () => {
+    // Not a style rule. `claude-opus-5` returns 400 "the compiled grammar is too large" at the
+    // shape this had on 26 September, and accepts it two shapes smaller. Stripping every enum
+    // changed nothing, so the cost is OBJECT SHAPES — which is what this counts.
+    // The margin is two shapes. Probe before adding one:
+    //   npm run probe:structured -- --model claude-opus-5 --schema-only
+    let objects = 0
+    const walk = (n: Record<string, unknown> | undefined) => {
+      if (!n || typeof n !== 'object') return
+      if (n.type === 'object' && n.properties) {
+        objects++
+        for (const v of Object.values(n.properties as Record<string, unknown>)) {
+          walk(v as Record<string, unknown>)
+        }
+      }
+      if (n.items) walk(n.items as Record<string, unknown>)
+    }
+    walk(SCAN_JSON_SCHEMA)
+    assert.equal(objects, 7, 'nine was refused by claude-opus-5; adding a nested object or an '
+      + 'array-of-objects will 400 on Opus and pass on Haiku, which is the worst way to find out')
   })
 
   test('the schema compels an ANSWER, not a value — every field required, most of them emptyable', () => {

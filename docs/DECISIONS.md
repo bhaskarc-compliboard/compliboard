@@ -10211,3 +10211,179 @@ Documents, Run 5 (25 Sep 2026). What a person does with a report: a checklist fr
 ## 135. DOCUMENTS, RUN 6 — 25 September 2026
 
 Documents, Run 6 (25 Sep 2026). A PDF's text is extracted alongside sending the file whole, kept on the scan, and used only to check quotes, so every quote on a PDF carries a verdict and a scanned image carries none. The scan is the matcher for gap identity: it is shown the document's open gaps with ids and says which of its findings is the same; matched old gaps become superseded and their checklists and drafts follow; the string matcher is the fallback. The attach flow scans through /api/document-scan and the card reads the index view; the old review route's POST has no caller in the app, and the audit engine calls reviewDocument directly until M2. To confirm groups proposals by key, one question per fact, with disagreement shown and settled by the person. Proposals from a re-read of the same file are collapsed on source and value. Fact keys are not reused across documents by the model; normalising them is a prompt-context change and is measured, not assumed.
+
+---
+
+## 136. THE 26 SEPTEMBER RELEASE, AND WHAT THE FIRST PRODUCTION SCAN FOUND — 26 September 2026
+
+Documents rev 1 is on production. `docs/releases/2026-09-26-documents-rev1.md` is the note; this is
+what it established and what it changed.
+
+### What was applied
+
+**Migrations 040 to 054 applied to production cleanly — fifteen files.** Types regenerated from
+production, typecheck green, push deployed.
+
+**Vercel Production now holds** `NEXT_PUBLIC_APP_URL`, `AI_MODEL_JUDGEMENT = claude-opus-5`
+(re-added as a **Config** variable, so it is readable rather than hidden), `AI_MODEL_DOCUMENT_SCAN =
+claude-opus-5`, and `AI_SCAN_STRUCTURED = false`. **`NOTIFY_TEST_TO` does not exist there**, which
+was the release note's one must-check: set on production, every customer's batch email would go to
+that address instead of to them.
+
+> ### §3 OF THE RELEASE NOTE IS SETTLED, AND `CLAUDE.md` §3.4a WAS THE DOCUMENT THAT WAS WRONG.
+>
+> The note recorded that `RELEASE.md` and `CLAUDE.md` §3.4a contradicted each other about whether the
+> `AI_MODEL_*` variables are set on Vercel, and that **what model reads a customer's document was
+> therefore not knowable from this repository.** Reading the dashboard answered it: they are set.
+> §3.4a said *"Production is untouched by this: those variables are UNSET there"* and that sentence
+> is now corrected. **`RELEASE.md`'s own list is the authoritative record of Vercel's state**, and it
+> has been updated today with the four above.
+
+### The first production scan was refused by the API
+
+`AI_MODEL_DOCUMENT_SCAN = claude-opus-5`, the JSON schema on. Verbatim:
+
+> **"The compiled grammar is too large, which would cause performance issues. Simplify your tool
+> schemas or reduce the number of strict tools."**
+
+**The same schema is accepted on Haiku.** That is the whole shape of it: a structured-output schema
+is not portable across models, and every local test had run on Haiku (§130). Setting
+`AI_SCAN_STRUCTURED = false` and pressing **Read it again** produced a full reading —
+
+- kind **program**, **Oregon OSHA**
+- **eight gaps, including all three planted in golden case 01**: the reporting procedure, the
+  critical-operations shutdown, and the named contact
+- the five-year nudge
+- and a note that **the document names a company other than the one it is filed under**
+
+Cost row: `document_scan`, `claude-opus-5`, **$0.517**.
+
+**So production runs the scan with the schema OFF** — until the schema is small enough for Opus's
+grammar limit, or the bake-off says the extractor path is as good. It is not a preference: with the
+schema on, Opus cannot read a document at all.
+
+*The prose path's own cost is measured and known: roughly one answer in five comes back with an
+unparseable brace (§131), which is why the schema was built. Running without it trades a hard 400 for
+a soft one-in-five, and that is the better trade only until the schema fits.*
+
+### The grammar limit, measured
+
+`npm run probe:structured` took a `--model` argument and — more to the point — **now sends the real
+`SCAN_JSON_SCHEMA` rather than a hand-written stand-in.** The old probe tested a copy and reported
+the mechanism usable; `prompts/document-scan.ts` already recorded that the three earlier schema rules
+were all found by sending the real thing instead. This was the fourth time.
+
+Probed against `claude-opus-5`, one variant per call. **A refused call is not billed, so the ladder
+cost nothing:**
+
+| Schema | |
+|---|---|
+| 9 objects / 54 properties — as shipped | **REFUSED** |
+| the same, **every enum stripped** | **REFUSED** |
+| the same minus any ONE array-of-objects | accepted |
+| 8 objects / 53 properties | accepted |
+| **7 objects / 52 properties — the shape now** | **accepted** |
+| 6 objects / 51 properties | accepted |
+
+> ### STRIPPING THE ENUMS CHANGED NOTHING, WHICH RULES OUT THE OBVIOUS GUESS.
+> The cost is **object shapes**, not alternatives within a field. The schema was two shapes over a
+> cliff, and there was no way to know that without sending it — the limit has no published number.
+
+**So `version_of` and `could_not_read` are flat, and no field was lost.** Both were two-field objects
+that existed only to group a pair, and **the database was already flat**:
+`document_scans.version_of_title`, `version_confidence` and `could_not_read_reason` are columns.
+`normaliseScanRaw` reads the flat keys and falls back to the nested ones, so every stored `raw_text`
+and every recorded golden run still parses. Both statements of the contract moved together — the
+prose JSON block and the schema, in one file, as that file requires.
+
+Accepted on **`claude-opus-5`** and on **`claude-haiku-4-5`**. **The margin is two shapes, and that is
+thin**: the next nested object or array-of-objects will 400 on Opus and pass on Haiku, which is the
+worst way for it to fail. `npm run probe:structured -- --model claude-opus-5 --schema-only` exits
+non-zero when the real schema is refused.
+
+**The schema is still off everywhere.** Making it fit is not the same decision as turning it on, and
+the bake-off decides that one.
+
+### The row wording for an API refusal was wrong
+
+> ### WE TOLD THE OWNER TO GO AND FIX A FILE THAT WAS NEVER WRONG.
+>
+> Every throw out of `runDocumentScan` landed in one catch in `/api/document-scan`, which wrote:
+> *"We couldn't read this file — it did not arrive as something we can open"*, way forward *"A PDF
+> exported from the original, or a straight-on photo in good light, would do it."* The PDF was
+> perfectly readable and read fine two minutes later. That is `CLAUDE.md` §5.1 broken in the way §5.1
+> names: a claim about a document nobody read, and the implication that the user's file was at fault
+> when the failure was ours.
+
+**The model call is now caught where it happens, inside `runDocumentScan`** — and the distinction is
+*where the throw is caught*, not what the error says:
+
+- **Above** that line a failure is about the FILE, and `parseDocumentToBlocks` says so in its own words.
+- **Below** it a failure is about the READING SERVICE: *"The reading service refused our request to
+  read this document, so nothing was read. That is our end of it, not a problem with the file you
+  sent."* Way forward: *"Read it again once we have fixed it — nothing about your file needs changing."*
+- **The API's own message is kept on the scan, for us**, in `raw_text` — which nothing in the UI reads.
+  Without it the only record of *why* is a Vercel log line that ages out, and the grammar-limit
+  sentence above is the entire reason production runs with the schema off.
+
+**An API failure is identified structurally, by the numeric `status` an SDK error carries**
+(`apiFailureStatus`), never by matching words in the message — a check on "grammar" or "400" would be
+wrong the first time the API rephrased itself. **Anything without a status is rethrown rather than
+described**, and that direction is the point: a `TypeError` from a bug of our own, reported to a
+customer as a refusal by Anthropic, is a different lie from the one being removed.
+
+What is left in the route's last-resort catch is genuinely unidentified and now says so: *"Something
+went wrong at our end while reading this file, and we do not yet know what."* The sweep's catch
+(`/api/jobs/scan-documents`) already read this way and is unchanged.
+
+### One more thing production says, and it is not what was expected
+
+The Vercel runtime logged **"Cannot load @napi-rs/canvas"** from pdfjs during that scan, and the
+hypothesis was that text extraction had silently failed in Vercel's runtime. **It had not.** Read
+through production's own migration-history connection:
+
+```sql
+select d.name, s.model, s.status, s.json_parsed, s.scanned_at,
+       (s.extracted_text is null) as text_is_null,
+       coalesce(length(s.extracted_text),0) as text_len,
+       s.quotes_checked, s.quotes_verified, s.could_not_read_reason
+  from public.document_scans s join public.documents d on d.id = s.document_id
+ order by s.scanned_at desc limit 5
+```
+
+One row: `01-eap-chemical.pdf`, `claude-opus-5`, `gaps_found`, `json_parsed` true,
+**`extracted_text` NOT null, 4,003 characters, `quotes_checked` 15, `quotes_verified` 15.** The
+canvas warning is pdfjs declining to build its optional *rendering* backend; `parseDocumentToBlocks`
+uses the *text* layer and never rasterises a page. **Nothing to fix, and the warning is noise** —
+recorded here so the next person who sees it does not go looking for a dependency.
+
+**And a second thing that query showed, which is not explained.** `document_scans` on production holds
+exactly one row — the successful reading. The refused attempt left **no scan row at all**, on a
+document uploaded once at 17:49:07 and read at 17:51:08 (`select status, count(*), min(uploaded_at),
+max(uploaded_at) from public.documents group by status`: 39 `held`, 1 `read`). The route's catch is
+supposed to write a `failedScan` for exactly this, and did not. **Why is not established and is not
+asserted here.** It is an open item; the change above is what makes such an attempt legible when it
+next happens, because the refusal now has its own sentence and carries the API's message.
+
+*The release note said 38 documents would be held. Production says **39**. The note's figure came from
+a count taken at preflight; the database is the one to believe.*
+
+### Opus 5.5 is priced
+
+`claude-opus-5-5` was already in `config/pricing.ts` at **$4 / $20 per million** from the owner's
+23 September pass. Re-checked against the published page on 26 September and **unchanged**, so there
+is no `PRICE_CORRECTIONS` entry — a row that was right stays right, and inventing a correction would
+claim a past total had been wrong when it had not. Web search is **$10 per 1,000 searches** and is not
+per model, which is why `PRICE_PER_SEARCH` is a single constant. `PRICE_SOURCE_URL` now records where
+the numbers come from, and a test pins the id to $4/$20 and to nothing else — `claude-opus-5-5` and
+`claude-opus-5` differ by two characters and by a dollar per million in.
+
+**`PRICES_VERIFIED_ON` deliberately did NOT move to 26 September.** That date means *a person checked
+the whole table*, and advancing it because an agent re-read one row would make the constant say
+something untrue about who had checked what.
+
+**Reversal conditions.** The schema switch is one Vercel variable and is meant to be thrown — off is
+today's answer, not a permanent one. The flattening is reversed only by a model that stops accepting
+it, and the probe is how that would be found. The wording change is a defect fix and is not
+reversible: a message that blames a customer's file for our own refused request is wrong whatever
+else is true.

@@ -205,9 +205,33 @@ stop cleanly. Haiku answers all of that for a fraction of the price. Use the exp
 when the question is **"is this answer any good"**, and not before.
 
 `.env.local` therefore points `AI_MODEL_PROSE`, `AI_MODEL_JUDGEMENT`, `AI_MODEL_SUBSTEPS` and
-`AI_MODEL_SUMMARY` at `claude-haiku-4-5`. **Production is untouched by this: those variables are
-UNSET there, so it runs the code defaults — Opus 5 and Sonnet 5.** An unset variable is the
-product's behaviour; a set one is a local decision (`lib/pipelineConfig.ts` says the same about
+`AI_MODEL_SUMMARY` at `claude-haiku-4-5`.
+
+> ### ⚠ CORRECTED 26 SEPTEMBER 2026: THESE VARIABLES *ARE* SET ON VERCEL PRODUCTION.
+>
+> This section used to say *"Production is untouched by this: those variables are UNSET there, so it
+> runs the code defaults — Opus 5 and Sonnet 5."* **That was wrong**, and it stayed wrong for three
+> days while `RELEASE.md` said the opposite. Documents rev 1's preflight caught the contradiction and
+> could not settle it from the repository, because **what model reads a customer's document is not a
+> fact this codebase contains** — it is a fact about a dashboard. Reading the dashboard settled it.
+>
+> **Set on Vercel Production today, by name:** `AI_MODEL_PROSE`, `AI_MODEL_JUDGEMENT`
+> (`claude-opus-5`), `AI_MODEL_SUBSTEPS`, `AI_MODEL_SUMMARY`, `AI_MODEL_DOCUMENT_SCAN`
+> (`claude-opus-5`), and `AI_SCAN_STRUCTURED` (`false`). `AI_MODEL_JUDGEMENT` was re-added as a
+> **Config** variable rather than a secret, so it can be read back instead of only overwritten.
+>
+> ### `docs/RELEASE.md` IS THE AUTHORITATIVE RECORD OF WHAT VERCEL HOLDS.
+>
+> Its closing list of variables set on Production is the one place that tracks it — updated on
+> 26 September with the four the Documents release added. **This file must not carry a second copy of
+> that list**, because two lists is how this contradiction happened: the names above are here to say
+> which knobs exist, and `RELEASE.md` says what they are set to. When the two disagree again, the
+> dashboard wins and `RELEASE.md` gets corrected. `DECISIONS.md` §136.
+
+**A local `AI_MODEL_*` is still a local decision**, and the code defaults (Opus 5, Sonnet 5) are still
+what an unset variable means — that part was always true. What changed is that production no longer
+*relies* on being unset, so **a model question about production is answered by reading `RELEASE.md` or
+the dashboard, never by reading the code defaults** (`lib/pipelineConfig.ts` says the same about
 switches).
 
 The one deliberate exception is a quality read:

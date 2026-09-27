@@ -35,7 +35,16 @@ import { readdirSync, readFileSync } from 'node:fs'
 // decision. Run 3's `AnswerBody` replaced it and `grep -rn answerDisplay app lib components`
 // returned only the file itself — the suite was exercising code nothing shipped. Lowering the
 // floor is exactly the deliberate act this guard exists to force somebody to make in writing.
-const FLOOR = 509
+//
+// 509 -> 528 on 26 Sep, post-release: 19 tests for the three things the first production scan found.
+// Seven say a refused MODEL CALL is not a file we could not open, and the negative one among them is
+// the one that matters — a `TypeError` of our own must NOT be reported to a customer as a refusal by
+// Anthropic. Six price `claude-opus-5-5` exactly, and refuse to let it inherit Opus 5's price by
+// resembling it. Six cover the schema flattening Opus 5's grammar limit forced: the flat keys, the
+// nested keys still reading, and a COUNT of object shapes — because nine was refused, seven is
+// accepted, and the next person to add a nested field needs the build to say so rather than
+// production.
+const FLOOR = 528
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

@@ -236,12 +236,14 @@ Answer with one JSON object and nothing else — no prose around it, no markdown
   "facts": [
     { "key": "short_snake_case_name", "value": "the value", "basis": "read | inferred", "quote": "word for word from the document", "locator": "section or page", "as_of": "YYYY-MM-DD or null", "affects": "one line on what this changes" }
   ],
-  "version_of": { "title": "a title from the list above, or null", "confidence": "high | medium | low" },
+  "version_of_title": "a title from the list above, or null",
+  "version_of_confidence": "high | medium | low",
   "expected_missing": [
     { "title": "what a company like this usually also holds", "why": "one line", "basis": "similar companies, not a checked requirement" }
   ],
   "confidence_notes": "where you are sure and where you are not",
-  "could_not_read": { "reason": "why, or null", "way_forward": "what would fix it, or null" }
+  "could_not_read_reason": "why, or null",
+  "could_not_read_way_forward": "what would fix it, or null"
 }
 
 Use null where you cannot tell, and an empty array where there is nothing. An empty array is a
@@ -290,6 +292,45 @@ when you worked it out.`
  *
  * `identity.kind` and `status` are enums with no empty member, because both already carry the
  * honest escape: `other`, and `could_not_read`.
+ *
+ * ---------------------------------------------------------------------------
+ * *** A FOURTH RULE, FOUND IN PRODUCTION ON 26 SEPTEMBER 2026: THE COMPILED GRAMMAR HAS A SIZE
+ * LIMIT, AND IT IS PER MODEL. ***
+ *
+ *     400 The compiled grammar is too large, which would cause performance issues.
+ *         Simplify your tool schemas or reduce the number of strict tools.
+ *
+ * The same schema Haiku accepts is refused by `claude-opus-5`. It is not a rule about shape like the
+ * other three — it is a budget, it has no published number, and the only way to know is to send it.
+ * `npm run probe:structured -- --model <id>` now sends THIS OBJECT rather than a stand-in, for
+ * exactly that reason.
+ *
+ * *** WHAT IT ACTUALLY RESPONDED TO, MEASURED RATHER THAN GUESSED. *** Probed against
+ * `claude-opus-5` on 26 September, one variant per call (a refused call is not billed):
+ *
+ *     9 objects / 54 properties  — the shape before this note        REFUSED
+ *     the same, every enum stripped                                  REFUSED
+ *     the same minus any ONE array-of-objects                         accepted
+ *     8 objects / 53 properties  (identity flattened)                 accepted
+ *     7 objects / 52 properties  (this shape)                         accepted
+ *     6 objects / 51 properties  (identity flattened too)             accepted
+ *
+ * **Stripping the enums changed nothing**, which rules out the obvious first guess and is why they
+ * are all still here: the cost is OBJECT SHAPES, not alternatives within a field. The schema was two
+ * shapes over a cliff.
+ *
+ * *** SO `version_of` AND `could_not_read` ARE FLAT, AND NO FIELD WAS LOST. *** Both were two-field
+ * objects that existed only to group a pair, and **the database was already flat** —
+ * `document_scans.version_of_title`, `version_confidence`, `could_not_read_reason` are columns, not
+ * a JSON blob. Nesting them here and unnesting them in `saveScan` bought nothing and cost one object
+ * shape each. `normaliseScanRaw` reads the flat keys AND the old nested ones, so every stored
+ * `raw_text` and every golden fixture written before today still parses.
+ *
+ * *** THE MARGIN IS TWO SHAPES, AND THAT IS THIN. *** Adding one more nested object or one more
+ * array-of-objects will 400 on Opus and pass on Haiku, which is the worst way for it to fail. Probe
+ * before shipping a field: `npm run probe:structured -- --model claude-opus-5 --schema-only` exits
+ * non-zero if the real schema is refused.
+ * ---------------------------------------------------------------------------
  */
 /** An answer that may be empty. `""` becomes null in `normaliseScan` — see the note above. */
 const nul = { type: 'string' } as const
@@ -357,11 +398,13 @@ export const SCAN_JSON_SCHEMA: Record<string, unknown> = obj({
       affects: nul,
     }),
   },
-  version_of: obj({ title: nul, confidence: nul }),
+  version_of_title: nul,
+  version_of_confidence: nul,
   expected_missing: {
     type: 'array',
     items: obj({ title: str, why: nul, basis: nul }),
   },
   confidence_notes: nul,
-  could_not_read: obj({ reason: nul, way_forward: nul }),
+  could_not_read_reason: nul,
+  could_not_read_way_forward: nul,
 })

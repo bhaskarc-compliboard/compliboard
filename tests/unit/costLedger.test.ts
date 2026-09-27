@@ -9,7 +9,7 @@
 import test, { describe } from 'node:test'
 import assert from 'node:assert/strict'
 import { estimateCost, priceFor, describeCost, LEDGER_TASKS } from '../../lib/costLedger.ts'
-import { MODEL_PRICES, PRICE_PER_SEARCH } from '../../config/pricing.ts'
+import { MODEL_PRICES, PRICE_PER_SEARCH, PRICE_SOURCE_URL } from '../../config/pricing.ts'
 
 describe('an unknown model is UNPRICED, not free', () => {
   test('costUsd is null, and the prices on the row are null with it', () => {
@@ -112,5 +112,51 @@ describe('the task list matches the CHECK constraint', () => {
       'gate', 'critique', 'audit', 'document_review', 'document_scan', 'document_draft', 'other',
     ]
     assert.deepEqual([...LEDGER_TASKS].sort(), inMigration.sort())
+  })
+})
+
+describe('Opus 5.5 prices EXACTLY, and not by resembling Opus 5 — 26 September 2026', () => {
+  // $4 in, $20 out, read off PRICE_SOURCE_URL on 26 September 2026. The reason this is a test and
+  // not a comment: the ONE failure mode of this table is a model id that resolves at the API and
+  // prices as null here, which records tokens with no money and leaves a total that looks healthy.
+  // Opus 5.5 is the live candidate — the bake-off may move the judgement tier onto it.
+
+  test('the id prices at $4 in and $20 out per million', () => {
+    const p = priceFor('claude-opus-5-5')
+    assert.ok(p, 'claude-opus-5-5 must be in the table, or its calls record no cost')
+    assert.equal(p.inputPerM, 4)
+    assert.equal(p.outputPerM, 20)
+  })
+
+  test('a million in and a million out is $24', () => {
+    const c = estimateCost({ model: 'claude-opus-5-5', inputTokens: 1e6, outputTokens: 1e6, searches: 0 })
+    assert.equal(c.costUsd, 24)
+    assert.equal(c.priceInputPerM, 4)
+    assert.equal(c.priceOutputPerM, 20)
+  })
+
+  test('it is CHEAPER than Opus 5, which is the direction the page says', () => {
+    const five = estimateCost({ model: 'claude-opus-5', inputTokens: 1e6, outputTokens: 1e6, searches: 0 })
+    const fiveFive = estimateCost({ model: 'claude-opus-5-5', inputTokens: 1e6, outputTokens: 1e6, searches: 0 })
+    assert.ok((fiveFive.costUsd ?? 0) < (five.costUsd ?? 0))
+  })
+
+  test('the neighbouring spellings are NOT it — exact match, no prefix inheritance', () => {
+    // `claude-opus-5-5` and `claude-opus-5` differ by two characters and by a dollar per million in.
+    assert.equal(priceFor('claude-opus-5-5-20260922'), null)
+    assert.equal(priceFor('claude-opus-55'), null)
+    assert.equal(priceFor('claude-opus-5.5'), null)
+    assert.notEqual(priceFor('claude-opus-5')?.inputPerM, priceFor('claude-opus-5-5')?.inputPerM)
+  })
+
+  test('one search costs the same on it as on every other model', () => {
+    // $10 per 1,000 searches is not per model, so this is the whole assertion there is to make.
+    const c = estimateCost({ model: 'claude-opus-5-5', inputTokens: 0, outputTokens: 0, searches: 1 })
+    assert.equal(c.costUsd, PRICE_PER_SEARCH)
+    assert.equal(PRICE_PER_SEARCH * 1000, 10)
+  })
+
+  test('the table says where its numbers came from', () => {
+    assert.match(PRICE_SOURCE_URL, /^https:\/\/platform\.claude\.com\/docs\/en\/about-claude\/pricing$/)
   })
 })

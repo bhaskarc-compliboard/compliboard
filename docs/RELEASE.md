@@ -68,6 +68,21 @@ Sign in with a test account and run the first three manual tests for the feature
 - Credential rotation (see `docs/HANDOFF-CODE.md` and `TODO.md`).
 - The privacy-policy line stating that conversation transcripts are cleared 7 days after summarising (gate four of the retention promise).
 
-## Variables currently set on Vercel Production (names only, as of 23 Sep 2026)
+## Variables currently set on Vercel Production (as of 26 Sep 2026)
 
-`SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `ANTHROPIC_API_KEY`, `RESEND_API_KEY`, `FEEDBACK_EMAIL` (from June), plus the nine added on 23 Sep: `CRON_SECRET`, `AI_MODEL_PROSE`, `AI_MODEL_JUDGEMENT`, `AI_MODEL_SUBSTEPS`, `AI_MODEL_SUMMARY`, `AI_EFFORT`, `RESEARCH_PREFER_GOV`, `RESEARCH_SPECIALIST`, `RESEARCH_PROVENANCE`.
+**This list is the authoritative record of what Vercel holds.** `CLAUDE.md` §3.4a points here and deliberately does not keep a second copy: on 26 September that section and this one disagreed about whether the `AI_MODEL_*` variables are set at all, which made the model that reads a customer's document unknowable from the repository. It was settled by reading the dashboard, §3.4a was the one that was wrong, and the rule now is **the dashboard wins and this list gets corrected.** `DECISIONS.md` §136.
+
+From June: `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `ANTHROPIC_API_KEY`, `RESEND_API_KEY`, `FEEDBACK_EMAIL`.
+
+Added 23 Sep: `CRON_SECRET`, `AI_MODEL_PROSE`, `AI_MODEL_JUDGEMENT`, `AI_MODEL_SUBSTEPS`, `AI_MODEL_SUMMARY`, `AI_EFFORT`, `RESEARCH_PREFER_GOV`, `RESEARCH_SPECIALIST`, `RESEARCH_PROVENANCE`.
+
+**Added 26 Sep, with Documents rev 1 — values given, because these four decide what a customer's document costs and who reads it:**
+
+| Variable | Value | |
+|---|---|---|
+| `NEXT_PUBLIC_APP_URL` | the site's public origin, no trailing slash | The only source of the link in the batch email. `NEXT_PUBLIC_*`, so it is inlined at build time and must exist **before** the push that builds |
+| `AI_MODEL_DOCUMENT_SCAN` | `claude-opus-5` | What reads a document |
+| `AI_SCAN_STRUCTURED` | `false` | **The JSON schema is OFF.** With it on, Opus 5 refuses the request outright — "the compiled grammar is too large". Not a preference; the alternative is that no document can be read at all |
+| `AI_MODEL_JUDGEMENT` | `claude-opus-5` | **Re-added as a Config variable, not a secret, so it can be read back** rather than only overwritten. That is the change that made this list checkable |
+
+**`NOTIFY_TEST_TO` is confirmed ABSENT and must stay absent.** Set here, every customer's batch email goes to that address instead of to them. `DEV_MAX_SEARCHES` is likewise not set and must not be.

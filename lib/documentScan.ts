@@ -281,6 +281,14 @@ function normaliseScanRaw(parsed: Record<string, unknown>, extractedText: string
   'raw_text' | 'json_parsed' | 'model' | 'searches' | 'cited_sources' | 'structured' | 'prompt_sha256' | 'quotes_checked'
   | 'quotes_verified' | 'extracted_text' | 'started_at'> {
   const id = (parsed.identity ?? {}) as Record<string, unknown>
+  // *** FLAT FIRST, NESTED AS THE FALLBACK — 26 September 2026. ***
+  // `version_of` and `could_not_read` were two-field nested objects in the schema until Opus 5
+  // refused the whole thing for its compiled grammar's size, and the database was flat all along
+  // (`document_scans.version_of_title`, `version_confidence`, `could_not_read_reason` are columns).
+  // The nested read stays because it costs one `??` and buys back every answer already stored: nine
+  // scans' `raw_text` on staging, the golden fixtures' recorded runs, and any prose-path answer from
+  // a model still following the old wording. A reader that only understood the new shape would turn
+  // all of those into silent nulls. See `prompts/document-scan.ts`, the fourth rule.
   const cnr = (parsed.could_not_read ?? {}) as Record<string, unknown>
   const vo = (parsed.version_of ?? {}) as Record<string, unknown>
 
@@ -334,12 +342,20 @@ function normaliseScanRaw(parsed: Record<string, unknown>, extractedText: string
       basis: basisOf(f?.basis),
       quote_verified: verifyQuote(str(f?.quote), extractedText),
     })),
-    version_of: { title: str(vo.title), confidence: str(vo.confidence) },
+    version_of: {
+      title: str(parsed.version_of_title) ?? str(vo.title),
+      confidence: str(parsed.version_of_confidence) ?? str(vo.confidence),
+    },
     expected_missing: (Array.isArray(parsed.expected_missing) ? parsed.expected_missing : []).map((e: Record<string, unknown>) => ({
       title: str(e?.title) ?? 'Untitled', why: str(e?.why), basis: str(e?.basis),
     })),
     confidence_notes: str(parsed.confidence_notes),
-    could_not_read: { reason: str(cnr.reason), way_forward: str(cnr.way_forward) },
+    // Flat first, nested second — and the nested form is ALSO what this module's own
+    // `failedScan` / `refusedScan` pass in, so the fallback is a live path and not only a legacy one.
+    could_not_read: {
+      reason: str(parsed.could_not_read_reason) ?? str(cnr.reason),
+      way_forward: str(parsed.could_not_read_way_forward) ?? str(cnr.way_forward),
+    },
   }
 }
 
@@ -495,6 +511,73 @@ export function failedScan(reason: string, wayForward: string, model = '(not cal
   }
 }
 
+/**
+ * WAS THE FAILURE THE MODEL CALL, OR THE FILE? — 26 September 2026.
+ *
+ * *** THIS IS A STRUCTURAL TEST, NOT A TEST ON THE WORDS OF THE ERROR. *** An SDK `APIError`
+ * carries a numeric `status`; a thrown `Error` from our own code does not. So a number here means
+ * the request reached Anthropic and came back refused, and no number means we never got an answer
+ * at all — a connection dropped, a DNS failure, a timeout. Reading the message and looking for
+ * "grammar" or "400" would be the other way of doing this, and it would be wrong the first time
+ * the API rephrased itself.
+ *
+ * Returns null when the thing thrown is not an API failure, so the caller RETHROWS rather than
+ * describe something it has not identified. That direction matters: a `TypeError` from a bug of our
+ * own would otherwise be reported to a customer as a refusal by Anthropic, which is a different
+ * lie from the one this change removes.
+ */
+export function apiFailureStatus(error: unknown): number | null {
+  const s = (error as { status?: unknown } | null)?.status
+  return typeof s === 'number' ? s : null
+}
+
+/**
+ * THE READING SERVICE ITSELF REFUSED — and that is not the same failure as a file we cannot open.
+ *
+ * *** THE WORDING THAT USED TO BE WRITTEN HERE WAS A CLAIM ABOUT THE CUSTOMER'S FILE. *** Every
+ * throw out of `runDocumentScan` landed in the route's last-resort catch, which said *"it did not
+ * arrive as something we can open"* and suggested exporting a fresh PDF. On 26 September the first
+ * production scan on `claude-opus-5` was refused by the API — *"The compiled grammar is too large,
+ * which would cause performance issues. Simplify your tool schemas or reduce the number of strict
+ * tools."* — for a PDF that was perfectly readable, and read fine two minutes later. `CLAUDE.md`
+ * §5.1: never assert anything about a document the product did not successfully read, and never
+ * imply the user did something wrong when the failure is ours. The file was never the problem;
+ * OUR request was.
+ *
+ * So the person is told the reading service refused OUR request, and the way forward is to ask for
+ * it again once we have fixed it — not to go and re-export their document.
+ *
+ * *** THE API'S OWN MESSAGE IS KEPT, ON THE SCAN, FOR US. *** It goes in `raw_text`, which nothing
+ * in the UI reads (`document_scans` has no separate technical column, and §5 wants the raw response
+ * kept where a bad answer is diagnosable from the database days later). Without it the only record
+ * of *why* is a Vercel log line that ages out; the grammar-limit sentence above is the entire reason
+ * production runs with `AI_SCAN_STRUCTURED=false`, and it survived only because somebody screenshotted it.
+ */
+export function refusedScan(args: {
+  error: unknown
+  model: string
+  status: number
+  extractedText: string
+  startedAt: string
+  structured: boolean
+  promptSha: string
+}): DocumentScan {
+  const detail = args.error instanceof Error ? args.error.message : String(args.error)
+  return {
+    ...normaliseScan({ status: 'could_not_read', could_not_read: {
+      reason: 'The reading service refused our request to read this document, so nothing was read. '
+        + 'That is our end of it, not a problem with the file you sent.',
+      way_forward: 'Read it again once we have fixed it — nothing about your file needs changing.' } },
+      args.extractedText),
+    // For us, never for the customer: the API's own sentence, with the status it came back with.
+    raw_text: `API ${args.status}: ${detail}`,
+    json_parsed: false, model: args.model, cited_sources: 0, searches: null,
+    structured: args.structured,
+    prompt_sha256: args.promptSha, quotes_checked: 0, quotes_verified: 0,
+    extracted_text: args.extractedText, started_at: args.startedAt,
+  }
+}
+
 export interface RunScanInput {
   buffer: ArrayBuffer
   fileName: string
@@ -547,16 +630,32 @@ export async function runDocumentScan(input: RunScanInput): Promise<DocumentScan
     { type: 'text', text: `File name: ${input.fileName}\n\nRead this document.` },
   ] as AIContent
 
-  const answer = await askAIWithCitations(system, content, {
-    task: 'document_scan',
-    maxTokens: 16000,
-    enableWebSearch: true,
-    // The shape is enforced by the API, not asked for in prose — unless AI_SCAN_STRUCTURED is
-    // "false", in which case nothing is sent and `extractJsonText` below is the mechanism again.
-    // Which path ran is recorded on the scan so a stored answer can be attributed later.
-    ...(structured ? { outputSchema: SCAN_JSON_SCHEMA } : {}),
-    ledger: { companyId: input.companyId, task: 'document_scan' },
-  })
+  // *** THE MODEL CALL IS CAUGHT HERE, AND THAT IS WHAT MAKES THE TWO FAILURES DIFFERENT. ***
+  // Above this line, a failure is about the FILE — `parseDocumentToBlocks` said it could not open
+  // it, and its own message is what the person reads. Below it, a failure is about the READING
+  // SERVICE. Until 26 September both fell through to one catch in the route, which described every
+  // one of them as a file that "did not arrive as something we can open" — see `refusedScan`.
+  // The distinction is WHERE the throw is caught, not what the error says.
+  let answer: Awaited<ReturnType<typeof askAIWithCitations>>
+  try {
+    answer = await askAIWithCitations(system, content, {
+      task: 'document_scan',
+      maxTokens: 16000,
+      enableWebSearch: true,
+      // The shape is enforced by the API, not asked for in prose — unless AI_SCAN_STRUCTURED is
+      // "false", in which case nothing is sent and `extractJsonText` below is the mechanism again.
+      // Which path ran is recorded on the scan so a stored answer can be attributed later.
+      ...(structured ? { outputSchema: SCAN_JSON_SCHEMA } : {}),
+      ledger: { companyId: input.companyId, task: 'document_scan' },
+    })
+  } catch (error) {
+    const status = apiFailureStatus(error)
+    // Something that is not an API failure is not ours to describe: rethrow it and let the caller's
+    // own last-resort catch say "something went wrong at our end", which is all anyone knows.
+    if (status === null) throw error
+    console.error(`document scan: the model call was refused with ${status} —`, error)
+    return refusedScan({ error, model, status, extractedText, startedAt, structured, promptSha })
+  }
 
   const raw = answer.text ?? ''
   let obj: Record<string, unknown> | null = null

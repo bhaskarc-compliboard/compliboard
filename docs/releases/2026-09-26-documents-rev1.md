@@ -2,6 +2,21 @@
 
 **Date written:** 26 September 2026
 **Target:** production (`dsfwmafnphdlfogetsus`)
+
+> ### ✅ RELEASED, 26 September 2026. §7 below now records what each step ACTUALLY did.
+>
+> Migrations 040 to 054 applied cleanly — fifteen files. Types regenerated from production, typecheck
+> green, push deployed. The variables in §3 were set, and **§3's conflict about production's models is
+> settled: they ARE set on Vercel, `CLAUDE.md` §3.4a was the document that was wrong, and
+> `RELEASE.md`'s list is now the authoritative record.**
+>
+> **The smoke test found one thing, and it was not small:** the first scan on `claude-opus-5` with the
+> JSON schema on was **refused by the API** — *"The compiled grammar is too large."* Production runs
+> with `AI_SCAN_STRUCTURED = false` because of it, and the reading that followed was good. Everything
+> below the header is left as it was written before the push, because a release note that is edited
+> into agreement with its own outcome stops being evidence of what was expected.
+> `DECISIONS.md` §136.
+
 **Status when written:** NOT PUSHED. Nothing in this note has been applied to production.
 **Last production push:** the deployed code is `origin/main` at commit `fa60e9c`; the last
 migration applied is `039_turns_attached_document.sql`, which landed in commit `ede8996`
@@ -305,19 +320,77 @@ Neither is introduced or resolved by Documents rev 1.
 
 ---
 
-## 7. Smoke test, to run on production after the push
+## 7. Smoke test — RUN, 26 September 2026
 
-This is `RELEASE.md` step 6 — "prove it on the live site" — written out for this feature. Ten
-minutes, in order. Stop at the first one that fails.
+This was `RELEASE.md` step 6, "prove it on the live site", written out for this feature before the
+push. **It has now been run, and each step below carries what actually happened as the owner reported
+it.** The instructions are left as they were written; the outcomes are added under them.
+
+**The model assertion is no longer conditional.** Step 6 was written to assert against "whatever
+`AI_MODEL_JUDGEMENT` turns out to be", because §3 could not settle it. It is settled:
+`AI_MODEL_DOCUMENT_SCAN = claude-opus-5` is set on Vercel Production, so **every step below asserts
+`claude-opus-5`.**
+
+> ### THE ONE FAILURE, AND IT STOPPED THE FIRST ATTEMPT DEAD.
+>
+> **Step 1 ran twice.** The first scan — Opus 5, `AI_SCAN_STRUCTURED` unset, so the JSON schema ON —
+> was refused by the API before any reading happened:
+>
+> > **"The compiled grammar is too large, which would cause performance issues. Simplify your tool
+> > schemas or reduce the number of strict tools."**
+>
+> **The same schema is accepted on Haiku**, which is why nothing local had ever seen it (`CLAUDE.md`
+> §3.4a: the build tier is Haiku). A structured-output schema is not portable across models.
+>
+> **The fix was a variable, not a push:** `AI_SCAN_STRUCTURED = false` on Vercel Production, then
+> **Read it again** in the drawer. That is `RELEASE.md`'s "a switch or model: rollback is one value,
+> no push", and it is the first time that path has been used in anger.
+>
+> The schema has since been made small enough for Opus to accept — `DECISIONS.md` §136 has the
+> measurements — but **it is still off on production**, because making it fit and turning it on are
+> two different decisions and the bake-off owns the second.
+
+**Outcome, step by step:**
+
+| # | | Result |
+|---|---|---|
+| 1 | Upload `01-eap-chemical.pdf` | **Failed, then passed.** Refused with the schema on; read with it off |
+| 2 | Watch the row | **Pass** — Queued → Reading… → Needs work, changing while watched |
+| 3 | Open the drawer | **Pass.** Kind **program**, agency **Oregon OSHA**, summary in the serif, **eight gaps** — including **all three planted in golden case 01**: the reporting procedure, the critical-operations shutdown, and the named contact. Plus the five-year nudge, and **a note that the document names a company other than the one it is filed under**, which nobody had asked for and which is the single most useful line in the reading |
+| 4 | Confirm one fact | **Pass** |
+| 5 | To confirm count | **Pass** |
+| 6 | The ledger | **Pass.** One `document_scan` row, model **`claude-opus-5`**, **$0.517** |
+| 7 | The sweep ran | **Pass** |
+| 8 | The held documents | **Pass — but the number is 39, not 38.** The note's 38 came from a preflight count; the database says 39 `held` and 1 `read`. The database is the one to believe |
+| 9 | No email went out | **Pass** |
+| 10 | `NOTIFY_TEST_TO` absent | **Pass** — confirmed absent |
+
+**And one thing the logs said that turned out to be nothing.** Vercel's runtime logged **"Cannot load
+`@napi-rs/canvas`"** from pdfjs during the scan, which reads like text extraction had failed. It had
+not: production's scan row carries **4,003 characters of `extracted_text`, 15 quotes checked and 15
+verified.** The warning is pdfjs declining to build its optional *rendering* backend, and nothing here
+rasterises a page. No fix needed — recorded so the next person does not chase it. `DECISIONS.md` §136.
+
+**A failure that left no trace, and it is an open item.** `document_scans` on production holds exactly
+one row: the successful reading. The refused attempt wrote **no scan row at all**, though the route's
+catch exists to write one. Why is not established. What has changed since is that a refused model call
+now has its own sentence on the row and keeps the API's message for us (§136), so the next one is
+legible.
+
+---
+
+### The steps as they were written, before the push
+
+Ten minutes, in order. Stop at the first one that fails.
 
 1. **Upload one golden fixture** through the Documents page — `tests/golden/documents/fixtures/01-eap-chemical.pdf` is the one with known planted gaps. One file, so it is read in the page.
 2. **Watch the row.** It should go **Queued → Reading… → Needs work**, with the status changing while you look at it. If it sits on Queued, the scan route is not being reached; if it sits on Reading…, the scan is running or has been killed.
 3. **Open the drawer.** It should show the kind, the agency, the date that matters, a summary in the serif, and a list of gaps with citations. The footer should offer *Open the file*, *Read it again*, *Download* and *Delete this file*.
 4. **Confirm one fact.** In *Facts we found, please confirm*, press **Confirm** on one. The message should say either "Confirmed" or "Confirmed, and recorded against the question it answers."
 5. **Check the To confirm count.** The sidebar should carry a number, and it should be one lower than before step 4. Open the page: three at a time, with the ranking line printed.
-6. **Check the ledger.** `select task, model, input_tokens, output_tokens, searches, cost_usd from ai_calls order by created_at desc limit 3` — there should be exactly one new `document_scan` row, and **its model must equal whatever `AI_MODEL_JUDGEMENT` is set to on Vercel** (§3: two documents disagree about whether it is set at all). If that variable is absent the answer is `claude-sonnet-4-5` and the row should cost roughly $0.15 — 29k in, 3.5k out and about one search, measured. If the row says `claude-haiku-4-5` and you expected Sonnet, a build variable has leaked; if it says Sonnet and you expected Haiku, `CLAUDE.md` §3.4a is the document that is out of date.
+6. **Check the ledger.** `select task, model, input_tokens, output_tokens, searches, cost_usd from ai_calls order by created_at desc limit 3` — there should be exactly one new `document_scan` row, and **its model must be `claude-opus-5`**, which is what `AI_MODEL_DOCUMENT_SCAN` is set to on Vercel Production. Anything else means a variable is not what this note says it is: `claude-haiku-4-5` would be a build variable leaking, and `claude-sonnet-4-5` would mean the variable is absent and the code default is answering. **Measured on the day: $0.517.** *(Written before the push as "roughly $0.15 on Sonnet 4.5"; the real figure is 3.4× that, because the model is Opus and the estimate was for a model this release does not use.)*
 7. **Check the sweep ran.** Within five minutes: `select job, started_at, finished_at, ok, counts from job_runs where job = 'scan_documents' order by started_at desc limit 1`. There should be a row, `ok = true`, `finished_at` set, and `counts` showing zeros — it has nothing to do, because the 38 are held.
-8. **Check the 38 are still held.** `select status, count(*) from documents group by status` — 38 `held`, one `read` (the fixture), nothing `uploaded`.
+8. **Check the held documents are still held.** `select status, count(*) from documents group by status` — one `read` (the fixture), nothing `uploaded`, and the rest `held`. *(Written as "38 held". The database says **39**. The count in this note was taken at preflight and was wrong; the query is right, which is why the step is a query and not an assertion of a number.)*
 9. **Check no email went out.** `select id, notified_at from document_batches order by created_at desc limit 3` — the fixture's batch should be `done` with `notified_at` **null**, because one file is the live path.
 10. **Check `NOTIFY_TEST_TO` is absent** from the production environment. If it is set, every customer's batch email goes to that address.
 

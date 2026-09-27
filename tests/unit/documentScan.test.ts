@@ -6,7 +6,7 @@
  */
 import test, { describe } from 'node:test'
 import assert from 'node:assert/strict'
-import { verifyQuote, normaliseScan } from '../../lib/documentScan.ts'
+import { verifyQuote, normaliseScan, failedScan, refusedScan, apiFailureStatus } from '../../lib/documentScan.ts'
  import { extractJsonText } from '../../lib/ai.ts'
 
 describe('a quote is checked against the document', () => {
@@ -133,5 +133,127 @@ describe('same_as_gap_id — the one id the model is asked for, Run 6', () => {
     const scan = normaliseScan({ identity: { kind: 'program' }, gaps: [{ title: 'Something else' }] }, '')
     assert.equal(scan.gaps[0].same_as_gap_id, null)
     assert.equal(scan.gaps[0].title, 'Something else')
+  })
+})
+
+describe('a refused MODEL CALL is not a file we could not open — 26 September 2026', () => {
+  // The first production scan on claude-opus-5 was refused by the API for its schema's size, and
+  // the message the owner saw told them to re-export a PDF that read perfectly two minutes later.
+  // These pin the two halves of the fix: the failure is identified structurally, and the sentence
+  // makes no claim about the customer's file.
+
+  const refusal = Object.assign(new Error(
+    'The compiled grammar is too large, which would cause performance issues. '
+    + 'Simplify your tool schemas or reduce the number of strict tools.'), { status: 400 })
+
+  test('an API error is identified by its numeric status, never by its words', () => {
+    assert.equal(apiFailureStatus(refusal), 400)
+    assert.equal(apiFailureStatus(Object.assign(new Error('overloaded'), { status: 529 })), 529)
+  })
+
+  test('a plain Error is NOT an API failure — it is rethrown, not described', () => {
+    // A bug of our own reported to a customer as a refusal by Anthropic is a different lie from
+    // the one being removed, so the test that matters here is the negative.
+    assert.equal(apiFailureStatus(new Error('Cannot read properties of undefined')), null)
+    assert.equal(apiFailureStatus(new TypeError('x is not a function')), null)
+    assert.equal(apiFailureStatus('a string'), null)
+    assert.equal(apiFailureStatus(null), null)
+    assert.equal(apiFailureStatus(Object.assign(new Error('weird'), { status: '400' })), null)
+  })
+
+  const scan = refusedScan({
+    error: refusal, model: 'claude-opus-5', status: 400,
+    extractedText: 'EMERGENCY ACTION PLAN', startedAt: '2026-09-26T17:49:00.000Z',
+    structured: true, promptSha: 'abc123',
+  })
+
+  test('the reason blames the reading service and says nothing about the file', () => {
+    assert.match(scan.could_not_read.reason ?? '', /reading service refused our request/)
+    assert.match(scan.could_not_read.reason ?? '', /not a problem with the file you sent/)
+    // The wording this replaces, and the advice that came with it.
+    assert.doesNotMatch(scan.could_not_read.reason ?? '', /did not arrive/)
+    assert.doesNotMatch(scan.could_not_read.way_forward ?? '', /photo|export/i)
+  })
+
+  test('the way forward is to ask again, once WE have fixed it', () => {
+    assert.match(scan.could_not_read.way_forward ?? '', /Read it again/)
+  })
+
+  test("the API's own message is kept on the scan, for us", () => {
+    assert.match(scan.raw_text, /^API 400: /)
+    assert.match(scan.raw_text, /compiled grammar is too large/)
+  })
+
+  test('nothing is asserted about the document: no gaps, no facts, no status but could_not_read', () => {
+    assert.equal(scan.status, 'could_not_read')
+    assert.equal(scan.json_parsed, false)
+    assert.deepEqual(scan.gaps, [])
+    assert.deepEqual(scan.facts, [])
+    assert.deepEqual(scan.deadlines, [])
+    assert.equal(scan.summary, null)
+    assert.equal(scan.identity.kind, null)
+    assert.equal(scan.quotes_checked, 0)
+  })
+
+  test('the model that was called is recorded — failedScan cannot say one was', () => {
+    // The distinction is the point: this call HAPPENED and was refused, so the ledger and the row
+    // agree on which model refused. A file that never reached a model says "(not called)".
+    assert.equal(scan.model, 'claude-opus-5')
+    assert.equal(failedScan('no file', 'upload it again').model, '(not called)')
+    assert.equal(failedScan('no file', 'upload it again').raw_text, '')
+  })
+})
+
+describe('version_of and could_not_read are FLAT now, and the nested form still reads — 26 Sep 2026', () => {
+  // Opus 5 refused the whole schema for its compiled grammar's size; these two two-field objects
+  // were the two shapes it was over by, and the database was flat all along. The fallback is what
+  // keeps nine stored scans and every recorded golden run readable, so it is tested, not assumed.
+
+  test('the flat keys the schema now asks for are read', () => {
+    const scan = normaliseScan({
+      identity: { kind: 'permit' },
+      version_of_title: 'ACDP 12-3456 (2024)',
+      version_of_confidence: 'high',
+      could_not_read_reason: 'the last two pages are a photograph of a photograph',
+      could_not_read_way_forward: 'a straight-on scan of pages 3 and 4',
+    }, '')
+    assert.equal(scan.version_of.title, 'ACDP 12-3456 (2024)')
+    assert.equal(scan.version_of.confidence, 'high')
+    assert.equal(scan.could_not_read.reason, 'the last two pages are a photograph of a photograph')
+    assert.equal(scan.could_not_read.way_forward, 'a straight-on scan of pages 3 and 4')
+  })
+
+  test('THE OLD NESTED FORM STILL READS — every answer already stored depends on it', () => {
+    const scan = normaliseScan({
+      identity: { kind: 'permit' },
+      version_of: { title: 'ACDP 12-3456 (2024)', confidence: 'medium' },
+      could_not_read: { reason: 'it is a scan of a fax', way_forward: 'the original PDF' },
+    }, '')
+    assert.equal(scan.version_of.title, 'ACDP 12-3456 (2024)')
+    assert.equal(scan.version_of.confidence, 'medium')
+    assert.equal(scan.could_not_read.reason, 'it is a scan of a fax')
+    assert.equal(scan.could_not_read.way_forward, 'the original PDF')
+  })
+
+  test('flat WINS over nested when a model answers both', () => {
+    // The prompt asks for flat, so flat is the model following instructions and nested is habit.
+    const scan = normaliseScan({
+      identity: { kind: 'permit' },
+      version_of_title: 'the flat answer',
+      version_of: { title: 'the nested answer', confidence: 'low' },
+      could_not_read_reason: 'the flat reason',
+      could_not_read: { reason: 'the nested reason', way_forward: 'nested way' },
+    }, '')
+    assert.equal(scan.version_of.title, 'the flat answer')
+    assert.equal(scan.could_not_read.reason, 'the flat reason')
+    // …and a field answered only in the nested object is still picked up rather than dropped.
+    assert.equal(scan.version_of.confidence, 'low')
+    assert.equal(scan.could_not_read.way_forward, 'nested way')
+  })
+
+  test('neither form present is null, not the empty string', () => {
+    const scan = normaliseScan({ identity: { kind: 'permit' } }, '')
+    assert.equal(scan.version_of.title, null)
+    assert.equal(scan.could_not_read.reason, null)
   })
 })

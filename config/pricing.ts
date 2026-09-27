@@ -35,8 +35,28 @@ export interface ModelPrice {
   outputPerM: number
 }
 
-/** Per-search cost for the server-side `web_search` tool, in US dollars. */
+/**
+ * Per-search cost for the server-side `web_search` tool, in US dollars.
+ *
+ * **$10 per 1,000 searches, and it is NOT per model** — the same figure for Opus, Sonnet and Haiku,
+ * which is why it sits here rather than in `ModelPrice`. Confirmed 26 September 2026 against
+ * `PRICE_SOURCE_URL` below: *"Web search is available on the Claude API for $10 per 1,000 searches,
+ * plus standard token costs for search-generated content."* A search the API refuses is not billed,
+ * which is why `lib/ai.ts` counts `usage.server_tool_use.web_search_requests` and not result blocks.
+ */
 export const PRICE_PER_SEARCH = 0.01
+
+/**
+ * Where the numbers in this file come from. Kept next to them so a re-check is a click, not a search.
+ *
+ * The page carries more than this table does — 5-minute and 1-hour cache writes, cache reads, the
+ * Batch API's 50%, fast mode. **None of those are priced here, because `ai_calls` does not record
+ * the tokens they would apply to**: migration 038 stores input, output and searches, so a cache read
+ * arrives as an ordinary input token and is costed as one. That is an overestimate, never an
+ * underestimate, and it is the direction to be wrong in — but it is a known limit of this table and
+ * not a rounding error.
+ */
+export const PRICE_SOURCE_URL = 'https://platform.claude.com/docs/en/about-claude/pricing'
 
 /**
  * Keys are the exact model ids sent to the API — the same strings `lib/ai.ts` resolves. An id
@@ -46,6 +66,14 @@ export const PRICE_PER_SEARCH = 0.01
  */
 export const MODEL_PRICES: Record<string, ModelPrice> = {
   'claude-opus-5':             { inputPerM: 5, outputPerM: 25 },
+  // OPUS 5.5 — $4/$20, re-checked against PRICE_SOURCE_URL on 26 September 2026, which lists it as
+  // "Claude Opus 5.5 … $4 / MTok … $20 / MTok" and gives the API id `claude-opus-5-5` on the models
+  // overview page. It was already in this table at these figures from the owner's 23 September pass
+  // and **nothing moved**, so there is no PRICE_CORRECTIONS entry: a row that was right stays right,
+  // and inventing a correction would say a past total had been wrong when it had not.
+  // It is CHEAPER than Opus 5 — $4/$20 against $5/$25 — so a future move of the judgement tier to it
+  // lowers the ledger rather than raising it. (Its cache reads are 0.05x rather than 0.1x, which this
+  // table cannot express; see PRICE_SOURCE_URL's note above.)
   'claude-opus-5-5':           { inputPerM: 4, outputPerM: 20 },
   'claude-sonnet-5':           { inputPerM: 2, outputPerM: 10 },
   'claude-sonnet-4-5':         { inputPerM: 3, outputPerM: 15 },
@@ -57,10 +85,17 @@ export const MODEL_PRICES: Record<string, ModelPrice> = {
 }
 
 /**
- * The day the table above was last checked against the published price list, by a person.
+ * The day the table above was last checked against the published price list, **by a person**.
  *
  * `npm run cost` prints it, so a report always says how old its prices are rather than leaving
  * the reader to assume they are current.
+ *
+ * *** IT DID NOT MOVE ON 26 SEPTEMBER, AND THAT IS DELIBERATE. *** Claude Code re-checked the Opus
+ * 5.5 and web-search figures against `PRICE_SOURCE_URL` that day and found them unchanged — the
+ * comments on those two entries record it, with the sentences the page actually carries. Advancing
+ * this date would claim the OWNER had checked the WHOLE table that day, which is what the date
+ * means and is not what happened. An agent re-reading one row is not the same event as a person
+ * verifying the table, and the file's own header says which of the two this constant is for.
  */
 export const PRICES_VERIFIED_ON = '2026-09-23'
 

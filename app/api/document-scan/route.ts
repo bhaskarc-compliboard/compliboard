@@ -125,14 +125,22 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     // THE LAST RESORT, AND IT IS STILL NOT A 500.
     //
-    // Something broke at our end — the model call threw, a write was refused. The document is
+    // Something broke at our end — a write was refused, a context query failed. The document is
     // left saying could_not_read with a reason a person can read, because the alternative is a
     // row stuck on `reading` forever and a page that spins. The technical detail goes to the
     // log, not to the customer (§5, two messages, two audiences).
+    //
+    // *** IT NO LONGER SAYS ANYTHING ABOUT THE FILE, BECAUSE IT DOES NOT KNOW ANYTHING ABOUT IT. ***
+    // This sentence used to read "it did not arrive as something we can open" and suggest
+    // re-exporting the PDF. That is the wording for a file we genuinely could not parse, and
+    // `parseDocumentToBlocks` already says that, in its own words, inside `runDocumentScan`. Every
+    // OTHER failure landed here and wore it — including the API refusing our request on
+    // 26 September for a PDF that read perfectly two minutes later, which told the owner to go and
+    // fix a file that was never wrong. A model-call failure is now named by `refusedScan`; what is
+    // left here is genuinely unidentified, and says so. `DECISIONS.md` §136, `CLAUDE.md` §5.1.
     console.error('document-scan:', error)
-    const reason = "We couldn't read this file — it did not arrive as something we can open. "
-      + 'That is our end of it, not a problem with what you sent.'
-    const wayForward = 'A PDF exported from the original, or a straight-on photo in good light, would do it.'
+    const reason = 'Something went wrong at our end while reading this file, and we do not yet know what.'
+    const wayForward = 'Press Read it again — this is usually temporary. Nothing about your file needs changing.'
     // Same as above: the row carries the reason, not just this response.
     let scanId: string | null = null
     try {
