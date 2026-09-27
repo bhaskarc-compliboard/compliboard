@@ -1,0 +1,331 @@
+{
+  "case": "03-olcc-cannabis",
+  "run": 1,
+  "run_date": "2026-09-27",
+  "model": "claude-opus-5-5",
+  "structured": false,
+  "searches": 1,
+  "cited_sources": 0,
+  "prompt_sha256": "dd437d41190b374cb6ef5bd37da0ebfe2a33ed9fc9c266fa1f55cd9d52cb1e4e",
+  "scan_id": "d034d214-7be7-4a98-95ad-1665ba565190",
+  "ai_call_id": "889539c3-1368-44e3-a2eb-bbcc4ad8cc74",
+  "wall_ms": 49946,
+  "cost_usd": 0.211336,
+  "input_tokens": 22999,
+  "output_tokens": 5467,
+  "json_parsed": true,
+  "compliant_found_in": [],
+  "alternative_pass": false,
+  "verdicts": {
+    "kind": {
+      "verdict": "PASS",
+      "detail": "identity.kind = \"permit\""
+    },
+    "issuer-olcc": {
+      "verdict": "PASS",
+      "detail": "identity.issuer = \"oregon liquor and cannabis commission\""
+    },
+    "agency-olcc": {
+      "verdict": "PASS",
+      "detail": "identity.agencies = [oregon liquor and cannabis commission (olcc)]"
+    },
+    "site-bailey-hill": {
+      "verdict": "PASS",
+      "detail": "identity.site = \"bailey hill\""
+    },
+    "doc-date": {
+      "verdict": "PASS",
+      "detail": "identity.doc_date = 2026-03-03"
+    },
+    "expiry": {
+      "verdict": "PASS",
+      "detail": "2027-03-02 in deadlines: \"License expires\""
+    },
+    "jurisdiction-oregon": {
+      "verdict": "PASS",
+      "detail": "identity.jurisdiction = [oregon]"
+    },
+    "status": {
+      "verdict": "PASS",
+      "detail": "status = current (156 days to 2027-03-02 -> current)"
+    },
+    "no-gaps": {
+      "verdict": "PASS",
+      "detail": "none"
+    },
+    "deadline-renewal": {
+      "verdict": "PASS",
+      "detail": "deadlines: \"OLCC must receive the renewal application and renewal fee\" [renewal, application, 20 days]"
+    },
+    "deadline-expiry": {
+      "verdict": "PASS",
+      "detail": "deadlines: \"License expires\" [expir, license]"
+    },
+    "condition-1": {
+      "verdict": "PASS",
+      "detail": "conditions: \"The license covers only 2210 Bailey Hill Road and only Evergreen Botan\" [premises, transfer, location]"
+    },
+    "condition-3": {
+      "verdict": "PASS",
+      "detail": "conditions: \"Track every marijuana item at the premises in the Cannabis Tracking Sy\" [cannabis tracking system, cts, track]"
+    },
+    "condition-4": {
+      "verdict": "PASS",
+      "detail": "conditions: \"Keep video surveillance at the premises that meets OAR 845-025-1450, a\" [video, surveillance, 90 day, recording]"
+    },
+    "condition-5": {
+      "verdict": "PASS",
+      "detail": "conditions: \"Report any change in ownership, in the premises, or in the people with\" [ownership, premises, change, report, financial interest, before]"
+    },
+    "fact-canopy": {
+      "verdict": "PASS",
+      "detail": "facts: \"canopy_limit_sq_ft\" [10,000, square feet, canopy]"
+    },
+    "fact-tier-ii": {
+      "verdict": "PASS",
+      "detail": "facts: \"cannabis_license_type\" [tier ii, indoor, producer]"
+    },
+    "label-consistency": {
+      "verdict": "CROSS",
+      "detail": "judged across the three runs, below"
+    },
+    "title-producer-license": {
+      "verdict": "PASS",
+      "detail": "[producer, license]"
+    },
+    "inferred-employees": {
+      "verdict": "PASS",
+      "detail": "facts: \"has_employees_handling_cannabis\" [employee, handle, marijuana]"
+    },
+    "expected-missing": {
+      "verdict": "PASS",
+      "detail": "expected_missing: \"Marijuana worker permits for each employee, with a roster\" [worker permit]"
+    }
+  },
+  "scan": {
+    "identity": {
+      "kind": "permit",
+      "title": "OLCC Recreational Marijuana Producer License (Tier II, Indoor) — Bailey Hill, License No. 020-1004763A8B2",
+      "issuer": "Oregon Liquor and Cannabis Commission",
+      "agencies": [
+        "Oregon Liquor and Cannabis Commission (OLCC)"
+      ],
+      "subjects": [
+        "Cannabis licensing",
+        "Cannabis tracking (CTS)",
+        "Security and video surveillance",
+        "Marijuana worker permits"
+      ],
+      "site": "Bailey Hill",
+      "jurisdiction": [
+        "Oregon"
+      ],
+      "doc_date": "2026-03-03",
+      "doc_date_kind": "issued",
+      "page_refs": {
+        "doc_date": "page 1 (footer: 'Date of issue for the current term: March 3, 2026')",
+        "issuer": "page 1 (header and footer: 'Issued by the Oregon Liquor and Cannabis Commission')",
+        "site": "page 1 ('Licensed premises: 2210 Bailey Hill Road, Eugene, Oregon 97405')",
+        "jurisdiction": "page 1 ('issued under ORS 475C and the rules of the Commission in OAR chapter 845, division 25')",
+        "expiry": "page 1 ('Expiration date: March 2, 2027')"
+      }
+    },
+    "summary": "This is Evergreen Botanicals' state license to grow recreational marijuana indoors at 2210 Bailey Hill Road, with up to 10,000 sq ft of mature plant canopy. The current one-year term runs March 3, 2026 to March 2, 2027. The license is the OLCC's own document, so there is nothing in it for you to fix. What matters is getting the renewal application and fee to the OLCC by February 10, 2027, and meeting the five conditions printed on it: tracking every item in CTS, making sure everyone who handles product holds a worker permit, keeping 90 days of video, reporting changes before they happen, and displaying the license where the public can see it.",
+    "status": "current",
+    "significant_date": "2026-03-03",
+    "significant_date_kind": "issued",
+    "freshness_note": "This is the current term, issued March 3, 2026. You don't need a newer copy until the next renewal is approved, which should be around March 3, 2027. The Authorized signature line on this copy is blank. It may just be a printed or electronic copy, but it's worth checking that the posted original is the signed one, or matches what the OLCC licensing portal shows.",
+    "gaps": [],
+    "conditions": [
+      {
+        "title": "The license covers only 2210 Bailey Hill Road and only Evergreen Botanicals, LLC. It cannot be transferred to another location or person.",
+        "condition_ref": "1",
+        "evidence_expected": "Proof that all production happens at the licensed address: a premises diagram on file with the OLCC that matches the actual layout, and no growing at any other site under this license."
+      },
+      {
+        "title": "Renew every year. The OLCC must receive the renewal application and fee at least 20 days before expiration (by February 10, 2027 for this term).",
+        "condition_ref": "2",
+        "evidence_expected": "The submitted renewal application and fee receipt, dated no later than February 10, 2027, plus the OLCC's confirmation that the application is complete."
+      },
+      {
+        "title": "Track every marijuana item at the premises in the Cannabis Tracking System (CTS).",
+        "condition_ref": "3",
+        "evidence_expected": "CTS records (plant tags, harvest lots, transfers, waste) that match physical inventory, and internal reconciliation records."
+      },
+      {
+        "title": "Every employee who handles marijuana items must hold a current OLCC marijuana worker permit.",
+        "condition_ref": "3",
+        "evidence_expected": "A staff roster with each person's worker permit number and expiration date, and copies of the permits. Worker permits are renewed every five years under OAR 845-025-5580."
+      },
+      {
+        "title": "Keep video surveillance at the premises that meets OAR 845-025-1450, and keep recordings for at least 90 days.",
+        "condition_ref": "4",
+        "evidence_expected": "Camera coverage map, recorder settings showing at least 90 days of storage, periodic checks that footage is retained, and system maintenance and outage logs."
+      },
+      {
+        "title": "Report any change in ownership, in the premises, or in the people with a financial interest to the OLCC before it takes effect.",
+        "condition_ref": "5",
+        "evidence_expected": "Copies of change notices and OLCC approvals, each dated before the change. A current ownership and financial-interest list that matches OLCC records."
+      },
+      {
+        "title": "Display the license at the premises where the public can see it.",
+        "condition_ref": null,
+        "evidence_expected": "The current-term license posted at the Bailey Hill premises. A dated photo of it posted is useful to keep."
+      }
+    ],
+    "deadlines": [
+      {
+        "title": "OLCC must receive the renewal application and renewal fee",
+        "due_on": "2027-02-10",
+        "source_line": "A renewal application and the renewal fee must be received by the Commission no later than 20 days before the expiration date.",
+        "recurs": true
+      },
+      {
+        "title": "License expires",
+        "due_on": "2027-03-02",
+        "source_line": "Expiration date: March 2, 2027",
+        "recurs": true
+      },
+      {
+        "title": "Keep surveillance recordings for at least 90 days (ongoing, rolling)",
+        "due_on": null,
+        "source_line": "Video surveillance meeting OAR 845-025-1450 must be maintained at the premises and recordings kept for at least 90 days.",
+        "recurs": true
+      }
+    ],
+    "facts": [
+      {
+        "key": "olcc_license_number",
+        "value": "020-1004763A8B2",
+        "quote": "License number: 020-1004763A8B2",
+        "locator": "page 1, license details box",
+        "as_of": "2026-03-03",
+        "affects": "Identifies the license in CTS, on renewals, on change notices and in dealings with the OLCC.",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "licensed_premises_address",
+        "value": "2210 Bailey Hill Road, Eugene, Oregon 97405",
+        "quote": "Licensed premises: 2210 Bailey Hill Road, Eugene, Oregon 97405",
+        "locator": "page 1, license details box",
+        "as_of": "2026-03-03",
+        "affects": "Production is allowed only here. Moving or expanding the premises needs OLCC approval first.",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "cannabis_license_type",
+        "value": "Recreational marijuana producer, Tier II, indoor",
+        "quote": "License type: Producer — Tier II, Indoor",
+        "locator": "page 1, license details box",
+        "as_of": "2026-03-03",
+        "affects": "Sets the fee tier, the canopy size limit and the indoor-grow rules (for example lighting and energy) that apply.",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "canopy_limit_sq_ft",
+        "value": "10,000 sq ft mature plant canopy",
+        "quote": "Canopy limit: 10,000 square feet mature plant canopy",
+        "locator": "page 1, license details box",
+        "as_of": "2026-03-03",
+        "affects": "Mature canopy above 10,000 sq ft would break the license. It also sets the scale of production size limits.",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "olcc_original_license_date",
+        "value": "2022-03-03",
+        "quote": "Original issue date: March 3, 2022",
+        "locator": "page 1, license details box",
+        "as_of": "2026-03-03",
+        "affects": "Shows the license has been renewed every year since 2022. A lapse would mean reapplying rather than renewing.",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "licensee_legal_name",
+        "value": "Evergreen Botanicals, LLC",
+        "quote": "Licensee: Evergreen Botanicals, LLC",
+        "locator": "page 1, license details box",
+        "as_of": "2026-03-03",
+        "affects": "The legal entity responsible for the license. Changes in its ownership or financial interests must be reported first (condition 5).",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "has_employees_handling_cannabis",
+        "value": "Likely yes. The license assumes employees who handle marijuana items.",
+        "quote": "every employee who handles marijuana items must hold a current marijuana worker permit issued by the Commission",
+        "locator": "page 1, condition 3",
+        "as_of": "2026-03-03",
+        "affects": "Brings in worker permit tracking and employer duties under Oregon OSHA, workers' comp and Paid Leave Oregon. The headcount is not stated.",
+        "basis": "inferred",
+        "quote_verified": true
+      }
+    ],
+    "version_of": {
+      "title": null,
+      "confidence": "high"
+    },
+    "expected_missing": [
+      {
+        "title": "Marijuana worker permits for each employee, with a roster",
+        "why": "Condition 3 requires them, and they are usually checked at OLCC inspections.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Security plan and video surveillance / alarm system records (OAR 845-025-1400 to 1470)",
+        "why": "Condition 4 points to the video rule, and producers usually keep a security plan, camera layout and alarm contract.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "OLCC-approved premises diagram",
+        "why": "Ties the license to the actual canopy and rooms, and is needed for any change to the premises.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Land Use Compatibility Statement (LUCS) from the City of Eugene or Lane County",
+        "why": "Producers usually hold local zoning sign-off from their original licensing.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Water source documentation (water right, or a utility or supplier letter)",
+        "why": "Oregon producers usually have to show a lawful water source when licensing and renewing.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Pesticide and agricultural chemical records, and Worker Protection Standard training records",
+        "why": "Cannabis growers in Oregon usually keep pesticide application logs, and WPS applies to agricultural workers.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Oregon OSHA written programs (hazard communication, and a safety committee if you have enough employees) plus workers' compensation coverage",
+        "why": "Standard employer obligations for an indoor grow with employees.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Proof of the most recent renewal submission (the 2026 renewal) and OLCC correspondence",
+        "why": "Shows renewal has been continuous since 2022 and gives you a template for the February 2027 filing.",
+        "basis": "similar companies, not a checked requirement"
+      }
+    ],
+    "confidence_notes": "High confidence on identity, dates, premises, tier, canopy and conditions. The page is clean and every item is read directly from page 1. The renewal date of 2027-02-10 is my own calculation: 20 days before March 2, 2027, where February 2027 has 28 days. Three things I'm less sure of. (1) The current wording of OAR 845-025-1190 appears to let a licensee who files on or before the expiration date keep operating, while OAR 845-025-1070 charges late-renewal fees if the OLCC receives the application less than 20 days before expiration. The license itself says 20 days, so treat February 10 as your real deadline. I did not confirm whether filing late also affects your right to keep operating under the current rule. (2) I did not check the current text of OAR 845-025-1450, so I am relying on the license's own statement of 90 days of video retention. (3) The Authorized signature line on this copy is blank, and I can't tell whether that is normal for an electronic copy. Permits have no gaps, so no gaps are listed.",
+    "could_not_read": {
+      "reason": null,
+      "way_forward": null
+    },
+    "raw_text": "{\n  \"identity\": {\n    \"kind\": \"permit\",\n    \"title\": \"OLCC Recreational Marijuana Producer License (Tier II, Indoor) — Bailey Hill, License No. 020-1004763A8B2\",\n    \"issuer\": \"Oregon Liquor and Cannabis Commission\",\n    \"agencies\": [\"Oregon Liquor and Cannabis Commission (OLCC)\"],\n    \"subjects\": [\"Cannabis licensing\", \"Cannabis tracking (CTS)\", \"Security and video surveillance\", \"Marijuana worker permits\"],\n    \"site\": \"Bailey Hill\",\n    \"jurisdiction\": [\"Oregon\"],\n    \"doc_date\": \"2026-03-03\",\n    \"doc_date_kind\": \"issued\",\n    \"page_refs\": {\n      \"doc_date\": \"page 1 (footer: 'Date of issue for the current term: March 3, 2026')\",\n      \"issuer\": \"page 1 (header and footer: 'Issued by the Oregon Liquor and Cannabis Commission')\",\n      \"site\": \"page 1 ('Licensed premises: 2210 Bailey Hill Road, Eugene, Oregon 97405')\",\n      \"jurisdiction\": \"page 1 ('issued under ORS 475C and the rules of the Commission in OAR chapter 845, division 25')\",\n      \"expiry\": \"page 1 ('Expiration date: March 2, 2027')\"\n    }\n  },\n  \"summary\": \"This is Evergreen Botanicals' state license to grow recreational marijuana indoors at 2210 Bailey Hill Road, with up to 10,000 sq ft of mature plant canopy. The current one-year term runs March 3, 2026 to March 2, 2027. The license is the OLCC's own document, so there is nothing in it for you to fix. What matters is getting the renewal application and fee to the OLCC by February 10, 2027, and meeting the five conditions printed on it: tracking every item in CTS, making sure everyone who handles product holds a worker permit, keeping 90 days of video, reporting changes before they happen, and displaying the license where the public can see it.\",\n  \"status\": \"current\",\n  \"significant_date\": \"2027-03-02\",\n  \"significant_date_kind\": \"expiry\",\n  \"freshness_note\": \"This is the current term, issued March 3, 2026. You don't need a newer copy until the next renewal is approved, which should be around March 3, 2027. The Authorized signature line on this copy is blank. It may just be a printed or electronic copy, but it's worth checking that the posted original is the signed one, or matches what the OLCC licensing portal shows.\",\n  \"gaps\": [],\n  \"conditions\": [\n    {\n      \"title\": \"The license covers only 2210 Bailey Hill Road and only Evergreen Botanicals, LLC. It cannot be transferred to another location or person.\",\n      \"condition_ref\": \"1\",\n      \"evidence_expected\": \"Proof that all production happens at the licensed address: a premises diagram on file with the OLCC that matches the actual layout, and no growing at any other site under this license.\"\n    },\n    {\n      \"title\": \"Renew every year. The OLCC must receive the renewal application and fee at least 20 days before expiration (by February 10, 2027 for this term).\",\n      \"condition_ref\": \"2\",\n      \"evidence_expected\": \"The submitted renewal application and fee receipt, dated no later than February 10, 2027, plus the OLCC's confirmation that the application is complete.\"\n    },\n    {\n      \"title\": \"Track every marijuana item at the premises in the Cannabis Tracking System (CTS).\",\n      \"condition_ref\": \"3\",\n      \"evidence_expected\": \"CTS records (plant tags, harvest lots, transfers, waste) that match physical inventory, and internal reconciliation records.\"\n    },\n    {\n      \"title\": \"Every employee who handles marijuana items must hold a current OLCC marijuana worker permit.\",\n      \"condition_ref\": \"3\",\n      \"evidence_expected\": \"A staff roster with each person's worker permit number and expiration date, and copies of the permits. Worker permits are renewed every five years under OAR 845-025-5580.\"\n    },\n    {\n      \"title\": \"Keep video surveillance at the premises that meets OAR 845-025-1450, and keep recordings for at least 90 days.\",\n      \"condition_ref\": \"4\",\n      \"evidence_expected\": \"Camera coverage map, recorder settings showing at least 90 days of storage, periodic checks that footage is retained, and system maintenance and outage logs.\"\n    },\n    {\n      \"title\": \"Report any change in ownership, in the premises, or in the people with a financial interest to the OLCC before it takes effect.\",\n      \"condition_ref\": \"5\",\n      \"evidence_expected\": \"Copies of change notices and OLCC approvals, each dated before the change. A current ownership and financial-interest list that matches OLCC records.\"\n    },\n    {\n      \"title\": \"Display the license at the premises where the public can see it.\",\n      \"condition_ref\": null,\n      \"evidence_expected\": \"The current-term license posted at the Bailey Hill premises. A dated photo of it posted is useful to keep.\"\n    }\n  ],\n  \"deadlines\": [\n    {\n      \"title\": \"OLCC must receive the renewal application and renewal fee\",\n      \"due_on\": \"2027-02-10\",\n      \"source_line\": \"A renewal application and the renewal fee must be received by the Commission no later than 20 days before the expiration date.\",\n      \"recurs\": true\n    },\n    {\n      \"title\": \"License expires\",\n      \"due_on\": \"2027-03-02\",\n      \"source_line\": \"Expiration date: March 2, 2027\",\n      \"recurs\": true\n    },\n    {\n      \"title\": \"Keep surveillance recordings for at least 90 days (ongoing, rolling)\",\n      \"due_on\": null,\n      \"source_line\": \"Video surveillance meeting OAR 845-025-1450 must be maintained at the premises and recordings kept for at least 90 days.\",\n      \"recurs\": true\n    }\n  ],\n  \"facts\": [\n    {\n      \"key\": \"olcc_license_number\",\n      \"value\": \"020-1004763A8B2\",\n      \"basis\": \"read\",\n      \"quote\": \"License number: 020-1004763A8B2\",\n      \"locator\": \"page 1, license details box\",\n      \"as_of\": \"2026-03-03\",\n      \"affects\": \"Identifies the license in CTS, on renewals, on change notices and in dealings with the OLCC.\"\n    },\n    {\n      \"key\": \"licensed_premises_address\",\n      \"value\": \"2210 Bailey Hill Road, Eugene, Oregon 97405\",\n      \"basis\": \"read\",\n      \"quote\": \"Licensed premises: 2210 Bailey Hill Road, Eugene, Oregon 97405\",\n      \"locator\": \"page 1, license details box\",\n      \"as_of\": \"2026-03-03\",\n      \"affects\": \"Production is allowed only here. Moving or expanding the premises needs OLCC approval first.\"\n    },\n    {\n      \"key\": \"cannabis_license_type\",\n      \"value\": \"Recreational marijuana producer, Tier II, indoor\",\n      \"basis\": \"read\",\n      \"quote\": \"License type: Producer — Tier II, Indoor\",\n      \"locator\": \"page 1, license details box\",\n      \"as_of\": \"2026-03-03\",\n      \"affects\": \"Sets the fee tier, the canopy size limit and the indoor-grow rules (for example lighting and energy) that apply.\"\n    },\n    {\n      \"key\": \"canopy_limit_sq_ft\",\n      \"value\": \"10,000 sq ft mature plant canopy\",\n      \"basis\": \"read\",\n      \"quote\": \"Canopy limit: 10,000 square feet mature plant canopy\",\n      \"locator\": \"page 1, license details box\",\n      \"as_of\": \"2026-03-03\",\n      \"affects\": \"Mature canopy above 10,000 sq ft would break the license. It also sets the scale of production size limits.\"\n    },\n    {\n      \"key\": \"olcc_original_license_date\",\n      \"value\": \"2022-03-03\",\n      \"basis\": \"read\",\n      \"quote\": \"Original issue date: March 3, 2022\",\n      \"locator\": \"page 1, license details box\",\n      \"as_of\": \"2026-03-03\",\n      \"affects\": \"Shows the license has been renewed every year since 2022. A lapse would mean reapplying rather than renewing.\"\n    },\n    {\n      \"key\": \"licensee_legal_name\",\n      \"value\": \"Evergreen Botanicals, LLC\",\n      \"basis\": \"read\",\n      \"quote\": \"Licensee: Evergreen Botanicals, LLC\",\n      \"locator\": \"page 1, license details box\",\n      \"as_of\": \"2026-03-03\",\n      \"affects\": \"The legal entity responsible for the license. Changes in its ownership or financial interests must be reported first (condition 5).\"\n    },\n    {\n      \"key\": \"has_employees_handling_cannabis\",\n      \"value\": \"Likely yes. The license assumes employees who handle marijuana items.\",\n      \"basis\": \"inferred\",\n      \"quote\": \"every employee who handles marijuana items must hold a current marijuana worker permit issued by the Commission\",\n      \"locator\": \"page 1, condition 3\",\n      \"as_of\": \"2026-03-03\",\n      \"affects\": \"Brings in worker permit tracking and employer duties under Oregon OSHA, workers' comp and Paid Leave Oregon. The headcount is not stated.\"\n    }\n  ],\n  \"version_of_title\": null,\n  \"version_of_confidence\": \"high\",\n  \"expected_missing\": [\n    {\n      \"title\": \"Marijuana worker permits for each employee, with a roster\",\n      \"why\": \"Condition 3 requires them, and they are usually checked at OLCC inspections.\",\n      \"basis\": \"similar companies, not a checked requirement\"\n    },\n    {\n      \"title\": \"Security plan and video surveillance / alarm system records (OAR 845-025-1400 to 1470)\",\n      \"why\": \"Condition 4 points to the video rule, and producers usually keep a security plan, camera layout and alarm contract.\",\n      \"basis\": \"similar companies, not a checked requirement\"\n    },\n    {\n      \"title\": \"OLCC-approved premises diagram\",\n      \"why\": \"Ties the license to the actual canopy and rooms, and is needed for any change to the premises.\",\n      \"basis\": \"similar companies, not a checked requirement\"\n    },\n    {\n      \"title\": \"Land Use Compatibility Statement (LUCS) from the City of Eugene or Lane County\",\n      \"why\": \"Producers usually hold local zoning sign-off from their original licensing.\",\n      \"basis\": \"similar companies, not a checked requirement\"\n    },\n    {\n      \"title\": \"Water source documentation (water right, or a utility or supplier letter)\",\n      \"why\": \"Oregon producers usually have to show a lawful water source when licensing and renewing.\",\n      \"basis\": \"similar companies, not a checked requirement\"\n    },\n    {\n      \"title\": \"Pesticide and agricultural chemical records, and Worker Protection Standard training records\",\n      \"why\": \"Cannabis growers in Oregon usually keep pesticide application logs, and WPS applies to agricultural workers.\",\n      \"basis\": \"similar companies, not a checked requirement\"\n    },\n    {\n      \"title\": \"Oregon OSHA written programs (hazard communication, and a safety committee if you have enough employees) plus workers' compensation coverage\",\n      \"why\": \"Standard employer obligations for an indoor grow with employees.\",\n      \"basis\": \"similar companies, not a checked requirement\"\n    },\n    {\n      \"title\": \"Proof of the most recent renewal submission (the 2026 renewal) and OLCC correspondence\",\n      \"why\": \"Shows renewal has been continuous since 2022 and gives you a template for the February 2027 filing.\",\n      \"basis\": \"similar companies, not a checked requirement\"\n    }\n  ],\n  \"confidence_notes\": \"High confidence on identity, dates, premises, tier, canopy and conditions. The page is clean and every item is read directly from page 1. The renewal date of 2027-02-10 is my own calculation: 20 days before March 2, 2027, where February 2027 has 28 days. Three things I'm less sure of. (1) The current wording of OAR 845-025-1190 appears to let a licensee who files on or before the expiration date keep operating, while OAR 845-025-1070 charges late-renewal fees if the OLCC receives the application less than 20 days before expiration. The license itself says 20 days, so treat February 10 as your real deadline. I did not confirm whether filing late also affects your right to keep operating under the current rule. (2) I did not check the current text of OAR 845-025-1450, so I am relying on the license's own statement of 90 days of video retention. (3) The Authorized signature line on this copy is blank, and I can't tell whether that is normal for an electronic copy. Permits have no gaps, so no gaps are listed.\",\n  \"could_not_read_reason\": null,\n  \"could_not_read_way_forward\": null\n}",
+    "json_parsed": true,
+    "model": "claude-opus-5-5",
+    "cited_sources": 0,
+    "searches": null,
+    "structured": false,
+    "prompt_sha256": "dd437d41190b374cb6ef5bd37da0ebfe2a33ed9fc9c266fa1f55cd9d52cb1e4e",
+    "quotes_checked": 7,
+    "quotes_verified": 7,
+    "extracted_text": "OREGON LIQUOR AND CANNABIS COMMISSION\n9079 SE McLoughlin Blvd, Portland, Oregon 97222\nRECREATIONAL MARIJUANA PRODUCER LICENSE\nLicense number: 020-1004763A8B2\nLicensee: Evergreen Botanicals, LLC\nTrade name: Evergreen Botanicals\nLicensed premises: 2210 Bailey Hill Road, Eugene, Oregon 97405\nLicense type: Producer — Tier II, Indoor\nCanopy limit: 10,000 square feet mature plant canopy\nOriginal issue date: March 3, 2022\nCurrent term: March 3, 2026 to March 2, 2027\nExpiration date: March 2, 2027\nThis license is issued under ORS 475C and the rules of the Commission in OAR chapter 845, division 25, and\nauthorizes the licensee to produce marijuana at the licensed premises named above, subject to those rules and to the\nconditions below.\nConditions of this license:\n1. The license is valid only for the premises named above and is not transferable to any other location or person.\n2. The license must be renewed annually. A renewal application and the renewal fee must be received by the\nCommission no later than 20 days before the expiration date. A licensee that has submitted a complete renewal\napplication before that date may continue to operate until the Commission acts on it.\n3. All marijuana items at the premises must be tracked in the Cannabis Tracking System, and every employee who\nhandles marijuana items must hold a current marijuana worker permit issued by the Commission.\n4. Video surveillance meeting OAR 845-025-1450 must be maintained at the premises and recordings kept for at\nleast 90 days.\n5. Any change in ownership, in the premises, or in the persons with a financial interest in the licensee must be\nreported to the Commission before it takes effect.\nThis license must be displayed at the licensed premises where it can be seen by the public.\nIssued by the Oregon Liquor and Cannabis Commission\nDate of issue for the current term: March 3, 2026\nAuthorized signature: ____________________ Licensing Director",
+    "started_at": "2026-09-27T17:09:49.171Z"
+  }
+}

@@ -282,6 +282,14 @@ p(`at least two of the spec's keywords for it — the citation is judged separat
 p(`it, because a gap found and miscited is a different result from a gap missed. \`n/3\` is how many of`)
 p(`the three runs found it.`)
 p()
+p(`> ### THE LAST COLUMN IS NOT A VERDICT ON THE MODEL.`)
+p(`>`)
+p(`> It says only whether the citation string **contains the rule number the spec names**. It reads`)
+p(`> **NO** for a citation that is arguably better than the answer key's: Oregon is a state-plan state,`)
+p(`> and \`OAR 437-002-0042(2)(c)\` is the rule that actually governs a Portland employer, where`)
+p(`> \`29 CFR 1910.38(c)(1)\` is the federal standard Oregon adopted. A model that cites the OAR alone`)
+p(`> is cited correctly and marked NO here. See "Where the spec looks wrong".`)
+p()
 for (const [id, { rule, ids }] of Object.entries(PLANTED)) {
   if (!caseOf[id]) continue
   const c = caseOf[id]
@@ -291,7 +299,7 @@ for (const [id, { rule, ids }] of Object.entries(PLANTED)) {
     const ch = c.must.find((x) => x.id === lid)
     p(`**\`${lid}\`** — ${md(ch.line)}`)
     p()
-    p(`| Configuration | Found | Citation the model gave | Right? |`)
+    p(`| Configuration | Found | Citation the model gave | Contains the spec's rule? |`)
     p(`|---|---|---|---|`)
     for (const [m, st, k] of present) {
       const rs = summary[k].byCase.get(id) ?? []
