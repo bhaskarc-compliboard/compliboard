@@ -1,0 +1,395 @@
+{
+  "case": "01-eap-chemical",
+  "run": 3,
+  "run_date": "2026-09-27",
+  "model": "claude-haiku-4-5",
+  "structured": false,
+  "searches": 0,
+  "cited_sources": 0,
+  "prompt_sha256": "a762b91aa1353d9fd2a2ed286bb13d5a24d144f210dabd98b02bb625eaf48d67",
+  "scan_id": "a8d8f1a6-a64c-4c8e-b007-ba0c393bb095",
+  "ai_call_id": "e4d92b6c-d5dd-48d8-b0e6-3550f83f8786",
+  "wall_ms": 42316,
+  "cost_usd": 0.035626000000000005,
+  "input_tokens": 13526,
+  "output_tokens": 4420,
+  "json_parsed": true,
+  "compliant_found_in": [],
+  "alternative_pass": false,
+  "verdicts": {
+    "kind": {
+      "verdict": "NEAR",
+      "detail": "identity.kind = \"policy\" — the spec names this a near miss, reported not failed"
+    },
+    "agency-osha": {
+      "verdict": "PASS",
+      "detail": "identity.agencies = [oregon osha]"
+    },
+    "site-portland": {
+      "verdict": "PASS",
+      "detail": "identity.site = \"portland\""
+    },
+    "doc-date": {
+      "verdict": "PASS",
+      "detail": "identity.doc_date = 2021-02-01"
+    },
+    "doc-date-kind": {
+      "verdict": "PASS",
+      "detail": "identity.doc_date_kind = \"revised\""
+    },
+    "jurisdiction-oregon": {
+      "verdict": "PASS",
+      "detail": "identity.jurisdiction = [oregon | federal]"
+    },
+    "status": {
+      "verdict": "PASS",
+      "detail": "status = \"gaps found\""
+    },
+    "gap-reporting": {
+      "verdict": "FAIL",
+      "detail": "no item matched. gaps held: Plan not current | No specification of incident coordinator ide | No procedure for accounting for contractors  | No documented evidence of floor warden and f | Evacuation map and floor warden roster not p | No documented evidence of evacuation drill r | No documented evidence of monthly fire alarm | No procedure for communication with off-site"
+    },
+    "gap-critical-operations": {
+      "verdict": "FAIL",
+      "detail": "no item matched. gaps held: Plan not current | No specification of incident coordinator ide | No procedure for accounting for contractors  | No documented evidence of floor warden and f | Evacuation map and floor warden roster not p | No documented evidence of evacuation drill r | No documented evidence of monthly fire alarm | No procedure for communication with off-site"
+    },
+    "gap-contact-name": {
+      "verdict": "FAIL",
+      "detail": "no item matched. gaps held: Plan not current | No specification of incident coordinator ide | No procedure for accounting for contractors  | No documented evidence of floor warden and f | Evacuation map and floor warden roster not p | No documented evidence of evacuation drill r | No documented evidence of monthly fire alarm | No procedure for communication with off-site"
+    },
+    "deadline-annual-review": {
+      "verdict": "PASS",
+      "detail": "deadlines: \"Annual review and update of the plan\" [annual, january, review, plan]"
+    },
+    "deadline-drills": {
+      "verdict": "PASS",
+      "detail": "deadlines: \"Evacuation drills\" [drill, twice, year, evacuation]"
+    },
+    "fact-42-employees": {
+      "verdict": "PASS",
+      "detail": "facts: \"employee_count\" [42, employees, portland]"
+    },
+    "label-consistency": {
+      "verdict": "CROSS",
+      "detail": "judged across the three runs, below"
+    },
+    "no-false-alarm-gap": {
+      "verdict": "PASS",
+      "detail": "not raised as such; 1 item(s) mention it — read below",
+      "soft": [
+        {
+          "where": "gaps",
+          "text": "No documented evidence of monthly fire alarm testing / The plan states the alarm is tested on the first Monday of each month but does not provide records of these tests, including whether each test was performed, what results were observed, or any problems identified and corrected. / Maintain a log or calendar record of monthly fire alarm testing showing the date, time, who performed the test, any discrepancies found, and any corrective actions taken. Retain records for at least three years. A simple checklist or log sheet is sufficient, showing the facility's compliance with the monthly testing requirement. / Oregon Fire Code (IFC Section 907.5); Oregon Administrative Rules 437-002-0131 / https://codes.iccsafe.org/content/IFC2021/chapter-9-fire-and-life-safety-features / section 2, line 'The alarm is tested on the first Monday of each month by the facilities lead' / read / The alarm is tested on the first Monday of each month by the facilities lead. / a0085a36-944b-4426-9513-326a67b3ab78"
+        }
+      ]
+    },
+    "no-false-evacuation-gap": {
+      "verdict": "PASS",
+      "detail": "not raised as such; 2 item(s) mention it — read below",
+      "soft": [
+        {
+          "where": "gaps",
+          "text": "Plan not current / The plan was last revised in February 2021 and has not been updated for over five years. The document is stale and does not reflect current building conditions, staffing, or procedures. / Conduct a full review of the plan in January 2026 (or as soon as possible) and revise it to reflect current conditions. Update the evacuation maps, floor warden roster, first-aid responder assignments, and any changes to facility layout or staffing. Document the revision date on the cover page. / Oregon Administrative Rules 437-002-0131; 29 CFR 1910.38(a) / https://www.oregon.gov/deq/aq/Pages/emergency-response.aspx / page 1 (revision date); section 6 (annual review requirement) / read / Revised February 2021 / 5b6af3cf-3451-43ef-a0b8-672f3be3f4f1"
+        },
+        {
+          "where": "gaps",
+          "text": "Evacuation map and floor warden roster not provided with this document / The plan references Appendix A (evacuation maps) and Appendix B (floor warden and first-aid responder roster) but these appendices are not included in the document provided. These are essential supporting documents. / Ensure that current evacuation maps for the warehouse, laboratory, and offices are posted at each exit door and in the document package. Ensure that the floor warden and first-aid responder roster showing current names and assignments is posted beside each evacuation map and retained with the plan. Both must be dated and updated whenever building layout or staff assignments change. / Oregon Administrative Rules 437-002-0131(3), (4) / https://www.oregon.gov/deq/aq/Pages/emergency-response.aspx / section 3, line 'Exit routes are posted on the evacuation maps at each exit door'; section 3, line 'Employees assigned as floor wardens (one per area, listed on the warden roster posted beside each evacuation map)'; section 6, references to Appendix A and Appendix B / read / Appendix A: Evacuation maps (warehouse, laboratory, offices); Appendix B: Floor warden and first-aid responder roster (posted beside each evacuation map) / 7a93cabd-d785-4446-b080-ee6e8de5607f"
+        }
+      ]
+    },
+    "no-false-headcount-gap": {
+      "verdict": "PASS",
+      "detail": "not raised",
+      "soft": []
+    },
+    "no-false-rescue-gap": {
+      "verdict": "PASS",
+      "detail": "not raised",
+      "soft": []
+    },
+    "freshness-five-years": {
+      "verdict": "PASS",
+      "detail": "[5 years, 2021]"
+    },
+    "fact-alarm-monitored": {
+      "verdict": "PASS",
+      "detail": "facts: \"fire_alarm_monitoring\" [cascade fire, monitored, alarm]"
+    },
+    "conditions-none-expected": {
+      "verdict": "PASS",
+      "detail": "none"
+    },
+    "alarm-test-deadline": {
+      "verdict": "PASS",
+      "detail": "deadlines: \"Monthly fire alarm test\" [alarm, monday, monthly, test]"
+    }
+  },
+  "scan": {
+    "identity": {
+      "kind": "policy",
+      "title": "Emergency Action Plan",
+      "issuer": null,
+      "agencies": [
+        "Oregon OSHA"
+      ],
+      "subjects": [
+        "chemical_safety",
+        "emergency_preparedness",
+        "evacuation"
+      ],
+      "site": "Portland",
+      "jurisdiction": [
+        "Oregon",
+        "federal"
+      ],
+      "doc_date": "2021-02-01",
+      "doc_date_kind": "revised",
+      "page_refs": {
+        "doc_date": "page 1",
+        "issuer": null
+      }
+    },
+    "summary": "This is Cascade Specialty Chemicals' Emergency Action Plan for their Portland facility, describing procedures for fires, chemical releases, medical emergencies, earthquakes, and other emergencies affecting all 42 employees and contractors. The plan covers alarm systems, evacuation routes and assembly points, accounting for personnel, rescue and medical duties, and annual training requirements. It is a required policy document under Oregon OSHA and federal OSHA rules (29 CFR 1910.38).",
+    "status": "gaps_found",
+    "significant_date": "2021-02-01",
+    "significant_date_kind": "revised",
+    "freshness_note": "This plan was last revised February 2021, now over 5 years old as of September 2026. Oregon Administrative Rules 437-002-0131 and 29 CFR 1910.38(a) require the plan to be reviewed annually and kept current. A new revision is overdue and should be prepared immediately.",
+    "gaps": [
+      {
+        "title": "Plan not current",
+        "description": "The plan was last revised in February 2021 and has not been updated for over five years. The document is stale and does not reflect current building conditions, staffing, or procedures.",
+        "fix": "Conduct a full review of the plan in January 2026 (or as soon as possible) and revise it to reflect current conditions. Update the evacuation maps, floor warden roster, first-aid responder assignments, and any changes to facility layout or staffing. Document the revision date on the cover page.",
+        "citation": "Oregon Administrative Rules 437-002-0131; 29 CFR 1910.38(a)",
+        "citation_url": "https://www.oregon.gov/deq/aq/Pages/emergency-response.aspx",
+        "locator": "page 1 (revision date); section 6 (annual review requirement)",
+        "draftable": true,
+        "basis": "read",
+        "quote": "Revised February 2021",
+        "quote_verified": true,
+        "same_as_gap_id": "5b6af3cf-3451-43ef-a0b8-672f3be3f4f1"
+      },
+      {
+        "title": "No specification of incident coordinator identity or current contact information",
+        "description": "The plan refers to 'the incident coordinator' in sections 4 and 5 but does not name who this person is, provide their contact information, or identify a backup. The identity and availability of this critical role is unknown.",
+        "fix": "Add a section identifying the incident coordinator by name and title, with phone number or other current contact information. Name a backup incident coordinator in case the primary is unavailable. Update this information whenever the assignment changes.",
+        "citation": "Oregon Administrative Rules 437-002-0131(3)",
+        "citation_url": "https://www.oregon.gov/deq/aq/Pages/emergency-response.aspx",
+        "locator": "section 4, line 'Any person unaccounted for is reported at once to the incident coordinator'; section 5",
+        "draftable": true,
+        "basis": "read",
+        "quote": "Any person unaccounted for is reported at once to the incident coordinator at the assembly point",
+        "quote_verified": true,
+        "same_as_gap_id": "2c05d280-6a74-476b-950d-69c55e3b261a"
+      },
+      {
+        "title": "No procedure for accounting for contractors and visitors",
+        "description": "The plan applies to contractors and visitors on site but does not describe how they sign in, how they are accounted for during evacuation, or how floor wardens know they are present.",
+        "fix": "Add a procedure requiring contractors and visitors to sign in with the receptionist, including name, time arrived, and area of facility. Specify that the receptionist brings the visitor log to the assembly point. Instruct floor wardens that they must account for any contractors or visitors in their area using the visitor log in addition to the daily sign-in sheet.",
+        "citation": "Oregon Administrative Rules 437-002-0131",
+        "citation_url": "https://www.oregon.gov/deq/aq/Pages/emergency-response.aspx",
+        "locator": "section 1 (scope mentions contractors and visitors); section 4 (accounting procedure uses only sign-in sheet and visitor log without explaining how visitor log is populated)",
+        "draftable": true,
+        "basis": "read",
+        "quote": "applies to all 42 employees at the Portland facility, including warehouse, drivers, laboratory and office staff, and to contractors and visitors while on site",
+        "quote_verified": true,
+        "same_as_gap_id": "6201e4ca-3cfc-4a19-bc1e-1140fb9f0c85"
+      },
+      {
+        "title": "No documented evidence of floor warden and first-aid responder training",
+        "description": "The plan states that floor wardens and first-aid responders are trained annually, but provides no documentation of who has received this training, when, or what the training covered.",
+        "fix": "Maintain records of floor warden and first-aid responder training, including dates trained, names of attendees, name and qualifications of trainer, topics covered, and sign-in sheets. Retain records for at least three years. Make these records available for inspection.",
+        "citation": "Oregon Administrative Rules 437-002-0131(6)",
+        "citation_url": "https://www.oregon.gov/deq/aq/Pages/emergency-response.aspx",
+        "locator": "section 6, line 'Floor wardens and first-aid responders are trained annually'",
+        "draftable": true,
+        "basis": "read",
+        "quote": "Floor wardens and first-aid responders are trained annually.",
+        "quote_verified": true,
+        "same_as_gap_id": "79d00ad4-506f-4876-89a5-156cdf846101"
+      },
+      {
+        "title": "Evacuation map and floor warden roster not provided with this document",
+        "description": "The plan references Appendix A (evacuation maps) and Appendix B (floor warden and first-aid responder roster) but these appendices are not included in the document provided. These are essential supporting documents.",
+        "fix": "Ensure that current evacuation maps for the warehouse, laboratory, and offices are posted at each exit door and in the document package. Ensure that the floor warden and first-aid responder roster showing current names and assignments is posted beside each evacuation map and retained with the plan. Both must be dated and updated whenever building layout or staff assignments change.",
+        "citation": "Oregon Administrative Rules 437-002-0131(3), (4)",
+        "citation_url": "https://www.oregon.gov/deq/aq/Pages/emergency-response.aspx",
+        "locator": "section 3, line 'Exit routes are posted on the evacuation maps at each exit door'; section 3, line 'Employees assigned as floor wardens (one per area, listed on the warden roster posted beside each evacuation map)'; section 6, references to Appendix A and Appendix B",
+        "draftable": false,
+        "basis": "read",
+        "quote": "Appendix A: Evacuation maps (warehouse, laboratory, offices); Appendix B: Floor warden and first-aid responder roster (posted beside each evacuation map)",
+        "quote_verified": true,
+        "same_as_gap_id": "7a93cabd-d785-4446-b080-ee6e8de5607f"
+      },
+      {
+        "title": "No documented evidence of evacuation drill records",
+        "description": "The plan states evacuation drills are held twice a year, but no records of these drills are provided. There is no documentation of when drills were held, how many people participated, any problems identified, or corrective actions taken.",
+        "fix": "Maintain records of each evacuation drill, including the date, time, whether announced or unannounced, number of participants, whether all personnel accounted for, time to evacuate, any problems encountered, and any corrective actions taken. Document that drills occur in spring and autumn as required. Retain records for at least three years.",
+        "citation": "Oregon Administrative Rules 437-002-0131(5)",
+        "citation_url": "https://www.oregon.gov/deq/aq/Pages/emergency-response.aspx",
+        "locator": "section 4, line 'Evacuation drills are held twice a year, in spring and autumn'",
+        "draftable": true,
+        "basis": "read",
+        "quote": "Evacuation drills are held twice a year, in spring and autumn.",
+        "quote_verified": true,
+        "same_as_gap_id": "91c9bcd8-79d6-47ca-8819-6f16377173fe"
+      },
+      {
+        "title": "No documented evidence of monthly fire alarm testing",
+        "description": "The plan states the alarm is tested on the first Monday of each month but does not provide records of these tests, including whether each test was performed, what results were observed, or any problems identified and corrected.",
+        "fix": "Maintain a log or calendar record of monthly fire alarm testing showing the date, time, who performed the test, any discrepancies found, and any corrective actions taken. Retain records for at least three years. A simple checklist or log sheet is sufficient, showing the facility's compliance with the monthly testing requirement.",
+        "citation": "Oregon Fire Code (IFC Section 907.5); Oregon Administrative Rules 437-002-0131",
+        "citation_url": "https://codes.iccsafe.org/content/IFC2021/chapter-9-fire-and-life-safety-features",
+        "locator": "section 2, line 'The alarm is tested on the first Monday of each month by the facilities lead'",
+        "draftable": true,
+        "basis": "read",
+        "quote": "The alarm is tested on the first Monday of each month by the facilities lead.",
+        "quote_verified": true,
+        "same_as_gap_id": "a0085a36-944b-4426-9513-326a67b3ab78"
+      },
+      {
+        "title": "No procedure for communication with off-site drivers",
+        "description": "The plan covers all 42 employees including drivers, but does not describe how drivers who are away from the facility will be notified of an emergency or evacuation order, or how they will be accounted for.",
+        "fix": "Add a procedure for how drivers will be notified of facility emergencies (radio, phone, dispatch system). Specify that drivers are not required to return to the facility unless instructed by the incident coordinator or emergency services. Specify how drivers will report their status and location. Include the phone number for off-site communication and the name of the person responsible for driver notification.",
+        "citation": "Oregon Administrative Rules 437-002-0131",
+        "citation_url": "https://www.oregon.gov/deq/aq/Pages/emergency-response.aspx",
+        "locator": "section 1, line 'all 42 employees at the Portland facility, including warehouse, drivers, laboratory and office staff'",
+        "draftable": true,
+        "basis": "read",
+        "quote": "all 42 employees at the Portland facility, including warehouse, drivers, laboratory and office staff",
+        "quote_verified": true,
+        "same_as_gap_id": "dd431f32-c1af-4219-b36c-cb89861c5c9c"
+      }
+    ],
+    "conditions": [],
+    "deadlines": [
+      {
+        "title": "Monthly fire alarm test",
+        "due_on": null,
+        "source_line": "The alarm is tested on the first Monday of each month by the facilities lead.",
+        "recurs": true
+      },
+      {
+        "title": "Annual review and update of the plan",
+        "due_on": null,
+        "source_line": "The facilities lead reviews the plan every January and updates the evacuation maps whenever the building layout changes.",
+        "recurs": true
+      },
+      {
+        "title": "Evacuation drills",
+        "due_on": null,
+        "source_line": "Evacuation drills are held twice a year, in spring and autumn.",
+        "recurs": true
+      },
+      {
+        "title": "Annual training for floor wardens and first-aid responders",
+        "due_on": null,
+        "source_line": "Floor wardens and first-aid responders are trained annually.",
+        "recurs": true
+      }
+    ],
+    "facts": [
+      {
+        "key": "employee_count",
+        "value": "42",
+        "quote": "all 42 employees at the Portland facility",
+        "locator": "section 1",
+        "as_of": "2021-02-01",
+        "affects": "Determines scope of plan and number of employees to account for during evacuation",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "facility_address",
+        "value": "4410 NW Front Avenue, Portland, Oregon 97210",
+        "quote": "Portland Facility, 4410 NW Front Avenue, Portland, Oregon 97210",
+        "locator": "page 1 (title page)",
+        "as_of": null,
+        "affects": "Identifies the facility covered by this plan",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "assembly_point_distance",
+        "value": "150 feet",
+        "quote": "The assembly point is the far north end of the visitor parking lot, beside the flagpole, at least 150 feet from the building.",
+        "locator": "section 3",
+        "as_of": "2021-02-01",
+        "affects": "Specifies minimum safe distance for employee assembly during evacuation",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "fire_alarm_monitoring",
+        "value": "24 hours a day by Cascade Fire & Safety under a service contract",
+        "quote": "The alarm is monitored 24 hours a day by Cascade Fire & Safety under a service contract.",
+        "locator": "section 2",
+        "as_of": "2021-02-01",
+        "affects": "Confirms alarm monitoring service and contact point for emergency dispatch",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "number_of_shifts",
+        "value": "At least 2 (inferred from 'two per shift' first-aid responder requirement)",
+        "quote": "two per shift, named on the warden roster",
+        "locator": "section 5",
+        "as_of": "2021-02-01",
+        "affects": "Indicates facility operates on multiple shifts; first-aid responders required for each shift",
+        "basis": "inferred",
+        "quote_verified": true
+      }
+    ],
+    "version_of": {
+      "title": null,
+      "confidence": "high"
+    },
+    "expected_missing": [
+      {
+        "title": "Training sign-in sheets and trainer qualifications",
+        "why": "Required to evidence compliance with mandatory training for floor wardens and first-aid responders",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Fire alarm test log or maintenance records",
+        "why": "Required to document monthly testing as stated in the plan and required by fire code",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Evacuation drill records and logs",
+        "why": "Required to document compliance with twice-yearly evacuation drills and identify any issues",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Chemical inventory and spill response procedures",
+        "why": "Needed because the facility handles chemicals and the plan mentions chemical release as an emergency scenario",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Incident coordinator contact information and backup assignment",
+        "why": "Critical to emergency response; person named must be identified and reachable",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Building floor plans and utility shut-off locations",
+        "why": "Needed to support evacuation maps and shelter-in-place procedures that reference mechanical room ventilation shutdown",
+        "basis": "similar companies, not a checked requirement"
+      }
+    ],
+    "confidence_notes": "High confidence in reading the document itself and identifying what is present and what is missing. The plan is clearly written and well-structured. High confidence in identifying gaps against Oregon Administrative Rules 437-002-0131 and 29 CFR 1910.38(a), which are stable requirements that have not changed. The most significant finding is that the plan is over five years out of date and does not meet the annual review requirement. Several gaps match exactly with open findings from an earlier review, confirming their validity. I am very sure the appendices (Appendix A and B) are not included in the document provided. I cannot verify whether those appendices actually exist at the facility or how current they are. The fact_key for number_of_shifts is inferred from the reference to 'two per shift' first-aid responders; the actual number of shifts is not explicitly stated. The fire alarm monitoring service provider (Cascade Fire & Safety) is named, but no phone number or contact details are given in the plan itself. I could not verify current Oregon Fire Code Section 907.5 requirements as my knowledge of specific code sections may be incomplete.",
+    "could_not_read": {
+      "reason": null,
+      "way_forward": null
+    },
+    "raw_text": "```json\n{\n  \"identity\": {\n    \"kind\": \"policy\",\n    \"title\": \"Emergency Action Plan\",\n    \"issuer\": null,\n    \"agencies\": [\n      \"Oregon OSHA\"\n    ],\n    \"subjects\": [\n      \"chemical_safety\",\n      \"emergency_preparedness\",\n      \"evacuation\"\n    ],\n    \"site\": \"Portland\",\n    \"jurisdiction\": [\n      \"Oregon\",\n      \"federal\"\n    ],\n    \"doc_date\": \"2021-02-01\",\n    \"doc_date_kind\": \"revised\",\n    \"page_refs\": {\n      \"doc_date\": \"page 1\",\n      \"issuer\": null\n    }\n  },\n  \"summary\": \"This is Cascade Specialty Chemicals' Emergency Action Plan for their Portland facility, describing procedures for fires, chemical releases, medical emergencies, earthquakes, and other emergencies affecting all 42 employees and contractors. The plan covers alarm systems, evacuation routes and assembly points, accounting for personnel, rescue and medical duties, and annual training requirements. It is a required policy document under Oregon OSHA and federal OSHA rules (29 CFR 1910.38).\",\n  \"status\": \"gaps_found\",\n  \"significant_date\": \"2021-02-01\",\n  \"significant_date_kind\": \"revised_on\",\n  \"freshness_note\": \"This plan was last revised February 2021, now over 5 years old as of September 2026. Oregon Administrative Rules 437-002-0131 and 29 CFR 1910.38(a) require the plan to be reviewed annually and kept current. A new revision is overdue and should be prepared immediately.\",\n  \"gaps\": [\n    {\n      \"title\": \"Plan not current\",\n      \"description\": \"The plan was last revised in February 2021 and has not been updated for over five years. The document is stale and does not reflect current building conditions, staffing, or procedures.\",\n      \"fix\": \"Conduct a full review of the plan in January 2026 (or as soon as possible) and revise it to reflect current conditions. Update the evacuation maps, floor warden roster, first-aid responder assignments, and any changes to facility layout or staffing. Document the revision date on the cover page.\",\n      \"citation\": \"Oregon Administrative Rules 437-002-0131; 29 CFR 1910.38(a)\",\n      \"citation_url\": \"https://www.oregon.gov/deq/aq/Pages/emergency-response.aspx\",\n      \"locator\": \"page 1 (revision date); section 6 (annual review requirement)\",\n      \"draftable\": true,\n      \"basis\": \"read\",\n      \"quote\": \"Revised February 2021\",\n      \"same_as_gap_id\": \"5b6af3cf-3451-43ef-a0b8-672f3be3f4f1\"\n    },\n    {\n      \"title\": \"No specification of incident coordinator identity or current contact information\",\n      \"description\": \"The plan refers to 'the incident coordinator' in sections 4 and 5 but does not name who this person is, provide their contact information, or identify a backup. The identity and availability of this critical role is unknown.\",\n      \"fix\": \"Add a section identifying the incident coordinator by name and title, with phone number or other current contact information. Name a backup incident coordinator in case the primary is unavailable. Update this information whenever the assignment changes.\",\n      \"citation\": \"Oregon Administrative Rules 437-002-0131(3)\",\n      \"citation_url\": \"https://www.oregon.gov/deq/aq/Pages/emergency-response.aspx\",\n      \"locator\": \"section 4, line 'Any person unaccounted for is reported at once to the incident coordinator'; section 5\",\n      \"draftable\": true,\n      \"basis\": \"read\",\n      \"quote\": \"Any person unaccounted for is reported at once to the incident coordinator at the assembly point\",\n      \"same_as_gap_id\": \"2c05d280-6a74-476b-950d-69c55e3b261a\"\n    },\n    {\n      \"title\": \"No procedure for accounting for contractors and visitors\",\n      \"description\": \"The plan applies to contractors and visitors on site but does not describe how they sign in, how they are accounted for during evacuation, or how floor wardens know they are present.\",\n      \"fix\": \"Add a procedure requiring contractors and visitors to sign in with the receptionist, including name, time arrived, and area of facility. Specify that the receptionist brings the visitor log to the assembly point. Instruct floor wardens that they must account for any contractors or visitors in their area using the visitor log in addition to the daily sign-in sheet.\",\n      \"citation\": \"Oregon Administrative Rules 437-002-0131\",\n      \"citation_url\": \"https://www.oregon.gov/deq/aq/Pages/emergency-response.aspx\",\n      \"locator\": \"section 1 (scope mentions contractors and visitors); section 4 (accounting procedure uses only sign-in sheet and visitor log without explaining how visitor log is populated)\",\n      \"draftable\": true,\n      \"basis\": \"read\",\n      \"quote\": \"applies to all 42 employees at the Portland facility, including warehouse, drivers, laboratory and office staff, and to contractors and visitors while on site\",\n      \"same_as_gap_id\": \"6201e4ca-3cfc-4a19-bc1e-1140fb9f0c85\"\n    },\n    {\n      \"title\": \"No documented evidence of floor warden and first-aid responder training\",\n      \"description\": \"The plan states that floor wardens and first-aid responders are trained annually, but provides no documentation of who has received this training, when, or what the training covered.\",\n      \"fix\": \"Maintain records of floor warden and first-aid responder training, including dates trained, names of attendees, name and qualifications of trainer, topics covered, and sign-in sheets. Retain records for at least three years. Make these records available for inspection.\",\n      \"citation\": \"Oregon Administrative Rules 437-002-0131(6)\",\n      \"citation_url\": \"https://www.oregon.gov/deq/aq/Pages/emergency-response.aspx\",\n      \"locator\": \"section 6, line 'Floor wardens and first-aid responders are trained annually'\",\n      \"draftable\": true,\n      \"basis\": \"read\",\n      \"quote\": \"Floor wardens and first-aid responders are trained annually.\",\n      \"same_as_gap_id\": \"79d00ad4-506f-4876-89a5-156cdf846101\"\n    },\n    {\n      \"title\": \"Evacuation map and floor warden roster not provided with this document\",\n      \"description\": \"The plan references Appendix A (evacuation maps) and Appendix B (floor warden and first-aid responder roster) but these appendices are not included in the document provided. These are essential supporting documents.\",\n      \"fix\": \"Ensure that current evacuation maps for the warehouse, laboratory, and offices are posted at each exit door and in the document package. Ensure that the floor warden and first-aid responder roster showing current names and assignments is posted beside each evacuation map and retained with the plan. Both must be dated and updated whenever building layout or staff assignments change.\",\n      \"citation\": \"Oregon Administrative Rules 437-002-0131(3), (4)\",\n      \"citation_url\": \"https://www.oregon.gov/deq/aq/Pages/emergency-response.aspx\",\n      \"locator\": \"section 3, line 'Exit routes are posted on the evacuation maps at each exit door'; section 3, line 'Employees assigned as floor wardens (one per area, listed on the warden roster posted beside each evacuation map)'; section 6, references to Appendix A and Appendix B\",\n      \"draftable\": false,\n      \"basis\": \"read\",\n      \"quote\": \"Appendix A: Evacuation maps (warehouse, laboratory, offices); Appendix B: Floor warden and first-aid responder roster (posted beside each evacuation map)\",\n      \"same_as_gap_id\": \"7a93cabd-d785-4446-b080-ee6e8de5607f\"\n    },\n    {\n      \"title\": \"No documented evidence of evacuation drill records\",\n      \"description\": \"The plan states evacuation drills are held twice a year, but no records of these drills are provided. There is no documentation of when drills were held, how many people participated, any problems identified, or corrective actions taken.\",\n      \"fix\": \"Maintain records of each evacuation drill, including the date, time, whether announced or unannounced, number of participants, whether all personnel accounted for, time to evacuate, any problems encountered, and any corrective actions taken. Document that drills occur in spring and autumn as required. Retain records for at least three years.\",\n      \"citation\": \"Oregon Administrative Rules 437-002-0131(5)\",\n      \"citation_url\": \"https://www.oregon.gov/deq/aq/Pages/emergency-response.aspx\",\n      \"locator\": \"section 4, line 'Evacuation drills are held twice a year, in spring and autumn'\",\n      \"draftable\": true,\n      \"basis\": \"read\",\n      \"quote\": \"Evacuation drills are held twice a year, in spring and autumn.\",\n      \"same_as_gap_id\": \"91c9bcd8-79d6-47ca-8819-6f16377173fe\"\n    },\n    {\n      \"title\": \"No documented evidence of monthly fire alarm testing\",\n      \"description\": \"The plan states the alarm is tested on the first Monday of each month but does not provide records of these tests, including whether each test was performed, what results were observed, or any problems identified and corrected.\",\n      \"fix\": \"Maintain a log or calendar record of monthly fire alarm testing showing the date, time, who performed the test, any discrepancies found, and any corrective actions taken. Retain records for at least three years. A simple checklist or log sheet is sufficient, showing the facility's compliance with the monthly testing requirement.\",\n      \"citation\": \"Oregon Fire Code (IFC Section 907.5); Oregon Administrative Rules 437-002-0131\",\n      \"citation_url\": \"https://codes.iccsafe.org/content/IFC2021/chapter-9-fire-and-life-safety-features\",\n      \"locator\": \"section 2, line 'The alarm is tested on the first Monday of each month by the facilities lead'\",\n      \"draftable\": true,\n      \"basis\": \"read\",\n      \"quote\": \"The alarm is tested on the first Monday of each month by the facilities lead.\",\n      \"same_as_gap_id\": \"a0085a36-944b-4426-9513-326a67b3ab78\"\n    },\n    {\n      \"title\": \"No procedure for communication with off-site drivers\",\n      \"description\": \"The plan covers all 42 employees including drivers, but does not describe how drivers who are away from the facility will be notified of an emergency or evacuation order, or how they will be accounted for.\",\n      \"fix\": \"Add a procedure for how drivers will be notified of facility emergencies (radio, phone, dispatch system). Specify that drivers are not required to return to the facility unless instructed by the incident coordinator or emergency services. Specify how drivers will report their status and location. Include the phone number for off-site communication and the name of the person responsible for driver notification.\",\n      \"citation\": \"Oregon Administrative Rules 437-002-0131\",\n      \"citation_url\": \"https://www.oregon.gov/deq/aq/Pages/emergency-response.aspx\",\n      \"locator\": \"section 1, line 'all 42 employees at the Portland facility, including warehouse, drivers, laboratory and office staff'\",\n      \"draftable\": true,\n      \"basis\": \"read\",\n      \"quote\": \"all 42 employees at the Portland facility, including warehouse, drivers, laboratory and office staff\",\n      \"same_as_gap_id\": \"dd431f32-c1af-4219-b36c-cb89861c5c9c\"\n    }\n  ],\n  \"conditions\": [],\n  \"deadlines\": [\n    {\n      \"title\": \"Monthly fire alarm test\",\n      \"due_on\": null,\n      \"source_line\": \"The alarm is tested on the first Monday of each month by the facilities lead.\",\n      \"recurs\": true\n    },\n    {\n      \"title\": \"Annual review and update of the plan\",\n      \"due_on\": null,\n      \"source_line\": \"The facilities lead reviews the plan every January and updates the evacuation maps whenever the building layout changes.\",\n      \"recurs\": true\n    },\n    {\n      \"title\": \"Evacuation drills\",\n      \"due_on\": null,\n      \"source_line\": \"Evacuation drills are held twice a year, in spring and autumn.\",\n      \"recurs\": true\n    },\n    {\n      \"title\": \"Annual training for floor wardens and first-aid responders\",\n      \"due_on\": null,\n      \"source_line\": \"Floor wardens and first-aid responders are trained annually.\",\n      \"recurs\": true\n    }\n  ],\n  \"facts\": [\n    {\n      \"key\": \"employee_count\",\n      \"value\": \"42\",\n      \"basis\": \"read\",\n      \"quote\": \"all 42 employees at the Portland facility\",\n      \"locator\": \"section 1\",\n      \"as_of\": \"2021-02-01\",\n      \"affects\": \"Determines scope of plan and number of employees to account for during evacuation\"\n    },\n    {\n      \"key\": \"facility_address\",\n      \"value\": \"4410 NW Front Avenue, Portland, Oregon 97210\",\n      \"basis\": \"read\",\n      \"quote\": \"Portland Facility, 4410 NW Front Avenue, Portland, Oregon 97210\",\n      \"locator\": \"page 1 (title page)\",\n      \"as_of\": null,\n      \"affects\": \"Identifies the facility covered by this plan\"\n    },\n    {\n      \"key\": \"assembly_point_distance\",\n      \"value\": \"150 feet\",\n      \"basis\": \"read\",\n      \"quote\": \"The assembly point is the far north end of the visitor parking lot, beside the flagpole, at least 150 feet from the building.\",\n      \"locator\": \"section 3\",\n      \"as_of\": \"2021-02-01\",\n      \"affects\": \"Specifies minimum safe distance for employee assembly during evacuation\"\n    },\n    {\n      \"key\": \"fire_alarm_monitoring\",\n      \"value\": \"24 hours a day by Cascade Fire & Safety under a service contract\",\n      \"basis\": \"read\",\n      \"quote\": \"The alarm is monitored 24 hours a day by Cascade Fire & Safety under a service contract.\",\n      \"locator\": \"section 2\",\n      \"as_of\": \"2021-02-01\",\n      \"affects\": \"Confirms alarm monitoring service and contact point for emergency dispatch\"\n    },\n    {\n      \"key\": \"number_of_shifts\",\n      \"value\": \"At least 2 (inferred from 'two per shift' first-aid responder requirement)\",\n      \"basis\": \"inferred\",\n      \"quote\": \"two per shift, named on the warden roster\",\n      \"locator\": \"section 5\",\n      \"as_of\": \"2021-02-01\",\n      \"affects\": \"Indicates facility operates on multiple shifts; first-aid responders required for each shift\"\n    }\n  ],\n  \"version_of_title\": null,\n  \"version_of_confidence\": \"high\",\n  \"expected_missing\": [\n    {\n      \"title\": \"Training sign-in sheets and trainer qualifications\",\n      \"why\": \"Required to evidence compliance with mandatory training for floor wardens and first-aid responders\",\n      \"basis\": \"similar companies, not a checked requirement\"\n    },\n    {\n      \"title\": \"Fire alarm test log or maintenance records\",\n      \"why\": \"Required to document monthly testing as stated in the plan and required by fire code\",\n      \"basis\": \"similar companies, not a checked requirement\"\n    },\n    {\n      \"title\": \"Evacuation drill records and logs\",\n      \"why\": \"Required to document compliance with twice-yearly evacuation drills and identify any issues\",\n      \"basis\": \"similar companies, not a checked requirement\"\n    },\n    {\n      \"title\": \"Chemical inventory and spill response procedures\",\n      \"why\": \"Needed because the facility handles chemicals and the plan mentions chemical release as an emergency scenario\",\n      \"basis\": \"similar companies, not a checked requirement\"\n    },\n    {\n      \"title\": \"Incident coordinator contact information and backup assignment\",\n      \"why\": \"Critical to emergency response; person named must be identified and reachable\",\n      \"basis\": \"similar companies, not a checked requirement\"\n    },\n    {\n      \"title\": \"Building floor plans and utility shut-off locations\",\n      \"why\": \"Needed to support evacuation maps and shelter-in-place procedures that reference mechanical room ventilation shutdown\",\n      \"basis\": \"similar companies, not a checked requirement\"\n    }\n  ],\n  \"confidence_notes\": \"High confidence in reading the document itself and identifying what is present and what is missing. The plan is clearly written and well-structured. High confidence in identifying gaps against Oregon Administrative Rules 437-002-0131 and 29 CFR 1910.38(a), which are stable requirements that have not changed. The most significant finding is that the plan is over five years out of date and does not meet the annual review requirement. Several gaps match exactly with open findings from an earlier review, confirming their validity. I am very sure the appendices (Appendix A and B) are not included in the document provided. I cannot verify whether those appendices actually exist at the facility or how current they are. The fact_key for number_of_shifts is inferred from the reference to 'two per shift' first-aid responders; the actual number of shifts is not explicitly stated. The fire alarm monitoring service provider (Cascade Fire & Safety) is named, but no phone number or contact details are given in the plan itself. I could not verify current Oregon Fire Code Section 907.5 requirements as my knowledge of specific code sections may be incomplete.\",\n  \"could_not_read_reason\": null,\n  \"could_not_read_way_forward\": null\n}\n```",
+    "json_parsed": true,
+    "model": "claude-haiku-4-5",
+    "cited_sources": 0,
+    "searches": null,
+    "structured": false,
+    "prompt_sha256": "a762b91aa1353d9fd2a2ed286bb13d5a24d144f210dabd98b02bb625eaf48d67",
+    "quotes_checked": 13,
+    "quotes_verified": 13,
+    "extracted_text": "CASCADE SPECIALTY CHEMICALS, LLC\nEMERGENCY ACTION PLAN\nPortland Facility, 4410 NW Front Avenue, Portland, Oregon 97210\nRevised February 2021\n1. Purpose and scope\nThis Emergency Action Plan describes what employees of Cascade Specialty Chemicals do when there is\na fire, chemical release, medical emergency, earthquake or other emergency at the Portland facility. It\napplies to all 42 employees at the Portland facility, including warehouse, drivers, laboratory and office\nstaff, and to contractors and visitors while on site. The plan is kept in the front office and in the warehouse\nbreak room, and a copy is available to any employee on request.\n2. Alarm system\nThe building has a monitored fire alarm system with audible horns and strobe lights in the warehouse,\nlaboratory, loading dock and offices. The alarm is monitored 24 hours a day by Cascade Fire & Safety\nunder a service contract. Manual pull stations are located at each exit door. The alarm is tested on the first\nMonday of each month by the facilities lead. A continuous horn means evacuate. Three short horns\nrepeated means shelter in place because of an outdoor hazard.\n3. Evacuation procedures\nWhen the continuous alarm sounds, all employees stop work, secure nothing that requires more than a\nfew seconds, and leave by the nearest marked exit. Exit routes are posted on the evacuation maps at each\nexit door and in Appendix A. Warehouse staff leave by the east dock doors or the north pedestrian door.\nLaboratory staff leave by the laboratory's own exterior door on the south wall. Office staff leave by the\nmain entrance or the west stairwell. Do not use the freight lift. Do not return for belongings.\nThe assembly point is the far north end of the visitor parking lot, beside the flagpole, at least 150 feet\nfrom the building. Employees assigned as floor wardens (one per area, listed on the warden roster posted\nbeside each evacuation map) sweep their area, close doors behind them, and report to the assembly point.\nFor a chemical release outdoors or a hazard that makes leaving the building unsafe, the shelter-in-place\nsignal sounds. Employees move to the interior conference room or the laboratory corridor, close doors,\nand the facilities lead shuts down the building ventilation from the mechanical room panel.\n4. Accounting for employees after evacuation\nAt the assembly point each floor warden takes a headcount of the people from their area against the daily\nsign-in sheet and the visitor log, which the receptionist brings out. Any person unaccounted for is reported\nat once to the incident coordinator at the assembly point, who passes the information to the fire\ndepartment on arrival. No one re-enters the building until the fire department or the incident coordinator\ngives the all-clear. Evacuation drills are held twice a year, in spring and autumn.\n5. Rescue and medical duties\nEmployees do not attempt rescue inside the building. First aid is given at the assembly point by the\ntrained first-aid responders (two per shift, named on the warden roster), who bring the first-aid kit and the\nAED from the front office. An employee exposed to a chemical is taken to the emergency shower and\neyewash at the loading dock if it can be reached safely, or to the assembly point, and the SDS for the\nproduct is brought to the responders. Emergency medical services are called for any injury beyond minor\nfirst aid.\n6. Training and review\nEvery new employee is walked through this plan, the exit routes for their work area and the assembly\npoint on their first day. Floor wardens and first-aid responders are trained annually. The plan is reviewed\nwith all employees whenever it is changed and whenever an employee's responsibilities under it change.\nThe facilities lead reviews the plan every January and updates the evacuation maps whenever the building\nlayout changes.\nAppendix A: Evacuation maps (warehouse, laboratory, offices)\nAppendix B: Floor warden and first-aid responder roster (posted beside each evacuation map)",
+    "started_at": "2026-09-27T18:40:20.221Z"
+  }
+}

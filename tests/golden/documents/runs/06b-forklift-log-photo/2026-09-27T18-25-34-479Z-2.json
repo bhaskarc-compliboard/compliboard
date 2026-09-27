@@ -1,0 +1,232 @@
+{
+  "case": "06b-forklift-log-photo",
+  "run": 2,
+  "run_date": "2026-09-27",
+  "model": "claude-sonnet-5",
+  "structured": true,
+  "searches": 0,
+  "cited_sources": 0,
+  "prompt_sha256": "8b6bb1724e319c1ccf34a63fbdb81430625312aed4cbef7ab68dd138dfb25ff5",
+  "scan_id": "aa7e8708-cd0b-4f61-a19a-b11c716d865d",
+  "ai_call_id": "dfb5685e-a0d8-461a-b6d8-c73506cd763b",
+  "wall_ms": 70284,
+  "cost_usd": 0.085176,
+  "input_tokens": 8963,
+  "output_tokens": 6725,
+  "json_parsed": true,
+  "compliant_found_in": [],
+  "alternative_pass": false,
+  "verdicts": {
+    "kind": {
+      "verdict": "PASS",
+      "detail": "identity.kind = \"record\""
+    },
+    "agency-osha": {
+      "verdict": "PASS",
+      "detail": "identity.agencies = [oregon osha]"
+    },
+    "subject": {
+      "verdict": "PASS",
+      "detail": "identity.subjects = [powered industrial truck safety]"
+    },
+    "site-portland": {
+      "verdict": "PASS",
+      "detail": "identity.site = \"portland\""
+    },
+    "doc-date": {
+      "verdict": "PASS",
+      "detail": "identity.doc_date = 2026-09-17"
+    },
+    "doc-date-kind": {
+      "verdict": "PASS",
+      "detail": "identity.doc_date_kind = \"last entry\""
+    },
+    "last-entry-date": {
+      "verdict": "FAIL",
+      "detail": "2026-09-18 appears in none of significant_date, identity.doc_date"
+    },
+    "status": {
+      "verdict": "FAIL",
+      "detail": "status = \"gaps found\" (forbidden)"
+    },
+    "finding-missing-days": {
+      "verdict": "PASS",
+      "detail": "gaps: \"No logged inspection for Sep 3 or Sep 4, 2026\" [sep 3, sep 4]"
+    },
+    "finding-horn-defect": {
+      "verdict": "PASS",
+      "detail": "gaps: \"Horn defect logged Sep 9 with no documented repair\" [horn, sep 9, defect, out of service, repair]"
+    },
+    "finding-no-entries-since": {
+      "verdict": "FAIL",
+      "detail": "no item matched. gaps/notes held: Horn defect logged Sep 9 with no documented  | No logged inspection for Sep 3 or Sep 4, 202 | summary | freshness_note | confidence_notes | expected_missing | expected_missing | expected_missing | expected_missing"
+    },
+    "deadline-chen": {
+      "verdict": "FAIL",
+      "detail": "no item matched. deadlines held: (nothing)"
+    },
+    "deadline-rivera": {
+      "verdict": "FAIL",
+      "detail": "no item matched. deadlines held: (nothing)"
+    },
+    "fact-truck": {
+      "verdict": "FAIL",
+      "detail": "no item matched. facts held: forklift_horn_defect_sep9_2026 | inspection_log_gap_sep3_4_2026"
+    },
+    "label-consistency": {
+      "verdict": "CROSS",
+      "detail": "judged across the three runs, below"
+    },
+    "no-false-certification-finding": {
+      "verdict": "PASS",
+      "detail": "not raised",
+      "soft": []
+    },
+    "no-false-form-finding": {
+      "verdict": "PASS",
+      "detail": "not raised",
+      "soft": []
+    },
+    "no-invented-maintenance-finding": {
+      "verdict": "PASS",
+      "detail": "not raised",
+      "soft": []
+    },
+    "citation-evaluation-rule": {
+      "verdict": "FAIL",
+      "detail": "\"1910.178(l)(4)(iii)\" not in deadlines, gaps, notes"
+    },
+    "two-operators-fact": {
+      "verdict": "FAIL",
+      "detail": "no item matched. facts held: forklift_horn_defect_sep9_2026 | inspection_log_gap_sep3_4_2026"
+    },
+    "conditions-none": {
+      "verdict": "PASS",
+      "detail": "none"
+    },
+    "freshness-recent": {
+      "verdict": "PASS",
+      "detail": "[entries]"
+    }
+  },
+  "scan": {
+    "identity": {
+      "kind": "record",
+      "title": "Powered Industrial Truck Pre-Shift Inspection Log — Forklift FL-2 (Toyota 8FGU25), September 2026, Portland Warehouse",
+      "issuer": "Cascade Specialty Chemicals, LLC",
+      "agencies": [
+        "Oregon OSHA"
+      ],
+      "subjects": [
+        "Powered Industrial Truck Safety"
+      ],
+      "site": "Portland",
+      "jurisdiction": [
+        "Oregon",
+        "federal"
+      ],
+      "doc_date": "2026-09-17",
+      "doc_date_kind": "last_entry",
+      "page_refs": {}
+    },
+    "summary": "This is the company's own daily pre-shift inspection log for forklift FL-2, a Toyota 8FGU25 propane truck at the Portland warehouse, covering September 2026. It records tick/X checks for each safety item (tires, forks, mast, horn, lights, brakes, steering, LPG tank, extinguisher, plate, guard) by shift, operator initials, and hours meter reading.",
+    "status": "gaps_found",
+    "significant_date": "2026-09-17",
+    "significant_date_kind": "last_entry",
+    "freshness_note": "The visible entries run only through Sep 17, 2026, ten days before today (Sep 27, 2026). It is not clear from this page whether the log continues beyond Sep 17 (page cropped) or whether inspections have simply not been logged since then — this should be confirmed.",
+    "gaps": [
+      {
+        "title": "Horn defect logged Sep 9 with no documented repair",
+        "description": "The Sep 9 row marks the horn as defective (X) with the note that the horn was not working. Subsequent rows (Sep 10 onward) show the horn as OK again, but there is no entry documenting when or how the horn was repaired, who repaired it, or that it was verified safe before the truck was returned to service.",
+        "fix": "Take FL-2 out of service immediately upon any safety-affecting defect and only return it to service after documented repair/verification; add a repair-confirmation line to the log (date, technician, verification) for the Sep 9 horn defect.",
+        "citation": "29 CFR 1910.178(q)(7)",
+        "citation_url": "https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.178",
+        "locator": "page 1, Sep 9 row",
+        "draftable": false,
+        "basis": "read",
+        "quote": "Horn not working",
+        "quote_verified": null,
+        "same_as_gap_id": "a5c1bd65-a65e-4a63-9435-5815208b409c"
+      },
+      {
+        "title": "No logged inspection for Sep 3 or Sep 4, 2026",
+        "description": "The daily entries jump directly from Sep 2 to Sep 7, 2026, with no rows for Sep 3 or Sep 4. If the truck was operated on either of those days, no pre-shift inspection was recorded for that shift.",
+        "fix": "Confirm whether FL-2 was operated on Sep 3–4; if so, this is a missed inspection that should be noted and corrected going forward by logging a pre-shift check every day the truck is used.",
+        "citation": "29 CFR 1910.178(q)(7)",
+        "citation_url": "https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.178",
+        "locator": "page 1, between Sep 2 and Sep 7 rows",
+        "draftable": false,
+        "basis": "read",
+        "quote": null,
+        "quote_verified": null,
+        "same_as_gap_id": "f609f4e7-297f-4aa2-9747-45b02c1c7a2f"
+      }
+    ],
+    "conditions": [],
+    "deadlines": [],
+    "facts": [
+      {
+        "key": "forklift_horn_defect_sep9_2026",
+        "value": "Horn marked defective (X) on Sep 9, 2026 with note 'Horn not working'; no repair entry follows before the truck resumed use on Sep 10",
+        "quote": "Horn not working",
+        "locator": "page 1, Sep 9 row",
+        "as_of": "2026-09-09",
+        "affects": "Confirms the truck was used on Sep 10 without a documented resolution of a safety-affecting defect from the prior day.",
+        "basis": "read",
+        "quote_verified": null
+      },
+      {
+        "key": "inspection_log_gap_sep3_4_2026",
+        "value": "No entries exist for Sep 3 or Sep 4, 2026; the log goes from Sep 2 directly to Sep 7",
+        "quote": null,
+        "locator": "page 1, table rows Sep 2 to Sep 7",
+        "as_of": "2026-09-07",
+        "affects": "Confirms a break in the daily pre-shift inspection record for two calendar days.",
+        "basis": "read",
+        "quote_verified": null
+      }
+    ],
+    "version_of": {
+      "title": "Powered Industrial Truck Pre-Shift Inspection Log — Forklift FL-2 (Toyota 8FGU25), September 2026, Portland Warehouse",
+      "confidence": "high"
+    },
+    "expected_missing": [
+      {
+        "title": "Documented repair/maintenance record for the Sep 9 horn defect",
+        "why": "A defect noted on a pre-shift log is normally followed by a maintenance ticket or work order showing the fix; none is referenced here",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Operator training/evaluation records for J.R. and M.C.",
+        "why": "Powered industrial truck operators shown on this log should have a current operator certification/evaluation on file; not part of this document",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Written Powered Industrial Truck safety program/policy",
+        "why": "Companies operating forklifts typically hold a program document setting inspection, training, and maintenance rules that this log implements",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Remainder of the September 2026 log (Sep 18–27 and beyond)",
+        "why": "Only entries through Sep 17 are visible on this page; a complete monthly log would normally continue through month-end",
+        "basis": "similar companies, not a checked requirement"
+      }
+    ],
+    "confidence_notes": "High confidence in what is transcribed from the visible table (dates, checks, the horn defect note, and the missing Sep 3–4 rows) since these are read directly off the page. Lower confidence on whether the log continues beyond Sep 17 on additional pages not provided, and on whether the missing Sep 3–4 days reflect a real missed inspection or simply days the truck was not operated.",
+    "could_not_read": {
+      "reason": null,
+      "way_forward": null
+    },
+    "raw_text": "{\"identity\":{\"kind\":\"record\",\"title\":\"Powered Industrial Truck Pre-Shift Inspection Log — Forklift FL-2 (Toyota 8FGU25), September 2026, Portland Warehouse\",\"issuer\":\"Cascade Specialty Chemicals, LLC\",\"agencies\":[\"Oregon OSHA\"],\"subjects\":[\"Powered Industrial Truck Safety\"],\"site\":\"Portland\",\"jurisdiction\":[\"Oregon\",\"federal\"],\"doc_date\":\"2026-09-17\",\"doc_date_kind\":\"last_entry\"},\"summary\":\"This is the company's own daily pre-shift inspection log for forklift FL-2, a Toyota 8FGU25 propane truck at the Portland warehouse, covering September 2026. It records tick/X checks for each safety item (tires, forks, mast, horn, lights, brakes, steering, LPG tank, extinguisher, plate, guard) by shift, operator initials, and hours meter reading.\",\"status\":\"gaps_found\",\"significant_date\":\"2026-09-17\",\"significant_date_kind\":\"last_entry\",\"freshness_note\":\"The visible entries run only through Sep 17, 2026, ten days before today (Sep 27, 2026). It is not clear from this page whether the log continues beyond Sep 17 (page cropped) or whether inspections have simply not been logged since then — this should be confirmed.\",\"gaps\":[{\"title\":\"Horn defect logged Sep 9 with no documented repair\",\"description\":\"The Sep 9 row marks the horn as defective (X) with the note that the horn was not working. Subsequent rows (Sep 10 onward) show the horn as OK again, but there is no entry documenting when or how the horn was repaired, who repaired it, or that it was verified safe before the truck was returned to service.\",\"fix\":\"Take FL-2 out of service immediately upon any safety-affecting defect and only return it to service after documented repair/verification; add a repair-confirmation line to the log (date, technician, verification) for the Sep 9 horn defect.\",\"citation\":\"29 CFR 1910.178(q)(7)\",\"citation_url\":\"https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.178\",\"locator\":\"page 1, Sep 9 row\",\"draftable\":false,\"basis\":\"read\",\"quote\":\"Horn not working\",\"same_as_gap_id\":\"a5c1bd65-a65e-4a63-9435-5815208b409c\"},{\"title\":\"No logged inspection for Sep 3 or Sep 4, 2026\",\"description\":\"The daily entries jump directly from Sep 2 to Sep 7, 2026, with no rows for Sep 3 or Sep 4. If the truck was operated on either of those days, no pre-shift inspection was recorded for that shift.\",\"fix\":\"Confirm whether FL-2 was operated on Sep 3–4; if so, this is a missed inspection that should be noted and corrected going forward by logging a pre-shift check every day the truck is used.\",\"citation\":\"29 CFR 1910.178(q)(7)\",\"citation_url\":\"https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.178\",\"locator\":\"page 1, between Sep 2 and Sep 7 rows\",\"draftable\":false,\"basis\":\"read\",\"quote\":\"\",\"same_as_gap_id\":\"f609f4e7-297f-4aa2-9747-45b02c1c7a2f\"}],\"conditions\":[],\"deadlines\":[],\"facts\":[{\"key\":\"forklift_horn_defect_sep9_2026\",\"value\":\"Horn marked defective (X) on Sep 9, 2026 with note 'Horn not working'; no repair entry follows before the truck resumed use on Sep 10\",\"basis\":\"read\",\"quote\":\"Horn not working\",\"locator\":\"page 1, Sep 9 row\",\"as_of\":\"2026-09-09\",\"affects\":\"Confirms the truck was used on Sep 10 without a documented resolution of a safety-affecting defect from the prior day.\"},{\"key\":\"inspection_log_gap_sep3_4_2026\",\"value\":\"No entries exist for Sep 3 or Sep 4, 2026; the log goes from Sep 2 directly to Sep 7\",\"basis\":\"read\",\"quote\":\"\",\"locator\":\"page 1, table rows Sep 2 to Sep 7\",\"as_of\":\"2026-09-07\",\"affects\":\"Confirms a break in the daily pre-shift inspection record for two calendar days.\"}],\"version_of_title\":\"Powered Industrial Truck Pre-Shift Inspection Log — Forklift FL-2 (Toyota 8FGU25), September 2026, Portland Warehouse\",\"version_of_confidence\":\"high\",\"expected_missing\":[{\"title\":\"Documented repair/maintenance record for the Sep 9 horn defect\",\"why\":\"A defect noted on a pre-shift log is normally followed by a maintenance ticket or work order showing the fix; none is referenced here\",\"basis\":\"similar companies, not a checked requirement\"},{\"title\":\"Operator training/evaluation records for J.R. and M.C.\",\"why\":\"Powered industrial truck operators shown on this log should have a current operator certification/evaluation on file; not part of this document\",\"basis\":\"similar companies, not a checked requirement\"},{\"title\":\"Written Powered Industrial Truck safety program/policy\",\"why\":\"Companies operating forklifts typically hold a program document setting inspection, training, and maintenance rules that this log implements\",\"basis\":\"similar companies, not a checked requirement\"},{\"title\":\"Remainder of the September 2026 log (Sep 18–27 and beyond)\",\"why\":\"Only entries through Sep 17 are visible on this page; a complete monthly log would normally continue through month-end\",\"basis\":\"similar companies, not a checked requirement\"}],\"confidence_notes\":\"High confidence in what is transcribed from the visible table (dates, checks, the horn defect note, and the missing Sep 3–4 rows) since these are read directly off the page. Lower confidence on whether the log continues beyond Sep 17 on additional pages not provided, and on whether the missing Sep 3–4 days reflect a real missed inspection or simply days the truck was not operated.\",\"could_not_read_reason\":\"\",\"could_not_read_way_forward\":\"\"}",
+    "json_parsed": true,
+    "model": "claude-sonnet-5",
+    "cited_sources": 0,
+    "searches": null,
+    "structured": true,
+    "prompt_sha256": "8b6bb1724e319c1ccf34a63fbdb81430625312aed4cbef7ab68dd138dfb25ff5",
+    "quotes_checked": 0,
+    "quotes_verified": 0,
+    "extracted_text": "",
+    "started_at": "2026-09-27T18:24:23.355Z"
+  }
+}
