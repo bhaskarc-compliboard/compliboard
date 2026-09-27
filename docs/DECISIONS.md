@@ -10387,3 +10387,71 @@ today's answer, not a permanent one. The flattening is reversed only by a model 
 it, and the probe is how that would be found. The wording change is a defect fix and is not
 reversible: a message that blames a customer's file for our own refused request is wrong whatever
 else is true.
+
+---
+
+## 137. THE MISSING SCAN ROW WAS NOT A MISSING WRITE — 27 September 2026
+
+§136 left an open item: production's refused Opus 5 scan on 26 September left **no `document_scans`
+row**, though the route's catch exists to write one. This settles what it was and what it was not.
+
+**Forced rather than waited for.** A one-line mutation in `lib/documentScan.ts` sent a schema the API
+must reject — `outputSchema` without `additionalProperties: false`, which returns `400 For 'object'
+type, 'additionalProperties' must be explicitly set to false` every time. The real route was then
+driven on a local dev server against staging, as a real signed-in user through `/api/documents` and
+`/api/document-scan`, the way `check-live.js` does it. Reverted afterwards; a refused call is not
+billed, so the whole investigation was free.
+
+> ### THE CATCH IS NOT THE BUG. IT WRITES THE ROW, AND IT WROTE IT BOTH WAYS.
+>
+> **With today's code** the model call is caught inside `runDocumentScan` and `refusedScan` returns a
+> reading: HTTP 200, one `document_scans` row, `status = could_not_read`, `model = claude-haiku-4-5`
+> (the model that was refused, not `(not called)`), and `raw_text` carrying
+> `API 400: … 'additionalProperties' must be explicitly set to false`. `document_index_v` showed the
+> reason, so the page and the drawer would both have said why.
+>
+> **Then the 26 September path was reproduced exactly** — a second one-line mutation making the throw
+> propagate past `refusedScan` to the route's own last-resort catch, which is what happened on
+> production. **It also wrote a row**, with the last-resort wording. Twice, on the two shapes of the
+> code, the write landed.
+
+**So the absent production row was never an unwritten row. It was a removed one.** The only thing in
+the product that removes a scan row is deleting its document — `document_scans.document_id` is
+`ON DELETE CASCADE` — and the only control that does that is the drawer's "Delete this file". The
+Documents page's upload loop never deletes: a scan that fails leaves the row and the file in place,
+by design, so the reading can be asked for again.
+
+**That is a hypothesis about what a person did, and it is labelled as one.** It fits the times — the
+surviving document's `uploaded_at` is 17:49:07 and its successful scan 17:51:08, so a first upload,
+a refusal, a delete and a re-upload all fit inside the two minutes before it — but a deleted row
+leaves nothing behind to confirm it with, and production keeps no audit of deletes. **What is
+established is the negative**, and it is the part that mattered: no code path drops the record of a
+refused reading, so there is nothing here to fix.
+
+### And a note on how this nearly went wrong
+
+The first read of the probe's result reported **"0 scan rows"** and was wrong. The query named
+`structured` — a field on the `DocumentScan` object, **not a column on `document_scans`** — so
+PostgREST returned an error rather than rows, and the script read `data` as null and printed zero.
+Thirty seconds from filing "the catch does not write the row", which is the opposite of the truth.
+
+> ### A CHECK THAT CANNOT SEE ANYTHING LOOKS EXACTLY LIKE A CHECK THAT FOUND NOTHING.
+> `scripts/check-schema-contracts.js` exists because a column name inside a query string is invisible
+> to `tsc` (§3.6) — and it validates the app's queries, not a throwaway probe's. The discipline that
+> catches it in a probe is different: **when a check reports an absence, prove the check can see a
+> presence** before believing it. The manual set in `TESTING.md` now carries this case, with that
+> sentence as its last line.
+
+**Reversal condition:** none — nothing was changed in the product. If a refused reading ever again
+leaves no row, the thing to suspect is a delete, and the thing to add is a record of deletes.
+
+### The measurement bug the bake-off's own first run found
+
+Unrelated to the above, and found by reading output rather than by looking for it. The runner's first
+Opus 5 scan printed **"? searches"** for a scan whose cost was $0.4859 against $0.4659 of tokens —
+two searches, plainly, at a cent each. `runDocumentScan` sets `scan.searches = null` by construction
+and `saveScan` fills the **database column** from the ledger row without mutating the object it was
+handed, so `document_scans.searches` and `ai_calls.searches` both held 2 while the stored run said
+null. The runner now records the ledger row's own count. **A measurement suite that cannot report how
+widely the model looked is missing the number that explains its own cost**, and search is a third of
+the bill on a research answer (§128 J).

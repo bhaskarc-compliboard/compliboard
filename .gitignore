@@ -44,3 +44,7 @@ supabase/.temp/
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Scratch space for one-off probes and bake-off driver logs. Never committed: these are
+# temporary investigations, and a repository that carries them stops being readable.
+.tmp-probe/

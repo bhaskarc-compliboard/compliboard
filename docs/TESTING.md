@@ -2025,3 +2025,64 @@ Whether the sweep's ordering produced a *better* reading of document eight than 
 would have. The mechanism is testable and the benefit is not: it rests on the claim that a scan
 shown the labels and keys already in use reuses them, and the only evidence for that is Run 6's
 measurement of what happens when it is not shown them.
+
+---
+
+## Documents — the reading service refuses (post-release, 27 September)
+
+**One test, and it exists because the product got this wrong on production with real eyes on it.**
+On 26 September the first scan on `claude-opus-5` was refused by the API for its schema's size, and
+the row told the owner their PDF *"did not arrive as something we can open"* and suggested exporting
+a fresh one. The file was fine; it read correctly two minutes later. `DECISIONS.md` §136.
+
+### 1. A refused model call blames us, not the file — and leaves a row
+
+**Force the refusal rather than wait for one.** The cheapest honest way is a one-line mutation in
+`lib/documentScan.ts` that sends a schema the API must reject — drop `additionalProperties: false`
+from the object passed as `outputSchema`, which returns `400 For 'object' type,
+'additionalProperties' must be explicitly set to false` every time. **Revert it afterwards.** A
+refused call is not billed, so this test is free.
+
+Upload any PDF through the Documents page and let it be read.
+
+**What must be true, and each of these was wrong at least once:**
+
+- The route returns **HTTP 200**, never a 500. A reading we could not produce is an answer.
+- The row reads **Could not read**, and the reason is **about us**: *"The reading service refused our
+  request to read this document, so nothing was read. That is our end of it, not a problem with the
+  file you sent."* The way forward is **"Read it again once we have fixed it"**.
+- **Nothing in the message mentions the file, a re-export, or a photograph.** That wording belongs to
+  `parseDocumentToBlocks` and only to it. If you see it here, the catch has been widened again.
+- **A `document_scans` row exists** — not just a status on `documents`. Check it, because the status
+  and the reason live in different tables and only the row survives a reload:
+  ```sql
+  select status, model, json_parsed, could_not_read_reason, raw_text
+    from document_scans where document_id = '<id>' order by scanned_at desc limit 1;
+  ```
+- **`raw_text` carries the API's own message**, prefixed `API 400:`. That field is ours and is never
+  rendered. Without it the only record of *why* is a log line that ages out.
+- **`model` names the model that refused**, not `(not called)`. A call that happened and was refused
+  is a different event from a file that never reached a model, and the ledger has to agree with the row.
+- Press **Read it again** with the mutation reverted: the document reads normally. A refusal must not
+  leave the document permanently stuck.
+
+**Then repeat it with a failure that is NOT an API error** — throw a plain `Error` from inside
+`runDocumentScan` instead. The reason must fall back to *"Something went wrong at our end while
+reading this file, and we do not yet know what."* **This is the half that matters most:** a `TypeError`
+of our own reported to a customer as a refusal by Anthropic is a different lie from the one being
+fixed, and the only thing separating them is that `apiFailureStatus` requires a numeric `status`.
+
+### What this test cannot tell you
+
+Whether the row would have been written on **26 September's** code. It would — proved by forcing the
+throw all the way through to the route's last-resort catch on staging, which wrote a row every time.
+So the missing production row was never an unwritten row, and this test does not explain it. See the
+bake-off note's preliminary section for what it was.
+
+### And one for the person running it, not for the product
+
+The first attempt at this investigation reported **"0 scan rows"** and was wrong. The query named a
+column `document_scans` does not have, PostgREST returned an error instead of rows, and the script
+read the error as an empty result. **When a check says "nothing is there", verify the check can see
+anything at all before you believe it** — `select count(*)` on the same table with no filter takes
+five seconds and would have caught it.

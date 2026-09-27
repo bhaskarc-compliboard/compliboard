@@ -8,6 +8,22 @@
 //   npm run golden:docs -- --seed-only       put the three companies back, scan nothing
 //   npm run golden:docs -- --from-runs       re-judge what is on disk, no model call
 //
+//   *** THE BAKE-OFF FLAGS — 27 September 2026. ***
+//   npm run golden:docs -- --model claude-opus-5-5 --structured off
+//
+//   `--model <id>` and `--structured on|off` OVERRIDE the environment for this run only, by
+//   setting `AI_MODEL_DOCUMENT_SCAN` and `AI_SCAN_STRUCTURED` in `process.env` before anything
+//   resolves them. Both `modelForTask()` and `scanStructuredOutput()` read the environment at CALL
+//   time, so one assignment here reaches every scan, the ledger row's model, and the stored run —
+//   and there is no second copy of the resolution to drift from `lib/ai.ts`. Nothing is written
+//   back to `.env.local` and the override dies with the process.
+//
+//   *** WHY FLAGS AND NOT `AI_MODEL_DOCUMENT_SCAN=x npm run golden:docs`. *** Because the run has to
+//   RECORD what it ran on. A configuration set in the shell is invisible in the output, and the
+//   bake-off's whole product is a table of seven configurations — one mislabelled row makes the
+//   comparison worthless. `model` and `structured` now go on every stored run, so the report is
+//   built from what each scan says about itself rather than from what somebody believed they typed.
+//
 // WHAT IT ANSWERS. For each fixture, does the scan contain every "must" its spec states, in
 // every run? It does not, and cannot, tell you an answer got BETTER — that is a person reading
 // the output. TESTING.md (b).
@@ -33,7 +49,8 @@
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync } from 'node:fs'
 import { createClient } from '@supabase/supabase-js'
 import { runDocumentScan, saveScan, buildScanContext } from '../lib/documentScan.ts'
-import { modelForTask } from '../lib/ai.ts'
+import { modelForTask, scanStructuredOutput } from '../lib/ai.ts'
+import { priceFor } from '../lib/costLedger.ts'
 
 const PROD_REF = 'dsfwmafnphdlfogetsus'
 const DIR = 'tests/golden/documents'
@@ -44,9 +61,36 @@ const args = process.argv.slice(2)
 const die = (m) => { console.error(`\n  ${m}\n`); process.exit(1) }
 const flagIndex = args.indexOf('--times')
 const times = Number(flagIndex >= 0 && args[flagIndex + 1] ? args[flagIndex + 1] : '3')
-const only = args.filter((a, i) => !a.startsWith('--') && i !== flagIndex + 1)[0]
+// *** A FLAG'S VALUE IS NOT A CASE ID. *** This used to exclude only the index after `--times`, so
+// `--model claude-opus-5` made "claude-opus-5" the case filter and the runner died with "No case
+// matching". Every value-taking flag is now excluded by name, in one list, so adding a third flag
+// cannot reintroduce it.
+const VALUE_FLAGS = ['--times', '--model', '--structured']
+const valueIndices = new Set(VALUE_FLAGS.map((f) => args.indexOf(f)).filter((i) => i >= 0).map((i) => i + 1))
+const only = args.filter((a, i) => !a.startsWith('--') && !valueIndices.has(i))[0]
 // Re-judge the runs already on disk instead of buying new ones. No model call, no database.
 const fromRuns = args.includes('--from-runs')
+
+// ---------------------------------------------------------------------------
+// THE BAKE-OFF FLAGS. Applied to process.env BEFORE MODEL is resolved below — the order matters,
+// and it is the only reason these lines sit here rather than with the other argument parsing.
+// ---------------------------------------------------------------------------
+const flagValue = (name) => { const i = args.indexOf(name); return i >= 0 ? args[i + 1] : null }
+const modelFlag = flagValue('--model')
+const structuredFlag = flagValue('--structured')
+if (args.includes('--model') && !modelFlag) die('--model needs a model id, e.g. --model claude-opus-5-5')
+if (args.includes('--structured') && !['on', 'off'].includes(structuredFlag)) {
+  die('--structured takes exactly "on" or "off". Anything else is a configuration nobody chose.')
+}
+if (modelFlag) process.env.AI_MODEL_DOCUMENT_SCAN = modelFlag
+if (structuredFlag) {
+  // `scanStructuredOutput()` is off ONLY on the exact string "false" — the switch was built that
+  // way so a typo cannot silently disable the schema. "on" therefore deletes the variable rather
+  // than setting a truthy value, so the default path is the real default and not a lookalike.
+  if (structuredFlag === 'off') process.env.AI_SCAN_STRUCTURED = 'false'
+  else delete process.env.AI_SCAN_STRUCTURED
+}
+
 // Seed the three companies and stop. `npm run db:reset` replays the chain from 000 onto an empty
 // database, and the golden companies are data, not schema — this puts them back without buying
 // twenty-one model calls to do it.
@@ -61,7 +105,43 @@ if (!process.env.ANTHROPIC_API_KEY) die('ANTHROPIC_API_KEY is not set.')
 
 const db = createClient(url, key, { auth: { persistSession: false } })
 const MODEL = modelForTask('document_scan')
+const STRUCTURED = scanStructuredOutput()
 const TODAY = new Date().toISOString().slice(0, 10)
+
+// ---------------------------------------------------------------------------
+// *** TWO REFUSALS, BOTH OF THEM ABOUT NOT SPENDING MONEY ON A VOID RESULT. ***
+// ---------------------------------------------------------------------------
+//
+// 1. A CAPPED SEARCH IS NOT THE OPEN BASELINE. `DEV_MAX_SEARCHES` caps `web_search.max_uses`
+//    whenever NODE_ENV is not production (`CLAUDE.md` §3.4a), and it is set in `.env.local`
+//    because building a layout needs the shape of an answer and not its breadth. But this suite
+//    measures what a document reading is WORTH, and the answer to that depends on how widely the
+//    model looked. Twenty-one scans at a cap of 2 is a real bill for a number nobody can use, so
+//    it refuses rather than prints a warning nobody reads at the top of a 600-line log.
+if (!fromRuns && process.env.DEV_MAX_SEARCHES) {
+  die([
+    `DEV_MAX_SEARCHES is set to ${process.env.DEV_MAX_SEARCHES}, which caps web_search.max_uses.`,
+    '  This suite is the OPEN BASELINE — search uncapped, as production runs it — and a capped run',
+    '  is money spent on a result that cannot be compared with production or with another',
+    '  configuration. Unset it for this command:',
+    '',
+    '    DEV_MAX_SEARCHES= npm run golden:docs -- --model <id> --structured off',
+  ].join('\n'))
+}
+//
+// 2. AN UNPRICED MODEL RECORDS ITS TOKENS AND NO COST. `config/pricing.ts` prices an id EXACTLY,
+//    and an id missing from it costs `null` — which is "not priced", never "free". A bake-off whose
+//    point is cost per scan must not run a configuration it cannot cost, and the failure would be
+//    invisible: the table would simply read "$—" for one row and look like a rendering problem.
+if (!fromRuns && !priceFor(MODEL)) {
+  die([
+    `${MODEL} is not in config/pricing.ts, so every call would record its tokens and NO cost.`,
+    "  Add its input and output price from Anthropic's published page — with the date checked —",
+    '  before running a configuration on it. Guessing that it costs the same as a similar id is',
+    '  exactly the invented number that table exists to keep out.',
+  ].join('\n'))
+}
+
 
 // ---------------------------------------------------------------------------
 // THE THREE COMPANIES, FROM THE SPECS' OWN CONTEXT LINES.
@@ -433,8 +513,14 @@ const caseFiles = ORDER.filter((id) => files.includes(`${id}.json`) && (!only ||
 if (!caseFiles.length) die(`No case matching "${only ?? ''}" in ${CASES}/`)
 
 console.log(`\n  Target   : ${url.replace(/https:\/\/([^.]+).*/, '$1')} (staging — there is no production target for this command)`)
-console.log(`  Model    : ${MODEL}`)
-console.log(`  Searches : ${process.env.DEV_MAX_SEARCHES ? `CAPPED AT ${process.env.DEV_MAX_SEARCHES} by DEV_MAX_SEARCHES — not the open baseline` : 'uncapped, as in production'}`)
+console.log(`  Model    : ${MODEL}${modelFlag ? '   (--model, overriding the environment for this run)' : '   (from the environment)'}`)
+console.log(`  Schema   : ${STRUCTURED ? 'ON  — output_config.format carries SCAN_JSON_SCHEMA' : 'OFF — the prose path, extractJsonText recovers the object'}`
+  + `${structuredFlag ? `   (--structured ${structuredFlag})` : '   (from the environment)'}`)
+// *** THIS LINE IS THE RUN'S OWN RECEIPT. *** The brief for the bake-off says a run whose header does
+// not read UNCAPPED is void, so the word is printed literally and the refusal above makes it
+// unreachable to print anything else. A header that hedged — "uncapped, as in production" — is not a
+// thing you can grep a log for six weeks later and believe.
+console.log(`  Searches : ${process.env.DEV_MAX_SEARCHES ? `CAPPED AT ${process.env.DEV_MAX_SEARCHES} — VOID` : 'UNCAPPED'}   (as production runs it)`)
 console.log(`  Run date : ${TODAY}   (date-dependent statuses are computed from this)`)
 console.log(`  Cases    : ${caseFiles.length} x ${times} run(s)`)
 if (fromRuns) console.log(`  --from-runs: re-judging the stored runs in ${RUNS}/ — no model call, no database write`)
@@ -535,7 +621,20 @@ for (const c of (fromRuns ? [] : caseFiles)) {
     const stamp = new Date().toISOString().replace(/[:.]/g, '-')
     writeFileSync(`${RUNS}/${c.id}/${stamp}-${n}.json`, JSON.stringify({
       case: c.id, run: n, run_date: TODAY, model: scan.model,
-      searches: scan.searches, cited_sources: scan.cited_sources,
+      // *** THE CONFIGURATION, ON EVERY STORED RUN. *** `scan.structured` is what the scan itself
+      // recorded, not what the flag asked for, so a run cannot be filed under a configuration it did
+      // not actually use. The bake-off report groups by exactly this pair.
+      structured: scan.structured,
+      // *** THE BILLED SEARCH COUNT COMES OFF THE LEDGER ROW, NOT OFF `scan`. ***
+      // `runDocumentScan` sets `scan.searches = null` by construction and `saveScan` fills the
+      // DATABASE column from the ai_calls row without mutating the object it was handed. So this
+      // used to store null on every run while `document_scans.searches` and `ai_calls.searches`
+      // both held the real number — found on 27 September when the bake-off's first run printed
+      // "? searches" for a scan whose cost included two of them ($0.4859 against $0.4659 of
+      // tokens). A measurement suite that cannot report how widely the model looked is missing
+      // the number that explains its own cost.
+      searches: call?.searches ?? scan.searches ?? null,
+      cited_sources: scan.cited_sources,
       prompt_sha256: scan.prompt_sha256, scan_id: scanId, ai_call_id: aiCallId,
       wall_ms: wall, cost_usd: call?.cost_usd ?? null,
       input_tokens: call?.input_tokens ?? null, output_tokens: call?.output_tokens ?? null,
@@ -544,8 +643,9 @@ for (const c of (fromRuns ? [] : caseFiles)) {
     }, null, 2) + '\n')
 
     runs.push({ n, scan, call, wall, verdicts, compliant, altPass })
+    const billed = call?.searches ?? scan.searches ?? null
     process.stdout.write(`  ${c.id}  run ${n}/${times}  ${(wall / 1000).toFixed(1)}s  `
-      + `${scan.searches ?? '?'} search${scan.searches === 1 ? '' : 'es'}  `
+      + `${billed ?? '?'} search${billed === 1 ? '' : 'es'}  `
       + `${scan.cited_sources} source${scan.cited_sources === 1 ? '' : 's'}  `
       + `$${call?.cost_usd == null ? '?' : Number(call.cost_usd).toFixed(4)}  ${scan.status}\n`)
   }
@@ -621,8 +721,8 @@ for (const { c, co, runs } of results) {
   const costs = runs.map((r) => (r.call?.cost_usd == null ? null : Number(r.call.cost_usd)))
   const total = costs.reduce((a, b) => a + (b ?? 0), 0)
   console.log(`    cost of runs  : $${total.toFixed(4)}  (${costs.map((x) => x == null ? '?' : '$' + x.toFixed(4)).join(' + ')})`)
-  console.log(`    model         : ${runs[0].scan.model}`)
-  console.log(`    searches      : ${runs.map((r) => r.scan.searches ?? '?').join(', ')}   (billed, from the ledger row)`)
+  console.log(`    model         : ${runs[0].scan.model}   schema ${runs[0].scan.structured ? 'ON' : 'OFF'}`)
+  console.log(`    searches      : ${runs.map((r) => r.call?.searches ?? r.scan.searches ?? '?').join(', ')}   (billed, from the ledger row)`)
   console.log(`    cited sources : ${runs.map((r) => r.scan.cited_sources ?? '?').join(', ')}   (distinct URLs in the answer)`)
   console.log(`    json parsed   : ${runs.map((r) => r.scan.json_parsed).join(', ')}`)
 
@@ -658,6 +758,7 @@ for (const [name, labels] of Object.entries(companyLabels)) {
 }
 const allRuns = results.flatMap((r) => r.runs)
 const allCost = allRuns.reduce((a, r) => a + Number(r.call?.cost_usd ?? 0), 0)
+console.log(`  configuration: ${MODEL}, schema ${STRUCTURED ? 'ON' : 'OFF'}, search UNCAPPED`)
 console.log(`  total cost of this command: $${allCost.toFixed(4)} over ${allRuns.length} call(s)`)
 console.log(`  full JSON of every run: ${RUNS}/<case>/<timestamp>-<n>.json`)
 console.log(bar(112) + '\n')
