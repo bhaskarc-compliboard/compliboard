@@ -1,0 +1,383 @@
+{
+  "case": "06b-forklift-log-photo",
+  "run": 2,
+  "run_date": "2026-09-27",
+  "model": "claude-haiku-4-5",
+  "structured": false,
+  "searches": 3,
+  "cited_sources": 0,
+  "prompt_sha256": "f05b1d81f2f4af97d0d5ec4073602c87846e750a2ffc6d8daaebe88f92431f14",
+  "scan_id": "ac591e84-dd5e-4f1f-92bd-f85a810ba455",
+  "ai_call_id": "f41a4f23-0554-48cc-8112-e94ae4f2f838",
+  "wall_ms": 54763,
+  "cost_usd": 0.08638499999999999,
+  "input_tokens": 29375,
+  "output_tokens": 5402,
+  "json_parsed": true,
+  "compliant_found_in": [],
+  "alternative_pass": false,
+  "verdicts": {
+    "kind": {
+      "verdict": "PASS",
+      "detail": "identity.kind = \"record\""
+    },
+    "agency-osha": {
+      "verdict": "PASS",
+      "detail": "identity.agencies = [oregon osha]"
+    },
+    "subject": {
+      "verdict": "FAIL",
+      "detail": "identity.subjects = [chemical safety | emergency preparedness]"
+    },
+    "site-portland": {
+      "verdict": "PASS",
+      "detail": "identity.site = \"portland\""
+    },
+    "doc-date": {
+      "verdict": "PASS",
+      "detail": "identity.doc_date = 2026-09-17"
+    },
+    "doc-date-kind": {
+      "verdict": "PASS",
+      "detail": "identity.doc_date_kind = \"last entry\""
+    },
+    "last-entry-date": {
+      "verdict": "FAIL",
+      "detail": "2026-09-18 appears in none of significant_date, identity.doc_date"
+    },
+    "status": {
+      "verdict": "FAIL",
+      "detail": "status = \"gaps found\" (forbidden)"
+    },
+    "finding-missing-days": {
+      "verdict": "FAIL",
+      "detail": "no item matched. gaps/notes held: No documentation of corrective action for ho | No evidence of operator training on inspecti | Operator names recorded as initials only; no | No maintenance or repair history linked to t | No documentation that defective truck was re | summary | freshness_note | confidence_notes | expected_missing | expected_missing | expected_missing | expected_missing | expected_missing"
+    },
+    "finding-horn-defect": {
+      "verdict": "PASS",
+      "detail": "gaps: \"No documentation of corrective action for horn defect\" [horn, sep 9, defect, removed from service, repair]"
+    },
+    "finding-no-entries-since": {
+      "verdict": "FAIL",
+      "detail": "no item matched. gaps/notes held: No documentation of corrective action for ho | No evidence of operator training on inspecti | Operator names recorded as initials only; no | No maintenance or repair history linked to t | No documentation that defective truck was re | summary | freshness_note | confidence_notes | expected_missing | expected_missing | expected_missing | expected_missing | expected_missing"
+    },
+    "deadline-chen": {
+      "verdict": "FAIL",
+      "detail": "no item matched. deadlines held: Pre-shift inspection required before each sh | Operator evaluation at least every three yea"
+    },
+    "deadline-rivera": {
+      "verdict": "FAIL",
+      "detail": "no item matched. deadlines held: Pre-shift inspection required before each sh | Operator evaluation at least every three yea"
+    },
+    "fact-truck": {
+      "verdict": "PASS",
+      "detail": "facts: \"truck_model\" [toyota, 8fgu25, fl-2, propane]"
+    },
+    "label-consistency": {
+      "verdict": "CROSS",
+      "detail": "judged across the three runs, below"
+    },
+    "no-false-certification-finding": {
+      "verdict": "FAIL",
+      "detail": "gaps: \"No evidence of operator training on inspection procedures / <cite index=\"21-1\">29 CFR 1910.178(l) requires the employer to train, evaluate, and certify each operator as competent on the specific truck type and workplace \"  ||  gaps: \"Operator names recorded as initials only; no link to certification records / The log records inspections by operators identified only as 'M.C.' and 'J.R.' OSHA does not require a first and last name in the inspection log\"",
+      "quotes": [
+        {
+          "where": "gaps",
+          "text": "No evidence of operator training on inspection procedures / <cite index=\"21-1\">29 CFR 1910.178(l) requires the employer to train, evaluate, and certify each operator as competent on the specific truck type and workplace conditions, then document that certification with the operator's name, the evaluation date, and the evaluator's name.</cite> This log shows two operators (M.C. and J.R.) performing inspections. No training records, evaluation records, or trainer names are present in the document to show that either operator received formal instruction on which checklist items to examine, how to perform each check, what constitutes a defect, or when to report findings. / Obtain or create written training records for both M.C. and J.R. showing: (1) date of formal instruction on the inspection procedure for this truck model; (2) name of the trainer and trainer's qualifications; (3) content covered (checklist items, how to recognize defects, reporting protocol); (4) date of practical evaluation in the workplace; (5) confirmation that the operator demonstrated competence in performing the inspection. These records must be cross-referenced to operator certification files. / 29 CFR 1910.178(l) / https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.178 / not in the document; implied from the operator names (M.C., J.R.) and the citation header / inferred / 6af30a9f-f1e3-4bd7-8ff6-d6875ddfeb38"
+        },
+        {
+          "where": "gaps",
+          "text": "Operator names recorded as initials only; no link to certification records / The log records inspections by operators identified only as 'M.C.' and 'J.R.' OSHA does not require a first and last name in the inspection log itself, but <cite index=\"22-7\">the certification shall include the name of the operator, the date of the training, the date of the evaluation, and the identity of the person(s) performing the training or evaluation.</cite> For an auditor to verify that the operator who performed the inspection has been trained and certified under 1910.178(l), the initials must be resolvable to a full name and a corresponding certification record. This log does not contain that link. / Maintain a key or roster that maps the operator initials (M.C., J.R.) to full names and operator certification record numbers or file locations. Ensure that when this log is reviewed by an auditor or OSHA inspector, the path from the inspector's signature on this log to the operator's training certification file is clear and traceable in the company's document management system. / 29 CFR 1910.178(l)(6) / https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.178 / page 1, 'Operator' column / inferred / M.C., J.R. / e21207cd-9ba6-4a92-9814-e134bd561f7a"
+        }
+      ],
+      "soft": [
+        {
+          "where": "gaps",
+          "text": "No maintenance or repair history linked to this inspection log / <cite index=\"4-6\">Three records do the heavy lifting: the operator certification (name, training date, evaluation date, evaluator), the pre-shift inspection log, and the maintenance and repair history per truck.</cite> This inspection log stands alone with no evidence of a linked maintenance record, repair request log, or corrective-action tracking system. A defect is recorded (horn on Sep 9) but there is no attached or cross-referenced maintenance work order, repair completion record, or follow-up re-inspection showing that the defect was corrected. <cite index=\"4-7\">An auditor reconstructs the program from these three sources, and a gap in any one of them converts a well-run floor into a paper violation.</cite> / Create and maintain a separate maintenance and repair log for this truck (Toyota 8FGU25, unit FL-2) with columns for: (1) date defect found; (2) description of defect; (3) which inspection log entry it came from; (4) date maintenance/repair was authorized; (5) authorized personnel who performed the work; (6) repair details (parts replaced, adjustments made); (7) date repair completed; (8) date and result of re-inspection to verify the repair was effective. Link this maintenance log to the inspection log by entry date and truck ID number. / 29 CFR 1910.178(q)(1), 1910.178(q)(7) / https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.178 / not in the document / inferred / 9729ff66-6e3e-462e-9f15-dd9f3ab46148"
+        }
+      ]
+    },
+    "no-false-form-finding": {
+      "verdict": "PASS",
+      "detail": "not raised as such; 1 item(s) mention it — read below",
+      "soft": [
+        {
+          "where": "gaps",
+          "text": "No evidence of operator training on inspection procedures / <cite index=\"21-1\">29 CFR 1910.178(l) requires the employer to train, evaluate, and certify each operator as competent on the specific truck type and workplace conditions, then document that certification with the operator's name, the evaluation date, and the evaluator's name.</cite> This log shows two operators (M.C. and J.R.) performing inspections. No training records, evaluation records, or trainer names are present in the document to show that either operator received formal instruction on which checklist items to examine, how to perform each check, what constitutes a defect, or when to report findings. / Obtain or create written training records for both M.C. and J.R. showing: (1) date of formal instruction on the inspection procedure for this truck model; (2) name of the trainer and trainer's qualifications; (3) content covered (checklist items, how to recognize defects, reporting protocol); (4) date of practical evaluation in the workplace; (5) confirmation that the operator demonstrated competence in performing the inspection. These records must be cross-referenced to operator certification files. / 29 CFR 1910.178(l) / https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.178 / not in the document; implied from the operator names (M.C., J.R.) and the citation header / inferred / 6af30a9f-f1e3-4bd7-8ff6-d6875ddfeb38"
+        }
+      ]
+    },
+    "no-invented-maintenance-finding": {
+      "verdict": "PASS",
+      "detail": "not raised",
+      "soft": []
+    },
+    "citation-evaluation-rule": {
+      "verdict": "PASS",
+      "detail": "\"1910.178(l)(4)(iii)\" found"
+    },
+    "two-operators-fact": {
+      "verdict": "FAIL",
+      "detail": "no item matched. facts held: truck_model | fuel_type | shift_schedule | inspection_items | defects_recorded | maintenance_action_recorded | operating_hour_meter_readings | operator_names_initials | maintenance_note_recorded"
+    },
+    "conditions-none": {
+      "verdict": "PASS",
+      "detail": "none"
+    },
+    "freshness-recent": {
+      "verdict": "PASS",
+      "detail": "[september]"
+    }
+  },
+  "scan": {
+    "identity": {
+      "kind": "record",
+      "title": "Powered Industrial Truck Pre-Shift Inspection Log — September 2026",
+      "issuer": null,
+      "agencies": [
+        "Oregon OSHA"
+      ],
+      "subjects": [
+        "chemical_safety",
+        "emergency_preparedness"
+      ],
+      "site": "Portland",
+      "jurisdiction": [
+        "federal",
+        "Oregon"
+      ],
+      "doc_date": "2026-09-17",
+      "doc_date_kind": "last_entry",
+      "page_refs": {
+        "doc_date": "page 1, final row",
+        "issuer": "not stated"
+      }
+    },
+    "summary": "This is a handwritten pre-shift inspection log for a propane-powered forklift (Toyota 8FGU25, unit FL-2) at Cascade Specialty Chemicals' Portland warehouse. The log documents daily visual checks by operators M.C. and J.R. of 15 safety items (tires, forks, mast, horn, lights, belt, brakes, steering, LPG tank, fire extinguisher, data plate, overhead guard, horn function, brake function, and propane tank security) against the requirement in 29 CFR 1910.178(q)(7) to examine each truck before placing it in service. One defect is noted: Sep 9 shows a horn marked with \"X\" and the note \"Horn not working.\" The log covers September 1–17, 2026 (day shift only), with hourglass meter readings recorded.",
+    "status": "gaps_found",
+    "significant_date": "2026-09-17",
+    "significant_date_kind": "last_entry",
+    "freshness_note": "This log is current as of 17 September 2026 (10 days old). Subsequent shifts beyond 17 September are not yet recorded. The document itself is not outdated, but incomplete inspection records for the rest of September and ongoing months would be needed to maintain full compliance.",
+    "gaps": [
+      {
+        "title": "No documentation of corrective action for horn defect",
+        "description": "The Sep 9 entry records a defect (horn not working, marked with X) but provides no evidence that the defect was corrected, repaired, or investigated. 29 CFR 1910.178(q)(7) requires that 'defects when found shall be immediately reported and corrected.' The log does not show whether the truck was removed from service, when the horn was fixed, who performed the repair, or when the truck was returned to service.",
+        "fix": "Create a separate maintenance/repair log or add a linked repair-action column to this inspection log showing: (1) date and time the defect was reported to the maintenance department; (2) which authorized personnel performed the repair; (3) the repair method and parts used; (4) date/time the repair was completed; (5) re-inspection to confirm the defect was corrected before the truck returned to service. Then cross-reference this log entry to that repair record.",
+        "citation": "29 CFR 1910.178(q)(7)",
+        "citation_url": "https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.178",
+        "locator": "page 1, row for Sep 9; defect note 'Horn not working'",
+        "draftable": true,
+        "basis": "read",
+        "quote": "Defects when found shall be immediately reported and corrected",
+        "quote_verified": null,
+        "same_as_gap_id": "5bcc93ec-3750-4792-9c0d-43f0ecac819a"
+      },
+      {
+        "title": "No evidence of operator training on inspection procedures",
+        "description": "<cite index=\"21-1\">29 CFR 1910.178(l) requires the employer to train, evaluate, and certify each operator as competent on the specific truck type and workplace conditions, then document that certification with the operator's name, the evaluation date, and the evaluator's name.</cite> This log shows two operators (M.C. and J.R.) performing inspections. No training records, evaluation records, or trainer names are present in the document to show that either operator received formal instruction on which checklist items to examine, how to perform each check, what constitutes a defect, or when to report findings.",
+        "fix": "Obtain or create written training records for both M.C. and J.R. showing: (1) date of formal instruction on the inspection procedure for this truck model; (2) name of the trainer and trainer's qualifications; (3) content covered (checklist items, how to recognize defects, reporting protocol); (4) date of practical evaluation in the workplace; (5) confirmation that the operator demonstrated competence in performing the inspection. These records must be cross-referenced to operator certification files.",
+        "citation": "29 CFR 1910.178(l)",
+        "citation_url": "https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.178",
+        "locator": "not in the document; implied from the operator names (M.C., J.R.) and the citation header",
+        "draftable": true,
+        "basis": "inferred",
+        "quote": null,
+        "quote_verified": null,
+        "same_as_gap_id": "6af30a9f-f1e3-4bd7-8ff6-d6875ddfeb38"
+      },
+      {
+        "title": "Operator names recorded as initials only; no link to certification records",
+        "description": "The log records inspections by operators identified only as 'M.C.' and 'J.R.' OSHA does not require a first and last name in the inspection log itself, but <cite index=\"22-7\">the certification shall include the name of the operator, the date of the training, the date of the evaluation, and the identity of the person(s) performing the training or evaluation.</cite> For an auditor to verify that the operator who performed the inspection has been trained and certified under 1910.178(l), the initials must be resolvable to a full name and a corresponding certification record. This log does not contain that link.",
+        "fix": "Maintain a key or roster that maps the operator initials (M.C., J.R.) to full names and operator certification record numbers or file locations. Ensure that when this log is reviewed by an auditor or OSHA inspector, the path from the inspector's signature on this log to the operator's training certification file is clear and traceable in the company's document management system.",
+        "citation": "29 CFR 1910.178(l)(6)",
+        "citation_url": "https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.178",
+        "locator": "page 1, 'Operator' column",
+        "draftable": true,
+        "basis": "inferred",
+        "quote": "M.C., J.R.",
+        "quote_verified": null,
+        "same_as_gap_id": "e21207cd-9ba6-4a92-9814-e134bd561f7a"
+      },
+      {
+        "title": "No maintenance or repair history linked to this inspection log",
+        "description": "<cite index=\"4-6\">Three records do the heavy lifting: the operator certification (name, training date, evaluation date, evaluator), the pre-shift inspection log, and the maintenance and repair history per truck.</cite> This inspection log stands alone with no evidence of a linked maintenance record, repair request log, or corrective-action tracking system. A defect is recorded (horn on Sep 9) but there is no attached or cross-referenced maintenance work order, repair completion record, or follow-up re-inspection showing that the defect was corrected. <cite index=\"4-7\">An auditor reconstructs the program from these three sources, and a gap in any one of them converts a well-run floor into a paper violation.</cite>",
+        "fix": "Create and maintain a separate maintenance and repair log for this truck (Toyota 8FGU25, unit FL-2) with columns for: (1) date defect found; (2) description of defect; (3) which inspection log entry it came from; (4) date maintenance/repair was authorized; (5) authorized personnel who performed the work; (6) repair details (parts replaced, adjustments made); (7) date repair completed; (8) date and result of re-inspection to verify the repair was effective. Link this maintenance log to the inspection log by entry date and truck ID number.",
+        "citation": "29 CFR 1910.178(q)(1), 1910.178(q)(7)",
+        "citation_url": "https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.178",
+        "locator": "not in the document",
+        "draftable": true,
+        "basis": "inferred",
+        "quote": null,
+        "quote_verified": null,
+        "same_as_gap_id": "9729ff66-6e3e-462e-9f15-dd9f3ab46148"
+      },
+      {
+        "title": "No documentation that defective truck was removed from service on Sep 9",
+        "description": "<cite index=\"9-4\">If at any time a powered industrial truck is found to be in need of repair, defective, or in any way unsafe, the truck shall be taken out of service until it has been restored to safe operating condition.</cite> The Sep 9 entry marks a defect (horn not working) but shows that operator M.C. completed the inspection and the truck retained its check marks on all other items. There is no note, flag, or indication that the truck was immediately removed from service and unavailable for use. Without a removal-from-service log, work order, or supervisor sign-off, there is no evidence that the defective truck was pulled from service on Sep 9 or any subsequent shift.",
+        "fix": "When a defect is recorded with an 'X' on the inspection log, an operator must immediately notify a supervisor and tag or lock out the truck to prevent operation. Create a parallel log titled 'Trucks Removed from Service' with: (1) inspection log entry date; (2) description of defect; (3) time truck was removed from service; (4) name of supervisor who removed it; (5) date/time truck was returned to service after repair (or note that it was scrapped). Reference this removal log in the Sep 9 entry and throughout the document.",
+        "citation": "29 CFR 1910.178(p)(1)",
+        "citation_url": "https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.178",
+        "locator": "page 1, row for Sep 9",
+        "draftable": true,
+        "basis": "inferred",
+        "quote": "Horn not working",
+        "quote_verified": null,
+        "same_as_gap_id": null
+      }
+    ],
+    "conditions": [],
+    "deadlines": [
+      {
+        "title": "Pre-shift inspection required before each shift",
+        "due_on": null,
+        "source_line": "Inspection per OSHA 29 CFR 1910.178(q)(7): examine before each shift; do not use if a defect affects safety",
+        "recurs": true
+      },
+      {
+        "title": "Operator evaluation at least every three years",
+        "due_on": null,
+        "source_line": "<cite index=\"26-12\">An evaluation of each powered industrial truck operator's performance shall be conducted at least once every three years.</cite> — 29 CFR 1910.178(l)(4)(iii)",
+        "recurs": true
+      }
+    ],
+    "facts": [
+      {
+        "key": "truck_model",
+        "value": "Toyota 8FGU25, unit FL-2",
+        "quote": "Truck: Toyota 8FGU25, unit FL-2, propane",
+        "locator": "page 1, header",
+        "as_of": "2026-09-01",
+        "affects": "Determines which training and inspection procedures apply; also affects which workplace locations and fuel-type restrictions apply under 1910.178(a)",
+        "basis": "read",
+        "quote_verified": null
+      },
+      {
+        "key": "fuel_type",
+        "value": "propane",
+        "quote": "propane",
+        "locator": "page 1, header",
+        "as_of": "2026-09-01",
+        "affects": "Propane tanks and fuel-system checks are required under 1910.178(q); affects where the truck can be operated (hazardous location restrictions in 1910.178(a))",
+        "basis": "read",
+        "quote_verified": null
+      },
+      {
+        "key": "shift_schedule",
+        "value": "day shift only, Sep 1-17",
+        "quote": "Shift: Day",
+        "locator": "page 1, 'Shift' column",
+        "as_of": "2026-09-17",
+        "affects": "A day-shift-only schedule does not require post-shift inspections; round-the-clock operation would require inspection after each shift under 1910.178(q)(7)",
+        "basis": "read",
+        "quote_verified": null
+      },
+      {
+        "key": "inspection_items",
+        "value": "15 checklist items: Tires and wheels, Forks/carriage/chains, Mast and hydraulics, Horn, Lights and backup alarm, Seat belt, Brakes and parking brake, Steering, Propane tank secure/no leak, Fire extinguisher present, Data plate legible, Overhead guard",
+        "quote": "Tires and wheels · Forks, carriage, chains · Mast and hydraulics (no leaks) · Horn · Lights and backup alarm · Seat belt · Brakes and parking brake · Steering · Propane tank secure, no leak · Fire extinguisher present · Data plate legible · Overhead guard",
+        "locator": "page 1, header checklist items",
+        "as_of": "2026-09-01",
+        "affects": "Scope of inspection required before each shift; if any item cannot be checked (because the truck has no such feature), clarification is needed whether the truck meets ANSI/ASME standards",
+        "basis": "read",
+        "quote_verified": null
+      },
+      {
+        "key": "defects_recorded",
+        "value": "One defect found: Sep 9, Horn marked 'X', note 'Horn not working'",
+        "quote": "Horn not working",
+        "locator": "page 1, Sep 9 row, 'Horn' and 'Notes' columns",
+        "as_of": "2026-09-09",
+        "affects": "Requires immediate corrective action and documentation under 1910.178(q)(7); truck must be removed from service per 1910.178(p)(1)",
+        "basis": "read",
+        "quote_verified": null
+      },
+      {
+        "key": "maintenance_action_recorded",
+        "value": "None evident in this log",
+        "quote": null,
+        "locator": "page 1, entire document",
+        "as_of": "2026-09-17",
+        "affects": "Absence of repair records means compliance gap identified in earlier findings (id: 9729ff66-6e3e-462e-9f15-dd9f3ab46148)",
+        "basis": "read",
+        "quote_verified": null
+      },
+      {
+        "key": "operating_hour_meter_readings",
+        "value": "Sep 1: 4,812 hours; Sep 2: 4,819 hours; Sep 7: 4,834 hours; Sep 8: 4,841 hours; Sep 9: 4,847 hours; Sep 10: 4,853 hours; Sep 11: 4,860 hours; Sep 14: 4,866 hours; Sep 15: 4,873 hours; Sep 16: 4,880 hours; Sep 17: 4,886 hours",
+        "quote": "4,812 ... 4,886",
+        "locator": "page 1, 'Hours' column",
+        "as_of": "2026-09-17",
+        "affects": "Useful for tracing maintenance intervals and usage patterns; shows roughly 6–7 hours of operation per day",
+        "basis": "read",
+        "quote_verified": null
+      },
+      {
+        "key": "operator_names_initials",
+        "value": "M.C. (5 entries: Sep 1, 2, 8, 14, 15, 17), J.R. (4 entries: Sep 7, 10, 11, 16)",
+        "quote": "M.C., J.R.",
+        "locator": "page 1, 'Operator' column",
+        "as_of": "2026-09-17",
+        "affects": "Identifies the operators performing inspections; initials must be traceable to full names and operator certification records under 1910.178(l)",
+        "basis": "read",
+        "quote_verified": null
+      },
+      {
+        "key": "maintenance_note_recorded",
+        "value": "Sep 14: 'Tank changed'; Sep 15: 'Tank changed' (propane tank change noted across two days)",
+        "quote": "Tank changed",
+        "locator": "page 1, Sep 14 and 15 rows, 'Notes' column",
+        "as_of": "2026-09-14",
+        "affects": "Indicates a maintenance action (propane tank replacement) but no repair order, authorization, or technician name is recorded; should be documented in a linked maintenance log",
+        "basis": "read",
+        "quote_verified": null
+      }
+    ],
+    "version_of": {
+      "title": "Powered Industrial Truck Pre-Shift Inspection Log",
+      "confidence": "high"
+    },
+    "expected_missing": [
+      {
+        "title": "Operator Certification Records (training date, evaluation date, trainer name for each operator)",
+        "why": "29 CFR 1910.178(l)(6) requires written certification showing operator name, training date, evaluation date, and evaluator identity; this log names operators (M.C., J.R.) but provides no link to their certification files",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Maintenance and Repair Log (work orders, repair completion records, and re-inspection sign-offs for defects found)",
+        "why": "<cite index=\"21-3\">Three records do the heavy lifting: the operator certification (name, training date, evaluation date, evaluator), the pre-shift inspection log, and the maintenance and repair history per truck.</cite>",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Truck Removal from Service Log (documenting when unsafe trucks are pulled and when they return)",
+        "why": "When a defect is found (e.g., Sep 9 horn failure), 1910.178(p)(1) requires the truck to be taken out of service immediately. A separate log showing removal date/time, supervisor sign-off, and return-to-service clearance is standard practice at chemical distribution warehouses",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Written Training Program Documentation",
+        "why": "29 CFR 1910.178(l)(1) requires a written training program defining what topics will be covered; this log shows inspection is happening but does not prove the company has a documented training program addressing 1910.178(l)(3)(i)–(ii) topics",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Authorized Personnel Roster for Repairs",
+        "why": "29 CFR 1910.178(q)(1) requires that 'all repairs shall be made by authorized personnel.' No roster or job descriptions showing who is authorized to repair this truck are present",
+        "basis": "similar companies, not a checked requirement"
+      }
+    ],
+    "confidence_notes": "I am highly confident in what this document is (a pre-shift inspection log) and what it records (daily checks of the forklift for 17 days in September 2026, with one defect noted on Sep 9). I am highly confident that gaps exist based on the open findings already on the compliance record (ids 5bcc93ec, 6af30a9f, 9729ff66, e21207cd) and on my reading of the standards I retrieved. The gaps are clearly supported by 29 CFR 1910.178(q)(7) and (l), which require documentation of corrective action, operator training certification, and maintenance records that do not appear in this log. I am less confident about Oregon-specific state requirements that might add or vary these federal rules; Oregon OSHA operates an approved state plan and generally follows federal OSHA closely, so I have cited only federal standards. The document itself is legible and complete for the dates shown (Sep 1–17). I have not been able to verify the current status of operator M.C. and J.R.'s certifications (whether they are current or overdue for re-evaluation) because this log does not contain that information and the certification records are not provided.",
+    "could_not_read": {
+      "reason": null,
+      "way_forward": null
+    },
+    "raw_text": "I need to search for the specific OSHA requirements referenced in this document to provide a complete and accurate assessment.```json\n{\n  \"identity\": {\n    \"kind\": \"record\",\n    \"title\": \"Powered Industrial Truck Pre-Shift Inspection Log — September 2026\",\n    \"issuer\": null,\n    \"agencies\": [\n      \"Oregon OSHA\"\n    ],\n    \"subjects\": [\n      \"chemical_safety\",\n      \"emergency_preparedness\"\n    ],\n    \"site\": \"Portland\",\n    \"jurisdiction\": [\n      \"federal\",\n      \"Oregon\"\n    ],\n    \"doc_date\": \"2026-09-17\",\n    \"doc_date_kind\": \"last_entry\",\n    \"page_refs\": {\n      \"doc_date\": \"page 1, final row\",\n      \"issuer\": \"not stated\"\n    }\n  },\n  \"summary\": \"This is a handwritten pre-shift inspection log for a propane-powered forklift (Toyota 8FGU25, unit FL-2) at Cascade Specialty Chemicals' Portland warehouse. The log documents daily visual checks by operators M.C. and J.R. of 15 safety items (tires, forks, mast, horn, lights, belt, brakes, steering, LPG tank, fire extinguisher, data plate, overhead guard, horn function, brake function, and propane tank security) against the requirement in 29 CFR 1910.178(q)(7) to examine each truck before placing it in service. One defect is noted: Sep 9 shows a horn marked with \\\"X\\\" and the note \\\"Horn not working.\\\" The log covers September 1–17, 2026 (day shift only), with hourglass meter readings recorded.\",\n    \"status\": \"gaps_found\",\n    \"significant_date\": \"2026-09-17\",\n    \"significant_date_kind\": \"last_entry\",\n    \"freshness_note\": \"This log is current as of 17 September 2026 (10 days old). Subsequent shifts beyond 17 September are not yet recorded. The document itself is not outdated, but incomplete inspection records for the rest of September and ongoing months would be needed to maintain full compliance.\",\n    \"gaps\": [\n      {\n        \"title\": \"No documentation of corrective action for horn defect\",\n        \"description\": \"The Sep 9 entry records a defect (horn not working, marked with X) but provides no evidence that the defect was corrected, repaired, or investigated. 29 CFR 1910.178(q)(7) requires that 'defects when found shall be immediately reported and corrected.' The log does not show whether the truck was removed from service, when the horn was fixed, who performed the repair, or when the truck was returned to service.\",\n        \"fix\": \"Create a separate maintenance/repair log or add a linked repair-action column to this inspection log showing: (1) date and time the defect was reported to the maintenance department; (2) which authorized personnel performed the repair; (3) the repair method and parts used; (4) date/time the repair was completed; (5) re-inspection to confirm the defect was corrected before the truck returned to service. Then cross-reference this log entry to that repair record.\",\n        \"citation\": \"29 CFR 1910.178(q)(7)\",\n        \"citation_url\": \"https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.178\",\n        \"locator\": \"page 1, row for Sep 9; defect note 'Horn not working'\",\n        \"draftable\": true,\n        \"basis\": \"read\",\n        \"quote\": \"Defects when found shall be immediately reported and corrected\",\n        \"same_as_gap_id\": \"5bcc93ec-3750-4792-9c0d-43f0ecac819a\"\n      },\n      {\n        \"title\": \"No evidence of operator training on inspection procedures\",\n        \"description\": \"<cite index=\\\"21-1\\\">29 CFR 1910.178(l) requires the employer to train, evaluate, and certify each operator as competent on the specific truck type and workplace conditions, then document that certification with the operator's name, the evaluation date, and the evaluator's name.</cite> This log shows two operators (M.C. and J.R.) performing inspections. No training records, evaluation records, or trainer names are present in the document to show that either operator received formal instruction on which checklist items to examine, how to perform each check, what constitutes a defect, or when to report findings.\",\n        \"fix\": \"Obtain or create written training records for both M.C. and J.R. showing: (1) date of formal instruction on the inspection procedure for this truck model; (2) name of the trainer and trainer's qualifications; (3) content covered (checklist items, how to recognize defects, reporting protocol); (4) date of practical evaluation in the workplace; (5) confirmation that the operator demonstrated competence in performing the inspection. These records must be cross-referenced to operator certification files.\",\n        \"citation\": \"29 CFR 1910.178(l)\",\n        \"citation_url\": \"https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.178\",\n        \"locator\": \"not in the document; implied from the operator names (M.C., J.R.) and the citation header\",\n        \"draftable\": true,\n        \"basis\": \"inferred\",\n        \"quote\": null,\n        \"same_as_gap_id\": \"6af30a9f-f1e3-4bd7-8ff6-d6875ddfeb38\"\n      },\n      {\n        \"title\": \"Operator names recorded as initials only; no link to certification records\",\n        \"description\": \"The log records inspections by operators identified only as 'M.C.' and 'J.R.' OSHA does not require a first and last name in the inspection log itself, but <cite index=\\\"22-7\\\">the certification shall include the name of the operator, the date of the training, the date of the evaluation, and the identity of the person(s) performing the training or evaluation.</cite> For an auditor to verify that the operator who performed the inspection has been trained and certified under 1910.178(l), the initials must be resolvable to a full name and a corresponding certification record. This log does not contain that link.\",\n        \"fix\": \"Maintain a key or roster that maps the operator initials (M.C., J.R.) to full names and operator certification record numbers or file locations. Ensure that when this log is reviewed by an auditor or OSHA inspector, the path from the inspector's signature on this log to the operator's training certification file is clear and traceable in the company's document management system.\",\n        \"citation\": \"29 CFR 1910.178(l)(6)\",\n        \"citation_url\": \"https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.178\",\n        \"locator\": \"page 1, 'Operator' column\",\n        \"draftable\": true,\n        \"basis\": \"inferred\",\n        \"quote\": \"M.C., J.R.\",\n        \"same_as_gap_id\": \"e21207cd-9ba6-4a92-9814-e134bd561f7a\"\n      },\n      {\n        \"title\": \"No maintenance or repair history linked to this inspection log\",\n        \"description\": \"<cite index=\\\"4-6\\\">Three records do the heavy lifting: the operator certification (name, training date, evaluation date, evaluator), the pre-shift inspection log, and the maintenance and repair history per truck.</cite> This inspection log stands alone with no evidence of a linked maintenance record, repair request log, or corrective-action tracking system. A defect is recorded (horn on Sep 9) but there is no attached or cross-referenced maintenance work order, repair completion record, or follow-up re-inspection showing that the defect was corrected. <cite index=\\\"4-7\\\">An auditor reconstructs the program from these three sources, and a gap in any one of them converts a well-run floor into a paper violation.</cite>\",\n        \"fix\": \"Create and maintain a separate maintenance and repair log for this truck (Toyota 8FGU25, unit FL-2) with columns for: (1) date defect found; (2) description of defect; (3) which inspection log entry it came from; (4) date maintenance/repair was authorized; (5) authorized personnel who performed the work; (6) repair details (parts replaced, adjustments made); (7) date repair completed; (8) date and result of re-inspection to verify the repair was effective. Link this maintenance log to the inspection log by entry date and truck ID number.\",\n        \"citation\": \"29 CFR 1910.178(q)(1), 1910.178(q)(7)\",\n        \"citation_url\": \"https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.178\",\n        \"locator\": \"not in the document\",\n        \"draftable\": true,\n        \"basis\": \"inferred\",\n        \"quote\": null,\n        \"same_as_gap_id\": \"9729ff66-6e3e-462e-9f15-dd9f3ab46148\"\n      },\n      {\n        \"title\": \"No documentation that defective truck was removed from service on Sep 9\",\n        \"description\": \"<cite index=\\\"9-4\\\">If at any time a powered industrial truck is found to be in need of repair, defective, or in any way unsafe, the truck shall be taken out of service until it has been restored to safe operating condition.</cite> The Sep 9 entry marks a defect (horn not working) but shows that operator M.C. completed the inspection and the truck retained its check marks on all other items. There is no note, flag, or indication that the truck was immediately removed from service and unavailable for use. Without a removal-from-service log, work order, or supervisor sign-off, there is no evidence that the defective truck was pulled from service on Sep 9 or any subsequent shift.\",\n        \"fix\": \"When a defect is recorded with an 'X' on the inspection log, an operator must immediately notify a supervisor and tag or lock out the truck to prevent operation. Create a parallel log titled 'Trucks Removed from Service' with: (1) inspection log entry date; (2) description of defect; (3) time truck was removed from service; (4) name of supervisor who removed it; (5) date/time truck was returned to service after repair (or note that it was scrapped). Reference this removal log in the Sep 9 entry and throughout the document.\",\n        \"citation\": \"29 CFR 1910.178(p)(1)\",\n        \"citation_url\": \"https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.178\",\n        \"locator\": \"page 1, row for Sep 9\",\n        \"draftable\": true,\n        \"basis\": \"inferred\",\n        \"quote\": \"Horn not working\",\n        \"same_as_gap_id\": \"\"\n      }\n    ],\n    \"conditions\": [],\n    \"deadlines\": [\n      {\n        \"title\": \"Pre-shift inspection required before each shift\",\n        \"due_on\": null,\n        \"source_line\": \"Inspection per OSHA 29 CFR 1910.178(q)(7): examine before each shift; do not use if a defect affects safety\",\n        \"recurs\": true\n      },\n      {\n        \"title\": \"Operator evaluation at least every three years\",\n        \"due_on\": null,\n        \"source_line\": \"<cite index=\\\"26-12\\\">An evaluation of each powered industrial truck operator's performance shall be conducted at least once every three years.</cite> — 29 CFR 1910.178(l)(4)(iii)\",\n        \"recurs\": true\n      }\n    ],\n    \"facts\": [\n      {\n        \"key\": \"truck_model\",\n        \"value\": \"Toyota 8FGU25, unit FL-2\",\n        \"basis\": \"read\",\n        \"quote\": \"Truck: Toyota 8FGU25, unit FL-2, propane\",\n        \"locator\": \"page 1, header\",\n        \"as_of\": \"2026-09-01\",\n        \"affects\": \"Determines which training and inspection procedures apply; also affects which workplace locations and fuel-type restrictions apply under 1910.178(a)\"\n      },\n      {\n        \"key\": \"fuel_type\",\n        \"value\": \"propane\",\n        \"basis\": \"read\",\n        \"quote\": \"propane\",\n        \"locator\": \"page 1, header\",\n        \"as_of\": \"2026-09-01\",\n        \"affects\": \"Propane tanks and fuel-system checks are required under 1910.178(q); affects where the truck can be operated (hazardous location restrictions in 1910.178(a))\"\n      },\n      {\n        \"key\": \"shift_schedule\",\n        \"value\": \"day shift only, Sep 1-17\",\n        \"basis\": \"read\",\n        \"quote\": \"Shift: Day\",\n        \"locator\": \"page 1, 'Shift' column\",\n        \"as_of\": \"2026-09-17\",\n        \"affects\": \"A day-shift-only schedule does not require post-shift inspections; round-the-clock operation would require inspection after each shift under 1910.178(q)(7)\"\n      },\n      {\n        \"key\": \"inspection_items\",\n        \"value\": \"15 checklist items: Tires and wheels, Forks/carriage/chains, Mast and hydraulics, Horn, Lights and backup alarm, Seat belt, Brakes and parking brake, Steering, Propane tank secure/no leak, Fire extinguisher present, Data plate legible, Overhead guard\",\n        \"basis\": \"read\",\n        \"quote\": \"Tires and wheels · Forks, carriage, chains · Mast and hydraulics (no leaks) · Horn · Lights and backup alarm · Seat belt · Brakes and parking brake · Steering · Propane tank secure, no leak · Fire extinguisher present · Data plate legible · Overhead guard\",\n        \"locator\": \"page 1, header checklist items\",\n        \"as_of\": \"2026-09-01\",\n        \"affects\": \"Scope of inspection required before each shift; if any item cannot be checked (because the truck has no such feature), clarification is needed whether the truck meets ANSI/ASME standards\"\n      },\n      {\n        \"key\": \"defects_recorded\",\n        \"value\": \"One defect found: Sep 9, Horn marked 'X', note 'Horn not working'\",\n        \"basis\": \"read\",\n        \"quote\": \"Horn not working\",\n        \"locator\": \"page 1, Sep 9 row, 'Horn' and 'Notes' columns\",\n        \"as_of\": \"2026-09-09\",\n        \"affects\": \"Requires immediate corrective action and documentation under 1910.178(q)(7); truck must be removed from service per 1910.178(p)(1)\"\n      },\n      {\n        \"key\": \"maintenance_action_recorded\",\n        \"value\": \"None evident in this log\",\n        \"basis\": \"read\",\n        \"quote\": null,\n        \"locator\": \"page 1, entire document\",\n        \"as_of\": \"2026-09-17\",\n        \"affects\": \"Absence of repair records means compliance gap identified in earlier findings (id: 9729ff66-6e3e-462e-9f15-dd9f3ab46148)\"\n      },\n      {\n        \"key\": \"operating_hour_meter_readings\",\n        \"value\": \"Sep 1: 4,812 hours; Sep 2: 4,819 hours; Sep 7: 4,834 hours; Sep 8: 4,841 hours; Sep 9: 4,847 hours; Sep 10: 4,853 hours; Sep 11: 4,860 hours; Sep 14: 4,866 hours; Sep 15: 4,873 hours; Sep 16: 4,880 hours; Sep 17: 4,886 hours\",\n        \"basis\": \"read\",\n        \"quote\": \"4,812 ... 4,886\",\n        \"locator\": \"page 1, 'Hours' column\",\n        \"as_of\": \"2026-09-17\",\n        \"affects\": \"Useful for tracing maintenance intervals and usage patterns; shows roughly 6–7 hours of operation per day\"\n      },\n      {\n        \"key\": \"operator_names_initials\",\n        \"value\": \"M.C. (5 entries: Sep 1, 2, 8, 14, 15, 17), J.R. (4 entries: Sep 7, 10, 11, 16)\",\n        \"basis\": \"read\",\n        \"quote\": \"M.C., J.R.\",\n        \"locator\": \"page 1, 'Operator' column\",\n        \"as_of\": \"2026-09-17\",\n        \"affects\": \"Identifies the operators performing inspections; initials must be traceable to full names and operator certification records under 1910.178(l)\"\n      },\n      {\n        \"key\": \"maintenance_note_recorded\",\n        \"value\": \"Sep 14: 'Tank changed'; Sep 15: 'Tank changed' (propane tank change noted across two days)\",\n        \"basis\": \"read\",\n        \"quote\": \"Tank changed\",\n        \"locator\": \"page 1, Sep 14 and 15 rows, 'Notes' column\",\n        \"as_of\": \"2026-09-14\",\n        \"affects\": \"Indicates a maintenance action (propane tank replacement) but no repair order, authorization, or technician name is recorded; should be documented in a linked maintenance log\"\n      }\n    ],\n    \"version_of_title\": \"Powered Industrial Truck Pre-Shift Inspection Log\",\n    \"version_of_confidence\": \"high\",\n    \"expected_missing\": [\n      {\n        \"title\": \"Operator Certification Records (training date, evaluation date, trainer name for each operator)\",\n        \"why\": \"29 CFR 1910.178(l)(6) requires written certification showing operator name, training date, evaluation date, and evaluator identity; this log names operators (M.C., J.R.) but provides no link to their certification files\",\n        \"basis\": \"similar companies, not a checked requirement\"\n      },\n      {\n        \"title\": \"Maintenance and Repair Log (work orders, repair completion records, and re-inspection sign-offs for defects found)\",\n        \"why\": \"<cite index=\\\"21-3\\\">Three records do the heavy lifting: the operator certification (name, training date, evaluation date, evaluator), the pre-shift inspection log, and the maintenance and repair history per truck.</cite>\",\n        \"basis\": \"similar companies, not a checked requirement\"\n      },\n      {\n        \"title\": \"Truck Removal from Service Log (documenting when unsafe trucks are pulled and when they return)\",\n        \"why\": \"When a defect is found (e.g., Sep 9 horn failure), 1910.178(p)(1) requires the truck to be taken out of service immediately. A separate log showing removal date/time, supervisor sign-off, and return-to-service clearance is standard practice at chemical distribution warehouses\",\n        \"basis\": \"similar companies, not a checked requirement\"\n      },\n      {\n        \"title\": \"Written Training Program Documentation\",\n        \"why\": \"29 CFR 1910.178(l)(1) requires a written training program defining what topics will be covered; this log shows inspection is happening but does not prove the company has a documented training program addressing 1910.178(l)(3)(i)–(ii) topics\",\n        \"basis\": \"similar companies, not a checked requirement\"\n      },\n      {\n        \"title\": \"Authorized Personnel Roster for Repairs\",\n        \"why\": \"29 CFR 1910.178(q)(1) requires that 'all repairs shall be made by authorized personnel.' No roster or job descriptions showing who is authorized to repair this truck are present\",\n        \"basis\": \"similar companies, not a checked requirement\"\n      }\n    ],\n    \"confidence_notes\": \"I am highly confident in what this document is (a pre-shift inspection log) and what it records (daily checks of the forklift for 17 days in September 2026, with one defect noted on Sep 9). I am highly confident that gaps exist based on the open findings already on the compliance record (ids 5bcc93ec, 6af30a9f, 9729ff66, e21207cd) and on my reading of the standards I retrieved. The gaps are clearly supported by 29 CFR 1910.178(q)(7) and (l), which require documentation of corrective action, operator training certification, and maintenance records that do not appear in this log. I am less confident about Oregon-specific state requirements that might add or vary these federal rules; Oregon OSHA operates an approved state plan and generally follows federal OSHA closely, so I have cited only federal standards. The document itself is legible and complete for the dates shown (Sep 1–17). I have not been able to verify the current status of operator M.C. and J.R.'s certifications (whether they are current or overdue for re-evaluation) because this log does not contain that information and the certification records are not provided.\",\n    \"could_not_read_reason\": null,\n    \"could_not_read_way_forward\": null\n  }\n```",
+    "json_parsed": true,
+    "model": "claude-haiku-4-5",
+    "cited_sources": 0,
+    "searches": null,
+    "structured": false,
+    "prompt_sha256": "f05b1d81f2f4af97d0d5ec4073602c87846e750a2ffc6d8daaebe88f92431f14",
+    "quotes_checked": 0,
+    "quotes_verified": 0,
+    "extracted_text": "",
+    "started_at": "2026-09-27T18:46:20.913Z"
+  }
+}

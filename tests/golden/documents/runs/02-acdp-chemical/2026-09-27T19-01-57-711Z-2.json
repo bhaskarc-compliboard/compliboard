@@ -1,0 +1,408 @@
+{
+  "case": "02-acdp-chemical",
+  "run": 2,
+  "run_date": "2026-09-27",
+  "model": "claude-haiku-4-5",
+  "structured": true,
+  "searches": 2,
+  "cited_sources": 0,
+  "prompt_sha256": "7137966c8cac0e7231721c5e93f7bf45a59ef277f9dd63dfb464713f3b8ea209",
+  "scan_id": "d2d2ba2a-da36-4c49-b1e3-fcf26ca92a08",
+  "ai_call_id": "c1f2581d-057c-43e7-b393-d48e009113bb",
+  "wall_ms": 36791,
+  "cost_usd": 0.07895,
+  "input_tokens": 44495,
+  "output_tokens": 2891,
+  "json_parsed": true,
+  "compliant_found_in": [],
+  "alternative_pass": false,
+  "verdicts": {
+    "kind": {
+      "verdict": "PASS",
+      "detail": "identity.kind = \"permit\""
+    },
+    "issuer-deq": {
+      "verdict": "PASS",
+      "detail": "identity.issuer = \"oregon department of environmental quality, northwest region\""
+    },
+    "agency-deq": {
+      "verdict": "PASS",
+      "detail": "identity.agencies = [oregon deq]"
+    },
+    "site-portland": {
+      "verdict": "PASS",
+      "detail": "identity.site = \"portland\""
+    },
+    "permit-number": {
+      "verdict": "PASS",
+      "detail": "\"26-2841-ST-01\" found"
+    },
+    "doc-date": {
+      "verdict": "PASS",
+      "detail": "identity.doc_date = 2021-09-01"
+    },
+    "doc-date-kind": {
+      "verdict": "PASS",
+      "detail": "identity.doc_date_kind = \"issued\""
+    },
+    "expiry": {
+      "verdict": "FAIL",
+      "detail": "2026-11-15 appears in none of significant_date, deadlines"
+    },
+    "jurisdiction-oregon": {
+      "verdict": "PASS",
+      "detail": "identity.jurisdiction = [oregon]"
+    },
+    "status": {
+      "verdict": "PASS",
+      "detail": "status = expiring (49 days to 2026-11-15 -> expiring)"
+    },
+    "no-gaps": {
+      "verdict": "PASS",
+      "detail": "none"
+    },
+    "deadline-renewal": {
+      "verdict": "PASS",
+      "detail": "deadlines: \"Renewal application deadline (120 days before expiration)\" [renewal, application, 120 days, 1.3]"
+    },
+    "deadline-expiry": {
+      "verdict": "FAIL",
+      "detail": "no item matched. deadlines held: Renewal application deadline (120 days befor | Annual report to DEQ | Semi-annual monitoring report | Notify DEQ of permit deviations | Submit deviation report to DEQ"
+    },
+    "deadline-annual-report": {
+      "verdict": "PASS",
+      "detail": "deadlines: \"Annual report to DEQ\" [annual report, february 15, 4.1, annual, february]"
+    },
+    "deadline-semi-annual": {
+      "verdict": "PASS",
+      "detail": "deadlines: \"Semi-annual monitoring report\" [semi-annual, monitoring report, july 31, 4.2]"
+    },
+    "condition-3-1": {
+      "verdict": "PASS",
+      "detail": "conditions: \"Maintain scrubber S-1 and S-2 pressure drop between 2.0 and 6.0 inches\" [pressure drop, 2.0, 6.0, scrubber, daily, log]"
+    },
+    "condition-3-2": {
+      "verdict": "PASS",
+      "detail": "conditions: \"Inspect scrubber components quarterly\" [quarter, inspect, scrubber]"
+    },
+    "condition-3-3": {
+      "verdict": "PASS",
+      "detail": "conditions: \"Replace carbon in C-1 at least annually or upon breakthrough detection\" [carbon, breakthrough, replace, c-1]"
+    },
+    "condition-3-4": {
+      "verdict": "PASS",
+      "detail": "conditions: \"Visible emissions shall not exceed 20% opacity for any period exceedin\" [opacity, 20%, visible emission]"
+    },
+    "condition-5-2": {
+      "verdict": "PASS",
+      "detail": "conditions: \"Notify DEQ within 24 hours of any permit deviation; submit written rep\" [24 hour, 15 day, deviation, notif, written report]"
+    },
+    "condition-4-3": {
+      "verdict": "PASS",
+      "detail": "conditions: \"Keep all required records for at least five years\" [five years, record, keep, retain]"
+    },
+    "fact-address": {
+      "verdict": "PASS",
+      "detail": "facts: \"facility_address\" [4410, front avenue, portland, address]"
+    },
+    "fact-sources": {
+      "verdict": "PASS",
+      "detail": "facts: \"permitted_sources_acid_scrubber\" [s-1, scrubber, permitted source]"
+    },
+    "label-consistency": {
+      "verdict": "CROSS",
+      "detail": "judged across the three runs, below"
+    },
+    "summary-agency-document": {
+      "verdict": "FAIL",
+      "detail": "only [condition] of the spec's words appear"
+    },
+    "oar-340-216": {
+      "verdict": "FAIL",
+      "detail": "\"340-216\" not in identity.title, summary, identity.jurisdiction"
+    },
+    "optional-deadlines": {
+      "verdict": "FAIL",
+      "detail": "no item matched. deadlines held: Renewal application deadline (120 days befor | Annual report to DEQ | Semi-annual monitoring report | Notify DEQ of permit deviations | Submit deviation report to DEQ"
+    },
+    "freshness-no-nudge": {
+      "verdict": "FAIL",
+      "detail": "\"This permit expires November 15, 2026. As of today (September 27, 2026), the company is no\""
+    },
+    "version-match-none": {
+      "verdict": "FAIL",
+      "detail": "\"Renewal of this permit has not yet occurred, so version status is prior to first renewal\""
+    }
+  },
+  "scan": {
+    "identity": {
+      "kind": "permit",
+      "title": "Standard Air Contaminant Discharge Permit for Chemical Storage and Repackaging with Vapor Control",
+      "issuer": "Oregon Department of Environmental Quality, Northwest Region",
+      "agencies": [
+        "Oregon DEQ"
+      ],
+      "subjects": [
+        "air emissions",
+        "chemical storage",
+        "vapor control"
+      ],
+      "site": "Portland",
+      "jurisdiction": [
+        "Oregon"
+      ],
+      "doc_date": "2021-09-01",
+      "doc_date_kind": "issued",
+      "page_refs": {}
+    },
+    "summary": "This is a Standard Air Contaminant Discharge Permit issued by Oregon DEQ authorizing Cascade Specialty Chemicals to operate two wet scrubbers serving its acid and caustic repackaging lines and four solvent storage tanks with carbon adsorption vapor control. The permit is now expiring and establishes conditions for scrubber pressure drop maintenance, quarterly inspections, carbon replacement, opacity limits, and reporting requirements.",
+    "status": "expiring",
+    "significant_date": "2026-07-18",
+    "significant_date_kind": "expiry",
+    "freshness_note": "This permit expires November 15, 2026. As of today (September 27, 2026), the company is now 50 days past the July 18, 2026 deadline to submit a renewal application 120 days before expiration. The permit is in critical renewal territory. This is a material issue requiring immediate attention.",
+    "gaps": [],
+    "conditions": [
+      {
+        "title": "Operate all sources in compliance with permit conditions and DEQ rules",
+        "condition_ref": "1.1",
+        "evidence_expected": "Operational records and compliance documentation"
+      },
+      {
+        "title": "Permit expiration and operation without renewal is a violation",
+        "condition_ref": "1.2",
+        "evidence_expected": "Current valid permit or evidence of timely renewal application submitted"
+      },
+      {
+        "title": "Submit complete renewal application by July 18, 2026",
+        "condition_ref": "1.3",
+        "evidence_expected": "Renewal application package submitted to Oregon DEQ with required forms and information"
+      },
+      {
+        "title": "Notify DEQ 60 days in advance of ownership changes or modifications increasing emissions",
+        "condition_ref": "1.4",
+        "evidence_expected": "Written notification sent to DEQ 60 days before any change in ownership"
+      },
+      {
+        "title": "Maintain scrubber S-1 and S-2 pressure drop between 2.0 and 6.0 inches water column during operation",
+        "condition_ref": "3.1",
+        "evidence_expected": "Scrubber log with daily pressure drop readings when operating"
+      },
+      {
+        "title": "Inspect scrubber components quarterly",
+        "condition_ref": "3.2",
+        "evidence_expected": "Scrubber log with quarterly inspection dates, inspector names, and corrective actions"
+      },
+      {
+        "title": "Replace carbon in C-1 at least annually or upon breakthrough detection",
+        "condition_ref": "3.3",
+        "evidence_expected": "Carbon replacement records with dates, weekly detector-tube check results"
+      },
+      {
+        "title": "Visible emissions shall not exceed 20% opacity for any period exceeding three minutes in one hour",
+        "condition_ref": "3.4",
+        "evidence_expected": "Opacity observation records or monitoring data"
+      },
+      {
+        "title": "Submit annual report by February 15 covering previous calendar year",
+        "condition_ref": "4.1",
+        "evidence_expected": "Annual report submitted to Oregon DEQ with throughput, scrubber log summaries, carbon dates, excess events"
+      },
+      {
+        "title": "Submit semi-annual monitoring report by July 31 for January through June",
+        "condition_ref": "4.2",
+        "evidence_expected": "Semi-annual monitoring report submitted to Oregon DEQ"
+      },
+      {
+        "title": "Keep all required records for at least five years",
+        "condition_ref": "4.3",
+        "evidence_expected": "Records retained and made available upon request"
+      },
+      {
+        "title": "Take reasonable steps to minimize emissions during scrubber malfunction, including shutting down associated line",
+        "condition_ref": "5.1",
+        "evidence_expected": "Operational procedures documentation and incident records"
+      },
+      {
+        "title": "Notify DEQ within 24 hours of any permit deviation; submit written report within 15 days",
+        "condition_ref": "5.2",
+        "evidence_expected": "Email or phone notification to DEQ followed by written deviation report with cause and corrective action"
+      },
+      {
+        "title": "Pay annual permit fee by due date on invoice",
+        "condition_ref": "6.2",
+        "evidence_expected": "Payment receipts for annual permit fees invoiced by DEQ"
+      }
+    ],
+    "deadlines": [
+      {
+        "title": "Renewal application deadline (120 days before expiration)",
+        "due_on": "2026-07-18",
+        "source_line": "Section 1.3: The permittee shall submit a complete application for renewal of this permit no later than 120 days before the expiration date, that is, on or before July 18, 2026.",
+        "recurs": false
+      },
+      {
+        "title": "Annual report to DEQ",
+        "due_on": "2027-02-15",
+        "source_line": "Section 4.1: The permittee shall submit an annual report to the Department by February 15 of each year covering the previous calendar year",
+        "recurs": true
+      },
+      {
+        "title": "Semi-annual monitoring report",
+        "due_on": "2027-07-31",
+        "source_line": "Section 4.2: The permittee shall submit a semi-annual monitoring report by July 31 covering January through June of the same year",
+        "recurs": true
+      },
+      {
+        "title": "Notify DEQ of permit deviations",
+        "due_on": null,
+        "source_line": "Section 5.2: within 24 hours of discovering any deviation from a condition of this permit",
+        "recurs": true
+      },
+      {
+        "title": "Submit deviation report to DEQ",
+        "due_on": null,
+        "source_line": "Section 5.2: submit a written report within 15 days describing the deviation, its cause, its duration and the corrective action taken",
+        "recurs": true
+      }
+    ],
+    "facts": [
+      {
+        "key": "permit_number",
+        "value": "26-2841-ST-01",
+        "quote": "Permit number: 26-2841-ST-01",
+        "locator": "First page, permit header",
+        "as_of": "2021-09-01",
+        "affects": "All future references to this operating authorization",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "facility_address",
+        "value": "4410 NW Front Avenue, Portland, Oregon 97210",
+        "quote": "Facility address: 4410 NW Front Avenue, Portland, Oregon 97210",
+        "locator": "First page, permit header",
+        "as_of": "2021-09-01",
+        "affects": "Identifies location of permitted sources",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "permitted_sources_acid_scrubber",
+        "value": "Packed-bed wet scrubber S-1 serving acid repackaging line (design flow 4,500 scfm)",
+        "quote": "Packed-bed wet scrubber S-1 serving the acid repackaging line (design flow 4,500 scfm)",
+        "locator": "Section 2.1",
+        "as_of": "2021-09-01",
+        "affects": "Air contaminant emissions control from acid repackaging operations",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "permitted_sources_caustic_scrubber",
+        "value": "Packed-bed wet scrubber S-2 serving caustic repackaging line (design flow 3,000 scfm)",
+        "quote": "Packed-bed wet scrubber S-2 serving the caustic repackaging line (design flow 3,000 scfm)",
+        "locator": "Section 2.2",
+        "as_of": "2021-09-01",
+        "affects": "Air contaminant emissions control from caustic repackaging operations",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "permitted_sources_storage_tanks",
+        "value": "Four solvent storage tanks T-3, T-4, T-5, T-6, each 10,000 gallons, fixed roof, vented to carbon adsorption unit C-1",
+        "quote": "Solvent storage tanks T-3, T-4, T-5 and T-6 (each 10,000 gallons, fixed roof, vented to carbon adsorption unit C-1)",
+        "locator": "Section 2.3",
+        "as_of": "2021-09-01",
+        "affects": "Vapor control from four 10,000 gallon solvent storage tanks",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "scrubber_pressure_drop_range",
+        "value": "2.0 to 6.0 inches of water column",
+        "quote": "maintain the pressure drop across each scrubber S-1 and S-2 within the range of 2.0 to 6.0 inches of water column whenever the associated line is operating",
+        "locator": "Section 3.1",
+        "as_of": "2021-09-01",
+        "affects": "Scrubber operating compliance monitoring and operational parameters",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "carbon_replacement_frequency",
+        "value": "At least once every 12 months or upon breakthrough detection by weekly detector-tube check, whichever is first",
+        "quote": "replace the carbon in adsorption unit C-1 at least once every 12 months or when breakthrough is detected by the weekly detector-tube check at the C-1 outlet, whichever comes first",
+        "locator": "Section 3.3",
+        "as_of": "2021-09-01",
+        "affects": "Vapor control effectiveness and maintenance requirements",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "visible_emissions_limit",
+        "value": "20 percent opacity for any period aggregating more than three minutes in any one hour",
+        "quote": "Visible emissions from any permitted source shall not exceed 20 percent opacity for any period aggregating more than three minutes in any one hour",
+        "locator": "Section 3.4",
+        "as_of": "2021-09-01",
+        "affects": "Opacity compliance threshold for visible emissions monitoring",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "plan_distribution",
+        "value": "Not specified in permit",
+        "quote": null,
+        "locator": "Permit does not specify who must receive copies of this permit or plan",
+        "as_of": "2021-09-01",
+        "affects": "Internal communication of permit requirements to operators",
+        "basis": "inferred",
+        "quote_verified": null
+      },
+      {
+        "key": "work_areas_covered",
+        "value": "Acid repackaging line and caustic repackaging line with associated vapor control for solvent storage",
+        "quote": "Packed-bed wet scrubber S-1 serving the acid repackaging line... Packed-bed wet scrubber S-2 serving the caustic repackaging line... Solvent storage tanks... vented to carbon adsorption unit C-1",
+        "locator": "Section 2, Permitted Sources",
+        "as_of": "2021-09-01",
+        "affects": "Scope of air emissions sources covered by this permit",
+        "basis": "inferred",
+        "quote_verified": false
+      }
+    ],
+    "version_of": {
+      "title": "Renewal of this permit has not yet occurred, so version status is prior to first renewal",
+      "confidence": "high"
+    },
+    "expected_missing": [
+      {
+        "title": "Permit modification or amendment records",
+        "why": "The company's operating procedures may have changed since 2021 issuance; permit amendments would be expected if sources, processes, or control equipment changed.",
+        "basis": "Common practice: most five-year permits receive at least one modification"
+      },
+      {
+        "title": "Previous permit history or prior renewal applications",
+        "why": "This appears to be the company's current Standard permit, but prior versions or renewal actions are not provided.",
+        "basis": "Regulatory expectations: permits typically have prior versions unless this is an initial permit"
+      },
+      {
+        "title": "Toxic Air Contaminant (TAC) Permit Addendum or CAO documentation",
+        "why": "Many Oregon permits for chemical operations include TAC permitting; presence or absence would clarify whether hazardous air pollutants are regulated.",
+        "basis": "Oregon DEQ CAO program applies to many chemical facilities"
+      }
+    ],
+    "confidence_notes": "High confidence in basic permit facts (number, dates, facility location, permitted sources, and specific operating conditions). The permit document is clear and well-structured. The critical issue is the renewal deadline status: the July 18, 2026 renewal application deadline has passed as of September 27, 2026, and the permit expires November 15, 2026. This is a material compliance gap requiring immediate remediation. The company should either confirm a timely renewal application was already submitted, or file one immediately. Condition 1.3 provides that a timely and complete renewal application allows continued operation while the Department acts on it, but this only applies if the application was actually submitted by July 18. No gaps were found in the permit document itself (permits are regulatory documents issued by the agency with no content to 'fix'), but the renewal status is critical. Annual and semi-annual reporting deadlines mentioned in the permit suggest the company should maintain detailed operating logs and carbon replacement records.",
+    "could_not_read": {
+      "reason": "-",
+      "way_forward": "-"
+    },
+    "raw_text": "{\"identity\":{\"kind\":\"permit\",\"title\":\"Standard Air Contaminant Discharge Permit for Chemical Storage and Repackaging with Vapor Control\",\"issuer\":\"Oregon Department of Environmental Quality, Northwest Region\",\"agencies\":[\"Oregon DEQ\"],\"subjects\":[\"air emissions\",\"chemical storage\",\"vapor control\"],\"site\":\"Portland\",\"jurisdiction\":[\"Oregon\"],\"doc_date\":\"2021-09-01\",\"doc_date_kind\":\"issued\"},\"summary\":\"This is a Standard Air Contaminant Discharge Permit issued by Oregon DEQ authorizing Cascade Specialty Chemicals to operate two wet scrubbers serving its acid and caustic repackaging lines and four solvent storage tanks with carbon adsorption vapor control. The permit is now expiring and establishes conditions for scrubber pressure drop maintenance, quarterly inspections, carbon replacement, opacity limits, and reporting requirements.\",\"status\":\"expiring\",\"significant_date\":\"2026-11-15\",\"significant_date_kind\":\"expiry\",\"freshness_note\":\"This permit expires November 15, 2026. As of today (September 27, 2026), the company is now 50 days past the July 18, 2026 deadline to submit a renewal application 120 days before expiration. The permit is in critical renewal territory. This is a material issue requiring immediate attention.\",\"gaps\":[],\"conditions\":[{\"title\":\"Operate all sources in compliance with permit conditions and DEQ rules\",\"condition_ref\":\"1.1\",\"evidence_expected\":\"Operational records and compliance documentation\"},{\"title\":\"Permit expiration and operation without renewal is a violation\",\"condition_ref\":\"1.2\",\"evidence_expected\":\"Current valid permit or evidence of timely renewal application submitted\"},{\"title\":\"Submit complete renewal application by July 18, 2026\",\"condition_ref\":\"1.3\",\"evidence_expected\":\"Renewal application package submitted to Oregon DEQ with required forms and information\"},{\"title\":\"Notify DEQ 60 days in advance of ownership changes or modifications increasing emissions\",\"condition_ref\":\"1.4\",\"evidence_expected\":\"Written notification sent to DEQ 60 days before any change in ownership\"},{\"title\":\"Maintain scrubber S-1 and S-2 pressure drop between 2.0 and 6.0 inches water column during operation\",\"condition_ref\":\"3.1\",\"evidence_expected\":\"Scrubber log with daily pressure drop readings when operating\"},{\"title\":\"Inspect scrubber components quarterly\",\"condition_ref\":\"3.2\",\"evidence_expected\":\"Scrubber log with quarterly inspection dates, inspector names, and corrective actions\"},{\"title\":\"Replace carbon in C-1 at least annually or upon breakthrough detection\",\"condition_ref\":\"3.3\",\"evidence_expected\":\"Carbon replacement records with dates, weekly detector-tube check results\"},{\"title\":\"Visible emissions shall not exceed 20% opacity for any period exceeding three minutes in one hour\",\"condition_ref\":\"3.4\",\"evidence_expected\":\"Opacity observation records or monitoring data\"},{\"title\":\"Submit annual report by February 15 covering previous calendar year\",\"condition_ref\":\"4.1\",\"evidence_expected\":\"Annual report submitted to Oregon DEQ with throughput, scrubber log summaries, carbon dates, excess events\"},{\"title\":\"Submit semi-annual monitoring report by July 31 for January through June\",\"condition_ref\":\"4.2\",\"evidence_expected\":\"Semi-annual monitoring report submitted to Oregon DEQ\"},{\"title\":\"Keep all required records for at least five years\",\"condition_ref\":\"4.3\",\"evidence_expected\":\"Records retained and made available upon request\"},{\"title\":\"Take reasonable steps to minimize emissions during scrubber malfunction, including shutting down associated line\",\"condition_ref\":\"5.1\",\"evidence_expected\":\"Operational procedures documentation and incident records\"},{\"title\":\"Notify DEQ within 24 hours of any permit deviation; submit written report within 15 days\",\"condition_ref\":\"5.2\",\"evidence_expected\":\"Email or phone notification to DEQ followed by written deviation report with cause and corrective action\"},{\"title\":\"Pay annual permit fee by due date on invoice\",\"condition_ref\":\"6.2\",\"evidence_expected\":\"Payment receipts for annual permit fees invoiced by DEQ\"}],\"deadlines\":[{\"title\":\"Renewal application deadline (120 days before expiration)\",\"due_on\":\"2026-07-18\",\"source_line\":\"Section 1.3: The permittee shall submit a complete application for renewal of this permit no later than 120 days before the expiration date, that is, on or before July 18, 2026.\",\"recurs\":false},{\"title\":\"Annual report to DEQ\",\"due_on\":\"2027-02-15\",\"source_line\":\"Section 4.1: The permittee shall submit an annual report to the Department by February 15 of each year covering the previous calendar year\",\"recurs\":true},{\"title\":\"Semi-annual monitoring report\",\"due_on\":\"2027-07-31\",\"source_line\":\"Section 4.2: The permittee shall submit a semi-annual monitoring report by July 31 covering January through June of the same year\",\"recurs\":true},{\"title\":\"Notify DEQ of permit deviations\",\"due_on\":\"-\",\"source_line\":\"Section 5.2: within 24 hours of discovering any deviation from a condition of this permit\",\"recurs\":true},{\"title\":\"Submit deviation report to DEQ\",\"due_on\":\"-\",\"source_line\":\"Section 5.2: submit a written report within 15 days describing the deviation, its cause, its duration and the corrective action taken\",\"recurs\":true}],\"facts\":[{\"key\":\"permit_number\",\"value\":\"26-2841-ST-01\",\"basis\":\"read\",\"quote\":\"Permit number: 26-2841-ST-01\",\"locator\":\"First page, permit header\",\"as_of\":\"2021-09-01\",\"affects\":\"All future references to this operating authorization\"},{\"key\":\"facility_address\",\"value\":\"4410 NW Front Avenue, Portland, Oregon 97210\",\"basis\":\"read\",\"quote\":\"Facility address: 4410 NW Front Avenue, Portland, Oregon 97210\",\"locator\":\"First page, permit header\",\"as_of\":\"2021-09-01\",\"affects\":\"Identifies location of permitted sources\"},{\"key\":\"permitted_sources_acid_scrubber\",\"value\":\"Packed-bed wet scrubber S-1 serving acid repackaging line (design flow 4,500 scfm)\",\"basis\":\"read\",\"quote\":\"Packed-bed wet scrubber S-1 serving the acid repackaging line (design flow 4,500 scfm)\",\"locator\":\"Section 2.1\",\"as_of\":\"2021-09-01\",\"affects\":\"Air contaminant emissions control from acid repackaging operations\"},{\"key\":\"permitted_sources_caustic_scrubber\",\"value\":\"Packed-bed wet scrubber S-2 serving caustic repackaging line (design flow 3,000 scfm)\",\"basis\":\"read\",\"quote\":\"Packed-bed wet scrubber S-2 serving the caustic repackaging line (design flow 3,000 scfm)\",\"locator\":\"Section 2.2\",\"as_of\":\"2021-09-01\",\"affects\":\"Air contaminant emissions control from caustic repackaging operations\"},{\"key\":\"permitted_sources_storage_tanks\",\"value\":\"Four solvent storage tanks T-3, T-4, T-5, T-6, each 10,000 gallons, fixed roof, vented to carbon adsorption unit C-1\",\"basis\":\"read\",\"quote\":\"Solvent storage tanks T-3, T-4, T-5 and T-6 (each 10,000 gallons, fixed roof, vented to carbon adsorption unit C-1)\",\"locator\":\"Section 2.3\",\"as_of\":\"2021-09-01\",\"affects\":\"Vapor control from four 10,000 gallon solvent storage tanks\"},{\"key\":\"scrubber_pressure_drop_range\",\"value\":\"2.0 to 6.0 inches of water column\",\"basis\":\"read\",\"quote\":\"maintain the pressure drop across each scrubber S-1 and S-2 within the range of 2.0 to 6.0 inches of water column whenever the associated line is operating\",\"locator\":\"Section 3.1\",\"as_of\":\"2021-09-01\",\"affects\":\"Scrubber operating compliance monitoring and operational parameters\"},{\"key\":\"carbon_replacement_frequency\",\"value\":\"At least once every 12 months or upon breakthrough detection by weekly detector-tube check, whichever is first\",\"basis\":\"read\",\"quote\":\"replace the carbon in adsorption unit C-1 at least once every 12 months or when breakthrough is detected by the weekly detector-tube check at the C-1 outlet, whichever comes first\",\"locator\":\"Section 3.3\",\"as_of\":\"2021-09-01\",\"affects\":\"Vapor control effectiveness and maintenance requirements\"},{\"key\":\"visible_emissions_limit\",\"value\":\"20 percent opacity for any period aggregating more than three minutes in any one hour\",\"basis\":\"read\",\"quote\":\"Visible emissions from any permitted source shall not exceed 20 percent opacity for any period aggregating more than three minutes in any one hour\",\"locator\":\"Section 3.4\",\"as_of\":\"2021-09-01\",\"affects\":\"Opacity compliance threshold for visible emissions monitoring\"},{\"key\":\"plan_distribution\",\"value\":\"Not specified in permit\",\"basis\":\"inferred\",\"quote\":\"\",\"locator\":\"Permit does not specify who must receive copies of this permit or plan\",\"as_of\":\"2021-09-01\",\"affects\":\"Internal communication of permit requirements to operators\"},{\"key\":\"work_areas_covered\",\"value\":\"Acid repackaging line and caustic repackaging line with associated vapor control for solvent storage\",\"basis\":\"inferred\",\"quote\":\"Packed-bed wet scrubber S-1 serving the acid repackaging line... Packed-bed wet scrubber S-2 serving the caustic repackaging line... Solvent storage tanks... vented to carbon adsorption unit C-1\",\"locator\":\"Section 2, Permitted Sources\",\"as_of\":\"2021-09-01\",\"affects\":\"Scope of air emissions sources covered by this permit\"}],\"version_of_title\":\"Renewal of this permit has not yet occurred, so version status is prior to first renewal\",\"version_of_confidence\":\"high\",\"expected_missing\":[{\"title\":\"Permit modification or amendment records\",\"why\":\"The company's operating procedures may have changed since 2021 issuance; permit amendments would be expected if sources, processes, or control equipment changed.\",\"basis\":\"Common practice: most five-year permits receive at least one modification\"},{\"title\":\"Previous permit history or prior renewal applications\",\"why\":\"This appears to be the company's current Standard permit, but prior versions or renewal actions are not provided.\",\"basis\":\"Regulatory expectations: permits typically have prior versions unless this is an initial permit\"},{\"title\":\"Toxic Air Contaminant (TAC) Permit Addendum or CAO documentation\",\"why\":\"Many Oregon permits for chemical operations include TAC permitting; presence or absence would clarify whether hazardous air pollutants are regulated.\",\"basis\":\"Oregon DEQ CAO program applies to many chemical facilities\"}],\"confidence_notes\":\"High confidence in basic permit facts (number, dates, facility location, permitted sources, and specific operating conditions). The permit document is clear and well-structured. The critical issue is the renewal deadline status: the July 18, 2026 renewal application deadline has passed as of September 27, 2026, and the permit expires November 15, 2026. This is a material compliance gap requiring immediate remediation. The company should either confirm a timely renewal application was already submitted, or file one immediately. Condition 1.3 provides that a timely and complete renewal application allows continued operation while the Department acts on it, but this only applies if the application was actually submitted by July 18. No gaps were found in the permit document itself (permits are regulatory documents issued by the agency with no content to 'fix'), but the renewal status is critical. Annual and semi-annual reporting deadlines mentioned in the permit suggest the company should maintain detailed operating logs and carbon replacement records.\",\"could_not_read_reason\":\"-\",\"could_not_read_way_forward\":\"-\"}",
+    "json_parsed": true,
+    "model": "claude-haiku-4-5",
+    "cited_sources": 0,
+    "searches": null,
+    "structured": true,
+    "prompt_sha256": "7137966c8cac0e7231721c5e93f7bf45a59ef277f9dd63dfb464713f3b8ea209",
+    "quotes_checked": 9,
+    "quotes_verified": 8,
+    "extracted_text": "STATE OF OREGON\nDEPARTMENT OF ENVIRONMENTAL QUALITY\nNorthwest Region · 700 NE Multnomah Street, Suite 600, Portland, Oregon\n97232\nSTANDARD AIR CONTAMINANT DISCHARGE PERMIT\nIssued under OAR 340-216\nPermit number: 26-2841-ST-01\nPermittee: Cascade Specialty Chemicals, LLC\nFacility: Cascade Specialty Chemicals, Portland Facility\nFacility address: 4410 NW Front Avenue, Portland, Oregon 97210\nSource category: Chemical storage and repackaging with vapor control\nDate issued: September 1, 2021\nExpiration date: November 15, 2026\nThis permit is issued in accordance with the provisions of ORS 468A.040 and OAR 340-216 and\nauthorizes the permittee to operate the air contaminant sources described below at the facility address,\nsubject to the conditions of this permit.\nSECTION 1. GENERAL CONDITIONS\n1.1 The permittee shall operate the sources listed in Section 2 in compliance with all conditions of this\npermit and all applicable rules of the Department.\n1.2 This permit expires on November 15, 2026. Operation of the permitted sources after the expiration\ndate without a renewed permit or a timely renewal application is a violation of this permit.\n1.3 The permittee shall submit a complete application for renewal of this permit no later than 120 days\nbefore the expiration date, that is, on or before July 18, 2026. A permittee that submits a timely and\ncomplete renewal application may continue to operate under the terms of this permit until the Department\ntakes final action on the application.\n1.4 The permittee shall notify the Department in writing at least 60 days before any change in ownership,\nand before any modification to a permitted source that would increase emissions of any regulated\npollutant.\nSECTION 2. PERMITTED SOURCES\n2.1 Packed-bed wet scrubber S-1 serving the acid repackaging line (design flow 4,500 scfm).\n2.2 Packed-bed wet scrubber S-2 serving the caustic repackaging line (design flow 3,000 scfm).\n2.3 Solvent storage tanks T-3, T-4, T-5 and T-6 (each 10,000 gallons, fixed roof, vented to carbon\nadsorption unit C-1).\nSECTION 3. OPERATING AND MONITORING CONDITIONS\n3.1 The permittee shall maintain the pressure drop across each scrubber S-1 and S-2 within the range of\n2.0 to 6.0 inches of water column whenever the associated line is operating, and shall record the pressure\ndrop reading once per operating day in a scrubber log.\n3.2 The permittee shall inspect each scrubber's recirculation pump, spray nozzles, packing and mist\neliminator at least once per calendar quarter and record the date, the inspector and any corrective action in\nthe scrubber log.\n3.3 The permittee shall replace the carbon in adsorption unit C-1 at least once every 12 months or when\nbreakthrough is detected by the weekly detector-tube check at the C-1 outlet, whichever comes first, and\nshall record each replacement.\n3.4 Visible emissions from any permitted source shall not exceed 20 percent opacity for any period\naggregating more than three minutes in any one hour.\nSECTION 4. RECORDKEEPING AND REPORTING\n4.1 The permittee shall submit an annual report to the Department by February 15 of each year covering\nthe previous calendar year, including total throughput by line, scrubber log summaries, carbon\nreplacement dates and any excess emission events.\n4.2 The permittee shall submit a semi-annual monitoring report by July 31 covering January through June\nof the same year.\n4.3 The permittee shall keep all records required by this permit for at least five years from the date of the\nrecord and make them available to the Department on request.\nSECTION 5. EXCESS EMISSIONS AND UPSETS\n5.1 The permittee shall take all reasonable steps to minimize emissions during any period of scrubber\nmalfunction, including stopping the associated repackaging line until the scrubber is returned to service.\n5.2 The permittee shall notify the Department by telephone or email within 24 hours of discovering any\ndeviation from a condition of this permit, and shall submit a written report within 15 days describing the\ndeviation, its cause, its duration and the corrective action taken.\nSECTION 6. ADMINISTRATIVE\n6.1 This permit may be modified, suspended or revoked for cause, including violation of any condition,\nobtaining the permit by misrepresentation, or a change in any condition that requires reduction of the\npermitted emissions.\n6.2 The permittee shall pay the annual permit fee invoiced by the Department by the due date stated on\nthe invoice.\nSigned for the Department,\nRegional Air Quality Manager, Northwest Region\nSeptember 1, 2021",
+    "started_at": "2026-09-27T19:01:20.391Z"
+  }
+}

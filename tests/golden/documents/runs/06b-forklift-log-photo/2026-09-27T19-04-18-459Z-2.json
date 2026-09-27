@@ -1,0 +1,156 @@
+{
+  "case": "06b-forklift-log-photo",
+  "run": 2,
+  "run_date": "2026-09-27",
+  "model": "claude-haiku-4-5",
+  "structured": true,
+  "searches": null,
+  "cited_sources": 0,
+  "prompt_sha256": "f6cf40c866360a88d12fa544a23eab3cee1259f47db9c4be1996f16159d4d7fa",
+  "scan_id": "2fbcd3b8-d03d-432b-a28a-d01314b28289",
+  "ai_call_id": null,
+  "wall_ms": 191,
+  "cost_usd": null,
+  "input_tokens": null,
+  "output_tokens": null,
+  "json_parsed": false,
+  "compliant_found_in": [],
+  "alternative_pass": false,
+  "verdicts": {
+    "kind": {
+      "verdict": "FAIL",
+      "detail": "identity.kind = \"null\""
+    },
+    "agency-osha": {
+      "verdict": "FAIL",
+      "detail": "identity.agencies = [empty]"
+    },
+    "subject": {
+      "verdict": "FAIL",
+      "detail": "identity.subjects = [empty]"
+    },
+    "site-portland": {
+      "verdict": "FAIL",
+      "detail": "identity.site = \"null\""
+    },
+    "doc-date": {
+      "verdict": "FAIL",
+      "detail": "identity.doc_date = null, wanted 2026-09-…"
+    },
+    "doc-date-kind": {
+      "verdict": "FAIL",
+      "detail": "identity.doc_date_kind = \"null\""
+    },
+    "last-entry-date": {
+      "verdict": "FAIL",
+      "detail": "2026-09-18 appears in none of significant_date, identity.doc_date"
+    },
+    "status": {
+      "verdict": "FAIL",
+      "detail": "status = \"could not read\""
+    },
+    "finding-missing-days": {
+      "verdict": "FAIL",
+      "detail": "no item matched. gaps/notes held: could_not_read"
+    },
+    "finding-horn-defect": {
+      "verdict": "FAIL",
+      "detail": "no item matched. gaps/notes held: could_not_read"
+    },
+    "finding-no-entries-since": {
+      "verdict": "FAIL",
+      "detail": "no item matched. gaps/notes held: could_not_read"
+    },
+    "deadline-chen": {
+      "verdict": "FAIL",
+      "detail": "no item matched. deadlines held: (nothing)"
+    },
+    "deadline-rivera": {
+      "verdict": "FAIL",
+      "detail": "no item matched. deadlines held: (nothing)"
+    },
+    "fact-truck": {
+      "verdict": "FAIL",
+      "detail": "no item matched. facts held: (nothing)"
+    },
+    "label-consistency": {
+      "verdict": "CROSS",
+      "detail": "judged across the three runs, below"
+    },
+    "no-false-certification-finding": {
+      "verdict": "PASS",
+      "detail": "not raised",
+      "soft": []
+    },
+    "no-false-form-finding": {
+      "verdict": "PASS",
+      "detail": "not raised",
+      "soft": []
+    },
+    "no-invented-maintenance-finding": {
+      "verdict": "PASS",
+      "detail": "not raised",
+      "soft": []
+    },
+    "citation-evaluation-rule": {
+      "verdict": "FAIL",
+      "detail": "\"1910.178(l)(4)(iii)\" not in deadlines, gaps, notes"
+    },
+    "two-operators-fact": {
+      "verdict": "FAIL",
+      "detail": "no item matched. facts held: (nothing)"
+    },
+    "conditions-none": {
+      "verdict": "PASS",
+      "detail": "none"
+    },
+    "freshness-recent": {
+      "verdict": "FAIL",
+      "detail": "only [nothing] of the spec's words appear"
+    }
+  },
+  "scan": {
+    "identity": {
+      "kind": null,
+      "title": null,
+      "issuer": null,
+      "agencies": [],
+      "subjects": [],
+      "site": null,
+      "jurisdiction": [],
+      "doc_date": null,
+      "doc_date_kind": null,
+      "page_refs": {}
+    },
+    "summary": null,
+    "status": "could_not_read",
+    "significant_date": null,
+    "significant_date_kind": null,
+    "freshness_note": null,
+    "gaps": [],
+    "conditions": [],
+    "deadlines": [],
+    "facts": [],
+    "version_of": {
+      "title": null,
+      "confidence": null
+    },
+    "expected_missing": [],
+    "confidence_notes": null,
+    "could_not_read": {
+      "reason": "The reading service refused our request to read this document, so nothing was read. That is our end of it, not a problem with the file you sent.",
+      "way_forward": "Read it again once we have fixed it — nothing about your file needs changing."
+    },
+    "raw_text": "API 400: 400 {\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits.\"},\"request_id\":\"req_011CfUTuTuTLdd65fSHixQwC\"}",
+    "json_parsed": false,
+    "model": "claude-haiku-4-5",
+    "cited_sources": 0,
+    "searches": null,
+    "structured": true,
+    "prompt_sha256": "f6cf40c866360a88d12fa544a23eab3cee1259f47db9c4be1996f16159d4d7fa",
+    "quotes_checked": 0,
+    "quotes_verified": 0,
+    "extracted_text": "",
+    "started_at": "2026-09-27T19:04:16.907Z"
+  }
+}
