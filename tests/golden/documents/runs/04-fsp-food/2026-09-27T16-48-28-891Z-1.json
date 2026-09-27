@@ -1,0 +1,635 @@
+{
+  "case": "04-fsp-food",
+  "run": 1,
+  "run_date": "2026-09-27",
+  "model": "claude-opus-5",
+  "structured": false,
+  "searches": 4,
+  "cited_sources": 0,
+  "prompt_sha256": "085d8a3a49bd3eef40737155c62c5c1c9b54e592742c07942af65d63f66ab905",
+  "scan_id": "b699577a-0948-4b22-931a-22fc4104e2e4",
+  "ai_call_id": "836a1f2f-429b-4ceb-b561-4253c3d9c558",
+  "wall_ms": 412141,
+  "cost_usd": 1.5040900000000001,
+  "input_tokens": 109198,
+  "output_tokens": 36724,
+  "json_parsed": true,
+  "compliant_found_in": [],
+  "alternative_pass": false,
+  "verdicts": {
+    "kind": {
+      "verdict": "PASS",
+      "detail": "identity.kind = \"program\""
+    },
+    "agency-fda": {
+      "verdict": "PASS",
+      "detail": "identity.agencies = [fda | oregon department of agriculture]"
+    },
+    "site-salem": {
+      "verdict": "PASS",
+      "detail": "identity.site = \"salem\""
+    },
+    "doc-date": {
+      "verdict": "PASS",
+      "detail": "identity.doc_date = 2025-05-12"
+    },
+    "jurisdiction-federal": {
+      "verdict": "PASS",
+      "detail": "identity.jurisdiction = [federal | oregon]"
+    },
+    "jurisdiction-oregon": {
+      "verdict": "PASS",
+      "detail": "identity.jurisdiction = [federal | oregon]"
+    },
+    "status": {
+      "verdict": "PASS",
+      "detail": "status = \"gaps found\""
+    },
+    "gap-recall-plan": {
+      "verdict": "PASS",
+      "detail": "gaps: \"No written recall plan\" [recall, written, plan]"
+    },
+    "gap-cook-validation": {
+      "verdict": "PASS",
+      "detail": "gaps: \"No validation of the process preventive controls\" [validat, cook, process preventive control, 212]"
+    },
+    "gap-reanalysis": {
+      "verdict": "PASS",
+      "detail": "gaps: \"No reanalysis provision\" [reanalys, three years]"
+    },
+    "deadline-thermometer": {
+      "verdict": "PASS",
+      "detail": "deadlines: \"Weekly probe thermometer calibration in ice water and boiling water\" [thermometer, calibrat, weekly, probe]"
+    },
+    "deadline-product-testing": {
+      "verdict": "PASS",
+      "detail": "deadlines: \"Monthly finished-product Listeria monocytogenes testing by an accredit\" [finished product, finished-product, monthly, listeria, test]"
+    },
+    "deadline-metal-detector": {
+      "verdict": "PASS",
+      "detail": "deadlines: \"Weekly probe thermometer calibration in ice water and boiling water\" [metal detector, annual, service, manufacturer]"
+    },
+    "deadline-training": {
+      "verdict": "PASS",
+      "detail": "deadlines: \"Annual food hygiene training for all production employees (plus at hir\" [training, annual, employee, hygiene]"
+    },
+    "fact-28-employees": {
+      "verdict": "PASS",
+      "detail": "facts: \"production_employee_count\" [28, production employees, employees]"
+    },
+    "fact-rte-product": {
+      "verdict": "PASS",
+      "detail": "facts: \"product_types\" [ready-to-eat, hummus, bean dip]"
+    },
+    "fact-pcqi": {
+      "verdict": "PASS",
+      "detail": "facts: \"pcqi_name\" [pcqi, dana whitfield, whitfield, preventive controls qualified individual]"
+    },
+    "label-consistency": {
+      "verdict": "CROSS",
+      "detail": "judged across the three runs, below"
+    },
+    "no-false-hazard-analysis-gap": {
+      "verdict": "PASS",
+      "detail": "not raised as such; 3 item(s) mention it — read below",
+      "soft": [
+        {
+          "where": "gaps",
+          "text": "No written recall plan / The plan identifies hazards requiring preventive controls but contains no recall plan. Part 117 requires a written recall plan as part of the food safety plan whenever the hazard analysis identifies a hazard requiring a preventive control — it must say how the facility will notify consignees, notify the public where needed, conduct effectiveness checks and dispose of recalled product. / Add a section 11, 'Recall plan', naming the recall coordinator and deputy, the consignee contact list and how it is kept current, how lot codes tie finished product to cook batches and label lots, public notification, effectiveness checks, disposal, and the FDA Reportable Food Registry step. / 21 CFR 117.139 (recall plan); 21 CFR 117.126(b)(4) (contents of the food safety plan) / https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-117/subpart-C/section-117.139 / not in the document / read"
+        },
+        {
+          "where": "gaps",
+          "text": "Refrigerated storage hazard has no preventive control, critical limit or monitoring / Section 3 lists 'Refrigerated storage — Growth of Listeria monocytogenes — Yes' as requiring a preventive control, but section 4 has no corresponding control line, no critical limit (e.g. product held at or below 41°F) and section 5 no monitoring of storage or distribution temperature. Related: the 45-day shelf life on an RTE product that supports Listeria growth is stated with no shelf-life validation or challenge study behind it. / Add a process preventive control for cold holding — critical limit at or below 41°F in the finished-goods cooler, continuous or twice-daily recorded monitoring, a corrective action for excursions and a verification step; and record the basis for the 45-day shelf life (challenge study, predictive model or literature) in the hazard analysis. / 21 CFR 117.135(a)–(b) and 21 CFR 117.140 (preventive control management components); 21 CFR 117.145 (monitoring) / https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-117/subpart-C/section-117.135 / section 3 (page 3) identifies it; section 4 (page 4) and section 5 (page 5) omit it / read / Refrigerated RTE product with a 45-day shelf life"
+        },
+        {
+          "where": "gaps",
+          "text": "Hazard analysis does not cover chemical hazards or economically motivated adulteration / The table in section 3 evaluates biological, physical and allergen hazards only. Part 117 requires the hazard analysis to consider known or reasonably foreseeable chemical hazards — including radiological hazards, pesticide and drug residues, natural toxins, food decomposition, unapproved food or colour additives and sanitiser or lubricant carry-over — and to consider hazards that may be intentionally introduced for economic gain. Several process steps also go unevaluated: receiving of packaging (tubs, film, labels), dry storage, filling/sealing seal integrity, and shipping. / Extend the hazard analysis table with a chemical/radiological row for each receiving and processing step (including sanitiser residue at post-sanitation rinse), an explicit EMA line for tahini and olive oil, and rows for packaging receipt, dry storage and shipping, each with a yes/no decision and a justification. / 21 CFR 117.130(b)(1)(ii)–(iii) and 117.130(b)(2) (hazards intentionally introduced for economic gain) / https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-117/subpart-C/section-117.130 / section 3, page 3 / read / Date coding | None significant | — | No | —"
+        }
+      ]
+    },
+    "no-false-allergen-gap": {
+      "verdict": "PASS",
+      "detail": "not raised",
+      "soft": []
+    },
+    "no-false-pcqi-gap": {
+      "verdict": "PASS",
+      "detail": "not raised as such; 3 item(s) mention it — read below",
+      "soft": [
+        {
+          "where": "gaps",
+          "text": "No reanalysis provision / The plan says nothing about when it will be reanalysed. Part 117 requires the whole food safety plan to be reanalysed at least once every three years, and sooner when there is a significant change, new information about a hazard, an unanticipated food safety problem, or a control found to be ineffective. / Add a short section stating the three-year reanalysis cycle with the next due date, the triggers for earlier reanalysis, that the PCQI performs or oversees it, and that the result is documented and the plan re-signed and re-dated. / 21 CFR 117.170 (reanalysis) / https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-117/subpart-C/section-117.170 / not in the document / read"
+        },
+        {
+          "where": "gaps",
+          "text": "No validation of the process preventive controls / Section 7 covers verification activities (records review, calibration, product testing) but there is no validation — the documented scientific or technical basis showing that a 212°F/60-minute cook and the two-stage cooling limits actually control the hazards named. Validation must be performed or overseen by a PCQI and documented. / Attach or reference the validation basis for the cook (process authority letter, thermal-death-time data or recognised guidance) and for the cooling limits (the FDA Food Code cooling criterion or a Clostridium perfringens model), signed and dated by the PCQI. / 21 CFR 117.160 (validation); 21 CFR 117.180(a)–(c) (PCQI performs or oversees validation) / https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-117/subpart-C/section-117.160 / section 7, page 6 — verification is present, validation is not / read / The PCQI reviews the cook, cooling, sanitation, allergen and metal detection records within seven working days of their creation."
+        },
+        {
+          "where": "gaps",
+          "text": "Corrective action procedures do not cover unanticipated problems or corrections / Section 6 gives a good set of specific corrective actions, but does not state the general duty: that all affected food is evaluated for safety, that adulterated food is prevented from entering commerce, that the cause is identified and corrected to reduce recurrence, and that the plan is reanalysed where needed. It also does not distinguish a 'correction' — a minor, timely fix — from a corrective action, which changes what has to be documented. / Add a lead paragraph to section 6 covering the general corrective-action duty and unanticipated food safety problems, and a short definition of a correction with how it is recorded. / 21 CFR 117.150 (corrective actions and corrections) / https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-117/subpart-C/section-117.150 / section 6, page 5 / read / All corrective actions are recorded on the corrective action log and reviewed by the PCQI within seven days."
+        }
+      ]
+    },
+    "no-false-supply-chain-gap": {
+      "verdict": "PASS",
+      "detail": "not raised as such; 1 item(s) mention it — read below",
+      "soft": [
+        {
+          "where": "gaps",
+          "text": "Supply-chain program is too thin to meet Subpart G / Section 8 is two sentences. Subpart G, where it applies, requires written procedures for receiving raw materials, written approval of suppliers before receipt, a determination by the receiving facility of which verification activity is appropriate (onsite audit, sampling and testing, review of the supplier's food safety records) and its frequency, and documented conduct of that activity. A supplier's third-party audit certificate and a lot COA are not by themselves the determination the rule asks for, and an onsite audit relied on as verification has its own content requirements. The plan also does not state whether any hazard is being controlled by the supplier rather than in-house — which is what decides whether Subpart G applies at all. / Say in section 3 or 8, for each raw-material hazard, whether it is controlled in the facility (cook, metal detection, label review) or by the supplier. For any hazard controlled by the supplier, write the approval procedure, the chosen verification activity with its written justification and frequency, who performs it, and where the records live. If no hazard is supplier-controlled, state that and keep section 8 as a purchasing programme rather than a Subpart G programme. / 21 CFR 117.405, 117.410, 117.420, 117.425, 117.430 and 117.435 (supply-chain program). I am confident these are the right sections; I am less certain which of them bind this facility, because that turns on whether any hazard here is controlled by the supplier. / https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-117/subpart-G / section 8, page 6 / read / Tahini and dry beans are received only from approved suppliers who provide a current third-party audit certificate and a certificate of analysis for each lot."
+        }
+      ]
+    },
+    "no-false-monitoring-gap": {
+      "verdict": "PASS",
+      "detail": "not raised as such; 4 item(s) mention it — read below",
+      "soft": [
+        {
+          "where": "gaps",
+          "text": "Refrigerated storage hazard has no preventive control, critical limit or monitoring / Section 3 lists 'Refrigerated storage — Growth of Listeria monocytogenes — Yes' as requiring a preventive control, but section 4 has no corresponding control line, no critical limit (e.g. product held at or below 41°F) and section 5 no monitoring of storage or distribution temperature. Related: the 45-day shelf life on an RTE product that supports Listeria growth is stated with no shelf-life validation or challenge study behind it. / Add a process preventive control for cold holding — critical limit at or below 41°F in the finished-goods cooler, continuous or twice-daily recorded monitoring, a corrective action for excursions and a verification step; and record the basis for the 45-day shelf life (challenge study, predictive model or literature) in the hazard analysis. / 21 CFR 117.135(a)–(b) and 21 CFR 117.140 (preventive control management components); 21 CFR 117.145 (monitoring) / https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-117/subpart-C/section-117.135 / section 3 (page 3) identifies it; section 4 (page 4) and section 5 (page 5) omit it / read / Refrigerated RTE product with a 45-day shelf life"
+        },
+        {
+          "where": "gaps",
+          "text": "Record content requirements not stated / Section 9 covers where records are kept and for how long, but not what each record must contain. Part 117 requires records to include the plant name and location, actual values and observations (not just a tick), the date and, where appropriate, the time of the activity, the product and lot code, and the signature or initials of the person performing the activity as well as of the reviewer with the date of review. / Add a paragraph to section 9 setting out the minimum fields for every log named in the plan, and check that the cook, cooling, ATP, metal detection, label and corrective action forms actually carry those fields. / 21 CFR 117.305 (general requirements applying to records) / https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-117/subpart-F/section-117.305 / section 9, page 7 / read / All records named in this plan are kept at the Salem plant for at least two years from the date of the record"
+        },
+        {
+          "where": "gaps",
+          "text": "Environmental monitoring and product testing procedures lack the required written detail / The plan states ten Listeria spp. swabs weekly across zones 1 and 2 and monthly finished-product testing, but does not set out the written procedures the rule calls for: the scientific basis for the sampling plan, identification of the specific sites and how they are rotated, the timing relative to production, the test method used, the laboratory, and the corrective action procedure triggered by a positive — though a corrective action is described in section 6. / Issue an environmental monitoring procedure and a finished-product testing procedure as annexes, with the site map, rotation, method, laboratory name and accreditation, action limits and escalation, and reference them from section 7. / 21 CFR 117.165(a)(3) and 117.165(b) (verification of implementation and effectiveness — written procedures for product testing and environmental monitoring) / https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-117/subpart-C/section-117.165 / section 4 (page 4) and section 7 (page 6) / read / Listeria spp. swabs, 10 sites weekly, zone 1 and 2"
+        },
+        {
+          "where": "gaps",
+          "text": "Corrective action procedures do not cover unanticipated problems or corrections / Section 6 gives a good set of specific corrective actions, but does not state the general duty: that all affected food is evaluated for safety, that adulterated food is prevented from entering commerce, that the cause is identified and corrected to reduce recurrence, and that the plan is reanalysed where needed. It also does not distinguish a 'correction' — a minor, timely fix — from a corrective action, which changes what has to be documented. / Add a lead paragraph to section 6 covering the general corrective-action duty and unanticipated food safety problems, and a short definition of a correction with how it is recorded. / 21 CFR 117.150 (corrective actions and corrections) / https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-117/subpart-C/section-117.150 / section 6, page 5 / read / All corrective actions are recorded on the corrective action log and reviewed by the PCQI within seven days."
+        }
+      ]
+    },
+    "agency-oda": {
+      "verdict": "PASS",
+      "detail": "identity.agencies = [fda | oregon department of agriculture]"
+    },
+    "fix-cook-validation-detail": {
+      "verdict": "PASS",
+      "detail": "gaps: \"No validation of the process preventive controls\" [212, scientific]"
+    },
+    "fix-reanalysis-detail": {
+      "verdict": "PASS",
+      "detail": "gaps: \"No reanalysis provision\" [three years, change]"
+    },
+    "freshness-no-nudge": {
+      "verdict": "FAIL",
+      "detail": "\"The plan carries an effective date of 12 May 2025 and is about 16 months old as of today. \""
+    },
+    "conditions-none-expected": {
+      "verdict": "PASS",
+      "detail": "none"
+    },
+    "inferred-fda-registered": {
+      "verdict": "FAIL",
+      "detail": "no item matched. facts held: facility_address | production_employee_count | product_types | distribution_states | shelf_life_days | refrigerated_holding_temp | declared_allergens | pcqi_name | pcqi_training_date | records_retention_period | operating_schedule"
+    }
+  },
+  "scan": {
+    "identity": {
+      "kind": "program",
+      "title": "FSMA Preventive Controls Food Safety Plan — Refrigerated Ready-to-Eat Hummus and Bean Dips, Salem Plant",
+      "issuer": "Willamette Valley Foods, Inc. (prepared by Dana Whitfield, Quality Manager / PCQI; approved by the Plant Manager)",
+      "agencies": [
+        "FDA",
+        "Oregon Department of Agriculture"
+      ],
+      "subjects": [
+        "Food safety",
+        "Allergen management",
+        "Sanitation and environmental monitoring",
+        "Supplier verification",
+        "Training"
+      ],
+      "site": "Salem",
+      "jurisdiction": [
+        "federal",
+        "Oregon"
+      ],
+      "doc_date": "2025-05-12",
+      "doc_date_kind": "effective",
+      "page_refs": {
+        "doc_date": "page 1 — \"Effective date: May 12, 2025\"",
+        "issuer": "page 1 — \"Prepared by: Dana Whitfield, Quality Manager, Preventive Controls Qualified Individual\" and \"Approved by: Plant Manager\"",
+        "site": "page 1 — \"Salem Plant, 1850 Fairgrounds Road NE, Salem, Oregon 97301\"",
+        "agencies": "page 7, section 9 — records \"available to FDA and the Oregon Department of Agriculture on request\"",
+        "jurisdiction": "page 2, section 1 — \"for retail sale in Oregon, Washington and Idaho\""
+      }
+    },
+    "summary": "This is the plant's own written food safety plan for refrigerated ready-to-eat hummus and bean dips, built on the FSMA preventive controls framework in 21 CFR Part 117 Subpart C — hazard analysis, process/sanitation/allergen preventive controls, monitoring, corrective actions, verification, supply-chain and records. Because it is a document the company writes and owns, it is judged against the rule rather than renewed: FDA or Oregon Department of Agriculture investigators will read it and then ask to see the logs it promises. The structure is sound and most of the core elements are present, but several Part 117 required elements are absent or thin — most importantly there is no recall plan, no reanalysis provision, no validation of the process controls, and one hazard the plan itself flags as requiring a preventive control (Listeria growth in refrigerated storage) has no control, critical limit or monitoring assigned to it.",
+    "status": "gaps_found",
+    "significant_date": "2025-05-12",
+    "significant_date_kind": "effective",
+    "freshness_note": "The plan carries an effective date of 12 May 2025 and is about 16 months old as of today. There is no revision history, no version number and no signature date, so there is no way to tell from the file whether it has been reviewed since. Ask whether a signed and dated current version exists, and whether anything has changed at the plant (new product, new line, new supplier, a Listeria positive) that would have triggered reanalysis under 21 CFR 117.170(a)(2) before the three-year mark.",
+    "gaps": [
+      {
+        "title": "No written recall plan",
+        "description": "The plan identifies hazards requiring preventive controls but contains no recall plan. Part 117 requires a written recall plan as part of the food safety plan whenever the hazard analysis identifies a hazard requiring a preventive control — it must say how the facility will notify consignees, notify the public where needed, conduct effectiveness checks and dispose of recalled product.",
+        "fix": "Add a section 11, 'Recall plan', naming the recall coordinator and deputy, the consignee contact list and how it is kept current, how lot codes tie finished product to cook batches and label lots, public notification, effectiveness checks, disposal, and the FDA Reportable Food Registry step.",
+        "citation": "21 CFR 117.139 (recall plan); 21 CFR 117.126(b)(4) (contents of the food safety plan)",
+        "citation_url": "https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-117/subpart-C/section-117.139",
+        "locator": "not in the document",
+        "draftable": true,
+        "basis": "read",
+        "quote": null,
+        "quote_verified": null,
+        "same_as_gap_id": null
+      },
+      {
+        "title": "Refrigerated storage hazard has no preventive control, critical limit or monitoring",
+        "description": "Section 3 lists 'Refrigerated storage — Growth of Listeria monocytogenes — Yes' as requiring a preventive control, but section 4 has no corresponding control line, no critical limit (e.g. product held at or below 41°F) and section 5 no monitoring of storage or distribution temperature. Related: the 45-day shelf life on an RTE product that supports Listeria growth is stated with no shelf-life validation or challenge study behind it.",
+        "fix": "Add a process preventive control for cold holding — critical limit at or below 41°F in the finished-goods cooler, continuous or twice-daily recorded monitoring, a corrective action for excursions and a verification step; and record the basis for the 45-day shelf life (challenge study, predictive model or literature) in the hazard analysis.",
+        "citation": "21 CFR 117.135(a)–(b) and 21 CFR 117.140 (preventive control management components); 21 CFR 117.145 (monitoring)",
+        "citation_url": "https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-117/subpart-C/section-117.135",
+        "locator": "section 3 (page 3) identifies it; section 4 (page 4) and section 5 (page 5) omit it",
+        "draftable": true,
+        "basis": "read",
+        "quote": "Refrigerated RTE product with a 45-day shelf life",
+        "quote_verified": false,
+        "same_as_gap_id": null
+      },
+      {
+        "title": "No reanalysis provision",
+        "description": "The plan says nothing about when it will be reanalysed. Part 117 requires the whole food safety plan to be reanalysed at least once every three years, and sooner when there is a significant change, new information about a hazard, an unanticipated food safety problem, or a control found to be ineffective.",
+        "fix": "Add a short section stating the three-year reanalysis cycle with the next due date, the triggers for earlier reanalysis, that the PCQI performs or oversees it, and that the result is documented and the plan re-signed and re-dated.",
+        "citation": "21 CFR 117.170 (reanalysis)",
+        "citation_url": "https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-117/subpart-C/section-117.170",
+        "locator": "not in the document",
+        "draftable": true,
+        "basis": "read",
+        "quote": null,
+        "quote_verified": null,
+        "same_as_gap_id": null
+      },
+      {
+        "title": "No validation of the process preventive controls",
+        "description": "Section 7 covers verification activities (records review, calibration, product testing) but there is no validation — the documented scientific or technical basis showing that a 212°F/60-minute cook and the two-stage cooling limits actually control the hazards named. Validation must be performed or overseen by a PCQI and documented.",
+        "fix": "Attach or reference the validation basis for the cook (process authority letter, thermal-death-time data or recognised guidance) and for the cooling limits (the FDA Food Code cooling criterion or a Clostridium perfringens model), signed and dated by the PCQI.",
+        "citation": "21 CFR 117.160 (validation); 21 CFR 117.180(a)–(c) (PCQI performs or oversees validation)",
+        "citation_url": "https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-117/subpart-C/section-117.160",
+        "locator": "section 7, page 6 — verification is present, validation is not",
+        "draftable": false,
+        "basis": "read",
+        "quote": "The PCQI reviews the cook, cooling, sanitation, allergen and metal detection records within seven working days of their creation.",
+        "quote_verified": true,
+        "same_as_gap_id": null
+      },
+      {
+        "title": "Hazard analysis does not cover chemical hazards or economically motivated adulteration",
+        "description": "The table in section 3 evaluates biological, physical and allergen hazards only. Part 117 requires the hazard analysis to consider known or reasonably foreseeable chemical hazards — including radiological hazards, pesticide and drug residues, natural toxins, food decomposition, unapproved food or colour additives and sanitiser or lubricant carry-over — and to consider hazards that may be intentionally introduced for economic gain. Several process steps also go unevaluated: receiving of packaging (tubs, film, labels), dry storage, filling/sealing seal integrity, and shipping.",
+        "fix": "Extend the hazard analysis table with a chemical/radiological row for each receiving and processing step (including sanitiser residue at post-sanitation rinse), an explicit EMA line for tahini and olive oil, and rows for packaging receipt, dry storage and shipping, each with a yes/no decision and a justification.",
+        "citation": "21 CFR 117.130(b)(1)(ii)–(iii) and 117.130(b)(2) (hazards intentionally introduced for economic gain)",
+        "citation_url": "https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-117/subpart-C/section-117.130",
+        "locator": "section 3, page 3",
+        "draftable": true,
+        "basis": "read",
+        "quote": "Date coding | None significant | — | No | —",
+        "quote_verified": true,
+        "same_as_gap_id": null
+      },
+      {
+        "title": "Supply-chain program is too thin to meet Subpart G",
+        "description": "Section 8 is two sentences. Subpart G, where it applies, requires written procedures for receiving raw materials, written approval of suppliers before receipt, a determination by the receiving facility of which verification activity is appropriate (onsite audit, sampling and testing, review of the supplier's food safety records) and its frequency, and documented conduct of that activity. A supplier's third-party audit certificate and a lot COA are not by themselves the determination the rule asks for, and an onsite audit relied on as verification has its own content requirements. The plan also does not state whether any hazard is being controlled by the supplier rather than in-house — which is what decides whether Subpart G applies at all.",
+        "fix": "Say in section 3 or 8, for each raw-material hazard, whether it is controlled in the facility (cook, metal detection, label review) or by the supplier. For any hazard controlled by the supplier, write the approval procedure, the chosen verification activity with its written justification and frequency, who performs it, and where the records live. If no hazard is supplier-controlled, state that and keep section 8 as a purchasing programme rather than a Subpart G programme.",
+        "citation": "21 CFR 117.405, 117.410, 117.420, 117.425, 117.430 and 117.435 (supply-chain program). I am confident these are the right sections; I am less certain which of them bind this facility, because that turns on whether any hazard here is controlled by the supplier.",
+        "citation_url": "https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-117/subpart-G",
+        "locator": "section 8, page 6",
+        "draftable": true,
+        "basis": "read",
+        "quote": "Tahini and dry beans are received only from approved suppliers who provide a current third-party audit certificate and a certificate of analysis for each lot.",
+        "quote_verified": true,
+        "same_as_gap_id": null
+      },
+      {
+        "title": "Plan is not signed and dated",
+        "description": "The cover page shows an approval line but no signature and no date of signature. Part 117 requires the food safety plan to be signed and dated by the owner, operator or agent in charge on initial completion and again on any modification or reanalysis. An unsigned plan is one of the first things an investigator notices.",
+        "fix": "Add a signature block on page 1 with printed name, title, signature and date, plus a revision-history table showing each modification and its signature date.",
+        "citation": "21 CFR 117.310 (additional requirements applying to the food safety plan)",
+        "citation_url": "https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-117/subpart-F/section-117.310",
+        "locator": "page 1, cover",
+        "draftable": true,
+        "basis": "read",
+        "quote": "Approved by: Plant Manager",
+        "quote_verified": true,
+        "same_as_gap_id": null
+      },
+      {
+        "title": "Record content requirements not stated",
+        "description": "Section 9 covers where records are kept and for how long, but not what each record must contain. Part 117 requires records to include the plant name and location, actual values and observations (not just a tick), the date and, where appropriate, the time of the activity, the product and lot code, and the signature or initials of the person performing the activity as well as of the reviewer with the date of review.",
+        "fix": "Add a paragraph to section 9 setting out the minimum fields for every log named in the plan, and check that the cook, cooling, ATP, metal detection, label and corrective action forms actually carry those fields.",
+        "citation": "21 CFR 117.305 (general requirements applying to records)",
+        "citation_url": "https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-117/subpart-F/section-117.305",
+        "locator": "section 9, page 7",
+        "draftable": true,
+        "basis": "read",
+        "quote": "All records named in this plan are kept at the Salem plant for at least two years from the date of the record",
+        "quote_verified": true,
+        "same_as_gap_id": null
+      },
+      {
+        "title": "Environmental monitoring and product testing procedures lack the required written detail",
+        "description": "The plan states ten Listeria spp. swabs weekly across zones 1 and 2 and monthly finished-product testing, but does not set out the written procedures the rule calls for: the scientific basis for the sampling plan, identification of the specific sites and how they are rotated, the timing relative to production, the test method used, the laboratory, and the corrective action procedure triggered by a positive — though a corrective action is described in section 6.",
+        "fix": "Issue an environmental monitoring procedure and a finished-product testing procedure as annexes, with the site map, rotation, method, laboratory name and accreditation, action limits and escalation, and reference them from section 7.",
+        "citation": "21 CFR 117.165(a)(3) and 117.165(b) (verification of implementation and effectiveness — written procedures for product testing and environmental monitoring)",
+        "citation_url": "https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-117/subpart-C/section-117.165",
+        "locator": "section 4 (page 4) and section 7 (page 6)",
+        "draftable": true,
+        "basis": "read",
+        "quote": "Listeria spp. swabs, 10 sites weekly, zone 1 and 2",
+        "quote_verified": false,
+        "same_as_gap_id": null
+      },
+      {
+        "title": "Corrective action procedures do not cover unanticipated problems or corrections",
+        "description": "Section 6 gives a good set of specific corrective actions, but does not state the general duty: that all affected food is evaluated for safety, that adulterated food is prevented from entering commerce, that the cause is identified and corrected to reduce recurrence, and that the plan is reanalysed where needed. It also does not distinguish a 'correction' — a minor, timely fix — from a corrective action, which changes what has to be documented.",
+        "fix": "Add a lead paragraph to section 6 covering the general corrective-action duty and unanticipated food safety problems, and a short definition of a correction with how it is recorded.",
+        "citation": "21 CFR 117.150 (corrective actions and corrections)",
+        "citation_url": "https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-117/subpart-C/section-117.150",
+        "locator": "section 6, page 5",
+        "draftable": true,
+        "basis": "read",
+        "quote": "All corrective actions are recorded on the corrective action log and reviewed by the PCQI within seven days.",
+        "quote_verified": true,
+        "same_as_gap_id": null
+      },
+      {
+        "title": "Training records not mentioned",
+        "description": "Section 10 commits to hygiene training at hire and annually, but does not say that records documenting that training are established and kept. Part 117 requires those records.",
+        "fix": "Add one line to section 10: training records show the employee name, date, subject, trainer and method of assessment, and are retained with the other plan records.",
+        "citation": "21 CFR 117.4(b)(2) and 117.4(d) (qualifications and training records)",
+        "citation_url": "https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-117/subpart-A/section-117.4",
+        "locator": "section 10, page 7",
+        "draftable": true,
+        "basis": "read",
+        "quote": "All production employees receive food hygiene training at hire and annually.",
+        "quote_verified": true,
+        "same_as_gap_id": null
+      }
+    ],
+    "conditions": [],
+    "deadlines": [
+      {
+        "title": "Reanalysis of the whole food safety plan (at least every three years) — date inferred from the effective date plus 21 CFR 117.170(a)(1), not stated in the plan",
+        "due_on": "2028-05-12",
+        "source_line": "Effective date: May 12, 2025",
+        "recurs": true
+      },
+      {
+        "title": "PCQI review of cook, cooling, sanitation, allergen and metal detection records",
+        "due_on": null,
+        "source_line": "The PCQI reviews the cook, cooling, sanitation, allergen and metal detection records within seven working days of their creation.",
+        "recurs": true
+      },
+      {
+        "title": "PCQI review of corrective action log entries within seven days",
+        "due_on": null,
+        "source_line": "All corrective actions are recorded on the corrective action log and reviewed by the PCQI within seven days.",
+        "recurs": true
+      },
+      {
+        "title": "Weekly Listeria spp. environmental monitoring swabs, 10 sites, zones 1 and 2",
+        "due_on": null,
+        "source_line": "ATP swab pass before start-up; Listeria spp. swabs, 10 sites weekly, zone 1 and 2",
+        "recurs": true
+      },
+      {
+        "title": "Weekly probe thermometer calibration in ice water and boiling water",
+        "due_on": null,
+        "source_line": "Probe thermometers are calibrated in ice water and boiling water weekly, and the metal detector is serviced by the manufacturer annually.",
+        "recurs": true
+      },
+      {
+        "title": "Annual manufacturer service of the metal detector",
+        "due_on": null,
+        "source_line": "Probe thermometers are calibrated in ice water and boiling water weekly, and the metal detector is serviced by the manufacturer annually.",
+        "recurs": true
+      },
+      {
+        "title": "Monthly finished-product Listeria monocytogenes testing by an accredited laboratory",
+        "due_on": null,
+        "source_line": "Finished product is tested for Listeria monocytogenes monthly by an accredited laboratory.",
+        "recurs": true
+      },
+      {
+        "title": "Quarterly trending of environmental monitoring results",
+        "due_on": null,
+        "source_line": "Environmental monitoring results are trended quarterly.",
+        "recurs": true
+      },
+      {
+        "title": "Annual food hygiene training for all production employees (plus at hire)",
+        "due_on": null,
+        "source_line": "All production employees receive food hygiene training at hire and annually.",
+        "recurs": true
+      },
+      {
+        "title": "Retention of all plan records for at least two years from the date of the record",
+        "due_on": null,
+        "source_line": "All records named in this plan are kept at the Salem plant for at least two years from the date of the record",
+        "recurs": true
+      },
+      {
+        "title": "Metal detector test-piece checks at start-up, every two hours and at end of run",
+        "due_on": null,
+        "source_line": "The line lead runs the three metal test pieces through the detector at start-up, every two hours, and at the end of the run, and records the result.",
+        "recurs": true
+      }
+    ],
+    "facts": [
+      {
+        "key": "facility_address",
+        "value": "1850 Fairgrounds Road NE, Salem, Oregon 97301",
+        "quote": "Salem Plant, 1850 Fairgrounds Road NE, Salem, Oregon 97301",
+        "locator": "page 1, cover",
+        "as_of": "2025-05-12",
+        "affects": "Ties the plan, the records and any FDA or ODA inspection to the single Salem manufacturing site.",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "production_employee_count",
+        "value": "28 production employees at the Salem plant",
+        "quote": "The Salem plant operates one shift, five days a week, with 28 production employees.",
+        "locator": "section 1, page 2",
+        "as_of": "2025-05-12",
+        "affects": "Well under 500 full-time-equivalent employees, so the facility is a 'small business' under 21 CFR 117.3 — relevant to Part 117 flexibility and to whether the intentional adulteration rule's exemptions may apply; also keeps it under most headcount-triggered employment thresholds.",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "product_types",
+        "value": "Refrigerated ready-to-eat hummus and bean dips in 8 oz and 16 oz sealed plastic tubs",
+        "quote": "Willamette Valley Foods produces refrigerated ready-to-eat hummus and bean dips in 8-ounce and 16-ounce sealed plastic tubs for retail sale in Oregon, Washington and Idaho.",
+        "locator": "section 1, page 2",
+        "as_of": "2025-05-12",
+        "affects": "RTE product exposed to the environment after a kill step is what drives the Listeria environmental monitoring obligation and FDA's high scrutiny of this category.",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "distribution_states",
+        "value": "Oregon, Washington and Idaho",
+        "quote": "for retail sale in Oregon, Washington and Idaho",
+        "locator": "section 1, page 2",
+        "as_of": "2025-05-12",
+        "affects": "Interstate distribution puts the plant squarely under FDA food facility registration and Part 117, alongside Oregon Department of Agriculture licensing and inspection.",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "shelf_life_days",
+        "value": "45 days refrigerated",
+        "quote": "Shelf life is 45 days refrigerated.",
+        "locator": "section 1, page 2",
+        "as_of": "2025-05-12",
+        "affects": "A 45-day refrigerated life on an RTE product that supports Listeria growth is what makes shelf-life validation and cold-chain control material.",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "refrigerated_holding_temp",
+        "value": "At or below 41°F",
+        "quote": "held refrigerated at or below 41°F",
+        "locator": "section 1, page 2",
+        "as_of": "2025-05-12",
+        "affects": "This is the de facto cold-holding limit but it is not written as a preventive control with monitoring — see the refrigerated-storage gap.",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "declared_allergens",
+        "value": "Sesame (all hummus items)",
+        "quote": "Products are labeled with the allergen statement \"Contains: sesame\" for all hummus items.",
+        "locator": "section 1, page 2",
+        "as_of": "2025-05-12",
+        "affects": "Sesame is a major food allergen under the FASTER Act, so label control and cross-contact control between hummus and non-tahini bean dips are mandatory allergen preventive controls.",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "pcqi_name",
+        "value": "Dana Whitfield, Quality Manager",
+        "quote": "Prepared by: Dana Whitfield, Quality Manager, Preventive Controls Qualified Individual",
+        "locator": "page 1, cover",
+        "as_of": "2025-05-12",
+        "affects": "Names the individual who must perform or oversee plan preparation, validation, records review and reanalysis; single-point dependency if she leaves.",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "pcqi_training_date",
+        "value": "FSPCA Preventive Controls course, March 2024",
+        "quote": "(PCQI certificate, FSPCA course, March 2024)",
+        "locator": "page 1, cover",
+        "as_of": "2025-05-12",
+        "affects": "Evidence of PCQI qualification; the certificate itself should be on file, and a trained back-up PCQI is worth having.",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "records_retention_period",
+        "value": "At least two years from the date of the record, kept at the Salem plant",
+        "quote": "All records named in this plan are kept at the Salem plant for at least two years from the date of the record",
+        "locator": "section 9, page 7",
+        "as_of": "2025-05-12",
+        "affects": "Matches the two-year minimum in 21 CFR 117.315; note the food safety plan itself must be kept for two years after it is superseded.",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "operating_schedule",
+        "value": "One shift, five days a week",
+        "quote": "The Salem plant operates one shift, five days a week",
+        "locator": "section 1, page 2",
+        "as_of": "2025-05-12",
+        "affects": "Single-shift operation with a full washdown between days is what makes the 'hummus last in the day' allergen scheduling control workable.",
+        "basis": "read",
+        "quote_verified": true
+      }
+    ],
+    "version_of": {
+      "title": null,
+      "confidence": "high"
+    },
+    "expected_missing": [
+      {
+        "title": "Oregon Department of Agriculture food processing establishment licence",
+        "why": "ODA licenses food processors in Oregon and inspects them against 21 CFR Part 117; this plan is the document they will ask to see at the visit.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "FDA food facility registration confirmation (biennial renewal)",
+        "why": "A facility manufacturing food for US consumption registers with FDA and renews in even-numbered years; a renewal window falls in late 2026.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Written recall plan as a standalone document",
+        "why": "Required content of the food safety plan and the thing you reach for at 2am; it is missing here.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Sanitation standard operating procedures and master sanitation schedule",
+        "why": "The plan relies on sanitation as a preventive control but the underlying SSOPs, chemical concentrations and periodic deep-clean schedule sit in a separate document.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Environmental monitoring programme with a zone map and site list",
+        "why": "Ten swabs a week across zones 1 and 2 implies a documented site map and rotation that is not in this file.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Shelf-life or Listeria challenge study supporting 45 days",
+        "why": "An RTE refrigerated dip with a 45-day life normally has a laboratory study or predictive-model justification behind it.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Approved supplier list, supplier audit certificates and COAs",
+        "why": "Section 8 refers to them; they are the evidence behind the supply-chain programme.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Label specifications and formulation sheets",
+        "why": "The allergen preventive control turns on the label matching the formulation sheet, so both need to be controlled documents.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Food defense plan under 21 CFR Part 121 (intentional adulteration), or a documented exemption",
+        "why": "Registered food facilities are covered unless a very small business exemption applies, which turns on average annual sales.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Mock recall / traceability exercise record",
+        "why": "Customers and third-party auditors typically expect one a year, and it is the practical test of the lot coding described in the process flow.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "City of Salem industrial wastewater discharge or pretreatment authorisation",
+        "why": "A plant with daily full washdowns and kettle cooking usually has a discharge authorisation or a fats-oils-grease condition from the local sewer authority.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Employee training records and hygiene policy",
+        "why": "Section 10 promises training at hire and annually; the signed rosters are the proof.",
+        "basis": "similar companies, not a checked requirement"
+      }
+    ],
+    "confidence_notes": "High confidence on what the document is, what it contains and what it omits — all ten sections are legible and I read them in full, and every quote above is taken word for word from the file. High confidence on the four big findings: no recall plan, no reanalysis provision, no validation, and a hazard flagged as requiring a preventive control (Listeria growth in refrigerated storage) with no control, limit or monitoring behind it. Those are structural, not stylistic. Medium confidence on the supply-chain finding: Subpart G only bites for hazards the plan says are controlled by the supplier, and this plan never says one way or the other — so the fix is first to state the decision, then to build out whatever follows. I am confident in the section numbers of 21 CFR Part 117 that I cite, but I have not re-read each provision word for word today, so treat the citations as the right place to look rather than as quoted text. Two side notes I checked rather than trusted to memory: the FSMA Food Traceability Rule compliance date has moved — FDA proposed a 30-month extension from 20 January 2026 to 20 July 2028, and Congress separately directed FDA not to enforce before that date — and in any case I do not believe refrigerated hummus is on the Food Traceability List, though tahini's treatment relative to the 'nut butters' entry is something I would confirm with FDA before relying on it. Also unverified from this file alone: whether the plant is a 'qualified facility', which depends on sales figures not stated here, and whether the plan has been signed or revised since the May 2025 effective date.",
+    "could_not_read": {
+      "reason": null,
+      "way_forward": null
+    },
+    "raw_text": "{\n  \"identity\": {\n    \"kind\": \"program\",\n    \"title\": \"FSMA Preventive Controls Food Safety Plan — Refrigerated Ready-to-Eat Hummus and Bean Dips, Salem Plant\",\n    \"issuer\": \"Willamette Valley Foods, Inc. (prepared by Dana Whitfield, Quality Manager / PCQI; approved by the Plant Manager)\",\n    \"agencies\": [\"FDA\", \"Oregon Department of Agriculture\"],\n    \"subjects\": [\"Food safety\", \"Allergen management\", \"Sanitation and environmental monitoring\", \"Supplier verification\", \"Training\"],\n    \"site\": \"Salem\",\n    \"jurisdiction\": [\"federal\", \"Oregon\"],\n    \"doc_date\": \"2025-05-12\",\n    \"doc_date_kind\": \"effective\",\n    \"page_refs\": {\n      \"doc_date\": \"page 1 — \\\"Effective date: May 12, 2025\\\"\",\n      \"issuer\": \"page 1 — \\\"Prepared by: Dana Whitfield, Quality Manager, Preventive Controls Qualified Individual\\\" and \\\"Approved by: Plant Manager\\\"\",\n      \"site\": \"page 1 — \\\"Salem Plant, 1850 Fairgrounds Road NE, Salem, Oregon 97301\\\"\",\n      \"agencies\": \"page 7, section 9 — records \\\"available to FDA and the Oregon Department of Agriculture on request\\\"\",\n      \"jurisdiction\": \"page 2, section 1 — \\\"for retail sale in Oregon, Washington and Idaho\\\"\"\n    }\n  },\n  \"summary\": \"This is the plant's own written food safety plan for refrigerated ready-to-eat hummus and bean dips, built on the FSMA preventive controls framework in 21 CFR Part 117 Subpart C — hazard analysis, process/sanitation/allergen preventive controls, monitoring, corrective actions, verification, supply-chain and records. Because it is a document the company writes and owns, it is judged against the rule rather than renewed: FDA or Oregon Department of Agriculture investigators will read it and then ask to see the logs it promises. The structure is sound and most of the core elements are present, but several Part 117 required elements are absent or thin — most importantly there is no recall plan, no reanalysis provision, no validation of the process controls, and one hazard the plan itself flags as requiring a preventive control (Listeria growth in refrigerated storage) has no control, critical limit or monitoring assigned to it.\",\n  \"status\": \"gaps_found\",\n  \"significant_date\": \"2028-05-12\",\n  \"significant_date_kind\": \"renewal\",\n  \"freshness_note\": \"The plan carries an effective date of 12 May 2025 and is about 16 months old as of today. There is no revision history, no version number and no signature date, so there is no way to tell from the file whether it has been reviewed since. Ask whether a signed and dated current version exists, and whether anything has changed at the plant (new product, new line, new supplier, a Listeria positive) that would have triggered reanalysis under 21 CFR 117.170(a)(2) before the three-year mark.\",\n  \"gaps\": [\n    {\n      \"title\": \"No written recall plan\",\n      \"description\": \"The plan identifies hazards requiring preventive controls but contains no recall plan. Part 117 requires a written recall plan as part of the food safety plan whenever the hazard analysis identifies a hazard requiring a preventive control — it must say how the facility will notify consignees, notify the public where needed, conduct effectiveness checks and dispose of recalled product.\",\n      \"fix\": \"Add a section 11, 'Recall plan', naming the recall coordinator and deputy, the consignee contact list and how it is kept current, how lot codes tie finished product to cook batches and label lots, public notification, effectiveness checks, disposal, and the FDA Reportable Food Registry step.\",\n      \"citation\": \"21 CFR 117.139 (recall plan); 21 CFR 117.126(b)(4) (contents of the food safety plan)\",\n      \"citation_url\": \"https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-117/subpart-C/section-117.139\",\n      \"locator\": \"not in the document\",\n      \"draftable\": true,\n      \"basis\": \"read\",\n      \"quote\": null,\n      \"same_as_gap_id\": \"\"\n    },\n    {\n      \"title\": \"Refrigerated storage hazard has no preventive control, critical limit or monitoring\",\n      \"description\": \"Section 3 lists 'Refrigerated storage — Growth of Listeria monocytogenes — Yes' as requiring a preventive control, but section 4 has no corresponding control line, no critical limit (e.g. product held at or below 41°F) and section 5 no monitoring of storage or distribution temperature. Related: the 45-day shelf life on an RTE product that supports Listeria growth is stated with no shelf-life validation or challenge study behind it.\",\n      \"fix\": \"Add a process preventive control for cold holding — critical limit at or below 41°F in the finished-goods cooler, continuous or twice-daily recorded monitoring, a corrective action for excursions and a verification step; and record the basis for the 45-day shelf life (challenge study, predictive model or literature) in the hazard analysis.\",\n      \"citation\": \"21 CFR 117.135(a)–(b) and 21 CFR 117.140 (preventive control management components); 21 CFR 117.145 (monitoring)\",\n      \"citation_url\": \"https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-117/subpart-C/section-117.135\",\n      \"locator\": \"section 3 (page 3) identifies it; section 4 (page 4) and section 5 (page 5) omit it\",\n      \"draftable\": true,\n      \"basis\": \"read\",\n      \"quote\": \"Refrigerated RTE product with a 45-day shelf life\",\n      \"same_as_gap_id\": \"\"\n    },\n    {\n      \"title\": \"No reanalysis provision\",\n      \"description\": \"The plan says nothing about when it will be reanalysed. Part 117 requires the whole food safety plan to be reanalysed at least once every three years, and sooner when there is a significant change, new information about a hazard, an unanticipated food safety problem, or a control found to be ineffective.\",\n      \"fix\": \"Add a short section stating the three-year reanalysis cycle with the next due date, the triggers for earlier reanalysis, that the PCQI performs or oversees it, and that the result is documented and the plan re-signed and re-dated.\",\n      \"citation\": \"21 CFR 117.170 (reanalysis)\",\n      \"citation_url\": \"https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-117/subpart-C/section-117.170\",\n      \"locator\": \"not in the document\",\n      \"draftable\": true,\n      \"basis\": \"read\",\n      \"quote\": null,\n      \"same_as_gap_id\": \"\"\n    },\n    {\n      \"title\": \"No validation of the process preventive controls\",\n      \"description\": \"Section 7 covers verification activities (records review, calibration, product testing) but there is no validation — the documented scientific or technical basis showing that a 212°F/60-minute cook and the two-stage cooling limits actually control the hazards named. Validation must be performed or overseen by a PCQI and documented.\",\n      \"fix\": \"Attach or reference the validation basis for the cook (process authority letter, thermal-death-time data or recognised guidance) and for the cooling limits (the FDA Food Code cooling criterion or a Clostridium perfringens model), signed and dated by the PCQI.\",\n      \"citation\": \"21 CFR 117.160 (validation); 21 CFR 117.180(a)–(c) (PCQI performs or oversees validation)\",\n      \"citation_url\": \"https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-117/subpart-C/section-117.160\",\n      \"locator\": \"section 7, page 6 — verification is present, validation is not\",\n      \"draftable\": false,\n      \"basis\": \"read\",\n      \"quote\": \"The PCQI reviews the cook, cooling, sanitation, allergen and metal detection records within seven working days of their creation.\",\n      \"same_as_gap_id\": \"\"\n    },\n    {\n      \"title\": \"Hazard analysis does not cover chemical hazards or economically motivated adulteration\",\n      \"description\": \"The table in section 3 evaluates biological, physical and allergen hazards only. Part 117 requires the hazard analysis to consider known or reasonably foreseeable chemical hazards — including radiological hazards, pesticide and drug residues, natural toxins, food decomposition, unapproved food or colour additives and sanitiser or lubricant carry-over — and to consider hazards that may be intentionally introduced for economic gain. Several process steps also go unevaluated: receiving of packaging (tubs, film, labels), dry storage, filling/sealing seal integrity, and shipping.\",\n      \"fix\": \"Extend the hazard analysis table with a chemical/radiological row for each receiving and processing step (including sanitiser residue at post-sanitation rinse), an explicit EMA line for tahini and olive oil, and rows for packaging receipt, dry storage and shipping, each with a yes/no decision and a justification.\",\n      \"citation\": \"21 CFR 117.130(b)(1)(ii)–(iii) and 117.130(b)(2) (hazards intentionally introduced for economic gain)\",\n      \"citation_url\": \"https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-117/subpart-C/section-117.130\",\n      \"locator\": \"section 3, page 3\",\n      \"draftable\": true,\n      \"basis\": \"read\",\n      \"quote\": \"Date coding | None significant | — | No | —\",\n      \"same_as_gap_id\": \"\"\n    },\n    {\n      \"title\": \"Supply-chain program is too thin to meet Subpart G\",\n      \"description\": \"Section 8 is two sentences. Subpart G, where it applies, requires written procedures for receiving raw materials, written approval of suppliers before receipt, a determination by the receiving facility of which verification activity is appropriate (onsite audit, sampling and testing, review of the supplier's food safety records) and its frequency, and documented conduct of that activity. A supplier's third-party audit certificate and a lot COA are not by themselves the determination the rule asks for, and an onsite audit relied on as verification has its own content requirements. The plan also does not state whether any hazard is being controlled by the supplier rather than in-house — which is what decides whether Subpart G applies at all.\",\n      \"fix\": \"Say in section 3 or 8, for each raw-material hazard, whether it is controlled in the facility (cook, metal detection, label review) or by the supplier. For any hazard controlled by the supplier, write the approval procedure, the chosen verification activity with its written justification and frequency, who performs it, and where the records live. If no hazard is supplier-controlled, state that and keep section 8 as a purchasing programme rather than a Subpart G programme.\",\n      \"citation\": \"21 CFR 117.405, 117.410, 117.420, 117.425, 117.430 and 117.435 (supply-chain program). I am confident these are the right sections; I am less certain which of them bind this facility, because that turns on whether any hazard here is controlled by the supplier.\",\n      \"citation_url\": \"https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-117/subpart-G\",\n      \"locator\": \"section 8, page 6\",\n      \"draftable\": true,\n      \"basis\": \"read\",\n      \"quote\": \"Tahini and dry beans are received only from approved suppliers who provide a current third-party audit certificate and a certificate of analysis for each lot.\",\n      \"same_as_gap_id\": \"\"\n    },\n    {\n      \"title\": \"Plan is not signed and dated\",\n      \"description\": \"The cover page shows an approval line but no signature and no date of signature. Part 117 requires the food safety plan to be signed and dated by the owner, operator or agent in charge on initial completion and again on any modification or reanalysis. An unsigned plan is one of the first things an investigator notices.\",\n      \"fix\": \"Add a signature block on page 1 with printed name, title, signature and date, plus a revision-history table showing each modification and its signature date.\",\n      \"citation\": \"21 CFR 117.310 (additional requirements applying to the food safety plan)\",\n      \"citation_url\": \"https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-117/subpart-F/section-117.310\",\n      \"locator\": \"page 1, cover\",\n      \"draftable\": true,\n      \"basis\": \"read\",\n      \"quote\": \"Approved by: Plant Manager\",\n      \"same_as_gap_id\": \"\"\n    },\n    {\n      \"title\": \"Record content requirements not stated\",\n      \"description\": \"Section 9 covers where records are kept and for how long, but not what each record must contain. Part 117 requires records to include the plant name and location, actual values and observations (not just a tick), the date and, where appropriate, the time of the activity, the product and lot code, and the signature or initials of the person performing the activity as well as of the reviewer with the date of review.\",\n      \"fix\": \"Add a paragraph to section 9 setting out the minimum fields for every log named in the plan, and check that the cook, cooling, ATP, metal detection, label and corrective action forms actually carry those fields.\",\n      \"citation\": \"21 CFR 117.305 (general requirements applying to records)\",\n      \"citation_url\": \"https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-117/subpart-F/section-117.305\",\n      \"locator\": \"section 9, page 7\",\n      \"draftable\": true,\n      \"basis\": \"read\",\n      \"quote\": \"All records named in this plan are kept at the Salem plant for at least two years from the date of the record\",\n      \"same_as_gap_id\": \"\"\n    },\n    {\n      \"title\": \"Environmental monitoring and product testing procedures lack the required written detail\",\n      \"description\": \"The plan states ten Listeria spp. swabs weekly across zones 1 and 2 and monthly finished-product testing, but does not set out the written procedures the rule calls for: the scientific basis for the sampling plan, identification of the specific sites and how they are rotated, the timing relative to production, the test method used, the laboratory, and the corrective action procedure triggered by a positive — though a corrective action is described in section 6.\",\n      \"fix\": \"Issue an environmental monitoring procedure and a finished-product testing procedure as annexes, with the site map, rotation, method, laboratory name and accreditation, action limits and escalation, and reference them from section 7.\",\n      \"citation\": \"21 CFR 117.165(a)(3) and 117.165(b) (verification of implementation and effectiveness — written procedures for product testing and environmental monitoring)\",\n      \"citation_url\": \"https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-117/subpart-C/section-117.165\",\n      \"locator\": \"section 4 (page 4) and section 7 (page 6)\",\n      \"draftable\": true,\n      \"basis\": \"read\",\n      \"quote\": \"Listeria spp. swabs, 10 sites weekly, zone 1 and 2\",\n      \"same_as_gap_id\": \"\"\n    },\n    {\n      \"title\": \"Corrective action procedures do not cover unanticipated problems or corrections\",\n      \"description\": \"Section 6 gives a good set of specific corrective actions, but does not state the general duty: that all affected food is evaluated for safety, that adulterated food is prevented from entering commerce, that the cause is identified and corrected to reduce recurrence, and that the plan is reanalysed where needed. It also does not distinguish a 'correction' — a minor, timely fix — from a corrective action, which changes what has to be documented.\",\n      \"fix\": \"Add a lead paragraph to section 6 covering the general corrective-action duty and unanticipated food safety problems, and a short definition of a correction with how it is recorded.\",\n      \"citation\": \"21 CFR 117.150 (corrective actions and corrections)\",\n      \"citation_url\": \"https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-117/subpart-C/section-117.150\",\n      \"locator\": \"section 6, page 5\",\n      \"draftable\": true,\n      \"basis\": \"read\",\n      \"quote\": \"All corrective actions are recorded on the corrective action log and reviewed by the PCQI within seven days.\",\n      \"same_as_gap_id\": \"\"\n    },\n    {\n      \"title\": \"Training records not mentioned\",\n      \"description\": \"Section 10 commits to hygiene training at hire and annually, but does not say that records documenting that training are established and kept. Part 117 requires those records.\",\n      \"fix\": \"Add one line to section 10: training records show the employee name, date, subject, trainer and method of assessment, and are retained with the other plan records.\",\n      \"citation\": \"21 CFR 117.4(b)(2) and 117.4(d) (qualifications and training records)\",\n      \"citation_url\": \"https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-117/subpart-A/section-117.4\",\n      \"locator\": \"section 10, page 7\",\n      \"draftable\": true,\n      \"basis\": \"read\",\n      \"quote\": \"All production employees receive food hygiene training at hire and annually.\",\n      \"same_as_gap_id\": \"\"\n    }\n  ],\n  \"conditions\": [],\n  \"deadlines\": [\n    {\n      \"title\": \"Reanalysis of the whole food safety plan (at least every three years) — date inferred from the effective date plus 21 CFR 117.170(a)(1), not stated in the plan\",\n      \"due_on\": \"2028-05-12\",\n      \"source_line\": \"Effective date: May 12, 2025\",\n      \"recurs\": true\n    },\n    {\n      \"title\": \"PCQI review of cook, cooling, sanitation, allergen and metal detection records\",\n      \"due_on\": null,\n      \"source_line\": \"The PCQI reviews the cook, cooling, sanitation, allergen and metal detection records within seven working days of their creation.\",\n      \"recurs\": true\n    },\n    {\n      \"title\": \"PCQI review of corrective action log entries within seven days\",\n      \"due_on\": null,\n      \"source_line\": \"All corrective actions are recorded on the corrective action log and reviewed by the PCQI within seven days.\",\n      \"recurs\": true\n    },\n    {\n      \"title\": \"Weekly Listeria spp. environmental monitoring swabs, 10 sites, zones 1 and 2\",\n      \"due_on\": null,\n      \"source_line\": \"ATP swab pass before start-up; Listeria spp. swabs, 10 sites weekly, zone 1 and 2\",\n      \"recurs\": true\n    },\n    {\n      \"title\": \"Weekly probe thermometer calibration in ice water and boiling water\",\n      \"due_on\": null,\n      \"source_line\": \"Probe thermometers are calibrated in ice water and boiling water weekly, and the metal detector is serviced by the manufacturer annually.\",\n      \"recurs\": true\n    },\n    {\n      \"title\": \"Annual manufacturer service of the metal detector\",\n      \"due_on\": null,\n      \"source_line\": \"Probe thermometers are calibrated in ice water and boiling water weekly, and the metal detector is serviced by the manufacturer annually.\",\n      \"recurs\": true\n    },\n    {\n      \"title\": \"Monthly finished-product Listeria monocytogenes testing by an accredited laboratory\",\n      \"due_on\": null,\n      \"source_line\": \"Finished product is tested for Listeria monocytogenes monthly by an accredited laboratory.\",\n      \"recurs\": true\n    },\n    {\n      \"title\": \"Quarterly trending of environmental monitoring results\",\n      \"due_on\": null,\n      \"source_line\": \"Environmental monitoring results are trended quarterly.\",\n      \"recurs\": true\n    },\n    {\n      \"title\": \"Annual food hygiene training for all production employees (plus at hire)\",\n      \"due_on\": null,\n      \"source_line\": \"All production employees receive food hygiene training at hire and annually.\",\n      \"recurs\": true\n    },\n    {\n      \"title\": \"Retention of all plan records for at least two years from the date of the record\",\n      \"due_on\": null,\n      \"source_line\": \"All records named in this plan are kept at the Salem plant for at least two years from the date of the record\",\n      \"recurs\": true\n    },\n    {\n      \"title\": \"Metal detector test-piece checks at start-up, every two hours and at end of run\",\n      \"due_on\": null,\n      \"source_line\": \"The line lead runs the three metal test pieces through the detector at start-up, every two hours, and at the end of the run, and records the result.\",\n      \"recurs\": true\n    }\n  ],\n  \"facts\": [\n    {\n      \"key\": \"facility_address\",\n      \"value\": \"1850 Fairgrounds Road NE, Salem, Oregon 97301\",\n      \"basis\": \"read\",\n      \"quote\": \"Salem Plant, 1850 Fairgrounds Road NE, Salem, Oregon 97301\",\n      \"locator\": \"page 1, cover\",\n      \"as_of\": \"2025-05-12\",\n      \"affects\": \"Ties the plan, the records and any FDA or ODA inspection to the single Salem manufacturing site.\"\n    },\n    {\n      \"key\": \"production_employee_count\",\n      \"value\": \"28 production employees at the Salem plant\",\n      \"basis\": \"read\",\n      \"quote\": \"The Salem plant operates one shift, five days a week, with 28 production employees.\",\n      \"locator\": \"section 1, page 2\",\n      \"as_of\": \"2025-05-12\",\n      \"affects\": \"Well under 500 full-time-equivalent employees, so the facility is a 'small business' under 21 CFR 117.3 — relevant to Part 117 flexibility and to whether the intentional adulteration rule's exemptions may apply; also keeps it under most headcount-triggered employment thresholds.\"\n    },\n    {\n      \"key\": \"product_types\",\n      \"value\": \"Refrigerated ready-to-eat hummus and bean dips in 8 oz and 16 oz sealed plastic tubs\",\n      \"basis\": \"read\",\n      \"quote\": \"Willamette Valley Foods produces refrigerated ready-to-eat hummus and bean dips in 8-ounce and 16-ounce sealed plastic tubs for retail sale in Oregon, Washington and Idaho.\",\n      \"locator\": \"section 1, page 2\",\n      \"as_of\": \"2025-05-12\",\n      \"affects\": \"RTE product exposed to the environment after a kill step is what drives the Listeria environmental monitoring obligation and FDA's high scrutiny of this category.\"\n    },\n    {\n      \"key\": \"distribution_states\",\n      \"value\": \"Oregon, Washington and Idaho\",\n      \"basis\": \"read\",\n      \"quote\": \"for retail sale in Oregon, Washington and Idaho\",\n      \"locator\": \"section 1, page 2\",\n      \"as_of\": \"2025-05-12\",\n      \"affects\": \"Interstate distribution puts the plant squarely under FDA food facility registration and Part 117, alongside Oregon Department of Agriculture licensing and inspection.\"\n    },\n    {\n      \"key\": \"shelf_life_days\",\n      \"value\": \"45 days refrigerated\",\n      \"basis\": \"read\",\n      \"quote\": \"Shelf life is 45 days refrigerated.\",\n      \"locator\": \"section 1, page 2\",\n      \"as_of\": \"2025-05-12\",\n      \"affects\": \"A 45-day refrigerated life on an RTE product that supports Listeria growth is what makes shelf-life validation and cold-chain control material.\"\n    },\n    {\n      \"key\": \"refrigerated_holding_temp\",\n      \"value\": \"At or below 41°F\",\n      \"basis\": \"read\",\n      \"quote\": \"held refrigerated at or below 41°F\",\n      \"locator\": \"section 1, page 2\",\n      \"as_of\": \"2025-05-12\",\n      \"affects\": \"This is the de facto cold-holding limit but it is not written as a preventive control with monitoring — see the refrigerated-storage gap.\"\n    },\n    {\n      \"key\": \"declared_allergens\",\n      \"value\": \"Sesame (all hummus items)\",\n      \"basis\": \"read\",\n      \"quote\": \"Products are labeled with the allergen statement \\\"Contains: sesame\\\" for all hummus items.\",\n      \"locator\": \"section 1, page 2\",\n      \"as_of\": \"2025-05-12\",\n      \"affects\": \"Sesame is a major food allergen under the FASTER Act, so label control and cross-contact control between hummus and non-tahini bean dips are mandatory allergen preventive controls.\"\n    },\n    {\n      \"key\": \"pcqi_name\",\n      \"value\": \"Dana Whitfield, Quality Manager\",\n      \"basis\": \"read\",\n      \"quote\": \"Prepared by: Dana Whitfield, Quality Manager, Preventive Controls Qualified Individual\",\n      \"locator\": \"page 1, cover\",\n      \"as_of\": \"2025-05-12\",\n      \"affects\": \"Names the individual who must perform or oversee plan preparation, validation, records review and reanalysis; single-point dependency if she leaves.\"\n    },\n    {\n      \"key\": \"pcqi_training_date\",\n      \"value\": \"FSPCA Preventive Controls course, March 2024\",\n      \"basis\": \"read\",\n      \"quote\": \"(PCQI certificate, FSPCA course, March 2024)\",\n      \"locator\": \"page 1, cover\",\n      \"as_of\": \"2025-05-12\",\n      \"affects\": \"Evidence of PCQI qualification; the certificate itself should be on file, and a trained back-up PCQI is worth having.\"\n    },\n    {\n      \"key\": \"records_retention_period\",\n      \"value\": \"At least two years from the date of the record, kept at the Salem plant\",\n      \"basis\": \"read\",\n      \"quote\": \"All records named in this plan are kept at the Salem plant for at least two years from the date of the record\",\n      \"locator\": \"section 9, page 7\",\n      \"as_of\": \"2025-05-12\",\n      \"affects\": \"Matches the two-year minimum in 21 CFR 117.315; note the food safety plan itself must be kept for two years after it is superseded.\"\n    },\n    {\n      \"key\": \"operating_schedule\",\n      \"value\": \"One shift, five days a week\",\n      \"basis\": \"read\",\n      \"quote\": \"The Salem plant operates one shift, five days a week\",\n      \"locator\": \"section 1, page 2\",\n      \"as_of\": \"2025-05-12\",\n      \"affects\": \"Single-shift operation with a full washdown between days is what makes the 'hummus last in the day' allergen scheduling control workable.\"\n    }\n  ],\n  \"version_of_title\": null,\n  \"version_of_confidence\": \"high\",\n  \"expected_missing\": [\n    {\n      \"title\": \"Oregon Department of Agriculture food processing establishment licence\",\n      \"why\": \"ODA licenses food processors in Oregon and inspects them against 21 CFR Part 117; this plan is the document they will ask to see at the visit.\",\n      \"basis\": \"similar companies, not a checked requirement\"\n    },\n    {\n      \"title\": \"FDA food facility registration confirmation (biennial renewal)\",\n      \"why\": \"A facility manufacturing food for US consumption registers with FDA and renews in even-numbered years; a renewal window falls in late 2026.\",\n      \"basis\": \"similar companies, not a checked requirement\"\n    },\n    {\n      \"title\": \"Written recall plan as a standalone document\",\n      \"why\": \"Required content of the food safety plan and the thing you reach for at 2am; it is missing here.\",\n      \"basis\": \"similar companies, not a checked requirement\"\n    },\n    {\n      \"title\": \"Sanitation standard operating procedures and master sanitation schedule\",\n      \"why\": \"The plan relies on sanitation as a preventive control but the underlying SSOPs, chemical concentrations and periodic deep-clean schedule sit in a separate document.\",\n      \"basis\": \"similar companies, not a checked requirement\"\n    },\n    {\n      \"title\": \"Environmental monitoring programme with a zone map and site list\",\n      \"why\": \"Ten swabs a week across zones 1 and 2 implies a documented site map and rotation that is not in this file.\",\n      \"basis\": \"similar companies, not a checked requirement\"\n    },\n    {\n      \"title\": \"Shelf-life or Listeria challenge study supporting 45 days\",\n      \"why\": \"An RTE refrigerated dip with a 45-day life normally has a laboratory study or predictive-model justification behind it.\",\n      \"basis\": \"similar companies, not a checked requirement\"\n    },\n    {\n      \"title\": \"Approved supplier list, supplier audit certificates and COAs\",\n      \"why\": \"Section 8 refers to them; they are the evidence behind the supply-chain programme.\",\n      \"basis\": \"similar companies, not a checked requirement\"\n    },\n    {\n      \"title\": \"Label specifications and formulation sheets\",\n      \"why\": \"The allergen preventive control turns on the label matching the formulation sheet, so both need to be controlled documents.\"\n      ,\n      \"basis\": \"similar companies, not a checked requirement\"\n    },\n    {\n      \"title\": \"Food defense plan under 21 CFR Part 121 (intentional adulteration), or a documented exemption\",\n      \"why\": \"Registered food facilities are covered unless a very small business exemption applies, which turns on average annual sales.\",\n      \"basis\": \"similar companies, not a checked requirement\"\n    },\n    {\n      \"title\": \"Mock recall / traceability exercise record\",\n      \"why\": \"Customers and third-party auditors typically expect one a year, and it is the practical test of the lot coding described in the process flow.\",\n      \"basis\": \"similar companies, not a checked requirement\"\n    },\n    {\n      \"title\": \"City of Salem industrial wastewater discharge or pretreatment authorisation\",\n      \"why\": \"A plant with daily full washdowns and kettle cooking usually has a discharge authorisation or a fats-oils-grease condition from the local sewer authority.\",\n      \"basis\": \"similar companies, not a checked requirement\"\n    },\n    {\n      \"title\": \"Employee training records and hygiene policy\",\n      \"why\": \"Section 10 promises training at hire and annually; the signed rosters are the proof.\",\n      \"basis\": \"similar companies, not a checked requirement\"\n    }\n  ],\n  \"confidence_notes\": \"High confidence on what the document is, what it contains and what it omits — all ten sections are legible and I read them in full, and every quote above is taken word for word from the file. High confidence on the four big findings: no recall plan, no reanalysis provision, no validation, and a hazard flagged as requiring a preventive control (Listeria growth in refrigerated storage) with no control, limit or monitoring behind it. Those are structural, not stylistic. Medium confidence on the supply-chain finding: Subpart G only bites for hazards the plan says are controlled by the supplier, and this plan never says one way or the other — so the fix is first to state the decision, then to build out whatever follows. I am confident in the section numbers of 21 CFR Part 117 that I cite, but I have not re-read each provision word for word today, so treat the citations as the right place to look rather than as quoted text. Two side notes I checked rather than trusted to memory: the FSMA Food Traceability Rule compliance date has moved — FDA proposed a 30-month extension from 20 January 2026 to 20 July 2028, and Congress separately directed FDA not to enforce before that date — and in any case I do not believe refrigerated hummus is on the Food Traceability List, though tahini's treatment relative to the 'nut butters' entry is something I would confirm with FDA before relying on it. Also unverified from this file alone: whether the plant is a 'qualified facility', which depends on sales figures not stated here, and whether the plan has been signed or revised since the May 2025 effective date.\",\n  \"could_not_read_reason\": null,\n  \"could_not_read_way_forward\": null\n}",
+    "json_parsed": true,
+    "model": "claude-opus-5",
+    "cited_sources": 0,
+    "searches": null,
+    "structured": false,
+    "prompt_sha256": "085d8a3a49bd3eef40737155c62c5c1c9b54e592742c07942af65d63f66ab905",
+    "quotes_checked": 20,
+    "quotes_verified": 18,
+    "extracted_text": "WILLAMETTE VALLEY FOODS, INC.\nFOOD SAFETY PLAN\nReady-to-eat hummus and bean dips\nSalem Plant, 1850 Fairgrounds Road NE, Salem, Oregon 97301\nEffective date: May 12, 2025\nPrepared by: Dana Whitfield, Quality Manager, Preventive Controls Qualified Individual\n(PCQI certificate, FSPCA course, March 2024)\nApproved by: Plant Manager\n1. Facility and product description\nWillamette Valley Foods produces refrigerated ready-to-eat hummus and bean dips in 8-ounce and 16-\nounce sealed plastic tubs for retail sale in Oregon, Washington and Idaho. The Salem plant operates one\nshift, five days a week, with 28 production employees. Products are made from cooked chickpeas or black\nbeans, tahini, lemon juice, garlic, olive oil, salt and spices, blended, filled, sealed, coded and held\nrefrigerated at or below 41°F. Shelf life is 45 days refrigerated. Products are labeled with the allergen\nstatement \"Contains: sesame\" for all hummus items.\n2. Process flow\nReceiving of dry beans, tahini and other ingredients → dry storage or refrigerated storage → soaking and\ncooking of beans (kettle, 212°F, 60 minutes minimum) → cooling in the blast chiller → blending with\nother ingredients → filling and sealing → date coding → metal detection → refrigerated storage →\nshipping.\n3. Hazard analysis\nStep Hazard Type Requires a Justification\npreventive\ncontrol?\nReceiving Sesame allergen Allergen Yes Undeclared allergen if mislabeled; cross-\ntahini contact with bean dips made without\ntahini\nReceiving dry Foreign material (stones, metal) Physical Yes Field debris in dry beans, controlled at\nbeans metal detection and by supplier screening\nCooking of Survival of vegetative pathogens Biological Yes Cook step is the kill step for the finished\nbeans (Salmonella, Listeria monocytogenes) product\nCooling Growth of Clostridium perfringens Biological Yes Slow cooling of a cooked legume allows\nand Bacillus cereus spore-former outgrowth\nBlending and Listeria monocytogenes from the Biological Yes RTE product exposed to the environment\nfilling environment after the kill step\nRefrigerated Growth of Listeria monocytogenes Biological Yes Refrigerated RTE product with a 45-day\nstorage shelf life\nDate coding None significant — No —\nMetal detection Metal fragments Physical Yes Final screen for metal from equipment\nand ingredients\n4. Preventive controls\nHazard Preventive control Type Critical limit or parameter\nVegetative Cook beans in the kettle to an internal temperature of at Process Minimum 212°F for 60 minutes, measured\npathogens at cook least 212°F for at least 60 minutes with a calibrated probe thermometer\nSpore-former Cool cooked beans from 135°F to 70°F within 2 hours Process 135°F to 70°F in 2 hours; 70°F to 41°F in\ngrowth at cooling and to 41°F within a further 4 hours in the blast chiller 4 hours\nListeria in the Sanitation of food-contact surfaces before each Sanitation ATP swab pass before start-up; Listeria\nRTE environment production run and between products; environmental spp. swabs, 10 sites weekly, zone 1 and 2\nmonitoring swabs weekly\nSesame allergen Allergen labeling review for every label at receipt and at Allergen Label matches the formulation sheet;\nprinting; product scheduling with hummus items last in washdown verified by ATP swab before\nthe day, followed by full washdown the next non-sesame product\nMetal Metal detection of every sealed tub Process Reject at 2.0 mm ferrous, 2.5 mm non-\nferrous, 3.0 mm stainless test pieces\n5. Monitoring\nThe kettle operator records the internal temperature and the time at the start and end of each cook batch\non the cook log. The blast chiller operator records the temperature at 2 hours and at 6 hours on the cooling\nlog. The sanitation lead records the ATP swab result before each start-up. The line lead runs the three\nmetal test pieces through the detector at start-up, every two hours, and at the end of the run, and records\nthe result. The quality technician reviews every label lot against the formulation sheet at receipt and signs\nthe label log.\n6. Corrective actions\nIf a cook batch does not reach 212°F for 60 minutes, the batch is re-cooked to the critical limit or\ndiscarded, and the cause is recorded. If cooling exceeds the time limits, the batch is discarded. If an ATP\nswab fails, the surface is re-cleaned and re-swabbed before production starts. If a Listeria spp. swab is\npositive, the site is cleaned and re-swabbed, adjacent sites are added, and product made on that line since\nthe last negative swab is held pending investigation. If the metal detector fails a test piece, all product\nsince the last passing test is re-run through the detector. If a label does not match the formulation, the lot\nis quarantined and not used. All corrective actions are recorded on the corrective action log and reviewed\nby the PCQI within seven days.\n7. Verification\nThe PCQI reviews the cook, cooling, sanitation, allergen and metal detection records within seven\nworking days of their creation. Probe thermometers are calibrated in ice water and boiling water weekly,\nand the metal detector is serviced by the manufacturer annually. Finished product is tested for Listeria\nmonocytogenes monthly by an accredited laboratory. Environmental monitoring results are trended\nquarterly.\n8. Supply-chain program\nTahini and dry beans are received only from approved suppliers who provide a current third-party audit\ncertificate and a certificate of analysis for each lot. The approved supplier list is maintained by the quality\nmanager.\n9. Records\nAll records named in this plan are kept at the Salem plant for at least two years from the date of the record\nand are available to FDA and the Oregon Department of Agriculture on request. Records are reviewed and\nsigned by the PCQI as described in section 7.\n10. Training\nAll production employees receive food hygiene training at hire and annually. The PCQI holds a current\nFSPCA certificate. Sanitation and line leads are trained on the monitoring procedures in this plan.",
+    "started_at": "2026-09-27T16:41:35.602Z"
+  }
+}

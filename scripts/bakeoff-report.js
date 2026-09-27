@@ -89,9 +89,23 @@ function caseVerdict(runs, c) {
   const labelSets = new Set(runs.map((r) => JSON.stringify({
     a: r.scan?.identity?.agencies, s: r.scan?.identity?.subjects })))
   const labelsSame = labelSets.size === 1
+  // *** THE SAME LABELS IN A DIFFERENT ORDER, MEASURED SEPARATELY. ***
+  // The runner compares `JSON.stringify` of the two arrays, which is order-sensitive, and
+  // `README.md` asks only that a label be "the identical string across the three runs" — that a
+  // label is not RENAMED between readings, which is the thing the label list exists to prevent.
+  // 27 September: Opus 5 returned ["Oregon OSHA","OSHA"] and ["OSHA","Oregon OSHA"] for the same
+  // document and the case was failed for it. So both are reported: the verdict as the runner
+  // judged it, and whether the SETS agree. The judge is NOT changed here — doing that mid-bake-off
+  // would make the configuration already measured incomparable with the six after it.
+  const setOf = (r) => JSON.stringify({
+    a: [...(r.scan?.identity?.agencies ?? [])].sort(),
+    s: [...(r.scan?.identity?.subjects ?? [])].sort() })
+  const labelsSameAsSets = new Set(runs.map(setOf)).size === 1
   const everyHonest = !!c.alternative_pass && runs.length > 0 && runs.every((r) => r.alternative_pass)
   const pass = (failing.length === 0 && !compliant.length && labelsSame) || everyHonest
-  return { pass, failing, compliant, labelsSame, everyHonest }
+  // What the case would have been had only the label ORDER differed — reported, never substituted.
+  const passIfSets = (failing.length === 0 && !compliant.length && labelsSameAsSets) || everyHonest
+  return { pass, failing, compliant, labelsSame, labelsSameAsSets, everyHonest, passIfSets }
 }
 
 /** Find a gap by KEYWORDS ONLY — see the header note. */
@@ -141,8 +155,17 @@ p()
 // ===== 1. per configuration =================================================
 p(`## Per configuration`)
 p()
-p(`| Configuration | Cases | Must-lines | Must-not violations | Parse failures | Labels agreed | Mean cost/scan | Mean wall | Searches/scan (mean, range) |`)
-p(`|---|---|---|---|---|---|---|---|---|`)
+p(`**Two "cases passed" columns, and the difference between them is a matcher, not a model.** The`)
+p(`runner compares the label arrays with \`JSON.stringify\`, which is order-sensitive, while \`README.md\``)
+p(`asks only that a label be "the identical string across the three runs" — that it is not RENAMED.`)
+p(`Every configuration below returns the same labels in a different ORDER on some case, and is failed`)
+p(`for it. **"as judged" is the runner's verdict as it stands; "labels as sets" is the same runs with`)
+p(`the arrays sorted before comparison.** The judge was not changed — see "Where the spec looks wrong".`)
+p()
+p(`"Labels agreed" is likewise given as *exact / as sets*.`)
+p()
+p(`| Configuration | Cases (as judged) | Cases (labels as sets) | Must-lines | Must-not violated (lines / items) | Parse failures | Labels agreed (exact / sets) | Mean cost/scan | Mean wall | Searches/scan (mean, range) |`)
+p(`|---|---|---|---|---|---|---|---|---|---|`)
 const summary = {}
 for (const [m, st, k] of present) {
   const runs = byConfig.get(k)
@@ -152,17 +175,28 @@ for (const [m, st, k] of present) {
     byCase.get(r.caseId).push(r)
   }
   let casesPassed = 0, lineTotal = 0, linePassed = 0, mustNotViol = 0, labelsAgreed = 0
+  let casesPassedSets = 0, labelsAgreedSets = 0, mustNotItems = 0
   const caseDetail = {}
   for (const [id, rs] of byCase) {
     const c = caseOf[id]
     const v = caseVerdict(rs, c)
     if (v.pass) casesPassed++
+    if (v.passIfSets) casesPassedSets++
     if (v.labelsSame) labelsAgreed++
+    if (v.labelsSameAsSets) labelsAgreedSets++
     for (const ch of [...c.must, ...c.must_not]) {
       lineTotal++
       const ok = rs.every((r) => { const vv = r.verdicts?.[ch.id]; return vv && !BAD.has(vv.verdict) })
       if (ok) linePassed++
-      else if (c.must_not.some((x) => x.id === ch.id)) mustNotViol++
+      else if (c.must_not.some((x) => x.id === ch.id)) {
+        mustNotViol++
+        // The LINE is violated once; the items that violated it are counted separately, because a
+        // "1" in the summary beside nine quoted items in the detail reads like a contradiction.
+        for (const r of rs) {
+          const v = r.verdicts?.[ch.id]
+          if (v && BAD.has(v.verdict)) mustNotItems += (v.quotes ?? [1]).length
+        }
+      }
     }
     caseDetail[id] = v
   }
@@ -170,10 +204,11 @@ for (const [m, st, k] of present) {
   const costs = runs.map((r) => r.cost_usd == null ? null : Number(r.cost_usd)).filter((x) => x != null)
   const walls = runs.map((r) => r.wall_ms).filter((x) => x != null)
   const searches = runs.map((r) => r.searches).filter((x) => typeof x === 'number')
-  summary[k] = { m, st, runs, byCase, caseDetail, casesPassed, lineTotal, linePassed, mustNotViol,
-                 parseFails, labelsAgreed, costs, walls, searches, nCases: byCase.size }
-  p(`| **${label(m, st)}** | ${casesPassed} of ${byCase.size} | ${linePassed} of ${lineTotal} `
-    + `| ${mustNotViol} | ${parseFails} of ${runs.length} | ${labelsAgreed} of ${byCase.size} `
+  summary[k] = { m, st, runs, byCase, caseDetail, casesPassed, casesPassedSets, lineTotal, linePassed,
+                 mustNotViol, mustNotItems, parseFails, labelsAgreed, labelsAgreedSets, costs, walls, searches,
+                 nCases: byCase.size }
+  p(`| **${label(m, st)}** | ${casesPassed} of ${byCase.size} | ${casesPassedSets} of ${byCase.size} | ${linePassed} of ${lineTotal} `
+    + `| ${mustNotViol} line${mustNotViol === 1 ? '' : 's'} / ${mustNotItems} item${mustNotItems === 1 ? '' : 's'} | ${parseFails} of ${runs.length} | ${labelsAgreed} / ${labelsAgreedSets} of ${byCase.size} `
     + `| ${money(mean(costs))} | ${walls.length ? (mean(walls) / 1000).toFixed(1) + 's' : '—'} `
     + `| ${searches.length ? mean(searches).toFixed(1) : '—'} (${searches.length ? Math.min(...searches) + '–' + Math.max(...searches) : '—'}) |`)
 }
@@ -223,7 +258,9 @@ for (const id of ORDER) {
     }
     const named = [...byId.entries()].map(([lid, runsF]) => `\`${lid}\` (run${runsF.length > 1 ? 's' : ''} ${runsF.join(',')})`).join('; ')
     const extra = []
-    if (!v.labelsSame) extra.push('**labels differ across runs**')
+    if (!v.labelsSame) extra.push(v.labelsSameAsSets
+      ? '**labels differ in ORDER only** — same set, failed by an order-sensitive matcher'
+      : '**labels differ across runs** (a different SET, not just order)')
     if (v.compliant.length) extra.push(`**"compliant" appears** (run${v.compliant.length > 1 ? 's' : ''} ${v.compliant.map((r) => r.run).join(',')})`)
     const note = v.everyHonest ? ' — every run answered could_not_read with a way forward, which the spec calls an honest pass' : ''
     p(`| ${label(m, st)} | ${v.pass ? '**PASS**' : 'FAIL'}${note} | ${[named, ...extra].filter(Boolean).join('; ') || '—'} |`)
@@ -302,7 +339,7 @@ for (const [m, st, k] of present) {
   }
   if (!rows.length) continue
   anyViolation = true
-  p(`### ${label(m, st)} — ${rows.length} violation${rows.length === 1 ? '' : 's'}`)
+  p(`### ${label(m, st)} — ${rows.length} offending item${rows.length === 1 ? '' : 's'} across ${new Set(rows.map((r) => r.lid)).size} must-not line${new Set(rows.map((r) => r.lid)).size === 1 ? '' : 's'}`)
   p()
   p(`| Case | Must-not | Run | What the model actually wrote |`)
   p(`|---|---|---|---|`)
@@ -369,6 +406,49 @@ for (const id of ['05-sds-supplier', '06a-forklift-log', '06b-forklift-log-photo
     const stats = [...new Set(rs.map((x) => x.scan?.status ?? 'null'))].join(' / ')
     const sum = r.scan?.summary ?? r.scan?.could_not_read?.reason ?? '(nothing)'
     p(`| ${label(m, st)} | ${kinds} | ${stats} | ${md(sum).slice(0, 420)} |`)
+  }
+  p()
+}
+p('---')
+p()
+p(`## Findings the specs do not mention`)
+p()
+p(`Gaps that match **neither** a must-line nor a must-not, by keyword. The suite cannot judge these:`)
+p(`the spec neither asks for them nor forbids them, so they pass silently either way. They are here`)
+p(`because **an extra finding is not free** — it is work a customer would do — and because a spec whose`)
+p(`must-not list does not cover what the best models actually say is a spec with a hole in it.`)
+p()
+p(`Counted once per distinct title per configuration, with the number of the ${present.length} configurations that raised it.`)
+p()
+for (const id of ORDER) {
+  if (!caseOf[id]) continue
+  const c = caseOf[id]
+  const checks = [...c.must, ...c.must_not]
+  const byTitle = new Map()
+  for (const [m, st, k] of present) {
+    for (const r of summary[k]?.byCase.get(id) ?? []) {
+      for (const g of r.scan?.gaps ?? []) {
+        const text = norm(ITEM_TEXT(g))
+        // Does this gap answer any line the spec states, in either direction?
+        const claimed = checks.some((ch) => {
+          const kws = (ch.keywords ?? ch.subject ?? []).map(norm)
+          if (!kws.length) return false
+          return kws.filter((w) => text.includes(w)).length >= (ch.min_keywords ?? 2)
+        })
+        if (claimed) continue
+        const t = String(g.title ?? '').trim()
+        if (!byTitle.has(t)) byTitle.set(t, { configs: new Set(), cite: g.citation ?? null })
+        byTitle.get(t).configs.add(label(m, st))
+      }
+    }
+  }
+  if (!byTitle.size) continue
+  p(`### ${id}`)
+  p()
+  p(`| Gap the spec does not mention | Configurations | A citation given for it |`)
+  p(`|---|---|---|`)
+  for (const [t, v] of [...byTitle.entries()].sort((a, b) => b[1].configs.size - a[1].configs.size)) {
+    p(`| ${md(t).slice(0, 150)} | ${v.configs.size} of ${present.length} | ${v.cite ? '`' + md(String(v.cite)).slice(0, 120) + '`' : '—'} |`)
   }
   p()
 }

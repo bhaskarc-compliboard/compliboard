@@ -4,7 +4,7 @@
   "run_date": "2026-09-27",
   "model": "claude-opus-5",
   "structured": false,
-  "searches": null,
+  "searches": 2,
   "cited_sources": 0,
   "prompt_sha256": "0fc4bd599e7ed0ab3926130f9fa7c39b19b144f076825444e549a6abbdaaad1e",
   "scan_id": "e35d3577-b207-420e-8135-c2dc82b167ad",
