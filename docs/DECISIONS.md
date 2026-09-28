@@ -10639,3 +10639,80 @@ most useful findings in the run and **which this suite scores zero either way.**
 **Reversal condition:** the model is one Vercel variable and is meant to be changed — that is what the
 bake-off is for, and it should be re-run when a new model ships. The answer-key corrections reverse only
 if a person reads the OAR and finds the paragraph mapping wrong.
+
+---
+
+## 140. THE 28 SEPTEMBER PUSH, AND THE SCHEMA TURNED ON AFTERWARDS — 28 September 2026
+
+The second production release of the week. **Code only — no migration ran.**
+
+> ### THESE ARE THE OWNER'S FACTS, RECORDED AS SUCH.
+> The push, the smoke checks and the variable change were the owner's; **Claude Code cannot read
+> Vercel and did not try.** What is verified from this machine is the git history below, and it is
+> marked separately from what is reported.
+
+### What went up
+
+Thirteen commits, `e17858d` … `c742a81`, verified with
+`git log --oneline --reverse 2eb8282..c742a81`:
+
+| | |
+|---|---|
+| `e17858d`, `e3932b8` | The 26 September release preflight and its note — committed on the 26th, pushed on the 28th |
+| `40ab055` | The refusal has its own words, and the schema fits Opus |
+| `0c057b4` … `5bf3b7e` | The bake-off: the runner's flags, the report builder, 147 runs, six answer-key corrections |
+| `2f4d380` | "Read it again" survives closing the drawer |
+| `d98471d`, `c742a81` | The housekeeping pass and the cleanup that followed it |
+
+**⚠ Two numbers that do not match, said plainly rather than smoothed over.**
+
+1. **`origin/main` carries FIFTEEN commits since the release, not thirteen.** The extra two —
+   `2be7c15` and `5d90012`, the PDF deletion and the two references that still pointed at it — were
+   made *after* the thirteen were described, and went up with or after them. Both are documentation
+   only. `git rev-list --count 2eb8282..origin/main` returns **15**; the thirteen are a real subset
+   and the record should not imply the tree stopped there.
+2. **"No migrations" needs one qualification.** `e17858d` **adds the file**
+   `supabase/migrations/054_documents_already_here_are_held.sql` to pushed history. **No migration
+   ran with this push**, and nothing was pending: 054 was applied to production on **26 September**
+   with the rev 1 release (§136), by `npm run db:migrate:prod`. So the claim is true of the
+   *deployment* and false of the *diff*, and `git diff --stat 2eb8282..c742a81 -- supabase/migrations/`
+   is what shows the difference.
+
+### The four smoke checks passed
+
+Reported by the owner. **Which four is not recorded here, because Claude Code did not see them** —
+and a record that named them on inference would be exactly the invented detail §9a is about. The push
+changed four things a smoke test would reach, and they are the natural candidates: "Read it again"
+returning at once and the reading landing anyway; the dashboard's readings list reading
+`document_index_v` instead of the deleted review route; the Calendar import still working now that
+`/api/extract-dates` requires a session; and a document read end to end. **If the four were these,
+this section should say so.**
+
+### Then the schema, as its own redeploy
+
+**`AI_SCAN_STRUCTURED` moved from `false` to `true` on production after the code push, not with it.**
+Smoke result: read on **`claude-opus-5-5`**, **$0.2531**.
+
+> ### A VARIABLE CHANGE IS ITSELF A REDEPLOY, SO THE TWO DO NOT RIDE TOGETHER.
+>
+> Changing a Vercel variable rebuilds and redeploys on its own (`RELEASE.md`). Turning the schema on
+> in the same window as thirteen commits of code would mean that **any change in a result afterwards
+> has two candidate causes and no way to separate them** — and the schema is the one thing in this
+> release whose effect the bake-off measured precisely enough to check. Sequencing them is what makes
+> the $0.2531 attributable.
+
+**$0.2531 against the bake-off's $0.2158 mean for this configuration** —
+`tests/golden/documents/bakeoff/2026-09-27-rejudged.md`, Opus 5.5 with the schema on. Same order, a
+little dearer, which is what one production document against seven fixtures should look like; a figure
+far from it would have been the thing to chase.
+
+**And it closes §139's open item.** That section recorded the schema as off, said it would go on after
+the next push, and gave the reason: across 135 answers bought in the bake-off, **zero failed to parse
+on either path**, so the one-in-five figure the switch was originally justified by no longer held. It
+earns its place on the other axes instead — with the schema on, Opus 5.5 was the only configuration
+with **no must-not violations and labels identical on 7 of 7 cases**, at a *lower* cost per scan than
+with it off.
+
+**Reversal condition:** one Vercel variable, no push — which is the whole point of it being a switch.
+Set it back to `false` if a production reading comes back unparseable, and the prose path is still
+there, still exercised by the golden set, and measured at zero parse failures over 135 answers.
