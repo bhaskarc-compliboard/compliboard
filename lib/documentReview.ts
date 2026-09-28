@@ -1,3 +1,13 @@
+// *** ONE CALLER LEFT — 28 September 2026. ***
+// `/api/document-review` was DELETED on 28 September. Its POST had had no caller in the app since
+// Documents Run 6 rewired the reading to `/api/document-scan`, and its GET served a dashboard list
+// computed from `document_reviews` — which by then held **0 rows**, so it showed a confident zero on
+// a company with ten documents and 88 open gaps. The dashboard reads `document_index_v` now.
+//
+// **This module is still reached, from exactly one place:** `app/api/audits/route.ts`, the audit
+// engine's auto-indexing step. It is retired when Audits is rewired to read document readings rather
+// than produce its own — `docs/HANDOFF-AUDITS.md` §1 and §4 — and not before. Nothing else imports it.
+
 import { askAIJson, type AIContent } from './ai.ts'
 import { reviewPrompt } from '../prompts/document-review'
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -31,7 +41,7 @@ export interface ReviewDocumentInput {
 
 // Reviews a document's actual content (PDF/image/Word/PowerPoint) and saves the
 // result to document_reviews. Shared by the manual "Review" button
-// (app/api/document-review/route.ts) and the audit engine's auto-indexing step —
+// (the route was DELETED 28 September 2026 — see the banner at the top) and the audit engine's
 // never duplicate this logic in two places.
 export async function reviewDocument(input: ReviewDocumentInput) {
   const client = input.db
@@ -71,7 +81,7 @@ export async function reviewDocument(input: ReviewDocumentInput) {
   }
 
   // MEASUREMENT ONLY — the call itself is unchanged. `companyId` is the caller's, taken from
-  // the verified session in both call sites (`/api/document-review` and the audit engine's
+  // the verified session in its remaining call site (the audit engine's
   // auto-index loop, each via `requireCompany`), never from a client value. Until now this path
   // wrote no `ai_calls` row at all, so the most expensive call in the product was the one the
   // cost report could not see (`DECISIONS.md` §128 J, `HANDOFF-DOCUMENTS.md` §4).

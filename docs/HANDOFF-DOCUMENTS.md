@@ -9,13 +9,14 @@
 > It is kept because it is the record of what was asked for before anything existed, which is the only
 > way to judge what was delivered.
 >
-> **What to read instead:** `docs/VISION-DOCUMENTS.md` for what the module is for, **`docs/DESIGN.md`
-> §3 and §6** for the layout template and how a section's files are laid out, `DECISIONS.md`
+> **What to read instead:** `docs/VISION-DOCUMENTS.md` for what the module is for,
+> **`docs/HANDOFF-AUDITS.md` §5 and §6** for the design template every section follows and the file
+> structure every section follows, **`docs/DESIGN.md`** for the template itself, `DECISIONS.md`
 > §131–§139 for what was decided, and `docs/releases/2026-09-26-documents-rev1.md` for what shipped.
 >
-> *(A note on the pointer: the housekeeping brief named `docs/HANDOFF-AUDITS.md` §5 and §6 as holding
-> the template and the file structure. **That file does not exist** — see
-> `docs/INVENTORY-2026-09.md`. `DESIGN.md` is where those actually live.)*
+> *(Corrected 28 September 2026: this box said `HANDOFF-AUDITS.md` did not exist, which was true when
+> the inventory was written and is not true now — the owner added it on the 27th. It is the brief for
+> the section that comes after Documents, and it carries the template and the structure at §5 and §6.)*
 
 *Written 23 September 2026 by the chat that shipped the research section. Read this first, then the files in §10, then answer the owner's first message.*
 

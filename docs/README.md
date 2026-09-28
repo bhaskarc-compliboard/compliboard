@@ -11,6 +11,7 @@
 > | **`RELEASE.md`** | How a change reaches production, and **the authoritative list of what Vercel Production holds.** When this and any other file disagree about a variable, the dashboard wins and `RELEASE.md` gets corrected |
 > | **`DESIGN.md`** | The layout template. §3 is the widths, §6 is how a new section's files are laid out |
 > | **`INVENTORY-2026-09.md`** | Every file in the repo checked against 28 September: what it is for, whether it is still true, and who calls what. `INVENTORY.md` is the older pass, organised by phase rather than by file, and both are kept |
+> | **`HANDOFF-AUDITS.md`** | *(added 27 September, listed here on the 28th)* The brief for the section after Documents — **and the first place to send anyone starting a new section**: §5 is the design template every section follows, §6 the file structure every section follows, §4 what Documents provides to Audits. The two completed handoffs point at it |
 >
 > `releases/` also holds one dated release note per production push — `2026-09-26-documents-rev1.md`
 > is the only one so far, and its §7 carries the outcome of every smoke-test step.

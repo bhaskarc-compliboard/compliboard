@@ -867,6 +867,10 @@ select company_id, source_name, count(*) as runs,
 having count(*) > 1;
 ```
 
+*(Note 28 September 2026: `baseline-outputs/` was deleted from the tree — it was a frozen dump from
+9 September that nothing read. **The answer below stands as a dated reading** and the rows behind it
+are in git history, at any commit before `d98471d`.)*
+
 **Answer, from `baseline-outputs/audits.json` — six audits of ISO 9001:2015, the same 272-item
 standard, the same company, across two days in July:**
 

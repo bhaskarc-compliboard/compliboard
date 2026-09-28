@@ -39,6 +39,7 @@
 import { useState, useEffect, useRef, useMemo, Suspense } from 'react'
 import { createClient, authHeaders } from '@/lib/supabase'
 import AppLayout from '@/components/AppLayout'
+import { STATUS_WORD, STATUS_GROUP_LABEL, isAmber, statusWord } from '@/lib/documentStatus'
 import { ACCEPTED_FILE_TYPES } from '@/lib/acceptedFiles'
 import DocumentReport from '@/components/DocumentReport'
 import { LIVE_SCAN_MAX } from '@/lib/documentBatch'
@@ -102,40 +103,8 @@ const STATUS_ORDER: string[] = [
   'current', 'recorded', 'on_file',
 ]
 
-const STATUS_GROUP_LABEL: Record<string, string> = {
-  needs_work: 'Needs work',
-  expiring: 'Expiring within 90 days',
-  expired: 'Expired',
-  could_not_read: 'Could not read',
-  not_yet_read: 'Not yet read',
-  current: 'Current',
-  recorded: 'Recorded',
-  on_file: 'On file',
-}
-
-const STATUS_WORD: Record<string, string> = {
-  needs_work: 'Needs work',
-  expiring: 'Expiring',
-  expired: 'Expired',
-  could_not_read: 'Could not read',
-  not_yet_read: 'Queued',
-  current: 'Current',
-  recorded: 'Recorded',
-  on_file: 'On file',
-}
-
-const AMBER_STATUSES = new Set(['needs_work', 'expiring', 'expired', 'could_not_read'])
-/**
- * Amber means "this asks something of you". A document that is queued or being read asks nothing
- * yet — so while work is in flight the row is grey, whatever the PREVIOUS reading said.
- *
- * It exists as one function because `statusWord` and the two colour call sites would otherwise
- * disagree: the word would say "Reading…" in the amber of a "Needs work" the new reading has not
- * confirmed yet. `held` is grey for the same reason it says "Not read yet".
- */
-const isAmber = (r: { display_status: string; document_status: string }) =>
-  r.document_status !== 'uploaded' && r.document_status !== 'reading' && r.document_status !== 'held'
-  && AMBER_STATUSES.has(r.display_status)
+// The status words, the group labels and the amber rule live in `lib/documentStatus.ts` — the
+// dashboard's readings list reads the same view and must say the same words (28 September 2026).
 
 /** What the date under the status word is called. The scan says which kind of date it is. */
 const DATE_LABEL: Record<string, string> = {
@@ -591,24 +560,7 @@ function DocumentsPageContent() {
   }
 
   const folderCount = (id: string) => rows.filter((r) => r.folder_id === id).length
-  const statusWord = (r: IndexRow) => {
-    // *** HELD IS NOT QUEUED, AND MUST NOT SAY SO (migration 054). ***
-    // These are the files that were already here when the sweep arrived. Nothing is going to
-    // read them on its own, so "Queued" would be a promise the product is not keeping — the
-    // exact shape of the anti-pattern this page exists to avoid. Checked FIRST, because `held`
-    // beats everything below it.
-    if (r.document_status === 'held') return 'Not read yet'
-    // *** WORK IN FLIGHT BEATS THE READING THAT IS STILL ON THE ROW — 28 September 2026. ***
-    // A "Read it again" leaves the PREVIOUS scan current while the new one is queued, so
-    // `display_status` still reads "Needs work" or "Current" from the old reading. Before this the
-    // row said exactly what it said before the button was pressed, for up to two minutes, which is
-    // indistinguishable from the button having done nothing — and doing nothing is the defect that
-    // was actually fixed. `readingIds` stays in the test because the page's own live upload loop
-    // sets it before the row's status has moved.
-    if (readingIds.has(r.document_id) || r.document_status === 'reading') return 'Reading…'
-    if (r.document_status === 'uploaded') return 'Queued'
-    return STATUS_WORD[r.display_status] ?? r.display_status
-  }
+  const rowWord = (r: IndexRow) => statusWord(r, readingIds.has(r.document_id))
 
   // ---------------------------------------------------------------------------
   // RENDER
@@ -667,7 +619,7 @@ function DocumentsPageContent() {
               lives once, in the drawer's header area. Three columns again. */}
 
           <div className="w-[160px] shrink-0 text-right">
-            <p className={`text-[13px] ${amber ? 'text-[var(--amber)]' : 'text-gray-500'}`}>{statusWord(r)}</p>
+            <p className={`text-[13px] ${amber ? 'text-[var(--amber)]' : 'text-gray-500'}`}>{rowWord(r)}</p>
             {r.significant_date && (
               <p className="mt-0.5 text-[12px] text-gray-400">{dateLabel} {fmtDate(r.significant_date)}</p>
             )}
@@ -881,7 +833,7 @@ function DocumentsPageContent() {
                   <td className="py-2.5 text-[12px] text-gray-600">{r.site_name ?? '—'}</td>
                   <td className="py-2.5 text-[12px] text-gray-600">{fmtDate(r.significant_date) || '—'}</td>
                   <td className={`py-2.5 text-[13px] ${isAmber(r) ? 'text-[var(--amber)]' : 'text-gray-500'}`}>
-                    {statusWord(r)}
+                    {rowWord(r)}
                   </td>
                 </tr>
               ))}

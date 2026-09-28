@@ -1109,7 +1109,10 @@ so the decision is made rather than inherited.
   part of why 13 of 38 documents have a null `folder_id`
 - ⬜ Resolve pricing: $199 or $99
 - ⬜ Remove HIPAA as a surfaced audit example
-- ⬜ Fix `app/upload/page.tsx:89` — `getPublicUrl` on a private bucket, already broken
+- ✅ **CLOSED 28 September 2026 by deleting the page.** `app/upload/page.tsx` was a second, older
+  upload surface with nothing linking to it — no nav item, no link, no redirect — and `/documents`
+  is the upload surface now. The `getPublicUrl` defect went with it. Git history keeps the file.
+  ~~Fix `app/upload/page.tsx:89` — `getPublicUrl` on a private bucket, already broken~~
 - ⬜ Add to docs: baseline exports go in git **only** while data is synthetic
 - ⬜ **`supabase db query -o json` returns two different JSON shapes.** Which one depends
   on the CLI's agent detection (`--agent auto|yes|no`): a bare array `[{...}]` when it
@@ -2803,7 +2806,8 @@ rebuild (Phase 1) for the versioning columns.
   `catch {}` commented *"extraction failed silently"*. Until those display the message the
   route now returns, a rejected file looks like nothing happened.
 
-- ⬜ `app/upload/page.tsx:89` calls `getPublicUrl` on a private bucket — already broken,
+- ✅ **CLOSED 28 September 2026 — the page was deleted.** See the note above; `/documents` is the
+  upload surface. ~~`app/upload/page.tsx:89` calls `getPublicUrl` on a private bucket — already broken,~~
   already listed in §0.7. Fix it there, not here.
 
 ---

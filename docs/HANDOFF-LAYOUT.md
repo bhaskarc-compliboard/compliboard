@@ -10,8 +10,10 @@
 > Kept as the record of what the pass was asked to do.
 >
 > **What to read instead:** **`docs/DESIGN.md`** is the live layout template, and §7 there is the
-> standing list of what is known-open. `DECISIONS.md` §130 records the build-on-Haiku rule that came
-> out of this pass, and `docs/VISION-DOCUMENTS.md` is the next section's own vision.
+> standing list of what is known-open. **`docs/HANDOFF-AUDITS.md` §5 and §6** restate the template and
+> the file structure as the next section is to follow them, which is the form a new chat should read
+> them in. `DECISIONS.md` §130 records the build-on-Haiku rule that came out of this pass, and
+> `docs/VISION-DOCUMENTS.md` is the Documents section's vision.
 >
 > *(`docs/INVENTORY-2026-09.md` checks every `DESIGN.md` rule against the shipped Documents page. One
 > differed — amber on a queued row — and the page was brought to the rule, not the other way round.)*

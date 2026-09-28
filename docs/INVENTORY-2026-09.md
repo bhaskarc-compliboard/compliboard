@@ -1,7 +1,12 @@
 # INVENTORY — every file in the repo against what is true on 28 September 2026
 
-**Written 28 September 2026.** One row per file: what it is for, whether it is current, and what was
-done or is proposed. Nothing was deleted; Part 3's proposals are the owner's to decide.
+**Written 28 September 2026, and updated the same day with the owner's decisions on Part 3.** One row
+per file: what it is for, whether it is current, and what was done.
+
+**After the cleanup the repo holds 34 API routes and 14 pages** (was 35 and 15). Four things were
+deleted on the owner's decision — `app/upload/page.tsx`, `app/api/document-review/route.ts`,
+`baseline-outputs/` and `CURRENT-SCHEMA.md` — and **git history keeps every one of them.** Two things
+were kept with a note rather than removed, and one was kept and secured.
 
 **Truth this was checked against.** Production is at migration **054** and the commit pushed on
 26 September. Documents rev 1 is released. Production reads documents on **`claude-opus-5-5`** with
@@ -15,13 +20,12 @@ done or is proposed. Nothing was deleted; Part 3's proposals are the owner's to 
 
 Recorded here rather than worked around, because both change what a later reader should trust.
 
-**1. `docs/HANDOFF-AUDITS.md` does not exist.** The brief names it as holding "the design template
-and file structure" at §5 and §6. There is no such file — `ls docs/` returns `HANDOFF-CODE.md`,
-`HANDOFF-DOCUMENTS.md` and `HANDOFF-LAYOUT.md` and nothing else beginning `HANDOFF-`. The nearest
-thing that exists is **`docs/DESIGN.md` §3 (Layout) and §6 (Building the next section)**, which is
-where the template and the file structure actually live. The two completed handoffs below are
-pointed at `DESIGN.md` §6, not at a file that is not on disk. **If HANDOFF-AUDITS.md is meant to be
-written next, it has not been started.**
+**1. `docs/HANDOFF-AUDITS.md` did not exist — ✅ RESOLVED 28 September 2026.** When this inventory was
+written the file was not on disk and the pointer was dangling. **The owner added it on 27 September**
+and it is now the brief for the section after Documents: §5 is the design template every section
+follows, §6 the file structure, §4 what Documents provides to Audits. Both completed handoffs and
+`docs/README.md` now point at it as well as at `DESIGN.md`. *Left in place rather than deleted because
+it is why the pointers read the way they do.*
 
 **2. `DECISIONS.md` §138 was already taken.** It is *"READ IT AGAIN RAN IN THE DRAWER'S REQUEST"*,
 written on 28 September for the drawer fix. The brief asks for §138 to record the bake-off and the
@@ -142,8 +146,8 @@ to match what shipped, and that is the normal state for a spec.
 | `account/` · `account/export/` | `/account` | Current |
 | `signup/` · `industries/` · `feedback/` | signup, feedback | Current |
 | `scan-website/` | signup scan | Current — **still calls Anthropic by `fetch` directly**, the known §3.4 exception |
-| `document-review/` | **GET** by `/dashboard`; **POST by nothing** | Mixed — see Part 3 |
-| `extract-dates/` | `/calendar` page | **Current — see Part 3** |
+| ~~`document-review/`~~ | — | ✅ **DELETED 28 Sep.** The dashboard reads `document_index_v` instead |
+| `extract-dates/` | `/calendar` page | Current. **Secured 28 Sep** — `requireCompany` added, ledger row carries the company. *The feature is the Calendar section's to keep or remove* |
 
 ---
 
@@ -156,21 +160,30 @@ deployed tree where it matters.
 | Item | Evidence | Verdict | Proposal |
 |---|---|---|---|
 | `lib/documentReview.ts` | **ALIVE.** `app/api/audits/route.ts:3` imports `reviewDocument`, and calls it at `:363` in the audit engine's auto-index step. Also imported by `app/api/document-review/route.ts:33` | **Not dead** | **Keep.** It stops being reachable when Audits is rewired (M2), not before |
-| `app/api/document-review/route.ts` **POST** | The only caller anywhere is `app/dashboard/page.tsx:48`, and it passes no `method`, so it is a **GET**. No `fetch` in the app posts to this route | **POST is dead; GET is alive** | **Keep the file, archive the POST**: leave the handler, add a comment naming the date it lost its last caller. Deleting the file would take the dashboard's review list with it |
-| `app/api/extract-dates/route.ts` | **ALIVE.** `app/calendar/page.tsx:134` posts to it. The Documents page stopped using it in Run 3; the Calendar page never did | **Not dead** | **Keep.** The brief's premise — that Documents rev 1 orphaned it — is half true: it orphaned it *on that page only* |
-| `app/upload/page.tsx` | **ORPHAN.** `grep -rn "/upload"` over `app components` returns **no link, no nav item, no redirect** — reachable only by typing the URL. It posts to `/api/documents` and `/api/chat` | Unreachable in the UI | **Archive.** It is a second, older upload surface with no folder, no batch, no scan; two upload paths is how the product starts disagreeing with itself. Not delete: the owner may want the URL to keep working while Documents settles |
+| `app/api/document-review/route.ts` | The only caller was `app/dashboard/page.tsx:48` — a **GET**, serving a list computed from `document_reviews`, which holds **0 rows** | Both methods now unreferenced | ✅ **DELETED ENTIRELY 28 Sep**, owner's decision, after the dashboard was rewired to `document_index_v`. `grep -rn "document-review"` over `app lib components scripts tests` returns **only comments**. `lib/documentReview.ts` survives with one caller |
+| `app/api/extract-dates/route.ts` | **ALIVE.** `app/calendar/page.tsx` posts to it. Documents orphaned it on that page only | Not dead | ✅ **KEPT AND SECURED 28 Sep.** It had **no session guard at all** — an unauthenticated POST could have a file read by a paid model call, recorded against no tenant. `requireCompany` added, ledger row carries the company. **The feature itself — importing dates from a file rather than reading them off obligation cadence — is the Calendar section's to keep or remove**, and is not decided here |
+| `app/upload/page.tsx` | **ORPHAN.** `grep -rn "/upload"` over `app components` returned **no link, no nav item, no redirect** — reachable only by typing the URL | Unreachable in the UI | ✅ **DELETED 28 Sep**, owner's decision. Two upload paths is how the product starts disagreeing with itself. Git history keeps it, and its two open `TODO.md` items are closed by the deletion |
 | `components/archive/GateAskCard.tsx` | No importer outside `components/archive/` | Dead by design | **Keep.** The folder's README states the reason |
-| `prototypes/compliance-workspace.html` | Referenced by `prototypes/README.md` and by `DESIGN.md` as the source of the layout | Spent | **Archive** — see above |
-| `baseline-outputs/*.json` | No code reads them; a dated capture | Spent | **Delete** — `git log` holds them |
-| `CURRENT-SCHEMA.md` | Superseded by generated `docs/SCHEMA.md` | Spent | **Delete** |
+| `prototypes/compliance-workspace.html` | Referenced by `prototypes/README.md` and by `DESIGN.md` | Spent | ✅ **KEPT 28 Sep**, owner's decision, with a 🕓 HISTORICAL line at the top of `prototypes/README.md` naming `DESIGN.md` as the live template |
+| `baseline-outputs/*.json` (13 files + README) | No code read them; a 9 September capture | Spent | ✅ **DELETED 28 Sep**, owner's decision. `docs/AUDIT-CHECKS.md` and `tests/golden/README.md` referenced them and now carry a note that the rows are in git history |
+| `CURRENT-SCHEMA.md` | Superseded by generated `docs/SCHEMA.md` | Spent | ✅ **DELETED 28 Sep**, owner's decision. Two `TODO.md` lines referenced it; one of those recorded that it was *wrong* about the reference-table count |
 | Scripts with no npm command | Listed above | All still useful | **Keep all**; give `bakeoff-report.js` a command |
 
-> ### THE ONE THING IN THIS TABLE THAT IS A RISK RATHER THAN CLUTTER
+> ### ✅ THE ONE RISK IN THIS TABLE IS CLOSED — 28 September 2026.
 >
-> `document_reviews` has **0 rows on staging** (`docs/SCHEMA.md`), and the dashboard still reads the
-> route that serves it. So the dashboard's review list is a live query against a table nothing writes
-> any more. That is not dead code — it is a **screen showing an empty list without saying why**, which
-> is `CLAUDE.md` §5.1's empty-state rule. It is not fixed here because fixing it is product work.
+> `document_reviews` has **0 rows**, and the dashboard was still reading the route that served it. So
+> "Files reviewed" and "Issues identified" both showed **0** on a company with ten documents and 88
+> open gaps — not a blank, a *confident zero*, which is the omniscient-status-tracker anti-pattern
+> `CLAUDE.md` §6 names.
+>
+> **The dashboard now reads `document_index_v`** — one row per document joined to its current scan, the
+> same view the Documents page groups and the drawer opens, so the two surfaces cannot say different
+> words about the same document (the word map is one file now, `lib/documentStatus.ts`). It shows the
+> **five most recent readings** with title, kind, status word and read date, each linking to
+> `/documents`; the counts are over every reading, not over the five. The empty state says **"No
+> documents read yet"** with a link to **Add files** — and it says *readings*, not *documents*, because
+> files may be queued and this list is about readings (§5.1: an empty state is a claim, and it has to
+> be true).
 
 ---
 

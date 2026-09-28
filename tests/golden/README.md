@@ -10,7 +10,8 @@ afternoon whenever it is next.
 
 ## Why here and not somewhere else
 
-`baseline-outputs/` at the repo root is **not** this. That folder is a frozen dump of 947
+`baseline-outputs/` at the repo root is **not** this — and it no longer exists; it was deleted on
+28 September 2026 and lives in git history. It was a frozen dump of 947
 rows of production AI output from 9 Sep, one JSON per table, kept as a "before" picture from
 before the determination gate and critic pass existed. Its own README says nothing in the
 codebase reads it. It answers *"did that change make the output better or worse"* across a

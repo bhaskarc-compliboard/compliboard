@@ -131,7 +131,14 @@ export default function CalendarPage() {
       const fd = new FormData()
       fd.append('file', importFile)
       fd.append('file_name', importFile.name)
-      const res = await fetch('/api/extract-dates', { method: 'POST', body: fd })
+      // *** THE HEADER IS REQUIRED SINCE 28 September 2026. ***
+      // `/api/extract-dates` gained `requireCompany`, so a call without a token now gets 401 — and
+      // this was the last fetch in the app sending none. It is a FormData POST, so only the
+      // Authorization header is added; setting Content-Type by hand would break the multipart
+      // boundary the browser writes for us.
+      const res = await fetch('/api/extract-dates', {
+        method: 'POST', body: fd, headers: await authHeaders(),
+      })
       const json = await res.json()
       if (json.dates_found && json.dates_found.length > 0) {
         setPendingDates(json.dates_found)
