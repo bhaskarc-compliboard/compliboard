@@ -20,6 +20,8 @@ import { askAIJson } from '@/lib/ai'
 import { hrAskPrompt, hrAuditPrompt } from '@/prompts/hr'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireCompany } from '@/lib/auth'
+// WHO THIS COMPANY IS, from the one place that assembles it — Task 0, commit 1.
+import { buildCompanyContext } from '@/lib/companyContext'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 import { parseDocumentToBlocks, describeUnsupported, extensionOf } from '@/lib/documentContent'
@@ -135,12 +137,14 @@ export async function POST(request: NextRequest) {
     // The company name feeds the prompt, so it is read from the database rather than
     // taken from the request. A caller-supplied name is free text arriving inside a
     // prompt — a way to influence the model's instructions, not just a label.
-    const { data: company } = await db
-      .from('companies')
-      .select('name')
-      .eq('id', companyId)
-      .single()
-    const companyName = company?.name ?? ''
+    //
+    // It comes through the company context now (Task 0), and this route asks for the `company`
+    // part and reads ONE FIELD of it. Both HR prompts take the name and nothing else —
+    // `hrAuditPrompt()` takes no arguments at all — and that is unchanged here. Widening HR to
+    // read a confirmed fact or a declared switch would change what feeds the answer (§3.1) and is
+    // its own run. docs/VISION-DOCUMENTS.md "One company context".
+    const hrContext = await buildCompanyContext(db, companyId, { parts: ['company'] })
+    const companyName = hrContext.parts.company.name
 
     if (mode === 'ask') {
       // Ask mode reads ALL of the company's handbooks so the answer is accurate

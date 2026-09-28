@@ -152,6 +152,96 @@ untested — applies to the runner as much as to anything it runs.
 
 ---
 
+## Manual set — Task 0 commit 1, one company context, 28 Sep 2026
+
+*Two tests, the perfect case and the edge case, per `HOW-WE-BUILD.md` §2 step 12. Both are run as
+`testalpha@example.com` on staging — **Test Alpha Chemical is the only fixture with two sites**, and
+two sites is the whole reason the context carries a site at all.*
+
+**What this set does NOT test, and it matters:** no prompt gained anything in this commit. Every
+prompt receives the same company information it received before, from one function instead of its
+own code. So neither test below should show a prompt saying something new — they check that the one
+assembly is what fed the prompt, and that a two-site company is no longer rendered as a set of
+contradictions.
+
+### (a) The perfect case — a document read for a two-site company
+
+1. Sign in as `testalpha@example.com` and upload any PDF on the Documents page. Wait for the row to
+   reach **Read** (one file is read in the page; `LIVE_SCAN_MAX = 3`).
+2. Read the context block the scan was built from. From a terminal it is one command and no model
+   call is needed to see the block if a scan has already run:
+
+   ```
+   npm run scan -- --document <id> --company alpha
+   ```
+
+   It prints `---- COMPANY CONTEXT (sha256 …) ----` before the model call, and
+   `npm run golden:docs` stores the same block on every run at
+   `tests/golden/documents/runs/<case>/<timestamp>-<n>.json` under `company_context`.
+
+**What must be true:**
+
+- **`Their sites:` lists BOTH plants**, each with its city, county and state, and Hillsboro marked
+  `(primary)`.
+- **`Industry:` reads `chemical manufacturing (recorded as chemical-manufacturing)`** — the words and
+  the slug the agency table joins on, because `companies.industry` is a join key and a reader needs
+  to know which it is.
+- The block has **`WHAT A PERSON HAS CONFIRMED FROM A DOCUMENT`, `LABELS ALREADY IN USE` and
+  `FACT KEYS ALREADY IN USE`**, and **no `WHAT A PERSON HAS DECLARED` section at all.** That absence
+  is the test: the scan does not read `company_switches` today and this commit did not give it them.
+- Scan a second document and the labels and fact keys from the first appear in the second's block.
+  That is the accumulate-forward mechanism; a scan that cannot see the previous reading's labels is
+  how "Oregon DEQ" and "Department of Environmental Quality" become two groups on one screen.
+
+**And where the switches ARE visible, because (a) cannot show them.** The declared switches go to the
+determination gate, not to the scan. To see them, the block for the gate's parts is
+`buildCompanyContext(db, companyId, { parts: ['company', 'declared'] })`, and what must be true is:
+
+- **Sixteen lines, and every site-scoped one names its plant** —
+  `Employees at this site (Test Alpha Chemical — Hillsboro) = 1` and
+  `Employees at this site (Test Alpha Chemical — Portland) = 6`.
+- **No bare duplicate anywhere.** Before this commit the same block read `Employees at this site = 1`
+  and `Employees at this site = 6`, and six more pairs like it — air permit tier `title_v` against
+  `none`, generator category `lqg` against `vsqg` — under a heading saying "treat these as settled".
+  Seven contradictions is the number to check against.
+- `Employees, enterprise-wide = 7` and `Employs anyone = true` stay **bare**, because they are
+  company-wide and naming a site on them would be the opposite error.
+
+### (b) The edge case — a fact confirmed from a document, then read back
+
+*This is the edge case because it crosses three surfaces (To confirm, the sweep, the next scan) and
+because the thing being checked is a date, which is the field most easily lost.*
+
+1. As `testalpha@`, upload a document the scan will propose facts from — one that states a number or
+   an address. Wait for **Read**, then open **To confirm**.
+2. Confirm one fact. Note the key and the value.
+3. Open the document's report drawer and press **Read it again**. It goes back in the queue as a batch
+   of one and the sweep picks it up (`/api/document-rescan` → `after()` → `sweep()`).
+4. Read the new scan's context block, as in (a).
+
+**What must be true:**
+
+- The confirmed fact appears under **`WHAT A PERSON HAS CONFIRMED FROM A DOCUMENT`**, as
+  `<key with spaces>: <value> — from "<document title>"`.
+- **If the source document stated a date, the line ends `, as of YYYY-MM-DD`.** If it stated none,
+  there is no `as of` clause and the line simply ends — an absent date is shown as absent, never as
+  today. The scan has been reading `as_of` per fact since Run 1 and had nowhere to put it until
+  migration 055.
+- **You are not asked the same fact again.** The block tells the next scan what is already confirmed
+  precisely so it does not re-propose it.
+- **No email arrives**, because a batch of one is never emailed
+  (`finishBatchIfDone`, `file_count <= 1`). An email telling somebody what they are looking at is the
+  defect that rule exists to prevent.
+
+**The site half of this cannot be tested through the UI yet**, and that is worth saying rather than
+leaving somebody to hunt for it: `fact_proposals.entity_id` is filled from the *document's*
+`entity_id`, so a fact only becomes site-scoped when the document is filed against a site, and
+nothing in the Documents UI sets a document's site today. Migration 055's own verify block, and
+`npm run check:live`, are what currently prove the two-rows-per-key case; the screen that will make it
+reachable is the "Your company" page, which is **not** in this commit.
+
+---
+
 ## Manual set — Documents Run 1, the scan and its contract, 25 Sep 2026
 
 > ### 🕓 HISTORICAL — kept, not current. *(Marked 28 September 2026.)*

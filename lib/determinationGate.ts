@@ -36,6 +36,9 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 // lib/gateContext.ts explains why that is worth a file.
 import { buildGateContext, collapseTurns, type FactSource, type KnownFact,
          type PriorTurn, type Frame, type ConversationFact } from './gateContext.ts'
+// "Who is this company", assembled once for every prompt in the product — Task 0.
+// docs/VISION-DOCUMENTS.md "One company context".
+import { buildCompanyContext } from './companyContext.ts'
 
 export { buildGateContext }
 export type { FactSource, KnownFact }
@@ -405,6 +408,14 @@ export async function gate(input: GateInput): Promise<GateResult> {
   // DETERMINATION-GATE.md §8.
   const known: KnownFact[] = []
 
+  // *** BOTH READS ARE NOW ONE CALL TO `lib/companyContext.ts` — Task 0, commit 1. ***
+  //
+  // This function used to query `entities` and `company_switches` itself. It asks for exactly the
+  // two parts it read before and nothing more: `company` (for the sites) and `declared` (the
+  // switches a person answered). It does NOT ask for `confirmed`, `labels`, `keys` or
+  // `document` — the gate does not read those today, and giving them to it here would be a change
+  // to what feeds a prompt (`CLAUDE.md` §3.1) hidden inside a refactor.
+  //
   // --- JURISDICTION, WHICH IS ALWAYS ESTABLISHED AND IS NOT A SWITCH ---
   //
   // Found while writing golden case 003, and the spec as first written did not have it:
@@ -415,38 +426,34 @@ export async function gate(input: GateInput): Promise<GateResult> {
   // day one, for the single most frequently determining fact in the product.
   //
   // Jurisdiction lives on entities (migration 009), not in company_switches, because it is
-  // a property of a SITE rather than a company (DECISIONS.md §20). Read it directly.
-  const { data: site } = await db
-    .from('entities')
-    .select('name, state, county, city')
-    .eq('company_id', companyId)
-    .eq('is_primary', true)
-    .maybeSingle()
+  // a property of a SITE rather than a company (DECISIONS.md §20). It is still the PRIMARY site's,
+  // still three facts, still `ai_from_profile`, and still company-wide rather than site-tagged:
+  // "where this business is" is one answer even for a company with two plants, and tagging it with
+  // a site would invite the model to think there are two jurisdictions when the gate has only ever
+  // been told about one.
+  const ctx = await buildCompanyContext(db, companyId, { parts: ['company', 'declared'] })
+  const primary = ctx.parts.company.sites.find((s) => s.primary) ?? null
 
-  if (site) {
-    const s = site as unknown as { name: string; state: string | null; county: string | null; city: string | null }
+  if (primary) {
     // source is ai_from_profile: these came from the address the company gave at signup,
     // resolved by geocoding. Not user_set — the user gave an address, not a county.
-    if (s.state) known.push({ switch_id: null, fact: 'worksite state', value: s.state, source: 'ai_from_profile' })
-    if (s.county) known.push({ switch_id: null, fact: 'worksite county', value: s.county, source: 'ai_from_profile' })
-    if (s.city) known.push({ switch_id: null, fact: 'worksite city', value: s.city, source: 'ai_from_profile' })
+    if (primary.state) known.push({ switch_id: null, fact: 'worksite state', value: primary.state, source: 'ai_from_profile' })
+    if (primary.county) known.push({ switch_id: null, fact: 'worksite county', value: primary.county, source: 'ai_from_profile' })
+    if (primary.city) known.push({ switch_id: null, fact: 'worksite city', value: primary.city, source: 'ai_from_profile' })
   }
 
-  const { data: established } = await db
-    .from('company_switches')
-    .select('switch_id, value, source, switches(label)')
-    .eq('company_id', companyId)
-
-  for (const row of established ?? []) {
-    const r = row as unknown as {
-      switch_id: string; value: string; source: FactSource
-      switches: { label: string } | null
-    }
+  // *** AND THE SITE COMES WITH THEM NOW. *** Measured on the staging fixture before this change:
+  // fourteen of Test Alpha Chemical's sixteen switches are site-scoped across two plants, and the
+  // block rendered them as seven pairs of bare contradictions — `Employees at this site = 1` and
+  // `= 6` — under a heading that told the model to treat them as settled. `subjectOf` in
+  // `lib/gateContext.ts` puts the plant's name on the line; this is where the value arrives.
+  for (const d of ctx.parts.declared) {
     known.push({
-      switch_id: r.switch_id,
-      fact: r.switches?.label ?? r.switch_id,
-      value: r.value,
-      source: r.source,
+      switch_id: d.switchId,
+      fact: d.label,
+      value: d.value,
+      source: (d.source ?? 'user_set') as FactSource,
+      site: d.siteName,
     })
   }
 

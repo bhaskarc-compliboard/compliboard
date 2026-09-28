@@ -44,7 +44,16 @@ import { readdirSync, readFileSync } from 'node:fs'
 // nested keys still reading, and a COUNT of object shapes — because nine was refused, seven is
 // accepted, and the next person to add a nested field needs the build to say so rather than
 // production.
-const FLOOR = 528
+//
+// *** 544 SINCE TASK 0, COMMIT 1: sixteen for the company context's renderer. ***
+// Raised deliberately, which is what this constant exists to force. Three of the sixteen are the
+// point: a two-site company's declared facts each carry their site, and the BARE form — `Employees
+// at this site = 1` beside `= 6`, which is what the gate's block actually rendered before this
+// commit — is asserted to appear nowhere. The rest cover parts selection (a caller gets only what
+// it asked for, so `sha256` fingerprints the send rather than the store), the declared/confirmed
+// distinction, and that an empty section says "not the same as nothing applies" instead of going
+// quiet (§5.1 applied to a prompt rather than a screen).
+const FLOOR = 544
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

@@ -72,11 +72,18 @@ export const maxDuration = 800
 /**
  * *** THE TIME BUDGET, AND WHY IT IS NOT 800. ***
  *
- * Stop starting new documents at 640 seconds, leaving 160 — comfortably more than the slowest
- * scan measured on the golden fixtures (117s, 01-eap-chemical through a cold route) — so the
- * document in flight when the budget runs out still finishes, is saved, and its batch is
- * updated. A run that is killed mid-scan costs a whole scan's money for nothing and leaves a
- * row in `reading` for rule 3 to clean up five minutes later.
+ * The run stops STARTING new documents once `BUDGET_MS - RESERVE_MS` has elapsed — **510 seconds**,
+ * leaving 290 of the 800 — which is comfortably more than the slowest scan measured on the golden
+ * fixtures (117s, 01-eap-chemical through a cold route). So the document in flight when the budget
+ * runs out still finishes, is saved, and its batch is updated. A run that is killed mid-scan costs a
+ * whole scan's money for nothing and leaves a row in `reading` for rule 3 to clean up five minutes
+ * later.
+ *
+ * *** CORRECTED 28 SEPTEMBER 2026. *** This paragraph said "Stop starting new documents at 640
+ * seconds, leaving 160". Both numbers describe `BUDGET_MS` alone and the code subtracts `RESERVE_MS`
+ * from it (lines below, and again per document), so the real figures are 510 and 290. The error was
+ * in the SAFE direction — it stops earlier than advertised, never later — which is exactly why
+ * nothing caught it: a budget that is more conservative than its comment produces no symptom.
  */
 const BUDGET_MS = 640_000
 /** Do not start a document unless this much of the budget remains. */

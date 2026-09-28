@@ -5,6 +5,11 @@
 //   npm run scan -- <path> --times 3                scan it three times and compare
 //   npm run scan -- --document <id> --times 2       re-scan a document already on staging
 //   npm run scan -- <path> --quiet                  the tables only, not the whole JSON
+//   npm run scan -- <path> --company alpha           scan for a company other than Gamma
+//
+// *** `--company` EXISTS FOR THE TWO-SITE CASE. *** Gamma is the empty company and the right
+// default for reading one file. Test Alpha Chemical is the only fixture with two sites, and the
+// company context's whole reason for carrying a site is that a second plant has its own answers.
 //
 // *** STAGING ONLY, BY CONSTRUCTION. *** It reads NEXT_PUBLIC_SUPABASE_URL, which on a developer
 // machine is staging (`CLAUDE.md` §3.8), and it refuses to run if that URL is the production ref.
@@ -14,7 +19,8 @@
 import { createClient } from '@supabase/supabase-js'
 import { readFileSync, existsSync } from 'node:fs'
 import { basename, extname } from 'node:path'
-import { runDocumentScan, saveScan, buildScanContext } from '../lib/documentScan.ts'
+import { runDocumentScan, saveScan, buildScanContext, SCAN_CONTEXT_PARTS } from '../lib/documentScan.ts'
+import { buildCompanyContext } from '../lib/companyContext.ts'
 import { estimateCost } from '../lib/costLedger.ts'
 
 const PROD_REF = 'dsfwmafnphdlfogetsus'
@@ -23,8 +29,12 @@ const flag = (n, d = null) => { const i = args.indexOf(n); return i >= 0 && args
 const has = (n) => args.includes(n)
 const times = Number(flag('--times', '1'))
 const docArg = flag('--document', null)
+const companyArg = flag('--company', null)
 const quiet = has('--quiet')
-const filePath = args.find((a) => !a.startsWith('--') && a !== String(times) && a !== docArg)
+// *** A FLAG'S VALUE IS NOT A FILE PATH. *** `--company alpha` would otherwise be read as a path
+// called "alpha" — the same shape as `run-golden-docs.js`'s note about `--times` and case ids.
+const filePath = args.find((a) => !a.startsWith('--') && a !== String(times)
+                                  && a !== docArg && a !== companyArg)
 
 const die = (m) => { console.error(`\n  ${m}\n`); process.exit(1) }
 
@@ -41,8 +51,14 @@ const db = createClient(url, key, { auth: { persistSession: false } })
 
 // The staging test company. testgamma is the empty one — chemical manufacturing, Oregon.
 const { data: prof } = await db.from('profiles').select('company_id, id').limit(1).maybeSingle()
+// *** `--company <fragment>` PICKS ANOTHER ONE — added Task 0, commit 1. ***
+// Gamma is the empty company, which is the right default for reading one file in isolation. It is
+// the WRONG one for looking at the company context: Test Alpha Chemical is the only fixture with
+// two sites, and the two-site case is the whole reason the context carries a site at all. Without a
+// flag the only way to see that block from a real scan was to edit this line.
+const wanted = flag('--company', 'gamma')
 const { data: gamma } = await db.from('companies').select('id, name, industry, city, state')
-  .ilike('name', '%gamma%').maybeSingle()
+  .ilike('name', `%${wanted}%`).limit(1).maybeSingle()
 const company = gamma ?? (await db.from('companies').select('id, name, industry, city, state').limit(1).maybeSingle()).data
 if (!company) die('No company on staging to scan for.')
 const { data: anyProfile } = await db.from('profiles').select('id').eq('company_id', company.id).limit(1).maybeSingle()
@@ -100,6 +116,15 @@ if (docArg) {
 const runs = []
 for (let i = 1; i <= times; i++) {
   const context = await buildScanContext(db, company, documentId)
+  // *** THE COMPANY CONTEXT THAT FED THIS PROMPT, PRINTED — Task 0, commit 1. ***
+  // Same function, same parts (`SCAN_CONTEXT_PARTS`), so this is the block the prompt was built
+  // from and not a second rendering of it. `TESTING.md`'s manual test (a) reads this.
+  const companyContext = await buildCompanyContext(db, company.id, { documentId, parts: SCAN_CONTEXT_PARTS })
+  if (!quiet) {
+    console.log(`\n  ---- COMPANY CONTEXT (sha256 ${companyContext.sha256.slice(0, 16)}…) ----`)
+    console.log(companyContext.block.split('\n').map((l) => `  ${l}`).join('\n'))
+    console.log('  ---- end of company context ----\n')
+  }
   if (i === 1) {
     console.log(`  Context  : ${context.sites.length} site(s), ${context.agencyLabels.length} agency label(s), `
       + `${context.subjectLabels.length} subject label(s), ${context.existingDocuments.length} document(s) on file, `

@@ -36,8 +36,12 @@ import type { PriorTurn } from '@/lib/gateContext';
 import { gate, type GateAnswering } from '@/lib/determinationGate';
 import { criticise, applyCritique } from '@/lib/criticPass';
 import { recordCritique } from '@/lib/criticRecord';
-import { splitForAnswer, businessFactsBlock, scenarioBlock, jurisdictionLine,
+import { splitForAnswer, scenarioBlock, jurisdictionLine,
          type SwitchScope } from '@/lib/gateContext';
+// "Who is this company", assembled once for every prompt — Task 0, commit 1.
+// It replaces `businessFactsBlock` here; see the note at the fold-in below for what it does not
+// replace, and why. docs/VISION-DOCUMENTS.md "One company context".
+import { buildCompanyContext } from '@/lib/companyContext';
 import { agenciesInScopeFor } from '@/lib/agencyScope';
 import type { ChecklistAnswer } from '@/lib/answerSchema';
 
@@ -629,7 +633,8 @@ export async function POST(request: NextRequest) {
       // facility's confined spaces. §78 made that impossible for `company_switches`; nothing made
       // it impossible for the prompt, which is where the answer comes from.
       //
-      //   businessFactsBlock   what is true of the business
+      //   the company context  what is true of the business (Task 0: one assembly, every prompt;
+      //                        it replaced `businessFactsBlock` here)
       //   scenarioBlock        a facility that does not exist, with the frame's jurisdiction
       //   jurisdictionLine     what the ANSWER is written for — from the frame, not the profile
       //
@@ -646,8 +651,38 @@ export async function POST(request: NextRequest) {
         const businessState =
           ctx.business.find((b) => b.fact === 'worksite state')?.value ?? null;
 
+        // *** WHO THIS COMPANY IS NOW COMES FROM `lib/companyContext.ts` — Task 0, commit 1. ***
+        //
+        // The research baseline reads NOTHING about the company and goes on reading nothing: this
+        // block is assembled here and folded in only when `RESEARCH_FACTS_BLOCK` is on, which it
+        // is not, on production or by default (`lib/pipelineConfig.ts`). So this changes what the
+        // product sends today by exactly nothing.
+        //
+        // *** WHAT REPLACED WHAT, AND WHAT DELIBERATELY DID NOT. ***
+        // `businessFactsBlock(ctx.business)` — the "who is this company" half — is replaced by the
+        // one company context, so a fact confirmed in Documents reaches research without research
+        // growing its own assembly. The other two are KEPT, because neither is about who the
+        // company is and each exists because of a measured failure:
+        //
+        //   · `scenarioBlock` — facts about a facility that DOES NOT EXIST. §103: an Arizona
+        //     hypothetical arrived as settled fact about an Oregon business. The company context is
+        //     the settled record and has no scenario in it, so dropping this would put that
+        //     failure back.
+        //   · `jurisdictionLine` — the frame the answer must be written for. §41's sibling: asked
+        //     about "our Hillsboro plant", one model produced an OHIO minimum-wage branch.
+        //
+        // *** AND ONE THING THIS LOSES, STATED RATHER THAN BURIED. *** `ctx.business` also carried
+        // facts the person stated IN THIS CONVERSATION about the real business. The company context
+        // is the database's settled record and does not have them, so with the switch on they would
+        // no longer reach the answer — which is §41's failure in miniature. The switch is off, so
+        // nothing regresses today, and this is the decision the chat owes §141 before it is ever
+        // turned on. It is flagged here rather than worked around, because inventing a merge would
+        // be a quality-affecting change nobody asked for (§3.1).
+        const companyBlock = (await buildCompanyContext(db, companyId,
+          { parts: ['company', 'declared'] })).block;
+
         establishedBlock = [
-          businessFactsBlock(ctx.business),
+          companyBlock,
           scenarioBlock(ctx.scenario, ctx.frame, ctx.business),
           jurisdictionLine(ctx.frame, businessState),
         ].filter(Boolean).join('\n\n');

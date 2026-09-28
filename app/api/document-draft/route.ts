@@ -24,6 +24,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireCompany, supabaseAdmin } from '@/lib/auth'
 import { askAI, modelForTask } from '@/lib/ai'
 import { parseDocumentToBlocks } from '@/lib/documentContent'
+import { buildCompanyContext } from '@/lib/companyContext'
 import { draftPrompt } from '@/prompts/document-draft'
 
 export const maxDuration = 800
@@ -66,8 +67,16 @@ export async function POST(request: NextRequest) {
 
     const { data: row } = await db.from('document_index_v')
       .select('title, kind').eq('document_id', documentId).maybeSingle()
-    const { data: company } = await db.from('companies')
-      .select('name, industry, state').eq('id', companyId).maybeSingle()
+    // WHO THIS COMPANY IS, from the one place that assembles it — Task 0, commit 1.
+    // The `company` part only: this prompt has never read a switch, a confirmed fact or a label,
+    // and it does not start now. `industrySlug` is the raw `companies.industry` value the old query
+    // returned, so the rendered prompt is unchanged. docs/VISION-DOCUMENTS.md "One company context".
+    const draftContext = await buildCompanyContext(db, companyId, { parts: ['company'] })
+    const company = {
+      name: draftContext.parts.company.name,
+      industry: draftContext.parts.company.industrySlug,
+      state: draftContext.parts.company.state,
+    }
 
     // The document itself, as blocks — the same parser the scan uses, so a PDF goes whole and
     // Word arrives as HTML. The draft has to match the document's voice, and it cannot do that

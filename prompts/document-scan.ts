@@ -37,8 +37,16 @@ export interface ScanPromptContext {
    * Rendered as plain sentences below; no instruction sentence of the prompt changes.
    */
   corrections: Array<{ field: string; value: string; reason: string | null }>
-  /** What this company has already confirmed about itself. Rendered as plain lines below. */
-  confirmedFacts: Array<{ key: string; value: string; basis: string }>
+  /**
+   * What this company has already confirmed about itself. Rendered as plain lines below.
+   *
+   * `site` arrives with migration 055 and is null for every row that existed before it: a
+   * confirmed fact can now belong to one plant rather than to the company. It is rendered ONLY
+   * when it is set, so the line is byte-identical for company-wide facts — and a two-site company
+   * cannot contribute two bare values for one key, which is the contradiction the gate's own
+   * context was measured producing.
+   */
+  confirmedFacts: Array<{ key: string; value: string; basis: string; site?: string | null }>
   /**
    * Fact keys already in use for this company, from every document read so far — Run 7.
    *
@@ -79,7 +87,7 @@ ${ctx.corrections.map((c) => `  - the ${c.field} is ${c.value}${c.reason ? ` —
   const confirmed = ctx.confirmedFacts.length
     ? `\nThis company has already confirmed the following about itself. Take these as given and do
 not propose them again:
-${ctx.confirmedFacts.map((f) => `  - ${f.key.replace(/_/g, ' ')}: ${f.value}${f.basis === 'inferred' ? ' (inferred)' : ''}`).join('\n')}\n`
+${ctx.confirmedFacts.map((f) => `  - ${f.key.replace(/_/g, ' ')}${f.site ? ` (${f.site})` : ''}: ${f.value}${f.basis === 'inferred' ? ' (inferred)' : ''}`).join('\n')}\n`
     : ''
 
   const dismissed = ctx.dismissedGaps.length

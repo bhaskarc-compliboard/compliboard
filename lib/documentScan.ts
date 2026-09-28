@@ -25,6 +25,7 @@
 import { createHash } from 'node:crypto'
 import { askAIWithCitations, extractJsonText, modelForTask, scanStructuredOutput, type AIContent } from './ai.ts'
 import { parseDocumentToBlocks } from './documentContent.ts'
+import { buildCompanyContext } from './companyContext.ts'
 import { scanPrompt, SCAN_JSON_SCHEMA, type ScanPromptContext } from '../prompts/document-scan.ts'
 
 /** A Supabase client, loosely typed: these scripts run outside Next's generated-types world. */
@@ -372,9 +373,23 @@ export function normaliseScan(parsed: Record<string, unknown>, extractedText: st
 }
 
 /**
- * THE CONTEXT THE PROMPT IS BUILT FROM — one copy, and every query ordered.
+ * WHICH PARTS OF THE COMPANY CONTEXT THE SCAN READS — named once, exported, so nothing has to
+ * guess.
  *
- * *** EVERY QUERY HERE CARRIES AN `order`, AND THAT IS THE POINT OF THE FUNCTION. ***
+ * `scripts/run-golden-docs.js` and `scripts/scan-document.js` both report the block that fed a
+ * prompt. If either wrote its own parts list, the block in the report would drift from the block in
+ * the prompt and nobody would notice — the report would simply be of a different context. That is
+ * the same failure `lib/gateContext.ts` was created to end, where the golden runner hand-rolled the
+ * gate's context and measured a gate the routes do not use (AUDIT-CHECKS.md check 14).
+ *
+ * `declared` is NOT in this list: the scan does not read `company_switches` today.
+ */
+export const SCAN_CONTEXT_PARTS = ['company', 'confirmed', 'labels', 'keys', 'document'] as const
+
+/**
+ * THE CONTEXT THE SCAN PROMPT IS BUILT FROM — the scan's own two lists, plus the company context.
+ *
+ * *** THE ORDERING RULE MOVED WITH THE QUERIES, IT DID NOT GO AWAY. ***
  * PostgREST returns rows in whatever order Postgres yields them when no ORDER BY is given, and
  * that order is not stable: an UPDATE rewrites a row and moves it in the heap. The label list,
  * the "already holds" list and the dismissed gaps are all rendered into the prompt as lines, so
@@ -385,28 +400,44 @@ export function normaliseScan(parsed: Record<string, unknown>, extractedText: st
  * case 05's run 3 hashed differently from runs 1 and 2 with no label, document or wording change
  * between them. A tripwire that goes off by itself is one nobody reads.
  *
- * It lives here rather than in each script because there were two copies of it and they had
- * already drifted — `scripts/scan-document.js` built the context ONCE before its loop, so its
- * run 2 never saw the label its run 1 had just written, which is the whole mechanism the
- * per-company label list exists for. `CLAUDE.md` §3.4's rule about not reimplementing at a call
- * site is the same rule.
+ * Everything about WHO THE COMPANY IS is now `lib/companyContext.ts`, which carries that rule on
+ * every query it makes and adds two orderings this function could not have needed before:
+ * migration 055 lets one fact key hold a company-wide row and one per site, so `order('key')`
+ * stopped being a total order.
+ *
+ * The two lists still built here are the two that are not about the company: what else is on file
+ * (the version question) and this document's own open gaps with their ids (the same_as_gap_id
+ * handoff). `scripts/scan-document.js` once built the whole thing ONCE before its loop, so its run
+ * 2 never saw the label run 1 had just written — which is the whole mechanism the per-company
+ * label list exists for. It is still rebuilt per document, for that reason.
  */
 export async function buildScanContext(
   db: Db,
   company: { id: string; name: string; industry: string | null; city?: string | null; state: string | null },
   documentId: string | null,
 ): Promise<ScanPromptContext> {
-  const { data: sites } = await db.from('entities')
-    .select('name, address, state').eq('company_id', company.id).order('name')
-  const { data: labels } = await db.from('company_labels')
-    .select('kind, label').eq('company_id', company.id).order('kind').order('label')
+  // *** THE COMPANY'S OWN DETAILS, ITS LABELS, ITS KEYS, ITS CONFIRMED FACTS AND THIS DOCUMENT'S
+  // CORRECTIONS NOW COME FROM ONE PLACE — `lib/companyContext.ts`, Task 0. ***
+  //
+  // The queries that used to sit here are the same queries, in the same order, with the same
+  // ordering clauses; they moved so that research, the draft and every later section read the
+  // identical assembly instead of each growing its own. `docs/VISION-DOCUMENTS.md` "One company
+  // context".
+  //
+  // *** `declared` IS NOT ASKED FOR, AND THAT IS DELIBERATE. *** The scan does not read
+  // `company_switches` today. Giving it them here would be a change to what feeds a prompt
+  // (`CLAUDE.md` §3.1) smuggled in under a refactor, and nothing would say whether a later
+  // golden movement came from the new facts or from the move. It is a separate, switched,
+  // measured run.
+  //
+  // The two lists that stay here are the two that are NOT about who the company is:
+  // `existingDocuments` (what else is on file, for the version question) and `openGaps` (this
+  // document's own findings, by id, for the same_as_gap_id handoff).
+  const ctx = await buildCompanyContext(db, company.id, { documentId, parts: SCAN_CONTEXT_PARTS })
+
   const { data: existing } = await db.from('document_scans')
     .select('title, kind, document_id').eq('company_id', company.id).eq('is_current', true)
     .order('title').limit(40)
-  const { data: dismissed } = documentId
-    ? await db.from('document_gaps').select('title, dismissed_reason')
-        .eq('document_id', documentId).eq('status', 'dismissed').order('title')
-    : { data: [] }
   // THE GAPS THAT ARE STILL OPEN ON THIS DOCUMENT, WITH THEIR IDS — Run 6.
   //
   // Shown to the scan so a new reading can say which old finding each of its gaps IS, rather
@@ -416,75 +447,41 @@ export async function buildScanContext(
     ? await db.from('document_gaps').select('id, title, citation')
         .eq('document_id', documentId).eq('status', 'open').order('id')
     : { data: [] }
-  // Newest per field. Ordered so the same state gives the same prompt string, like everything
-  // else here — and `created_at desc, id desc` for the same tie-break reason as migration 045.
-  // WHAT THE COMPANY HAS CONFIRMED ABOUT ITSELF (migration 050). Shown to the next scan so it
-  // does not propose a fact somebody has already answered, and so it reads the document against
-  // what is known rather than against nothing.
-  //
-  // *** THE RESEARCH PROMPT DOES NOT READ THESE IN THIS RUN. *** Only the scan does. Wiring them
-  // into research is a change to what feeds an answer (§3.1) and belongs in its own run with its
-  // own measurement.
-  const { data: confirmedFacts } = await db.from('company_facts')
-    .select('key, value, basis').eq('company_id', company.id).order('key')
-
-  // EVERY FACT KEY THIS COMPANY'S DOCUMENTS HAVE USED — Run 7, and it is the label list one
-  // table across. Run 6 measured five keys for one address across four documents, which is five
-  // questions in the To confirm queue about a fact the customer has one answer to. Both statuses
-  // count: an accepted key is the name that stuck, and a still-pending one is a name already put
-  // in front of the person. Rejected and withdrawn are left out — those are names we should not
-  // encourage. Ordered, like everything else here, so the same state gives the same prompt.
-  const { data: usedKeys } = await db.from('fact_proposals')
-    .select('switch_key').eq('company_id', company.id)
-    .in('status', ['proposed', 'accepted']).order('switch_key')
-
-  const { data: corrections } = documentId
-    ? await db.from('document_corrections').select('field, new_value, reason, created_at, id')
-        .eq('document_id', documentId).order('created_at', { ascending: false }).order('id', { ascending: false })
-    : { data: [] }
 
   return {
     company: {
-      name: company.name,
-      industry: company.industry,
-      address: [company.city, company.state].filter(Boolean).join(', ') || null,
-      state: company.state,
+      name: ctx.parts.company.name || company.name,
+      // *** THE SLUG, VERBATIM, EXACTLY AS BEFORE. *** The context also carries the slug spelled
+      // as words, and the block renders both — but this prompt has always rendered the raw value
+      // of `companies.industry` and it goes on rendering that, so `prompt_sha256` does not move
+      // for a company whose row has not changed.
+      industry: ctx.parts.company.industrySlug ?? company.industry,
+      address: ctx.parts.company.address,
+      state: ctx.parts.company.state ?? company.state,
     },
-    sites: (sites ?? []).map((s: Record<string, string | null>) =>
-      ({ name: s.name as string, address: s.address, state: s.state })),
-    agencyLabels: (labels ?? []).filter((l: { kind: string }) => l.kind === 'agency')
-      .map((l: { label: string }) => l.label),
-    subjectLabels: (labels ?? []).filter((l: { kind: string }) => l.kind === 'subject')
-      .map((l: { label: string }) => l.label),
+    // The scan renders `name — address, state` and only those three, unchanged. The context knows
+    // the city, county and which site is primary; this prompt is not told them today.
+    sites: ctx.parts.company.sites.map((s) => ({ name: s.name, address: s.address, state: s.state })),
+    agencyLabels: ctx.parts.labels.agencies,
+    subjectLabels: ctx.parts.labels.subjects,
     // The document being scanned is NOT in its own "what this company already holds" list: on a
     // real upload it has not been read yet, and offering it as a version of itself is nonsense.
-    existingDocuments: (existing ?? [])
-      .filter((d: { title: string | null; document_id: string }) => d.title && d.document_id !== documentId)
-      .map((d: { title: string; kind: string | null }) => ({ title: d.title, kind: d.kind })),
-    dismissedGaps: (dismissed ?? []).map((g: { title: string; dismissed_reason: string | null }) =>
-      ({ title: g.title, reason: g.dismissed_reason })),
-    openGaps: (openGaps ?? []).map((g: { id: string; title: string; citation: string | null }) =>
-      ({ id: g.id, title: g.title, citation: g.citation })),
-    factKeys: [...new Set([
-      ...(usedKeys ?? []).map((k: { switch_key: string }) => k.switch_key),
-      ...(confirmedFacts ?? []).map((f: { key: string }) => f.key),
-    ].filter(Boolean))].sort(),
-    confirmedFacts: (confirmedFacts ?? []).map((f: { key: string; value: unknown; basis: string }) => ({
-      key: f.key,
-      value: typeof f.value === 'string' ? f.value : JSON.stringify(f.value ?? '').replace(/^"|"$/g, ''),
-      basis: f.basis,
+    existingDocuments: ((existing ?? []) as Array<{ title: string | null; kind: string | null; document_id: string }>)
+      .filter((d) => d.title && d.document_id !== documentId)
+      .map((d) => ({ title: d.title as string, kind: d.kind })),
+    dismissedGaps: ctx.parts.document?.dismissedGaps ?? [],
+    openGaps: ((openGaps ?? []) as Array<{ id: string; title: string; citation: string | null }>)
+      .map((g) => ({ id: g.id, title: g.title, citation: g.citation })),
+    factKeys: ctx.parts.keys,
+    // `site` is carried so a two-site company's confirmed facts are two statements rather than two
+    // bare values for one key. It is null for every row that exists today — migration 055 created
+    // the column — so the rendered prompt is byte-identical until somebody confirms a fact against
+    // a site for the first time. The as-of date is NOT passed: that would be visible on existing
+    // rows, which is an addition, and additions are their own run.
+    confirmedFacts: ctx.parts.confirmed.map((f) => ({
+      key: f.key, value: f.value, basis: f.basis, site: f.siteName,
     })),
-    corrections: (() => {
-      const seen = new Set<string>()
-      const out: Array<{ field: string; value: string; reason: string | null }> = []
-      for (const c of (corrections ?? []) as Array<{ field: string; new_value: unknown; reason: string | null }>) {
-        if (seen.has(c.field)) continue          // the list is newest-first, so the first wins
-        seen.add(c.field)
-        const v = Array.isArray(c.new_value) ? c.new_value.join(', ') : String(c.new_value ?? '')
-        if (v) out.push({ field: c.field, value: v, reason: c.reason })
-      }
-      return out.sort((a, b) => a.field.localeCompare(b.field))
-    })(),
+    corrections: ctx.parts.document?.corrections ?? [],
   }
 }
 
@@ -702,7 +699,7 @@ export async function runDocumentScan(input: RunScanInput): Promise<DocumentScan
 export async function saveScan(
   db: Db, scan: DocumentScan, args: { documentId: string; companyId: string; entityId?: string | null },
 ): Promise<{ scanId: string | null; aiCallId: string | null }> {
-  const { documentId, companyId } = args
+  const { documentId, companyId, entityId } = args
 
   // The ledger row this call wrote. `recordAICall` is deliberately not awaited inside lib/ai.ts
   // — bookkeeping must never delay an answer — so it is found by time rather than by id.
@@ -926,6 +923,16 @@ export async function saveScan(
       // since Run 1 and its answer never reached a column, so the drawer had nothing to show a
       // person about to confirm a claim on the strength of a quote.
       quote_verified: f.quote_verified,
+      // ...AND THE THIRD TIME THE SAME SHAPE APPEARED — migration 055. `as_of` has been asked for
+      // (`prompts/document-scan.ts`) and parsed (`normaliseScanRaw`) since Run 1 and had no column
+      // to land in, so a fact read out of a 2021 handbook reached the queue looking as current as
+      // one read out of this month's permit. No prompt changed to get it: the field was already
+      // there.
+      as_of: f.as_of,
+      // The site the DOCUMENT is filed against, not one the model chose. A fact's site is a
+      // property of where the document belongs, and `entityId` here is the same value the scan row
+      // itself is written with — so a fact and its reading can never disagree about the plant.
+      entity_id: entityId ?? null,
     })))
     if (e) throw new Error(`fact_proposals: ${e.message}`)
   }

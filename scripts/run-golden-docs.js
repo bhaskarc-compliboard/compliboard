@@ -49,7 +49,8 @@
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync } from 'node:fs'
 import { createHash } from 'node:crypto'
 import { createClient } from '@supabase/supabase-js'
-import { runDocumentScan, saveScan, buildScanContext } from '../lib/documentScan.ts'
+import { runDocumentScan, saveScan, buildScanContext, SCAN_CONTEXT_PARTS } from '../lib/documentScan.ts'
+import { buildCompanyContext } from '../lib/companyContext.ts'
 import { modelForTask, scanStructuredOutput } from '../lib/ai.ts'
 import { priceFor } from '../lib/costLedger.ts'
 
@@ -152,20 +153,53 @@ if (!fromRuns && !priceFor(MODEL)) {
 // ---------------------------------------------------------------------------
 // THE THREE COMPANIES, FROM THE SPECS' OWN CONTEXT LINES.
 // Copied from the "Company context to scan under:" line of each spec — nothing invented.
+//
+// *** `industry` IS THE SLUG SIGNUP WRITES, NOT THE SPEC'S PROSE — corrected Task 0, commit 1. ***
+//
+// These three carried `'chemical distribution'`, `'cannabis cultivation'` and
+// `'food manufacturing (ready-to-eat dips and spreads)'`: the specs' own descriptions, which read
+// well and match nothing. `companies.industry` is a JOIN KEY. `/api/signup` writes whatever the
+// dropdown supplied (`app/api/signup/route.ts:41`), that dropdown is
+// `distinct requirement_templates.industries` (`/api/industries`), and the page names the variable
+// `slug`. So the column holds a slug, and `agencies.industries` and `requirement_templates.industries`
+// hold the same slugs.
+//
+// The cost of the mismatch, measured before this change: `agenciesInScopeFor` returned an EMPTY
+// LIST for all three golden companies, because `.contains('industries', ['chemical distribution'])`
+// matches none of the 33 agency rows. The critic pass then rendered "(none known — do not treat
+// this as 'no agency applies')" on every golden case, and any Audits work judged on this set would
+// have been judged with no agency in scope.
+//
+// `description` keeps the spec's prose so it is not lost, and NOTHING READS IT. It is not written
+// to any column: `companies` has one industry field and it is the join key. If the scan should be
+// told a fuller description, that is a column and a prompt change, which is its own run.
+//
+// *** WILLAMETTE IS `'other'`, AND THAT IS THE HONEST ANSWER RATHER THAN A GAP. ***
+// `agencies.industries` holds exactly two slugs — `chemical-manufacturing` (31 rows) and
+// `cannabis` (25) — and `industry_coverage` claims exactly those two, every row `not_built`. There
+// is no food slug because there is no food vertical. A real food manufacturer signing up today
+// gets one industry in the dropdown plus "Don't see your industry?", and picks the latter, which
+// sends the literal string `other`. So that is what this fixture is: the food case exercises the
+// no-coverage path on purpose, and inventing a `food-manufacturing` slug here would put a vertical
+// in the fixtures that the library does not have (`CLAUDE.md` §7 — verticals are rows, and these
+// rows do not exist).
 // ---------------------------------------------------------------------------
 const COMPANIES = {
   cascade: {
-    name: 'Cascade Specialty Chemicals, LLC', industry: 'chemical distribution',
+    name: 'Cascade Specialty Chemicals, LLC', industry: 'chemical-manufacturing',
+    description: 'chemical distribution',
     city: 'Portland', state: 'Oregon',
     site: { name: 'Portland', address: '4410 NW Front Ave, Portland, Oregon 97210', city: 'Portland', state: 'Oregon' },
   },
   evergreen: {
-    name: 'Evergreen Botanicals, LLC', industry: 'cannabis cultivation',
+    name: 'Evergreen Botanicals, LLC', industry: 'cannabis',
+    description: 'cannabis cultivation',
     city: 'Eugene', state: 'Oregon',
     site: { name: 'Bailey Hill', address: '2210 Bailey Hill Road, Eugene, Oregon 97405', city: 'Eugene', state: 'Oregon' },
   },
   willamette: {
-    name: 'Willamette Valley Foods, Inc.', industry: 'food manufacturing (ready-to-eat dips and spreads)',
+    name: 'Willamette Valley Foods, Inc.', industry: 'other',
+    description: 'food manufacturing (ready-to-eat dips and spreads)',
     city: 'Salem', state: 'Oregon',
     site: { name: 'Salem', address: '1850 Fairgrounds Road NE, Salem, Oregon 97301', city: 'Salem', state: 'Oregon' },
   },
@@ -521,6 +555,18 @@ async function uploadFixture(co, caseFile) {
 /** One ordered copy, in lib/documentScan.ts, so this runner and `npm run scan` cannot drift. */
 const buildContext = (co, documentId) => buildScanContext(db, co, documentId)
 
+// *** THE COMPANY CONTEXT BLOCK, STORED ON EVERY RUN — Task 0, commit 1. ***
+//
+// `buildScanContext` feeds the prompt; this is the same assembly, for the same parts
+// (`SCAN_CONTEXT_PARTS`, exported so there is one definition), rendered as the plain block. It is
+// stored on the run so "what was this company when the scan read this document" is answerable from
+// the run file months later, instead of being reconstructed from a database that has moved on.
+//
+// It costs one extra read per run and no model call. `prompt_sha256` already says THAT the prompt
+// changed; this says WHAT the company looked like, which is the half nobody could see.
+const buildContextBlock = (co, documentId) =>
+  buildCompanyContext(db, co.id, { documentId, parts: SCAN_CONTEXT_PARTS })
+
 // ---------------------------------------------------------------------------
 // MAIN
 // ---------------------------------------------------------------------------
@@ -641,6 +687,7 @@ for (const c of (fromRuns ? [] : caseFiles)) {
 
   for (let n = 1; n <= times; n++) {
     const context = await buildContext(co, documentId)
+    const companyContext = await buildContextBlock(co, documentId)
     const t0 = Date.now()
     const scan = await runDocumentScan({
       buffer: bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength),
@@ -675,6 +722,10 @@ for (const c of (fromRuns ? [] : caseFiles)) {
       searches: call?.searches ?? scan.searches ?? null,
       cited_sources: scan.cited_sources,
       prompt_sha256: scan.prompt_sha256, scan_id: scanId, ai_call_id: aiCallId,
+      // WHO THIS COMPANY WAS WHEN THIS DOCUMENT WAS READ. The block, and its own hash so two runs
+      // can be compared on the context alone without diffing prose.
+      company_context: companyContext.block,
+      company_context_sha256: companyContext.sha256,
       wall_ms: wall, cost_usd: call?.cost_usd ?? null,
       input_tokens: call?.input_tokens ?? null, output_tokens: call?.output_tokens ?? null,
       json_parsed: scan.json_parsed, compliant_found_in: compliant,

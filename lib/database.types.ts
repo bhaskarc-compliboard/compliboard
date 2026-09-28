@@ -608,10 +608,12 @@ export type Database = {
       }
       company_facts: {
         Row: {
+          as_of: string | null
           basis: string
           company_id: string
           confirmed_at: string
           confirmed_by: string | null
+          entity_id: string | null
           id: string
           key: string
           source_document_id: string | null
@@ -619,10 +621,12 @@ export type Database = {
           value: Json | null
         }
         Insert: {
+          as_of?: string | null
           basis?: string
           company_id: string
           confirmed_at?: string
           confirmed_by?: string | null
+          entity_id?: string | null
           id?: string
           key: string
           source_document_id?: string | null
@@ -630,10 +634,12 @@ export type Database = {
           value?: Json | null
         }
         Update: {
+          as_of?: string | null
           basis?: string
           company_id?: string
           confirmed_at?: string
           confirmed_by?: string | null
+          entity_id?: string | null
           id?: string
           key?: string
           source_document_id?: string | null
@@ -647,6 +653,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_facts_entity_in_same_company"
+            columns: ["company_id", "entity_id"]
+            isOneToOne: false
+            referencedRelation: "entities"
+            referencedColumns: ["company_id", "id"]
           },
           {
             foreignKeyName: "company_facts_source_document_id_fkey"
@@ -1873,10 +1886,12 @@ export type Database = {
       fact_proposals: {
         Row: {
           affects: string | null
+          as_of: string | null
           basis: string
           company_id: string
           created_at: string
           document_id: string | null
+          entity_id: string | null
           from_turn_id: string | null
           id: string
           locator: string | null
@@ -1892,10 +1907,12 @@ export type Database = {
         }
         Insert: {
           affects?: string | null
+          as_of?: string | null
           basis?: string
           company_id: string
           created_at?: string
           document_id?: string | null
+          entity_id?: string | null
           from_turn_id?: string | null
           id?: string
           locator?: string | null
@@ -1911,10 +1928,12 @@ export type Database = {
         }
         Update: {
           affects?: string | null
+          as_of?: string | null
           basis?: string
           company_id?: string
           created_at?: string
           document_id?: string | null
+          entity_id?: string | null
           from_turn_id?: string | null
           id?: string
           locator?: string | null
@@ -1949,6 +1968,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "documents"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fact_proposals_entity_in_same_company"
+            columns: ["company_id", "entity_id"]
+            isOneToOne: false
+            referencedRelation: "entities"
+            referencedColumns: ["company_id", "id"]
           },
           {
             foreignKeyName: "fact_proposals_from_turn_id_fkey"

@@ -19,8 +19,13 @@
 //
 // So the unit here is the KEY. Every pending proposal carrying that key is one source behind it:
 // the document and where in it, or the conversation. Confirm settles the key once from what the
-// sources say; Not right rejects all of them with one reason. `company_facts` is already unique
-// on (company_id, key), so the database has always agreed that a key has one answer.
+// sources say; Not right rejects all of them with one reason.
+//
+// *** AND SINCE MIGRATION 055 A KEY HAS ONE ANSWER PER SITE, NOT ONE ANSWER. *** `company_facts`
+// was UNIQUE (company_id, key) and is now UNIQUE (company_id, key, entity_id) NULLS NOT DISTINCT:
+// one company-wide row per key, one row per key per plant, and both may stand side by side. The
+// unit on this page is still the KEY — a person is asked once — but confirming a fact read out of
+// the Salem permit no longer overwrites the one read out of Portland's.
 //
 // *** WHEN THE SOURCES DISAGREE, THE PERSON PICKS. *** Two documents saying 42 and 38 employees
 // is not something to average, resolve by recency, or decide by which scan ran last. It is the
@@ -275,8 +280,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: true, wrote: 'company_switches', switch_id: settledKey, settled: ids.length })
     }
 
-    // Not a switch: `company_facts`, one row per company and key, the newest confirmation
-    // replacing the last, carrying the proposal and the document it came from.
+    // Not a switch: `company_facts` — one row per company, key and SITE (migration 055), the newest
+    // confirmation replacing the last for that same site, carrying the proposal, the document it
+    // came from, and the date that document says it was true.
     const carrier = group.find((p) => String(p.proposed_value ?? '') === value) ?? group[0]
     const { error: fErr } = await supabaseAdmin.from('company_facts').upsert({
       company_id: companyId,
@@ -291,9 +297,26 @@ export async function POST(request: NextRequest) {
       // happened to be newest — the quote behind a fact has to belong to the fact.
       source_document_id: carrier.document_id ?? null,
       source_proposal_id: carrier.id,
+      // *** THE SITE AND THE DATE, COPIED FROM THE PROPOSAL — migration 055. ***
+      //
+      // Both come off the CARRIER, the proposal whose words the value came from, for the same
+      // reason `source_document_id` does: the quote behind a fact has to belong to the fact, and so
+      // does the plant it is about and the day it was true.
+      //
+      // `entity_id` is what makes two plants answerable. Before this, one company had one answer
+      // per key, so confirming the Salem permit's generator category silently overwrote Portland's
+      // — and the context block then told every prompt one site's value as though it were the
+      // company's. `as_of` is what stops a fact out of a 2021 handbook reading as current.
+      entity_id: carrier.entity_id ?? null,
+      as_of: carrier.as_of ?? null,
       confirmed_by: userId,
       confirmed_at: new Date().toISOString(),
-    }, { onConflict: 'company_id,key' })
+      // *** THE CONFLICT TARGET MOVED WITH THE INDEX. *** `company_facts_company_id_key_key` is
+      // gone; `company_facts_one_per_key_and_site` is UNIQUE (company_id, key, entity_id) NULLS NOT
+      // DISTINCT. Naming the old pair here would fail at the database — `ON CONFLICT` needs a real
+      // unique index to infer — and NULLS NOT DISTINCT is what keeps "one company-wide answer per
+      // key" true now that the third column exists.
+    }, { onConflict: 'company_id,key,entity_id' })
     if (fErr) throw fErr
     await supabaseAdmin.from('fact_proposals').update({ status: 'accepted' }).in('id', ids)
     return NextResponse.json({ ok: true, wrote: 'company_facts', key: settledKey, settled: ids.length })

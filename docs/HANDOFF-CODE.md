@@ -147,13 +147,24 @@ fact_proposals 138 · company_facts 0 · document_batches 2
 document_reviews 0 · ai_calls 153 · job_runs 1
 ```
 
-> ### `document_reviews` IS 0, AND THE DASHBOARD STILL READS IT.
+> ### `document_reviews` IS 0 ON STAGING. IT IS 34 ON PRODUCTION.
 >
-> The old review path writes nothing any more — `/api/document-scan` is the reading for every door a
-> file comes in by (Run 6). But `app/dashboard/page.tsx:48` still GETs `/api/document-review`, so the
-> dashboard's review list is **a live query against a table nothing fills.** That is not dead code, it
-> is an empty state that does not say why it is empty — `CLAUDE.md` §5.1. Recorded in
-> `docs/INVENTORY-2026-09.md`; **not fixed, because fixing it is product work.**
+> *(Corrected 28 September 2026. This box read "`document_reviews` IS 0, AND THE DASHBOARD STILL
+> READS IT" without saying which database, and the figure is a STAGING figure — every number in this
+> section is.)*
+>
+> Read through the linked Supabase CLI on 28 September: **staging 0, production 34.** The old review
+> path writes nothing any more — `/api/document-scan` is the reading for every door a file comes in by
+> (Run 6) — and `/api/document-review` was deleted, so the dashboard defect this box described is
+> fixed (`app/dashboard/page.tsx` reads `document_index_v`). What is NOT true is "a table nothing
+> fills": production's 34 rows are the only readings that exist for 39 of its 41 documents, and the
+> audit engine is the one thing that reads them.
+>
+> **And the 34 rows are not customer data.** All ten companies on production are the owner's own test
+> rows — `CB-Test-1`, `CB-Test-2`, `CB-Test-3`, `CB-Test 1`, `CB-Test 2`, `ZZ Throwaway Test`,
+> `zz-test-empty` — none matching a staging fixture name or a golden company. **Production has no
+> real customer on it**, which is what makes the 39 `held` documents and the six July `audits` rows
+> safe to leave alone.
 
 Production row counts are **not in this handoff**: `SUPABASE_PROD_URL` and
 `SUPABASE_PROD_SERVICE_ROLE_KEY` are **blank** in `.env.local`, which `CLAUDE.md` §3.8 says is the
@@ -168,11 +179,17 @@ Supabase CLI with `SUPABASE_PROD_REF`. Do not quote the figures in §126's hando
 
 ```
 $ npm run check      # typecheck && check:schema && test && build
-  check-schema-contracts: ok — 142 files, 35 relations (34 tables + 1 view).
-  tests 457 · pass 457 · fail 0
-  test-guard: 457 tests, 0 skipped, 0 todo, floor 457. OK
+  check-schema-contracts: ok — 174 files, 44 relations (42 tables + 2 views).
+  tests 544 · pass 544 · fail 0
+  test-guard: 544 tests, 0 skipped, 0 todo, floor 544. OK
   ✓ Compiled successfully
 ```
+
+*(Re-run 28 September 2026. This block said `142 files, 35 relations` and `457 tests` with a floor of
+457, which was the 23 September figure and had been left standing through the fifteen Documents
+migrations. The floor in `scripts/test-guard.js` was already **528** when this was read — so the
+document was two revisions behind the committed constant, not one. It is **544** as of Task 0's
+commit 1: sixteen for the company context's renderer.)*
 
 **Both fix rounds are the evidence of what this gate cannot see.** Eleven defects across them,
 every one found by a person using the product, every one with a green `npm run check` behind it:
@@ -226,8 +243,18 @@ was charged**. Quote the corrected column.
 
 > ### ⛔ AND THE LARGEST KNOWN HOLE IN EVERY FIGURE ABOVE
 >
-> **`lib/documentReview.ts` passes no `ledger:` argument** — `grep -n ledger
-> lib/documentReview.ts` returns nothing — so **every document scan is missing from this table.**
+> **⚠ CORRECTED 28 SEPTEMBER 2026: `lib/documentReview.ts` DOES pass a `ledger:` argument.**
+> It is at **`lib/documentReview.ts:90`** — `ledger: { companyId, task: 'document_review' }`, with the
+> comment above it reading "MEASUREMENT ONLY — the call itself is unchanged". This box used to say
+> *"`lib/documentReview.ts` passes no `ledger:` argument — `grep -n ledger lib/documentReview.ts`
+> returns nothing"*, and that grep now returns line 90. **The claim was true when it was written and
+> the fix was not recorded here.**
+>
+> The `document_review` task still has **zero rows**, and the reason is different and worth stating:
+> its one remaining caller is the audit engine's auto-index loop, and **no audit has been run on
+> staging or production since the ledger existed** (production's six `audits` rows are from 25 July).
+> So the call site is counted and simply has not been called. *"A call site with no `ledger:`
+> argument is a call nobody is counting"* is still the rule; this is no longer an instance of it.
 > **The owner measured a two-page PDF scan at $1.10 on live on 23 September** (the owner's
 > figure; not reproduced by this session). That one call is more than the entire `convert` task's
 > recorded spend.
@@ -268,7 +295,8 @@ reconciled with them — where they disagree, they win.
 ## 9. Commands worth knowing
 
 ```
-npm run check         typecheck · schema contracts · 457 tests · build. Green as of this commit.
+npm run check         typecheck · schema contracts · 544 tests · build. Green as of this commit.
+                      (was written as 457 until 28 Sep; the committed floor had been 528 for days.)
 npm run check:live    signs in as a real staging fixture and writes as that user.
   -- --only sources      the third-turn citation step alone
   -- --only attachment   attach a PDF and ask about it (Fix Round 2)

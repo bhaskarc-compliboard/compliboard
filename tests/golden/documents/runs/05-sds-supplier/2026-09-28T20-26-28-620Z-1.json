@@ -1,0 +1,210 @@
+{
+  "case": "05-sds-supplier",
+  "run": 1,
+  "run_date": "2026-09-28",
+  "model": "claude-haiku-4-5",
+  "structured": true,
+  "searches": 1,
+  "cited_sources": 0,
+  "prompt_sha256": "fa231f22109a415055cecc77b43468250bf2ac7faf265ae48524d56e460a17f1",
+  "scan_id": "c7434eb2-5a1c-4d8c-a342-3a5348435fd4",
+  "ai_call_id": "45407196-efde-4bf7-8875-8b71ee541252",
+  "company_context": "WHO THIS COMPANY IS\n  Name: Cascade Specialty Chemicals, LLC\n  Industry: chemical manufacturing (recorded as chemical-manufacturing)\n  Address: Portland, Oregon\n  State: Oregon\nTheir sites:\n  - Portland — 4410 NW Front Ave, Portland, Oregon 97210, Portland, Oregon (primary)\n\nWHAT A PERSON HAS CONFIRMED FROM A DOCUMENT\nEach of these was read in the named document and then confirmed by a person.\n  (nothing confirmed yet)\n\nLABELS ALREADY IN USE FOR THIS COMPANY\nAgencies:\n  - Oregon DEQ\nSubjects:\n  - air quality\n  - chemical storage and repackaging\n  - vapor control\n\nFACT KEYS ALREADY IN USE FOR THIS COMPANY\n  - alarm_monitoring_provider\n  - annual_reporting_deadline\n  - assembly_point_distance\n  - building_areas_covered\n  - carbon_replacement_frequency\n  - emergency_shower_eyewash_location\n  - facility_address\n  - first_aid_responders_per_shift\n  - number_of_employees_portland\n  - permit_expiration_date\n  - permit_issued_date\n  - permit_number\n  - permitted_equipment\n  - plan_document_locations\n  - scrubber_pressure_drop_requirement\n  - shelter_in_place_locations\n  - source_category\n  - visible_emissions_limit",
+  "company_context_sha256": "8c64dac87363335e32d431c726566fc3c6d2df97f92491f9de6a9b0813a0e928",
+  "wall_ms": 16391,
+  "cost_usd": 0.050105000000000004,
+  "input_tokens": 33830,
+  "output_tokens": 1255,
+  "json_parsed": true,
+  "compliant_found_in": [],
+  "alternative_pass": false,
+  "verdicts": {
+    "kind": {
+      "verdict": "PASS",
+      "detail": "identity.kind = \"supplier document\""
+    },
+    "issuer-supplier": {
+      "verdict": "PASS",
+      "detail": "identity.issuer = \"northwest alkali products, inc.\""
+    },
+    "agency-osha": {
+      "verdict": "FAIL",
+      "detail": "identity.agencies = [empty]"
+    },
+    "site-not-invented": {
+      "verdict": "PASS",
+      "detail": "identity.site = \"company wide\""
+    },
+    "doc-date": {
+      "verdict": "PASS",
+      "detail": "identity.doc_date = 2024-03-18"
+    },
+    "doc-date-kind": {
+      "verdict": "PASS",
+      "detail": "identity.doc_date_kind = \"revised\""
+    },
+    "status": {
+      "verdict": "PASS",
+      "detail": "status = \"not judged\""
+    },
+    "no-gaps": {
+      "verdict": "PASS",
+      "detail": "none"
+    },
+    "no-deadlines": {
+      "verdict": "PASS",
+      "detail": "none"
+    },
+    "no-conditions": {
+      "verdict": "PASS",
+      "detail": "none"
+    },
+    "summary-supplier-document": {
+      "verdict": "PASS",
+      "detail": "[supplier, hazard communication, employees]"
+    },
+    "label-consistency": {
+      "verdict": "CROSS",
+      "detail": "judged across the three runs, below"
+    },
+    "company-fact-is-inferred": {
+      "verdict": "PASS",
+      "detail": "no such fact was proposed — the spec does not require one"
+    },
+    "no-supplier-or-chemical-facts": {
+      "verdict": "FAIL",
+      "detail": "facts: \"supplier_name / Northwest Alkali Products, Inc. / Northwest Alkali Products, Inc., 3420 Taylor Way, Tacoma, Washington 98421 / Section 1, Identification / 2024-03-18 / This is the source of the sodium hydroxide solution \"  ||  facts: \"product_hazard_classification / Skin corrosion Category 1A, Serious eye damage Category 1, Corrosive to metals Category 1 / Skin corrosion, Category 1A (H314); Serious eye damage, Category 1 (H318); Corrosive to metals, \"  ||  facts: \"osha_pel_sodium_hydroxide / 2 mg/m³ (TWA) / OSHA PEL 2 mg/m³ (TWA) / Section 8, Exposure Controls/Personal Protection / 2024-03-18 / Establishes exposure limit for monitoring and control if this chemical generates mist d\"",
+      "quotes": [
+        {
+          "where": "facts",
+          "text": "supplier_name / Northwest Alkali Products, Inc. / Northwest Alkali Products, Inc., 3420 Taylor Way, Tacoma, Washington 98421 / Section 1, Identification / 2024-03-18 / This is the source of the sodium hydroxide solution the company may use or purchase / read"
+        },
+        {
+          "where": "facts",
+          "text": "product_hazard_classification / Skin corrosion Category 1A, Serious eye damage Category 1, Corrosive to metals Category 1 / Skin corrosion, Category 1A (H314); Serious eye damage, Category 1 (H318); Corrosive to metals, Category 1 (H290) / Section 2, Hazard Identification / 2024-03-18 / Determines required personal protective equipment and engineering controls if this chemical is used at the facility / read"
+        },
+        {
+          "where": "facts",
+          "text": "osha_pel_sodium_hydroxide / 2 mg/m³ (TWA) / OSHA PEL 2 mg/m³ (TWA) / Section 8, Exposure Controls/Personal Protection / 2024-03-18 / Establishes exposure limit for monitoring and control if this chemical generates mist during use / read"
+        }
+      ],
+      "soft": []
+    },
+    "hazcom-accessible-note": {
+      "verdict": "FAIL",
+      "detail": "only [nothing] of the spec's words appear"
+    },
+    "freshness-2024": {
+      "verdict": "PASS",
+      "detail": "[2024, current]"
+    }
+  },
+  "scan": {
+    "identity": {
+      "kind": "supplier_document",
+      "title": "Safety Data Sheet for Sodium Hydroxide Solution, 50%",
+      "issuer": "Northwest Alkali Products, Inc.",
+      "agencies": [],
+      "subjects": [],
+      "site": "company_wide",
+      "jurisdiction": [
+        "federal"
+      ],
+      "doc_date": "2024-03-18",
+      "doc_date_kind": "revised",
+      "page_refs": {}
+    },
+    "summary": "This is a Safety Data Sheet (SDS) prepared by the chemical supplier Northwest Alkali Products for sodium hydroxide solution, 50%, according to OSHA's Hazard Communication Standard. It describes the chemical's hazards, composition, handling requirements, and emergency response. This is the supplier's document, not Cascade's—the company would maintain a copy for its employees' reference when using this chemical.",
+    "status": "not_judged",
+    "significant_date": "2024-03-18",
+    "significant_date_kind": "revised",
+    "freshness_note": "The SDS was revised on March 18, 2024, and is current as of September 28, 2026. It is recent and applicable.",
+    "gaps": [],
+    "conditions": [],
+    "deadlines": [],
+    "facts": [
+      {
+        "key": "supplier_name",
+        "value": "Northwest Alkali Products, Inc.",
+        "quote": "Northwest Alkali Products, Inc., 3420 Taylor Way, Tacoma, Washington 98421",
+        "locator": "Section 1, Identification",
+        "as_of": "2024-03-18",
+        "affects": "This is the source of the sodium hydroxide solution the company may use or purchase",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "product_hazard_classification",
+        "value": "Skin corrosion Category 1A, Serious eye damage Category 1, Corrosive to metals Category 1",
+        "quote": "Skin corrosion, Category 1A (H314); Serious eye damage, Category 1 (H318); Corrosive to metals, Category 1 (H290)",
+        "locator": "Section 2, Hazard Identification",
+        "as_of": "2024-03-18",
+        "affects": "Determines required personal protective equipment and engineering controls if this chemical is used at the facility",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "osha_pel_sodium_hydroxide",
+        "value": "2 mg/m³ (TWA)",
+        "quote": "OSHA PEL 2 mg/m³ (TWA)",
+        "locator": "Section 8, Exposure Controls/Personal Protection",
+        "as_of": "2024-03-18",
+        "affects": "Establishes exposure limit for monitoring and control if this chemical generates mist during use",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "required_emergency_equipment",
+        "value": "Emergency eyewash and safety shower within 10 seconds of work areas",
+        "quote": "emergency eyewash and safety shower within 10 seconds of work areas",
+        "locator": "Section 8, Exposure Controls/Personal Protection",
+        "as_of": "2024-03-18",
+        "affects": "May require facility modifications or relocation of equipment if product is routinely used",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "storage_container_requirement",
+        "value": "Corrosion-resistant container such as polyethylene, lined steel, or stainless steel",
+        "quote": "Store in a cool, dry, well-ventilated area in the original corrosion-resistant container (polyethylene, lined steel, or stainless steel)",
+        "locator": "Section 7, Handling and Storage",
+        "as_of": "2024-03-18",
+        "affects": "Affects how the chemical is stored and whether existing storage containers are suitable",
+        "basis": "read",
+        "quote_verified": true
+      }
+    ],
+    "version_of": {
+      "title": null,
+      "confidence": "high"
+    },
+    "expected_missing": [
+      {
+        "title": "Supplier's certificate of analysis or batch-specific technical data",
+        "why": "An SDS is generic; if the company purchases specific lots, they may need batch-specific certifications",
+        "basis": "common practice in chemical procurement"
+      },
+      {
+        "title": "Company-specific safety protocol or compatibility document",
+        "why": "Cascade's own emergency plan or hazard assessment for this chemical would supplement the SDS",
+        "basis": "similar companies maintain site-specific documents"
+      }
+    ],
+    "confidence_notes": "This is straightforwardly a supplier's Safety Data Sheet and is not subject to compliance gaps—it is the manufacturer's document prepared under federal OSHA rules. The document is complete, recent, and properly formatted in the mandatory 16-section GHS format required by 29 CFR 1910.1200 Appendix D. All mandatory sections 1–11 and 16 are present. The information is legible and accurate. No issues were identified with the document itself. However, I cannot judge whether Cascade Specialty Chemicals actually uses this chemical or maintains it properly in their facility—that would require examination of their own purchasing records, inventory, storage verification, and hazard communication program, none of which are present here.",
+    "could_not_read": {
+      "reason": null,
+      "way_forward": null
+    },
+    "raw_text": "{\"identity\": {\"kind\": \"supplier_document\", \"title\": \"Safety Data Sheet for Sodium Hydroxide Solution, 50%\", \"issuer\": \"Northwest Alkali Products, Inc.\", \"agencies\": [], \"subjects\": [], \"site\": \"company_wide\", \"jurisdiction\": [\"federal\"], \"doc_date\": \"2024-03-18\", \"doc_date_kind\": \"revised\"}, \"summary\": \"This is a Safety Data Sheet (SDS) prepared by the chemical supplier Northwest Alkali Products for sodium hydroxide solution, 50%, according to OSHA's Hazard Communication Standard. It describes the chemical's hazards, composition, handling requirements, and emergency response. This is the supplier's document, not Cascade's—the company would maintain a copy for its employees' reference when using this chemical.\", \"status\": \"not_judged\", \"significant_date\": \"2024-03-18\", \"significant_date_kind\": \"revised_on\", \"freshness_note\": \"The SDS was revised on March 18, 2024, and is current as of September 28, 2026. It is recent and applicable.\", \"gaps\": [], \"conditions\": [], \"deadlines\": [], \"facts\": [{\"key\": \"supplier_name\", \"value\": \"Northwest Alkali Products, Inc.\", \"basis\": \"read\", \"quote\": \"Northwest Alkali Products, Inc., 3420 Taylor Way, Tacoma, Washington 98421\", \"locator\": \"Section 1, Identification\", \"as_of\": \"2024-03-18\", \"affects\": \"This is the source of the sodium hydroxide solution the company may use or purchase\"}, {\"key\": \"product_hazard_classification\", \"value\": \"Skin corrosion Category 1A, Serious eye damage Category 1, Corrosive to metals Category 1\", \"basis\": \"read\", \"quote\": \"Skin corrosion, Category 1A (H314); Serious eye damage, Category 1 (H318); Corrosive to metals, Category 1 (H290)\", \"locator\": \"Section 2, Hazard Identification\", \"as_of\": \"2024-03-18\", \"affects\": \"Determines required personal protective equipment and engineering controls if this chemical is used at the facility\"}, {\"key\": \"osha_pel_sodium_hydroxide\", \"value\": \"2 mg/m³ (TWA)\", \"basis\": \"read\", \"quote\": \"OSHA PEL 2 mg/m³ (TWA)\", \"locator\": \"Section 8, Exposure Controls/Personal Protection\", \"as_of\": \"2024-03-18\", \"affects\": \"Establishes exposure limit for monitoring and control if this chemical generates mist during use\"}, {\"key\": \"required_emergency_equipment\", \"value\": \"Emergency eyewash and safety shower within 10 seconds of work areas\", \"basis\": \"read\", \"quote\": \"emergency eyewash and safety shower within 10 seconds of work areas\", \"locator\": \"Section 8, Exposure Controls/Personal Protection\", \"as_of\": \"2024-03-18\", \"affects\": \"May require facility modifications or relocation of equipment if product is routinely used\"}, {\"key\": \"storage_container_requirement\", \"value\": \"Corrosion-resistant container such as polyethylene, lined steel, or stainless steel\", \"basis\": \"read\", \"quote\": \"Store in a cool, dry, well-ventilated area in the original corrosion-resistant container (polyethylene, lined steel, or stainless steel)\", \"locator\": \"Section 7, Handling and Storage\", \"as_of\": \"2024-03-18\", \"affects\": \"Affects how the chemical is stored and whether existing storage containers are suitable\"}], \"version_of_title\": \"null\", \"version_of_confidence\": \"high\", \"expected_missing\": [{\"title\": \"Supplier's certificate of analysis or batch-specific technical data\", \"why\": \"An SDS is generic; if the company purchases specific lots, they may need batch-specific certifications\", \"basis\": \"common practice in chemical procurement\"}, {\"title\": \"Company-specific safety protocol or compatibility document\", \"why\": \"Cascade's own emergency plan or hazard assessment for this chemical would supplement the SDS\", \"basis\": \"similar companies maintain site-specific documents\"}], \"confidence_notes\": \"This is straightforwardly a supplier's Safety Data Sheet and is not subject to compliance gaps—it is the manufacturer's document prepared under federal OSHA rules. The document is complete, recent, and properly formatted in the mandatory 16-section GHS format required by 29 CFR 1910.1200 Appendix D. All mandatory sections 1–11 and 16 are present. The information is legible and accurate. No issues were identified with the document itself. However, I cannot judge whether Cascade Specialty Chemicals actually uses this chemical or maintains it properly in their facility—that would require examination of their own purchasing records, inventory, storage verification, and hazard communication program, none of which are present here.\", \"could_not_read_reason\": \"null\", \"could_not_read_way_forward\": \"null\"}",
+    "json_parsed": true,
+    "model": "claude-haiku-4-5",
+    "cited_sources": 0,
+    "searches": null,
+    "structured": true,
+    "prompt_sha256": "fa231f22109a415055cecc77b43468250bf2ac7faf265ae48524d56e460a17f1",
+    "quotes_checked": 5,
+    "quotes_verified": 5,
+    "extracted_text": "SAFETY DATA SHEET\nSodium Hydroxide Solution, 50%\nAccording to OSHA Hazard Communication Standard, 29 CFR 1910.1200\nRevision date: March 18, 2024 · Version 4.1 · Supersedes version 4.0 (August\n2, 2021)\nSECTION 1. IDENTIFICATION\nProduct identifier: Sodium Hydroxide Solution, 50% (w/w)\nSynonyms: Caustic soda solution, lye solution, NaOH 50%\nRecommended use: Industrial pH adjustment, cleaning, chemical manufacturing\nSupplier: Northwest Alkali Products, Inc., 3420 Taylor Way, Tacoma, Washington 98421 · Telephone (253) 555-0140\nEmergency telephone: CHEMTREC 1-800-424-9300 (24 hours)\nSECTION 2. HAZARD IDENTIFICATION\nClassification: Skin corrosion, Category 1A (H314); Serious eye damage, Category 1 (H318); Corrosive to metals, Category 1\n(H290)\nSignal word: DANGER\nHazard statements: H290 May be corrosive to metals. H314 Causes severe skin burns and eye damage.\nPrecautionary statements: P260 Do not breathe mist or vapours. P280 Wear protective gloves, protective clothing, eye protection\nand face protection. P301+P330+P331 If swallowed: rinse mouth, do NOT induce vomiting. P303+P361+P353 If on skin (or\nhair): take off immediately all contaminated clothing, rinse skin with water. P305+P351+P338 If in eyes: rinse cautiously with\nwater for several minutes; remove contact lenses if present and easy to do; continue rinsing. P310 Immediately call a poison\ncenter or doctor. P390 Absorb spillage to prevent material damage. P406 Store in a corrosion-resistant container with a resistant\ninner liner.\nPictograms: Corrosion\nSECTION 3. COMPOSITION / INFORMATION ON INGREDIENTS\nSodium hydroxide, CAS 1310-73-2, 48–52%. Water, CAS 7732-18-5, 48–52%.\nSECTION 4. FIRST-AID MEASURES\nEyes: Immediately flush with plenty of water for at least 30 minutes, lifting the eyelids. Get medical attention immediately.\nSkin: Immediately flush with plenty of water for at least 30 minutes while removing contaminated clothing and shoes. Get\nmedical attention immediately. Inhalation: Move to fresh air. If breathing is difficult, give oxygen. Get medical attention.\nIngestion: Do not induce vomiting. Rinse mouth, give water to drink if the person is conscious. Get medical attention\nimmediately.\nSECTION 5. FIRE-FIGHTING MEASURES\nThe product is not flammable. Contact with aluminium, zinc, tin and their alloys generates hydrogen gas, which is flammable.\nUse extinguishing media appropriate to surrounding materials. Wear self-contained breathing apparatus and full protective\nclothing.\nSECTION 6. ACCIDENTAL RELEASE MEASURES\nEvacuate unnecessary personnel. Wear the protective equipment in Section 8. Contain the spill with inert absorbent (sand,\nvermiculite). Neutralise carefully with dilute acid if trained to do so. Do not allow to enter drains or waterways. Collect into a\nsuitable corrosion-resistant container for disposal.\nSECTION 7. HANDLING AND STORAGE\nHandling: Avoid contact with skin, eyes and clothing. Do not breathe mist. Add caustic to water slowly, never water to caustic.\nStorage: Store in a cool, dry, well-ventilated area in the original corrosion-resistant container (polyethylene, lined steel, or\nstainless steel). Keep away from acids, aluminium, zinc, tin, organic halogens and nitro compounds. Keep containers closed.\nSolution may freeze below 54°F (12°C).\nSECTION 8. EXPOSURE CONTROLS / PERSONAL PROTECTION\nExposure limits: Sodium hydroxide — OSHA PEL 2 mg/m³ (TWA); ACGIH TLV 2 mg/m³ (ceiling); NIOSH REL 2 mg/m³\n(ceiling). Engineering controls: Local exhaust ventilation where mist may be generated; emergency eyewash and safety shower\nwithin 10 seconds of work areas. Eye and face protection: Chemical splash goggles and face shield. Skin protection: Neoprene,\nnitrile or butyl rubber gloves, chemical-resistant apron or suit, rubber boots. Respiratory protection: Where mist exceeds\nexposure limits, a NIOSH-approved respirator with particulate filter.\nSECTION 9. PHYSICAL AND CHEMICAL PROPERTIES\nAppearance: Clear, colourless to slightly turbid liquid. Odour: Odourless. pH: 14. Freezing point: 54°F (12°C). Boiling point:\n293°F (145°C). Specific gravity: 1.52 at 68°F (20°C). Solubility in water: Complete. Vapour pressure: 1.5 mm Hg at 68°F.\nSECTION 10. STABILITY AND REACTIVITY\nStable under recommended storage conditions. Reacts violently with acids. Reacts with aluminium, zinc, tin, brass and bronze to\nproduce hydrogen. Absorbs carbon dioxide from the air. Hazardous decomposition: none under normal use.\nSECTION 11. TOXICOLOGICAL INFORMATION\nAcute effects: Severe burns to skin, eyes and mucous membranes on contact; ingestion causes severe burns to the mouth, throat\nand stomach, possibly perforation. Chronic effects: Repeated exposure to mist may cause dermatitis and damage to the\nrespiratory tract. Carcinogenicity: Not listed by IARC, NTP or OSHA.\nSECTION 12. ECOLOGICAL INFORMATION\nHarmful to aquatic life through pH change. Do not release to the environment. Rapidly neutralised in the environment; does not\nbioaccumulate.\nSECTION 13. DISPOSAL CONSIDERATIONS\nDispose of in accordance with federal, state and local regulations. Unneutralised product is a corrosive hazardous waste (RCRA\nD002).\nSECTION 14. TRANSPORT INFORMATION\nUN number: UN1824. Proper shipping name: Sodium hydroxide solution. Hazard class: 8. Packing group: II. DOT reportable\nquantity (RQ): 1,000 lb (sodium hydroxide).\nSECTION 15. REGULATORY INFORMATION\nTSCA: Listed. CERCLA RQ: 1,000 lb. SARA 311/312 hazard categories: Skin corrosion, Serious eye damage, Corrosive to\nmetals. California Proposition 65: Not listed.\nSECTION 16. OTHER INFORMATION\nPrepared by: Northwest Alkali Products, Regulatory Affairs. Revision date: March 18, 2024. Changes from version 4.0: Section\n8 updated to current ACGIH TLV; Section 14 packing group corrected. Disclaimer: The information in this SDS is believed to\nbe accurate as of the revision date. It is the user's responsibility to determine suitability for their use.",
+    "started_at": "2026-09-28T20:26:11.751Z"
+  }
+}

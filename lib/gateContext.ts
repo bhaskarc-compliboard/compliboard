@@ -45,6 +45,34 @@ export interface KnownFact {
   fact: string
   value: string
   source: FactSource
+  /**
+   * *** THE SITE THIS FACT IS ABOUT. Null for a company-wide fact. Added Task 0, commit 1. ***
+   *
+   * Without it a company with two plants produced SEVEN DIRECT CONTRADICTIONS in one block, read
+   * off the staging fixture: `Employees at this site = 1` and `= 6`, `Air permit tier = title_v`
+   * and `= none`, `Hazardous waste generator category = lqg` and `= vsqg`, and the same for
+   * hazardous chemicals, laboratory use, confined spaces and stormwater — all under the heading
+   * "ESTABLISHED FACTS ABOUT THIS COMPANY", with `establishedFactsBlock` closing "Treat these as
+   * settled."
+   *
+   * The storage was never wrong: `company_switches` has carried `scope` and `entity_id` since
+   * migration 008, and `CLAUDE.md` §1 says 73 of the 95 switches are site-scoped precisely because
+   * "a second plant has its own air permit, its own generator category and its own forklifts".
+   * The gate's SELECT did not ask for either column, so the rendering flattened a distinction the
+   * database had kept. `subjectOf` below is the one place that puts it back.
+   */
+  site?: string | null
+}
+
+/**
+ * WHAT A FACT IS ABOUT — its label, and the site when it has one.
+ *
+ * One function so the gate's context, the established block and the answer's business block all
+ * phrase it identically. A fact must not change shape as it moves between stages, which is the
+ * same reason `establishedFactsBlock` lives beside `buildGateContext`.
+ */
+export function subjectOf(k: KnownFact): string {
+  return k.site ? `${k.fact} (${k.site})` : k.fact
 }
 
 /**
@@ -139,7 +167,7 @@ export function buildGateContext(
   contextLines.push('ESTABLISHED FACTS ABOUT THIS COMPANY:')
   contextLines.push(known.length === 0
     ? '  (none established — this is not the same as "none apply")'
-    : known.map((k) => `  ${k.fact} = ${k.value}   [${k.source}]`).join('\n'))
+    : known.map((k) => `  ${subjectOf(k)} = ${k.value}   [${k.source}]`).join('\n'))
   contextLines.push('')
   contextLines.push('VOCABULARY OF FACTS THIS PRODUCT CAN ASK ABOUT:')
   contextLines.push(vocabulary.length === 0
@@ -193,7 +221,7 @@ export function establishedFactsBlock(known: KnownFact[]): string {
   if (known.length === 0) return ''
   return [
     'WHAT IS ALREADY ESTABLISHED ABOUT THIS COMPANY:',
-    known.map((k) => `  ${k.fact} = ${k.value}   [established by: ${k.source}]`).join('\n'),
+    known.map((k) => `  ${subjectOf(k)} = ${k.value}   [established by: ${k.source}]`).join('\n'),
     '',
     'Treat these as settled. Do not ask the user to confirm them, do not branch on them, and',
     'do not answer for a jurisdiction other than the one named here.',
@@ -309,14 +337,30 @@ function provenance(s: FactSource): string {
   }
 }
 
-/** BLOCK B — the business. Premises to reason from, never a checklist to work through. */
+/**
+ * BLOCK B — the business. Premises to reason from, never a checklist to work through.
+ *
+ * *** NO PRODUCTION CALLER SINCE TASK 0, COMMIT 1 — kept, and here is why. ***
+ *
+ * `/api/chat` folded this in behind `RESEARCH_FACTS_BLOCK`; the one company context
+ * (`lib/companyContext.ts`) replaced it there, so "who is this company" has one assembly. Only a
+ * test calls this now, which by §9a's own rule makes it a claim nothing checks.
+ *
+ * It is NOT deleted because it does one thing the company context deliberately cannot: it renders
+ * facts the person stated IN THIS CONVERSATION about the real business. The context is the settled
+ * database record (`docs/VISION-DOCUMENTS.md`: "Pending proposals live in the queue. The context is
+ * the settled record"), so a fact typed into the question this turn is not in it. Whether those
+ * facts should also reach the answer — and if so merged with the context or beside it — is the
+ * decision flagged at the fold-in in `/api/chat` and owed to `DECISIONS.md` §141. Deleting the
+ * renderer before that is decided would quietly settle it.
+ */
 export function businessFactsBlock(business: KnownFact[]): string {
   if (business.length === 0) return ''
-  const width = Math.max(...business.map((k) => `${k.fact} = ${k.value}`.length)) + 2
+  const width = Math.max(...business.map((k) => `${subjectOf(k)} = ${k.value}`.length)) + 2
   return [
     'WHAT WE ALREADY KNOW ABOUT THIS BUSINESS — these are premises. Reason from them.',
     '',
-    ...business.map((k) => `  ${`${k.fact} = ${k.value}`.padEnd(width)}${provenance(k.source)}`),
+    ...business.map((k) => `  ${`${subjectOf(k)} = ${k.value}`.padEnd(width)}${provenance(k.source)}`),
     '',
     'Start from these. Work out what they mean for this question and say it.',
     '',
