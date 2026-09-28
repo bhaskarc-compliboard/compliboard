@@ -81,7 +81,7 @@ to match what shipped, and that is the normal state for a spec.
 | `docs/REQUIREMENTS-SCREEN.md` | M6, the requirements screen | **Design only, not built** | None needed |
 | `docs/PATTERNS.md` | Conventions carried over from Bizpulses | Reference, ages fine | None needed |
 | `docs/INVENTORY.md` | A phase-by-phase surface inventory from **15 September** | **Superseded by this file** | **Note added at the top** pointing here. Propose keep: it is organised by phase, this one by file, and they answer different questions |
-| `docs/Vision for Document Module.pdf` | The vision as the owner first wrote it | Superseded by the `.md` | **Left untouched.** Propose keep — it is the owner's own artefact and not a document the code depends on |
+| ~~`docs/Vision for Document Module.pdf`~~ | The vision as a PDF export | Superseded by the `.md` | ✅ **DELETED 28 Sep**, owner's decision, overriding this file's proposal to keep it. **`VISION-DOCUMENTS.md` is the source, not a rendering of the PDF**, so the PDF was the derived copy and the one that could go stale. Git history keeps it |
 
 ### docs/ — completed handoffs
 

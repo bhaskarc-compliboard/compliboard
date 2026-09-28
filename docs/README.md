@@ -7,7 +7,7 @@
 >
 > | File | What it is |
 > |---|---|
-> | **`VISION-DOCUMENTS.md`** | The Documents module's vision, 27 September. **The current one** — `Vision for Document Module.pdf` beside it is the owner's original and is superseded by it |
+> | **`VISION-DOCUMENTS.md`** | The Documents module's vision, 27 September. **The only one** — it is the source, not an export of something else. *(A `Vision for Document Module.pdf` sat beside it until 28 September and was deleted; git history keeps it.)* |
 > | **`RELEASE.md`** | How a change reaches production, and **the authoritative list of what Vercel Production holds.** When this and any other file disagree about a variable, the dashboard wins and `RELEASE.md` gets corrected |
 > | **`DESIGN.md`** | The layout template. §3 is the widths, §6 is how a new section's files are laid out |
 > | **`INVENTORY-2026-09.md`** | Every file in the repo checked against 28 September: what it is for, whether it is still true, and who calls what. `INVENTORY.md` is the older pass, organised by phase rather than by file, and both are kept |
