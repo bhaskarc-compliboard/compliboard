@@ -92,7 +92,7 @@ never fire. Version 17: Sweep; every number re-read on 15 Sep. **Both environmen
 two of them re-run after passing for the wrong reason); **M1.1's `topics` shipped to production**
 with no facts column (§78); **`CLAUDE.md` §3.6 corrected** — the default ACL grants
 `authenticated=arwdDxtm` including DELETE, so a grant list describes what you added, not what the
-role holds; and **M1.2b specified** (`docs/GATE-HISTORY.md`). **274 tests.** Two measurements now
+role holds; and **M1.2b specified** (`docs/archive/GATE-HISTORY.md`). **274 tests.** Two measurements now
 exist where none did: **21 applies of 200 CREATED** and **5 MOVED** of 200. And the qualifier is
 unchanged: **0 of 200 live requirements checked against a published source**, 22 of 216 clauses
 that can never fire. Version 16: End-of-session sweep; every number re-read from the databases

@@ -1,4 +1,10 @@
 # Detailed To-Do
+
+> *(Note 28 September 2026: **`BUILD-PLAN.md` moved to `docs/archive/`.** It is cited by bare name below and the citations still hold — the file is at `docs/archive/BUILD-PLAN.md`. `docs/archive/README.md` says what supersedes it.)*
+>
+> *(Note 28 September 2026: **`GATE-HISTORY.md` moved to `docs/archive/`.** It is cited by bare name below and the citations still hold — the file is at `docs/archive/GATE-HISTORY.md`. `docs/archive/README.md` says what supersedes it.)*
+>
+> *(Note 28 September 2026: **`REQUIREMENTS-SCREEN.md` moved to `docs/archive/`.** It is cited by bare name below and the citations still hold — the file is at `docs/archive/REQUIREMENTS-SCREEN.md`. `docs/archive/README.md` says what supersedes it.)*
 **Version:** 41 · **Updated:** 23 September 2026
 **Supersedes:** version 40 (22 Sep). **RUN 2 is built** (`DECISIONS.md` §125): conversations
 persist as `turns`, counters record events, conversion carries scope and provenance, and two
@@ -100,7 +106,7 @@ protected by **zero** policies, constraints or triggers. Version 22: **M1.2b, M1
 closed and reachable over HTTP. The rotation gate's eighth credential now **exists**
 (`TURN_SIGNING_SECRET`) and is the only one never leaked, so it is **born rotated**. Version 21: **7.2a is DONE** — both routes built and driven over real
 HTTP as a signed-in user. **M1.1 is DONE and on production** (migration 028, `topics`, no facts
-column per §78). **M1.2b now precedes M1.2** (§82) and is **specified** in `docs/GATE-HISTORY.md`,
+column per §78). **M1.2b now precedes M1.2** (§82) and is **specified** in `docs/archive/GATE-HISTORY.md`,
 with its trimming measurement already run (§83): the bound holds, the latency motivation is
 withdrawn. The gate gains a sixth `FactSource`, **`hypothetical`**. Version 20: Adds **M1's build plan**, nine tasks against `WORKSPACE.md`
 v3, with **7.2a named as its floor** — M1's central act is fact capture and no endpoint for it

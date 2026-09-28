@@ -1,5 +1,7 @@
 # Vision for Document Module
 
+> *(Note 28 September 2026: **`BUILD-PLAN.md` moved to `docs/archive/`.** It is cited by bare name below and the citations still hold — the file is at `docs/archive/BUILD-PLAN.md`. `docs/archive/README.md` says what supersedes it.)*
+
 24 September 2026, updated 27 September 2026 · Bhaskar Choudhury
 
 ## What this section is, and why it comes first

@@ -324,7 +324,7 @@ about.
 `resolved.known` and render under *WHAT IS ALREADY ESTABLISHED ABOUT THIS COMPANY*, followed by
 *Treat these as settled*. `DECISIONS.md` §103 has the run.
 
-**The fix is a third block, not a rule.** `RESEARCH-PROMPT-DRAFT.txt` Block C — the scenario,
+**The fix is a third block, not a rule.** `RESEARCH-PROMPT-DRAFT.txt` Block C — the scenario, *(the draft file was deleted 28 September 2026; it is in git history, and the wording it approved is live in `prompts/`)* —
 carrying the frame's jurisdiction, tense and subject, with the hypothetical-sourced facts moved
 out of the facts block by the renderer. Block D is the jurisdiction line, generated from the
 frame, replacing §3's *"do not answer for a state other than the one named here"* — which is wrong

@@ -45,7 +45,7 @@ Four layers, and the third is the important one:
 | 4. Evidence | Which documents prove each obligation | AI matches, stored as rows |
 
 **On layer 2:** the count was `~46` here until 12 September, from an estimate in
-`CHEMICAL-OR-WA.md` §2.4 written before the requirement library existed. The seeded list is
+`docs/archive/CHEMICAL-OR-WA.md` §2.4 written before the requirement library existed. The seeded list is
 **95**, derived by reading all 188 `trigger_condition` strings in `requirement_templates` and
 asking of each *which fact does this actually need* — which found 6 proposed switches nothing
 uses and 30 missing facts that 48 requirements depend on. `DECISIONS.md` §36; the list itself
@@ -65,6 +65,11 @@ or 6+ with a Portland location"* in a single sentence.
 or a new feature rather than relying on memory of a past session — see `docs/README.md`
 for what each covers. Not all of them are present at any given time; the owner adds them.
 
+> **Eight moved to `docs/archive/` on 28 September 2026** and are marked `archive/` below. Archived
+> means **not current**, not *not needed*: `docs/archive/README.md` names what supersedes each, and
+> three of the eight are the only written design for work that has not been done yet. Nothing in this
+> section points at a path that no longer exists.
+
 - **`HOW-WE-BUILD.md`** — **the working method. Read it before the first task of a
   session.** The three roles and why they stay separate, the loop from read-only
   investigation through to production, what counts as verification, and what the method
@@ -72,9 +77,9 @@ for what each covers. Not all of them are present at any given time; the owner a
   reasoning behind them.*
 - **`DECISIONS.md`** — every decision made and why, plus the condition under which it
   would be reversed.
-- **`CHEMICAL-OR-WA.md`** — the full design of the first vertical: regulatory map, data
+- **`archive/CHEMICAL-OR-WA.md`** *(archived 28 Sep — still the ONLY design for the vertical, and nothing has replaced it)* — the full design of the first vertical: regulatory map, data
   model, runtime pipeline, display, verification, onboarding. Design only, not built.
-- **`BUILD-PLAN.md`** — the phased plan, and why the order is the order.
+- **`archive/BUILD-PLAN.md`** *(archived 28 Sep — the ordering rule it carried is restated in this file below; `TODO.md` is what to follow)* — the phased plan, and why the order is the order.
 - **`TODO.md`** — the task-level to-do: what is done, in progress, or not started. The
   *what next* to the build plan's *why*.
 - **`WORKSPACE.md`** — the Compliance Workspace module: conversation model, fact capture,
@@ -90,7 +95,7 @@ for what each covers. Not all of them are present at any given time; the owner a
   reviewing its own reasoning and will agree with it. **It reports and never regenerates** — a
   silent fix destroys the evidence, and a self-healing loop means no failure is ever found.
   **Built 12 Sep.**
-- **`AUDIT-CHECKS.md`** — the questions `npm run check` does not answer. It answers *"does
+- **`archive/AUDIT-CHECKS.md`** *(archived 28 Sep — **no check in it has been re-run since 22 September** and it covers none of the five tables Documents added; the questions are still worth asking and should be pulled forward with the Audits work)* — the questions `npm run check` does not answer. It answers *"does
   the code build and behave"*; nothing answered *"is what we are telling customers actually
   true"*, and this is that second set. Each check is a question, the query that answers it,
   and **the answer on the date it was last actually run** — including where that answer is
@@ -112,7 +117,7 @@ nobody noticed".
 
 **Both plans are ordered horizontal first, vertical last.** The numbered phases are
 infrastructure — schema, runtime pipeline, resolution, worker, library, observability. The
-final section (`MODULES` in `TODO.md`, `PART C` in `BUILD-PLAN.md`) is the seven product
+final section (`MODULES` in `TODO.md`, `PART C` in `archive/BUILD-PLAN.md`) is the seven product
 modules, worked one at a time once the ground under them has stopped moving. **Do not start
 module work because it is more visible than schema work** — each module names the phases it
 depends on, and starting early means building it twice. `DECISIONS.md` §18 has the reasoning

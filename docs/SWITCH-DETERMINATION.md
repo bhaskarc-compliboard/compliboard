@@ -1,4 +1,6 @@
 # Switch Determination — Phase 7.2
+
+> *(Note 28 September 2026: **`AUDIT-CHECKS.md` moved to `docs/archive/`.** It is cited by bare name below and the citations still hold — the file is at `docs/archive/AUDIT-CHECKS.md`. `docs/archive/README.md` says what supersedes it.)*
 **Version:** 4 · **Updated:** 15 September 2026
 **Supersedes:** version 3 (12 Sep). §2 gains **`declared` — a person told us directly**, ranked **4, above `stated`** (migration 026). The other four classes describe how a DOCUMENT supports a claim; a person is not on that scale, and `DECISIONS.md` §24.1's rule was unexpressible until now. `declared` may not carry a document (027). Previously, v3: Adds **§10, the 7.2a spec** — the ask path is built FIRST on
 the measured argument (three SDSs moved zero obligations; one question moved 19), it reuses the

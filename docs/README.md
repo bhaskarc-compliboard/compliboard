@@ -1,25 +1,80 @@
 # docs/
 
-> ### ⚠ FOUR FILES THIS INDEX DOES NOT LIST. *(Added 28 September 2026.)*
->
-> The same failure the note below records, one release later — files were added and the index did not
-> move with them.
->
-> | File | What it is |
-> |---|---|
-> | **`VISION-DOCUMENTS.md`** | The Documents module's vision, 27 September. **The only one** — it is the source, not an export of something else. *(A `Vision for Document Module.pdf` sat beside it until 28 September and was deleted; git history keeps it.)* |
-> | **`RELEASE.md`** | How a change reaches production, and **the authoritative list of what Vercel Production holds.** When this and any other file disagree about a variable, the dashboard wins and `RELEASE.md` gets corrected |
-> | **`DESIGN.md`** | The layout template. §3 is the widths, §6 is how a new section's files are laid out |
-> | **`INVENTORY-2026-09.md`** | Every file in the repo checked against 28 September: what it is for, whether it is still true, and who calls what. `INVENTORY.md` is the older pass, organised by phase rather than by file, and both are kept |
-> | **`HANDOFF-AUDITS.md`** | *(added 27 September, listed here on the 28th)* The brief for the section after Documents — **and the first place to send anyone starting a new section**: §5 is the design template every section follows, §6 the file structure every section follows, §4 what Documents provides to Audits. The two completed handoffs point at it |
->
-> `releases/` also holds one dated release note per production push — `2026-09-26-documents-rev1.md`
-> is the only one so far, and its §7 carries the outcome of every smoke-test step.
+**Version:** 11 · **Updated:** 28 September 2026
 
-**Version:** 10 · **Updated:** 24 September 2026
-**Supersedes:** version 9 (23 Sep). **Both handoffs are present and indexed as such.** Version 9
-listed them as expected-and-not-present, which was true when it was written and stopped being
-true within the hour: they were placed while that check ran.
+**This is the index of what is LIVE.** Eight files moved to **`archive/`** on 28 September; that
+folder's own README names what supersedes each, and it is the only place this index points at them.
+
+---
+
+## What is live
+
+### Read first, every session
+
+| | |
+|---|---|
+| **`../CLAUDE.md`** | The standing brief: the rules, the architecture in one sentence, what must never break |
+| **`HOW-WE-BUILD.md`** | The working method — the three roles, the loop, what counts as verification |
+| **`../STATUS.md`** | One line per module with the date it was last actually checked |
+| **`HANDOFF-CODE.md`** | The state of the code: git, migrations, production, row counts. What a new chat trusts |
+
+### Decisions and releases
+
+| | |
+|---|---|
+| **`DECISIONS.md`** | Every decision and why, plus what would reverse it. **Append-only** — nothing above the last entry ever changes |
+| **`RELEASE.md`** | How a change reaches production, and **the authoritative list of what Vercel Production holds** |
+| **`releases/`** | One dated note per production push, with its smoke-test outcomes |
+
+### The current section, and the next
+
+| | |
+|---|---|
+| **`VISION-DOCUMENTS.md`** | The Documents module's vision. The source, not an export |
+| **`HANDOFF-AUDITS.md`** | The brief for the section after Documents — **and the first thing any new section's chat reads.** §5 is the design template every section follows, §6 the file structure |
+| **`DESIGN.md`** | The layout template: widths, type, colour, the components |
+
+### Specs for what is built
+
+| | |
+|---|---|
+| **`DETERMINATION-GATE.md`** | Stage 1 — the step that asks rather than guesses. Built, except §11 |
+| **`CRITIC-PASS.md`** | Stage 5 — the reviewer that reports and never regenerates |
+| **`RESEARCH-ANSWER.md`** | The shape of a research answer |
+| **`SWITCH-DETERMINATION.md`** | Phase 7.2 |
+| **`WORKSPACE.md`** | The Compliance Workspace: conversations, fact capture, topics, signup |
+
+### Specs for what is not built
+
+| | |
+|---|---|
+| **`EVIDENCE-LINKING.md`** | Phase 7.3. Design only |
+
+### Tests, data and inventory
+
+| | |
+|---|---|
+| **`TESTING.md`** | The three kinds of test kept apart, and every manual set — including the historical ones, marked as such |
+| **`SCHEMA.md`** | **GENERATED.** `node --env-file=.env.local scripts/schema-doc.js`. Never edited by hand |
+| **`TODO.md`** | The task-level to-do: what is done, in progress, not started |
+| **`INVENTORY-2026-09.md`** | Every file in the repo checked against 28 September: what it is for, whether it is true, who calls what |
+| **`PATTERNS.md`** | Conventions carried over from the sibling Bizpulses project |
+
+### Archived
+
+| | |
+|---|---|
+| **`archive/`** | Eight files, kept for the record and superseded. **`archive/README.md` names what replaces each** — and flags the three that are the only written design for work still to be done: `AUDIT-CHECKS.md`, `CHEMICAL-OR-WA.md`, `REQUIREMENTS-SCREEN.md` |
+
+---
+
+## The rule this index keeps breaking
+
+Twice a file has been added and this index has not moved with it — version 9 indexed two handoffs as
+"expected and not present" when they were already on disk, and version 10 missed four files including
+the one that is authoritative for production's variables. **A file added to `docs/` is not added until
+it is listed here.** The version history below is kept for that reason.
+
 Version 9: indexed `HANDOFF-LAYOUT.md` and `HANDOFF-DOCUMENTS.md` as expected and not present.
 Version 8: version 7 (15 Sep). One correction, and it reversed a rule: the seed-data entry said
 the database was the source of truth once a worksheet was loaded. **`DECISIONS.md` §118 decided the

@@ -15,7 +15,7 @@ and §12, then `docs/SCHEMA.md` for the database. This file is state, not method
 >
 > *(Corrected 28 September 2026. This banner used to say §8 had not been reconciled with them.)*
 >
-> `docs/HANDOFF-LAYOUT.md` (the layout pass, finished 24 September) and `docs/HANDOFF-DOCUMENTS.md`
+> `docs/archive/HANDOFF-LAYOUT.md` (the layout pass, finished 24 September) and `docs/archive/HANDOFF-DOCUMENTS.md`
 > (the Documents section, released 26 September) are both **marked completed at the top** and kept.
 > Neither is a live instruction.
 >

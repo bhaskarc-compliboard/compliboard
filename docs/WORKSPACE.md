@@ -1,5 +1,7 @@
 # The Compliance Workspace — M1
 
+> *(Note 28 September 2026: **`GATE-HISTORY.md` moved to `docs/archive/`.** It is cited by bare name below and the citations still hold — the file is at `docs/archive/GATE-HISTORY.md`. `docs/archive/README.md` says what supersedes it.)*
+
 > ### ⚠ ONE THING IN HERE MOVED: THE ATTACH PATH.
 >
 > *(Corrected 28 September 2026.)* Where this design says an attached file is read by the review path,

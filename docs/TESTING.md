@@ -1,5 +1,7 @@
 # Testing
 
+> *(Note 28 September 2026: **`AUDIT-CHECKS.md` moved to `docs/archive/`.** It is cited by bare name below and the citations still hold — the file is at `docs/archive/AUDIT-CHECKS.md`. `docs/archive/README.md` says what supersedes it.)*
+
 > **Every manual set in this file is kept, including the ones that test screens the product has since
 > replaced.** Those carry a 🕓 HISTORICAL banner naming what is current instead — added 28 September
 > 2026. A manual set is the record of what a person checked and when; a file that deletes the sets whose

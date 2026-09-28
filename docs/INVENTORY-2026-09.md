@@ -58,9 +58,9 @@ append-only and renumbering an existing entry would break every cross-reference 
 | `docs/TESTING.md` | The three kinds of test and every manual set | Current | **Historical markers added** to the sets that test the removed Review button and the old date-extraction on the Documents page |
 | `docs/VISION-DOCUMENTS.md` | The Documents module's vision (27 Sep) | **Current — this is the one** | None needed |
 | `docs/DESIGN.md` | The layout template | Current | **Checked rule by rule against the shipped page — see the table below.** Changed nothing: the layout chat owns it |
-| `docs/AUDIT-CHECKS.md` | The questions `npm run check` does not answer | Current in shape, answers are dated | **Note added**: no check has been re-run since 22 September, and Documents added five tables none of them cover |
+| `docs/archive/AUDIT-CHECKS.md` | The questions `npm run check` does not answer | Current in shape, answers are dated | **Note added**: no check has been re-run since 22 September, and Documents added five tables none of them cover |
 | `docs/TODO.md` | Task-level to-do | **Outdated** | **Corrected.** Documents marked done with pointers; the M4 plan superseded-noted |
-| `docs/BUILD-PLAN.md` | The phased plan and why the order is the order | **Outdated** | **Superseded note** on the Documents/M4 part; the phase ordering itself is unchanged and still right |
+| `docs/archive/BUILD-PLAN.md` | The phased plan and why the order is the order | **Outdated** | **Superseded note** on the Documents/M4 part; the phase ordering itself is unchanged and still right |
 | `docs/releases/2026-09-26-documents-rev1.md` | The rev 1 release note, with its smoke test outcomes | Current | None — it is a dated record and is finished |
 
 ### docs/ — design specs, written before the thing was built
@@ -71,24 +71,24 @@ to match what shipped, and that is the normal state for a spec.
 | Path | What it is for | State | Done / proposed |
 |---|---|---|---|
 | `docs/WORKSPACE.md` | The Compliance Workspace: conversations, facts, topics, signup | Current as a design; the workspace shipped | **Note added**: the attach path is `/api/document-scan` since Run 6, not the review route |
-| `docs/CHEMICAL-OR-WA.md` | The first vertical's full design | Current as a design, **not built** | None needed; `CLAUDE.md` §1 already corrects its switch count |
+| `docs/archive/CHEMICAL-OR-WA.md` | The first vertical's full design | Current as a design, **not built** | None needed; `CLAUDE.md` §1 already corrects its switch count |
 | `docs/DETERMINATION-GATE.md` | Stage 1 of the runtime pipeline | Built except §11 | None needed |
 | `docs/CRITIC-PASS.md` | Stage 5, the reviewer | Built 12 Sep | None needed |
 | `docs/RESEARCH-ANSWER.md` | The research answer's shape | Built | None needed |
-| `docs/GATE-HISTORY.md` | M1.2b, the gate gains a conversation | Built | None needed |
+| `docs/archive/GATE-HISTORY.md` | M1.2b, the gate gains a conversation | Built | None needed |
 | `docs/SWITCH-DETERMINATION.md` | Phase 7.2 | Built | None needed |
 | `docs/EVIDENCE-LINKING.md` | Phase 7.3 | **Design only, not built** | None needed |
-| `docs/REQUIREMENTS-SCREEN.md` | M6, the requirements screen | **Design only, not built** | None needed |
+| `docs/archive/REQUIREMENTS-SCREEN.md` | M6, the requirements screen | **Design only, not built** | None needed |
 | `docs/PATTERNS.md` | Conventions carried over from Bizpulses | Reference, ages fine | None needed |
-| `docs/INVENTORY.md` | A phase-by-phase surface inventory from **15 September** | **Superseded by this file** | **Note added at the top** pointing here. Propose keep: it is organised by phase, this one by file, and they answer different questions |
+| `docs/archive/INVENTORY.md` | A phase-by-phase surface inventory from **15 September** | **Superseded by this file** | **Note added at the top** pointing here. Propose keep: it is organised by phase, this one by file, and they answer different questions |
 | ~~`docs/Vision for Document Module.pdf`~~ | The vision as a PDF export | Superseded by the `.md` | ✅ **DELETED 28 Sep**, owner's decision, overriding this file's proposal to keep it. **`VISION-DOCUMENTS.md` is the source, not a rendering of the PDF**, so the PDF was the derived copy and the one that could go stale. Git history keeps it |
 
 ### docs/ — completed handoffs
 
 | Path | What it is for | State | Done / proposed |
 |---|---|---|---|
-| `docs/HANDOFF-DOCUMENTS.md` | Brief for the chat that built Documents | **Completed 26 September** | **Marked completed at the top**, dated, pointing at `VISION-DOCUMENTS.md` and `DESIGN.md` §6. Not deleted |
-| `docs/HANDOFF-LAYOUT.md` | Brief for the layout pass on the workspace page | **Completed 24 September** | **Marked completed at the top**, same pointers. Not deleted |
+| `docs/archive/HANDOFF-DOCUMENTS.md` | Brief for the chat that built Documents | **Completed 26 September** | **Marked completed at the top**, dated, pointing at `VISION-DOCUMENTS.md` and `DESIGN.md` §6. Not deleted |
+| `docs/archive/HANDOFF-LAYOUT.md` | Brief for the layout pass on the workspace page | **Completed 24 September** | **Marked completed at the top**, same pointers. Not deleted |
 | `docs/HANDOFF-CODE.md` | The state of the code — **the file the next chat trusts** | **Badly outdated**: §2 was headed "039 ON BOTH" | **Rewritten** state sections to 28 September, structure kept |
 
 ### prototypes/, baseline-outputs/, components/archive/
@@ -165,7 +165,7 @@ deployed tree where it matters.
 | `app/upload/page.tsx` | **ORPHAN.** `grep -rn "/upload"` over `app components` returned **no link, no nav item, no redirect** — reachable only by typing the URL | Unreachable in the UI | ✅ **DELETED 28 Sep**, owner's decision. Two upload paths is how the product starts disagreeing with itself. Git history keeps it, and its two open `TODO.md` items are closed by the deletion |
 | `components/archive/GateAskCard.tsx` | No importer outside `components/archive/` | Dead by design | **Keep.** The folder's README states the reason |
 | `prototypes/compliance-workspace.html` | Referenced by `prototypes/README.md` and by `DESIGN.md` | Spent | ✅ **KEPT 28 Sep**, owner's decision, with a 🕓 HISTORICAL line at the top of `prototypes/README.md` naming `DESIGN.md` as the live template |
-| `baseline-outputs/*.json` (13 files + README) | No code read them; a 9 September capture | Spent | ✅ **DELETED 28 Sep**, owner's decision. `docs/AUDIT-CHECKS.md` and `tests/golden/README.md` referenced them and now carry a note that the rows are in git history |
+| `baseline-outputs/*.json` (13 files + README) | No code read them; a 9 September capture | Spent | ✅ **DELETED 28 Sep**, owner's decision. `docs/archive/AUDIT-CHECKS.md` and `tests/golden/README.md` referenced them and now carry a note that the rows are in git history |
 | `CURRENT-SCHEMA.md` | Superseded by generated `docs/SCHEMA.md` | Spent | ✅ **DELETED 28 Sep**, owner's decision. Two `TODO.md` lines referenced it; one of those recorded that it was *wrong* about the reference-table count |
 | Scripts with no npm command | Listed above | All still useful | **Keep all**; give `bakeoff-report.js` a command |
 
@@ -210,14 +210,14 @@ The layout chat owns `DESIGN.md`. This is what differs, and which I think is rig
 3. `HOW-WE-BUILD.md` §3 and §5a — the same three rules where the method lives.
 4. `STATUS.md` — migration state 039 → 054; Documents rows added as done.
 5. `docs/TODO.md` — Documents marked done; the M4 plan superseded-noted.
-6. `docs/BUILD-PLAN.md` — superseded note on the Documents part.
+6. `docs/archive/BUILD-PLAN.md` — superseded note on the Documents part.
 7. `docs/RELEASE.md` — `AI_MODEL_DOCUMENT_SCAN = claude-opus-5-5`, `AI_SCAN_STRUCTURED = false`.
 8. `docs/HANDOFF-CODE.md` — state sections rewritten to 28 September.
-9. `docs/HANDOFF-DOCUMENTS.md`, `docs/HANDOFF-LAYOUT.md` — marked completed with pointers.
+9. `docs/archive/HANDOFF-DOCUMENTS.md`, `docs/archive/HANDOFF-LAYOUT.md` — marked completed with pointers.
 10. `docs/README.md` — the four missing files listed.
 11. `docs/WORKSPACE.md` — the attach path note.
-12. `docs/AUDIT-CHECKS.md` — a note that no check has been re-run since 22 September.
-13. `docs/INVENTORY.md`, `CURRENT-SCHEMA.md` — superseded notes pointing at what is current.
+12. `docs/archive/AUDIT-CHECKS.md` — a note that no check has been re-run since 22 September.
+13. `docs/archive/INVENTORY.md`, `CURRENT-SCHEMA.md` — superseded notes pointing at what is current.
 14. `docs/TESTING.md` — historical markers on the removed-screen sets.
 15. `docs/SCHEMA.md` — regenerated.
 16. `docs/DECISIONS.md` — §139 appended.

@@ -1,4 +1,6 @@
 # The Determination Gate — Stage 1
+
+> *(Note 28 September 2026: **`GATE-HISTORY.md` moved to `docs/archive/`.** It is cited by bare name below and the citations still hold — the file is at `docs/archive/GATE-HISTORY.md`. `docs/archive/README.md` says what supersedes it.)*
 **Version:** 5 · **Updated:** 15 September 2026
 **Supersedes:** version 4 (12 Sep). **Points at `GATE-HISTORY.md` for the three things the gate gained on 15 Sep** — `priorTurns`, `frame` and `followUp` — rather than restating them, so there is one authoritative description of each. `GateResult` corrected to show the current shape. Everything else in this file is unchanged and correct.
 **Supersedes:** version 3 (11 Sep). §8's five counts re-measured: `switches` is 95 rows and
@@ -22,7 +24,7 @@ gate asks where the worksite is, a fact every company already has.
 > blocking fact is, the ask/proceed union, answering in place, and why the gate does not read the
 > library.** All of that is unchanged and correct.
 >
-> **Three things were added on 15 September and are NOT described here. `docs/GATE-HISTORY.md` is
+> **Three things were added on 15 September and are NOT described here. `docs/archive/GATE-HISTORY.md` is
 > authoritative for all three:**
 >
 > | Added | What it is | Where |
@@ -258,7 +260,7 @@ export type GateResult =
   | { outcome: 'ask';     ask: GateAsk;          frame: Frame; followUp: FollowUp }
 
 // ^^ `frame` and `followUp` were added 15 Sep and are NOT described in this file.
-//    `docs/GATE-HISTORY.md` is authoritative for both, and for `GateInput.priorTurns`.
+//    `docs/archive/GATE-HISTORY.md` is authoritative for both, and for `GateInput.priorTurns`.
 //    See the pointer at the top of this document.
 ```
 
