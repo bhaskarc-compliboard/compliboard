@@ -65,6 +65,27 @@ What the old audit engine does today, and must stop doing: `app/api/audits/route
 
 Read `docs/DESIGN.md` in full; it is authoritative. The layout chat owns it; additions from a section go in as marked additions. What follows is the template as Documents applied it, so Audits and the Workspace match it exactly.
 
+### 5.0 The rule about who is speaking
+
+**The product never names what does the reading. It reads, finds, asks and says.**
+*(Added 28 September 2026, Task 0 commit 2.)*
+
+No screen, empty state, button or error says what performs a reading. "We read your permit", "this
+is what we found", "is that still right?" — the product is the subject of every sentence. A person
+confirming a fact about their own business is helped by the quote and the page it came from, never by
+being told what read it; and a line that names the reader invites the reader to be argued with
+instead of the fact.
+
+This is not a euphemism. `CLAUDE.md` §6 requires a verified row and a generated row to look
+different, and they do — through `basis`, `quote_verified`, "inferred", "these words were not found
+in the file", and the amber that carries each. Those say **how sure we are**, which is what a person
+can act on. What did the reading is not.
+
+It applies hardest where the product is least sure, which is where the temptation is worst: an
+apology that names a mechanism reads as the product blaming a component rather than owning a failure
+(§5.1's worked example is the same instinct one step along). **`/your-company` is the first page held
+to this rule end to end** and the assertion is in its manual set: the word does not appear on it.
+
 ### 5.1 Tokens
 - Interface type: IBM Plex Sans. Reading and page titles: Source Serif 4.
 - Page background cool grey (`#F7F8FA`), white surfaces, near-black ink (`#14171A`), soft ink (`#5B6470`), light grey for light headings and counts (`#8A929C`), hairline (`#E6E9ED`).
@@ -158,7 +179,31 @@ Shared code every section uses and must not copy: `lib/ai.ts` (askAIWithCitation
 ## 8. Operations: what Claude Code may run, and how
 
 - Local dev (`npm run dev`) points at staging via `.env.local`. Never at production.
-- `npm run check` (typecheck, schema contracts, tests with a floor, build) before every commit. `npm run check:live` signs in as a fixture and drives routes against staging; it is the gate for any migration touching a tenant table; its two attachment content assertions fail on the Haiku tier and pass on production's configuration.
+- `npm run check` (typecheck, schema contracts, tests with a floor, build) before every commit. `npm run check:live` signs in as a fixture and drives routes against staging; it is the gate for any migration touching a tenant table.
+
+  > **⚠ MORE THAN TWO OF ITS ASSERTIONS FAIL ON THE HAIKU TIER, AND THE SET IS NOT FIXED.**
+  > *(Corrected 28 September 2026, from two runs the same evening.)* This bullet named two —
+  > `attachment/tier` and `attachment/errors`, the content assertions that pass on production's
+  > configuration. Measured:
+  >
+  > | assertion | run 1 | run 2 |
+  > |---|---|---|
+  > | `convert complete` — expects both origins, Haiku returns `{"conversation": N}` only | ✗ | ✗ |
+  > | `attachment/errors` — names 2 then 3 of the policy's 5 errors | ✗ | ✗ |
+  > | `attachment/tier` — the 25 + 31 = 56 headcount | ✗ | **✓** |
+  >
+  > **So the honest statement is not "two" or "three" but "two reliably and a third intermittently",**
+  > and `convert complete` is the one the documentation never named. It is a model-quality outcome
+  > rather than a wiring fault, and that was checked rather than assumed:
+  > `app/api/checklists/from-topic/route.ts` and `prompts/convert.ts` are untouched by Task 0, and
+  > that route reads no company context — its prompts are constants.
+  >
+  > **And one line is neither a pass nor a failure:** `sources` reports `NEITHER a denial nor a clear
+  > affirmation`, the standing third-turn citation defect in `HANDOFF-CODE.md` §7.
+  >
+  > Why this matters more than the count: a run reporting "3 problems" against a document saying "2
+  > are expected" is a run somebody reads as green — and a *flapping* assertion is worse than a
+  > failing one, because the first green run is the one that gets quoted.
 - `npm run db:reset` and `npm run db:restore` on staging, under a pty, after any new migration; the result is read from `supabase_migrations.schema_migrations`, not from the command (twice the pty automation silently did nothing).
 - `npm run golden:docs`, `npm run cost -- --since <date>`, `npm run preflight` (read-only against production; the only production access Claude Code has).
 - Claude Code commits and does not push. A push to `main` deploys production. Migrations run on production only by the owner, via `npm run db:migrate:prod` and the word PRODUCTION.

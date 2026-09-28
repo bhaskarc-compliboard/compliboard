@@ -115,6 +115,17 @@ export interface ConfirmedFact {
   /** `company_facts.as_of` (migration 055) — the date the source says it was true. */
   asOf: string | null
   sourceDocumentTitle: string | null
+  /**
+   * The ids behind the title, so a screen can LINK to the document and to the proposal that
+   * carried the value — Task 0, commit 2.
+   *
+   * *** NEITHER IS RENDERED, AND THAT IS DELIBERATE. *** `renderCompanyContext` does not touch
+   * them, so `block` and `sha256` are byte-identical to before this field existed and no prompt
+   * gained anything. A uuid in a prompt is noise the model cannot act on; in a page it is the
+   * difference between "from the air permit" and a link to the air permit.
+   */
+  sourceDocumentId: string | null
+  sourceProposalId: string | null
 }
 
 export interface ContextDocument {
@@ -235,7 +246,7 @@ export async function buildCompanyContext(
   let confirmedKeys: string[] = []
   if (want.has('confirmed') || want.has('keys')) {
     const { data: rows } = await db.from('company_facts')
-      .select('key, value, basis, entity_id, as_of, source_document_id')
+      .select('key, value, basis, entity_id, as_of, source_document_id, source_proposal_id')
       .eq('company_id', companyId).order('key').order('entity_id', { nullsFirst: true })
     const factRows = (rows ?? []) as Array<Record<string, unknown>>
     confirmedKeys = factRows.map((f) => f.key as string)
@@ -264,6 +275,8 @@ export async function buildCompanyContext(
         siteName: entityId ? (siteNameById.get(entityId) ?? null) : null,
         asOf: (f.as_of as string) ?? null,
         sourceDocumentTitle: srcId ? (titleById.get(srcId) ?? null) : null,
+        sourceDocumentId: srcId,
+        sourceProposalId: (f.source_proposal_id as string) ?? null,
       }
     }).sort((a, b) => a.key.localeCompare(b.key)
                    || (a.siteName ?? '').localeCompare(b.siteName ?? ''))

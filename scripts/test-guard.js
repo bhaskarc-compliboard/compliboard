@@ -53,7 +53,16 @@ import { readdirSync, readFileSync } from 'node:fs'
 // it asked for, so `sha256` fingerprints the send rather than the store), the declared/confirmed
 // distinction, and that an empty section says "not the same as nothing applies" instead of going
 // quiet (§5.1 applied to a prompt rather than a screen).
-const FLOOR = 544
+//
+// *** 559 SINCE TASK 0, COMMIT 2. *** One more on the company context — the two link ids added for
+// the Your company page must render to a byte-identical block, or every stored `prompt_sha256`
+// moves for a uuid no model can act on. And fourteen on `questionLines`, which decides what a
+// person is ASKED: that three facts from one reading are one question, that a key two documents
+// both propose cannot be filed under either, that a disagreement is always lifted out of its
+// document group — including the invisible case, where the sources agree with each other and
+// contradict something already settled — and that the order is what a question unblocks rather
+// than when it arrived.
+const FLOOR = 559
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

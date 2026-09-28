@@ -44,6 +44,10 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { requireCompany, supabaseAdmin } from '@/lib/auth'
+// The question lines, in one place — the sidebar badge counts the lines the Your company page draws,
+// and a badge computed from anything else promises a different amount of work from the one on
+// screen. lib/confirmationQueue.ts says why that is a file.
+import { questionLines } from '@/lib/confirmationQueue'
 
 /** Keys with an "affects" line first, then documents before conversations, then newest. */
 export const RANKING_LINE =
@@ -75,7 +79,7 @@ export async function GET(request: NextRequest) {
     const docIds = [...new Set(rows.map((r) => r.document_id).filter(Boolean))]
     const topicIds = [...new Set(rows.map((r) => r.topic_id).filter(Boolean))]
 
-    const [docs, topics, switches] = await Promise.all([
+    const [docs, topics, switches, sites] = await Promise.all([
       docIds.length
         ? db.from('document_index_v').select('document_id, title').in('document_id', docIds)
         : { data: [] },
@@ -85,10 +89,14 @@ export async function GET(request: NextRequest) {
       // Which keys name a switch decides where a confirmation goes, and the page says so on the
       // row rather than surprising somebody after they click.
       db.from('switches').select('id').in('id', [...new Set(rows.map((r) => r.switch_key))]),
+      // THE SITES, so a proposal about one plant can say which. Ordered, like every other read
+      // that feeds a rendering.
+      db.from('entities').select('id, name').eq('company_id', companyId).order('name'),
     ])
     const docTitle = Object.fromEntries((docs.data ?? []).map((d: Row) => [d.document_id, d.title]))
     const topicTitle = Object.fromEntries((topics.data ?? []).map((t: Row) => [t.id, t.title]))
     const isSwitch = new Set((switches.data ?? []).map((s: Row) => s.id))
+    const siteName = Object.fromEntries((sites.data ?? []).map((e: Row) => [e.id, e.name]))
 
     // ---- one entry per key, every proposal under it as a source ----
     const byKey = new Map<string, Row[]>()
@@ -127,6 +135,21 @@ export async function GET(request: NextRequest) {
           basis: r.basis,
           affects: r.affects,
           created_at: r.created_at,
+          // *** THREE FIELDS ADDED FOR THE "YOUR COMPANY" PAGE — Task 0, commit 2. READ-ONLY. ***
+          // Nothing about what this route WRITES changed; these are three columns already on the
+          // row that the response did not carry.
+          //   document_id — so the queue can ask one question per DOCUMENT ("the permit says 6
+          //     things about you") instead of one per key. The key-level grouping below is
+          //     unchanged and is still what Confirm settles.
+          //   entity_id / site — so a proposal about the Portland plant says Portland. Without it
+          //     two plants' answers are two lines that look like a contradiction (§141).
+          //   as_of — so a fact out of a 2021 handbook is asked as "as of 2021-02-01. Is that still
+          //     right?" rather than as though it were true today. Parsed since Run 1, columned by
+          //     migration 055, and this is the first reader.
+          document_id: r.document_id ?? null,
+          entity_id: r.entity_id ?? null,
+          site: r.entity_id ? (siteName[r.entity_id] ?? null) : null,
+          as_of: r.as_of ?? null,
           from: r.document_id
             ? { kind: 'document' as const, title: docTitle[r.document_id] ?? 'a document', locator: r.locator }
             : { kind: 'conversation' as const, title: topicTitle[r.topic_id ?? ''] ?? 'a conversation', locator: null },
@@ -161,12 +184,39 @@ export async function GET(request: NextRequest) {
       return String(b.newest).localeCompare(String(a.newest))
     })
 
+    // *** THE BADGE COUNTS QUESTION LINES, SO THIS ROUTE HAS TO KNOW WHAT IS SETTLED. ***
+    // A key whose proposed value differs from what is already settled for that key AND that site is
+    // its own question — "this is not what we have" — rather than one fact inside "the permit says 6
+    // things about you". Two cheap reads, and they are what make `question_lines` the number the
+    // page actually draws. Ordered, like every read that feeds a rendering.
+    const [facts, declared] = await Promise.all([
+      db.from('company_facts').select('key, value, entity_id')
+        .eq('company_id', companyId).order('key').order('entity_id', { nullsFirst: true }),
+      db.from('company_switches').select('switch_id, value, entity_id')
+        .eq('company_id', companyId).order('switch_id').order('entity_id', { nullsFirst: true }),
+    ])
+    const settledFor = (k: string, entityId: string | null): string | null => {
+      const f = (facts.data ?? []).find((r: Row) => r.key === k && (r.entity_id ?? null) === entityId)
+      if (f) return String(f.value ?? '')
+      const d = (declared.data ?? []).find((r: Row) => r.switch_id === k && (r.entity_id ?? null) === entityId)
+      return d ? String(d.value ?? '') : null
+    }
+    const lines = questionLines(keys, settledFor)
+
     return NextResponse.json({
       keys,
-      // *** THE COUNT IS KEYS, NOT ROWS. *** It is the number of decisions waiting, which is what
-      // the sidebar badge is promising. `rows` is reported separately so the page can say how
-      // many readings sit behind them.
-      count: keys.length,
+      // *** THE COUNT IS QUESTION LINES, NOT KEYS AND NOT ROWS — changed Task 0, commit 2. ***
+      //
+      // It was `keys.length`, which was right while one key was one line on screen. The Your company
+      // page groups a single document's facts into ONE question, so a badge of 9 over a page showing
+      // 5 lines would be two different promises about how long this will take — the failure this
+      // route's own comment named about "3 of 24" against "3 from 69 readings".
+      //
+      // `key_count` and `proposal_count` are both still reported, because the page says how many
+      // readings sit behind the questions and that sentence needs the raw numbers.
+      count: lines.length,
+      question_lines: lines.length,
+      key_count: keys.length,
       proposal_count: rows.length,
       ranking: RANKING_LINE,
     })

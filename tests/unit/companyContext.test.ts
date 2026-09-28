@@ -14,7 +14,7 @@
 import { test, describe } from 'node:test'
 import assert from 'node:assert/strict'
 import { renderCompanyContext, ALL_PARTS,
-         type CompanyContextParts } from '../../lib/companyContext.ts'
+         type CompanyContextParts, type ConfirmedFact } from '../../lib/companyContext.ts'
 // `subjectOf` lives beside the gate's own renderer, because the gate, the established block and
 // this block must phrase a fact identically — one function, three call sites.
 import { subjectOf } from '../../lib/gateContext.ts'
@@ -43,6 +43,14 @@ function parts(over: Partial<CompanyContextParts> = {}): CompanyContextParts {
     ...over,
   }
 }
+
+/** A confirmed fact, with the fields a test does not care about defaulted. Added when
+ *  `sourceDocumentId` and `sourceProposalId` arrived: three inline literals had to change for a
+ *  field none of them asserts, which is the shape that makes people stop adding tests. */
+const confirmed = (over: Partial<ConfirmedFact> & { key: string; value: string }): ConfirmedFact => ({
+  basis: 'read', entityId: null, siteName: null, asOf: null,
+  sourceDocumentTitle: null, sourceDocumentId: null, sourceProposalId: null, ...over,
+})
 
 const declared = (label: string, value: string, siteName: string | null) => ({
   switchId: 'site_employee_count', label, value,
@@ -88,9 +96,8 @@ describe('the declared block never shows two bare values for one label', () => {
 describe('a caller gets only the parts it asked for', () => {
   const p = parts({
     declared: [declared('Air permit tier', 'title_v', HILLSBORO)],
-    confirmed: [{ key: 'facility_address', value: '4410 NW Front Ave', basis: 'read',
-                  entityId: null, siteName: null, asOf: '2021-02-01',
-                  sourceDocumentTitle: 'Emergency Action Plan' }],
+    confirmed: [confirmed({ key: 'facility_address', value: '4410 NW Front Ave',
+                            asOf: '2021-02-01', sourceDocumentTitle: 'Emergency Action Plan' })],
     labels: { agencies: ['Oregon DEQ'], subjects: ['air emissions'] },
     keys: ['facility_address'],
   })
@@ -116,9 +123,9 @@ describe('a caller gets only the parts it asked for', () => {
 describe('the block says which facts were declared and which were confirmed', () => {
   const b = renderCompanyContext(parts({
     declared: [declared('Employs anyone', 'true', null)],
-    confirmed: [{ key: 'facility_address', value: '4410 NW Front Ave', basis: 'read',
-                  entityId: 'b', siteName: PORTLAND, asOf: '2021-02-01',
-                  sourceDocumentTitle: 'Emergency Action Plan' }],
+    confirmed: [confirmed({ key: 'facility_address', value: '4410 NW Front Ave', entityId: 'b',
+                            siteName: PORTLAND, asOf: '2021-02-01',
+                            sourceDocumentTitle: 'Emergency Action Plan' })],
   }), ['declared', 'confirmed'])
 
   test('declared says a person answered it directly', () => {
@@ -133,8 +140,7 @@ describe('the block says which facts were declared and which were confirmed', ()
   })
   test('an inferred fact says so rather than passing as stated', () => {
     const inferred = renderCompanyContext(parts({
-      confirmed: [{ key: 'employee_count', value: '40', basis: 'inferred', entityId: null,
-                    siteName: null, asOf: null, sourceDocumentTitle: null }],
+      confirmed: [confirmed({ key: 'employee_count', value: '40', basis: 'inferred' })],
     }), ['confirmed'])
     assert.match(inferred, /\(inferred, not stated outright\)/)
   })
@@ -163,5 +169,24 @@ describe('the industry is shown as words and as the slug it joins on', () => {
     p.company.industrySlug = 'other'
     p.company.industryWords = null
     assert.match(renderCompanyContext(p, ['company']), /Industry: other\n/)
+  })
+})
+
+describe('the link ids never reach the block — Task 0, commit 2', () => {
+  // A uuid in a prompt is noise the model cannot act on. These two fields exist for the page and
+  // the renderer must not touch them, or every stored prompt_sha256 moves for nothing.
+  test('a fact with ids renders identically to the same fact without them', () => {
+    const withIds = renderCompanyContext(parts({
+      confirmed: [confirmed({ key: 'facility_address', value: '4410 NW Front Ave',
+                              sourceDocumentTitle: 'Emergency Action Plan',
+                              sourceDocumentId: '11111111-1111-1111-1111-111111111111',
+                              sourceProposalId: '22222222-2222-2222-2222-222222222222' })],
+    }), ALL_PARTS)
+    const withoutIds = renderCompanyContext(parts({
+      confirmed: [confirmed({ key: 'facility_address', value: '4410 NW Front Ave',
+                              sourceDocumentTitle: 'Emergency Action Plan' })],
+    }), ALL_PARTS)
+    assert.equal(withIds, withoutIds)
+    assert.doesNotMatch(withIds, /1111-1111|2222-2222/)
   })
 })

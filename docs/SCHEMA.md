@@ -3,8 +3,8 @@
 **GENERATED — do not edit.** `node --env-file=.env.local scripts/schema-doc.js`, and it runs
 inside `npm run db:migrate`, so it cannot be stale by more than one migration.
 
-**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-09-28 20:17 UTC
-**Migrations applied:** 56 — `000` to `055`
+**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-09-28 22:49 UTC
+**Migrations applied:** 57 — `000` to `056`
 
 *Every figure here was read from the catalog of that database. Nothing is copied from the
 migration files, which say what was intended rather than what is there — and the two have
@@ -38,8 +38,8 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 **Requirements (the deterministic spine)**
 
 - `requirement_templates` — 0 rows · touched by route industries, route obligations, route switches/answer, route switches/ask, lib obligationWriter, +4 more
-- `switches` — 0 rows · touched by route chat, route obligations, route switches/answer, route switches/ask, route to-confirm, +6 more
-- `company_switches` — 0 rows · touched by route switches/answer, route switches/ask, lib companyContext, lib obligationWriter, script resolve-dryrun, +2 more
+- `switches` — 0 rows · touched by route chat, route obligations, route switches/answer, route switches/ask, route to-confirm, +7 more
+- `company_switches` — 0 rows · touched by route switches/answer, route switches/ask, route to-confirm, lib companyContext, lib obligationWriter, +3 more
 - `switch_determinations` — 0 rows · touched by route switches/answer, script audit-data-checks, script check-live
 - `obligations` — 0 rows · touched by route account, route obligations, route switches/answer
 - `obligation_evidence` — 0 rows · touched by route account/export, route account
@@ -68,9 +68,9 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 
 **Tenancy and accounts**
 
-- `companies` — 0 rows · touched by route account/export, route account, route audits, route document-scan, route jobs/scan-documents, +17 more
+- `companies` — 0 rows · touched by route account/export, route account, route audits, route document-scan, route jobs/scan-documents, +18 more
 - `profiles` — 0 rows · touched by route account/export, route account, route signup, screen audits, screen calendar, +8 more
-- `entities` — 0 rows · touched by route document-actions, route documents/index, route documents/report, route switches/answer, route switches/ask, +9 more
+- `entities` — 0 rows · touched by route document-actions, route documents/index, route documents/report, route switches/answer, route switches/ask, +11 more
 
 **Calendar**
 
@@ -419,7 +419,7 @@ One row per audit run. A frozen snapshot of results as checked that day — reus
 
 **Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route account/export`, `route account`, `route audits`, `route document-scan`, `route jobs/scan-documents`, `route obligations`, `route signup`, `screen audits`, `screen compliance`, `screen dashboard`, `screen documents`, `screen hr`, `lib agencyScope`, `lib companyContext`, `lib obligationWriter`, `script check-prompt-determinism`, `script resolve-dryrun`, `script run-golden-docs`, `script run-golden`, `script scan-document`, `script seed-multisite-fixture`, `script seed-staging-testdata`
+**Read or written by:** `route account/export`, `route account`, `route audits`, `route document-scan`, `route jobs/scan-documents`, `route obligations`, `route signup`, `route your-company`, `screen audits`, `screen compliance`, `screen dashboard`, `screen documents`, `screen hr`, `lib agencyScope`, `lib companyContext`, `lib obligationWriter`, `script check-prompt-determinism`, `script resolve-dryrun`, `script run-golden-docs`, `script run-golden`, `script scan-document`, `script seed-multisite-fixture`, `script seed-staging-testdata`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -554,7 +554,7 @@ What a company has confirmed about itself that is NOT one of the 95 switches. No
 
 **Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route to-confirm`, `lib companyContext`
+**Read or written by:** `route to-confirm`, `route your-company`, `lib companyContext`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -581,7 +581,7 @@ What a company has confirmed about itself that is NOT one of the 95 switches. No
 
 **Constraints:**
 
-- `company_facts_basis_check` — `CHECK ((basis = ANY (ARRAY['read'::text, 'inferred'::text])))`
+- `company_facts_basis_check` — `CHECK ((basis = ANY (ARRAY['read'::text, 'inferred'::text, 'declared'::text])))`
 
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
@@ -680,7 +680,7 @@ What a company has confirmed about itself that is NOT one of the 95 switches. No
 
 **Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route switches/answer`, `route switches/ask`, `lib companyContext`, `lib obligationWriter`, `script resolve-dryrun`, `script run-golden`, `script seed-multisite-fixture`
+**Read or written by:** `route switches/answer`, `route switches/ask`, `route to-confirm`, `lib companyContext`, `lib obligationWriter`, `script resolve-dryrun`, `script run-golden`, `script seed-multisite-fixture`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -1357,7 +1357,7 @@ One row per correction a person makes to what a document IS. Newest per field wi
 
 **Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route document-actions`, `route documents/index`, `route documents/report`, `route switches/answer`, `route switches/ask`, `lib agencyScope`, `lib companyContext`, `lib obligationWriter`, `script check-live`, `script resolve-dryrun`, `script run-golden-docs`, `script run-golden`, `script seed-multisite-fixture`, `script seed-staging-testdata`
+**Read or written by:** `route document-actions`, `route documents/index`, `route documents/report`, `route switches/answer`, `route switches/ask`, `route to-confirm`, `route your-company`, `lib agencyScope`, `lib companyContext`, `lib obligationWriter`, `script check-live`, `script resolve-dryrun`, `script run-golden-docs`, `script run-golden`, `script seed-multisite-fixture`, `script seed-staging-testdata`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -1424,7 +1424,7 @@ Candidate company facts read out of a conversation overnight. PROPOSED, never wr
 
 **Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route document-actions`, `route documents/report`, `route jobs/summarise`, `route to-confirm`, `screen compliance`, `lib companyContext`, `lib documentScan`
+**Read or written by:** `route document-actions`, `route documents/report`, `route jobs/summarise`, `route to-confirm`, `route your-company`, `screen compliance`, `lib companyContext`, `lib documentScan`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -1728,8 +1728,8 @@ One row per nightly run. Answers release gate 2 — did it run, and what did it 
 **Points at:**
 
 - `added_by` → `auth.users` — ON DELETE SET NULL
-- `company_id` → `documents` — ON DELETE CASCADE
 - `company_id` → `companies` — ON DELETE CASCADE
+- `company_id` → `documents` — ON DELETE CASCADE
 - `document_id` → `documents` — ON DELETE CASCADE
 - `document_id` → `documents` — ON DELETE CASCADE
 - `entity_id` → `entities` — ON DELETE CASCADE
@@ -2109,7 +2109,7 @@ The ~59 facts about a company that determine which requirements apply. Reference
 
 **Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route chat`, `route obligations`, `route switches/answer`, `route switches/ask`, `route to-confirm`, `lib determinationGate`, `lib obligationWriter`, `script load-switches`, `script resolve-dryrun`, `script run-golden`, `script seed-multisite-fixture`
+**Read or written by:** `route chat`, `route obligations`, `route switches/answer`, `route switches/ask`, `route to-confirm`, `route your-company`, `lib determinationGate`, `lib obligationWriter`, `script load-switches`, `script resolve-dryrun`, `script run-golden`, `script seed-multisite-fixture`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -2497,4 +2497,5 @@ filtered HERE so no consumer can forget it (CLAUDE.md §3.2). A corrected link
 053
 054
 055
+056
 ```

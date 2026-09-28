@@ -19,10 +19,17 @@ const NAV_ITEMS = [
   { label: 'Compliance Workspace', href: '/compliance' },
   { label: 'HR Workspace', href: '/hr' },
   { label: 'Company Documents', href: '/documents' },
-  // THE COUNT IS PART OF THE ITEM. "To confirm" with nothing waiting is a door nobody opens;
-  // "To confirm 3" is the one thing on this nav that asks for a minute rather than offering a
-  // place to go. WORKSPACE.md §7.5 gives the queue its own home rather than a dashboard panel.
-  { label: 'To confirm', href: '/to-confirm', badge: 'toConfirm' as const },
+  // THE COUNT IS PART OF THE ITEM. "Your company" with nothing waiting is a record to read;
+  // "Your company 3" is the one thing on this nav that asks for a minute rather than offering a
+  // place to go.
+  //
+  // *** IT WAS "To confirm" UNTIL TASK 0, COMMIT 2, AND IT KEEPS THAT POSITION AND THAT BADGE. ***
+  // The queue is now the first section of the page rather than a screen of its own: the questions
+  // and the record they complete are one thing. The position is unchanged on purpose — a person who
+  // has learnt where the badge appears should not have to learn again — and the badge still counts
+  // QUESTION LINES, which is the number of decisions waiting, not the number of readings behind
+  // them. `/to-confirm` 308s here.
+  { label: 'Your company', href: '/your-company', badge: 'toConfirm' as const },
   { label: 'Calendar', href: '/calendar' },
   { label: 'My Account', href: '/account', soon: false },
 ]
@@ -52,7 +59,11 @@ export default function AppLayout({ children, title, didYouKnow }: AppLayoutProp
         const res = await fetch('/api/to-confirm', { headers: await authHeaders() })
         if (!res.ok) return
         const j = await res.json()
-        setToConfirm(j.count ?? 0)
+        // `question_lines`, not `count` and not `key_count`: the badge has to be the number of lines
+        // the Your company page actually draws, or it promises a different amount of work. The route
+        // and the page build those lines with the same function (`lib/confirmationQueue.ts`), so the
+        // two cannot drift. `count` is kept as an alias for the same number.
+        setToConfirm(j.question_lines ?? j.count ?? 0)
       } catch { /* the nav must render whether or not this answers */ }
     })()
   }, [pathname])

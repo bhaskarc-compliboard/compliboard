@@ -152,6 +152,80 @@ untested — applies to the runner as much as to anything it runs.
 
 ---
 
+## Manual set — Task 0 commit 2, Your company, 28 Sep 2026
+
+*Two tests, the perfect case and the edge case. Both signed in against staging. **No model call is
+made by either** — everything on this page is something a person said or confirmed, so a test that
+needed one would mean the page had stopped being the settled record.*
+
+**Before either: the word "AI" must appear nowhere on the page**, in any heading, empty state, meta
+line or error. Search the rendered page for it. The rule is `docs/HANDOFF-AUDITS.md` §5 — the product
+reads, finds, asks and says, and never names what does the reading. A person confirming a fact about
+their own business is helped by the quote and the page it came from, not by being told what read it.
+
+### (a) The perfect case — Cascade, after the permit is read
+
+1. `DEV_MAX_SEARCHES= npm run golden:docs -- 02 --times 1` reads Cascade's air permit.
+2. Open **Your company** as a user of that company.
+
+**What must be true:**
+
+- **The queue is ONE line, not ten.** It reads *"The Standard Air Contaminant Discharge Permit says
+  10 things about you. Are they right?"* — ten pending readings, one question. The sidebar badge
+  reads **1**, not 10: the badge counts question lines, and a badge of 10 over a page showing one
+  line would be two different promises about how long this will take.
+- Opening it shows a green **Confirm all 10** above ten fact lines. Each reads
+  `<key in words> (<site>): <value>, as of <date>. Is that still right?` with `quoted · <locator>`
+  under it and the verbatim quote below that. **Every line carries `(Portland)`** — the site comes
+  from the document's own `entity_id`, so a permit filed against one plant proposes facts about that
+  plant.
+- **Confirm all 10** writes ten `company_facts` rows, each with its site and its as-of date, and the
+  group disappears — the queue heading goes with it, because "Waiting for you" is drawn only when a
+  question exists.
+- The record then shows them under one heading, **Confirmed from documents**, each with
+  `as of <date> · <locator> · <document title>`, the title linking to the Documents drawer.
+
+### (b) The edge case — Test Alpha, two sites, and an edit
+
+*This is the edge case because it is the two-site company: every assertion here is one that reads
+identically right and wrong on a single-site company, which is how the contradiction §141 records
+survived for as long as it did.*
+
+1. Sign in as `testalpha@example.com`. Open **Your company**.
+2. **Group by → Site.**
+
+**What must be true:**
+
+- **Three groups**, and the two plants are separate: `TEST ALPHA CHEMICAL — HILLSBORO 7`,
+  `TEST ALPHA CHEMICAL — PORTLAND 7`, `THE WHOLE COMPANY 2`. Hillsboro's air permit tier reads
+  `title_v` and Portland's `none`; generator category `lqg` against `vsqg`. **The same label never
+  appears twice inside one group.**
+- Folded, each heading carries its count and a one-line summary of the first two lines and "and N
+  more". Typing in **Find a fact** opens every group holding a match — a filter that leaves its
+  matches folded away has not filtered anything.
+3. **Edit** `Employees at this site (Test Alpha Chemical — Portland)` to **8**.
+
+- The record shows **8**, with the meta line `you answered · How many people work at this site?` —
+  the question it answers, from the switch library, so a line nobody remembers giving can be
+  recognised by the question rather than by its key.
+- **Hillsboro is untouched at 1.** This is the assertion that matters: before migration 055 and §141,
+  one company had one answer per key.
+- The gate's declared block rendered for `testalpha@` shows
+  `Employees at this site (Test Alpha Chemical — Portland) = 8` and
+  `... (Test Alpha Chemical — Hillsboro) = 1`, and **no bare `Employees at this site = ` anywhere**.
+4. **Edit a confirmed line** — one that came from a document — and change its value.
+
+- The line's meta becomes **`you corrected this`**, and the document link, the locator and the as-of
+  date are **gone**: a value a person typed has no document source and is not true as of the
+  document's date. `basis` is `declared` (migration 056).
+- **The history survives.** `fact_proposals` still holds the accepted row with what the document
+  said, its quote, its locator and its as-of date, so "the permit said 26-2841-ST-01 and somebody
+  corrected it" is still answerable.
+- Editing a key **nobody has confirmed** is a 404, not a new row. This action edits a settled fact;
+  it is not a second way to write one that skipped the queue.
+
+---
+
 ## Manual set — Task 0 commit 1, one company context, 28 Sep 2026
 
 *Two tests, the perfect case and the edge case, per `HOW-WE-BUILD.md` §2 step 12. Both are run as
@@ -1860,6 +1934,22 @@ silently under somebody half way through copying it is the thing this prevents.
 the gap's title and fix, and the document attached below it. Send it: the answer must show
 the document was carried. Reload the workspace afterwards — the composer must **not**
 re-fill, because the parameters are consumed on arrival.
+
+> ### 🕓 ITEMS 6 TO 9 ARE HISTORICAL — the screen they describe is gone.
+> *(Marked 28 September 2026, Task 0 commit 2.)*
+>
+> `/to-confirm` was folded into **`/your-company`** and now 308s there. The behaviour these four
+> items test is still the behaviour — one confirmation per key, both doors writing one row, a reason
+> required to reject — but the surface, the wording and the counts have all moved:
+>
+> | item | what changed |
+> |---|---|
+> | 6 | The sidebar reads **Your company**, not To confirm, and its badge counts **question lines** rather than keys. The page shows **five** lines, not three, and a single document's facts arrive as ONE line. The ranking line is no longer printed on the page; the order is stated in `lib/confirmationQueue.ts` and asserted by fourteen tests. |
+> | 7, 8 | Still exactly true of the writes — `/api/to-confirm` is unchanged — but they are performed in the "Waiting for you" section of `/your-company`. |
+> | 9 | Still true. The reason still lands in `fact_proposals.rejected_reason`, from either door. |
+>
+> **Current instead: "Manual set — Task 0 commit 2" above.** These are kept because a manual set is
+> the record of what was checked and when, and deleting them would delete that.
 
 ### 6. To confirm shows the count and the three
 
