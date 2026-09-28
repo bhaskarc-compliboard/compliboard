@@ -1,7 +1,7 @@
-// YOUR COMPANY — the page's one read, and its three writes. Task 0, commit 2.
+// COMPANY INFORMATION — the page's one read, and its three writes. Task 0, commit 2.
 //
 // *** NO MODEL CALL LIVES HERE, AND THAT IS THE POINT OF THE PAGE. ***
-// Everything on "Your company" is something a person said or confirmed. If this route ever needs
+// Everything on "Company information" is something a person said or confirmed. If this route ever needs
 // `lib/ai.ts` it has stopped being the settled record and become another thing that guesses.
 //
 // THE READ is `buildCompanyContext` (Task 0, commit 1) plus presentation metadata. The context
@@ -106,7 +106,7 @@ export async function GET(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('GET /api/your-company failed:', error)
+    console.error('GET /api/company-information failed:', error)
     return NextResponse.json(
       { error: 'We could not load your company just now. Please try again.' }, { status: 500 })
   }
@@ -245,7 +245,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { error: 'Expected an action of company, declared or confirmed.' }, { status: 400 })
   } catch (error) {
-    console.error('POST /api/your-company failed:', error)
+    console.error('POST /api/company-information failed:', error)
     return NextResponse.json(
       { error: 'We could not save that just now. Please try again.' }, { status: 500 })
   }

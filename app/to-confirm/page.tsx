@@ -1,7 +1,7 @@
 /**
  * /to-confirm — GONE, AND IT REDIRECTS RATHER THAN 404s. Task 0, commit 2.
  *
- * The confirmation queue is the first section of `/your-company`: the questions and the record they
+ * The confirmation queue is the first section of `/company-information`: the questions and the record they
  * complete are one thing, and they were two screens only because the queue was built first.
  *
  * *** A REDIRECT AND NOT A DELETION, FOR TWO REASONS. ***
@@ -17,5 +17,5 @@
 import { permanentRedirect } from 'next/navigation'
 
 export default function ToConfirmRedirect() {
-  permanentRedirect('/your-company')
+  permanentRedirect('/company-information')
 }

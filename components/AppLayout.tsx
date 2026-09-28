@@ -19,8 +19,8 @@ const NAV_ITEMS = [
   { label: 'Compliance Workspace', href: '/compliance' },
   { label: 'HR Workspace', href: '/hr' },
   { label: 'Company Documents', href: '/documents' },
-  // THE COUNT IS PART OF THE ITEM. "Your company" with nothing waiting is a record to read;
-  // "Your company 3" is the one thing on this nav that asks for a minute rather than offering a
+  // THE COUNT IS PART OF THE ITEM. "Company information" with nothing waiting is a record to read;
+  // "Company information 3" is the one thing on this nav that asks for a minute rather than offering a
   // place to go.
   //
   // *** IT WAS "To confirm" UNTIL TASK 0, COMMIT 2, AND IT KEEPS THAT POSITION AND THAT BADGE. ***
@@ -29,7 +29,7 @@ const NAV_ITEMS = [
   // has learnt where the badge appears should not have to learn again — and the badge still counts
   // QUESTION LINES, which is the number of decisions waiting, not the number of readings behind
   // them. `/to-confirm` 308s here.
-  { label: 'Your company', href: '/your-company', badge: 'toConfirm' as const },
+  { label: 'Company information', href: '/company-information', badge: 'toConfirm' as const },
   { label: 'Calendar', href: '/calendar' },
   { label: 'My Account', href: '/account', soon: false },
 ]
@@ -60,7 +60,7 @@ export default function AppLayout({ children, title, didYouKnow }: AppLayoutProp
         if (!res.ok) return
         const j = await res.json()
         // `question_lines`, not `count` and not `key_count`: the badge has to be the number of lines
-        // the Your company page actually draws, or it promises a different amount of work. The route
+        // the Company information page actually draws, or it promises a different amount of work. The
         // and the page build those lines with the same function (`lib/confirmationQueue.ts`), so the
         // two cannot drift. `count` is kept as an alias for the same number.
         setToConfirm(j.question_lines ?? j.count ?? 0)

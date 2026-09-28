@@ -55,7 +55,7 @@ import { readdirSync, readFileSync } from 'node:fs'
 // quiet (§5.1 applied to a prompt rather than a screen).
 //
 // *** 559 SINCE TASK 0, COMMIT 2. *** One more on the company context — the two link ids added for
-// the Your company page must render to a byte-identical block, or every stored `prompt_sha256`
+// the Company information page must render to a byte-identical block, or every stored `prompt_sha256`
 // moves for a uuid no model can act on. And fourteen on `questionLines`, which decides what a
 // person is ASKED: that three facts from one reading are one question, that a key two documents
 // both propose cannot be filed under either, that a disagreement is always lifted out of its

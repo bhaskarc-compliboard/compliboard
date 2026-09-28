@@ -44,7 +44,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { requireCompany, supabaseAdmin } from '@/lib/auth'
-// The question lines, in one place — the sidebar badge counts the lines the Your company page draws,
+// The question lines, in one place — the sidebar badge counts the lines the Company information page
 // and a badge computed from anything else promises a different amount of work from the one on
 // screen. lib/confirmationQueue.ts says why that is a file.
 import { questionLines } from '@/lib/confirmationQueue'
@@ -135,7 +135,7 @@ export async function GET(request: NextRequest) {
           basis: r.basis,
           affects: r.affects,
           created_at: r.created_at,
-          // *** THREE FIELDS ADDED FOR THE "YOUR COMPANY" PAGE — Task 0, commit 2. READ-ONLY. ***
+          // *** THREE FIELDS ADDED FOR THE "COMPANY INFORMATION" PAGE — Task 0, commit 2. READ-ONLY. ***
           // Nothing about what this route WRITES changed; these are three columns already on the
           // row that the response did not carry.
           //   document_id — so the queue can ask one question per DOCUMENT ("the permit says 6
@@ -207,7 +207,7 @@ export async function GET(request: NextRequest) {
       keys,
       // *** THE COUNT IS QUESTION LINES, NOT KEYS AND NOT ROWS — changed Task 0, commit 2. ***
       //
-      // It was `keys.length`, which was right while one key was one line on screen. The Your company
+      // It was `keys.length`, which was right while one key was one line on screen. The Company information
       // page groups a single document's facts into ONE question, so a badge of 9 over a page showing
       // 5 lines would be two different promises about how long this will take — the failure this
       // route's own comment named about "3 of 24" against "3 from 69 readings".

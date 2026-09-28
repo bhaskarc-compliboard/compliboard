@@ -152,7 +152,7 @@ untested — applies to the runner as much as to anything it runs.
 
 ---
 
-## Manual set — Task 0 commit 2, Your company, 28 Sep 2026
+## Manual set — Task 0 commit 2, Company information, 28 Sep 2026
 
 *Two tests, the perfect case and the edge case. Both signed in against staging. **No model call is
 made by either** — everything on this page is something a person said or confirmed, so a test that
@@ -166,7 +166,7 @@ their own business is helped by the quote and the page it came from, not by bein
 ### (a) The perfect case — Cascade, after the permit is read
 
 1. `DEV_MAX_SEARCHES= npm run golden:docs -- 02 --times 1` reads Cascade's air permit.
-2. Open **Your company** as a user of that company.
+2. Open **Company information** as a user of that company.
 
 **What must be true:**
 
@@ -191,7 +191,7 @@ their own business is helped by the quote and the page it came from, not by bein
 identically right and wrong on a single-site company, which is how the contradiction §141 records
 survived for as long as it did.*
 
-1. Sign in as `testalpha@example.com`. Open **Your company**.
+1. Sign in as `testalpha@example.com`. Open **Company information**.
 2. **Group by → Site.**
 
 **What must be true:**
@@ -312,7 +312,7 @@ leaving somebody to hunt for it: `fact_proposals.entity_id` is filled from the *
 `entity_id`, so a fact only becomes site-scoped when the document is filed against a site, and
 nothing in the Documents UI sets a document's site today. Migration 055's own verify block, and
 `npm run check:live`, are what currently prove the two-rows-per-key case; the screen that will make it
-reachable is the "Your company" page, which is **not** in this commit.
+reachable is the "Company information" page (named "Your company" until commit 3), which is **not** in this commit.
 
 ---
 
@@ -1938,14 +1938,14 @@ re-fill, because the parameters are consumed on arrival.
 > ### 🕓 ITEMS 6 TO 9 ARE HISTORICAL — the screen they describe is gone.
 > *(Marked 28 September 2026, Task 0 commit 2.)*
 >
-> `/to-confirm` was folded into **`/your-company`** and now 308s there. The behaviour these four
+> `/to-confirm` was folded into **`/company-information`** and now 308s there. The behaviour these four
 > items test is still the behaviour — one confirmation per key, both doors writing one row, a reason
 > required to reject — but the surface, the wording and the counts have all moved:
 >
 > | item | what changed |
 > |---|---|
-> | 6 | The sidebar reads **Your company**, not To confirm, and its badge counts **question lines** rather than keys. The page shows **five** lines, not three, and a single document's facts arrive as ONE line. The ranking line is no longer printed on the page; the order is stated in `lib/confirmationQueue.ts` and asserted by fourteen tests. |
-> | 7, 8 | Still exactly true of the writes — `/api/to-confirm` is unchanged — but they are performed in the "Waiting for you" section of `/your-company`. |
+> | 6 | The sidebar reads **Company information**, not To confirm, and its badge counts **question lines** rather than keys. The page shows **five** lines, not three, and a single document's facts arrive as ONE line. The ranking line is no longer printed on the page; the order is stated in `lib/confirmationQueue.ts` and asserted by fourteen tests. |
+> | 7, 8 | Still exactly true of the writes — `/api/to-confirm` is unchanged — but they are performed in the "Waiting for you" section of `/company-information`. |
 > | 9 | Still true. The reason still lands in `fact_proposals.rejected_reason`, from either door. |
 >
 > **Current instead: "Manual set — Task 0 commit 2" above.** These are kept because a manual set is

@@ -37,7 +37,7 @@ Every instruction names what to read first, what to build, what not to do, and t
 - **The scan (or the audit) is the matcher** for identity across re-reads: it is shown the previous findings with ids and says which are the same; string matching is the fallback (§135).
 - **Claude Code may reset staging under a pty** (CLAUDE.md §3.7); the production guard is never automated.
 - **RELEASE.md in `docs/` governs every release.** Migrations first, then variables, then code.
-- **One company context, every section benefits from every other (decided 27 Sep 2026; vision doc, "One company context").** Everything a person confirms or corrects anywhere (declared switches, `company_facts`, `document_corrections`, labels and keys in use) is assembled by one function and every prompt in the product reads that block and nothing else for "who is this company". Nothing the model concluded on its own goes in it; pending proposals stay in the queue. It comes with a "Your company" screen where a person sees the same list and can change any line. Build the function and the screen before Audits reads anything, so Audits is the first section built on the rule. As it is built: fact keys gain a site scope, confirmed facts carry the as-of date of their source, and an alias table will map fact keys to switch keys when the requirement table returns.
+- **One company context, every section benefits from every other (decided 27 Sep 2026; vision doc, "One company context").** Everything a person confirms or corrects anywhere (declared switches, `company_facts`, `document_corrections`, labels and keys in use) is assembled by one function and every prompt in the product reads that block and nothing else for "who is this company". Nothing the model concluded on its own goes in it; pending proposals stay in the queue. It comes with a "Your company" screen where a person sees the same list and can change any line. *(The screen shipped on 28 September and is called **Company information** — `/company-information`. The wording of this rule is left as it was decided on 27 Sep; the name changed in Task 0 commit 3.)* Build the function and the screen before Audits reads anything, so Audits is the first section built on the rule. As it is built: fact keys gain a site scope, confirmed facts carry the as-of date of their source, and an alias table will map fact keys to switch keys when the requirement table returns.
 
 ## 4. What Documents provides to Audits
 
@@ -83,7 +83,7 @@ can act on. What did the reading is not.
 
 It applies hardest where the product is least sure, which is where the temptation is worst: an
 apology that names a mechanism reads as the product blaming a component rather than owning a failure
-(§5.1's worked example is the same instinct one step along). **`/your-company` is the first page held
+(§5.1's worked example is the same instinct one step along). **`/company-information` is the first page held
 to this rule end to end** and the assertion is in its manual set: the word does not appear on it.
 
 ### 5.1 Tokens
@@ -229,7 +229,7 @@ Drive connection (its own run when the owner's Google and Microsoft accounts exi
 
 ## 12. First tasks
 
-0. The company context, before anything reads for Audits: one function in `lib/` assembling declared switches, confirmed facts (with site scope and as-of date), corrections, labels and keys; every existing prompt builder (document scan, research, checklist, draft) switched to read it and nothing else for the company; a "Your company" page at 900 with the settled list and an edit per line; golden runs re-run once on Haiku to show nothing mechanical changed. One run, its own DECISIONS entry.
+0. The company context, before anything reads for Audits: one function in `lib/` assembling declared switches, confirmed facts (with site scope and as-of date), corrections, labels and keys; every existing prompt builder (document scan, research, checklist, draft) switched to read it and nothing else for the company; a "Your company" page at 900 with the settled list and an edit per line — **built, and named Company information** (`/company-information`, Task 0 commit 3); golden runs re-run once on Haiku to show nothing mechanical changed. One run, its own DECISIONS entry.
 1. The owner's vision, then questions, then the canvas: the Audits page (900, the template above), the audit report drawer (the report structure above with audit nouns), and where "Audit this agency" lives.
 2. The contract, read off the drawer: what an audit row and an audit report store, in the same shape as `document_scans` and `document_gaps` (findings as rows with ids and a lifecycle; the audit as the matcher across re-runs).
 3. Run 1: the audit as a script over the readings of one golden company, three times on Haiku, mechanics only; the old engine's loop retired in the same run or the next.

@@ -1,7 +1,7 @@
 'use client'
 
 /**
- * YOUR COMPANY — the settled record, with the confirmation queue folded into the top of it.
+ * COMPANY INFORMATION — the settled record, with the confirmation queue folded into the top of it.
  * Task 0, commit 2. Boards D and C of "CompliBoard Audits — the boards".
  *
  * *** WHY THE QUEUE LIVES HERE AND "TO CONFIRM" IS GONE. ***
@@ -21,7 +21,7 @@
  * `docs/HANDOFF-AUDITS.md` §5. A person confirming a fact about their own business is not helped by
  * being told what read it; they are helped by the quote and the page it came from.
  *
- * ONE READ FOR THE RECORD (`/api/your-company`, built on `lib/companyContext.ts` so this screen and
+ * ONE READ FOR THE RECORD (`/api/company-information`, built on `lib/companyContext.ts` so this screen and
  * every prompt see the same assembly) and ONE FOR THE QUEUE (`/api/to-confirm`, unchanged — the
  * same route the report drawer answers through, so a fact confirmed here and there is one row
  * changing state). No model call on this page.
@@ -145,7 +145,7 @@ function YourCompanyContent() {
     try {
       const h = await authHeaders()
       const [r, q] = await Promise.all([
-        fetch('/api/your-company', { headers: h }),
+        fetch('/api/company-information', { headers: h }),
         fetch('/api/to-confirm', { headers: h }),
       ])
       if (r.ok) setRec(await r.json())
@@ -227,7 +227,7 @@ function YourCompanyContent() {
   async function saveCompany() {
     setBusy(true)
     try {
-      const res = await fetch('/api/your-company', {
+      const res = await fetch('/api/company-information', {
         method: 'POST', headers: await authHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ action: 'company', ...companyDraft }),
       })
@@ -240,7 +240,7 @@ function YourCompanyContent() {
   async function saveLine(payload: Record<string, unknown>) {
     setBusy(true)
     try {
-      const res = await fetch('/api/your-company', {
+      const res = await fetch('/api/company-information', {
         method: 'POST', headers: await authHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(payload),
       })
@@ -363,13 +363,13 @@ function YourCompanyContent() {
             the same header the report drawer prints, for the same reason. */}
         <div className="mb-4 hidden border-b border-gray-300 pb-2 print:block">
           {rec?.company.name && <p className="text-[13px] font-semibold text-gray-900">{rec.company.name}</p>}
-          <p className="text-[15px] font-medium text-gray-900">Your company</p>
+          <p className="text-[15px] font-medium text-gray-900">Company information</p>
           <p className="text-[11px] text-gray-600">Printed {today} · CompliBoard</p>
         </div>
 
         <div className="pt-6 print:hidden">
           <div className="flex items-baseline justify-between gap-4">
-            <h1 className="font-serif text-[28px] font-normal text-gray-900">Your company</h1>
+            <h1 className="font-serif text-[28px] font-normal text-gray-900">Company information</h1>
             {rec && (
               <p className="shrink-0 text-[12px] text-gray-400">
                 {rec.counts.settled} {rec.counts.settled === 1 ? 'fact' : 'facts'} settled
