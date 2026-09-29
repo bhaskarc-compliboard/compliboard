@@ -29,7 +29,7 @@
 
 import { useState, useEffect, useCallback, useMemo, Suspense } from 'react'
 import { authHeaders } from '@/lib/supabase'
-import AppLayout from '@/components/AppLayout'
+import AppLayout, { FACTS_CHANGED } from '@/components/AppLayout'
 // The question lines and their order, in one place, because the sidebar badge counts the same lines
 // this page draws. See lib/confirmationQueue.ts for why that is a file.
 import { questionLines, type QuestionLine } from '@/lib/confirmationQueue'
@@ -109,6 +109,31 @@ function plainValue(value: string, valueType: string | null): string {
   return value
 }
 
+/**
+ * THE ACTION CLASSES, IN ONE PLACE — found by the 29 September smoke test.
+ *
+ * *** A `<button>` DOES NOT GET A POINTER BY ITSELF. *** Browsers default `button` to
+ * `cursor: default` and Tailwind's preflight does not change it, so every action on this page showed
+ * the arrow. **Confirm and Save were worse than that: they had no hover rule at all** — only
+ * `disabled:text-gray-300` — so there was nothing at all to say they could be pressed. Text that
+ * changes the record and looks exactly like text is the whole defect.
+ *
+ * The old To confirm page's *Not right* is the rule being matched: underlined, darkening on hover.
+ * The green actions darken to `--green-ink`, which is what that token is for.
+ *
+ * `disabled:cursor-not-allowed` matters as much as the pointer: `busy` disables these while a write
+ * is in flight, and a pointer over a dead button invites a second click on a request that is already
+ * running.
+ */
+const ACTION_GREEN =
+  'cursor-pointer text-[13px] text-[var(--green)] underline hover:text-[var(--green-ink)] ' +
+  'disabled:cursor-not-allowed disabled:text-gray-300 disabled:no-underline'
+const ACTION_GREY = 'cursor-pointer text-[13px] text-gray-600 underline hover:text-gray-900'
+const ACTION_QUIET = 'cursor-pointer text-[13px] text-gray-500 hover:text-gray-800'
+const ACTION_PRIMARY =
+  'cursor-pointer rounded-md bg-[var(--green)] px-4 py-2 text-[14px] font-medium text-white ' +
+  'hover:bg-[var(--green-ink)] disabled:cursor-not-allowed disabled:opacity-50'
+
 const keyWords = (k: string) => k.replace(/_/g, ' ')
 
 export default function YourCompanyPage() {
@@ -141,6 +166,17 @@ function YourCompanyContent() {
   const [editingLine, setEditingLine] = useState<string | null>(null)
   const [lineDraft, setLineDraft] = useState('')
 
+  /**
+   * ONE PLACE FIRES THE EVENT, AND IT IS THE RELOAD — not each of the four writes.
+   *
+   * Every write on this page ends by awaiting `load()`, so this is the single point at which the
+   * page's own numbers are fresh. Firing at each call site instead would be four chances to forget
+   * the fifth, and the sidebar would be stale for exactly the action nobody remembered.
+   *
+   * It fires on the FIRST load too, which is harmless — AppLayout has just fetched the same number on
+   * the pathname change — and it is what makes the rule "after the page reloads its data, the nav
+   * reloads its count" rather than "after certain buttons".
+   */
   const load = useCallback(async () => {
     try {
       const h = await authHeaders()
@@ -150,6 +186,10 @@ function YourCompanyContent() {
       ])
       if (r.ok) setRec(await r.json())
       if (q.ok) setQueue((await q.json()).keys ?? [])
+      // The sidebar badge counts the same question lines this page draws. Without this it read the
+      // count once per pathname and went stale the moment somebody answered — the 29 September smoke
+      // test saw 12 on the nav beside a page showing the question gone.
+      window.dispatchEvent(new Event(FACTS_CHANGED))
     } finally { setLoading(false) }
   }, [])
 
@@ -427,7 +467,7 @@ function YourCompanyContent() {
                           {open && (
                             <div className="mt-3 pl-5">
                               <button disabled={busy} onClick={() => confirmAll(line.keys)}
-                                className="rounded-md bg-[var(--green)] px-4 py-2 text-[14px] font-medium text-white hover:opacity-90 disabled:opacity-50">
+                                className={ACTION_PRIMARY}>
                                 Confirm all {line.keys.length}
                               </button>
                               <ul className="mt-3 divide-y divide-gray-100">
@@ -456,9 +496,9 @@ function YourCompanyContent() {
                                       )}
                                       <div className="mt-1.5 flex items-center gap-4">
                                         <button disabled={busy} onClick={() => answer(k.key, 'accepted')}
-                                          className="text-[13px] text-[var(--green)] disabled:text-gray-300">Confirm</button>
+                                          className={ACTION_GREEN}>Confirm</button>
                                         <button onClick={() => setRejecting(k.key)}
-                                          className="text-[13px] text-gray-600 underline hover:text-gray-900">Not right</button>
+                                          className={ACTION_GREY}>Not right</button>
                                       </div>
                                       {rejecting === k.key && (
                                         <RejectBox reason={reason} setReason={setReason} busy={busy}
@@ -505,12 +545,12 @@ function YourCompanyContent() {
                           <div className="mt-2 flex flex-wrap items-center gap-4">
                             {values.map((v) => (
                               <button key={v} disabled={busy} onClick={() => answer(k.key, 'accepted', { value: v })}
-                                className="text-[13px] text-[var(--green)] disabled:text-gray-300">
+                                className={ACTION_GREEN}>
                                 Confirm “{v}”
                               </button>
                             ))}
                             <button onClick={() => setRejecting(k.key)}
-                              className="text-[13px] text-gray-600 underline hover:text-gray-900">Not right</button>
+                              className={ACTION_GREY}>Not right</button>
                           </div>
                           {rejecting === k.key && (
                             <RejectBox reason={reason} setReason={setReason} busy={busy}
@@ -535,9 +575,9 @@ function YourCompanyContent() {
                         </p>
                         <div className="mt-1.5 flex items-center gap-4">
                           <button disabled={busy} onClick={() => answer(k.key, 'accepted')}
-                            className="text-[13px] text-[var(--green)] disabled:text-gray-300">Confirm</button>
+                            className={ACTION_GREEN}>Confirm</button>
                           <button onClick={() => setRejecting(k.key)}
-                            className="text-[13px] text-gray-600 underline hover:text-gray-900">Not right</button>
+                            className={ACTION_GREY}>Not right</button>
                         </div>
                         {rejecting === k.key && (
                           <RejectBox reason={reason} setReason={setReason} busy={busy}
@@ -580,9 +620,9 @@ function YourCompanyContent() {
                     </div>
                     <div className="flex items-center gap-3 pt-1">
                       <button disabled={busy} onClick={saveCompany}
-                        className="text-[13px] text-[var(--green)] disabled:text-gray-300">Save</button>
+                        className={ACTION_GREEN}>Save</button>
                       <button onClick={() => setEditingCompany(false)}
-                        className="text-[13px] text-gray-500 hover:text-gray-800">Cancel</button>
+                        className={ACTION_QUIET}>Cancel</button>
                     </div>
                   </div>
                 ) : (
@@ -594,7 +634,7 @@ function YourCompanyContent() {
                         {rec.company.address ? ` · ${rec.company.address}` : ''}
                       </p>
                     </div>
-                    <button className="no-print shrink-0 text-[13px] text-gray-600 underline hover:text-gray-900"
+                    <button className={`no-print shrink-0 ${ACTION_GREY}`}
                       onClick={() => {
                         setCompanyDraft({
                           name: rec.company.name ?? '',
@@ -723,9 +763,9 @@ function YourCompanyContent() {
                                       onClick={() => saveLine(l.edit.kind === 'declared'
                                         ? { action: 'declared', switch_id: l.edit.d.switchId, value: lineDraft.trim(), entity_id: l.edit.d.entityId }
                                         : { action: 'confirmed', key: l.edit.f.key, value: lineDraft.trim(), entity_id: l.edit.f.entityId })}
-                                      className="text-[13px] text-[var(--green)] disabled:text-gray-300">Save</button>
+                                      className={ACTION_GREEN}>Save</button>
                                     <button onClick={() => setEditingLine(null)}
-                                      className="text-[13px] text-gray-500 hover:text-gray-800">Cancel</button>
+                                      className={ACTION_QUIET}>Cancel</button>
                                   </div>
                                 </div>
                               ) : (
@@ -746,7 +786,7 @@ function YourCompanyContent() {
                                       )}
                                     </p>
                                   </div>
-                                  <button className="no-print shrink-0 text-[13px] text-gray-600 underline hover:text-gray-900"
+                                  <button className={`no-print shrink-0 ${ACTION_GREY}`}
                                     onClick={() => {
                                       setEditingLine(l.id)
                                       setLineDraft(l.edit.kind === 'declared' ? l.edit.d.value : l.edit.f.value)
@@ -782,8 +822,8 @@ function RejectBox({ reason, setReason, busy, onSave, onCancel }: {
         className="w-full resize-none rounded border border-gray-200 px-2 py-1.5 text-[13px]" />
       <div className="mt-1.5 flex items-center gap-3">
         <button disabled={!reason.trim() || busy} onClick={onSave}
-          className="text-[13px] text-[var(--green)] disabled:text-gray-300">Save</button>
-        <button onClick={onCancel} className="text-[13px] text-gray-500 hover:text-gray-800">Cancel</button>
+          className={ACTION_GREEN}>Save</button>
+        <button onClick={onCancel} className={ACTION_QUIET}>Cancel</button>
       </div>
     </div>
   )

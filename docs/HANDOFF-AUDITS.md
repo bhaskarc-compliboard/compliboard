@@ -182,15 +182,19 @@ Shared code every section uses and must not copy: `lib/ai.ts` (askAIWithCitation
 - `npm run check` (typecheck, schema contracts, tests with a floor, build) before every commit. `npm run check:live` signs in as a fixture and drives routes against staging; it is the gate for any migration touching a tenant table.
 
   > **⚠ MORE THAN TWO OF ITS ASSERTIONS FAIL ON THE HAIKU TIER, AND THE SET IS NOT FIXED.**
-  > *(Corrected 28 September 2026, from two runs the same evening.)* This bullet named two —
+  > *(Corrected 28 September 2026 from two runs; a third added 29 September.)* This bullet named two —
   > `attachment/tier` and `attachment/errors`, the content assertions that pass on production's
   > configuration. Measured:
   >
-  > | assertion | run 1 | run 2 |
-  > |---|---|---|
-  > | `convert complete` — expects both origins, Haiku returns `{"conversation": N}` only | ✗ | ✗ |
-  > | `attachment/errors` — names 2 then 3 of the policy's 5 errors | ✗ | ✗ |
-  > | `attachment/tier` — the 25 + 31 = 56 headcount | ✗ | **✓** |
+  > | assertion | run 1 | run 2 | run 3 |
+  > |---|---|---|---|
+  > | `convert complete` — expects both origins, Haiku returns `{"conversation": N}` only | ✗ | ✗ | ✗ |
+  > | `attachment/errors` — named 2, then 3, then 4 of the policy's 5 errors | ✗ | ✗ | ✗ |
+  > | `attachment/tier` — the 25 + 31 = 56 headcount | ✗ | **✓** | ✗ |
+  >
+  > Three runs: two fail every time, one fails two in three. `attachment/errors` got *closer* each
+  > run (2, 3, 4 of 5) without passing, which is worth knowing — it is a threshold assertion on a
+  > model's recall, not a binary about wiring.
   >
   > **So the honest statement is not "two" or "three" but "two reliably and a third intermittently",**
   > and `convert complete` is the one the documentation never named. It is a model-quality outcome

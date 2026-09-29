@@ -202,6 +202,21 @@ behave"*. None of those was that question.
   invisible to all 457 tests. `npm run check:live` signs in as a real fixture.
 - **Nothing checks regulatory content.** A model checking a model produces agreement.
   `npm run golden:facts` is a **presence check on plain text**, not a verification.
+- **⚠ A DIRECTORY RENAME UNDER `app/` FAILS IT ON A FILE NOBODY EDITED.** *(Added 29 September
+  2026, Task 0 commit 3.)* Next generates a route validator into `.next/types/validator.ts` that
+  imports every page and route by path. `npm run check` runs **`typecheck` before `build`**, so after
+  `git mv app/your-company app/company-information` the stale validator still imported the old paths
+  and `tsc` failed twice:
+
+  ```
+  .next/types/validator.ts(179,39): error TS2307: Cannot find module '../../app/your-company/page.js'
+  .next/types/validator.ts(494,39): error TS2307: Cannot find module '../../app/api/your-company/route.js'
+  ```
+
+  **`rm -rf .next`** fixes it — the directory is gitignored — and the regenerated validator names the
+  new paths. Worth knowing because the error points at generated code in a file the commit did not
+  touch, and the obvious reading is that the rename was done wrong.
+
 - **⚠ It executes 2 of this repository's scripts.** `tsconfig.json`'s `include` has no
   `**/*.js` pattern, so the rest are invisible to it — `scripts/preflight-prod.js` sat
   unparseable for seven days while the gate said green (§121). The fix is a `check:syntax` step;

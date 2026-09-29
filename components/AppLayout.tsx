@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter, usePathname } from 'next/navigation'
 
@@ -9,6 +9,15 @@ interface AppLayoutProps {
   title?: string
   didYouKnow?: { icon: string; text: string }
 }
+
+/**
+ * WHAT THE COMPANY INFORMATION PAGE FIRES WHEN IT CHANGES THE RECORD.
+ *
+ * Exported so the name has ONE definition. A string literal at each end is a rename waiting to break
+ * silently: the listener would simply never fire, the badge would go back to being stale, and nothing
+ * would fail. That is the same class of bug as the badge counting keys while the page drew lines.
+ */
+export const FACTS_CHANGED = 'compliboard:facts-changed'
 
 // *** NO ICONS. *** Multicolour OS emoji put seven uncontrolled colour schemes into a product
 // whose rule is one green, used only where it means something — and they render differently on
@@ -50,23 +59,42 @@ export default function AppLayout({ children, title, didYouKnow }: AppLayoutProp
   const [toast, setToast] = useState<string | null>(null)
   const [toConfirm, setToConfirm] = useState<number | null>(null)
 
-  // Read once per page load. A live count would mean polling every screen in the product for a
-  // number that changes when the person themselves changes it.
+  // Read once per page load, AND ONCE MORE WHENEVER THE PAGE SAYS THE ANSWER CHANGED.
+  //
+  // *** STILL NOT POLLING, AND THAT IS THE POINT. *** A live count would mean every screen in the
+  // product asking for a number that only changes when the person themselves changes it. The count
+  // is read on a pathname change, as it always was, and on ONE event the Company information page
+  // dispatches after a write it has already awaited.
+  //
+  // Found by the 29 September smoke test: the badge read 12 while the page showed the question
+  // answered and gone. Both numbers were right for the moment each was fetched, which is what makes
+  // it the worse kind of wrong — nothing looked broken, the nav just quietly disagreed with the page
+  // in front of it.
+  const loadCount = useCallback(async () => {
+    try {
+      const { authHeaders } = await import('@/lib/supabase')
+      const res = await fetch('/api/to-confirm', { headers: await authHeaders() })
+      if (!res.ok) return
+      const j = await res.json()
+      // `question_lines`, not `count` and not `key_count`: the badge has to be the number of lines
+      // the Company information page actually draws, or it promises a different amount of work. The
+      // route and the page build those lines with the same function (`lib/confirmationQueue.ts`), so
+      // the two cannot drift. `count` is kept as an alias for the same number.
+      setToConfirm(j.question_lines ?? j.count ?? 0)
+    } catch { /* the nav must render whether or not this answers */ }
+  }, [])
+
+  useEffect(() => { loadCount() }, [pathname, loadCount])
+
+  // The event, not a prop and not a context. `AppLayout` wraps every page and the page that changes
+  // the count is one of its children, so a callback would have to be threaded through the layout for
+  // the benefit of a single screen. A window event is one line at each end and nothing else in the
+  // product is touched by it — which is what the fix was asked to be.
   useEffect(() => {
-    (async () => {
-      try {
-        const { authHeaders } = await import('@/lib/supabase')
-        const res = await fetch('/api/to-confirm', { headers: await authHeaders() })
-        if (!res.ok) return
-        const j = await res.json()
-        // `question_lines`, not `count` and not `key_count`: the badge has to be the number of lines
-        // the Company information page actually draws, or it promises a different amount of work. The
-        // and the page build those lines with the same function (`lib/confirmationQueue.ts`), so the
-        // two cannot drift. `count` is kept as an alias for the same number.
-        setToConfirm(j.question_lines ?? j.count ?? 0)
-      } catch { /* the nav must render whether or not this answers */ }
-    })()
-  }, [pathname])
+    const onChanged = () => { loadCount() }
+    window.addEventListener(FACTS_CHANGED, onChanged)
+    return () => window.removeEventListener(FACTS_CHANGED, onChanged)
+  }, [loadCount])
 
   useEffect(() => {
     async function loadCompany() {

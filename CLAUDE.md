@@ -632,6 +632,25 @@ Do not re-litigate without flagging.
   This labelling makes lazy deferrals catchable before they're accepted. CompliBoard is
   sold on trustworthiness; correctness takes priority over shipping speed.
 
+### 9.1 ⚡ THE STANDING COMMAND FOR EVERY INSTRUCTION AND EVERY REPORT
+
+*Added 29 September 2026 by the owner, and it carries on every instruction from here.
+`DECISIONS.md` §142.*
+
+> **Before you assert a cause, point at the line that says it. If you can't, call it a
+> hypothesis and check it. Never file a record you haven't seen evidence for. Every report
+> ends with how this run's changes affect sections other than the one being built, by file.**
+
+It is §9a's first rule promoted from a long run to every run, because the failures it catches
+are not rare. Three in one week: a cause asserted from a user-facing error message when
+`raw_text` on the same row said "your credit balance is too low"; a check reporting "0 scan
+rows" that was reading a PostgREST error as an empty result; and a count of `check:live`
+failures stated as two when a second run made it three and a third made it two again.
+
+**The last clause is not bookkeeping.** A section that reports only its own effects is how a
+Documents rule gets changed for the Company information page and nobody tells the Documents
+golden set — which is exactly what commit 4's third fix is.
+
 ---
 
 ## 9a. ⚡ RULES FOR A LONG RUN

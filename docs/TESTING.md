@@ -215,6 +215,20 @@ survived for as long as it did.*
   `... (Test Alpha Chemical — Hillsboro) = 1`, and **no bare `Employees at this site = ` anywhere**.
 4. **Edit a confirmed line** — one that came from a document — and change its value.
 
+5. **Watch the sidebar while you answer.** After Confirm, the badge beside **Company information**
+   drops **without a reload**.
+
+- This is the 29 September smoke test's second finding. The badge read 12 beside a page showing the
+  question answered and gone, and both numbers were right for the moment each was fetched — which is
+  what made it the worse kind of wrong: nothing looked broken, the nav just quietly disagreed with the
+  page in front of it.
+- It is **not polling.** The page dispatches one `window` event after the reload it already awaits,
+  and `AppLayout` listens for it. If the badge goes stale again, the thing to check is that the event
+  name still matches at both ends — it is exported as `FACTS_CHANGED` from `components/AppLayout.tsx`
+  precisely so a rename cannot break it silently.
+- Answer from the **report drawer** instead and the badge does **not** move until a reload. That is
+  known and not in this commit: the drawer is a different surface and fires no event.
+
 - The line's meta becomes **`you corrected this`**, and the document link, the locator and the as-of
   date are **gone**: a value a person typed has no document source and is not true as of the
   document's date. `basis` is `declared` (migration 056).
@@ -2212,8 +2226,23 @@ scan something. This is us saying the file no longer says it, which teaches noth
 the person's fault. And the row is still there: a proposal that silently disappeared from the
 queue is a change nobody can see.
 
-A key the new reading restates with a **different value** must survive as a disagreement, not be
-withdrawn — that is Run 6's two-values-one-key case, and withdrawing it would hide the change.
+> **⚠ REVERSED 29 SEPTEMBER 2026.** This paragraph used to read: *"A key the new reading restates
+> with a **different value** must survive as a disagreement, not be withdrawn — that is Run 6's
+> two-values-one-key case, and withdrawing it would hide the change."*
+>
+> **It was wrong, and the live smoke test showed how.** One Emergency Action Plan read twice proposed
+> *"Yes, kept in the front office"* and *"Yes — an AED kept in the front office"* for one key, and the
+> queue asked a person to arbitrate between two paraphrases of one sentence in one file. **Only two
+> different documents can disagree**; a document does not disagree with itself, and its latest reading
+> is what it says.
+>
+> So: re-reading a document withdraws **every** pending proposal from its earlier readings. Run 6's
+> two-values-one-key case is untouched — it needs two documents, and the withdraw only ever touches
+> this document's own rows. A confirmed or rejected proposal is untouched either way.
+>
+> And the drawer's label changed with it, because the old words stopped being true: it read *"No
+> longer proposed by the latest reading"*, which is false for a key the latest reading DOES restate.
+> It now reads **"From an earlier reading of this document"**, which is true in both cases.
 
 ### 6. A gap the latest reading passed over stays open and says so
 

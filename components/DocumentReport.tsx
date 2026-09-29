@@ -895,11 +895,21 @@ export default function DocumentReport({
                   <p className="mt-0.5 text-[12px] text-gray-400">
                     {/* *** WITHDRAWN IS NOT REJECTED, AND THE WORDING KEEPS THEM APART — Run 7. ***
                         "Not right" is the person saying we were wrong, and the next scan is
-                        shown it. This is US saying the latest reading of the file no longer
-                        says it — nobody was wrong, and the row stays so the change is visible
-                        rather than a proposal that silently disappeared from the queue. */}
+                        shown it. This is US saying the row came from a reading we have replaced —
+                        nobody was wrong, and the row stays so the change is visible rather than a
+                        proposal that silently disappeared from the queue.
+
+                        *** THE WORDS CHANGED 29 SEPTEMBER 2026, BECAUSE THEY STOPPED BEING TRUE. ***
+                        It read "No longer proposed by the latest reading", which was true while a
+                        proposal was withdrawn only when the new reading went SILENT about its key.
+                        Re-reading a document now withdraws every pending proposal from its earlier
+                        readings, so a key the latest reading DOES restate has a withdrawn row too —
+                        and for that row the old sentence was simply false.
+
+                        One line, true in both cases: it names where the row came from and claims
+                        nothing about what replaced it, because in the silent case nothing did. */}
                     {f.status === 'accepted' ? 'Confirmed'
-                      : f.status === 'withdrawn' ? 'No longer proposed by the latest reading'
+                      : f.status === 'withdrawn' ? 'From an earlier reading of this document'
                       : 'Not right'}
                     {f.rejected_reason ? ` — you said: ${f.rejected_reason}` : ''}
                   </p>

@@ -876,36 +876,42 @@ export async function saveScan(
     })))
     if (e) throw new Error(`document_deadlines: ${e.message}`)
   }
-  // *** A PROPOSAL THE LATEST READING NO LONGER MAKES IS WITHDRAWN — Run 7. ***
-  //
-  // The scan proposes "42 employees"; the document is edited and read again; the new reading
-  // does not mention employees at all. Until now the old proposal stayed `proposed` for ever
-  // and the person was asked to confirm something the current reading of the file does not say.
+  // *** READING A DOCUMENT AGAIN WITHDRAWS EVERY PENDING PROPOSAL FROM ITS EARLIER READINGS. ***
   //
   // WITHDRAWN IS NOT REJECTED, and the difference matters in both directions. Rejected is a
   // person saying "that is wrong", and the next scan is shown it so the claim is not made again.
-  // Withdrawn is us saying "we no longer read this in the file" — nobody was wrong, so it
-  // teaches the next scan nothing, and it is not deleted either: the drawer shows it as "no
-  // longer proposed by the latest reading", which is information a person may want to act on.
+  // Withdrawn is us saying "this came from a reading we have replaced" — nobody was wrong, so it
+  // teaches the next scan nothing, and it is not deleted either: the drawer shows it, which is
+  // information a person may want to act on.
   //
-  // MATCHED ON THE KEY, not the value. A reading that now says 38 instead of 42 is a CHANGED
-  // proposal, not a withdrawn one — the new row is inserted below, the queue shows both under
-  // one key, and the person settles it (Run 6). Only a key this reading is silent about is
-  // withdrawn. And only ever this document's own proposals: another document's reading of the
-  // same key is not ours to retract.
+  // *** CHANGED 29 SEPTEMBER 2026, AND THE OLD RULE WAS DELIBERATE, WHICH IS WHY IT SURVIVED. ***
   //
-  // It runs before the insert so a key the new scan DOES restate is not withdrawn and then
-  // re-proposed in the same breath.
+  // This used to match on the KEY: a pending proposal was withdrawn only when the new reading was
+  // SILENT about its key, and a key the new reading restated with different words kept both rows.
+  // The comment here argued for it — "a reading that now says 38 instead of 42 is a CHANGED
+  // proposal, not a withdrawn one; the queue shows both under one key and the person settles it".
+  //
+  // The live smoke test on 29 September showed what that produces. One Emergency Action Plan, read
+  // twice, proposed "Yes, kept in the front office" and "Yes — an AED kept in the front office" for
+  // one key. `lib/confirmationQueue.ts` then did exactly the right thing with the wrong input and
+  // lifted it out as **"we have two different answers"** — the product asking a person to arbitrate
+  // between two paraphrases of one sentence in one file.
+  //
+  // **Only two different DOCUMENTS can disagree.** A document does not disagree with itself; its
+  // latest reading is what it says. The two-values-one-key case Run 6 built for is real and is
+  // unaffected: it needs two documents, and this only ever touches THIS document's own rows
+  // (`.eq('document_id', documentId)`) — another document's reading of the same key is not ours to
+  // retract.
+  //
+  // A CONFIRMED OR REJECTED PROPOSAL IS UNTOUCHED (`.eq('status', 'proposed')`). A person's decision
+  // outranks a re-read, and the accepted row is the history a corrected fact points back to (§056).
+  //
+  // It runs BEFORE the insert, so the new reading's own rows are never caught by it.
   {
-    const freshKeys = new Set(scan.facts.map((f) => f.key.slice(0, 120)))
-    const { data: pending } = await db.from('fact_proposals')
-      .select('id, switch_key').eq('document_id', documentId).eq('status', 'proposed')
-    const stale = ((pending ?? []) as Array<{ id: string; switch_key: string }>)
-      .filter((p) => !freshKeys.has(p.switch_key))
-    if (stale.length) {
-      await db.from('fact_proposals')
-        .update({ status: 'withdrawn' }).in('id', stale.map((p) => p.id))
-    }
+    const { error: wErr } = await db.from('fact_proposals')
+      .update({ status: 'withdrawn' })
+      .eq('document_id', documentId).eq('status', 'proposed')
+    if (wErr) throw new Error(`fact_proposals withdraw: ${wErr.message}`)
   }
 
   // PROPOSED, NEVER WRITTEN (§108).
