@@ -1,0 +1,228 @@
+{
+  "id": "09-forklift-training-records",
+  "title": "Powered industrial truck operator training and evaluation records",
+  "spec": "09-forklift-training-records.md",
+  "dir": "tests/golden/audits",
+  "fixture": "fixtures/09-forklift-training-records.pdf",
+  "company": "cascade",
+  "must": [
+    {
+      "id": "kind",
+      "line": "kind: record",
+      "type": "field_one_of",
+      "field": "identity.kind",
+      "accept": [
+        "record"
+      ]
+    },
+    {
+      "id": "agency-osha",
+      "line": "agency includes OSHA or Oregon OSHA, the same label string case 06 produced for this company",
+      "type": "list_contains",
+      "field": "identity.agencies",
+      "accept": [
+        "osha"
+      ]
+    },
+    {
+      "id": "subject",
+      "line": "subject includes something like \"powered industrial trucks\", \"forklift\" or \"worker training\"",
+      "type": "list_contains",
+      "field": "identity.subjects",
+      "accept": [
+        "powered industrial truck",
+        "forklift",
+        "worker training",
+        "training"
+      ]
+    },
+    {
+      "id": "site-portland",
+      "line": "site: Portland",
+      "type": "field_contains",
+      "field": "identity.site",
+      "accept": [
+        "portland"
+      ]
+    },
+    {
+      "id": "doc-date",
+      "line": "doc_date: June 2, 2025",
+      "type": "date_equals",
+      "field": "identity.doc_date",
+      "value": "2025-06-02"
+    },
+    {
+      "id": "status",
+      "line": "Status (must): recorded or gaps_found. Never \"compliant\".",
+      "type": "field_one_of",
+      "field": "status",
+      "accept": [
+        "recorded",
+        "gaps_found"
+      ]
+    },
+    {
+      "id": "finding-patel-overdue",
+      "line": "1. R. Patel's next evaluation was due May 19, 2026 and no evaluation after May 19, 2023 is recorded; the notes column is blank. Keywords: Patel, May 19, 2026, three years, evaluation.",
+      "type": "item",
+      "collections": [
+        "gaps",
+        "notes"
+      ],
+      "keywords": [
+        "patel",
+        "may 19",
+        "2026",
+        "three years",
+        "evaluation"
+      ],
+      "min_keywords": 2
+    },
+    {
+      "id": "deadline-chen",
+      "line": "Deadlines (must contain, with dates): 1. M. Chen evaluation due March 11, 2027",
+      "type": "item",
+      "collections": [
+        "deadlines"
+      ],
+      "date": "2027-03-11",
+      "keywords": [
+        "chen",
+        "evaluation",
+        "operator"
+      ],
+      "min_keywords": 1
+    },
+    {
+      "id": "deadline-rivera",
+      "line": "Deadlines (must contain, with dates): 2. J. Rivera evaluation due June 2, 2028",
+      "type": "item",
+      "collections": [
+        "deadlines"
+      ],
+      "date": "2028-06-02",
+      "keywords": [
+        "rivera",
+        "evaluation",
+        "operator"
+      ],
+      "min_keywords": 1
+    },
+    {
+      "id": "deadline-patel",
+      "line": "Deadlines (must contain, with dates): 3. R. Patel evaluation due May 19, 2026, flagged as passed at any run date after it",
+      "type": "item",
+      "collections": [
+        "deadlines"
+      ],
+      "date": "2026-05-19",
+      "keywords": [
+        "patel",
+        "evaluation",
+        "operator"
+      ],
+      "min_keywords": 1
+    },
+    {
+      "id": "label-consistency",
+      "line": "Consistency across the three runs: the agency label must be the same string in all three.",
+      "type": "labels_identical_across_runs"
+    }
+  ],
+  "must_not": [
+    {
+      "id": "no-chen-or-rivera-gap",
+      "line": "any gap about M. Chen or J. Rivera; their evaluations are current",
+      "type": "absent_item",
+      "collections": [
+        "gaps"
+      ],
+      "subject": [
+        "chen",
+        "rivera"
+      ],
+      "absence": [
+        "no ",
+        "missing",
+        "absent",
+        "overdue",
+        "expired",
+        "lacks",
+        "none",
+        "does not",
+        "not evaluated",
+        "no record",
+        "without",
+        "stale"
+      ]
+    },
+    {
+      "id": "no-trainer-gap",
+      "line": "a gap that the trainer is not qualified; the trainer's certification is stated",
+      "type": "absent_item",
+      "collections": [
+        "gaps"
+      ],
+      "subject": [
+        "trainer",
+        "ortiz",
+        "instructor",
+        "evaluator"
+      ],
+      "absence": [
+        "not qualified",
+        "unqualified",
+        "no ",
+        "missing",
+        "absent",
+        "lacks",
+        "no record",
+        "does not",
+        "without"
+      ]
+    }
+  ],
+  "reported": [
+    {
+      "id": "citation-evaluation-rule",
+      "line": "Citation may name 1910.178(l)(4)(iii).",
+      "type": "appears_anywhere",
+      "collections": [
+        "gaps",
+        "notes",
+        "deadlines"
+      ],
+      "needle": "1910.178(l)(4)(iii)"
+    },
+    {
+      "id": "doc-date-kind",
+      "line": "doc_date kind \"last entry\" or \"updated\"; either passes. ScanIdentity.doc_date_kind carries issued|revised|last_entry|effective|unknown, so \"updated\" has no value to land on.",
+      "type": "field_contains",
+      "field": "identity.doc_date_kind",
+      "accept": [
+        "last_entry",
+        "last entry",
+        "revised"
+      ]
+    },
+    {
+      "id": "facts-operators-trained",
+      "line": "Facts (may contain, quote verified true): three operators trained as of June 2, 2025; the trainer\u2019s name and course. A fact that the company operates a propane forklift is acceptable.",
+      "type": "item",
+      "collections": [
+        "facts"
+      ],
+      "keywords": [
+        "operator",
+        "trained",
+        "training",
+        "forklift",
+        "propane",
+        "ortiz"
+      ],
+      "min_keywords": 2,
+      "quote_must_verify": true
+    }
+  ]
+}

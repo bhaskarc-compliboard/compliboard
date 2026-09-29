@@ -1,0 +1,325 @@
+{
+  "id": "cascade-deq",
+  "title": "Oregon DEQ \u2014 Cascade Specialty Chemicals",
+  "key": "cascade-deq.md",
+  "company": "cascade",
+  "agency": "Oregon DEQ",
+  "must": [
+    {
+      "id": "renewal-passed",
+      "line": "renewal application due 2026-07-18, passed, nothing on file",
+      "type": "item",
+      "collections": [
+        "findings",
+        "dates"
+      ],
+      "keywords": [
+        "renewal",
+        "application"
+      ],
+      "min_keywords": 2,
+      "date_or_text": [
+        "2026-07-18",
+        "july 18"
+      ]
+    },
+    {
+      "id": "expiry-date",
+      "line": "the permit expiring 2026-11-15",
+      "type": "item",
+      "collections": [
+        "findings",
+        "dates"
+      ],
+      "keywords": [
+        "expir"
+      ],
+      "min_keywords": 1,
+      "date_or_text": [
+        "2026-11-15",
+        "november 15"
+      ]
+    },
+    {
+      "id": "quarterly-inspection",
+      "line": "quarterly scrubber inspection records, nothing on file, 3.2",
+      "type": "item",
+      "collections": [
+        "findings"
+      ],
+      "word": "nothing_on_file",
+      "keywords": [
+        "quarterly",
+        "inspect"
+      ],
+      "min_keywords": 2
+    },
+    {
+      "id": "carbon-records",
+      "line": "annual carbon replacement records, nothing on file, 3.3",
+      "type": "item",
+      "collections": [
+        "findings"
+      ],
+      "word": "nothing_on_file",
+      "keywords": [
+        "carbon"
+      ],
+      "min_keywords": 1
+    },
+    {
+      "id": "opacity-records",
+      "line": "opacity records, nothing on file, 3.4",
+      "type": "item",
+      "collections": [
+        "findings"
+      ],
+      "word": "nothing_on_file",
+      "keywords": [
+        "opacity"
+      ],
+      "min_keywords": 1
+    },
+    {
+      "id": "annual-report",
+      "line": "annual report by 15 February, recurring, nothing on file for 2026",
+      "type": "item",
+      "collections": [
+        "findings",
+        "dates"
+      ],
+      "keywords": [
+        "annual",
+        "report"
+      ],
+      "min_keywords": 2,
+      "date_or_text": [
+        "02-15",
+        "february 15"
+      ]
+    },
+    {
+      "id": "semiannual-report",
+      "line": "semi-annual report by 31 July, recurring, nothing on file for 2026",
+      "type": "item",
+      "collections": [
+        "findings",
+        "dates"
+      ],
+      "keywords": [
+        "semi"
+      ],
+      "min_keywords": 1,
+      "date_or_text": [
+        "07-31",
+        "july 31"
+      ]
+    },
+    {
+      "id": "not-a-document-question",
+      "line": "at least one not-a-document question",
+      "type": "count_at_least",
+      "collection": "not_document_questions",
+      "n": 1
+    },
+    {
+      "id": "scrubber-log-on-file",
+      "line": "condition 3.1 answered on file, the scrubber log, carrying the reading's own findings (spec 07 AUDIT USE)",
+      "type": "item",
+      "collections": [
+        "findings"
+      ],
+      "word": "on_file",
+      "keywords": [
+        "scrubber",
+        "log"
+      ],
+      "min_keywords": 2
+    },
+    {
+      "id": "scrubber-log-findings-carried",
+      "line": "the scrubber log's own findings carried: the missing August week and the September 9 reading of 6.4 above 6.0 (spec 07 AUDIT USE)",
+      "type": "count_matching",
+      "collection": "findings",
+      "n": 1,
+      "any_of": [
+        [
+          "august",
+          "16"
+        ],
+        [
+          "august",
+          "missing"
+        ],
+        [
+          "6.4",
+          "september 9"
+        ],
+        [
+          "6.4",
+          "s-2"
+        ],
+        [
+          "september 9",
+          "excursion"
+        ]
+      ]
+    },
+    {
+      "id": "annual-report-4-1-on-file",
+      "line": "condition 4.1 on file for reporting year 2025, received 2026-02-12, next due 2027-02-15 (spec 08 AUDIT USE)",
+      "type": "item",
+      "collections": [
+        "findings",
+        "dates"
+      ],
+      "keywords": [
+        "annual",
+        "report"
+      ],
+      "min_keywords": 2,
+      "date_or_text": [
+        "2025",
+        "2026-02-12",
+        "february 12"
+      ]
+    },
+    {
+      "id": "semiannual-4-2-nothing",
+      "line": "condition 4.2, the semi-annual report for January to June 2026 due 2026-07-31: nothing on file (spec 08 AUDIT USE)",
+      "type": "item",
+      "collections": [
+        "findings"
+      ],
+      "word": "nothing_on_file",
+      "keywords": [
+        "semi"
+      ],
+      "min_keywords": 1
+    },
+    {
+      "id": "carbon-due-2026-03-14",
+      "line": "condition 3.3: last replacement 2025-03-14 by the report's own words, so the 12-month replacement fell due 2026-03-14 and nothing for 2026 is on file (spec 08 AUDIT USE)",
+      "type": "item",
+      "collections": [
+        "findings",
+        "dates"
+      ],
+      "keywords": [
+        "carbon"
+      ],
+      "min_keywords": 1,
+      "date_or_text": [
+        "2026-03-14",
+        "march 14, 2026",
+        "march 14 2026"
+      ]
+    },
+    {
+      "id": "sep9-deviation-nothing",
+      "line": "nothing on file for the September 9, 2026 excursion: 5.2 asks for notice within 24 hours and a written report within 15 days (spec 12 AUDIT USE line A5)",
+      "type": "count_matching",
+      "collection": "findings",
+      "n": 1,
+      "any_of": [
+        [
+          "deviation",
+          "september 9"
+        ],
+        [
+          "deviation report",
+          "nothing"
+        ],
+        [
+          "excursion",
+          "report"
+        ],
+        [
+          "5.2",
+          "september 9"
+        ]
+      ]
+    }
+  ],
+  "must_not": [
+    {
+      "id": "no-satisfied",
+      "line": "no finding worded satisfied, compliant or met",
+      "type": "forbidden_words",
+      "words": [
+        "satisfied",
+        "compliant",
+        "in compliance",
+        " met ",
+        "all clear"
+      ],
+      "unless": [
+        "ansi-compliant",
+        "non-compliant"
+      ]
+    },
+    {
+      "id": "no-invented-document",
+      "line": "no document_id that was not given",
+      "type": "known_documents_only"
+    },
+    {
+      "id": "no-forklift-as-scrubber",
+      "line": "the forklift log never offered as the scrubber log",
+      "type": "absent_item",
+      "collections": [
+        "findings"
+      ],
+      "subject": [
+        "forklift"
+      ],
+      "absence": [
+        "scrubber"
+      ]
+    },
+    {
+      "id": "no-expected-as-finding",
+      "line": "nothing from expected_not_seen duplicated into findings",
+      "type": "expected_not_duplicated"
+    },
+    {
+      "id": "no-ai-word",
+      "line": "the word AI appears nowhere",
+      "type": "forbidden_words",
+      "words": [
+        "ai "
+      ],
+      "literal": true
+    }
+  ],
+  "acceptable": [
+    {
+      "id": "scrubber-plan-expected",
+      "line": "a scrubber operating and maintenance plan under expected",
+      "type": "item",
+      "collections": [
+        "expected_not_seen"
+      ],
+      "keywords": [
+        "scrubber"
+      ],
+      "min_keywords": 1
+    }
+  ],
+  "ok": [
+    {
+      "id": "scrubber-log",
+      "line": "SUPERSEDED 29 September by scrubber-log-on-file. It was the correct answer while the scrubber log was not on file, and it is the opposite of the correct answer now that case 07 is: a key holding both cannot pass, so this one is reported and not counted. Kept because it is the right line for a company that has not uploaded the log, which is most of them. Original line: \"the daily scrubber log as nothing on file, citing 3.1\".",
+      "type": "item",
+      "collections": [
+        "findings"
+      ],
+      "word": "nothing_on_file",
+      "keywords": [
+        "scrubber",
+        "log"
+      ],
+      "min_keywords": 2
+    }
+  ]
+}

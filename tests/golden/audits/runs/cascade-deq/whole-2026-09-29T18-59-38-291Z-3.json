@@ -1,0 +1,1702 @@
+{
+  "case": "cascade-deq",
+  "agency": "Oregon DEQ",
+  "mode": "whole",
+  "run": 3,
+  "run_date": "2026-09-29",
+  "model": "claude-haiku-4-5",
+  "input_block": "TODAY IS 2026-09-29. Every \"passed\" or \"expiring\" judgement is against that date.\n\nTHE AGENCY THIS AUDIT IS ABOUT: Oregon DEQ\nOnly this agency. Another regulator's documents are listed at the end as titles only and\nare not yours to judge here.\n\nWHO THIS COMPANY IS\n  Name: Cascade Specialty Chemicals, LLC\n  Industry: chemical manufacturing (recorded as chemical-manufacturing)\n  Address: Portland, Oregon\nTheir sites:\n  - Portland — 4410 NW Front Ave, Portland, Oregon 97210 (primary)\n\nDOCUMENTS ON FILE FOR OREGON DEQ — 8\n\n  --- Air Contaminant Discharge Permit — Compliance Inspection Checklist (Inspector's Field Form)\n      id: baf52b9c-fa92-4aa1-885d-9d32f3ad7811\n      file: 12-auditor-checklist-deq-air.docx\n      kind: other · status: not_judged · shown as: on_file\n      the document's own date: 2026-09-29 (last_entry)\n      the date that matters: 2026-09-29 (last_entry)\n      site: Portland\n      what the reading said it is: This is an inspector's field form used by Oregon DEQ during a compliance inspection of a facility holding an Air Contaminant Discharge Permit. It is a blank template that structures the inspection through five sections: permit and submissions, records, and on-site observations. The form is not the permit itself, but a tool to verify that the facility is meeting all ACDP conditions and submitting required reports.\n      WHAT THE READING FOUND WRONG WITH IT: nothing\n      WHAT THIS DOCUMENT OBLIGES THEM TO KEEP DOING (16), read out of the document itself:\n        · A1 — Current ACDP permit available at the facility and not expired\n            the evidence you would expect to see: The original or certified copy of the current ACDP permit with expiration date shown\n        · A2 — Renewal application submitted at least 120 days before permit expiration (when expiration is within 12 months)\n            the evidence you would expect to see: A dated copy of the renewal application submitted to DEQ, or confirmation from DEQ of receipt more than 120 days before expiration\n        · A3 — Annual report for the previous calendar year submitted by February 15\n            the evidence you would expect to see: A dated copy of the annual report or email confirmation of submission to DEQ\n        · A4 — Semi-annual monitoring report for January to June submitted by July 31\n            the evidence you would expect to see: A dated copy of the semi-annual monitoring report or email confirmation of submission to DEQ\n        · A5 — Deviation reports: any deviation in the last 12 months notified within 24 hours and reported in writing within 15 days\n            the evidence you would expect to see: Log or copies of any deviation notices (written or electronic) sent within 24 hours, and written reports sent within 15 days of each deviation\n        · B1 — Scrubber pressure-drop log covering the last 12 months, one reading per operating day, readings within the permitted range\n            the evidence you would expect to see: A complete 12-month log with dated entries for each operating day showing pressure drop readings and evidence they remained within the permit's specified range\n        · B2 — Quarterly scrubber inspection records for the last four quarters\n            the evidence you would expect to see: Four dated inspection records covering the most recent calendar quarters, with results documented\n        · B3 — Carbon replacement record within the last 12 months, or breakthrough records showing replacement was not required\n            the evidence you would expect to see: Either a dated record of carbon replacement with vendor documentation, or breakthrough detection records showing the carbon remained effective\n        · B4 — Weekly detector-tube check records at the carbon unit outlet\n            the evidence you would expect to see: A log of weekly checks with dates and results, covering the period required by the permit\n        · B5 — Opacity observation records, or a statement of the method used to monitor visible emissions\n            the evidence you would expect to see: Either dated visual opacity observations, or a written description of the monitoring method used and records supporting that method\n        · B6 — Records retained for five years and available on request\n            the evidence you would expect to see: Evidence of a records management system showing all required records (logs, reports, certifications) are kept for five years and immediately accessible\n        · C1 — Each scrubber operating with the associated line, pressure drop within range at the time of inspection\n            the evidence you would expect to see: Visual observation during the inspection, and a pressure-drop gauge reading or recent log entry showing the current reading is within the permitted range\n        · C2 — Solvent storage tanks T-3 to T-6 vented to the carbon unit, no open vents or leaks observed\n            the evidence you would expect to see: Visual observation that all four tanks are connected to the carbon unit outlet, no bypass vents, and no visible liquid or vapor leaks\n        · C3 — Tank and line labels legible; permitted sources match the permit's equipment list\n            the evidence you would expect to see: Legible labels on all tanks and process lines, a copy of the permit's equipment schedule, and visual confirmation that each listed item is present and in service\n        · C4 — Facility employee count on the day, for fee tier verification\n            the evidence you would expect to see: A count of employees present on the inspection date, or payroll records for the week of inspection\n        · C5 — Emergency contact and emergency plan available at the facility\n            the evidence you would expect to see: A copy of the facility's Emergency Action Plan, a written list of emergency contacts posted at an accessible location, and evidence of staff training\n      DATES THIS DOCUMENT SETS (7):\n        · Annual report submission deadline — no date stated (recurring)\n        · Deviation notification deadline — no date stated\n        · Deviation report written submission deadline — no date stated\n        · Renewal application submission deadline (Basic ACDP) — no date stated (recurring)\n        · Renewal application submission deadline (Simple ACDP) — no date stated (recurring)\n        · Renewal application submission deadline (Standard ACDP) — no date stated (recurring)\n        · Semi-annual monitoring report submission deadline — no date stated (recurring)\n      WHAT THE READING SAID A COMPANY LIKE THIS USUALLY ALSO HOLDS (1) —\n        a suggestion from similar companies, NOT a checked requirement:\n        · Completed inspection report with inspector and facility signatures — This is a blank template, not a filled-out inspection record. A completed form would show the inspector's findings for each item and signatures.\n      WHAT THIS DOCUMENT SAYS, proposed by the reading, not confirmed by anyone (6):\n        · carbon replacement check frequency: At least weekly detector-tube checks at the carbon unit outlet, as of 2026-09-29\n            it says: \"Weekly detector-tube check records at the carbon unit outlet\"\n            where: B4\n        · emergency plan availability: Emergency contact information and emergency plan must be available at the facility, as of 2026-09-29\n            it says: \"Emergency contact and emergency plan available at the facility\"\n            where: C5\n        · inspection checklist sections: Five sections: A (Permit and Submissions), B (Records), C (On the Day), as of 2026-09-29\n            it says: \"SECTION A — PERMIT AND SUBMISSIONS, SECTION B — RECORDS, SECTION C — ON THE DAY\"\n            where: Heading structure\n        · record retention requirement: Five years, as of 2026-09-29\n            it says: \"Records retained for five years and available on request\"\n            where: B6\n        · scrubber monitoring requirement: One pressure-drop reading per operating day, readings must remain within the permitted range, as of 2026-09-29\n            it says: \"Scrubber pressure-drop log covering the last 12 months, one reading per operating day, readings within the permitted range\"\n            where: B1\n        · solvent tank control method: Solvent storage tanks T-3 to T-6 must be vented to the carbon unit with no open vents, as of 2026-09-29\n            it says: \"Solvent storage tanks T-3 to T-6 vented to the carbon unit, no open vents or leaks observed\"\n            where: C2\n\n  --- Annual Report for Standard Air Contaminant Discharge Permit 26-2841-ST-01, Reporting Year 2025\n      id: 227d2b8e-c917-405f-84d0-0cb74945fc97\n      file: 08-deq-annual-report-2025.pdf\n      kind: record · status: recorded · shown as: recorded\n      the document's own date: 2026-02-10 (issued)\n      the date that matters: 2026-02-10 (last_entry)\n      site: Portland\n      what the reading said it is: This is an annual report submitted to Oregon DEQ under the Standard Air Contaminant Discharge Permit, covering operations at the Portland facility for calendar year 2025. It documents throughput across three production lines, scrubber performance logs, carbon adsorption unit maintenance, and reports one equipment failure deviation. The report is required by permit condition and confirms the facility's operational status and compliance monitoring for the reporting period.\n      WHAT THE READING FOUND WRONG WITH IT: nothing\n      WHAT THIS DOCUMENT OBLIGES THEM TO KEEP DOING (4), read out of the document itself:\n        · 4.1 — Annual reporting of throughput by line\n            the evidence you would expect to see: Signed annual report documenting pounds repackaged and operating days for each production line\n        · 3.1 and 3.2 — Scrubber pressure-drop logging and quarterly inspections\n            the evidence you would expect to see: Daily pressure-drop logs maintained in scrubber maintenance file, quarterly inspection records on specified dates\n        · 3.3 — Carbon adsorption unit C-1 outlet detection and scheduled replacement\n            the evidence you would expect to see: Weekly detector-tube checks for breakthrough; carbon replacement records with dates and quantities\n        · 5.1 and 5.2 — Deviation and excess emissions reporting\n            the evidence you would expect to see: Written deviation reports submitted to DEQ within required timeframe; opacity monitoring records\n      DATES THIS DOCUMENT SETS (2):\n        · Annual permit report submission — 2027-02-12 (recurring)\n        · Carbon adsorption unit C-1 scheduled replacement — 2026-03-14 (recurring)\n      WHAT THE READING SAID A COMPANY LIKE THIS USUALLY ALSO HOLDS (4) —\n        a suggestion from similar companies, NOT a checked requirement:\n        · Deviation report DEV-2025-0913 (August 22 pump failure) — Referenced but full written deviation report not included in this annual report document\n        · Quarterly scrubber maintenance inspection records — Mentioned as existing in scrubber maintenance file but not attached to this report document\n        · Supporting daily pressure-drop logs for scrubbers S-1 and S-2 — Only summary statistics provided; daily logs referenced as maintained but not included\n        · Weekly C-1 detector-tube check records for all 52 weeks of 2025 — Only summary statement provided; individual weekly records not included in annual report\n      WHAT THIS DOCUMENT SAYS, proposed by the reading, not confirmed by anyone (10):\n        · acid line operating days august: Operating 238 days in 2025; August-specific operating days not itemized in this annual report, as of 2025-12-31\n            it says: \"Acid repackaging line (S-1)...1,842,000...238\"\n            where: Page 2, Section 1 throughput table\n        · c1 carbon breakthrough detection: Weekly detector-tube checks performed every week in 2025 with no breakthrough detected, as of 2025-12-31\n            it says: \"Weekly detector-tube checks at the C-1 outlet were carried out every week in 2025 with no breakthrough detected.\"\n            where: Page 3, Section 3\n        · carbon replacement interval: 1,800 pounds of Calgon Filtrasorb 400 replaced on March 14, 2025; next replacement scheduled on or before March 14, 2026, as of 2025-12-31\n            it says: \"The carbon in C-1 was replaced on March 14, 2025 (Calgon Filtrasorb 400, 1,800 pounds, by Northwest Carbon Services). The next scheduled replacement is on or before March 14, 2026.\"\n            where: Page 3, Section 3\n        · caustic line operating days august: Operating 231 days in 2025; August-specific operating days not itemized in this annual report, as of 2025-12-31\n            it says: \"Caustic repackaging line (S-2)...1,210,000...231\"\n            where: Page 2, Section 1 throughput table\n        · facility location: 4410 NW Front Avenue, Portland, Oregon 97210, as of 2025-12-31\n            it says: \"Cascade Specialty Chemicals, LLC — Portland Facility, 4410 NW Front Avenue, Portland, Oregon 97210\"\n            where: Page 2, report header\n        · permit number: 26-2841-ST-01, as of 2025-12-31\n            it says: \"Standard Air Contaminant Discharge Permit 26-2841-ST-01\"\n            where: Page 1 and throughout\n        · scrubber s1 design flow: S-1 scrubber maintained average pressure drop of 3.8 in. w.c. across 238 operating days, as of 2025-12-31\n            it says: \"S-1...238...3.8...3.1...4.6...0\"\n            where: Page 2, Section 2 scrubber log summary\n        · scrubber s2 design flow: S-2 scrubber maintained average pressure drop of 4.1 in. w.c. across 231 operating days, as of 2025-12-31\n            it says: \"S-2...231...4.1...3.4...5.2...0\"\n            where: Page 2, Section 2 scrubber log summary\n        · solvent storage tank capacity: Solvent storage tanks T-3 to T-6 received 3,960,000 gallons of acetone, isopropanol, toluene, and xylene in 2025, as of 2025-12-31\n            it says: \"Solvent storage T-3 to T-6 (C-1)...acetone, isopropanol, toluene, xylene...3,960,000 gallons received\"\n            where: Page 2, Section 1\n        · visible emissions opacity limit: No visible emissions above 20 percent observed at any permitted source in 2025, as of 2025-12-31\n            it says: \"Opacity: no visible emissions above 20 percent were observed at any permitted source in 2025.\"\n            where: Page 3, Section 4\n\n  --- Monthly EHS Self-Check\n      id: 88f0951e-ceaa-4cf7-95de-d5d5937aa66d\n      file: 13-company-self-check.docx\n      kind: program · status: not_judged · shown as: on_file\n      the document's own date: none stated (unknown)\n      the date that matters: none\n      site: Portland\n      what the reading said it is: This is a monthly self-inspection checklist designed to track compliance with workplace safety, air quality, fire safety, and chemical handling standards. The company completes this form to verify that key controls are in place each month — air permit posted and valid, scrubber pressure-drop readings logged within operating ranges, detector-tube checks performed, equipment inspections done, fire extinguishers current, exits clear, eyewash and safety showers functional, and safety data sheets available. Any item marked 'N' must be reported to the Plant Manager by the 5th of the following month.\n      WHAT THE READING FOUND WRONG WITH IT (8) — these are already findings; carry them, do not re-find them:\n        · No document date or completion record visible\n            The template shows blanks for Month, Completed by, and Supervisor with no dates or initials filled in. Without a completed instance of this form, it is not possible to verify whether the company is performing these checks or how recent the most recent check was.\n            what it needs: Obtain a completed monthly self-check form showing the month reviewed, the date of supervisor review, the employee who completed it, and the results (Y/N and initials) for each line item. Confirm the company fills this out every month.\n            the rule: OSHA General Duty Clause (OSH Act Section 5(a)(1)); OAR 340-216-8010 et seq. (Oregon air permit posting and availability requirements)\n        · No procedure for tracking or escalating failures  [worked out from the document, not stated in it]\n            The form states 'Items marked N are reported to the Plant Manager by the 5th of the following month' but does not specify what happens next — no procedure for investigation, root cause, corrective action, documentation, or verification that issues are fixed before the next month.\n            what it needs: Establish a written procedure defining: (1) what constitutes an 'N' result, (2) who investigates, (3) required corrective actions by category, (4) documentation requirements, (5) verification that fixes are in place before the next check, (6) escalation criteria for repeated failures or safety risks.\n            the rule: OSHA General Duty Clause; 29 CFR 1910.22 (general safety requirements); Oregon DEQ permit conditions typically require prompt correction of deficiencies\n        · Missing scope for Line 3 — C-1 detector-tube check frequency and method  [worked out from the document, not stated in it]\n            Line 3 calls for 'Weekly C-1 detector-tube checks done and recorded every week this month' but the checklist does not specify what constitutes a valid check (e.g., testing method, recording format, pass/fail criteria, action if outlet exceeds threshold).\n            what it needs: Add to the procedure or attach a reference document: the standard or protocol for C-1 outlet detector-tube testing, the acceptable range or pass criterion, the required log format, and what corrective action is required if the check shows a failure.\n            the rule: Oregon air permit conditions for scrubber outlet monitoring (likely specified in Permit 26-2841-ST-01 or its attachments); ANSI/ASABE standard or equivalent\n        · Missing acceptance range for Line 2 — scrubber pressure-drop readings\n            Line 2 specifies 'readings between 2.0 and 6.0' but does not clarify the units (inches water column, bar, kPa, etc.) or reference the source permit condition that sets this range.\n            what it needs: Amend Line 2 to state the units of measurement (e.g., 'readings between 2.0 and 6.0 inches of water column') and add a reference to the permit condition or design document that establishes this range.\n            the rule: Oregon air permit conditions for scrubber operations; company's own Scrubber Pressure-Drop Log document already exists\n        · No definition of defect follow-up documentation for Line 4  [worked out from the document, not stated in it]\n            Line 4 requires 'any defect followed up' but does not specify what follow-up means — repair timelines, work orders, log entries, supervisor approval, or sign-off required.\n            what it needs: Add to the procedure or manual: define 'follow-up' to include (1) creation of work order or incident report, (2) severity/urgency category, (3) repair deadline (e.g., before next use, within 24 hours, within one week), (4) required documentation (photos, maintenance log entry, mechanic's sign-off), and (5) verification that defect was corrected before the truck next runs.\n            the rule: OSHA 29 CFR 1910.178 (powered industrial truck operation and maintenance); company's own PIT Pre-Shift Inspection Log already documents daily checks\n        · Fire extinguisher tag protocol not specified  [worked out from the document, not stated in it]\n            Line 5 states fire extinguishers must be 'tagged within the last 12 months; monthly visual check initialled on each tag' but does not specify who performs the monthly check (technician or any employee), where initials go, or what visual checks constitute pass/fail.\n            what it needs: Add procedures for fire extinguisher maintenance: (1) annual professional inspection/recharge must be performed by a certified service company; (2) monthly visual walk-through: check for damage, blockage, pressure gauge in green zone; (3) log and initial a tag on the extinguisher or maintain a separate log; (4) any defect triggers immediate service or replacement. Reference NFPA 10 or equivalent.\n            the rule: NFPA 10 (Standard for Portable Fire Extinguishers); OSHA 29 CFR 1910.157 (general requirements for all portable fire extinguishers)\n        · Eyewash and safety shower flush protocol incomplete  [worked out from the document, not stated in it]\n            Line 7 calls for 'Eyewash stations and safety showers flushed this week and logged' but does not specify duration of flush, acceptance criteria, or where logs are kept.\n            what it needs: Add to the procedure: (1) flushing frequency (at minimum weekly; some standards require daily or when in use); (2) flush duration (typically 1–3 minutes to clear lines); (3) visual inspection for water flow, clarity, and nozzle function; (4) log entry must include date, time, location, flush duration, any defects noted, and initials; (5) any malfunction must trigger repair/replacement before next work day.\n            the rule: ANSI Z535.4 (labeling and marking of hazardous substances); OSHA 29 CFR 1910.151 (eye and face protection); many states and facilities follow ANSI Z535.1 or local code for emergency equipment inspection\n        · SDS binder update protocol undefined  [worked out from the document, not stated in it]\n            Line 8 requires 'Safety data sheets on hand for every chemical received this month; binder index updated' but does not define who updates the index, how indexing is organized, or how obsolete SDSs are removed.\n            what it needs: Add to the SDS management procedure: (1) designate responsible person(s); (2) require SDS to be obtained and added to binder within X days of receipt (commonly within 5–10 days); (3) organize by product name, CAS number, or hazard category with consistent labeling; (4) maintain an index or log with product name, receipt date, SDS version date, and location in binder; (5) remove and archive obsolete SDSs (keep for X years per record retention policy); (6) verify accessibility during inspections; (7) train all employees on binder location and use.\n            the rule: OSHA 29 CFR 1910.1200(g) (Hazard Communication Standard, SDS requirements)\n      DATES THIS DOCUMENT SETS (1):\n        · Items marked N reported to Plant Manager — no date stated (recurring)\n      WHAT THE READING SAID A COMPANY LIKE THIS USUALLY ALSO HOLDS (7) —\n        a suggestion from similar companies, NOT a checked requirement:\n        · Completed monthly forms for prior months — To verify the company is actually conducting these checks monthly and responding to failures, a history of completed forms is essential. Without them, the template is a procedure document only, not evidence of compliance.\n        · Escalation or investigation log for 'N' results — The checklist states failures go to the Plant Manager by the 5th of the following month, but no log of those reports, investigations, or remediation actions was provided. This is critical evidence that problems are addressed.\n        · Exit route and emergency egress audit or floor plan — Line 6 checks that exits and aisles are clear and signs are lit, but no floor plan, exit signage documentation, or periodic egress audit procedure is provided.\n        · Fire extinguisher maintenance contract or service record — Line 5 requires annual professional tagging and monthly checks. The company should hold a service contract and annual maintenance records, which are missing from the submission.\n        · Powered Industrial Truck operator training and evaluation records — The company has a 'Powered Industrial Truck Operator Training and Evaluation Record' in its document list, but how that links to the pre-shift inspection protocol on Line 4 is not shown.\n        · Scrubber maintenance and testing SOP — Line 2 and 3 reference specific monitoring ranges and detector-tube checks, but the actual procedure, acceptance criteria, and corrective-action thresholds are not attached or incorporated.\n        · SDS master list or binder with current index — Line 8 requires an updated SDS binder and index. The template does not show how many chemicals are in inventory or what the current index looks like.\n      WHAT THIS DOCUMENT SAYS, proposed by the reading, not confirmed by anyone (1):\n        · inspection checklist sections: 8 line items covering air permit, scrubber monitoring, detector-tube checks, forklift inspections, fire extinguisher maintenance, exit routes, eyewash/safety showers, and safety data sheets\n            it says: \"8 check items numbered 1–8\"\n            where: table rows\n\n  --- Powered Industrial Truck Operator Training and Evaluation Record\n      id: 67bfefd2-d327-46e1-8f86-3109b4f0c768\n      file: 09-forklift-training-records.pdf\n      kind: record · status: recorded · shown as: recorded\n      the document's own date: 2025-06-02 (last_entry)\n      the date that matters: 2025-06-02 (last_entry)\n      site: Portland\n      what the reading said it is: This is a training and evaluation record for operators of powered industrial trucks (forklifts and pallet jacks) at the Portland facility, maintained under OSHA 29 CFR 1910.178(l) and Oregon OSHA rules. It documents formal instruction, practical training, initial evaluation, and three-yearly re-evaluation for three operators, and identifies the certified trainer.\n      WHAT THE READING FOUND WRONG WITH IT: nothing\n      DATES THIS DOCUMENT SETS (3):\n        · J. Rivera three-year re-evaluation — 2028-06-02 (recurring)\n        · M. Chen three-year re-evaluation — 2027-03-11 (recurring)\n        · R. Patel three-year re-evaluation — 2026-05-19 (recurring)\n      WHAT THE READING SAID A COMPANY LIKE THIS USUALLY ALSO HOLDS (2) —\n        a suggestion from similar companies, NOT a checked requirement:\n        · Accident or incident reports involving powered industrial trucks — The record references refresher training after accidents or near misses, but no such incidents are documented\n        · Pre-shift or daily inspection logs for powered industrial trucks — OSHA 1910.178(q) requires that powered industrial trucks be examined before use; daily inspection records are standard for this equipment\n      WHAT THIS DOCUMENT SAYS, proposed by the reading, not confirmed by anyone (4):\n        · equipment model: Toyota 8FGU25 propane counterbalance (unit FL-2) and Crown WP 3000 electric pallet jack (unit PJ-1), as of 2025-06-02\n            it says: \"Trucks in service: Toyota 8FGU25 propane counterbalance, unit FL-2; Crown WP 3000 electric pallet jack, unit PJ-1.\"\n            where: Program reference paragraph, page 1\n        · operator j rivera certification: Formal instruction 2025-05-27, practical training 2025-05-29, initial evaluation 2025-06-02, most recent evaluation 2025-06-02, next evaluation due 2028-06-02, as of 2025-06-02\n            it says: \"J. Rivera (Jose Rivera) FL-2, PJ-1 2025-05-27 2025-05-29 2025-06-02 2025-06-02 2028-06-02\"\n            where: Table, J. Rivera row, page 1\n        · operator m chen certification: Formal instruction 2024-03-04, practical training 2024-03-06, initial evaluation 2024-03-11, most recent evaluation 2024-03-11, next evaluation due 2027-03-11, as of 2024-03-11\n            it says: \"M. Chen (Michael Chen) FL-2, PJ-1 2024-03-04 2024-03-06 2024-03-11 2024-03-11 2027-03-11\"\n            where: Table, M. Chen row, page 1\n        · staff categories: Three operators: M. Chen (Michael Chen), J. Rivera (Jose Rivera), R. Patel (Rina Patel); trainer Sandra Ortiz, Warehouse Supervisor, as of 2025-06-02\n            it says: \"Trainer: Sandra Ortiz, Warehouse Supervisor, certified powered industrial truck trainer (Northwest Safety Training Institute, course PIT-T-2022-0417).\"\n            where: Trainer line, page 1\n\n  --- Powered Industrial Truck Pre-Shift Inspection Log\n      id: 6c4b9e16-6d50-4486-bc3d-e076fadeb8f5\n      file: 06a-forklift-log.pdf\n      kind: record · status: gaps_found · shown as: needs_work\n      the document's own date: 2026-09-18 (last_entry)\n      the date that matters: 2026-09-18 (last_entry)\n      site: Portland\n      what the reading said it is: This is a maintenance and safety record documenting daily pre-shift inspections of a Toyota propane forklift (unit FL-2) at the Portland warehouse for September 2026. It shows inspection results against 12 checklist items required by OSHA 29 CFR 1910.178(q)(7), with equipment hours logged and operator initials recorded for each inspection.\n      WHAT THE READING FOUND WRONG WITH IT (3) — these are already findings; carry them, do not re-find them:\n        · Missing inspections for September 3-6\n            The hour meter shows the truck ran on 5-6 September (hours increased from 4,819 at Sep 2 to 4,834 at Sep 7), but no inspections are documented for Sep 3, 4, 5, or 6. OSHA 29 CFR 1910.178(q)(7) requires examination before the truck is placed in service each shift.\n            what it needs: Conduct and document inspections for the missing dates, or if the truck did not run those days, correct the hour meter record. If inspections cannot be reconstructed, document why and ensure no gaps remain going forward.\n            the rule: OSHA 29 CFR 1910.178(q)(7)\n        · No supervisor review signature or date\n            The log form has a line for 'Supervisor review' with blanks for signature and date, but both are left blank and unsigned. This undermines accountability and verification of the log's completeness.\n            what it needs: Have a supervisor sign and date the log to certify that they have reviewed the inspections and that all required entries have been completed.\n            the rule: OSHA 29 CFR 1910.178(q)(7) (requires documented examination); Oregon Administrative Rules OAR 437-004-1178(q)(7) (likely mirrors federal standard)\n        · Defect not resolved—horn not working on September 9\n            On 9 September, the horn was marked with an X (defect) with the note 'Horn not working'. The log shows the truck continued to be used on subsequent days, but there is no record of when the horn was repaired or whether a work order was issued. OSHA 29 CFR 1910.178(q)(7) states the truck shall not be placed in service if examination shows a condition adversely affecting safety.\n            what it needs: Document the corrective action taken: when the horn was repaired, by whom, and verification that it was tested and working before the truck returned to service. If it was repaired before the next inspection (Sep 10), document that. If not, explain why the truck was used after the defect was noted.\n            the rule: OSHA 29 CFR 1910.178(q)(7)\n      WHAT THIS DOCUMENT OBLIGES THEM TO KEEP DOING (3), read out of the document itself:\n        · OSHA 29 CFR 1910.178(q)(7) — Examination before each shift\n            the evidence you would expect to see: Pre-shift inspection log showing date, time or shift, all 12 checklist items reviewed (tires, forks, mast, horn, lights, seatbelt, brakes, steering, propane tank, fire extinguisher, data plate, overhead guard), operator signature or initials, and notes on any defects found.\n        · OSHA 29 CFR 1910.178(q)(7) — No defective truck in service\n            the evidence you would expect to see: Log entry showing when defects are found, when they are reported to maintenance, when repairs are completed, and verification that the truck was not used until the defect was corrected. For Sep 9 horn defect, repair completion record.\n        · OSHA 29 CFR 1910.178(l) — Operator training and certification\n            the evidence you would expect to see: Operator certification records for M. Chen and J. Rivera showing training date, evaluation date, and re-evaluation due date. Log shows M. Chen certified 2024-03-11 (evaluation due 2027-03-11) and J. Rivera certified 2025-06-02 (evaluation due 2028-06-02).\n      DATES THIS DOCUMENT SETS (2):\n        · J. Rivera forklift operator re-evaluation due — 2028-06-02 (recurring)\n        · M. Chen forklift operator re-evaluation due — 2027-03-11 (recurring)\n      WHAT THE READING SAID A COMPANY LIKE THIS USUALLY ALSO HOLDS (3) —\n        a suggestion from similar companies, NOT a checked requirement:\n        · Documentation of training and re-evaluation for forklift operators — OSHA 29 CFR 1910.178(l) requires formal training records, evaluation records, and certificates of training; these would normally be filed separately from the operational log.\n        · Maintenance and repair history by truck — Repair records for the Sep 9 horn defect (and any other repairs) would normally be kept separately to track corrective actions and downtime.\n        · Monthly or annual maintenance inspection record — OSHA 29 CFR 1910.178(q)(8) implies more detailed maintenance inspections beyond daily pre-shift checks; detailed inspection records would typically accompany a pre-shift log.\n      WHAT THIS DOCUMENT SAYS, proposed by the reading, not confirmed by anyone (7):\n        · equipment hours end: 4,893 hours, as of 2026-09-18\n            it says: \"Sep 18 Day 4,893\"\n            where: Page 2, Sep 18 row\n        · equipment hours start: 4,812 hours, as of 2026-09-01\n            it says: \"Sep 1 Day 4,812\"\n            where: Page 1, Sep 1 row\n        · equipment model: Toyota 8FGU25, unit FL-2, propane-powered forklift, as of 2026-09-01\n            it says: \"Truck: Toyota 8FGU25, unit FL-2, propane\"\n            where: Page 1, header\n        · inspection coverage: 11 documented inspection days out of 18 calendar days in the logged period (Sep 1, 2, 7, 8, 9, 10, 11, 14, 15, 16, 17, 18); gaps on Sep 3, 4, 5, 6, 12, 13, as of 2026-09-18\n            it says: \"The hour meter rises between Sep 2 (4,819) and Sep 7 (4,834), which shows the truck ran on the missing days.\"\n            where: Page 1-2, inspection log table and note on page 2\n        · inspection month: September 2026, as of 2026-09-30\n            it says: \"Month: September 2026\"\n            where: Page 1, header\n        · operator j rivera certification: Certified 2025-06-02, evaluation due 2028-06-02, as of 2026-09-18\n            it says: \"J.R. = J. Rivera (certified 2025-06-02, evaluation due 2028-06-02)\"\n            where: Page 2, operator key\n        · operator m chen certification: Certified 2024-03-11, evaluation due 2027-03-11, as of 2026-09-18\n            it says: \"M.C. = M. Chen (certified 2024-03-11, evaluation due 2027-03-11)\"\n            where: Page 2, operator key\n\n  --- Powered Industrial Truck Pre-Shift Inspection Log\n      id: 84487477-03e2-4f5b-ba10-7df4b8a5cfab\n      file: 06b-forklift-log-photo.pdf\n      kind: record · status: recorded · shown as: recorded\n      the document's own date: none stated (last_entry)\n      the date that matters: none\n      site: Portland\n      what the reading said it is: This is a daily pre-shift inspection log for a Toyota forklift (model 8FGU25) at the Portland warehouse, tracking thirteen safety-critical systems under OSHA 29 CFR 1910.178(q)(7). Each inspection marks components as passing (✓) or defective (X), with operators signing and noting any problems; this document is current through mid-September 2026 and shows one defect flagged on September 9.\n      WHAT THE READING FOUND WRONG WITH IT: nothing\n      WHAT THIS DOCUMENT OBLIGES THEM TO KEEP DOING (3), read out of the document itself:\n        · OSHA 29 CFR 1910.178(q)(7) — Daily pre-shift examination before equipment placed in service\n            the evidence you would expect to see: Completed inspection log with date, shift, operator name, all checklist items marked (✓ or X), hours, and sign-off; defects immediately reported and corrected before use.\n        · OSHA 29 CFR 1910.178(q)(7) — Equipment not used if examination reveals a safety defect\n            the evidence you would expect to see: Notation in log (as shown Sep 9: 'Horn not working') and maintenance record confirming defect corrected before return to service.\n        · OSHA 29 CFR 1910.178(q)(7) — Defects reported and corrected immediately\n            the evidence you would expect to see: Log entries noting defects, maintenance work order, and follow-up inspection confirming repair before equipment resumes operation.\n      DATES THIS DOCUMENT SETS (1):\n        · Pre-shift inspection required before each shift — no date stated (recurring)\n      WHAT THE READING SAID A COMPANY LIKE THIS USUALLY ALSO HOLDS (3) —\n        a suggestion from similar companies, NOT a checked requirement:\n        · Defect correction and follow-up inspection record — When a defect is found (such as 'Horn not working' on Sep 9), OSHA requires the truck be removed from service and corrected immediately; follow-up inspection showing the repair and return to service are not shown in this log.\n        · Equipment maintenance history and parts records — To demonstrate that defects are tracked and corrected, maintenance work orders and parts replacement records support the pre-shift log.\n        · Operator training and certification records — OSHA 1910.178(l) requires documented training and evaluation before anyone operates a truck, with re-evaluation at least every three years.\n      WHAT THIS DOCUMENT SAYS, proposed by the reading, not confirmed by anyone (7):\n        · equipment hours end: 4,886 hours, as of 2026-09-17\n            it says: \"4,886\"\n            where: page 1, Sep 17 row\n        · equipment hours start: 4,812 hours, as of 2026-09-01\n            it says: \"4,812\"\n            where: page 1, Sep 1 row\n        · equipment model: Toyota 8FGU25, unit FL-2, propane-powered\n            it says: \"Truck: Toyota 8FGU25, unit FL-2, propane\"\n            where: page 1, header\n        · facility location: Portland Warehouse, 4410 NW Front Ave, Portland, Oregon 97210\n            it says: \"PORTLAND WAREHOUSE\"\n            where: page 1, header\n        · inspection month: September 2026\n            it says: \"Month: September 2026\"\n            where: page 1, header\n        · operator j rivera certification: J.R. performed inspections on Sep 7, 10, 11, 16\n            it says: \"J.R.\"\n            where: page 1, Operator column\n        · operator m chen certification: M.C. performed multiple inspections including Sep 1, 2, 8, 14, 15, 17\n            it says: \"M.C.\"\n            where: page 1, Operator column\n\n  --- Scrubber Pressure-Drop Log and C-1 Outlet Detector-Tube Check — August and September 2026\n      id: 39bb23ec-2017-46c2-8df0-b25b3cbd599f\n      file: 07-scrubber-log-record.pdf\n      kind: record · status: recorded · shown as: recorded\n      the document's own date: 2026-09-25 (last_entry)\n      the date that matters: 2026-09-25 (last_entry)\n      site: Portland\n      what the reading said it is: This is a compliance record log documenting daily scrubber pressure-drop readings and weekly carbon-unit outlet detector-tube checks for August and September 2026, required by Air Contaminant Discharge Permit 26-2841-ST-01. The log tracks two scrubbers (S-1 for acid repackaging, S-2 for caustic repackaging) and verifies they maintain pressures between 2.0 and 6.0 inches of water column and show no carbon breakthrough.\n      WHAT THE READING FOUND WRONG WITH IT (3) — these are already findings; carry them, do not re-find them:\n        · Missing supervisor sign-off\n            Both August and September logs show blank lines for supervisor review signature and date, which are required for record completion and permit compliance.\n            what it needs: Complete the supervisor review signature and date fields on both pages immediately.\n            the rule: Air Contaminant Discharge Permit 26-2841-ST-01, Conditions 3.1 and 3.3\n        · Incomplete weekly detector-tube checks in September\n            The September detector-tube log shows only two entries (Sep 7 and Sep 21) when the condition requires weekly checks. September has five weeks and should have five weekly readings recorded.\n            what it needs: Add the missing detector-tube readings for the weeks of September 14 and September 28 (or the applicable weeks if a different schedule is used).\n            the rule: Air Contaminant Discharge Permit 26-2841-ST-01, Condition 3.3\n        · One out-of-range scrubber reading — S-2 on September 9\n            On September 9, the S-2 (caustic line) scrubber pressure drop was recorded as 6.4 inches of water column, which exceeds the maximum permitted range of 6.0 inches.\n            what it needs: Document the cause of the pressure exceedance (e.g., nozzle clogging, line blockage, instrumentation error) and any corrective action taken. This may require notification to Oregon DEQ depending on permit language for exceedances.\n            the rule: Air Contaminant Discharge Permit 26-2841-ST-01, Condition 3.1: keep pressure drop between 2.0 and 6.0 inches of water column whenever the line is operating\n      WHAT THIS DOCUMENT OBLIGES THEM TO KEEP DOING (4), read out of the document itself:\n        · 3.1 — Record scrubber pressure drop once per operating day\n            the evidence you would expect to see: Daily log entries with date, acid line operating status, caustic line operating status, S-1 pressure drop reading (in. w.c.), S-2 pressure drop reading (in. w.c.), and name of person recording\n        · 3.1 — Maintain scrubber pressure drop between 2.0 and 6.0 inches of water column\n            the evidence you would expect to see: All daily pressure drop readings within the range of 2.0–6.0 in. w.c.; any exceedances documented with explanation and corrective action\n        · 3.3 — Perform weekly detector-tube check at C-1 carbon unit outlet\n            the evidence you would expect to see: Weekly log showing date, tube reading in ppm, whether breakthrough was detected, and name of person performing the check\n        · 3.1 and 3.3 — Maintain supervisor review and sign-off of logs\n            the evidence you would expect to see: Signed and dated supervisor review signature on both August and September logs\n      DATES THIS DOCUMENT SETS (2):\n        · Perform weekly C-1 outlet detector-tube check — no date stated (recurring)\n        · Record pressure drop readings daily for each operating day — no date stated (recurring)\n      WHAT THE READING SAID A COMPANY LIKE THIS USUALLY ALSO HOLDS (4) —\n        a suggestion from similar companies, NOT a checked requirement:\n        · Corrective action documentation for the September 9 pressure exceedance — Needed to show what was done in response to the out-of-range reading and prevent recurrence\n        · Equipment maintenance and calibration log for the magnehelic gauge — Pressure readings depend on gauge accuracy; maintenance records should verify calibration\n        · Permit itself (Air Contaminant Discharge Permit 26-2841-ST-01) — Referenced in the record but not held; needed to verify all permit conditions are met\n        · Standard Operating Procedure (SOP) for scrubber operation and pressure-drop measurement — Should document the procedure for reading gauges, recording data, and responding to exceedances\n      WHAT THIS DOCUMENT SAYS, proposed by the reading, not confirmed by anyone (9):\n        · acid line operating days august: 21 days, as of 2026-08-31\n            it says: \"August throughput (from the line counters): acid line ran 21 days\"\n            where: Page 1, August summary\n        · august pressure drop readings logged: 16 entries for pressure readings, as of 2026-08-31\n            it says: \"Rows entered: 16\"\n            where: Page 1, August summary\n        · c1 carbon breakthrough detection: No breakthrough detected in all weekly checks (August and September), as of 2026-09-21\n            it says: \"Breakthrough? No (repeated for all entries)\"\n            where: Pages 1–2, weekly detector-tube tables\n        · caustic line operating days august: 20 days, as of 2026-08-31\n            it says: \"August throughput (from the line counters): acid line ran 21 days, caustic line ran 20 days\"\n            where: Page 1, August summary\n        · scrubber pressure drop exceedance: One reading above maximum: S-2 at 6.4 in. w.c. on September 9, 2026, as of 2026-09-09\n            it says: \"Sep 9 Y Y 4.0 6.4 T.N.\"\n            where: Page 2, September table, Sep 9 entry\n        · scrubber pressure drop range: 2.0 to 6.0 inches of water column, as of 2026-08-01\n            it says: \"keep it between 2.0 and 6.0 inches of water column whenever the line is operating\"\n            where: Page 1, Condition 3.1\n        · scrubber s1 design flow: Not stated in this record\n            where: document\n        · scrubber s2 design flow: Not stated in this record\n            where: document\n        · september pressure drop readings logged: 18 entries for daily pressure readings through September 25, as of 2026-09-25\n            it says: \"Last entry Sep 25 with 18 rows of daily data shown\"\n            where: Page 2, September table\n\n  --- Standard Air Contaminant Discharge Permit\n      id: a372f5f8-50af-473f-84b7-20013ad38726\n      file: 02-acdp-chemical.pdf\n      kind: permit · status: expiring · shown as: expiring\n      the document's own date: 2021-09-01 (issued)\n      the date that matters: 2026-11-15 (expiry)\n      site: Portland\n      what the reading said it is: This is a Standard Air Contaminant Discharge Permit issued by the Oregon Department of Environmental Quality authorizing Cascade Specialty Chemicals to operate two scrubbers, four solvent storage tanks, and associated vapor control equipment for chemical storage and repackaging operations at their Portland facility. The permit sets operating parameters, monitoring requirements, recordkeeping obligations, and reporting deadlines that must be met to remain in lawful operation.\n      WHAT THE READING FOUND WRONG WITH IT: nothing\n      WHAT THIS DOCUMENT OBLIGES THEM TO KEEP DOING (15), read out of the document itself:\n        · 1.1 — Operate permitted sources in compliance with all permit conditions and applicable Department rules\n            the evidence you would expect to see: Compliance with all operating conditions in Sections 1-6 and applicable OAR 340-216 rules\n        · 3.1 — Maintain pressure drop across scrubber S-1 within 2.0 to 6.0 inches of water column when operating\n            the evidence you would expect to see: Scrubber log documenting daily pressure drop readings during operation\n        · 3.1 — Maintain pressure drop across scrubber S-2 within 2.0 to 6.0 inches of water column when operating\n            the evidence you would expect to see: Scrubber log documenting daily pressure drop readings during operation\n        · 3.2 — Inspect scrubber S-1 components (pump, nozzles, packing, mist eliminator) at least quarterly\n            the evidence you would expect to see: Scrubber log with quarterly inspection dates, inspector name, and any corrective actions taken\n        · 3.2 — Inspect scrubber S-2 components (pump, nozzles, packing, mist eliminator) at least quarterly\n            the evidence you would expect to see: Scrubber log with quarterly inspection dates, inspector name, and any corrective actions taken\n        · 3.3 — Replace carbon in adsorption unit C-1 at least annually or when breakthrough detected, whichever is first\n            the evidence you would expect to see: Records documenting date of each carbon replacement and weekly detector-tube checks at C-1 outlet\n        · 3.3 — Perform weekly detector-tube check at carbon adsorption unit C-1 outlet\n            the evidence you would expect to see: Weekly detector-tube check documentation showing no breakthrough or date of detection\n        · 3.4 — Ensure visible emissions do not exceed 20 percent opacity for more than three minutes in any one hour\n            the evidence you would expect to see: Visual inspection records or monitoring documentation showing compliance\n        · 5.1 — Take reasonable steps to minimize emissions during scrubber malfunction, including stopping the affected repackaging line until scrubber is returned to service\n            the evidence you would expect to see: Operation logs showing shutdown of lines when scrubbers malfunction until repair\n        · 5.2 — Notify Department within 24 hours of discovering any permit deviation\n            the evidence you would expect to see: Records of telephone or email notification to DEQ and copies of 24-hour notifications made\n        · 5.2 — Submit written report within 15 days of any permit deviation describing deviation, cause, duration, and corrective action\n            the evidence you would expect to see: Written deviation reports submitted to DEQ within 15-day window of discovery\n        · 4.1 — Submit annual report by February 15 covering the previous calendar year\n            the evidence you would expect to see: Annual report including throughput by line, scrubber log summaries, carbon replacement dates, and excess emission event documentation\n        · 4.2 — Submit semi-annual monitoring report by July 31 covering January through June\n            the evidence you would expect to see: Semi-annual monitoring report documenting operations for the first six months of each year\n        · 4.3 — Keep all permit records for at least five years from the date created\n            the evidence you would expect to see: Organized record retention system with daily logs, quarterly inspection records, replacement records, monitoring reports, and deviation reports retained for five years\n        · 6.2 — Pay annual permit fee by the due date on Department invoice\n            the evidence you would expect to see: Proof of annual permit fee payment within stated deadline on invoice\n      DATES THIS DOCUMENT SETS (10):\n        · Inspect each scrubber's recirculation pump, spray nozzles, packing, and mist eliminator — no date stated (recurring)\n        · Notify Department by telephone or email within 24 hours of discovering any permit deviation — no date stated\n        · Perform weekly detector-tube check at carbon adsorption unit C-1 outlet — no date stated (recurring)\n        · Permit expires — operation without renewed permit or timely renewal application becomes violation — 2026-11-15\n        · Record pressure drop readings for scrubbers S-1 and S-2 — no date stated (recurring)\n        · Replace carbon in adsorption unit C-1 or document that weekly check shows no breakthrough — no date stated (recurring)\n        · Submit annual report to Department by February 15 — no date stated (recurring)\n        · Submit renewal application to avoid permit expiration without coverage — 2026-07-18\n        · Submit semi-annual monitoring report by July 31 — no date stated (recurring)\n        · Submit written deviation report within 15 days of discovery — no date stated\n      WHAT THE READING SAID A COMPANY LIKE THIS USUALLY ALSO HOLDS (3) —\n        a suggestion from similar companies, NOT a checked requirement:\n        · Chemical Inventory List with Safety Data Sheets (SDS) — Facility handles acids, caustics, and solvents; while not required in this air permit, inventory and SDS documentation is typically maintained separately for HAZCOM compliance\n        · Contingency Plan or Spill Prevention Control and Countermeasure Plan (SPCC) — Companies handling chemicals typically maintain spill prevention documentation separate from air permits but coordinated with environmental compliance\n        · Process Safety Management (PSM) Plan — Chemical repackaging operations may trigger federal OSHA PSM requirements (29 CFR 1910.119), though the air permit itself does not address this\n      WHAT THIS DOCUMENT SAYS, proposed by the reading, not confirmed by anyone (13):\n        · carbon replacement interval: At least once every 12 months or when breakthrough detected, whichever comes first, as of 2021-09-01\n            it says: \"replace the carbon in adsorption unit C-1 at least once every 12 months or when breakthrough is detected by the weekly detector-tube check at the C-1 outlet, whichever comes first\"\n            where: Section 3.3, Page 3\n        · expiration date: 2026-11-15, as of 2021-09-01\n            it says: \"Expiration date: November 15, 2026\"\n            where: Page 1, permit header and Section 1.2\n        · facility location: 4410 NW Front Avenue, Portland, Oregon 97210, as of 2021-09-01\n            it says: \"Facility address: 4410 NW Front Avenue, Portland, Oregon 97210\"\n            where: Page 1, permit header\n        · issued date: 2021-09-01, as of 2021-09-01\n            it says: \"Date issued: September 1, 2021\"\n            where: Page 1, permit header\n        · permit number: 26-2841-ST-01, as of 2021-09-01\n            it says: \"Permit number: 26-2841-ST-01\"\n            where: Page 1, permit header\n        · record retention period: Five years from date of record, as of 2021-09-01\n            it says: \"keep all records required by this permit for at least five years from the date of the record\"\n            where: Section 4.3, Page 4\n        · renewal application deadline: 120 days before expiration (July 18, 2026), as of 2021-09-01\n            it says: \"The permittee shall submit a complete application for renewal of this permit no later than 120 days before the expiration date, that is, on or before July 18, 2026\"\n            where: Section 1.3, Page 2\n        · scrubber pressure drop range: 2.0 to 6.0 inches of water column, as of 2021-09-01\n            it says: \"maintain the pressure drop across each scrubber S-1 and S-2 within the range of 2.0 to 6.0 inches of water column whenever the associated line is operating\"\n            where: Section 3.1, Page 3\n        · scrubber s1 design flow: 4,500 scfm, as of 2021-09-01\n            it says: \"Packed-bed wet scrubber S-1 serving the acid repackaging line (design flow 4,500 scfm)\"\n            where: Section 2.1, Page 3\n        · scrubber s2 design flow: 3,000 scfm, as of 2021-09-01\n            it says: \"Packed-bed wet scrubber S-2 serving the caustic repackaging line (design flow 3,000 scfm)\"\n            where: Section 2.2, Page 3\n        · solvent storage tank capacity: 10,000 gallons each (four tanks: T-3, T-4, T-5, T-6), as of 2021-09-01\n            it says: \"Solvent storage tanks T-3, T-4, T-5 and T-6 (each 10,000 gallons, fixed roof, vented to carbon adsorption unit C-1)\"\n            where: Section 2.3, Page 3\n        · source category: Chemical storage and repackaging with vapor control, as of 2021-09-01\n            it says: \"Source category: Chemical storage and repackaging with vapor control\"\n            where: Page 1, permit header\n        · visible emissions opacity limit: 20 percent opacity maximum for any period exceeding three minutes in any one hour, as of 2021-09-01\n            it says: \"Visible emissions from any permitted source shall not exceed 20 percent opacity for any period aggregating more than three minutes in any one hour\"\n            where: Section 3.4, Page 3\n\nFACTS THIS COMPANY HAS CONFIRMED, ACROSS EVERYTHING THEY HOLD\nEach was read in a document and then confirmed by a person. Nothing a reading merely\nproposed is here — an unconfirmed proposal is a question, not a fact.\n  employee count (Portland): 42 employees at Portland facility, as of 2021-02-01 — from \"Emergency Action Plan\"\n\nEVERYTHING ELSE THIS COMPANY HOLDS — 4, TITLES AND DATES ONLY\nListed so you can say what is NOT among them. You have not been shown their contents and\nmust not describe what is in them.\n  - Certificate of Annual Maintenance — Portable Fire Extinguishers · record · recorded · 2025-08-20\n  - Emergency Action Plan · policy · gaps_found · 2021-02-01\n  - OSHA Form 300A Summary of Work-Related Injuries and Illnesses for Year 2025 · record · current · 2026-02-01\n  - Safety Data Sheet - Sodium Hydroxide Solution, 50% · supplier_document · not_judged · 2024-03-18\n\nTHE AGENCY AND SUBJECT WORDS THIS COMPANY ALREADY USES\n  agencies: Oregon DEQ · U.S. Department of Labor - Occupational Safety and Health Administration\n  subjects: chemical_safety · emergency_preparedness · workplace_safety",
+  "input_sha256": "db589aa4f48150d2bd90acdb9f2dc0d3ce7d1f7d32789e10b27b6c5b5219b334",
+  "input": {
+    "today": "2026-09-29",
+    "agency": "Oregon DEQ",
+    "company": {
+      "name": "Cascade Specialty Chemicals, LLC",
+      "industrySlug": "chemical-manufacturing",
+      "industryWords": "chemical manufacturing",
+      "address": "Portland, Oregon",
+      "state": "Oregon",
+      "sites": [
+        {
+          "id": "ff15bc1b-7f82-4c31-9ba6-20b1e8a40fb8",
+          "name": "Portland",
+          "address": "4410 NW Front Ave, Portland, Oregon 97210",
+          "state": "Oregon",
+          "county": null,
+          "city": "Portland",
+          "primary": true
+        }
+      ]
+    },
+    "confirmed": [
+      {
+        "key": "employee_count",
+        "value": "42 employees at Portland facility",
+        "basis": "read",
+        "entityId": "ff15bc1b-7f82-4c31-9ba6-20b1e8a40fb8",
+        "siteName": "Portland",
+        "asOf": "2021-02-01",
+        "sourceDocumentTitle": "Emergency Action Plan",
+        "sourceDocumentId": "ba964e51-94bc-4aaa-8362-d763ecf30b27",
+        "sourceProposalId": "e62461bc-4d80-4f23-9b1d-f84f75cacbf9"
+      }
+    ],
+    "labels": {
+      "agencies": [
+        "Oregon DEQ",
+        "U.S. Department of Labor - Occupational Safety and Health Administration"
+      ],
+      "subjects": [
+        "chemical_safety",
+        "emergency_preparedness",
+        "workplace_safety"
+      ]
+    },
+    "keys": [
+      "abc_dry_chemical_units",
+      "acid_line_operating_days_august",
+      "alarm_monitoring_vendor",
+      "assembly_point_distance",
+      "august_pressure_drop_readings_logged",
+      "c1_carbon_breakthrough_detection",
+      "carbon_replacement_check_frequency",
+      "carbon_replacement_interval",
+      "caustic_line_operating_days_august",
+      "certifying_official",
+      "class_k_units",
+      "co2_units",
+      "days_away_from_work",
+      "emergency_plan_availability",
+      "emergency_shower_eyewash_location",
+      "employee_count",
+      "equipment_hours_end",
+      "equipment_hours_start",
+      "equipment_model",
+      "expiration_date",
+      "extinguisher_units_passed",
+      "extinguisher_units_total",
+      "facility_location",
+      "first_aid_responders_per_shift",
+      "industry_classification",
+      "injuries_recorded",
+      "inspection_checklist_sections",
+      "inspection_coverage",
+      "inspection_month",
+      "issued_date",
+      "last_revision_date",
+      "maintenance_standard_applied",
+      "operator_j_rivera_certification",
+      "operator_m_chen_certification",
+      "permit_number",
+      "plan_locations",
+      "product_identifier",
+      "record_retention_period",
+      "record_retention_requirement",
+      "renewal_application_deadline",
+      "scrubber_monitoring_requirement",
+      "scrubber_pressure_drop_exceedance",
+      "scrubber_pressure_drop_range",
+      "scrubber_s1_design_flow",
+      "scrubber_s2_design_flow",
+      "september_pressure_drop_readings_logged",
+      "service_company_license",
+      "solvent_storage_tank_capacity",
+      "solvent_tank_control_method",
+      "source_category",
+      "staff_categories",
+      "technician_license",
+      "total_hours_worked",
+      "total_recordable_cases",
+      "visible_emissions_opacity_limit"
+    ],
+    "documents": [
+      {
+        "document_id": "baf52b9c-fa92-4aa1-885d-9d32f3ad7811",
+        "title": "Air Contaminant Discharge Permit — Compliance Inspection Checklist (Inspector's Field Form)",
+        "file_name": "12-auditor-checklist-deq-air.docx",
+        "kind": "other",
+        "status": "not_judged",
+        "display_status": "on_file",
+        "doc_date": "2026-09-29",
+        "doc_date_kind": "last_entry",
+        "significant_date": "2026-09-29",
+        "significant_date_kind": "last_entry",
+        "site": "Portland",
+        "summary": "This is an inspector's field form used by Oregon DEQ during a compliance inspection of a facility holding an Air Contaminant Discharge Permit. It is a blank template that structures the inspection through five sections: permit and submissions, records, and on-site observations. The form is not the permit itself, but a tool to verify that the facility is meeting all ACDP conditions and submitting required reports.",
+        "open_gaps": [],
+        "conditions": [
+          {
+            "condition_ref": "A1",
+            "title": "Current ACDP permit available at the facility and not expired",
+            "evidence_expected": "The original or certified copy of the current ACDP permit with expiration date shown"
+          },
+          {
+            "condition_ref": "A2",
+            "title": "Renewal application submitted at least 120 days before permit expiration (when expiration is within 12 months)",
+            "evidence_expected": "A dated copy of the renewal application submitted to DEQ, or confirmation from DEQ of receipt more than 120 days before expiration"
+          },
+          {
+            "condition_ref": "A3",
+            "title": "Annual report for the previous calendar year submitted by February 15",
+            "evidence_expected": "A dated copy of the annual report or email confirmation of submission to DEQ"
+          },
+          {
+            "condition_ref": "A4",
+            "title": "Semi-annual monitoring report for January to June submitted by July 31",
+            "evidence_expected": "A dated copy of the semi-annual monitoring report or email confirmation of submission to DEQ"
+          },
+          {
+            "condition_ref": "A5",
+            "title": "Deviation reports: any deviation in the last 12 months notified within 24 hours and reported in writing within 15 days",
+            "evidence_expected": "Log or copies of any deviation notices (written or electronic) sent within 24 hours, and written reports sent within 15 days of each deviation"
+          },
+          {
+            "condition_ref": "B1",
+            "title": "Scrubber pressure-drop log covering the last 12 months, one reading per operating day, readings within the permitted range",
+            "evidence_expected": "A complete 12-month log with dated entries for each operating day showing pressure drop readings and evidence they remained within the permit's specified range"
+          },
+          {
+            "condition_ref": "B2",
+            "title": "Quarterly scrubber inspection records for the last four quarters",
+            "evidence_expected": "Four dated inspection records covering the most recent calendar quarters, with results documented"
+          },
+          {
+            "condition_ref": "B3",
+            "title": "Carbon replacement record within the last 12 months, or breakthrough records showing replacement was not required",
+            "evidence_expected": "Either a dated record of carbon replacement with vendor documentation, or breakthrough detection records showing the carbon remained effective"
+          },
+          {
+            "condition_ref": "B4",
+            "title": "Weekly detector-tube check records at the carbon unit outlet",
+            "evidence_expected": "A log of weekly checks with dates and results, covering the period required by the permit"
+          },
+          {
+            "condition_ref": "B5",
+            "title": "Opacity observation records, or a statement of the method used to monitor visible emissions",
+            "evidence_expected": "Either dated visual opacity observations, or a written description of the monitoring method used and records supporting that method"
+          },
+          {
+            "condition_ref": "B6",
+            "title": "Records retained for five years and available on request",
+            "evidence_expected": "Evidence of a records management system showing all required records (logs, reports, certifications) are kept for five years and immediately accessible"
+          },
+          {
+            "condition_ref": "C1",
+            "title": "Each scrubber operating with the associated line, pressure drop within range at the time of inspection",
+            "evidence_expected": "Visual observation during the inspection, and a pressure-drop gauge reading or recent log entry showing the current reading is within the permitted range"
+          },
+          {
+            "condition_ref": "C2",
+            "title": "Solvent storage tanks T-3 to T-6 vented to the carbon unit, no open vents or leaks observed",
+            "evidence_expected": "Visual observation that all four tanks are connected to the carbon unit outlet, no bypass vents, and no visible liquid or vapor leaks"
+          },
+          {
+            "condition_ref": "C3",
+            "title": "Tank and line labels legible; permitted sources match the permit's equipment list",
+            "evidence_expected": "Legible labels on all tanks and process lines, a copy of the permit's equipment schedule, and visual confirmation that each listed item is present and in service"
+          },
+          {
+            "condition_ref": "C4",
+            "title": "Facility employee count on the day, for fee tier verification",
+            "evidence_expected": "A count of employees present on the inspection date, or payroll records for the week of inspection"
+          },
+          {
+            "condition_ref": "C5",
+            "title": "Emergency contact and emergency plan available at the facility",
+            "evidence_expected": "A copy of the facility's Emergency Action Plan, a written list of emergency contacts posted at an accessible location, and evidence of staff training"
+          }
+        ],
+        "deadlines": [
+          {
+            "title": "Annual report submission deadline",
+            "due_on": null,
+            "recurs": true
+          },
+          {
+            "title": "Deviation notification deadline",
+            "due_on": null,
+            "recurs": false
+          },
+          {
+            "title": "Deviation report written submission deadline",
+            "due_on": null,
+            "recurs": false
+          },
+          {
+            "title": "Renewal application submission deadline (Basic ACDP)",
+            "due_on": null,
+            "recurs": true
+          },
+          {
+            "title": "Renewal application submission deadline (Simple ACDP)",
+            "due_on": null,
+            "recurs": true
+          },
+          {
+            "title": "Renewal application submission deadline (Standard ACDP)",
+            "due_on": null,
+            "recurs": true
+          },
+          {
+            "title": "Semi-annual monitoring report submission deadline",
+            "due_on": null,
+            "recurs": true
+          }
+        ],
+        "expected_missing": [
+          {
+            "title": "Completed inspection report with inspector and facility signatures",
+            "why": "This is a blank template, not a filled-out inspection record. A completed form would show the inspector's findings for each item and signatures.",
+            "basis": "The document as presented has blank fields for all checklist items and signatures"
+          }
+        ],
+        "confirmed_facts": [],
+        "proposed_facts": [
+          {
+            "key": "carbon_replacement_check_frequency",
+            "value": "At least weekly detector-tube checks at the carbon unit outlet",
+            "quote": "Weekly detector-tube check records at the carbon unit outlet",
+            "locator": "B4",
+            "as_of": "2026-09-29"
+          },
+          {
+            "key": "emergency_plan_availability",
+            "value": "Emergency contact information and emergency plan must be available at the facility",
+            "quote": "Emergency contact and emergency plan available at the facility",
+            "locator": "C5",
+            "as_of": "2026-09-29"
+          },
+          {
+            "key": "inspection_checklist_sections",
+            "value": "Five sections: A (Permit and Submissions), B (Records), C (On the Day)",
+            "quote": "SECTION A — PERMIT AND SUBMISSIONS, SECTION B — RECORDS, SECTION C — ON THE DAY",
+            "locator": "Heading structure",
+            "as_of": "2026-09-29"
+          },
+          {
+            "key": "record_retention_requirement",
+            "value": "Five years",
+            "quote": "Records retained for five years and available on request",
+            "locator": "B6",
+            "as_of": "2026-09-29"
+          },
+          {
+            "key": "scrubber_monitoring_requirement",
+            "value": "One pressure-drop reading per operating day, readings must remain within the permitted range",
+            "quote": "Scrubber pressure-drop log covering the last 12 months, one reading per operating day, readings within the permitted range",
+            "locator": "B1",
+            "as_of": "2026-09-29"
+          },
+          {
+            "key": "solvent_tank_control_method",
+            "value": "Solvent storage tanks T-3 to T-6 must be vented to the carbon unit with no open vents",
+            "quote": "Solvent storage tanks T-3 to T-6 vented to the carbon unit, no open vents or leaks observed",
+            "locator": "C2",
+            "as_of": "2026-09-29"
+          }
+        ]
+      },
+      {
+        "document_id": "227d2b8e-c917-405f-84d0-0cb74945fc97",
+        "title": "Annual Report for Standard Air Contaminant Discharge Permit 26-2841-ST-01, Reporting Year 2025",
+        "file_name": "08-deq-annual-report-2025.pdf",
+        "kind": "record",
+        "status": "recorded",
+        "display_status": "recorded",
+        "doc_date": "2026-02-10",
+        "doc_date_kind": "issued",
+        "significant_date": "2026-02-10",
+        "significant_date_kind": "last_entry",
+        "site": "Portland",
+        "summary": "This is an annual report submitted to Oregon DEQ under the Standard Air Contaminant Discharge Permit, covering operations at the Portland facility for calendar year 2025. It documents throughput across three production lines, scrubber performance logs, carbon adsorption unit maintenance, and reports one equipment failure deviation. The report is required by permit condition and confirms the facility's operational status and compliance monitoring for the reporting period.",
+        "open_gaps": [],
+        "conditions": [
+          {
+            "condition_ref": "4.1",
+            "title": "Annual reporting of throughput by line",
+            "evidence_expected": "Signed annual report documenting pounds repackaged and operating days for each production line"
+          },
+          {
+            "condition_ref": "3.1 and 3.2",
+            "title": "Scrubber pressure-drop logging and quarterly inspections",
+            "evidence_expected": "Daily pressure-drop logs maintained in scrubber maintenance file, quarterly inspection records on specified dates"
+          },
+          {
+            "condition_ref": "3.3",
+            "title": "Carbon adsorption unit C-1 outlet detection and scheduled replacement",
+            "evidence_expected": "Weekly detector-tube checks for breakthrough; carbon replacement records with dates and quantities"
+          },
+          {
+            "condition_ref": "5.1 and 5.2",
+            "title": "Deviation and excess emissions reporting",
+            "evidence_expected": "Written deviation reports submitted to DEQ within required timeframe; opacity monitoring records"
+          }
+        ],
+        "deadlines": [
+          {
+            "title": "Annual permit report submission",
+            "due_on": "2027-02-12",
+            "recurs": true
+          },
+          {
+            "title": "Carbon adsorption unit C-1 scheduled replacement",
+            "due_on": "2026-03-14",
+            "recurs": true
+          }
+        ],
+        "expected_missing": [
+          {
+            "title": "Deviation report DEV-2025-0913 (August 22 pump failure)",
+            "why": "Referenced but full written deviation report not included in this annual report document",
+            "basis": "Permit conditions typically require separate formal deviation notifications"
+          },
+          {
+            "title": "Quarterly scrubber maintenance inspection records",
+            "why": "Mentioned as existing in scrubber maintenance file but not attached to this report document",
+            "basis": "similar companies maintain detailed maintenance logs separately from annual summaries"
+          },
+          {
+            "title": "Supporting daily pressure-drop logs for scrubbers S-1 and S-2",
+            "why": "Only summary statistics provided; daily logs referenced as maintained but not included",
+            "basis": "Permit conditions typically require detailed logs to support summary data in annual reports"
+          },
+          {
+            "title": "Weekly C-1 detector-tube check records for all 52 weeks of 2025",
+            "why": "Only summary statement provided; individual weekly records not included in annual report",
+            "basis": "Permit conditions typically require detailed records supporting summary claims"
+          }
+        ],
+        "confirmed_facts": [],
+        "proposed_facts": [
+          {
+            "key": "acid_line_operating_days_august",
+            "value": "Operating 238 days in 2025; August-specific operating days not itemized in this annual report",
+            "quote": "Acid repackaging line (S-1)...1,842,000...238",
+            "locator": "Page 2, Section 1 throughput table",
+            "as_of": "2025-12-31"
+          },
+          {
+            "key": "c1_carbon_breakthrough_detection",
+            "value": "Weekly detector-tube checks performed every week in 2025 with no breakthrough detected",
+            "quote": "Weekly detector-tube checks at the C-1 outlet were carried out every week in 2025 with no breakthrough detected.",
+            "locator": "Page 3, Section 3",
+            "as_of": "2025-12-31"
+          },
+          {
+            "key": "carbon_replacement_interval",
+            "value": "1,800 pounds of Calgon Filtrasorb 400 replaced on March 14, 2025; next replacement scheduled on or before March 14, 2026",
+            "quote": "The carbon in C-1 was replaced on March 14, 2025 (Calgon Filtrasorb 400, 1,800 pounds, by Northwest Carbon Services). The next scheduled replacement is on or before March 14, 2026.",
+            "locator": "Page 3, Section 3",
+            "as_of": "2025-12-31"
+          },
+          {
+            "key": "caustic_line_operating_days_august",
+            "value": "Operating 231 days in 2025; August-specific operating days not itemized in this annual report",
+            "quote": "Caustic repackaging line (S-2)...1,210,000...231",
+            "locator": "Page 2, Section 1 throughput table",
+            "as_of": "2025-12-31"
+          },
+          {
+            "key": "facility_location",
+            "value": "4410 NW Front Avenue, Portland, Oregon 97210",
+            "quote": "Cascade Specialty Chemicals, LLC — Portland Facility, 4410 NW Front Avenue, Portland, Oregon 97210",
+            "locator": "Page 2, report header",
+            "as_of": "2025-12-31"
+          },
+          {
+            "key": "permit_number",
+            "value": "26-2841-ST-01",
+            "quote": "Standard Air Contaminant Discharge Permit 26-2841-ST-01",
+            "locator": "Page 1 and throughout",
+            "as_of": "2025-12-31"
+          },
+          {
+            "key": "scrubber_s1_design_flow",
+            "value": "S-1 scrubber maintained average pressure drop of 3.8 in. w.c. across 238 operating days",
+            "quote": "S-1...238...3.8...3.1...4.6...0",
+            "locator": "Page 2, Section 2 scrubber log summary",
+            "as_of": "2025-12-31"
+          },
+          {
+            "key": "scrubber_s2_design_flow",
+            "value": "S-2 scrubber maintained average pressure drop of 4.1 in. w.c. across 231 operating days",
+            "quote": "S-2...231...4.1...3.4...5.2...0",
+            "locator": "Page 2, Section 2 scrubber log summary",
+            "as_of": "2025-12-31"
+          },
+          {
+            "key": "solvent_storage_tank_capacity",
+            "value": "Solvent storage tanks T-3 to T-6 received 3,960,000 gallons of acetone, isopropanol, toluene, and xylene in 2025",
+            "quote": "Solvent storage T-3 to T-6 (C-1)...acetone, isopropanol, toluene, xylene...3,960,000 gallons received",
+            "locator": "Page 2, Section 1",
+            "as_of": "2025-12-31"
+          },
+          {
+            "key": "visible_emissions_opacity_limit",
+            "value": "No visible emissions above 20 percent observed at any permitted source in 2025",
+            "quote": "Opacity: no visible emissions above 20 percent were observed at any permitted source in 2025.",
+            "locator": "Page 3, Section 4",
+            "as_of": "2025-12-31"
+          }
+        ]
+      },
+      {
+        "document_id": "88f0951e-ceaa-4cf7-95de-d5d5937aa66d",
+        "title": "Monthly EHS Self-Check",
+        "file_name": "13-company-self-check.docx",
+        "kind": "program",
+        "status": "not_judged",
+        "display_status": "on_file",
+        "doc_date": null,
+        "doc_date_kind": "unknown",
+        "significant_date": null,
+        "significant_date_kind": null,
+        "site": "Portland",
+        "summary": "This is a monthly self-inspection checklist designed to track compliance with workplace safety, air quality, fire safety, and chemical handling standards. The company completes this form to verify that key controls are in place each month — air permit posted and valid, scrubber pressure-drop readings logged within operating ranges, detector-tube checks performed, equipment inspections done, fire extinguishers current, exits clear, eyewash and safety showers functional, and safety data sheets available. Any item marked 'N' must be reported to the Plant Manager by the 5th of the following month.",
+        "open_gaps": [
+          {
+            "title": "No document date or completion record visible",
+            "description": "The template shows blanks for Month, Completed by, and Supervisor with no dates or initials filled in. Without a completed instance of this form, it is not possible to verify whether the company is performing these checks or how recent the most recent check was.",
+            "fix": "Obtain a completed monthly self-check form showing the month reviewed, the date of supervisor review, the employee who completed it, and the results (Y/N and initials) for each line item. Confirm the company fills this out every month.",
+            "citation": "OSHA General Duty Clause (OSH Act Section 5(a)(1)); OAR 340-216-8010 et seq. (Oregon air permit posting and availability requirements)",
+            "basis": "read"
+          },
+          {
+            "title": "No procedure for tracking or escalating failures",
+            "description": "The form states 'Items marked N are reported to the Plant Manager by the 5th of the following month' but does not specify what happens next — no procedure for investigation, root cause, corrective action, documentation, or verification that issues are fixed before the next month.",
+            "fix": "Establish a written procedure defining: (1) what constitutes an 'N' result, (2) who investigates, (3) required corrective actions by category, (4) documentation requirements, (5) verification that fixes are in place before the next check, (6) escalation criteria for repeated failures or safety risks.",
+            "citation": "OSHA General Duty Clause; 29 CFR 1910.22 (general safety requirements); Oregon DEQ permit conditions typically require prompt correction of deficiencies",
+            "basis": "inferred"
+          },
+          {
+            "title": "Missing scope for Line 3 — C-1 detector-tube check frequency and method",
+            "description": "Line 3 calls for 'Weekly C-1 detector-tube checks done and recorded every week this month' but the checklist does not specify what constitutes a valid check (e.g., testing method, recording format, pass/fail criteria, action if outlet exceeds threshold).",
+            "fix": "Add to the procedure or attach a reference document: the standard or protocol for C-1 outlet detector-tube testing, the acceptable range or pass criterion, the required log format, and what corrective action is required if the check shows a failure.",
+            "citation": "Oregon air permit conditions for scrubber outlet monitoring (likely specified in Permit 26-2841-ST-01 or its attachments); ANSI/ASABE standard or equivalent",
+            "basis": "inferred"
+          },
+          {
+            "title": "Missing acceptance range for Line 2 — scrubber pressure-drop readings",
+            "description": "Line 2 specifies 'readings between 2.0 and 6.0' but does not clarify the units (inches water column, bar, kPa, etc.) or reference the source permit condition that sets this range.",
+            "fix": "Amend Line 2 to state the units of measurement (e.g., 'readings between 2.0 and 6.0 inches of water column') and add a reference to the permit condition or design document that establishes this range.",
+            "citation": "Oregon air permit conditions for scrubber operations; company's own Scrubber Pressure-Drop Log document already exists",
+            "basis": "read"
+          },
+          {
+            "title": "No definition of defect follow-up documentation for Line 4",
+            "description": "Line 4 requires 'any defect followed up' but does not specify what follow-up means — repair timelines, work orders, log entries, supervisor approval, or sign-off required.",
+            "fix": "Add to the procedure or manual: define 'follow-up' to include (1) creation of work order or incident report, (2) severity/urgency category, (3) repair deadline (e.g., before next use, within 24 hours, within one week), (4) required documentation (photos, maintenance log entry, mechanic's sign-off), and (5) verification that defect was corrected before the truck next runs.",
+            "citation": "OSHA 29 CFR 1910.178 (powered industrial truck operation and maintenance); company's own PIT Pre-Shift Inspection Log already documents daily checks",
+            "basis": "inferred"
+          },
+          {
+            "title": "Fire extinguisher tag protocol not specified",
+            "description": "Line 5 states fire extinguishers must be 'tagged within the last 12 months; monthly visual check initialled on each tag' but does not specify who performs the monthly check (technician or any employee), where initials go, or what visual checks constitute pass/fail.",
+            "fix": "Add procedures for fire extinguisher maintenance: (1) annual professional inspection/recharge must be performed by a certified service company; (2) monthly visual walk-through: check for damage, blockage, pressure gauge in green zone; (3) log and initial a tag on the extinguisher or maintain a separate log; (4) any defect triggers immediate service or replacement. Reference NFPA 10 or equivalent.",
+            "citation": "NFPA 10 (Standard for Portable Fire Extinguishers); OSHA 29 CFR 1910.157 (general requirements for all portable fire extinguishers)",
+            "basis": "inferred"
+          },
+          {
+            "title": "Eyewash and safety shower flush protocol incomplete",
+            "description": "Line 7 calls for 'Eyewash stations and safety showers flushed this week and logged' but does not specify duration of flush, acceptance criteria, or where logs are kept.",
+            "fix": "Add to the procedure: (1) flushing frequency (at minimum weekly; some standards require daily or when in use); (2) flush duration (typically 1–3 minutes to clear lines); (3) visual inspection for water flow, clarity, and nozzle function; (4) log entry must include date, time, location, flush duration, any defects noted, and initials; (5) any malfunction must trigger repair/replacement before next work day.",
+            "citation": "ANSI Z535.4 (labeling and marking of hazardous substances); OSHA 29 CFR 1910.151 (eye and face protection); many states and facilities follow ANSI Z535.1 or local code for emergency equipment inspection",
+            "basis": "inferred"
+          },
+          {
+            "title": "SDS binder update protocol undefined",
+            "description": "Line 8 requires 'Safety data sheets on hand for every chemical received this month; binder index updated' but does not define who updates the index, how indexing is organized, or how obsolete SDSs are removed.",
+            "fix": "Add to the SDS management procedure: (1) designate responsible person(s); (2) require SDS to be obtained and added to binder within X days of receipt (commonly within 5–10 days); (3) organize by product name, CAS number, or hazard category with consistent labeling; (4) maintain an index or log with product name, receipt date, SDS version date, and location in binder; (5) remove and archive obsolete SDSs (keep for X years per record retention policy); (6) verify accessibility during inspections; (7) train all employees on binder location and use.",
+            "citation": "OSHA 29 CFR 1910.1200(g) (Hazard Communication Standard, SDS requirements)",
+            "basis": "inferred"
+          }
+        ],
+        "conditions": [],
+        "deadlines": [
+          {
+            "title": "Items marked N reported to Plant Manager",
+            "due_on": null,
+            "recurs": true
+          }
+        ],
+        "expected_missing": [
+          {
+            "title": "Completed monthly forms for prior months",
+            "why": "To verify the company is actually conducting these checks monthly and responding to failures, a history of completed forms is essential. Without them, the template is a procedure document only, not evidence of compliance.",
+            "basis": "industry best practice; OSHA expects employers to maintain records of inspections and corrective actions."
+          },
+          {
+            "title": "Escalation or investigation log for 'N' results",
+            "why": "The checklist states failures go to the Plant Manager by the 5th of the following month, but no log of those reports, investigations, or remediation actions was provided. This is critical evidence that problems are addressed.",
+            "basis": "OSHA General Duty Clause and permit conditions typically require documentation of corrective action."
+          },
+          {
+            "title": "Exit route and emergency egress audit or floor plan",
+            "why": "Line 6 checks that exits and aisles are clear and signs are lit, but no floor plan, exit signage documentation, or periodic egress audit procedure is provided.",
+            "basis": "OSHA 1910.35 requires workplace emergency action plans and exit route maintenance."
+          },
+          {
+            "title": "Fire extinguisher maintenance contract or service record",
+            "why": "Line 5 requires annual professional tagging and monthly checks. The company should hold a service contract and annual maintenance records, which are missing from the submission.",
+            "basis": "NFPA 10 and OSHA 1910.157 require documentation of professional inspections."
+          },
+          {
+            "title": "Powered Industrial Truck operator training and evaluation records",
+            "why": "The company has a 'Powered Industrial Truck Operator Training and Evaluation Record' in its document list, but how that links to the pre-shift inspection protocol on Line 4 is not shown.",
+            "basis": "OSHA 1910.178 requires operators to be trained and evaluated, and daily pre-shift checks to be documented."
+          },
+          {
+            "title": "Scrubber maintenance and testing SOP",
+            "why": "Line 2 and 3 reference specific monitoring ranges and detector-tube checks, but the actual procedure, acceptance criteria, and corrective-action thresholds are not attached or incorporated.",
+            "basis": "Air permit conditions and company's own Scrubber Pressure-Drop Log document suggest these details exist elsewhere."
+          },
+          {
+            "title": "SDS master list or binder with current index",
+            "why": "Line 8 requires an updated SDS binder and index. The template does not show how many chemicals are in inventory or what the current index looks like.",
+            "basis": "OSHA 1910.1200(g) requires ready access to SDSs for all hazardous chemicals in use."
+          }
+        ],
+        "confirmed_facts": [],
+        "proposed_facts": [
+          {
+            "key": "inspection_checklist_sections",
+            "value": "8 line items covering air permit, scrubber monitoring, detector-tube checks, forklift inspections, fire extinguisher maintenance, exit routes, eyewash/safety showers, and safety data sheets",
+            "quote": "8 check items numbered 1–8",
+            "locator": "table rows",
+            "as_of": null
+          }
+        ]
+      },
+      {
+        "document_id": "67bfefd2-d327-46e1-8f86-3109b4f0c768",
+        "title": "Powered Industrial Truck Operator Training and Evaluation Record",
+        "file_name": "09-forklift-training-records.pdf",
+        "kind": "record",
+        "status": "recorded",
+        "display_status": "recorded",
+        "doc_date": "2025-06-02",
+        "doc_date_kind": "last_entry",
+        "significant_date": "2025-06-02",
+        "significant_date_kind": "last_entry",
+        "site": "Portland",
+        "summary": "This is a training and evaluation record for operators of powered industrial trucks (forklifts and pallet jacks) at the Portland facility, maintained under OSHA 29 CFR 1910.178(l) and Oregon OSHA rules. It documents formal instruction, practical training, initial evaluation, and three-yearly re-evaluation for three operators, and identifies the certified trainer.",
+        "open_gaps": [],
+        "conditions": [],
+        "deadlines": [
+          {
+            "title": "J. Rivera three-year re-evaluation",
+            "due_on": "2028-06-02",
+            "recurs": true
+          },
+          {
+            "title": "M. Chen three-year re-evaluation",
+            "due_on": "2027-03-11",
+            "recurs": true
+          },
+          {
+            "title": "R. Patel three-year re-evaluation",
+            "due_on": "2026-05-19",
+            "recurs": true
+          }
+        ],
+        "expected_missing": [
+          {
+            "title": "Accident or incident reports involving powered industrial trucks",
+            "why": "The record references refresher training after accidents or near misses, but no such incidents are documented",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Pre-shift or daily inspection logs for powered industrial trucks",
+            "why": "OSHA 1910.178(q) requires that powered industrial trucks be examined before use; daily inspection records are standard for this equipment",
+            "basis": "similar companies, not a checked requirement"
+          }
+        ],
+        "confirmed_facts": [],
+        "proposed_facts": [
+          {
+            "key": "equipment_model",
+            "value": "Toyota 8FGU25 propane counterbalance (unit FL-2) and Crown WP 3000 electric pallet jack (unit PJ-1)",
+            "quote": "Trucks in service: Toyota 8FGU25 propane counterbalance, unit FL-2; Crown WP 3000 electric pallet jack, unit PJ-1.",
+            "locator": "Program reference paragraph, page 1",
+            "as_of": "2025-06-02"
+          },
+          {
+            "key": "operator_j_rivera_certification",
+            "value": "Formal instruction 2025-05-27, practical training 2025-05-29, initial evaluation 2025-06-02, most recent evaluation 2025-06-02, next evaluation due 2028-06-02",
+            "quote": "J. Rivera (Jose Rivera) FL-2, PJ-1 2025-05-27 2025-05-29 2025-06-02 2025-06-02 2028-06-02",
+            "locator": "Table, J. Rivera row, page 1",
+            "as_of": "2025-06-02"
+          },
+          {
+            "key": "operator_m_chen_certification",
+            "value": "Formal instruction 2024-03-04, practical training 2024-03-06, initial evaluation 2024-03-11, most recent evaluation 2024-03-11, next evaluation due 2027-03-11",
+            "quote": "M. Chen (Michael Chen) FL-2, PJ-1 2024-03-04 2024-03-06 2024-03-11 2024-03-11 2027-03-11",
+            "locator": "Table, M. Chen row, page 1",
+            "as_of": "2024-03-11"
+          },
+          {
+            "key": "staff_categories",
+            "value": "Three operators: M. Chen (Michael Chen), J. Rivera (Jose Rivera), R. Patel (Rina Patel); trainer Sandra Ortiz, Warehouse Supervisor",
+            "quote": "Trainer: Sandra Ortiz, Warehouse Supervisor, certified powered industrial truck trainer (Northwest Safety Training Institute, course PIT-T-2022-0417).",
+            "locator": "Trainer line, page 1",
+            "as_of": "2025-06-02"
+          }
+        ]
+      },
+      {
+        "document_id": "6c4b9e16-6d50-4486-bc3d-e076fadeb8f5",
+        "title": "Powered Industrial Truck Pre-Shift Inspection Log",
+        "file_name": "06a-forklift-log.pdf",
+        "kind": "record",
+        "status": "gaps_found",
+        "display_status": "needs_work",
+        "doc_date": "2026-09-18",
+        "doc_date_kind": "last_entry",
+        "significant_date": "2026-09-18",
+        "significant_date_kind": "last_entry",
+        "site": "Portland",
+        "summary": "This is a maintenance and safety record documenting daily pre-shift inspections of a Toyota propane forklift (unit FL-2) at the Portland warehouse for September 2026. It shows inspection results against 12 checklist items required by OSHA 29 CFR 1910.178(q)(7), with equipment hours logged and operator initials recorded for each inspection.",
+        "open_gaps": [
+          {
+            "title": "Missing inspections for September 3-6",
+            "description": "The hour meter shows the truck ran on 5-6 September (hours increased from 4,819 at Sep 2 to 4,834 at Sep 7), but no inspections are documented for Sep 3, 4, 5, or 6. OSHA 29 CFR 1910.178(q)(7) requires examination before the truck is placed in service each shift.",
+            "fix": "Conduct and document inspections for the missing dates, or if the truck did not run those days, correct the hour meter record. If inspections cannot be reconstructed, document why and ensure no gaps remain going forward.",
+            "citation": "OSHA 29 CFR 1910.178(q)(7)",
+            "basis": "read"
+          },
+          {
+            "title": "No supervisor review signature or date",
+            "description": "The log form has a line for 'Supervisor review' with blanks for signature and date, but both are left blank and unsigned. This undermines accountability and verification of the log's completeness.",
+            "fix": "Have a supervisor sign and date the log to certify that they have reviewed the inspections and that all required entries have been completed.",
+            "citation": "OSHA 29 CFR 1910.178(q)(7) (requires documented examination); Oregon Administrative Rules OAR 437-004-1178(q)(7) (likely mirrors federal standard)",
+            "basis": "read"
+          },
+          {
+            "title": "Defect not resolved—horn not working on September 9",
+            "description": "On 9 September, the horn was marked with an X (defect) with the note 'Horn not working'. The log shows the truck continued to be used on subsequent days, but there is no record of when the horn was repaired or whether a work order was issued. OSHA 29 CFR 1910.178(q)(7) states the truck shall not be placed in service if examination shows a condition adversely affecting safety.",
+            "fix": "Document the corrective action taken: when the horn was repaired, by whom, and verification that it was tested and working before the truck returned to service. If it was repaired before the next inspection (Sep 10), document that. If not, explain why the truck was used after the defect was noted.",
+            "citation": "OSHA 29 CFR 1910.178(q)(7)",
+            "basis": "read"
+          }
+        ],
+        "conditions": [
+          {
+            "condition_ref": "OSHA 29 CFR 1910.178(q)(7)",
+            "title": "Examination before each shift",
+            "evidence_expected": "Pre-shift inspection log showing date, time or shift, all 12 checklist items reviewed (tires, forks, mast, horn, lights, seatbelt, brakes, steering, propane tank, fire extinguisher, data plate, overhead guard), operator signature or initials, and notes on any defects found."
+          },
+          {
+            "condition_ref": "OSHA 29 CFR 1910.178(q)(7)",
+            "title": "No defective truck in service",
+            "evidence_expected": "Log entry showing when defects are found, when they are reported to maintenance, when repairs are completed, and verification that the truck was not used until the defect was corrected. For Sep 9 horn defect, repair completion record."
+          },
+          {
+            "condition_ref": "OSHA 29 CFR 1910.178(l)",
+            "title": "Operator training and certification",
+            "evidence_expected": "Operator certification records for M. Chen and J. Rivera showing training date, evaluation date, and re-evaluation due date. Log shows M. Chen certified 2024-03-11 (evaluation due 2027-03-11) and J. Rivera certified 2025-06-02 (evaluation due 2028-06-02)."
+          }
+        ],
+        "deadlines": [
+          {
+            "title": "J. Rivera forklift operator re-evaluation due",
+            "due_on": "2028-06-02",
+            "recurs": true
+          },
+          {
+            "title": "M. Chen forklift operator re-evaluation due",
+            "due_on": "2027-03-11",
+            "recurs": true
+          }
+        ],
+        "expected_missing": [
+          {
+            "title": "Documentation of training and re-evaluation for forklift operators",
+            "why": "OSHA 29 CFR 1910.178(l) requires formal training records, evaluation records, and certificates of training; these would normally be filed separately from the operational log.",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Maintenance and repair history by truck",
+            "why": "Repair records for the Sep 9 horn defect (and any other repairs) would normally be kept separately to track corrective actions and downtime.",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Monthly or annual maintenance inspection record",
+            "why": "OSHA 29 CFR 1910.178(q)(8) implies more detailed maintenance inspections beyond daily pre-shift checks; detailed inspection records would typically accompany a pre-shift log.",
+            "basis": "similar companies, not a checked requirement"
+          }
+        ],
+        "confirmed_facts": [],
+        "proposed_facts": [
+          {
+            "key": "equipment_hours_end",
+            "value": "4,893 hours",
+            "quote": "Sep 18 Day 4,893",
+            "locator": "Page 2, Sep 18 row",
+            "as_of": "2026-09-18"
+          },
+          {
+            "key": "equipment_hours_start",
+            "value": "4,812 hours",
+            "quote": "Sep 1 Day 4,812",
+            "locator": "Page 1, Sep 1 row",
+            "as_of": "2026-09-01"
+          },
+          {
+            "key": "equipment_model",
+            "value": "Toyota 8FGU25, unit FL-2, propane-powered forklift",
+            "quote": "Truck: Toyota 8FGU25, unit FL-2, propane",
+            "locator": "Page 1, header",
+            "as_of": "2026-09-01"
+          },
+          {
+            "key": "inspection_coverage",
+            "value": "11 documented inspection days out of 18 calendar days in the logged period (Sep 1, 2, 7, 8, 9, 10, 11, 14, 15, 16, 17, 18); gaps on Sep 3, 4, 5, 6, 12, 13",
+            "quote": "The hour meter rises between Sep 2 (4,819) and Sep 7 (4,834), which shows the truck ran on the missing days.",
+            "locator": "Page 1-2, inspection log table and note on page 2",
+            "as_of": "2026-09-18"
+          },
+          {
+            "key": "inspection_month",
+            "value": "September 2026",
+            "quote": "Month: September 2026",
+            "locator": "Page 1, header",
+            "as_of": "2026-09-30"
+          },
+          {
+            "key": "operator_j_rivera_certification",
+            "value": "Certified 2025-06-02, evaluation due 2028-06-02",
+            "quote": "J.R. = J. Rivera (certified 2025-06-02, evaluation due 2028-06-02)",
+            "locator": "Page 2, operator key",
+            "as_of": "2026-09-18"
+          },
+          {
+            "key": "operator_m_chen_certification",
+            "value": "Certified 2024-03-11, evaluation due 2027-03-11",
+            "quote": "M.C. = M. Chen (certified 2024-03-11, evaluation due 2027-03-11)",
+            "locator": "Page 2, operator key",
+            "as_of": "2026-09-18"
+          }
+        ]
+      },
+      {
+        "document_id": "84487477-03e2-4f5b-ba10-7df4b8a5cfab",
+        "title": "Powered Industrial Truck Pre-Shift Inspection Log",
+        "file_name": "06b-forklift-log-photo.pdf",
+        "kind": "record",
+        "status": "recorded",
+        "display_status": "recorded",
+        "doc_date": null,
+        "doc_date_kind": "last_entry",
+        "significant_date": null,
+        "significant_date_kind": null,
+        "site": "Portland",
+        "summary": "This is a daily pre-shift inspection log for a Toyota forklift (model 8FGU25) at the Portland warehouse, tracking thirteen safety-critical systems under OSHA 29 CFR 1910.178(q)(7). Each inspection marks components as passing (✓) or defective (X), with operators signing and noting any problems; this document is current through mid-September 2026 and shows one defect flagged on September 9.",
+        "open_gaps": [],
+        "conditions": [
+          {
+            "condition_ref": "OSHA 29 CFR 1910.178(q)(7)",
+            "title": "Daily pre-shift examination before equipment placed in service",
+            "evidence_expected": "Completed inspection log with date, shift, operator name, all checklist items marked (✓ or X), hours, and sign-off; defects immediately reported and corrected before use."
+          },
+          {
+            "condition_ref": "OSHA 29 CFR 1910.178(q)(7)",
+            "title": "Equipment not used if examination reveals a safety defect",
+            "evidence_expected": "Notation in log (as shown Sep 9: 'Horn not working') and maintenance record confirming defect corrected before return to service."
+          },
+          {
+            "condition_ref": "OSHA 29 CFR 1910.178(q)(7)",
+            "title": "Defects reported and corrected immediately",
+            "evidence_expected": "Log entries noting defects, maintenance work order, and follow-up inspection confirming repair before equipment resumes operation."
+          }
+        ],
+        "deadlines": [
+          {
+            "title": "Pre-shift inspection required before each shift",
+            "due_on": null,
+            "recurs": true
+          }
+        ],
+        "expected_missing": [
+          {
+            "title": "Defect correction and follow-up inspection record",
+            "why": "When a defect is found (such as 'Horn not working' on Sep 9), OSHA requires the truck be removed from service and corrected immediately; follow-up inspection showing the repair and return to service are not shown in this log.",
+            "basis": "OSHA 1910.178(q)(7) requires defects be reported and corrected, with no return to service until safe. The Sep 9 entry notes 'Horn not working' but later entries do not show verification the horn was repaired and inspected before the truck was used again."
+          },
+          {
+            "title": "Equipment maintenance history and parts records",
+            "why": "To demonstrate that defects are tracked and corrected, maintenance work orders and parts replacement records support the pre-shift log.",
+            "basis": "Similar companies maintain maintenance files tied to inspection logs to prove defects have been addressed."
+          },
+          {
+            "title": "Operator training and certification records",
+            "why": "OSHA 1910.178(l) requires documented training and evaluation before anyone operates a truck, with re-evaluation at least every three years.",
+            "basis": "Similar companies maintain separate operator certifications; the log names operators (M.C., J.R.) but does not show when they were trained or when re-evaluation is due."
+          }
+        ],
+        "confirmed_facts": [],
+        "proposed_facts": [
+          {
+            "key": "equipment_hours_end",
+            "value": "4,886 hours",
+            "quote": "4,886",
+            "locator": "page 1, Sep 17 row",
+            "as_of": "2026-09-17"
+          },
+          {
+            "key": "equipment_hours_start",
+            "value": "4,812 hours",
+            "quote": "4,812",
+            "locator": "page 1, Sep 1 row",
+            "as_of": "2026-09-01"
+          },
+          {
+            "key": "equipment_model",
+            "value": "Toyota 8FGU25, unit FL-2, propane-powered",
+            "quote": "Truck: Toyota 8FGU25, unit FL-2, propane",
+            "locator": "page 1, header",
+            "as_of": null
+          },
+          {
+            "key": "facility_location",
+            "value": "Portland Warehouse, 4410 NW Front Ave, Portland, Oregon 97210",
+            "quote": "PORTLAND WAREHOUSE",
+            "locator": "page 1, header",
+            "as_of": null
+          },
+          {
+            "key": "inspection_month",
+            "value": "September 2026",
+            "quote": "Month: September 2026",
+            "locator": "page 1, header",
+            "as_of": null
+          },
+          {
+            "key": "operator_j_rivera_certification",
+            "value": "J.R. performed inspections on Sep 7, 10, 11, 16",
+            "quote": "J.R.",
+            "locator": "page 1, Operator column",
+            "as_of": null
+          },
+          {
+            "key": "operator_m_chen_certification",
+            "value": "M.C. performed multiple inspections including Sep 1, 2, 8, 14, 15, 17",
+            "quote": "M.C.",
+            "locator": "page 1, Operator column",
+            "as_of": null
+          }
+        ]
+      },
+      {
+        "document_id": "39bb23ec-2017-46c2-8df0-b25b3cbd599f",
+        "title": "Scrubber Pressure-Drop Log and C-1 Outlet Detector-Tube Check — August and September 2026",
+        "file_name": "07-scrubber-log-record.pdf",
+        "kind": "record",
+        "status": "recorded",
+        "display_status": "recorded",
+        "doc_date": "2026-09-25",
+        "doc_date_kind": "last_entry",
+        "significant_date": "2026-09-25",
+        "significant_date_kind": "last_entry",
+        "site": "Portland",
+        "summary": "This is a compliance record log documenting daily scrubber pressure-drop readings and weekly carbon-unit outlet detector-tube checks for August and September 2026, required by Air Contaminant Discharge Permit 26-2841-ST-01. The log tracks two scrubbers (S-1 for acid repackaging, S-2 for caustic repackaging) and verifies they maintain pressures between 2.0 and 6.0 inches of water column and show no carbon breakthrough.",
+        "open_gaps": [
+          {
+            "title": "Missing supervisor sign-off",
+            "description": "Both August and September logs show blank lines for supervisor review signature and date, which are required for record completion and permit compliance.",
+            "fix": "Complete the supervisor review signature and date fields on both pages immediately.",
+            "citation": "Air Contaminant Discharge Permit 26-2841-ST-01, Conditions 3.1 and 3.3",
+            "basis": "read"
+          },
+          {
+            "title": "Incomplete weekly detector-tube checks in September",
+            "description": "The September detector-tube log shows only two entries (Sep 7 and Sep 21) when the condition requires weekly checks. September has five weeks and should have five weekly readings recorded.",
+            "fix": "Add the missing detector-tube readings for the weeks of September 14 and September 28 (or the applicable weeks if a different schedule is used).",
+            "citation": "Air Contaminant Discharge Permit 26-2841-ST-01, Condition 3.3",
+            "basis": "read"
+          },
+          {
+            "title": "One out-of-range scrubber reading — S-2 on September 9",
+            "description": "On September 9, the S-2 (caustic line) scrubber pressure drop was recorded as 6.4 inches of water column, which exceeds the maximum permitted range of 6.0 inches.",
+            "fix": "Document the cause of the pressure exceedance (e.g., nozzle clogging, line blockage, instrumentation error) and any corrective action taken. This may require notification to Oregon DEQ depending on permit language for exceedances.",
+            "citation": "Air Contaminant Discharge Permit 26-2841-ST-01, Condition 3.1: keep pressure drop between 2.0 and 6.0 inches of water column whenever the line is operating",
+            "basis": "read"
+          }
+        ],
+        "conditions": [
+          {
+            "condition_ref": "3.1",
+            "title": "Record scrubber pressure drop once per operating day",
+            "evidence_expected": "Daily log entries with date, acid line operating status, caustic line operating status, S-1 pressure drop reading (in. w.c.), S-2 pressure drop reading (in. w.c.), and name of person recording"
+          },
+          {
+            "condition_ref": "3.1",
+            "title": "Maintain scrubber pressure drop between 2.0 and 6.0 inches of water column",
+            "evidence_expected": "All daily pressure drop readings within the range of 2.0–6.0 in. w.c.; any exceedances documented with explanation and corrective action"
+          },
+          {
+            "condition_ref": "3.3",
+            "title": "Perform weekly detector-tube check at C-1 carbon unit outlet",
+            "evidence_expected": "Weekly log showing date, tube reading in ppm, whether breakthrough was detected, and name of person performing the check"
+          },
+          {
+            "condition_ref": "3.1 and 3.3",
+            "title": "Maintain supervisor review and sign-off of logs",
+            "evidence_expected": "Signed and dated supervisor review signature on both August and September logs"
+          }
+        ],
+        "deadlines": [
+          {
+            "title": "Perform weekly C-1 outlet detector-tube check",
+            "due_on": null,
+            "recurs": true
+          },
+          {
+            "title": "Record pressure drop readings daily for each operating day",
+            "due_on": null,
+            "recurs": true
+          }
+        ],
+        "expected_missing": [
+          {
+            "title": "Corrective action documentation for the September 9 pressure exceedance",
+            "why": "Needed to show what was done in response to the out-of-range reading and prevent recurrence",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Equipment maintenance and calibration log for the magnehelic gauge",
+            "why": "Pressure readings depend on gauge accuracy; maintenance records should verify calibration",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Permit itself (Air Contaminant Discharge Permit 26-2841-ST-01)",
+            "why": "Referenced in the record but not held; needed to verify all permit conditions are met",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Standard Operating Procedure (SOP) for scrubber operation and pressure-drop measurement",
+            "why": "Should document the procedure for reading gauges, recording data, and responding to exceedances",
+            "basis": "similar companies, not a checked requirement"
+          }
+        ],
+        "confirmed_facts": [],
+        "proposed_facts": [
+          {
+            "key": "acid_line_operating_days_august",
+            "value": "21 days",
+            "quote": "August throughput (from the line counters): acid line ran 21 days",
+            "locator": "Page 1, August summary",
+            "as_of": "2026-08-31"
+          },
+          {
+            "key": "august_pressure_drop_readings_logged",
+            "value": "16 entries for pressure readings",
+            "quote": "Rows entered: 16",
+            "locator": "Page 1, August summary",
+            "as_of": "2026-08-31"
+          },
+          {
+            "key": "c1_carbon_breakthrough_detection",
+            "value": "No breakthrough detected in all weekly checks (August and September)",
+            "quote": "Breakthrough? No (repeated for all entries)",
+            "locator": "Pages 1–2, weekly detector-tube tables",
+            "as_of": "2026-09-21"
+          },
+          {
+            "key": "caustic_line_operating_days_august",
+            "value": "20 days",
+            "quote": "August throughput (from the line counters): acid line ran 21 days, caustic line ran 20 days",
+            "locator": "Page 1, August summary",
+            "as_of": "2026-08-31"
+          },
+          {
+            "key": "scrubber_pressure_drop_exceedance",
+            "value": "One reading above maximum: S-2 at 6.4 in. w.c. on September 9, 2026",
+            "quote": "Sep 9 Y Y 4.0 6.4 T.N.",
+            "locator": "Page 2, September table, Sep 9 entry",
+            "as_of": "2026-09-09"
+          },
+          {
+            "key": "scrubber_pressure_drop_range",
+            "value": "2.0 to 6.0 inches of water column",
+            "quote": "keep it between 2.0 and 6.0 inches of water column whenever the line is operating",
+            "locator": "Page 1, Condition 3.1",
+            "as_of": "2026-08-01"
+          },
+          {
+            "key": "scrubber_s1_design_flow",
+            "value": "Not stated in this record",
+            "quote": null,
+            "locator": "document",
+            "as_of": null
+          },
+          {
+            "key": "scrubber_s2_design_flow",
+            "value": "Not stated in this record",
+            "quote": null,
+            "locator": "document",
+            "as_of": null
+          },
+          {
+            "key": "september_pressure_drop_readings_logged",
+            "value": "18 entries for daily pressure readings through September 25",
+            "quote": "Last entry Sep 25 with 18 rows of daily data shown",
+            "locator": "Page 2, September table",
+            "as_of": "2026-09-25"
+          }
+        ]
+      },
+      {
+        "document_id": "a372f5f8-50af-473f-84b7-20013ad38726",
+        "title": "Standard Air Contaminant Discharge Permit",
+        "file_name": "02-acdp-chemical.pdf",
+        "kind": "permit",
+        "status": "expiring",
+        "display_status": "expiring",
+        "doc_date": "2021-09-01",
+        "doc_date_kind": "issued",
+        "significant_date": "2026-11-15",
+        "significant_date_kind": "expiry",
+        "site": "Portland",
+        "summary": "This is a Standard Air Contaminant Discharge Permit issued by the Oregon Department of Environmental Quality authorizing Cascade Specialty Chemicals to operate two scrubbers, four solvent storage tanks, and associated vapor control equipment for chemical storage and repackaging operations at their Portland facility. The permit sets operating parameters, monitoring requirements, recordkeeping obligations, and reporting deadlines that must be met to remain in lawful operation.",
+        "open_gaps": [],
+        "conditions": [
+          {
+            "condition_ref": "1.1",
+            "title": "Operate permitted sources in compliance with all permit conditions and applicable Department rules",
+            "evidence_expected": "Compliance with all operating conditions in Sections 1-6 and applicable OAR 340-216 rules"
+          },
+          {
+            "condition_ref": "3.1",
+            "title": "Maintain pressure drop across scrubber S-1 within 2.0 to 6.0 inches of water column when operating",
+            "evidence_expected": "Scrubber log documenting daily pressure drop readings during operation"
+          },
+          {
+            "condition_ref": "3.1",
+            "title": "Maintain pressure drop across scrubber S-2 within 2.0 to 6.0 inches of water column when operating",
+            "evidence_expected": "Scrubber log documenting daily pressure drop readings during operation"
+          },
+          {
+            "condition_ref": "3.2",
+            "title": "Inspect scrubber S-1 components (pump, nozzles, packing, mist eliminator) at least quarterly",
+            "evidence_expected": "Scrubber log with quarterly inspection dates, inspector name, and any corrective actions taken"
+          },
+          {
+            "condition_ref": "3.2",
+            "title": "Inspect scrubber S-2 components (pump, nozzles, packing, mist eliminator) at least quarterly",
+            "evidence_expected": "Scrubber log with quarterly inspection dates, inspector name, and any corrective actions taken"
+          },
+          {
+            "condition_ref": "3.3",
+            "title": "Replace carbon in adsorption unit C-1 at least annually or when breakthrough detected, whichever is first",
+            "evidence_expected": "Records documenting date of each carbon replacement and weekly detector-tube checks at C-1 outlet"
+          },
+          {
+            "condition_ref": "3.3",
+            "title": "Perform weekly detector-tube check at carbon adsorption unit C-1 outlet",
+            "evidence_expected": "Weekly detector-tube check documentation showing no breakthrough or date of detection"
+          },
+          {
+            "condition_ref": "3.4",
+            "title": "Ensure visible emissions do not exceed 20 percent opacity for more than three minutes in any one hour",
+            "evidence_expected": "Visual inspection records or monitoring documentation showing compliance"
+          },
+          {
+            "condition_ref": "5.1",
+            "title": "Take reasonable steps to minimize emissions during scrubber malfunction, including stopping the affected repackaging line until scrubber is returned to service",
+            "evidence_expected": "Operation logs showing shutdown of lines when scrubbers malfunction until repair"
+          },
+          {
+            "condition_ref": "5.2",
+            "title": "Notify Department within 24 hours of discovering any permit deviation",
+            "evidence_expected": "Records of telephone or email notification to DEQ and copies of 24-hour notifications made"
+          },
+          {
+            "condition_ref": "5.2",
+            "title": "Submit written report within 15 days of any permit deviation describing deviation, cause, duration, and corrective action",
+            "evidence_expected": "Written deviation reports submitted to DEQ within 15-day window of discovery"
+          },
+          {
+            "condition_ref": "4.1",
+            "title": "Submit annual report by February 15 covering the previous calendar year",
+            "evidence_expected": "Annual report including throughput by line, scrubber log summaries, carbon replacement dates, and excess emission event documentation"
+          },
+          {
+            "condition_ref": "4.2",
+            "title": "Submit semi-annual monitoring report by July 31 covering January through June",
+            "evidence_expected": "Semi-annual monitoring report documenting operations for the first six months of each year"
+          },
+          {
+            "condition_ref": "4.3",
+            "title": "Keep all permit records for at least five years from the date created",
+            "evidence_expected": "Organized record retention system with daily logs, quarterly inspection records, replacement records, monitoring reports, and deviation reports retained for five years"
+          },
+          {
+            "condition_ref": "6.2",
+            "title": "Pay annual permit fee by the due date on Department invoice",
+            "evidence_expected": "Proof of annual permit fee payment within stated deadline on invoice"
+          }
+        ],
+        "deadlines": [
+          {
+            "title": "Inspect each scrubber's recirculation pump, spray nozzles, packing, and mist eliminator",
+            "due_on": null,
+            "recurs": true
+          },
+          {
+            "title": "Notify Department by telephone or email within 24 hours of discovering any permit deviation",
+            "due_on": null,
+            "recurs": false
+          },
+          {
+            "title": "Perform weekly detector-tube check at carbon adsorption unit C-1 outlet",
+            "due_on": null,
+            "recurs": true
+          },
+          {
+            "title": "Permit expires — operation without renewed permit or timely renewal application becomes violation",
+            "due_on": "2026-11-15",
+            "recurs": false
+          },
+          {
+            "title": "Record pressure drop readings for scrubbers S-1 and S-2",
+            "due_on": null,
+            "recurs": true
+          },
+          {
+            "title": "Replace carbon in adsorption unit C-1 or document that weekly check shows no breakthrough",
+            "due_on": null,
+            "recurs": true
+          },
+          {
+            "title": "Submit annual report to Department by February 15",
+            "due_on": null,
+            "recurs": true
+          },
+          {
+            "title": "Submit renewal application to avoid permit expiration without coverage",
+            "due_on": "2026-07-18",
+            "recurs": false
+          },
+          {
+            "title": "Submit semi-annual monitoring report by July 31",
+            "due_on": null,
+            "recurs": true
+          },
+          {
+            "title": "Submit written deviation report within 15 days of discovery",
+            "due_on": null,
+            "recurs": false
+          }
+        ],
+        "expected_missing": [
+          {
+            "title": "Chemical Inventory List with Safety Data Sheets (SDS)",
+            "why": "Facility handles acids, caustics, and solvents; while not required in this air permit, inventory and SDS documentation is typically maintained separately for HAZCOM compliance",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Contingency Plan or Spill Prevention Control and Countermeasure Plan (SPCC)",
+            "why": "Companies handling chemicals typically maintain spill prevention documentation separate from air permits but coordinated with environmental compliance",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Process Safety Management (PSM) Plan",
+            "why": "Chemical repackaging operations may trigger federal OSHA PSM requirements (29 CFR 1910.119), though the air permit itself does not address this",
+            "basis": "similar companies, not a checked requirement"
+          }
+        ],
+        "confirmed_facts": [],
+        "proposed_facts": [
+          {
+            "key": "carbon_replacement_interval",
+            "value": "At least once every 12 months or when breakthrough detected, whichever comes first",
+            "quote": "replace the carbon in adsorption unit C-1 at least once every 12 months or when breakthrough is detected by the weekly detector-tube check at the C-1 outlet, whichever comes first",
+            "locator": "Section 3.3, Page 3",
+            "as_of": "2021-09-01"
+          },
+          {
+            "key": "expiration_date",
+            "value": "2026-11-15",
+            "quote": "Expiration date: November 15, 2026",
+            "locator": "Page 1, permit header and Section 1.2",
+            "as_of": "2021-09-01"
+          },
+          {
+            "key": "facility_location",
+            "value": "4410 NW Front Avenue, Portland, Oregon 97210",
+            "quote": "Facility address: 4410 NW Front Avenue, Portland, Oregon 97210",
+            "locator": "Page 1, permit header",
+            "as_of": "2021-09-01"
+          },
+          {
+            "key": "issued_date",
+            "value": "2021-09-01",
+            "quote": "Date issued: September 1, 2021",
+            "locator": "Page 1, permit header",
+            "as_of": "2021-09-01"
+          },
+          {
+            "key": "permit_number",
+            "value": "26-2841-ST-01",
+            "quote": "Permit number: 26-2841-ST-01",
+            "locator": "Page 1, permit header",
+            "as_of": "2021-09-01"
+          },
+          {
+            "key": "record_retention_period",
+            "value": "Five years from date of record",
+            "quote": "keep all records required by this permit for at least five years from the date of the record",
+            "locator": "Section 4.3, Page 4",
+            "as_of": "2021-09-01"
+          },
+          {
+            "key": "renewal_application_deadline",
+            "value": "120 days before expiration (July 18, 2026)",
+            "quote": "The permittee shall submit a complete application for renewal of this permit no later than 120 days before the expiration date, that is, on or before July 18, 2026",
+            "locator": "Section 1.3, Page 2",
+            "as_of": "2021-09-01"
+          },
+          {
+            "key": "scrubber_pressure_drop_range",
+            "value": "2.0 to 6.0 inches of water column",
+            "quote": "maintain the pressure drop across each scrubber S-1 and S-2 within the range of 2.0 to 6.0 inches of water column whenever the associated line is operating",
+            "locator": "Section 3.1, Page 3",
+            "as_of": "2021-09-01"
+          },
+          {
+            "key": "scrubber_s1_design_flow",
+            "value": "4,500 scfm",
+            "quote": "Packed-bed wet scrubber S-1 serving the acid repackaging line (design flow 4,500 scfm)",
+            "locator": "Section 2.1, Page 3",
+            "as_of": "2021-09-01"
+          },
+          {
+            "key": "scrubber_s2_design_flow",
+            "value": "3,000 scfm",
+            "quote": "Packed-bed wet scrubber S-2 serving the caustic repackaging line (design flow 3,000 scfm)",
+            "locator": "Section 2.2, Page 3",
+            "as_of": "2021-09-01"
+          },
+          {
+            "key": "solvent_storage_tank_capacity",
+            "value": "10,000 gallons each (four tanks: T-3, T-4, T-5, T-6)",
+            "quote": "Solvent storage tanks T-3, T-4, T-5 and T-6 (each 10,000 gallons, fixed roof, vented to carbon adsorption unit C-1)",
+            "locator": "Section 2.3, Page 3",
+            "as_of": "2021-09-01"
+          },
+          {
+            "key": "source_category",
+            "value": "Chemical storage and repackaging with vapor control",
+            "quote": "Source category: Chemical storage and repackaging with vapor control",
+            "locator": "Page 1, permit header",
+            "as_of": "2021-09-01"
+          },
+          {
+            "key": "visible_emissions_opacity_limit",
+            "value": "20 percent opacity maximum for any period exceeding three minutes in any one hour",
+            "quote": "Visible emissions from any permitted source shall not exceed 20 percent opacity for any period aggregating more than three minutes in any one hour",
+            "locator": "Section 3.4, Page 3",
+            "as_of": "2021-09-01"
+          }
+        ]
+      }
+    ],
+    "other_documents": [
+      {
+        "document_id": "5a137618-2f46-4a38-b74a-8e3d878055aa",
+        "title": "Certificate of Annual Maintenance — Portable Fire Extinguishers",
+        "kind": "record",
+        "status": "recorded",
+        "significant_date": "2025-08-20"
+      },
+      {
+        "document_id": "ba964e51-94bc-4aaa-8362-d763ecf30b27",
+        "title": "Emergency Action Plan",
+        "kind": "policy",
+        "status": "gaps_found",
+        "significant_date": "2021-02-01"
+      },
+      {
+        "document_id": "b91959b1-235a-4292-bbfd-19d81b99d84f",
+        "title": "OSHA Form 300A Summary of Work-Related Injuries and Illnesses for Year 2025",
+        "kind": "record",
+        "status": "current",
+        "significant_date": "2026-02-01"
+      },
+      {
+        "document_id": "661d632d-ca16-4fed-bf2f-90317df5447d",
+        "title": "Safety Data Sheet - Sodium Hydroxide Solution, 50%",
+        "kind": "supplier_document",
+        "status": "not_judged",
+        "significant_date": "2024-03-18"
+      }
+    ]
+  },
+  "calls": [
+    {
+      "section": "whole",
+      "wall_ms": 51204,
+      "cost_usd": 0.044954999999999995,
+      "sources": 0,
+      "input_tokens": 18125,
+      "output_tokens": 5366,
+      "searches": 0,
+      "json_parsed": true,
+      "raw_text": "```json\n{\n  \"covers\": {\n    \"documents_read\": [\n      \"baf52b9c-fa92-4aa1-885d-9d32f3ad7811\",\n      \"227d2b8e-c917-405f-84d0-0cb74945fc97\",\n      \"88f0951e-ceaa-4cf7-95de-d5d5937aa66d\",\n      \"67bfefd2-d327-46e1-8f86-3109b4f0c768\",\n      \"6c4b9e16-6d50-4486-bc3d-e076fadeb8f5\",\n      \"84487477-03e2-4f5b-ba10-7df4b8a5cfab\",\n      \"39bb23ec-2017-46c2-8df0-b25b3cbd599f\",\n      \"a372f5f8-50af-473f-84b7-20013ad38726\"\n    ],\n    \"documents_held_but_not_read\": [\n      \"Certificate of Annual Maintenance — Portable Fire Extinguishers\",\n      \"Emergency Action Plan\",\n      \"OSHA Form 300A Summary of Work-Related Injuries and Illnesses for Year 2025\",\n      \"Safety Data Sheet - Sodium Hydroxide Solution, 50%\"\n    ],\n    \"readings_as_of\": \"2026-09-29\"\n  },\n  \"findings\": [\n    {\n      \"title\": \"Air Contaminant Discharge Permit expiration and renewal application deadline\",\n      \"word\": \"stale\",\n      \"document_id\": \"a372f5f8-50af-473f-84b7-20013ad38726\",\n      \"locator\": \"Section 1.2 and 1.3, Page 2\",\n      \"quote\": \"The permittee shall submit a complete application for renewal of this permit no later than 120 days before the expiration date, that is, on or before July 18, 2026.\",\n      \"what_to_do\": \"Confirm whether a renewal application was submitted by July 18, 2026. If not, submit immediately. The permit expires November 15, 2026; operating without a renewed permit or timely renewal application in process becomes a violation.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Scrubber pressure-drop log: incomplete supervisor sign-off\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": \"39bb23ec-2017-46c2-8df0-b25b3cbd599f\",\n      \"locator\": \"August and September logs, supervisor review fields\",\n      \"quote\": \"Both August and September logs show blank lines for supervisor review signature and date, which are required for record completion and permit compliance.\",\n      \"what_to_do\": \"Complete the supervisor review signature and date fields on both August and September logs immediately.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Scrubber pressure-drop log: missing detector-tube checks in September\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": \"39bb23ec-2017-46c2-8df0-b25b3cbd599f\",\n      \"locator\": \"September detector-tube table, Page 2\",\n      \"quote\": \"The September detector-tube log shows only two entries (Sep 7 and Sep 21) when the condition requires weekly checks. September has five weeks and should have five weekly readings recorded.\",\n      \"what_to_do\": \"Add the missing detector-tube readings for the weeks of September 14 and September 28 (or confirm the applicable weekly schedule and provide missing entries).\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Scrubber S-2 out-of-range pressure-drop reading on September 9\",\n      \"word\": \"on_file\",\n      \"document_id\": \"39bb23ec-2017-46c2-8df0-b25b3cbd599f\",\n      \"locator\": \"September table, September 9 entry, Page 2\",\n      \"quote\": \"On September 9, the S-2 (caustic line) scrubber pressure drop was recorded as 6.4 inches of water column, which exceeds the maximum permitted range of 6.0 inches.\",\n      \"what_to_do\": \"Document the cause of the pressure exceedance and any corrective action taken. Determine whether permit language requires notification to Oregon DEQ of this exceedance and, if so, submit notification.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Powered industrial truck pre-shift inspection: missing inspections September 3–6\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": \"6c4b9e16-6d50-4486-bc3d-e076fadeb8f5\",\n      \"locator\": \"September 1–7 inspection log, Page 1, and hour meter comparison\",\n      \"quote\": \"The hour meter shows the truck ran on 5-6 September (hours increased from 4,819 at Sep 2 to 4,834 at Sep 7), but no inspections are documented for Sep 3, 4, 5, or 6. OSHA 29 CFR 1910.178(q)(7) requires examination before the truck is placed in service each shift.\",\n      \"what_to_do\": \"Conduct and document inspections for the missing dates, or if the truck did not run those days, correct the hour meter record. If inspections cannot be reconstructed, document why and ensure no gaps remain going forward.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Powered industrial truck pre-shift inspection: no supervisor review signature\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": \"6c4b9e16-6d50-4486-bc3d-e076fadeb8f5\",\n      \"locator\": \"Supervisor review line, Page 2\",\n      \"quote\": \"The log form has a line for 'Supervisor review' with blanks for signature and date, but both are left blank and unsigned.\",\n      \"what_to_do\": \"Have a supervisor sign and date the log to certify that they have reviewed the inspections and that all required entries have been completed.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Powered industrial truck: horn defect on September 9 not resolved in log\",\n      \"word\": \"on_file\",\n      \"document_id\": \"6c4b9e16-6d50-4486-bc3d-e076fadeb8f5\",\n      \"locator\": \"September 9 entry, Page 2\",\n      \"quote\": \"On 9 September, the horn was marked with an X (defect) with the note 'Horn not working'. The log shows the truck continued to be used on subsequent days, but there is no record of when the horn was repaired or whether a work order was issued.\",\n      \"what_to_do\": \"Document the corrective action taken: when the horn was repaired, by whom, and verification that it was tested and working before the truck returned to service. If the truck was not used after the defect was noted, verify and document that.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Monthly EHS Self-Check: no completed forms on file\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": \"88f0951e-ceaa-4cf7-95de-d5d5937aa66d\",\n      \"locator\": \"Form header and template, entire document\",\n      \"quote\": \"The template shows blanks for Month, Completed by, and Supervisor with no dates or initials filled in. Without a completed instance of this form, it is not possible to verify whether the company is performing these checks or how recent the most recent check was.\",\n      \"what_to_do\": \"Obtain a completed monthly self-check form showing the month reviewed, the date of supervisor review, the employee who completed it, and the results (Y/N and initials) for each line item. Confirm the company fills this out every month and provide copies for the most recent 12 months.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Monthly EHS Self-Check: no procedure for tracking or escalating failures\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": \"88f0951e-ceaa-4cf7-95de-d5d5937aa66d\",\n      \"locator\": \"Line item instructions, entire document\",\n      \"quote\": null,\n      \"what_to_do\": \"Establish a written procedure defining: (1) what constitutes an 'N' result, (2) who investigates, (3) required corrective actions by category, (4) documentation requirements, (5) verification that fixes are in place before the next check, (6) escalation criteria for repeated failures or safety risks.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Monthly EHS Self-Check Line 3: missing scope for detector-tube check frequency and method\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": \"88f0951e-ceaa-4cf7-95de-d5d5937aa66d\",\n      \"locator\": \"Line 3, entire document\",\n      \"quote\": null,\n      \"what_to_do\": \"Add to the procedure or attach a reference document: the standard or protocol for C-1 outlet detector-tube testing, the acceptable range or pass criterion, the required log format, and what corrective action is required if the check shows a failure.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Monthly EHS Self-Check Line 2: missing units for scrubber pressure-drop acceptance range\",\n      \"word\": \"on_file\",\n      \"document_id\": \"88f0951e-ceaa-4cf7-95de-d5d5937aa66d\",\n      \"locator\": \"Line 2, self-check form\",\n      \"quote\": null,\n      \"what_to_do\": \"Amend Line 2 to state the units of measurement (e.g., 'readings between 2.0 and 6.0 inches of water column') and add a reference to the permit condition or design document that establishes this range.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Monthly EHS Self-Check Line 4: missing follow-up documentation definition for equipment defects\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": \"88f0951e-ceaa-4cf7-95de-d5d5937aa66d\",\n      \"locator\": \"Line 4, entire document\",\n      \"quote\": null,\n      \"what_to_do\": \"Add to the procedure or manual: define 'follow-up' to include (1) creation of work order or incident report, (2) severity/urgency category, (3) repair deadline (e.g., before next use, within 24 hours, within one week), (4) required documentation (photos, maintenance log entry, mechanic's sign-off), and (5) verification that defect was corrected.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Monthly EHS Self-Check Line 5: fire extinguisher maintenance protocol not specified\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": \"88f0951e-ceaa-4cf7-95de-d5d5937aa66d\",\n      \"locator\": \"Line 5, entire document\",\n      \"quote\": null,\n      \"what_to_do\": \"Add procedures for fire extinguisher maintenance: (1) annual professional inspection/recharge must be performed by a certified service company; (2) monthly visual walk-through: check for damage, blockage, pressure gauge in green zone; (3) log and initial a tag on the extinguisher or maintain a separate log; (4) any defect triggers immediate service or replacement.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Monthly EHS Self-Check Line 7: eyewash and safety shower flush protocol incomplete\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": \"88f0951e-ceaa-4cf7-95de-d5d5937aa66d\",\n      \"locator\": \"Line 7, entire document\",\n      \"quote\": null,\n      \"what_to_do\": \"Add to the procedure: (1) flushing frequency (at minimum weekly; some standards require daily or when in use); (2) flush duration (typically 1–3 minutes to clear lines); (3) visual inspection for water flow, clarity, and nozzle function; (4) log entry must include date, time, location, flush duration, any defects noted, and initials; (5) any malfunction must trigger repair/replacement before next work day.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Monthly EHS Self-Check Line 8: SDS binder update protocol undefined\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": \"88f0951e-ceaa-4cf7-95de-d5d5937aa66d\",\n      \"locator\": \"Line 8, entire document\",\n      \"quote\": null,\n      \"what_to_do\": \"Add to the SDS management procedure: (1) designate responsible person(s); (2) require SDS to be obtained and added to binder within X days of receipt; (3) organize by product name, CAS number, or hazard category with consistent labeling; (4) maintain an index or log with product name, receipt date, SDS version date, and location in binder; (5) remove and archive obsolete SDSs; (6) verify accessibility during inspections; (7) train all employees on binder location and use.\",\n      \"basis\": \"read\"\n    }\n  ],\n  \"dates\": [\n    {\n      \"title\": \"Air Contaminant Discharge Permit renewal application submission deadline\",\n      \"due_on\": \"2026-07-18\",\n      \"recurs\": false,\n      \"document_id\": \"a372f5f8-50af-473f-84b7-20013ad38726\",\n      \"passed\": true\n    },\n    {\n      \"title\": \"Air Contaminant Discharge Permit expiration\",\n      \"due_on\": \"2026-11-15\",\n      \"recurs\": false,\n      \"document_id\": \"a372f5f8-50af-473f-84b7-20013ad38726\",\n      \"passed\": false\n    },\n    {\n      \"title\": \"Annual permit report submission (recurring, due February 15 each year)\",\n      \"due_on\": \"2027-02-15\",\n      \"recurs\": true,\n      \"document_id\": \"227d2b8e-c917-405f-84d0-0cb74945fc97\",\n      \"passed\": false\n    },\n    {\n      \"title\": \"Carbon adsorption unit C-1 scheduled replacement (recurring annual or upon breakthrough)\",\n      \"due_on\": \"2026-03-14\",\n      \"recurs\": true,\n      \"document_id\": \"227d2b8e-c917-405f-84d0-0cb74945fc97\",\n      \"passed\": true\n    },\n    {\n      \"title\": \"R. Patel powered industrial truck operator re-evaluation\",\n      \"due_on\": \"2026-05-19\",\n      \"recurs\": true,\n      \"document_id\": \"67bfefd2-d327-46e1-8f86-3109b4f0c768\",\n      \"passed\": true\n    },\n    {\n      \"title\": \"M. Chen powered industrial truck operator re-evaluation\",\n      \"due_on\": \"2027-03-11\",\n      \"recurs\": true,\n      \"document_id\": \"67bfefd2-d327-46e1-8f86-3109b4f0c768\",\n      \"passed\": false\n    },\n    {\n      \"title\": \"J. Rivera powered industrial truck operator re-evaluation\",\n      \"due_on\": \"2028-06-02\",\n      \"recurs\": true,\n      \"document_id\": \"67bfefd2-d327-46e1-8f86-3109b4f0c768\",\n      \"passed\": false\n    }\n  ],\n  \"not_document_questions\": [\n    \"Has the company submitted the renewal application for Air Contaminant Discharge Permit 26-2841-ST-01 by July 18, 2026, and has Oregon DEQ acknowledged receipt?\",\n    \"What corrective action was taken in response to the September 9 scrubber S-2 out-of-range pressure reading (6.4 in. w.c.), and was Oregon DEQ notified if required by permit language?\",\n    \"Has the horn defect on powered industrial truck FL-2 (noted September 9) been repaired, and when was the truck returned to service after repair?\",\n    \"What is the frequency and documentation method used for the monthly EHS self-checks, and where are completed forms for the past 12 months kept?\",\n    \"Are escalation and follow-up procedures in place for items marked 'N' on the monthly EHS self-check, and what corrective actions have been taken?\",\n    \"What is the schedule and procedure for quarterly scrubber S-1 and S-2 component inspections (pump, nozzles, packing, mist eliminator), and where are records kept?\",\n    \"What is the documented procedure for measuring detector-tube checks at the C-1 carbon unit outlet, including the test method, pass/fail criteria, and corrective actions?\",\n    \"What fire extinguisher maintenance contract or service records are in place, and when was the last annual professional inspection completed?\"\n  ],\n  \"expected_not_seen\": [\n    {\n      \"title\": \"Completed monthly EHS Self-Check forms for prior months\",\n      \"why\": \"To verify the company is conducting these checks monthly and responding to failures, a history of completed forms showing month, completion date, supervisor review date, and results (Y/N) for each line item is essential evidence of compliance.\"\n    },\n    {\n      \"title\": \"Escalation or investigation log for 'N' results on monthly self-checks\",\n      \"why\": \"The template states failures go to the Plant Manager by the 5th of the following month, but a log of those reports, investigations, root-cause findings, and remediation actions is critical evidence that problems are tracked and addressed.\"\n    },\n    {\n      \"title\": \"Scrubber quarterly maintenance inspection records for S-1 and S-2\",\n      \"why\": \"The annual report and permit reference quarterly inspections of scrubber components (pump, nozzles, packing, mist eliminator), but individual quarterly inspection records were not provided. These are required by the permit to show maintenance is occurring on schedule.\"\n    },\n    {\n      \"title\": \"Corrective action documentation for the September 9 scrubber S-2 pressure exceedance\",\n      \"why\": \"A reading of 6.4 in. w.c. exceeds the permitted range. Documentation of the cause (clogging, blockage, gauge error) and corrective action taken is needed to show compliance and to satisfy any permit deviation reporting requirements.\"\n    },\n    {\n      \"title\": \"Maintenance and repair log for powered industrial truck FL-2\",\n      \"why\": \"The pre-shift inspection log shows defects (e.g., horn not working on Sep 9), but separate maintenance work orders and repair completion records are needed to verify that defects are corrected and the truck is safe before returning to service.\"\n    },\n    {\n      \"title\": \"Air Contaminant Discharge Permit 26-2841-ST-01 (full permit document)\",\n      \"why\": \"The company holds this permit but it was not provided for review. A copy should be retained at the facility for reference, and it contains specific operating conditions, monitoring methods, and reporting requirements that guide compliance.\"\n    },\n    {\n      \"title\": \"Standard Operating Procedure (SOP) for scrubber operation and pressure-drop measurement\",\n      \"why\": \"Pressure readings depend on consistent methods and gauge calibration. An SOP documenting the procedure for reading gauges, recording data, acceptable ranges, and responding to exceedances supports accurate compliance monitoring.\"\n    },\n    {\n      \"title\": \"Equipment maintenance and calibration log for scrubber pressure gauges\",\n      \"why\": \"The pressure readings recorded in the scrubber log depend on gauge accuracy. A calibration and maintenance record for the magnehelic gauge (or equivalent) verifies that readings are reliable.\"\n    },\n    {\n      \"title\": \"Fire extinguisher maintenance contract and annual service records\",\n      \"why\": \"The monthly self-check requires annual professional tagging and monthly visual checks of fire extinguishers. A service contract and annual maintenance records (with dates and technician signatures) are standard evidence of compliance with NFPA 10 and OSHA 29 CFR 1910.157.\"\n    },\n    {\n      \"title\": \"SDS master list or binder with current index\",\n      \"why\": \"The monthly self-check requires that safety data sheets be on hand for every chemical received and that the binder index be updated. A master inventory, current index, and organized binder demonstrate readiness and compliance with OSHA 29 CFR 1910.1200(g).\"\n    },\n    {\n      \"title\": \"Exit route and emergency egress audit or floor plan\",\n      \"why\": \"The monthly self-check includes Line 6 (exits and aisles clear, signs lit). A floor plan and periodic egress audit procedure provide documentation that emergency exit routes are maintained and accessible.\"\n    },\n    {\n      \"title\": \"Deviation report DEV-2025-0913 (August 22 pump failure incident)\",\n      \"why\": \"The 2025 annual report references a deviation (August 22 pump failure) but the written deviation report itself was not included. The full written report, with date of discovery, notification to DEQ, cause, duration, and corrective action, is required by the permit.\"\n    }\n  ],\n  \"contradictions\": []\n}\n```"
+    }
+  ],
+  "answer": {
+    "covers": {
+      "documents_read": [
+        "baf52b9c-fa92-4aa1-885d-9d32f3ad7811",
+        "227d2b8e-c917-405f-84d0-0cb74945fc97",
+        "88f0951e-ceaa-4cf7-95de-d5d5937aa66d",
+        "67bfefd2-d327-46e1-8f86-3109b4f0c768",
+        "6c4b9e16-6d50-4486-bc3d-e076fadeb8f5",
+        "84487477-03e2-4f5b-ba10-7df4b8a5cfab",
+        "39bb23ec-2017-46c2-8df0-b25b3cbd599f",
+        "a372f5f8-50af-473f-84b7-20013ad38726"
+      ],
+      "documents_held_but_not_read": [
+        "Certificate of Annual Maintenance — Portable Fire Extinguishers",
+        "Emergency Action Plan",
+        "OSHA Form 300A Summary of Work-Related Injuries and Illnesses for Year 2025",
+        "Safety Data Sheet - Sodium Hydroxide Solution, 50%"
+      ],
+      "readings_as_of": "2026-09-29"
+    },
+    "findings": [
+      {
+        "title": "Air Contaminant Discharge Permit expiration and renewal application deadline",
+        "word": "stale",
+        "document_id": "a372f5f8-50af-473f-84b7-20013ad38726",
+        "locator": "Section 1.2 and 1.3, Page 2",
+        "quote": "The permittee shall submit a complete application for renewal of this permit no later than 120 days before the expiration date, that is, on or before July 18, 2026.",
+        "what_to_do": "Confirm whether a renewal application was submitted by July 18, 2026. If not, submit immediately. The permit expires November 15, 2026; operating without a renewed permit or timely renewal application in process becomes a violation.",
+        "basis": "read"
+      },
+      {
+        "title": "Scrubber pressure-drop log: incomplete supervisor sign-off",
+        "word": "nothing_on_file",
+        "document_id": "39bb23ec-2017-46c2-8df0-b25b3cbd599f",
+        "locator": "August and September logs, supervisor review fields",
+        "quote": "Both August and September logs show blank lines for supervisor review signature and date, which are required for record completion and permit compliance.",
+        "what_to_do": "Complete the supervisor review signature and date fields on both August and September logs immediately.",
+        "basis": "read"
+      },
+      {
+        "title": "Scrubber pressure-drop log: missing detector-tube checks in September",
+        "word": "nothing_on_file",
+        "document_id": "39bb23ec-2017-46c2-8df0-b25b3cbd599f",
+        "locator": "September detector-tube table, Page 2",
+        "quote": "The September detector-tube log shows only two entries (Sep 7 and Sep 21) when the condition requires weekly checks. September has five weeks and should have five weekly readings recorded.",
+        "what_to_do": "Add the missing detector-tube readings for the weeks of September 14 and September 28 (or confirm the applicable weekly schedule and provide missing entries).",
+        "basis": "read"
+      },
+      {
+        "title": "Scrubber S-2 out-of-range pressure-drop reading on September 9",
+        "word": "on_file",
+        "document_id": "39bb23ec-2017-46c2-8df0-b25b3cbd599f",
+        "locator": "September table, September 9 entry, Page 2",
+        "quote": "On September 9, the S-2 (caustic line) scrubber pressure drop was recorded as 6.4 inches of water column, which exceeds the maximum permitted range of 6.0 inches.",
+        "what_to_do": "Document the cause of the pressure exceedance and any corrective action taken. Determine whether permit language requires notification to Oregon DEQ of this exceedance and, if so, submit notification.",
+        "basis": "read"
+      },
+      {
+        "title": "Powered industrial truck pre-shift inspection: missing inspections September 3–6",
+        "word": "nothing_on_file",
+        "document_id": "6c4b9e16-6d50-4486-bc3d-e076fadeb8f5",
+        "locator": "September 1–7 inspection log, Page 1, and hour meter comparison",
+        "quote": "The hour meter shows the truck ran on 5-6 September (hours increased from 4,819 at Sep 2 to 4,834 at Sep 7), but no inspections are documented for Sep 3, 4, 5, or 6. OSHA 29 CFR 1910.178(q)(7) requires examination before the truck is placed in service each shift.",
+        "what_to_do": "Conduct and document inspections for the missing dates, or if the truck did not run those days, correct the hour meter record. If inspections cannot be reconstructed, document why and ensure no gaps remain going forward.",
+        "basis": "read"
+      },
+      {
+        "title": "Powered industrial truck pre-shift inspection: no supervisor review signature",
+        "word": "nothing_on_file",
+        "document_id": "6c4b9e16-6d50-4486-bc3d-e076fadeb8f5",
+        "locator": "Supervisor review line, Page 2",
+        "quote": "The log form has a line for 'Supervisor review' with blanks for signature and date, but both are left blank and unsigned.",
+        "what_to_do": "Have a supervisor sign and date the log to certify that they have reviewed the inspections and that all required entries have been completed.",
+        "basis": "read"
+      },
+      {
+        "title": "Powered industrial truck: horn defect on September 9 not resolved in log",
+        "word": "on_file",
+        "document_id": "6c4b9e16-6d50-4486-bc3d-e076fadeb8f5",
+        "locator": "September 9 entry, Page 2",
+        "quote": "On 9 September, the horn was marked with an X (defect) with the note 'Horn not working'. The log shows the truck continued to be used on subsequent days, but there is no record of when the horn was repaired or whether a work order was issued.",
+        "what_to_do": "Document the corrective action taken: when the horn was repaired, by whom, and verification that it was tested and working before the truck returned to service. If the truck was not used after the defect was noted, verify and document that.",
+        "basis": "read"
+      },
+      {
+        "title": "Monthly EHS Self-Check: no completed forms on file",
+        "word": "nothing_on_file",
+        "document_id": "88f0951e-ceaa-4cf7-95de-d5d5937aa66d",
+        "locator": "Form header and template, entire document",
+        "quote": "The template shows blanks for Month, Completed by, and Supervisor with no dates or initials filled in. Without a completed instance of this form, it is not possible to verify whether the company is performing these checks or how recent the most recent check was.",
+        "what_to_do": "Obtain a completed monthly self-check form showing the month reviewed, the date of supervisor review, the employee who completed it, and the results (Y/N and initials) for each line item. Confirm the company fills this out every month and provide copies for the most recent 12 months.",
+        "basis": "read"
+      },
+      {
+        "title": "Monthly EHS Self-Check: no procedure for tracking or escalating failures",
+        "word": "nothing_on_file",
+        "document_id": "88f0951e-ceaa-4cf7-95de-d5d5937aa66d",
+        "locator": "Line item instructions, entire document",
+        "quote": null,
+        "what_to_do": "Establish a written procedure defining: (1) what constitutes an 'N' result, (2) who investigates, (3) required corrective actions by category, (4) documentation requirements, (5) verification that fixes are in place before the next check, (6) escalation criteria for repeated failures or safety risks.",
+        "basis": "read"
+      },
+      {
+        "title": "Monthly EHS Self-Check Line 3: missing scope for detector-tube check frequency and method",
+        "word": "nothing_on_file",
+        "document_id": "88f0951e-ceaa-4cf7-95de-d5d5937aa66d",
+        "locator": "Line 3, entire document",
+        "quote": null,
+        "what_to_do": "Add to the procedure or attach a reference document: the standard or protocol for C-1 outlet detector-tube testing, the acceptable range or pass criterion, the required log format, and what corrective action is required if the check shows a failure.",
+        "basis": "read"
+      },
+      {
+        "title": "Monthly EHS Self-Check Line 2: missing units for scrubber pressure-drop acceptance range",
+        "word": "on_file",
+        "document_id": "88f0951e-ceaa-4cf7-95de-d5d5937aa66d",
+        "locator": "Line 2, self-check form",
+        "quote": null,
+        "what_to_do": "Amend Line 2 to state the units of measurement (e.g., 'readings between 2.0 and 6.0 inches of water column') and add a reference to the permit condition or design document that establishes this range.",
+        "basis": "read"
+      },
+      {
+        "title": "Monthly EHS Self-Check Line 4: missing follow-up documentation definition for equipment defects",
+        "word": "nothing_on_file",
+        "document_id": "88f0951e-ceaa-4cf7-95de-d5d5937aa66d",
+        "locator": "Line 4, entire document",
+        "quote": null,
+        "what_to_do": "Add to the procedure or manual: define 'follow-up' to include (1) creation of work order or incident report, (2) severity/urgency category, (3) repair deadline (e.g., before next use, within 24 hours, within one week), (4) required documentation (photos, maintenance log entry, mechanic's sign-off), and (5) verification that defect was corrected.",
+        "basis": "read"
+      },
+      {
+        "title": "Monthly EHS Self-Check Line 5: fire extinguisher maintenance protocol not specified",
+        "word": "nothing_on_file",
+        "document_id": "88f0951e-ceaa-4cf7-95de-d5d5937aa66d",
+        "locator": "Line 5, entire document",
+        "quote": null,
+        "what_to_do": "Add procedures for fire extinguisher maintenance: (1) annual professional inspection/recharge must be performed by a certified service company; (2) monthly visual walk-through: check for damage, blockage, pressure gauge in green zone; (3) log and initial a tag on the extinguisher or maintain a separate log; (4) any defect triggers immediate service or replacement.",
+        "basis": "read"
+      },
+      {
+        "title": "Monthly EHS Self-Check Line 7: eyewash and safety shower flush protocol incomplete",
+        "word": "nothing_on_file",
+        "document_id": "88f0951e-ceaa-4cf7-95de-d5d5937aa66d",
+        "locator": "Line 7, entire document",
+        "quote": null,
+        "what_to_do": "Add to the procedure: (1) flushing frequency (at minimum weekly; some standards require daily or when in use); (2) flush duration (typically 1–3 minutes to clear lines); (3) visual inspection for water flow, clarity, and nozzle function; (4) log entry must include date, time, location, flush duration, any defects noted, and initials; (5) any malfunction must trigger repair/replacement before next work day.",
+        "basis": "read"
+      },
+      {
+        "title": "Monthly EHS Self-Check Line 8: SDS binder update protocol undefined",
+        "word": "nothing_on_file",
+        "document_id": "88f0951e-ceaa-4cf7-95de-d5d5937aa66d",
+        "locator": "Line 8, entire document",
+        "quote": null,
+        "what_to_do": "Add to the SDS management procedure: (1) designate responsible person(s); (2) require SDS to be obtained and added to binder within X days of receipt; (3) organize by product name, CAS number, or hazard category with consistent labeling; (4) maintain an index or log with product name, receipt date, SDS version date, and location in binder; (5) remove and archive obsolete SDSs; (6) verify accessibility during inspections; (7) train all employees on binder location and use.",
+        "basis": "read"
+      }
+    ],
+    "dates": [
+      {
+        "title": "Air Contaminant Discharge Permit renewal application submission deadline",
+        "due_on": "2026-07-18",
+        "recurs": false,
+        "document_id": "a372f5f8-50af-473f-84b7-20013ad38726",
+        "passed": true
+      },
+      {
+        "title": "Air Contaminant Discharge Permit expiration",
+        "due_on": "2026-11-15",
+        "recurs": false,
+        "document_id": "a372f5f8-50af-473f-84b7-20013ad38726",
+        "passed": false
+      },
+      {
+        "title": "Annual permit report submission (recurring, due February 15 each year)",
+        "due_on": "2027-02-15",
+        "recurs": true,
+        "document_id": "227d2b8e-c917-405f-84d0-0cb74945fc97",
+        "passed": false
+      },
+      {
+        "title": "Carbon adsorption unit C-1 scheduled replacement (recurring annual or upon breakthrough)",
+        "due_on": "2026-03-14",
+        "recurs": true,
+        "document_id": "227d2b8e-c917-405f-84d0-0cb74945fc97",
+        "passed": true
+      },
+      {
+        "title": "R. Patel powered industrial truck operator re-evaluation",
+        "due_on": "2026-05-19",
+        "recurs": true,
+        "document_id": "67bfefd2-d327-46e1-8f86-3109b4f0c768",
+        "passed": true
+      },
+      {
+        "title": "M. Chen powered industrial truck operator re-evaluation",
+        "due_on": "2027-03-11",
+        "recurs": true,
+        "document_id": "67bfefd2-d327-46e1-8f86-3109b4f0c768",
+        "passed": false
+      },
+      {
+        "title": "J. Rivera powered industrial truck operator re-evaluation",
+        "due_on": "2028-06-02",
+        "recurs": true,
+        "document_id": "67bfefd2-d327-46e1-8f86-3109b4f0c768",
+        "passed": false
+      }
+    ],
+    "not_document_questions": [
+      "Has the company submitted the renewal application for Air Contaminant Discharge Permit 26-2841-ST-01 by July 18, 2026, and has Oregon DEQ acknowledged receipt?",
+      "What corrective action was taken in response to the September 9 scrubber S-2 out-of-range pressure reading (6.4 in. w.c.), and was Oregon DEQ notified if required by permit language?",
+      "Has the horn defect on powered industrial truck FL-2 (noted September 9) been repaired, and when was the truck returned to service after repair?",
+      "What is the frequency and documentation method used for the monthly EHS self-checks, and where are completed forms for the past 12 months kept?",
+      "Are escalation and follow-up procedures in place for items marked 'N' on the monthly EHS self-check, and what corrective actions have been taken?",
+      "What is the schedule and procedure for quarterly scrubber S-1 and S-2 component inspections (pump, nozzles, packing, mist eliminator), and where are records kept?",
+      "What is the documented procedure for measuring detector-tube checks at the C-1 carbon unit outlet, including the test method, pass/fail criteria, and corrective actions?",
+      "What fire extinguisher maintenance contract or service records are in place, and when was the last annual professional inspection completed?"
+    ],
+    "expected_not_seen": [
+      {
+        "title": "Completed monthly EHS Self-Check forms for prior months",
+        "why": "To verify the company is conducting these checks monthly and responding to failures, a history of completed forms showing month, completion date, supervisor review date, and results (Y/N) for each line item is essential evidence of compliance."
+      },
+      {
+        "title": "Escalation or investigation log for 'N' results on monthly self-checks",
+        "why": "The template states failures go to the Plant Manager by the 5th of the following month, but a log of those reports, investigations, root-cause findings, and remediation actions is critical evidence that problems are tracked and addressed."
+      },
+      {
+        "title": "Scrubber quarterly maintenance inspection records for S-1 and S-2",
+        "why": "The annual report and permit reference quarterly inspections of scrubber components (pump, nozzles, packing, mist eliminator), but individual quarterly inspection records were not provided. These are required by the permit to show maintenance is occurring on schedule."
+      },
+      {
+        "title": "Corrective action documentation for the September 9 scrubber S-2 pressure exceedance",
+        "why": "A reading of 6.4 in. w.c. exceeds the permitted range. Documentation of the cause (clogging, blockage, gauge error) and corrective action taken is needed to show compliance and to satisfy any permit deviation reporting requirements."
+      },
+      {
+        "title": "Maintenance and repair log for powered industrial truck FL-2",
+        "why": "The pre-shift inspection log shows defects (e.g., horn not working on Sep 9), but separate maintenance work orders and repair completion records are needed to verify that defects are corrected and the truck is safe before returning to service."
+      },
+      {
+        "title": "Air Contaminant Discharge Permit 26-2841-ST-01 (full permit document)",
+        "why": "The company holds this permit but it was not provided for review. A copy should be retained at the facility for reference, and it contains specific operating conditions, monitoring methods, and reporting requirements that guide compliance."
+      },
+      {
+        "title": "Standard Operating Procedure (SOP) for scrubber operation and pressure-drop measurement",
+        "why": "Pressure readings depend on consistent methods and gauge calibration. An SOP documenting the procedure for reading gauges, recording data, acceptable ranges, and responding to exceedances supports accurate compliance monitoring."
+      },
+      {
+        "title": "Equipment maintenance and calibration log for scrubber pressure gauges",
+        "why": "The pressure readings recorded in the scrubber log depend on gauge accuracy. A calibration and maintenance record for the magnehelic gauge (or equivalent) verifies that readings are reliable."
+      },
+      {
+        "title": "Fire extinguisher maintenance contract and annual service records",
+        "why": "The monthly self-check requires annual professional tagging and monthly visual checks of fire extinguishers. A service contract and annual maintenance records (with dates and technician signatures) are standard evidence of compliance with NFPA 10 and OSHA 29 CFR 1910.157."
+      },
+      {
+        "title": "SDS master list or binder with current index",
+        "why": "The monthly self-check requires that safety data sheets be on hand for every chemical received and that the binder index be updated. A master inventory, current index, and organized binder demonstrate readiness and compliance with OSHA 29 CFR 1910.1200(g)."
+      },
+      {
+        "title": "Exit route and emergency egress audit or floor plan",
+        "why": "The monthly self-check includes Line 6 (exits and aisles clear, signs lit). A floor plan and periodic egress audit procedure provide documentation that emergency exit routes are maintained and accessible."
+      },
+      {
+        "title": "Deviation report DEV-2025-0913 (August 22 pump failure incident)",
+        "why": "The 2025 annual report references a deviation (August 22 pump failure) but the written deviation report itself was not included. The full written report, with date of discovery, notification to DEQ, cause, duration, and corrective action, is required by the permit."
+      }
+    ],
+    "contradictions": []
+  },
+  "verdicts": {
+    "renewal-passed": {
+      "verdict": "PASS",
+      "detail": "findings: \"Air Contaminant Discharge Permit expiration and renewal application \" [stale]"
+    },
+    "expiry-date": {
+      "verdict": "PASS",
+      "detail": "findings: \"Air Contaminant Discharge Permit expiration and renewal application \" [stale]"
+    },
+    "quarterly-inspection": {
+      "verdict": "FAIL",
+      "detail": "no item matched with word=nothing_on_file. held: Air Contaminant Discharge Permit e | Scrubber pressure-drop log: incomp | Scrubber pressure-drop log: missin | Scrubber S-2 out-of-range pressure | Powered industrial truck pre-shift | Powered industrial truck pre-shift | Powered industrial truck: horn def | Monthly EHS Self-Check: no complet | Monthly EHS Self-Check: no procedu | Monthly EHS Self-Check Line 3: mis | Monthly EHS Self-Check Line 2: mis | Monthly EHS Self-Check Line 4: mis | Monthly EHS Self-Check Line 5: fir | Monthly EHS Self-Check Line 7: eye | Monthly EHS Self-Check Line 8: SDS"
+    },
+    "carbon-records": {
+      "verdict": "FAIL",
+      "detail": "no item matched with word=nothing_on_file. held: Air Contaminant Discharge Permit e | Scrubber pressure-drop log: incomp | Scrubber pressure-drop log: missin | Scrubber S-2 out-of-range pressure | Powered industrial truck pre-shift | Powered industrial truck pre-shift | Powered industrial truck: horn def | Monthly EHS Self-Check: no complet | Monthly EHS Self-Check: no procedu | Monthly EHS Self-Check Line 3: mis | Monthly EHS Self-Check Line 2: mis | Monthly EHS Self-Check Line 4: mis | Monthly EHS Self-Check Line 5: fir | Monthly EHS Self-Check Line 7: eye | Monthly EHS Self-Check Line 8: SDS"
+    },
+    "opacity-records": {
+      "verdict": "FAIL",
+      "detail": "no item matched with word=nothing_on_file. held: Air Contaminant Discharge Permit e | Scrubber pressure-drop log: incomp | Scrubber pressure-drop log: missin | Scrubber S-2 out-of-range pressure | Powered industrial truck pre-shift | Powered industrial truck pre-shift | Powered industrial truck: horn def | Monthly EHS Self-Check: no complet | Monthly EHS Self-Check: no procedu | Monthly EHS Self-Check Line 3: mis | Monthly EHS Self-Check Line 2: mis | Monthly EHS Self-Check Line 4: mis | Monthly EHS Self-Check Line 5: fir | Monthly EHS Self-Check Line 7: eye | Monthly EHS Self-Check Line 8: SDS"
+    },
+    "annual-report": {
+      "verdict": "PASS",
+      "detail": "dates: \"Annual permit report submission (recurring, due February 15 each yea\""
+    },
+    "semiannual-report": {
+      "verdict": "FAIL",
+      "detail": "no item matched. held: Air Contaminant Discharge Permit e | Scrubber pressure-drop log: incomp | Scrubber pressure-drop log: missin | Scrubber S-2 out-of-range pressure | Powered industrial truck pre-shift | Powered industrial truck pre-shift | Powered industrial truck: horn def | Monthly EHS Self-Check: no complet | Monthly EHS Self-Check: no procedu | Monthly EHS Self-Check Line 3: mis | Monthly EHS Self-Check Line 2: mis | Monthly EHS Self-Check Line 4: mis | Monthly EHS Self-Check Line 5: fir | Monthly EHS Self-Check Line 7: eye | Monthly EHS Self-Check Line 8: SDS | Air Contaminant Discharge Permit r | Air Contaminant Discharge Permit e | Annual permit report submission (r | Carbon adsorption unit C-1 schedul | R. Patel powered industrial truck  | M. Chen powered industrial truck o | J. Rivera powered industrial truck"
+    },
+    "not-a-document-question": {
+      "verdict": "PASS",
+      "detail": "not_document_questions has 8"
+    },
+    "scrubber-log-on-file": {
+      "verdict": "FAIL",
+      "detail": "no item matched with word=on_file. held: Air Contaminant Discharge Permit e | Scrubber pressure-drop log: incomp | Scrubber pressure-drop log: missin | Scrubber S-2 out-of-range pressure | Powered industrial truck pre-shift | Powered industrial truck pre-shift | Powered industrial truck: horn def | Monthly EHS Self-Check: no complet | Monthly EHS Self-Check: no procedu | Monthly EHS Self-Check Line 3: mis | Monthly EHS Self-Check Line 2: mis | Monthly EHS Self-Check Line 4: mis | Monthly EHS Self-Check Line 5: fir | Monthly EHS Self-Check Line 7: eye | Monthly EHS Self-Check Line 8: SDS"
+    },
+    "scrubber-log-findings-carried": {
+      "verdict": "PASS",
+      "detail": "2 of 5 carried"
+    },
+    "annual-report-4-1-on-file": {
+      "verdict": "FAIL",
+      "detail": "no item matched. held: Air Contaminant Discharge Permit e | Scrubber pressure-drop log: incomp | Scrubber pressure-drop log: missin | Scrubber S-2 out-of-range pressure | Powered industrial truck pre-shift | Powered industrial truck pre-shift | Powered industrial truck: horn def | Monthly EHS Self-Check: no complet | Monthly EHS Self-Check: no procedu | Monthly EHS Self-Check Line 3: mis | Monthly EHS Self-Check Line 2: mis | Monthly EHS Self-Check Line 4: mis | Monthly EHS Self-Check Line 5: fir | Monthly EHS Self-Check Line 7: eye | Monthly EHS Self-Check Line 8: SDS | Air Contaminant Discharge Permit r | Air Contaminant Discharge Permit e | Annual permit report submission (r | Carbon adsorption unit C-1 schedul | R. Patel powered industrial truck  | M. Chen powered industrial truck o | J. Rivera powered industrial truck"
+    },
+    "semiannual-4-2-nothing": {
+      "verdict": "FAIL",
+      "detail": "no item matched with word=nothing_on_file. held: Air Contaminant Discharge Permit e | Scrubber pressure-drop log: incomp | Scrubber pressure-drop log: missin | Scrubber S-2 out-of-range pressure | Powered industrial truck pre-shift | Powered industrial truck pre-shift | Powered industrial truck: horn def | Monthly EHS Self-Check: no complet | Monthly EHS Self-Check: no procedu | Monthly EHS Self-Check Line 3: mis | Monthly EHS Self-Check Line 2: mis | Monthly EHS Self-Check Line 4: mis | Monthly EHS Self-Check Line 5: fir | Monthly EHS Self-Check Line 7: eye | Monthly EHS Self-Check Line 8: SDS"
+    },
+    "carbon-due-2026-03-14": {
+      "verdict": "PASS",
+      "detail": "dates: \"Carbon adsorption unit C-1 scheduled replacement (recurring annual o\""
+    },
+    "sep9-deviation-nothing": {
+      "verdict": "FAIL",
+      "detail": "0 of 4 carried, needs 1"
+    },
+    "no-satisfied": {
+      "verdict": "PASS",
+      "detail": "no positive claim about the company"
+    },
+    "no-invented-document": {
+      "verdict": "PASS",
+      "detail": "every document_id was given in the block"
+    },
+    "no-forklift-as-scrubber": {
+      "verdict": "PASS",
+      "detail": "nothing matched"
+    },
+    "no-expected-as-finding": {
+      "verdict": "PASS",
+      "detail": "no expected item appears as a finding"
+    },
+    "no-ai-word": {
+      "verdict": "PASS",
+      "detail": "the word appears nowhere"
+    },
+    "scrubber-plan-expected": {
+      "verdict": "PASS",
+      "detail": "expected_not_seen: \"Scrubber quarterly maintenance inspection records for S-1 and S-2\""
+    }
+  },
+  "cost_usd": 0.044954999999999995,
+  "wall_ms": 51204
+}

@@ -1,0 +1,461 @@
+{
+  "case": "cascade-deq",
+  "agency": "Oregon DEQ",
+  "mode": "whole",
+  "run": 1,
+  "run_date": "2026-09-29",
+  "model": "claude-haiku-4-5",
+  "input_block": "TODAY IS 2026-09-29. Every \"passed\" or \"expiring\" judgement is against that date.\n\nTHE AGENCY THIS AUDIT IS ABOUT: Oregon DEQ\nOnly this agency. Another regulator's documents are listed at the end as titles only and\nare not yours to judge here.\n\nWHO THIS COMPANY IS\n  Name: Cascade Specialty Chemicals, LLC\n  Industry: chemical manufacturing (recorded as chemical-manufacturing)\n  Address: Portland, Oregon\nTheir sites:\n  - Portland — 4410 NW Front Ave, Portland, Oregon 97210, Portland, Oregon (primary)\n\nDOCUMENTS ON FILE FOR OREGON DEQ — 1\n\n  --- Standard Air Contaminant Discharge Permit\n      id: 69bbc42a-9a5c-4776-80d9-ae819d0ff87d\n      file: 02-acdp-chemical.pdf\n      kind: permit · status: expiring · shown as: expiring\n      the document's own date: 2021-09-01 (issued)\n      the date that matters: 2026-11-15 (expiry)\n      site: Portland\n      what the reading said it is: This is a Standard Air Contaminant Discharge Permit issued by Oregon DEQ for Cascade Specialty Chemicals' chemical storage and repackaging operations with vapor control at their Portland facility. The permit authorizes operation of two wet scrubbers, four solvent storage tanks, and related equipment, subject to specific operating conditions, monitoring requirements, and reporting obligations set by the Oregon Department of Environmental Quality.\n      WHAT THE READING FOUND WRONG WITH IT: nothing\n      WHAT THIS DOCUMENT OBLIGES THEM TO KEEP DOING (14), read out of the document itself:\n        · 1.1 — Operate sources in compliance with permit conditions and DEQ rules\n            the evidence you would expect to see: Demonstration that all operations conform to this permit and applicable OAR 340-216 rules\n        · 1.2 — Permit expires November 15, 2026; operation after expiration without renewal is a violation\n            the evidence you would expect to see: Valid renewal permit or evidence that a timely renewal application was submitted before July 18, 2026\n        · 1.3 — Submit complete permit renewal application by July 18, 2026 (120 days before expiration)\n            the evidence you would expect to see: Confirmation of application submission to DEQ; applicant may continue operation if timely and complete application is submitted\n        · 1.4 — Notify DEQ in writing at least 60 days before any change in ownership or modification that increases emissions\n            the evidence you would expect to see: Written notice to DEQ prior to ownership change or source modification\n        · 3.1 — Maintain scrubber pressure drop within 2.0 to 6.0 inches of water column when operating\n            the evidence you would expect to see: Daily scrubber log recording pressure drop readings for each operating day\n        · 3.2 — Inspect scrubber components (pump, nozzles, packing, mist eliminator) quarterly\n            the evidence you would expect to see: Quarterly inspection records in scrubber log showing date, inspector name, and any corrective actions\n        · 3.3 — Replace carbon in adsorption unit C-1 at least annually or when breakthrough detected\n            the evidence you would expect to see: Records of all carbon replacements with dates; weekly detector-tube checks at C-1 outlet\n        · 3.4 — Limit visible emissions to 20 percent opacity for no more than 3 minutes per hour\n            the evidence you would expect to see: Opacity monitoring records; documentation of any exceedances and corrective actions\n        · 4.1 — Submit annual report by February 15 covering previous calendar year\n            the evidence you would expect to see: Annual report to DEQ including total throughput by line, scrubber log summaries, carbon replacement dates, and excess emission events\n        · 4.2 — Submit semi-annual monitoring report by July 31 for January-June period\n            the evidence you would expect to see: Semi-annual report to DEQ for first half of calendar year\n        · 4.3 — Maintain all permit records for at least five years\n            the evidence you would expect to see: Accessible records available for DEQ inspection on request\n        · 5.1 — Take all reasonable steps to minimize emissions during scrubber malfunction\n            the evidence you would expect to see: Procedures in place to stop associated repackaging line until scrubber is repaired\n        · 5.2 — Notify DEQ within 24 hours of any permit deviation by telephone or email\n            the evidence you would expect to see: Telephone or email notification within 24 hours; written report within 15 days describing deviation, cause, duration, and corrective action\n        · 6.2 — Pay annual permit fee by due date on invoice\n            the evidence you would expect to see: Proof of payment of annual permit fee to DEQ\n      DATES THIS DOCUMENT SETS (4):\n        · Permit expires; continued operation requires valid renewal — 2026-11-15\n        · Submit annual report to Department — 2027-02-15 (recurring)\n        · Submit complete permit renewal application — 2026-07-18\n        · Submit semi-annual monitoring report — 2027-07-31 (recurring)\n      WHAT THE READING SAID A COMPANY LIKE THIS USUALLY ALSO HOLDS (2) —\n        a suggestion from similar companies, NOT a checked requirement:\n        · Renewal Application Submission Status — The renewal deadline (July 18, 2026) has passed. The document does not confirm whether a renewal application was timely submitted, which is critical to the company's ability to legally continue operations\n        · Toxic Air Contaminant Permit Addendum (if applicable) — For Standard ACDPs, DEQ may require a Toxic Air Contaminant Permit Addendum under OAR 340-216-0069 upon renewal if toxic air contaminants are involved\n\nFACTS THIS COMPANY HAS CONFIRMED, ACROSS EVERYTHING THEY HOLD\nEach was read in a document and then confirmed by a person. Nothing a reading merely\nproposed is here — an unconfirmed proposal is a question, not a fact.\n  (nothing confirmed yet)\n\nEVERYTHING ELSE THIS COMPANY HOLDS — 4, TITLES AND DATES ONLY\nListed so you can say what is NOT among them. You have not been shown their contents and\nmust not describe what is in them.\n  - Emergency Action Plan · policy · gaps_found · 2021-02-01\n  - Powered Industrial Truck Pre-Shift Inspection Log · record · gaps_found · 2026-09-18\n  - Powered Industrial Truck Pre-Shift Inspection Log · record · recorded · 2026-09-17\n  - Safety Data Sheet for Sodium Hydroxide Solution, 50% · supplier_document · not_judged · 2024-03-18\n\nTHE AGENCY AND SUBJECT WORDS THIS COMPANY ALREADY USES\n  agencies: Oregon DEQ · Oregon OSHA\n  subjects: Air Quality Control · Emergency Response · Environmental Compliance · Evacuation · Fire Prevention · Hazardous Chemical Safety",
+  "input_sha256": "83bf3e053ba23ab5026a2e687ed3a9c657101ff2aecab0f548bb0e6e3c46bb60",
+  "input": {
+    "today": "2026-09-29",
+    "agency": "Oregon DEQ",
+    "company": {
+      "name": "Cascade Specialty Chemicals, LLC",
+      "industrySlug": "chemical-manufacturing",
+      "industryWords": "chemical manufacturing",
+      "address": "Portland, Oregon",
+      "state": "Oregon",
+      "sites": [
+        {
+          "id": "ff15bc1b-7f82-4c31-9ba6-20b1e8a40fb8",
+          "name": "Portland",
+          "address": "4410 NW Front Ave, Portland, Oregon 97210",
+          "state": "Oregon",
+          "county": null,
+          "city": "Portland",
+          "primary": true
+        }
+      ]
+    },
+    "confirmed": [],
+    "labels": {
+      "agencies": [
+        "Oregon DEQ",
+        "Oregon OSHA"
+      ],
+      "subjects": [
+        "Air Quality Control",
+        "Emergency Response",
+        "Environmental Compliance",
+        "Evacuation",
+        "Fire Prevention",
+        "Hazardous Chemical Safety"
+      ]
+    },
+    "keys": [
+      "assembly_point",
+      "defect_noted_horn_september_9",
+      "dot_hazard_class",
+      "dot_packing_group",
+      "emergency_eyewash_requirement",
+      "emergency_shower_and_eyewash_location",
+      "employee_count",
+      "equipment_id",
+      "facility_address",
+      "fire_alarm_monitoring",
+      "first_aid_responders_per_shift",
+      "freezing_point_celsius",
+      "hazard_classification_corrosive_to_metals",
+      "hazard_classification_eye_damage",
+      "hazard_classification_skin_corrosion",
+      "inspection_period",
+      "operator_certification_j_r",
+      "operator_certification_m_c",
+      "osha_exposure_limit_sodium_hydroxide",
+      "permit_expiration_date",
+      "permit_issued_date",
+      "permit_number",
+      "permitted_sources",
+      "product_name",
+      "rcra_hazard_waste_classification",
+      "shelter_in_place_safe_rooms",
+      "source_category",
+      "storage_container_material",
+      "supplier_name",
+      "truck_hours_meter_reading",
+      "un_transport_number"
+    ],
+    "documents": [
+      {
+        "document_id": "69bbc42a-9a5c-4776-80d9-ae819d0ff87d",
+        "title": "Standard Air Contaminant Discharge Permit",
+        "file_name": "02-acdp-chemical.pdf",
+        "kind": "permit",
+        "status": "expiring",
+        "display_status": "expiring",
+        "doc_date": "2021-09-01",
+        "doc_date_kind": "issued",
+        "significant_date": "2026-11-15",
+        "significant_date_kind": "expiry",
+        "site": "Portland",
+        "summary": "This is a Standard Air Contaminant Discharge Permit issued by Oregon DEQ for Cascade Specialty Chemicals' chemical storage and repackaging operations with vapor control at their Portland facility. The permit authorizes operation of two wet scrubbers, four solvent storage tanks, and related equipment, subject to specific operating conditions, monitoring requirements, and reporting obligations set by the Oregon Department of Environmental Quality.",
+        "open_gaps": [],
+        "conditions": [
+          {
+            "condition_ref": "1.1",
+            "title": "Operate sources in compliance with permit conditions and DEQ rules",
+            "evidence_expected": "Demonstration that all operations conform to this permit and applicable OAR 340-216 rules"
+          },
+          {
+            "condition_ref": "1.2",
+            "title": "Permit expires November 15, 2026; operation after expiration without renewal is a violation",
+            "evidence_expected": "Valid renewal permit or evidence that a timely renewal application was submitted before July 18, 2026"
+          },
+          {
+            "condition_ref": "1.3",
+            "title": "Submit complete permit renewal application by July 18, 2026 (120 days before expiration)",
+            "evidence_expected": "Confirmation of application submission to DEQ; applicant may continue operation if timely and complete application is submitted"
+          },
+          {
+            "condition_ref": "1.4",
+            "title": "Notify DEQ in writing at least 60 days before any change in ownership or modification that increases emissions",
+            "evidence_expected": "Written notice to DEQ prior to ownership change or source modification"
+          },
+          {
+            "condition_ref": "3.1",
+            "title": "Maintain scrubber pressure drop within 2.0 to 6.0 inches of water column when operating",
+            "evidence_expected": "Daily scrubber log recording pressure drop readings for each operating day"
+          },
+          {
+            "condition_ref": "3.2",
+            "title": "Inspect scrubber components (pump, nozzles, packing, mist eliminator) quarterly",
+            "evidence_expected": "Quarterly inspection records in scrubber log showing date, inspector name, and any corrective actions"
+          },
+          {
+            "condition_ref": "3.3",
+            "title": "Replace carbon in adsorption unit C-1 at least annually or when breakthrough detected",
+            "evidence_expected": "Records of all carbon replacements with dates; weekly detector-tube checks at C-1 outlet"
+          },
+          {
+            "condition_ref": "3.4",
+            "title": "Limit visible emissions to 20 percent opacity for no more than 3 minutes per hour",
+            "evidence_expected": "Opacity monitoring records; documentation of any exceedances and corrective actions"
+          },
+          {
+            "condition_ref": "4.1",
+            "title": "Submit annual report by February 15 covering previous calendar year",
+            "evidence_expected": "Annual report to DEQ including total throughput by line, scrubber log summaries, carbon replacement dates, and excess emission events"
+          },
+          {
+            "condition_ref": "4.2",
+            "title": "Submit semi-annual monitoring report by July 31 for January-June period",
+            "evidence_expected": "Semi-annual report to DEQ for first half of calendar year"
+          },
+          {
+            "condition_ref": "4.3",
+            "title": "Maintain all permit records for at least five years",
+            "evidence_expected": "Accessible records available for DEQ inspection on request"
+          },
+          {
+            "condition_ref": "5.1",
+            "title": "Take all reasonable steps to minimize emissions during scrubber malfunction",
+            "evidence_expected": "Procedures in place to stop associated repackaging line until scrubber is repaired"
+          },
+          {
+            "condition_ref": "5.2",
+            "title": "Notify DEQ within 24 hours of any permit deviation by telephone or email",
+            "evidence_expected": "Telephone or email notification within 24 hours; written report within 15 days describing deviation, cause, duration, and corrective action"
+          },
+          {
+            "condition_ref": "6.2",
+            "title": "Pay annual permit fee by due date on invoice",
+            "evidence_expected": "Proof of payment of annual permit fee to DEQ"
+          }
+        ],
+        "deadlines": [
+          {
+            "title": "Permit expires; continued operation requires valid renewal",
+            "due_on": "2026-11-15",
+            "recurs": false
+          },
+          {
+            "title": "Submit annual report to Department",
+            "due_on": "2027-02-15",
+            "recurs": true
+          },
+          {
+            "title": "Submit complete permit renewal application",
+            "due_on": "2026-07-18",
+            "recurs": false
+          },
+          {
+            "title": "Submit semi-annual monitoring report",
+            "due_on": "2027-07-31",
+            "recurs": true
+          }
+        ],
+        "expected_missing": [
+          {
+            "title": "Renewal Application Submission Status",
+            "why": "The renewal deadline (July 18, 2026) has passed. The document does not confirm whether a renewal application was timely submitted, which is critical to the company's ability to legally continue operations",
+            "basis": "The permit itself does not contain evidence of application submission; this must be verified through DEQ records or the company's records"
+          },
+          {
+            "title": "Toxic Air Contaminant Permit Addendum (if applicable)",
+            "why": "For Standard ACDPs, DEQ may require a Toxic Air Contaminant Permit Addendum under OAR 340-216-0069 upon renewal if toxic air contaminants are involved",
+            "basis": "OAR 340-216-0069 applies to Standard ACDPs; Oregon rules on Cleaner Air Oregon may require addendum upon renewal"
+          }
+        ],
+        "confirmed_facts": []
+      }
+    ],
+    "other_documents": [
+      {
+        "document_id": "31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b",
+        "title": "Emergency Action Plan",
+        "kind": "policy",
+        "status": "gaps_found",
+        "significant_date": "2021-02-01"
+      },
+      {
+        "document_id": "617428b4-96a8-4eed-96d1-773ccbf9a4cf",
+        "title": "Powered Industrial Truck Pre-Shift Inspection Log",
+        "kind": "record",
+        "status": "gaps_found",
+        "significant_date": "2026-09-18"
+      },
+      {
+        "document_id": "73af0407-4efd-42d1-9d66-86ec5fb875d6",
+        "title": "Powered Industrial Truck Pre-Shift Inspection Log",
+        "kind": "record",
+        "status": "recorded",
+        "significant_date": "2026-09-17"
+      },
+      {
+        "document_id": "b3362ae5-71d4-4a53-9be1-4b93ec728215",
+        "title": "Safety Data Sheet for Sodium Hydroxide Solution, 50%",
+        "kind": "supplier_document",
+        "status": "not_judged",
+        "significant_date": "2024-03-18"
+      }
+    ]
+  },
+  "calls": [
+    {
+      "section": "whole",
+      "wall_ms": 12081,
+      "cost_usd": 0.013932,
+      "sources": 0,
+      "input_tokens": 5097,
+      "output_tokens": 1767,
+      "searches": 0,
+      "json_parsed": true,
+      "raw_text": "```json\n{\n  \"covers\": {\n    \"documents_read\": [\n      \"69bbc42a-9a5c-4776-80d9-ae819d0ff87d\"\n    ],\n    \"documents_held_but_not_read\": [\n      \"Emergency Action Plan\",\n      \"Powered Industrial Truck Pre-Shift Inspection Log\",\n      \"Safety Data Sheet for Sodium Hydroxide Solution, 50%\"\n    ],\n    \"readings_as_of\": null\n  },\n  \"findings\": [\n    {\n      \"title\": \"Permit renewal application submission\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": null,\n      \"locator\": null,\n      \"quote\": null,\n      \"what_to_do\": \"Upload confirmation of permit renewal application submission to DEQ, or if not yet submitted, submit complete renewal application immediately before expiration on 2026-11-15\",\n      \"basis\": \"inferred\"\n    },\n    {\n      \"title\": \"Daily scrubber operating logs\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": null,\n      \"locator\": null,\n      \"quote\": null,\n      \"what_to_do\": \"Upload all daily scrubber pressure drop logs recording readings for each operating day, as required by permit condition 3.1\",\n      \"basis\": \"inferred\"\n    },\n    {\n      \"title\": \"Quarterly scrubber inspection records\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": null,\n      \"locator\": null,\n      \"quote\": null,\n      \"what_to_do\": \"Upload all quarterly inspection records showing date, inspector name, components inspected, and any corrective actions, as required by permit condition 3.2\",\n      \"basis\": \"inferred\"\n    },\n    {\n      \"title\": \"Carbon replacement records for adsorption unit C-1\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": null,\n      \"locator\": null,\n      \"quote\": null,\n      \"what_to_do\": \"Upload records of all carbon replacements with dates and weekly detector-tube check results at C-1 outlet, as required by permit condition 3.3\",\n      \"basis\": \"inferred\"\n    },\n    {\n      \"title\": \"Opacity monitoring records\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": null,\n      \"locator\": null,\n      \"quote\": null,\n      \"what_to_do\": \"Upload opacity monitoring records and documentation of any exceedances of the 20 percent opacity limit, as required by permit condition 3.4\",\n      \"basis\": \"inferred\"\n    },\n    {\n      \"title\": \"Annual report to DEQ\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": null,\n      \"locator\": null,\n      \"quote\": null,\n      \"what_to_do\": \"Upload most recent annual report covering previous calendar year, including total throughput by line, scrubber log summaries, carbon replacement dates, and excess emission events, as required by permit condition 4.1\",\n      \"basis\": \"inferred\"\n    },\n    {\n      \"title\": \"Semi-annual monitoring report to DEQ\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": null,\n      \"locator\": null,\n      \"quote\": null,\n      \"what_to_do\": \"Upload most recent semi-annual report for January-June period, as required by permit condition 4.2\",\n      \"basis\": \"inferred\"\n    },\n    {\n      \"title\": \"Scrubber malfunction procedures\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": null,\n      \"locator\": null,\n      \"quote\": null,\n      \"what_to_do\": \"Upload written procedures for minimizing emissions during scrubber malfunction, including protocol to stop associated repackaging line until scrubber is repaired, as required by permit condition 5.1\",\n      \"basis\": \"inferred\"\n    },\n    {\n      \"title\": \"Permit deviation notification records\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": null,\n      \"locator\": null,\n      \"quote\": null,\n      \"what_to_do\": \"Upload records of any permit deviations reported to DEQ, including telephone or email notification sent within 24 hours and written reports submitted within 15 days, as required by permit condition 5.2\",\n      \"basis\": \"inferred\"\n    },\n    {\n      \"title\": \"Annual permit fee payment proof\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": null,\n      \"locator\": null,\n      \"quote\": null,\n      \"what_to_do\": \"Upload proof of payment of most recent annual permit fee to DEQ, as required by permit condition 6.2\",\n      \"basis\": \"inferred\"\n    }\n  ],\n  \"dates\": [\n    {\n      \"title\": \"Submit complete permit renewal application\",\n      \"due_on\": \"2026-07-18\",\n      \"recurs\": false,\n      \"document_id\": \"69bbc42a-9a5c-4776-80d9-ae819d0ff87d\",\n      \"passed\": true\n    },\n    {\n      \"title\": \"Permit expires; continued operation requires valid renewal\",\n      \"due_on\": \"2026-11-15\",\n      \"recurs\": false,\n      \"document_id\": \"69bbc42a-9a5c-4776-80d9-ae819d0ff87d\",\n      \"passed\": false\n    },\n    {\n      \"title\": \"Submit semi-annual monitoring report for January-June period\",\n      \"due_on\": \"2027-07-31\",\n      \"recurs\": true,\n      \"document_id\": \"69bbc42a-9a5c-4776-80d9-ae819d0ff87d\",\n      \"passed\": false\n    },\n    {\n      \"title\": \"Submit annual report to Department\",\n      \"due_on\": \"2027-02-15\",\n      \"recurs\": true,\n      \"document_id\": \"69bbc42a-9a5c-4776-80d9-ae819d0ff87d\",\n      \"passed\": false\n    }\n  ],\n  \"not_document_questions\": [\n    \"Are all sources being operated in compliance with permit conditions and applicable OAR 340-216 rules?\",\n    \"Have any changes in ownership or modifications that increase emissions occurred and been properly reported to DEQ?\"\n  ],\n  \"expected_not_seen\": [\n    {\n      \"title\": \"Renewal Application Submission Status\",\n      \"why\": \"The permit renewal deadline of July 18, 2026 has passed; confirmation of timely and complete application submission is critical to the company's legal authority to continue operations\"\n    },\n    {\n      \"title\": \"Toxic Air Contaminant Permit Addendum\",\n      \"why\": \"DEQ may require a Toxic Air Contaminant Permit Addendum under OAR 340-216-0069 upon renewal if toxic air contaminants are involved in operations\"\n    }\n  ],\n  \"contradictions\": []\n}\n```"
+    }
+  ],
+  "answer": {
+    "covers": {
+      "documents_read": [
+        "69bbc42a-9a5c-4776-80d9-ae819d0ff87d"
+      ],
+      "documents_held_but_not_read": [
+        "Emergency Action Plan",
+        "Powered Industrial Truck Pre-Shift Inspection Log",
+        "Safety Data Sheet for Sodium Hydroxide Solution, 50%"
+      ],
+      "readings_as_of": null
+    },
+    "findings": [
+      {
+        "title": "Permit renewal application submission",
+        "word": "nothing_on_file",
+        "document_id": null,
+        "locator": null,
+        "quote": null,
+        "what_to_do": "Upload confirmation of permit renewal application submission to DEQ, or if not yet submitted, submit complete renewal application immediately before expiration on 2026-11-15",
+        "basis": "inferred"
+      },
+      {
+        "title": "Daily scrubber operating logs",
+        "word": "nothing_on_file",
+        "document_id": null,
+        "locator": null,
+        "quote": null,
+        "what_to_do": "Upload all daily scrubber pressure drop logs recording readings for each operating day, as required by permit condition 3.1",
+        "basis": "inferred"
+      },
+      {
+        "title": "Quarterly scrubber inspection records",
+        "word": "nothing_on_file",
+        "document_id": null,
+        "locator": null,
+        "quote": null,
+        "what_to_do": "Upload all quarterly inspection records showing date, inspector name, components inspected, and any corrective actions, as required by permit condition 3.2",
+        "basis": "inferred"
+      },
+      {
+        "title": "Carbon replacement records for adsorption unit C-1",
+        "word": "nothing_on_file",
+        "document_id": null,
+        "locator": null,
+        "quote": null,
+        "what_to_do": "Upload records of all carbon replacements with dates and weekly detector-tube check results at C-1 outlet, as required by permit condition 3.3",
+        "basis": "inferred"
+      },
+      {
+        "title": "Opacity monitoring records",
+        "word": "nothing_on_file",
+        "document_id": null,
+        "locator": null,
+        "quote": null,
+        "what_to_do": "Upload opacity monitoring records and documentation of any exceedances of the 20 percent opacity limit, as required by permit condition 3.4",
+        "basis": "inferred"
+      },
+      {
+        "title": "Annual report to DEQ",
+        "word": "nothing_on_file",
+        "document_id": null,
+        "locator": null,
+        "quote": null,
+        "what_to_do": "Upload most recent annual report covering previous calendar year, including total throughput by line, scrubber log summaries, carbon replacement dates, and excess emission events, as required by permit condition 4.1",
+        "basis": "inferred"
+      },
+      {
+        "title": "Semi-annual monitoring report to DEQ",
+        "word": "nothing_on_file",
+        "document_id": null,
+        "locator": null,
+        "quote": null,
+        "what_to_do": "Upload most recent semi-annual report for January-June period, as required by permit condition 4.2",
+        "basis": "inferred"
+      },
+      {
+        "title": "Scrubber malfunction procedures",
+        "word": "nothing_on_file",
+        "document_id": null,
+        "locator": null,
+        "quote": null,
+        "what_to_do": "Upload written procedures for minimizing emissions during scrubber malfunction, including protocol to stop associated repackaging line until scrubber is repaired, as required by permit condition 5.1",
+        "basis": "inferred"
+      },
+      {
+        "title": "Permit deviation notification records",
+        "word": "nothing_on_file",
+        "document_id": null,
+        "locator": null,
+        "quote": null,
+        "what_to_do": "Upload records of any permit deviations reported to DEQ, including telephone or email notification sent within 24 hours and written reports submitted within 15 days, as required by permit condition 5.2",
+        "basis": "inferred"
+      },
+      {
+        "title": "Annual permit fee payment proof",
+        "word": "nothing_on_file",
+        "document_id": null,
+        "locator": null,
+        "quote": null,
+        "what_to_do": "Upload proof of payment of most recent annual permit fee to DEQ, as required by permit condition 6.2",
+        "basis": "inferred"
+      }
+    ],
+    "dates": [
+      {
+        "title": "Submit complete permit renewal application",
+        "due_on": "2026-07-18",
+        "recurs": false,
+        "document_id": "69bbc42a-9a5c-4776-80d9-ae819d0ff87d",
+        "passed": true
+      },
+      {
+        "title": "Permit expires; continued operation requires valid renewal",
+        "due_on": "2026-11-15",
+        "recurs": false,
+        "document_id": "69bbc42a-9a5c-4776-80d9-ae819d0ff87d",
+        "passed": false
+      },
+      {
+        "title": "Submit semi-annual monitoring report for January-June period",
+        "due_on": "2027-07-31",
+        "recurs": true,
+        "document_id": "69bbc42a-9a5c-4776-80d9-ae819d0ff87d",
+        "passed": false
+      },
+      {
+        "title": "Submit annual report to Department",
+        "due_on": "2027-02-15",
+        "recurs": true,
+        "document_id": "69bbc42a-9a5c-4776-80d9-ae819d0ff87d",
+        "passed": false
+      }
+    ],
+    "not_document_questions": [
+      "Are all sources being operated in compliance with permit conditions and applicable OAR 340-216 rules?",
+      "Have any changes in ownership or modifications that increase emissions occurred and been properly reported to DEQ?"
+    ],
+    "expected_not_seen": [
+      {
+        "title": "Renewal Application Submission Status",
+        "why": "The permit renewal deadline of July 18, 2026 has passed; confirmation of timely and complete application submission is critical to the company's legal authority to continue operations"
+      },
+      {
+        "title": "Toxic Air Contaminant Permit Addendum",
+        "why": "DEQ may require a Toxic Air Contaminant Permit Addendum under OAR 340-216-0069 upon renewal if toxic air contaminants are involved in operations"
+      }
+    ],
+    "contradictions": []
+  },
+  "verdicts": {
+    "renewal-passed": {
+      "verdict": "PASS",
+      "detail": "dates: \"Submit complete permit renewal application\""
+    },
+    "expiry-date": {
+      "verdict": "PASS",
+      "detail": "findings: \"Permit renewal application submission\" [nothing_on_file]"
+    },
+    "scrubber-log": {
+      "verdict": "PASS",
+      "detail": "findings: \"Daily scrubber operating logs\" [nothing_on_file]"
+    },
+    "quarterly-inspection": {
+      "verdict": "PASS",
+      "detail": "findings: \"Quarterly scrubber inspection records\" [nothing_on_file]"
+    },
+    "carbon-records": {
+      "verdict": "PASS",
+      "detail": "findings: \"Carbon replacement records for adsorption unit C-1\" [nothing_on_file]"
+    },
+    "opacity-records": {
+      "verdict": "PASS",
+      "detail": "findings: \"Opacity monitoring records\" [nothing_on_file]"
+    },
+    "annual-report": {
+      "verdict": "PASS",
+      "detail": "dates: \"Submit annual report to Department\""
+    },
+    "semiannual-report": {
+      "verdict": "PASS",
+      "detail": "dates: \"Submit semi-annual monitoring report for January-June period\""
+    },
+    "not-a-document-question": {
+      "verdict": "PASS",
+      "detail": "not_document_questions has 2"
+    },
+    "no-satisfied": {
+      "verdict": "FAIL",
+      "detail": "\"in compliance\" in \"Are all sources being operated in compliance with permit c\""
+    },
+    "no-invented-document": {
+      "verdict": "PASS",
+      "detail": "every document_id was given in the block"
+    },
+    "no-forklift-as-scrubber": {
+      "verdict": "PASS",
+      "detail": "nothing matched"
+    },
+    "no-expected-as-finding": {
+      "verdict": "PASS",
+      "detail": "no expected item appears as a finding"
+    },
+    "no-ai-word": {
+      "verdict": "FAIL",
+      "detail": "\"ai\" in \"Daily scrubber operating logs\" · \"ai\" in \"Upload all daily scrubber pressure drop logs recording rea\" · \"ai\" in \"Upload written procedures for minimizing emissions during \""
+    },
+    "scrubber-plan-expected": {
+      "verdict": "FAIL",
+      "detail": "no item matched. held: Renewal Application Submission Sta | Toxic Air Contaminant Permit Adden"
+    }
+  },
+  "cost_usd": 0.013932,
+  "wall_ms": 12081
+}

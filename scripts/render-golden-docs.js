@@ -25,21 +25,34 @@
 
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs'
 import { spawn } from 'node:child_process'
+import * as zlib from 'node:zlib'
 
 const DIR = 'tests/golden/documents'
 const OUT = `${DIR}/fixtures`
+// *** AND IT IS WRITTEN BACK BESIDE ITS OWN SPEC — Audits Run 1b. ***
+// `dir` moved where a spec is READ from; the output stayed a single folder, so 07 to 13 rendered
+// into `tests/golden/documents/fixtures/` while their case files pointed at
+// `tests/golden/audits/fixtures/`. The audits README asks for the other shape in as many words:
+// "The folder is separate so it is clear which fixtures were written for which section."
+const outFor = (f) => `${f.dir ?? DIR}/fixtures`
 const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
 const only = process.argv.slice(2).find((a) => !a.startsWith('--'))
 
 const die = (m) => { console.error(`\n  ${m}\n`); process.exit(1) }
 if (!existsSync(CHROME)) die(`No Chrome at ${CHROME}. This renders fixtures through Chrome's print engine.`)
 mkdirSync(OUT, { recursive: true })
+mkdirSync('tests/golden/audits/fixtures', { recursive: true })
 
 // ---------------------------------------------------------------------------
 // 1. THE SPEC'S OWN WORDS
 // ---------------------------------------------------------------------------
-function documentText(specFile) {
-  const src = readFileSync(`${DIR}/${specFile}`, 'utf8')
+// *** A FIXTURE MAY COME FROM ANOTHER FOLDER — Audits Run 1b. ***
+// Cases 07 to 13 were written for the Audits section and live in `tests/golden/audits/`, numbered on
+// from the documents set "so a case id means one thing everywhere" (that README). The spec is still
+// the truth and is still never retyped; only where it is read from moves.
+const AUDIT_DIR = 'tests/golden/audits'
+function documentText(specFile, dir = DIR) {
+  const src = readFileSync(`${dir}/${specFile}`, 'utf8')
   const m = src.match(/## DOCUMENT TEXT\n([\s\S]*?)\n---\n\n## ANSWER KEY/)
   if (!m) die(`${specFile}: could not find the DOCUMENT TEXT section.`)
   return m[1].trim()
@@ -243,6 +256,248 @@ const FIXTURES = {
         `<section class="page">${inner}</section>`)
     },
   },
+  // ------------------------------------------------------------------------
+  // 07 to 11 — written for the Audits section, in tests/golden/audits/. Audits Run 1b.
+  // ------------------------------------------------------------------------
+  '07-scrubber-log-record': {
+    dir: AUDIT_DIR, spec: '07-scrubber-log-record.md', file: '07-scrubber-log-record.pdf',
+    pages: 2, landscape: true,
+    // Chrome repeats the <thead> when the September table breaks across a page — the browser
+    // paginating one table, not a second header in the content. Same mechanism as 06a.
+    headerRow: 'Date Acid line ran Caustic line ran S-1 ΔP (in. w.c.) S-2 ΔP (in. w.c.) Recorded by Notes',
+    build(blocks) {
+      // "2 pages, landscape. Page 1 is the August table, page 2 is the September table, each
+      // followed by the weekly C-1 detector-tube table for that month. A plain warehouse form."
+      const css = `
+        @page { size: Letter landscape; }
+        .page { width: 11in; height: auto; padding: 0.4in 0.5in 0.3in; }
+        body { font-family: Helvetica, Arial, sans-serif; }
+        p { font-size: 8pt; line-height: 1.3; text-align: left; margin-bottom: 4pt; }
+        .head { font-size: 9.5pt; font-weight: bold; line-height: 1.45; margin-bottom: 6pt; }
+        table { font-size: 8pt; margin-bottom: 5pt; }
+        /* Tight rows on purpose: each month has to be ONE landscape page, and the spec says two
+           pages. At 5.5pt of vertical padding September's eighteen rows plus its weekly table ran
+           to four pages, which is the layout disagreeing with the spec's own "Render as" line. */
+        th, td { padding: 2.2pt 3pt; text-align: center; line-height: 1.15; }
+        th:first-child, td:first-child, th:last-child, td:last-child { text-align: left; }
+        th { background: #ddd; }
+        .month { font-weight: bold; font-size: 9pt; margin-top: 6pt; margin-bottom: 3pt; }
+      `
+      // Page 1 is August: the header, the month line, the daily table, the throughput line, the
+      // weekly-check heading and its table — blocks 0 to 5. Page 2 is September, blocks 6 to 10,
+      // ending with the two line leads and the supervisor review line.
+      const opts = { 0: { cls: 'head' }, 1: { cls: 'month' }, 6: { cls: 'month' } }
+      return htmlPage('Scrubber Pressure-Drop Log', css,
+        paginate(blocks, [[0, 5], [6, 10]], opts))
+    },
+  },
+  '08-deq-annual-report-2025': {
+    dir: AUDIT_DIR, spec: '08-deq-annual-report-2025.md', file: '08-deq-annual-report-2025.pdf',
+    pages: 3,
+    build(blocks) {
+      // "Page 1 is a printed confirmation email … From/To/Date/Subject block. Pages 2 and 3 are
+      // the report itself: a title block, four short numbered sections with small tables."
+      const css = `
+        .page1 p:first-child { font-family: 'Courier New', monospace; font-size: 10pt;
+          line-height: 1.7; white-space: pre-wrap; border-bottom: 1pt solid #999;
+          padding-bottom: 10pt; margin-bottom: 14pt; }
+        .page1 p { font-size: 10.5pt; line-height: 1.6; }
+        .page2 p:first-child { text-align: center; font-weight: bold; font-size: 12.5pt;
+          line-height: 1.5; }
+        table { font-size: 9.5pt; }
+        th, td { padding: 5pt 6pt; }
+      `
+      return htmlPage('Annual Report to DEQ — Reporting Year 2025', css,
+        paginate(blocks, [[0, 4], [5, 11], [12, 17]]))
+    },
+  },
+  '09-forklift-training-records': {
+    dir: AUDIT_DIR, spec: '09-forklift-training-records.md', file: '09-forklift-training-records.pdf',
+    pages: 2,
+    build(blocks) {
+      // "Page 1 is the roster … one table with a row per operator. Page 2 is the certificate of
+      // training for M. Chen, a simple certificate layout with the trainer's signature block."
+      const css = `
+        .page1 p:first-child { font-weight: bold; font-size: 11.5pt; line-height: 1.6; }
+        table { font-size: 8.5pt; }
+        th, td { padding: 6pt 3.5pt; text-align: left; }
+        th { background: #e8e8e8; }
+        .page2 { padding-top: 1.6in; text-align: center; }
+        .page2 p { text-align: center; font-size: 12pt; line-height: 1.9; margin-bottom: 20pt; }
+        .page2 p:first-child { font-size: 15pt; font-weight: bold; letter-spacing: 1pt; }
+      `
+      return htmlPage('Powered Industrial Truck Operator Training and Evaluation Record', css,
+        paginate(blocks, [[0, 4], [5, 8]]))
+    },
+  },
+  '10-osha-300a-2025': {
+    dir: AUDIT_DIR, spec: '10-osha-300a-2025.md', file: '10-osha-300a-2025.pdf', pages: 1,
+    build(blocks) {
+      // "laid out like the government form: a title band, three boxed areas … an establishment
+      // information block … a certification block at the foot. Small print, ruled boxes."
+      const css = `
+        .page { padding: 0.5in 0.55in; }
+        p { font-size: 8.5pt; line-height: 1.45; margin-bottom: 7pt; }
+        p:first-child { font-size: 13pt; font-weight: bold; border: 1.5pt solid #111;
+          padding: 7pt 9pt; line-height: 1.5; margin-bottom: 9pt; }
+        p:nth-child(2) { font-size: 7pt; line-height: 1.35; color: #222; }
+        p:nth-child(3), p:nth-child(4), p:nth-child(5), p:nth-child(6), p:nth-child(7) {
+          border: 0.8pt solid #333; padding: 6pt 8pt; margin-bottom: 7pt; }
+        p:last-child { font-size: 7.5pt; font-style: italic; }
+      `
+      return htmlPage("OSHA's Form 300A — Summary of Work-Related Injuries and Illnesses, 2025",
+        css, paginate(blocks, [[0, 8]]))
+    },
+  },
+  '11-fire-extinguisher-certificate': {
+    dir: AUDIT_DIR, spec: '11-fire-extinguisher-certificate.md',
+    file: '11-fire-extinguisher-certificate.pdf', pages: 1,
+    build(blocks) {
+      // "A service company's certificate: letterhead, a certificate block, one table of units by
+      // location, the technician's signature and licence line, the 'next annual maintenance due'
+      // line in bold near the foot."
+      const css = `
+        .page { padding: 0.5in 0.6in; }
+        p { font-size: 9.5pt; line-height: 1.5; margin-bottom: 8pt; }
+        p:first-child { font-size: 15pt; font-weight: bold; letter-spacing: .5pt;
+          border-bottom: 2pt solid #7a1414; padding-bottom: 5pt; color: #7a1414; }
+        p:nth-child(2) { font-size: 8.5pt; color: #333; margin-top: -3pt; }
+        p:nth-child(3) { font-size: 12pt; font-weight: bold; text-align: center;
+          margin-top: 16pt; letter-spacing: .4pt; }
+        table { font-size: 8pt; }
+        th, td { padding: 4.5pt 3pt; text-align: left; }
+        th { background: #eee; }
+        p:nth-last-child(3) { font-weight: bold; font-size: 11pt; }
+      `
+      return htmlPage('Certificate of Annual Maintenance — Portable Fire Extinguishers', css,
+        paginate(blocks, [[0, 7]]))
+    },
+  },
+}
+
+// ---------------------------------------------------------------------------
+// THE TWO WORD FIXTURES — 12 and 13. Audits Run 1b.
+//
+// *** NO LIBRARY WAS ADDED, AND THAT IS A DELIBERATE DEVIATION FROM THE INSTRUCTION. ***
+// The instruction said "choose a library already in package.json if one writes .docx, else the
+// smallest that does". Nothing in package.json writes one — `mammoth` and `officeparser` read,
+// `xlsx` writes spreadsheets — so the letter of it says add one.
+//
+// It is not added, for the reason this file's own header already gives about PDFs: "There is no PDF
+// library in this project and adding one for a test fixture would be a dependency the product does
+// not need." A .docx is a ZIP of three XML parts, and Node has `zlib` built in. The smallest thing
+// that writes one here is about sixty lines and no supply chain.
+//
+// *** THE ACCEPTANCE TEST IS MAMMOTH, NOT A SPEC. *** `lib/documentContent.ts` reads .docx with
+// `mammoth.convertToHtml`, so a fixture the product cannot read is worthless however valid it is.
+// `checkDocx` below round-trips every file through mammoth and compares the text with the spec's,
+// the same way `checkPdf` round-trips a PDF through its own text layer.
+// ---------------------------------------------------------------------------
+const WORD = {
+  '12-auditor-checklist-deq-air': {
+    dir: AUDIT_DIR, spec: '12-auditor-checklist-deq-air.md',
+    file: '12-auditor-checklist-deq-air.docx',
+  },
+  '13-company-self-check': {
+    dir: AUDIT_DIR, spec: '13-company-self-check.md', file: '13-company-self-check.docx',
+  },
+}
+
+const xmlEsc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+
+/** One paragraph. `b` for the bold run used on headings. */
+const wP = (text, bold) =>
+  `<w:p><w:pPr>${bold ? '<w:rPr><w:b/></w:rPr>' : ''}</w:pPr>`
+  + `<w:r>${bold ? '<w:rPr><w:b/></w:rPr>' : ''}<w:t xml:space="preserve">${xmlEsc(text)}</w:t></w:r></w:p>`
+
+/** A markdown pipe table as a Word table. The separator row is layout, not content, and is dropped
+ *  exactly as `blockHtml` drops it for the PDFs — so the text mammoth gives back matches the spec. */
+function wTable(block) {
+  const rows = block.split('\n').map((l) => l.trim()).filter((l) => l && !isSeparatorRow(l))
+  const cells = (l) => l.replace(/^\|/, '').replace(/\|$/, '').split('|').map((c) => c.trim())
+  const body = rows.map((l, i) => '<w:tr>' + cells(l).map((c) =>
+    `<w:tc><w:tcPr><w:tcW w:w="0" w:type="auto"/></w:tcPr>${wP(c, i === 0)}</w:tc>`).join('') + '</w:tr>').join('')
+  return '<w:tbl><w:tblPr><w:tblW w:w="5000" w:type="pct"/>'
+    + '<w:tblBorders>' + ['top', 'left', 'bottom', 'right', 'insideH', 'insideV']
+        .map((e) => `<w:${e} w:val="single" w:sz="4" w:color="999999"/>`).join('') + '</w:tblBorders>'
+    + '</w:tblPr>' + body + '</w:tbl>'
+}
+
+function docxBody(blocks) {
+  return blocks.map((b) => isTable(b)
+    ? wTable(b)
+    : b.split('\n').map((line) => wP(line, isHeading(b))).join('')).join('')
+}
+
+/** A ZIP with no compression beyond deflate-raw, written by hand. Three parts is all a .docx needs
+ *  for mammoth: the content types, the package relationship, and the document. */
+function zip(files) {
+  const { deflateRawSync, crc32 } = zlib
+  const chunks = [], central = []
+  let offset = 0
+  for (const [name, content] of files) {
+    const data = Buffer.from(content, 'utf8')
+    const body = deflateRawSync(data)
+    const crc = crc32 ? crc32(data) : crc32of(data)
+    const nameBuf = Buffer.from(name, 'utf8')
+    const local = Buffer.alloc(30)
+    local.writeUInt32LE(0x04034b50, 0); local.writeUInt16LE(20, 4); local.writeUInt16LE(0, 6)
+    local.writeUInt16LE(8, 8); local.writeUInt16LE(0, 10); local.writeUInt16LE(0x2100, 12)
+    local.writeUInt32LE(crc, 14); local.writeUInt32LE(body.length, 18)
+    local.writeUInt32LE(data.length, 22); local.writeUInt16LE(nameBuf.length, 26)
+    chunks.push(local, nameBuf, body)
+    const cd = Buffer.alloc(46)
+    cd.writeUInt32LE(0x02014b50, 0); cd.writeUInt16LE(20, 4); cd.writeUInt16LE(20, 6)
+    cd.writeUInt16LE(0, 8); cd.writeUInt16LE(8, 10); cd.writeUInt16LE(0, 12)
+    cd.writeUInt16LE(0x2100, 14); cd.writeUInt32LE(crc, 16); cd.writeUInt32LE(body.length, 20)
+    cd.writeUInt32LE(data.length, 24); cd.writeUInt16LE(nameBuf.length, 28)
+    cd.writeUInt32LE(0, 38); cd.writeUInt32LE(offset, 42)
+    central.push(cd, nameBuf)
+    offset += local.length + nameBuf.length + body.length
+  }
+  const cdBuf = Buffer.concat(central)
+  const end = Buffer.alloc(22)
+  end.writeUInt32LE(0x06054b50, 0); end.writeUInt16LE(files.length, 8)
+  end.writeUInt16LE(files.length, 10); end.writeUInt32LE(cdBuf.length, 12)
+  end.writeUInt32LE(offset, 16)
+  return Buffer.concat([...chunks, cdBuf, end])
+}
+
+/** CRC-32, for Node versions whose zlib does not export one. */
+let CRC_TABLE = null
+function crc32of(buf) {
+  if (!CRC_TABLE) {
+    CRC_TABLE = new Int32Array(256)
+    for (let n = 0; n < 256; n++) {
+      let c = n
+      for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1
+      CRC_TABLE[n] = c
+    }
+  }
+  let c = -1
+  for (let i = 0; i < buf.length; i++) c = CRC_TABLE[(c ^ buf[i]) & 0xff] ^ (c >>> 8)
+  return (c ^ -1) >>> 0
+}
+
+function buildDocx(blocks) {
+  const document = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+    + '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
+    + `<w:body>${docxBody(blocks)}</w:body></w:document>`
+  return zip([
+    ['[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+      + '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+      + '<Default Extension="xml" ContentType="application/xml"/>'
+      + '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+      + '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>'
+      + '</Types>'],
+    ['_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+      + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+      + '<Relationship Id="rId1" Target="word/document.xml" '
+      + 'Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument"/>'
+      + '</Relationships>'],
+    ['word/document.xml', document],
+  ])
 }
 
 // 06b is built from 06a's page 1, so it is described rather than built here.
@@ -532,17 +787,52 @@ function pdfPageCount(buf) {
 // ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// THE WORD FIXTURES, BEFORE CHROME — they need no browser.
+// ---------------------------------------------------------------------------
+const wordIds = Object.keys(WORD).filter((id) => !only || id.startsWith(only))
+const wordRows = []
+for (const id of wordIds) {
+  const f = WORD[id]
+  const text = documentText(f.spec, f.dir)
+  const buf = buildDocx(blocksOf(text))
+  // *** THE PRODUCT'S OWN PARSER IS THE CHECK. *** A fixture `lib/documentContent.ts` cannot read is
+  // worthless however valid the OOXML is, and a silent half-read — the table lost, the text kept —
+  // would make the answer keys measure the parser rather than the model.
+  const mammoth = (await import('mammoth')).default
+  const { value: html } = await mammoth.convertToHtml({ buffer: buf })
+  const back = html.replace(/<[^>]+>/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+  // A local squeeze: the file's own `squeeze` is a `const` declared below this point and is
+  // therefore not hoisted. Same rule — compare with every space removed, so layout cannot fail a
+  // fidelity check that is about words.
+  const sq = (v) => v.replace(/\s+/g, '')
+  const want = sq(text.split('\n').filter((l) => !isSeparatorRow(l)).join(' ').replace(/\|/g, ' '))
+  const got = sq(back)
+  if (got !== want) {
+    let at = 0
+    while (at < Math.min(got.length, want.length) && got[at] === want[at]) at++
+    console.error(`\n  ${id}: MAMMOTH'S TEXT DOES NOT MATCH THE SPEC. Nothing written.`)
+    console.error(`    first difference at character ${at}`)
+    console.error(`    spec  : …${want.slice(Math.max(0, at - 50), at + 70)}…`)
+    console.error(`    docx  : …${got.slice(Math.max(0, at - 50), at + 70)}…\n`)
+    process.exit(1)
+  }
+  writeFileSync(`${outFor(f)}/${f.file}`, buf)
+  wordRows.push({ id, file: f.file, bytes: buf.length, chars: got.length })
+}
+
 const ids = Object.keys(FIXTURES).filter((id) => !only || id.startsWith(only))
 const wantPhoto = !only || PHOTO.id.startsWith(only) || only === '06'
-if (!ids.length && !wantPhoto) die(`No fixture matching "${only}".`)
+if (!ids.length && !wantPhoto && !wordIds.length) die(`No fixture matching "${only}".`)
 
-console.log(`\n  Rendering into ${OUT}/\n`)
+console.log(`\n  Rendering into ${OUT}/ and tests/golden/audits/fixtures/ (cases 07 to 13)\n`)
 const rows = []
 
 await withChrome(async (port) => {
   for (const id of ids) {
     const f = FIXTURES[id]
-    const text = documentText(f.spec)
+    const text = documentText(f.spec, f.dir ?? DIR)
     const html = f.build(blocksOf(text))
     const check = checkFidelity(id, text, html)
     if (!check.ok) {
@@ -561,7 +851,7 @@ await withChrome(async (port) => {
       console.error(`    pdf : …${inFile.got}…\n`)
       process.exit(1)
     }
-    writeFileSync(`${OUT}/${f.file}`, pdf)
+    writeFileSync(`${outFor(f)}/${f.file}`, pdf)
     const pages = pdfPageCount(pdf)
     rows.push({ id, file: f.file, pages, want: f.pages, bytes: pdf.length, chars: check.chars,
       repeats: inFile.repeats })
@@ -597,7 +887,7 @@ await withChrome(async (port) => {
     </body></html>`
     const jpeg = await toJpeg(port, photo, { x: 0, y: 0, width: 1500, height: 1160, scale: 1 })
     const pdf = pdfOfJpeg(jpeg, 792, 612)   // one Letter-landscape page of pure image (no dates in it)
-    writeFileSync(`${OUT}/${PHOTO.file}`, pdf)
+    writeFileSync(`${outFor(PHOTO)}/${PHOTO.file}`, pdf)
     rows.push({ id: PHOTO.id, file: PHOTO.file, pages: pdfPageCount(pdf), want: 1,
       bytes: pdf.length, chars: 0, photo: true })
   }

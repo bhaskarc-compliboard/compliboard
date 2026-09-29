@@ -221,6 +221,16 @@ Shared code every section uses and must not copy: `lib/ai.ts` (askAIWithCitation
 
 **File types (vision doc, "File types"; one small run after the bake-off and before drive connection).** Eleven types read today (PDF, JPEG, PNG, GIF, WebP, .xlsx, .xls, CSV, text, .docx, .pptx). The picker also promises `.doc`, `.ppt` and `image/*`, and those fail on read (HEIC from every iPhone, TIFF from every scanner). To add: server-side conversion for HEIC/TIFF/BMP; `.eml`/`.msg` and `.zip` expanded into batches; `.md`/`.rtf` as text; honest refusals with export instructions for `.doc`/`.ppt`/Apple formats; PDFs over 100 pages or 32 MB split or text-read and said so; password-protected PDFs asked for, not failed generically; the picker's list generated from the parser's table; one fixture per type. The rule: every type the picker offers is one the product reads, or the picker does not offer it.
 
+**The audit binder (recorded 29 September 2026; `DECISIONS.md` §143).** *After the audit section ships,
+and after the file-types run above* — in that order, because the binder needs the conversion container
+that run brings. One PDF: a cover, then **each cited document as pages behind a tab sheet**, then the
+audit report at the back. It is the thing a person carries into an inspection, and it is why the
+file-types work is a prerequisite rather than a nicety — a binder that silently omits the HEIC photo
+of the forklift log is worse than no binder. Recorded for the landing page.
+
+*(This went into §10 and not §9 as the instruction said: §9 is "How a change reaches production" and
+§10 is the parked list the instruction described. Numbering noted rather than followed.)*
+
 Drive connection (its own run when the owner's Google and Microsoft accounts exist). The requirement table's return (`evidence_types` on the library, canonical agencies, `switch_determinations` and `obligation_evidence` written, the seven "never infer" rules as measured switches). Chat over documents. Pinned views. Nested grouping. Site-scoped fact keys. A rule for gaps not seen twice. The structured-output schema simplified and measured. Prompt caching and Batch API as measured switches. The weekly email.
 
 ## 11. What only the owner can supply (ask before designing)

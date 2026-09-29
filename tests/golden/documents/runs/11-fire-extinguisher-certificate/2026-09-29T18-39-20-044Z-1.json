@@ -1,0 +1,276 @@
+{
+  "case": "11-fire-extinguisher-certificate",
+  "run": 1,
+  "run_date": "2026-09-29",
+  "model": "claude-haiku-4-5",
+  "structured": true,
+  "searches": 2,
+  "cited_sources": 0,
+  "prompt_sha256": "7eac32a877299f84e0356815cd78fefc213e93c1f8a481ac460e84f0a27d06cc",
+  "scan_id": "c9ce5b47-fdc1-4b4c-99b2-7b9a20e00b07",
+  "ai_call_id": "041907f8-a4bc-4cba-8da9-c8d022b983b3",
+  "company_context": "WHO THIS COMPANY IS\n  Name: Cascade Specialty Chemicals, LLC\n  Industry: chemical manufacturing (recorded as chemical-manufacturing)\n  Address: Portland, Oregon\n  State: Oregon\nTheir sites:\n  - Portland — 4410 NW Front Ave, Portland, Oregon 97210 (primary)\n\nWHAT A PERSON HAS CONFIRMED FROM A DOCUMENT\nEach of these was read in the named document and then confirmed by a person.\n  (nothing confirmed yet)\n\nLABELS ALREADY IN USE FOR THIS COMPANY\nAgencies:\n  - Oregon DEQ\n  - U.S. Department of Labor - Occupational Safety and Health Administration\nSubjects:\n  - chemical_safety\n  - emergency_preparedness\n  - workplace_safety\n\nFACT KEYS ALREADY IN USE FOR THIS COMPANY\n  - acid_line_operating_days_august\n  - alarm_monitoring_vendor\n  - assembly_point_distance\n  - august_pressure_drop_readings_logged\n  - c1_carbon_breakthrough_detection\n  - carbon_replacement_interval\n  - caustic_line_operating_days_august\n  - certifying_official\n  - days_away_from_work\n  - emergency_shower_eyewash_location\n  - employee_count\n  - equipment_hours_end\n  - equipment_hours_start\n  - equipment_model\n  - expiration_date\n  - facility_location\n  - first_aid_responders_per_shift\n  - industry_classification\n  - injuries_recorded\n  - inspection_coverage\n  - inspection_month\n  - issued_date\n  - last_revision_date\n  - operator_j_rivera_certification\n  - operator_m_chen_certification\n  - permit_number\n  - plan_locations\n  - product_identifier\n  - record_retention_period\n  - renewal_application_deadline\n  - scrubber_pressure_drop_exceedance\n  - scrubber_pressure_drop_range\n  - scrubber_s1_design_flow\n  - scrubber_s2_design_flow\n  - september_pressure_drop_readings_logged\n  - solvent_storage_tank_capacity\n  - source_category\n  - staff_categories\n  - total_hours_worked\n  - total_recordable_cases\n  - visible_emissions_opacity_limit",
+  "company_context_sha256": "da5f99733aeafd157698e5931c78d084c793018b23551004dcfbc73179dd04f8",
+  "wall_ms": 23951,
+  "cost_usd": 0.05863500000000001,
+  "input_tokens": 28295,
+  "output_tokens": 2068,
+  "json_parsed": true,
+  "compliant_found_in": [],
+  "alternative_pass": false,
+  "verdicts": {
+    "kind": {
+      "verdict": "FAIL",
+      "detail": "identity.kind = \"record\""
+    },
+    "issuer": {
+      "verdict": "PASS",
+      "detail": "identity.issuer = \"rose city fire protection, inc.\""
+    },
+    "agency-fire-or-osha": {
+      "verdict": "FAIL",
+      "detail": "identity.agencies = [u.s. department of labor - occupational safety and health administration]"
+    },
+    "subject": {
+      "verdict": "FAIL",
+      "detail": "identity.subjects = [emergency preparedness | workplace safety]"
+    },
+    "site-portland": {
+      "verdict": "PASS",
+      "detail": "identity.site = \"portland\""
+    },
+    "doc-date": {
+      "verdict": "PASS",
+      "detail": "identity.doc_date = 2025-08-20"
+    },
+    "expiry": {
+      "verdict": "PASS",
+      "detail": "2026-08-20 in deadlines: \"Annual maintenance renewal for all units\""
+    },
+    "status": {
+      "verdict": "FAIL",
+      "detail": "status = recorded, the run date makes it expired (-40 days to 2026-08-20)"
+    },
+    "no-gaps": {
+      "verdict": "PASS",
+      "detail": "none"
+    },
+    "deadline-annual": {
+      "verdict": "PASS",
+      "detail": "deadlines: \"Annual maintenance renewal for all units\" [annual, maintenance]"
+    },
+    "deadline-six-year": {
+      "verdict": "PASS",
+      "detail": "deadlines: \"Six-year internal maintenance for units W-3 and L-1\" [six, w-3, l-1]"
+    },
+    "label-consistency": {
+      "verdict": "CROSS",
+      "detail": "judged across the three runs, below"
+    },
+    "no-monthly-inspection-gap": {
+      "verdict": "PASS",
+      "detail": "not raised",
+      "soft": []
+    },
+    "doc-date-kind": {
+      "verdict": "PASS",
+      "detail": "identity.doc_date_kind = \"issued\""
+    },
+    "significant-date-kind": {
+      "verdict": "FAIL",
+      "detail": "significant_date_kind = \"last entry\""
+    },
+    "facts-may-contain": {
+      "verdict": "PASS",
+      "detail": "facts: \"extinguisher_units_total\" [14, extinguisher]"
+    }
+  },
+  "scan": {
+    "identity": {
+      "kind": "record",
+      "title": "Certificate of Annual Maintenance — Portable Fire Extinguishers",
+      "issuer": "Rose City Fire Protection, Inc.",
+      "agencies": [
+        "U.S. Department of Labor - Occupational Safety and Health Administration"
+      ],
+      "subjects": [
+        "emergency_preparedness",
+        "workplace_safety"
+      ],
+      "site": "Portland",
+      "jurisdiction": [
+        "Oregon",
+        "federal"
+      ],
+      "doc_date": "2025-08-20",
+      "doc_date_kind": "issued",
+      "page_refs": {}
+    },
+    "summary": "This is a maintenance service record documenting annual inspection and servicing of 14 portable fire extinguishers at the Portland facility, performed by a licensed technician in accordance with NFPA 10 (2022). All units passed inspection and are ready for use; the company must conduct monthly visual inspections of each unit and schedule the next annual maintenance by August 20, 2026, with special attention to units W-3 and L-1 which require six-year internal maintenance before November 2026.",
+    "status": "recorded",
+    "significant_date": "2025-08-20",
+    "significant_date_kind": "last_entry",
+    "freshness_note": "This record is dated August 20, 2025—over one year old as of today (September 29, 2026). The next annual maintenance was due August 20, 2026 and appears to be overdue. A current maintenance certificate is needed immediately.",
+    "gaps": [],
+    "conditions": [
+      {
+        "title": "Monthly visual inspection of all fire extinguishers",
+        "condition_ref": "NFPA 10, Section 7.2",
+        "evidence_expected": "Monthly inspection tags or records on each extinguisher documenting date, inspector name, and condition checks"
+      },
+      {
+        "title": "Annual maintenance by certified technician",
+        "condition_ref": "NFPA 10, Section 7.3 and Oregon OAR 437-002-0187(2)",
+        "evidence_expected": "Current maintenance certificate with technician license, date, and results for each unit"
+      },
+      {
+        "title": "Six-year internal maintenance for W-3 and L-1",
+        "condition_ref": "NFPA 10, Section 7.3.6",
+        "evidence_expected": "Maintenance certificate documenting internal examination, disassembly, inspection, and refilling before November 2026"
+      },
+      {
+        "title": "Hydrostatic testing at prescribed intervals",
+        "condition_ref": "NFPA 10, Chapter 8",
+        "evidence_expected": "Hydrostatic test records showing test date, pressure results, and technician credentials for each unit when interval arrives"
+      }
+    ],
+    "deadlines": [
+      {
+        "title": "Annual maintenance renewal for all units",
+        "due_on": "2026-08-20",
+        "source_line": "Page 1: 'NEXT ANNUAL MAINTENANCE DUE: AUGUST 20, 2026.'",
+        "recurs": true
+      },
+      {
+        "title": "Six-year internal maintenance for units W-3 and L-1",
+        "due_on": "2026-11-30",
+        "source_line": "Page 1: 'Units W-3 and L-1 reach their six-year internal maintenance interval in 2026; schedule before November 2026.'",
+        "recurs": false
+      }
+    ],
+    "facts": [
+      {
+        "key": "extinguisher_units_total",
+        "value": "14",
+        "quote": "Units serviced: 14.",
+        "locator": "Page 1, table footer",
+        "as_of": "2025-08-20",
+        "affects": "Overall fire protection coverage at Portland facility",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "extinguisher_units_passed",
+        "value": "14",
+        "quote": "Units failed or removed from service: 0.",
+        "locator": "Page 1, table footer",
+        "as_of": "2025-08-20",
+        "affects": "All extinguishers are operational and ready for use",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "abc_dry_chemical_units",
+        "value": "11",
+        "quote": "Types include ABC dry chemical (W-1, W-2, W-3, W-4, D-1, D-2, O-1, B-1, A-1, A-2, T-1)",
+        "locator": "Page 1, table 'Type' column",
+        "as_of": "2025-08-20",
+        "affects": "Majority of units are general-purpose dry chemical, suitable for Class A, B, C fires",
+        "basis": "inferred",
+        "quote_verified": false
+      },
+      {
+        "key": "co2_units",
+        "value": "2",
+        "quote": "L-1 and L-2 are CO2 type",
+        "locator": "Page 1, table 'Type' column",
+        "as_of": "2025-08-20",
+        "affects": "Laboratory area has specialized suppression for electrical and solvent fires",
+        "basis": "inferred",
+        "quote_verified": false
+      },
+      {
+        "key": "class_k_units",
+        "value": "1",
+        "quote": "O-2 Offices, break room Class K 6 L",
+        "locator": "Page 1, table",
+        "as_of": "2025-08-20",
+        "affects": "Break room has specialized suppression for cooking oil fires",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "maintenance_standard_applied",
+        "value": "NFPA 10 (2022), Chapter 7, and manufacturer instructions",
+        "quote": "Service performed: annual maintenance in accordance with NFPA 10 (2022), Chapter 7, and the manufacturer's instructions",
+        "locator": "Page 1",
+        "as_of": "2025-08-20",
+        "affects": "Maintenance performed to current national standard",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "technician_license",
+        "value": "PET-4406",
+        "quote": "Technician: Marcus Bell, Oregon SFM Portable Extinguisher Technician Licence PET-4406",
+        "locator": "Page 1, signature line",
+        "as_of": "2025-08-20",
+        "affects": "Service performed by state-licensed technician meeting Oregon requirements",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "service_company_license",
+        "value": "FPE-1187",
+        "quote": "Oregon SFM Licence FPE-1187",
+        "locator": "Page 1, header",
+        "as_of": "2025-08-20",
+        "affects": "Service company is state-licensed and authorized by Oregon State Fire Marshal",
+        "basis": "read",
+        "quote_verified": true
+      }
+    ],
+    "version_of": {
+      "title": "This appears to be the annual maintenance certificate for the portable fire extinguishers held in the company's record list.",
+      "confidence": "high"
+    },
+    "expected_missing": [
+      {
+        "title": "Updated annual maintenance certificate (2026)",
+        "why": "The previous certificate is dated August 2025; renewal was due August 20, 2026 and the current date is September 29, 2026, indicating overdue maintenance.",
+        "basis": "NFPA 10 and Oregon OAR 437-002-0187 require annual maintenance; similar companies maintain current certificates"
+      },
+      {
+        "title": "Monthly visual inspection log for period August 2025 to September 2026",
+        "why": "NFPA 10, Section 7.2 and Oregon regulations require monthly visual inspections with records kept on unit tags; a complete set would show compliance.",
+        "basis": "NFPA 10 Section 7.2 and Oregon OAR 437-002-0187 mandate monthly inspections; standard practice at similar facilities"
+      },
+      {
+        "title": "Six-year internal maintenance certificate for units W-3 and L-1",
+        "why": "These units reach their six-year interval in 2026 and require internal examination before November 2026; no certificate for this work appears in the company records.",
+        "basis": "NFPA 10, Section 7.3.6 and the August 2025 certificate itself flag this requirement"
+      },
+      {
+        "title": "Hydrostatic test records",
+        "why": "Various units will require hydrostatic testing at 12-year intervals (dry chemical and CO2 types per manufacture date); no records of completed tests are listed.",
+        "basis": "NFPA 10, Chapter 8 requires hydrostatic testing; similar companies maintain test records"
+      }
+    ],
+    "confidence_notes": "High confidence in what this document is and what it records: it is a straightforward maintenance service record from a licensed provider, signed by a credentialed technician, with clear pass results for all 14 units. The document accurately identifies unit locations, types, sizes, manufacture dates, and next maintenance dates. The critical gap is that this record is from August 2025 and the required annual renewal date of August 20, 2026 has passed (today is September 29, 2026). This is a compliance concern—not a gap in the document itself, but an overdue maintenance deadline. I am confident in the NFPA 10 and Oregon regulatory requirements based on search results; Oregon OAR 437-002-0187 explicitly requires annual maintenance and monthly visual inspections. I cannot verify from the document itself whether monthly inspections have been logged, as those records are typically kept on the unit tags and not provided here.",
+    "could_not_read": {
+      "reason": ".",
+      "way_forward": "."
+    },
+    "raw_text": "{\"identity\":{\"kind\":\"record\",\"title\":\"Certificate of Annual Maintenance — Portable Fire Extinguishers\",\"issuer\":\"Rose City Fire Protection, Inc.\",\"agencies\":[\"U.S. Department of Labor - Occupational Safety and Health Administration\"],\"subjects\":[\"emergency_preparedness\",\"workplace_safety\"],\"site\":\"Portland\",\"jurisdiction\":[\"Oregon\",\"federal\"],\"doc_date\":\"2025-08-20\",\"doc_date_kind\":\"issued\"},\"summary\":\"This is a maintenance service record documenting annual inspection and servicing of 14 portable fire extinguishers at the Portland facility, performed by a licensed technician in accordance with NFPA 10 (2022). All units passed inspection and are ready for use; the company must conduct monthly visual inspections of each unit and schedule the next annual maintenance by August 20, 2026, with special attention to units W-3 and L-1 which require six-year internal maintenance before November 2026.\",\"status\":\"recorded\",\"significant_date\":\"2026-08-20\",\"significant_date_kind\":\"renewal\",\"freshness_note\":\"This record is dated August 20, 2025—over one year old as of today (September 29, 2026). The next annual maintenance was due August 20, 2026 and appears to be overdue. A current maintenance certificate is needed immediately.\",\"gaps\":[],\"conditions\":[{\"title\":\"Monthly visual inspection of all fire extinguishers\",\"condition_ref\":\"NFPA 10, Section 7.2\",\"evidence_expected\":\"Monthly inspection tags or records on each extinguisher documenting date, inspector name, and condition checks\"},{\"title\":\"Annual maintenance by certified technician\",\"condition_ref\":\"NFPA 10, Section 7.3 and Oregon OAR 437-002-0187(2)\",\"evidence_expected\":\"Current maintenance certificate with technician license, date, and results for each unit\"},{\"title\":\"Six-year internal maintenance for W-3 and L-1\",\"condition_ref\":\"NFPA 10, Section 7.3.6\",\"evidence_expected\":\"Maintenance certificate documenting internal examination, disassembly, inspection, and refilling before November 2026\"},{\"title\":\"Hydrostatic testing at prescribed intervals\",\"condition_ref\":\"NFPA 10, Chapter 8\",\"evidence_expected\":\"Hydrostatic test records showing test date, pressure results, and technician credentials for each unit when interval arrives\"}],\"deadlines\":[{\"title\":\"Annual maintenance renewal for all units\",\"due_on\":\"2026-08-20\",\"source_line\":\"Page 1: 'NEXT ANNUAL MAINTENANCE DUE: AUGUST 20, 2026.'\",\"recurs\":true},{\"title\":\"Six-year internal maintenance for units W-3 and L-1\",\"due_on\":\"2026-11-30\",\"source_line\":\"Page 1: 'Units W-3 and L-1 reach their six-year internal maintenance interval in 2026; schedule before November 2026.'\",\"recurs\":false}],\"facts\":[{\"key\":\"extinguisher_units_total\",\"value\":\"14\",\"basis\":\"read\",\"quote\":\"Units serviced: 14.\",\"locator\":\"Page 1, table footer\",\"as_of\":\"2025-08-20\",\"affects\":\"Overall fire protection coverage at Portland facility\"},{\"key\":\"extinguisher_units_passed\",\"value\":\"14\",\"basis\":\"read\",\"quote\":\"Units failed or removed from service: 0.\",\"locator\":\"Page 1, table footer\",\"as_of\":\"2025-08-20\",\"affects\":\"All extinguishers are operational and ready for use\"},{\"key\":\"abc_dry_chemical_units\",\"value\":\"11\",\"basis\":\"inferred\",\"quote\":\"Types include ABC dry chemical (W-1, W-2, W-3, W-4, D-1, D-2, O-1, B-1, A-1, A-2, T-1)\",\"locator\":\"Page 1, table 'Type' column\",\"as_of\":\"2025-08-20\",\"affects\":\"Majority of units are general-purpose dry chemical, suitable for Class A, B, C fires\"},{\"key\":\"co2_units\",\"value\":\"2\",\"basis\":\"inferred\",\"quote\":\"L-1 and L-2 are CO2 type\",\"locator\":\"Page 1, table 'Type' column\",\"as_of\":\"2025-08-20\",\"affects\":\"Laboratory area has specialized suppression for electrical and solvent fires\"},{\"key\":\"class_k_units\",\"value\":\"1\",\"basis\":\"read\",\"quote\":\"O-2 Offices, break room Class K 6 L\",\"locator\":\"Page 1, table\",\"as_of\":\"2025-08-20\",\"affects\":\"Break room has specialized suppression for cooking oil fires\"},{\"key\":\"maintenance_standard_applied\",\"value\":\"NFPA 10 (2022), Chapter 7, and manufacturer instructions\",\"basis\":\"read\",\"quote\":\"Service performed: annual maintenance in accordance with NFPA 10 (2022), Chapter 7, and the manufacturer's instructions\",\"locator\":\"Page 1\",\"as_of\":\"2025-08-20\",\"affects\":\"Maintenance performed to current national standard\"},{\"key\":\"technician_license\",\"value\":\"PET-4406\",\"basis\":\"read\",\"quote\":\"Technician: Marcus Bell, Oregon SFM Portable Extinguisher Technician Licence PET-4406\",\"locator\":\"Page 1, signature line\",\"as_of\":\"2025-08-20\",\"affects\":\"Service performed by state-licensed technician meeting Oregon requirements\"},{\"key\":\"service_company_license\",\"value\":\"FPE-1187\",\"basis\":\"read\",\"quote\":\"Oregon SFM Licence FPE-1187\",\"locator\":\"Page 1, header\",\"as_of\":\"2025-08-20\",\"affects\":\"Service company is state-licensed and authorized by Oregon State Fire Marshal\"}],\"version_of_title\":\"This appears to be the annual maintenance certificate for the portable fire extinguishers held in the company's record list.\",\"version_of_confidence\":\"high\",\"expected_missing\":[{\"title\":\"Updated annual maintenance certificate (2026)\",\"why\":\"The previous certificate is dated August 2025; renewal was due August 20, 2026 and the current date is September 29, 2026, indicating overdue maintenance.\",\"basis\":\"NFPA 10 and Oregon OAR 437-002-0187 require annual maintenance; similar companies maintain current certificates\"},{\"title\":\"Monthly visual inspection log for period August 2025 to September 2026\",\"why\":\"NFPA 10, Section 7.2 and Oregon regulations require monthly visual inspections with records kept on unit tags; a complete set would show compliance.\",\"basis\":\"NFPA 10 Section 7.2 and Oregon OAR 437-002-0187 mandate monthly inspections; standard practice at similar facilities\"},{\"title\":\"Six-year internal maintenance certificate for units W-3 and L-1\",\"why\":\"These units reach their six-year interval in 2026 and require internal examination before November 2026; no certificate for this work appears in the company records.\",\"basis\":\"NFPA 10, Section 7.3.6 and the August 2025 certificate itself flag this requirement\"},{\"title\":\"Hydrostatic test records\",\"why\":\"Various units will require hydrostatic testing at 12-year intervals (dry chemical and CO2 types per manufacture date); no records of completed tests are listed.\",\"basis\":\"NFPA 10, Chapter 8 requires hydrostatic testing; similar companies maintain test records\"}],\"confidence_notes\":\"High confidence in what this document is and what it records: it is a straightforward maintenance service record from a licensed provider, signed by a credentialed technician, with clear pass results for all 14 units. The document accurately identifies unit locations, types, sizes, manufacture dates, and next maintenance dates. The critical gap is that this record is from August 2025 and the required annual renewal date of August 20, 2026 has passed (today is September 29, 2026). This is a compliance concern—not a gap in the document itself, but an overdue maintenance deadline. I am confident in the NFPA 10 and Oregon regulatory requirements based on search results; Oregon OAR 437-002-0187 explicitly requires annual maintenance and monthly visual inspections. I cannot verify from the document itself whether monthly inspections have been logged, as those records are typically kept on the unit tags and not provided here.\",\"could_not_read_reason\":\".\",\"could_not_read_way_forward\":\".\"}",
+    "json_parsed": true,
+    "model": "claude-haiku-4-5",
+    "cited_sources": 0,
+    "searches": null,
+    "structured": true,
+    "prompt_sha256": "7eac32a877299f84e0356815cd78fefc213e93c1f8a481ac460e84f0a27d06cc",
+    "quotes_checked": 8,
+    "quotes_verified": 6,
+    "extracted_text": "ROSE CITY FIRE PROTECTION, INC.\nPortable Fire Extinguisher Service · 2210 SE Holgate Boulevard, Portland,\nOregon 97202 · (503) 555-0192 · Oregon SFM Licence FPE-1187\nCERTIFICATE OF ANNUAL MAINTENANCE — PORTABLE FIRE EXTINGUISHERS\nCustomer: Cascade Specialty Chemicals, LLC — Portland Facility, 4410 NW Front Avenue,\nPortland, Oregon 97210\nService date: August 20, 2025\nService performed: annual maintenance in accordance with NFPA 10 (2022), Chapter 7, and\nthe manufacturer's instructions; each unit examined, weighed, pressure verified, hose and\nnozzle checked, tamper seal replaced, service tag attached.\nUnit Location Type Size Manufactured Last hydrostatic test 6-year maintenance due Result\nW-1 Warehouse bay 1, east column ABC dry chemical 10 lb 2021 — 2027 Pass\nW-2 Warehouse bay 2, dock door ABC dry chemical 10 lb 2021 — 2027 Pass\nW-3 Warehouse bay 3, drum rack ABC dry chemical 20 lb 2020 — November 2026 Pass\nW-4 Warehouse bay 4, solvent cage ABC dry chemical 20 lb 2021 — 2027 Pass\nL-1 Laboratory, entry CO2 10 lb 2020 2020 November 2026 Pass\nL-2 Laboratory, fume hood wall CO2 10 lb 2022 2022 2028 Pass\nD-1 Loading dock, north ABC dry chemical 20 lb 2022 — 2028 Pass\nD-2 Loading dock, south ABC dry chemical 20 lb 2022 — 2028 Pass\nO-1 Offices, reception ABC dry chemical 5 lb 2023 — 2029 Pass\nO-2 Offices, break room Class K 6 L 2023 — 2029 Pass\nB-1 Boiler room ABC dry chemical 10 lb 2021 — 2027 Pass\nA-1 Acid repackaging line ABC dry chemical 20 lb 2021 — 2027 Pass\nA-2 Caustic repackaging line ABC dry chemical 20 lb 2021 — 2027 Pass\nT-1 Tank farm, T-3 to T-6 ABC dry chemical 20 lb 2022 — 2028 Pass\nUnits serviced: 14. Units failed or removed from service: 0.\nNEXT ANNUAL MAINTENANCE DUE: AUGUST 20, 2026.\nUnits W-3 and L-1 reach their six-year internal maintenance interval in 2026; schedule before November 2026.\nMonthly visual inspections remain the customer's responsibility under NFPA 10, Section 7.2, and are to be recorded on the unit tag.\nTechnician: Marcus Bell, Oregon SFM Portable Extinguisher Technician Licence PET-4406 · Signed: August 20, 2025",
+    "started_at": "2026-09-29T18:38:55.451Z"
+  }
+}

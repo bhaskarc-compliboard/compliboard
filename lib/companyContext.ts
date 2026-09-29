@@ -162,6 +162,36 @@ export interface BuildCompanyContextOptions {
 
 const line = (xs: string[]) => (xs.length ? xs.map((x) => `  - ${x}`).join('\n') : '  (none yet)')
 
+/**
+ * WHERE A SITE IS, AS ONE ADDRESS RATHER THAN AS THREE COLUMNS CONCATENATED.
+ *
+ * *** IT PRINTED THE CITY AND THE STATE TWICE. *** Cascade's site carries
+ * `address = "4410 NW Front Ave, Portland, Oregon 97210"`, `city = "Portland"`, `state = "Oregon"`,
+ * and the old line joined all of them:
+ *
+ *     - Portland — 4410 NW Front Ave, Portland, Oregon 97210, Portland, Oregon (primary)
+ *
+ * The columns are not wrong and neither was the join: a site with a NULL address needs
+ * `city, county, state` to say anything at all, which is how Test Alpha's two plants render. What was
+ * wrong is appending a component the address already contains.
+ *
+ * So each component is dropped when the address already carries it. A site with no address is
+ * unchanged, which is what keeps the fixtures' blocks byte-identical.
+ *
+ * Exported because `lib/audit.ts` had a copy of the same join and therefore the same defect. One
+ * function, two callers — the rule §3.4 states for prompts, applied to the thing a prompt renders.
+ */
+export function siteWhere(s: { address: string | null; city: string | null; county: string | null; state: string | null }): string {
+  const addr = (s.address ?? '').trim()
+  const has = (v: string | null) => !!v && addr.toLowerCase().includes(v.trim().toLowerCase())
+  return [
+    addr || null,
+    has(s.city) ? null : s.city,
+    s.county && !has(s.county) ? `${s.county} County` : null,
+    has(s.state) ? null : s.state,
+  ].filter(Boolean).join(', ')
+}
+
 /** jsonb comes back as whatever was stored. A string stays a string; anything else is shown as
  *  JSON without the outer quotes, which is what `buildScanContext` did before this. */
 function plainValue(v: unknown): string {
@@ -376,8 +406,7 @@ export function renderCompanyContext(
     out.push('Their sites:')
     out.push(c.sites.length
       ? c.sites.map((s) => {
-          const where = [s.address, s.city, s.county ? `${s.county} County` : null, s.state]
-            .filter(Boolean).join(', ')
+          const where = siteWhere(s)
           return `  - ${s.name}${where ? ` — ${where}` : ''}${s.primary ? ' (primary)' : ''}`
         }).join('\n')
       : '  (no sites recorded)')

@@ -1,0 +1,181 @@
+{
+  "id": "10-osha-300a-2025",
+  "title": "OSHA Form 300A, summary of work-related injuries and illnesses, 2025",
+  "spec": "10-osha-300a-2025.md",
+  "dir": "tests/golden/audits",
+  "fixture": "fixtures/10-osha-300a-2025.pdf",
+  "company": "cascade",
+  "must": [
+    {
+      "id": "kind",
+      "line": "kind: record, or report if the vocabulary has one; never policy. The vocabulary has no \"report\".",
+      "type": "field_one_of",
+      "field": "identity.kind",
+      "accept": [
+        "record"
+      ],
+      "forbid": [
+        "policy"
+      ]
+    },
+    {
+      "id": "agency-osha",
+      "line": "agency includes OSHA or Oregon OSHA, the same label string cases 06 and 09 produced for this company",
+      "type": "list_contains",
+      "field": "identity.agencies",
+      "accept": [
+        "osha"
+      ]
+    },
+    {
+      "id": "subject",
+      "line": "subject includes something like \"injury and illness recordkeeping\", \"OSHA 300\" or \"recordkeeping\"",
+      "type": "list_contains",
+      "field": "identity.subjects",
+      "accept": [
+        "recordkeeping",
+        "injury",
+        "300"
+      ]
+    },
+    {
+      "id": "site-portland",
+      "line": "site: Portland",
+      "type": "field_contains",
+      "field": "identity.site",
+      "accept": [
+        "portland"
+      ]
+    },
+    {
+      "id": "doc-date",
+      "line": "doc_date: February 1, 2026",
+      "type": "date_equals",
+      "field": "identity.doc_date",
+      "value": "2026-02-01"
+    },
+    {
+      "id": "status",
+      "line": "Status (must): current, recorded or no_gaps_found. Never \"compliant\".",
+      "type": "field_one_of",
+      "field": "status",
+      "accept": [
+        "current",
+        "recorded",
+        "no_gaps_found"
+      ]
+    },
+    {
+      "id": "no-gaps",
+      "line": "Gaps (must): none. The form is complete and certified. Any gap on it is a false finding and fails the run.",
+      "type": "empty",
+      "collections": [
+        "gaps"
+      ]
+    },
+    {
+      "id": "fact-65-employees",
+      "line": "Facts (must contain, quote verified true): annual average number of employees 65, as_of 2025-12-31 or 2025",
+      "type": "item",
+      "collections": [
+        "facts"
+      ],
+      "keywords": [
+        "65",
+        "employee",
+        "annual average"
+      ],
+      "min_keywords": 2,
+      "quote_must_verify": true
+    },
+    {
+      "id": "label-consistency",
+      "line": "Consistency across the three runs: the agency label must be the same string in all three.",
+      "type": "labels_identical_across_runs"
+    }
+  ],
+  "must_not": [
+    {
+      "id": "no-case-count-gap",
+      "line": "a gap about the number of cases; a statement that 3 injuries is high or low",
+      "type": "absent_item",
+      "collections": [
+        "gaps"
+      ],
+      "subject": [
+        "case",
+        "injur",
+        "recordable",
+        "incident rate",
+        "dart"
+      ],
+      "absence": [
+        "high",
+        "elevated",
+        "concerning",
+        "excessive",
+        "too many",
+        "above average",
+        "low",
+        "significant number"
+      ]
+    },
+    {
+      "id": "no-emergency-plan-claim",
+      "line": "a claim about the emergency plan (the scan cannot see it). expected_missing is not counted \u2014 it is the honest \"companies like this usually also hold\" channel (the note on case 06a).",
+      "type": "absent_item",
+      "collections": [
+        "gaps",
+        "facts"
+      ],
+      "subject": [
+        "emergency action plan",
+        "emergency plan",
+        "evacuation plan"
+      ],
+      "absence": []
+    }
+  ],
+  "reported": [
+    {
+      "id": "doc-date-kind",
+      "line": "doc_date kind \"signed\", \"issued\" or \"certified\"; any passes. The vocabulary carries issued|revised|last_entry|effective|unknown.",
+      "type": "field_contains",
+      "field": "identity.doc_date_kind",
+      "accept": [
+        "issued",
+        "effective",
+        "revised"
+      ]
+    },
+    {
+      "id": "deadline-posting",
+      "line": "Deadlines (may contain, correct if present): posting period February 1 to April 30, 2026, passed; next summary to be posted February 1, 2027 (recurring). Neither is required of the scan.",
+      "type": "item",
+      "collections": [
+        "deadlines"
+      ],
+      "keywords": [
+        "post",
+        "summary"
+      ],
+      "min_keywords": 1
+    },
+    {
+      "id": "facts-may-contain",
+      "line": "May contain: 3 recordable injuries in 2025; 1 case with days away; NAICS 424690; total hours 128,400.",
+      "type": "item",
+      "collections": [
+        "facts"
+      ],
+      "keywords": [
+        "recordable",
+        "days away",
+        "424690",
+        "128,400",
+        "hours"
+      ],
+      "min_keywords": 1
+    }
+  ]
+}

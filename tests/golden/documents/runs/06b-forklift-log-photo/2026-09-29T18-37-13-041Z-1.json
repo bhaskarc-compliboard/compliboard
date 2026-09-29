@@ -1,0 +1,276 @@
+{
+  "case": "06b-forklift-log-photo",
+  "run": 1,
+  "run_date": "2026-09-29",
+  "model": "claude-haiku-4-5",
+  "structured": true,
+  "searches": 1,
+  "cited_sources": 0,
+  "prompt_sha256": "941b689479b31eb0d391726fbd0828052c9d8212c7934198edca8c5a62328ea9",
+  "scan_id": "a7967b49-c23f-4c5c-886a-4a99dcb6498e",
+  "ai_call_id": "3b2ea194-adf8-49a3-b7ac-4935824b0807",
+  "company_context": "WHO THIS COMPANY IS\n  Name: Cascade Specialty Chemicals, LLC\n  Industry: chemical manufacturing (recorded as chemical-manufacturing)\n  Address: Portland, Oregon\n  State: Oregon\nTheir sites:\n  - Portland — 4410 NW Front Ave, Portland, Oregon 97210 (primary)\n\nWHAT A PERSON HAS CONFIRMED FROM A DOCUMENT\nEach of these was read in the named document and then confirmed by a person.\n  (nothing confirmed yet)\n\nLABELS ALREADY IN USE FOR THIS COMPANY\nAgencies:\n  - Oregon DEQ\nSubjects:\n  - chemical_safety\n  - emergency_preparedness\n  - workplace_safety\n\nFACT KEYS ALREADY IN USE FOR THIS COMPANY\n  - alarm_monitoring_vendor\n  - assembly_point_distance\n  - carbon_replacement_interval\n  - emergency_shower_eyewash_location\n  - employee_count\n  - equipment_hours_end\n  - equipment_hours_start\n  - equipment_model\n  - expiration_date\n  - facility_location\n  - first_aid_responders_per_shift\n  - inspection_coverage\n  - inspection_month\n  - issued_date\n  - last_revision_date\n  - operator_j_rivera_certification\n  - operator_m_chen_certification\n  - permit_number\n  - plan_locations\n  - product_identifier\n  - record_retention_period\n  - renewal_application_deadline\n  - scrubber_pressure_drop_range\n  - scrubber_s1_design_flow\n  - scrubber_s2_design_flow\n  - solvent_storage_tank_capacity\n  - source_category\n  - staff_categories\n  - visible_emissions_opacity_limit",
+  "company_context_sha256": "d9f7fad01af7f220c4e077ed8d03196122344c276e35782b6c8fb59fd050d5ab",
+  "wall_ms": 20388,
+  "cost_usd": 0.03991,
+  "input_tokens": 20910,
+  "output_tokens": 1800,
+  "json_parsed": true,
+  "compliant_found_in": [],
+  "alternative_pass": false,
+  "verdicts": {
+    "kind": {
+      "verdict": "PASS",
+      "detail": "identity.kind = \"record\""
+    },
+    "agency-osha": {
+      "verdict": "FAIL",
+      "detail": "identity.agencies = [oregon deq]"
+    },
+    "subject": {
+      "verdict": "PASS",
+      "detail": "identity.subjects = [workplace safety | emergency preparedness]"
+    },
+    "site-portland": {
+      "verdict": "PASS",
+      "detail": "identity.site = \"portland\""
+    },
+    "doc-date": {
+      "verdict": "FAIL",
+      "detail": "identity.doc_date = null, wanted 2026-09-…"
+    },
+    "doc-date-kind": {
+      "verdict": "PASS",
+      "detail": "identity.doc_date_kind = \"last entry\""
+    },
+    "status": {
+      "verdict": "PASS",
+      "detail": "status = \"recorded\""
+    },
+    "finding-missing-days": {
+      "verdict": "FAIL",
+      "detail": "no item matched. gaps/notes held: summary | freshness_note | confidence_notes | expected_missing | expected_missing | expected_missing"
+    },
+    "finding-horn-defect": {
+      "verdict": "PASS",
+      "detail": "notes: \"summary\" [september 9, defect]"
+    },
+    "finding-no-entries-since": {
+      "verdict": "FAIL",
+      "detail": "no item matched. gaps/notes held: summary | freshness_note | confidence_notes | expected_missing | expected_missing | expected_missing"
+    },
+    "fact-truck": {
+      "verdict": "PASS",
+      "detail": "facts: \"equipment_model\" [toyota, 8fgu25, fl-2, propane]"
+    },
+    "label-consistency": {
+      "verdict": "CROSS",
+      "detail": "judged across the three runs, below"
+    },
+    "no-false-certification-finding": {
+      "verdict": "PASS",
+      "detail": "not raised",
+      "soft": []
+    },
+    "no-false-form-finding": {
+      "verdict": "PASS",
+      "detail": "not raised",
+      "soft": []
+    },
+    "no-invented-maintenance-finding": {
+      "verdict": "PASS",
+      "detail": "not raised",
+      "soft": []
+    },
+    "citation-evaluation-rule": {
+      "verdict": "FAIL",
+      "detail": "\"1910.178(l)(4)(iii)\" not in deadlines, gaps, notes"
+    },
+    "two-operators-fact": {
+      "verdict": "PASS",
+      "detail": "facts: \"operator_m_chen_certification\" [operator, certified, chen]"
+    },
+    "conditions-none": {
+      "verdict": "FAIL",
+      "detail": "3: \"Daily pre-shift examination before equipment placed in service\"; \"Equipment not used if examination reveals a safety defect\"; \"Defects reported and corrected immediately\""
+    },
+    "freshness-recent": {
+      "verdict": "PASS",
+      "detail": "[entries]"
+    },
+    "last-entry-date": {
+      "verdict": "FAIL",
+      "detail": "2026-09-18 appears in none of significant_date, identity.doc_date"
+    },
+    "deadline-chen": {
+      "verdict": "FAIL",
+      "detail": "no item matched. deadlines held: Pre-shift inspection required before each sh"
+    },
+    "deadline-rivera": {
+      "verdict": "FAIL",
+      "detail": "no item matched. deadlines held: Pre-shift inspection required before each sh"
+    }
+  },
+  "scan": {
+    "identity": {
+      "kind": "record",
+      "title": "Powered Industrial Truck Pre-Shift Inspection Log",
+      "issuer": "Cascade Specialty Chemicals, LLC",
+      "agencies": [
+        "Oregon DEQ"
+      ],
+      "subjects": [
+        "workplace_safety",
+        "emergency_preparedness"
+      ],
+      "site": "Portland",
+      "jurisdiction": [
+        "Oregon",
+        "federal"
+      ],
+      "doc_date": null,
+      "doc_date_kind": "last_entry",
+      "page_refs": {}
+    },
+    "summary": "This is a daily pre-shift inspection log for a Toyota forklift (model 8FGU25) at the Portland warehouse, tracking thirteen safety-critical systems under OSHA 29 CFR 1910.178(q)(7). Each inspection marks components as passing (✓) or defective (X), with operators signing and noting any problems; this document is current through mid-September 2026 and shows one defect flagged on September 9.",
+    "status": "recorded",
+    "significant_date": null,
+    "significant_date_kind": null,
+    "freshness_note": "Log entries end on 2026-09-17, now 12 days old. Current daily entries should be produced to demonstrate ongoing compliance.",
+    "gaps": [],
+    "conditions": [
+      {
+        "title": "Daily pre-shift examination before equipment placed in service",
+        "condition_ref": "OSHA 29 CFR 1910.178(q)(7)",
+        "evidence_expected": "Completed inspection log with date, shift, operator name, all checklist items marked (✓ or X), hours, and sign-off; defects immediately reported and corrected before use."
+      },
+      {
+        "title": "Equipment not used if examination reveals a safety defect",
+        "condition_ref": "OSHA 29 CFR 1910.178(q)(7)",
+        "evidence_expected": "Notation in log (as shown Sep 9: 'Horn not working') and maintenance record confirming defect corrected before return to service."
+      },
+      {
+        "title": "Defects reported and corrected immediately",
+        "condition_ref": "OSHA 29 CFR 1910.178(q)(7)",
+        "evidence_expected": "Log entries noting defects, maintenance work order, and follow-up inspection confirming repair before equipment resumes operation."
+      }
+    ],
+    "deadlines": [
+      {
+        "title": "Pre-shift inspection required before each shift",
+        "due_on": null,
+        "source_line": "Header: 'Inspection per OSHA 29 CFR 1910.178(q)(7): examine before each shift'",
+        "recurs": true
+      }
+    ],
+    "facts": [
+      {
+        "key": "equipment_model",
+        "value": "Toyota 8FGU25, unit FL-2, propane-powered",
+        "quote": "Truck: Toyota 8FGU25, unit FL-2, propane",
+        "locator": "page 1, header",
+        "as_of": null,
+        "affects": "Identifies which piece of equipment the log covers.",
+        "basis": "read",
+        "quote_verified": null
+      },
+      {
+        "key": "equipment_hours_end",
+        "value": "4,886 hours",
+        "quote": "4,886",
+        "locator": "page 1, Sep 17 row",
+        "as_of": "2026-09-17",
+        "affects": "Tracks cumulative operating hours for maintenance scheduling and wear monitoring.",
+        "basis": "read",
+        "quote_verified": null
+      },
+      {
+        "key": "equipment_hours_start",
+        "value": "4,812 hours",
+        "quote": "4,812",
+        "locator": "page 1, Sep 1 row",
+        "as_of": "2026-09-01",
+        "affects": "Marks starting point for hours logged during September.",
+        "basis": "read",
+        "quote_verified": null
+      },
+      {
+        "key": "inspection_month",
+        "value": "September 2026",
+        "quote": "Month: September 2026",
+        "locator": "page 1, header",
+        "as_of": null,
+        "affects": "Defines the period covered by this inspection log.",
+        "basis": "read",
+        "quote_verified": null
+      },
+      {
+        "key": "operator_m_chen_certification",
+        "value": "M.C. performed multiple inspections including Sep 1, 2, 8, 14, 15, 17",
+        "quote": "M.C.",
+        "locator": "page 1, Operator column",
+        "as_of": null,
+        "affects": "Documents which certified operator performed each daily pre-shift inspection.",
+        "basis": "read",
+        "quote_verified": null
+      },
+      {
+        "key": "operator_j_rivera_certification",
+        "value": "J.R. performed inspections on Sep 7, 10, 11, 16",
+        "quote": "J.R.",
+        "locator": "page 1, Operator column",
+        "as_of": null,
+        "affects": "Documents which certified operator performed daily pre-shift inspections.",
+        "basis": "read",
+        "quote_verified": null
+      },
+      {
+        "key": "facility_location",
+        "value": "Portland Warehouse, 4410 NW Front Ave, Portland, Oregon 97210",
+        "quote": "PORTLAND WAREHOUSE",
+        "locator": "page 1, header",
+        "as_of": null,
+        "affects": "Confirms equipment location and regulatory jurisdiction.",
+        "basis": "read",
+        "quote_verified": null
+      }
+    ],
+    "version_of": {
+      "title": "Powered Industrial Truck Pre-Shift Inspection Log",
+      "confidence": "high"
+    },
+    "expected_missing": [
+      {
+        "title": "Operator training and certification records",
+        "why": "OSHA 1910.178(l) requires documented training and evaluation before anyone operates a truck, with re-evaluation at least every three years.",
+        "basis": "Similar companies maintain separate operator certifications; the log names operators (M.C., J.R.) but does not show when they were trained or when re-evaluation is due."
+      },
+      {
+        "title": "Defect correction and follow-up inspection record",
+        "why": "When a defect is found (such as 'Horn not working' on Sep 9), OSHA requires the truck be removed from service and corrected immediately; follow-up inspection showing the repair and return to service are not shown in this log.",
+        "basis": "OSHA 1910.178(q)(7) requires defects be reported and corrected, with no return to service until safe. The Sep 9 entry notes 'Horn not working' but later entries do not show verification the horn was repaired and inspected before the truck was used again."
+      },
+      {
+        "title": "Equipment maintenance history and parts records",
+        "why": "To demonstrate that defects are tracked and corrected, maintenance work orders and parts replacement records support the pre-shift log.",
+        "basis": "Similar companies maintain maintenance files tied to inspection logs to prove defects have been addressed."
+      }
+    ],
+    "confidence_notes": "High confidence on what the document is, its format, and which defect was noted (Sep 9 horn failure). High confidence that this is a record, not a permit or policy, and that it is current through September 17. The OSHA standard 1910.178(q)(7) is well-established and the inspection checklist aligns with the cited regulation. Medium confidence on whether the Sep 9 defect was corrected before the truck was used again—the log itself does not show this. The operators named (M.C., J.R.) are initials only; full training and certification records are not in this document. The log is 12 days old as of the query date (2026-09-29), so current compliance would require ongoing daily entries not shown here.",
+    "could_not_read": {
+      "reason": null,
+      "way_forward": null
+    },
+    "raw_text": "{\"identity\": {\"kind\": \"record\", \"title\": \"Powered Industrial Truck Pre-Shift Inspection Log\", \"issuer\": \"Cascade Specialty Chemicals, LLC\", \"agencies\": [\"Oregon DEQ\"], \"subjects\": [\"workplace_safety\", \"emergency_preparedness\"], \"site\": \"Portland\", \"jurisdiction\": [\"Oregon\", \"federal\"], \"doc_date\": \"2026-09\", \"doc_date_kind\": \"last_entry\"}, \"summary\": \"This is a daily pre-shift inspection log for a Toyota forklift (model 8FGU25) at the Portland warehouse, tracking thirteen safety-critical systems under OSHA 29 CFR 1910.178(q)(7). Each inspection marks components as passing (✓) or defective (X), with operators signing and noting any problems; this document is current through mid-September 2026 and shows one defect flagged on September 9.\", \"status\": \"recorded\", \"significant_date\": \"2026-09-17\", \"significant_date_kind\": \"last_entry\", \"freshness_note\": \"Log entries end on 2026-09-17, now 12 days old. Current daily entries should be produced to demonstrate ongoing compliance.\", \"gaps\": [], \"conditions\": [{\"title\": \"Daily pre-shift examination before equipment placed in service\", \"condition_ref\": \"OSHA 29 CFR 1910.178(q)(7)\", \"evidence_expected\": \"Completed inspection log with date, shift, operator name, all checklist items marked (✓ or X), hours, and sign-off; defects immediately reported and corrected before use.\"}, {\"title\": \"Equipment not used if examination reveals a safety defect\", \"condition_ref\": \"OSHA 29 CFR 1910.178(q)(7)\", \"evidence_expected\": \"Notation in log (as shown Sep 9: 'Horn not working') and maintenance record confirming defect corrected before return to service.\"}, {\"title\": \"Defects reported and corrected immediately\", \"condition_ref\": \"OSHA 29 CFR 1910.178(q)(7)\", \"evidence_expected\": \"Log entries noting defects, maintenance work order, and follow-up inspection confirming repair before equipment resumes operation.\"}], \"deadlines\": [{\"title\": \"Pre-shift inspection required before each shift\", \"due_on\": \"daily\", \"source_line\": \"Header: 'Inspection per OSHA 29 CFR 1910.178(q)(7): examine before each shift'\", \"recurs\": true}], \"facts\": [{\"key\": \"equipment_model\", \"value\": \"Toyota 8FGU25, unit FL-2, propane-powered\", \"basis\": \"read\", \"quote\": \"Truck: Toyota 8FGU25, unit FL-2, propane\", \"locator\": \"page 1, header\", \"as_of\": \"2026-09\", \"affects\": \"Identifies which piece of equipment the log covers.\"}, {\"key\": \"equipment_hours_end\", \"value\": \"4,886 hours\", \"basis\": \"read\", \"quote\": \"4,886\", \"locator\": \"page 1, Sep 17 row\", \"as_of\": \"2026-09-17\", \"affects\": \"Tracks cumulative operating hours for maintenance scheduling and wear monitoring.\"}, {\"key\": \"equipment_hours_start\", \"value\": \"4,812 hours\", \"basis\": \"read\", \"quote\": \"4,812\", \"locator\": \"page 1, Sep 1 row\", \"as_of\": \"2026-09-01\", \"affects\": \"Marks starting point for hours logged during September.\"}, {\"key\": \"inspection_month\", \"value\": \"September 2026\", \"basis\": \"read\", \"quote\": \"Month: September 2026\", \"locator\": \"page 1, header\", \"as_of\": \"2026-09\", \"affects\": \"Defines the period covered by this inspection log.\"}, {\"key\": \"operator_m_chen_certification\", \"value\": \"M.C. performed multiple inspections including Sep 1, 2, 8, 14, 15, 17\", \"basis\": \"read\", \"quote\": \"M.C.\", \"locator\": \"page 1, Operator column\", \"as_of\": \"2026-09\", \"affects\": \"Documents which certified operator performed each daily pre-shift inspection.\"}, {\"key\": \"operator_j_rivera_certification\", \"value\": \"J.R. performed inspections on Sep 7, 10, 11, 16\", \"basis\": \"read\", \"quote\": \"J.R.\", \"locator\": \"page 1, Operator column\", \"as_of\": \"2026-09\", \"affects\": \"Documents which certified operator performed daily pre-shift inspections.\"}, {\"key\": \"facility_location\", \"value\": \"Portland Warehouse, 4410 NW Front Ave, Portland, Oregon 97210\", \"basis\": \"read\", \"quote\": \"PORTLAND WAREHOUSE\", \"locator\": \"page 1, header\", \"as_of\": \"2026-09\", \"affects\": \"Confirms equipment location and regulatory jurisdiction.\"}], \"version_of_title\": \"Powered Industrial Truck Pre-Shift Inspection Log\", \"version_of_confidence\": \"high\", \"expected_missing\": [{\"title\": \"Operator training and certification records\", \"why\": \"OSHA 1910.178(l) requires documented training and evaluation before anyone operates a truck, with re-evaluation at least every three years.\", \"basis\": \"Similar companies maintain separate operator certifications; the log names operators (M.C., J.R.) but does not show when they were trained or when re-evaluation is due.\"}, {\"title\": \"Defect correction and follow-up inspection record\", \"why\": \"When a defect is found (such as 'Horn not working' on Sep 9), OSHA requires the truck be removed from service and corrected immediately; follow-up inspection showing the repair and return to service are not shown in this log.\", \"basis\": \"OSHA 1910.178(q)(7) requires defects be reported and corrected, with no return to service until safe. The Sep 9 entry notes 'Horn not working' but later entries do not show verification the horn was repaired and inspected before the truck was used again.\"}, {\"title\": \"Equipment maintenance history and parts records\", \"why\": \"To demonstrate that defects are tracked and corrected, maintenance work orders and parts replacement records support the pre-shift log.\", \"basis\": \"Similar companies maintain maintenance files tied to inspection logs to prove defects have been addressed.\"}], \"confidence_notes\": \"High confidence on what the document is, its format, and which defect was noted (Sep 9 horn failure). High confidence that this is a record, not a permit or policy, and that it is current through September 17. The OSHA standard 1910.178(q)(7) is well-established and the inspection checklist aligns with the cited regulation. Medium confidence on whether the Sep 9 defect was corrected before the truck was used again—the log itself does not show this. The operators named (M.C., J.R.) are initials only; full training and certification records are not in this document. The log is 12 days old as of the query date (2026-09-29), so current compliance would require ongoing daily entries not shown here.\", \"could_not_read_reason\": \"null\", \"could_not_read_way_forward\": \"null\"}",
+    "json_parsed": true,
+    "model": "claude-haiku-4-5",
+    "cited_sources": 0,
+    "searches": null,
+    "structured": true,
+    "prompt_sha256": "941b689479b31eb0d391726fbd0828052c9d8212c7934198edca8c5a62328ea9",
+    "quotes_checked": 0,
+    "quotes_verified": 0,
+    "extracted_text": "",
+    "started_at": "2026-09-29T18:36:51.827Z"
+  }
+}

@@ -1,0 +1,280 @@
+{
+  "case": "10-osha-300a-2025",
+  "run": 1,
+  "run_date": "2026-09-29",
+  "model": "claude-haiku-4-5",
+  "structured": true,
+  "searches": 2,
+  "cited_sources": 0,
+  "prompt_sha256": "333582f81efa3241763cbd550e370be71ad041b5f589eb494edb80ffdbac8774",
+  "scan_id": "731a7369-3f13-414c-a3d2-ed2c0bb089e7",
+  "ai_call_id": "f596362c-9227-4992-86f4-79e5c8ffdf57",
+  "company_context": "WHO THIS COMPANY IS\n  Name: Cascade Specialty Chemicals, LLC\n  Industry: chemical manufacturing (recorded as chemical-manufacturing)\n  Address: Portland, Oregon\n  State: Oregon\nTheir sites:\n  - Portland — 4410 NW Front Ave, Portland, Oregon 97210 (primary)\n\nWHAT A PERSON HAS CONFIRMED FROM A DOCUMENT\nEach of these was read in the named document and then confirmed by a person.\n  (nothing confirmed yet)\n\nLABELS ALREADY IN USE FOR THIS COMPANY\nAgencies:\n  - Oregon DEQ\nSubjects:\n  - chemical_safety\n  - emergency_preparedness\n  - workplace_safety\n\nFACT KEYS ALREADY IN USE FOR THIS COMPANY\n  - acid_line_operating_days_august\n  - alarm_monitoring_vendor\n  - assembly_point_distance\n  - august_pressure_drop_readings_logged\n  - c1_carbon_breakthrough_detection\n  - carbon_replacement_interval\n  - caustic_line_operating_days_august\n  - emergency_shower_eyewash_location\n  - employee_count\n  - equipment_hours_end\n  - equipment_hours_start\n  - equipment_model\n  - expiration_date\n  - facility_location\n  - first_aid_responders_per_shift\n  - inspection_coverage\n  - inspection_month\n  - issued_date\n  - last_revision_date\n  - operator_j_rivera_certification\n  - operator_m_chen_certification\n  - permit_number\n  - plan_locations\n  - product_identifier\n  - record_retention_period\n  - renewal_application_deadline\n  - scrubber_pressure_drop_exceedance\n  - scrubber_pressure_drop_range\n  - scrubber_s1_design_flow\n  - scrubber_s2_design_flow\n  - september_pressure_drop_readings_logged\n  - solvent_storage_tank_capacity\n  - source_category\n  - staff_categories\n  - visible_emissions_opacity_limit",
+  "company_context_sha256": "7acf18d5f1012aa5dfdec9db229f9e65afc32a3578dd533d00a77226642041e3",
+  "wall_ms": 25104,
+  "cost_usd": 0.06056400000000001,
+  "input_tokens": 28714,
+  "output_tokens": 2370,
+  "json_parsed": true,
+  "compliant_found_in": [],
+  "alternative_pass": false,
+  "verdicts": {
+    "kind": {
+      "verdict": "PASS",
+      "detail": "identity.kind = \"record\""
+    },
+    "agency-osha": {
+      "verdict": "FAIL",
+      "detail": "identity.agencies = [u.s. department of labor - occupational safety and health administration]"
+    },
+    "subject": {
+      "verdict": "FAIL",
+      "detail": "identity.subjects = [workplace safety | emergency preparedness]"
+    },
+    "site-portland": {
+      "verdict": "PASS",
+      "detail": "identity.site = \"portland\""
+    },
+    "doc-date": {
+      "verdict": "PASS",
+      "detail": "identity.doc_date = 2026-02-01"
+    },
+    "status": {
+      "verdict": "PASS",
+      "detail": "status = \"current\""
+    },
+    "no-gaps": {
+      "verdict": "PASS",
+      "detail": "none"
+    },
+    "fact-65-employees": {
+      "verdict": "PASS",
+      "detail": "facts: \"employee_count\" [65, employee, annual average]"
+    },
+    "label-consistency": {
+      "verdict": "CROSS",
+      "detail": "judged across the three runs, below"
+    },
+    "no-case-count-gap": {
+      "verdict": "PASS",
+      "detail": "not raised",
+      "soft": []
+    },
+    "no-emergency-plan-claim": {
+      "verdict": "PASS",
+      "detail": "not raised",
+      "soft": []
+    },
+    "doc-date-kind": {
+      "verdict": "PASS",
+      "detail": "identity.doc_date_kind = \"issued\""
+    },
+    "deadline-posting": {
+      "verdict": "PASS",
+      "detail": "deadlines: \"Post Form 300A in workplace\" [post, summary]"
+    },
+    "facts-may-contain": {
+      "verdict": "PASS",
+      "detail": "facts: \"total_hours_worked\" [128,400, hours]"
+    }
+  },
+  "scan": {
+    "identity": {
+      "kind": "record",
+      "title": "OSHA Form 300A Summary of Work-Related Injuries and Illnesses for Year 2025",
+      "issuer": "Cascade Specialty Chemicals, LLC",
+      "agencies": [
+        "U.S. Department of Labor - Occupational Safety and Health Administration"
+      ],
+      "subjects": [
+        "workplace_safety",
+        "emergency_preparedness"
+      ],
+      "site": "Portland",
+      "jurisdiction": [
+        "federal",
+        "Oregon"
+      ],
+      "doc_date": "2026-02-01",
+      "doc_date_kind": "issued",
+      "page_refs": {}
+    },
+    "summary": "This is OSHA Form 300A, the annual summary of recordable work-related injuries and illnesses for calendar year 2025. The form is required to be completed by employers with 10 or more employees and must be posted in a visible workplace location from February 1 through April 30 of the following year. The form documents that Cascade Specialty Chemicals had 3 recordable cases in 2025 (1 case with days away from work, 2 other recordable cases), with 6 total days away from work and no fatalities.",
+    "status": "current",
+    "significant_date": "2026-02-01",
+    "significant_date_kind": "last_entry",
+    "freshness_note": "This form covers 2025 data and was issued February 1, 2026. As of September 29, 2026, the posting requirement has expired (ended April 30, 2026). The form must now be retained in records for five years from the end of calendar year 2025, through December 31, 2030.",
+    "gaps": [],
+    "conditions": [
+      {
+        "title": "Post Form 300A in visible location",
+        "condition_ref": "29 CFR 1904.32",
+        "evidence_expected": "Physical posting of the form at the Portland facility in a conspicuous location where employee notices are customarily displayed from February 1 through April 30, 2026"
+      },
+      {
+        "title": "Retain Form 300A and supporting OSHA 300 Log",
+        "condition_ref": "29 CFR 1904.33",
+        "evidence_expected": "Stored copies of the Form 300A and underlying OSHA Form 300 Log retained for five years following the end of the calendar year covered (through December 31, 2030)"
+      },
+      {
+        "title": "Certify accuracy by company executive",
+        "condition_ref": "29 CFR 1904.32",
+        "evidence_expected": "Form signed and certified by a company executive attesting to the truth and accuracy of entries"
+      }
+    ],
+    "deadlines": [
+      {
+        "title": "Post Form 300A in workplace",
+        "due_on": "2026-02-01",
+        "source_line": "Post this Summary page from February 1 to April 30 of the year following the year covered by the form",
+        "recurs": true
+      },
+      {
+        "title": "Remove/stop posting Form 300A",
+        "due_on": "2026-04-30",
+        "source_line": "Post this Summary page from February 1 to April 30 of the year following the year covered by the form",
+        "recurs": true
+      },
+      {
+        "title": "Retain records (end date)",
+        "due_on": "2030-12-31",
+        "source_line": "Five years following the end of the calendar year that these records cover (inferred from 29 CFR 1904.33)",
+        "recurs": false
+      }
+    ],
+    "facts": [
+      {
+        "key": "employee_count",
+        "value": "65 (annual average)",
+        "quote": "Annual average number of employees: 65",
+        "locator": "Employment information section",
+        "as_of": "2025-12-31",
+        "affects": "Determines OSHA recordkeeping obligations; this facility with 65 employees exceeds the 10-employee threshold and is subject to Form 300A posting and retention requirements",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "total_hours_worked",
+        "value": "128,400",
+        "quote": "Total hours worked by all employees last year: 128,400",
+        "locator": "Employment information section",
+        "as_of": "2025-12-31",
+        "affects": "Used to calculate injury/illness rates and assess safety performance metrics",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "total_recordable_cases",
+        "value": "3",
+        "quote": "Total number of cases with days away from work: 1 (H); Total number of other recordable cases: 2 (J)",
+        "locator": "Number of Cases section",
+        "as_of": "2025-12-31",
+        "affects": "Reflects the company's safety record for 2025; lower frequency may reduce scrutiny but does not eliminate obligations",
+        "basis": "read",
+        "quote_verified": false
+      },
+      {
+        "key": "days_away_from_work",
+        "value": "6 days total",
+        "quote": "Total number of days away from work: 6 (K)",
+        "locator": "Number of Days section",
+        "as_of": "2025-12-31",
+        "affects": "Indicates severity of the one case involving time away from work",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "injuries_recorded",
+        "value": "3",
+        "quote": "Total number of (M): Injuries 3",
+        "locator": "Injury and Illness Types section",
+        "as_of": "2025-12-31",
+        "affects": "All three recordable cases in 2025 were classified as injuries rather than illnesses",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "facility_location",
+        "value": "4410 NW Front Avenue, Portland, Oregon 97210",
+        "quote": "Street: 4410 NW Front Avenue; City: Portland · State: OR · ZIP: 97210",
+        "locator": "Establishment information section",
+        "as_of": "2025-12-31",
+        "affects": "Confirms the location subject to OSHA record retention and posting requirements",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "industry_classification",
+        "value": "NAICS 424690 - Chemical and allied products merchant wholesaler; repackaging of acids, caustics and solvents",
+        "quote": "North American Industrial Classification (NAICS): 424690; Industry description: Chemical and allied products merchant wholesaler; repackaging of acids, caustics and solvents",
+        "locator": "Establishment information section",
+        "as_of": "2025-12-31",
+        "affects": "High-hazard industry classification; affects scope of OSHA compliance obligations and may trigger electronic reporting requirements if applicable threshold is met",
+        "basis": "read",
+        "quote_verified": false
+      },
+      {
+        "key": "issued_date",
+        "value": "2026-02-01",
+        "quote": "Date: February 1, 2026",
+        "locator": "Sign here section",
+        "as_of": "2026-02-01",
+        "affects": "Marks the beginning of the three-month posting requirement period",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "certifying_official",
+        "value": "Daniel Okafor, Plant Manager",
+        "quote": "Daniel Okafor · Plant Manager · Phone (503) 555-0148 · Date: February 1, 2026",
+        "locator": "Sign here section",
+        "as_of": "2026-02-01",
+        "affects": "Executive certification establishes accountability for accuracy of injury and illness data",
+        "basis": "read",
+        "quote_verified": true
+      }
+    ],
+    "version_of": {
+      "title": "OSHA Form 300A differs from the annual OSHA Form 300 Log; this summary is the required form version per Part 1904",
+      "confidence": "high"
+    },
+    "expected_missing": [
+      {
+        "title": "OSHA Form 300 Log (detailed injury and illness log)",
+        "why": "This 300A is a summary; the underlying Form 300 Log with individual case details must also be retained",
+        "basis": "The instructions state to use the Log to verify entries before completing the summary, and retention requirements require both be kept for five years"
+      },
+      {
+        "title": "OSHA Form 301 Incident Reports",
+        "why": "Each recordable case on the 300 Log should have a corresponding Form 301 with incident details",
+        "basis": "OSHA recordkeeping rules require Form 301 reports for each recordable injury or illness to document specifics"
+      },
+      {
+        "title": "Electronic submission confirmation via OSHA Injury Tracking Application",
+        "why": "If the company meets the threshold (250+ employees or 20-249 in designated high-hazard industries), electronic data submission was required by March 2, 2026",
+        "basis": "The facility has 65 employees in a high-hazard manufacturing industry; must verify if electronic reporting was triggered"
+      },
+      {
+        "title": "Documentation of posting location and dates",
+        "why": "To verify the form was posted in a conspicuous location from February 1 through April 30, 2026 as required",
+        "basis": "OSHA regulations require posting; companies should maintain evidence of when and where the form was displayed"
+      }
+    ],
+    "confidence_notes": "High confidence in reading and interpreting this document. The form is straightforward and clearly labeled. The company meets OSHA's posting requirements (65 employees exceeds the 10-employee threshold). Key uncertainty: whether the company is required to submit data electronically to OSHA's Injury Tracking Application based on industry classification and size. The facility operates in manufacturing (NAICS 424690, a high-hazard industry), and with 65 employees falls in the 20-249 range; if this specific NAICS code is on the Appendix A list of covered industries, electronic submission by March 2, 2026 would have been required. This should be verified against OSHA's current Appendix A list. The document itself contains no gaps—it is a government form completed by the employer and is the official record. All factual entries read directly from the form.",
+    "could_not_read": {
+      "reason": null,
+      "way_forward": null
+    },
+    "raw_text": "{\"identity\": {\"kind\": \"record\", \"title\": \"OSHA Form 300A Summary of Work-Related Injuries and Illnesses for Year 2025\", \"issuer\": \"Cascade Specialty Chemicals, LLC\", \"agencies\": [\"U.S. Department of Labor - Occupational Safety and Health Administration\"], \"subjects\": [\"workplace_safety\", \"emergency_preparedness\"], \"site\": \"Portland\", \"jurisdiction\": [\"federal\", \"Oregon\"], \"doc_date\": \"2026-02-01\", \"doc_date_kind\": \"issued\"}, \"summary\": \"This is OSHA Form 300A, the annual summary of recordable work-related injuries and illnesses for calendar year 2025. The form is required to be completed by employers with 10 or more employees and must be posted in a visible workplace location from February 1 through April 30 of the following year. The form documents that Cascade Specialty Chemicals had 3 recordable cases in 2025 (1 case with days away from work, 2 other recordable cases), with 6 total days away from work and no fatalities.\", \"status\": \"current\", \"significant_date\": \"2026-04-30\", \"significant_date_kind\": \"expiry\", \"freshness_note\": \"This form covers 2025 data and was issued February 1, 2026. As of September 29, 2026, the posting requirement has expired (ended April 30, 2026). The form must now be retained in records for five years from the end of calendar year 2025, through December 31, 2030.\", \"gaps\": [], \"conditions\": [{\"title\": \"Post Form 300A in visible location\", \"condition_ref\": \"29 CFR 1904.32\", \"evidence_expected\": \"Physical posting of the form at the Portland facility in a conspicuous location where employee notices are customarily displayed from February 1 through April 30, 2026\"}, {\"title\": \"Retain Form 300A and supporting OSHA 300 Log\", \"condition_ref\": \"29 CFR 1904.33\", \"evidence_expected\": \"Stored copies of the Form 300A and underlying OSHA Form 300 Log retained for five years following the end of the calendar year covered (through December 31, 2030)\"}, {\"title\": \"Certify accuracy by company executive\", \"condition_ref\": \"29 CFR 1904.32\", \"evidence_expected\": \"Form signed and certified by a company executive attesting to the truth and accuracy of entries\"}], \"deadlines\": [{\"title\": \"Post Form 300A in workplace\", \"due_on\": \"2026-02-01\", \"source_line\": \"Post this Summary page from February 1 to April 30 of the year following the year covered by the form\", \"recurs\": true}, {\"title\": \"Remove/stop posting Form 300A\", \"due_on\": \"2026-04-30\", \"source_line\": \"Post this Summary page from February 1 to April 30 of the year following the year covered by the form\", \"recurs\": true}, {\"title\": \"Retain records (end date)\", \"due_on\": \"2030-12-31\", \"source_line\": \"Five years following the end of the calendar year that these records cover (inferred from 29 CFR 1904.33)\", \"recurs\": false}], \"facts\": [{\"key\": \"employee_count\", \"value\": \"65 (annual average)\", \"basis\": \"read\", \"quote\": \"Annual average number of employees: 65\", \"locator\": \"Employment information section\", \"as_of\": \"2025-12-31\", \"affects\": \"Determines OSHA recordkeeping obligations; this facility with 65 employees exceeds the 10-employee threshold and is subject to Form 300A posting and retention requirements\"}, {\"key\": \"total_hours_worked\", \"value\": \"128,400\", \"basis\": \"read\", \"quote\": \"Total hours worked by all employees last year: 128,400\", \"locator\": \"Employment information section\", \"as_of\": \"2025-12-31\", \"affects\": \"Used to calculate injury/illness rates and assess safety performance metrics\"}, {\"key\": \"total_recordable_cases\", \"value\": \"3\", \"basis\": \"read\", \"quote\": \"Total number of cases with days away from work: 1 (H); Total number of other recordable cases: 2 (J)\", \"locator\": \"Number of Cases section\", \"as_of\": \"2025-12-31\", \"affects\": \"Reflects the company's safety record for 2025; lower frequency may reduce scrutiny but does not eliminate obligations\"}, {\"key\": \"days_away_from_work\", \"value\": \"6 days total\", \"basis\": \"read\", \"quote\": \"Total number of days away from work: 6 (K)\", \"locator\": \"Number of Days section\", \"as_of\": \"2025-12-31\", \"affects\": \"Indicates severity of the one case involving time away from work\"}, {\"key\": \"injuries_recorded\", \"value\": \"3\", \"basis\": \"read\", \"quote\": \"Total number of (M): Injuries 3\", \"locator\": \"Injury and Illness Types section\", \"as_of\": \"2025-12-31\", \"affects\": \"All three recordable cases in 2025 were classified as injuries rather than illnesses\"}, {\"key\": \"facility_location\", \"value\": \"4410 NW Front Avenue, Portland, Oregon 97210\", \"basis\": \"read\", \"quote\": \"Street: 4410 NW Front Avenue; City: Portland · State: OR · ZIP: 97210\", \"locator\": \"Establishment information section\", \"as_of\": \"2025-12-31\", \"affects\": \"Confirms the location subject to OSHA record retention and posting requirements\"}, {\"key\": \"industry_classification\", \"value\": \"NAICS 424690 - Chemical and allied products merchant wholesaler; repackaging of acids, caustics and solvents\", \"basis\": \"read\", \"quote\": \"North American Industrial Classification (NAICS): 424690; Industry description: Chemical and allied products merchant wholesaler; repackaging of acids, caustics and solvents\", \"locator\": \"Establishment information section\", \"as_of\": \"2025-12-31\", \"affects\": \"High-hazard industry classification; affects scope of OSHA compliance obligations and may trigger electronic reporting requirements if applicable threshold is met\"}, {\"key\": \"issued_date\", \"value\": \"2026-02-01\", \"basis\": \"read\", \"quote\": \"Date: February 1, 2026\", \"locator\": \"Sign here section\", \"as_of\": \"2026-02-01\", \"affects\": \"Marks the beginning of the three-month posting requirement period\"}, {\"key\": \"certifying_official\", \"value\": \"Daniel Okafor, Plant Manager\", \"basis\": \"read\", \"quote\": \"Daniel Okafor · Plant Manager · Phone (503) 555-0148 · Date: February 1, 2026\", \"locator\": \"Sign here section\", \"as_of\": \"2026-02-01\", \"affects\": \"Executive certification establishes accountability for accuracy of injury and illness data\"}], \"version_of_title\": \"OSHA Form 300A differs from the annual OSHA Form 300 Log; this summary is the required form version per Part 1904\", \"version_of_confidence\": \"high\", \"expected_missing\": [{\"title\": \"OSHA Form 300 Log (detailed injury and illness log)\", \"why\": \"This 300A is a summary; the underlying Form 300 Log with individual case details must also be retained\", \"basis\": \"The instructions state to use the Log to verify entries before completing the summary, and retention requirements require both be kept for five years\"}, {\"title\": \"OSHA Form 301 Incident Reports\", \"why\": \"Each recordable case on the 300 Log should have a corresponding Form 301 with incident details\", \"basis\": \"OSHA recordkeeping rules require Form 301 reports for each recordable injury or illness to document specifics\"}, {\"title\": \"Electronic submission confirmation via OSHA Injury Tracking Application\", \"why\": \"If the company meets the threshold (250+ employees or 20-249 in designated high-hazard industries), electronic data submission was required by March 2, 2026\", \"basis\": \"The facility has 65 employees in a high-hazard manufacturing industry; must verify if electronic reporting was triggered\"}, {\"title\": \"Documentation of posting location and dates\", \"why\": \"To verify the form was posted in a conspicuous location from February 1 through April 30, 2026 as required\", \"basis\": \"OSHA regulations require posting; companies should maintain evidence of when and where the form was displayed\"}], \"confidence_notes\": \"High confidence in reading and interpreting this document. The form is straightforward and clearly labeled. The company meets OSHA's posting requirements (65 employees exceeds the 10-employee threshold). Key uncertainty: whether the company is required to submit data electronically to OSHA's Injury Tracking Application based on industry classification and size. The facility operates in manufacturing (NAICS 424690, a high-hazard industry), and with 65 employees falls in the 20-249 range; if this specific NAICS code is on the Appendix A list of covered industries, electronic submission by March 2, 2026 would have been required. This should be verified against OSHA's current Appendix A list. The document itself contains no gaps—it is a government form completed by the employer and is the official record. All factual entries read directly from the form.\", \"could_not_read_reason\": \"null\", \"could_not_read_way_forward\": \"null\"}",
+    "json_parsed": true,
+    "model": "claude-haiku-4-5",
+    "cited_sources": 0,
+    "searches": null,
+    "structured": true,
+    "prompt_sha256": "333582f81efa3241763cbd550e370be71ad041b5f589eb494edb80ffdbac8774",
+    "quotes_checked": 9,
+    "quotes_verified": 7,
+    "extracted_text": "OSHA's Form 300A (Rev. 01/2004)\nSummary of Work-Related Injuries and Illnesses\nYear 2025\nU.S. Department of Labor · Occupational Safety and Health Administration · Form\napproved OMB no. 1218-0176\nAll establishments covered by Part 1904 must complete this Summary page, even if no work-related injuries or illnesses occurred during the year. Remember to review the Log to verify that\nthe entries are complete and accurate before completing this summary. Using the Log, count the individual entries you made for each category. Then write the totals below, making sure\nyou've added the entries from every page of the Log. If you had no cases, write \"0.\" Employees, former employees, and their representatives have the right to review the OSHA Form 300 in\nits entirety.\nNumber of Cases\nTotal number of deaths: 0 (G)\nTotal number of cases with days away from work: 1 (H)\nTotal number of cases with job transfer or restriction: 0 (I)\nTotal number of other recordable cases: 2 (J)\nNumber of Days\nTotal number of days away from work: 6 (K)\nTotal number of days of job transfer or restriction: 0 (L)\nInjury and Illness Types\nTotal number of (M): Injuries 3 · Skin disorders 0 · Respiratory conditions 0 · Poisonings 0 · Hearing loss 0 · All other illnesses 0\nEstablishment information\nYour establishment name: Cascade Specialty Chemicals, LLC — Portland Facility\nStreet: 4410 NW Front Avenue\nCity: Portland · State: OR · ZIP: 97210\nIndustry description: Chemical and allied products merchant wholesaler; repackaging of acids, caustics and solvents\nNorth American Industrial Classification (NAICS): 424690\nEmployment information\nAnnual average number of employees: 65\nTotal hours worked by all employees last year: 128,400\nSign here\nKnowingly falsifying this document may result in a fine.\nI certify that I have examined this document and that to the best of my knowledge the entries are true, accurate, and complete.\nDaniel Okafor · Plant Manager · Phone (503) 555-0148 · Date: February 1, 2026\nPost this Summary page from February 1 to April 30 of the year following the year covered by the form.",
+    "started_at": "2026-09-29T18:38:27.859Z"
+  }
+}

@@ -1,0 +1,244 @@
+{
+  "id": "07-scrubber-log-record",
+  "title": "Scrubber pressure-drop log, a missing week and an unreported excursion",
+  "spec": "07-scrubber-log-record.md",
+  "dir": "tests/golden/audits",
+  "fixture": "fixtures/07-scrubber-log-record.pdf",
+  "company": "cascade",
+  "must": [
+    {
+      "id": "kind",
+      "line": "kind: record",
+      "type": "field_one_of",
+      "field": "identity.kind",
+      "accept": [
+        "record"
+      ]
+    },
+    {
+      "id": "agency-deq",
+      "line": "agency includes Oregon DEQ (accept \"DEQ\", \"Oregon Department of Environmental Quality\"); the same string case 02 produced for this company",
+      "type": "list_contains",
+      "field": "identity.agencies",
+      "accept": [
+        "deq",
+        "department of environmental quality"
+      ]
+    },
+    {
+      "id": "subject",
+      "line": "subject includes something like \"air quality\", \"air permit\" or \"scrubber\"",
+      "type": "list_contains",
+      "field": "identity.subjects",
+      "accept": [
+        "air quality",
+        "air permit",
+        "scrubber",
+        "air"
+      ]
+    },
+    {
+      "id": "site-portland",
+      "line": "site: Portland",
+      "type": "field_contains",
+      "field": "identity.site",
+      "accept": [
+        "portland"
+      ]
+    },
+    {
+      "id": "doc-date",
+      "line": "doc_date: September 2026",
+      "type": "date_prefix",
+      "field": "identity.doc_date",
+      "prefix": "2026-09"
+    },
+    {
+      "id": "doc-date-kind",
+      "line": "doc_date: ... kind \"last entry\"",
+      "type": "field_contains",
+      "field": "identity.doc_date_kind",
+      "accept": [
+        "last_entry",
+        "last entry"
+      ]
+    },
+    {
+      "id": "last-entry-date",
+      "line": "doc_date: September 2026, kind \"last entry\", with the date September 25, 2026",
+      "type": "date_anywhere",
+      "fields": [
+        "identity.doc_date",
+        "significant_date"
+      ],
+      "value": "2026-09-25"
+    },
+    {
+      "id": "status",
+      "line": "Status (must): recorded or gaps_found, with last entry September 25, 2026. Never \"compliant\".",
+      "type": "field_one_of",
+      "field": "status",
+      "accept": [
+        "recorded",
+        "gaps_found"
+      ]
+    },
+    {
+      "id": "finding-missing-august",
+      "line": "1. August 17 to 21 have no entries although the August throughput line says the acid line ran 21 days and only 16 rows are entered. Keywords: August, missing, 21 days, 16.",
+      "type": "item",
+      "collections": [
+        "gaps",
+        "notes"
+      ],
+      "keywords": [
+        "august",
+        "missing",
+        "21 days",
+        "16"
+      ],
+      "min_keywords": 2
+    },
+    {
+      "id": "finding-sep9-excursion",
+      "line": "2. September 9, S-2 reads 6.4 inches of water column, above the 6.0 upper limit, with no note and no corrective action. Keywords: September 9, 6.4, 6.0, S-2.",
+      "type": "item",
+      "collections": [
+        "gaps",
+        "notes"
+      ],
+      "keywords": [
+        "september 9",
+        "6.4",
+        "6.0",
+        "s-2"
+      ],
+      "min_keywords": 2
+    },
+    {
+      "id": "finding-missing-weekly",
+      "line": "3. The weekly C-1 detector-tube check has no entry for the week of September 14. Keywords: September 14, weekly, C-1, detector.",
+      "type": "item",
+      "collections": [
+        "gaps",
+        "notes"
+      ],
+      "keywords": [
+        "september 14",
+        "weekly",
+        "c-1",
+        "detector"
+      ],
+      "min_keywords": 2
+    },
+    {
+      "id": "label-consistency",
+      "line": "Consistency across the three runs: the agency label must be the same string in all three.",
+      "type": "labels_identical_across_runs"
+    }
+  ],
+  "must_not": [
+    {
+      "id": "no-quarterly-inspection-gap",
+      "line": "any gap about the quarterly scrubber inspection (condition 3.2); this document is not an inspection record and does not claim to be",
+      "type": "absent_item",
+      "collections": [
+        "gaps"
+      ],
+      "subject": [
+        "quarterly inspection",
+        "quarterly scrubber",
+        "quarterly"
+      ],
+      "absence": [
+        "no ",
+        "missing",
+        "absent",
+        "lacks",
+        "none",
+        "does not",
+        "fails to",
+        "without",
+        "not ",
+        "no record"
+      ]
+    },
+    {
+      "id": "no-carbon-replacement-gap",
+      "line": "any gap about carbon replacement (condition 3.3) beyond the missing weekly check",
+      "type": "absent_item",
+      "collections": [
+        "gaps"
+      ],
+      "subject": [
+        "carbon replacement",
+        "replacement of the carbon",
+        "carbon change",
+        "carbon bed replac"
+      ],
+      "absence": [
+        "no ",
+        "missing",
+        "absent",
+        "overdue",
+        "lacks",
+        "none",
+        "does not",
+        "not ",
+        "no record"
+      ]
+    }
+  ],
+  "reported": [
+    {
+      "id": "permit-number-fact",
+      "line": "the permit number 26-2841-ST-01 may appear as a fact with a verified quote; correct if present",
+      "type": "item",
+      "collections": [
+        "facts"
+      ],
+      "keywords": [
+        "26-2841-st-01",
+        "permit"
+      ],
+      "min_keywords": 1,
+      "quote_must_verify": true
+    },
+    {
+      "id": "citation-3-1",
+      "line": "Citation may name condition 3.1 (finding 1).",
+      "type": "appears_anywhere",
+      "collections": [
+        "gaps",
+        "notes"
+      ],
+      "needle": "3.1"
+    },
+    {
+      "id": "citation-5-2",
+      "line": "The finding may add that condition 5.2 asks for a deviation to be reported within 24 hours and a written report within 15 days; correct if present, not required.",
+      "type": "appears_anywhere",
+      "collections": [
+        "gaps",
+        "notes"
+      ],
+      "needle": "5.2"
+    },
+    {
+      "id": "deadlines-none",
+      "line": "Deadlines: none required.",
+      "type": "empty",
+      "collections": [
+        "deadlines"
+      ]
+    },
+    {
+      "id": "conditions-none",
+      "line": "Conditions: none expected (not a permit).",
+      "type": "empty",
+      "collections": [
+        "conditions"
+      ]
+    }
+  ]
+}

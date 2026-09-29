@@ -1,0 +1,231 @@
+{
+  "id": "08-deq-annual-report-2025",
+  "title": "Annual report to DEQ for calendar 2025, with the submission confirmation",
+  "spec": "08-deq-annual-report-2025.md",
+  "dir": "tests/golden/audits",
+  "fixture": "fixtures/08-deq-annual-report-2025.pdf",
+  "company": "cascade",
+  "must": [
+    {
+      "id": "kind",
+      "line": "kind: record, or report if the vocabulary has one; never policy or permit. ScanIdentity.kind has no \"report\" (prompts/document-scan.ts line 359), so \"record\" is the only accepting value the vocabulary carries.",
+      "type": "field_one_of",
+      "field": "identity.kind",
+      "accept": [
+        "record"
+      ],
+      "forbid": [
+        "policy",
+        "permit"
+      ]
+    },
+    {
+      "id": "agency-deq",
+      "line": "agency includes Oregon DEQ, the same label string as cases 02 and 07",
+      "type": "list_contains",
+      "field": "identity.agencies",
+      "accept": [
+        "deq",
+        "department of environmental quality"
+      ]
+    },
+    {
+      "id": "subject",
+      "line": "subject includes something like \"air quality\" or \"air permit\"",
+      "type": "list_contains",
+      "field": "identity.subjects",
+      "accept": [
+        "air quality",
+        "air permit",
+        "air"
+      ]
+    },
+    {
+      "id": "site-portland",
+      "line": "site: Portland",
+      "type": "field_contains",
+      "field": "identity.site",
+      "accept": [
+        "portland"
+      ]
+    },
+    {
+      "id": "doc-date",
+      "line": "doc_date: February 12, 2026 ... or February 10, 2026 if the scan takes the signature date; either passes. Not \"last entry\". The month is what one check can say when the key accepts two dates; which of the two came back is reported below.",
+      "type": "date_prefix",
+      "field": "identity.doc_date",
+      "prefix": "2026-02"
+    },
+    {
+      "id": "doc-date-kind-not-last-entry",
+      "line": "doc_date kind \"submitted\" or \"issued\" ... Not \"last entry\".",
+      "type": "field_one_of",
+      "field": "identity.doc_date_kind",
+      "accept": [
+        "issued",
+        "effective",
+        "revised",
+        "unknown"
+      ],
+      "forbid": [
+        "last_entry"
+      ]
+    },
+    {
+      "id": "status",
+      "line": "Status (must): current, recorded or no_gaps_found. Never \"compliant\".",
+      "type": "field_one_of",
+      "field": "status",
+      "accept": [
+        "current",
+        "recorded",
+        "no_gaps_found"
+      ]
+    },
+    {
+      "id": "no-gaps",
+      "line": "Gaps (must): none. This is a clean, timely submission. Any gap on it is a false finding and fails the run.",
+      "type": "empty",
+      "collections": [
+        "gaps"
+      ]
+    },
+    {
+      "id": "fact-at-least-one",
+      "line": "Facts (must contain at least one, quote verified true): carbon in C-1 last replaced March 14, 2025 (section 3), as_of 2025-03-14; annual report for 2025 received by DEQ February 12, 2026 (page 1). Either satisfies the \"at least one\"; both are reported separately below.",
+      "type": "item",
+      "collections": [
+        "facts"
+      ],
+      "keywords": [
+        "carbon",
+        "march 14, 2025",
+        "2025-03-14",
+        "annual report",
+        "received",
+        "february 12, 2026",
+        "2026-02-12"
+      ],
+      "min_keywords": 2,
+      "quote_must_verify": true
+    },
+    {
+      "id": "label-consistency",
+      "line": "Consistency across the three runs: the agency label must be the same string in all three.",
+      "type": "labels_identical_across_runs"
+    }
+  ],
+  "must_not": [
+    {
+      "id": "no-2025-deviation-gap",
+      "line": "a gap about the 2025 deviation (it was reported within 24 hours and in writing within 15 days, which is what the permit asks)",
+      "type": "absent_item",
+      "collections": [
+        "gaps"
+      ],
+      "subject": [
+        "deviation",
+        "august 22",
+        "dev-2025-0913",
+        "recirculation pump"
+      ],
+      "absence": [
+        "no ",
+        "missing",
+        "late",
+        "not reported",
+        "unreported",
+        "failed to",
+        "absent",
+        "no record",
+        "without"
+      ]
+    }
+  ],
+  "reported": [
+    {
+      "id": "fact-carbon-date",
+      "line": "Facts: carbon in C-1 last replaced March 14, 2025 (section 3), as_of 2025-03-14",
+      "type": "item",
+      "collections": [
+        "facts"
+      ],
+      "keywords": [
+        "carbon",
+        "c-1",
+        "replaced",
+        "filtrasorb"
+      ],
+      "min_keywords": 2,
+      "date_or_text": [
+        "2025-03-14"
+      ]
+    },
+    {
+      "id": "fact-report-received",
+      "line": "Facts: annual report for 2025 received by DEQ February 12, 2026 (page 1)",
+      "type": "item",
+      "collections": [
+        "facts",
+        "notes"
+      ],
+      "keywords": [
+        "annual report",
+        "received",
+        "submission"
+      ],
+      "min_keywords": 1,
+      "date_or_text": [
+        "2026-02-12"
+      ]
+    },
+    {
+      "id": "in-compliance-sentences",
+      "line": "Must not: any statement that the facility is in compliance. NOT MACHINE-DECIDABLE AS A MUST-NOT: the document\u2019s own confirmation says \"It is not a determination that the report is complete or that the facility is in compliance\", and the key expressly allows the summary to repeat that. The words of the blessed sentence and of the forbidden claim are the same words, so a token matcher fails the honest one \u2014 the exact mistake Run 1 found in `no-satisfied`. Every item carrying the phrase is printed here for a person to read.",
+      "type": "absent_item",
+      "collections": [
+        "gaps",
+        "notes",
+        "facts"
+      ],
+      "subject": [
+        "in compliance",
+        "in full compliance"
+      ],
+      "absence": [],
+      "window": 0
+    },
+    {
+      "id": "deadline-next-annual",
+      "line": "Deadlines (may contain, correct if present): the next annual report by February 15, 2027 (condition 4.1, recurring)",
+      "type": "item",
+      "collections": [
+        "deadlines"
+      ],
+      "keywords": [
+        "annual report",
+        "4.1"
+      ],
+      "min_keywords": 1,
+      "date_or_text": [
+        "2027-02-15"
+      ]
+    },
+    {
+      "id": "deadline-carbon",
+      "line": "Deadlines (may contain, correct if present): the carbon replacement due on or before March 14, 2026 (condition 3.3)",
+      "type": "item",
+      "collections": [
+        "deadlines"
+      ],
+      "keywords": [
+        "carbon",
+        "3.3"
+      ],
+      "min_keywords": 1,
+      "date_or_text": [
+        "2026-03-14"
+      ]
+    }
+  ]
+}

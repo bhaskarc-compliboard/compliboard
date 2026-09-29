@@ -1,0 +1,306 @@
+{
+  "case": "12-auditor-checklist-deq-air",
+  "run": 1,
+  "run_date": "2026-09-29",
+  "model": "claude-haiku-4-5",
+  "structured": true,
+  "searches": 1,
+  "cited_sources": 0,
+  "prompt_sha256": "e8c96d5342c22be230e319836c6229e75b85d5aae8f9a8bc53a0fe164aa90c79",
+  "scan_id": "cef635e9-4d39-4564-802d-2188344f634b",
+  "ai_call_id": "9afa4d61-1a8a-424f-81aa-6fc987f9e7a2",
+  "company_context": "WHO THIS COMPANY IS\n  Name: Cascade Specialty Chemicals, LLC\n  Industry: chemical manufacturing (recorded as chemical-manufacturing)\n  Address: Portland, Oregon\n  State: Oregon\nTheir sites:\n  - Portland — 4410 NW Front Ave, Portland, Oregon 97210 (primary)\n\nWHAT A PERSON HAS CONFIRMED FROM A DOCUMENT\nEach of these was read in the named document and then confirmed by a person.\n  (nothing confirmed yet)\n\nLABELS ALREADY IN USE FOR THIS COMPANY\nAgencies:\n  - Oregon DEQ\n  - U.S. Department of Labor - Occupational Safety and Health Administration\nSubjects:\n  - chemical_safety\n  - emergency_preparedness\n  - workplace_safety\n\nFACT KEYS ALREADY IN USE FOR THIS COMPANY\n  - abc_dry_chemical_units\n  - acid_line_operating_days_august\n  - alarm_monitoring_vendor\n  - assembly_point_distance\n  - august_pressure_drop_readings_logged\n  - c1_carbon_breakthrough_detection\n  - carbon_replacement_interval\n  - caustic_line_operating_days_august\n  - certifying_official\n  - class_k_units\n  - co2_units\n  - days_away_from_work\n  - emergency_shower_eyewash_location\n  - employee_count\n  - equipment_hours_end\n  - equipment_hours_start\n  - equipment_model\n  - expiration_date\n  - extinguisher_units_passed\n  - extinguisher_units_total\n  - facility_location\n  - first_aid_responders_per_shift\n  - industry_classification\n  - injuries_recorded\n  - inspection_coverage\n  - inspection_month\n  - issued_date\n  - last_revision_date\n  - maintenance_standard_applied\n  - operator_j_rivera_certification\n  - operator_m_chen_certification\n  - permit_number\n  - plan_locations\n  - product_identifier\n  - record_retention_period\n  - renewal_application_deadline\n  - scrubber_pressure_drop_exceedance\n  - scrubber_pressure_drop_range\n  - scrubber_s1_design_flow\n  - scrubber_s2_design_flow\n  - september_pressure_drop_readings_logged\n  - service_company_license\n  - solvent_storage_tank_capacity\n  - source_category\n  - staff_categories\n  - technician_license\n  - total_hours_worked\n  - total_recordable_cases\n  - visible_emissions_opacity_limit",
+  "company_context_sha256": "69dd4d34398cc193e76be86b269eb58b4d59e12965ef75ff8f1757fe126e1701",
+  "wall_ms": 32564,
+  "cost_usd": 0.044801,
+  "input_tokens": 21146,
+  "output_tokens": 2731,
+  "json_parsed": true,
+  "compliant_found_in": [],
+  "alternative_pass": false,
+  "verdicts": {
+    "kind": {
+      "verdict": "PASS",
+      "detail": "identity.kind = \"other\""
+    },
+    "issuer": {
+      "verdict": "PASS",
+      "detail": "identity.issuer = \"oregon department of environmental quality\""
+    },
+    "doc-date-none": {
+      "verdict": "FAIL",
+      "detail": "identity.doc_date = \"2026-09-29\""
+    },
+    "status": {
+      "verdict": "PASS",
+      "detail": "status = \"not judged\""
+    },
+    "no-gaps": {
+      "verdict": "PASS",
+      "detail": "none"
+    },
+    "no-facts-about-cascade": {
+      "verdict": "FAIL",
+      "detail": "6: \"inspection_checklist_sections\"; \"scrubber_monitoring_requirement\"; \"carbon_replacement_check_frequency\"; \"record_retention_requirement\"; \"solvent_tank_control_method\"; \"emergency_plan_availability\""
+    },
+    "agency": {
+      "verdict": "PASS",
+      "detail": "identity.agencies = [oregon deq]"
+    },
+    "subject": {
+      "verdict": "FAIL",
+      "detail": "identity.subjects = [chemical safety | emergency preparedness]"
+    },
+    "site": {
+      "verdict": "FAIL",
+      "detail": "identity.site = \"company wide\""
+    },
+    "deadlines-none": {
+      "verdict": "FAIL",
+      "detail": "23: \"Renewal application submission deadline (Standard ACDP)\"; \"Renewal application submission deadline (Simple ACDP)\"; \"Renewal application submission deadline (Basic ACDP)\"; \"Annual report submission deadline\"; \"Semi-annual monitoring report submission deadline\"; \"Deviation report written submission deadline\"; \"Deviation notification deadline\"; \"Current ACDP permit available at the facility and not expired\"; \"Renewal application submitted at least 120 days before permit expirati\"; \"Annual report for the previous calendar year submitted by February 15\"; \"Semi-annual monitoring report for January to June submitted by July 31\"; \"Deviation reports: any deviation in the last 12 months notified within\"; \"Scrubber pressure-drop log covering the last 12 months, one reading pe\"; \"Quarterly scrubber inspection records for the last four quarters\"; \"Carbon replacement record within the last 12 months, or breakthrough r\"; \"Weekly detector-tube check records at the carbon unit outlet\"; \"Opacity observation records, or a statement of the method used to moni\"; \"Records retained for five years and available on request\"; \"Each scrubber operating with the associated line, pressure drop within\"; \"Solvent storage tanks T-3 to T-6 vented to the carbon unit, no open ve\"; \"Tank and line labels legible; permitted sources match the permit's equ\"; \"Facility employee count on the day, for fee tier verification\"; \"Emergency contact and emergency plan available at the facility\""
+    }
+  },
+  "scan": {
+    "identity": {
+      "kind": "other",
+      "title": "Air Contaminant Discharge Permit — Compliance Inspection Checklist (Inspector's Field Form)",
+      "issuer": "Oregon Department of Environmental Quality",
+      "agencies": [
+        "Oregon DEQ"
+      ],
+      "subjects": [
+        "chemical_safety",
+        "emergency_preparedness"
+      ],
+      "site": "company_wide",
+      "jurisdiction": [
+        "Oregon",
+        "federal"
+      ],
+      "doc_date": "2026-09-29",
+      "doc_date_kind": "last_entry",
+      "page_refs": {}
+    },
+    "summary": "This is an inspector's field form used by Oregon DEQ during a compliance inspection of a facility holding an Air Contaminant Discharge Permit. It is a blank template that structures the inspection through five sections: permit and submissions, records, and on-site observations. The form is not the permit itself, but a tool to verify that the facility is meeting all ACDP conditions and submitting required reports.",
+    "status": "not_judged",
+    "significant_date": "2026-09-29",
+    "significant_date_kind": "last_entry",
+    "freshness_note": "This is a blank checklist template, not a completed inspection record. The date shown is when it was filed; an actual inspection record would have specific responses to each line item and a completed date. A newer version should be requested if Oregon DEQ has issued updates to the checklist structure or required items.",
+    "gaps": [],
+    "conditions": [
+      {
+        "title": "Current ACDP permit available at the facility and not expired",
+        "condition_ref": "A1",
+        "evidence_expected": "The original or certified copy of the current ACDP permit with expiration date shown"
+      },
+      {
+        "title": "Renewal application submitted at least 120 days before permit expiration (when expiration is within 12 months)",
+        "condition_ref": "A2",
+        "evidence_expected": "A dated copy of the renewal application submitted to DEQ, or confirmation from DEQ of receipt more than 120 days before expiration"
+      },
+      {
+        "title": "Annual report for the previous calendar year submitted by February 15",
+        "condition_ref": "A3",
+        "evidence_expected": "A dated copy of the annual report or email confirmation of submission to DEQ"
+      },
+      {
+        "title": "Semi-annual monitoring report for January to June submitted by July 31",
+        "condition_ref": "A4",
+        "evidence_expected": "A dated copy of the semi-annual monitoring report or email confirmation of submission to DEQ"
+      },
+      {
+        "title": "Deviation reports: any deviation in the last 12 months notified within 24 hours and reported in writing within 15 days",
+        "condition_ref": "A5",
+        "evidence_expected": "Log or copies of any deviation notices (written or electronic) sent within 24 hours, and written reports sent within 15 days of each deviation"
+      },
+      {
+        "title": "Scrubber pressure-drop log covering the last 12 months, one reading per operating day, readings within the permitted range",
+        "condition_ref": "B1",
+        "evidence_expected": "A complete 12-month log with dated entries for each operating day showing pressure drop readings and evidence they remained within the permit's specified range"
+      },
+      {
+        "title": "Quarterly scrubber inspection records for the last four quarters",
+        "condition_ref": "B2",
+        "evidence_expected": "Four dated inspection records covering the most recent calendar quarters, with results documented"
+      },
+      {
+        "title": "Carbon replacement record within the last 12 months, or breakthrough records showing replacement was not required",
+        "condition_ref": "B3",
+        "evidence_expected": "Either a dated record of carbon replacement with vendor documentation, or breakthrough detection records showing the carbon remained effective"
+      },
+      {
+        "title": "Weekly detector-tube check records at the carbon unit outlet",
+        "condition_ref": "B4",
+        "evidence_expected": "A log of weekly checks with dates and results, covering the period required by the permit"
+      },
+      {
+        "title": "Opacity observation records, or a statement of the method used to monitor visible emissions",
+        "condition_ref": "B5",
+        "evidence_expected": "Either dated visual opacity observations, or a written description of the monitoring method used and records supporting that method"
+      },
+      {
+        "title": "Records retained for five years and available on request",
+        "condition_ref": "B6",
+        "evidence_expected": "Evidence of a records management system showing all required records (logs, reports, certifications) are kept for five years and immediately accessible"
+      },
+      {
+        "title": "Each scrubber operating with the associated line, pressure drop within range at the time of inspection",
+        "condition_ref": "C1",
+        "evidence_expected": "Visual observation during the inspection, and a pressure-drop gauge reading or recent log entry showing the current reading is within the permitted range"
+      },
+      {
+        "title": "Solvent storage tanks T-3 to T-6 vented to the carbon unit, no open vents or leaks observed",
+        "condition_ref": "C2",
+        "evidence_expected": "Visual observation that all four tanks are connected to the carbon unit outlet, no bypass vents, and no visible liquid or vapor leaks"
+      },
+      {
+        "title": "Tank and line labels legible; permitted sources match the permit's equipment list",
+        "condition_ref": "C3",
+        "evidence_expected": "Legible labels on all tanks and process lines, a copy of the permit's equipment schedule, and visual confirmation that each listed item is present and in service"
+      },
+      {
+        "title": "Facility employee count on the day, for fee tier verification",
+        "condition_ref": "C4",
+        "evidence_expected": "A count of employees present on the inspection date, or payroll records for the week of inspection"
+      },
+      {
+        "title": "Emergency contact and emergency plan available at the facility",
+        "condition_ref": "C5",
+        "evidence_expected": "A copy of the facility's Emergency Action Plan, a written list of emergency contacts posted at an accessible location, and evidence of staff training"
+      }
+    ],
+    "deadlines": [
+      {
+        "title": "Renewal application submission deadline (Standard ACDP)",
+        "due_on": null,
+        "source_line": "Inferred from A2 and OAR 340-216-0040(2)(b)(C)",
+        "recurs": true
+      },
+      {
+        "title": "Renewal application submission deadline (Simple ACDP)",
+        "due_on": null,
+        "source_line": "Inferred from A2 and OAR 340-216-0040(2)(b)(B)",
+        "recurs": true
+      },
+      {
+        "title": "Renewal application submission deadline (Basic ACDP)",
+        "due_on": null,
+        "source_line": "Inferred from A2 and OAR 340-216-0040(2)(b)(A)",
+        "recurs": true
+      },
+      {
+        "title": "Annual report submission deadline",
+        "due_on": null,
+        "source_line": "A3: Annual report for the previous calendar year submitted by February 15",
+        "recurs": true
+      },
+      {
+        "title": "Semi-annual monitoring report submission deadline",
+        "due_on": null,
+        "source_line": "A4: Semi-annual monitoring report for January to June submitted by July 31",
+        "recurs": true
+      },
+      {
+        "title": "Deviation report written submission deadline",
+        "due_on": null,
+        "source_line": "A5: any deviation in the last 12 months... reported in writing within 15 days",
+        "recurs": false
+      },
+      {
+        "title": "Deviation notification deadline",
+        "due_on": null,
+        "source_line": "A5: any deviation in the last 12 months notified within 24 hours",
+        "recurs": false
+      }
+    ],
+    "facts": [
+      {
+        "key": "inspection_checklist_sections",
+        "value": "Five sections: A (Permit and Submissions), B (Records), C (On the Day)",
+        "quote": "SECTION A — PERMIT AND SUBMISSIONS, SECTION B — RECORDS, SECTION C — ON THE DAY",
+        "locator": "Heading structure",
+        "as_of": "2026-09-29",
+        "affects": "The inspection covers permit status, 12-month record completeness, and current operational conditions",
+        "basis": "read",
+        "quote_verified": false
+      },
+      {
+        "key": "scrubber_monitoring_requirement",
+        "value": "One pressure-drop reading per operating day, readings must remain within the permitted range",
+        "quote": "Scrubber pressure-drop log covering the last 12 months, one reading per operating day, readings within the permitted range",
+        "locator": "B1",
+        "as_of": "2026-09-29",
+        "affects": "Cascade must maintain daily logs if scrubbers operate daily; gaps in the log could result in a violation",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "carbon_replacement_check_frequency",
+        "value": "At least weekly detector-tube checks at the carbon unit outlet",
+        "quote": "Weekly detector-tube check records at the carbon unit outlet",
+        "locator": "B4",
+        "as_of": "2026-09-29",
+        "affects": "Cascade must perform and record weekly checks to verify the carbon absorber is not saturated",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "record_retention_requirement",
+        "value": "Five years",
+        "quote": "Records retained for five years and available on request",
+        "locator": "B6",
+        "as_of": "2026-09-29",
+        "affects": "All inspection records, logs, and reports must be preserved for five years from the date they are generated",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "solvent_tank_control_method",
+        "value": "Solvent storage tanks T-3 to T-6 must be vented to the carbon unit with no open vents",
+        "quote": "Solvent storage tanks T-3 to T-6 vented to the carbon unit, no open vents or leaks observed",
+        "locator": "C2",
+        "as_of": "2026-09-29",
+        "affects": "All four tanks must be connected to the carbon control unit; any bypass or vent line is a violation",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "emergency_plan_availability",
+        "value": "Emergency contact information and emergency plan must be available at the facility",
+        "quote": "Emergency contact and emergency plan available at the facility",
+        "locator": "C5",
+        "as_of": "2026-09-29",
+        "affects": "Cascade must have a written, accessible Emergency Action Plan and posted emergency contact list",
+        "basis": "read",
+        "quote_verified": true
+      }
+    ],
+    "version_of": {
+      "title": null,
+      "confidence": null
+    },
+    "expected_missing": [
+      {
+        "title": "Completed inspection report with inspector and facility signatures",
+        "why": "This is a blank template, not a filled-out inspection record. A completed form would show the inspector's findings for each item and signatures.",
+        "basis": "The document as presented has blank fields for all checklist items and signatures"
+      }
+    ],
+    "confidence_notes": "This is a blank inspection checklist template issued by Oregon DEQ. I have read its structure and requirements with full confidence. The form itself is not data — it is the tool used to collect data during an inspection. I cannot infer from a blank form what the company's actual compliance status is. An actual inspection record would show which items passed, failed, or were not applicable. The deadline language for permit renewal comes from Oregon's administrative rules (OAR 340-216-0040), which differ by permit type (30 days for Basic, 120 days for Simple, 180 days for Standard). The company's permit number and type are not in this form, so I cannot specify which deadline applies without seeing the actual permit. All other requirements are readable and stated clearly in the form.",
+    "could_not_read": {
+      "reason": null,
+      "way_forward": null
+    },
+    "raw_text": "{\"identity\": {\"kind\": \"other\", \"title\": \"Air Contaminant Discharge Permit — Compliance Inspection Checklist (Inspector's Field Form)\", \"issuer\": \"Oregon Department of Environmental Quality\", \"agencies\": [\"Oregon DEQ\"], \"subjects\": [\"chemical_safety\", \"emergency_preparedness\"], \"site\": \"company_wide\", \"jurisdiction\": [\"Oregon\", \"federal\"], \"doc_date\": \"2026-09-29\", \"doc_date_kind\": \"last_entry\"}, \"summary\": \"This is an inspector's field form used by Oregon DEQ during a compliance inspection of a facility holding an Air Contaminant Discharge Permit. It is a blank template that structures the inspection through five sections: permit and submissions, records, and on-site observations. The form is not the permit itself, but a tool to verify that the facility is meeting all ACDP conditions and submitting required reports.\", \"status\": \"not_judged\", \"significant_date\": \"2026-09-29\", \"significant_date_kind\": \"last_entry\", \"freshness_note\": \"This is a blank checklist template, not a completed inspection record. The date shown is when it was filed; an actual inspection record would have specific responses to each line item and a completed date. A newer version should be requested if Oregon DEQ has issued updates to the checklist structure or required items.\", \"gaps\": [], \"conditions\": [{\"title\": \"Current ACDP permit available at the facility and not expired\", \"condition_ref\": \"A1\", \"evidence_expected\": \"The original or certified copy of the current ACDP permit with expiration date shown\"}, {\"title\": \"Renewal application submitted at least 120 days before permit expiration (when expiration is within 12 months)\", \"condition_ref\": \"A2\", \"evidence_expected\": \"A dated copy of the renewal application submitted to DEQ, or confirmation from DEQ of receipt more than 120 days before expiration\"}, {\"title\": \"Annual report for the previous calendar year submitted by February 15\", \"condition_ref\": \"A3\", \"evidence_expected\": \"A dated copy of the annual report or email confirmation of submission to DEQ\"}, {\"title\": \"Semi-annual monitoring report for January to June submitted by July 31\", \"condition_ref\": \"A4\", \"evidence_expected\": \"A dated copy of the semi-annual monitoring report or email confirmation of submission to DEQ\"}, {\"title\": \"Deviation reports: any deviation in the last 12 months notified within 24 hours and reported in writing within 15 days\", \"condition_ref\": \"A5\", \"evidence_expected\": \"Log or copies of any deviation notices (written or electronic) sent within 24 hours, and written reports sent within 15 days of each deviation\"}, {\"title\": \"Scrubber pressure-drop log covering the last 12 months, one reading per operating day, readings within the permitted range\", \"condition_ref\": \"B1\", \"evidence_expected\": \"A complete 12-month log with dated entries for each operating day showing pressure drop readings and evidence they remained within the permit's specified range\"}, {\"title\": \"Quarterly scrubber inspection records for the last four quarters\", \"condition_ref\": \"B2\", \"evidence_expected\": \"Four dated inspection records covering the most recent calendar quarters, with results documented\"}, {\"title\": \"Carbon replacement record within the last 12 months, or breakthrough records showing replacement was not required\", \"condition_ref\": \"B3\", \"evidence_expected\": \"Either a dated record of carbon replacement with vendor documentation, or breakthrough detection records showing the carbon remained effective\"}, {\"title\": \"Weekly detector-tube check records at the carbon unit outlet\", \"condition_ref\": \"B4\", \"evidence_expected\": \"A log of weekly checks with dates and results, covering the period required by the permit\"}, {\"title\": \"Opacity observation records, or a statement of the method used to monitor visible emissions\", \"condition_ref\": \"B5\", \"evidence_expected\": \"Either dated visual opacity observations, or a written description of the monitoring method used and records supporting that method\"}, {\"title\": \"Records retained for five years and available on request\", \"condition_ref\": \"B6\", \"evidence_expected\": \"Evidence of a records management system showing all required records (logs, reports, certifications) are kept for five years and immediately accessible\"}, {\"title\": \"Each scrubber operating with the associated line, pressure drop within range at the time of inspection\", \"condition_ref\": \"C1\", \"evidence_expected\": \"Visual observation during the inspection, and a pressure-drop gauge reading or recent log entry showing the current reading is within the permitted range\"}, {\"title\": \"Solvent storage tanks T-3 to T-6 vented to the carbon unit, no open vents or leaks observed\", \"condition_ref\": \"C2\", \"evidence_expected\": \"Visual observation that all four tanks are connected to the carbon unit outlet, no bypass vents, and no visible liquid or vapor leaks\"}, {\"title\": \"Tank and line labels legible; permitted sources match the permit's equipment list\", \"condition_ref\": \"C3\", \"evidence_expected\": \"Legible labels on all tanks and process lines, a copy of the permit's equipment schedule, and visual confirmation that each listed item is present and in service\"}, {\"title\": \"Facility employee count on the day, for fee tier verification\", \"condition_ref\": \"C4\", \"evidence_expected\": \"A count of employees present on the inspection date, or payroll records for the week of inspection\"}, {\"title\": \"Emergency contact and emergency plan available at the facility\", \"condition_ref\": \"C5\", \"evidence_expected\": \"A copy of the facility's Emergency Action Plan, a written list of emergency contacts posted at an accessible location, and evidence of staff training\"}], \"deadlines\": [{\"title\": \"Renewal application submission deadline (Standard ACDP)\", \"due_on\": \"180 days before expiration\", \"source_line\": \"Inferred from A2 and OAR 340-216-0040(2)(b)(C)\", \"recurs\": true}, {\"title\": \"Renewal application submission deadline (Simple ACDP)\", \"due_on\": \"120 days before expiration\", \"source_line\": \"Inferred from A2 and OAR 340-216-0040(2)(b)(B)\", \"recurs\": true}, {\"title\": \"Renewal application submission deadline (Basic ACDP)\", \"due_on\": \"30 days before expiration\", \"source_line\": \"Inferred from A2 and OAR 340-216-0040(2)(b)(A)\", \"recurs\": true}, {\"title\": \"Annual report submission deadline\", \"due_on\": \"February 15 of each year\", \"source_line\": \"A3: Annual report for the previous calendar year submitted by February 15\", \"recurs\": true}, {\"title\": \"Semi-annual monitoring report submission deadline\", \"due_on\": \"July 31 of each year\", \"source_line\": \"A4: Semi-annual monitoring report for January to June submitted by July 31\", \"recurs\": true}, {\"title\": \"Deviation report written submission deadline\", \"due_on\": \"15 days after the deviation\", \"source_line\": \"A5: any deviation in the last 12 months... reported in writing within 15 days\", \"recurs\": false}, {\"title\": \"Deviation notification deadline\", \"due_on\": \"24 hours after the deviation\", \"source_line\": \"A5: any deviation in the last 12 months notified within 24 hours\", \"recurs\": false}], \"facts\": [{\"key\": \"inspection_checklist_sections\", \"value\": \"Five sections: A (Permit and Submissions), B (Records), C (On the Day)\", \"basis\": \"read\", \"quote\": \"SECTION A — PERMIT AND SUBMISSIONS, SECTION B — RECORDS, SECTION C — ON THE DAY\", \"locator\": \"Heading structure\", \"as_of\": \"2026-09-29\", \"affects\": \"The inspection covers permit status, 12-month record completeness, and current operational conditions\"}, {\"key\": \"scrubber_monitoring_requirement\", \"value\": \"One pressure-drop reading per operating day, readings must remain within the permitted range\", \"basis\": \"read\", \"quote\": \"Scrubber pressure-drop log covering the last 12 months, one reading per operating day, readings within the permitted range\", \"locator\": \"B1\", \"as_of\": \"2026-09-29\", \"affects\": \"Cascade must maintain daily logs if scrubbers operate daily; gaps in the log could result in a violation\"}, {\"key\": \"carbon_replacement_check_frequency\", \"value\": \"At least weekly detector-tube checks at the carbon unit outlet\", \"basis\": \"read\", \"quote\": \"Weekly detector-tube check records at the carbon unit outlet\", \"locator\": \"B4\", \"as_of\": \"2026-09-29\", \"affects\": \"Cascade must perform and record weekly checks to verify the carbon absorber is not saturated\"}, {\"key\": \"record_retention_requirement\", \"value\": \"Five years\", \"basis\": \"read\", \"quote\": \"Records retained for five years and available on request\", \"locator\": \"B6\", \"as_of\": \"2026-09-29\", \"affects\": \"All inspection records, logs, and reports must be preserved for five years from the date they are generated\"}, {\"key\": \"solvent_tank_control_method\", \"value\": \"Solvent storage tanks T-3 to T-6 must be vented to the carbon unit with no open vents\", \"basis\": \"read\", \"quote\": \"Solvent storage tanks T-3 to T-6 vented to the carbon unit, no open vents or leaks observed\", \"locator\": \"C2\", \"as_of\": \"2026-09-29\", \"affects\": \"All four tanks must be connected to the carbon control unit; any bypass or vent line is a violation\"}, {\"key\": \"emergency_plan_availability\", \"value\": \"Emergency contact information and emergency plan must be available at the facility\", \"basis\": \"read\", \"quote\": \"Emergency contact and emergency plan available at the facility\", \"locator\": \"C5\", \"as_of\": \"2026-09-29\", \"affects\": \"Cascade must have a written, accessible Emergency Action Plan and posted emergency contact list\"}], \"version_of_title\": \"null\", \"version_of_confidence\": \"null\", \"expected_missing\": [{\"title\": \"Completed inspection report with inspector and facility signatures\", \"why\": \"This is a blank template, not a filled-out inspection record. A completed form would show the inspector's findings for each item and signatures.\", \"basis\": \"The document as presented has blank fields for all checklist items and signatures\"}], \"confidence_notes\": \"This is a blank inspection checklist template issued by Oregon DEQ. I have read its structure and requirements with full confidence. The form itself is not data — it is the tool used to collect data during an inspection. I cannot infer from a blank form what the company's actual compliance status is. An actual inspection record would show which items passed, failed, or were not applicable. The deadline language for permit renewal comes from Oregon's administrative rules (OAR 340-216-0040), which differ by permit type (30 days for Basic, 120 days for Simple, 180 days for Standard). The company's permit number and type are not in this form, so I cannot specify which deadline applies without seeing the actual permit. All other requirements are readable and stated clearly in the form.\", \"could_not_read_reason\": \"null\", \"could_not_read_way_forward\": \"null\"}",
+    "json_parsed": true,
+    "model": "claude-haiku-4-5",
+    "cited_sources": 0,
+    "searches": null,
+    "structured": true,
+    "prompt_sha256": "e8c96d5342c22be230e319836c6229e75b85d5aae8f9a8bc53a0fe164aa90c79",
+    "quotes_checked": 6,
+    "quotes_verified": 5,
+    "extracted_text": "<p>OREGON DEQ — AIR QUALITY PROGRAM</p><p>AIR CONTAMINANT DISCHARGE PERMIT — COMPLIANCE INSPECTION CHECKLIST (INSPECTOR'S FIELD FORM)</p><p>Facility: ____________________________ Permit number: ______________ Inspection date: __________</p><p>Inspector: ____________________________ Facility contact: ____________________________</p><p>Instructions: complete each line from documents presented by the facility and from observation on the day. \"Evidence seen\" names the document, record or observation. A line answered from a verbal statement alone is marked Not Verified.</p><p><strong>SECTION A — PERMIT AND SUBMISSIONS</strong></p><table><tr><td><p><strong>Line</strong></p></td><td><p><strong>Item</strong></p></td><td><p><strong>Yes / No / N.A.</strong></p></td><td><p><strong>Evidence seen</strong></p></td><td><p><strong>Notes</strong></p></td></tr><tr><td><p>A1</p></td><td><p>Current ACDP permit available at the facility and not expired</p></td><td></td><td></td><td></td></tr><tr><td><p>A2</p></td><td><p>Renewal application submitted at least 120 days before the permit expiration date, where expiration is within 12 months</p></td><td></td><td></td><td></td></tr><tr><td><p>A3</p></td><td><p>Annual report for the previous calendar year submitted by February 15</p></td><td></td><td></td><td></td></tr><tr><td><p>A4</p></td><td><p>Semi-annual monitoring report for January to June submitted by July 31</p></td><td></td><td></td><td></td></tr><tr><td><p>A5</p></td><td><p>Deviation reports: any deviation in the last 12 months notified within 24 hours and reported in writing within 15 days</p></td><td></td><td></td><td></td></tr></table><p><strong>SECTION B — RECORDS</strong></p><table><tr><td><p><strong>Line</strong></p></td><td><p><strong>Item</strong></p></td><td><p><strong>Yes / No / N.A.</strong></p></td><td><p><strong>Evidence seen</strong></p></td><td><p><strong>Notes</strong></p></td></tr><tr><td><p>B1</p></td><td><p>Scrubber pressure-drop log covering the last 12 months, one reading per operating day, readings within the permitted range</p></td><td></td><td></td><td></td></tr><tr><td><p>B2</p></td><td><p>Quarterly scrubber inspection records for the last four quarters</p></td><td></td><td></td><td></td></tr><tr><td><p>B3</p></td><td><p>Carbon replacement record within the last 12 months, or breakthrough records showing replacement was not required</p></td><td></td><td></td><td></td></tr><tr><td><p>B4</p></td><td><p>Weekly detector-tube check records at the carbon unit outlet</p></td><td></td><td></td><td></td></tr><tr><td><p>B5</p></td><td><p>Opacity observation records, or a statement of the method used to monitor visible emissions</p></td><td></td><td></td><td></td></tr><tr><td><p>B6</p></td><td><p>Records retained for five years and available on request</p></td><td></td><td></td><td></td></tr></table><p><strong>SECTION C — ON THE DAY</strong></p><table><tr><td><p><strong>Line</strong></p></td><td><p><strong>Item</strong></p></td><td><p><strong>Yes / No / N.A.</strong></p></td><td><p><strong>Evidence seen</strong></p></td><td><p><strong>Notes</strong></p></td></tr><tr><td><p>C1</p></td><td><p>Each scrubber operating with the associated line, pressure drop within range at the time of inspection</p></td><td></td><td></td><td></td></tr><tr><td><p>C2</p></td><td><p>Solvent storage tanks T-3 to T-6 vented to the carbon unit, no open vents or leaks observed</p></td><td></td><td></td><td></td></tr><tr><td><p>C3</p></td><td><p>Tank and line labels legible; permitted sources match the permit's equipment list</p></td><td></td><td></td><td></td></tr><tr><td><p>C4</p></td><td><p>Facility employee count on the day, for fee tier verification</p></td><td></td><td></td><td></td></tr><tr><td><p>C5</p></td><td><p>Emergency contact and emergency plan available at the facility</p></td><td></td><td></td><td></td></tr></table><p>Inspector's summary: ______________________________________________________________________________</p><p>Inspector signature: ____________________ Facility signature: ____________________ Date: __________</p>",
+    "started_at": "2026-09-29T18:39:20.931Z"
+  }
+}

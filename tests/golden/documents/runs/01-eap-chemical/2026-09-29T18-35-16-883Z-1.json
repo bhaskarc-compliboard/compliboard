@@ -1,0 +1,518 @@
+{
+  "case": "01-eap-chemical",
+  "run": 1,
+  "run_date": "2026-09-29",
+  "model": "claude-haiku-4-5",
+  "structured": true,
+  "searches": 0,
+  "cited_sources": 0,
+  "prompt_sha256": "0b2d58291b99da9240010cb9a5d4066f24c91a79ae8ac9e9919ac6250646c7f3",
+  "scan_id": "d13f4b98-1c28-4d78-b4d7-f061dcff12f8",
+  "ai_call_id": "6e20b5c1-20bc-46ac-b5b2-22081be78711",
+  "company_context": "WHO THIS COMPANY IS\n  Name: Cascade Specialty Chemicals, LLC\n  Industry: chemical manufacturing (recorded as chemical-manufacturing)\n  Address: Portland, Oregon\n  State: Oregon\nTheir sites:\n  - Portland — 4410 NW Front Ave, Portland, Oregon 97210 (primary)\n\nWHAT A PERSON HAS CONFIRMED FROM A DOCUMENT\nEach of these was read in the named document and then confirmed by a person.\n  (nothing confirmed yet)\n\nLABELS ALREADY IN USE FOR THIS COMPANY\nAgencies:\n  (none yet)\nSubjects:\n  (none yet)\n\nFACT KEYS ALREADY IN USE FOR THIS COMPANY\n  (none yet)",
+  "company_context_sha256": "964ca6c5901e71c31c250d1c3b854546f4f889a8eab98289fe682a3fe0093bd8",
+  "wall_ms": 47674,
+  "cost_usd": 0.037149,
+  "input_tokens": 14359,
+  "output_tokens": 4558,
+  "json_parsed": true,
+  "compliant_found_in": [],
+  "alternative_pass": false,
+  "verdicts": {
+    "kind": {
+      "verdict": "NEAR",
+      "detail": "identity.kind = \"policy\" — the spec names this a near miss, reported not failed"
+    },
+    "agency-osha": {
+      "verdict": "FAIL",
+      "detail": "identity.agencies = [empty]"
+    },
+    "site-portland": {
+      "verdict": "PASS",
+      "detail": "identity.site = \"portland\""
+    },
+    "doc-date": {
+      "verdict": "PASS",
+      "detail": "identity.doc_date = 2021-02-01"
+    },
+    "doc-date-kind": {
+      "verdict": "PASS",
+      "detail": "identity.doc_date_kind = \"revised\""
+    },
+    "jurisdiction-oregon": {
+      "verdict": "PASS",
+      "detail": "identity.jurisdiction = [oregon | federal]"
+    },
+    "status": {
+      "verdict": "PASS",
+      "detail": "status = \"gaps found\""
+    },
+    "gap-reporting": {
+      "verdict": "FAIL",
+      "detail": "no item matched. gaps held: Missing last review or update date | Missing rescue and medical response training | Missing fire alarm system maintenance and te | Missing drill documentation and records | Missing incident coordinator designation and | Missing emergency contact and notification p | Missing critical infrastructure shutdown and | Missing communication with individuals with "
+    },
+    "gap-critical-operations": {
+      "verdict": "FAIL",
+      "detail": "no item matched. gaps held: Missing last review or update date | Missing rescue and medical response training | Missing fire alarm system maintenance and te | Missing drill documentation and records | Missing incident coordinator designation and | Missing emergency contact and notification p | Missing critical infrastructure shutdown and | Missing communication with individuals with "
+    },
+    "gap-contact-name": {
+      "verdict": "FAIL",
+      "detail": "no item matched. gaps held: Missing last review or update date | Missing rescue and medical response training | Missing fire alarm system maintenance and te | Missing drill documentation and records | Missing incident coordinator designation and | Missing emergency contact and notification p | Missing critical infrastructure shutdown and | Missing communication with individuals with "
+    },
+    "deadline-annual-review": {
+      "verdict": "PASS",
+      "detail": "deadlines: \"Annual plan review\" [annual, january, review, plan]"
+    },
+    "deadline-drills": {
+      "verdict": "PASS",
+      "detail": "deadlines: \"Spring evacuation drill\" [drill, twice, year, evacuation]"
+    },
+    "fact-42-employees": {
+      "verdict": "PASS",
+      "detail": "facts: \"employee_count\" [42, employees, portland]"
+    },
+    "label-consistency": {
+      "verdict": "CROSS",
+      "detail": "judged across the three runs, below"
+    },
+    "no-false-alarm-gap": {
+      "verdict": "FAIL",
+      "detail": "gaps: \"Missing fire alarm system maintenance and test records / The plan states the alarm is tested on the first Monday of each month but does not require records of those tests. It does not require documentation that Cascade F\"",
+      "quotes": [
+        {
+          "where": "gaps",
+          "text": "Missing fire alarm system maintenance and test records / The plan states the alarm is tested on the first Monday of each month but does not require records of those tests. It does not require documentation that Cascade Fire & Safety's 24-hour monitoring and maintenance is current. / Maintain a log showing the date and result of each monthly alarm test. Maintain records showing the service contract with Cascade Fire & Safety, its renewal date, and copies of their quarterly or annual maintenance reports. / OSHA 1910.38(a) and NFPA 72 (National Fire Alarm Code) require fire alarm systems to be tested and serviced regularly with records kept. / https://www.osha.gov/pls/oshaweb/owadisp.show_document?p_table=STANDARDS&p_id=9727 / Section 2, Alarm system / inferred / The alarm is tested on the first Monday of each month by the facilities lead."
+        }
+      ],
+      "soft": []
+    },
+    "no-false-evacuation-gap": {
+      "verdict": "PASS",
+      "detail": "not raised as such; 3 item(s) mention it — read below",
+      "soft": [
+        {
+          "where": "gaps",
+          "text": "Missing last review or update date / The document states the facilities lead reviews the plan every January, but does not record when that review was last done or whether the plan was updated after the February 2021 revision. / Add a line stating the date of the most recent annual review and any updates made. For example: 'Last reviewed and updated: January 2026.' / OSHA 1910.38(a) requires emergency action plans be reviewed and updated at least annually. / https://www.osha.gov/pls/oshaweb/owadisp.show_document?p_table=STANDARDS&p_id=9727 / Section 6, Training and review / inferred / The facilities lead reviews the plan every January and updates the evacuation maps whenever the building layout changes."
+        },
+        {
+          "where": "gaps",
+          "text": "Missing critical infrastructure shutdown and utility procedures / The plan mentions the facilities lead shutting down ventilation in a shelter-in-place event (Section 3) but does not describe procedures for stopping chemical operations, closing gas or water valves, or other steps to contain a hazard. / Add a section describing what equipment or processes must be shut down in different emergency scenarios (fire, chemical release, medical emergency). Specify who is trained to perform these shutdowns and where control panels or valves are located. / OSHA 1910.38(a) requires procedures for shutdown of operations at the facility. / https://www.osha.gov/pls/oshaweb/owadisp.show_document?p_table=STANDARDS&p_id=9727 / Section 3, Evacuation procedures; Section 5, Rescue and medical duties / inferred / the facilities lead shuts down the building ventilation from the mechanical room panel"
+        },
+        {
+          "where": "gaps",
+          "text": "Missing communication with individuals with special needs / The plan does not address how employees with mobility limitations, hearing or visual impairments, or other conditions that affect emergency response will be accommodated during evacuation or shelter-in-place. / Add a section on accommodations for employees with disabilities or special needs. Note that floor wardens should be aware of employees requiring assistance and that assembly point procedures should account for mobility-limited individuals. / OSHA 1910.38(a)(5) requires the emergency action plan address rescue and medical duties and specifically require consideration of persons unable to exit the facility unassisted. / https://www.osha.gov/pls/oshaweb/owadisp.show_document?p_table=STANDARDS&p_id=9727 / Section 3, Evacuation procedures; Section 5, Rescue and medical duties / inferred"
+        }
+      ]
+    },
+    "no-false-headcount-gap": {
+      "verdict": "PASS",
+      "detail": "not raised as such; 2 item(s) mention it — read below",
+      "soft": [
+        {
+          "where": "gaps",
+          "text": "Missing drill documentation and records / The plan states evacuation drills are held twice a year (spring and autumn) but does not require records of dates, number of participants, problems found, or corrective actions taken. / Maintain a log of each evacuation drill showing the date, time, participants, duration, any problems encountered, and corrective actions taken. Document that drills are completed and reviewed. / OSHA 1910.38(a) requires emergency action plans include procedures for practices and drills and that records be kept. / https://www.osha.gov/pls/oshaweb/owadisp.show_document?p_table=STANDARDS&p_id=9727 / Section 4, Accounting for employees after evacuation / inferred / Evacuation drills are held twice a year, in spring and autumn."
+        },
+        {
+          "where": "gaps",
+          "text": "Missing incident coordinator designation and training / Section 4 references an 'incident coordinator at the assembly point' who communicates with the fire department, but the plan does not name who this person is or confirm they have been trained for this role. / Designate one or more incident coordinators by name and title. Specify their training and confirm they understand the role. Note backup designations in case the primary is unavailable. / OSHA 1910.38(a) requires designation of personnel responsible for emergency response roles. / https://www.osha.gov/pls/oshaweb/owadisp.show_document?p_table=STANDARDS&p_id=9727 / Section 4, Accounting for employees after evacuation / inferred / Any person unaccounted for is reported at once to the incident coordinator at the assembly point, who passes the information to the fire department on arrival."
+        }
+      ]
+    },
+    "no-false-rescue-gap": {
+      "verdict": "FAIL",
+      "detail": "gaps: \"Missing rescue and medical response training documentation / The plan names two first-aid responders per shift and states they are trained, but does not specify what training they have received (e.g., CPR, First Aid cert\"",
+      "quotes": [
+        {
+          "where": "gaps",
+          "text": "Missing rescue and medical response training documentation / The plan names two first-aid responders per shift and states they are trained, but does not specify what training they have received (e.g., CPR, First Aid certification level, dates of most recent training). / Maintain records showing the name, certification type, certification number, and expiry date for each first-aid responder. Document that floor wardens receive annual training and keep records of training dates and topics. / OSHA 1910.38(a) requires employers to ensure that all designated personnel are trained. Oregon also requires first-aid and CPR training records. / https://www.osha.gov/pls/oshaweb/owadisp.show_document?p_table=STANDARDS&p_id=9727 / Section 5, Rescue and medical duties, and Section 6, Training and review / inferred / First aid is given at the assembly point by the trained first-aid responders (two per shift, named on the warden roster)"
+        }
+      ],
+      "soft": [
+        {
+          "where": "gaps",
+          "text": "Missing critical infrastructure shutdown and utility procedures / The plan mentions the facilities lead shutting down ventilation in a shelter-in-place event (Section 3) but does not describe procedures for stopping chemical operations, closing gas or water valves, or other steps to contain a hazard. / Add a section describing what equipment or processes must be shut down in different emergency scenarios (fire, chemical release, medical emergency). Specify who is trained to perform these shutdowns and where control panels or valves are located. / OSHA 1910.38(a) requires procedures for shutdown of operations at the facility. / https://www.osha.gov/pls/oshaweb/owadisp.show_document?p_table=STANDARDS&p_id=9727 / Section 3, Evacuation procedures; Section 5, Rescue and medical duties / inferred / the facilities lead shuts down the building ventilation from the mechanical room panel"
+        },
+        {
+          "where": "gaps",
+          "text": "Missing communication with individuals with special needs / The plan does not address how employees with mobility limitations, hearing or visual impairments, or other conditions that affect emergency response will be accommodated during evacuation or shelter-in-place. / Add a section on accommodations for employees with disabilities or special needs. Note that floor wardens should be aware of employees requiring assistance and that assembly point procedures should account for mobility-limited individuals. / OSHA 1910.38(a)(5) requires the emergency action plan address rescue and medical duties and specifically require consideration of persons unable to exit the facility unassisted. / https://www.osha.gov/pls/oshaweb/owadisp.show_document?p_table=STANDARDS&p_id=9727 / Section 3, Evacuation procedures; Section 5, Rescue and medical duties / inferred"
+        }
+      ]
+    },
+    "freshness-five-years": {
+      "verdict": "PASS",
+      "detail": "[five years, 2021]"
+    },
+    "fact-alarm-monitored": {
+      "verdict": "PASS",
+      "detail": "facts: \"alarm_monitoring_vendor\" [cascade fire, monitored, alarm]"
+    },
+    "conditions-none-expected": {
+      "verdict": "FAIL",
+      "detail": "11: \"Employees must evacuate immediately upon continuous alarm\"; \"Assembly point must be maintained at far north end of visitor parking \"; \"Floor wardens must sweep their area and report to assembly point\"; \"Receptionist must bring daily sign-in sheet and visitor log to assembl\"; \"Fire alarm must be tested on first Monday of each month\"; \"Two trained first-aid responders must be on each shift\"; \"Training on plan and exit routes must be provided on first day of empl\"; \"Annual training for floor wardens and first-aid responders\"; \"Plan review by facilities lead every January\"; \"Evacuation maps must be updated whenever building layout changes\"; \"Evacuation drills must be held twice per year (spring and autumn)\""
+    },
+    "alarm-test-deadline": {
+      "verdict": "PASS",
+      "detail": "deadlines: \"Monthly fire alarm test\" [alarm, monday, monthly, test]"
+    }
+  },
+  "scan": {
+    "identity": {
+      "kind": "policy",
+      "title": "Emergency Action Plan",
+      "issuer": "Cascade Specialty Chemicals, LLC",
+      "agencies": [],
+      "subjects": [
+        "emergency_preparedness",
+        "workplace_safety",
+        "chemical_safety"
+      ],
+      "site": "Portland",
+      "jurisdiction": [
+        "Oregon",
+        "federal"
+      ],
+      "doc_date": "2021-02-01",
+      "doc_date_kind": "revised",
+      "page_refs": {}
+    },
+    "summary": "This is Cascade Specialty Chemicals' internal policy describing how the Portland facility's 42 employees must respond to fires, chemical releases, medical emergencies, earthquakes, and other emergencies. The plan covers alarm signals, evacuation routes and assembly procedures, employee accounting, medical response, and staff training requirements. It is not a permit or certificate issued by an agency, but rather an internal operational policy required under workplace safety regulations.",
+    "status": "gaps_found",
+    "significant_date": "2021-02-01",
+    "significant_date_kind": "revised",
+    "freshness_note": "The document was last revised in February 2021, nearly five years old. The plan specifies annual review by the facilities lead every January (Section 6), so a new version may be overdue. Ask whether the January 2026 review was completed and whether the plan has been updated since.",
+    "gaps": [
+      {
+        "title": "Missing last review or update date",
+        "description": "The document states the facilities lead reviews the plan every January, but does not record when that review was last done or whether the plan was updated after the February 2021 revision.",
+        "fix": "Add a line stating the date of the most recent annual review and any updates made. For example: 'Last reviewed and updated: January 2026.'",
+        "citation": "OSHA 1910.38(a) requires emergency action plans be reviewed and updated at least annually.",
+        "citation_url": "https://www.osha.gov/pls/oshaweb/owadisp.show_document?p_table=STANDARDS&p_id=9727",
+        "locator": "Section 6, Training and review",
+        "draftable": true,
+        "basis": "inferred",
+        "quote": "The facilities lead reviews the plan every January and updates the evacuation maps whenever the building layout changes.",
+        "quote_verified": true,
+        "same_as_gap_id": null
+      },
+      {
+        "title": "Missing rescue and medical response training documentation",
+        "description": "The plan names two first-aid responders per shift and states they are trained, but does not specify what training they have received (e.g., CPR, First Aid certification level, dates of most recent training).",
+        "fix": "Maintain records showing the name, certification type, certification number, and expiry date for each first-aid responder. Document that floor wardens receive annual training and keep records of training dates and topics.",
+        "citation": "OSHA 1910.38(a) requires employers to ensure that all designated personnel are trained. Oregon also requires first-aid and CPR training records.",
+        "citation_url": "https://www.osha.gov/pls/oshaweb/owadisp.show_document?p_table=STANDARDS&p_id=9727",
+        "locator": "Section 5, Rescue and medical duties, and Section 6, Training and review",
+        "draftable": true,
+        "basis": "inferred",
+        "quote": "First aid is given at the assembly point by the trained first-aid responders (two per shift, named on the warden roster)",
+        "quote_verified": true,
+        "same_as_gap_id": null
+      },
+      {
+        "title": "Missing fire alarm system maintenance and test records",
+        "description": "The plan states the alarm is tested on the first Monday of each month but does not require records of those tests. It does not require documentation that Cascade Fire & Safety's 24-hour monitoring and maintenance is current.",
+        "fix": "Maintain a log showing the date and result of each monthly alarm test. Maintain records showing the service contract with Cascade Fire & Safety, its renewal date, and copies of their quarterly or annual maintenance reports.",
+        "citation": "OSHA 1910.38(a) and NFPA 72 (National Fire Alarm Code) require fire alarm systems to be tested and serviced regularly with records kept.",
+        "citation_url": "https://www.osha.gov/pls/oshaweb/owadisp.show_document?p_table=STANDARDS&p_id=9727",
+        "locator": "Section 2, Alarm system",
+        "draftable": true,
+        "basis": "inferred",
+        "quote": "The alarm is tested on the first Monday of each month by the facilities lead.",
+        "quote_verified": true,
+        "same_as_gap_id": null
+      },
+      {
+        "title": "Missing drill documentation and records",
+        "description": "The plan states evacuation drills are held twice a year (spring and autumn) but does not require records of dates, number of participants, problems found, or corrective actions taken.",
+        "fix": "Maintain a log of each evacuation drill showing the date, time, participants, duration, any problems encountered, and corrective actions taken. Document that drills are completed and reviewed.",
+        "citation": "OSHA 1910.38(a) requires emergency action plans include procedures for practices and drills and that records be kept.",
+        "citation_url": "https://www.osha.gov/pls/oshaweb/owadisp.show_document?p_table=STANDARDS&p_id=9727",
+        "locator": "Section 4, Accounting for employees after evacuation",
+        "draftable": true,
+        "basis": "inferred",
+        "quote": "Evacuation drills are held twice a year, in spring and autumn.",
+        "quote_verified": true,
+        "same_as_gap_id": null
+      },
+      {
+        "title": "Missing incident coordinator designation and training",
+        "description": "Section 4 references an 'incident coordinator at the assembly point' who communicates with the fire department, but the plan does not name who this person is or confirm they have been trained for this role.",
+        "fix": "Designate one or more incident coordinators by name and title. Specify their training and confirm they understand the role. Note backup designations in case the primary is unavailable.",
+        "citation": "OSHA 1910.38(a) requires designation of personnel responsible for emergency response roles.",
+        "citation_url": "https://www.osha.gov/pls/oshaweb/owadisp.show_document?p_table=STANDARDS&p_id=9727",
+        "locator": "Section 4, Accounting for employees after evacuation",
+        "draftable": true,
+        "basis": "inferred",
+        "quote": "Any person unaccounted for is reported at once to the incident coordinator at the assembly point, who passes the information to the fire department on arrival.",
+        "quote_verified": true,
+        "same_as_gap_id": null
+      },
+      {
+        "title": "Missing emergency contact and notification procedures",
+        "description": "The plan does not describe how management or emergency responders will be notified in an actual emergency, or how employees will be informed of an all-clear or updated information during an incident.",
+        "fix": "Add a section on emergency notification, including phone numbers for key personnel to be called, who is responsible for notifying off-site staff or family members, and how updates will be communicated (e.g., text, email, phone tree).",
+        "citation": "OSHA 1910.38(a) requires procedures for notifying emergency responders and affected persons.",
+        "citation_url": "https://www.osha.gov/pls/oshaweb/owadisp.show_document?p_table=STANDARDS&p_id=9727",
+        "locator": "not in the document",
+        "draftable": true,
+        "basis": "inferred",
+        "quote": null,
+        "quote_verified": null,
+        "same_as_gap_id": null
+      },
+      {
+        "title": "Missing critical infrastructure shutdown and utility procedures",
+        "description": "The plan mentions the facilities lead shutting down ventilation in a shelter-in-place event (Section 3) but does not describe procedures for stopping chemical operations, closing gas or water valves, or other steps to contain a hazard.",
+        "fix": "Add a section describing what equipment or processes must be shut down in different emergency scenarios (fire, chemical release, medical emergency). Specify who is trained to perform these shutdowns and where control panels or valves are located.",
+        "citation": "OSHA 1910.38(a) requires procedures for shutdown of operations at the facility.",
+        "citation_url": "https://www.osha.gov/pls/oshaweb/owadisp.show_document?p_table=STANDARDS&p_id=9727",
+        "locator": "Section 3, Evacuation procedures; Section 5, Rescue and medical duties",
+        "draftable": true,
+        "basis": "inferred",
+        "quote": "the facilities lead shuts down the building ventilation from the mechanical room panel",
+        "quote_verified": true,
+        "same_as_gap_id": null
+      },
+      {
+        "title": "Missing communication with individuals with special needs",
+        "description": "The plan does not address how employees with mobility limitations, hearing or visual impairments, or other conditions that affect emergency response will be accommodated during evacuation or shelter-in-place.",
+        "fix": "Add a section on accommodations for employees with disabilities or special needs. Note that floor wardens should be aware of employees requiring assistance and that assembly point procedures should account for mobility-limited individuals.",
+        "citation": "OSHA 1910.38(a)(5) requires the emergency action plan address rescue and medical duties and specifically require consideration of persons unable to exit the facility unassisted.",
+        "citation_url": "https://www.osha.gov/pls/oshaweb/owadisp.show_document?p_table=STANDARDS&p_id=9727",
+        "locator": "Section 3, Evacuation procedures; Section 5, Rescue and medical duties",
+        "draftable": true,
+        "basis": "inferred",
+        "quote": null,
+        "quote_verified": null,
+        "same_as_gap_id": null
+      }
+    ],
+    "conditions": [
+      {
+        "title": "Employees must evacuate immediately upon continuous alarm",
+        "condition_ref": "Section 3",
+        "evidence_expected": "Evacuation drill records showing employees comply with alarm; observation of signage and exit routes in place"
+      },
+      {
+        "title": "Assembly point must be maintained at far north end of visitor parking lot, 150+ feet from building",
+        "condition_ref": "Section 3",
+        "evidence_expected": "Site inspection confirming assembly point location and distance from building"
+      },
+      {
+        "title": "Floor wardens must sweep their area and report to assembly point",
+        "condition_ref": "Section 3 and Appendix B",
+        "evidence_expected": "Warden roster on file; drill records showing wardens complete their areas"
+      },
+      {
+        "title": "Receptionist must bring daily sign-in sheet and visitor log to assembly point",
+        "condition_ref": "Section 4",
+        "evidence_expected": "Sign-in sheets and visitor logs on file; evidence from drills"
+      },
+      {
+        "title": "Fire alarm must be tested on first Monday of each month",
+        "condition_ref": "Section 2",
+        "evidence_expected": "Monthly test log with dates and results"
+      },
+      {
+        "title": "Two trained first-aid responders must be on each shift",
+        "condition_ref": "Section 5 and Appendix B",
+        "evidence_expected": "Current first-aid and CPR certifications on file; warden roster showing names and shift assignments"
+      },
+      {
+        "title": "Training on plan and exit routes must be provided on first day of employment",
+        "condition_ref": "Section 6",
+        "evidence_expected": "New hire checklist or sign-off records showing training was conducted"
+      },
+      {
+        "title": "Annual training for floor wardens and first-aid responders",
+        "condition_ref": "Section 6",
+        "evidence_expected": "Training attendance records for wardens and responders; dates of most recent training"
+      },
+      {
+        "title": "Plan review by facilities lead every January",
+        "condition_ref": "Section 6",
+        "evidence_expected": "Dated memo or sign-off showing annual review was completed; updated plan or maps if changes made"
+      },
+      {
+        "title": "Evacuation maps must be updated whenever building layout changes",
+        "condition_ref": "Section 6",
+        "evidence_expected": "Current evacuation maps for warehouse, laboratory, and offices (Appendix A)"
+      },
+      {
+        "title": "Evacuation drills must be held twice per year (spring and autumn)",
+        "condition_ref": "Section 4",
+        "evidence_expected": "Drill records showing dates, participants, duration, and any corrective actions from each drill"
+      }
+    ],
+    "deadlines": [
+      {
+        "title": "Monthly fire alarm test",
+        "due_on": null,
+        "source_line": "Section 2: The alarm is tested on the first Monday of each month by the facilities lead.",
+        "recurs": true
+      },
+      {
+        "title": "Annual training for floor wardens and first-aid responders",
+        "due_on": null,
+        "source_line": "Section 6: Floor wardens and first-aid responders are trained annually.",
+        "recurs": true
+      },
+      {
+        "title": "Annual plan review",
+        "due_on": null,
+        "source_line": "Section 6: The facilities lead reviews the plan every January and updates the evacuation maps whenever the building layout changes.",
+        "recurs": true
+      },
+      {
+        "title": "Spring evacuation drill",
+        "due_on": null,
+        "source_line": "Section 4: Evacuation drills are held twice a year, in spring and autumn.",
+        "recurs": true
+      },
+      {
+        "title": "Autumn evacuation drill",
+        "due_on": null,
+        "source_line": "Section 4: Evacuation drills are held twice a year, in spring and autumn.",
+        "recurs": true
+      }
+    ],
+    "facts": [
+      {
+        "key": "facility_location",
+        "value": "4410 NW Front Avenue, Portland, Oregon 97210",
+        "quote": "Portland Facility, 4410 NW Front Avenue, Portland, Oregon 97210",
+        "locator": "Page 1, header",
+        "as_of": "2021-02-01",
+        "affects": "Jurisdictional applicability and site-specific emergency procedures",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "employee_count",
+        "value": "42 employees at Portland facility",
+        "quote": "It applies to all 42 employees at the Portland facility, including warehouse, drivers, laboratory and office staff",
+        "locator": "Section 1, Purpose and scope",
+        "as_of": "2021-02-01",
+        "affects": "Scale of evacuation planning, headcount procedures, and resource allocation for first-aid and warden roles",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "staff_categories",
+        "value": "warehouse, drivers, laboratory, and office staff",
+        "quote": "It applies to all 42 employees at the Portland facility, including warehouse, drivers, laboratory and office staff, and to contractors and visitors while on site.",
+        "locator": "Section 1, Purpose and scope",
+        "as_of": "2021-02-01",
+        "affects": "Different evacuation routes assigned to each category; training and role assignments must account for all groups",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "alarm_monitoring_vendor",
+        "value": "Cascade Fire & Safety",
+        "quote": "The alarm is monitored 24 hours a day by Cascade Fire & Safety under a service contract.",
+        "locator": "Section 2, Alarm system",
+        "as_of": "2021-02-01",
+        "affects": "Vendor management, service contract renewal, and verification of continuous monitoring capability",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "first_aid_responders_per_shift",
+        "value": "2 responders per shift",
+        "quote": "First aid is given at the assembly point by the trained first-aid responders (two per shift, named on the warden roster)",
+        "locator": "Section 5, Rescue and medical duties",
+        "as_of": "2021-02-01",
+        "affects": "Adequate medical response capacity; must ensure two trained responders are present on each shift at all times",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "assembly_point_distance",
+        "value": "at least 150 feet from building",
+        "quote": "The assembly point is the far north end of the visitor parking lot, beside the flagpole, at least 150 feet from the building.",
+        "locator": "Section 3, Evacuation procedures",
+        "as_of": "2021-02-01",
+        "affects": "Employee safety during evacuation; site layout verification required",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "emergency_shower_eyewash_location",
+        "value": "loading dock",
+        "quote": "An employee exposed to a chemical is taken to the emergency shower and eyewash at the loading dock if it can be reached safely",
+        "locator": "Section 5, Rescue and medical duties",
+        "as_of": "2021-02-01",
+        "affects": "Requires verification that emergency shower and eyewash are present, functional, and accessible; ANSI Z535 compliance needed",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "plan_locations",
+        "value": "front office and warehouse break room",
+        "quote": "The plan is kept in the front office and in the warehouse break room, and a copy is available to any employee on request.",
+        "locator": "Section 1, Purpose and scope",
+        "as_of": "2021-02-01",
+        "affects": "Accessibility and communication; ensures all staff can review procedures",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "last_revision_date",
+        "value": "February 2021",
+        "quote": "Revised February 2021",
+        "locator": "Page 1, header and title page",
+        "as_of": "2021-02-01",
+        "affects": "Document currency; nearly 5 years old and overdue for annual review cycle; should be updated to confirm current status",
+        "basis": "read",
+        "quote_verified": true
+      }
+    ],
+    "version_of": {
+      "title": null,
+      "confidence": null
+    },
+    "expected_missing": [
+      {
+        "title": "Injury and incident reporting procedures",
+        "why": "A company this size with chemical operations should have a written procedure for documenting and reporting workplace injuries, chemical exposures, and near-misses.",
+        "basis": "similar companies"
+      },
+      {
+        "title": "Chemical inventory and hazard summary",
+        "why": "An emergency action plan for a chemical manufacturer should reference or be accompanied by a summary of hazardous chemicals on site, including quantities and storage locations, to help responders understand the threat.",
+        "basis": "similar companies"
+      },
+      {
+        "title": "Medical emergency procedures specific to chemical exposure",
+        "why": "Beyond directing exposure victims to the emergency shower, the plan should name specific first-aid treatments for the chemicals in use (e.g., for ingestion, inhalation, skin contact).",
+        "basis": "similar companies"
+      },
+      {
+        "title": "Restoration and business continuity procedures",
+        "why": "The plan should address how to resume operations safely after an emergency and communicate with customers or suppliers of delays.",
+        "basis": "similar companies"
+      },
+      {
+        "title": "Post-emergency debriefing and documentation",
+        "why": "A procedure for documenting lessons learned, near-misses, or actual events to improve future preparedness.",
+        "basis": "similar companies"
+      }
+    ],
+    "confidence_notes": "This plan was read completely and is clearly written. I am confident in the facts stated and the gaps identified regarding missing documentation, records, and supporting procedures. The plan itself meets the basic structure required by OSHA 1910.38(a) — it covers evacuation, accounting for employees, rescue and medical duties, and training. However, the significant gaps are in supporting documentation: no record dates are shown for reviews, drills, training, or alarm tests, and no supporting records are mentioned as being maintained. At nearly five years since the last revision, it is overdue for the annual January review specified in Section 6. I am not able to confirm from this document alone whether those supporting records exist in the company's files. A medium-to-high confidence rating is appropriate: the plan itself is sound, but its effectiveness depends on records and annual updates that are not evident from the document provided.",
+    "could_not_read": {
+      "reason": null,
+      "way_forward": null
+    },
+    "raw_text": "{\"identity\": {\"kind\": \"policy\", \"title\": \"Emergency Action Plan\", \"issuer\": \"Cascade Specialty Chemicals, LLC\", \"agencies\": [], \"subjects\": [\"emergency_preparedness\", \"workplace_safety\", \"chemical_safety\"], \"site\": \"Portland\", \"jurisdiction\": [\"Oregon\", \"federal\"], \"doc_date\": \"2021-02-01\", \"doc_date_kind\": \"revised\"}, \"summary\": \"This is Cascade Specialty Chemicals' internal policy describing how the Portland facility's 42 employees must respond to fires, chemical releases, medical emergencies, earthquakes, and other emergencies. The plan covers alarm signals, evacuation routes and assembly procedures, employee accounting, medical response, and staff training requirements. It is not a permit or certificate issued by an agency, but rather an internal operational policy required under workplace safety regulations.\", \"status\": \"gaps_found\", \"significant_date\": \"2026-09-29\", \"significant_date_kind\": \"renewal\", \"freshness_note\": \"The document was last revised in February 2021, nearly five years old. The plan specifies annual review by the facilities lead every January (Section 6), so a new version may be overdue. Ask whether the January 2026 review was completed and whether the plan has been updated since.\", \"gaps\": [{\"title\": \"Missing last review or update date\", \"description\": \"The document states the facilities lead reviews the plan every January, but does not record when that review was last done or whether the plan was updated after the February 2021 revision.\", \"fix\": \"Add a line stating the date of the most recent annual review and any updates made. For example: 'Last reviewed and updated: January 2026.'\", \"citation\": \"OSHA 1910.38(a) requires emergency action plans be reviewed and updated at least annually.\", \"citation_url\": \"https://www.osha.gov/pls/oshaweb/owadisp.show_document?p_table=STANDARDS&p_id=9727\", \"locator\": \"Section 6, Training and review\", \"draftable\": true, \"basis\": \"inferred\", \"quote\": \"The facilities lead reviews the plan every January and updates the evacuation maps whenever the building layout changes.\", \"same_as_gap_id\": \"\"}, {\"title\": \"Missing rescue and medical response training documentation\", \"description\": \"The plan names two first-aid responders per shift and states they are trained, but does not specify what training they have received (e.g., CPR, First Aid certification level, dates of most recent training).\", \"fix\": \"Maintain records showing the name, certification type, certification number, and expiry date for each first-aid responder. Document that floor wardens receive annual training and keep records of training dates and topics.\", \"citation\": \"OSHA 1910.38(a) requires employers to ensure that all designated personnel are trained. Oregon also requires first-aid and CPR training records.\", \"citation_url\": \"https://www.osha.gov/pls/oshaweb/owadisp.show_document?p_table=STANDARDS&p_id=9727\", \"locator\": \"Section 5, Rescue and medical duties, and Section 6, Training and review\", \"draftable\": true, \"basis\": \"inferred\", \"quote\": \"First aid is given at the assembly point by the trained first-aid responders (two per shift, named on the warden roster)\", \"same_as_gap_id\": \"\"}, {\"title\": \"Missing fire alarm system maintenance and test records\", \"description\": \"The plan states the alarm is tested on the first Monday of each month but does not require records of those tests. It does not require documentation that Cascade Fire & Safety's 24-hour monitoring and maintenance is current.\", \"fix\": \"Maintain a log showing the date and result of each monthly alarm test. Maintain records showing the service contract with Cascade Fire & Safety, its renewal date, and copies of their quarterly or annual maintenance reports.\", \"citation\": \"OSHA 1910.38(a) and NFPA 72 (National Fire Alarm Code) require fire alarm systems to be tested and serviced regularly with records kept.\", \"citation_url\": \"https://www.osha.gov/pls/oshaweb/owadisp.show_document?p_table=STANDARDS&p_id=9727\", \"locator\": \"Section 2, Alarm system\", \"draftable\": true, \"basis\": \"inferred\", \"quote\": \"The alarm is tested on the first Monday of each month by the facilities lead.\", \"same_as_gap_id\": \"\"}, {\"title\": \"Missing drill documentation and records\", \"description\": \"The plan states evacuation drills are held twice a year (spring and autumn) but does not require records of dates, number of participants, problems found, or corrective actions taken.\", \"fix\": \"Maintain a log of each evacuation drill showing the date, time, participants, duration, any problems encountered, and corrective actions taken. Document that drills are completed and reviewed.\", \"citation\": \"OSHA 1910.38(a) requires emergency action plans include procedures for practices and drills and that records be kept.\", \"citation_url\": \"https://www.osha.gov/pls/oshaweb/owadisp.show_document?p_table=STANDARDS&p_id=9727\", \"locator\": \"Section 4, Accounting for employees after evacuation\", \"draftable\": true, \"basis\": \"inferred\", \"quote\": \"Evacuation drills are held twice a year, in spring and autumn.\", \"same_as_gap_id\": \"\"}, {\"title\": \"Missing incident coordinator designation and training\", \"description\": \"Section 4 references an 'incident coordinator at the assembly point' who communicates with the fire department, but the plan does not name who this person is or confirm they have been trained for this role.\", \"fix\": \"Designate one or more incident coordinators by name and title. Specify their training and confirm they understand the role. Note backup designations in case the primary is unavailable.\", \"citation\": \"OSHA 1910.38(a) requires designation of personnel responsible for emergency response roles.\", \"citation_url\": \"https://www.osha.gov/pls/oshaweb/owadisp.show_document?p_table=STANDARDS&p_id=9727\", \"locator\": \"Section 4, Accounting for employees after evacuation\", \"draftable\": true, \"basis\": \"inferred\", \"quote\": \"Any person unaccounted for is reported at once to the incident coordinator at the assembly point, who passes the information to the fire department on arrival.\", \"same_as_gap_id\": \"\"}, {\"title\": \"Missing emergency contact and notification procedures\", \"description\": \"The plan does not describe how management or emergency responders will be notified in an actual emergency, or how employees will be informed of an all-clear or updated information during an incident.\", \"fix\": \"Add a section on emergency notification, including phone numbers for key personnel to be called, who is responsible for notifying off-site staff or family members, and how updates will be communicated (e.g., text, email, phone tree).\", \"citation\": \"OSHA 1910.38(a) requires procedures for notifying emergency responders and affected persons.\", \"citation_url\": \"https://www.osha.gov/pls/oshaweb/owadisp.show_document?p_table=STANDARDS&p_id=9727\", \"locator\": \"not in the document\", \"draftable\": true, \"basis\": \"inferred\", \"quote\": \"\", \"same_as_gap_id\": \"\"}, {\"title\": \"Missing critical infrastructure shutdown and utility procedures\", \"description\": \"The plan mentions the facilities lead shutting down ventilation in a shelter-in-place event (Section 3) but does not describe procedures for stopping chemical operations, closing gas or water valves, or other steps to contain a hazard.\", \"fix\": \"Add a section describing what equipment or processes must be shut down in different emergency scenarios (fire, chemical release, medical emergency). Specify who is trained to perform these shutdowns and where control panels or valves are located.\", \"citation\": \"OSHA 1910.38(a) requires procedures for shutdown of operations at the facility.\", \"citation_url\": \"https://www.osha.gov/pls/oshaweb/owadisp.show_document?p_table=STANDARDS&p_id=9727\", \"locator\": \"Section 3, Evacuation procedures; Section 5, Rescue and medical duties\", \"draftable\": true, \"basis\": \"inferred\", \"quote\": \"the facilities lead shuts down the building ventilation from the mechanical room panel\", \"same_as_gap_id\": \"\"}, {\"title\": \"Missing communication with individuals with special needs\", \"description\": \"The plan does not address how employees with mobility limitations, hearing or visual impairments, or other conditions that affect emergency response will be accommodated during evacuation or shelter-in-place.\", \"fix\": \"Add a section on accommodations for employees with disabilities or special needs. Note that floor wardens should be aware of employees requiring assistance and that assembly point procedures should account for mobility-limited individuals.\", \"citation\": \"OSHA 1910.38(a)(5) requires the emergency action plan address rescue and medical duties and specifically require consideration of persons unable to exit the facility unassisted.\", \"citation_url\": \"https://www.osha.gov/pls/oshaweb/owadisp.show_document?p_table=STANDARDS&p_id=9727\", \"locator\": \"Section 3, Evacuation procedures; Section 5, Rescue and medical duties\", \"draftable\": true, \"basis\": \"inferred\", \"quote\": \"\", \"same_as_gap_id\": \"\"}], \"conditions\": [{\"title\": \"Employees must evacuate immediately upon continuous alarm\", \"condition_ref\": \"Section 3\", \"evidence_expected\": \"Evacuation drill records showing employees comply with alarm; observation of signage and exit routes in place\"}, {\"title\": \"Assembly point must be maintained at far north end of visitor parking lot, 150+ feet from building\", \"condition_ref\": \"Section 3\", \"evidence_expected\": \"Site inspection confirming assembly point location and distance from building\"}, {\"title\": \"Floor wardens must sweep their area and report to assembly point\", \"condition_ref\": \"Section 3 and Appendix B\", \"evidence_expected\": \"Warden roster on file; drill records showing wardens complete their areas\"}, {\"title\": \"Receptionist must bring daily sign-in sheet and visitor log to assembly point\", \"condition_ref\": \"Section 4\", \"evidence_expected\": \"Sign-in sheets and visitor logs on file; evidence from drills\"}, {\"title\": \"Fire alarm must be tested on first Monday of each month\", \"condition_ref\": \"Section 2\", \"evidence_expected\": \"Monthly test log with dates and results\"}, {\"title\": \"Two trained first-aid responders must be on each shift\", \"condition_ref\": \"Section 5 and Appendix B\", \"evidence_expected\": \"Current first-aid and CPR certifications on file; warden roster showing names and shift assignments\"}, {\"title\": \"Training on plan and exit routes must be provided on first day of employment\", \"condition_ref\": \"Section 6\", \"evidence_expected\": \"New hire checklist or sign-off records showing training was conducted\"}, {\"title\": \"Annual training for floor wardens and first-aid responders\", \"condition_ref\": \"Section 6\", \"evidence_expected\": \"Training attendance records for wardens and responders; dates of most recent training\"}, {\"title\": \"Plan review by facilities lead every January\", \"condition_ref\": \"Section 6\", \"evidence_expected\": \"Dated memo or sign-off showing annual review was completed; updated plan or maps if changes made\"}, {\"title\": \"Evacuation maps must be updated whenever building layout changes\", \"condition_ref\": \"Section 6\", \"evidence_expected\": \"Current evacuation maps for warehouse, laboratory, and offices (Appendix A)\"}, {\"title\": \"Evacuation drills must be held twice per year (spring and autumn)\", \"condition_ref\": \"Section 4\", \"evidence_expected\": \"Drill records showing dates, participants, duration, and any corrective actions from each drill\"}], \"deadlines\": [{\"title\": \"Monthly fire alarm test\", \"due_on\": \"first Monday of each month\", \"source_line\": \"Section 2: The alarm is tested on the first Monday of each month by the facilities lead.\", \"recurs\": true}, {\"title\": \"Annual training for floor wardens and first-aid responders\", \"due_on\": \"annually\", \"source_line\": \"Section 6: Floor wardens and first-aid responders are trained annually.\", \"recurs\": true}, {\"title\": \"Annual plan review\", \"due_on\": \"annually in January\", \"source_line\": \"Section 6: The facilities lead reviews the plan every January and updates the evacuation maps whenever the building layout changes.\", \"recurs\": true}, {\"title\": \"Spring evacuation drill\", \"due_on\": \"spring (approximate)\", \"source_line\": \"Section 4: Evacuation drills are held twice a year, in spring and autumn.\", \"recurs\": true}, {\"title\": \"Autumn evacuation drill\", \"due_on\": \"autumn (approximate)\", \"source_line\": \"Section 4: Evacuation drills are held twice a year, in spring and autumn.\", \"recurs\": true}], \"facts\": [{\"key\": \"facility_location\", \"value\": \"4410 NW Front Avenue, Portland, Oregon 97210\", \"basis\": \"read\", \"quote\": \"Portland Facility, 4410 NW Front Avenue, Portland, Oregon 97210\", \"locator\": \"Page 1, header\", \"as_of\": \"2021-02-01\", \"affects\": \"Jurisdictional applicability and site-specific emergency procedures\"}, {\"key\": \"employee_count\", \"value\": \"42 employees at Portland facility\", \"basis\": \"read\", \"quote\": \"It applies to all 42 employees at the Portland facility, including warehouse, drivers, laboratory and office staff\", \"locator\": \"Section 1, Purpose and scope\", \"as_of\": \"2021-02-01\", \"affects\": \"Scale of evacuation planning, headcount procedures, and resource allocation for first-aid and warden roles\"}, {\"key\": \"staff_categories\", \"value\": \"warehouse, drivers, laboratory, and office staff\", \"basis\": \"read\", \"quote\": \"It applies to all 42 employees at the Portland facility, including warehouse, drivers, laboratory and office staff, and to contractors and visitors while on site.\", \"locator\": \"Section 1, Purpose and scope\", \"as_of\": \"2021-02-01\", \"affects\": \"Different evacuation routes assigned to each category; training and role assignments must account for all groups\"}, {\"key\": \"alarm_monitoring_vendor\", \"value\": \"Cascade Fire & Safety\", \"basis\": \"read\", \"quote\": \"The alarm is monitored 24 hours a day by Cascade Fire & Safety under a service contract.\", \"locator\": \"Section 2, Alarm system\", \"as_of\": \"2021-02-01\", \"affects\": \"Vendor management, service contract renewal, and verification of continuous monitoring capability\"}, {\"key\": \"first_aid_responders_per_shift\", \"value\": \"2 responders per shift\", \"basis\": \"read\", \"quote\": \"First aid is given at the assembly point by the trained first-aid responders (two per shift, named on the warden roster)\", \"locator\": \"Section 5, Rescue and medical duties\", \"as_of\": \"2021-02-01\", \"affects\": \"Adequate medical response capacity; must ensure two trained responders are present on each shift at all times\"}, {\"key\": \"assembly_point_distance\", \"value\": \"at least 150 feet from building\", \"basis\": \"read\", \"quote\": \"The assembly point is the far north end of the visitor parking lot, beside the flagpole, at least 150 feet from the building.\", \"locator\": \"Section 3, Evacuation procedures\", \"as_of\": \"2021-02-01\", \"affects\": \"Employee safety during evacuation; site layout verification required\"}, {\"key\": \"emergency_shower_eyewash_location\", \"value\": \"loading dock\", \"basis\": \"read\", \"quote\": \"An employee exposed to a chemical is taken to the emergency shower and eyewash at the loading dock if it can be reached safely\", \"locator\": \"Section 5, Rescue and medical duties\", \"as_of\": \"2021-02-01\", \"affects\": \"Requires verification that emergency shower and eyewash are present, functional, and accessible; ANSI Z535 compliance needed\"}, {\"key\": \"plan_locations\", \"value\": \"front office and warehouse break room\", \"basis\": \"read\", \"quote\": \"The plan is kept in the front office and in the warehouse break room, and a copy is available to any employee on request.\", \"locator\": \"Section 1, Purpose and scope\", \"as_of\": \"2021-02-01\", \"affects\": \"Accessibility and communication; ensures all staff can review procedures\"}, {\"key\": \"last_revision_date\", \"value\": \"February 2021\", \"basis\": \"read\", \"quote\": \"Revised February 2021\", \"locator\": \"Page 1, header and title page\", \"as_of\": \"2021-02-01\", \"affects\": \"Document currency; nearly 5 years old and overdue for annual review cycle; should be updated to confirm current status\"}], \"version_of_title\": \"null\", \"version_of_confidence\": \"null\", \"expected_missing\": [{\"title\": \"Injury and incident reporting procedures\", \"why\": \"A company this size with chemical operations should have a written procedure for documenting and reporting workplace injuries, chemical exposures, and near-misses.\", \"basis\": \"similar companies\"}, {\"title\": \"Chemical inventory and hazard summary\", \"why\": \"An emergency action plan for a chemical manufacturer should reference or be accompanied by a summary of hazardous chemicals on site, including quantities and storage locations, to help responders understand the threat.\", \"basis\": \"similar companies\"}, {\"title\": \"Medical emergency procedures specific to chemical exposure\", \"why\": \"Beyond directing exposure victims to the emergency shower, the plan should name specific first-aid treatments for the chemicals in use (e.g., for ingestion, inhalation, skin contact).\", \"basis\": \"similar companies\"}, {\"title\": \"Restoration and business continuity procedures\", \"why\": \"The plan should address how to resume operations safely after an emergency and communicate with customers or suppliers of delays.\", \"basis\": \"similar companies\"}, {\"title\": \"Post-emergency debriefing and documentation\", \"why\": \"A procedure for documenting lessons learned, near-misses, or actual events to improve future preparedness.\", \"basis\": \"similar companies\"}], \"confidence_notes\": \"This plan was read completely and is clearly written. I am confident in the facts stated and the gaps identified regarding missing documentation, records, and supporting procedures. The plan itself meets the basic structure required by OSHA 1910.38(a) — it covers evacuation, accounting for employees, rescue and medical duties, and training. However, the significant gaps are in supporting documentation: no record dates are shown for reviews, drills, training, or alarm tests, and no supporting records are mentioned as being maintained. At nearly five years since the last revision, it is overdue for the annual January review specified in Section 6. I am not able to confirm from this document alone whether those supporting records exist in the company's files. A medium-to-high confidence rating is appropriate: the plan itself is sound, but its effectiveness depends on records and annual updates that are not evident from the document provided.\", \"could_not_read_reason\": \"null\", \"could_not_read_way_forward\": \"null\"}",
+    "json_parsed": true,
+    "model": "claude-haiku-4-5",
+    "cited_sources": 0,
+    "searches": null,
+    "structured": true,
+    "prompt_sha256": "0b2d58291b99da9240010cb9a5d4066f24c91a79ae8ac9e9919ac6250646c7f3",
+    "quotes_checked": 15,
+    "quotes_verified": 15,
+    "extracted_text": "CASCADE SPECIALTY CHEMICALS, LLC\nEMERGENCY ACTION PLAN\nPortland Facility, 4410 NW Front Avenue, Portland, Oregon 97210\nRevised February 2021\n1. Purpose and scope\nThis Emergency Action Plan describes what employees of Cascade Specialty Chemicals do when there is\na fire, chemical release, medical emergency, earthquake or other emergency at the Portland facility. It\napplies to all 42 employees at the Portland facility, including warehouse, drivers, laboratory and office\nstaff, and to contractors and visitors while on site. The plan is kept in the front office and in the warehouse\nbreak room, and a copy is available to any employee on request.\n2. Alarm system\nThe building has a monitored fire alarm system with audible horns and strobe lights in the warehouse,\nlaboratory, loading dock and offices. The alarm is monitored 24 hours a day by Cascade Fire & Safety\nunder a service contract. Manual pull stations are located at each exit door. The alarm is tested on the first\nMonday of each month by the facilities lead. A continuous horn means evacuate. Three short horns\nrepeated means shelter in place because of an outdoor hazard.\n3. Evacuation procedures\nWhen the continuous alarm sounds, all employees stop work, secure nothing that requires more than a\nfew seconds, and leave by the nearest marked exit. Exit routes are posted on the evacuation maps at each\nexit door and in Appendix A. Warehouse staff leave by the east dock doors or the north pedestrian door.\nLaboratory staff leave by the laboratory's own exterior door on the south wall. Office staff leave by the\nmain entrance or the west stairwell. Do not use the freight lift. Do not return for belongings.\nThe assembly point is the far north end of the visitor parking lot, beside the flagpole, at least 150 feet\nfrom the building. Employees assigned as floor wardens (one per area, listed on the warden roster posted\nbeside each evacuation map) sweep their area, close doors behind them, and report to the assembly point.\nFor a chemical release outdoors or a hazard that makes leaving the building unsafe, the shelter-in-place\nsignal sounds. Employees move to the interior conference room or the laboratory corridor, close doors,\nand the facilities lead shuts down the building ventilation from the mechanical room panel.\n4. Accounting for employees after evacuation\nAt the assembly point each floor warden takes a headcount of the people from their area against the daily\nsign-in sheet and the visitor log, which the receptionist brings out. Any person unaccounted for is reported\nat once to the incident coordinator at the assembly point, who passes the information to the fire\ndepartment on arrival. No one re-enters the building until the fire department or the incident coordinator\ngives the all-clear. Evacuation drills are held twice a year, in spring and autumn.\n5. Rescue and medical duties\nEmployees do not attempt rescue inside the building. First aid is given at the assembly point by the\ntrained first-aid responders (two per shift, named on the warden roster), who bring the first-aid kit and the\nAED from the front office. An employee exposed to a chemical is taken to the emergency shower and\neyewash at the loading dock if it can be reached safely, or to the assembly point, and the SDS for the\nproduct is brought to the responders. Emergency medical services are called for any injury beyond minor\nfirst aid.\n6. Training and review\nEvery new employee is walked through this plan, the exit routes for their work area and the assembly\npoint on their first day. Floor wardens and first-aid responders are trained annually. The plan is reviewed\nwith all employees whenever it is changed and whenever an employee's responsibilities under it change.\nThe facilities lead reviews the plan every January and updates the evacuation maps whenever the building\nlayout changes.\nAppendix A: Evacuation maps (warehouse, laboratory, offices)\nAppendix B: Floor warden and first-aid responder roster (posted beside each evacuation map)",
+    "started_at": "2026-09-29T18:34:28.303Z"
+  }
+}

@@ -1,0 +1,542 @@
+{
+  "case": "01-eap-chemical",
+  "run": 1,
+  "run_date": "2026-09-29",
+  "model": "claude-haiku-4-5",
+  "structured": true,
+  "searches": 2,
+  "cited_sources": 0,
+  "prompt_sha256": "0b2d58291b99da9240010cb9a5d4066f24c91a79ae8ac9e9919ac6250646c7f3",
+  "scan_id": "a1d97cb2-9160-4c1b-bea4-e9c9dfefeade",
+  "ai_call_id": "dc289c00-d2fc-4f75-bfb5-7a7b0214ecd6",
+  "company_context": "WHO THIS COMPANY IS\n  Name: Cascade Specialty Chemicals, LLC\n  Industry: chemical manufacturing (recorded as chemical-manufacturing)\n  Address: Portland, Oregon\n  State: Oregon\nTheir sites:\n  - Portland — 4410 NW Front Ave, Portland, Oregon 97210 (primary)\n\nWHAT A PERSON HAS CONFIRMED FROM A DOCUMENT\nEach of these was read in the named document and then confirmed by a person.\n  (nothing confirmed yet)\n\nLABELS ALREADY IN USE FOR THIS COMPANY\nAgencies:\n  (none yet)\nSubjects:\n  (none yet)\n\nFACT KEYS ALREADY IN USE FOR THIS COMPANY\n  (none yet)",
+  "company_context_sha256": "964ca6c5901e71c31c250d1c3b854546f4f889a8eab98289fe682a3fe0093bd8",
+  "wall_ms": 89179,
+  "cost_usd": 0.090006,
+  "input_tokens": 39686,
+  "output_tokens": 6064,
+  "json_parsed": true,
+  "compliant_found_in": [],
+  "alternative_pass": false,
+  "verdicts": {
+    "kind": {
+      "verdict": "NEAR",
+      "detail": "identity.kind = \"policy\" — the spec names this a near miss, reported not failed"
+    },
+    "agency-osha": {
+      "verdict": "FAIL",
+      "detail": "identity.agencies = [empty]"
+    },
+    "site-portland": {
+      "verdict": "PASS",
+      "detail": "identity.site = \"portland\""
+    },
+    "doc-date": {
+      "verdict": "PASS",
+      "detail": "identity.doc_date = 2021-02-01"
+    },
+    "doc-date-kind": {
+      "verdict": "PASS",
+      "detail": "identity.doc_date_kind = \"revised\""
+    },
+    "jurisdiction-oregon": {
+      "verdict": "PASS",
+      "detail": "identity.jurisdiction = [oregon | federal]"
+    },
+    "status": {
+      "verdict": "FAIL",
+      "detail": "status = \"not judged\""
+    },
+    "gap-reporting": {
+      "verdict": "FAIL",
+      "detail": "no item matched. gaps held: No evidence of annual review completion | Appendices A and B not provided | No written internal alert procedures for con | No documented incident coordinator designati | No procedures for non-English-speaking emplo | No procedure for account of off-site or remo | No reference to SDS accessibility or chemica | No description of safe shutdown procedures f | No mention of utility shutdown (water, gas,  | No documentation of first-aid responder cert | Drill documentation not described"
+    },
+    "gap-critical-operations": {
+      "verdict": "FAIL",
+      "detail": "no item matched. gaps held: No evidence of annual review completion | Appendices A and B not provided | No written internal alert procedures for con | No documented incident coordinator designati | No procedures for non-English-speaking emplo | No procedure for account of off-site or remo | No reference to SDS accessibility or chemica | No description of safe shutdown procedures f | No mention of utility shutdown (water, gas,  | No documentation of first-aid responder cert | Drill documentation not described"
+    },
+    "gap-contact-name": {
+      "verdict": "FAIL",
+      "detail": "no item matched. gaps held: No evidence of annual review completion | Appendices A and B not provided | No written internal alert procedures for con | No documented incident coordinator designati | No procedures for non-English-speaking emplo | No procedure for account of off-site or remo | No reference to SDS accessibility or chemica | No description of safe shutdown procedures f | No mention of utility shutdown (water, gas,  | No documentation of first-aid responder cert | Drill documentation not described"
+    },
+    "deadline-annual-review": {
+      "verdict": "PASS",
+      "detail": "deadlines: \"Annual plan review\" [annual, january, review, plan]"
+    },
+    "deadline-drills": {
+      "verdict": "PASS",
+      "detail": "deadlines: \"Evacuation drills\" [drill, twice, year, evacuation]"
+    },
+    "fact-42-employees": {
+      "verdict": "PASS",
+      "detail": "facts: \"employee_count\" [42, employees, portland]"
+    },
+    "label-consistency": {
+      "verdict": "CROSS",
+      "detail": "judged across the three runs, below"
+    },
+    "no-false-alarm-gap": {
+      "verdict": "PASS",
+      "detail": "not raised as such; 3 item(s) mention it — read below",
+      "soft": [
+        {
+          "where": "gaps",
+          "text": "No written internal alert procedures for contractors and visitors / The plan states it 'applies to...contractors and visitors while on site' and Section 2 describes the alarm system, but does not include procedures for how contractors and visitors are notified of the plan, shown the assembly point, or briefed on evacuation procedures before beginning work. / Add or clarify a section requiring contractors and visitors to receive a brief orientation to the alarm signals, evacuation route for their work area, and assembly point location before starting work, with documentation of acknowledgment. / 29 CFR 1910.38(a) requires procedures for employees and other on-site personnel; best practice also requires contractors be instructed in emergency procedures under 29 CFR 1910.119 (PSM) if applicable, or OSHA 3088 guidance on contractor coordination. / https://www.osha.gov/publications/osha3088 / Section 1 (Purpose and scope) / inferred / It applies to all 42 employees at the Portland facility, including warehouse, drivers, laboratory and office staff, and to contractors and visitors while on site."
+        },
+        {
+          "where": "gaps",
+          "text": "No procedures for non-English-speaking employees / The plan does not address how employees who do not speak English fluently will understand the alarm signals, evacuation instructions, or briefings. For a facility handling hazardous chemicals, this is a significant gap if any portion of the 42-person workforce is non-English-speaking. / If any employees are non-English-speaking, provide translated key information (at minimum: alarm meanings, evacuation routes, assembly point location) and confirm comprehension through briefing or demonstration. / Oregon OSHA and OSHA require emergency procedures be communicated to all employees; Title VII and workplace safety standards generally require meaningful access to safety information for all workers. / https://www.osha.gov/sites/default/files/publications/OSHA3088.pdf / Section 1 (Purpose and scope) and Section 6 (Training) / inferred / Every new employee is walked through this plan, the exit routes for their work area and the assembly point on their first day."
+        },
+        {
+          "where": "gaps",
+          "text": "No description of safe shutdown procedures for in-process chemical operations / The plan does not address shutdown procedures for active chemical processes (blending, reactions, distillation, etc.) before evacuation. This is critical for a manufacturing facility; evacuation may create hazardous conditions if equipment or reactions are left unattended. / Add a section describing which processes (if any) must be partially or fully shut down before evacuation, who is responsible for each shutdown step, and any personnel who may remain at specific posts temporarily to execute safe shutdown procedures. / OSHA guidance (OSHA 3088 and 1910.38 Appendix A) notes that essential plant operations may require certain employees to remain temporarily to execute safe shutdown; 29 CFR 1910.119 (PSM) requires procedures for emergency operations. / https://www.osha.gov/sites/default/files/publications/OSHA3088.pdf / Section 3, Evacuation procedures / inferred / When the continuous alarm sounds, all employees stop work, secure nothing that requires more than a few seconds, and leave by the nearest marked exit."
+        }
+      ]
+    },
+    "no-false-evacuation-gap": {
+      "verdict": "PASS",
+      "detail": "not raised as such; 6 item(s) mention it — read below",
+      "soft": [
+        {
+          "where": "gaps",
+          "text": "No evidence of annual review completion / Section 6 states 'The facilities lead reviews the plan every January' but the document shows only one revision date (February 2021). No log or memo documenting the annual reviews for 2022, 2023, 2024, 2025, or 2026 is attached or referenced. / Maintain a written record of each January review, signed by the facilities lead and dated, noting whether updates were needed and what changes (if any) were made to the plan or evacuation maps. / 29 CFR 1910.38(a) and Oregon OSHA 437-002-0042 require emergency action plans be in writing and kept current; annual review practice should be documented to show compliance. / https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.38 / Section 6, Training and review / read / The facilities lead reviews the plan every January and updates the evacuation maps whenever the building layout changes."
+        },
+        {
+          "where": "gaps",
+          "text": "Appendices A and B not provided / The document references Appendix A (evacuation maps) and Appendix B (floor warden and first-aid responder roster) but these critical materials are not included. The plan cannot be fully evaluated for completeness without seeing the actual evacuation maps, warden roster, and responder names. / Obtain and attach the current evacuation maps (Appendix A) and the current floor warden and first-aid responder roster (Appendix B) to verify they are up to date and complete. / 29 CFR 1910.38(a) requires exit routes to be identified and an evacuation plan with specific assignments of personnel; rosters must be current. / https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.38 / Section 3 (references to Appendix A) and Section 5 (references to Appendix B) / read / Appendix A: Evacuation maps (warehouse, laboratory, offices); Appendix B: Floor warden and first-aid responder roster (posted beside each evacuation map)"
+        },
+        {
+          "where": "gaps",
+          "text": "No written internal alert procedures for contractors and visitors / The plan states it 'applies to...contractors and visitors while on site' and Section 2 describes the alarm system, but does not include procedures for how contractors and visitors are notified of the plan, shown the assembly point, or briefed on evacuation procedures before beginning work. / Add or clarify a section requiring contractors and visitors to receive a brief orientation to the alarm signals, evacuation route for their work area, and assembly point location before starting work, with documentation of acknowledgment. / 29 CFR 1910.38(a) requires procedures for employees and other on-site personnel; best practice also requires contractors be instructed in emergency procedures under 29 CFR 1910.119 (PSM) if applicable, or OSHA 3088 guidance on contractor coordination. / https://www.osha.gov/publications/osha3088 / Section 1 (Purpose and scope) / inferred / It applies to all 42 employees at the Portland facility, including warehouse, drivers, laboratory and office staff, and to contractors and visitors while on site."
+        },
+        {
+          "where": "gaps",
+          "text": "No procedures for non-English-speaking employees / The plan does not address how employees who do not speak English fluently will understand the alarm signals, evacuation instructions, or briefings. For a facility handling hazardous chemicals, this is a significant gap if any portion of the 42-person workforce is non-English-speaking. / If any employees are non-English-speaking, provide translated key information (at minimum: alarm meanings, evacuation routes, assembly point location) and confirm comprehension through briefing or demonstration. / Oregon OSHA and OSHA require emergency procedures be communicated to all employees; Title VII and workplace safety standards generally require meaningful access to safety information for all workers. / https://www.osha.gov/sites/default/files/publications/OSHA3088.pdf / Section 1 (Purpose and scope) and Section 6 (Training) / inferred / Every new employee is walked through this plan, the exit routes for their work area and the assembly point on their first day."
+        },
+        {
+          "where": "gaps",
+          "text": "No description of safe shutdown procedures for in-process chemical operations / The plan does not address shutdown procedures for active chemical processes (blending, reactions, distillation, etc.) before evacuation. This is critical for a manufacturing facility; evacuation may create hazardous conditions if equipment or reactions are left unattended. / Add a section describing which processes (if any) must be partially or fully shut down before evacuation, who is responsible for each shutdown step, and any personnel who may remain at specific posts temporarily to execute safe shutdown procedures. / OSHA guidance (OSHA 3088 and 1910.38 Appendix A) notes that essential plant operations may require certain employees to remain temporarily to execute safe shutdown; 29 CFR 1910.119 (PSM) requires procedures for emergency operations. / https://www.osha.gov/sites/default/files/publications/OSHA3088.pdf / Section 3, Evacuation procedures / inferred / When the continuous alarm sounds, all employees stop work, secure nothing that requires more than a few seconds, and leave by the nearest marked exit."
+        },
+        {
+          "where": "gaps",
+          "text": "No mention of utility shutdown (water, gas, electricity) during emergency / For a chemical facility, emergency procedures may require shutting off natural gas, electricity, or water supplies to prevent fires, explosions, or chemical reactions. The plan does not address this or identify who is authorized and trained to do so. / If utility shutdown is necessary, identify the location of main shut-off points, who is trained and authorized to shut them off, and when (e.g., before evacuation for gas/electricity, but only on incident coordinator authority). / OSHA 1910.119 (PSM) requires procedures for managing chemical processes during emergencies; best practice for chemical facilities includes utility shutdown procedures. / https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.119 / Section 3, Evacuation procedures and Section 6, Training and review / inferred / the facilities lead shuts down the building ventilation from the mechanical room panel."
+        }
+      ]
+    },
+    "no-false-headcount-gap": {
+      "verdict": "PASS",
+      "detail": "not raised as such; 3 item(s) mention it — read below",
+      "soft": [
+        {
+          "where": "gaps",
+          "text": "No documented incident coordinator designation or backup / Section 4 refers to 'the incident coordinator at the assembly point' who receives reports and communicates with fire department, but does not name the incident coordinator, specify when this role is activated, or identify a backup if the primary coordinator is unavailable. / Name the designated incident coordinator (or specify the title/position), identify one or more backups by name or title, and document how the role is assigned for each shift (day, evening, night) and weekends. / 29 CFR 1910.38(a)(1) requires an emergency action plan to identify who is responsible for emergency response; OSHA interpretation and PSM standards require clear assignment of emergency response duties. / https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.38 / Section 4, Accounting for employees after evacuation / inferred / Any person unaccounted for is reported at once to the incident coordinator at the assembly point, who passes the information to the fire department on arrival."
+        },
+        {
+          "where": "gaps",
+          "text": "No procedure for account of off-site or remote workers / The plan does not clarify how to account for employees who may be off-site during an emergency (e.g., delivery drivers, field technicians, sales representatives). The accountability procedure in Section 4 assumes all personnel are at the facility. / Add a note stating whether any employees regularly work off-site and, if so, describe how they are accounted for in an emergency (e.g., by a separate call-in procedure, manager check-in, etc.). / 29 CFR 1910.38 and OSHA guidance require accounting for all employees; if none work remotely, clarify that; if some do, plan must address it. / https://www.osha.gov/sites/default/files/publications/OSHA3088.pdf / Section 4, Accounting for employees after evacuation / inferred / At the assembly point each floor warden takes a headcount of the people from their area against the daily sign-in sheet and the visitor log, which the receptionist brings out."
+        },
+        {
+          "where": "gaps",
+          "text": "Drill documentation not described / Section 4 states 'Evacuation drills are held twice a year, in spring and autumn' but the plan does not require written documentation of drill results, dates, attendance, problems identified, or corrective actions taken. / Add a requirement to document each drill with the date, number of participants, time to evacuate, any problems observed, and corrective actions taken. Maintain these records for review during inspections. / OSHA 1910.38 requires plans be effective; 29 CFR 1910.38 Appendix A recommends periodic testing and revision; OSHA interprets this to require documentation of drills. / https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.38 / Section 4, Accounting for employees after evacuation / inferred / Evacuation drills are held twice a year, in spring and autumn."
+        }
+      ]
+    },
+    "no-false-rescue-gap": {
+      "verdict": "PASS",
+      "detail": "not raised as such; 2 item(s) mention it — read below",
+      "soft": [
+        {
+          "where": "gaps",
+          "text": "No reference to SDS accessibility or chemical inventory / Section 5 states that 'the SDS for the product is brought to the responders' for a chemically-exposed employee, but does not specify where SDSs are stored, how they are indexed, or how quickly they can be retrieved during an emergency. For a chemical manufacturing facility, easy access to SDS for all on-site chemicals is critical. / Clarify where SDSs are stored (e.g., online database, hardcopy binder at first-aid station), how responders access them quickly (by chemical name, CAS number, product code), and confirm backup access method if primary system is unavailable. / 29 CFR 1910.1200 (Hazard Communication) requires SDSs be readily available; 29 CFR 1910.38 requires plans to address emergency medical care; 1910.119 (PSM) requires process documentation including SDSs. / https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.1200 / Section 5, Rescue and medical duties / inferred / An employee exposed to a chemical is taken to the emergency shower and eyewash at the loading dock if it can be reached safely, or to the assembly point, and the SDS for the product is brought to the responders."
+        },
+        {
+          "where": "gaps",
+          "text": "No documentation of first-aid responder certification or AED readiness / Section 5 mentions trained first-aid responders and an AED but does not specify: (a) which certifications they hold (CPR, first aid, wilderness first aid, etc.), (b) expiration dates of certifications, (c) when the AED was last inspected or had its pads/battery checked, or (d) a schedule for recertification. / Document for each first-aid responder their certifications (type and expiration date). Establish and document a schedule for annual recertification and monthly AED maintenance checks. / OSHA 1910.38 and best practice require competent first-aid personnel; AED manufacturers and AHA guidelines require regular maintenance and battery/pad replacement. / https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.38 / Section 5, Rescue and medical duties, and Section 6, Training and review / inferred / First aid is given at the assembly point by the trained first-aid responders (two per shift, named on the warden roster), who bring the first-aid kit and the AED from the front office."
+        }
+      ]
+    },
+    "freshness-five-years": {
+      "verdict": "PASS",
+      "detail": "[five years, 2021]"
+    },
+    "fact-alarm-monitored": {
+      "verdict": "PASS",
+      "detail": "facts: \"alarm_coverage_areas\" [monitored, alarm]"
+    },
+    "conditions-none-expected": {
+      "verdict": "PASS",
+      "detail": "none"
+    },
+    "alarm-test-deadline": {
+      "verdict": "PASS",
+      "detail": "deadlines: \"Alarm system test\" [alarm, monday, test]"
+    }
+  },
+  "scan": {
+    "identity": {
+      "kind": "policy",
+      "title": "Emergency Action Plan",
+      "issuer": "Cascade Specialty Chemicals, LLC",
+      "agencies": [],
+      "subjects": [
+        "emergency_preparedness",
+        "workplace_safety",
+        "chemical_safety"
+      ],
+      "site": "Portland",
+      "jurisdiction": [
+        "Oregon",
+        "federal"
+      ],
+      "doc_date": "2021-02-01",
+      "doc_date_kind": "revised",
+      "page_refs": {}
+    },
+    "summary": "This is an internal emergency action plan for a 42-employee chemical manufacturing facility that describes evacuation procedures, alarm systems, employee accountability, first aid, and rescue duties in the event of fire, chemical release, medical emergency, or earthquake. The plan is the company's own policy document, not a permit or certificate issued by an agency.",
+    "status": "not_judged",
+    "significant_date": "2021-02-01",
+    "significant_date_kind": "revised",
+    "freshness_note": "This plan was revised in February 2021 and is now over five years old. Given that the plan states it is reviewed every January and requires evacuation map updates whenever building layout changes, it should be verified whether a more recent version exists (current date is September 2026).",
+    "gaps": [
+      {
+        "title": "No evidence of annual review completion",
+        "description": "Section 6 states 'The facilities lead reviews the plan every January' but the document shows only one revision date (February 2021). No log or memo documenting the annual reviews for 2022, 2023, 2024, 2025, or 2026 is attached or referenced.",
+        "fix": "Maintain a written record of each January review, signed by the facilities lead and dated, noting whether updates were needed and what changes (if any) were made to the plan or evacuation maps.",
+        "citation": "29 CFR 1910.38(a) and Oregon OSHA 437-002-0042 require emergency action plans be in writing and kept current; annual review practice should be documented to show compliance.",
+        "citation_url": "https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.38",
+        "locator": "Section 6, Training and review",
+        "draftable": true,
+        "basis": "read",
+        "quote": "The facilities lead reviews the plan every January and updates the evacuation maps whenever the building layout changes.",
+        "quote_verified": true,
+        "same_as_gap_id": null
+      },
+      {
+        "title": "Appendices A and B not provided",
+        "description": "The document references Appendix A (evacuation maps) and Appendix B (floor warden and first-aid responder roster) but these critical materials are not included. The plan cannot be fully evaluated for completeness without seeing the actual evacuation maps, warden roster, and responder names.",
+        "fix": "Obtain and attach the current evacuation maps (Appendix A) and the current floor warden and first-aid responder roster (Appendix B) to verify they are up to date and complete.",
+        "citation": "29 CFR 1910.38(a) requires exit routes to be identified and an evacuation plan with specific assignments of personnel; rosters must be current.",
+        "citation_url": "https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.38",
+        "locator": "Section 3 (references to Appendix A) and Section 5 (references to Appendix B)",
+        "draftable": false,
+        "basis": "read",
+        "quote": "Appendix A: Evacuation maps (warehouse, laboratory, offices); Appendix B: Floor warden and first-aid responder roster (posted beside each evacuation map)",
+        "quote_verified": true,
+        "same_as_gap_id": null
+      },
+      {
+        "title": "No written internal alert procedures for contractors and visitors",
+        "description": "The plan states it 'applies to...contractors and visitors while on site' and Section 2 describes the alarm system, but does not include procedures for how contractors and visitors are notified of the plan, shown the assembly point, or briefed on evacuation procedures before beginning work.",
+        "fix": "Add or clarify a section requiring contractors and visitors to receive a brief orientation to the alarm signals, evacuation route for their work area, and assembly point location before starting work, with documentation of acknowledgment.",
+        "citation": "29 CFR 1910.38(a) requires procedures for employees and other on-site personnel; best practice also requires contractors be instructed in emergency procedures under 29 CFR 1910.119 (PSM) if applicable, or OSHA 3088 guidance on contractor coordination.",
+        "citation_url": "https://www.osha.gov/publications/osha3088",
+        "locator": "Section 1 (Purpose and scope)",
+        "draftable": true,
+        "basis": "inferred",
+        "quote": "It applies to all 42 employees at the Portland facility, including warehouse, drivers, laboratory and office staff, and to contractors and visitors while on site.",
+        "quote_verified": true,
+        "same_as_gap_id": null
+      },
+      {
+        "title": "No documented incident coordinator designation or backup",
+        "description": "Section 4 refers to 'the incident coordinator at the assembly point' who receives reports and communicates with fire department, but does not name the incident coordinator, specify when this role is activated, or identify a backup if the primary coordinator is unavailable.",
+        "fix": "Name the designated incident coordinator (or specify the title/position), identify one or more backups by name or title, and document how the role is assigned for each shift (day, evening, night) and weekends.",
+        "citation": "29 CFR 1910.38(a)(1) requires an emergency action plan to identify who is responsible for emergency response; OSHA interpretation and PSM standards require clear assignment of emergency response duties.",
+        "citation_url": "https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.38",
+        "locator": "Section 4, Accounting for employees after evacuation",
+        "draftable": true,
+        "basis": "inferred",
+        "quote": "Any person unaccounted for is reported at once to the incident coordinator at the assembly point, who passes the information to the fire department on arrival.",
+        "quote_verified": true,
+        "same_as_gap_id": null
+      },
+      {
+        "title": "No procedures for non-English-speaking employees",
+        "description": "The plan does not address how employees who do not speak English fluently will understand the alarm signals, evacuation instructions, or briefings. For a facility handling hazardous chemicals, this is a significant gap if any portion of the 42-person workforce is non-English-speaking.",
+        "fix": "If any employees are non-English-speaking, provide translated key information (at minimum: alarm meanings, evacuation routes, assembly point location) and confirm comprehension through briefing or demonstration.",
+        "citation": "Oregon OSHA and OSHA require emergency procedures be communicated to all employees; Title VII and workplace safety standards generally require meaningful access to safety information for all workers.",
+        "citation_url": "https://www.osha.gov/sites/default/files/publications/OSHA3088.pdf",
+        "locator": "Section 1 (Purpose and scope) and Section 6 (Training)",
+        "draftable": true,
+        "basis": "inferred",
+        "quote": "Every new employee is walked through this plan, the exit routes for their work area and the assembly point on their first day.",
+        "quote_verified": true,
+        "same_as_gap_id": null
+      },
+      {
+        "title": "No procedure for account of off-site or remote workers",
+        "description": "The plan does not clarify how to account for employees who may be off-site during an emergency (e.g., delivery drivers, field technicians, sales representatives). The accountability procedure in Section 4 assumes all personnel are at the facility.",
+        "fix": "Add a note stating whether any employees regularly work off-site and, if so, describe how they are accounted for in an emergency (e.g., by a separate call-in procedure, manager check-in, etc.).",
+        "citation": "29 CFR 1910.38 and OSHA guidance require accounting for all employees; if none work remotely, clarify that; if some do, plan must address it.",
+        "citation_url": "https://www.osha.gov/sites/default/files/publications/OSHA3088.pdf",
+        "locator": "Section 4, Accounting for employees after evacuation",
+        "draftable": true,
+        "basis": "inferred",
+        "quote": "At the assembly point each floor warden takes a headcount of the people from their area against the daily sign-in sheet and the visitor log, which the receptionist brings out.",
+        "quote_verified": true,
+        "same_as_gap_id": null
+      },
+      {
+        "title": "No reference to SDS accessibility or chemical inventory",
+        "description": "Section 5 states that 'the SDS for the product is brought to the responders' for a chemically-exposed employee, but does not specify where SDSs are stored, how they are indexed, or how quickly they can be retrieved during an emergency. For a chemical manufacturing facility, easy access to SDS for all on-site chemicals is critical.",
+        "fix": "Clarify where SDSs are stored (e.g., online database, hardcopy binder at first-aid station), how responders access them quickly (by chemical name, CAS number, product code), and confirm backup access method if primary system is unavailable.",
+        "citation": "29 CFR 1910.1200 (Hazard Communication) requires SDSs be readily available; 29 CFR 1910.38 requires plans to address emergency medical care; 1910.119 (PSM) requires process documentation including SDSs.",
+        "citation_url": "https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.1200",
+        "locator": "Section 5, Rescue and medical duties",
+        "draftable": true,
+        "basis": "inferred",
+        "quote": "An employee exposed to a chemical is taken to the emergency shower and eyewash at the loading dock if it can be reached safely, or to the assembly point, and the SDS for the product is brought to the responders.",
+        "quote_verified": true,
+        "same_as_gap_id": null
+      },
+      {
+        "title": "No description of safe shutdown procedures for in-process chemical operations",
+        "description": "The plan does not address shutdown procedures for active chemical processes (blending, reactions, distillation, etc.) before evacuation. This is critical for a manufacturing facility; evacuation may create hazardous conditions if equipment or reactions are left unattended.",
+        "fix": "Add a section describing which processes (if any) must be partially or fully shut down before evacuation, who is responsible for each shutdown step, and any personnel who may remain at specific posts temporarily to execute safe shutdown procedures.",
+        "citation": "OSHA guidance (OSHA 3088 and 1910.38 Appendix A) notes that essential plant operations may require certain employees to remain temporarily to execute safe shutdown; 29 CFR 1910.119 (PSM) requires procedures for emergency operations.",
+        "citation_url": "https://www.osha.gov/sites/default/files/publications/OSHA3088.pdf",
+        "locator": "Section 3, Evacuation procedures",
+        "draftable": true,
+        "basis": "inferred",
+        "quote": "When the continuous alarm sounds, all employees stop work, secure nothing that requires more than a few seconds, and leave by the nearest marked exit.",
+        "quote_verified": true,
+        "same_as_gap_id": null
+      },
+      {
+        "title": "No mention of utility shutdown (water, gas, electricity) during emergency",
+        "description": "For a chemical facility, emergency procedures may require shutting off natural gas, electricity, or water supplies to prevent fires, explosions, or chemical reactions. The plan does not address this or identify who is authorized and trained to do so.",
+        "fix": "If utility shutdown is necessary, identify the location of main shut-off points, who is trained and authorized to shut them off, and when (e.g., before evacuation for gas/electricity, but only on incident coordinator authority).",
+        "citation": "OSHA 1910.119 (PSM) requires procedures for managing chemical processes during emergencies; best practice for chemical facilities includes utility shutdown procedures.",
+        "citation_url": "https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.119",
+        "locator": "Section 3, Evacuation procedures and Section 6, Training and review",
+        "draftable": true,
+        "basis": "inferred",
+        "quote": "the facilities lead shuts down the building ventilation from the mechanical room panel.",
+        "quote_verified": true,
+        "same_as_gap_id": null
+      },
+      {
+        "title": "No documentation of first-aid responder certification or AED readiness",
+        "description": "Section 5 mentions trained first-aid responders and an AED but does not specify: (a) which certifications they hold (CPR, first aid, wilderness first aid, etc.), (b) expiration dates of certifications, (c) when the AED was last inspected or had its pads/battery checked, or (d) a schedule for recertification.",
+        "fix": "Document for each first-aid responder their certifications (type and expiration date). Establish and document a schedule for annual recertification and monthly AED maintenance checks.",
+        "citation": "OSHA 1910.38 and best practice require competent first-aid personnel; AED manufacturers and AHA guidelines require regular maintenance and battery/pad replacement.",
+        "citation_url": "https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.38",
+        "locator": "Section 5, Rescue and medical duties, and Section 6, Training and review",
+        "draftable": true,
+        "basis": "inferred",
+        "quote": "First aid is given at the assembly point by the trained first-aid responders (two per shift, named on the warden roster), who bring the first-aid kit and the AED from the front office.",
+        "quote_verified": true,
+        "same_as_gap_id": null
+      },
+      {
+        "title": "Drill documentation not described",
+        "description": "Section 4 states 'Evacuation drills are held twice a year, in spring and autumn' but the plan does not require written documentation of drill results, dates, attendance, problems identified, or corrective actions taken.",
+        "fix": "Add a requirement to document each drill with the date, number of participants, time to evacuate, any problems observed, and corrective actions taken. Maintain these records for review during inspections.",
+        "citation": "OSHA 1910.38 requires plans be effective; 29 CFR 1910.38 Appendix A recommends periodic testing and revision; OSHA interprets this to require documentation of drills.",
+        "citation_url": "https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.38",
+        "locator": "Section 4, Accounting for employees after evacuation",
+        "draftable": true,
+        "basis": "inferred",
+        "quote": "Evacuation drills are held twice a year, in spring and autumn.",
+        "quote_verified": true,
+        "same_as_gap_id": null
+      }
+    ],
+    "conditions": [],
+    "deadlines": [
+      {
+        "title": "Alarm system test",
+        "due_on": null,
+        "source_line": "The alarm is tested on the first Monday of each month by the facilities lead.",
+        "recurs": true
+      },
+      {
+        "title": "Annual plan review",
+        "due_on": null,
+        "source_line": "The facilities lead reviews the plan every January and updates the evacuation maps whenever the building layout changes.",
+        "recurs": true
+      },
+      {
+        "title": "Annual training for floor wardens and first-aid responders",
+        "due_on": null,
+        "source_line": "Floor wardens and first-aid responders are trained annually.",
+        "recurs": true
+      },
+      {
+        "title": "Evacuation drills",
+        "due_on": null,
+        "source_line": "Evacuation drills are held twice a year, in spring and autumn.",
+        "recurs": true
+      }
+    ],
+    "facts": [
+      {
+        "key": "employee_count",
+        "value": "42",
+        "quote": "It applies to all 42 employees at the Portland facility, including warehouse, drivers, laboratory and office staff",
+        "locator": "Section 1, Purpose and scope",
+        "as_of": "2021-02-01",
+        "affects": "Determines the scale and complexity of the emergency action plan; informs whether plan is proportionate to facility size",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "facility_address",
+        "value": "4410 NW Front Avenue, Portland, Oregon 97210",
+        "quote": "Portland Facility, 4410 NW Front Avenue, Portland, Oregon 97210",
+        "locator": "Cover page and Section 1",
+        "as_of": "2021-02-01",
+        "affects": "Identifies the precise location of the facility and assembly point location",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "alarm_coverage_areas",
+        "value": "Warehouse, laboratory, loading dock, and offices",
+        "quote": "The building has a monitored fire alarm system with audible horns and strobe lights in the warehouse, laboratory, loading dock and offices.",
+        "locator": "Section 2, Alarm system",
+        "as_of": "2021-02-01",
+        "affects": "Determines whether all work areas are covered by emergency notification systems",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "alarm_monitoring_service",
+        "value": "Cascade Fire & Safety, monitored 24 hours a day",
+        "quote": "The alarm is monitored 24 hours a day by Cascade Fire & Safety under a service contract.",
+        "locator": "Section 2, Alarm system",
+        "as_of": "2021-02-01",
+        "affects": "Confirms external agency involvement in fire detection and emergency response coordination",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "assembly_point_distance",
+        "value": "At least 150 feet from the building",
+        "quote": "The assembly point is the far north end of the visitor parking lot, beside the flagpole, at least 150 feet from the building.",
+        "locator": "Section 3, Evacuation procedures",
+        "as_of": "2021-02-01",
+        "affects": "Verifies assembly point meets OSHA recommendations for safe distance from hazard source",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "first_aid_responders_per_shift",
+        "value": "Two per shift",
+        "quote": "First aid is given at the assembly point by the trained first-aid responders (two per shift, named on the warden roster)",
+        "locator": "Section 5, Rescue and medical duties",
+        "as_of": "2021-02-01",
+        "affects": "Determines adequacy of first-aid coverage; two is minimum for dual coverage if one is needed elsewhere",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "emergency_shower_and_eyewash_location",
+        "value": "Loading dock",
+        "quote": "An employee exposed to a chemical is taken to the emergency shower and eyewash at the loading dock if it can be reached safely",
+        "locator": "Section 5, Rescue and medical duties",
+        "as_of": "2021-02-01",
+        "affects": "Critical for chemical exposure response; should verify equipment is inspected regularly and accessible",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "alarm_test_frequency",
+        "value": "First Monday of each month",
+        "quote": "The alarm is tested on the first Monday of each month by the facilities lead.",
+        "locator": "Section 2, Alarm system",
+        "as_of": "2021-02-01",
+        "affects": "Verifies alarm system functionality on regular basis; meets OSHA requirements for system testing",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "new_employee_orientation",
+        "value": "Walked through plan, exit routes, and assembly point on first day",
+        "quote": "Every new employee is walked through this plan, the exit routes for their work area and the assembly point on their first day.",
+        "locator": "Section 6, Training and review",
+        "as_of": "2021-02-01",
+        "affects": "Confirms initial safety training is provided to all employees; no documentation method specified",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "alarm_signal_meanings",
+        "value": "Continuous horn = evacuate; three short horns repeated = shelter in place",
+        "quote": "A continuous horn means evacuate. Three short horns repeated means shelter in place because of an outdoor hazard.",
+        "locator": "Section 2, Alarm system",
+        "as_of": "2021-02-01",
+        "affects": "Employees must recognize and respond to alarm signals correctly; affects response speed and appropriateness",
+        "basis": "read",
+        "quote_verified": true
+      }
+    ],
+    "version_of": {
+      "title": null,
+      "confidence": "low"
+    },
+    "expected_missing": [
+      {
+        "title": "Fire Prevention Plan",
+        "why": "OSHA 29 CFR 1910.38(b) requires employers subject to emergency action plan rules to also maintain a written fire prevention plan, often as a separate but coordinated document.",
+        "basis": "Similar manufacturing facilities typically hold a separate fire prevention plan covering hazardous materials storage, hot work procedures, electrical maintenance, and fire suppression equipment maintenance."
+      },
+      {
+        "title": "Hazardous Chemical Inventory",
+        "why": "For a chemical manufacturing facility, a current inventory of all hazardous chemicals on-site (with quantities and SDSs) should accompany the emergency action plan.",
+        "basis": "OSHA 1910.1200 (Hazard Communication) and 1910.119 (PSM) require chemical inventory; 1910.38 requires plan to address hazardous materials present."
+      },
+      {
+        "title": "Process Safety Management (PSM) Program documentation",
+        "why": "If this facility manufactures or handles highly hazardous chemicals above threshold quantities (per 29 CFR 1910.119 Appendix A), a PSM program and associated mechanical integrity, procedures, and training documents should exist.",
+        "basis": "A chemical-manufacturing facility is likely to fall under PSM if producing or storing chemicals like chlorine, ammonia, phosgene, or flammable liquids at or above threshold quantities."
+      },
+      {
+        "title": "Building layout drawings with hazard zones",
+        "why": "Emergency action plans for facilities with hazardous materials often reference hazard zones (e.g., 'flammable storage area,' 'reactive chemistry lab') on building drawings to clarify which shelter-in-place area to use and why.",
+        "basis": "Appendix A references evacuations maps but does not appear to include hazard-zone labeling typical of chemical facilities."
+      },
+      {
+        "title": "Emergency contact roster with 24/7 availability",
+        "why": "A current emergency contact list (facilities manager, plant manager, emergency coordinator, fire department, poison control, local hospital) should be maintained separately and accessible at the assembly point.",
+        "basis": "OSHA 1910.38 does not explicitly require this but OSHA 3088 guidance and best practice recommend it, especially for chemical facilities."
+      },
+      {
+        "title": "Mutual aid or mutual response agreements",
+        "why": "If the facility has agreements with neighboring businesses or the local fire department for emergency response, these should be documented.",
+        "basis": "Some chemical facilities establish mutual-aid arrangements with neighboring tenants or off-site emergency response teams."
+      },
+      {
+        "title": "Permit-required confined spaces (PRCS) procedures",
+        "why": "If the facility has confined spaces (tanks, vessels, sumps), a Permit-Required Confined Space program (29 CFR 1910.146) must accompany the emergency action plan.",
+        "basis": "Chemical manufacturing facilities often have reactors, storage tanks, or mixing vessels that may require confined-space entry and emergency rescue procedures."
+      },
+      {
+        "title": "SOP for chemical-specific emergency response",
+        "why": "Beyond general evacuation, chemical-specific procedures (e.g., 'if acetic acid spills, do X; if peroxide spills, do Y') should be referenced in or appended to the plan.",
+        "basis": "OSHA 1910.119 and OSHA 1910.120 (HAZWOPER) require procedures for anticipated chemical emergencies; standard practice is a cross-referenced emergency-response SOP."
+      },
+      {
+        "title": "Feedback mechanism from drills and incidents",
+        "why": "A procedure for capturing lessons learned from evacuation drills and any actual incidents, with documented follow-up and plan improvements, is not described.",
+        "basis": "OSHA 1910.38 Appendix A and best practice require plans be reviewed and revised; a formal feedback loop ensures continuous improvement."
+      }
+    ],
+    "confidence_notes": "Confidence is high that this is an internal emergency action plan document issued by Cascade Specialty Chemicals and that the content accurately reflects sections 1–6 as written. The plan appears to address the core OSHA 1910.38(a) requirements for general industry (evacuation policy, alarm procedures, accountability, rescue duties, training). However, confidence in completeness is lower because: (1) The appendices (evacuation maps and warden roster) are not provided, preventing verification that names, assignments, and layout are current. (2) The last revision date is February 2021, now over five years ago; the plan states annual review is conducted, but no documentation of 2022–2026 reviews is included. (3) For a chemical manufacturing facility, the plan does not explicitly reference whether it is also governed by OSHA 1910.119 (Process Safety Management) or 1910.120 (HAZWOPER/emergency response) rules, which would impose additional requirements beyond 1910.38 if applicable. Without knowing the specific chemicals stored/manufactured and their quantities, it is unclear whether PSM applies and whether the plan is sufficient under that standard. (4) No SDS inventory or reference procedure is detailed. (5) The procedure for safe shutdown of in-process chemical operations is absent, a significant gap for a manufacturing site. These gaps do not invalidate the plan as an emergency action plan; they indicate areas where the plan requires supplementation or verification. The plan meets basic OSHA 1910.38 form requirements but may not be sufficient if PSM or HAZWOPER standards apply to this facility's operations.",
+    "could_not_read": {
+      "reason": null,
+      "way_forward": null
+    },
+    "raw_text": "{\"identity\": {\"kind\": \"policy\", \"title\": \"Emergency Action Plan\", \"issuer\": \"Cascade Specialty Chemicals, LLC\", \"agencies\": [], \"subjects\": [\"emergency_preparedness\", \"workplace_safety\", \"chemical_safety\"], \"site\": \"Portland\", \"jurisdiction\": [\"Oregon\", \"federal\"], \"doc_date\": \"2021-02-01\", \"doc_date_kind\": \"revised\"}, \"summary\": \"This is an internal emergency action plan for a 42-employee chemical manufacturing facility that describes evacuation procedures, alarm systems, employee accountability, first aid, and rescue duties in the event of fire, chemical release, medical emergency, or earthquake. The plan is the company's own policy document, not a permit or certificate issued by an agency.\", \"status\": \"not_judged\", \"significant_date\": \"2021-02-01\", \"significant_date_kind\": \"revised_on\", \"freshness_note\": \"This plan was revised in February 2021 and is now over five years old. Given that the plan states it is reviewed every January and requires evacuation map updates whenever building layout changes, it should be verified whether a more recent version exists (current date is September 2026).\", \"gaps\": [{\"title\": \"No evidence of annual review completion\", \"description\": \"Section 6 states 'The facilities lead reviews the plan every January' but the document shows only one revision date (February 2021). No log or memo documenting the annual reviews for 2022, 2023, 2024, 2025, or 2026 is attached or referenced.\", \"fix\": \"Maintain a written record of each January review, signed by the facilities lead and dated, noting whether updates were needed and what changes (if any) were made to the plan or evacuation maps.\", \"citation\": \"29 CFR 1910.38(a) and Oregon OSHA 437-002-0042 require emergency action plans be in writing and kept current; annual review practice should be documented to show compliance.\", \"citation_url\": \"https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.38\", \"locator\": \"Section 6, Training and review\", \"draftable\": true, \"basis\": \"read\", \"quote\": \"The facilities lead reviews the plan every January and updates the evacuation maps whenever the building layout changes.\", \"same_as_gap_id\": \"\"}, {\"title\": \"Appendices A and B not provided\", \"description\": \"The document references Appendix A (evacuation maps) and Appendix B (floor warden and first-aid responder roster) but these critical materials are not included. The plan cannot be fully evaluated for completeness without seeing the actual evacuation maps, warden roster, and responder names.\", \"fix\": \"Obtain and attach the current evacuation maps (Appendix A) and the current floor warden and first-aid responder roster (Appendix B) to verify they are up to date and complete.\", \"citation\": \"29 CFR 1910.38(a) requires exit routes to be identified and an evacuation plan with specific assignments of personnel; rosters must be current.\", \"citation_url\": \"https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.38\", \"locator\": \"Section 3 (references to Appendix A) and Section 5 (references to Appendix B)\", \"draftable\": false, \"basis\": \"read\", \"quote\": \"Appendix A: Evacuation maps (warehouse, laboratory, offices); Appendix B: Floor warden and first-aid responder roster (posted beside each evacuation map)\", \"same_as_gap_id\": \"\"}, {\"title\": \"No written internal alert procedures for contractors and visitors\", \"description\": \"The plan states it 'applies to...contractors and visitors while on site' and Section 2 describes the alarm system, but does not include procedures for how contractors and visitors are notified of the plan, shown the assembly point, or briefed on evacuation procedures before beginning work.\", \"fix\": \"Add or clarify a section requiring contractors and visitors to receive a brief orientation to the alarm signals, evacuation route for their work area, and assembly point location before starting work, with documentation of acknowledgment.\", \"citation\": \"29 CFR 1910.38(a) requires procedures for employees and other on-site personnel; best practice also requires contractors be instructed in emergency procedures under 29 CFR 1910.119 (PSM) if applicable, or OSHA 3088 guidance on contractor coordination.\", \"citation_url\": \"https://www.osha.gov/publications/osha3088\", \"locator\": \"Section 1 (Purpose and scope)\", \"draftable\": true, \"basis\": \"inferred\", \"quote\": \"It applies to all 42 employees at the Portland facility, including warehouse, drivers, laboratory and office staff, and to contractors and visitors while on site.\", \"same_as_gap_id\": \"\"}, {\"title\": \"No documented incident coordinator designation or backup\", \"description\": \"Section 4 refers to 'the incident coordinator at the assembly point' who receives reports and communicates with fire department, but does not name the incident coordinator, specify when this role is activated, or identify a backup if the primary coordinator is unavailable.\", \"fix\": \"Name the designated incident coordinator (or specify the title/position), identify one or more backups by name or title, and document how the role is assigned for each shift (day, evening, night) and weekends.\", \"citation\": \"29 CFR 1910.38(a)(1) requires an emergency action plan to identify who is responsible for emergency response; OSHA interpretation and PSM standards require clear assignment of emergency response duties.\", \"citation_url\": \"https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.38\", \"locator\": \"Section 4, Accounting for employees after evacuation\", \"draftable\": true, \"basis\": \"inferred\", \"quote\": \"Any person unaccounted for is reported at once to the incident coordinator at the assembly point, who passes the information to the fire department on arrival.\", \"same_as_gap_id\": \"\"}, {\"title\": \"No procedures for non-English-speaking employees\", \"description\": \"The plan does not address how employees who do not speak English fluently will understand the alarm signals, evacuation instructions, or briefings. For a facility handling hazardous chemicals, this is a significant gap if any portion of the 42-person workforce is non-English-speaking.\", \"fix\": \"If any employees are non-English-speaking, provide translated key information (at minimum: alarm meanings, evacuation routes, assembly point location) and confirm comprehension through briefing or demonstration.\", \"citation\": \"Oregon OSHA and OSHA require emergency procedures be communicated to all employees; Title VII and workplace safety standards generally require meaningful access to safety information for all workers.\", \"citation_url\": \"https://www.osha.gov/sites/default/files/publications/OSHA3088.pdf\", \"locator\": \"Section 1 (Purpose and scope) and Section 6 (Training)\", \"draftable\": true, \"basis\": \"inferred\", \"quote\": \"Every new employee is walked through this plan, the exit routes for their work area and the assembly point on their first day.\", \"same_as_gap_id\": \"\"}, {\"title\": \"No procedure for account of off-site or remote workers\", \"description\": \"The plan does not clarify how to account for employees who may be off-site during an emergency (e.g., delivery drivers, field technicians, sales representatives). The accountability procedure in Section 4 assumes all personnel are at the facility.\", \"fix\": \"Add a note stating whether any employees regularly work off-site and, if so, describe how they are accounted for in an emergency (e.g., by a separate call-in procedure, manager check-in, etc.).\", \"citation\": \"29 CFR 1910.38 and OSHA guidance require accounting for all employees; if none work remotely, clarify that; if some do, plan must address it.\", \"citation_url\": \"https://www.osha.gov/sites/default/files/publications/OSHA3088.pdf\", \"locator\": \"Section 4, Accounting for employees after evacuation\", \"draftable\": true, \"basis\": \"inferred\", \"quote\": \"At the assembly point each floor warden takes a headcount of the people from their area against the daily sign-in sheet and the visitor log, which the receptionist brings out.\", \"same_as_gap_id\": \"\"}, {\"title\": \"No reference to SDS accessibility or chemical inventory\", \"description\": \"Section 5 states that 'the SDS for the product is brought to the responders' for a chemically-exposed employee, but does not specify where SDSs are stored, how they are indexed, or how quickly they can be retrieved during an emergency. For a chemical manufacturing facility, easy access to SDS for all on-site chemicals is critical.\", \"fix\": \"Clarify where SDSs are stored (e.g., online database, hardcopy binder at first-aid station), how responders access them quickly (by chemical name, CAS number, product code), and confirm backup access method if primary system is unavailable.\", \"citation\": \"29 CFR 1910.1200 (Hazard Communication) requires SDSs be readily available; 29 CFR 1910.38 requires plans to address emergency medical care; 1910.119 (PSM) requires process documentation including SDSs.\", \"citation_url\": \"https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.1200\", \"locator\": \"Section 5, Rescue and medical duties\", \"draftable\": true, \"basis\": \"inferred\", \"quote\": \"An employee exposed to a chemical is taken to the emergency shower and eyewash at the loading dock if it can be reached safely, or to the assembly point, and the SDS for the product is brought to the responders.\", \"same_as_gap_id\": \"\"}, {\"title\": \"No description of safe shutdown procedures for in-process chemical operations\", \"description\": \"The plan does not address shutdown procedures for active chemical processes (blending, reactions, distillation, etc.) before evacuation. This is critical for a manufacturing facility; evacuation may create hazardous conditions if equipment or reactions are left unattended.\", \"fix\": \"Add a section describing which processes (if any) must be partially or fully shut down before evacuation, who is responsible for each shutdown step, and any personnel who may remain at specific posts temporarily to execute safe shutdown procedures.\", \"citation\": \"OSHA guidance (OSHA 3088 and 1910.38 Appendix A) notes that essential plant operations may require certain employees to remain temporarily to execute safe shutdown; 29 CFR 1910.119 (PSM) requires procedures for emergency operations.\", \"citation_url\": \"https://www.osha.gov/sites/default/files/publications/OSHA3088.pdf\", \"locator\": \"Section 3, Evacuation procedures\", \"draftable\": true, \"basis\": \"inferred\", \"quote\": \"When the continuous alarm sounds, all employees stop work, secure nothing that requires more than a few seconds, and leave by the nearest marked exit.\", \"same_as_gap_id\": \"\"}, {\"title\": \"No mention of utility shutdown (water, gas, electricity) during emergency\", \"description\": \"For a chemical facility, emergency procedures may require shutting off natural gas, electricity, or water supplies to prevent fires, explosions, or chemical reactions. The plan does not address this or identify who is authorized and trained to do so.\", \"fix\": \"If utility shutdown is necessary, identify the location of main shut-off points, who is trained and authorized to shut them off, and when (e.g., before evacuation for gas/electricity, but only on incident coordinator authority).\", \"citation\": \"OSHA 1910.119 (PSM) requires procedures for managing chemical processes during emergencies; best practice for chemical facilities includes utility shutdown procedures.\", \"citation_url\": \"https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.119\", \"locator\": \"Section 3, Evacuation procedures and Section 6, Training and review\", \"draftable\": true, \"basis\": \"inferred\", \"quote\": \"the facilities lead shuts down the building ventilation from the mechanical room panel.\", \"same_as_gap_id\": \"\"}, {\"title\": \"No documentation of first-aid responder certification or AED readiness\", \"description\": \"Section 5 mentions trained first-aid responders and an AED but does not specify: (a) which certifications they hold (CPR, first aid, wilderness first aid, etc.), (b) expiration dates of certifications, (c) when the AED was last inspected or had its pads/battery checked, or (d) a schedule for recertification.\", \"fix\": \"Document for each first-aid responder their certifications (type and expiration date). Establish and document a schedule for annual recertification and monthly AED maintenance checks.\", \"citation\": \"OSHA 1910.38 and best practice require competent first-aid personnel; AED manufacturers and AHA guidelines require regular maintenance and battery/pad replacement.\", \"citation_url\": \"https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.38\", \"locator\": \"Section 5, Rescue and medical duties, and Section 6, Training and review\", \"draftable\": true, \"basis\": \"inferred\", \"quote\": \"First aid is given at the assembly point by the trained first-aid responders (two per shift, named on the warden roster), who bring the first-aid kit and the AED from the front office.\", \"same_as_gap_id\": \"\"}, {\"title\": \"Drill documentation not described\", \"description\": \"Section 4 states 'Evacuation drills are held twice a year, in spring and autumn' but the plan does not require written documentation of drill results, dates, attendance, problems identified, or corrective actions taken.\", \"fix\": \"Add a requirement to document each drill with the date, number of participants, time to evacuate, any problems observed, and corrective actions taken. Maintain these records for review during inspections.\", \"citation\": \"OSHA 1910.38 requires plans be effective; 29 CFR 1910.38 Appendix A recommends periodic testing and revision; OSHA interprets this to require documentation of drills.\", \"citation_url\": \"https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.38\", \"locator\": \"Section 4, Accounting for employees after evacuation\", \"draftable\": true, \"basis\": \"inferred\", \"quote\": \"Evacuation drills are held twice a year, in spring and autumn.\", \"same_as_gap_id\": \"\"}], \"conditions\": [], \"deadlines\": [{\"title\": \"Alarm system test\", \"due_on\": \"\", \"source_line\": \"The alarm is tested on the first Monday of each month by the facilities lead.\", \"recurs\": true}, {\"title\": \"Annual plan review\", \"due_on\": \"\", \"source_line\": \"The facilities lead reviews the plan every January and updates the evacuation maps whenever the building layout changes.\", \"recurs\": true}, {\"title\": \"Annual training for floor wardens and first-aid responders\", \"due_on\": \"\", \"source_line\": \"Floor wardens and first-aid responders are trained annually.\", \"recurs\": true}, {\"title\": \"Evacuation drills\", \"due_on\": \"\", \"source_line\": \"Evacuation drills are held twice a year, in spring and autumn.\", \"recurs\": true}], \"facts\": [{\"key\": \"employee_count\", \"value\": \"42\", \"basis\": \"read\", \"quote\": \"It applies to all 42 employees at the Portland facility, including warehouse, drivers, laboratory and office staff\", \"locator\": \"Section 1, Purpose and scope\", \"as_of\": \"2021-02-01\", \"affects\": \"Determines the scale and complexity of the emergency action plan; informs whether plan is proportionate to facility size\"}, {\"key\": \"facility_address\", \"value\": \"4410 NW Front Avenue, Portland, Oregon 97210\", \"basis\": \"read\", \"quote\": \"Portland Facility, 4410 NW Front Avenue, Portland, Oregon 97210\", \"locator\": \"Cover page and Section 1\", \"as_of\": \"2021-02-01\", \"affects\": \"Identifies the precise location of the facility and assembly point location\"}, {\"key\": \"alarm_coverage_areas\", \"value\": \"Warehouse, laboratory, loading dock, and offices\", \"basis\": \"read\", \"quote\": \"The building has a monitored fire alarm system with audible horns and strobe lights in the warehouse, laboratory, loading dock and offices.\", \"locator\": \"Section 2, Alarm system\", \"as_of\": \"2021-02-01\", \"affects\": \"Determines whether all work areas are covered by emergency notification systems\"}, {\"key\": \"alarm_monitoring_service\", \"value\": \"Cascade Fire & Safety, monitored 24 hours a day\", \"basis\": \"read\", \"quote\": \"The alarm is monitored 24 hours a day by Cascade Fire & Safety under a service contract.\", \"locator\": \"Section 2, Alarm system\", \"as_of\": \"2021-02-01\", \"affects\": \"Confirms external agency involvement in fire detection and emergency response coordination\"}, {\"key\": \"assembly_point_distance\", \"value\": \"At least 150 feet from the building\", \"basis\": \"read\", \"quote\": \"The assembly point is the far north end of the visitor parking lot, beside the flagpole, at least 150 feet from the building.\", \"locator\": \"Section 3, Evacuation procedures\", \"as_of\": \"2021-02-01\", \"affects\": \"Verifies assembly point meets OSHA recommendations for safe distance from hazard source\"}, {\"key\": \"first_aid_responders_per_shift\", \"value\": \"Two per shift\", \"basis\": \"read\", \"quote\": \"First aid is given at the assembly point by the trained first-aid responders (two per shift, named on the warden roster)\", \"locator\": \"Section 5, Rescue and medical duties\", \"as_of\": \"2021-02-01\", \"affects\": \"Determines adequacy of first-aid coverage; two is minimum for dual coverage if one is needed elsewhere\"}, {\"key\": \"emergency_shower_and_eyewash_location\", \"value\": \"Loading dock\", \"basis\": \"read\", \"quote\": \"An employee exposed to a chemical is taken to the emergency shower and eyewash at the loading dock if it can be reached safely\", \"locator\": \"Section 5, Rescue and medical duties\", \"as_of\": \"2021-02-01\", \"affects\": \"Critical for chemical exposure response; should verify equipment is inspected regularly and accessible\"}, {\"key\": \"alarm_test_frequency\", \"value\": \"First Monday of each month\", \"basis\": \"read\", \"quote\": \"The alarm is tested on the first Monday of each month by the facilities lead.\", \"locator\": \"Section 2, Alarm system\", \"as_of\": \"2021-02-01\", \"affects\": \"Verifies alarm system functionality on regular basis; meets OSHA requirements for system testing\"}, {\"key\": \"new_employee_orientation\", \"value\": \"Walked through plan, exit routes, and assembly point on first day\", \"basis\": \"read\", \"quote\": \"Every new employee is walked through this plan, the exit routes for their work area and the assembly point on their first day.\", \"locator\": \"Section 6, Training and review\", \"as_of\": \"2021-02-01\", \"affects\": \"Confirms initial safety training is provided to all employees; no documentation method specified\"}, {\"key\": \"alarm_signal_meanings\", \"value\": \"Continuous horn = evacuate; three short horns repeated = shelter in place\", \"basis\": \"read\", \"quote\": \"A continuous horn means evacuate. Three short horns repeated means shelter in place because of an outdoor hazard.\", \"locator\": \"Section 2, Alarm system\", \"as_of\": \"2021-02-01\", \"affects\": \"Employees must recognize and respond to alarm signals correctly; affects response speed and appropriateness\"}], \"version_of_title\": \"null\", \"version_of_confidence\": \"low\", \"expected_missing\": [{\"title\": \"Fire Prevention Plan\", \"why\": \"OSHA 29 CFR 1910.38(b) requires employers subject to emergency action plan rules to also maintain a written fire prevention plan, often as a separate but coordinated document.\", \"basis\": \"Similar manufacturing facilities typically hold a separate fire prevention plan covering hazardous materials storage, hot work procedures, electrical maintenance, and fire suppression equipment maintenance.\"}, {\"title\": \"Hazardous Chemical Inventory\", \"why\": \"For a chemical manufacturing facility, a current inventory of all hazardous chemicals on-site (with quantities and SDSs) should accompany the emergency action plan.\", \"basis\": \"OSHA 1910.1200 (Hazard Communication) and 1910.119 (PSM) require chemical inventory; 1910.38 requires plan to address hazardous materials present.\"}, {\"title\": \"Process Safety Management (PSM) Program documentation\", \"why\": \"If this facility manufactures or handles highly hazardous chemicals above threshold quantities (per 29 CFR 1910.119 Appendix A), a PSM program and associated mechanical integrity, procedures, and training documents should exist.\", \"basis\": \"A chemical-manufacturing facility is likely to fall under PSM if producing or storing chemicals like chlorine, ammonia, phosgene, or flammable liquids at or above threshold quantities.\"}, {\"title\": \"Building layout drawings with hazard zones\", \"why\": \"Emergency action plans for facilities with hazardous materials often reference hazard zones (e.g., 'flammable storage area,' 'reactive chemistry lab') on building drawings to clarify which shelter-in-place area to use and why.\", \"basis\": \"Appendix A references evacuations maps but does not appear to include hazard-zone labeling typical of chemical facilities.\"}, {\"title\": \"Emergency contact roster with 24/7 availability\", \"why\": \"A current emergency contact list (facilities manager, plant manager, emergency coordinator, fire department, poison control, local hospital) should be maintained separately and accessible at the assembly point.\", \"basis\": \"OSHA 1910.38 does not explicitly require this but OSHA 3088 guidance and best practice recommend it, especially for chemical facilities.\"}, {\"title\": \"Mutual aid or mutual response agreements\", \"why\": \"If the facility has agreements with neighboring businesses or the local fire department for emergency response, these should be documented.\", \"basis\": \"Some chemical facilities establish mutual-aid arrangements with neighboring tenants or off-site emergency response teams.\"}, {\"title\": \"Permit-required confined spaces (PRCS) procedures\", \"why\": \"If the facility has confined spaces (tanks, vessels, sumps), a Permit-Required Confined Space program (29 CFR 1910.146) must accompany the emergency action plan.\", \"basis\": \"Chemical manufacturing facilities often have reactors, storage tanks, or mixing vessels that may require confined-space entry and emergency rescue procedures.\"}, {\"title\": \"SOP for chemical-specific emergency response\", \"why\": \"Beyond general evacuation, chemical-specific procedures (e.g., 'if acetic acid spills, do X; if peroxide spills, do Y') should be referenced in or appended to the plan.\", \"basis\": \"OSHA 1910.119 and OSHA 1910.120 (HAZWOPER) require procedures for anticipated chemical emergencies; standard practice is a cross-referenced emergency-response SOP.\"}, {\"title\": \"Feedback mechanism from drills and incidents\", \"why\": \"A procedure for capturing lessons learned from evacuation drills and any actual incidents, with documented follow-up and plan improvements, is not described.\", \"basis\": \"OSHA 1910.38 Appendix A and best practice require plans be reviewed and revised; a formal feedback loop ensures continuous improvement.\"}], \"confidence_notes\": \"Confidence is high that this is an internal emergency action plan document issued by Cascade Specialty Chemicals and that the content accurately reflects sections 1–6 as written. The plan appears to address the core OSHA 1910.38(a) requirements for general industry (evacuation policy, alarm procedures, accountability, rescue duties, training). However, confidence in completeness is lower because: (1) The appendices (evacuation maps and warden roster) are not provided, preventing verification that names, assignments, and layout are current. (2) The last revision date is February 2021, now over five years ago; the plan states annual review is conducted, but no documentation of 2022–2026 reviews is included. (3) For a chemical manufacturing facility, the plan does not explicitly reference whether it is also governed by OSHA 1910.119 (Process Safety Management) or 1910.120 (HAZWOPER/emergency response) rules, which would impose additional requirements beyond 1910.38 if applicable. Without knowing the specific chemicals stored/manufactured and their quantities, it is unclear whether PSM applies and whether the plan is sufficient under that standard. (4) No SDS inventory or reference procedure is detailed. (5) The procedure for safe shutdown of in-process chemical operations is absent, a significant gap for a manufacturing site. These gaps do not invalidate the plan as an emergency action plan; they indicate areas where the plan requires supplementation or verification. The plan meets basic OSHA 1910.38 form requirements but may not be sufficient if PSM or HAZWOPER standards apply to this facility's operations.\", \"could_not_read_reason\": \"null\", \"could_not_read_way_forward\": \"null\"}",
+    "json_parsed": true,
+    "model": "claude-haiku-4-5",
+    "cited_sources": 0,
+    "searches": null,
+    "structured": true,
+    "prompt_sha256": "0b2d58291b99da9240010cb9a5d4066f24c91a79ae8ac9e9919ac6250646c7f3",
+    "quotes_checked": 21,
+    "quotes_verified": 21,
+    "extracted_text": "CASCADE SPECIALTY CHEMICALS, LLC\nEMERGENCY ACTION PLAN\nPortland Facility, 4410 NW Front Avenue, Portland, Oregon 97210\nRevised February 2021\n1. Purpose and scope\nThis Emergency Action Plan describes what employees of Cascade Specialty Chemicals do when there is\na fire, chemical release, medical emergency, earthquake or other emergency at the Portland facility. It\napplies to all 42 employees at the Portland facility, including warehouse, drivers, laboratory and office\nstaff, and to contractors and visitors while on site. The plan is kept in the front office and in the warehouse\nbreak room, and a copy is available to any employee on request.\n2. Alarm system\nThe building has a monitored fire alarm system with audible horns and strobe lights in the warehouse,\nlaboratory, loading dock and offices. The alarm is monitored 24 hours a day by Cascade Fire & Safety\nunder a service contract. Manual pull stations are located at each exit door. The alarm is tested on the first\nMonday of each month by the facilities lead. A continuous horn means evacuate. Three short horns\nrepeated means shelter in place because of an outdoor hazard.\n3. Evacuation procedures\nWhen the continuous alarm sounds, all employees stop work, secure nothing that requires more than a\nfew seconds, and leave by the nearest marked exit. Exit routes are posted on the evacuation maps at each\nexit door and in Appendix A. Warehouse staff leave by the east dock doors or the north pedestrian door.\nLaboratory staff leave by the laboratory's own exterior door on the south wall. Office staff leave by the\nmain entrance or the west stairwell. Do not use the freight lift. Do not return for belongings.\nThe assembly point is the far north end of the visitor parking lot, beside the flagpole, at least 150 feet\nfrom the building. Employees assigned as floor wardens (one per area, listed on the warden roster posted\nbeside each evacuation map) sweep their area, close doors behind them, and report to the assembly point.\nFor a chemical release outdoors or a hazard that makes leaving the building unsafe, the shelter-in-place\nsignal sounds. Employees move to the interior conference room or the laboratory corridor, close doors,\nand the facilities lead shuts down the building ventilation from the mechanical room panel.\n4. Accounting for employees after evacuation\nAt the assembly point each floor warden takes a headcount of the people from their area against the daily\nsign-in sheet and the visitor log, which the receptionist brings out. Any person unaccounted for is reported\nat once to the incident coordinator at the assembly point, who passes the information to the fire\ndepartment on arrival. No one re-enters the building until the fire department or the incident coordinator\ngives the all-clear. Evacuation drills are held twice a year, in spring and autumn.\n5. Rescue and medical duties\nEmployees do not attempt rescue inside the building. First aid is given at the assembly point by the\ntrained first-aid responders (two per shift, named on the warden roster), who bring the first-aid kit and the\nAED from the front office. An employee exposed to a chemical is taken to the emergency shower and\neyewash at the loading dock if it can be reached safely, or to the assembly point, and the SDS for the\nproduct is brought to the responders. Emergency medical services are called for any injury beyond minor\nfirst aid.\n6. Training and review\nEvery new employee is walked through this plan, the exit routes for their work area and the assembly\npoint on their first day. Floor wardens and first-aid responders are trained annually. The plan is reviewed\nwith all employees whenever it is changed and whenever an employee's responsibilities under it change.\nThe facilities lead reviews the plan every January and updates the evacuation maps whenever the building\nlayout changes.\nAppendix A: Evacuation maps (warehouse, laboratory, offices)\nAppendix B: Floor warden and first-aid responder roster (posted beside each evacuation map)",
+    "started_at": "2026-09-29T18:25:14.616Z"
+  }
+}

@@ -1,0 +1,107 @@
+{
+  "id": "13-company-self-check",
+  "title": "The company's own monthly EHS self-check (Word)",
+  "spec": "13-company-self-check.md",
+  "dir": "tests/golden/audits",
+  "fixture": "fixtures/13-company-self-check.docx",
+  "company": "cascade",
+  "must": [
+    {
+      "id": "kind",
+      "line": "kind: other, template or checklist, whichever the vocabulary has; never policy, record or program. The vocabulary carries only \"other\" of the three.",
+      "type": "field_one_of",
+      "field": "identity.kind",
+      "accept": [
+        "other"
+      ],
+      "forbid": [
+        "policy",
+        "record",
+        "program"
+      ]
+    },
+    {
+      "id": "issuer",
+      "line": "issuer: Cascade Specialty Chemicals (the company's own form)",
+      "type": "field_contains",
+      "field": "identity.issuer",
+      "accept": [
+        "cascade"
+      ]
+    },
+    {
+      "id": "site-portland",
+      "line": "site: Portland",
+      "type": "field_contains",
+      "field": "identity.site",
+      "accept": [
+        "portland"
+      ]
+    },
+    {
+      "id": "doc-date-none",
+      "line": "doc_date: none, or \"undated\"; a scan that invents a month fails the run",
+      "type": "field_one_of",
+      "field": "identity.doc_date",
+      "accept": [
+        "undated"
+      ],
+      "allow_null": true
+    },
+    {
+      "id": "status",
+      "line": "Status (must): not_judged, or the vocabulary\u2019s equivalent for a blank form. Never gaps_found, never \"compliant\".",
+      "type": "field_one_of",
+      "field": "status",
+      "accept": [
+        "not_judged"
+      ],
+      "forbid": [
+        "gaps_found"
+      ]
+    },
+    {
+      "id": "no-gaps",
+      "line": "Gaps (must): none. The lines are checks, not findings.",
+      "type": "empty",
+      "collections": [
+        "gaps"
+      ]
+    },
+    {
+      "id": "no-facts-about-cascade",
+      "line": "A scan that proposes \"eyewash stations are flushed weekly\" as a fact about Cascade fails the run; the form asks whether it was done and says nothing about whether it was.",
+      "type": "empty",
+      "collections": [
+        "facts"
+      ]
+    },
+    {
+      "id": "label-consistency",
+      "line": "Consistency across the three runs: the agency label must be the same string in all three.",
+      "type": "labels_identical_across_runs"
+    }
+  ],
+  "must_not": [],
+  "reported": [
+    {
+      "id": "agency",
+      "line": "agency: none, or a mix of Oregon DEQ and Oregon OSHA; either passes. The label strings, if any, must be the same across the three runs and match the company\u2019s existing labels",
+      "type": "list_contains",
+      "field": "identity.agencies",
+      "accept": [
+        "deq",
+        "osha"
+      ]
+    },
+    {
+      "id": "deadlines-none",
+      "line": "Deadlines, conditions, facts: none required.",
+      "type": "empty",
+      "collections": [
+        "deadlines",
+        "conditions"
+      ]
+    }
+  ]
+}

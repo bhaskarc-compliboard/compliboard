@@ -1,0 +1,112 @@
+{
+  "id": "12-auditor-checklist-deq-air",
+  "title": "An auditor's checklist: DEQ air compliance inspection (Word)",
+  "spec": "12-auditor-checklist-deq-air.md",
+  "dir": "tests/golden/audits",
+  "fixture": "fixtures/12-auditor-checklist-deq-air.docx",
+  "company": "cascade",
+  "must": [
+    {
+      "id": "kind",
+      "line": "kind: other, template or checklist, whichever the vocabulary has; never permit, policy or record. ScanIdentity.kind carries permit|certificate|program|policy|record|supplier_document|other, so \"other\" is the only one of the three the vocabulary has.",
+      "type": "field_one_of",
+      "field": "identity.kind",
+      "accept": [
+        "other"
+      ],
+      "forbid": [
+        "permit",
+        "policy",
+        "record"
+      ]
+    },
+    {
+      "id": "issuer",
+      "line": "issuer: Oregon DEQ (it is the agency's blank form)",
+      "type": "field_contains",
+      "field": "identity.issuer",
+      "accept": [
+        "deq",
+        "department of environmental quality"
+      ]
+    },
+    {
+      "id": "doc-date-none",
+      "line": "doc_date: none, or \"undated\"; a scan that invents a date fails the run",
+      "type": "field_one_of",
+      "field": "identity.doc_date",
+      "accept": [
+        "undated"
+      ],
+      "allow_null": true
+    },
+    {
+      "id": "status",
+      "line": "Status (must): not_judged, or the vocabulary\u2019s equivalent for a document that is not evidence about the company. Never gaps_found, never \"compliant\".",
+      "type": "field_one_of",
+      "field": "status",
+      "accept": [
+        "not_judged"
+      ],
+      "forbid": [
+        "gaps_found"
+      ]
+    },
+    {
+      "id": "no-gaps",
+      "line": "Gaps (must): none. Every line in the form is a question, not a finding. A gap on this document is a false finding and fails the run.",
+      "type": "empty",
+      "collections": [
+        "gaps"
+      ]
+    },
+    {
+      "id": "no-facts-about-cascade",
+      "line": "A scan that proposes \"renewal 120 days before expiration\" as a fact about Cascade from this document fails the run; the form states no fact about Cascade.",
+      "type": "empty",
+      "collections": [
+        "facts"
+      ]
+    }
+  ],
+  "must_not": [],
+  "reported": [
+    {
+      "id": "agency",
+      "line": "the agency label may be Oregon DEQ or none; the scan may say this is the agency\u2019s form rather than the company\u2019s document",
+      "type": "list_contains",
+      "field": "identity.agencies",
+      "accept": [
+        "deq",
+        "department of environmental quality"
+      ]
+    },
+    {
+      "id": "subject",
+      "line": "subject: air quality, or none",
+      "type": "list_contains",
+      "field": "identity.subjects",
+      "accept": [
+        "air"
+      ]
+    },
+    {
+      "id": "site",
+      "line": "site: Portland, or none",
+      "type": "field_contains",
+      "field": "identity.site",
+      "accept": [
+        "portland"
+      ]
+    },
+    {
+      "id": "deadlines-none",
+      "line": "Deadlines, conditions, facts: none required.",
+      "type": "empty",
+      "collections": [
+        "deadlines",
+        "conditions"
+      ]
+    }
+  ]
+}

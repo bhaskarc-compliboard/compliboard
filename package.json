@@ -21,6 +21,7 @@
     "golden:docs": "node --env-file=.env.local scripts/run-golden-docs.js",
     "golden:docs:render": "node scripts/render-golden-docs.js",
     "golden:docs:reparse": "node --env-file=.env.local scripts/reparse-golden-runs.js",
+    "golden:audit": "node --env-file=.env.local scripts/run-golden-audit.js",
     "check:determinism": "node --env-file=.env.local scripts/check-prompt-determinism.js",
     "probe:searches": "node --env-file=.env.local scripts/probe-search-count.js",
     "probe:structured": "node --env-file=.env.local scripts/probe-structured-output.js",

@@ -1,0 +1,322 @@
+{
+  "case": "07-scrubber-log-record",
+  "run": 1,
+  "run_date": "2026-09-29",
+  "model": "claude-haiku-4-5",
+  "structured": true,
+  "searches": 1,
+  "cited_sources": 0,
+  "prompt_sha256": "54938d0ca37b4cebfe3ab5edd0639fc4e75ca359b4e9d4932a061430a9812948",
+  "scan_id": "55ad1fb3-2c45-4c6b-a92c-d4f2873f8b3e",
+  "ai_call_id": "2af5b93b-5cb2-4c9a-b91e-15e31402bc12",
+  "company_context": "WHO THIS COMPANY IS\n  Name: Cascade Specialty Chemicals, LLC\n  Industry: chemical manufacturing (recorded as chemical-manufacturing)\n  Address: Portland, Oregon\n  State: Oregon\nTheir sites:\n  - Portland — 4410 NW Front Ave, Portland, Oregon 97210 (primary)\n\nWHAT A PERSON HAS CONFIRMED FROM A DOCUMENT\nEach of these was read in the named document and then confirmed by a person.\n  (nothing confirmed yet)\n\nLABELS ALREADY IN USE FOR THIS COMPANY\nAgencies:\n  - Oregon DEQ\nSubjects:\n  - chemical_safety\n  - emergency_preparedness\n  - workplace_safety\n\nFACT KEYS ALREADY IN USE FOR THIS COMPANY\n  - acgih_tlv_exposure_limit\n  - alarm_coverage_areas\n  - alarm_monitoring_service\n  - alarm_signal_meanings\n  - alarm_test_frequency\n  - assembly_point_distance\n  - carbon_replacement_frequency\n  - chemical_composition\n  - defect_found_september_9\n  - dot_reportable_quantity\n  - emergency_eyewash_shower_distance\n  - emergency_shower_and_eyewash_location\n  - employee_count\n  - equipment_hours_end_of_period\n  - equipment_identifier\n  - facility_address\n  - first_aid_responders_per_shift\n  - freezing_point\n  - hazard_classification\n  - inspection_checklist_items\n  - inspection_frequency_required\n  - new_employee_orientation\n  - niosh_rel_exposure_limit\n  - operator_certification_j_rivera\n  - operator_certification_m_chen\n  - osha_pel_exposure_limit\n  - permit_number\n  - permit_type\n  - ph_value\n  - product_identifier\n  - propane_tank_maintenance_event\n  - rcra_hazard_waste_code\n  - recommended_ppe_eye\n  - recommended_ppe_skin\n  - record_retention_period\n  - scrubber_pressure_drop_range\n  - scrubber_s1_design_flow\n  - scrubber_s2_design_flow\n  - signal_word\n  - source_category\n  - storage_tank_capacity\n  - supplier_name\n  - un_number\n  - visible_emissions_limit",
+  "company_context_sha256": "0a59e97a265da956375ad5516c48140ca8552df5d5e8f7b1d104dc380f1e7fcc",
+  "wall_ms": 38694,
+  "cost_usd": 0.054995,
+  "input_tokens": 27135,
+  "output_tokens": 3572,
+  "json_parsed": true,
+  "compliant_found_in": [
+    "gap \"S-2 pressure drop exceeded upper limit on Septembe\""
+  ],
+  "alternative_pass": false,
+  "verdicts": {
+    "kind": {
+      "verdict": "PASS",
+      "detail": "identity.kind = \"record\""
+    },
+    "agency-deq": {
+      "verdict": "PASS",
+      "detail": "identity.agencies = [oregon deq]"
+    },
+    "subject": {
+      "verdict": "FAIL",
+      "detail": "identity.subjects = [chemical safety | emergency preparedness | workplace safety]"
+    },
+    "site-portland": {
+      "verdict": "PASS",
+      "detail": "identity.site = \"portland\""
+    },
+    "doc-date": {
+      "verdict": "PASS",
+      "detail": "identity.doc_date = 2026-09-29"
+    },
+    "doc-date-kind": {
+      "verdict": "PASS",
+      "detail": "identity.doc_date_kind = \"last entry\""
+    },
+    "last-entry-date": {
+      "verdict": "FAIL",
+      "detail": "2026-09-25 appears in none of identity.doc_date, significant_date"
+    },
+    "status": {
+      "verdict": "PASS",
+      "detail": "status = \"recorded\""
+    },
+    "finding-missing-august": {
+      "verdict": "PASS",
+      "detail": "gaps: \"Missing supervisor review signature and date\" [august, missing]"
+    },
+    "finding-sep9-excursion": {
+      "verdict": "PASS",
+      "detail": "gaps: \"S-2 pressure drop exceeded upper limit on September 9\" [september 9, 6.4, 6.0, s-2]"
+    },
+    "finding-missing-weekly": {
+      "verdict": "PASS",
+      "detail": "gaps: \"Missing detector-tube check for week of August 14 and two weeks in Sep\" [weekly, c-1, detector]"
+    },
+    "label-consistency": {
+      "verdict": "CROSS",
+      "detail": "judged across the three runs, below"
+    },
+    "no-quarterly-inspection-gap": {
+      "verdict": "PASS",
+      "detail": "not raised",
+      "soft": []
+    },
+    "no-carbon-replacement-gap": {
+      "verdict": "PASS",
+      "detail": "not raised",
+      "soft": []
+    },
+    "permit-number-fact": {
+      "verdict": "PASS",
+      "detail": "facts: \"defect_found_september_9\" [permit]"
+    },
+    "citation-3-1": {
+      "verdict": "PASS",
+      "detail": "\"3.1\" found"
+    },
+    "citation-5-2": {
+      "verdict": "PASS",
+      "detail": "\"5.2\" found"
+    },
+    "deadlines-none": {
+      "verdict": "FAIL",
+      "detail": "2: \"Perform daily scrubber pressure-drop reading\"; \"Conduct weekly C-1 outlet detector-tube check\""
+    },
+    "conditions-none": {
+      "verdict": "FAIL",
+      "detail": "3: \"Record pressure drop across each scrubber once per operating day\"; \"Keep pressure drop within 2.0–6.0 inches of water column during operat\"; \"Conduct weekly checks for breakthrough at the C-1 carbon unit outlet\""
+    }
+  },
+  "scan": {
+    "identity": {
+      "kind": "record",
+      "title": "Scrubber Pressure-Drop Log and C-1 Carbon Outlet Detector-Tube Check — August and September 2026",
+      "issuer": "Cascade Specialty Chemicals, LLC",
+      "agencies": [
+        "Oregon DEQ"
+      ],
+      "subjects": [
+        "chemical_safety",
+        "emergency_preparedness",
+        "workplace_safety"
+      ],
+      "site": "Portland",
+      "jurisdiction": [
+        "Oregon",
+        "federal"
+      ],
+      "doc_date": "2026-09-29",
+      "doc_date_kind": "last_entry",
+      "page_refs": {}
+    },
+    "summary": "This is a log of equipment performance monitoring maintained by Cascade Specialty Chemicals at their Portland facility to satisfy conditions of their Standard Air Contaminant Discharge Permit 26-2841-ST-01. The log records daily pressure-drop measurements across two scrubbers (S-1 for acid repackaging, S-2 for caustic repackaging) to ensure they remain between 2.0 and 6.0 inches of water column, and weekly breakthrough checks on a carbon unit outlet. The document shows recorded readings from August 1–31 and September 1–25, 2026, with one excursion on September 9 requiring attention.",
+    "status": "recorded",
+    "significant_date": "2026-09-29",
+    "significant_date_kind": "last_entry",
+    "freshness_note": "This record was last updated on September 25, 2026 for the daily log and September 21, 2026 for the weekly detector-tube check. The document is current but incomplete: supervisor review signatures and dates are blank, which is required for closure of the record.",
+    "gaps": [
+      {
+        "title": "Missing supervisor review signature and date",
+        "description": "The log contains a line for supervisor review signature and date at the bottom of each month's section, but these fields are blank for both August and September. The permit condition requires record-keeping; supervisory sign-off is standard practice for monitoring records to confirm their accuracy and completeness before filing.",
+        "fix": "Have a supervisor review and sign the record with the date, confirming that all required readings have been taken and are within or outside acceptable limits.",
+        "citation": "Air Contaminant Discharge Permit 26-2841-ST-01, Condition 3.1 (pressure drop monitoring) and Condition 3.3 (detector-tube checks)",
+        "citation_url": null,
+        "locator": "Bottom of August section and bottom of September section (both pages)",
+        "draftable": false,
+        "basis": "read",
+        "quote": "Supervisor review: ____________________ Date: __________",
+        "quote_verified": true,
+        "same_as_gap_id": null
+      },
+      {
+        "title": "S-2 pressure drop exceeded upper limit on September 9",
+        "description": "On September 9, 2026, the S-2 (caustic repackaging line) scrubber recorded a pressure drop of 6.4 inches of water column. The permit condition 3.1 requires that pressure drop be kept between 2.0 and 6.0 inches whenever the line is operating. A reading of 6.4 exceeds the 6.0 upper limit.",
+        "fix": "Document the cause of the excursion (nozzle clogging, scaling, equipment malfunction, or other), the corrective action taken, and when normal operation was restored. This should be recorded in the Notes column or in a separate incident log. Verify that S-2 was brought back into compliance on the next operating day (September 10 shows 4.6, which is compliant).",
+        "citation": "Air Contaminant Discharge Permit 26-2841-ST-01, Condition 3.1",
+        "citation_url": null,
+        "locator": "September 9, 2026 row; S-2 ΔP column; Notes field shows no explanation",
+        "draftable": true,
+        "basis": "read",
+        "quote": "Sep 9: S-2 ΔP 6.4 in. w.c.",
+        "quote_verified": false,
+        "same_as_gap_id": null
+      },
+      {
+        "title": "Missing detector-tube check for week of August 14 and two weeks in September",
+        "description": "The permit condition 3.3 requires a weekly check for breakthrough at the C-1 carbon unit outlet. The August detector-tube log shows checks for weeks starting Aug 3, 10, 17, 24, and 31 (5 checks). However, there is a gap: no entry is shown for the week of August 14, even though the scrubber log shows the caustic line ran on August 14. In September, only two checks are recorded (weeks of Sep 7 and Sep 21), but the September scrubber log shows operation through September 25. The weeks of Sep 14 and Sep 28 are missing.",
+        "fix": "Complete missing detector-tube checks. For the week of August 14, retroactively verify whether a check was conducted and record it, or document why it was skipped (e.g., planned downtime). For September weeks 14 and 28, conduct the checks now if the carbon unit is still in service, record the date and result, and implement a system to ensure weekly checks are not missed going forward.",
+        "citation": "Air Contaminant Discharge Permit 26-2841-ST-01, Condition 3.3",
+        "citation_url": null,
+        "locator": "August weekly check table (5 entries for 5 expected weeks) and September weekly check table (2 entries, but through Sept 25 indicates at least 4 weeks)",
+        "draftable": false,
+        "basis": "read",
+        "quote": "Condition 3.3: weekly check for breakthrough at the C-1 carbon unit outlet",
+        "quote_verified": true,
+        "same_as_gap_id": null
+      }
+    ],
+    "conditions": [
+      {
+        "title": "Record pressure drop across each scrubber once per operating day",
+        "condition_ref": "Condition 3.1",
+        "evidence_expected": "Daily magnehelic gauge readings for S-1 and S-2, recorded in a log with date, line operation status (Y/N), pressure drop in inches of water column, operator name, and any notes. Readings must be maintained between 2.0 and 6.0 inches of water column when the line is operating."
+      },
+      {
+        "title": "Keep pressure drop within 2.0–6.0 inches of water column during operation",
+        "condition_ref": "Condition 3.1",
+        "evidence_expected": "All recorded pressure drops within the specified range, or documentation of when an out-of-range reading occurred, the cause, and the corrective action taken and date brought back into compliance."
+      },
+      {
+        "title": "Conduct weekly checks for breakthrough at the C-1 carbon unit outlet",
+        "condition_ref": "Condition 3.3",
+        "evidence_expected": "Weekly detector-tube readings at the carbon outlet, recorded with the week start date, ppm reading, whether breakthrough was detected (Yes/No), and the name of the person who conducted the check. A baseline reading of 0 ppm indicates proper function."
+      }
+    ],
+    "deadlines": [
+      {
+        "title": "Perform daily scrubber pressure-drop reading",
+        "due_on": null,
+        "source_line": "Condition 3.1: 'once per operating day'",
+        "recurs": true
+      },
+      {
+        "title": "Conduct weekly C-1 outlet detector-tube check",
+        "due_on": null,
+        "source_line": "Condition 3.3: 'weekly check for breakthrough at the C-1 carbon unit outlet'",
+        "recurs": true
+      }
+    ],
+    "facts": [
+      {
+        "key": "scrubber_s1_design_flow",
+        "value": "S-1 (acid repackaging line) scrubber pressure drops range from 3.6 to 4.0 inches of water column in August and 3.8 to 4.0 inches in September",
+        "quote": "S-1 ΔP readings: August range 3.6–4.0, September range 3.8–4.0",
+        "locator": "August scrubber log and September scrubber log, S-1 ΔP columns",
+        "as_of": "2026-09-25",
+        "affects": "Indicates S-1 is operating in the middle-to-lower portion of the 2.0–6.0 allowed range, suggesting consistent performance and adequate scrubber function.",
+        "basis": "read",
+        "quote_verified": false
+      },
+      {
+        "key": "scrubber_s2_design_flow",
+        "value": "S-2 (caustic repackaging line) scrubber pressure drops range from 4.0 to 4.4 inches of water column in August and 4.1 to 6.4 inches in September, with one excursion to 6.4 on Sep 9",
+        "quote": "S-2 ΔP readings: August range 4.0–4.4, September range 4.1–6.4 (excursion on Sep 9)",
+        "locator": "August scrubber log and September scrubber log, S-2 ΔP columns",
+        "as_of": "2026-09-25",
+        "affects": "S-2 operates higher in the pressure-drop range than S-1, and the excursion on September 9 indicates a possible partial blockage, scaling, or equipment issue requiring investigation and correction.",
+        "basis": "read",
+        "quote_verified": false
+      },
+      {
+        "key": "defect_found_september_9",
+        "value": "S-2 pressure drop exceeded permit limit (6.4 in. w.c. vs. 6.0 max) on September 9, 2026",
+        "quote": "Sep 9: S-2 ΔP 6.4 in. w.c.",
+        "locator": "September scrubber log, Sept 9 row, S-2 ΔP column",
+        "as_of": "2026-09-09",
+        "affects": "Indicates potential scrubber clogging or fouling on the caustic line and requires root-cause investigation and documentation of corrective action to ensure permit compliance.",
+        "basis": "read",
+        "quote_verified": false
+      },
+      {
+        "key": "carbon_replacement_frequency",
+        "value": "C-1 carbon unit shows 0 ppm breakthrough detection in all 7 recorded weeks (August and September 2026), indicating the carbon is still functioning and has not been reached saturation or breakthrough",
+        "quote": "Tube reading (ppm): all entries 0; Breakthrough?: all 'No'",
+        "locator": "August weekly check table and September weekly check table",
+        "as_of": "2026-09-21",
+        "affects": "The carbon unit is performing its intended function. No immediate replacement is required, but the company should continue monitoring and be prepared to replace the carbon if breakthrough (ppm > 0) is detected.",
+        "basis": "read",
+        "quote_verified": false
+      },
+      {
+        "key": "equipment_identifier",
+        "value": "Two scrubbers in operation: S-1 (acid repackaging line) and S-2 (caustic repackaging line); one carbon unit C-1 at outlet",
+        "quote": "S-1 (acid repackaging line) and S-2 (caustic repackaging line); C-1 carbon unit outlet",
+        "locator": "Document title and condition references",
+        "as_of": "2026-09-29",
+        "affects": "These are the control devices regulated under the permit and required to be monitored daily and weekly to ensure compliance with emission limits.",
+        "basis": "read",
+        "quote_verified": false
+      },
+      {
+        "key": "permit_number",
+        "value": "26-2841-ST-01",
+        "quote": "Air Contaminant Discharge Permit 26-2841-ST-01",
+        "locator": "Document header and condition reference",
+        "as_of": "2026-09-29",
+        "affects": "This is the permit under which the facility operates and whose conditions this log demonstrates compliance or non-compliance with.",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "facility_address",
+        "value": "4410 NW Front Ave, Portland, Oregon 97210",
+        "quote": "CASCADE SPECIALTY CHEMICALS, LLC — PORTLAND FACILITY",
+        "locator": "Document header",
+        "as_of": "2026-09-29",
+        "affects": "Confirms the Portland site is the location of the scrubber and carbon monitoring system being logged.",
+        "basis": "read",
+        "quote_verified": true
+      }
+    ],
+    "version_of": {
+      "title": "Scrubber Pressure-Drop Log",
+      "confidence": "high"
+    },
+    "expected_missing": [
+      {
+        "title": "Air Contaminant Discharge Permit 26-2841-ST-01 itself",
+        "why": "The record references and must be read in conjunction with the permit document to confirm the exact limits, monitoring frequency, and reporting requirements",
+        "basis": "similar companies maintain their actual permits alongside monitoring logs for verification"
+      },
+      {
+        "title": "Monthly or quarterly summary report to Oregon DEQ",
+        "why": "Standard air permits often require facilities to submit monthly or quarterly summaries of monitoring data to the agency, or to report excursions within a certain timeframe (e.g., 24 hours)",
+        "basis": "similar companies must report permit excursions to DEQ; this log alone does not show evidence of DEQ notification of the Sep 9 excursion"
+      },
+      {
+        "title": "Root-cause analysis and corrective-action report for the September 9 S-2 excursion",
+        "why": "When a permit condition limit is exceeded, permit holders are typically required to determine why, what was done to correct it, and how recurrence will be prevented",
+        "basis": "standard permit practice requires documentation of investigation and remedy for out-of-compliance events"
+      },
+      {
+        "title": "Maintenance records for scrubbers S-1 and S-2",
+        "why": "The log notes 'nozzles rinsed' on Aug 14 for S-2, suggesting maintenance is performed; full maintenance logs (frequency, scope, findings) would be expected",
+        "basis": "scrubber performance depends on maintenance; companies typically keep separate maintenance schedules and records"
+      },
+      {
+        "title": "Equipment calibration certificate for magnehelic gauges",
+        "why": "The log states readings are taken 'at the magnehelic gauge on the scrubber inlet'; these gauges must be calibrated to ensure accuracy",
+        "basis": "regulatory monitoring requires calibrated instrumentation; facilities maintain calibration records separately from logs"
+      }
+    ],
+    "confidence_notes": "High confidence in what the log says: all data are clearly readable, dates and readings are explicit, and the permit conditions are stated directly in the document header. The major findings are solid: (1) one excursion on Sep 9 (S-2 at 6.4 in. w.c., exceeding 6.0 max); (2) supervisor review signatures are missing; (3) the weekly detector-tube checks are incomplete (missing week of Aug 14, and weeks of Sep 14 and 28 given operation through Sep 25). The only uncertainty is whether the missing detector-tube entries represent actual skipped checks or data-entry delays. The document does not explain the cause of the Sep 9 excursion or state whether it was reported to DEQ. The company should have the actual permit on file to confirm the exact reporting and retention requirements.",
+    "could_not_read": {
+      "reason": null,
+      "way_forward": null
+    },
+    "raw_text": "{\"identity\": {\"kind\": \"record\", \"title\": \"Scrubber Pressure-Drop Log and C-1 Carbon Outlet Detector-Tube Check — August and September 2026\", \"issuer\": \"Cascade Specialty Chemicals, LLC\", \"agencies\": [\"Oregon DEQ\"], \"subjects\": [\"chemical_safety\", \"emergency_preparedness\", \"workplace_safety\"], \"site\": \"Portland\", \"jurisdiction\": [\"Oregon\", \"federal\"], \"doc_date\": \"2026-09-29\", \"doc_date_kind\": \"last_entry\"}, \"summary\": \"This is a log of equipment performance monitoring maintained by Cascade Specialty Chemicals at their Portland facility to satisfy conditions of their Standard Air Contaminant Discharge Permit 26-2841-ST-01. The log records daily pressure-drop measurements across two scrubbers (S-1 for acid repackaging, S-2 for caustic repackaging) to ensure they remain between 2.0 and 6.0 inches of water column, and weekly breakthrough checks on a carbon unit outlet. The document shows recorded readings from August 1–31 and September 1–25, 2026, with one excursion on September 9 requiring attention.\", \"status\": \"recorded\", \"significant_date\": \"2026-09-09\", \"significant_date_kind\": \"last_entry\", \"freshness_note\": \"This record was last updated on September 25, 2026 for the daily log and September 21, 2026 for the weekly detector-tube check. The document is current but incomplete: supervisor review signatures and dates are blank, which is required for closure of the record.\", \"gaps\": [{\"title\": \"Missing supervisor review signature and date\", \"description\": \"The log contains a line for supervisor review signature and date at the bottom of each month's section, but these fields are blank for both August and September. The permit condition requires record-keeping; supervisory sign-off is standard practice for monitoring records to confirm their accuracy and completeness before filing.\", \"fix\": \"Have a supervisor review and sign the record with the date, confirming that all required readings have been taken and are within or outside acceptable limits.\", \"citation\": \"Air Contaminant Discharge Permit 26-2841-ST-01, Condition 3.1 (pressure drop monitoring) and Condition 3.3 (detector-tube checks)\", \"citation_url\": \"null\", \"locator\": \"Bottom of August section and bottom of September section (both pages)\", \"draftable\": false, \"basis\": \"read\", \"quote\": \"Supervisor review: ____________________ Date: __________\", \"same_as_gap_id\": \"\"}, {\"title\": \"S-2 pressure drop exceeded upper limit on September 9\", \"description\": \"On September 9, 2026, the S-2 (caustic repackaging line) scrubber recorded a pressure drop of 6.4 inches of water column. The permit condition 3.1 requires that pressure drop be kept between 2.0 and 6.0 inches whenever the line is operating. A reading of 6.4 exceeds the 6.0 upper limit.\", \"fix\": \"Document the cause of the excursion (nozzle clogging, scaling, equipment malfunction, or other), the corrective action taken, and when normal operation was restored. This should be recorded in the Notes column or in a separate incident log. Verify that S-2 was brought back into compliance on the next operating day (September 10 shows 4.6, which is compliant).\", \"citation\": \"Air Contaminant Discharge Permit 26-2841-ST-01, Condition 3.1\", \"citation_url\": \"null\", \"locator\": \"September 9, 2026 row; S-2 ΔP column; Notes field shows no explanation\", \"draftable\": true, \"basis\": \"read\", \"quote\": \"Sep 9: S-2 ΔP 6.4 in. w.c.\", \"same_as_gap_id\": \"\"}, {\"title\": \"Missing detector-tube check for week of August 14 and two weeks in September\", \"description\": \"The permit condition 3.3 requires a weekly check for breakthrough at the C-1 carbon unit outlet. The August detector-tube log shows checks for weeks starting Aug 3, 10, 17, 24, and 31 (5 checks). However, there is a gap: no entry is shown for the week of August 14, even though the scrubber log shows the caustic line ran on August 14. In September, only two checks are recorded (weeks of Sep 7 and Sep 21), but the September scrubber log shows operation through September 25. The weeks of Sep 14 and Sep 28 are missing.\", \"fix\": \"Complete missing detector-tube checks. For the week of August 14, retroactively verify whether a check was conducted and record it, or document why it was skipped (e.g., planned downtime). For September weeks 14 and 28, conduct the checks now if the carbon unit is still in service, record the date and result, and implement a system to ensure weekly checks are not missed going forward.\", \"citation\": \"Air Contaminant Discharge Permit 26-2841-ST-01, Condition 3.3\", \"citation_url\": \"null\", \"locator\": \"August weekly check table (5 entries for 5 expected weeks) and September weekly check table (2 entries, but through Sept 25 indicates at least 4 weeks)\", \"draftable\": false, \"basis\": \"read\", \"quote\": \"Condition 3.3: weekly check for breakthrough at the C-1 carbon unit outlet\", \"same_as_gap_id\": \"\"}], \"conditions\": [{\"title\": \"Record pressure drop across each scrubber once per operating day\", \"condition_ref\": \"Condition 3.1\", \"evidence_expected\": \"Daily magnehelic gauge readings for S-1 and S-2, recorded in a log with date, line operation status (Y/N), pressure drop in inches of water column, operator name, and any notes. Readings must be maintained between 2.0 and 6.0 inches of water column when the line is operating.\"}, {\"title\": \"Keep pressure drop within 2.0–6.0 inches of water column during operation\", \"condition_ref\": \"Condition 3.1\", \"evidence_expected\": \"All recorded pressure drops within the specified range, or documentation of when an out-of-range reading occurred, the cause, and the corrective action taken and date brought back into compliance.\"}, {\"title\": \"Conduct weekly checks for breakthrough at the C-1 carbon unit outlet\", \"condition_ref\": \"Condition 3.3\", \"evidence_expected\": \"Weekly detector-tube readings at the carbon outlet, recorded with the week start date, ppm reading, whether breakthrough was detected (Yes/No), and the name of the person who conducted the check. A baseline reading of 0 ppm indicates proper function.\"}], \"deadlines\": [{\"title\": \"Perform daily scrubber pressure-drop reading\", \"due_on\": \"every operating day\", \"source_line\": \"Condition 3.1: 'once per operating day'\", \"recurs\": true}, {\"title\": \"Conduct weekly C-1 outlet detector-tube check\", \"due_on\": \"weekly\", \"source_line\": \"Condition 3.3: 'weekly check for breakthrough at the C-1 carbon unit outlet'\", \"recurs\": true}], \"facts\": [{\"key\": \"scrubber_s1_design_flow\", \"value\": \"S-1 (acid repackaging line) scrubber pressure drops range from 3.6 to 4.0 inches of water column in August and 3.8 to 4.0 inches in September\", \"basis\": \"read\", \"quote\": \"S-1 ΔP readings: August range 3.6–4.0, September range 3.8–4.0\", \"locator\": \"August scrubber log and September scrubber log, S-1 ΔP columns\", \"as_of\": \"2026-09-25\", \"affects\": \"Indicates S-1 is operating in the middle-to-lower portion of the 2.0–6.0 allowed range, suggesting consistent performance and adequate scrubber function.\"}, {\"key\": \"scrubber_s2_design_flow\", \"value\": \"S-2 (caustic repackaging line) scrubber pressure drops range from 4.0 to 4.4 inches of water column in August and 4.1 to 6.4 inches in September, with one excursion to 6.4 on Sep 9\", \"basis\": \"read\", \"quote\": \"S-2 ΔP readings: August range 4.0–4.4, September range 4.1–6.4 (excursion on Sep 9)\", \"locator\": \"August scrubber log and September scrubber log, S-2 ΔP columns\", \"as_of\": \"2026-09-25\", \"affects\": \"S-2 operates higher in the pressure-drop range than S-1, and the excursion on September 9 indicates a possible partial blockage, scaling, or equipment issue requiring investigation and correction.\"}, {\"key\": \"defect_found_september_9\", \"value\": \"S-2 pressure drop exceeded permit limit (6.4 in. w.c. vs. 6.0 max) on September 9, 2026\", \"basis\": \"read\", \"quote\": \"Sep 9: S-2 ΔP 6.4 in. w.c.\", \"locator\": \"September scrubber log, Sept 9 row, S-2 ΔP column\", \"as_of\": \"2026-09-09\", \"affects\": \"Indicates potential scrubber clogging or fouling on the caustic line and requires root-cause investigation and documentation of corrective action to ensure permit compliance.\"}, {\"key\": \"carbon_replacement_frequency\", \"value\": \"C-1 carbon unit shows 0 ppm breakthrough detection in all 7 recorded weeks (August and September 2026), indicating the carbon is still functioning and has not been reached saturation or breakthrough\", \"basis\": \"read\", \"quote\": \"Tube reading (ppm): all entries 0; Breakthrough?: all 'No'\", \"locator\": \"August weekly check table and September weekly check table\", \"as_of\": \"2026-09-21\", \"affects\": \"The carbon unit is performing its intended function. No immediate replacement is required, but the company should continue monitoring and be prepared to replace the carbon if breakthrough (ppm > 0) is detected.\"}, {\"key\": \"equipment_identifier\", \"value\": \"Two scrubbers in operation: S-1 (acid repackaging line) and S-2 (caustic repackaging line); one carbon unit C-1 at outlet\", \"basis\": \"read\", \"quote\": \"S-1 (acid repackaging line) and S-2 (caustic repackaging line); C-1 carbon unit outlet\", \"locator\": \"Document title and condition references\", \"as_of\": \"2026-09-29\", \"affects\": \"These are the control devices regulated under the permit and required to be monitored daily and weekly to ensure compliance with emission limits.\"}, {\"key\": \"permit_number\", \"value\": \"26-2841-ST-01\", \"basis\": \"read\", \"quote\": \"Air Contaminant Discharge Permit 26-2841-ST-01\", \"locator\": \"Document header and condition reference\", \"as_of\": \"2026-09-29\", \"affects\": \"This is the permit under which the facility operates and whose conditions this log demonstrates compliance or non-compliance with.\"}, {\"key\": \"facility_address\", \"value\": \"4410 NW Front Ave, Portland, Oregon 97210\", \"basis\": \"read\", \"quote\": \"CASCADE SPECIALTY CHEMICALS, LLC — PORTLAND FACILITY\", \"locator\": \"Document header\", \"as_of\": \"2026-09-29\", \"affects\": \"Confirms the Portland site is the location of the scrubber and carbon monitoring system being logged.\"}], \"version_of_title\": \"Scrubber Pressure-Drop Log\", \"version_of_confidence\": \"high\", \"expected_missing\": [{\"title\": \"Air Contaminant Discharge Permit 26-2841-ST-01 itself\", \"why\": \"The record references and must be read in conjunction with the permit document to confirm the exact limits, monitoring frequency, and reporting requirements\", \"basis\": \"similar companies maintain their actual permits alongside monitoring logs for verification\"}, {\"title\": \"Monthly or quarterly summary report to Oregon DEQ\", \"why\": \"Standard air permits often require facilities to submit monthly or quarterly summaries of monitoring data to the agency, or to report excursions within a certain timeframe (e.g., 24 hours)\", \"basis\": \"similar companies must report permit excursions to DEQ; this log alone does not show evidence of DEQ notification of the Sep 9 excursion\"}, {\"title\": \"Root-cause analysis and corrective-action report for the September 9 S-2 excursion\", \"why\": \"When a permit condition limit is exceeded, permit holders are typically required to determine why, what was done to correct it, and how recurrence will be prevented\", \"basis\": \"standard permit practice requires documentation of investigation and remedy for out-of-compliance events\"}, {\"title\": \"Maintenance records for scrubbers S-1 and S-2\", \"why\": \"The log notes 'nozzles rinsed' on Aug 14 for S-2, suggesting maintenance is performed; full maintenance logs (frequency, scope, findings) would be expected\", \"basis\": \"scrubber performance depends on maintenance; companies typically keep separate maintenance schedules and records\"}, {\"title\": \"Equipment calibration certificate for magnehelic gauges\", \"why\": \"The log states readings are taken 'at the magnehelic gauge on the scrubber inlet'; these gauges must be calibrated to ensure accuracy\", \"basis\": \"regulatory monitoring requires calibrated instrumentation; facilities maintain calibration records separately from logs\"}], \"confidence_notes\": \"High confidence in what the log says: all data are clearly readable, dates and readings are explicit, and the permit conditions are stated directly in the document header. The major findings are solid: (1) one excursion on Sep 9 (S-2 at 6.4 in. w.c., exceeding 6.0 max); (2) supervisor review signatures are missing; (3) the weekly detector-tube checks are incomplete (missing week of Aug 14, and weeks of Sep 14 and 28 given operation through Sep 25). The only uncertainty is whether the missing detector-tube entries represent actual skipped checks or data-entry delays. The document does not explain the cause of the Sep 9 excursion or state whether it was reported to DEQ. The company should have the actual permit on file to confirm the exact reporting and retention requirements.\", \"could_not_read_reason\": \"null\", \"could_not_read_way_forward\": \"null\"}",
+    "json_parsed": true,
+    "model": "claude-haiku-4-5",
+    "cited_sources": 0,
+    "searches": null,
+    "structured": true,
+    "prompt_sha256": "54938d0ca37b4cebfe3ab5edd0639fc4e75ca359b4e9d4932a061430a9812948",
+    "quotes_checked": 10,
+    "quotes_verified": 4,
+    "extracted_text": "CASCADE SPECIALTY CHEMICALS, LLC — PORTLAND FACILITY\nSCRUBBER PRESSURE-DROP LOG — S-1 (acid repackaging line) and S-2 (caustic repackaging line)\nAir Contaminant Discharge Permit 26-2841-ST-01, Condition 3.1: record the pressure drop across each scrubber once per operating day; keep it between 2.0\nand 6.0 inches of water column whenever the line is operating. Readings taken at the magnehelic gauge on the scrubber inlet.\nMONTH: AUGUST 2026\nDate Acid line ran Caustic line ran S-1 ΔP (in. w.c.) S-2 ΔP (in. w.c.) Recorded by Notes\nAug 3 Y Y 3.6 4.0 T.N.\nAug 4 Y Y 3.7 4.1 T.N.\nAug 5 Y N 3.6 — T.N. caustic line down, no product\nAug 6 Y Y 3.8 4.0 K.S.\nAug 7 Y Y 3.7 4.2 K.S.\nAug 10 Y Y 3.9 4.1 T.N.\nAug 11 Y Y 3.8 4.3 T.N.\nAug 12 Y Y 3.8 4.2 T.N.\nAug 13 Y Y 4.0 4.2 K.S.\nAug 14 Y Y 3.9 4.4 K.S. nozzles rinsed\nAug 24 Y Y 3.7 4.0 T.N.\nAug 25 Y Y 3.8 4.1 T.N.\nAug 26 Y Y 3.8 4.1 T.N.\nAug 27 Y Y 3.9 4.3 K.S.\nAug 28 Y Y 3.9 4.2 K.S.\nAug 31 Y Y 3.7 4.0 T.N.\nAugust throughput (from the line counters): acid line ran 21 days, caustic line ran 20 days. Rows entered: 16.\nWEEKLY C-1 OUTLET DETECTOR-TUBE CHECK — AUGUST 2026 (Condition 3.3: weekly check for breakthrough at the C-1 carbon unit outlet)\nWeek of Tube reading (ppm) Breakthrough? Checked by\nAug 3 0 No T.N.\nAug 10 0 No T.N.\nAug 17 0 No K.S.\nAug 24 0 No T.N.\nAug 31 0 No T.N.\nMONTH: SEPTEMBER 2026\nDate Acid line ran Caustic line ran S-1 ΔP (in. w.c.) S-2 ΔP (in. w.c.) Recorded by Notes\nSep 1 Y Y 3.8 4.1 T.N.\nSep 2 Y Y 3.8 4.2 T.N.\nSep 3 Y Y 3.9 4.3 K.S.\nSep 4 Y Y 3.9 4.4 K.S.\nSep 8 Y Y 4.0 4.5 T.N.\nSep 9 Y Y 4.0 6.4 T.N.\nSep 10 Y Y 3.9 4.6 T.N.\nSep 11 Y Y 3.9 4.4 K.S.\nSep 14 Y Y 3.8 4.3 T.N.\nSep 15 Y Y 3.8 4.2 T.N.\nSep 16 Y Y 3.9 4.3 K.S.\nSep 17 Y Y 3.9 4.2 K.S.\nSep 18 Y Y 3.8 4.1 T.N.\nSep 21 Y Y 3.8 4.2 T.N.\nSep 22 Y Y 3.9 4.2 T.N.\nSep 23 Y Y 3.9 4.3 K.S.\nSep 24 Y Y 3.8 4.2 K.S.\nSep 25 Y Y 3.8 4.1 T.N.\nWEEKLY C-1 OUTLET DETECTOR-TUBE CHECK — SEPTEMBER 2026\nWeek of Tube reading (ppm) Breakthrough? Checked by\nSep 7 0 No T.N.\nSep 21 0 No T.N.\nRecorded by: T.N. = T. Nguyen, line lead · K.S. = K. Sato, line lead. Supervisor review: ____________________ Date: __________",
+    "started_at": "2026-09-29T18:28:44.985Z"
+  }
+}

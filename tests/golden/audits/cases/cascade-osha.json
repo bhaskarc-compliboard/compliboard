@@ -1,0 +1,229 @@
+{
+  "id": "cascade-osha",
+  "title": "Oregon OSHA \u2014 Cascade Specialty Chemicals",
+  "key": "cascade-osha.md",
+  "company": "cascade",
+  "agency": "U.S. Department of Labor - Occupational Safety and Health Administration",
+  "must": [
+    {
+      "id": "carry-eap-gaps",
+      "line": "at least three of the plan's four gaps carried as findings",
+      "type": "count_matching",
+      "collection": "findings",
+      "n": 3,
+      "any_of": [
+        [
+          "contact",
+          "name"
+        ],
+        [
+          "critical",
+          "operations"
+        ],
+        [
+          "alarm",
+          "ansi"
+        ],
+        [
+          "review",
+          "2021"
+        ]
+      ]
+    },
+    {
+      "id": "plan-stale",
+      "line": "the plan as stale, as of February 2021",
+      "type": "item",
+      "collections": [
+        "findings"
+      ],
+      "word": "stale",
+      "keywords": [
+        "plan"
+      ],
+      "min_keywords": 1,
+      "date_or_text": [
+        "2021-02",
+        "february 2021",
+        "2021"
+      ]
+    },
+    {
+      "id": "forklift-on-file",
+      "line": "the forklift logs as on file",
+      "type": "item",
+      "collections": [
+        "findings"
+      ],
+      "word": "on_file",
+      "keywords": [
+        "forklift"
+      ],
+      "min_keywords": 1
+    },
+    {
+      "id": "alarm-expected",
+      "line": "alarm testing or maintenance records as a finding against the plan's Section 2 condition",
+      "type": "item",
+      "collections": [
+        "findings"
+      ],
+      "keywords": [
+        "alarm",
+        "records"
+      ],
+      "min_keywords": 2
+    },
+    {
+      "id": "training-records-on-file",
+      "line": "the powered industrial truck training records on file, with R. Patel stale: next evaluation due 2026-05-19 and nothing after 2023-05-19 recorded (spec 09 AUDIT USE)",
+      "type": "count_matching",
+      "collection": "findings",
+      "n": 1,
+      "any_of": [
+        [
+          "training",
+          "patel"
+        ],
+        [
+          "patel",
+          "2026-05-19"
+        ],
+        [
+          "patel",
+          "stale"
+        ],
+        [
+          "evaluation",
+          "patel"
+        ]
+      ]
+    },
+    {
+      "id": "employee-count-contradiction",
+      "line": "the 42 against 65 contradiction, naming both documents: 42 as of 2021-02-01 from the plan (confirmed) against 65 for 2025 from the 300A (only proposed) (spec 10 AUDIT USE; spec 12 line C4)",
+      "type": "count_matching",
+      "collection": "contradictions",
+      "n": 1,
+      "any_of": [
+        [
+          "42",
+          "65"
+        ],
+        [
+          "employee",
+          "42"
+        ],
+        [
+          "employee",
+          "65"
+        ]
+      ]
+    },
+    {
+      "id": "extinguisher-stale",
+      "line": "the fire extinguisher certificate as stale, the annual maintenance expired 2026-08-20, passed at the run date (spec 11 AUDIT USE; spec 13 line 5)",
+      "type": "item",
+      "collections": [
+        "findings",
+        "dates"
+      ],
+      "keywords": [
+        "extinguisher"
+      ],
+      "min_keywords": 1,
+      "date_or_text": [
+        "2026-08-20",
+        "august 20, 2026",
+        "august 20 2026"
+      ],
+      "word": "stale"
+    }
+  ],
+  "must_not": [
+    {
+      "id": "no-new-eap-gap",
+      "line": "no finding claiming a fault the reading did not find",
+      "type": "eap_gap_whitelist",
+      "allowed": [
+        "contact",
+        "critical",
+        "alarm",
+        "review",
+        "2021",
+        "stale",
+        "ansi",
+        "duties",
+        "procedures"
+      ]
+    },
+    {
+      "id": "no-deq-permit",
+      "line": "nothing about the air permit",
+      "type": "absent_item",
+      "collections": [
+        "findings",
+        "dates",
+        "expected_not_seen"
+      ],
+      "subject": [
+        "air contaminant",
+        "acdp",
+        "air permit"
+      ],
+      "absence": []
+    },
+    {
+      "id": "no-satisfied",
+      "line": "no satisfied, compliant or met",
+      "type": "forbidden_words",
+      "words": [
+        "satisfied",
+        "compliant",
+        "in compliance",
+        " met ",
+        "all clear"
+      ],
+      "unless": [
+        "ansi-compliant",
+        "non-compliant"
+      ]
+    },
+    {
+      "id": "no-ai-word",
+      "line": "the word AI appears nowhere",
+      "type": "forbidden_words",
+      "words": [
+        "ai "
+      ],
+      "literal": true
+    }
+  ],
+  "acceptable": [
+    {
+      "id": "sds-not-judged",
+      "line": "the supplier SDS named as not judged",
+      "type": "item",
+      "collections": [
+        "findings"
+      ],
+      "keywords": [
+        "sds"
+      ],
+      "min_keywords": 1
+    },
+    {
+      "id": "forklift-gaps",
+      "line": "the forklift log's own gaps carried",
+      "type": "item",
+      "collections": [
+        "findings"
+      ],
+      "keywords": [
+        "horn"
+      ],
+      "min_keywords": 1
+    }
+  ],
+  "agency_was": "Oregon OSHA \u2014 the label the 29 September morning pass produced. The twelve-document pass that afternoon produced the string above instead and no Oregon OSHA row survives in company_labels, so buildAuditInput (lib/audit.ts:123 compares the label exactly) would match zero documents. The two strings are NOT merged; both are recorded. Oregon is a state-plan state, so the federal DOL string is arguably the wrong one of the two."
+}

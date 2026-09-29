@@ -1,0 +1,198 @@
+{
+  "id": "11-fire-extinguisher-certificate",
+  "title": "Portable fire extinguisher annual maintenance certificate, expired at the run date",
+  "spec": "11-fire-extinguisher-certificate.md",
+  "dir": "tests/golden/audits",
+  "fixture": "fixtures/11-fire-extinguisher-certificate.pdf",
+  "company": "cascade",
+  "must": [
+    {
+      "id": "kind",
+      "line": "kind: certificate",
+      "type": "field_one_of",
+      "field": "identity.kind",
+      "accept": [
+        "certificate"
+      ]
+    },
+    {
+      "id": "issuer",
+      "line": "issuer: Rose City Fire Protection, Inc. (a service company, not an agency)",
+      "type": "field_contains",
+      "field": "identity.issuer",
+      "accept": [
+        "rose city"
+      ]
+    },
+    {
+      "id": "agency-fire-or-osha",
+      "line": "agency includes a fire authority for Portland \u2014 accept \"Portland Fire & Rescue\", \"Portland Fire Marshal\", \"Oregon State Fire Marshal\" or \"OSFM\" \u2014 or OSHA (1910.157 governs portable extinguishers). Whichever the scan chooses, the label string must be the same across the three runs.",
+      "type": "list_contains",
+      "field": "identity.agencies",
+      "accept": [
+        "portland fire",
+        "fire marshal",
+        "oregon state fire marshal",
+        "osfm",
+        "osha"
+      ]
+    },
+    {
+      "id": "subject",
+      "line": "subject includes something like \"fire protection\" or \"fire extinguishers\"",
+      "type": "list_contains",
+      "field": "identity.subjects",
+      "accept": [
+        "fire protection",
+        "fire extinguisher",
+        "fire"
+      ]
+    },
+    {
+      "id": "site-portland",
+      "line": "site: Portland",
+      "type": "field_contains",
+      "field": "identity.site",
+      "accept": [
+        "portland"
+      ]
+    },
+    {
+      "id": "doc-date",
+      "line": "doc_date: August 20, 2025, kind \"issued\"",
+      "type": "date_equals",
+      "field": "identity.doc_date",
+      "value": "2025-08-20"
+    },
+    {
+      "id": "expiry",
+      "line": "expiry August 20, 2026",
+      "type": "date_anywhere",
+      "fields": [
+        "significant_date"
+      ],
+      "value": "2026-08-20",
+      "collections": [
+        "deadlines",
+        "notes"
+      ]
+    },
+    {
+      "id": "status",
+      "line": "Status (must): the runner computes it from the dates and the run date: expiring within 90 days before August 20, 2026; expired after. At a run date of September 29, 2026 or later: expired. Never \"compliant\".",
+      "type": "status_by_date",
+      "expiry": "2026-08-20",
+      "expiring_window_days": 90
+    },
+    {
+      "id": "no-gaps",
+      "line": "Gaps (must): none on the certificate itself. It is a service record and is complete.",
+      "type": "empty",
+      "collections": [
+        "gaps"
+      ]
+    },
+    {
+      "id": "deadline-annual",
+      "line": "Deadlines (must contain, with dates): 1. Next annual maintenance August 20, 2026 (flagged as passed at any run date after it)",
+      "type": "item",
+      "collections": [
+        "deadlines"
+      ],
+      "date": "2026-08-20",
+      "keywords": [
+        "annual",
+        "maintenance",
+        "service"
+      ],
+      "min_keywords": 1
+    },
+    {
+      "id": "deadline-six-year",
+      "line": "Deadlines (must contain, with dates): 2. Six-year maintenance for W-3 and L-1 by November 2026",
+      "type": "item",
+      "collections": [
+        "deadlines"
+      ],
+      "keywords": [
+        "six",
+        "w-3",
+        "l-1"
+      ],
+      "min_keywords": 1,
+      "date_or_text": [
+        "november 2026",
+        "2026-11"
+      ]
+    },
+    {
+      "id": "label-consistency",
+      "line": "Consistency across the three runs: the agency label must be the same string in all three.",
+      "type": "labels_identical_across_runs"
+    }
+  ],
+  "must_not": [
+    {
+      "id": "no-monthly-inspection-gap",
+      "line": "a gap that monthly inspections are missing; the certificate says they are the customer's responsibility and this document does not record them",
+      "type": "absent_item",
+      "collections": [
+        "gaps"
+      ],
+      "subject": [
+        "monthly inspection",
+        "monthly visual",
+        "monthly check",
+        "monthly"
+      ],
+      "absence": [
+        "no ",
+        "missing",
+        "absent",
+        "lacks",
+        "none",
+        "does not",
+        "not ",
+        "no record",
+        "without"
+      ]
+    }
+  ],
+  "reported": [
+    {
+      "id": "doc-date-kind",
+      "line": "doc_date kind \"issued\"",
+      "type": "field_contains",
+      "field": "identity.doc_date_kind",
+      "accept": [
+        "issued"
+      ]
+    },
+    {
+      "id": "significant-date-kind",
+      "line": "The one date that matters for a certificate is the expiry.",
+      "type": "field_contains",
+      "field": "significant_date_kind",
+      "accept": [
+        "expiry"
+      ]
+    },
+    {
+      "id": "facts-may-contain",
+      "line": "Facts (may contain, quote verified true): 14 extinguishers at the Portland facility as of August 20, 2025; the service company's name and licence. Acceptable.",
+      "type": "item",
+      "collections": [
+        "facts"
+      ],
+      "keywords": [
+        "14",
+        "extinguisher",
+        "rose city",
+        "licence",
+        "license"
+      ],
+      "min_keywords": 2,
+      "quote_must_verify": true
+    }
+  ]
+}

@@ -206,8 +206,17 @@ const COMPANIES = {
 }
 
 // README: "the runner scans them in the order 01, 02, 05, 06a, 06b for that company."
+// The README's order, so labels and "what this company already holds" accumulate the way they will
+// for a customer: 01, 02, 05, 06a, 06b, then 07 to 11, then the two templates.
 const ORDER = ['01-eap-chemical', '02-acdp-chemical', '05-sds-supplier', '06a-forklift-log',
-               '06b-forklift-log-photo', '03-olcc-cannabis', '04-fsp-food']
+               '06b-forklift-log-photo',
+               // Audits Run 1b, in the audits README's order. They come AFTER the five so the
+               // labels and the "already holds" list are what they would be for a real customer by
+               // the time each is read; 12 and 13 are templates and are read last.
+               '07-scrubber-log-record', '08-deq-annual-report-2025', '09-forklift-training-records',
+               '10-osha-300a-2025', '11-fire-extinguisher-certificate',
+               '12-auditor-checklist-deq-air', '13-company-self-check',
+               '03-olcc-cannabis', '04-fsp-food']
 
 // ---------------------------------------------------------------------------
 // JUDGING
@@ -477,8 +486,13 @@ function compliantCheck(scan) {
 }
 
 /** Quotes on facts are checked verbatim against the spec's DOCUMENT TEXT. */
-function specDocumentText(specFile) {
-  const src = readFileSync(`${DIR}/${specFile}`, 'utf8')
+// *** A CASE MAY CARRY ITS SPEC IN ANOTHER FOLDER — Audits Run 1b. ***
+// Cases 07 to 13 were written for the Audits section and live in `tests/golden/audits/`, numbered on
+// from this set so a case id means one thing everywhere. `dir` on the case file says where; absent, it
+// is this folder, so every existing case is unchanged.
+const AUDIT_DIR = 'tests/golden/audits'
+function specDocumentText(specFile, dir = DIR) {
+  const src = readFileSync(`${dir}/${specFile}`, 'utf8')
   const m = src.match(/## DOCUMENT TEXT\n([\s\S]*?)\n---\n\n## ANSWER KEY/)
   return m ? m[1].trim() : ''
 }
@@ -535,21 +549,32 @@ async function resetCompany(co) {
   return (docs ?? []).length
 }
 
+// *** THE FIXTURE'S OWN FOLDER, AND ITS OWN MEDIA TYPE — Audits Run 1b. ***
+// Both of these were hardcoded and both were wrong for cases 07 to 13: the path ignored the case
+// file's `dir`, and every upload was labelled `application/pdf`. Cases 12 and 13 are .docx, and
+// `lib/documentContent.ts` line 148 detects Word by type OR extension — so a mislabelled .docx
+// would have been read correctly by accident, off the filename, with a lie stored in `file_type`
+// for anything that later trusts the column instead of the name.
+const MEDIA = { pdf: 'application/pdf',
+  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }
+
 async function uploadFixture(co, caseFile) {
-  const path = `${DIR}/${caseFile.fixture}`
+  const path = `${caseFile.dir ?? DIR}/${caseFile.fixture}`
   if (!existsSync(path)) die(`Missing fixture ${path}. Run: npm run golden:docs:render`)
   const bytes = readFileSync(path)
   const name = path.split('/').pop()
+  const ext = name.split('.').pop().toLowerCase()
+  const type = MEDIA[ext] ?? die(`No media type for .${ext} (${name}) — add it to MEDIA`)
   const storagePath = `${co.id}/golden/${Date.now()}-${name}`
   const { error: up } = await db.storage.from('company-documents')
-    .upload(storagePath, bytes, { contentType: 'application/pdf' })
+    .upload(storagePath, bytes, { contentType: type })
   if (up) die(`Upload failed for ${name}: ${up.message}`)
   const { data: row, error } = await db.from('documents').insert({
-    company_id: co.id, name, file_url: storagePath, file_type: 'application/pdf',
+    company_id: co.id, name, file_url: storagePath, file_type: type,
     file_size: bytes.length, source: 'upload', status: 'uploaded', entity_id: co.entityId,
   }).select('id').single()
   if (error) die(`documents insert for ${name}: ${error.message}`)
-  return { documentId: row.id, bytes, name }
+  return { documentId: row.id, bytes, name, type }
 }
 
 /** One ordered copy, in lib/documentScan.ts, so this runner and `npm run scan` cannot drift. */
@@ -650,7 +675,7 @@ if (fromRuns) {
     // re-judge 147 runs against corrected answer keys.
     const all = [...byRun.entries()].sort(([a], [b]) => (a < b ? -1 : 1)).map(([, f]) => f)
     const stored = since ? all.filter((f) => f.slice(0, 10) >= since) : all.slice(-times)
-    const specText = specDocumentText(c.spec)
+    const specText = specDocumentText(c.spec, c.dir ?? DIR)
     const runs = stored.map((f, i) => {
       const d = JSON.parse(readFileSync(`${dir}/${f}`, 'utf8'))
       const scan = d.scan
@@ -681,8 +706,8 @@ if (fromRuns) {
 
 for (const c of (fromRuns ? [] : caseFiles)) {
   const co = companies[c.company]
-  const specText = specDocumentText(c.spec)
-  const { documentId, bytes, name } = await uploadFixture(co, c)
+  const specText = specDocumentText(c.spec, c.dir ?? DIR)
+  const { documentId, bytes, name, type } = await uploadFixture(co, c)
   const runs = []
 
   for (let n = 1; n <= times; n++) {
@@ -691,7 +716,13 @@ for (const c of (fromRuns ? [] : caseFiles)) {
     const t0 = Date.now()
     const scan = await runDocumentScan({
       buffer: bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength),
-      fileName: name, fileType: 'application/pdf', companyId: co.id, context,
+      // *** THE FILE'S OWN TYPE, NOT A CONSTANT — Audits Run 1b. ***
+      // This read `'application/pdf'` for every fixture. Every fixture WAS a PDF until cases 12 and
+      // 13, and then `parseDocumentToBlocks` was told a .docx was a PDF, sent it as a pdf document
+      // block, and the API refused the call: "messages.0.content.0.pdf.source.base64.data: The PDF
+      // specified was not valid." A scan that reads a Word file is the customer path for a .docx
+      // upload, so the runner must exercise it rather than assert around it.
+      fileName: name, fileType: type, companyId: co.id, context,
     })
     const wall = Date.now() - t0
     const { scanId, aiCallId } = await saveScan(db, scan, { documentId, companyId: co.id, entityId: co.entityId })

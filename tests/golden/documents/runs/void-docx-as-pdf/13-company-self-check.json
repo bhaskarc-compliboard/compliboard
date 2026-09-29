@@ -1,0 +1,107 @@
+{
+  "case": "13-company-self-check",
+  "run": 1,
+  "run_date": "2026-09-29",
+  "model": "claude-haiku-4-5",
+  "structured": true,
+  "searches": null,
+  "cited_sources": 0,
+  "prompt_sha256": "d3203165edd4f02b12de7d84c03ee336a1c6fc1bc05570da042512bf4b597093",
+  "scan_id": "6c1eb698-4273-45be-80ae-5ef8a93b95c4",
+  "ai_call_id": null,
+  "company_context": "WHO THIS COMPANY IS\n  Name: Cascade Specialty Chemicals, LLC\n  Industry: chemical manufacturing (recorded as chemical-manufacturing)\n  Address: Portland, Oregon\n  State: Oregon\nTheir sites:\n  - Portland — 4410 NW Front Ave, Portland, Oregon 97210 (primary)\n\nWHAT A PERSON HAS CONFIRMED FROM A DOCUMENT\nEach of these was read in the named document and then confirmed by a person.\n  (nothing confirmed yet)\n\nLABELS ALREADY IN USE FOR THIS COMPANY\nAgencies:\n  - Oregon DEQ\n  - OSHA\nSubjects:\n  - chemical_safety\n  - emergency_preparedness\n  - workplace_safety\n\nFACT KEYS ALREADY IN USE FOR THIS COMPANY\n  - acgih_tlv_exposure_limit\n  - alarm_coverage_areas\n  - alarm_monitoring_service\n  - alarm_signal_meanings\n  - alarm_test_frequency\n  - assembly_point_distance\n  - carbon_replacement_frequency\n  - cases_with_days_away\n  - cases_with_job_transfer_restriction\n  - certifying_official\n  - chemical_composition\n  - days_away_from_work\n  - days_job_transfer_restriction\n  - defect_found_september_9\n  - dot_reportable_quantity\n  - emergency_eyewash_shower_distance\n  - emergency_shower_and_eyewash_location\n  - employee_count\n  - equipment_hours_end_of_period\n  - equipment_identifier\n  - extinguisher_types_abc_dry_chemical\n  - extinguisher_types_class_k\n  - extinguisher_types_co2\n  - extinguisher_units_failed\n  - extinguisher_units_total\n  - facility_address\n  - first_aid_responders_per_shift\n  - freezing_point\n  - hazard_classification\n  - hearing_loss\n  - hydrostatic_test_schedule_co2_units\n  - hydrostatic_test_status_l1\n  - industry_description\n  - injury_type_total\n  - inspection_checklist_items\n  - inspection_frequency_required\n  - maintenance_standard_used\n  - new_employee_orientation\n  - niosh_rel_exposure_limit\n  - operator_certification_j_rivera\n  - operator_certification_m_chen\n  - operator_certification_r_patel\n  - osha_pel_exposure_limit\n  - other_illnesses\n  - other_recordable_cases\n  - permit_number\n  - permit_type\n  - ph_value\n  - poisonings\n  - product_identifier\n  - propane_tank_maintenance_event\n  - rcra_hazard_waste_code\n  - recommended_ppe_eye\n  - recommended_ppe_skin\n  - record_retention_period\n  - refresher_training_requirement\n  - respiratory_conditions\n  - scrubber_pressure_drop_range\n  - scrubber_s1_design_flow\n  - scrubber_s2_design_flow\n  - service_company_license\n  - service_technician_name\n  - signal_word\n  - skin_disorders\n  - source_category\n  - storage_tank_capacity\n  - supplier_name\n  - total_deaths\n  - total_hours_worked\n  - trainer_certification\n  - un_number\n  - visible_emissions_limit",
+  "company_context_sha256": "65e79a9145c1566a1b7528dd8347c985b520e7df30ba2c3b12f779e21cdf1391",
+  "wall_ms": 246,
+  "cost_usd": null,
+  "input_tokens": null,
+  "output_tokens": null,
+  "json_parsed": false,
+  "compliant_found_in": [],
+  "alternative_pass": false,
+  "verdicts": {
+    "kind": {
+      "verdict": "FAIL",
+      "detail": "identity.kind = \"null\""
+    },
+    "issuer": {
+      "verdict": "FAIL",
+      "detail": "identity.issuer = \"null\""
+    },
+    "site-portland": {
+      "verdict": "FAIL",
+      "detail": "identity.site = \"null\""
+    },
+    "doc-date-none": {
+      "verdict": "PASS",
+      "detail": "identity.doc_date = null"
+    },
+    "status": {
+      "verdict": "FAIL",
+      "detail": "status = \"could not read\""
+    },
+    "no-gaps": {
+      "verdict": "PASS",
+      "detail": "none"
+    },
+    "no-facts-about-cascade": {
+      "verdict": "PASS",
+      "detail": "none"
+    },
+    "label-consistency": {
+      "verdict": "CROSS",
+      "detail": "judged across the three runs, below"
+    },
+    "agency": {
+      "verdict": "FAIL",
+      "detail": "identity.agencies = [empty]"
+    },
+    "deadlines-none": {
+      "verdict": "PASS",
+      "detail": "none"
+    }
+  },
+  "scan": {
+    "identity": {
+      "kind": null,
+      "title": null,
+      "issuer": null,
+      "agencies": [],
+      "subjects": [],
+      "site": null,
+      "jurisdiction": [],
+      "doc_date": null,
+      "doc_date_kind": null,
+      "page_refs": {}
+    },
+    "summary": null,
+    "status": "could_not_read",
+    "significant_date": null,
+    "significant_date_kind": null,
+    "freshness_note": null,
+    "gaps": [],
+    "conditions": [],
+    "deadlines": [],
+    "facts": [],
+    "version_of": {
+      "title": null,
+      "confidence": null
+    },
+    "expected_missing": [],
+    "confidence_notes": null,
+    "could_not_read": {
+      "reason": "The reading service refused our request to read this document, so nothing was read. That is our end of it, not a problem with the file you sent.",
+      "way_forward": "Read it again once we have fixed it — nothing about your file needs changing."
+    },
+    "raw_text": "API 400: 400 {\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"messages.0.content.0.pdf.source.base64.data: The PDF specified was not valid.\"},\"request_id\":\"req_011CfYD2WtWSCm7oXjWqZ7U5\"}",
+    "json_parsed": false,
+    "model": "claude-haiku-4-5",
+    "cited_sources": 0,
+    "searches": null,
+    "structured": true,
+    "prompt_sha256": "d3203165edd4f02b12de7d84c03ee336a1c6fc1bc05570da042512bf4b597093",
+    "quotes_checked": 0,
+    "quotes_verified": 0,
+    "extracted_text": "",
+    "started_at": "2026-09-29T18:31:32.851Z"
+  }
+}

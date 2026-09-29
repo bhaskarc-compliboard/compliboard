@@ -1,0 +1,876 @@
+{
+  "case": "cascade-osha",
+  "agency": "U.S. Department of Labor - Occupational Safety and Health Administration",
+  "mode": "whole",
+  "run": 2,
+  "run_date": "2026-09-29",
+  "model": "claude-haiku-4-5",
+  "input_block": "TODAY IS 2026-09-29. Every \"passed\" or \"expiring\" judgement is against that date.\n\nTHE AGENCY THIS AUDIT IS ABOUT: U.S. Department of Labor - Occupational Safety and Health Administration\nOnly this agency. Another regulator's documents are listed at the end as titles only and\nare not yours to judge here.\n\nWHO THIS COMPANY IS\n  Name: Cascade Specialty Chemicals, LLC\n  Industry: chemical manufacturing (recorded as chemical-manufacturing)\n  Address: Portland, Oregon\nTheir sites:\n  - Portland — 4410 NW Front Ave, Portland, Oregon 97210 (primary)\n\nDOCUMENTS ON FILE FOR U.S. DEPARTMENT OF LABOR - OCCUPATIONAL SAFETY AND HEALTH ADMINISTRATION — 3\n\n  --- Certificate of Annual Maintenance — Portable Fire Extinguishers\n      id: 5a137618-2f46-4a38-b74a-8e3d878055aa\n      file: 11-fire-extinguisher-certificate.pdf\n      kind: record · status: recorded · shown as: recorded\n      the document's own date: 2025-08-20 (issued)\n      the date that matters: 2025-08-20 (last_entry)\n      site: Portland\n      what the reading said it is: This is a maintenance service record documenting annual inspection and servicing of 14 portable fire extinguishers at the Portland facility, performed by a licensed technician in accordance with NFPA 10 (2022). All units passed inspection and are ready for use; the company must conduct monthly visual inspections of each unit and schedule the next annual maintenance by August 20, 2026, with special attention to units W-3 and L-1 which require six-year internal maintenance before November 2026.\n      WHAT THE READING FOUND WRONG WITH IT: nothing\n      WHAT THIS DOCUMENT OBLIGES THEM TO KEEP DOING (4), read out of the document itself:\n        · NFPA 10, Section 7.2 — Monthly visual inspection of all fire extinguishers\n            the evidence you would expect to see: Monthly inspection tags or records on each extinguisher documenting date, inspector name, and condition checks\n        · NFPA 10, Section 7.3 and Oregon OAR 437-002-0187(2) — Annual maintenance by certified technician\n            the evidence you would expect to see: Current maintenance certificate with technician license, date, and results for each unit\n        · NFPA 10, Section 7.3.6 — Six-year internal maintenance for W-3 and L-1\n            the evidence you would expect to see: Maintenance certificate documenting internal examination, disassembly, inspection, and refilling before November 2026\n        · NFPA 10, Chapter 8 — Hydrostatic testing at prescribed intervals\n            the evidence you would expect to see: Hydrostatic test records showing test date, pressure results, and technician credentials for each unit when interval arrives\n      DATES THIS DOCUMENT SETS (2):\n        · Annual maintenance renewal for all units — 2026-08-20 (recurring)\n        · Six-year internal maintenance for units W-3 and L-1 — 2026-11-30\n      WHAT THE READING SAID A COMPANY LIKE THIS USUALLY ALSO HOLDS (4) —\n        a suggestion from similar companies, NOT a checked requirement:\n        · Hydrostatic test records — Various units will require hydrostatic testing at 12-year intervals (dry chemical and CO2 types per manufacture date); no records of completed tests are listed.\n        · Monthly visual inspection log for period August 2025 to September 2026 — NFPA 10, Section 7.2 and Oregon regulations require monthly visual inspections with records kept on unit tags; a complete set would show compliance.\n        · Six-year internal maintenance certificate for units W-3 and L-1 — These units reach their six-year interval in 2026 and require internal examination before November 2026; no certificate for this work appears in the company records.\n        · Updated annual maintenance certificate (2026) — The previous certificate is dated August 2025; renewal was due August 20, 2026 and the current date is September 29, 2026, indicating overdue maintenance.\n      WHAT THIS DOCUMENT SAYS, proposed by the reading, not confirmed by anyone (8):\n        · abc dry chemical units: 11, as of 2025-08-20\n            it says: \"Types include ABC dry chemical (W-1, W-2, W-3, W-4, D-1, D-2, O-1, B-1, A-1, A-2, T-1)\"\n            where: Page 1, table 'Type' column\n        · class k units: 1, as of 2025-08-20\n            it says: \"O-2 Offices, break room Class K 6 L\"\n            where: Page 1, table\n        · co2 units: 2, as of 2025-08-20\n            it says: \"L-1 and L-2 are CO2 type\"\n            where: Page 1, table 'Type' column\n        · extinguisher units passed: 14, as of 2025-08-20\n            it says: \"Units failed or removed from service: 0.\"\n            where: Page 1, table footer\n        · extinguisher units total: 14, as of 2025-08-20\n            it says: \"Units serviced: 14.\"\n            where: Page 1, table footer\n        · maintenance standard applied: NFPA 10 (2022), Chapter 7, and manufacturer instructions, as of 2025-08-20\n            it says: \"Service performed: annual maintenance in accordance with NFPA 10 (2022), Chapter 7, and the manufacturer's instructions\"\n            where: Page 1\n        · service company license: FPE-1187, as of 2025-08-20\n            it says: \"Oregon SFM Licence FPE-1187\"\n            where: Page 1, header\n        · technician license: PET-4406, as of 2025-08-20\n            it says: \"Technician: Marcus Bell, Oregon SFM Portable Extinguisher Technician Licence PET-4406\"\n            where: Page 1, signature line\n\n  --- Monthly EHS Self-Check\n      id: 88f0951e-ceaa-4cf7-95de-d5d5937aa66d\n      file: 13-company-self-check.docx\n      kind: program · status: not_judged · shown as: on_file\n      the document's own date: none stated (unknown)\n      the date that matters: none\n      site: Portland\n      what the reading said it is: This is a monthly self-inspection checklist designed to track compliance with workplace safety, air quality, fire safety, and chemical handling standards. The company completes this form to verify that key controls are in place each month — air permit posted and valid, scrubber pressure-drop readings logged within operating ranges, detector-tube checks performed, equipment inspections done, fire extinguishers current, exits clear, eyewash and safety showers functional, and safety data sheets available. Any item marked 'N' must be reported to the Plant Manager by the 5th of the following month.\n      WHAT THE READING FOUND WRONG WITH IT (8) — these are already findings; carry them, do not re-find them:\n        · No document date or completion record visible\n            The template shows blanks for Month, Completed by, and Supervisor with no dates or initials filled in. Without a completed instance of this form, it is not possible to verify whether the company is performing these checks or how recent the most recent check was.\n            what it needs: Obtain a completed monthly self-check form showing the month reviewed, the date of supervisor review, the employee who completed it, and the results (Y/N and initials) for each line item. Confirm the company fills this out every month.\n            the rule: OSHA General Duty Clause (OSH Act Section 5(a)(1)); OAR 340-216-8010 et seq. (Oregon air permit posting and availability requirements)\n        · No procedure for tracking or escalating failures  [worked out from the document, not stated in it]\n            The form states 'Items marked N are reported to the Plant Manager by the 5th of the following month' but does not specify what happens next — no procedure for investigation, root cause, corrective action, documentation, or verification that issues are fixed before the next month.\n            what it needs: Establish a written procedure defining: (1) what constitutes an 'N' result, (2) who investigates, (3) required corrective actions by category, (4) documentation requirements, (5) verification that fixes are in place before the next check, (6) escalation criteria for repeated failures or safety risks.\n            the rule: OSHA General Duty Clause; 29 CFR 1910.22 (general safety requirements); Oregon DEQ permit conditions typically require prompt correction of deficiencies\n        · Missing scope for Line 3 — C-1 detector-tube check frequency and method  [worked out from the document, not stated in it]\n            Line 3 calls for 'Weekly C-1 detector-tube checks done and recorded every week this month' but the checklist does not specify what constitutes a valid check (e.g., testing method, recording format, pass/fail criteria, action if outlet exceeds threshold).\n            what it needs: Add to the procedure or attach a reference document: the standard or protocol for C-1 outlet detector-tube testing, the acceptable range or pass criterion, the required log format, and what corrective action is required if the check shows a failure.\n            the rule: Oregon air permit conditions for scrubber outlet monitoring (likely specified in Permit 26-2841-ST-01 or its attachments); ANSI/ASABE standard or equivalent\n        · Missing acceptance range for Line 2 — scrubber pressure-drop readings\n            Line 2 specifies 'readings between 2.0 and 6.0' but does not clarify the units (inches water column, bar, kPa, etc.) or reference the source permit condition that sets this range.\n            what it needs: Amend Line 2 to state the units of measurement (e.g., 'readings between 2.0 and 6.0 inches of water column') and add a reference to the permit condition or design document that establishes this range.\n            the rule: Oregon air permit conditions for scrubber operations; company's own Scrubber Pressure-Drop Log document already exists\n        · No definition of defect follow-up documentation for Line 4  [worked out from the document, not stated in it]\n            Line 4 requires 'any defect followed up' but does not specify what follow-up means — repair timelines, work orders, log entries, supervisor approval, or sign-off required.\n            what it needs: Add to the procedure or manual: define 'follow-up' to include (1) creation of work order or incident report, (2) severity/urgency category, (3) repair deadline (e.g., before next use, within 24 hours, within one week), (4) required documentation (photos, maintenance log entry, mechanic's sign-off), and (5) verification that defect was corrected before the truck next runs.\n            the rule: OSHA 29 CFR 1910.178 (powered industrial truck operation and maintenance); company's own PIT Pre-Shift Inspection Log already documents daily checks\n        · Fire extinguisher tag protocol not specified  [worked out from the document, not stated in it]\n            Line 5 states fire extinguishers must be 'tagged within the last 12 months; monthly visual check initialled on each tag' but does not specify who performs the monthly check (technician or any employee), where initials go, or what visual checks constitute pass/fail.\n            what it needs: Add procedures for fire extinguisher maintenance: (1) annual professional inspection/recharge must be performed by a certified service company; (2) monthly visual walk-through: check for damage, blockage, pressure gauge in green zone; (3) log and initial a tag on the extinguisher or maintain a separate log; (4) any defect triggers immediate service or replacement. Reference NFPA 10 or equivalent.\n            the rule: NFPA 10 (Standard for Portable Fire Extinguishers); OSHA 29 CFR 1910.157 (general requirements for all portable fire extinguishers)\n        · Eyewash and safety shower flush protocol incomplete  [worked out from the document, not stated in it]\n            Line 7 calls for 'Eyewash stations and safety showers flushed this week and logged' but does not specify duration of flush, acceptance criteria, or where logs are kept.\n            what it needs: Add to the procedure: (1) flushing frequency (at minimum weekly; some standards require daily or when in use); (2) flush duration (typically 1–3 minutes to clear lines); (3) visual inspection for water flow, clarity, and nozzle function; (4) log entry must include date, time, location, flush duration, any defects noted, and initials; (5) any malfunction must trigger repair/replacement before next work day.\n            the rule: ANSI Z535.4 (labeling and marking of hazardous substances); OSHA 29 CFR 1910.151 (eye and face protection); many states and facilities follow ANSI Z535.1 or local code for emergency equipment inspection\n        · SDS binder update protocol undefined  [worked out from the document, not stated in it]\n            Line 8 requires 'Safety data sheets on hand for every chemical received this month; binder index updated' but does not define who updates the index, how indexing is organized, or how obsolete SDSs are removed.\n            what it needs: Add to the SDS management procedure: (1) designate responsible person(s); (2) require SDS to be obtained and added to binder within X days of receipt (commonly within 5–10 days); (3) organize by product name, CAS number, or hazard category with consistent labeling; (4) maintain an index or log with product name, receipt date, SDS version date, and location in binder; (5) remove and archive obsolete SDSs (keep for X years per record retention policy); (6) verify accessibility during inspections; (7) train all employees on binder location and use.\n            the rule: OSHA 29 CFR 1910.1200(g) (Hazard Communication Standard, SDS requirements)\n      DATES THIS DOCUMENT SETS (1):\n        · Items marked N reported to Plant Manager — no date stated (recurring)\n      WHAT THE READING SAID A COMPANY LIKE THIS USUALLY ALSO HOLDS (7) —\n        a suggestion from similar companies, NOT a checked requirement:\n        · Completed monthly forms for prior months — To verify the company is actually conducting these checks monthly and responding to failures, a history of completed forms is essential. Without them, the template is a procedure document only, not evidence of compliance.\n        · Escalation or investigation log for 'N' results — The checklist states failures go to the Plant Manager by the 5th of the following month, but no log of those reports, investigations, or remediation actions was provided. This is critical evidence that problems are addressed.\n        · Exit route and emergency egress audit or floor plan — Line 6 checks that exits and aisles are clear and signs are lit, but no floor plan, exit signage documentation, or periodic egress audit procedure is provided.\n        · Fire extinguisher maintenance contract or service record — Line 5 requires annual professional tagging and monthly checks. The company should hold a service contract and annual maintenance records, which are missing from the submission.\n        · Powered Industrial Truck operator training and evaluation records — The company has a 'Powered Industrial Truck Operator Training and Evaluation Record' in its document list, but how that links to the pre-shift inspection protocol on Line 4 is not shown.\n        · Scrubber maintenance and testing SOP — Line 2 and 3 reference specific monitoring ranges and detector-tube checks, but the actual procedure, acceptance criteria, and corrective-action thresholds are not attached or incorporated.\n        · SDS master list or binder with current index — Line 8 requires an updated SDS binder and index. The template does not show how many chemicals are in inventory or what the current index looks like.\n      WHAT THIS DOCUMENT SAYS, proposed by the reading, not confirmed by anyone (1):\n        · inspection checklist sections: 8 line items covering air permit, scrubber monitoring, detector-tube checks, forklift inspections, fire extinguisher maintenance, exit routes, eyewash/safety showers, and safety data sheets\n            it says: \"8 check items numbered 1–8\"\n            where: table rows\n\n  --- OSHA Form 300A Summary of Work-Related Injuries and Illnesses for Year 2025\n      id: b91959b1-235a-4292-bbfd-19d81b99d84f\n      file: 10-osha-300a-2025.pdf\n      kind: record · status: current · shown as: recorded\n      the document's own date: 2026-02-01 (issued)\n      the date that matters: 2026-02-01 (last_entry)\n      site: Portland\n      what the reading said it is: This is OSHA Form 300A, the annual summary of recordable work-related injuries and illnesses for calendar year 2025. The form is required to be completed by employers with 10 or more employees and must be posted in a visible workplace location from February 1 through April 30 of the following year. The form documents that Cascade Specialty Chemicals had 3 recordable cases in 2025 (1 case with days away from work, 2 other recordable cases), with 6 total days away from work and no fatalities.\n      WHAT THE READING FOUND WRONG WITH IT: nothing\n      WHAT THIS DOCUMENT OBLIGES THEM TO KEEP DOING (3), read out of the document itself:\n        · 29 CFR 1904.32 — Post Form 300A in visible location\n            the evidence you would expect to see: Physical posting of the form at the Portland facility in a conspicuous location where employee notices are customarily displayed from February 1 through April 30, 2026\n        · 29 CFR 1904.33 — Retain Form 300A and supporting OSHA 300 Log\n            the evidence you would expect to see: Stored copies of the Form 300A and underlying OSHA Form 300 Log retained for five years following the end of the calendar year covered (through December 31, 2030)\n        · 29 CFR 1904.32 — Certify accuracy by company executive\n            the evidence you would expect to see: Form signed and certified by a company executive attesting to the truth and accuracy of entries\n      DATES THIS DOCUMENT SETS (3):\n        · Post Form 300A in workplace — 2026-02-01 (recurring)\n        · Remove/stop posting Form 300A — 2026-04-30 (recurring)\n        · Retain records (end date) — 2030-12-31\n      WHAT THE READING SAID A COMPANY LIKE THIS USUALLY ALSO HOLDS (4) —\n        a suggestion from similar companies, NOT a checked requirement:\n        · Documentation of posting location and dates — To verify the form was posted in a conspicuous location from February 1 through April 30, 2026 as required\n        · Electronic submission confirmation via OSHA Injury Tracking Application — If the company meets the threshold (250+ employees or 20-249 in designated high-hazard industries), electronic data submission was required by March 2, 2026\n        · OSHA Form 300 Log (detailed injury and illness log) — This 300A is a summary; the underlying Form 300 Log with individual case details must also be retained\n        · OSHA Form 301 Incident Reports — Each recordable case on the 300 Log should have a corresponding Form 301 with incident details\n      WHAT THIS DOCUMENT SAYS, proposed by the reading, not confirmed by anyone (9):\n        · certifying official: Daniel Okafor, Plant Manager, as of 2026-02-01\n            it says: \"Daniel Okafor · Plant Manager · Phone (503) 555-0148 · Date: February 1, 2026\"\n            where: Sign here section\n        · days away from work: 6 days total, as of 2025-12-31\n            it says: \"Total number of days away from work: 6 (K)\"\n            where: Number of Days section\n        · employee count: 65 (annual average), as of 2025-12-31\n            it says: \"Annual average number of employees: 65\"\n            where: Employment information section\n        · facility location: 4410 NW Front Avenue, Portland, Oregon 97210, as of 2025-12-31\n            it says: \"Street: 4410 NW Front Avenue; City: Portland · State: OR · ZIP: 97210\"\n            where: Establishment information section\n        · industry classification: NAICS 424690 - Chemical and allied products merchant wholesaler; repackaging of acids, caustics and solvents, as of 2025-12-31\n            it says: \"North American Industrial Classification (NAICS): 424690; Industry description: Chemical and allied products merchant wholesaler; repackaging of acids, caustics and solvents\"\n            where: Establishment information section\n        · injuries recorded: 3, as of 2025-12-31\n            it says: \"Total number of (M): Injuries 3\"\n            where: Injury and Illness Types section\n        · issued date: 2026-02-01, as of 2026-02-01\n            it says: \"Date: February 1, 2026\"\n            where: Sign here section\n        · total hours worked: 128,400, as of 2025-12-31\n            it says: \"Total hours worked by all employees last year: 128,400\"\n            where: Employment information section\n        · total recordable cases: 3, as of 2025-12-31\n            it says: \"Total number of cases with days away from work: 1 (H); Total number of other recordable cases: 2 (J)\"\n            where: Number of Cases section\n\nFACTS THIS COMPANY HAS CONFIRMED, ACROSS EVERYTHING THEY HOLD\nEach was read in a document and then confirmed by a person. Nothing a reading merely\nproposed is here — an unconfirmed proposal is a question, not a fact.\n  (nothing confirmed yet)\n\nEVERYTHING ELSE THIS COMPANY HOLDS — 9, TITLES AND DATES ONLY\nListed so you can say what is NOT among them. You have not been shown their contents and\nmust not describe what is in them.\n  - Air Contaminant Discharge Permit — Compliance Inspection Checklist (Inspector's Field Form) · other · not_judged · 2026-09-29\n  - Annual Report for Standard Air Contaminant Discharge Permit 26-2841-ST-01, Reporting Year 2025 · record · recorded · 2026-02-10\n  - Emergency Action Plan · policy · gaps_found · 2021-02-01\n  - Powered Industrial Truck Operator Training and Evaluation Record · record · recorded · 2025-06-02\n  - Powered Industrial Truck Pre-Shift Inspection Log · record · gaps_found · 2026-09-18\n  - Powered Industrial Truck Pre-Shift Inspection Log · record · recorded\n  - Safety Data Sheet - Sodium Hydroxide Solution, 50% · supplier_document · not_judged · 2024-03-18\n  - Scrubber Pressure-Drop Log and C-1 Outlet Detector-Tube Check — August and September 2026 · record · recorded · 2026-09-25\n  - Standard Air Contaminant Discharge Permit · permit · expiring · 2026-11-15\n\nTHE AGENCY AND SUBJECT WORDS THIS COMPANY ALREADY USES\n  agencies: Oregon DEQ · U.S. Department of Labor - Occupational Safety and Health Administration\n  subjects: chemical_safety · emergency_preparedness · workplace_safety",
+  "input_sha256": "6dbc84df17d60810df8df5bd7982f73346e846a537fd1d5e5399596797c6d8eb",
+  "input": {
+    "today": "2026-09-29",
+    "agency": "U.S. Department of Labor - Occupational Safety and Health Administration",
+    "company": {
+      "name": "Cascade Specialty Chemicals, LLC",
+      "industrySlug": "chemical-manufacturing",
+      "industryWords": "chemical manufacturing",
+      "address": "Portland, Oregon",
+      "state": "Oregon",
+      "sites": [
+        {
+          "id": "ff15bc1b-7f82-4c31-9ba6-20b1e8a40fb8",
+          "name": "Portland",
+          "address": "4410 NW Front Ave, Portland, Oregon 97210",
+          "state": "Oregon",
+          "county": null,
+          "city": "Portland",
+          "primary": true
+        }
+      ]
+    },
+    "confirmed": [],
+    "labels": {
+      "agencies": [
+        "Oregon DEQ",
+        "U.S. Department of Labor - Occupational Safety and Health Administration"
+      ],
+      "subjects": [
+        "chemical_safety",
+        "emergency_preparedness",
+        "workplace_safety"
+      ]
+    },
+    "keys": [
+      "abc_dry_chemical_units",
+      "acid_line_operating_days_august",
+      "alarm_monitoring_vendor",
+      "assembly_point_distance",
+      "august_pressure_drop_readings_logged",
+      "c1_carbon_breakthrough_detection",
+      "carbon_replacement_check_frequency",
+      "carbon_replacement_interval",
+      "caustic_line_operating_days_august",
+      "certifying_official",
+      "class_k_units",
+      "co2_units",
+      "days_away_from_work",
+      "emergency_plan_availability",
+      "emergency_shower_eyewash_location",
+      "employee_count",
+      "equipment_hours_end",
+      "equipment_hours_start",
+      "equipment_model",
+      "expiration_date",
+      "extinguisher_units_passed",
+      "extinguisher_units_total",
+      "facility_location",
+      "first_aid_responders_per_shift",
+      "industry_classification",
+      "injuries_recorded",
+      "inspection_checklist_sections",
+      "inspection_coverage",
+      "inspection_month",
+      "issued_date",
+      "last_revision_date",
+      "maintenance_standard_applied",
+      "operator_j_rivera_certification",
+      "operator_m_chen_certification",
+      "permit_number",
+      "plan_locations",
+      "product_identifier",
+      "record_retention_period",
+      "record_retention_requirement",
+      "renewal_application_deadline",
+      "scrubber_monitoring_requirement",
+      "scrubber_pressure_drop_exceedance",
+      "scrubber_pressure_drop_range",
+      "scrubber_s1_design_flow",
+      "scrubber_s2_design_flow",
+      "september_pressure_drop_readings_logged",
+      "service_company_license",
+      "solvent_storage_tank_capacity",
+      "solvent_tank_control_method",
+      "source_category",
+      "staff_categories",
+      "technician_license",
+      "total_hours_worked",
+      "total_recordable_cases",
+      "visible_emissions_opacity_limit"
+    ],
+    "documents": [
+      {
+        "document_id": "5a137618-2f46-4a38-b74a-8e3d878055aa",
+        "title": "Certificate of Annual Maintenance — Portable Fire Extinguishers",
+        "file_name": "11-fire-extinguisher-certificate.pdf",
+        "kind": "record",
+        "status": "recorded",
+        "display_status": "recorded",
+        "doc_date": "2025-08-20",
+        "doc_date_kind": "issued",
+        "significant_date": "2025-08-20",
+        "significant_date_kind": "last_entry",
+        "site": "Portland",
+        "summary": "This is a maintenance service record documenting annual inspection and servicing of 14 portable fire extinguishers at the Portland facility, performed by a licensed technician in accordance with NFPA 10 (2022). All units passed inspection and are ready for use; the company must conduct monthly visual inspections of each unit and schedule the next annual maintenance by August 20, 2026, with special attention to units W-3 and L-1 which require six-year internal maintenance before November 2026.",
+        "open_gaps": [],
+        "conditions": [
+          {
+            "condition_ref": "NFPA 10, Section 7.2",
+            "title": "Monthly visual inspection of all fire extinguishers",
+            "evidence_expected": "Monthly inspection tags or records on each extinguisher documenting date, inspector name, and condition checks"
+          },
+          {
+            "condition_ref": "NFPA 10, Section 7.3 and Oregon OAR 437-002-0187(2)",
+            "title": "Annual maintenance by certified technician",
+            "evidence_expected": "Current maintenance certificate with technician license, date, and results for each unit"
+          },
+          {
+            "condition_ref": "NFPA 10, Section 7.3.6",
+            "title": "Six-year internal maintenance for W-3 and L-1",
+            "evidence_expected": "Maintenance certificate documenting internal examination, disassembly, inspection, and refilling before November 2026"
+          },
+          {
+            "condition_ref": "NFPA 10, Chapter 8",
+            "title": "Hydrostatic testing at prescribed intervals",
+            "evidence_expected": "Hydrostatic test records showing test date, pressure results, and technician credentials for each unit when interval arrives"
+          }
+        ],
+        "deadlines": [
+          {
+            "title": "Annual maintenance renewal for all units",
+            "due_on": "2026-08-20",
+            "recurs": true
+          },
+          {
+            "title": "Six-year internal maintenance for units W-3 and L-1",
+            "due_on": "2026-11-30",
+            "recurs": false
+          }
+        ],
+        "expected_missing": [
+          {
+            "title": "Hydrostatic test records",
+            "why": "Various units will require hydrostatic testing at 12-year intervals (dry chemical and CO2 types per manufacture date); no records of completed tests are listed.",
+            "basis": "NFPA 10, Chapter 8 requires hydrostatic testing; similar companies maintain test records"
+          },
+          {
+            "title": "Monthly visual inspection log for period August 2025 to September 2026",
+            "why": "NFPA 10, Section 7.2 and Oregon regulations require monthly visual inspections with records kept on unit tags; a complete set would show compliance.",
+            "basis": "NFPA 10 Section 7.2 and Oregon OAR 437-002-0187 mandate monthly inspections; standard practice at similar facilities"
+          },
+          {
+            "title": "Six-year internal maintenance certificate for units W-3 and L-1",
+            "why": "These units reach their six-year interval in 2026 and require internal examination before November 2026; no certificate for this work appears in the company records.",
+            "basis": "NFPA 10, Section 7.3.6 and the August 2025 certificate itself flag this requirement"
+          },
+          {
+            "title": "Updated annual maintenance certificate (2026)",
+            "why": "The previous certificate is dated August 2025; renewal was due August 20, 2026 and the current date is September 29, 2026, indicating overdue maintenance.",
+            "basis": "NFPA 10 and Oregon OAR 437-002-0187 require annual maintenance; similar companies maintain current certificates"
+          }
+        ],
+        "confirmed_facts": [],
+        "proposed_facts": [
+          {
+            "key": "abc_dry_chemical_units",
+            "value": "11",
+            "quote": "Types include ABC dry chemical (W-1, W-2, W-3, W-4, D-1, D-2, O-1, B-1, A-1, A-2, T-1)",
+            "locator": "Page 1, table 'Type' column",
+            "as_of": "2025-08-20"
+          },
+          {
+            "key": "class_k_units",
+            "value": "1",
+            "quote": "O-2 Offices, break room Class K 6 L",
+            "locator": "Page 1, table",
+            "as_of": "2025-08-20"
+          },
+          {
+            "key": "co2_units",
+            "value": "2",
+            "quote": "L-1 and L-2 are CO2 type",
+            "locator": "Page 1, table 'Type' column",
+            "as_of": "2025-08-20"
+          },
+          {
+            "key": "extinguisher_units_passed",
+            "value": "14",
+            "quote": "Units failed or removed from service: 0.",
+            "locator": "Page 1, table footer",
+            "as_of": "2025-08-20"
+          },
+          {
+            "key": "extinguisher_units_total",
+            "value": "14",
+            "quote": "Units serviced: 14.",
+            "locator": "Page 1, table footer",
+            "as_of": "2025-08-20"
+          },
+          {
+            "key": "maintenance_standard_applied",
+            "value": "NFPA 10 (2022), Chapter 7, and manufacturer instructions",
+            "quote": "Service performed: annual maintenance in accordance with NFPA 10 (2022), Chapter 7, and the manufacturer's instructions",
+            "locator": "Page 1",
+            "as_of": "2025-08-20"
+          },
+          {
+            "key": "service_company_license",
+            "value": "FPE-1187",
+            "quote": "Oregon SFM Licence FPE-1187",
+            "locator": "Page 1, header",
+            "as_of": "2025-08-20"
+          },
+          {
+            "key": "technician_license",
+            "value": "PET-4406",
+            "quote": "Technician: Marcus Bell, Oregon SFM Portable Extinguisher Technician Licence PET-4406",
+            "locator": "Page 1, signature line",
+            "as_of": "2025-08-20"
+          }
+        ]
+      },
+      {
+        "document_id": "88f0951e-ceaa-4cf7-95de-d5d5937aa66d",
+        "title": "Monthly EHS Self-Check",
+        "file_name": "13-company-self-check.docx",
+        "kind": "program",
+        "status": "not_judged",
+        "display_status": "on_file",
+        "doc_date": null,
+        "doc_date_kind": "unknown",
+        "significant_date": null,
+        "significant_date_kind": null,
+        "site": "Portland",
+        "summary": "This is a monthly self-inspection checklist designed to track compliance with workplace safety, air quality, fire safety, and chemical handling standards. The company completes this form to verify that key controls are in place each month — air permit posted and valid, scrubber pressure-drop readings logged within operating ranges, detector-tube checks performed, equipment inspections done, fire extinguishers current, exits clear, eyewash and safety showers functional, and safety data sheets available. Any item marked 'N' must be reported to the Plant Manager by the 5th of the following month.",
+        "open_gaps": [
+          {
+            "title": "No document date or completion record visible",
+            "description": "The template shows blanks for Month, Completed by, and Supervisor with no dates or initials filled in. Without a completed instance of this form, it is not possible to verify whether the company is performing these checks or how recent the most recent check was.",
+            "fix": "Obtain a completed monthly self-check form showing the month reviewed, the date of supervisor review, the employee who completed it, and the results (Y/N and initials) for each line item. Confirm the company fills this out every month.",
+            "citation": "OSHA General Duty Clause (OSH Act Section 5(a)(1)); OAR 340-216-8010 et seq. (Oregon air permit posting and availability requirements)",
+            "basis": "read"
+          },
+          {
+            "title": "No procedure for tracking or escalating failures",
+            "description": "The form states 'Items marked N are reported to the Plant Manager by the 5th of the following month' but does not specify what happens next — no procedure for investigation, root cause, corrective action, documentation, or verification that issues are fixed before the next month.",
+            "fix": "Establish a written procedure defining: (1) what constitutes an 'N' result, (2) who investigates, (3) required corrective actions by category, (4) documentation requirements, (5) verification that fixes are in place before the next check, (6) escalation criteria for repeated failures or safety risks.",
+            "citation": "OSHA General Duty Clause; 29 CFR 1910.22 (general safety requirements); Oregon DEQ permit conditions typically require prompt correction of deficiencies",
+            "basis": "inferred"
+          },
+          {
+            "title": "Missing scope for Line 3 — C-1 detector-tube check frequency and method",
+            "description": "Line 3 calls for 'Weekly C-1 detector-tube checks done and recorded every week this month' but the checklist does not specify what constitutes a valid check (e.g., testing method, recording format, pass/fail criteria, action if outlet exceeds threshold).",
+            "fix": "Add to the procedure or attach a reference document: the standard or protocol for C-1 outlet detector-tube testing, the acceptable range or pass criterion, the required log format, and what corrective action is required if the check shows a failure.",
+            "citation": "Oregon air permit conditions for scrubber outlet monitoring (likely specified in Permit 26-2841-ST-01 or its attachments); ANSI/ASABE standard or equivalent",
+            "basis": "inferred"
+          },
+          {
+            "title": "Missing acceptance range for Line 2 — scrubber pressure-drop readings",
+            "description": "Line 2 specifies 'readings between 2.0 and 6.0' but does not clarify the units (inches water column, bar, kPa, etc.) or reference the source permit condition that sets this range.",
+            "fix": "Amend Line 2 to state the units of measurement (e.g., 'readings between 2.0 and 6.0 inches of water column') and add a reference to the permit condition or design document that establishes this range.",
+            "citation": "Oregon air permit conditions for scrubber operations; company's own Scrubber Pressure-Drop Log document already exists",
+            "basis": "read"
+          },
+          {
+            "title": "No definition of defect follow-up documentation for Line 4",
+            "description": "Line 4 requires 'any defect followed up' but does not specify what follow-up means — repair timelines, work orders, log entries, supervisor approval, or sign-off required.",
+            "fix": "Add to the procedure or manual: define 'follow-up' to include (1) creation of work order or incident report, (2) severity/urgency category, (3) repair deadline (e.g., before next use, within 24 hours, within one week), (4) required documentation (photos, maintenance log entry, mechanic's sign-off), and (5) verification that defect was corrected before the truck next runs.",
+            "citation": "OSHA 29 CFR 1910.178 (powered industrial truck operation and maintenance); company's own PIT Pre-Shift Inspection Log already documents daily checks",
+            "basis": "inferred"
+          },
+          {
+            "title": "Fire extinguisher tag protocol not specified",
+            "description": "Line 5 states fire extinguishers must be 'tagged within the last 12 months; monthly visual check initialled on each tag' but does not specify who performs the monthly check (technician or any employee), where initials go, or what visual checks constitute pass/fail.",
+            "fix": "Add procedures for fire extinguisher maintenance: (1) annual professional inspection/recharge must be performed by a certified service company; (2) monthly visual walk-through: check for damage, blockage, pressure gauge in green zone; (3) log and initial a tag on the extinguisher or maintain a separate log; (4) any defect triggers immediate service or replacement. Reference NFPA 10 or equivalent.",
+            "citation": "NFPA 10 (Standard for Portable Fire Extinguishers); OSHA 29 CFR 1910.157 (general requirements for all portable fire extinguishers)",
+            "basis": "inferred"
+          },
+          {
+            "title": "Eyewash and safety shower flush protocol incomplete",
+            "description": "Line 7 calls for 'Eyewash stations and safety showers flushed this week and logged' but does not specify duration of flush, acceptance criteria, or where logs are kept.",
+            "fix": "Add to the procedure: (1) flushing frequency (at minimum weekly; some standards require daily or when in use); (2) flush duration (typically 1–3 minutes to clear lines); (3) visual inspection for water flow, clarity, and nozzle function; (4) log entry must include date, time, location, flush duration, any defects noted, and initials; (5) any malfunction must trigger repair/replacement before next work day.",
+            "citation": "ANSI Z535.4 (labeling and marking of hazardous substances); OSHA 29 CFR 1910.151 (eye and face protection); many states and facilities follow ANSI Z535.1 or local code for emergency equipment inspection",
+            "basis": "inferred"
+          },
+          {
+            "title": "SDS binder update protocol undefined",
+            "description": "Line 8 requires 'Safety data sheets on hand for every chemical received this month; binder index updated' but does not define who updates the index, how indexing is organized, or how obsolete SDSs are removed.",
+            "fix": "Add to the SDS management procedure: (1) designate responsible person(s); (2) require SDS to be obtained and added to binder within X days of receipt (commonly within 5–10 days); (3) organize by product name, CAS number, or hazard category with consistent labeling; (4) maintain an index or log with product name, receipt date, SDS version date, and location in binder; (5) remove and archive obsolete SDSs (keep for X years per record retention policy); (6) verify accessibility during inspections; (7) train all employees on binder location and use.",
+            "citation": "OSHA 29 CFR 1910.1200(g) (Hazard Communication Standard, SDS requirements)",
+            "basis": "inferred"
+          }
+        ],
+        "conditions": [],
+        "deadlines": [
+          {
+            "title": "Items marked N reported to Plant Manager",
+            "due_on": null,
+            "recurs": true
+          }
+        ],
+        "expected_missing": [
+          {
+            "title": "Completed monthly forms for prior months",
+            "why": "To verify the company is actually conducting these checks monthly and responding to failures, a history of completed forms is essential. Without them, the template is a procedure document only, not evidence of compliance.",
+            "basis": "industry best practice; OSHA expects employers to maintain records of inspections and corrective actions."
+          },
+          {
+            "title": "Escalation or investigation log for 'N' results",
+            "why": "The checklist states failures go to the Plant Manager by the 5th of the following month, but no log of those reports, investigations, or remediation actions was provided. This is critical evidence that problems are addressed.",
+            "basis": "OSHA General Duty Clause and permit conditions typically require documentation of corrective action."
+          },
+          {
+            "title": "Exit route and emergency egress audit or floor plan",
+            "why": "Line 6 checks that exits and aisles are clear and signs are lit, but no floor plan, exit signage documentation, or periodic egress audit procedure is provided.",
+            "basis": "OSHA 1910.35 requires workplace emergency action plans and exit route maintenance."
+          },
+          {
+            "title": "Fire extinguisher maintenance contract or service record",
+            "why": "Line 5 requires annual professional tagging and monthly checks. The company should hold a service contract and annual maintenance records, which are missing from the submission.",
+            "basis": "NFPA 10 and OSHA 1910.157 require documentation of professional inspections."
+          },
+          {
+            "title": "Powered Industrial Truck operator training and evaluation records",
+            "why": "The company has a 'Powered Industrial Truck Operator Training and Evaluation Record' in its document list, but how that links to the pre-shift inspection protocol on Line 4 is not shown.",
+            "basis": "OSHA 1910.178 requires operators to be trained and evaluated, and daily pre-shift checks to be documented."
+          },
+          {
+            "title": "Scrubber maintenance and testing SOP",
+            "why": "Line 2 and 3 reference specific monitoring ranges and detector-tube checks, but the actual procedure, acceptance criteria, and corrective-action thresholds are not attached or incorporated.",
+            "basis": "Air permit conditions and company's own Scrubber Pressure-Drop Log document suggest these details exist elsewhere."
+          },
+          {
+            "title": "SDS master list or binder with current index",
+            "why": "Line 8 requires an updated SDS binder and index. The template does not show how many chemicals are in inventory or what the current index looks like.",
+            "basis": "OSHA 1910.1200(g) requires ready access to SDSs for all hazardous chemicals in use."
+          }
+        ],
+        "confirmed_facts": [],
+        "proposed_facts": [
+          {
+            "key": "inspection_checklist_sections",
+            "value": "8 line items covering air permit, scrubber monitoring, detector-tube checks, forklift inspections, fire extinguisher maintenance, exit routes, eyewash/safety showers, and safety data sheets",
+            "quote": "8 check items numbered 1–8",
+            "locator": "table rows",
+            "as_of": null
+          }
+        ]
+      },
+      {
+        "document_id": "b91959b1-235a-4292-bbfd-19d81b99d84f",
+        "title": "OSHA Form 300A Summary of Work-Related Injuries and Illnesses for Year 2025",
+        "file_name": "10-osha-300a-2025.pdf",
+        "kind": "record",
+        "status": "current",
+        "display_status": "recorded",
+        "doc_date": "2026-02-01",
+        "doc_date_kind": "issued",
+        "significant_date": "2026-02-01",
+        "significant_date_kind": "last_entry",
+        "site": "Portland",
+        "summary": "This is OSHA Form 300A, the annual summary of recordable work-related injuries and illnesses for calendar year 2025. The form is required to be completed by employers with 10 or more employees and must be posted in a visible workplace location from February 1 through April 30 of the following year. The form documents that Cascade Specialty Chemicals had 3 recordable cases in 2025 (1 case with days away from work, 2 other recordable cases), with 6 total days away from work and no fatalities.",
+        "open_gaps": [],
+        "conditions": [
+          {
+            "condition_ref": "29 CFR 1904.32",
+            "title": "Post Form 300A in visible location",
+            "evidence_expected": "Physical posting of the form at the Portland facility in a conspicuous location where employee notices are customarily displayed from February 1 through April 30, 2026"
+          },
+          {
+            "condition_ref": "29 CFR 1904.33",
+            "title": "Retain Form 300A and supporting OSHA 300 Log",
+            "evidence_expected": "Stored copies of the Form 300A and underlying OSHA Form 300 Log retained for five years following the end of the calendar year covered (through December 31, 2030)"
+          },
+          {
+            "condition_ref": "29 CFR 1904.32",
+            "title": "Certify accuracy by company executive",
+            "evidence_expected": "Form signed and certified by a company executive attesting to the truth and accuracy of entries"
+          }
+        ],
+        "deadlines": [
+          {
+            "title": "Post Form 300A in workplace",
+            "due_on": "2026-02-01",
+            "recurs": true
+          },
+          {
+            "title": "Remove/stop posting Form 300A",
+            "due_on": "2026-04-30",
+            "recurs": true
+          },
+          {
+            "title": "Retain records (end date)",
+            "due_on": "2030-12-31",
+            "recurs": false
+          }
+        ],
+        "expected_missing": [
+          {
+            "title": "Documentation of posting location and dates",
+            "why": "To verify the form was posted in a conspicuous location from February 1 through April 30, 2026 as required",
+            "basis": "OSHA regulations require posting; companies should maintain evidence of when and where the form was displayed"
+          },
+          {
+            "title": "Electronic submission confirmation via OSHA Injury Tracking Application",
+            "why": "If the company meets the threshold (250+ employees or 20-249 in designated high-hazard industries), electronic data submission was required by March 2, 2026",
+            "basis": "The facility has 65 employees in a high-hazard manufacturing industry; must verify if electronic reporting was triggered"
+          },
+          {
+            "title": "OSHA Form 300 Log (detailed injury and illness log)",
+            "why": "This 300A is a summary; the underlying Form 300 Log with individual case details must also be retained",
+            "basis": "The instructions state to use the Log to verify entries before completing the summary, and retention requirements require both be kept for five years"
+          },
+          {
+            "title": "OSHA Form 301 Incident Reports",
+            "why": "Each recordable case on the 300 Log should have a corresponding Form 301 with incident details",
+            "basis": "OSHA recordkeeping rules require Form 301 reports for each recordable injury or illness to document specifics"
+          }
+        ],
+        "confirmed_facts": [],
+        "proposed_facts": [
+          {
+            "key": "certifying_official",
+            "value": "Daniel Okafor, Plant Manager",
+            "quote": "Daniel Okafor · Plant Manager · Phone (503) 555-0148 · Date: February 1, 2026",
+            "locator": "Sign here section",
+            "as_of": "2026-02-01"
+          },
+          {
+            "key": "days_away_from_work",
+            "value": "6 days total",
+            "quote": "Total number of days away from work: 6 (K)",
+            "locator": "Number of Days section",
+            "as_of": "2025-12-31"
+          },
+          {
+            "key": "employee_count",
+            "value": "65 (annual average)",
+            "quote": "Annual average number of employees: 65",
+            "locator": "Employment information section",
+            "as_of": "2025-12-31"
+          },
+          {
+            "key": "facility_location",
+            "value": "4410 NW Front Avenue, Portland, Oregon 97210",
+            "quote": "Street: 4410 NW Front Avenue; City: Portland · State: OR · ZIP: 97210",
+            "locator": "Establishment information section",
+            "as_of": "2025-12-31"
+          },
+          {
+            "key": "industry_classification",
+            "value": "NAICS 424690 - Chemical and allied products merchant wholesaler; repackaging of acids, caustics and solvents",
+            "quote": "North American Industrial Classification (NAICS): 424690; Industry description: Chemical and allied products merchant wholesaler; repackaging of acids, caustics and solvents",
+            "locator": "Establishment information section",
+            "as_of": "2025-12-31"
+          },
+          {
+            "key": "injuries_recorded",
+            "value": "3",
+            "quote": "Total number of (M): Injuries 3",
+            "locator": "Injury and Illness Types section",
+            "as_of": "2025-12-31"
+          },
+          {
+            "key": "issued_date",
+            "value": "2026-02-01",
+            "quote": "Date: February 1, 2026",
+            "locator": "Sign here section",
+            "as_of": "2026-02-01"
+          },
+          {
+            "key": "total_hours_worked",
+            "value": "128,400",
+            "quote": "Total hours worked by all employees last year: 128,400",
+            "locator": "Employment information section",
+            "as_of": "2025-12-31"
+          },
+          {
+            "key": "total_recordable_cases",
+            "value": "3",
+            "quote": "Total number of cases with days away from work: 1 (H); Total number of other recordable cases: 2 (J)",
+            "locator": "Number of Cases section",
+            "as_of": "2025-12-31"
+          }
+        ]
+      }
+    ],
+    "other_documents": [
+      {
+        "document_id": "baf52b9c-fa92-4aa1-885d-9d32f3ad7811",
+        "title": "Air Contaminant Discharge Permit — Compliance Inspection Checklist (Inspector's Field Form)",
+        "kind": "other",
+        "status": "not_judged",
+        "significant_date": "2026-09-29"
+      },
+      {
+        "document_id": "227d2b8e-c917-405f-84d0-0cb74945fc97",
+        "title": "Annual Report for Standard Air Contaminant Discharge Permit 26-2841-ST-01, Reporting Year 2025",
+        "kind": "record",
+        "status": "recorded",
+        "significant_date": "2026-02-10"
+      },
+      {
+        "document_id": "ba964e51-94bc-4aaa-8362-d763ecf30b27",
+        "title": "Emergency Action Plan",
+        "kind": "policy",
+        "status": "gaps_found",
+        "significant_date": "2021-02-01"
+      },
+      {
+        "document_id": "67bfefd2-d327-46e1-8f86-3109b4f0c768",
+        "title": "Powered Industrial Truck Operator Training and Evaluation Record",
+        "kind": "record",
+        "status": "recorded",
+        "significant_date": "2025-06-02"
+      },
+      {
+        "document_id": "6c4b9e16-6d50-4486-bc3d-e076fadeb8f5",
+        "title": "Powered Industrial Truck Pre-Shift Inspection Log",
+        "kind": "record",
+        "status": "gaps_found",
+        "significant_date": "2026-09-18"
+      },
+      {
+        "document_id": "84487477-03e2-4f5b-ba10-7df4b8a5cfab",
+        "title": "Powered Industrial Truck Pre-Shift Inspection Log",
+        "kind": "record",
+        "status": "recorded",
+        "significant_date": null
+      },
+      {
+        "document_id": "661d632d-ca16-4fed-bf2f-90317df5447d",
+        "title": "Safety Data Sheet - Sodium Hydroxide Solution, 50%",
+        "kind": "supplier_document",
+        "status": "not_judged",
+        "significant_date": "2024-03-18"
+      },
+      {
+        "document_id": "39bb23ec-2017-46c2-8df0-b25b3cbd599f",
+        "title": "Scrubber Pressure-Drop Log and C-1 Outlet Detector-Tube Check — August and September 2026",
+        "kind": "record",
+        "status": "recorded",
+        "significant_date": "2026-09-25"
+      },
+      {
+        "document_id": "a372f5f8-50af-473f-84b7-20013ad38726",
+        "title": "Standard Air Contaminant Discharge Permit",
+        "kind": "permit",
+        "status": "expiring",
+        "significant_date": "2026-11-15"
+      }
+    ]
+  },
+  "calls": [
+    {
+      "section": "whole",
+      "wall_ms": 43494,
+      "cost_usd": 0.031508999999999995,
+      "sources": 0,
+      "input_tokens": 9304,
+      "output_tokens": 4441,
+      "searches": 0,
+      "json_parsed": true,
+      "raw_text": "```json\n{\n  \"covers\": {\n    \"documents_read\": [\n      \"5a137618-2f46-4a38-b74a-8e3d878055aa\",\n      \"88f0951e-ceaa-4cf7-95de-d5d5937aa66d\",\n      \"b91959b1-235a-4292-bbfd-19d81b99d84f\"\n    ],\n    \"documents_held_but_not_read\": [\n      \"Air Contaminant Discharge Permit — Compliance Inspection Checklist (Inspector's Field Form)\",\n      \"Annual Report for Standard Air Contaminant Discharge Permit 26-2841-ST-01, Reporting Year 2025\",\n      \"Emergency Action Plan\",\n      \"Powered Industrial Truck Operator Training and Evaluation Record\",\n      \"Powered Industrial Truck Pre-Shift Inspection Log\",\n      \"Safety Data Sheet - Sodium Hydroxide Solution, 50%\",\n      \"Scrubber Pressure-Drop Log and C-1 Outlet Detector-Tube Check — August and September 2026\",\n      \"Standard Air Contaminant Discharge Permit\"\n    ],\n    \"readings_as_of\": \"2026-09-29\"\n  },\n  \"findings\": [\n    {\n      \"title\": \"Monthly visual inspection records for fire extinguishers\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": \"5a137618-2f46-4a38-b74a-8e3d878055aa\",\n      \"locator\": null,\n      \"quote\": null,\n      \"what_to_do\": \"Obtain or upload monthly inspection tags or records for all 14 extinguishers from August 2025 through September 2026, documenting date, inspector name, and condition checks for each unit as required by NFPA 10, Section 7.2.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Annual maintenance certificate renewal for fire extinguishers — due date passed\",\n      \"word\": \"stale\",\n      \"document_id\": \"5a137618-2f46-4a38-b74a-8e3d878055aa\",\n      \"locator\": \"Page 1, certificate footer\",\n      \"quote\": \"next annual maintenance by August 20, 2026\",\n      \"what_to_do\": \"Obtain the 2026 annual maintenance certificate from the licensed technician (Marcus Bell, Oregon SFM PET-4406, or equivalent) and upload it immediately. The renewal deadline of August 20, 2026 has passed as of today (September 29, 2026).\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Six-year internal maintenance certificate for units W-3 and L-1\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": \"5a137618-2f46-4a38-b74a-8e3d878055aa\",\n      \"locator\": \"Page 1, special notes section\",\n      \"quote\": \"special attention to units W-3 and L-1 which require six-year internal maintenance before November 2026\",\n      \"what_to_do\": \"Obtain and upload the six-year internal maintenance certificate for units W-3 and L-1 documenting internal examination, disassembly, inspection, and refilling. This work must be completed by November 30, 2026.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Hydrostatic test records for fire extinguishers\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": \"5a137618-2f46-4a38-b74a-8e3d878055aa\",\n      \"locator\": null,\n      \"quote\": null,\n      \"what_to_do\": \"Determine which units require hydrostatic testing based on manufacture date and type (12-year intervals for dry chemical and CO2). Obtain test records showing test date, pressure results, and technician credentials for any units whose interval has arrived, or schedule testing if overdue.\",\n      \"basis\": \"inferred\"\n    },\n    {\n      \"title\": \"Monthly EHS Self-Check form — no completed instances on file\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": \"88f0951e-ceaa-4cf7-95de-d5d5937aa66d\",\n      \"locator\": \"Template form, signature section\",\n      \"quote\": \"The template shows blanks for Month, Completed by, and Supervisor with no dates or initials filled in. Without a completed instance of this form, it is not possible to verify whether the company is performing these checks or how recent the most recent check was.\",\n      \"what_to_do\": \"Obtain or upload completed monthly self-check forms for each month from the inception of this program through September 2026, showing the month reviewed, date of supervisor review, employee who completed it, and Y/N results with initials for each line item.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Escalation and corrective-action procedure for failed monthly EHS checks\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": \"88f0951e-ceaa-4cf7-95de-d5d5937aa66d\",\n      \"locator\": \"Template form, instruction section\",\n      \"quote\": \"Items marked N are reported to the Plant Manager by the 5th of the following month\",\n      \"what_to_do\": \"Establish and upload a written procedure defining: (1) what constitutes an 'N' result; (2) who investigates; (3) required corrective actions by category; (4) documentation requirements; (5) verification that fixes are in place before the next check; (6) escalation criteria for repeated failures or safety risks.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"C-1 detector-tube check protocol — scope and acceptance criteria undefined\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": \"88f0951e-ceaa-4cf7-95de-d5d5937aa66d\",\n      \"locator\": \"Line 3 of checklist\",\n      \"quote\": \"Weekly C-1 detector-tube checks done and recorded every week this month\",\n      \"what_to_do\": \"Add to the procedure or attach a reference document the standard or protocol for C-1 outlet detector-tube testing, the acceptable range or pass criterion, the required log format, and what corrective action is required if the check shows a failure.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Scrubber pressure-drop reading units and range reference missing\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": \"88f0951e-ceaa-4cf7-95de-d5d5937aa66d\",\n      \"locator\": \"Line 2 of checklist\",\n      \"quote\": \"readings between 2.0 and 6.0\",\n      \"what_to_do\": \"Amend Line 2 to state the units of measurement (e.g., 'inches of water column') and add a reference to the permit condition or design document that establishes this range.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Powered Industrial Truck defect follow-up documentation protocol undefined\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": \"88f0951e-ceaa-4cf7-95de-d5d5937aa66d\",\n      \"locator\": \"Line 4 of checklist\",\n      \"quote\": \"any defect followed up\",\n      \"what_to_do\": \"Add to the procedure or manual a definition of 'follow-up' including: (1) creation of work order or incident report; (2) severity/urgency category; (3) repair deadline; (4) required documentation (photos, maintenance log entry, mechanic's sign-off); and (5) verification that defect was corrected before the truck next runs.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Fire extinguisher monthly visual inspection protocol not specified in self-check\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": \"88f0951e-ceaa-4cf7-95de-d5d5937aa66d\",\n      \"locator\": \"Line 5 of checklist\",\n      \"quote\": \"fire extinguishers tagged within the last 12 months; monthly visual check initialled on each tag\",\n      \"what_to_do\": \"Add procedures for fire extinguisher maintenance specifying: (1) annual professional inspection/recharge by certified service company; (2) monthly visual walk-through: check for damage, blockage, pressure gauge in green zone; (3) log and initial a tag or maintain a separate log; (4) any defect triggers immediate service or replacement. Reference NFPA 10.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Eyewash and safety shower flush protocol incomplete\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": \"88f0951e-ceaa-4cf7-95de-d5d5937aa66d\",\n      \"locator\": \"Line 7 of checklist\",\n      \"quote\": \"Eyewash stations and safety showers flushed this week and logged\",\n      \"what_to_do\": \"Add to the procedure: (1) flushing frequency; (2) flush duration; (3) visual inspection for water flow, clarity, and nozzle function; (4) log entry format including date, time, location, flush duration, any defects, and initials; (5) malfunction response and repair/replacement deadline.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Safety Data Sheet binder management protocol undefined\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": \"88f0951e-ceaa-4cf7-95de-d5d5937aa66d\",\n      \"locator\": \"Line 8 of checklist\",\n      \"quote\": \"Safety data sheets on hand for every chemical received this month; binder index updated\",\n      \"what_to_do\": \"Add to the SDS management procedure: (1) designate responsible person(s); (2) require SDS to be obtained and added to binder within X days of receipt; (3) organize by product name, CAS number, or hazard category; (4) maintain an index or log with product name, receipt date, SDS version date, and location; (5) define archive/retention policy for obsolete SDSs; (6) verify accessibility during inspections; (7) train all employees on binder location and use.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"OSHA Form 300A posting in workplace location — current requirement\",\n      \"word\": \"on_file\",\n      \"document_id\": \"b91959b1-235a-4292-bbfd-19d81b99d84f\",\n      \"locator\": \"Form header and certification section\",\n      \"quote\": null,\n      \"what_to_do\": \"Verify that Form 300A is currently posted in a conspicuous workplace location where employee notices are customarily displayed. Posting is required from February 1 through April 30 of each year under 29 CFR 1904.32.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"OSHA Form 300A and Form 300 Log retention through 2030\",\n      \"word\": \"on_file\",\n      \"document_id\": \"b91959b1-235a-4292-bbfd-19d81b99d84f\",\n      \"locator\": \"Form header and annual summary\",\n      \"quote\": null,\n      \"what_to_do\": \"Retain the Form 300A and supporting OSHA Form 300 Log (detailed injury and illness log) through December 31, 2030 as required by 29 CFR 1904.33.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"OSHA Form 300 Log and Form 301 Incident Reports\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": \"b91959b1-235a-4292-bbfd-19d81b99d84f\",\n      \"locator\": null,\n      \"quote\": null,\n      \"what_to_do\": \"Obtain or upload the OSHA Form 300 Log (detailed injury and illness log) and Form 301 Incident Reports for each of the 3 recordable cases documented on the 300A summary for calendar year 2025.\",\n      \"basis\": \"inferred\"\n    }\n  ],\n  \"dates\": [\n    {\n      \"title\": \"Annual maintenance renewal for fire extinguishers (all units)\",\n      \"due_on\": \"2026-08-20\",\n      \"recurs\": true,\n      \"document_id\": \"5a137618-2f46-4a38-b74a-8e3d878055aa\",\n      \"passed\": true\n    },\n    {\n      \"title\": \"Six-year internal maintenance for units W-3 and L-1\",\n      \"due_on\": \"2026-11-30\",\n      \"recurs\": false,\n      \"document_id\": \"5a137618-2f46-4a38-b74a-8e3d878055aa\",\n      \"passed\": false\n    },\n    {\n      \"title\": \"Post OSHA Form 300A in workplace\",\n      \"due_on\": \"2026-02-01\",\n      \"recurs\": true,\n      \"document_id\": \"b91959b1-235a-4292-bbfd-19d81b99d84f\",\n      \"passed\": true\n    },\n    {\n      \"title\": \"Remove OSHA Form 300A from posting\",\n      \"due_on\": \"2026-04-30\",\n      \"recurs\": true,\n      \"document_id\": \"b91959b1-235a-4292-bbfd-19d81b99d84f\",\n      \"passed\": true\n    },\n    {\n      \"title\": \"Retain OSHA Form 300A and Form 300 Log through end date\",\n      \"due_on\": \"2030-12-31\",\n      \"recurs\": false,\n      \"document_id\": \"b91959b1-235a-4292-bbfd-19d81b99d84f\",\n      \"passed\": false\n    },\n    {\n      \"title\": \"Items marked N reported to Plant Manager by 5th of following month\",\n      \"due_on\": null,\n      \"recurs\": true,\n      \"document_id\": \"88f0951e-ceaa-4cf7-95de-d5d5937aa66d\",\n      \"passed\": false\n    }\n  ],\n  \"not_document_questions\": [\n    \"Are monthly visual inspections of fire extinguishers actually being performed each month by employees or by certified technician?\",\n    \"Is the monthly EHS Self-Check form being completed every month, and are 'N' results being reported to the Plant Manager as required?\",\n    \"Has the company established and is it following the corrective-action procedure for failures identified on the monthly self-check?\",\n    \"Are C-1 detector-tube checks being performed weekly and recorded as indicated on the self-check form, and are readings within acceptable limits?\",\n    \"Are powered industrial truck defects being documented and remedied according to a defined protocol?\",\n    \"Are eyewash stations and safety showers being flushed and maintained at the required frequency?\",\n    \"Is the SDS binder being maintained current and accessible to employees, with an updated index?\"\n  ],\n  \"expected_not_seen\": [\n    {\n      \"title\": \"Hydrostatic test records for fire extinguishers\",\n      \"why\": \"Companies in this industry typically maintain hydrostatic test records for units subject to 12-year testing intervals under NFPA 10, Chapter 8, with test date, pressure results, and technician credentials for each unit.\"\n    },\n    {\n      \"title\": \"Completed monthly EHS Self-Check forms for prior months\",\n      \"why\": \"To verify compliance with the monthly self-inspection program, companies maintain a history of completed forms showing the month reviewed, supervisor review date, employee name, and results (Y/N with initials) for each line item.\"\n    },\n    {\n      \"title\": \"Escalation and investigation log for failed monthly checks\",\n      \"why\": \"Companies track and document the resolution of 'N' results reported to the Plant Manager, including the investigation, root cause, corrective action taken, responsible person, and verification of fix, to demonstrate systematic remediation.\"\n    },\n    {\n      \"title\": \"Exit route and emergency egress audit or floor plan\",\n      \"why\": \"Companies maintain documentation of exit routes, emergency egress procedures, floor plans showing exits and assembly areas, and periodic egress audits to verify compliance with OSHA 29 CFR 1910.35 and related standards.\"\n    },\n    {\n      \"title\": \"Powered Industrial Truck operator training records and evaluation documentation\",\n      \"why\": \"Companies maintain records of PIT operator training, evaluation, and certification per 29 CFR 1910.178, linked to the pre-shift inspection protocol to demonstrate qualified operators and proper equipment maintenance.\"\n    },\n    {\n      \"title\": \"Scrubber maintenance and testing standard operating procedure\",\n      \"why\": \"Companies document the protocol for scrubber operations, pressure-drop monitoring, outlet detection and testing methods, acceptance criteria, and corrective-action thresholds required by permit conditions and design specifications.\"\n    },\n    {\n      \"title\": \"SDS master list and current binder index\",\n      \"why\": \"Companies maintain a master list or inventory of all chemicals in use, with corresponding SDS on file, organized by product name or CAS number, and an updated index showing receipt date, SDS version date, and binder location for each chemical.\"\n    },\n    {\n      \"title\": \"Documentation of Form 300A posting location, dates, and verification\",\n      \"why\": \"Companies document where Form 300A was posted (location description or photo), the dates it was posted and removed, and supervisor sign-off verifying posting compliance for each year.\"\n    }\n  ],\n  \"contradictions\": []\n}\n```"
+    }
+  ],
+  "answer": {
+    "covers": {
+      "documents_read": [
+        "5a137618-2f46-4a38-b74a-8e3d878055aa",
+        "88f0951e-ceaa-4cf7-95de-d5d5937aa66d",
+        "b91959b1-235a-4292-bbfd-19d81b99d84f"
+      ],
+      "documents_held_but_not_read": [
+        "Air Contaminant Discharge Permit — Compliance Inspection Checklist (Inspector's Field Form)",
+        "Annual Report for Standard Air Contaminant Discharge Permit 26-2841-ST-01, Reporting Year 2025",
+        "Emergency Action Plan",
+        "Powered Industrial Truck Operator Training and Evaluation Record",
+        "Powered Industrial Truck Pre-Shift Inspection Log",
+        "Safety Data Sheet - Sodium Hydroxide Solution, 50%",
+        "Scrubber Pressure-Drop Log and C-1 Outlet Detector-Tube Check — August and September 2026",
+        "Standard Air Contaminant Discharge Permit"
+      ],
+      "readings_as_of": "2026-09-29"
+    },
+    "findings": [
+      {
+        "title": "Monthly visual inspection records for fire extinguishers",
+        "word": "nothing_on_file",
+        "document_id": "5a137618-2f46-4a38-b74a-8e3d878055aa",
+        "locator": null,
+        "quote": null,
+        "what_to_do": "Obtain or upload monthly inspection tags or records for all 14 extinguishers from August 2025 through September 2026, documenting date, inspector name, and condition checks for each unit as required by NFPA 10, Section 7.2.",
+        "basis": "read"
+      },
+      {
+        "title": "Annual maintenance certificate renewal for fire extinguishers — due date passed",
+        "word": "stale",
+        "document_id": "5a137618-2f46-4a38-b74a-8e3d878055aa",
+        "locator": "Page 1, certificate footer",
+        "quote": "next annual maintenance by August 20, 2026",
+        "what_to_do": "Obtain the 2026 annual maintenance certificate from the licensed technician (Marcus Bell, Oregon SFM PET-4406, or equivalent) and upload it immediately. The renewal deadline of August 20, 2026 has passed as of today (September 29, 2026).",
+        "basis": "read"
+      },
+      {
+        "title": "Six-year internal maintenance certificate for units W-3 and L-1",
+        "word": "nothing_on_file",
+        "document_id": "5a137618-2f46-4a38-b74a-8e3d878055aa",
+        "locator": "Page 1, special notes section",
+        "quote": "special attention to units W-3 and L-1 which require six-year internal maintenance before November 2026",
+        "what_to_do": "Obtain and upload the six-year internal maintenance certificate for units W-3 and L-1 documenting internal examination, disassembly, inspection, and refilling. This work must be completed by November 30, 2026.",
+        "basis": "read"
+      },
+      {
+        "title": "Hydrostatic test records for fire extinguishers",
+        "word": "nothing_on_file",
+        "document_id": "5a137618-2f46-4a38-b74a-8e3d878055aa",
+        "locator": null,
+        "quote": null,
+        "what_to_do": "Determine which units require hydrostatic testing based on manufacture date and type (12-year intervals for dry chemical and CO2). Obtain test records showing test date, pressure results, and technician credentials for any units whose interval has arrived, or schedule testing if overdue.",
+        "basis": "inferred"
+      },
+      {
+        "title": "Monthly EHS Self-Check form — no completed instances on file",
+        "word": "nothing_on_file",
+        "document_id": "88f0951e-ceaa-4cf7-95de-d5d5937aa66d",
+        "locator": "Template form, signature section",
+        "quote": "The template shows blanks for Month, Completed by, and Supervisor with no dates or initials filled in. Without a completed instance of this form, it is not possible to verify whether the company is performing these checks or how recent the most recent check was.",
+        "what_to_do": "Obtain or upload completed monthly self-check forms for each month from the inception of this program through September 2026, showing the month reviewed, date of supervisor review, employee who completed it, and Y/N results with initials for each line item.",
+        "basis": "read"
+      },
+      {
+        "title": "Escalation and corrective-action procedure for failed monthly EHS checks",
+        "word": "nothing_on_file",
+        "document_id": "88f0951e-ceaa-4cf7-95de-d5d5937aa66d",
+        "locator": "Template form, instruction section",
+        "quote": "Items marked N are reported to the Plant Manager by the 5th of the following month",
+        "what_to_do": "Establish and upload a written procedure defining: (1) what constitutes an 'N' result; (2) who investigates; (3) required corrective actions by category; (4) documentation requirements; (5) verification that fixes are in place before the next check; (6) escalation criteria for repeated failures or safety risks.",
+        "basis": "read"
+      },
+      {
+        "title": "C-1 detector-tube check protocol — scope and acceptance criteria undefined",
+        "word": "nothing_on_file",
+        "document_id": "88f0951e-ceaa-4cf7-95de-d5d5937aa66d",
+        "locator": "Line 3 of checklist",
+        "quote": "Weekly C-1 detector-tube checks done and recorded every week this month",
+        "what_to_do": "Add to the procedure or attach a reference document the standard or protocol for C-1 outlet detector-tube testing, the acceptable range or pass criterion, the required log format, and what corrective action is required if the check shows a failure.",
+        "basis": "read"
+      },
+      {
+        "title": "Scrubber pressure-drop reading units and range reference missing",
+        "word": "nothing_on_file",
+        "document_id": "88f0951e-ceaa-4cf7-95de-d5d5937aa66d",
+        "locator": "Line 2 of checklist",
+        "quote": "readings between 2.0 and 6.0",
+        "what_to_do": "Amend Line 2 to state the units of measurement (e.g., 'inches of water column') and add a reference to the permit condition or design document that establishes this range.",
+        "basis": "read"
+      },
+      {
+        "title": "Powered Industrial Truck defect follow-up documentation protocol undefined",
+        "word": "nothing_on_file",
+        "document_id": "88f0951e-ceaa-4cf7-95de-d5d5937aa66d",
+        "locator": "Line 4 of checklist",
+        "quote": "any defect followed up",
+        "what_to_do": "Add to the procedure or manual a definition of 'follow-up' including: (1) creation of work order or incident report; (2) severity/urgency category; (3) repair deadline; (4) required documentation (photos, maintenance log entry, mechanic's sign-off); and (5) verification that defect was corrected before the truck next runs.",
+        "basis": "read"
+      },
+      {
+        "title": "Fire extinguisher monthly visual inspection protocol not specified in self-check",
+        "word": "nothing_on_file",
+        "document_id": "88f0951e-ceaa-4cf7-95de-d5d5937aa66d",
+        "locator": "Line 5 of checklist",
+        "quote": "fire extinguishers tagged within the last 12 months; monthly visual check initialled on each tag",
+        "what_to_do": "Add procedures for fire extinguisher maintenance specifying: (1) annual professional inspection/recharge by certified service company; (2) monthly visual walk-through: check for damage, blockage, pressure gauge in green zone; (3) log and initial a tag or maintain a separate log; (4) any defect triggers immediate service or replacement. Reference NFPA 10.",
+        "basis": "read"
+      },
+      {
+        "title": "Eyewash and safety shower flush protocol incomplete",
+        "word": "nothing_on_file",
+        "document_id": "88f0951e-ceaa-4cf7-95de-d5d5937aa66d",
+        "locator": "Line 7 of checklist",
+        "quote": "Eyewash stations and safety showers flushed this week and logged",
+        "what_to_do": "Add to the procedure: (1) flushing frequency; (2) flush duration; (3) visual inspection for water flow, clarity, and nozzle function; (4) log entry format including date, time, location, flush duration, any defects, and initials; (5) malfunction response and repair/replacement deadline.",
+        "basis": "read"
+      },
+      {
+        "title": "Safety Data Sheet binder management protocol undefined",
+        "word": "nothing_on_file",
+        "document_id": "88f0951e-ceaa-4cf7-95de-d5d5937aa66d",
+        "locator": "Line 8 of checklist",
+        "quote": "Safety data sheets on hand for every chemical received this month; binder index updated",
+        "what_to_do": "Add to the SDS management procedure: (1) designate responsible person(s); (2) require SDS to be obtained and added to binder within X days of receipt; (3) organize by product name, CAS number, or hazard category; (4) maintain an index or log with product name, receipt date, SDS version date, and location; (5) define archive/retention policy for obsolete SDSs; (6) verify accessibility during inspections; (7) train all employees on binder location and use.",
+        "basis": "read"
+      },
+      {
+        "title": "OSHA Form 300A posting in workplace location — current requirement",
+        "word": "on_file",
+        "document_id": "b91959b1-235a-4292-bbfd-19d81b99d84f",
+        "locator": "Form header and certification section",
+        "quote": null,
+        "what_to_do": "Verify that Form 300A is currently posted in a conspicuous workplace location where employee notices are customarily displayed. Posting is required from February 1 through April 30 of each year under 29 CFR 1904.32.",
+        "basis": "read"
+      },
+      {
+        "title": "OSHA Form 300A and Form 300 Log retention through 2030",
+        "word": "on_file",
+        "document_id": "b91959b1-235a-4292-bbfd-19d81b99d84f",
+        "locator": "Form header and annual summary",
+        "quote": null,
+        "what_to_do": "Retain the Form 300A and supporting OSHA Form 300 Log (detailed injury and illness log) through December 31, 2030 as required by 29 CFR 1904.33.",
+        "basis": "read"
+      },
+      {
+        "title": "OSHA Form 300 Log and Form 301 Incident Reports",
+        "word": "nothing_on_file",
+        "document_id": "b91959b1-235a-4292-bbfd-19d81b99d84f",
+        "locator": null,
+        "quote": null,
+        "what_to_do": "Obtain or upload the OSHA Form 300 Log (detailed injury and illness log) and Form 301 Incident Reports for each of the 3 recordable cases documented on the 300A summary for calendar year 2025.",
+        "basis": "inferred"
+      }
+    ],
+    "dates": [
+      {
+        "title": "Annual maintenance renewal for fire extinguishers (all units)",
+        "due_on": "2026-08-20",
+        "recurs": true,
+        "document_id": "5a137618-2f46-4a38-b74a-8e3d878055aa",
+        "passed": true
+      },
+      {
+        "title": "Six-year internal maintenance for units W-3 and L-1",
+        "due_on": "2026-11-30",
+        "recurs": false,
+        "document_id": "5a137618-2f46-4a38-b74a-8e3d878055aa",
+        "passed": false
+      },
+      {
+        "title": "Post OSHA Form 300A in workplace",
+        "due_on": "2026-02-01",
+        "recurs": true,
+        "document_id": "b91959b1-235a-4292-bbfd-19d81b99d84f",
+        "passed": true
+      },
+      {
+        "title": "Remove OSHA Form 300A from posting",
+        "due_on": "2026-04-30",
+        "recurs": true,
+        "document_id": "b91959b1-235a-4292-bbfd-19d81b99d84f",
+        "passed": true
+      },
+      {
+        "title": "Retain OSHA Form 300A and Form 300 Log through end date",
+        "due_on": "2030-12-31",
+        "recurs": false,
+        "document_id": "b91959b1-235a-4292-bbfd-19d81b99d84f",
+        "passed": false
+      },
+      {
+        "title": "Items marked N reported to Plant Manager by 5th of following month",
+        "due_on": null,
+        "recurs": true,
+        "document_id": "88f0951e-ceaa-4cf7-95de-d5d5937aa66d",
+        "passed": false
+      }
+    ],
+    "not_document_questions": [
+      "Are monthly visual inspections of fire extinguishers actually being performed each month by employees or by certified technician?",
+      "Is the monthly EHS Self-Check form being completed every month, and are 'N' results being reported to the Plant Manager as required?",
+      "Has the company established and is it following the corrective-action procedure for failures identified on the monthly self-check?",
+      "Are C-1 detector-tube checks being performed weekly and recorded as indicated on the self-check form, and are readings within acceptable limits?",
+      "Are powered industrial truck defects being documented and remedied according to a defined protocol?",
+      "Are eyewash stations and safety showers being flushed and maintained at the required frequency?",
+      "Is the SDS binder being maintained current and accessible to employees, with an updated index?"
+    ],
+    "expected_not_seen": [
+      {
+        "title": "Hydrostatic test records for fire extinguishers",
+        "why": "Companies in this industry typically maintain hydrostatic test records for units subject to 12-year testing intervals under NFPA 10, Chapter 8, with test date, pressure results, and technician credentials for each unit."
+      },
+      {
+        "title": "Completed monthly EHS Self-Check forms for prior months",
+        "why": "To verify compliance with the monthly self-inspection program, companies maintain a history of completed forms showing the month reviewed, supervisor review date, employee name, and results (Y/N with initials) for each line item."
+      },
+      {
+        "title": "Escalation and investigation log for failed monthly checks",
+        "why": "Companies track and document the resolution of 'N' results reported to the Plant Manager, including the investigation, root cause, corrective action taken, responsible person, and verification of fix, to demonstrate systematic remediation."
+      },
+      {
+        "title": "Exit route and emergency egress audit or floor plan",
+        "why": "Companies maintain documentation of exit routes, emergency egress procedures, floor plans showing exits and assembly areas, and periodic egress audits to verify compliance with OSHA 29 CFR 1910.35 and related standards."
+      },
+      {
+        "title": "Powered Industrial Truck operator training records and evaluation documentation",
+        "why": "Companies maintain records of PIT operator training, evaluation, and certification per 29 CFR 1910.178, linked to the pre-shift inspection protocol to demonstrate qualified operators and proper equipment maintenance."
+      },
+      {
+        "title": "Scrubber maintenance and testing standard operating procedure",
+        "why": "Companies document the protocol for scrubber operations, pressure-drop monitoring, outlet detection and testing methods, acceptance criteria, and corrective-action thresholds required by permit conditions and design specifications."
+      },
+      {
+        "title": "SDS master list and current binder index",
+        "why": "Companies maintain a master list or inventory of all chemicals in use, with corresponding SDS on file, organized by product name or CAS number, and an updated index showing receipt date, SDS version date, and binder location for each chemical."
+      },
+      {
+        "title": "Documentation of Form 300A posting location, dates, and verification",
+        "why": "Companies document where Form 300A was posted (location description or photo), the dates it was posted and removed, and supervisor sign-off verifying posting compliance for each year."
+      }
+    ],
+    "contradictions": []
+  },
+  "verdicts": {
+    "carry-eap-gaps": {
+      "verdict": "FAIL",
+      "detail": "0 of 4 carried, needs 3"
+    },
+    "plan-stale": {
+      "verdict": "FAIL",
+      "detail": "no item matched with word=stale. held: Monthly visual inspection records  | Annual maintenance certificate ren | Six-year internal maintenance cert | Hydrostatic test records for fire  | Monthly EHS Self-Check form — no c | Escalation and corrective-action p | C-1 detector-tube check protocol — | Scrubber pressure-drop reading uni | Powered Industrial Truck defect fo | Fire extinguisher monthly visual i | Eyewash and safety shower flush pr | Safety Data Sheet binder managemen | OSHA Form 300A posting in workplac | OSHA Form 300A and Form 300 Log re | OSHA Form 300 Log and Form 301 Inc"
+    },
+    "forklift-on-file": {
+      "verdict": "FAIL",
+      "detail": "no item matched with word=on_file. held: Monthly visual inspection records  | Annual maintenance certificate ren | Six-year internal maintenance cert | Hydrostatic test records for fire  | Monthly EHS Self-Check form — no c | Escalation and corrective-action p | C-1 detector-tube check protocol — | Scrubber pressure-drop reading uni | Powered Industrial Truck defect fo | Fire extinguisher monthly visual i | Eyewash and safety shower flush pr | Safety Data Sheet binder managemen | OSHA Form 300A posting in workplac | OSHA Form 300A and Form 300 Log re | OSHA Form 300 Log and Form 301 Inc"
+    },
+    "alarm-expected": {
+      "verdict": "FAIL",
+      "detail": "no item matched. held: Monthly visual inspection records  | Annual maintenance certificate ren | Six-year internal maintenance cert | Hydrostatic test records for fire  | Monthly EHS Self-Check form — no c | Escalation and corrective-action p | C-1 detector-tube check protocol — | Scrubber pressure-drop reading uni | Powered Industrial Truck defect fo | Fire extinguisher monthly visual i | Eyewash and safety shower flush pr | Safety Data Sheet binder managemen | OSHA Form 300A posting in workplac | OSHA Form 300A and Form 300 Log re | OSHA Form 300 Log and Form 301 Inc"
+    },
+    "training-records-on-file": {
+      "verdict": "FAIL",
+      "detail": "0 of 4 carried, needs 1"
+    },
+    "employee-count-contradiction": {
+      "verdict": "FAIL",
+      "detail": "0 of 3 carried, needs 1"
+    },
+    "extinguisher-stale": {
+      "verdict": "PASS",
+      "detail": "findings: \"Annual maintenance certificate renewal for fire extinguishers — due \" [stale]"
+    },
+    "no-new-eap-gap": {
+      "verdict": "PASS",
+      "detail": "no fault on the plan beyond the four the reading found"
+    },
+    "no-deq-permit": {
+      "verdict": "PASS",
+      "detail": "nothing matched"
+    },
+    "no-satisfied": {
+      "verdict": "PASS",
+      "detail": "no positive claim about the company"
+    },
+    "no-ai-word": {
+      "verdict": "PASS",
+      "detail": "the word appears nowhere"
+    },
+    "sds-not-judged": {
+      "verdict": "PASS",
+      "detail": "findings: \"Safety Data Sheet binder management protocol undefined\" [nothing_on_file]"
+    },
+    "forklift-gaps": {
+      "verdict": "FAIL",
+      "detail": "no item matched. held: Monthly visual inspection records  | Annual maintenance certificate ren | Six-year internal maintenance cert | Hydrostatic test records for fire  | Monthly EHS Self-Check form — no c | Escalation and corrective-action p | C-1 detector-tube check protocol — | Scrubber pressure-drop reading uni | Powered Industrial Truck defect fo | Fire extinguisher monthly visual i | Eyewash and safety shower flush pr | Safety Data Sheet binder managemen | OSHA Form 300A posting in workplac | OSHA Form 300A and Form 300 Log re | OSHA Form 300 Log and Form 301 Inc"
+    }
+  },
+  "cost_usd": 0.031508999999999995,
+  "wall_ms": 43494
+}

@@ -48,3 +48,7 @@ next-env.d.ts
 # Scratch space for one-off probes and bake-off driver logs. Never committed: these are
 # temporary investigations, and a repository that carries them stops being readable.
 .tmp-probe/
+
+# macOS text clippings dragged into the repo while writing fixtures (Audits Run 1b).
+# Not source: a clipping is a copy of text that already lives in a spec.
+*.textClipping

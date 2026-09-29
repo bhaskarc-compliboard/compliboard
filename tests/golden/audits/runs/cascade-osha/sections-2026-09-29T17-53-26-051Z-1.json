@@ -1,0 +1,710 @@
+{
+  "case": "cascade-osha",
+  "agency": "Oregon OSHA",
+  "mode": "sections",
+  "run": 1,
+  "run_date": "2026-09-29",
+  "model": "claude-haiku-4-5",
+  "input_block": "TODAY IS 2026-09-29. Every \"passed\" or \"expiring\" judgement is against that date.\n\nTHE AGENCY THIS AUDIT IS ABOUT: Oregon OSHA\nOnly this agency. Another regulator's documents are listed at the end as titles only and\nare not yours to judge here.\n\nWHO THIS COMPANY IS\n  Name: Cascade Specialty Chemicals, LLC\n  Industry: chemical manufacturing (recorded as chemical-manufacturing)\n  Address: Portland, Oregon\nTheir sites:\n  - Portland — 4410 NW Front Ave, Portland, Oregon 97210, Portland, Oregon (primary)\n\nDOCUMENTS ON FILE FOR OREGON OSHA — 3\n\n  --- Emergency Action Plan\n      id: 31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\n      file: 01-eap-chemical.pdf\n      kind: policy · status: gaps_found · shown as: needs_work\n      the document's own date: 2021-02-01 (revised)\n      the date that matters: 2021-02-01 (revised)\n      site: Portland\n      what the reading said it is: This is the company's written emergency action plan for the Portland facility covering fire, chemical release, medical emergency, earthquake and other emergencies affecting all 42 employees. It describes alarm systems, evacuation routes and assembly points, headcount procedures, rescue and medical response, and staff training requirements. The plan must comply with OSHA 1910.38 and Oregon OSHA rules.\n      WHAT THE READING FOUND WRONG WITH IT (4) — these are already findings; carry them, do not re-find them:\n        · Missing contact name or title for plan information and duties\n            OSHA 1910.38(c)(6) requires the plan to include the name or job title of every employee who may be contacted by employees who need more information about the plan or an explanation of their duties. This document does not list such names or titles.\n            what it needs: Add a section identifying specific employees (by name or title) who can answer questions about the plan and employee duties—for example, the facilities lead or a safety officer.\n            the rule: 29 CFR 1910.38(c)(6)\n        · Missing procedures for employees remaining to operate critical plant operations\n            OSHA 1910.38(c)(3) requires the plan to include procedures for employees who remain to operate critical plant operations before they evacuate. This plan does not describe such procedures.\n            what it needs: Add a section describing which employees (if any) are assigned to remain briefly to shut down critical operations, what those operations are, and when and how they must evacuate after shutdown is complete.\n            the rule: 29 CFR 1910.38(c)(3)\n        · Alarm system signals not ANSI-compliant\n            OSHA 1910.165(b) requires that employee alarm systems use signals complying with ANSI S3.41-1974. The plan describes a continuous horn for evacuation and three short horns for shelter-in-place, but does not confirm these meet the ANSI standard or reference the standard.\n            what it needs: Verify the audible horn signals in the building meet ANSI S3.41-1974 standards, document that verification, and add a reference to the standard in section 2 or as a new compliance note.\n            the rule: 29 CFR 1910.165(b)\n        · Plan not reviewed or updated since February 2021\n            Oregon OSHA rule 437-002-0042 and OSHA 1910.38(f) require the plan to be reviewed with employees when it is changed, when an employee's responsibilities change, and the facilities lead states in section 6 that the plan is reviewed every January. The document is over five years old with no update date shown.\n            what it needs: Conduct the required January annual review and issue a revised plan dated with the current year. Update evacuation maps, floor warden roster, and verify that all procedures remain current with any facility or staffing changes.\n            the rule: OAR 437-002-0042; 29 CFR 1910.38(f)\n      WHAT THIS DOCUMENT OBLIGES THEM TO KEEP DOING (8), read out of the document itself:\n        · Section 2 — Maintain monitored fire alarm system with audible and visual signals\n            the evidence you would expect to see: Service contract with Cascade Fire & Safety, proof of monthly testing by facilities lead (first Monday of each month), inspection records\n        · Section 4 — Conduct evacuation drills twice per year in spring and autumn\n            the evidence you would expect to see: Sign-in sheets, headcount records, and after-action notes from spring and autumn drills\n        · Section 6 — Train new employees on plan, routes, and assembly point on first day\n            the evidence you would expect to see: New hire training checklist or records documenting walkthrough of plan, exit routes, and assembly point\n        · Section 6 — Train floor wardens and first-aid responders annually\n            the evidence you would expect to see: Annual training attendance records, roster showing names of all floor wardens and first-aid responders per shift\n        · Section 6 — Review plan with all employees when it is changed or when responsibilities change\n            the evidence you would expect to see: Meeting notes, email confirmations, or sign-in sheets documenting employee review of plan updates\n        · Section 5 — Maintain and stock first-aid kit and AED in front office\n            the evidence you would expect to see: Inventory log, expiration dates on first-aid supplies, AED maintenance records\n        · Section 5 — Maintain emergency shower and eyewash at loading dock\n            the evidence you would expect to see: Maintenance and testing logs for emergency shower and eyewash, monthly or quarterly inspection records\n        · Sections 3 and 6, Appendices A and B — Keep warden roster and evacuation maps posted at each exit door and break room\n            the evidence you would expect to see: Visible posted maps, current floor warden and first-aid responder roster listing names and areas\n      DATES THIS DOCUMENT SETS (4):\n        · Annual review of plan and evacuation maps update — no date stated (recurring)\n        · Annual training for floor wardens and first-aid responders — no date stated (recurring)\n        · Evacuation drills — no date stated (recurring)\n        · Monthly alarm system test — no date stated (recurring)\n      WHAT THE READING SAID A COMPANY LIKE THIS USUALLY ALSO HOLDS (4) —\n        a suggestion from similar companies, NOT a checked requirement:\n        · Incident command system (ICS) structure and roles during response — The plan names an incident coordinator at the assembly point but does not define the ICS structure or chain of command during a major incident.\n        · Notification or public information procedure for nearby businesses or residents — For outdoor chemical releases, the company may need to notify neighboring facilities; the plan should address this.\n        · Post-incident decontamination or cleanup procedures — For chemical exposure or release, the plan should describe how the area is made safe before returning to work.\n        · Procedure for communicating with emergency responders on-site — For incidents like chemical spills or medical emergencies, the plan should identify who communicates with fire, police, and EMS, and what information is provided.\n\n  --- Powered Industrial Truck Pre-Shift Inspection Log\n      id: 617428b4-96a8-4eed-96d1-773ccbf9a4cf\n      file: 06a-forklift-log.pdf\n      kind: record · status: gaps_found · shown as: needs_work\n      the document's own date: 2026-09-18 (last_entry)\n      the date that matters: 2026-09-18 (last_entry)\n      site: Portland\n      what the reading said it is: This is a daily inspection log for a propane-powered Toyota forklift (FL-2) operated at the Portland warehouse. The log documents pre-shift safety inspections per OSHA 29 CFR 1910.178(q)(7) covering tires, forks, mast, horn, lights, seat belt, brakes, steering, propane tank, fire extinguisher, data plate, and overhead guard. The company is required to maintain this inspection record as evidence that defective equipment is identified and removed from service before use.\n      WHAT THE READING FOUND WRONG WITH IT (3) — these are already findings; carry them, do not re-find them:\n        · Missing inspections for September 3–6 and September 12–13\n            The log shows entries for September 1, 2, 7, 8, 9, 10, 11, 14, 15, 16, 17, and 18. OSHA 29 CFR 1910.178(q)(7) requires that powered industrial trucks be examined before being placed in service and shall be examined at least daily. The hour meter shows the truck was in operation on the missing days (hours rose from 4,819 on September 2 to 4,834 on September 7, and from 4,860 on September 11 to 4,873 on September 15), but no inspection records exist for September 3, 4, 5, 6, 12, or 13. This is a gap in documentation required by OSHA.\n            what it needs: Inspect and log the truck before each shift, every day, including weekends and holidays. If the truck was operated on September 3–6 and 12–13 but no shift occurred, document that explicitly (e.g., 'Not in service' or 'Weekend – no operations'). Going forward, do not operate the truck without first recording a pre-shift inspection.\n            the rule: 29 CFR 1910.178(q)(7)\n        · Horn defect not removed from service\n            On September 9, the inspection log shows an 'X' in the Horn column with the operator note 'Horn not working.' However, the truck continued to be used the next day (September 10, inspected by J.R. with all items marked OK, including horn). OSHA 29 CFR 1910.178(q)(7) requires that trucks showing a defective condition adversely affecting safety shall not be placed in service, and defects shall be immediately reported and corrected. A non-functioning horn is a safety defect that should have removed the truck from service until repaired.\n            what it needs: When a defect is found during pre-shift inspection, do not place the truck in service. Mark it out of service, notify supervision immediately, document the defect and the date removed from service, repair it, and re-inspect before returning it to use. The September 10 entry should show that either (a) the horn was repaired overnight and re-tested on September 10, or (b) the truck remained out of service.\n            the rule: 29 CFR 1910.178(q)(7)\n        · Supervisor review signature missing  [worked out from the document, not stated in it]\n            The log template includes a line for 'Supervisor review: ______________________ Date: __________', but no supervisor has signed or dated this section. OSHA 29 CFR 1910.178(q)(7) does not explicitly require supervisor sign-off, but best practice and many state inspection protocols expect documented supervisory review of inspection records to ensure accountability and that defects are acted upon. The absence of a signature leaves no evidence that a supervisor has reviewed the log or verified that noted defects were corrected.\n            what it needs: Have the appropriate supervisor review the monthly inspection log and sign it with the date. Document the supervisor's name and title. This provides evidence of management oversight and ensures that any defects noted (like the September 9 horn failure) were tracked and corrected before the truck returned to service.\n            the rule: Oregon OSHA guidance; 29 CFR 1910.178(q)(7) best practices\n      WHAT THIS DOCUMENT OBLIGES THEM TO KEEP DOING (3), read out of the document itself:\n        · 29 CFR 1910.178(q)(7) — Daily pre-shift inspection of Toyota 8FGU25 (FL-2) before placing in service\n            the evidence you would expect to see: Pre-shift inspection log with date, time/shift, checklist items (tires, forks, mast, horn, lights, belt, brakes, steering, LPG tank, fire extinguisher, data plate, guard), operator initials, and any defects noted. Log must show inspection before the truck is used each day.\n        · 29 CFR 1910.178(q)(7) — Removal of defective equipment from service\n            the evidence you would expect to see: When an 'X' or defect is marked on the inspection log, the truck must not be placed in service for the next shift. Evidence would be: (a) documentation that the defect was corrected before the next inspection (repair ticket, maintenance record), (b) re-inspection showing the item as OK, or (c) the truck marked 'Out of Service' or 'Not Inspected' until repaired.\n        · 29 CFR 1910.178(l) — Operator certification and training\n            the evidence you would expect to see: Training and evaluation records for each operator; the log shows M.C. (M. Chen, certified 2024-03-11, evaluation due 2027-03-11) and J.R. (J. Rivera, certified 2025-06-02, evaluation due 2028-06-02). Evidence: initial training records, evaluation completion dates, proof of re-evaluation at least every 3 years.\n      DATES THIS DOCUMENT SETS (2):\n        · J. Rivera (J.R.) forklift operator re-evaluation due — 2028-06-02 (recurring)\n        · M. Chen (M.C.) forklift operator re-evaluation due — 2027-03-11 (recurring)\n      WHAT THE READING SAID A COMPANY LIKE THIS USUALLY ALSO HOLDS (3) —\n        a suggestion from similar companies, NOT a checked requirement:\n        · Forklift certification or in-service equipment record — A document showing the truck's original certification date, manufacturer certification, any modifications, and current permit/registration status\n        · Maintenance and repair log for forklift FL-2 — The September 9 horn defect should be paired with a maintenance work order or repair ticket showing when the horn was fixed, by whom, and the date returned to service\n        · Training records and evaluation documentation for M. Chen and J. Rivera — The log references certification and re-evaluation dates but does not include the actual training curriculum completion records, written or practical exam results, or the re-evaluation reports\n\n  --- Powered Industrial Truck Pre-Shift Inspection Log\n      id: 73af0407-4efd-42d1-9d66-86ec5fb875d6\n      file: 06b-forklift-log-photo.pdf\n      kind: record · status: recorded · shown as: recorded\n      the document's own date: 2026-09-17 (last_entry)\n      the date that matters: 2026-09-17 (last_entry)\n      site: Portland\n      what the reading said it is: This is an operating log documenting daily pre-shift inspections of a Toyota forklift (model BFGU25, unit FL-2, propane) from September 1-17, 2026, as required by OSHA 29 CFR 1910.178(q)(7). Each inspection records operator initials and whether 14 safety components passed inspection, with one defect noted: a non-working horn on September 9.\n      WHAT THE READING FOUND WRONG WITH IT: nothing\n      WHAT THIS DOCUMENT OBLIGES THEM TO KEEP DOING (2), read out of the document itself:\n        · 29 CFR 1910.178(q)(7) — Daily pre-shift inspection required\n            the evidence you would expect to see: Daily inspection log showing examination of powered industrial truck before each shift, with notation of any defects and corrective action taken\n        · 29 CFR 1910.178(q)(7) — Defective equipment removed from service\n            the evidence you would expect to see: Documentation that defective truck or component was not operated; repair records showing correction\n      DATES THIS DOCUMENT SETS (1):\n        · Daily pre-shift inspection — no date stated (recurring)\n      WHAT THE READING SAID A COMPANY LIKE THIS USUALLY ALSO HOLDS (1) —\n        a suggestion from similar companies, NOT a checked requirement:\n        · Maintenance work order or corrective action record for horn defect — September 9 horn defect documented but no follow-up record showing when/how it was repaired\n\nFACTS THIS COMPANY HAS CONFIRMED, ACROSS EVERYTHING THEY HOLD\nEach was read in a document and then confirmed by a person. Nothing a reading merely\nproposed is here — an unconfirmed proposal is a question, not a fact.\n  (nothing confirmed yet)\n\nEVERYTHING ELSE THIS COMPANY HOLDS — 2, TITLES AND DATES ONLY\nListed so you can say what is NOT among them. You have not been shown their contents and\nmust not describe what is in them.\n  - Safety Data Sheet for Sodium Hydroxide Solution, 50% · supplier_document · not_judged · 2024-03-18\n  - Standard Air Contaminant Discharge Permit · permit · expiring · 2026-11-15\n\nTHE AGENCY AND SUBJECT WORDS THIS COMPANY ALREADY USES\n  agencies: Oregon DEQ · Oregon OSHA\n  subjects: Air Quality Control · Emergency Response · Environmental Compliance · Evacuation · Fire Prevention · Hazardous Chemical Safety",
+  "input_sha256": "345117ad11b6479cb5c2d3d4f41b6488b6e0d3dcaf1fb65964390d14423a5e57",
+  "input": {
+    "today": "2026-09-29",
+    "agency": "Oregon OSHA",
+    "company": {
+      "name": "Cascade Specialty Chemicals, LLC",
+      "industrySlug": "chemical-manufacturing",
+      "industryWords": "chemical manufacturing",
+      "address": "Portland, Oregon",
+      "state": "Oregon",
+      "sites": [
+        {
+          "id": "ff15bc1b-7f82-4c31-9ba6-20b1e8a40fb8",
+          "name": "Portland",
+          "address": "4410 NW Front Ave, Portland, Oregon 97210",
+          "state": "Oregon",
+          "county": null,
+          "city": "Portland",
+          "primary": true
+        }
+      ]
+    },
+    "confirmed": [],
+    "labels": {
+      "agencies": [
+        "Oregon DEQ",
+        "Oregon OSHA"
+      ],
+      "subjects": [
+        "Air Quality Control",
+        "Emergency Response",
+        "Environmental Compliance",
+        "Evacuation",
+        "Fire Prevention",
+        "Hazardous Chemical Safety"
+      ]
+    },
+    "keys": [
+      "assembly_point",
+      "defect_noted_horn_september_9",
+      "dot_hazard_class",
+      "dot_packing_group",
+      "emergency_eyewash_requirement",
+      "emergency_shower_and_eyewash_location",
+      "employee_count",
+      "equipment_id",
+      "facility_address",
+      "fire_alarm_monitoring",
+      "first_aid_responders_per_shift",
+      "freezing_point_celsius",
+      "hazard_classification_corrosive_to_metals",
+      "hazard_classification_eye_damage",
+      "hazard_classification_skin_corrosion",
+      "inspection_period",
+      "operator_certification_j_r",
+      "operator_certification_m_c",
+      "osha_exposure_limit_sodium_hydroxide",
+      "permit_expiration_date",
+      "permit_issued_date",
+      "permit_number",
+      "permitted_sources",
+      "product_name",
+      "rcra_hazard_waste_classification",
+      "shelter_in_place_safe_rooms",
+      "source_category",
+      "storage_container_material",
+      "supplier_name",
+      "truck_hours_meter_reading",
+      "un_transport_number"
+    ],
+    "documents": [
+      {
+        "document_id": "31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b",
+        "title": "Emergency Action Plan",
+        "file_name": "01-eap-chemical.pdf",
+        "kind": "policy",
+        "status": "gaps_found",
+        "display_status": "needs_work",
+        "doc_date": "2021-02-01",
+        "doc_date_kind": "revised",
+        "significant_date": "2021-02-01",
+        "significant_date_kind": "revised",
+        "site": "Portland",
+        "summary": "This is the company's written emergency action plan for the Portland facility covering fire, chemical release, medical emergency, earthquake and other emergencies affecting all 42 employees. It describes alarm systems, evacuation routes and assembly points, headcount procedures, rescue and medical response, and staff training requirements. The plan must comply with OSHA 1910.38 and Oregon OSHA rules.",
+        "open_gaps": [
+          {
+            "title": "Missing contact name or title for plan information and duties",
+            "description": "OSHA 1910.38(c)(6) requires the plan to include the name or job title of every employee who may be contacted by employees who need more information about the plan or an explanation of their duties. This document does not list such names or titles.",
+            "fix": "Add a section identifying specific employees (by name or title) who can answer questions about the plan and employee duties—for example, the facilities lead or a safety officer.",
+            "citation": "29 CFR 1910.38(c)(6)",
+            "basis": "read"
+          },
+          {
+            "title": "Missing procedures for employees remaining to operate critical plant operations",
+            "description": "OSHA 1910.38(c)(3) requires the plan to include procedures for employees who remain to operate critical plant operations before they evacuate. This plan does not describe such procedures.",
+            "fix": "Add a section describing which employees (if any) are assigned to remain briefly to shut down critical operations, what those operations are, and when and how they must evacuate after shutdown is complete.",
+            "citation": "29 CFR 1910.38(c)(3)",
+            "basis": "read"
+          },
+          {
+            "title": "Alarm system signals not ANSI-compliant",
+            "description": "OSHA 1910.165(b) requires that employee alarm systems use signals complying with ANSI S3.41-1974. The plan describes a continuous horn for evacuation and three short horns for shelter-in-place, but does not confirm these meet the ANSI standard or reference the standard.",
+            "fix": "Verify the audible horn signals in the building meet ANSI S3.41-1974 standards, document that verification, and add a reference to the standard in section 2 or as a new compliance note.",
+            "citation": "29 CFR 1910.165(b)",
+            "basis": "read"
+          },
+          {
+            "title": "Plan not reviewed or updated since February 2021",
+            "description": "Oregon OSHA rule 437-002-0042 and OSHA 1910.38(f) require the plan to be reviewed with employees when it is changed, when an employee's responsibilities change, and the facilities lead states in section 6 that the plan is reviewed every January. The document is over five years old with no update date shown.",
+            "fix": "Conduct the required January annual review and issue a revised plan dated with the current year. Update evacuation maps, floor warden roster, and verify that all procedures remain current with any facility or staffing changes.",
+            "citation": "OAR 437-002-0042; 29 CFR 1910.38(f)",
+            "basis": "read"
+          }
+        ],
+        "conditions": [
+          {
+            "condition_ref": "Section 2",
+            "title": "Maintain monitored fire alarm system with audible and visual signals",
+            "evidence_expected": "Service contract with Cascade Fire & Safety, proof of monthly testing by facilities lead (first Monday of each month), inspection records"
+          },
+          {
+            "condition_ref": "Section 4",
+            "title": "Conduct evacuation drills twice per year in spring and autumn",
+            "evidence_expected": "Sign-in sheets, headcount records, and after-action notes from spring and autumn drills"
+          },
+          {
+            "condition_ref": "Section 6",
+            "title": "Train new employees on plan, routes, and assembly point on first day",
+            "evidence_expected": "New hire training checklist or records documenting walkthrough of plan, exit routes, and assembly point"
+          },
+          {
+            "condition_ref": "Section 6",
+            "title": "Train floor wardens and first-aid responders annually",
+            "evidence_expected": "Annual training attendance records, roster showing names of all floor wardens and first-aid responders per shift"
+          },
+          {
+            "condition_ref": "Section 6",
+            "title": "Review plan with all employees when it is changed or when responsibilities change",
+            "evidence_expected": "Meeting notes, email confirmations, or sign-in sheets documenting employee review of plan updates"
+          },
+          {
+            "condition_ref": "Section 5",
+            "title": "Maintain and stock first-aid kit and AED in front office",
+            "evidence_expected": "Inventory log, expiration dates on first-aid supplies, AED maintenance records"
+          },
+          {
+            "condition_ref": "Section 5",
+            "title": "Maintain emergency shower and eyewash at loading dock",
+            "evidence_expected": "Maintenance and testing logs for emergency shower and eyewash, monthly or quarterly inspection records"
+          },
+          {
+            "condition_ref": "Sections 3 and 6, Appendices A and B",
+            "title": "Keep warden roster and evacuation maps posted at each exit door and break room",
+            "evidence_expected": "Visible posted maps, current floor warden and first-aid responder roster listing names and areas"
+          }
+        ],
+        "deadlines": [
+          {
+            "title": "Annual review of plan and evacuation maps update",
+            "due_on": null,
+            "recurs": true
+          },
+          {
+            "title": "Annual training for floor wardens and first-aid responders",
+            "due_on": null,
+            "recurs": true
+          },
+          {
+            "title": "Evacuation drills",
+            "due_on": null,
+            "recurs": true
+          },
+          {
+            "title": "Monthly alarm system test",
+            "due_on": null,
+            "recurs": true
+          }
+        ],
+        "expected_missing": [
+          {
+            "title": "Incident command system (ICS) structure and roles during response",
+            "why": "The plan names an incident coordinator at the assembly point but does not define the ICS structure or chain of command during a major incident.",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Notification or public information procedure for nearby businesses or residents",
+            "why": "For outdoor chemical releases, the company may need to notify neighboring facilities; the plan should address this.",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Post-incident decontamination or cleanup procedures",
+            "why": "For chemical exposure or release, the plan should describe how the area is made safe before returning to work.",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Procedure for communicating with emergency responders on-site",
+            "why": "For incidents like chemical spills or medical emergencies, the plan should identify who communicates with fire, police, and EMS, and what information is provided.",
+            "basis": "similar companies, not a checked requirement"
+          }
+        ],
+        "confirmed_facts": []
+      },
+      {
+        "document_id": "617428b4-96a8-4eed-96d1-773ccbf9a4cf",
+        "title": "Powered Industrial Truck Pre-Shift Inspection Log",
+        "file_name": "06a-forklift-log.pdf",
+        "kind": "record",
+        "status": "gaps_found",
+        "display_status": "needs_work",
+        "doc_date": "2026-09-18",
+        "doc_date_kind": "last_entry",
+        "significant_date": "2026-09-18",
+        "significant_date_kind": "last_entry",
+        "site": "Portland",
+        "summary": "This is a daily inspection log for a propane-powered Toyota forklift (FL-2) operated at the Portland warehouse. The log documents pre-shift safety inspections per OSHA 29 CFR 1910.178(q)(7) covering tires, forks, mast, horn, lights, seat belt, brakes, steering, propane tank, fire extinguisher, data plate, and overhead guard. The company is required to maintain this inspection record as evidence that defective equipment is identified and removed from service before use.",
+        "open_gaps": [
+          {
+            "title": "Missing inspections for September 3–6 and September 12–13",
+            "description": "The log shows entries for September 1, 2, 7, 8, 9, 10, 11, 14, 15, 16, 17, and 18. OSHA 29 CFR 1910.178(q)(7) requires that powered industrial trucks be examined before being placed in service and shall be examined at least daily. The hour meter shows the truck was in operation on the missing days (hours rose from 4,819 on September 2 to 4,834 on September 7, and from 4,860 on September 11 to 4,873 on September 15), but no inspection records exist for September 3, 4, 5, 6, 12, or 13. This is a gap in documentation required by OSHA.",
+            "fix": "Inspect and log the truck before each shift, every day, including weekends and holidays. If the truck was operated on September 3–6 and 12–13 but no shift occurred, document that explicitly (e.g., 'Not in service' or 'Weekend – no operations'). Going forward, do not operate the truck without first recording a pre-shift inspection.",
+            "citation": "29 CFR 1910.178(q)(7)",
+            "basis": "read"
+          },
+          {
+            "title": "Horn defect not removed from service",
+            "description": "On September 9, the inspection log shows an 'X' in the Horn column with the operator note 'Horn not working.' However, the truck continued to be used the next day (September 10, inspected by J.R. with all items marked OK, including horn). OSHA 29 CFR 1910.178(q)(7) requires that trucks showing a defective condition adversely affecting safety shall not be placed in service, and defects shall be immediately reported and corrected. A non-functioning horn is a safety defect that should have removed the truck from service until repaired.",
+            "fix": "When a defect is found during pre-shift inspection, do not place the truck in service. Mark it out of service, notify supervision immediately, document the defect and the date removed from service, repair it, and re-inspect before returning it to use. The September 10 entry should show that either (a) the horn was repaired overnight and re-tested on September 10, or (b) the truck remained out of service.",
+            "citation": "29 CFR 1910.178(q)(7)",
+            "basis": "read"
+          },
+          {
+            "title": "Supervisor review signature missing",
+            "description": "The log template includes a line for 'Supervisor review: ______________________ Date: __________', but no supervisor has signed or dated this section. OSHA 29 CFR 1910.178(q)(7) does not explicitly require supervisor sign-off, but best practice and many state inspection protocols expect documented supervisory review of inspection records to ensure accountability and that defects are acted upon. The absence of a signature leaves no evidence that a supervisor has reviewed the log or verified that noted defects were corrected.",
+            "fix": "Have the appropriate supervisor review the monthly inspection log and sign it with the date. Document the supervisor's name and title. This provides evidence of management oversight and ensures that any defects noted (like the September 9 horn failure) were tracked and corrected before the truck returned to service.",
+            "citation": "Oregon OSHA guidance; 29 CFR 1910.178(q)(7) best practices",
+            "basis": "inferred"
+          }
+        ],
+        "conditions": [
+          {
+            "condition_ref": "29 CFR 1910.178(q)(7)",
+            "title": "Daily pre-shift inspection of Toyota 8FGU25 (FL-2) before placing in service",
+            "evidence_expected": "Pre-shift inspection log with date, time/shift, checklist items (tires, forks, mast, horn, lights, belt, brakes, steering, LPG tank, fire extinguisher, data plate, guard), operator initials, and any defects noted. Log must show inspection before the truck is used each day."
+          },
+          {
+            "condition_ref": "29 CFR 1910.178(q)(7)",
+            "title": "Removal of defective equipment from service",
+            "evidence_expected": "When an 'X' or defect is marked on the inspection log, the truck must not be placed in service for the next shift. Evidence would be: (a) documentation that the defect was corrected before the next inspection (repair ticket, maintenance record), (b) re-inspection showing the item as OK, or (c) the truck marked 'Out of Service' or 'Not Inspected' until repaired."
+          },
+          {
+            "condition_ref": "29 CFR 1910.178(l)",
+            "title": "Operator certification and training",
+            "evidence_expected": "Training and evaluation records for each operator; the log shows M.C. (M. Chen, certified 2024-03-11, evaluation due 2027-03-11) and J.R. (J. Rivera, certified 2025-06-02, evaluation due 2028-06-02). Evidence: initial training records, evaluation completion dates, proof of re-evaluation at least every 3 years."
+          }
+        ],
+        "deadlines": [
+          {
+            "title": "J. Rivera (J.R.) forklift operator re-evaluation due",
+            "due_on": "2028-06-02",
+            "recurs": true
+          },
+          {
+            "title": "M. Chen (M.C.) forklift operator re-evaluation due",
+            "due_on": "2027-03-11",
+            "recurs": true
+          }
+        ],
+        "expected_missing": [
+          {
+            "title": "Forklift certification or in-service equipment record",
+            "why": "A document showing the truck's original certification date, manufacturer certification, any modifications, and current permit/registration status",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Maintenance and repair log for forklift FL-2",
+            "why": "The September 9 horn defect should be paired with a maintenance work order or repair ticket showing when the horn was fixed, by whom, and the date returned to service",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Training records and evaluation documentation for M. Chen and J. Rivera",
+            "why": "The log references certification and re-evaluation dates but does not include the actual training curriculum completion records, written or practical exam results, or the re-evaluation reports",
+            "basis": "similar companies, not a checked requirement"
+          }
+        ],
+        "confirmed_facts": []
+      },
+      {
+        "document_id": "73af0407-4efd-42d1-9d66-86ec5fb875d6",
+        "title": "Powered Industrial Truck Pre-Shift Inspection Log",
+        "file_name": "06b-forklift-log-photo.pdf",
+        "kind": "record",
+        "status": "recorded",
+        "display_status": "recorded",
+        "doc_date": "2026-09-17",
+        "doc_date_kind": "last_entry",
+        "significant_date": "2026-09-17",
+        "significant_date_kind": "last_entry",
+        "site": "Portland",
+        "summary": "This is an operating log documenting daily pre-shift inspections of a Toyota forklift (model BFGU25, unit FL-2, propane) from September 1-17, 2026, as required by OSHA 29 CFR 1910.178(q)(7). Each inspection records operator initials and whether 14 safety components passed inspection, with one defect noted: a non-working horn on September 9.",
+        "open_gaps": [],
+        "conditions": [
+          {
+            "condition_ref": "29 CFR 1910.178(q)(7)",
+            "title": "Daily pre-shift inspection required",
+            "evidence_expected": "Daily inspection log showing examination of powered industrial truck before each shift, with notation of any defects and corrective action taken"
+          },
+          {
+            "condition_ref": "29 CFR 1910.178(q)(7)",
+            "title": "Defective equipment removed from service",
+            "evidence_expected": "Documentation that defective truck or component was not operated; repair records showing correction"
+          }
+        ],
+        "deadlines": [
+          {
+            "title": "Daily pre-shift inspection",
+            "due_on": null,
+            "recurs": true
+          }
+        ],
+        "expected_missing": [
+          {
+            "title": "Maintenance work order or corrective action record for horn defect",
+            "why": "September 9 horn defect documented but no follow-up record showing when/how it was repaired",
+            "basis": "similar companies maintain separate maintenance logs; OSHA 1910.178(q)(7) requires defects be 'immediately reported and corrected'"
+          }
+        ],
+        "confirmed_facts": []
+      }
+    ],
+    "other_documents": [
+      {
+        "document_id": "b3362ae5-71d4-4a53-9be1-4b93ec728215",
+        "title": "Safety Data Sheet for Sodium Hydroxide Solution, 50%",
+        "kind": "supplier_document",
+        "status": "not_judged",
+        "significant_date": "2024-03-18"
+      },
+      {
+        "document_id": "69bbc42a-9a5c-4776-80d9-ae819d0ff87d",
+        "title": "Standard Air Contaminant Discharge Permit",
+        "kind": "permit",
+        "status": "expiring",
+        "significant_date": "2026-11-15"
+      }
+    ]
+  },
+  "calls": [
+    {
+      "section": "dates",
+      "wall_ms": 17897,
+      "cost_usd": 0.018059000000000002,
+      "sources": 0,
+      "input_tokens": 7694,
+      "output_tokens": 2073,
+      "searches": 0,
+      "json_parsed": true,
+      "raw_text": "```json\n{\n  \"covers\": {\n    \"documents_read\": [\n      \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"617428b4-96a8-4eed-96d1-773ccbf9a4cf\",\n      \"73af0407-4efd-42d1-9d66-86ec5fb875d6\"\n    ],\n    \"documents_held_but_not_read\": [\n      \"Safety Data Sheet for Sodium Hydroxide Solution, 50%\",\n      \"Standard Air Contaminant Discharge Permit\"\n    ],\n    \"readings_as_of\": \"2026-09-18\"\n  },\n  \"findings\": [\n    {\n      \"title\": \"Emergency Action Plan — missing plan information contact name or title\",\n      \"word\": \"on_file\",\n      \"document_id\": \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"locator\": null,\n      \"quote\": \"This document does not list such names or titles.\",\n      \"what_to_do\": \"Add a section identifying specific employees (by name or title) who can answer questions about the plan and employee duties—for example, the facilities lead or a safety officer.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Emergency Action Plan — missing procedures for employees remaining to operate critical plant operations\",\n      \"word\": \"on_file\",\n      \"document_id\": \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"locator\": null,\n      \"quote\": \"This plan does not describe such procedures.\",\n      \"what_to_do\": \"Add a section describing which employees (if any) are assigned to remain briefly to shut down critical operations, what those operations are, and when and how they must evacuate after shutdown is complete.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Emergency Action Plan — alarm system signals not ANSI-compliant\",\n      \"word\": \"on_file\",\n      \"document_id\": \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"locator\": null,\n      \"quote\": \"does not confirm these meet the ANSI standard or reference the standard.\",\n      \"what_to_do\": \"Verify the audible horn signals in the building meet ANSI S3.41-1974 standards, document that verification, and add a reference to the standard in section 2 or as a new compliance note.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Emergency Action Plan — plan not reviewed or updated since February 2021\",\n      \"word\": \"stale\",\n      \"document_id\": \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"locator\": null,\n      \"quote\": \"The document is over five years old with no update date shown.\",\n      \"what_to_do\": \"Conduct the required January annual review and issue a revised plan dated with the current year. Update evacuation maps, floor warden roster, and verify that all procedures remain current with any facility or staffing changes.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Forklift FL-2 pre-shift inspection log — missing inspections for September 3–6 and September 12–13\",\n      \"word\": \"on_file\",\n      \"document_id\": \"617428b4-96a8-4eed-96d1-773ccbf9a4cf\",\n      \"locator\": null,\n      \"quote\": \"but no inspection records exist for September 3, 4, 5, 6, 12, or 13.\",\n      \"what_to_do\": \"Inspect and log the truck before each shift, every day, including weekends and holidays. If the truck was operated on September 3–6 and 12–13 but no shift occurred, document that explicitly (e.g., 'Not in service' or 'Weekend – no operations'). Going forward, do not operate the truck without first recording a pre-shift inspection.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Forklift FL-2 pre-shift inspection log — horn defect not removed from service\",\n      \"word\": \"on_file\",\n      \"document_id\": \"617428b4-96a8-4eed-96d1-773ccbf9a4cf\",\n      \"locator\": null,\n      \"quote\": \"the truck continued to be used the next day (September 10, inspected by J.R. with all items marked OK, including horn).\",\n      \"what_to_do\": \"When a defect is found during pre-shift inspection, do not place the truck in service. Mark it out of service, notify supervision immediately, document the defect and the date removed from service, repair it, and re-inspect before returning it to use. The September 10 entry should show that either (a) the horn was repaired overnight and re-tested on September 10, or (b) the truck remained out of service.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Forklift FL-2 pre-shift inspection log — supervisor review signature missing\",\n      \"word\": \"on_file\",\n      \"document_id\": \"617428b4-96a8-4eed-96d1-773ccbf9a4cf\",\n      \"locator\": null,\n      \"quote\": \"no supervisor has signed or dated this section.\",\n      \"what_to_do\": \"Have the appropriate supervisor review the monthly inspection log and sign it with the date. Document the supervisor's name and title. This provides evidence of management oversight and ensures that any defects noted (like the September 9 horn failure) were tracked and corrected before the truck returned to service.\",\n      \"basis\": \"read\"\n    }\n  ],\n  \"dates\": [\n    {\n      \"title\": \"Annual review of Emergency Action Plan and evacuation maps update\",\n      \"due_on\": null,\n      \"recurs\": true,\n      \"document_id\": \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"passed\": null\n    },\n    {\n      \"title\": \"Annual training for floor wardens and first-aid responders\",\n      \"due_on\": null,\n      \"recurs\": true,\n      \"document_id\": \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"passed\": null\n    },\n    {\n      \"title\": \"Evacuation drills (twice per year, spring and autumn)\",\n      \"due_on\": null,\n      \"recurs\": true,\n      \"document_id\": \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"passed\": null\n    },\n    {\n      \"title\": \"Monthly alarm system test\",\n      \"due_on\": null,\n      \"recurs\": true,\n      \"document_id\": \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"passed\": null\n    },\n    {\n      \"title\": \"M. Chen (M.C.) forklift operator re-evaluation\",\n      \"due_on\": \"2027-03-11\",\n      \"recurs\": true,\n      \"document_id\": \"617428b4-96a8-4eed-96d1-773ccbf9a4cf\",\n      \"passed\": false\n    },\n    {\n      \"title\": \"J. Rivera (J.R.) forklift operator re-evaluation\",\n      \"due_on\": \"2028-06-02\",\n      \"recurs\": true,\n      \"document_id\": \"617428b4-96a8-4eed-96d1-773ccbf9a4cf\",\n      \"passed\": false\n    },\n    {\n      \"title\": \"Daily pre-shift inspection of forklift FL-2\",\n      \"due_on\": null,\n      \"recurs\": true,\n      \"document_id\": \"73af0407-4efd-42d1-9d66-86ec5fb875d6\",\n      \"passed\": null\n    }\n  ],\n  \"not_document_questions\": [],\n  \"expected_not_seen\": [],\n  \"contradictions\": []\n}\n```"
+    },
+    {
+      "section": "conditions",
+      "wall_ms": 31873,
+      "cost_usd": 0.028259,
+      "sources": 0,
+      "input_tokens": 9799,
+      "output_tokens": 3692,
+      "searches": 0,
+      "json_parsed": true,
+      "raw_text": "```json\n{\n  \"covers\": {\n    \"documents_read\": [\n      \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"617428b4-96a8-4eed-96d1-773ccbf9a4cf\",\n      \"73af0407-4efd-42d1-9d66-86ec5fb875d6\"\n    ],\n    \"documents_held_but_not_read\": [\n      \"Safety Data Sheet for Sodium Hydroxide Solution, 50%\",\n      \"Standard Air Contaminant Discharge Permit\"\n    ],\n    \"readings_as_of\": \"2026-09-18\"\n  },\n  \"findings\": [\n    {\n      \"title\": \"Emergency Action Plan — Section 2 — Maintain monitored fire alarm system with audible and visual signals\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"locator\": \"Section 2\",\n      \"quote\": null,\n      \"what_to_do\": \"Produce service contract with fire alarm vendor, monthly testing records signed by facilities lead (first Monday of each month), and inspection certificates.\",\n      \"basis\": \"inferred\"\n    },\n    {\n      \"title\": \"Emergency Action Plan — Section 4 — Conduct evacuation drills twice per year in spring and autumn\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"locator\": \"Section 4\",\n      \"quote\": null,\n      \"what_to_do\": \"Produce sign-in sheets, headcount records, and after-action notes from spring and autumn drills for this year and prior years.\",\n      \"basis\": \"inferred\"\n    },\n    {\n      \"title\": \"Emergency Action Plan — Section 6 — Train new employees on plan, routes, and assembly point on first day\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"locator\": \"Section 6\",\n      \"quote\": null,\n      \"what_to_do\": \"Produce new hire training checklist or records documenting walkthrough of plan, exit routes, and assembly point for all employees hired in the past year.\",\n      \"basis\": \"inferred\"\n    },\n    {\n      \"title\": \"Emergency Action Plan — Section 6 — Train floor wardens and first-aid responders annually\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"locator\": \"Section 6\",\n      \"quote\": null,\n      \"what_to_do\": \"Produce annual training attendance records and roster showing names of all floor wardens and first-aid responders by shift for the current year.\",\n      \"basis\": \"inferred\"\n    },\n    {\n      \"title\": \"Emergency Action Plan — Section 6 — Review plan with all employees when it is changed or when responsibilities change\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"locator\": \"Section 6\",\n      \"quote\": null,\n      \"what_to_do\": \"Produce meeting notes, email confirmations, or sign-in sheets documenting employee review of plan updates.\",\n      \"basis\": \"inferred\"\n    },\n    {\n      \"title\": \"Emergency Action Plan — Section 5 — Maintain and stock first-aid kit and AED in front office\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"locator\": \"Section 5\",\n      \"quote\": null,\n      \"what_to_do\": \"Produce inventory log showing contents and expiration dates of first-aid supplies, and AED maintenance and testing records.\",\n      \"basis\": \"inferred\"\n    },\n    {\n      \"title\": \"Emergency Action Plan — Section 5 — Maintain emergency shower and eyewash at loading dock\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"locator\": \"Section 5\",\n      \"quote\": null,\n      \"what_to_do\": \"Produce maintenance and testing logs for emergency shower and eyewash, with monthly or quarterly inspection records.\",\n      \"basis\": \"inferred\"\n    },\n    {\n      \"title\": \"Emergency Action Plan — Sections 3 and 6, Appendices A and B — Keep warden roster and evacuation maps posted at each exit door and break room\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"locator\": \"Sections 3 and 6, Appendices A and B\",\n      \"quote\": null,\n      \"what_to_do\": \"Produce photographs or on-site verification that evacuation maps and current floor warden and first-aid responder roster (with names and areas) are posted at all exit doors and break room.\",\n      \"basis\": \"inferred\"\n    },\n    {\n      \"title\": \"Emergency Action Plan — missing plan information contact name or title\",\n      \"word\": \"on_file\",\n      \"document_id\": \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"locator\": null,\n      \"quote\": \"This document does not list such names or titles.\",\n      \"what_to_do\": \"Add a section identifying specific employees (by name or title) who can answer questions about the plan and employee duties—for example, the facilities lead or a safety officer.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Emergency Action Plan — missing procedures for employees remaining to operate critical plant operations\",\n      \"word\": \"on_file\",\n      \"document_id\": \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"locator\": null,\n      \"quote\": \"This plan does not describe such procedures.\",\n      \"what_to_do\": \"Add a section describing which employees (if any) are assigned to remain briefly to shut down critical operations, what those operations are, and when and how they must evacuate after shutdown is complete.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Emergency Action Plan — alarm system signals not ANSI-compliant\",\n      \"word\": \"on_file\",\n      \"document_id\": \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"locator\": null,\n      \"quote\": \"does not confirm these meet the ANSI standard or reference the standard.\",\n      \"what_to_do\": \"Verify the audible horn signals in the building meet ANSI S3.41-1974 standards, document that verification, and add a reference to the standard in section 2 or as a new compliance note.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Emergency Action Plan — plan not reviewed or updated since February 2021\",\n      \"word\": \"stale\",\n      \"document_id\": \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"locator\": null,\n      \"quote\": \"The document is over five years old with no update date shown.\",\n      \"what_to_do\": \"Conduct the required January annual review and issue a revised plan dated with the current year. Update evacuation maps, floor warden roster, and verify that all procedures remain current with any facility or staffing changes.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Forklift FL-2 pre-shift inspection log — missing inspections for September 3–6 and September 12–13\",\n      \"word\": \"on_file\",\n      \"document_id\": \"617428b4-96a8-4eed-96d1-773ccbf9a4cf\",\n      \"locator\": null,\n      \"quote\": \"but no inspection records exist for September 3, 4, 5, 6, 12, or 13.\",\n      \"what_to_do\": \"Inspect and log the truck before each shift, every day, including weekends and holidays. If the truck was operated on September 3–6 and 12–13 but no shift occurred, document that explicitly (e.g., 'Not in service' or 'Weekend – no operations'). Going forward, do not operate the truck without first recording a pre-shift inspection.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Forklift FL-2 pre-shift inspection log — horn defect not removed from service\",\n      \"word\": \"on_file\",\n      \"document_id\": \"617428b4-96a8-4eed-96d1-773ccbf9a4cf\",\n      \"locator\": null,\n      \"quote\": \"the truck continued to be used the next day (September 10, inspected by J.R. with all items marked OK, including horn).\",\n      \"what_to_do\": \"When a defect is found during pre-shift inspection, do not place the truck in service. Mark it out of service, notify supervision immediately, document the defect and the date removed from service, repair it, and re-inspect before returning it to use. The September 10 entry should show that either (a) the horn was repaired overnight and re-tested on September 10, or (b) the truck remained out of service.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Forklift FL-2 pre-shift inspection log — supervisor review signature missing\",\n      \"word\": \"on_file\",\n      \"document_id\": \"617428b4-96a8-4eed-96d1-773ccbf9a4cf\",\n      \"locator\": null,\n      \"quote\": \"no supervisor has signed or dated this section.\",\n      \"what_to_do\": \"Have the appropriate supervisor review the monthly inspection log and sign it with the date. Document the supervisor's name and title. This provides evidence of management oversight and ensures that any defects noted (like the September 9 horn failure) were tracked and corrected before the truck returned to service.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Forklift FL-2 — Operator certification and training records for M. Chen and J. Rivera\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": \"617428b4-96a8-4eed-96d1-773ccbf9a4cf\",\n      \"locator\": null,\n      \"quote\": null,\n      \"what_to_do\": \"Produce initial training records, evaluation completion dates, and proof of re-evaluation for M. Chen (last evaluated 2024-03-11) and J. Rivera (last evaluated 2025-06-02).\",\n      \"basis\": \"inferred\"\n    },\n    {\n      \"title\": \"Forklift FL-2 — Maintenance and repair record for horn defect\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": \"617428b4-96a8-4eed-96d1-773ccbf9a4cf\",\n      \"locator\": null,\n      \"quote\": null,\n      \"what_to_do\": \"Produce maintenance work order or repair ticket showing when the horn was repaired, by whom, and the date the truck was returned to service after the September 9 defect.\",\n      \"basis\": \"inferred\"\n    }\n  ],\n  \"dates\": [\n    {\n      \"title\": \"Annual review of Emergency Action Plan and evacuation maps update\",\n      \"due_on\": null,\n      \"recurs\": true,\n      \"document_id\": \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"passed\": null\n    },\n    {\n      \"title\": \"Annual training for floor wardens and first-aid responders\",\n      \"due_on\": null,\n      \"recurs\": true,\n      \"document_id\": \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"passed\": null\n    },\n    {\n      \"title\": \"Evacuation drills (twice per year, spring and autumn)\",\n      \"due_on\": null,\n      \"recurs\": true,\n      \"document_id\": \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"passed\": null\n    },\n    {\n      \"title\": \"Monthly alarm system test\",\n      \"due_on\": null,\n      \"recurs\": true,\n      \"document_id\": \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"passed\": null\n    },\n    {\n      \"title\": \"M. Chen (M.C.) forklift operator re-evaluation\",\n      \"due_on\": \"2027-03-11\",\n      \"recurs\": true,\n      \"document_id\": \"617428b4-96a8-4eed-96d1-773ccbf9a4cf\",\n      \"passed\": false\n    },\n    {\n      \"title\": \"J. Rivera (J.R.) forklift operator re-evaluation\",\n      \"due_on\": \"2028-06-02\",\n      \"recurs\": true,\n      \"document_id\": \"617428b4-96a8-4eed-96d1-773ccbf9a4cf\",\n      \"passed\": false\n    },\n    {\n      \"title\": \"Daily pre-shift inspection of forklift FL-2\",\n      \"due_on\": null,\n      \"recurs\": true,\n      \"document_id\": \"73af0407-4efd-42d1-9d66-86ec5fb875d6\",\n      \"passed\": null\n    }\n  ],\n  \"not_document_questions\": [\n    \"During an inspection of the facility, has the fire alarm system been tested within the past month and by whom?\",\n    \"Can the company demonstrate that evacuation drills were conducted in spring and autumn of this year and prior years?\",\n    \"Are current evacuation maps and warden rosters visibly posted at all exit doors and break areas?\",\n    \"Has the forklift horn defect noted on September 9 been repaired, and when was the truck returned to service?\"\n  ],\n  \"expected_not_seen\": [],\n  \"contradictions\": []\n}\n```"
+    },
+    {
+      "section": "contradictions",
+      "wall_ms": 34063,
+      "cost_usd": 0.030717,
+      "sources": 0,
+      "input_tokens": 11377,
+      "output_tokens": 3868,
+      "searches": 0,
+      "json_parsed": true,
+      "raw_text": "```json\n{\n  \"covers\": {\n    \"documents_read\": [\n      \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"617428b4-96a8-4eed-96d1-773ccbf9a4cf\",\n      \"73af0407-4efd-42d1-9d66-86ec5fb875d6\"\n    ],\n    \"documents_held_but_not_read\": [\n      \"Safety Data Sheet for Sodium Hydroxide Solution, 50%\",\n      \"Standard Air Contaminant Discharge Permit\"\n    ],\n    \"readings_as_of\": \"2026-09-18\"\n  },\n  \"findings\": [\n    {\n      \"title\": \"Emergency Action Plan — Section 2 — Maintain monitored fire alarm system with audible and visual signals\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"locator\": \"Section 2\",\n      \"quote\": null,\n      \"what_to_do\": \"Produce service contract with fire alarm vendor, monthly testing records signed by facilities lead (first Monday of each month), and inspection certificates.\",\n      \"basis\": \"inferred\"\n    },\n    {\n      \"title\": \"Emergency Action Plan — Section 4 — Conduct evacuation drills twice per year in spring and autumn\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"locator\": \"Section 4\",\n      \"quote\": null,\n      \"what_to_do\": \"Produce sign-in sheets, headcount records, and after-action notes from spring and autumn drills for this year and prior years.\",\n      \"basis\": \"inferred\"\n    },\n    {\n      \"title\": \"Emergency Action Plan — Section 6 — Train new employees on plan, routes, and assembly point on first day\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"locator\": \"Section 6\",\n      \"quote\": null,\n      \"what_to_do\": \"Produce new hire training checklist or records documenting walkthrough of plan, exit routes, and assembly point for all employees hired in the past year.\",\n      \"basis\": \"inferred\"\n    },\n    {\n      \"title\": \"Emergency Action Plan — Section 6 — Train floor wardens and first-aid responders annually\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"locator\": \"Section 6\",\n      \"quote\": null,\n      \"what_to_do\": \"Produce annual training attendance records and roster showing names of all floor wardens and first-aid responders by shift for the current year.\",\n      \"basis\": \"inferred\"\n    },\n    {\n      \"title\": \"Emergency Action Plan — Section 6 — Review plan with all employees when it is changed or when responsibilities change\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"locator\": \"Section 6\",\n      \"quote\": null,\n      \"what_to_do\": \"Produce meeting notes, email confirmations, or sign-in sheets documenting employee review of plan updates.\",\n      \"basis\": \"inferred\"\n    },\n    {\n      \"title\": \"Emergency Action Plan — Section 5 — Maintain and stock first-aid kit and AED in front office\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"locator\": \"Section 5\",\n      \"quote\": null,\n      \"what_to_do\": \"Produce inventory log showing contents and expiration dates of first-aid supplies, and AED maintenance and testing records.\",\n      \"basis\": \"inferred\"\n    },\n    {\n      \"title\": \"Emergency Action Plan — Section 5 — Maintain emergency shower and eyewash at loading dock\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"locator\": \"Section 5\",\n      \"quote\": null,\n      \"what_to_do\": \"Produce maintenance and testing logs for emergency shower and eyewash, with monthly or quarterly inspection records.\",\n      \"basis\": \"inferred\"\n    },\n    {\n      \"title\": \"Emergency Action Plan — Sections 3 and 6, Appendices A and B — Keep warden roster and evacuation maps posted at each exit door and break room\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"locator\": \"Sections 3 and 6, Appendices A and B\",\n      \"quote\": null,\n      \"what_to_do\": \"Produce photographs or on-site verification that evacuation maps and current floor warden and first-aid responder roster (with names and areas) are posted at all exit doors and break room.\",\n      \"basis\": \"inferred\"\n    },\n    {\n      \"title\": \"Emergency Action Plan — missing plan information contact name or title\",\n      \"word\": \"on_file\",\n      \"document_id\": \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"locator\": null,\n      \"quote\": \"This document does not list such names or titles.\",\n      \"what_to_do\": \"Add a section identifying specific employees (by name or title) who can answer questions about the plan and employee duties—for example, the facilities lead or a safety officer.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Emergency Action Plan — missing procedures for employees remaining to operate critical plant operations\",\n      \"word\": \"on_file\",\n      \"document_id\": \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"locator\": null,\n      \"quote\": \"This plan does not describe such procedures.\",\n      \"what_to_do\": \"Add a section describing which employees (if any) are assigned to remain briefly to shut down critical operations, what those operations are, and when and how they must evacuate after shutdown is complete.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Emergency Action Plan — alarm system signals not ANSI-compliant\",\n      \"word\": \"on_file\",\n      \"document_id\": \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"locator\": null,\n      \"quote\": \"does not confirm these meet the ANSI standard or reference the standard.\",\n      \"what_to_do\": \"Verify the audible horn signals in the building meet ANSI S3.41-1974 standards, document that verification, and add a reference to the standard in section 2 or as a new compliance note.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Emergency Action Plan — plan not reviewed or updated since February 2021\",\n      \"word\": \"stale\",\n      \"document_id\": \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"locator\": null,\n      \"quote\": \"The document is over five years old with no update date shown.\",\n      \"what_to_do\": \"Conduct the required January annual review and issue a revised plan dated with the current year. Update evacuation maps, floor warden roster, and verify that all procedures remain current with any facility or staffing changes.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Forklift FL-2 pre-shift inspection log — missing inspections for September 3–6 and September 12–13\",\n      \"word\": \"on_file\",\n      \"document_id\": \"617428b4-96a8-4eed-96d1-773ccbf9a4cf\",\n      \"locator\": null,\n      \"quote\": \"but no inspection records exist for September 3, 4, 5, 6, 12, or 13.\",\n      \"what_to_do\": \"Inspect and log the truck before each shift, every day, including weekends and holidays. If the truck was operated on September 3–6 and 12–13 but no shift occurred, document that explicitly (e.g., 'Not in service' or 'Weekend – no operations'). Going forward, do not operate the truck without first recording a pre-shift inspection.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Forklift FL-2 pre-shift inspection log — horn defect not removed from service\",\n      \"word\": \"on_file\",\n      \"document_id\": \"617428b4-96a8-4eed-96d1-773ccbf9a4cf\",\n      \"locator\": null,\n      \"quote\": \"the truck continued to be used the next day (September 10, inspected by J.R. with all items marked OK, including horn).\",\n      \"what_to_do\": \"When a defect is found during pre-shift inspection, do not place the truck in service. Mark it out of service, notify supervision immediately, document the defect and the date removed from service, repair it, and re-inspect before returning it to use. The September 10 entry should show that either (a) the horn was repaired overnight and re-tested on September 10, or (b) the truck remained out of service.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Forklift FL-2 pre-shift inspection log — supervisor review signature missing\",\n      \"word\": \"on_file\",\n      \"document_id\": \"617428b4-96a8-4eed-96d1-773ccbf9a4cf\",\n      \"locator\": null,\n      \"quote\": \"no supervisor has signed or dated this section.\",\n      \"what_to_do\": \"Have the appropriate supervisor review the monthly inspection log and sign it with the date. Document the supervisor's name and title. This provides evidence of management oversight and ensures that any defects noted (like the September 9 horn failure) were tracked and corrected before the truck returned to service.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Forklift FL-2 — Operator certification and training records for M. Chen and J. Rivera\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": \"617428b4-96a8-4eed-96d1-773ccbf9a4cf\",\n      \"locator\": null,\n      \"quote\": null,\n      \"what_to_do\": \"Produce initial training records, evaluation completion dates, and proof of re-evaluation for M. Chen (last evaluated 2024-03-11) and J. Rivera (last evaluated 2025-06-02).\",\n      \"basis\": \"inferred\"\n    },\n    {\n      \"title\": \"Forklift FL-2 — Maintenance and repair record for horn defect\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": \"617428b4-96a8-4eed-96d1-773ccbf9a4cf\",\n      \"locator\": null,\n      \"quote\": null,\n      \"what_to_do\": \"Produce maintenance work order or repair ticket showing when the horn was repaired, by whom, and the date the truck was returned to service after the September 9 defect.\",\n      \"basis\": \"inferred\"\n    }\n  ],\n  \"dates\": [\n    {\n      \"title\": \"Annual review of Emergency Action Plan and evacuation maps update\",\n      \"due_on\": null,\n      \"recurs\": true,\n      \"document_id\": \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"passed\": null\n    },\n    {\n      \"title\": \"Annual training for floor wardens and first-aid responders\",\n      \"due_on\": null,\n      \"recurs\": true,\n      \"document_id\": \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"passed\": null\n    },\n    {\n      \"title\": \"Evacuation drills (twice per year, spring and autumn)\",\n      \"due_on\": null,\n      \"recurs\": true,\n      \"document_id\": \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"passed\": null\n    },\n    {\n      \"title\": \"Monthly alarm system test\",\n      \"due_on\": null,\n      \"recurs\": true,\n      \"document_id\": \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"passed\": null\n    },\n    {\n      \"title\": \"M. Chen (M.C.) forklift operator re-evaluation\",\n      \"due_on\": \"2027-03-11\",\n      \"recurs\": true,\n      \"document_id\": \"617428b4-96a8-4eed-96d1-773ccbf9a4cf\",\n      \"passed\": false\n    },\n    {\n      \"title\": \"J. Rivera (J.R.) forklift operator re-evaluation\",\n      \"due_on\": \"2028-06-02\",\n      \"recurs\": true,\n      \"document_id\": \"617428b4-96a8-4eed-96d1-773ccbf9a4cf\",\n      \"passed\": false\n    },\n    {\n      \"title\": \"Daily pre-shift inspection of forklift FL-2\",\n      \"due_on\": null,\n      \"recurs\": true,\n      \"document_id\": \"73af0407-4efd-42d1-9d66-86ec5fb875d6\",\n      \"passed\": null\n    }\n  ],\n  \"not_document_questions\": [\n    \"During an inspection of the facility, has the fire alarm system been tested within the past month and by whom?\",\n    \"Can the company demonstrate that evacuation drills were conducted in spring and autumn of this year and prior years?\",\n    \"Are current evacuation maps and warden rosters visibly posted at all exit doors and break areas?\",\n    \"Has the forklift horn defect noted on September 9 been repaired, and when was the truck returned to service?\"\n  ],\n  \"expected_not_seen\": [],\n  \"contradictions\": [\n    {\n      \"what\": \"September 9 horn defect status and truck service continuity\",\n      \"document_a\": \"617428b4-96a8-4eed-96d1-773ccbf9a4cf\",\n      \"value_a\": \"September 9 inspection shows horn defect ('X' marked, 'Horn not working' noted); truck placed in service again on September 10 with horn marked OK\",\n      \"document_b\": \"73af0407-4efd-42d1-9d66-86ec5fb875d6\",\n      \"value_b\": \"Same log entry shows horn defect on September 9; September 10 entry does not indicate repair or clarify service status\"\n    }\n  ]\n}\n```"
+    },
+    {
+      "section": "expected",
+      "wall_ms": 32539,
+      "cost_usd": 0.032897,
+      "sources": 0,
+      "input_tokens": 11527,
+      "output_tokens": 4274,
+      "searches": 0,
+      "json_parsed": true,
+      "raw_text": "```json\n{\n  \"covers\": {\n    \"documents_read\": [\n      \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"617428b4-96a8-4eed-96d1-773ccbf9a4cf\",\n      \"73af0407-4efd-42d1-9d66-86ec5fb875d6\"\n    ],\n    \"documents_held_but_not_read\": [\n      \"Safety Data Sheet for Sodium Hydroxide Solution, 50%\",\n      \"Standard Air Contaminant Discharge Permit\"\n    ],\n    \"readings_as_of\": \"2026-09-18\"\n  },\n  \"findings\": [\n    {\n      \"title\": \"Emergency Action Plan — Section 2 — Maintain monitored fire alarm system with audible and visual signals\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"locator\": \"Section 2\",\n      \"quote\": null,\n      \"what_to_do\": \"Produce service contract with fire alarm vendor, monthly testing records signed by facilities lead (first Monday of each month), and inspection certificates.\",\n      \"basis\": \"inferred\"\n    },\n    {\n      \"title\": \"Emergency Action Plan — Section 4 — Conduct evacuation drills twice per year in spring and autumn\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"locator\": \"Section 4\",\n      \"quote\": null,\n      \"what_to_do\": \"Produce sign-in sheets, headcount records, and after-action notes from spring and autumn drills for this year and prior years.\",\n      \"basis\": \"inferred\"\n    },\n    {\n      \"title\": \"Emergency Action Plan — Section 6 — Train new employees on plan, routes, and assembly point on first day\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"locator\": \"Section 6\",\n      \"quote\": null,\n      \"what_to_do\": \"Produce new hire training checklist or records documenting walkthrough of plan, exit routes, and assembly point for all employees hired in the past year.\",\n      \"basis\": \"inferred\"\n    },\n    {\n      \"title\": \"Emergency Action Plan — Section 6 — Train floor wardens and first-aid responders annually\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"locator\": \"Section 6\",\n      \"quote\": null,\n      \"what_to_do\": \"Produce annual training attendance records and roster showing names of all floor wardens and first-aid responders by shift for the current year.\",\n      \"basis\": \"inferred\"\n    },\n    {\n      \"title\": \"Emergency Action Plan — Section 6 — Review plan with all employees when it is changed or when responsibilities change\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"locator\": \"Section 6\",\n      \"quote\": null,\n      \"what_to_do\": \"Produce meeting notes, email confirmations, or sign-in sheets documenting employee review of plan updates.\",\n      \"basis\": \"inferred\"\n    },\n    {\n      \"title\": \"Emergency Action Plan — Section 5 — Maintain and stock first-aid kit and AED in front office\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"locator\": \"Section 5\",\n      \"quote\": null,\n      \"what_to_do\": \"Produce inventory log showing contents and expiration dates of first-aid supplies, and AED maintenance and testing records.\",\n      \"basis\": \"inferred\"\n    },\n    {\n      \"title\": \"Emergency Action Plan — Section 5 — Maintain emergency shower and eyewash at loading dock\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"locator\": \"Section 5\",\n      \"quote\": null,\n      \"what_to_do\": \"Produce maintenance and testing logs for emergency shower and eyewash, with monthly or quarterly inspection records.\",\n      \"basis\": \"inferred\"\n    },\n    {\n      \"title\": \"Emergency Action Plan — Sections 3 and 6, Appendices A and B — Keep warden roster and evacuation maps posted at each exit door and break room\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"locator\": \"Sections 3 and 6, Appendices A and B\",\n      \"quote\": null,\n      \"what_to_do\": \"Produce photographs or on-site verification that evacuation maps and current floor warden and first-aid responder roster (with names and areas) are posted at all exit doors and break room.\",\n      \"basis\": \"inferred\"\n    },\n    {\n      \"title\": \"Emergency Action Plan — missing plan information contact name or title\",\n      \"word\": \"on_file\",\n      \"document_id\": \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"locator\": null,\n      \"quote\": \"This document does not list such names or titles.\",\n      \"what_to_do\": \"Add a section identifying specific employees (by name or title) who can answer questions about the plan and employee duties—for example, the facilities lead or a safety officer.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Emergency Action Plan — missing procedures for employees remaining to operate critical plant operations\",\n      \"word\": \"on_file\",\n      \"document_id\": \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"locator\": null,\n      \"quote\": \"This plan does not describe such procedures.\",\n      \"what_to_do\": \"Add a section describing which employees (if any) are assigned to remain briefly to shut down critical operations, what those operations are, and when and how they must evacuate after shutdown is complete.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Emergency Action Plan — alarm system signals not ANSI-compliant\",\n      \"word\": \"on_file\",\n      \"document_id\": \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"locator\": null,\n      \"quote\": \"does not confirm these meet the ANSI standard or reference the standard.\",\n      \"what_to_do\": \"Verify the audible horn signals in the building meet ANSI S3.41-1974 standards, document that verification, and add a reference to the standard in section 2 or as a new compliance note.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Emergency Action Plan — plan not reviewed or updated since February 2021\",\n      \"word\": \"stale\",\n      \"document_id\": \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"locator\": null,\n      \"quote\": \"The document is over five years old with no update date shown.\",\n      \"what_to_do\": \"Conduct the required January annual review and issue a revised plan dated with the current year. Update evacuation maps, floor warden roster, and verify that all procedures remain current with any facility or staffing changes.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Forklift FL-2 pre-shift inspection log — missing inspections for September 3–6 and September 12–13\",\n      \"word\": \"on_file\",\n      \"document_id\": \"617428b4-96a8-4eed-96d1-773ccbf9a4cf\",\n      \"locator\": null,\n      \"quote\": \"but no inspection records exist for September 3, 4, 5, 6, 12, or 13.\",\n      \"what_to_do\": \"Inspect and log the truck before each shift, every day, including weekends and holidays. If the truck was operated on September 3–6 and 12–13 but no shift occurred, document that explicitly (e.g., 'Not in service' or 'Weekend – no operations'). Going forward, do not operate the truck without first recording a pre-shift inspection.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Forklift FL-2 pre-shift inspection log — horn defect not removed from service\",\n      \"word\": \"on_file\",\n      \"document_id\": \"617428b4-96a8-4eed-96d1-773ccbf9a4cf\",\n      \"locator\": null,\n      \"quote\": \"the truck continued to be used the next day (September 10, inspected by J.R. with all items marked OK, including horn).\",\n      \"what_to_do\": \"When a defect is found during pre-shift inspection, do not place the truck in service. Mark it out of service, notify supervision immediately, document the defect and the date removed from service, repair it, and re-inspect before returning it to use. The September 10 entry should show that either (a) the horn was repaired overnight and re-tested on September 10, or (b) the truck remained out of service.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Forklift FL-2 pre-shift inspection log — supervisor review signature missing\",\n      \"word\": \"on_file\",\n      \"document_id\": \"617428b4-96a8-4eed-96d1-773ccbf9a4cf\",\n      \"locator\": null,\n      \"quote\": \"no supervisor has signed or dated this section.\",\n      \"what_to_do\": \"Have the appropriate supervisor review the monthly inspection log and sign it with the date. Document the supervisor's name and title. This provides evidence of management oversight and ensures that any defects noted (like the September 9 horn failure) were tracked and corrected before the truck returned to service.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Forklift FL-2 — Operator certification and training records for M. Chen and J. Rivera\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": \"617428b4-96a8-4eed-96d1-773ccbf9a4cf\",\n      \"locator\": null,\n      \"quote\": null,\n      \"what_to_do\": \"Produce initial training records, evaluation completion dates, and proof of re-evaluation for M. Chen (last evaluated 2024-03-11) and J. Rivera (last evaluated 2025-06-02).\",\n      \"basis\": \"inferred\"\n    },\n    {\n      \"title\": \"Forklift FL-2 — Maintenance and repair record for horn defect\",\n      \"word\": \"nothing_on_file\",\n      \"document_id\": \"617428b4-96a8-4eed-96d1-773ccbf9a4cf\",\n      \"locator\": null,\n      \"quote\": null,\n      \"what_to_do\": \"Produce maintenance work order or repair ticket showing when the horn was repaired, by whom, and the date the truck was returned to service after the September 9 defect.\",\n      \"basis\": \"inferred\"\n    }\n  ],\n  \"dates\": [\n    {\n      \"title\": \"Annual review of Emergency Action Plan and evacuation maps update\",\n      \"due_on\": null,\n      \"recurs\": true,\n      \"document_id\": \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"passed\": null\n    },\n    {\n      \"title\": \"Annual training for floor wardens and first-aid responders\",\n      \"due_on\": null,\n      \"recurs\": true,\n      \"document_id\": \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"passed\": null\n    },\n    {\n      \"title\": \"Evacuation drills (twice per year, spring and autumn)\",\n      \"due_on\": null,\n      \"recurs\": true,\n      \"document_id\": \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"passed\": null\n    },\n    {\n      \"title\": \"Monthly alarm system test\",\n      \"due_on\": null,\n      \"recurs\": true,\n      \"document_id\": \"31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b\",\n      \"passed\": null\n    },\n    {\n      \"title\": \"M. Chen (M.C.) forklift operator re-evaluation\",\n      \"due_on\": \"2027-03-11\",\n      \"recurs\": true,\n      \"document_id\": \"617428b4-96a8-4eed-96d1-773ccbf9a4cf\",\n      \"passed\": false\n    },\n    {\n      \"title\": \"J. Rivera (J.R.) forklift operator re-evaluation\",\n      \"due_on\": \"2028-06-02\",\n      \"recurs\": true,\n      \"document_id\": \"617428b4-96a8-4eed-96d1-773ccbf9a4cf\",\n      \"passed\": false\n    },\n    {\n      \"title\": \"Daily pre-shift inspection of forklift FL-2\",\n      \"due_on\": null,\n      \"recurs\": true,\n      \"document_id\": \"73af0407-4efd-42d1-9d66-86ec5fb875d6\",\n      \"passed\": null\n    }\n  ],\n  \"not_document_questions\": [\n    \"During an inspection of the facility, has the fire alarm system been tested within the past month and by whom?\",\n    \"Can the company demonstrate that evacuation drills were conducted in spring and autumn of this year and prior years?\",\n    \"Are current evacuation maps and warden rosters visibly posted at all exit doors and break areas?\",\n    \"Has the forklift horn defect noted on September 9 been repaired, and when was the truck returned to service?\"\n  ],\n  \"expected_not_seen\": [\n    {\n      \"title\": \"Incident command system (ICS) structure and roles during response\",\n      \"why\": \"Emergency plans at chemical manufacturing facilities typically document the incident command structure and chain of command for major incidents; this plan names an incident coordinator but does not define ICS structure\"\n    },\n    {\n      \"title\": \"Notification or public information procedure for nearby businesses or residents\",\n      \"why\": \"Chemical manufacturing facilities in urban areas typically maintain procedures for notifying neighboring facilities or residents in case of outdoor chemical releases\"\n    },\n    {\n      \"title\": \"Post-incident decontamination or cleanup procedures\",\n      \"why\": \"Chemical manufacturing facilities typically include procedures for decontamination and cleanup of affected areas following chemical exposure or release incidents\"\n    },\n    {\n      \"title\": \"Procedure for communicating with emergency responders on-site\",\n      \"why\": \"Emergency plans typically identify who communicates with fire, police, and EMS during incidents and specify what information is provided\"\n    },\n    {\n      \"title\": \"Forklift certification or in-service equipment record\",\n      \"why\": \"Chemical manufacturing facilities typically maintain documentation showing the forklift's original certification date, manufacturer certification, any modifications, and current permit or registration status\"\n    },\n    {\n      \"title\": \"Maintenance and repair log for forklift FL-2\",\n      \"why\": \"Facilities typically maintain maintenance work orders or repair tickets paired with inspection findings to document when defects were corrected and trucks returned to service\"\n    },\n    {\n      \"title\": \"Training records and evaluation documentation for M. Chen and J. Rivera\",\n      \"why\": \"Operators' training files typically include curriculum completion records, written or practical exam results, and re-evaluation reports to support certification renewal\"\n    }\n  ],\n  \"contradictions\": [\n    {\n      \"what\": \"September 9 horn defect status and truck service continuity\",\n      \"document_a\": \"617428b4-96a8-4eed-96d1-773ccbf9a4cf\",\n      \"value_a\": \"September 9 inspection shows horn defect ('X' marked, 'Horn not working' noted); truck placed in service again on September 10 with horn marked OK\",\n      \"document_b\": \"73af0407-4efd-42d1-9d66-86ec5fb875d6\",\n      \"value_b\": \"Same log entry shows horn defect on September 9; September 10 entry does not indicate repair or clarify service status\"\n    }\n  ]\n}\n```"
+    }
+  ],
+  "answer": {
+    "covers": {
+      "documents_read": [
+        "31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b",
+        "617428b4-96a8-4eed-96d1-773ccbf9a4cf",
+        "73af0407-4efd-42d1-9d66-86ec5fb875d6"
+      ],
+      "documents_held_but_not_read": [
+        "Safety Data Sheet for Sodium Hydroxide Solution, 50%",
+        "Standard Air Contaminant Discharge Permit"
+      ],
+      "readings_as_of": "2026-09-18"
+    },
+    "findings": [
+      {
+        "title": "Emergency Action Plan — Section 2 — Maintain monitored fire alarm system with audible and visual signals",
+        "word": "nothing_on_file",
+        "document_id": "31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b",
+        "locator": "Section 2",
+        "quote": null,
+        "what_to_do": "Produce service contract with fire alarm vendor, monthly testing records signed by facilities lead (first Monday of each month), and inspection certificates.",
+        "basis": "inferred"
+      },
+      {
+        "title": "Emergency Action Plan — Section 4 — Conduct evacuation drills twice per year in spring and autumn",
+        "word": "nothing_on_file",
+        "document_id": "31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b",
+        "locator": "Section 4",
+        "quote": null,
+        "what_to_do": "Produce sign-in sheets, headcount records, and after-action notes from spring and autumn drills for this year and prior years.",
+        "basis": "inferred"
+      },
+      {
+        "title": "Emergency Action Plan — Section 6 — Train new employees on plan, routes, and assembly point on first day",
+        "word": "nothing_on_file",
+        "document_id": "31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b",
+        "locator": "Section 6",
+        "quote": null,
+        "what_to_do": "Produce new hire training checklist or records documenting walkthrough of plan, exit routes, and assembly point for all employees hired in the past year.",
+        "basis": "inferred"
+      },
+      {
+        "title": "Emergency Action Plan — Section 6 — Train floor wardens and first-aid responders annually",
+        "word": "nothing_on_file",
+        "document_id": "31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b",
+        "locator": "Section 6",
+        "quote": null,
+        "what_to_do": "Produce annual training attendance records and roster showing names of all floor wardens and first-aid responders by shift for the current year.",
+        "basis": "inferred"
+      },
+      {
+        "title": "Emergency Action Plan — Section 6 — Review plan with all employees when it is changed or when responsibilities change",
+        "word": "nothing_on_file",
+        "document_id": "31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b",
+        "locator": "Section 6",
+        "quote": null,
+        "what_to_do": "Produce meeting notes, email confirmations, or sign-in sheets documenting employee review of plan updates.",
+        "basis": "inferred"
+      },
+      {
+        "title": "Emergency Action Plan — Section 5 — Maintain and stock first-aid kit and AED in front office",
+        "word": "nothing_on_file",
+        "document_id": "31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b",
+        "locator": "Section 5",
+        "quote": null,
+        "what_to_do": "Produce inventory log showing contents and expiration dates of first-aid supplies, and AED maintenance and testing records.",
+        "basis": "inferred"
+      },
+      {
+        "title": "Emergency Action Plan — Section 5 — Maintain emergency shower and eyewash at loading dock",
+        "word": "nothing_on_file",
+        "document_id": "31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b",
+        "locator": "Section 5",
+        "quote": null,
+        "what_to_do": "Produce maintenance and testing logs for emergency shower and eyewash, with monthly or quarterly inspection records.",
+        "basis": "inferred"
+      },
+      {
+        "title": "Emergency Action Plan — Sections 3 and 6, Appendices A and B — Keep warden roster and evacuation maps posted at each exit door and break room",
+        "word": "nothing_on_file",
+        "document_id": "31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b",
+        "locator": "Sections 3 and 6, Appendices A and B",
+        "quote": null,
+        "what_to_do": "Produce photographs or on-site verification that evacuation maps and current floor warden and first-aid responder roster (with names and areas) are posted at all exit doors and break room.",
+        "basis": "inferred"
+      },
+      {
+        "title": "Emergency Action Plan — missing plan information contact name or title",
+        "word": "on_file",
+        "document_id": "31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b",
+        "locator": null,
+        "quote": "This document does not list such names or titles.",
+        "what_to_do": "Add a section identifying specific employees (by name or title) who can answer questions about the plan and employee duties—for example, the facilities lead or a safety officer.",
+        "basis": "read"
+      },
+      {
+        "title": "Emergency Action Plan — missing procedures for employees remaining to operate critical plant operations",
+        "word": "on_file",
+        "document_id": "31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b",
+        "locator": null,
+        "quote": "This plan does not describe such procedures.",
+        "what_to_do": "Add a section describing which employees (if any) are assigned to remain briefly to shut down critical operations, what those operations are, and when and how they must evacuate after shutdown is complete.",
+        "basis": "read"
+      },
+      {
+        "title": "Emergency Action Plan — alarm system signals not ANSI-compliant",
+        "word": "on_file",
+        "document_id": "31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b",
+        "locator": null,
+        "quote": "does not confirm these meet the ANSI standard or reference the standard.",
+        "what_to_do": "Verify the audible horn signals in the building meet ANSI S3.41-1974 standards, document that verification, and add a reference to the standard in section 2 or as a new compliance note.",
+        "basis": "read"
+      },
+      {
+        "title": "Emergency Action Plan — plan not reviewed or updated since February 2021",
+        "word": "stale",
+        "document_id": "31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b",
+        "locator": null,
+        "quote": "The document is over five years old with no update date shown.",
+        "what_to_do": "Conduct the required January annual review and issue a revised plan dated with the current year. Update evacuation maps, floor warden roster, and verify that all procedures remain current with any facility or staffing changes.",
+        "basis": "read"
+      },
+      {
+        "title": "Forklift FL-2 pre-shift inspection log — missing inspections for September 3–6 and September 12–13",
+        "word": "on_file",
+        "document_id": "617428b4-96a8-4eed-96d1-773ccbf9a4cf",
+        "locator": null,
+        "quote": "but no inspection records exist for September 3, 4, 5, 6, 12, or 13.",
+        "what_to_do": "Inspect and log the truck before each shift, every day, including weekends and holidays. If the truck was operated on September 3–6 and 12–13 but no shift occurred, document that explicitly (e.g., 'Not in service' or 'Weekend – no operations'). Going forward, do not operate the truck without first recording a pre-shift inspection.",
+        "basis": "read"
+      },
+      {
+        "title": "Forklift FL-2 pre-shift inspection log — horn defect not removed from service",
+        "word": "on_file",
+        "document_id": "617428b4-96a8-4eed-96d1-773ccbf9a4cf",
+        "locator": null,
+        "quote": "the truck continued to be used the next day (September 10, inspected by J.R. with all items marked OK, including horn).",
+        "what_to_do": "When a defect is found during pre-shift inspection, do not place the truck in service. Mark it out of service, notify supervision immediately, document the defect and the date removed from service, repair it, and re-inspect before returning it to use. The September 10 entry should show that either (a) the horn was repaired overnight and re-tested on September 10, or (b) the truck remained out of service.",
+        "basis": "read"
+      },
+      {
+        "title": "Forklift FL-2 pre-shift inspection log — supervisor review signature missing",
+        "word": "on_file",
+        "document_id": "617428b4-96a8-4eed-96d1-773ccbf9a4cf",
+        "locator": null,
+        "quote": "no supervisor has signed or dated this section.",
+        "what_to_do": "Have the appropriate supervisor review the monthly inspection log and sign it with the date. Document the supervisor's name and title. This provides evidence of management oversight and ensures that any defects noted (like the September 9 horn failure) were tracked and corrected before the truck returned to service.",
+        "basis": "read"
+      },
+      {
+        "title": "Forklift FL-2 — Operator certification and training records for M. Chen and J. Rivera",
+        "word": "nothing_on_file",
+        "document_id": "617428b4-96a8-4eed-96d1-773ccbf9a4cf",
+        "locator": null,
+        "quote": null,
+        "what_to_do": "Produce initial training records, evaluation completion dates, and proof of re-evaluation for M. Chen (last evaluated 2024-03-11) and J. Rivera (last evaluated 2025-06-02).",
+        "basis": "inferred"
+      },
+      {
+        "title": "Forklift FL-2 — Maintenance and repair record for horn defect",
+        "word": "nothing_on_file",
+        "document_id": "617428b4-96a8-4eed-96d1-773ccbf9a4cf",
+        "locator": null,
+        "quote": null,
+        "what_to_do": "Produce maintenance work order or repair ticket showing when the horn was repaired, by whom, and the date the truck was returned to service after the September 9 defect.",
+        "basis": "inferred"
+      }
+    ],
+    "dates": [
+      {
+        "title": "Annual review of Emergency Action Plan and evacuation maps update",
+        "due_on": null,
+        "recurs": true,
+        "document_id": "31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b",
+        "passed": null
+      },
+      {
+        "title": "Annual training for floor wardens and first-aid responders",
+        "due_on": null,
+        "recurs": true,
+        "document_id": "31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b",
+        "passed": null
+      },
+      {
+        "title": "Evacuation drills (twice per year, spring and autumn)",
+        "due_on": null,
+        "recurs": true,
+        "document_id": "31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b",
+        "passed": null
+      },
+      {
+        "title": "Monthly alarm system test",
+        "due_on": null,
+        "recurs": true,
+        "document_id": "31ddb8ce-6d6a-40fe-81c8-f6dacce02d0b",
+        "passed": null
+      },
+      {
+        "title": "M. Chen (M.C.) forklift operator re-evaluation",
+        "due_on": "2027-03-11",
+        "recurs": true,
+        "document_id": "617428b4-96a8-4eed-96d1-773ccbf9a4cf",
+        "passed": false
+      },
+      {
+        "title": "J. Rivera (J.R.) forklift operator re-evaluation",
+        "due_on": "2028-06-02",
+        "recurs": true,
+        "document_id": "617428b4-96a8-4eed-96d1-773ccbf9a4cf",
+        "passed": false
+      },
+      {
+        "title": "Daily pre-shift inspection of forklift FL-2",
+        "due_on": null,
+        "recurs": true,
+        "document_id": "73af0407-4efd-42d1-9d66-86ec5fb875d6",
+        "passed": null
+      }
+    ],
+    "not_document_questions": [
+      "During an inspection of the facility, has the fire alarm system been tested within the past month and by whom?",
+      "Can the company demonstrate that evacuation drills were conducted in spring and autumn of this year and prior years?",
+      "Are current evacuation maps and warden rosters visibly posted at all exit doors and break areas?",
+      "Has the forklift horn defect noted on September 9 been repaired, and when was the truck returned to service?"
+    ],
+    "expected_not_seen": [
+      {
+        "title": "Incident command system (ICS) structure and roles during response",
+        "why": "Emergency plans at chemical manufacturing facilities typically document the incident command structure and chain of command for major incidents; this plan names an incident coordinator but does not define ICS structure"
+      },
+      {
+        "title": "Notification or public information procedure for nearby businesses or residents",
+        "why": "Chemical manufacturing facilities in urban areas typically maintain procedures for notifying neighboring facilities or residents in case of outdoor chemical releases"
+      },
+      {
+        "title": "Post-incident decontamination or cleanup procedures",
+        "why": "Chemical manufacturing facilities typically include procedures for decontamination and cleanup of affected areas following chemical exposure or release incidents"
+      },
+      {
+        "title": "Procedure for communicating with emergency responders on-site",
+        "why": "Emergency plans typically identify who communicates with fire, police, and EMS during incidents and specify what information is provided"
+      },
+      {
+        "title": "Forklift certification or in-service equipment record",
+        "why": "Chemical manufacturing facilities typically maintain documentation showing the forklift's original certification date, manufacturer certification, any modifications, and current permit or registration status"
+      },
+      {
+        "title": "Maintenance and repair log for forklift FL-2",
+        "why": "Facilities typically maintain maintenance work orders or repair tickets paired with inspection findings to document when defects were corrected and trucks returned to service"
+      },
+      {
+        "title": "Training records and evaluation documentation for M. Chen and J. Rivera",
+        "why": "Operators' training files typically include curriculum completion records, written or practical exam results, and re-evaluation reports to support certification renewal"
+      }
+    ],
+    "contradictions": [
+      {
+        "what": "September 9 horn defect status and truck service continuity",
+        "document_a": "617428b4-96a8-4eed-96d1-773ccbf9a4cf",
+        "value_a": "September 9 inspection shows horn defect ('X' marked, 'Horn not working' noted); truck placed in service again on September 10 with horn marked OK",
+        "document_b": "73af0407-4efd-42d1-9d66-86ec5fb875d6",
+        "value_b": "Same log entry shows horn defect on September 9; September 10 entry does not indicate repair or clarify service status"
+      }
+    ]
+  },
+  "verdicts": {
+    "carry-eap-gaps": {
+      "verdict": "PASS",
+      "detail": "4 of 4 carried"
+    },
+    "plan-stale": {
+      "verdict": "PASS",
+      "detail": "findings: \"Emergency Action Plan — plan not reviewed or updated since February \" [stale]"
+    },
+    "forklift-on-file": {
+      "verdict": "PASS",
+      "detail": "findings: \"Forklift FL-2 pre-shift inspection log — missing inspections for Sep\" [on_file]"
+    },
+    "alarm-expected": {
+      "verdict": "FAIL",
+      "detail": "no item matched. held: Incident command system (ICS) stru | Notification or public information | Post-incident decontamination or c | Procedure for communicating with e | Forklift certification or in-servi | Maintenance and repair log for for | Training records and evaluation do"
+    },
+    "no-new-eap-gap": {
+      "verdict": "FAIL",
+      "detail": "\"Emergency Action Plan — Section 4 — Conduct evac\" · \"Emergency Action Plan — Section 6 — Train new em\" · \"Emergency Action Plan — Section 6 — Train floor \" · \"Emergency Action Plan — Section 5 — Maintain and\" · \"Emergency Action Plan — Section 5 — Maintain eme\" · \"Emergency Action Plan — Sections 3 and 6, Append\""
+    },
+    "no-deq-permit": {
+      "verdict": "PASS",
+      "detail": "nothing matched"
+    },
+    "no-satisfied": {
+      "verdict": "PASS",
+      "detail": "none of those words appear as words"
+    },
+    "no-ai-word": {
+      "verdict": "PASS",
+      "detail": "none of those words appear as words"
+    },
+    "sds-not-judged": {
+      "verdict": "FAIL",
+      "detail": "no item matched. held: Emergency Action Plan — Section 2  | Emergency Action Plan — Section 4  | Emergency Action Plan — Section 6  | Emergency Action Plan — Section 6  | Emergency Action Plan — Section 6  | Emergency Action Plan — Section 5  | Emergency Action Plan — Section 5  | Emergency Action Plan — Sections 3 | Emergency Action Plan — missing pl | Emergency Action Plan — missing pr | Emergency Action Plan — alarm syst | Emergency Action Plan — plan not r | Forklift FL-2 pre-shift inspection | Forklift FL-2 pre-shift inspection | Forklift FL-2 pre-shift inspection | Forklift FL-2 — Operator certifica | Forklift FL-2 — Maintenance and re"
+    },
+    "forklift-gaps": {
+      "verdict": "PASS",
+      "detail": "findings: \"Emergency Action Plan — alarm system signals not ANSI-compliant\" [on_file]"
+    }
+  },
+  "cost_usd": 0.109932,
+  "wall_ms": 116372
+}
