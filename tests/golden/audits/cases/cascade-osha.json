@@ -3,7 +3,7 @@
   "title": "Oregon OSHA \u2014 Cascade Specialty Chemicals",
   "key": "cascade-osha.md",
   "company": "cascade",
-  "agency": "U.S. Department of Labor - Occupational Safety and Health Administration",
+  "agency": "Oregon OSHA",
   "must": [
     {
       "id": "carry-eap-gaps",
@@ -225,5 +225,5 @@
       "min_keywords": 1
     }
   ],
-  "agency_was": "Oregon OSHA \u2014 the label the 29 September morning pass produced. The twelve-document pass that afternoon produced the string above instead and no Oregon OSHA row survives in company_labels, so buildAuditInput (lib/audit.ts:123 compares the label exactly) would match zero documents. The two strings are NOT merged; both are recorded. Oregon is a state-plan state, so the federal DOL string is arguably the wrong one of the two."
+  "agency_was": "Run 1b, on Haiku, produced \"U.S. Department of Labor - Occupational Safety and Health Administration\" for this regulator and no Oregon OSHA row survived, so the case had to follow the label to be measurable at all. The real-model pass on 29 September (claude-opus-5-5) produced \"Oregon OSHA\" for all six OSHA documents, which is both the spec's string and the correct one for a state-plan state. Recorded, not merged: the same regulator has now been named two ways by two models, and which string a company ends up with is the model's choice, not the product's."
 }

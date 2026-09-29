@@ -1,0 +1,178 @@
+{
+  "case": "13-company-self-check",
+  "run": 1,
+  "run_date": "2026-09-29",
+  "model": "claude-opus-5-5",
+  "structured": true,
+  "searches": 0,
+  "cited_sources": 0,
+  "prompt_sha256": "f8f91026173836941a75bd3bf0b3df0aeb4204dce3aec81a3835370b087f0922",
+  "scan_id": "3a28c4eb-60a0-40a1-bfdf-8bd6af5200fa",
+  "ai_call_id": "712bed96-ce55-4fba-be23-024a3ff10cb5",
+  "company_context": "WHO THIS COMPANY IS\n  Name: Cascade Specialty Chemicals, LLC\n  Industry: chemical manufacturing (recorded as chemical-manufacturing)\n  Address: Portland, Oregon\n  State: Oregon\nTheir sites:\n  - Portland — 4410 NW Front Ave, Portland, Oregon 97210 (primary)\n\nWHAT A PERSON HAS CONFIRMED FROM A DOCUMENT\nEach of these was read in the named document and then confirmed by a person.\n  employee count (Portland): 42 employees at Portland facility, as of 2021-02-01\n\nLABELS ALREADY IN USE FOR THIS COMPANY\nAgencies:\n  - Oregon DEQ\n  - Oregon OSHA\nSubjects:\n  - Air Quality\n  - Emergency Preparedness\n  - Fire Safety\n  - Hazard Communication\n  - Injury and Illness Recordkeeping\n  - Powered Industrial Trucks\n\nFACT KEYS ALREADY IN USE FOR THIS COMPANY\n  - acid_caustic_repackaging_lines\n  - air_permit_deviations_2025\n  - air_permit_type_and_number\n  - annual_average_employees_2025\n  - boiler_on_site\n  - carbon_adsorption_unit_c1\n  - certified_forklift_operators\n  - emergency_eyewash_shower_location\n  - employee_count\n  - employees_evacuate_during_fire\n  - employs_drivers\n  - fire_alarm_monitoring_vendor\n  - fire_extinguisher_service_vendor\n  - forklift_operating_shifts\n  - forklift_trainer_evaluator\n  - naics_code\n  - onsite_laboratory\n  - portable_fire_extinguisher_count\n  - powered_industrial_trucks_on_site\n  - propane_forklift_cylinders\n  - recordable_cases_2025\n  - sodium_hydroxide_50_on_site\n  - solvent_bulk_storage\n  - source_category\n  - tank_farm\n  - total_hours_worked_2025",
+  "company_context_sha256": "b6c2c610a795ebecd70a181c4077449e4df7102ad1c246140f5af3df80e8e212",
+  "wall_ms": 28173,
+  "cost_usd": 0.08718000000000001,
+  "input_tokens": 8510,
+  "output_tokens": 2657,
+  "json_parsed": true,
+  "compliant_found_in": [],
+  "alternative_pass": false,
+  "verdicts": {
+    "kind": {
+      "verdict": "PASS",
+      "detail": "identity.kind = \"other\""
+    },
+    "issuer": {
+      "verdict": "PASS",
+      "detail": "identity.issuer = \"cascade specialty chemicals, llc (internal form)\""
+    },
+    "site-portland": {
+      "verdict": "PASS",
+      "detail": "identity.site = \"portland\""
+    },
+    "doc-date-none": {
+      "verdict": "PASS",
+      "detail": "identity.doc_date = null"
+    },
+    "status": {
+      "verdict": "PASS",
+      "detail": "status = \"not judged\""
+    },
+    "no-gaps": {
+      "verdict": "PASS",
+      "detail": "none"
+    },
+    "no-facts-about-cascade": {
+      "verdict": "FAIL",
+      "detail": "2: \"scrubber_pressure_drop_range\"; \"emergency_eyewash_shower_location\""
+    },
+    "label-consistency": {
+      "verdict": "CROSS",
+      "detail": "judged across the three runs, below"
+    },
+    "agency": {
+      "verdict": "PASS",
+      "detail": "identity.agencies = [oregon deq | oregon osha]"
+    },
+    "deadlines-none": {
+      "verdict": "FAIL",
+      "detail": "1: \"Report any items marked N to the Plant Manager\""
+    }
+  },
+  "scan": {
+    "identity": {
+      "kind": "other",
+      "title": "Monthly EHS Self-Check Form (blank internal template), Portland Facility",
+      "issuer": "Cascade Specialty Chemicals, LLC (internal form)",
+      "agencies": [
+        "Oregon DEQ",
+        "Oregon OSHA"
+      ],
+      "subjects": [
+        "Air Quality",
+        "Powered Industrial Trucks",
+        "Fire Safety",
+        "Emergency Preparedness",
+        "Hazard Communication"
+      ],
+      "site": "Portland",
+      "jurisdiction": [
+        "Oregon",
+        "federal"
+      ],
+      "doc_date": null,
+      "doc_date_kind": "unknown",
+      "page_refs": {}
+    },
+    "summary": "This is the company's own blank monthly checklist. It has eight lines covering the air permit, the scrubber and carbon-unit logs, forklift inspections, fire extinguishers, exits, eyewash stations and showers, and safety data sheets. It is a template, not a filled-in record, so it proves nothing yet. It becomes evidence only when someone completes it each month with Y/N, initials and a supervisor sign-off.",
+    "status": "not_judged",
+    "significant_date": null,
+    "significant_date_kind": null,
+    "freshness_note": "The form has no date, revision number or month filled in. Because it is blank, how old it is doesn't matter much. What matters is whether completed copies exist for recent months, especially August and September 2026. Ask for those.",
+    "gaps": [],
+    "conditions": [],
+    "deadlines": [
+      {
+        "title": "Report any items marked N to the Plant Manager",
+        "due_on": null,
+        "source_line": "Items marked N are reported to the Plant Manager by the 5th of the following month.",
+        "recurs": true
+      }
+    ],
+    "facts": [
+      {
+        "key": "scrubber_pressure_drop_range",
+        "value": "The form's acceptable range for scrubber pressure drop is 2.0 to 6.0. No units are given.",
+        "quote": "readings between 2.0 and 6.0",
+        "locator": "Line 2",
+        "as_of": null,
+        "affects": "This is the internal range the scrubber log is checked against. It should match the range in the air permit (ACDP 26-2841-ST-01). I have not confirmed that it does.",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "emergency_eyewash_shower_location",
+        "value": "There is more than one eyewash station and safety shower at the site. The form does not say where they are.",
+        "quote": "Eyewash stations and safety showers flushed this week and logged",
+        "locator": "Line 7",
+        "as_of": null,
+        "affects": "Confirms the site has emergency eyewash and shower equipment that needs weekly activation and a log.",
+        "basis": "inferred",
+        "quote_verified": true
+      }
+    ],
+    "version_of": {
+      "title": null,
+      "confidence": "high"
+    },
+    "expected_missing": [
+      {
+        "title": "Completed monthly self-checks for recent months",
+        "why": "The blank form shows the process exists. Completed, signed copies are what show it was actually done.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Written Hazard Communication program, plus a chemical inventory / SDS binder index",
+        "why": "Line 8 refers to an SDS binder index. No written HazCom program appears in what the company holds, and chemical makers and repackagers usually keep one.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Weekly eyewash and safety shower activation log",
+        "why": "Line 7 refers to a log for eyewash and shower flushing, and it is not in what the company holds.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "OSHA Form 300 Log and Form 301 incident reports for 2025",
+        "why": "The company holds the 300A summary but not the log or incident reports behind it.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Exit route and exit sign inspection records",
+        "why": "Line 6 checks exits and exit signs. Sites like this often keep a separate record of emergency lighting and exit sign tests.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Hazardous waste generator records and Oregon Community Right-to-Know / Tier II hazardous substance reporting",
+        "why": "Chemical repackagers with bulk storage and tank farms usually hold these.",
+        "basis": "similar companies, not a checked requirement"
+      }
+    ],
+    "confidence_notes": "I'm sure this is a blank internal form. The month, the names, all eight Y/N and initials columns, and the supervisor sign-off are empty, so there is nothing to judge for completeness or recency. I did not check it against any rule, because no rule requires this exact form. Some things to review, not findings: (1) Line 2's range of 2.0 to 6.0 has no units and should be checked against the air permit's pressure-drop condition. (2) Line 5 matches the usual 12-month maintenance and monthly visual inspection for portable extinguishers under 29 CFR 1910.157(e), which Oregon OSHA adopts. I did not check whether Oregon's text differs. (3) Line 7 asks for weekly flushing, which matches the common ANSI Z358.1 practice. Neither the air permit posting nor the specific scrubber and C-1 conditions were checked against the permit text here.",
+    "could_not_read": {
+      "reason": null,
+      "way_forward": null
+    },
+    "raw_text": "{\"identity\":{\"kind\":\"other\",\"title\":\"Monthly EHS Self-Check Form (blank internal template), Portland Facility\",\"issuer\":\"Cascade Specialty Chemicals, LLC (internal form)\",\"agencies\":[\"Oregon DEQ\",\"Oregon OSHA\"],\"subjects\":[\"Air Quality\",\"Powered Industrial Trucks\",\"Fire Safety\",\"Emergency Preparedness\",\"Hazard Communication\"],\"site\":\"Portland\",\"jurisdiction\":[\"Oregon\",\"federal\"],\"doc_date\": \"\",\"doc_date_kind\":\"unknown\"},\"summary\":\"This is the company's own blank monthly checklist. It has eight lines covering the air permit, the scrubber and carbon-unit logs, forklift inspections, fire extinguishers, exits, eyewash stations and showers, and safety data sheets. It is a template, not a filled-in record, so it proves nothing yet. It becomes evidence only when someone completes it each month with Y/N, initials and a supervisor sign-off.\",\"status\":\"not_judged\",\"significant_date\":\"\",\"significant_date_kind\":\"\",\"freshness_note\":\"The form has no date, revision number or month filled in. Because it is blank, how old it is doesn't matter much. What matters is whether completed copies exist for recent months, especially August and September 2026. Ask for those.\",\"gaps\":[],\"conditions\":[],\"deadlines\":[{\"title\":\"Report any items marked N to the Plant Manager\",\"due_on\":\"\",\"source_line\":\"Items marked N are reported to the Plant Manager by the 5th of the following month.\",\"recurs\":true}],\"facts\":[{\"key\":\"scrubber_pressure_drop_range\",\"value\":\"The form's acceptable range for scrubber pressure drop is 2.0 to 6.0. No units are given.\",\"basis\":\"read\",\"quote\":\"readings between 2.0 and 6.0\",\"locator\":\"Line 2\",\"as_of\":\"\",\"affects\":\"This is the internal range the scrubber log is checked against. It should match the range in the air permit (ACDP 26-2841-ST-01). I have not confirmed that it does.\"},{\"key\":\"emergency_eyewash_shower_location\",\"value\":\"There is more than one eyewash station and safety shower at the site. The form does not say where they are.\",\"basis\":\"inferred\",\"quote\":\"Eyewash stations and safety showers flushed this week and logged\",\"locator\":\"Line 7\",\"as_of\":\"\",\"affects\":\"Confirms the site has emergency eyewash and shower equipment that needs weekly activation and a log.\"}],\"version_of_title\":\"\",\"version_of_confidence\":\"high\",\"expected_missing\":[{\"title\":\"Completed monthly self-checks for recent months\",\"why\":\"The blank form shows the process exists. Completed, signed copies are what show it was actually done.\",\"basis\":\"similar companies, not a checked requirement\"},{\"title\":\"Written Hazard Communication program, plus a chemical inventory / SDS binder index\",\"why\":\"Line 8 refers to an SDS binder index. No written HazCom program appears in what the company holds, and chemical makers and repackagers usually keep one.\",\"basis\":\"similar companies, not a checked requirement\"},{\"title\":\"Weekly eyewash and safety shower activation log\",\"why\":\"Line 7 refers to a log for eyewash and shower flushing, and it is not in what the company holds.\",\"basis\":\"similar companies, not a checked requirement\"},{\"title\":\"OSHA Form 300 Log and Form 301 incident reports for 2025\",\"why\":\"The company holds the 300A summary but not the log or incident reports behind it.\",\"basis\":\"similar companies, not a checked requirement\"},{\"title\":\"Exit route and exit sign inspection records\",\"why\":\"Line 6 checks exits and exit signs. Sites like this often keep a separate record of emergency lighting and exit sign tests.\",\"basis\":\"similar companies, not a checked requirement\"},{\"title\":\"Hazardous waste generator records and Oregon Community Right-to-Know / Tier II hazardous substance reporting\",\"why\":\"Chemical repackagers with bulk storage and tank farms usually hold these.\",\"basis\":\"similar companies, not a checked requirement\"}],\"confidence_notes\":\"I'm sure this is a blank internal form. The month, the names, all eight Y/N and initials columns, and the supervisor sign-off are empty, so there is nothing to judge for completeness or recency. I did not check it against any rule, because no rule requires this exact form. Some things to review, not findings: (1) Line 2's range of 2.0 to 6.0 has no units and should be checked against the air permit's pressure-drop condition. (2) Line 5 matches the usual 12-month maintenance and monthly visual inspection for portable extinguishers under 29 CFR 1910.157(e), which Oregon OSHA adopts. I did not check whether Oregon's text differs. (3) Line 7 asks for weekly flushing, which matches the common ANSI Z358.1 practice. Neither the air permit posting nor the specific scrubber and C-1 conditions were checked against the permit text here.\",\"could_not_read_reason\":\"\",\"could_not_read_way_forward\":\"\"}",
+    "json_parsed": true,
+    "model": "claude-opus-5-5",
+    "cited_sources": 0,
+    "searches": null,
+    "structured": true,
+    "prompt_sha256": "f8f91026173836941a75bd3bf0b3df0aeb4204dce3aec81a3835370b087f0922",
+    "quotes_checked": 2,
+    "quotes_verified": 2,
+    "extracted_text": "<p>CASCADE SPECIALTY CHEMICALS, LLC — PORTLAND FACILITY</p><p>MONTHLY EHS SELF-CHECK</p><p>Month: __________ Completed by: ____________________ Supervisor: ____________________</p><table><tr><td><p><strong>Line</strong></p></td><td><p><strong>Check</strong></p></td><td><p><strong>Done (Y/N)</strong></p></td><td><p><strong>Initials</strong></p></td><td><p><strong>Notes</strong></p></td></tr><tr><td><p>1</p></td><td><p>Air permit posted in the front office and not expired</p></td><td></td><td></td><td></td></tr><tr><td><p>2</p></td><td><p>Scrubber pressure-drop log complete for the month, every operating day, readings between 2.0 and 6.0</p></td><td></td><td></td><td></td></tr><tr><td><p>3</p></td><td><p>Weekly C-1 detector-tube checks done and recorded every week this month</p></td><td></td><td></td><td></td></tr><tr><td><p>4</p></td><td><p>Forklift pre-shift inspection log complete for every day the truck ran; any defect followed up</p></td><td></td><td></td><td></td></tr><tr><td><p>5</p></td><td><p>Fire extinguishers tagged within the last 12 months; monthly visual check initialled on each tag</p></td><td></td><td></td><td></td></tr><tr><td><p>6</p></td><td><p>Exits, exit routes and aisles clear; exit signs lit</p></td><td></td><td></td><td></td></tr><tr><td><p>7</p></td><td><p>Eyewash stations and safety showers flushed this week and logged</p></td><td></td><td></td><td></td></tr><tr><td><p>8</p></td><td><p>Safety data sheets on hand for every chemical received this month; binder index updated</p></td><td></td><td></td><td></td></tr></table><p>Supervisor review: ____________________ Date: __________ · Items marked N are reported to the Plant Manager by the 5th of the following month.</p>",
+    "started_at": "2026-09-29T21:22:50.881Z"
+  }
+}

@@ -43,6 +43,14 @@ export interface AuditExpected { title: string; why: string | null; basis: strin
 
 /** A document whose current reading carries this agency — the audit's evidence. */
 export interface AuditDocument {
+  /**
+   * *** THE MODEL IS NEVER SHOWN A UUID — Audits Run 1c. ***
+   * D1, D2, D3 in the order the block lists them. Run 1b had the model copy raw ids and one came
+   * back as …-84c0-… for a document whose id is …-84d0-…: a single character wrong, which would
+   * have attached a finding to no document at all. A handle is short enough to copy correctly and
+   * checkable against a list of twelve, so a wrong one is caught instead of guessed at.
+   */
+  handle: string
   document_id: string
   title: string
   file_name: string
@@ -72,6 +80,8 @@ export interface AuditDocument {
 
 /** Everything else on file: four fields, so "nothing among the five" is answerable. */
 export interface AuditOtherDocument {
+  /** D7, D8 — the same series as the documents above, continuing. */
+  handle: string
   document_id: string
   title: string
   kind: string | null
@@ -88,6 +98,8 @@ export interface AuditInput {
   keys: string[]
   documents: AuditDocument[]
   other_documents: AuditOtherDocument[]
+  /** handle -> document_id, for every document the block names. The caller resolves with this. */
+  handles: Record<string, string>
 }
 
 export interface BuiltAuditInput {
@@ -191,9 +203,14 @@ export async function buildAuditInput(
     })).sort((a, b) => a.title.localeCompare(b.title)))
   }
 
+  // One series across both lists, in the order the block prints them, so D7 means one thing.
+  let handleN = 0
+  const nextHandle = () => `D${++handleN}`
+
   const documents: AuditDocument[] = mine.map((r) => {
     const id = r.document_id as string
     return {
+      handle: nextHandle(),
       document_id: id,
       title: (r.title as string) ?? (r.file_name as string) ?? '',
       file_name: (r.file_name as string) ?? '',
@@ -231,6 +248,7 @@ export async function buildAuditInput(
   })
 
   const other_documents: AuditOtherDocument[] = others.map((r) => ({
+    handle: nextHandle(),
     document_id: r.document_id as string,
     title: (r.title as string) ?? (r.file_name as string) ?? '',
     kind: (r.kind as string) ?? null,
@@ -243,6 +261,7 @@ export async function buildAuditInput(
     company: ctx.parts.company, confirmed: ctx.parts.confirmed,
     labels: ctx.parts.labels, keys: ctx.parts.keys,
     documents, other_documents,
+    handles: Object.fromEntries([...documents, ...other_documents].map((d) => [d.handle, d.document_id])),
   }
   const block = renderAuditInput(input)
   return { input, block, sha256: createHash('sha256').update(block).digest('hex') }
@@ -282,13 +301,13 @@ export function renderAuditInput(i: AuditInput): string {
 
   out.push('')
   out.push(`DOCUMENTS ON FILE FOR ${i.agency.toUpperCase()} — ${i.documents.length}`)
+  out.push('Each is named by a HANDLE — D1, D2 — and that handle is how you refer to it. Nothing else.')
   if (!i.documents.length) {
     out.push('  (none — this company holds no document any reading attributed to this agency)')
   }
   for (const d of i.documents) {
     out.push('')
-    out.push(`  --- ${d.title}`)
-    out.push(`      id: ${d.document_id}`)
+    out.push(`  --- ${d.handle} — ${d.title}`)
     out.push(`      file: ${d.file_name}`)
     out.push(`      kind: ${d.kind ?? 'not judged'} · status: ${d.status ?? 'unknown'} · shown as: ${d.display_status ?? 'unknown'}`)
     out.push(`      the document's own date: ${d.doc_date ?? 'none stated'}${d.doc_date_kind ? ` (${d.doc_date_kind})` : ''}`)
@@ -365,7 +384,7 @@ export function renderAuditInput(i: AuditInput): string {
   out.push('Listed so you can say what is NOT among them. You have not been shown their contents and')
   out.push('must not describe what is in them.')
   out.push(i.other_documents.length
-    ? i.other_documents.map((d) => `  - ${d.title} · ${d.kind ?? 'not judged'} · ${d.status ?? 'unknown'}`
+    ? i.other_documents.map((d) => `  - ${d.handle} — ${d.title} · ${d.kind ?? 'not judged'} · ${d.status ?? 'unknown'}`
         + `${d.significant_date ? ` · ${d.significant_date}` : ''}`).join('\n')
     : '  (nothing else on file)')
 

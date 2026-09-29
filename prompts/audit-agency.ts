@@ -79,7 +79,7 @@ const SHAPE = `Respond with valid JSON only. No markdown, no backticks, no text 
 
 {
   "covers": {
-    "documents_read": ["<document_id>", ...],
+    "documents_read": ["<document handle, e.g. D1>", ...],
     "documents_held_but_not_read": ["<title>", ...],
     "readings_as_of": "YYYY-MM-DD — the most recent date any reading you used was made, or null"
   },
@@ -87,7 +87,7 @@ const SHAPE = `Respond with valid JSON only. No markdown, no backticks, no text 
     {
       "title": "what an inspector would ask about, in the company's own terms",
       "word": "on_file | stale | nothing_on_file | not_a_document_question",
-      "document_id": "<id> or null",
+      "document": "<document handle, e.g. D3> or null",
       "locator": "where in that document, or null",
       "quote": "word for word from the reading, or null",
       "what_to_do": "one concrete next step, or null when there is nothing to do",
@@ -97,11 +97,8 @@ const SHAPE = `Respond with valid JSON only. No markdown, no backticks, no text 
   "dates": [
     {
       "title": "...", "due_on": "YYYY-MM-DD or null", "recurs": true or false,
-      "document_id": "<id>", "passed": true or false
+      "document": "<document handle>", "passed": true or false
     }
-  ],
-  "not_document_questions": [
-    "something this agency will ask that no document can answer — a practice, a training, a walk-round"
   ],
   "expected_not_seen": [
     { "title": "...", "why": "why a company like this usually holds it" }
@@ -109,8 +106,8 @@ const SHAPE = `Respond with valid JSON only. No markdown, no backticks, no text 
   "contradictions": [
     {
       "what": "the thing the two documents disagree about",
-      "document_a": "<id>", "value_a": "...",
-      "document_b": "<id>", "value_b": "..."
+      "document_a": "<document handle>", "value_a": "...",
+      "document_b": "<document handle>", "value_b": "..."
     }
   ]
 }
@@ -123,6 +120,15 @@ THE WORDS IN "word", AND WHAT EACH ONE CLAIMS:
   nothing_on_file         — a document obliges them to hold or produce something and no reading has
                             produced it. NOT an accusation.
   not_a_document_question — this agency will ask about it and no document can settle it.
+
+NAME A DOCUMENT BY ITS HANDLE. Each document you are shown carries one — D1, D2, D3 — printed
+beside its title. Write that handle and nothing else wherever a document is asked for. Do not write a
+title, a file name, or an identifier of any other shape: a handle is checked against the list you were
+given, and one that is not on it is recorded as an error against your finding.
+
+A QUESTION NO DOCUMENT CAN SETTLE IS A FINDING TOO, with word not_a_document_question and
+"document": null. There is no separate list for them. One list of findings, four words, so nothing has
+to be said twice and nothing gets counted twice.
 
 "passed" is against today's date, given at the top of the block. A recurring date whose most recent
 occurrence is behind today is passed.
@@ -149,16 +155,16 @@ export const AUDIT_SECTIONS = [
     asks: 'covers, dates, and the findings about the documents themselves',
     instruction: `THIS CALL: "covers" and "dates", and only the findings that are about a DOCUMENT'S OWN
 STATE — on_file, stale, and any date-driven nothing_on_file (a renewal that was due and has nothing
-on file). Leave "not_document_questions", "expected_not_seen" and "contradictions" as empty arrays;
-later calls fill them. Return the whole JSON shape with those keys empty.`,
+on file). Leave "expected_not_seen" and "contradictions" as empty arrays; later calls fill them.
+Return the whole JSON shape with those keys empty.`,
   },
   {
     id: 'conditions',
     asks: 'the conditions each document obliges, against what is on file',
     instruction: `THIS CALL: findings for the CONDITIONS the documents oblige them to keep — each one
 against what is actually on file. A condition with nothing on file to show for it is
-nothing_on_file, cites the condition, and is not an accusation. Also fill
-"not_document_questions" with what this agency will ask that no document can settle.
+nothing_on_file, cites the condition, and is not an accusation. Also add, as findings with word
+not_a_document_question and "document": null, what this agency will ask that no document can settle.
 Carry forward every key the earlier call filled, unchanged. Leave "expected_not_seen" and
 "contradictions" empty.`,
   },

@@ -1,0 +1,1656 @@
+{
+  "case": "cascade-osha",
+  "agency": "Oregon OSHA",
+  "mode": "whole",
+  "run": 3,
+  "run_date": "2026-09-29",
+  "model": "claude-haiku-4-5",
+  "input_block": "TODAY IS 2026-09-29. Every \"passed\" or \"expiring\" judgement is against that date.\n\nTHE AGENCY THIS AUDIT IS ABOUT: Oregon OSHA\nOnly this agency. Another regulator's documents are listed at the end as titles only and\nare not yours to judge here.\n\nWHO THIS COMPANY IS\n  Name: Cascade Specialty Chemicals, LLC\n  Industry: chemical manufacturing (recorded as chemical-manufacturing)\n  Address: Portland, Oregon\nTheir sites:\n  - Portland — 4410 NW Front Ave, Portland, Oregon 97210 (primary)\n\nDOCUMENTS ON FILE FOR OREGON OSHA — 8\nEach is named by a HANDLE — D1, D2 — and that handle is how you refer to it. Nothing else.\n\n  --- D1 — Certificate of Annual Maintenance — Portable Fire Extinguishers (14 units), Service Date August 20, 2025, Portland Facility\n      file: 11-fire-extinguisher-certificate.pdf\n      kind: certificate · status: expired · shown as: current\n      the document's own date: 2025-08-20 (issued)\n      the date that matters: 2025-08-20 (issued)\n      site: Portland\n      what the reading said it is: This is a vendor's certificate showing that all 14 portable fire extinguishers at the Portland facility got their annual maintenance on August 20, 2025, and all 14 passed. It proves the 2025 service happened. It does not cover 2026: the certificate itself says the next annual maintenance was due August 20, 2026, and that date passed about 40 days ago. Two units (W-3 and L-1) also need six-year work before November 2026, and the CO2 unit L-1 appears to be overdue for its hydrostatic test.\n      WHAT THE READING FOUND WRONG WITH IT: nothing\n      WHAT THIS DOCUMENT OBLIGES THEM TO KEEP DOING (4), read out of the document itself:\n        · Page 1: 'NEXT ANNUAL MAINTENANCE DUE: AUGUST 20, 2026.' — Annual maintenance of every portable extinguisher (Oregon OSHA adopts 29 CFR 1910.157(e)(3); NFPA 10 Chapter 7)\n            the evidence you would expect to see: A 2026 vendor maintenance certificate covering all 14 units, plus a current-year service tag on each unit. Keep records for one year after the last entry or for the life of the shell, whichever is shorter.\n        · Page 1: 'Monthly visual inspections remain the customer's responsibility under NFPA 10, Section 7.2' — Monthly visual inspection of each extinguisher, recorded on the unit tag (29 CFR 1910.157(e)(2); NFPA 10 Section 7.2)\n            the evidence you would expect to see: Initialed and dated monthly entries on each unit's tag, or a monthly inspection log, for every month since August 2025.\n        · Page 1: 'Units W-3 and L-1 reach their six-year internal maintenance interval in 2026; schedule before November 2026.' — Six-year internal maintenance of stored-pressure dry chemical units (29 CFR 1910.157(e)(4)); W-3 is due by November 2026\n            the evidence you would expect to see: A vendor work order or certificate showing W-3 had its six-year internal maintenance, plus a new verification-of-service collar or label on the unit.\n        · Page 1, table: L-1 'Last hydrostatic test' 2020 — Hydrostatic testing on schedule, including the five-year interval for CO2 units (29 CFR 1910.157(f), Table L-1; NFPA 10 Chapter 8)\n            the evidence you would expect to see: A hydrostatic test record and cylinder stamp or label for L-1 dated within the last five years; the next one for L-2 by 2027.\n      DATES THIS DOCUMENT SETS (5):\n        · Annual maintenance of all 14 portable fire extinguishers (overdue as of 2026-09-29 unless already done) — 2026-08-20 (recurring)\n        · Hydrostatic test for CO2 unit L-1 (last test 2020; the five-year CO2 interval is inferred from 29 CFR 1910.157 Table L-1 and is not stated in the document) — 2025-12-31 (recurring)\n        · Monthly visual inspection of each extinguisher, recorded on the unit tag — no date stated (recurring)\n        · Six-year internal maintenance for units W-3 and L-1 — 2026-10-31 (recurring)\n        · Six-year maintenance for W-1, W-2, W-4, B-1, A-1 and A-2 (year only; no month given) — 2027-12-31 (recurring)\n      WHAT THE READING SAID A COMPANY LIKE THIS USUALLY ALSO HOLDS (6) —\n        a suggestion from similar companies, NOT a checked requirement:\n        · 2026 annual maintenance certificate for portable fire extinguishers — This 2025 certificate stopped covering the site on 2026-08-20.\n        · Chemical hygiene plan for the laboratory — The certificate shows an on-site lab with a fume hood.\n        · Fire alarm and sprinkler inspection and testing reports — Chemical facilities with a monitored fire alarm usually keep yearly NFPA 72 and NFPA 25 reports.\n        · Fire extinguisher training records for employees — 29 CFR 1910.157(g) requires annual training if employees are expected to use extinguishers. Not needed if the Emergency Action Plan has everyone evacuate and extinguishers are not for employee use.\n        · Hydrostatic test certificate for CO2 unit L-1 — The last hydrostatic test shown for L-1 was in 2020.\n        · Monthly extinguisher inspection records (tags or log) — The certificate puts monthly inspections on the customer, and nothing in the held list shows them being done.\n      WHAT THIS DOCUMENT SAYS, proposed by the reading, not confirmed by anyone (7):\n        · acid caustic repackaging lines: Separate acid and caustic repackaging lines, each with its own 20 lb ABC extinguisher, as of 2025-08-20\n            it says: \"Caustic repackaging line\"\n            where: Page 1, table rows A-1 and A-2\n        · boiler on site: There is a boiler room at the facility, as of 2025-08-20\n            it says: \"Boiler room\"\n            where: Page 1, table row B-1\n        · fire extinguisher service vendor: Rose City Fire Protection, Inc., Oregon SFM Licence FPE-1187, as of 2025-08-20\n            it says: \"ROSE CITY FIRE PROTECTION, INC.\"\n            where: Page 1, header\n        · onsite laboratory: Yes, there is a laboratory with a fume hood, protected by CO2 extinguishers L-1 and L-2, as of 2025-08-20\n            it says: \"Laboratory, fume hood wall\"\n            where: Page 1, table row L-2\n        · portable fire extinguisher count: 14 portable fire extinguishers at the Portland facility: 11 ABC dry chemical, 2 CO2, 1 Class K, as of 2025-08-20\n            it says: \"Units serviced: 14. Units failed or removed from service: 0.\"\n            where: Page 1, below the unit table\n        · solvent bulk storage: A solvent storage cage in warehouse bay 4, as of 2025-08-20\n            it says: \"Warehouse bay 4, solvent cage\"\n            where: Page 1, table row W-4\n        · tank farm: A tank farm with at least tanks T-3 through T-6, as of 2025-08-20\n            it says: \"Tank farm, T-3 to T-6\"\n            where: Page 1, table row T-1\n\n  --- D2 — Emergency Action Plan – Portland Facility\n      file: 01-eap-chemical.pdf\n      kind: program · status: gaps_found · shown as: needs_work\n      the document's own date: 2021-02-01 (revised)\n      the date that matters: 2021-02-01 (revised)\n      site: Portland\n      what the reading said it is: This is your written plan for what employees do in a fire, chemical release, medical emergency or earthquake at the Portland facility. It is your own document, so you can fix it. In Oregon it is checked against Oregon OSHA's emergency action plan rule, OAR 437-002-0042. It covers evacuation, headcounts, first aid, alarm signals, designated wardens and reviews with employees. It leaves out three things the rule requires: how to report an emergency, how to shut down critical equipment before leaving, and who employees contact about the plan. It was last revised in February 2021 and shows no review since.\n      WHAT THE READING FOUND WRONG WITH IT (7) — these are already findings; carry them, do not re-find them:\n        · No procedure for reporting a fire or other emergency\n            The plan says pull stations are at each exit and that an outside company monitors the alarm. It never says who calls 911, how to report a chemical release or medical emergency that won't set off the fire alarm, or which phone numbers to use.\n            what it needs: Add a short 'Reporting an emergency' section. It should say: pull the nearest station for a fire; call 911 from a safe place for any fire, release or serious injury; tell the incident coordinator or a supervisor; and give the site address to give the dispatcher. List the internal phone numbers.\n            the rule: OAR 437-002-0042(2)(c)\n        · No procedure for shutting down critical equipment before evacuating\n            The rule requires procedures for emergency operation or shutdown of critical equipment before evacuation. The plan tells everyone to leave at once. The only shutdown it mentions is the ventilation shutoff during shelter-in-place. For a chemical manufacturer with a laboratory, there is nothing on reactors, heating, transfer pumps, gas cylinders or other process equipment, and nothing saying who, if anyone, stays behind to do it.\n            what it needs: Decide which equipment must be made safe before people leave. Name the job title responsible, write the steps and a cut-off point after which that person leaves too. If nothing needs a shutdown, say so in writing.\n            the rule: OAR 437-002-0042(2)(d)\n        · No named contact for questions about the plan; incident coordinator not identified\n            The rule requires the names or job titles of the people employees can contact for more information about their duties under the plan. No one is named for this. The plan also relies on an 'incident coordinator' but never says who holds that role or who stands in when that person is absent.\n            what it needs: Add a contacts section. Give the job title, and ideally the name and phone number, of the plan contact (for example the facilities lead), the incident coordinator and a backup.\n            the rule: OAR 437-002-0042(2)(f)\n        · Earthquake listed in scope but no earthquake procedure  [worked out from the document, not stated in it]\n            Section 1 lists earthquakes as a covered emergency. The plan only gives procedures for alarm-triggered evacuation and shelter-in-place. It doesn't say what to do during and right after shaking (drop, cover and hold on, then evacuate once shaking stops and check for chemical spills). The rule asks for the 'type of evacuation' for each emergency. Whether that means a separate earthquake procedure is required is my reading, not a checked requirement.\n            what it needs: Add a short earthquake procedure. Cover what to do during shaking, when to evacuate, which routes to avoid (the freight lift, racking, the lab), and a post-quake check for chemical spills and gas leaks.\n            the rule: OAR 437-002-0042(2)(a) (my reading)\n        · No statement on how far employees respond to chemical spills  [worked out from the document, not stated in it]\n            The plan covers chemical releases by evacuating or sheltering in place. It doesn't say whether employees clean up small spills themselves (incidental releases) or never respond. If employees do respond beyond small incidental spills, the federal hazardous waste and emergency response rule (HAZWOPER, 29 CFR 1910.120(q)) would require a separate emergency response plan and training. I'm not sure how Oregon has adopted this; I believe it is by reference.\n            what it needs: Add a sentence saying employees do not respond to chemical releases beyond small incidental spills they are trained to clean up, and that larger releases are handled by the fire department. If that isn't true, a separate HAZWOPER emergency response plan is needed.\n            the rule: 29 CFR 1910.120(q) (not confirmed for how Oregon applies it)\n        · Appendices A and B are not in the file\n            The plan points to evacuation maps (Appendix A) and to the floor warden and first-aid responder roster (Appendix B) for exit route assignments and designated evacuation helpers. Neither is attached. So there is no way to check that exit routes are assigned or that designated employees exist, which the rule requires.\n            what it needs: Attach the current evacuation maps and the current warden and first-aid roster to the plan, with dates. Check that the roster names people who still work there.\n            the rule: OAR 437-002-0042(2)(a) and (4)\n        · The plan's own January review has not been recorded since 2021  [worked out from the document, not stated in it]\n            The plan commits to a review every January, but the revision date is still February 2021 and there is no review log or sign-off. This is the plan's own commitment, not a specific Oregon rule.\n            what it needs: Add a review log at the end (date, reviewer, changes made). Carry out and record a review now.\n            the rule: none (the plan's own commitment)\n      DATES THIS DOCUMENT SETS (4):\n        · Annual January review of the plan by the facilities lead — 2027-01-31 (recurring)\n        · Annual training for floor wardens and first-aid responders — no date stated (recurring)\n        · Autumn evacuation drill (twice a year, spring and autumn) — no date stated (recurring)\n        · Monthly fire alarm test by the facilities lead — 2026-10-05 (recurring)\n      WHAT THE READING SAID A COMPANY LIKE THIS USUALLY ALSO HOLDS (8) —\n        a suggestion from similar companies, NOT a checked requirement:\n        · Chemical Hygiene Plan for the laboratory — The plan shows laboratory staff are on site.\n        · Fire Prevention Plan (OAR 437-002-0043) — Workplaces where everyone evacuates in a fire usually need one alongside the emergency action plan.\n        · Hazard Communication program, SDS library and chemical inventory — A chemical manufacturer's employees handle hazardous chemicals every day.\n        · Hazardous substance inventory reporting (EPCRA Tier II / Oregon State Fire Marshal Hazardous Substance Information Survey) — Commonly required for facilities that store chemicals above reporting thresholds.\n        · Hazardous waste generator documents and contingency plan; spill plan (SPCC) or Oregon integrated contingency plan — Chemical manufacturers commonly generate hazardous waste and store oil or chemicals in bulk.\n        · Oregon safety committee records (OAR 437-001-0765) — Oregon employers with more than 10 employees usually keep safety committee minutes.\n        · OSHA 300/300A injury logs — Commonly kept by manufacturers with more than 10 employees.\n        · Records of evacuation drills, alarm tests and warden/first-aid training — The plan promises drills twice a year, monthly alarm tests and annual training; the records are what show these happened.\n      WHAT THIS DOCUMENT SAYS, proposed by the reading, not confirmed by anyone (5):\n        · emergency eyewash shower location: Emergency shower and eyewash at the loading dock; AED and first-aid kit in the front office, as of 2021-02-01\n            it says: \"taken to the emergency shower and eyewash at the loading dock if it can be reached safely\"\n            where: Section 5, page 4\n        · employees evacuate during fire: All employees evacuate when the fire alarm sounds; the plan gives no role for employees in fighting fires, as of 2021-02-01\n            it says: \"When the continuous alarm sounds, all employees stop work, secure nothing that requires more than a few seconds, and leave by the nearest marked exit.\"\n            where: Section 3, page 3\n        · employs drivers: The Portland workforce includes drivers, as of 2021-02-01\n            it says: \"including warehouse, drivers, laboratory and office staff\"\n            where: Section 1, page 2\n        · fire alarm monitoring vendor: Fire alarm monitored 24 hours a day by Cascade Fire & Safety under a service contract, as of 2021-02-01\n            it says: \"The alarm is monitored 24 hours a day by Cascade Fire & Safety under a service contract.\"\n            where: Section 2, page 2\n        · onsite laboratory: The Portland facility has a laboratory with laboratory staff, as of 2021-02-01\n            it says: \"Laboratory staff leave by the laboratory's own exterior door on the south wall.\"\n            where: Section 3, page 3\n\n  --- D3 — Forklift Pre-Shift Inspection Log, Unit FL-2 (Toyota 8FGU25, propane), September 2026, Portland Warehouse\n      file: 06b-forklift-log-photo.pdf\n      kind: record · status: gaps_found · shown as: needs_work\n      the document's own date: 2026-09-17 (last_entry)\n      the date that matters: 2026-09-17 (last_entry)\n      site: Portland\n      what the reading said it is: This is your own daily pre-shift inspection log for forklift FL-2, a propane Toyota 8FGU25 at the Portland warehouse, for September 2026. It is a record, so it is checked for completeness and how recent it is, not against a written standard. The last row that can be read is September 17. The log has missing weekdays, and a horn defect was found on Sep 9 with nothing written down about pulling the truck from service or fixing it.\n      WHAT THE READING FOUND WRONG WITH IT (4) — these are already findings; carry them, do not re-find them:\n        · Missing weekday inspections, Sep 3–4  [worked out from the document, not stated in it]\n            There are no entries for Thursday Sep 3 or Friday Sep 4. The hour meter goes from 4,819 (start of shift Sep 2) to 4,834 (Sep 7). That is about 15 hours, but the Sep 2 shift explains only about 7 of them. This suggests the truck ran about one more shift with no pre-shift inspection written down.\n            what it needs: Ask the operators and supervisor whether FL-2 was used on Sep 3 or 4. If it was, write a dated note on the log explaining the missing inspection, and remind operators that every shift of use needs an entry first.\n            the rule: 29 CFR 1910.178(q)(7) (examined before being placed in service, at least daily), which Oregon OSHA enforces through its Division 2 general industry rules. I have not confirmed the exact Oregon rule number.\n        · Horn defect with no out-of-service or repair record\n            On Sep 9 the horn is marked X with the note 'Horn not working'. The log does not say the truck was tagged out, who was told, or when and how it was repaired. By the next morning (Sep 10) the hour meter is up 6 hours, so the truck may have run the rest of the Sep 9 shift with a broken horn. The Sep 10 row marks the horn OK with no repair shown.\n            what it needs: Find or write the repair record (work order or mechanic's note with date and who did it) and attach it to this log. Add 'out of service / repaired by / date' columns or a notes rule so any X entry shows how it was closed.\n            the rule: 29 CFR 1910.178(p)(1) (trucks needing repair taken out of service until restored) and 1910.178(q)(7)\n        · No entries visible after Sep 17  [worked out from the document, not stated in it]\n            The readable log stops at Thursday Sep 17. Sep 18, Sep 21–25 and Sep 28–29 are not shown. The photo is cut off at the bottom, so these rows may exist and simply not be in the image.\n            what it needs: Upload the full page or a flat scan showing the rest of September. If there are no entries after Sep 17, find out whether FL-2 was in use.\n            the rule: 29 CFR 1910.178(q)(7)\n        · Operators identified by initials only, no supervisor review\n            Operators appear only as 'M.C.' and 'J.R.'. The log has no key to full names and no supervisor sign-off, so it cannot be matched against forklift operator certification records.\n            what it needs: Add a signature key (initials to full name) and a monthly supervisor review line. Check that both operators hold current operator evaluations.\n            the rule: 29 CFR 1910.178(l) (operator training and certification). The log itself is not required to carry this.\n      DATES THIS DOCUMENT SETS (2):\n        · Pre-shift inspection of FL-2 before each shift of use (at least daily) — no date stated (recurring)\n        · Start October 2026 log for FL-2 — 2026-10-01 (recurring)\n      WHAT THE READING SAID A COMPANY LIKE THIS USUALLY ALSO HOLDS (4) —\n        a suggestion from similar companies, NOT a checked requirement:\n        · Forklift maintenance and repair records / work orders for FL-2 — These would close out defects like the Sep 9 horn fault\n        · Forklift operator training and certification records (M.C., J.R. and others) — Operator evaluations are required at least every three years and are the first thing asked for alongside inspection logs\n        · Inspection logs for any other powered industrial trucks on site — Only FL-2 is on file. A unit number of 2 suggests there is at least one more truck\n        · Written Hazard Communication Program — A chemical repackager holding SDSs would normally also have a written HazCom program\n      WHAT THIS DOCUMENT SAYS, proposed by the reading, not confirmed by anyone (4):\n        · certified forklift operators: At least two operators use FL-2, recorded as M.C. and J.R. The log does not show whether they are certified, as of 2026-09-17\n            it says: \"J.R.\"\n            where: Page 1, Operator column\n        · forklift operating shifts: Only day shift use of FL-2 is recorded, as of 2026-09-17\n            it says: \"Day\"\n            where: Page 1, Shift column\n        · powered industrial trucks on site: Toyota 8FGU25 forklift, unit FL-2, propane, Portland warehouse, as of 2026-09-17\n            it says: \"Truck: Toyota 8FGU25, unit FL-2, propane\"\n            where: Page 1, header\n        · propane forklift cylinders: Yes. FL-2 runs on swappable LPG cylinders, and a cylinder change is logged Sep 15, as of 2026-09-15\n            it says: \"Tank changed\"\n            where: Page 1, Sep 15 row, Notes\n\n  --- D4 — Forklift Pre-Shift Inspection Log, Unit FL-2 (Toyota 8FGU25, propane), September 2026, Portland Warehouse\n      file: 06a-forklift-log.pdf\n      kind: record · status: gaps_found · shown as: needs_work\n      the document's own date: 2026-09-18 (last_entry)\n      the date that matters: 2026-09-18 (last_entry)\n      site: Portland\n      what the reading said it is: This is your own log of the daily pre-use checks on one propane forklift (unit FL-2) at the Portland warehouse for September 2026. Oregon OSHA adopts the federal rule 29 CFR 1910.178 by reference. Under 1910.178(q)(7) the truck must be checked at least once a day before use, and taken out of service if a defect affects safety. A log like this is the easiest way to show that happened. The log has missing days, an open defect with no repair record, no entries after September 18, and no supervisor sign-off.\n      WHAT THE READING FOUND WRONG WITH IT (4) — these are already findings; carry them, do not re-find them:\n        · Truck used on days with no recorded check (Sep 3–4)\n            There are no entries for Thursday Sep 3 or Friday Sep 4. The hour meter went up 15 hours between the Sep 2 and Sep 7 entries, while a normal day adds about 6–7. So the truck appears to have run on one or both of those days without the required daily check.\n            what it needs: Find out who drove FL-2 on Sep 3–4 and why no check was logged. Remind operators that the check comes before any use. Don't back-fill the log. Add a dated note explaining the gap.\n            the rule: 29 CFR 1910.178(q)(7), adopted in Oregon by OAR 437-002-0220\n        · Horn defect with no out-of-service or repair record  [worked out from the document, not stated in it]\n            On Sep 9 the horn was marked as a defect. Nothing shows the truck was tagged out of service, who repaired it, or when. The horn is ticked OK the next day. The hour meter went up 6 hours between the Sep 9 and Sep 10 checks, which suggests the truck kept running on Sep 9 with the horn broken.\n            what it needs: Find the work order or repair note for the horn and file it with this log. If the truck ran with the horn out, record what happened and remind operators to tag out a truck with a safety defect until it is fixed. Add a column or line for 'defect reported to / repaired by / date returned to service'.\n            the rule: 29 CFR 1910.178(q)(7) and 1910.178(q)(1)\n        · No entries after September 18  [worked out from the document, not stated in it]\n            The log stops on Friday Sep 18. There are no checks for Sep 21–25 or Sep 28. The sheet doesn't say whether the truck was out of service.\n            what it needs: Find the rest of the September sheet, or confirm the truck was parked and note that on the log. If it ran, treat those days as missed checks.\n            the rule: 29 CFR 1910.178(q)(7)\n        · Supervisor review not signed\n            The supervisor review line and its date are blank. Nobody has signed off that the missed days and the horn defect were seen and dealt with.\n            what it needs: Have the warehouse supervisor review the log, note what was done about the missing days and the horn, then sign and date it.\n            the rule: null (this is an internal control on your own form, not a rule requirement)\n      DATES THIS DOCUMENT SETS (3):\n        · Check the forklift before each shift it is used — no date stated (recurring)\n        · Three-year performance re-evaluation of forklift operator J. Rivera — 2028-06-02 (recurring)\n        · Three-year performance re-evaluation of forklift operator M. Chen — 2027-03-11 (recurring)\n      WHAT THE READING SAID A COMPANY LIKE THIS USUALLY ALSO HOLDS (4) —\n        a suggestion from similar companies, NOT a checked requirement:\n        · Forklift maintenance and repair records (e.g. the horn repair after Sep 9) — This would close the Sep 9 defect and show the truck was fixed before going back into use.\n        · Forklift operator training and evaluation certifications for M. Chen and J. Rivera — The log lists certification dates, but the records themselves (who trained and evaluated, and when) are what 1910.178(l)(6) asks for.\n        · Inspection logs for other trucks (e.g. FL-1) and for earlier months — The unit number suggests a fleet, and one month of one truck is a thin record.\n        · Written Hazard Communication program — A chemical manufacturer handling products like 50% caustic soda usually keeps one alongside its safety data sheets. None is in the list of documents you hold.\n      WHAT THIS DOCUMENT SAYS, proposed by the reading, not confirmed by anyone (3):\n        · certified forklift operators: Two certified operators: M. Chen (certified 2024-03-11) and J. Rivera (certified 2025-06-02), as of 2026-09-18\n            it says: \"Operators: M.C. = M. Chen (certified 2024-03-11, evaluation due 2027-03-11) · J.R. = J. Rivera (certified 2025-06-02, evaluation due 2028-06-02)\"\n            where: Page 2, below table\n        · powered industrial trucks on site: At least one propane forklift, Toyota 8FGU25, unit FL-2, at the Portland warehouse. The 'FL-2' number suggests there is at least one more truck., as of 2026-09-18\n            it says: \"Truck: Toyota 8FGU25, unit FL-2, propane\"\n            where: Page 1, header\n        · propane forklift cylinders: The forklift runs on propane, and its cylinders are changed on site, as of 2026-09-15\n            it says: \"Tank changed\"\n            where: Page 1, row Sep 15\n\n  --- D5 — Monthly EHS Self-Check Form (blank internal template), Portland Facility\n      file: 13-company-self-check.docx\n      kind: other · status: not_judged · shown as: on_file\n      the document's own date: none stated (unknown)\n      the date that matters: none\n      site: Portland\n      what the reading said it is: This is the company's own blank monthly checklist. It has eight lines covering the air permit, the scrubber and carbon-unit logs, forklift inspections, fire extinguishers, exits, eyewash stations and showers, and safety data sheets. It is a template, not a filled-in record, so it proves nothing yet. It becomes evidence only when someone completes it each month with Y/N, initials and a supervisor sign-off.\n      WHAT THE READING FOUND WRONG WITH IT: nothing\n      DATES THIS DOCUMENT SETS (1):\n        · Report any items marked N to the Plant Manager — no date stated (recurring)\n      WHAT THE READING SAID A COMPANY LIKE THIS USUALLY ALSO HOLDS (6) —\n        a suggestion from similar companies, NOT a checked requirement:\n        · Completed monthly self-checks for recent months — The blank form shows the process exists. Completed, signed copies are what show it was actually done.\n        · Exit route and exit sign inspection records — Line 6 checks exits and exit signs. Sites like this often keep a separate record of emergency lighting and exit sign tests.\n        · Hazardous waste generator records and Oregon Community Right-to-Know / Tier II hazardous substance reporting — Chemical repackagers with bulk storage and tank farms usually hold these.\n        · OSHA Form 300 Log and Form 301 incident reports for 2025 — The company holds the 300A summary but not the log or incident reports behind it.\n        · Weekly eyewash and safety shower activation log — Line 7 refers to a log for eyewash and shower flushing, and it is not in what the company holds.\n        · Written Hazard Communication program, plus a chemical inventory / SDS binder index — Line 8 refers to an SDS binder index. No written HazCom program appears in what the company holds, and chemical makers and repackagers usually keep one.\n      WHAT THIS DOCUMENT SAYS, proposed by the reading, not confirmed by anyone (2):\n        · emergency eyewash shower location: There is more than one eyewash station and safety shower at the site. The form does not say where they are.\n            it says: \"Eyewash stations and safety showers flushed this week and logged\"\n            where: Line 7\n        · scrubber pressure drop range: The form's acceptable range for scrubber pressure drop is 2.0 to 6.0. No units are given.\n            it says: \"readings between 2.0 and 6.0\"\n            where: Line 2\n\n  --- D6 — OSHA Form 300A Summary of Work-Related Injuries and Illnesses, Calendar Year 2025, Portland Facility\n      file: 10-osha-300a-2025.pdf\n      kind: record · status: recorded · shown as: recorded\n      the document's own date: 2026-02-01 (issued)\n      the date that matters: 2026-02-01 (last_entry)\n      site: Portland\n      what the reading said it is: This is the company's own yearly summary of work-related injuries and illnesses at the Portland facility for 2025, filled in on the federal OSHA 300A form and signed by the Plant Manager on February 1, 2026 (page 1). It shows 3 recordable injuries: 1 with 6 days away from work and 2 other recordable cases. There were no deaths and no job-transfer or restriction cases. It is a record, so it was checked for completeness and for whether it fits with what the company has already confirmed. It was not checked against a program standard.\n      WHAT THE READING FOUND WRONG WITH IT (3) — these are already findings; carry them, do not re-find them:\n        · Annual average employee count does not match the confirmed headcount  [worked out from the document, not stated in it]\n            The form reports an annual average of 65 employees and 128,400 hours worked in 2025. The company has confirmed 42 employees at Portland. 128,400 hours works out to about 1,975 hours per person for 65 people, which is plausible. For 42 people it would be about 3,057 hours each, which is not. So either headcount dropped after 2025, the figure counts temporary or leased workers, or one of the numbers is wrong. The 2025 average also affects whether the 20-employee threshold for electronic filing applies to the site.\n            what it needs: Check the 2025 payroll and any temp or staffing-agency records to confirm the average and the hours. If the 300A is wrong, correct it and resubmit through OSHA's Injury Tracking Application. If it is right, note that 42 is today's headcount and not the 2025 average.\n            the rule: OAR 437-001-0700 (300A must show annual average employees and total hours worked covered by the OSHA 300 Log)\n        · No proof of electronic filing for 2025  [worked out from the document, not stated in it]\n            The company is in Oregon, averaged 20 or more employees in 2025, and reports NAICS 424690. That very likely means this summary had to be filed electronically through OSHA's Injury Tracking Application by March 2, 2026. The files the company holds include no filing receipt. I believe NAICS 4246 is on the designated-industry list (Table 7), but I did not check the table itself.\n            what it needs: Log into OSHA's Injury Tracking Application (osha.gov/injuryreporting) and confirm the 2025 300A was filed. Keep the confirmation. If it was not filed, file it now.\n            the rule: OAR 437-001-0700(24)(b) and Table 7 (mirrors 29 CFR 1904.41); due March 2 of the following year\n        · Industry code may not match the company's profile  [worked out from the document, not stated in it]\n            The form lists NAICS 424690, a chemical wholesaler code. The company's profile says chemical manufacturing. The NAICS code decides which designated-industry list the site falls under for electronic filing.\n            what it needs: Confirm the right NAICS code for the Portland establishment, for example against the Oregon unemployment insurance registration, and use it the same way on the 300A and in the Injury Tracking Application.\n            the rule: OAR 437-001-0700(24) Tables 7 and 8 (designated industries by NAICS)\n      DATES THIS DOCUMENT SETS (5):\n        · Complete, certify and post the 2026 300A — 2027-02-01 (recurring)\n        · File the 2025 300A electronically with OSHA's Injury Tracking Application (deadline passed; confirm it was filed) — 2026-03-02 (recurring)\n        · File the 2026 300A electronically — 2027-03-02 (recurring)\n        · Keep the 2025 300A, 300 Log and 801 forms until at least this date — 2030-12-31\n        · Post the 2025 summary in the workplace (period has ended) — 2026-04-30 (recurring)\n      WHAT THE READING SAID A COMPANY LIKE THIS USUALLY ALSO HOLDS (5) —\n        a suggestion from similar companies, NOT a checked requirement:\n        · DCBS Form 801 (or equivalent) for each of the 3 recorded 2025 cases — Oregon requires an 801 or equivalent incident report for each recordable case.\n        · Hazard Communication written program — The company repackages acids, caustics and solvents, and only a supplier SDS is on file.\n        · OSHA 300 Log of Work-Related Injuries and Illnesses for 2025 (and the 2026 log in progress) — The 300A is totaled from the 300 Log, and the log has to be kept along with it.\n        · OSHA Injury Tracking Application filing confirmation for the 2025 300A — This is the proof that the summary was filed electronically by March 2, 2026.\n        · PPE hazard assessment certification — This is usual for acid and caustic handling operations.\n      WHAT THIS DOCUMENT SAYS, proposed by the reading, not confirmed by anyone (5):\n        · acid caustic repackaging lines: The Portland facility repackages acids, caustics and solvents, as of 2026-02-01\n            it says: \"repackaging of acids, caustics and solvents\"\n            where: page 1, Establishment information\n        · annual average employees 2025: 65, as of 2025-12-31\n            it says: \"Annual average number of employees: 65\"\n            where: page 1, Employment information\n        · naics code: 424690, as of 2026-02-01\n            it says: \"North American Industrial Classification (NAICS): 424690\"\n            where: page 1, Establishment information\n        · recordable cases 2025: 3 recordable injuries (1 with days away, 6 days away; 2 other recordable; 0 deaths; 0 restricted or transferred), as of 2025-12-31\n            it says: \"Total number of cases with days away from work: 1 (H)\"\n            where: page 1, Number of Cases / Number of Days\n        · total hours worked 2025: 128,400, as of 2025-12-31\n            it says: \"Total hours worked by all employees last year: 128,400\"\n            where: page 1, Employment information\n\n  --- D7 — Powered Industrial Truck Operator Training and Evaluation Record (with Michael Chen Certificate of Training), Portland Facility\n      file: 09-forklift-training-records.pdf\n      kind: record · status: gaps_found · shown as: needs_work\n      the document's own date: 2025-06-02 (last_entry)\n      the date that matters: 2025-06-02 (last_entry)\n      site: Portland\n      what the reading said it is: This is the company's own roster of forklift and pallet-jack operator training and evaluations for the Portland facility, followed by one signed training certificate (Michael Chen, page 2). It lists three operators and the dates each was trained and evaluated. Rina Patel's three-year evaluation fell due on 2026-05-19 and is now more than four months overdue. The roster itself has not been updated since June 2, 2025.\n      WHAT THE READING FOUND WRONG WITH IT (4) — these are already findings; carry them, do not re-find them:\n        · Operator re-evaluation overdue (R. Patel)\n            Rina Patel's most recent evaluation was 2023-05-19, and the roster shows her next evaluation due 2026-05-19. As of 2026-09-29 the document shows no new evaluation, so her three-year evaluation is more than four months overdue. The roster lists her as an operator of FL-2, the propane forklift.\n            what it needs: Keep Patel off FL-2 unless she is supervised until Sandra Ortiz evaluates her in the workplace. After that, add the new evaluation date and next due date (three years later) to the roster and issue a signed certificate. If she was already re-evaluated and it just wasn't written down, add the record now with the real date.\n            the rule: 29 CFR 1910.178(l)(4)(iii), adopted in Oregon under Oregon OSHA Division 2, Subdivision N\n        · No certificate noted or attached for R. Patel\n            The Notes column says \"certificate on file\" for Chen and Rivera but is blank for Patel. The certification rule asks for the operator's name, training date, evaluation date and the trainer/evaluator. The roster row has all four, so the missing certificate may only be a paperwork gap. Still, the file has no signed certificate for her.\n            what it needs: When Patel is re-evaluated, issue a signed certificate like Chen's and mark it on file in the roster.\n            the rule: 29 CFR 1910.178(l)(6)\n        · Rivera certificate referenced but not in this file\n            The roster says Jose Rivera's certificate is on file, but only Michael Chen's certificate is in this document (page 2).\n            what it needs: Attach Rivera's signed certificate (evaluation 2025-06-02) to this record, or confirm where it is kept.\n            the rule: 29 CFR 1910.178(l)(6)\n        · Roster not updated in over a year\n            The roster was last updated June 2, 2025. It says no refresher training was needed in 2026 'to date', but that statement is only good as of June 2025. Nothing in the record covers the months since then.\n            what it needs: Review and re-date the roster, record any refresher training or new operators since June 2025, and update it every time training or an evaluation happens.\n            the rule: 29 CFR 1910.178(l)(4)\n      DATES THIS DOCUMENT SETS (3):\n        · Three-year operator evaluation — J. Rivera — 2028-06-02 (recurring)\n        · Three-year operator evaluation — M. Chen — 2027-03-11 (recurring)\n        · Three-year operator evaluation — R. Patel (OVERDUE) — 2026-05-19 (recurring)\n      WHAT THE READING SAID A COMPANY LIKE THIS USUALLY ALSO HOLDS (5) —\n        a suggestion from similar companies, NOT a checked requirement:\n        · Current forklift operator roster showing Patel's re-evaluation (or her removal from operating) — The only roster on file is dated June 2025 and shows an evaluation that lapsed in May 2026.\n        · Lockout/tagout (energy control) program and training records — Chemical manufacturing plants with process equipment usually hold one.\n        · PPE hazard assessment certification and eyewash/shower inspection log — The company handles 50% sodium hydroxide and acids, so these are commonly kept.\n        · Pre-shift inspection log for pallet jack PJ-1 — The company holds logs only for FL-2 (the September 2026 log appears twice in the list); PJ-1 is also in service.\n        · Written Hazard Communication program and employee HazCom training records — A chemical repackager with 42 employees usually keeps these next to its PIT training records.\n      WHAT THIS DOCUMENT SAYS, proposed by the reading, not confirmed by anyone (4):\n        · certified forklift operators: Three trained operators on the roster: Michael Chen (FL-2, PJ-1), Jose Rivera (FL-2, PJ-1) and Rina Patel (FL-2). Patel's three-year evaluation lapsed on 2026-05-19., as of 2025-06-02\n            it says: \"M. Chen (Michael Chen) FL-2, PJ-1 2024-03-04 2024-03-06 2024-03-11 2024-03-11 2027-03-11 S. Ortiz certificate on file\"\n            where: Page 1, roster table\n        · forklift trainer evaluator: Sandra Ortiz, Warehouse Supervisor, who took a certified PIT trainer course (Northwest Safety Training Institute, PIT-T-2022-0417), as of 2025-06-02\n            it says: \"Trainer: Sandra Ortiz, Warehouse Supervisor, certified powered industrial truck trainer\"\n            where: Page 1, below table\n        · powered industrial trucks on site: Toyota 8FGU25 propane counterbalance forklift (FL-2) and Crown WP 3000 electric pallet jack (PJ-1), as of 2025-06-02\n            it says: \"Trucks in service: Toyota 8FGU25 propane counterbalance, unit FL-2; Crown WP 3000 electric pallet jack, unit PJ-1.\"\n            where: Page 1, header paragraph\n        · propane forklift cylinders: FL-2 runs on propane, as of 2025-06-02\n            it says: \"Toyota 8FGU25 propane counterbalance, unit FL-2\"\n            where: Page 1, header paragraph\n\n  --- D8 — Safety Data Sheet – Sodium Hydroxide Solution, 50% (Northwest Alkali Products, Version 4.1)\n      file: 05-sds-supplier.pdf\n      kind: supplier_document · status: not_judged · shown as: on_file\n      the document's own date: 2024-03-18 (revised)\n      the date that matters: 2024-03-18 (revised)\n      site: Portland\n      what the reading said it is: This is the supplier's Safety Data Sheet (SDS) for 50% caustic soda (sodium hydroxide solution). The SDS belongs to Northwest Alkali Products, not to Cascade, so there is nothing in it for you to fix, and it is not judged here. Your job is to keep the current version where workers can get to it at the Portland site, and to make sure your labels, PPE, eyewash/shower, spill response, waste handling and training match what it says: a Category 1A skin corrosive that is also corrosive to metals, with a 1,000 lb reportable quantity (RQ) and handled as RCRA D002 corrosive waste if disposed of without neutralizing.\n      WHAT THE READING FOUND WRONG WITH IT: nothing\n      WHAT THE READING SAID A COMPANY LIKE THIS USUALLY ALSO HOLDS (7) —\n        a suggestion from similar companies, NOT a checked requirement:\n        · Emergency eyewash and safety shower inspection/activation log — The SDS calls for an eyewash and shower within 10 seconds of work areas, and operators usually keep weekly activation records.\n        · Hazardous waste generator records and Oregon DEQ generator status — Unneutralized caustic waste is D002 corrosive hazardous waste.\n        · Industrial stormwater permit (e.g., Oregon DEQ 1200-Z) or a no-exposure certification — Chemical manufacturing sites in Oregon commonly hold one or the other.\n        · Oregon State Fire Marshal hazardous substance / EPCRA Tier II inventory report — Chemical manufacturers storing bulk caustic often meet state and federal inventory reporting thresholds.\n        · PPE hazard assessment certification — Handling caustic calls for goggles, face shield, gloves, apron and boots, and a written assessment usually backs that up.\n        · Spill response / release reporting procedure — The 1,000 lb CERCLA RQ and the SDS's instruction to keep spills out of drains usually lead to a written spill procedure.\n        · Written Hazard Communication program, SDS index and chemical inventory — Any employer with hazardous chemicals such as caustic needs a written HazCom program, an inventory, and SDSs workers can reach, and none of these is in the list.\n      WHAT THIS DOCUMENT SAYS, proposed by the reading, not confirmed by anyone (1):\n        · sodium hydroxide 50 on site: Cascade appears to keep 50% sodium hydroxide solution (caustic soda) from Northwest Alkali Products at the Portland facility. I inferred this from the fact that the company holds this SDS; the SDS itself does not name Cascade., as of 2024-03-18\n            it says: \"Product identifier: Sodium Hydroxide Solution, 50% (w/w)\"\n            where: Page 1, Section 1\n\nFACTS THIS COMPANY HAS CONFIRMED, ACROSS EVERYTHING THEY HOLD\nEach was read in a document and then confirmed by a person. Nothing a reading merely\nproposed is here — an unconfirmed proposal is a question, not a fact.\n  employee count (Portland): 42 employees at Portland facility, as of 2021-02-01\n\nEVERYTHING ELSE THIS COMPANY HOLDS — 4, TITLES AND DATES ONLY\nListed so you can say what is NOT among them. You have not been shown their contents and\nmust not describe what is in them.\n  - D9 — Air Permit Annual Report for 2025 (Standard ACDP 26-2841-ST-01) with Oregon DEQ Receipt Confirmation, Portland Facility · record · recorded · 2026-02-12\n  - D10 — Oregon DEQ Air Contaminant Discharge Permit Compliance Inspection Checklist (Inspector's Field Form), blank · other · not_judged\n  - D11 — Scrubber Pressure-Drop Log (S-1 acid line, S-2 caustic line) and Weekly C-1 Carbon Outlet Detector-Tube Check, August–September 2026, Portland Facility · record · gaps_found · 2026-09-25\n  - D12 — Standard Air Contaminant Discharge Permit No. 26-2841-ST-01, Portland Facility · permit · expiring · 2026-11-15\n\nTHE AGENCY AND SUBJECT WORDS THIS COMPANY ALREADY USES\n  agencies: Oregon DEQ · Oregon OSHA\n  subjects: Air Quality · Emergency Preparedness · Fire Safety · Hazard Communication · Injury and Illness Recordkeeping · Powered Industrial Trucks",
+  "input_sha256": "4a975daa9d36748fa456ff9bda76751793da44457df031e1a51ece0d12c3108c",
+  "input": {
+    "today": "2026-09-29",
+    "agency": "Oregon OSHA",
+    "company": {
+      "name": "Cascade Specialty Chemicals, LLC",
+      "industrySlug": "chemical-manufacturing",
+      "industryWords": "chemical manufacturing",
+      "address": "Portland, Oregon",
+      "state": "Oregon",
+      "sites": [
+        {
+          "id": "ff15bc1b-7f82-4c31-9ba6-20b1e8a40fb8",
+          "name": "Portland",
+          "address": "4410 NW Front Ave, Portland, Oregon 97210",
+          "state": "Oregon",
+          "county": null,
+          "city": "Portland",
+          "primary": true
+        }
+      ]
+    },
+    "confirmed": [
+      {
+        "key": "employee_count",
+        "value": "42 employees at Portland facility",
+        "basis": "read",
+        "entityId": "ff15bc1b-7f82-4c31-9ba6-20b1e8a40fb8",
+        "siteName": "Portland",
+        "asOf": "2021-02-01",
+        "sourceDocumentTitle": null,
+        "sourceDocumentId": null,
+        "sourceProposalId": null
+      }
+    ],
+    "labels": {
+      "agencies": [
+        "Oregon DEQ",
+        "Oregon OSHA"
+      ],
+      "subjects": [
+        "Air Quality",
+        "Emergency Preparedness",
+        "Fire Safety",
+        "Hazard Communication",
+        "Injury and Illness Recordkeeping",
+        "Powered Industrial Trucks"
+      ]
+    },
+    "keys": [
+      "acid_caustic_repackaging_lines",
+      "air_permit_deviations_2025",
+      "air_permit_type_and_number",
+      "annual_average_employees_2025",
+      "boiler_on_site",
+      "carbon_adsorption_unit_c1",
+      "certified_forklift_operators",
+      "emergency_eyewash_shower_location",
+      "employee_count",
+      "employees_evacuate_during_fire",
+      "employs_drivers",
+      "fire_alarm_monitoring_vendor",
+      "fire_extinguisher_service_vendor",
+      "forklift_operating_shifts",
+      "forklift_trainer_evaluator",
+      "naics_code",
+      "onsite_laboratory",
+      "portable_fire_extinguisher_count",
+      "powered_industrial_trucks_on_site",
+      "propane_forklift_cylinders",
+      "recordable_cases_2025",
+      "scrubber_pressure_drop_range",
+      "sodium_hydroxide_50_on_site",
+      "solvent_bulk_storage",
+      "source_category",
+      "tank_farm",
+      "total_hours_worked_2025"
+    ],
+    "documents": [
+      {
+        "handle": "D1",
+        "document_id": "699b8886-0cf6-4fd1-94eb-44f2d192801c",
+        "title": "Certificate of Annual Maintenance — Portable Fire Extinguishers (14 units), Service Date August 20, 2025, Portland Facility",
+        "file_name": "11-fire-extinguisher-certificate.pdf",
+        "kind": "certificate",
+        "status": "expired",
+        "display_status": "current",
+        "doc_date": "2025-08-20",
+        "doc_date_kind": "issued",
+        "significant_date": "2025-08-20",
+        "significant_date_kind": "issued",
+        "site": "Portland",
+        "summary": "This is a vendor's certificate showing that all 14 portable fire extinguishers at the Portland facility got their annual maintenance on August 20, 2025, and all 14 passed. It proves the 2025 service happened. It does not cover 2026: the certificate itself says the next annual maintenance was due August 20, 2026, and that date passed about 40 days ago. Two units (W-3 and L-1) also need six-year work before November 2026, and the CO2 unit L-1 appears to be overdue for its hydrostatic test.",
+        "open_gaps": [],
+        "conditions": [
+          {
+            "condition_ref": "Page 1: 'NEXT ANNUAL MAINTENANCE DUE: AUGUST 20, 2026.'",
+            "title": "Annual maintenance of every portable extinguisher (Oregon OSHA adopts 29 CFR 1910.157(e)(3); NFPA 10 Chapter 7)",
+            "evidence_expected": "A 2026 vendor maintenance certificate covering all 14 units, plus a current-year service tag on each unit. Keep records for one year after the last entry or for the life of the shell, whichever is shorter."
+          },
+          {
+            "condition_ref": "Page 1: 'Monthly visual inspections remain the customer's responsibility under NFPA 10, Section 7.2'",
+            "title": "Monthly visual inspection of each extinguisher, recorded on the unit tag (29 CFR 1910.157(e)(2); NFPA 10 Section 7.2)",
+            "evidence_expected": "Initialed and dated monthly entries on each unit's tag, or a monthly inspection log, for every month since August 2025."
+          },
+          {
+            "condition_ref": "Page 1: 'Units W-3 and L-1 reach their six-year internal maintenance interval in 2026; schedule before November 2026.'",
+            "title": "Six-year internal maintenance of stored-pressure dry chemical units (29 CFR 1910.157(e)(4)); W-3 is due by November 2026",
+            "evidence_expected": "A vendor work order or certificate showing W-3 had its six-year internal maintenance, plus a new verification-of-service collar or label on the unit."
+          },
+          {
+            "condition_ref": "Page 1, table: L-1 'Last hydrostatic test' 2020",
+            "title": "Hydrostatic testing on schedule, including the five-year interval for CO2 units (29 CFR 1910.157(f), Table L-1; NFPA 10 Chapter 8)",
+            "evidence_expected": "A hydrostatic test record and cylinder stamp or label for L-1 dated within the last five years; the next one for L-2 by 2027."
+          }
+        ],
+        "deadlines": [
+          {
+            "title": "Annual maintenance of all 14 portable fire extinguishers (overdue as of 2026-09-29 unless already done)",
+            "due_on": "2026-08-20",
+            "recurs": true
+          },
+          {
+            "title": "Hydrostatic test for CO2 unit L-1 (last test 2020; the five-year CO2 interval is inferred from 29 CFR 1910.157 Table L-1 and is not stated in the document)",
+            "due_on": "2025-12-31",
+            "recurs": true
+          },
+          {
+            "title": "Monthly visual inspection of each extinguisher, recorded on the unit tag",
+            "due_on": null,
+            "recurs": true
+          },
+          {
+            "title": "Six-year internal maintenance for units W-3 and L-1",
+            "due_on": "2026-10-31",
+            "recurs": true
+          },
+          {
+            "title": "Six-year maintenance for W-1, W-2, W-4, B-1, A-1 and A-2 (year only; no month given)",
+            "due_on": "2027-12-31",
+            "recurs": true
+          }
+        ],
+        "expected_missing": [
+          {
+            "title": "2026 annual maintenance certificate for portable fire extinguishers",
+            "why": "This 2025 certificate stopped covering the site on 2026-08-20.",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Chemical hygiene plan for the laboratory",
+            "why": "The certificate shows an on-site lab with a fume hood.",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Fire alarm and sprinkler inspection and testing reports",
+            "why": "Chemical facilities with a monitored fire alarm usually keep yearly NFPA 72 and NFPA 25 reports.",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Fire extinguisher training records for employees",
+            "why": "29 CFR 1910.157(g) requires annual training if employees are expected to use extinguishers. Not needed if the Emergency Action Plan has everyone evacuate and extinguishers are not for employee use.",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Hydrostatic test certificate for CO2 unit L-1",
+            "why": "The last hydrostatic test shown for L-1 was in 2020.",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Monthly extinguisher inspection records (tags or log)",
+            "why": "The certificate puts monthly inspections on the customer, and nothing in the held list shows them being done.",
+            "basis": "similar companies, not a checked requirement"
+          }
+        ],
+        "confirmed_facts": [],
+        "proposed_facts": [
+          {
+            "key": "acid_caustic_repackaging_lines",
+            "value": "Separate acid and caustic repackaging lines, each with its own 20 lb ABC extinguisher",
+            "quote": "Caustic repackaging line",
+            "locator": "Page 1, table rows A-1 and A-2",
+            "as_of": "2025-08-20"
+          },
+          {
+            "key": "boiler_on_site",
+            "value": "There is a boiler room at the facility",
+            "quote": "Boiler room",
+            "locator": "Page 1, table row B-1",
+            "as_of": "2025-08-20"
+          },
+          {
+            "key": "fire_extinguisher_service_vendor",
+            "value": "Rose City Fire Protection, Inc., Oregon SFM Licence FPE-1187",
+            "quote": "ROSE CITY FIRE PROTECTION, INC.",
+            "locator": "Page 1, header",
+            "as_of": "2025-08-20"
+          },
+          {
+            "key": "onsite_laboratory",
+            "value": "Yes, there is a laboratory with a fume hood, protected by CO2 extinguishers L-1 and L-2",
+            "quote": "Laboratory, fume hood wall",
+            "locator": "Page 1, table row L-2",
+            "as_of": "2025-08-20"
+          },
+          {
+            "key": "portable_fire_extinguisher_count",
+            "value": "14 portable fire extinguishers at the Portland facility: 11 ABC dry chemical, 2 CO2, 1 Class K",
+            "quote": "Units serviced: 14. Units failed or removed from service: 0.",
+            "locator": "Page 1, below the unit table",
+            "as_of": "2025-08-20"
+          },
+          {
+            "key": "solvent_bulk_storage",
+            "value": "A solvent storage cage in warehouse bay 4",
+            "quote": "Warehouse bay 4, solvent cage",
+            "locator": "Page 1, table row W-4",
+            "as_of": "2025-08-20"
+          },
+          {
+            "key": "tank_farm",
+            "value": "A tank farm with at least tanks T-3 through T-6",
+            "quote": "Tank farm, T-3 to T-6",
+            "locator": "Page 1, table row T-1",
+            "as_of": "2025-08-20"
+          }
+        ]
+      },
+      {
+        "handle": "D2",
+        "document_id": "31a8ed49-8c3f-4018-8384-a8f805d7ac01",
+        "title": "Emergency Action Plan – Portland Facility",
+        "file_name": "01-eap-chemical.pdf",
+        "kind": "program",
+        "status": "gaps_found",
+        "display_status": "needs_work",
+        "doc_date": "2021-02-01",
+        "doc_date_kind": "revised",
+        "significant_date": "2021-02-01",
+        "significant_date_kind": "revised",
+        "site": "Portland",
+        "summary": "This is your written plan for what employees do in a fire, chemical release, medical emergency or earthquake at the Portland facility. It is your own document, so you can fix it. In Oregon it is checked against Oregon OSHA's emergency action plan rule, OAR 437-002-0042. It covers evacuation, headcounts, first aid, alarm signals, designated wardens and reviews with employees. It leaves out three things the rule requires: how to report an emergency, how to shut down critical equipment before leaving, and who employees contact about the plan. It was last revised in February 2021 and shows no review since.",
+        "open_gaps": [
+          {
+            "title": "No procedure for reporting a fire or other emergency",
+            "description": "The plan says pull stations are at each exit and that an outside company monitors the alarm. It never says who calls 911, how to report a chemical release or medical emergency that won't set off the fire alarm, or which phone numbers to use.",
+            "fix": "Add a short 'Reporting an emergency' section. It should say: pull the nearest station for a fire; call 911 from a safe place for any fire, release or serious injury; tell the incident coordinator or a supervisor; and give the site address to give the dispatcher. List the internal phone numbers.",
+            "citation": "OAR 437-002-0042(2)(c)",
+            "basis": "read"
+          },
+          {
+            "title": "No procedure for shutting down critical equipment before evacuating",
+            "description": "The rule requires procedures for emergency operation or shutdown of critical equipment before evacuation. The plan tells everyone to leave at once. The only shutdown it mentions is the ventilation shutoff during shelter-in-place. For a chemical manufacturer with a laboratory, there is nothing on reactors, heating, transfer pumps, gas cylinders or other process equipment, and nothing saying who, if anyone, stays behind to do it.",
+            "fix": "Decide which equipment must be made safe before people leave. Name the job title responsible, write the steps and a cut-off point after which that person leaves too. If nothing needs a shutdown, say so in writing.",
+            "citation": "OAR 437-002-0042(2)(d)",
+            "basis": "read"
+          },
+          {
+            "title": "No named contact for questions about the plan; incident coordinator not identified",
+            "description": "The rule requires the names or job titles of the people employees can contact for more information about their duties under the plan. No one is named for this. The plan also relies on an 'incident coordinator' but never says who holds that role or who stands in when that person is absent.",
+            "fix": "Add a contacts section. Give the job title, and ideally the name and phone number, of the plan contact (for example the facilities lead), the incident coordinator and a backup.",
+            "citation": "OAR 437-002-0042(2)(f)",
+            "basis": "read"
+          },
+          {
+            "title": "Earthquake listed in scope but no earthquake procedure",
+            "description": "Section 1 lists earthquakes as a covered emergency. The plan only gives procedures for alarm-triggered evacuation and shelter-in-place. It doesn't say what to do during and right after shaking (drop, cover and hold on, then evacuate once shaking stops and check for chemical spills). The rule asks for the 'type of evacuation' for each emergency. Whether that means a separate earthquake procedure is required is my reading, not a checked requirement.",
+            "fix": "Add a short earthquake procedure. Cover what to do during shaking, when to evacuate, which routes to avoid (the freight lift, racking, the lab), and a post-quake check for chemical spills and gas leaks.",
+            "citation": "OAR 437-002-0042(2)(a) (my reading)",
+            "basis": "inferred"
+          },
+          {
+            "title": "No statement on how far employees respond to chemical spills",
+            "description": "The plan covers chemical releases by evacuating or sheltering in place. It doesn't say whether employees clean up small spills themselves (incidental releases) or never respond. If employees do respond beyond small incidental spills, the federal hazardous waste and emergency response rule (HAZWOPER, 29 CFR 1910.120(q)) would require a separate emergency response plan and training. I'm not sure how Oregon has adopted this; I believe it is by reference.",
+            "fix": "Add a sentence saying employees do not respond to chemical releases beyond small incidental spills they are trained to clean up, and that larger releases are handled by the fire department. If that isn't true, a separate HAZWOPER emergency response plan is needed.",
+            "citation": "29 CFR 1910.120(q) (not confirmed for how Oregon applies it)",
+            "basis": "inferred"
+          },
+          {
+            "title": "Appendices A and B are not in the file",
+            "description": "The plan points to evacuation maps (Appendix A) and to the floor warden and first-aid responder roster (Appendix B) for exit route assignments and designated evacuation helpers. Neither is attached. So there is no way to check that exit routes are assigned or that designated employees exist, which the rule requires.",
+            "fix": "Attach the current evacuation maps and the current warden and first-aid roster to the plan, with dates. Check that the roster names people who still work there.",
+            "citation": "OAR 437-002-0042(2)(a) and (4)",
+            "basis": "read"
+          },
+          {
+            "title": "The plan's own January review has not been recorded since 2021",
+            "description": "The plan commits to a review every January, but the revision date is still February 2021 and there is no review log or sign-off. This is the plan's own commitment, not a specific Oregon rule.",
+            "fix": "Add a review log at the end (date, reviewer, changes made). Carry out and record a review now.",
+            "citation": "none (the plan's own commitment)",
+            "basis": "inferred"
+          }
+        ],
+        "conditions": [],
+        "deadlines": [
+          {
+            "title": "Annual January review of the plan by the facilities lead",
+            "due_on": "2027-01-31",
+            "recurs": true
+          },
+          {
+            "title": "Annual training for floor wardens and first-aid responders",
+            "due_on": null,
+            "recurs": true
+          },
+          {
+            "title": "Autumn evacuation drill (twice a year, spring and autumn)",
+            "due_on": null,
+            "recurs": true
+          },
+          {
+            "title": "Monthly fire alarm test by the facilities lead",
+            "due_on": "2026-10-05",
+            "recurs": true
+          }
+        ],
+        "expected_missing": [
+          {
+            "title": "Chemical Hygiene Plan for the laboratory",
+            "why": "The plan shows laboratory staff are on site.",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Fire Prevention Plan (OAR 437-002-0043)",
+            "why": "Workplaces where everyone evacuates in a fire usually need one alongside the emergency action plan.",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Hazard Communication program, SDS library and chemical inventory",
+            "why": "A chemical manufacturer's employees handle hazardous chemicals every day.",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Hazardous substance inventory reporting (EPCRA Tier II / Oregon State Fire Marshal Hazardous Substance Information Survey)",
+            "why": "Commonly required for facilities that store chemicals above reporting thresholds.",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Hazardous waste generator documents and contingency plan; spill plan (SPCC) or Oregon integrated contingency plan",
+            "why": "Chemical manufacturers commonly generate hazardous waste and store oil or chemicals in bulk.",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Oregon safety committee records (OAR 437-001-0765)",
+            "why": "Oregon employers with more than 10 employees usually keep safety committee minutes.",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "OSHA 300/300A injury logs",
+            "why": "Commonly kept by manufacturers with more than 10 employees.",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Records of evacuation drills, alarm tests and warden/first-aid training",
+            "why": "The plan promises drills twice a year, monthly alarm tests and annual training; the records are what show these happened.",
+            "basis": "similar companies, not a checked requirement"
+          }
+        ],
+        "confirmed_facts": [],
+        "proposed_facts": [
+          {
+            "key": "emergency_eyewash_shower_location",
+            "value": "Emergency shower and eyewash at the loading dock; AED and first-aid kit in the front office",
+            "quote": "taken to the emergency shower and eyewash at the loading dock if it can be reached safely",
+            "locator": "Section 5, page 4",
+            "as_of": "2021-02-01"
+          },
+          {
+            "key": "employees_evacuate_during_fire",
+            "value": "All employees evacuate when the fire alarm sounds; the plan gives no role for employees in fighting fires",
+            "quote": "When the continuous alarm sounds, all employees stop work, secure nothing that requires more than a few seconds, and leave by the nearest marked exit.",
+            "locator": "Section 3, page 3",
+            "as_of": "2021-02-01"
+          },
+          {
+            "key": "employs_drivers",
+            "value": "The Portland workforce includes drivers",
+            "quote": "including warehouse, drivers, laboratory and office staff",
+            "locator": "Section 1, page 2",
+            "as_of": "2021-02-01"
+          },
+          {
+            "key": "fire_alarm_monitoring_vendor",
+            "value": "Fire alarm monitored 24 hours a day by Cascade Fire & Safety under a service contract",
+            "quote": "The alarm is monitored 24 hours a day by Cascade Fire & Safety under a service contract.",
+            "locator": "Section 2, page 2",
+            "as_of": "2021-02-01"
+          },
+          {
+            "key": "onsite_laboratory",
+            "value": "The Portland facility has a laboratory with laboratory staff",
+            "quote": "Laboratory staff leave by the laboratory's own exterior door on the south wall.",
+            "locator": "Section 3, page 3",
+            "as_of": "2021-02-01"
+          }
+        ]
+      },
+      {
+        "handle": "D3",
+        "document_id": "0a7b3dbe-c59a-481f-b789-4c61611e770e",
+        "title": "Forklift Pre-Shift Inspection Log, Unit FL-2 (Toyota 8FGU25, propane), September 2026, Portland Warehouse",
+        "file_name": "06b-forklift-log-photo.pdf",
+        "kind": "record",
+        "status": "gaps_found",
+        "display_status": "needs_work",
+        "doc_date": "2026-09-17",
+        "doc_date_kind": "last_entry",
+        "significant_date": "2026-09-17",
+        "significant_date_kind": "last_entry",
+        "site": "Portland",
+        "summary": "This is your own daily pre-shift inspection log for forklift FL-2, a propane Toyota 8FGU25 at the Portland warehouse, for September 2026. It is a record, so it is checked for completeness and how recent it is, not against a written standard. The last row that can be read is September 17. The log has missing weekdays, and a horn defect was found on Sep 9 with nothing written down about pulling the truck from service or fixing it.",
+        "open_gaps": [
+          {
+            "title": "Missing weekday inspections, Sep 3–4",
+            "description": "There are no entries for Thursday Sep 3 or Friday Sep 4. The hour meter goes from 4,819 (start of shift Sep 2) to 4,834 (Sep 7). That is about 15 hours, but the Sep 2 shift explains only about 7 of them. This suggests the truck ran about one more shift with no pre-shift inspection written down.",
+            "fix": "Ask the operators and supervisor whether FL-2 was used on Sep 3 or 4. If it was, write a dated note on the log explaining the missing inspection, and remind operators that every shift of use needs an entry first.",
+            "citation": "29 CFR 1910.178(q)(7) (examined before being placed in service, at least daily), which Oregon OSHA enforces through its Division 2 general industry rules. I have not confirmed the exact Oregon rule number.",
+            "basis": "inferred"
+          },
+          {
+            "title": "Horn defect with no out-of-service or repair record",
+            "description": "On Sep 9 the horn is marked X with the note 'Horn not working'. The log does not say the truck was tagged out, who was told, or when and how it was repaired. By the next morning (Sep 10) the hour meter is up 6 hours, so the truck may have run the rest of the Sep 9 shift with a broken horn. The Sep 10 row marks the horn OK with no repair shown.",
+            "fix": "Find or write the repair record (work order or mechanic's note with date and who did it) and attach it to this log. Add 'out of service / repaired by / date' columns or a notes rule so any X entry shows how it was closed.",
+            "citation": "29 CFR 1910.178(p)(1) (trucks needing repair taken out of service until restored) and 1910.178(q)(7)",
+            "basis": "read"
+          },
+          {
+            "title": "No entries visible after Sep 17",
+            "description": "The readable log stops at Thursday Sep 17. Sep 18, Sep 21–25 and Sep 28–29 are not shown. The photo is cut off at the bottom, so these rows may exist and simply not be in the image.",
+            "fix": "Upload the full page or a flat scan showing the rest of September. If there are no entries after Sep 17, find out whether FL-2 was in use.",
+            "citation": "29 CFR 1910.178(q)(7)",
+            "basis": "inferred"
+          },
+          {
+            "title": "Operators identified by initials only, no supervisor review",
+            "description": "Operators appear only as 'M.C.' and 'J.R.'. The log has no key to full names and no supervisor sign-off, so it cannot be matched against forklift operator certification records.",
+            "fix": "Add a signature key (initials to full name) and a monthly supervisor review line. Check that both operators hold current operator evaluations.",
+            "citation": "29 CFR 1910.178(l) (operator training and certification). The log itself is not required to carry this.",
+            "basis": "read"
+          }
+        ],
+        "conditions": [],
+        "deadlines": [
+          {
+            "title": "Pre-shift inspection of FL-2 before each shift of use (at least daily)",
+            "due_on": null,
+            "recurs": true
+          },
+          {
+            "title": "Start October 2026 log for FL-2",
+            "due_on": "2026-10-01",
+            "recurs": true
+          }
+        ],
+        "expected_missing": [
+          {
+            "title": "Forklift maintenance and repair records / work orders for FL-2",
+            "why": "These would close out defects like the Sep 9 horn fault",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Forklift operator training and certification records (M.C., J.R. and others)",
+            "why": "Operator evaluations are required at least every three years and are the first thing asked for alongside inspection logs",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Inspection logs for any other powered industrial trucks on site",
+            "why": "Only FL-2 is on file. A unit number of 2 suggests there is at least one more truck",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Written Hazard Communication Program",
+            "why": "A chemical repackager holding SDSs would normally also have a written HazCom program",
+            "basis": "similar companies, not a checked requirement"
+          }
+        ],
+        "confirmed_facts": [],
+        "proposed_facts": [
+          {
+            "key": "certified_forklift_operators",
+            "value": "At least two operators use FL-2, recorded as M.C. and J.R. The log does not show whether they are certified",
+            "quote": "J.R.",
+            "locator": "Page 1, Operator column",
+            "as_of": "2026-09-17"
+          },
+          {
+            "key": "forklift_operating_shifts",
+            "value": "Only day shift use of FL-2 is recorded",
+            "quote": "Day",
+            "locator": "Page 1, Shift column",
+            "as_of": "2026-09-17"
+          },
+          {
+            "key": "powered_industrial_trucks_on_site",
+            "value": "Toyota 8FGU25 forklift, unit FL-2, propane, Portland warehouse",
+            "quote": "Truck: Toyota 8FGU25, unit FL-2, propane",
+            "locator": "Page 1, header",
+            "as_of": "2026-09-17"
+          },
+          {
+            "key": "propane_forklift_cylinders",
+            "value": "Yes. FL-2 runs on swappable LPG cylinders, and a cylinder change is logged Sep 15",
+            "quote": "Tank changed",
+            "locator": "Page 1, Sep 15 row, Notes",
+            "as_of": "2026-09-15"
+          }
+        ]
+      },
+      {
+        "handle": "D4",
+        "document_id": "5654e2d8-9dfc-4c68-99c6-4570c4fbeb70",
+        "title": "Forklift Pre-Shift Inspection Log, Unit FL-2 (Toyota 8FGU25, propane), September 2026, Portland Warehouse",
+        "file_name": "06a-forklift-log.pdf",
+        "kind": "record",
+        "status": "gaps_found",
+        "display_status": "needs_work",
+        "doc_date": "2026-09-18",
+        "doc_date_kind": "last_entry",
+        "significant_date": "2026-09-18",
+        "significant_date_kind": "last_entry",
+        "site": "Portland",
+        "summary": "This is your own log of the daily pre-use checks on one propane forklift (unit FL-2) at the Portland warehouse for September 2026. Oregon OSHA adopts the federal rule 29 CFR 1910.178 by reference. Under 1910.178(q)(7) the truck must be checked at least once a day before use, and taken out of service if a defect affects safety. A log like this is the easiest way to show that happened. The log has missing days, an open defect with no repair record, no entries after September 18, and no supervisor sign-off.",
+        "open_gaps": [
+          {
+            "title": "Truck used on days with no recorded check (Sep 3–4)",
+            "description": "There are no entries for Thursday Sep 3 or Friday Sep 4. The hour meter went up 15 hours between the Sep 2 and Sep 7 entries, while a normal day adds about 6–7. So the truck appears to have run on one or both of those days without the required daily check.",
+            "fix": "Find out who drove FL-2 on Sep 3–4 and why no check was logged. Remind operators that the check comes before any use. Don't back-fill the log. Add a dated note explaining the gap.",
+            "citation": "29 CFR 1910.178(q)(7), adopted in Oregon by OAR 437-002-0220",
+            "basis": "read"
+          },
+          {
+            "title": "Horn defect with no out-of-service or repair record",
+            "description": "On Sep 9 the horn was marked as a defect. Nothing shows the truck was tagged out of service, who repaired it, or when. The horn is ticked OK the next day. The hour meter went up 6 hours between the Sep 9 and Sep 10 checks, which suggests the truck kept running on Sep 9 with the horn broken.",
+            "fix": "Find the work order or repair note for the horn and file it with this log. If the truck ran with the horn out, record what happened and remind operators to tag out a truck with a safety defect until it is fixed. Add a column or line for 'defect reported to / repaired by / date returned to service'.",
+            "citation": "29 CFR 1910.178(q)(7) and 1910.178(q)(1)",
+            "basis": "inferred"
+          },
+          {
+            "title": "No entries after September 18",
+            "description": "The log stops on Friday Sep 18. There are no checks for Sep 21–25 or Sep 28. The sheet doesn't say whether the truck was out of service.",
+            "fix": "Find the rest of the September sheet, or confirm the truck was parked and note that on the log. If it ran, treat those days as missed checks.",
+            "citation": "29 CFR 1910.178(q)(7)",
+            "basis": "inferred"
+          },
+          {
+            "title": "Supervisor review not signed",
+            "description": "The supervisor review line and its date are blank. Nobody has signed off that the missed days and the horn defect were seen and dealt with.",
+            "fix": "Have the warehouse supervisor review the log, note what was done about the missing days and the horn, then sign and date it.",
+            "citation": "null (this is an internal control on your own form, not a rule requirement)",
+            "basis": "read"
+          }
+        ],
+        "conditions": [],
+        "deadlines": [
+          {
+            "title": "Check the forklift before each shift it is used",
+            "due_on": null,
+            "recurs": true
+          },
+          {
+            "title": "Three-year performance re-evaluation of forklift operator J. Rivera",
+            "due_on": "2028-06-02",
+            "recurs": true
+          },
+          {
+            "title": "Three-year performance re-evaluation of forklift operator M. Chen",
+            "due_on": "2027-03-11",
+            "recurs": true
+          }
+        ],
+        "expected_missing": [
+          {
+            "title": "Forklift maintenance and repair records (e.g. the horn repair after Sep 9)",
+            "why": "This would close the Sep 9 defect and show the truck was fixed before going back into use.",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Forklift operator training and evaluation certifications for M. Chen and J. Rivera",
+            "why": "The log lists certification dates, but the records themselves (who trained and evaluated, and when) are what 1910.178(l)(6) asks for.",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Inspection logs for other trucks (e.g. FL-1) and for earlier months",
+            "why": "The unit number suggests a fleet, and one month of one truck is a thin record.",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Written Hazard Communication program",
+            "why": "A chemical manufacturer handling products like 50% caustic soda usually keeps one alongside its safety data sheets. None is in the list of documents you hold.",
+            "basis": "similar companies, not a checked requirement"
+          }
+        ],
+        "confirmed_facts": [],
+        "proposed_facts": [
+          {
+            "key": "certified_forklift_operators",
+            "value": "Two certified operators: M. Chen (certified 2024-03-11) and J. Rivera (certified 2025-06-02)",
+            "quote": "Operators: M.C. = M. Chen (certified 2024-03-11, evaluation due 2027-03-11) · J.R. = J. Rivera (certified 2025-06-02, evaluation due 2028-06-02)",
+            "locator": "Page 2, below table",
+            "as_of": "2026-09-18"
+          },
+          {
+            "key": "powered_industrial_trucks_on_site",
+            "value": "At least one propane forklift, Toyota 8FGU25, unit FL-2, at the Portland warehouse. The 'FL-2' number suggests there is at least one more truck.",
+            "quote": "Truck: Toyota 8FGU25, unit FL-2, propane",
+            "locator": "Page 1, header",
+            "as_of": "2026-09-18"
+          },
+          {
+            "key": "propane_forklift_cylinders",
+            "value": "The forklift runs on propane, and its cylinders are changed on site",
+            "quote": "Tank changed",
+            "locator": "Page 1, row Sep 15",
+            "as_of": "2026-09-15"
+          }
+        ]
+      },
+      {
+        "handle": "D5",
+        "document_id": "62b1ece4-3892-466d-83b1-9e1e4270f533",
+        "title": "Monthly EHS Self-Check Form (blank internal template), Portland Facility",
+        "file_name": "13-company-self-check.docx",
+        "kind": "other",
+        "status": "not_judged",
+        "display_status": "on_file",
+        "doc_date": null,
+        "doc_date_kind": "unknown",
+        "significant_date": null,
+        "significant_date_kind": null,
+        "site": "Portland",
+        "summary": "This is the company's own blank monthly checklist. It has eight lines covering the air permit, the scrubber and carbon-unit logs, forklift inspections, fire extinguishers, exits, eyewash stations and showers, and safety data sheets. It is a template, not a filled-in record, so it proves nothing yet. It becomes evidence only when someone completes it each month with Y/N, initials and a supervisor sign-off.",
+        "open_gaps": [],
+        "conditions": [],
+        "deadlines": [
+          {
+            "title": "Report any items marked N to the Plant Manager",
+            "due_on": null,
+            "recurs": true
+          }
+        ],
+        "expected_missing": [
+          {
+            "title": "Completed monthly self-checks for recent months",
+            "why": "The blank form shows the process exists. Completed, signed copies are what show it was actually done.",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Exit route and exit sign inspection records",
+            "why": "Line 6 checks exits and exit signs. Sites like this often keep a separate record of emergency lighting and exit sign tests.",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Hazardous waste generator records and Oregon Community Right-to-Know / Tier II hazardous substance reporting",
+            "why": "Chemical repackagers with bulk storage and tank farms usually hold these.",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "OSHA Form 300 Log and Form 301 incident reports for 2025",
+            "why": "The company holds the 300A summary but not the log or incident reports behind it.",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Weekly eyewash and safety shower activation log",
+            "why": "Line 7 refers to a log for eyewash and shower flushing, and it is not in what the company holds.",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Written Hazard Communication program, plus a chemical inventory / SDS binder index",
+            "why": "Line 8 refers to an SDS binder index. No written HazCom program appears in what the company holds, and chemical makers and repackagers usually keep one.",
+            "basis": "similar companies, not a checked requirement"
+          }
+        ],
+        "confirmed_facts": [],
+        "proposed_facts": [
+          {
+            "key": "emergency_eyewash_shower_location",
+            "value": "There is more than one eyewash station and safety shower at the site. The form does not say where they are.",
+            "quote": "Eyewash stations and safety showers flushed this week and logged",
+            "locator": "Line 7",
+            "as_of": null
+          },
+          {
+            "key": "scrubber_pressure_drop_range",
+            "value": "The form's acceptable range for scrubber pressure drop is 2.0 to 6.0. No units are given.",
+            "quote": "readings between 2.0 and 6.0",
+            "locator": "Line 2",
+            "as_of": null
+          }
+        ]
+      },
+      {
+        "handle": "D6",
+        "document_id": "b733e633-02e2-43c8-ae3d-1087e17a4a7d",
+        "title": "OSHA Form 300A Summary of Work-Related Injuries and Illnesses, Calendar Year 2025, Portland Facility",
+        "file_name": "10-osha-300a-2025.pdf",
+        "kind": "record",
+        "status": "recorded",
+        "display_status": "recorded",
+        "doc_date": "2026-02-01",
+        "doc_date_kind": "issued",
+        "significant_date": "2026-02-01",
+        "significant_date_kind": "last_entry",
+        "site": "Portland",
+        "summary": "This is the company's own yearly summary of work-related injuries and illnesses at the Portland facility for 2025, filled in on the federal OSHA 300A form and signed by the Plant Manager on February 1, 2026 (page 1). It shows 3 recordable injuries: 1 with 6 days away from work and 2 other recordable cases. There were no deaths and no job-transfer or restriction cases. It is a record, so it was checked for completeness and for whether it fits with what the company has already confirmed. It was not checked against a program standard.",
+        "open_gaps": [
+          {
+            "title": "Annual average employee count does not match the confirmed headcount",
+            "description": "The form reports an annual average of 65 employees and 128,400 hours worked in 2025. The company has confirmed 42 employees at Portland. 128,400 hours works out to about 1,975 hours per person for 65 people, which is plausible. For 42 people it would be about 3,057 hours each, which is not. So either headcount dropped after 2025, the figure counts temporary or leased workers, or one of the numbers is wrong. The 2025 average also affects whether the 20-employee threshold for electronic filing applies to the site.",
+            "fix": "Check the 2025 payroll and any temp or staffing-agency records to confirm the average and the hours. If the 300A is wrong, correct it and resubmit through OSHA's Injury Tracking Application. If it is right, note that 42 is today's headcount and not the 2025 average.",
+            "citation": "OAR 437-001-0700 (300A must show annual average employees and total hours worked covered by the OSHA 300 Log)",
+            "basis": "inferred"
+          },
+          {
+            "title": "No proof of electronic filing for 2025",
+            "description": "The company is in Oregon, averaged 20 or more employees in 2025, and reports NAICS 424690. That very likely means this summary had to be filed electronically through OSHA's Injury Tracking Application by March 2, 2026. The files the company holds include no filing receipt. I believe NAICS 4246 is on the designated-industry list (Table 7), but I did not check the table itself.",
+            "fix": "Log into OSHA's Injury Tracking Application (osha.gov/injuryreporting) and confirm the 2025 300A was filed. Keep the confirmation. If it was not filed, file it now.",
+            "citation": "OAR 437-001-0700(24)(b) and Table 7 (mirrors 29 CFR 1904.41); due March 2 of the following year",
+            "basis": "inferred"
+          },
+          {
+            "title": "Industry code may not match the company's profile",
+            "description": "The form lists NAICS 424690, a chemical wholesaler code. The company's profile says chemical manufacturing. The NAICS code decides which designated-industry list the site falls under for electronic filing.",
+            "fix": "Confirm the right NAICS code for the Portland establishment, for example against the Oregon unemployment insurance registration, and use it the same way on the 300A and in the Injury Tracking Application.",
+            "citation": "OAR 437-001-0700(24) Tables 7 and 8 (designated industries by NAICS)",
+            "basis": "inferred"
+          }
+        ],
+        "conditions": [],
+        "deadlines": [
+          {
+            "title": "Complete, certify and post the 2026 300A",
+            "due_on": "2027-02-01",
+            "recurs": true
+          },
+          {
+            "title": "File the 2025 300A electronically with OSHA's Injury Tracking Application (deadline passed; confirm it was filed)",
+            "due_on": "2026-03-02",
+            "recurs": true
+          },
+          {
+            "title": "File the 2026 300A electronically",
+            "due_on": "2027-03-02",
+            "recurs": true
+          },
+          {
+            "title": "Keep the 2025 300A, 300 Log and 801 forms until at least this date",
+            "due_on": "2030-12-31",
+            "recurs": false
+          },
+          {
+            "title": "Post the 2025 summary in the workplace (period has ended)",
+            "due_on": "2026-04-30",
+            "recurs": true
+          }
+        ],
+        "expected_missing": [
+          {
+            "title": "DCBS Form 801 (or equivalent) for each of the 3 recorded 2025 cases",
+            "why": "Oregon requires an 801 or equivalent incident report for each recordable case.",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Hazard Communication written program",
+            "why": "The company repackages acids, caustics and solvents, and only a supplier SDS is on file.",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "OSHA 300 Log of Work-Related Injuries and Illnesses for 2025 (and the 2026 log in progress)",
+            "why": "The 300A is totaled from the 300 Log, and the log has to be kept along with it.",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "OSHA Injury Tracking Application filing confirmation for the 2025 300A",
+            "why": "This is the proof that the summary was filed electronically by March 2, 2026.",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "PPE hazard assessment certification",
+            "why": "This is usual for acid and caustic handling operations.",
+            "basis": "similar companies, not a checked requirement"
+          }
+        ],
+        "confirmed_facts": [],
+        "proposed_facts": [
+          {
+            "key": "acid_caustic_repackaging_lines",
+            "value": "The Portland facility repackages acids, caustics and solvents",
+            "quote": "repackaging of acids, caustics and solvents",
+            "locator": "page 1, Establishment information",
+            "as_of": "2026-02-01"
+          },
+          {
+            "key": "annual_average_employees_2025",
+            "value": "65",
+            "quote": "Annual average number of employees: 65",
+            "locator": "page 1, Employment information",
+            "as_of": "2025-12-31"
+          },
+          {
+            "key": "naics_code",
+            "value": "424690",
+            "quote": "North American Industrial Classification (NAICS): 424690",
+            "locator": "page 1, Establishment information",
+            "as_of": "2026-02-01"
+          },
+          {
+            "key": "recordable_cases_2025",
+            "value": "3 recordable injuries (1 with days away, 6 days away; 2 other recordable; 0 deaths; 0 restricted or transferred)",
+            "quote": "Total number of cases with days away from work: 1 (H)",
+            "locator": "page 1, Number of Cases / Number of Days",
+            "as_of": "2025-12-31"
+          },
+          {
+            "key": "total_hours_worked_2025",
+            "value": "128,400",
+            "quote": "Total hours worked by all employees last year: 128,400",
+            "locator": "page 1, Employment information",
+            "as_of": "2025-12-31"
+          }
+        ]
+      },
+      {
+        "handle": "D7",
+        "document_id": "cd003abe-0df1-49be-b36c-59b894b0903a",
+        "title": "Powered Industrial Truck Operator Training and Evaluation Record (with Michael Chen Certificate of Training), Portland Facility",
+        "file_name": "09-forklift-training-records.pdf",
+        "kind": "record",
+        "status": "gaps_found",
+        "display_status": "needs_work",
+        "doc_date": "2025-06-02",
+        "doc_date_kind": "last_entry",
+        "significant_date": "2025-06-02",
+        "significant_date_kind": "last_entry",
+        "site": "Portland",
+        "summary": "This is the company's own roster of forklift and pallet-jack operator training and evaluations for the Portland facility, followed by one signed training certificate (Michael Chen, page 2). It lists three operators and the dates each was trained and evaluated. Rina Patel's three-year evaluation fell due on 2026-05-19 and is now more than four months overdue. The roster itself has not been updated since June 2, 2025.",
+        "open_gaps": [
+          {
+            "title": "Operator re-evaluation overdue (R. Patel)",
+            "description": "Rina Patel's most recent evaluation was 2023-05-19, and the roster shows her next evaluation due 2026-05-19. As of 2026-09-29 the document shows no new evaluation, so her three-year evaluation is more than four months overdue. The roster lists her as an operator of FL-2, the propane forklift.",
+            "fix": "Keep Patel off FL-2 unless she is supervised until Sandra Ortiz evaluates her in the workplace. After that, add the new evaluation date and next due date (three years later) to the roster and issue a signed certificate. If she was already re-evaluated and it just wasn't written down, add the record now with the real date.",
+            "citation": "29 CFR 1910.178(l)(4)(iii), adopted in Oregon under Oregon OSHA Division 2, Subdivision N",
+            "basis": "read"
+          },
+          {
+            "title": "No certificate noted or attached for R. Patel",
+            "description": "The Notes column says \"certificate on file\" for Chen and Rivera but is blank for Patel. The certification rule asks for the operator's name, training date, evaluation date and the trainer/evaluator. The roster row has all four, so the missing certificate may only be a paperwork gap. Still, the file has no signed certificate for her.",
+            "fix": "When Patel is re-evaluated, issue a signed certificate like Chen's and mark it on file in the roster.",
+            "citation": "29 CFR 1910.178(l)(6)",
+            "basis": "read"
+          },
+          {
+            "title": "Rivera certificate referenced but not in this file",
+            "description": "The roster says Jose Rivera's certificate is on file, but only Michael Chen's certificate is in this document (page 2).",
+            "fix": "Attach Rivera's signed certificate (evaluation 2025-06-02) to this record, or confirm where it is kept.",
+            "citation": "29 CFR 1910.178(l)(6)",
+            "basis": "read"
+          },
+          {
+            "title": "Roster not updated in over a year",
+            "description": "The roster was last updated June 2, 2025. It says no refresher training was needed in 2026 'to date', but that statement is only good as of June 2025. Nothing in the record covers the months since then.",
+            "fix": "Review and re-date the roster, record any refresher training or new operators since June 2025, and update it every time training or an evaluation happens.",
+            "citation": "29 CFR 1910.178(l)(4)",
+            "basis": "read"
+          }
+        ],
+        "conditions": [],
+        "deadlines": [
+          {
+            "title": "Three-year operator evaluation — J. Rivera",
+            "due_on": "2028-06-02",
+            "recurs": true
+          },
+          {
+            "title": "Three-year operator evaluation — M. Chen",
+            "due_on": "2027-03-11",
+            "recurs": true
+          },
+          {
+            "title": "Three-year operator evaluation — R. Patel (OVERDUE)",
+            "due_on": "2026-05-19",
+            "recurs": true
+          }
+        ],
+        "expected_missing": [
+          {
+            "title": "Current forklift operator roster showing Patel's re-evaluation (or her removal from operating)",
+            "why": "The only roster on file is dated June 2025 and shows an evaluation that lapsed in May 2026.",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Lockout/tagout (energy control) program and training records",
+            "why": "Chemical manufacturing plants with process equipment usually hold one.",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "PPE hazard assessment certification and eyewash/shower inspection log",
+            "why": "The company handles 50% sodium hydroxide and acids, so these are commonly kept.",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Pre-shift inspection log for pallet jack PJ-1",
+            "why": "The company holds logs only for FL-2 (the September 2026 log appears twice in the list); PJ-1 is also in service.",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Written Hazard Communication program and employee HazCom training records",
+            "why": "A chemical repackager with 42 employees usually keeps these next to its PIT training records.",
+            "basis": "similar companies, not a checked requirement"
+          }
+        ],
+        "confirmed_facts": [],
+        "proposed_facts": [
+          {
+            "key": "certified_forklift_operators",
+            "value": "Three trained operators on the roster: Michael Chen (FL-2, PJ-1), Jose Rivera (FL-2, PJ-1) and Rina Patel (FL-2). Patel's three-year evaluation lapsed on 2026-05-19.",
+            "quote": "M. Chen (Michael Chen) FL-2, PJ-1 2024-03-04 2024-03-06 2024-03-11 2024-03-11 2027-03-11 S. Ortiz certificate on file",
+            "locator": "Page 1, roster table",
+            "as_of": "2025-06-02"
+          },
+          {
+            "key": "forklift_trainer_evaluator",
+            "value": "Sandra Ortiz, Warehouse Supervisor, who took a certified PIT trainer course (Northwest Safety Training Institute, PIT-T-2022-0417)",
+            "quote": "Trainer: Sandra Ortiz, Warehouse Supervisor, certified powered industrial truck trainer",
+            "locator": "Page 1, below table",
+            "as_of": "2025-06-02"
+          },
+          {
+            "key": "powered_industrial_trucks_on_site",
+            "value": "Toyota 8FGU25 propane counterbalance forklift (FL-2) and Crown WP 3000 electric pallet jack (PJ-1)",
+            "quote": "Trucks in service: Toyota 8FGU25 propane counterbalance, unit FL-2; Crown WP 3000 electric pallet jack, unit PJ-1.",
+            "locator": "Page 1, header paragraph",
+            "as_of": "2025-06-02"
+          },
+          {
+            "key": "propane_forklift_cylinders",
+            "value": "FL-2 runs on propane",
+            "quote": "Toyota 8FGU25 propane counterbalance, unit FL-2",
+            "locator": "Page 1, header paragraph",
+            "as_of": "2025-06-02"
+          }
+        ]
+      },
+      {
+        "handle": "D8",
+        "document_id": "090df598-dd9c-4c4f-b154-3915b1e4a2cd",
+        "title": "Safety Data Sheet – Sodium Hydroxide Solution, 50% (Northwest Alkali Products, Version 4.1)",
+        "file_name": "05-sds-supplier.pdf",
+        "kind": "supplier_document",
+        "status": "not_judged",
+        "display_status": "on_file",
+        "doc_date": "2024-03-18",
+        "doc_date_kind": "revised",
+        "significant_date": "2024-03-18",
+        "significant_date_kind": "revised",
+        "site": "Portland",
+        "summary": "This is the supplier's Safety Data Sheet (SDS) for 50% caustic soda (sodium hydroxide solution). The SDS belongs to Northwest Alkali Products, not to Cascade, so there is nothing in it for you to fix, and it is not judged here. Your job is to keep the current version where workers can get to it at the Portland site, and to make sure your labels, PPE, eyewash/shower, spill response, waste handling and training match what it says: a Category 1A skin corrosive that is also corrosive to metals, with a 1,000 lb reportable quantity (RQ) and handled as RCRA D002 corrosive waste if disposed of without neutralizing.",
+        "open_gaps": [],
+        "conditions": [],
+        "deadlines": [],
+        "expected_missing": [
+          {
+            "title": "Emergency eyewash and safety shower inspection/activation log",
+            "why": "The SDS calls for an eyewash and shower within 10 seconds of work areas, and operators usually keep weekly activation records.",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Hazardous waste generator records and Oregon DEQ generator status",
+            "why": "Unneutralized caustic waste is D002 corrosive hazardous waste.",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Industrial stormwater permit (e.g., Oregon DEQ 1200-Z) or a no-exposure certification",
+            "why": "Chemical manufacturing sites in Oregon commonly hold one or the other.",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Oregon State Fire Marshal hazardous substance / EPCRA Tier II inventory report",
+            "why": "Chemical manufacturers storing bulk caustic often meet state and federal inventory reporting thresholds.",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "PPE hazard assessment certification",
+            "why": "Handling caustic calls for goggles, face shield, gloves, apron and boots, and a written assessment usually backs that up.",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Spill response / release reporting procedure",
+            "why": "The 1,000 lb CERCLA RQ and the SDS's instruction to keep spills out of drains usually lead to a written spill procedure.",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Written Hazard Communication program, SDS index and chemical inventory",
+            "why": "Any employer with hazardous chemicals such as caustic needs a written HazCom program, an inventory, and SDSs workers can reach, and none of these is in the list.",
+            "basis": "similar companies, not a checked requirement"
+          }
+        ],
+        "confirmed_facts": [],
+        "proposed_facts": [
+          {
+            "key": "sodium_hydroxide_50_on_site",
+            "value": "Cascade appears to keep 50% sodium hydroxide solution (caustic soda) from Northwest Alkali Products at the Portland facility. I inferred this from the fact that the company holds this SDS; the SDS itself does not name Cascade.",
+            "quote": "Product identifier: Sodium Hydroxide Solution, 50% (w/w)",
+            "locator": "Page 1, Section 1",
+            "as_of": "2024-03-18"
+          }
+        ]
+      }
+    ],
+    "other_documents": [
+      {
+        "handle": "D9",
+        "document_id": "33f2a5ac-f6fe-40b7-a788-410b8799f70f",
+        "title": "Air Permit Annual Report for 2025 (Standard ACDP 26-2841-ST-01) with Oregon DEQ Receipt Confirmation, Portland Facility",
+        "kind": "record",
+        "status": "recorded",
+        "significant_date": "2026-02-12"
+      },
+      {
+        "handle": "D10",
+        "document_id": "0ed0ce54-8e2a-4b31-b77f-abd6866edeb6",
+        "title": "Oregon DEQ Air Contaminant Discharge Permit Compliance Inspection Checklist (Inspector's Field Form), blank",
+        "kind": "other",
+        "status": "not_judged",
+        "significant_date": null
+      },
+      {
+        "handle": "D11",
+        "document_id": "e3edb915-d54a-4400-afc8-3b35b4acf3f4",
+        "title": "Scrubber Pressure-Drop Log (S-1 acid line, S-2 caustic line) and Weekly C-1 Carbon Outlet Detector-Tube Check, August–September 2026, Portland Facility",
+        "kind": "record",
+        "status": "gaps_found",
+        "significant_date": "2026-09-25"
+      },
+      {
+        "handle": "D12",
+        "document_id": "c940e528-4b97-485e-8d6f-6b0052350e02",
+        "title": "Standard Air Contaminant Discharge Permit No. 26-2841-ST-01, Portland Facility",
+        "kind": "permit",
+        "status": "expiring",
+        "significant_date": "2026-11-15"
+      }
+    ],
+    "handles": {
+      "D1": "699b8886-0cf6-4fd1-94eb-44f2d192801c",
+      "D2": "31a8ed49-8c3f-4018-8384-a8f805d7ac01",
+      "D3": "0a7b3dbe-c59a-481f-b789-4c61611e770e",
+      "D4": "5654e2d8-9dfc-4c68-99c6-4570c4fbeb70",
+      "D5": "62b1ece4-3892-466d-83b1-9e1e4270f533",
+      "D6": "b733e633-02e2-43c8-ae3d-1087e17a4a7d",
+      "D7": "cd003abe-0df1-49be-b36c-59b894b0903a",
+      "D8": "090df598-dd9c-4c4f-b154-3915b1e4a2cd",
+      "D9": "33f2a5ac-f6fe-40b7-a788-410b8799f70f",
+      "D10": "0ed0ce54-8e2a-4b31-b77f-abd6866edeb6",
+      "D11": "e3edb915-d54a-4400-afc8-3b35b4acf3f4",
+      "D12": "c940e528-4b97-485e-8d6f-6b0052350e02"
+    }
+  },
+  "calls": [
+    {
+      "section": "whole",
+      "wall_ms": 60812,
+      "cost_usd": 0.049185,
+      "sources": 0,
+      "input_tokens": 16090,
+      "output_tokens": 6619,
+      "searches": 0,
+      "json_parsed": true,
+      "raw_text": "```json\n{\n  \"covers\": {\n    \"documents_read\": [\n      \"D1\",\n      \"D2\",\n      \"D3\",\n      \"D4\",\n      \"D5\",\n      \"D6\",\n      \"D7\",\n      \"D8\"\n    ],\n    \"documents_held_but_not_read\": [\n      \"Air Permit Annual Report for 2025 (Standard ACDP 26-2841-ST-01) with Oregon DEQ Receipt Confirmation, Portland Facility\",\n      \"Oregon DEQ Air Contaminant Discharge Permit Compliance Inspection Checklist (Inspector's Field Form), blank\",\n      \"Scrubber Pressure-Drop Log (S-1 acid line, S-2 caustic line) and Weekly C-1 Carbon Outlet Detector-Tube Check, August–September 2026, Portland Facility\",\n      \"Standard Air Contaminant Discharge Permit No. 26-2841-ST-01, Portland Facility\"\n    ],\n    \"readings_as_of\": \"2026-09-29\"\n  },\n  \"findings\": [\n    {\n      \"title\": \"Annual maintenance of portable fire extinguishers\",\n      \"word\": \"stale\",\n      \"document\": \"D1\",\n      \"locator\": \"Page 1, NEXT ANNUAL MAINTENANCE DUE\",\n      \"quote\": \"NEXT ANNUAL MAINTENANCE DUE: AUGUST 20, 2026\",\n      \"what_to_do\": \"Obtain a vendor certificate of 2026 annual maintenance for all 14 portable extinguishers, signed and dated, and ensure each unit carries a current service tag.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Hydrostatic test for CO2 unit L-1\",\n      \"word\": \"nothing_on_file\",\n      \"document\": \"D1\",\n      \"locator\": \"Page 1, table row L-1, Last hydrostatic test\",\n      \"quote\": \"Last hydrostatic test 2020\",\n      \"what_to_do\": \"Obtain a hydrostatic test record and cylinder stamp or label for L-1 dated within the last five years (the five-year CO2 interval is required by 29 CFR 1910.157(f) and NFPA 10 Chapter 8).\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Six-year internal maintenance for portable fire extinguisher unit W-3\",\n      \"word\": \"nothing_on_file\",\n      \"document\": \"D1\",\n      \"locator\": \"Page 1, table row W-3, and statement about six-year interval\",\n      \"quote\": \"Units W-3 and L-1 reach their six-year internal maintenance interval in 2026; schedule before November 2026.\",\n      \"what_to_do\": \"Obtain a vendor work order or certificate showing W-3 had its six-year internal maintenance, plus a new verification-of-service collar or label on the unit.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Monthly visual inspection records for portable fire extinguishers\",\n      \"word\": \"nothing_on_file\",\n      \"document\": \"D1\",\n      \"locator\": \"Page 1, Monthly visual inspections section\",\n      \"quote\": \"Monthly visual inspections remain the customer's responsibility under NFPA 10, Section 7.2\",\n      \"what_to_do\": \"Obtain and file either initialed and dated monthly entries on each unit's tag, or a monthly inspection log, for every month since August 2025 through the present.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Emergency action plan missing required procedures for reporting emergencies\",\n      \"word\": \"on_file\",\n      \"document\": \"D2\",\n      \"locator\": \"Section 2 and 3, pages 2–3\",\n      \"quote\": null,\n      \"what_to_do\": \"Add a short 'Reporting an emergency' section to the plan. It should state: pull the nearest alarm station for a fire; call 911 from a safe place for any fire, release or serious injury; tell the incident coordinator or a supervisor; and give the site address to the dispatcher. List the internal phone numbers.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Emergency action plan missing procedures for shutting down critical equipment before evacuation\",\n      \"word\": \"on_file\",\n      \"document\": \"D2\",\n      \"locator\": \"Section 3, page 3\",\n      \"quote\": \"When the continuous alarm sounds, all employees stop work, secure nothing that requires more than a few seconds, and leave by the nearest marked exit.\",\n      \"what_to_do\": \"Decide which equipment must be made safe before people leave (reactors, heating, transfer pumps, gas cylinders, process equipment). Name the job title responsible, write the steps and a cut-off point after which that person leaves too. If nothing needs a shutdown, state so in writing.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Emergency action plan missing named contact for plan information and incident coordinator identification\",\n      \"word\": \"on_file\",\n      \"document\": \"D2\",\n      \"locator\": \"Section 1 and throughout\",\n      \"quote\": null,\n      \"what_to_do\": \"Add a contacts section. Give the job title, and ideally the name and phone number, of the plan contact (e.g., the facilities lead), the incident coordinator and a backup.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Emergency action plan covers earthquakes but provides no earthquake procedure\",\n      \"word\": \"on_file\",\n      \"document\": \"D2\",\n      \"locator\": \"Section 1, page 2; no earthquake procedure elsewhere in plan\",\n      \"quote\": null,\n      \"what_to_do\": \"Add a short earthquake procedure. Cover what to do during shaking (drop, cover and hold on), when to evacuate once shaking stops, which routes to avoid (the freight lift, racking, the lab), and a post-quake check for chemical spills and gas leaks.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Emergency action plan does not state the scope of employee response to chemical spills\",\n      \"word\": \"on_file\",\n      \"document\": \"D2\",\n      \"locator\": \"Section 4, page 3–4 (chemical release procedures)\",\n      \"quote\": null,\n      \"what_to_do\": \"Add a sentence stating whether employees do not respond to chemical releases beyond small incidental spills they are trained to clean up, and that larger releases are handled by the fire department. If that is not true, obtain a separate HAZWOPER emergency response plan and training.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Emergency action plan appendices A and B not attached\",\n      \"word\": \"nothing_on_file\",\n      \"document\": \"D2\",\n      \"locator\": \"Plan references Appendix A (evacuation maps) and Appendix B (floor warden and first-aid responder roster)\",\n      \"quote\": null,\n      \"what_to_do\": \"Attach the current evacuation maps and the current warden and first-aid responder roster to the plan, with dates. Check that the roster names people who still work there.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Emergency action plan annual January review overdue and not recorded\",\n      \"word\": \"stale\",\n      \"document\": \"D2\",\n      \"locator\": \"Page 1, revision date; plan's own commitment throughout\",\n      \"quote\": null,\n      \"what_to_do\": \"Add a review log at the end of the plan showing date, reviewer and changes made. Carry out and record a review now, before the next January.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Forklift FL-2 pre-shift inspections missing for September 3–4\",\n      \"word\": \"nothing_on_file\",\n      \"document\": \"D4\",\n      \"locator\": \"September 2026 log, no entries for Thursday Sep 3 and Friday Sep 4\",\n      \"quote\": null,\n      \"what_to_do\": \"Find out who drove FL-2 on Sep 3–4 and why no check was logged. Add a dated note to the log explaining the gap. Remind operators that the check comes before any use. Do not back-fill the log with retroactive entries.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Forklift FL-2 horn defect with no repair record or out-of-service documentation\",\n      \"word\": \"nothing_on_file\",\n      \"document\": \"D4\",\n      \"locator\": \"September 2026 log, Sep 9 and Sep 10 rows\",\n      \"quote\": \"On Sep 9 the horn was marked as a defect. Nothing shows the truck was tagged out of service, who repaired it, or when.\",\n      \"what_to_do\": \"Find the work order or repair note for the horn and file it with this log. Add a column or line for 'defect reported to / repaired by / date returned to service' so any defect entry shows how it was closed. If the truck ran with the horn broken, record what happened and remind operators to tag out a truck with a safety defect until it is fixed.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Forklift FL-2 pre-shift inspection log incomplete after September 18\",\n      \"word\": \"nothing_on_file\",\n      \"document\": \"D4\",\n      \"locator\": \"Log stops at September 18; no entries for Sep 21–25 or Sep 28–29\",\n      \"quote\": null,\n      \"what_to_do\": \"Find the rest of the September 2026 sheet, or confirm the truck was parked and note that on the log. If FL-2 was in use, treat those days as missed checks and follow up with the same action as the Sep 3–4 gap.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Forklift FL-2 inspection log supervisor review not signed\",\n      \"word\": \"on_file\",\n      \"document\": \"D4\",\n      \"locator\": \"Bottom of log, supervisor review line and date blank\",\n      \"quote\": null,\n      \"what_to_do\": \"Have the warehouse supervisor review the log, note what was done about the missing days and the horn defect, then sign and date the review.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Forklift operator Rina Patel three-year evaluation overdue\",\n      \"word\": \"nothing_on_file\",\n      \"document\": \"D7\",\n      \"locator\": \"Page 1, roster table, R. Patel row, Due date 2026-05-19\",\n      \"quote\": null,\n      \"what_to_do\": \"Keep Patel off FL-2 unless she is supervised until Sandra Ortiz evaluates her in the workplace. After that, add the new evaluation date and next due date (three years later) to the roster and issue a signed certificate. If she was already re-evaluated and it just was not written down, add the record now with the real date.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Forklift operator Jose Rivera certificate not filed\",\n      \"word\": \"nothing_on_file\",\n      \"document\": \"D7\",\n      \"locator\": \"Page 1, roster notes for J. Rivera say 'certificate on file' but only M. Chen's certificate is attached (page 2)\",\n      \"quote\": null,\n      \"what_to_do\": \"Attach Jose Rivera's signed certificate (evaluation 2025-06-02) to this record, or confirm where it is kept and provide the location.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"Forklift operator training roster not updated since June 2025\",\n      \"word\": \"stale\",\n      \"document\": \"D7\",\n      \"locator\": \"Page 1, date 2025-06-02 (last_entry)\",\n      \"quote\": null,\n      \"what_to_do\": \"Review and re-date the roster, record any refresher training or new operators since June 2025, and update it every time training or an evaluation happens.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"OSHA Form 300A 2025 average employee count discrepancy\",\n      \"word\": \"on_file\",\n      \"document\": \"D6\",\n      \"locator\": \"Page 1, Employment information section\",\n      \"quote\": \"Annual average number of employees: 65\",\n      \"what_to_do\": \"Check the 2025 payroll and any temp or staffing-agency records to confirm the 2025 average and total hours worked. If the 300A is wrong, correct it and resubmit through OSHA's Injury Tracking Application. If it is correct, note that 42 is today's headcount and not the 2025 average.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"OSHA Form 300A 2025 electronic filing confirmation missing\",\n      \"word\": \"nothing_on_file\",\n      \"document\": \"D6\",\n      \"locator\": \"Entire document; no filing receipt included\",\n      \"quote\": null,\n      \"what_to_do\": \"Log into OSHA's Injury Tracking Application and confirm the 2025 300A was filed electronically by March 2, 2026. Keep the confirmation. If it was not filed, file it now.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"OSHA Form 300A NAICS code may not match company profile\",\n      \"word\": \"on_file\",\n      \"document\": \"D6\",\n      \"locator\": \"Page 1, Establishment information section\",\n      \"quote\": \"North American Industrial Classification (NAICS): 424690\",\n      \"what_to_do\": \"Confirm the correct NAICS code for the Portland establishment (e.g., against the Oregon unemployment insurance registration). Chemical manufacturing and chemical wholesaling have different codes. Use it the same way on the 300A and in the Injury Tracking Application.\",\n      \"basis\": \"read\"\n    },\n    {\n      \"title\": \"OSHA 300 Log and incident reports (Form 801) for 2025 recordable cases not filed\",\n      \"word\": \"nothing_on_file\",\n      \"document\": \"D6\",\n      \"locator\": \"Page 1 shows 3 recordable cases in 2025; no supporting documents on file\",\n      \"quote\": \"Total number of cases with days away from work: 1\",\n      \"what_to_do\": \"Obtain the OSHA 300 Log for 2025 and the detailed incident report (Form 801 or Oregon equivalent) for each of the 3 recordable cases, and file them with the 300A.\",\n      \"basis\": \"inferred\"\n    }\n  ],\n  \"dates\": [\n    {\n      \"title\": \"Annual maintenance of all 14 portable fire extinguishers\",\n      \"due_on\": \"2026-08-20\",\n      \"recurs\": true,\n      \"document\": \"D1\",\n      \"passed\": true\n    },\n    {\n      \"title\": \"Hydrostatic test for CO2 unit L-1 (five-year interval from last 2020 test)\",\n      \"due_on\": \"2025-12-31\",\n      \"recurs\": true,\n      \"document\": \"D1\",\n      \"passed\": true\n    },\n    {\n      \"title\": \"Six-year internal maintenance for units W-3 and L-1\",\n      \"due_on\": \"2026-11-30\",\n      \"recurs\": true,\n      \"document\": \"D1\",\n      \"passed\": false\n    },\n    {\n      \"title\": \"Six-year maintenance for W-1, W-2, W-4, B-1, A-1 and A-2\",\n      \"due_on\": \"2027-12-31\",\n      \"recurs\": true,\n      \"document\": \"D1\",\n      \"passed\": false\n    },\n    {\n      \"title\": \"Monthly visual inspection of each portable extinguisher\",\n      \"due_on\": null,\n      \"recurs\": true,\n      \"document\": \"D1\",\n      \"passed\": false\n    },\n    {\n      \"title\": \"Annual January review of emergency action plan\",\n      \"due_on\": \"2027-01-31\",\n      \"recurs\": true,\n      \"document\": \"D2\",\n      \"passed\": false\n    },\n    {\n      \"title\": \"Monthly fire alarm test by facilities lead\",\n      \"due_on\": \"2026-10-05\",\n      \"recurs\": true,\n      \"document\": \"D2\",\n      \"passed\": false\n    },\n    {\n      \"title\": \"Annual training for floor wardens and first-aid responders\",\n      \"due_on\": null,\n      \"recurs\": true,\n      \"document\": \"D2\",\n      \"passed\": false\n    },\n    {\n      \"title\": \"Autumn evacuation drill (twice yearly, spring and autumn)\",\n      \"due_on\": null,\n      \"recurs\": true,\n      \"document\": \"D2\",\n      \"passed\": false\n    },\n    {\n      \"title\": \"Pre-shift inspection of FL-2 before each shift of use\",\n      \"due_on\": null,\n      \"recurs\": true,\n      \"document\": \"D4\",\n      \"passed\": false\n    },\n    {\n      \"title\": \"Three-year performance re-evaluation of forklift operator M. Chen\",\n      \"due_on\": \"2027-03-11\",\n      \"recurs\": true,\n      \"document\": \"D4\",\n      \"passed\": false\n    },\n    {\n      \"title\": \"Three-year performance re-evaluation of forklift operator J. Rivera\",\n      \"due_on\": \"2028-06-02\",\n      \"recurs\": true,\n      \"document\": \"D4\",\n      \"passed\": false\n    },\n    {\n      \"title\": \"Report any items marked N on monthly EHS self-check form to Plant Manager\",\n      \"due_on\": null,\n      \"recurs\": true,\n      \"document\": \"D5\",\n      \"passed\": false\n    },\n    {\n      \"title\": \"File 2025 OSHA 300A electronically with OSHA's Injury Tracking Application\",\n      \"due_on\": \"2026-03-02\",\n      \"recurs\": true,\n      \"document\": \"D6\",\n      \"passed\": true\n    },\n    {\n      \"title\": \"Post 2025 OSHA 300A summary in workplace\",\n      \"due_on\": \"2026-04-30\",\n      \"recurs\": true,\n      \"document\": \"D6\",\n      \"passed\": true\n    },\n    {\n      \"title\": \"Keep 2025 OSHA 300A, 300 Log and 801 forms until at least\",\n      \"due_on\": \"2030-12-31\",\n      \"recurs\": false,\n      \"document\": \"D6\",\n      \"passed\": false\n    },\n    {\n      \"title\": \"Complete, certify and post the 2026 OSHA 300A\",\n      \"due_on\": \"2027-02-01\",\n      \"recurs\": true,\n      \"document\": \"D6\",\n      \"passed\": false\n    },\n    {\n      \"title\": \"File 2026 OSHA 300A electronically with OSHA's Injury Tracking Application\",\n      \"due_on\": \"2027-03-02\",\n      \"recurs\": true,\n      \"document\": \"D6\",\n      \"passed\": false\n    },\n    {\n      \"title\": \"Three-year operator evaluation — R. Patel\",\n      \"due_on\": \"2026-05-19\",\n      \"recurs\": true,\n      \"document\": \"D7\",\n      \"passed\": true\n    },\n    {\n      \"title\": \"Three-year operator evaluation — M. Chen\",\n      \"due_on\": \"2027-03-11\",\n      \"recurs\": true,\n      \"document\": \"D7\",\n      \"passed\": false\n    },\n    {\n      \"title\": \"Three-year operator evaluation — J. Rivera\",\n      \"due_on\": \"2028-06-02\",\n      \"recurs\": true,\n      \"document\": \"D7\",\n      \"passed\": false\n    },\n    {\n      \"title\": \"Start October 2026 log for FL-2\",\n      \"due_on\": \"2026-10-01\",\n      \"recurs\": true,\n      \"document\": \"D3\",\n      \"passed\": false\n    }\n  ],\n  \"expected_not_seen\": [\n    {\n      \"title\": \"2026 annual maintenance certificate for portable fire extinguishers\",\n      \"why\": \"Chemical facilities with multiple extinguishers and a 2025 maintenance record typically keep the 2026 annual service certificate when due.\"\n    },\n    {\n      \"title\": \"Chemical hygiene plan for the laboratory\",\n      \"why\": \"The fire extinguisher certificate and emergency action plan both reference an on-site laboratory with a fume hood, and facilities with laboratory operations usually keep a written chemical hygiene plan.\"\n    },\n    {\n      \"title\": \"Fire alarm and sprinkler inspection and testing reports\",\n      \"why\": \"Chemical facilities with monitored fire alarm systems typically keep annual NFPA 72 fire alarm and NFPA 25 sprinkler inspection reports.\"\n    },\n    {\n      \"title\": \"Fire extinguisher training records for employees\",\n      \"why\": \"If employees are expected to use extinguishers, annual training is required under 29 CFR 1910.157(g). If the Emergency Action Plan requires evacuation and extinguishers are not for employee use, training may not be needed.\"\n    },\n    {\n      \"title\": \"Hydrostatic test certificate for CO2 unit L-1\",\n      \"why\": \"The 2025 fire extinguisher maintenance certificate shows L-1's last hydrostatic test was in 2020, five years ago. A current test record is typically expected by now.\"\n    },\n    {\n      \"title\": \"Monthly extinguisher inspection records (unit tags or log)\",\n      \"why\": \"The fire extinguisher certificate places monthly visual inspections on the customer under NFPA 10, and monthly inspection records or unit tags showing those inspections are typically kept.\"\n    },\n    {\n      \"title\": \"Completed monthly self-checks for recent months\",\n      \"why\": \"The company holds a blank monthly EHS self-check form. Completed and signed copies showing the self-checks were actually carried out are typically kept.\"\n    },\n    {\n      \"title\": \"Exit route and exit sign inspection records\",\n      \"why\": \"The self-check form references regular checks of exits and exit signs. Emergency action plans and exit route compliance typically lead to separate inspection records.\"\n    },\n    {\n      \"title\": \"Hazardous waste generator records and Oregon Community Right-to-Know / Tier II reporting\",\n      \"why\": \"The company repackages acids, caustics and solvents and holds a tank farm with bulk storage. Chemical repackagers with these materials commonly generate hazardous waste and meet state and federal inventory reporting thresholds.\"\n    },\n    {\n      \"title\": \"Weekly eyewash and safety shower activation log\",\n      \"why\": \"The self-check form line 7 references a log for eyewash and shower flushing. The SDS for 50% sodium hydroxide requires eyewash and shower within 10 seconds, and weekly flushing records are typically kept.\"\n    },\n    {\n      \"title\": \"Written Hazard Communication program and employee training records\",\n      \"why\": \"The company repackages acids, caustics and solvents; holds a supplier SDS for 50% caustic soda; and operates a laboratory. Chemical manufacturers and repackagers with multiple hazardous chemicals typically keep a written HazCom program, a chemical inventory, and training records.\"\n    },\n    {\n      \"title\": \"Lockout/tagout (energy control) program and training records\",\n      \"why\": \"Chemical manufacturing plants with reactors, heating, transfer pumps and other process equipment typically keep a written energy control program and related training records.\"\n    },\n    {\n      \"title\": \"PPE hazard assessment certification\",\n      \"why\": \"Handling 50% sodium hydroxide (caustic soda) and acids typically requires goggles, face shield, gloves, apron and boots. A written PPE hazard assessment usually backs up these requirements.\"\n    },\n    {\n      \"title\": \"Inspection logs for other powered industrial trucks (e.g., FL-1, PJ-1)\",\n      \"why\": \"The company holds two logs for FL-2 and a training record naming PJ-1 (pallet jack). The unit number FL-2 suggests there is at least one other truck (FL-1). Pre-shift inspection logs for all trucks in service are typically kept.\"\n    },\n    {\n      \"title\": \"Forklift maintenance and repair records / work orders\",\n      \"why\": \"The FL-2 inspection logs show a horn defect on Sep 9. Work orders or repair notes for this and other defects found on inspection logs are typically filed alongside them.\"\n    },\n    {\n      \"title\": \"Fire Prevention Plan\",\n      \"why\": \"Oregon OSHA Rule OAR 437-002-0043 requires a written fire prevention plan alongside the emergency action plan in most chemical manufacturing and storage facilities.\"\n    },\n    {\n      \"title\": \"OSHA 300 Log of Work-Related Injuries and Illnesses for 2025 and 2026\",\n      \"why\": \"The company holds the 2025 OSHA 300A summary showing 3 recordable cases. The 300 Log and detailed incident reports (Form 801) behind the summary are required to be kept alongside it.\"\n    },\n    {\n      \"title\": \"Oregon Safety Committee records\",\n      \"why\": \"The company has 42 employees, more than 10. Oregon employers with more than 10 employees typically keep written safety committee records (OAR 437-001-0765).\"\n    },\n    {\n      \"title\": \"Spill response and release reporting procedure\",\n      \"why\": \"The SDS for 50% sodium hydroxide notes a 1,000 lb reportable quantity and instructs to keep spills out of drains. Chemical repackagers typically keep a written spill response and reporting procedure.\"\n    }\n  ],\n  \"contradictions\": [\n    {\n      \"what\": \"Forklift operator certifications and next evaluation due dates for M. Chen\",\n      \"document_a\": \"D4\",\n      \"value_a\": \"M. Chen certified 2024-03-11, evaluation due 2027-03-11\",\n      \"document_b\": \"D7\",\n      \"value_b\": \"M. Chen (Michael Chen) trained 2024-03-04, evaluated 2024-03-06, certification date 2024-03-11, next due 2027-03-11\"\n    }\n  ]\n}\n```"
+    }
+  ],
+  "answer": {
+    "covers": {
+      "documents_read": [
+        "D1",
+        "D2",
+        "D3",
+        "D4",
+        "D5",
+        "D6",
+        "D7",
+        "D8"
+      ],
+      "documents_held_but_not_read": [
+        "Air Permit Annual Report for 2025 (Standard ACDP 26-2841-ST-01) with Oregon DEQ Receipt Confirmation, Portland Facility",
+        "Oregon DEQ Air Contaminant Discharge Permit Compliance Inspection Checklist (Inspector's Field Form), blank",
+        "Scrubber Pressure-Drop Log (S-1 acid line, S-2 caustic line) and Weekly C-1 Carbon Outlet Detector-Tube Check, August–September 2026, Portland Facility",
+        "Standard Air Contaminant Discharge Permit No. 26-2841-ST-01, Portland Facility"
+      ],
+      "readings_as_of": "2026-09-29",
+      "documents_read_ids": [
+        "699b8886-0cf6-4fd1-94eb-44f2d192801c",
+        "31a8ed49-8c3f-4018-8384-a8f805d7ac01",
+        "0a7b3dbe-c59a-481f-b789-4c61611e770e",
+        "5654e2d8-9dfc-4c68-99c6-4570c4fbeb70",
+        "62b1ece4-3892-466d-83b1-9e1e4270f533",
+        "b733e633-02e2-43c8-ae3d-1087e17a4a7d",
+        "cd003abe-0df1-49be-b36c-59b894b0903a",
+        "090df598-dd9c-4c4f-b154-3915b1e4a2cd"
+      ]
+    },
+    "findings": [
+      {
+        "title": "Annual maintenance of portable fire extinguishers",
+        "word": "stale",
+        "document": "D1",
+        "locator": "Page 1, NEXT ANNUAL MAINTENANCE DUE",
+        "quote": "NEXT ANNUAL MAINTENANCE DUE: AUGUST 20, 2026",
+        "what_to_do": "Obtain a vendor certificate of 2026 annual maintenance for all 14 portable extinguishers, signed and dated, and ensure each unit carries a current service tag.",
+        "basis": "read",
+        "document_id": "699b8886-0cf6-4fd1-94eb-44f2d192801c"
+      },
+      {
+        "title": "Hydrostatic test for CO2 unit L-1",
+        "word": "nothing_on_file",
+        "document": "D1",
+        "locator": "Page 1, table row L-1, Last hydrostatic test",
+        "quote": "Last hydrostatic test 2020",
+        "what_to_do": "Obtain a hydrostatic test record and cylinder stamp or label for L-1 dated within the last five years (the five-year CO2 interval is required by 29 CFR 1910.157(f) and NFPA 10 Chapter 8).",
+        "basis": "read",
+        "document_id": "699b8886-0cf6-4fd1-94eb-44f2d192801c"
+      },
+      {
+        "title": "Six-year internal maintenance for portable fire extinguisher unit W-3",
+        "word": "nothing_on_file",
+        "document": "D1",
+        "locator": "Page 1, table row W-3, and statement about six-year interval",
+        "quote": "Units W-3 and L-1 reach their six-year internal maintenance interval in 2026; schedule before November 2026.",
+        "what_to_do": "Obtain a vendor work order or certificate showing W-3 had its six-year internal maintenance, plus a new verification-of-service collar or label on the unit.",
+        "basis": "read",
+        "document_id": "699b8886-0cf6-4fd1-94eb-44f2d192801c"
+      },
+      {
+        "title": "Monthly visual inspection records for portable fire extinguishers",
+        "word": "nothing_on_file",
+        "document": "D1",
+        "locator": "Page 1, Monthly visual inspections section",
+        "quote": "Monthly visual inspections remain the customer's responsibility under NFPA 10, Section 7.2",
+        "what_to_do": "Obtain and file either initialed and dated monthly entries on each unit's tag, or a monthly inspection log, for every month since August 2025 through the present.",
+        "basis": "read",
+        "document_id": "699b8886-0cf6-4fd1-94eb-44f2d192801c"
+      },
+      {
+        "title": "Emergency action plan missing required procedures for reporting emergencies",
+        "word": "on_file",
+        "document": "D2",
+        "locator": "Section 2 and 3, pages 2–3",
+        "quote": null,
+        "what_to_do": "Add a short 'Reporting an emergency' section to the plan. It should state: pull the nearest alarm station for a fire; call 911 from a safe place for any fire, release or serious injury; tell the incident coordinator or a supervisor; and give the site address to the dispatcher. List the internal phone numbers.",
+        "basis": "read",
+        "document_id": "31a8ed49-8c3f-4018-8384-a8f805d7ac01"
+      },
+      {
+        "title": "Emergency action plan missing procedures for shutting down critical equipment before evacuation",
+        "word": "on_file",
+        "document": "D2",
+        "locator": "Section 3, page 3",
+        "quote": "When the continuous alarm sounds, all employees stop work, secure nothing that requires more than a few seconds, and leave by the nearest marked exit.",
+        "what_to_do": "Decide which equipment must be made safe before people leave (reactors, heating, transfer pumps, gas cylinders, process equipment). Name the job title responsible, write the steps and a cut-off point after which that person leaves too. If nothing needs a shutdown, state so in writing.",
+        "basis": "read",
+        "document_id": "31a8ed49-8c3f-4018-8384-a8f805d7ac01"
+      },
+      {
+        "title": "Emergency action plan missing named contact for plan information and incident coordinator identification",
+        "word": "on_file",
+        "document": "D2",
+        "locator": "Section 1 and throughout",
+        "quote": null,
+        "what_to_do": "Add a contacts section. Give the job title, and ideally the name and phone number, of the plan contact (e.g., the facilities lead), the incident coordinator and a backup.",
+        "basis": "read",
+        "document_id": "31a8ed49-8c3f-4018-8384-a8f805d7ac01"
+      },
+      {
+        "title": "Emergency action plan covers earthquakes but provides no earthquake procedure",
+        "word": "on_file",
+        "document": "D2",
+        "locator": "Section 1, page 2; no earthquake procedure elsewhere in plan",
+        "quote": null,
+        "what_to_do": "Add a short earthquake procedure. Cover what to do during shaking (drop, cover and hold on), when to evacuate once shaking stops, which routes to avoid (the freight lift, racking, the lab), and a post-quake check for chemical spills and gas leaks.",
+        "basis": "read",
+        "document_id": "31a8ed49-8c3f-4018-8384-a8f805d7ac01"
+      },
+      {
+        "title": "Emergency action plan does not state the scope of employee response to chemical spills",
+        "word": "on_file",
+        "document": "D2",
+        "locator": "Section 4, page 3–4 (chemical release procedures)",
+        "quote": null,
+        "what_to_do": "Add a sentence stating whether employees do not respond to chemical releases beyond small incidental spills they are trained to clean up, and that larger releases are handled by the fire department. If that is not true, obtain a separate HAZWOPER emergency response plan and training.",
+        "basis": "read",
+        "document_id": "31a8ed49-8c3f-4018-8384-a8f805d7ac01"
+      },
+      {
+        "title": "Emergency action plan appendices A and B not attached",
+        "word": "nothing_on_file",
+        "document": "D2",
+        "locator": "Plan references Appendix A (evacuation maps) and Appendix B (floor warden and first-aid responder roster)",
+        "quote": null,
+        "what_to_do": "Attach the current evacuation maps and the current warden and first-aid responder roster to the plan, with dates. Check that the roster names people who still work there.",
+        "basis": "read",
+        "document_id": "31a8ed49-8c3f-4018-8384-a8f805d7ac01"
+      },
+      {
+        "title": "Emergency action plan annual January review overdue and not recorded",
+        "word": "stale",
+        "document": "D2",
+        "locator": "Page 1, revision date; plan's own commitment throughout",
+        "quote": null,
+        "what_to_do": "Add a review log at the end of the plan showing date, reviewer and changes made. Carry out and record a review now, before the next January.",
+        "basis": "read",
+        "document_id": "31a8ed49-8c3f-4018-8384-a8f805d7ac01"
+      },
+      {
+        "title": "Forklift FL-2 pre-shift inspections missing for September 3–4",
+        "word": "nothing_on_file",
+        "document": "D4",
+        "locator": "September 2026 log, no entries for Thursday Sep 3 and Friday Sep 4",
+        "quote": null,
+        "what_to_do": "Find out who drove FL-2 on Sep 3–4 and why no check was logged. Add a dated note to the log explaining the gap. Remind operators that the check comes before any use. Do not back-fill the log with retroactive entries.",
+        "basis": "read",
+        "document_id": "5654e2d8-9dfc-4c68-99c6-4570c4fbeb70"
+      },
+      {
+        "title": "Forklift FL-2 horn defect with no repair record or out-of-service documentation",
+        "word": "nothing_on_file",
+        "document": "D4",
+        "locator": "September 2026 log, Sep 9 and Sep 10 rows",
+        "quote": "On Sep 9 the horn was marked as a defect. Nothing shows the truck was tagged out of service, who repaired it, or when.",
+        "what_to_do": "Find the work order or repair note for the horn and file it with this log. Add a column or line for 'defect reported to / repaired by / date returned to service' so any defect entry shows how it was closed. If the truck ran with the horn broken, record what happened and remind operators to tag out a truck with a safety defect until it is fixed.",
+        "basis": "read",
+        "document_id": "5654e2d8-9dfc-4c68-99c6-4570c4fbeb70"
+      },
+      {
+        "title": "Forklift FL-2 pre-shift inspection log incomplete after September 18",
+        "word": "nothing_on_file",
+        "document": "D4",
+        "locator": "Log stops at September 18; no entries for Sep 21–25 or Sep 28–29",
+        "quote": null,
+        "what_to_do": "Find the rest of the September 2026 sheet, or confirm the truck was parked and note that on the log. If FL-2 was in use, treat those days as missed checks and follow up with the same action as the Sep 3–4 gap.",
+        "basis": "read",
+        "document_id": "5654e2d8-9dfc-4c68-99c6-4570c4fbeb70"
+      },
+      {
+        "title": "Forklift FL-2 inspection log supervisor review not signed",
+        "word": "on_file",
+        "document": "D4",
+        "locator": "Bottom of log, supervisor review line and date blank",
+        "quote": null,
+        "what_to_do": "Have the warehouse supervisor review the log, note what was done about the missing days and the horn defect, then sign and date the review.",
+        "basis": "read",
+        "document_id": "5654e2d8-9dfc-4c68-99c6-4570c4fbeb70"
+      },
+      {
+        "title": "Forklift operator Rina Patel three-year evaluation overdue",
+        "word": "nothing_on_file",
+        "document": "D7",
+        "locator": "Page 1, roster table, R. Patel row, Due date 2026-05-19",
+        "quote": null,
+        "what_to_do": "Keep Patel off FL-2 unless she is supervised until Sandra Ortiz evaluates her in the workplace. After that, add the new evaluation date and next due date (three years later) to the roster and issue a signed certificate. If she was already re-evaluated and it just was not written down, add the record now with the real date.",
+        "basis": "read",
+        "document_id": "cd003abe-0df1-49be-b36c-59b894b0903a"
+      },
+      {
+        "title": "Forklift operator Jose Rivera certificate not filed",
+        "word": "nothing_on_file",
+        "document": "D7",
+        "locator": "Page 1, roster notes for J. Rivera say 'certificate on file' but only M. Chen's certificate is attached (page 2)",
+        "quote": null,
+        "what_to_do": "Attach Jose Rivera's signed certificate (evaluation 2025-06-02) to this record, or confirm where it is kept and provide the location.",
+        "basis": "read",
+        "document_id": "cd003abe-0df1-49be-b36c-59b894b0903a"
+      },
+      {
+        "title": "Forklift operator training roster not updated since June 2025",
+        "word": "stale",
+        "document": "D7",
+        "locator": "Page 1, date 2025-06-02 (last_entry)",
+        "quote": null,
+        "what_to_do": "Review and re-date the roster, record any refresher training or new operators since June 2025, and update it every time training or an evaluation happens.",
+        "basis": "read",
+        "document_id": "cd003abe-0df1-49be-b36c-59b894b0903a"
+      },
+      {
+        "title": "OSHA Form 300A 2025 average employee count discrepancy",
+        "word": "on_file",
+        "document": "D6",
+        "locator": "Page 1, Employment information section",
+        "quote": "Annual average number of employees: 65",
+        "what_to_do": "Check the 2025 payroll and any temp or staffing-agency records to confirm the 2025 average and total hours worked. If the 300A is wrong, correct it and resubmit through OSHA's Injury Tracking Application. If it is correct, note that 42 is today's headcount and not the 2025 average.",
+        "basis": "read",
+        "document_id": "b733e633-02e2-43c8-ae3d-1087e17a4a7d"
+      },
+      {
+        "title": "OSHA Form 300A 2025 electronic filing confirmation missing",
+        "word": "nothing_on_file",
+        "document": "D6",
+        "locator": "Entire document; no filing receipt included",
+        "quote": null,
+        "what_to_do": "Log into OSHA's Injury Tracking Application and confirm the 2025 300A was filed electronically by March 2, 2026. Keep the confirmation. If it was not filed, file it now.",
+        "basis": "read",
+        "document_id": "b733e633-02e2-43c8-ae3d-1087e17a4a7d"
+      },
+      {
+        "title": "OSHA Form 300A NAICS code may not match company profile",
+        "word": "on_file",
+        "document": "D6",
+        "locator": "Page 1, Establishment information section",
+        "quote": "North American Industrial Classification (NAICS): 424690",
+        "what_to_do": "Confirm the correct NAICS code for the Portland establishment (e.g., against the Oregon unemployment insurance registration). Chemical manufacturing and chemical wholesaling have different codes. Use it the same way on the 300A and in the Injury Tracking Application.",
+        "basis": "read",
+        "document_id": "b733e633-02e2-43c8-ae3d-1087e17a4a7d"
+      },
+      {
+        "title": "OSHA 300 Log and incident reports (Form 801) for 2025 recordable cases not filed",
+        "word": "nothing_on_file",
+        "document": "D6",
+        "locator": "Page 1 shows 3 recordable cases in 2025; no supporting documents on file",
+        "quote": "Total number of cases with days away from work: 1",
+        "what_to_do": "Obtain the OSHA 300 Log for 2025 and the detailed incident report (Form 801 or Oregon equivalent) for each of the 3 recordable cases, and file them with the 300A.",
+        "basis": "inferred",
+        "document_id": "b733e633-02e2-43c8-ae3d-1087e17a4a7d"
+      }
+    ],
+    "dates": [
+      {
+        "title": "Annual maintenance of all 14 portable fire extinguishers",
+        "due_on": "2026-08-20",
+        "recurs": true,
+        "document": "D1",
+        "passed": true,
+        "document_id": "699b8886-0cf6-4fd1-94eb-44f2d192801c"
+      },
+      {
+        "title": "Hydrostatic test for CO2 unit L-1 (five-year interval from last 2020 test)",
+        "due_on": "2025-12-31",
+        "recurs": true,
+        "document": "D1",
+        "passed": true,
+        "document_id": "699b8886-0cf6-4fd1-94eb-44f2d192801c"
+      },
+      {
+        "title": "Six-year internal maintenance for units W-3 and L-1",
+        "due_on": "2026-11-30",
+        "recurs": true,
+        "document": "D1",
+        "passed": false,
+        "document_id": "699b8886-0cf6-4fd1-94eb-44f2d192801c"
+      },
+      {
+        "title": "Six-year maintenance for W-1, W-2, W-4, B-1, A-1 and A-2",
+        "due_on": "2027-12-31",
+        "recurs": true,
+        "document": "D1",
+        "passed": false,
+        "document_id": "699b8886-0cf6-4fd1-94eb-44f2d192801c"
+      },
+      {
+        "title": "Monthly visual inspection of each portable extinguisher",
+        "due_on": null,
+        "recurs": true,
+        "document": "D1",
+        "passed": false,
+        "document_id": "699b8886-0cf6-4fd1-94eb-44f2d192801c"
+      },
+      {
+        "title": "Annual January review of emergency action plan",
+        "due_on": "2027-01-31",
+        "recurs": true,
+        "document": "D2",
+        "passed": false,
+        "document_id": "31a8ed49-8c3f-4018-8384-a8f805d7ac01"
+      },
+      {
+        "title": "Monthly fire alarm test by facilities lead",
+        "due_on": "2026-10-05",
+        "recurs": true,
+        "document": "D2",
+        "passed": false,
+        "document_id": "31a8ed49-8c3f-4018-8384-a8f805d7ac01"
+      },
+      {
+        "title": "Annual training for floor wardens and first-aid responders",
+        "due_on": null,
+        "recurs": true,
+        "document": "D2",
+        "passed": false,
+        "document_id": "31a8ed49-8c3f-4018-8384-a8f805d7ac01"
+      },
+      {
+        "title": "Autumn evacuation drill (twice yearly, spring and autumn)",
+        "due_on": null,
+        "recurs": true,
+        "document": "D2",
+        "passed": false,
+        "document_id": "31a8ed49-8c3f-4018-8384-a8f805d7ac01"
+      },
+      {
+        "title": "Pre-shift inspection of FL-2 before each shift of use",
+        "due_on": null,
+        "recurs": true,
+        "document": "D4",
+        "passed": false,
+        "document_id": "5654e2d8-9dfc-4c68-99c6-4570c4fbeb70"
+      },
+      {
+        "title": "Three-year performance re-evaluation of forklift operator M. Chen",
+        "due_on": "2027-03-11",
+        "recurs": true,
+        "document": "D4",
+        "passed": false,
+        "document_id": "5654e2d8-9dfc-4c68-99c6-4570c4fbeb70"
+      },
+      {
+        "title": "Three-year performance re-evaluation of forklift operator J. Rivera",
+        "due_on": "2028-06-02",
+        "recurs": true,
+        "document": "D4",
+        "passed": false,
+        "document_id": "5654e2d8-9dfc-4c68-99c6-4570c4fbeb70"
+      },
+      {
+        "title": "Report any items marked N on monthly EHS self-check form to Plant Manager",
+        "due_on": null,
+        "recurs": true,
+        "document": "D5",
+        "passed": false,
+        "document_id": "62b1ece4-3892-466d-83b1-9e1e4270f533"
+      },
+      {
+        "title": "File 2025 OSHA 300A electronically with OSHA's Injury Tracking Application",
+        "due_on": "2026-03-02",
+        "recurs": true,
+        "document": "D6",
+        "passed": true,
+        "document_id": "b733e633-02e2-43c8-ae3d-1087e17a4a7d"
+      },
+      {
+        "title": "Post 2025 OSHA 300A summary in workplace",
+        "due_on": "2026-04-30",
+        "recurs": true,
+        "document": "D6",
+        "passed": true,
+        "document_id": "b733e633-02e2-43c8-ae3d-1087e17a4a7d"
+      },
+      {
+        "title": "Keep 2025 OSHA 300A, 300 Log and 801 forms until at least",
+        "due_on": "2030-12-31",
+        "recurs": false,
+        "document": "D6",
+        "passed": false,
+        "document_id": "b733e633-02e2-43c8-ae3d-1087e17a4a7d"
+      },
+      {
+        "title": "Complete, certify and post the 2026 OSHA 300A",
+        "due_on": "2027-02-01",
+        "recurs": true,
+        "document": "D6",
+        "passed": false,
+        "document_id": "b733e633-02e2-43c8-ae3d-1087e17a4a7d"
+      },
+      {
+        "title": "File 2026 OSHA 300A electronically with OSHA's Injury Tracking Application",
+        "due_on": "2027-03-02",
+        "recurs": true,
+        "document": "D6",
+        "passed": false,
+        "document_id": "b733e633-02e2-43c8-ae3d-1087e17a4a7d"
+      },
+      {
+        "title": "Three-year operator evaluation — R. Patel",
+        "due_on": "2026-05-19",
+        "recurs": true,
+        "document": "D7",
+        "passed": true,
+        "document_id": "cd003abe-0df1-49be-b36c-59b894b0903a"
+      },
+      {
+        "title": "Three-year operator evaluation — M. Chen",
+        "due_on": "2027-03-11",
+        "recurs": true,
+        "document": "D7",
+        "passed": false,
+        "document_id": "cd003abe-0df1-49be-b36c-59b894b0903a"
+      },
+      {
+        "title": "Three-year operator evaluation — J. Rivera",
+        "due_on": "2028-06-02",
+        "recurs": true,
+        "document": "D7",
+        "passed": false,
+        "document_id": "cd003abe-0df1-49be-b36c-59b894b0903a"
+      },
+      {
+        "title": "Start October 2026 log for FL-2",
+        "due_on": "2026-10-01",
+        "recurs": true,
+        "document": "D3",
+        "passed": false,
+        "document_id": "0a7b3dbe-c59a-481f-b789-4c61611e770e"
+      }
+    ],
+    "expected_not_seen": [
+      {
+        "title": "2026 annual maintenance certificate for portable fire extinguishers",
+        "why": "Chemical facilities with multiple extinguishers and a 2025 maintenance record typically keep the 2026 annual service certificate when due."
+      },
+      {
+        "title": "Chemical hygiene plan for the laboratory",
+        "why": "The fire extinguisher certificate and emergency action plan both reference an on-site laboratory with a fume hood, and facilities with laboratory operations usually keep a written chemical hygiene plan."
+      },
+      {
+        "title": "Fire alarm and sprinkler inspection and testing reports",
+        "why": "Chemical facilities with monitored fire alarm systems typically keep annual NFPA 72 fire alarm and NFPA 25 sprinkler inspection reports."
+      },
+      {
+        "title": "Fire extinguisher training records for employees",
+        "why": "If employees are expected to use extinguishers, annual training is required under 29 CFR 1910.157(g). If the Emergency Action Plan requires evacuation and extinguishers are not for employee use, training may not be needed."
+      },
+      {
+        "title": "Hydrostatic test certificate for CO2 unit L-1",
+        "why": "The 2025 fire extinguisher maintenance certificate shows L-1's last hydrostatic test was in 2020, five years ago. A current test record is typically expected by now."
+      },
+      {
+        "title": "Monthly extinguisher inspection records (unit tags or log)",
+        "why": "The fire extinguisher certificate places monthly visual inspections on the customer under NFPA 10, and monthly inspection records or unit tags showing those inspections are typically kept."
+      },
+      {
+        "title": "Completed monthly self-checks for recent months",
+        "why": "The company holds a blank monthly EHS self-check form. Completed and signed copies showing the self-checks were actually carried out are typically kept."
+      },
+      {
+        "title": "Exit route and exit sign inspection records",
+        "why": "The self-check form references regular checks of exits and exit signs. Emergency action plans and exit route compliance typically lead to separate inspection records."
+      },
+      {
+        "title": "Hazardous waste generator records and Oregon Community Right-to-Know / Tier II reporting",
+        "why": "The company repackages acids, caustics and solvents and holds a tank farm with bulk storage. Chemical repackagers with these materials commonly generate hazardous waste and meet state and federal inventory reporting thresholds."
+      },
+      {
+        "title": "Weekly eyewash and safety shower activation log",
+        "why": "The self-check form line 7 references a log for eyewash and shower flushing. The SDS for 50% sodium hydroxide requires eyewash and shower within 10 seconds, and weekly flushing records are typically kept."
+      },
+      {
+        "title": "Written Hazard Communication program and employee training records",
+        "why": "The company repackages acids, caustics and solvents; holds a supplier SDS for 50% caustic soda; and operates a laboratory. Chemical manufacturers and repackagers with multiple hazardous chemicals typically keep a written HazCom program, a chemical inventory, and training records."
+      },
+      {
+        "title": "Lockout/tagout (energy control) program and training records",
+        "why": "Chemical manufacturing plants with reactors, heating, transfer pumps and other process equipment typically keep a written energy control program and related training records."
+      },
+      {
+        "title": "PPE hazard assessment certification",
+        "why": "Handling 50% sodium hydroxide (caustic soda) and acids typically requires goggles, face shield, gloves, apron and boots. A written PPE hazard assessment usually backs up these requirements."
+      },
+      {
+        "title": "Inspection logs for other powered industrial trucks (e.g., FL-1, PJ-1)",
+        "why": "The company holds two logs for FL-2 and a training record naming PJ-1 (pallet jack). The unit number FL-2 suggests there is at least one other truck (FL-1). Pre-shift inspection logs for all trucks in service are typically kept."
+      },
+      {
+        "title": "Forklift maintenance and repair records / work orders",
+        "why": "The FL-2 inspection logs show a horn defect on Sep 9. Work orders or repair notes for this and other defects found on inspection logs are typically filed alongside them."
+      },
+      {
+        "title": "Fire Prevention Plan",
+        "why": "Oregon OSHA Rule OAR 437-002-0043 requires a written fire prevention plan alongside the emergency action plan in most chemical manufacturing and storage facilities."
+      },
+      {
+        "title": "OSHA 300 Log of Work-Related Injuries and Illnesses for 2025 and 2026",
+        "why": "The company holds the 2025 OSHA 300A summary showing 3 recordable cases. The 300 Log and detailed incident reports (Form 801) behind the summary are required to be kept alongside it."
+      },
+      {
+        "title": "Oregon Safety Committee records",
+        "why": "The company has 42 employees, more than 10. Oregon employers with more than 10 employees typically keep written safety committee records (OAR 437-001-0765)."
+      },
+      {
+        "title": "Spill response and release reporting procedure",
+        "why": "The SDS for 50% sodium hydroxide notes a 1,000 lb reportable quantity and instructs to keep spills out of drains. Chemical repackagers typically keep a written spill response and reporting procedure."
+      }
+    ],
+    "contradictions": [
+      {
+        "what": "Forklift operator certifications and next evaluation due dates for M. Chen",
+        "document_a": "D4",
+        "value_a": "M. Chen certified 2024-03-11, evaluation due 2027-03-11",
+        "document_b": "D7",
+        "value_b": "M. Chen (Michael Chen) trained 2024-03-04, evaluated 2024-03-06, certification date 2024-03-11, next due 2027-03-11",
+        "document_a_id": "5654e2d8-9dfc-4c68-99c6-4570c4fbeb70",
+        "document_b_id": "cd003abe-0df1-49be-b36c-59b894b0903a"
+      }
+    ]
+  },
+  "verdicts": {
+    "carry-eap-gaps": {
+      "verdict": "FAIL",
+      "detail": "1 of 4 carried, needs 3"
+    },
+    "plan-stale": {
+      "verdict": "FAIL",
+      "detail": "no item matched with word=stale. held: Annual maintenance of portable fir | Hydrostatic test for CO2 unit L-1 | Six-year internal maintenance for  | Monthly visual inspection records  | Emergency action plan missing requ | Emergency action plan missing proc | Emergency action plan missing name | Emergency action plan covers earth | Emergency action plan does not sta | Emergency action plan appendices A | Emergency action plan annual Janua | Forklift FL-2 pre-shift inspection | Forklift FL-2 horn defect with no  | Forklift FL-2 pre-shift inspection | Forklift FL-2 inspection log super | Forklift operator Rina Patel three | Forklift operator Jose Rivera cert | Forklift operator training roster  | OSHA Form 300A 2025 average employ | OSHA Form 300A 2025 electronic fil | OSHA Form 300A NAICS code may not  | OSHA 300 Log and incident reports "
+    },
+    "forklift-on-file": {
+      "verdict": "PASS",
+      "detail": "findings: \"Forklift FL-2 inspection log supervisor review not signed\" [on_file]"
+    },
+    "alarm-expected": {
+      "verdict": "FAIL",
+      "detail": "no item matched. held: Annual maintenance of portable fir | Hydrostatic test for CO2 unit L-1 | Six-year internal maintenance for  | Monthly visual inspection records  | Emergency action plan missing requ | Emergency action plan missing proc | Emergency action plan missing name | Emergency action plan covers earth | Emergency action plan does not sta | Emergency action plan appendices A | Emergency action plan annual Janua | Forklift FL-2 pre-shift inspection | Forklift FL-2 horn defect with no  | Forklift FL-2 pre-shift inspection | Forklift FL-2 inspection log super | Forklift operator Rina Patel three | Forklift operator Jose Rivera cert | Forklift operator training roster  | OSHA Form 300A 2025 average employ | OSHA Form 300A 2025 electronic fil | OSHA Form 300A NAICS code may not  | OSHA 300 Log and incident reports "
+    },
+    "training-records-on-file": {
+      "verdict": "PASS",
+      "detail": "2 of 4 carried"
+    },
+    "employee-count-contradiction": {
+      "verdict": "FAIL",
+      "detail": "0 of 3 carried, needs 1"
+    },
+    "extinguisher-stale": {
+      "verdict": "PASS",
+      "detail": "findings: \"Annual maintenance of portable fire extinguishers\" [stale]"
+    },
+    "no-new-eap-gap": {
+      "verdict": "FAIL",
+      "detail": "\"Emergency action plan appendices A and B not att\""
+    },
+    "no-deq-permit": {
+      "verdict": "PASS",
+      "detail": "nothing matched"
+    },
+    "no-satisfied": {
+      "verdict": "PASS",
+      "detail": "no positive claim about the company"
+    },
+    "no-ai-word": {
+      "verdict": "PASS",
+      "detail": "the word appears nowhere"
+    },
+    "sds-not-judged": {
+      "verdict": "FAIL",
+      "detail": "no item matched. held: Annual maintenance of portable fir | Hydrostatic test for CO2 unit L-1 | Six-year internal maintenance for  | Monthly visual inspection records  | Emergency action plan missing requ | Emergency action plan missing proc | Emergency action plan missing name | Emergency action plan covers earth | Emergency action plan does not sta | Emergency action plan appendices A | Emergency action plan annual Janua | Forklift FL-2 pre-shift inspection | Forklift FL-2 horn defect with no  | Forklift FL-2 pre-shift inspection | Forklift FL-2 inspection log super | Forklift operator Rina Patel three | Forklift operator Jose Rivera cert | Forklift operator training roster  | OSHA Form 300A 2025 average employ | OSHA Form 300A 2025 electronic fil | OSHA Form 300A NAICS code may not  | OSHA 300 Log and incident reports "
+    },
+    "forklift-gaps": {
+      "verdict": "PASS",
+      "detail": "findings: \"Forklift FL-2 horn defect with no repair record or out-of-service do\" [nothing_on_file]"
+    }
+  },
+  "cost_usd": 0.049185,
+  "wall_ms": 60812,
+  "handle_errors": []
+}

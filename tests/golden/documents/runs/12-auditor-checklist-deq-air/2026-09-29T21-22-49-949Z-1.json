@@ -1,0 +1,174 @@
+{
+  "case": "12-auditor-checklist-deq-air",
+  "run": 1,
+  "run_date": "2026-09-29",
+  "model": "claude-opus-5-5",
+  "structured": true,
+  "searches": 0,
+  "cited_sources": 0,
+  "prompt_sha256": "7f2bd1183c6deb83e81e1879700a06163eed845a3c8bd0a553bb4aeeeef0d7a3",
+  "scan_id": "d501b745-d6dd-430d-9022-a9839da87884",
+  "ai_call_id": "4a8f1a1e-afa7-4b94-8705-98999459c55b",
+  "company_context": "WHO THIS COMPANY IS\n  Name: Cascade Specialty Chemicals, LLC\n  Industry: chemical manufacturing (recorded as chemical-manufacturing)\n  Address: Portland, Oregon\n  State: Oregon\nTheir sites:\n  - Portland — 4410 NW Front Ave, Portland, Oregon 97210 (primary)\n\nWHAT A PERSON HAS CONFIRMED FROM A DOCUMENT\nEach of these was read in the named document and then confirmed by a person.\n  employee count (Portland): 42 employees at Portland facility, as of 2021-02-01\n\nLABELS ALREADY IN USE FOR THIS COMPANY\nAgencies:\n  - Oregon DEQ\n  - Oregon OSHA\nSubjects:\n  - Air Quality\n  - Emergency Preparedness\n  - Fire Safety\n  - Hazard Communication\n  - Injury and Illness Recordkeeping\n  - Powered Industrial Trucks\n\nFACT KEYS ALREADY IN USE FOR THIS COMPANY\n  - acid_caustic_repackaging_lines\n  - air_permit_deviations_2025\n  - air_permit_type_and_number\n  - annual_average_employees_2025\n  - boiler_on_site\n  - carbon_adsorption_unit_c1\n  - certified_forklift_operators\n  - emergency_eyewash_shower_location\n  - employee_count\n  - employees_evacuate_during_fire\n  - employs_drivers\n  - fire_alarm_monitoring_vendor\n  - fire_extinguisher_service_vendor\n  - forklift_operating_shifts\n  - forklift_trainer_evaluator\n  - naics_code\n  - onsite_laboratory\n  - portable_fire_extinguisher_count\n  - powered_industrial_trucks_on_site\n  - propane_forklift_cylinders\n  - recordable_cases_2025\n  - sodium_hydroxide_50_on_site\n  - solvent_bulk_storage\n  - source_category\n  - tank_farm\n  - total_hours_worked_2025",
+  "company_context_sha256": "b6c2c610a795ebecd70a181c4077449e4df7102ad1c246140f5af3df80e8e212",
+  "wall_ms": 28966,
+  "cost_usd": 0.09362399999999999,
+  "input_tokens": 9411,
+  "output_tokens": 2799,
+  "json_parsed": true,
+  "compliant_found_in": [],
+  "alternative_pass": false,
+  "verdicts": {
+    "kind": {
+      "verdict": "PASS",
+      "detail": "identity.kind = \"other\""
+    },
+    "issuer": {
+      "verdict": "PASS",
+      "detail": "identity.issuer = \"oregon deq air quality program (named in the page 1 header; not verified as an official deq form)\""
+    },
+    "doc-date-none": {
+      "verdict": "PASS",
+      "detail": "identity.doc_date = null"
+    },
+    "status": {
+      "verdict": "PASS",
+      "detail": "status = \"not judged\""
+    },
+    "no-gaps": {
+      "verdict": "PASS",
+      "detail": "none"
+    },
+    "no-facts-about-cascade": {
+      "verdict": "PASS",
+      "detail": "none"
+    },
+    "agency": {
+      "verdict": "PASS",
+      "detail": "identity.agencies = [oregon deq]"
+    },
+    "subject": {
+      "verdict": "PASS",
+      "detail": "identity.subjects = [air quality]"
+    },
+    "site": {
+      "verdict": "PASS",
+      "detail": "identity.site = \"portland — 4410 nw front ave, portland, oregon 97210\""
+    },
+    "deadlines-none": {
+      "verdict": "FAIL",
+      "detail": "4: \"Annual report for calendar year 2026 (the form says it is due by Febru\"; \"Semi-annual monitoring report for January–June 2026 (the form says it \"; \"Deviation reporting: notify within 24 hours and report in writing with\"; \"Permit renewal application: the form says at least 120 days before exp\""
+    }
+  },
+  "scan": {
+    "identity": {
+      "kind": "other",
+      "title": "Oregon DEQ Air Contaminant Discharge Permit Compliance Inspection Checklist (Inspector's Field Form), blank",
+      "issuer": "Oregon DEQ Air Quality Program (named in the page 1 header; not verified as an official DEQ form)",
+      "agencies": [
+        "Oregon DEQ"
+      ],
+      "subjects": [
+        "Air Quality"
+      ],
+      "site": "Portland — 4410 NW Front Ave, Portland, Oregon 97210",
+      "jurisdiction": [
+        "Oregon"
+      ],
+      "doc_date": null,
+      "doc_date_kind": "unknown",
+      "page_refs": {}
+    },
+    "summary": "This is a blank inspection checklist, not a permit, record or program. Every field is empty: facility, permit number, inspection date, inspector, all Yes/No/N.A. answers, evidence, notes and signatures. It proves nothing about Cascade yet. Its real use is as a list of what an inspector would ask to see. Lines A1–C5 cover the permit, renewal timing, annual and semi-annual reports, deviation reporting, scrubber and carbon-unit records, opacity monitoring, keeping records for 5 years, and conditions on the day of inspection.",
+    "status": "not_judged",
+    "significant_date": null,
+    "significant_date_kind": null,
+    "freshness_note": "The form has no date, no form number and no revision marking, and no inspection has been recorded on it. If an inspection has actually happened, ask DEQ or the inspector for the completed, signed copy. As a prep tool, check each line against the permit itself (Standard ACDP 26-2841-ST-01), not against this form.",
+    "gaps": [],
+    "conditions": [],
+    "deadlines": [
+      {
+        "title": "Annual report for calendar year 2026 (the form says it is due by February 15; confirm the date in the permit)",
+        "due_on": "2027-02-15",
+        "source_line": "A3 — Annual report for the previous calendar year submitted by February 15",
+        "recurs": true
+      },
+      {
+        "title": "Semi-annual monitoring report for January–June 2026 (the form says it was due July 31, which has passed; check that it was filed, and confirm in the permit that such a report is required)",
+        "due_on": "2026-07-31",
+        "source_line": "A4 — Semi-annual monitoring report for January to June submitted by July 31",
+        "recurs": true
+      },
+      {
+        "title": "Deviation reporting: notify within 24 hours and report in writing within 15 days of any deviation (according to the form; confirm in the permit)",
+        "due_on": null,
+        "source_line": "A5 — Deviation reports: any deviation in the last 12 months notified within 24 hours and reported in writing within 15 days",
+        "recurs": true
+      },
+      {
+        "title": "Permit renewal application: the form says at least 120 days before expiry. Confirm the lead time in the permit and in OAR 340-216; I am not sure 120 days is right for a Standard ACDP.",
+        "due_on": null,
+        "source_line": "A2 — Renewal application submitted at least 120 days before the permit expiration date, where expiration is within 12 months",
+        "recurs": true
+      }
+    ],
+    "facts": [],
+    "version_of": {
+      "title": null,
+      "confidence": "high"
+    },
+    "expected_missing": [
+      {
+        "title": "Semi-annual monitoring report for January–June 2026, with proof DEQ received it",
+        "why": "Line A4 asks for it and it is not among the documents held.",
+        "basis": "similar companies, not a checked requirement; confirm the requirement in the permit"
+      },
+      {
+        "title": "Quarterly scrubber inspection records for the last four quarters (S-1 acid line, S-2 caustic line)",
+        "why": "Line B2 asks for them; the documents held include only the daily pressure-drop log.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Carbon replacement or breakthrough record for unit C-1 from the last 12 months",
+        "why": "Line B3 asks for it; the documents held include only the weekly detector-tube check.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Scrubber pressure-drop log covering the full last 12 months",
+        "why": "Line B1 asks for 12 months; the log held covers only August–September 2026.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Opacity (visible emissions) observation records, or a written statement of the monitoring method",
+        "why": "Line B5 asks for one or the other.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Deviation reports and DEQ notifications from the last 12 months, or a written statement that none occurred",
+        "why": "Line A5 asks for them; the company already tracks air_permit_deviations_2025.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Records retention procedure (5 years)",
+        "why": "Line B6 asks whether records are kept for 5 years and available on request.",
+        "basis": "similar companies, not a checked requirement"
+      }
+    ],
+    "confidence_notes": "I am sure the form is entirely blank and records no findings, so I did not judge it and took no company facts from it. I am less sure where it came from. The file name suggests an auditor's or consultant's version rather than a published DEQ form. It has no DEQ form number. Line C4 asks for employee count for 'fee tier verification', but I do not believe Oregon ACDP fees are based on employee count, so treat that line with caution. The 120-day renewal lead time, the February 15 and July 31 due dates and the 24-hour/15-day deviation timing all come from this form, not from the permit or the rules. Confirm each one against Standard ACDP 26-2841-ST-01 before relying on it. The equipment named on the form (tanks T-3 to T-6, carbon unit, scrubbers) matches this company, so I assigned it to the Portland site, but that is my inference; the facility field is blank.",
+    "could_not_read": {
+      "reason": null,
+      "way_forward": null
+    },
+    "raw_text": "{\"identity\":{\"kind\":\"other\",\"title\":\"Oregon DEQ Air Contaminant Discharge Permit Compliance Inspection Checklist (Inspector's Field Form), blank\",\"issuer\":\"Oregon DEQ Air Quality Program (named in the page 1 header; not verified as an official DEQ form)\",\"agencies\":[\"Oregon DEQ\"],\"subjects\":[\"Air Quality\"],\"site\":\"Portland — 4410 NW Front Ave, Portland, Oregon 97210\",\"jurisdiction\":[\"Oregon\"],\"doc_date\":\"\",\"doc_date_kind\":\"unknown\"},\"summary\":\"This is a blank inspection checklist, not a permit, record or program. Every field is empty: facility, permit number, inspection date, inspector, all Yes/No/N.A. answers, evidence, notes and signatures. It proves nothing about Cascade yet. Its real use is as a list of what an inspector would ask to see. Lines A1–C5 cover the permit, renewal timing, annual and semi-annual reports, deviation reporting, scrubber and carbon-unit records, opacity monitoring, keeping records for 5 years, and conditions on the day of inspection.\",\"status\":\"not_judged\",\"significant_date\":\"\",\"significant_date_kind\":\"\",\"freshness_note\":\"The form has no date, no form number and no revision marking, and no inspection has been recorded on it. If an inspection has actually happened, ask DEQ or the inspector for the completed, signed copy. As a prep tool, check each line against the permit itself (Standard ACDP 26-2841-ST-01), not against this form.\",\"gaps\":[],\"conditions\":[],\"deadlines\":[{\"title\":\"Annual report for calendar year 2026 (the form says it is due by February 15; confirm the date in the permit)\",\"due_on\":\"2027-02-15\",\"source_line\":\"A3 — Annual report for the previous calendar year submitted by February 15\",\"recurs\":true},{\"title\":\"Semi-annual monitoring report for January–June 2026 (the form says it was due July 31, which has passed; check that it was filed, and confirm in the permit that such a report is required)\",\"due_on\":\"2026-07-31\",\"source_line\":\"A4 — Semi-annual monitoring report for January to June submitted by July 31\",\"recurs\":true},{\"title\":\"Deviation reporting: notify within 24 hours and report in writing within 15 days of any deviation (according to the form; confirm in the permit)\",\"due_on\":\"\",\"source_line\":\"A5 — Deviation reports: any deviation in the last 12 months notified within 24 hours and reported in writing within 15 days\",\"recurs\":true},{\"title\":\"Permit renewal application: the form says at least 120 days before expiry. Confirm the lead time in the permit and in OAR 340-216; I am not sure 120 days is right for a Standard ACDP.\",\"due_on\":\"\",\"source_line\":\"A2 — Renewal application submitted at least 120 days before the permit expiration date, where expiration is within 12 months\",\"recurs\":true}],\"facts\":[],\"version_of_title\":\"\",\"version_of_confidence\":\"high\",\"expected_missing\":[{\"title\":\"Semi-annual monitoring report for January–June 2026, with proof DEQ received it\",\"why\":\"Line A4 asks for it and it is not among the documents held.\",\"basis\":\"similar companies, not a checked requirement; confirm the requirement in the permit\"},{\"title\":\"Quarterly scrubber inspection records for the last four quarters (S-1 acid line, S-2 caustic line)\",\"why\":\"Line B2 asks for them; the documents held include only the daily pressure-drop log.\",\"basis\":\"similar companies, not a checked requirement\"},{\"title\":\"Carbon replacement or breakthrough record for unit C-1 from the last 12 months\",\"why\":\"Line B3 asks for it; the documents held include only the weekly detector-tube check.\",\"basis\":\"similar companies, not a checked requirement\"},{\"title\":\"Scrubber pressure-drop log covering the full last 12 months\",\"why\":\"Line B1 asks for 12 months; the log held covers only August–September 2026.\",\"basis\":\"similar companies, not a checked requirement\"},{\"title\":\"Opacity (visible emissions) observation records, or a written statement of the monitoring method\",\"why\":\"Line B5 asks for one or the other.\",\"basis\":\"similar companies, not a checked requirement\"},{\"title\":\"Deviation reports and DEQ notifications from the last 12 months, or a written statement that none occurred\",\"why\":\"Line A5 asks for them; the company already tracks air_permit_deviations_2025.\",\"basis\":\"similar companies, not a checked requirement\"},{\"title\":\"Records retention procedure (5 years)\",\"why\":\"Line B6 asks whether records are kept for 5 years and available on request.\",\"basis\":\"similar companies, not a checked requirement\"}],\"confidence_notes\":\"I am sure the form is entirely blank and records no findings, so I did not judge it and took no company facts from it. I am less sure where it came from. The file name suggests an auditor's or consultant's version rather than a published DEQ form. It has no DEQ form number. Line C4 asks for employee count for 'fee tier verification', but I do not believe Oregon ACDP fees are based on employee count, so treat that line with caution. The 120-day renewal lead time, the February 15 and July 31 due dates and the 24-hour/15-day deviation timing all come from this form, not from the permit or the rules. Confirm each one against Standard ACDP 26-2841-ST-01 before relying on it. The equipment named on the form (tanks T-3 to T-6, carbon unit, scrubbers) matches this company, so I assigned it to the Portland site, but that is my inference; the facility field is blank.\",\"could_not_read_reason\":\"\",\"could_not_read_way_forward\":\"\"}",
+    "json_parsed": true,
+    "model": "claude-opus-5-5",
+    "cited_sources": 0,
+    "searches": null,
+    "structured": true,
+    "prompt_sha256": "7f2bd1183c6deb83e81e1879700a06163eed845a3c8bd0a553bb4aeeeef0d7a3",
+    "quotes_checked": 0,
+    "quotes_verified": 0,
+    "extracted_text": "<p>OREGON DEQ — AIR QUALITY PROGRAM</p><p>AIR CONTAMINANT DISCHARGE PERMIT — COMPLIANCE INSPECTION CHECKLIST (INSPECTOR'S FIELD FORM)</p><p>Facility: ____________________________ Permit number: ______________ Inspection date: __________</p><p>Inspector: ____________________________ Facility contact: ____________________________</p><p>Instructions: complete each line from documents presented by the facility and from observation on the day. \"Evidence seen\" names the document, record or observation. A line answered from a verbal statement alone is marked Not Verified.</p><p><strong>SECTION A — PERMIT AND SUBMISSIONS</strong></p><table><tr><td><p><strong>Line</strong></p></td><td><p><strong>Item</strong></p></td><td><p><strong>Yes / No / N.A.</strong></p></td><td><p><strong>Evidence seen</strong></p></td><td><p><strong>Notes</strong></p></td></tr><tr><td><p>A1</p></td><td><p>Current ACDP permit available at the facility and not expired</p></td><td></td><td></td><td></td></tr><tr><td><p>A2</p></td><td><p>Renewal application submitted at least 120 days before the permit expiration date, where expiration is within 12 months</p></td><td></td><td></td><td></td></tr><tr><td><p>A3</p></td><td><p>Annual report for the previous calendar year submitted by February 15</p></td><td></td><td></td><td></td></tr><tr><td><p>A4</p></td><td><p>Semi-annual monitoring report for January to June submitted by July 31</p></td><td></td><td></td><td></td></tr><tr><td><p>A5</p></td><td><p>Deviation reports: any deviation in the last 12 months notified within 24 hours and reported in writing within 15 days</p></td><td></td><td></td><td></td></tr></table><p><strong>SECTION B — RECORDS</strong></p><table><tr><td><p><strong>Line</strong></p></td><td><p><strong>Item</strong></p></td><td><p><strong>Yes / No / N.A.</strong></p></td><td><p><strong>Evidence seen</strong></p></td><td><p><strong>Notes</strong></p></td></tr><tr><td><p>B1</p></td><td><p>Scrubber pressure-drop log covering the last 12 months, one reading per operating day, readings within the permitted range</p></td><td></td><td></td><td></td></tr><tr><td><p>B2</p></td><td><p>Quarterly scrubber inspection records for the last four quarters</p></td><td></td><td></td><td></td></tr><tr><td><p>B3</p></td><td><p>Carbon replacement record within the last 12 months, or breakthrough records showing replacement was not required</p></td><td></td><td></td><td></td></tr><tr><td><p>B4</p></td><td><p>Weekly detector-tube check records at the carbon unit outlet</p></td><td></td><td></td><td></td></tr><tr><td><p>B5</p></td><td><p>Opacity observation records, or a statement of the method used to monitor visible emissions</p></td><td></td><td></td><td></td></tr><tr><td><p>B6</p></td><td><p>Records retained for five years and available on request</p></td><td></td><td></td><td></td></tr></table><p><strong>SECTION C — ON THE DAY</strong></p><table><tr><td><p><strong>Line</strong></p></td><td><p><strong>Item</strong></p></td><td><p><strong>Yes / No / N.A.</strong></p></td><td><p><strong>Evidence seen</strong></p></td><td><p><strong>Notes</strong></p></td></tr><tr><td><p>C1</p></td><td><p>Each scrubber operating with the associated line, pressure drop within range at the time of inspection</p></td><td></td><td></td><td></td></tr><tr><td><p>C2</p></td><td><p>Solvent storage tanks T-3 to T-6 vented to the carbon unit, no open vents or leaks observed</p></td><td></td><td></td><td></td></tr><tr><td><p>C3</p></td><td><p>Tank and line labels legible; permitted sources match the permit's equipment list</p></td><td></td><td></td><td></td></tr><tr><td><p>C4</p></td><td><p>Facility employee count on the day, for fee tier verification</p></td><td></td><td></td><td></td></tr><tr><td><p>C5</p></td><td><p>Emergency contact and emergency plan available at the facility</p></td><td></td><td></td><td></td></tr></table><p>Inspector's summary: ______________________________________________________________________________</p><p>Inspector signature: ____________________ Facility signature: ____________________ Date: __________</p>",
+    "started_at": "2026-09-29T21:22:20.612Z"
+  }
+}

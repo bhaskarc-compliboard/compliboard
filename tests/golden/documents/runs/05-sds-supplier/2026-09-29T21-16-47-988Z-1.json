@@ -1,0 +1,186 @@
+{
+  "case": "05-sds-supplier",
+  "run": 1,
+  "run_date": "2026-09-29",
+  "model": "claude-opus-5-5",
+  "structured": true,
+  "searches": 1,
+  "cited_sources": 0,
+  "prompt_sha256": "9bb5fd17f7a523d5db08ff77ef48a0e67fcd338bb0457f9e5111918b2ea8f3d7",
+  "scan_id": "428b6f81-3e81-4eb0-b061-4b57b3608100",
+  "ai_call_id": "9acc3394-4da9-47ad-943a-8731a8f235f2",
+  "company_context": "WHO THIS COMPANY IS\n  Name: Cascade Specialty Chemicals, LLC\n  Industry: chemical manufacturing (recorded as chemical-manufacturing)\n  Address: Portland, Oregon\n  State: Oregon\nTheir sites:\n  - Portland — 4410 NW Front Ave, Portland, Oregon 97210 (primary)\n\nWHAT A PERSON HAS CONFIRMED FROM A DOCUMENT\nEach of these was read in the named document and then confirmed by a person.\n  employee count (Portland): 42 employees at Portland facility, as of 2021-02-01\n\nLABELS ALREADY IN USE FOR THIS COMPANY\nAgencies:\n  - Oregon DEQ\n  - Oregon OSHA\nSubjects:\n  - Air Quality\n  - Emergency Preparedness\n  - Fire Safety\n\nFACT KEYS ALREADY IN USE FOR THIS COMPANY\n  - acid_caustic_repackaging_lines\n  - air_permit_type_and_number\n  - emergency_eyewash_shower_location\n  - employee_count\n  - employees_evacuate_during_fire\n  - employs_drivers\n  - fire_alarm_monitoring_vendor\n  - onsite_laboratory\n  - solvent_bulk_storage\n  - source_category",
+  "company_context_sha256": "93381c8df42434ebb088f1e2a85071e3a2cdd2424373e78dad7cd3e24f67f3b7",
+  "wall_ms": 35833,
+  "cost_usd": 0.235496,
+  "input_tokens": 40334,
+  "output_tokens": 3208,
+  "json_parsed": true,
+  "compliant_found_in": [],
+  "alternative_pass": false,
+  "verdicts": {
+    "kind": {
+      "verdict": "PASS",
+      "detail": "identity.kind = \"supplier document\""
+    },
+    "issuer-supplier": {
+      "verdict": "PASS",
+      "detail": "identity.issuer = \"northwest alkali products, inc., tacoma, washington (regulatory affairs) – page 1, section 1, and page 4, section 16\""
+    },
+    "agency-osha": {
+      "verdict": "PASS",
+      "detail": "identity.agencies = [oregon osha]"
+    },
+    "site-not-invented": {
+      "verdict": "FAIL",
+      "detail": "identity.site = \"portland\""
+    },
+    "doc-date": {
+      "verdict": "PASS",
+      "detail": "identity.doc_date = 2024-03-18"
+    },
+    "doc-date-kind": {
+      "verdict": "PASS",
+      "detail": "identity.doc_date_kind = \"revised\""
+    },
+    "status": {
+      "verdict": "PASS",
+      "detail": "status = \"not judged\""
+    },
+    "no-gaps": {
+      "verdict": "PASS",
+      "detail": "none"
+    },
+    "no-deadlines": {
+      "verdict": "PASS",
+      "detail": "none"
+    },
+    "no-conditions": {
+      "verdict": "PASS",
+      "detail": "none"
+    },
+    "summary-supplier-document": {
+      "verdict": "PASS",
+      "detail": "[supplier, nothing, fix, current version]"
+    },
+    "label-consistency": {
+      "verdict": "CROSS",
+      "detail": "judged across the three runs, below"
+    },
+    "company-fact-is-inferred": {
+      "verdict": "PASS",
+      "detail": "1 such fact(s), every one basis=inferred"
+    },
+    "no-supplier-or-chemical-facts": {
+      "verdict": "PASS",
+      "detail": "not raised",
+      "soft": []
+    },
+    "hazcom-accessible-note": {
+      "verdict": "FAIL",
+      "detail": "only [nothing] of the spec's words appear"
+    },
+    "freshness-2024": {
+      "verdict": "PASS",
+      "detail": "[2024, newer]"
+    }
+  },
+  "scan": {
+    "identity": {
+      "kind": "supplier_document",
+      "title": "Safety Data Sheet – Sodium Hydroxide Solution, 50% (Northwest Alkali Products, Version 4.1)",
+      "issuer": "Northwest Alkali Products, Inc., Tacoma, Washington (Regulatory Affairs) – page 1, Section 1, and page 4, Section 16",
+      "agencies": [
+        "Oregon OSHA"
+      ],
+      "subjects": [
+        "Hazard Communication"
+      ],
+      "site": "Portland",
+      "jurisdiction": [
+        "federal",
+        "Oregon"
+      ],
+      "doc_date": "2024-03-18",
+      "doc_date_kind": "revised",
+      "page_refs": {}
+    },
+    "summary": "This is the supplier's Safety Data Sheet (SDS) for 50% caustic soda (sodium hydroxide solution). The SDS belongs to Northwest Alkali Products, not to Cascade, so there is nothing in it for you to fix, and it is not judged here. Your job is to keep the current version where workers can get to it at the Portland site, and to make sure your labels, PPE, eyewash/shower, spill response, waste handling and training match what it says: a Category 1A skin corrosive that is also corrosive to metals, with a 1,000 lb reportable quantity (RQ) and handled as RCRA D002 corrosive waste if disposed of without neutralizing.",
+    "status": "not_judged",
+    "significant_date": "2024-03-18",
+    "significant_date_kind": "revised",
+    "freshness_note": "Revised March 18, 2024 (Version 4.1, replacing 4.0 from August 2, 2021). That is about 2.5 years old, and it was written before OSHA's 2024 update to the Hazard Communication Standard (published May 20, 2024). OSHA's January 2026 extension set May 19, 2026 as the date by which manufacturers and distributors of substances must update SDSs and labels, and November 20, 2026 as the date for employers to update workplace labels, the written program and training for substances. If this product counts as a substance, that employer date is less than two months away. Mixtures have later dates (November 19, 2027 for manufacturers). I am not sure whether OSHA treats a 50% water solution as a substance or a mixture here, or whether Oregon OSHA has adopted the extended dates the same way. Ask Northwest Alkali whether a newer version exists or is coming, and confirm the dates with Oregon OSHA.",
+    "gaps": [],
+    "conditions": [],
+    "deadlines": [],
+    "facts": [
+      {
+        "key": "sodium_hydroxide_50_on_site",
+        "value": "Cascade appears to keep 50% sodium hydroxide solution (caustic soda) from Northwest Alkali Products at the Portland facility. I inferred this from the fact that the company holds this SDS; the SDS itself does not name Cascade.",
+        "quote": "Product identifier: Sodium Hydroxide Solution, 50% (w/w)",
+        "locator": "Page 1, Section 1",
+        "as_of": "2024-03-18",
+        "affects": "Brings in HazCom (SDS access, labels, training), the eyewash/shower requirement for corrosives, the PPE hazard assessment, release reporting for spills at or above the 1,000 lb sodium hydroxide RQ, D002 waste handling, and possibly hazardous-substance inventory reporting depending on how much is on site.",
+        "basis": "inferred",
+        "quote_verified": true
+      }
+    ],
+    "version_of": {
+      "title": "none",
+      "confidence": "high"
+    },
+    "expected_missing": [
+      {
+        "title": "Written Hazard Communication program, SDS index and chemical inventory",
+        "why": "Any employer with hazardous chemicals such as caustic needs a written HazCom program, an inventory, and SDSs workers can reach, and none of these is in the list.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Emergency eyewash and safety shower inspection/activation log",
+        "why": "The SDS calls for an eyewash and shower within 10 seconds of work areas, and operators usually keep weekly activation records.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "PPE hazard assessment certification",
+        "why": "Handling caustic calls for goggles, face shield, gloves, apron and boots, and a written assessment usually backs that up.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Hazardous waste generator records and Oregon DEQ generator status",
+        "why": "Unneutralized caustic waste is D002 corrosive hazardous waste.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Oregon State Fire Marshal hazardous substance / EPCRA Tier II inventory report",
+        "why": "Chemical manufacturers storing bulk caustic often meet state and federal inventory reporting thresholds.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Spill response / release reporting procedure",
+        "why": "The 1,000 lb CERCLA RQ and the SDS's instruction to keep spills out of drains usually lead to a written spill procedure.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Industrial stormwater permit (e.g., Oregon DEQ 1200-Z) or a no-exposure certification",
+        "why": "Chemical manufacturing sites in Oregon commonly hold one or the other.",
+        "basis": "similar companies, not a checked requirement"
+      }
+    ],
+    "confidence_notes": "All four pages read cleanly, and the identity, supplier, revision date, version history and hazard details are read directly from the text. That this is a supplier document, and so not judged, is certain. Tying it to the Portland site is my inference, because Portland is Cascade's only site. The HazCom 2024 compliance dates come from OSHA's January 2026 extension notice. I am not sure whether a 50% water solution falls under the substance dates or the mixture dates, or exactly how Oregon OSHA adopted the extension. The company fact is inferred from Cascade holding the SDS, not stated in it. The SDS does not give quantities on site, so I cannot say which inventory or reporting thresholds apply.",
+    "could_not_read": {
+      "reason": null,
+      "way_forward": null
+    },
+    "raw_text": "{\"identity\":{\"kind\":\"supplier_document\",\"title\":\"Safety Data Sheet – Sodium Hydroxide Solution, 50% (Northwest Alkali Products, Version 4.1)\",\"issuer\":\"Northwest Alkali Products, Inc., Tacoma, Washington (Regulatory Affairs) – page 1, Section 1, and page 4, Section 16\",\"agencies\":[\"Oregon OSHA\"],\"subjects\":[\"Hazard Communication\"],\"site\":\"Portland\",\"jurisdiction\":[\"federal\",\"Oregon\"],\"doc_date\":\"2024-03-18\",\"doc_date_kind\":\"revised\"},\"summary\":\"This is the supplier's Safety Data Sheet (SDS) for 50% caustic soda (sodium hydroxide solution). The SDS belongs to Northwest Alkali Products, not to Cascade, so there is nothing in it for you to fix, and it is not judged here. Your job is to keep the current version where workers can get to it at the Portland site, and to make sure your labels, PPE, eyewash/shower, spill response, waste handling and training match what it says: a Category 1A skin corrosive that is also corrosive to metals, with a 1,000 lb reportable quantity (RQ) and handled as RCRA D002 corrosive waste if disposed of without neutralizing.\",\"status\":\"not_judged\",\"significant_date\":\"2024-03-18\",\"significant_date_kind\":\"revised_on\",\"freshness_note\":\"Revised March 18, 2024 (Version 4.1, replacing 4.0 from August 2, 2021). That is about 2.5 years old, and it was written before OSHA's 2024 update to the Hazard Communication Standard (published May 20, 2024). OSHA's January 2026 extension set May 19, 2026 as the date by which manufacturers and distributors of substances must update SDSs and labels, and November 20, 2026 as the date for employers to update workplace labels, the written program and training for substances. If this product counts as a substance, that employer date is less than two months away. Mixtures have later dates (November 19, 2027 for manufacturers). I am not sure whether OSHA treats a 50% water solution as a substance or a mixture here, or whether Oregon OSHA has adopted the extended dates the same way. Ask Northwest Alkali whether a newer version exists or is coming, and confirm the dates with Oregon OSHA.\",\"gaps\":[],\"conditions\":[],\"deadlines\":[],\"facts\":[{\"key\":\"sodium_hydroxide_50_on_site\",\"value\":\"Cascade appears to keep 50% sodium hydroxide solution (caustic soda) from Northwest Alkali Products at the Portland facility. I inferred this from the fact that the company holds this SDS; the SDS itself does not name Cascade.\",\"basis\":\"inferred\",\"quote\":\"Product identifier: Sodium Hydroxide Solution, 50% (w/w)\",\"locator\":\"Page 1, Section 1\",\"as_of\":\"2024-03-18\",\"affects\":\"Brings in HazCom (SDS access, labels, training), the eyewash/shower requirement for corrosives, the PPE hazard assessment, release reporting for spills at or above the 1,000 lb sodium hydroxide RQ, D002 waste handling, and possibly hazardous-substance inventory reporting depending on how much is on site.\"}],\"version_of_title\":\"none\",\"version_of_confidence\":\"high\",\"expected_missing\":[{\"title\":\"Written Hazard Communication program, SDS index and chemical inventory\",\"why\":\"Any employer with hazardous chemicals such as caustic needs a written HazCom program, an inventory, and SDSs workers can reach, and none of these is in the list.\",\"basis\":\"similar companies, not a checked requirement\"},{\"title\":\"Emergency eyewash and safety shower inspection/activation log\",\"why\":\"The SDS calls for an eyewash and shower within 10 seconds of work areas, and operators usually keep weekly activation records.\",\"basis\":\"similar companies, not a checked requirement\"},{\"title\":\"PPE hazard assessment certification\",\"why\":\"Handling caustic calls for goggles, face shield, gloves, apron and boots, and a written assessment usually backs that up.\",\"basis\":\"similar companies, not a checked requirement\"},{\"title\":\"Hazardous waste generator records and Oregon DEQ generator status\",\"why\":\"Unneutralized caustic waste is D002 corrosive hazardous waste.\",\"basis\":\"similar companies, not a checked requirement\"},{\"title\":\"Oregon State Fire Marshal hazardous substance / EPCRA Tier II inventory report\",\"why\":\"Chemical manufacturers storing bulk caustic often meet state and federal inventory reporting thresholds.\",\"basis\":\"similar companies, not a checked requirement\"},{\"title\":\"Spill response / release reporting procedure\",\"why\":\"The 1,000 lb CERCLA RQ and the SDS's instruction to keep spills out of drains usually lead to a written spill procedure.\",\"basis\":\"similar companies, not a checked requirement\"},{\"title\":\"Industrial stormwater permit (e.g., Oregon DEQ 1200-Z) or a no-exposure certification\",\"why\":\"Chemical manufacturing sites in Oregon commonly hold one or the other.\",\"basis\":\"similar companies, not a checked requirement\"}],\"confidence_notes\":\"All four pages read cleanly, and the identity, supplier, revision date, version history and hazard details are read directly from the text. That this is a supplier document, and so not judged, is certain. Tying it to the Portland site is my inference, because Portland is Cascade's only site. The HazCom 2024 compliance dates come from OSHA's January 2026 extension notice. I am not sure whether a 50% water solution falls under the substance dates or the mixture dates, or exactly how Oregon OSHA adopted the extension. The company fact is inferred from Cascade holding the SDS, not stated in it. The SDS does not give quantities on site, so I cannot say which inventory or reporting thresholds apply.\",\"could_not_read_reason\":\"\",\"could_not_read_way_forward\":\"\"}",
+    "json_parsed": true,
+    "model": "claude-opus-5-5",
+    "cited_sources": 0,
+    "searches": null,
+    "structured": true,
+    "prompt_sha256": "9bb5fd17f7a523d5db08ff77ef48a0e67fcd338bb0457f9e5111918b2ea8f3d7",
+    "quotes_checked": 1,
+    "quotes_verified": 1,
+    "extracted_text": "SAFETY DATA SHEET\nSodium Hydroxide Solution, 50%\nAccording to OSHA Hazard Communication Standard, 29 CFR 1910.1200\nRevision date: March 18, 2024 · Version 4.1 · Supersedes version 4.0 (August\n2, 2021)\nSECTION 1. IDENTIFICATION\nProduct identifier: Sodium Hydroxide Solution, 50% (w/w)\nSynonyms: Caustic soda solution, lye solution, NaOH 50%\nRecommended use: Industrial pH adjustment, cleaning, chemical manufacturing\nSupplier: Northwest Alkali Products, Inc., 3420 Taylor Way, Tacoma, Washington 98421 · Telephone (253) 555-0140\nEmergency telephone: CHEMTREC 1-800-424-9300 (24 hours)\nSECTION 2. HAZARD IDENTIFICATION\nClassification: Skin corrosion, Category 1A (H314); Serious eye damage, Category 1 (H318); Corrosive to metals, Category 1\n(H290)\nSignal word: DANGER\nHazard statements: H290 May be corrosive to metals. H314 Causes severe skin burns and eye damage.\nPrecautionary statements: P260 Do not breathe mist or vapours. P280 Wear protective gloves, protective clothing, eye protection\nand face protection. P301+P330+P331 If swallowed: rinse mouth, do NOT induce vomiting. P303+P361+P353 If on skin (or\nhair): take off immediately all contaminated clothing, rinse skin with water. P305+P351+P338 If in eyes: rinse cautiously with\nwater for several minutes; remove contact lenses if present and easy to do; continue rinsing. P310 Immediately call a poison\ncenter or doctor. P390 Absorb spillage to prevent material damage. P406 Store in a corrosion-resistant container with a resistant\ninner liner.\nPictograms: Corrosion\nSECTION 3. COMPOSITION / INFORMATION ON INGREDIENTS\nSodium hydroxide, CAS 1310-73-2, 48–52%. Water, CAS 7732-18-5, 48–52%.\nSECTION 4. FIRST-AID MEASURES\nEyes: Immediately flush with plenty of water for at least 30 minutes, lifting the eyelids. Get medical attention immediately.\nSkin: Immediately flush with plenty of water for at least 30 minutes while removing contaminated clothing and shoes. Get\nmedical attention immediately. Inhalation: Move to fresh air. If breathing is difficult, give oxygen. Get medical attention.\nIngestion: Do not induce vomiting. Rinse mouth, give water to drink if the person is conscious. Get medical attention\nimmediately.\nSECTION 5. FIRE-FIGHTING MEASURES\nThe product is not flammable. Contact with aluminium, zinc, tin and their alloys generates hydrogen gas, which is flammable.\nUse extinguishing media appropriate to surrounding materials. Wear self-contained breathing apparatus and full protective\nclothing.\nSECTION 6. ACCIDENTAL RELEASE MEASURES\nEvacuate unnecessary personnel. Wear the protective equipment in Section 8. Contain the spill with inert absorbent (sand,\nvermiculite). Neutralise carefully with dilute acid if trained to do so. Do not allow to enter drains or waterways. Collect into a\nsuitable corrosion-resistant container for disposal.\nSECTION 7. HANDLING AND STORAGE\nHandling: Avoid contact with skin, eyes and clothing. Do not breathe mist. Add caustic to water slowly, never water to caustic.\nStorage: Store in a cool, dry, well-ventilated area in the original corrosion-resistant container (polyethylene, lined steel, or\nstainless steel). Keep away from acids, aluminium, zinc, tin, organic halogens and nitro compounds. Keep containers closed.\nSolution may freeze below 54°F (12°C).\nSECTION 8. EXPOSURE CONTROLS / PERSONAL PROTECTION\nExposure limits: Sodium hydroxide — OSHA PEL 2 mg/m³ (TWA); ACGIH TLV 2 mg/m³ (ceiling); NIOSH REL 2 mg/m³\n(ceiling). Engineering controls: Local exhaust ventilation where mist may be generated; emergency eyewash and safety shower\nwithin 10 seconds of work areas. Eye and face protection: Chemical splash goggles and face shield. Skin protection: Neoprene,\nnitrile or butyl rubber gloves, chemical-resistant apron or suit, rubber boots. Respiratory protection: Where mist exceeds\nexposure limits, a NIOSH-approved respirator with particulate filter.\nSECTION 9. PHYSICAL AND CHEMICAL PROPERTIES\nAppearance: Clear, colourless to slightly turbid liquid. Odour: Odourless. pH: 14. Freezing point: 54°F (12°C). Boiling point:\n293°F (145°C). Specific gravity: 1.52 at 68°F (20°C). Solubility in water: Complete. Vapour pressure: 1.5 mm Hg at 68°F.\nSECTION 10. STABILITY AND REACTIVITY\nStable under recommended storage conditions. Reacts violently with acids. Reacts with aluminium, zinc, tin, brass and bronze to\nproduce hydrogen. Absorbs carbon dioxide from the air. Hazardous decomposition: none under normal use.\nSECTION 11. TOXICOLOGICAL INFORMATION\nAcute effects: Severe burns to skin, eyes and mucous membranes on contact; ingestion causes severe burns to the mouth, throat\nand stomach, possibly perforation. Chronic effects: Repeated exposure to mist may cause dermatitis and damage to the\nrespiratory tract. Carcinogenicity: Not listed by IARC, NTP or OSHA.\nSECTION 12. ECOLOGICAL INFORMATION\nHarmful to aquatic life through pH change. Do not release to the environment. Rapidly neutralised in the environment; does not\nbioaccumulate.\nSECTION 13. DISPOSAL CONSIDERATIONS\nDispose of in accordance with federal, state and local regulations. Unneutralised product is a corrosive hazardous waste (RCRA\nD002).\nSECTION 14. TRANSPORT INFORMATION\nUN number: UN1824. Proper shipping name: Sodium hydroxide solution. Hazard class: 8. Packing group: II. DOT reportable\nquantity (RQ): 1,000 lb (sodium hydroxide).\nSECTION 15. REGULATORY INFORMATION\nTSCA: Listed. CERCLA RQ: 1,000 lb. SARA 311/312 hazard categories: Skin corrosion, Serious eye damage, Corrosive to\nmetals. California Proposition 65: Not listed.\nSECTION 16. OTHER INFORMATION\nPrepared by: Northwest Alkali Products, Regulatory Affairs. Revision date: March 18, 2024. Changes from version 4.0: Section\n8 updated to current ACGIH TLV; Section 14 packing group corrected. Disclaimer: The information in this SDS is believed to\nbe accurate as of the revision date. It is the user's responsibility to determine suitability for their use.",
+    "started_at": "2026-09-29T21:16:11.673Z"
+  }
+}

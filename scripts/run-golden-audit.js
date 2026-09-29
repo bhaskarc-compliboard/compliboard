@@ -87,7 +87,15 @@ function collections(a) {
     dates: a?.dates ?? [],
     expected_not_seen: a?.expected_not_seen ?? [],
     contradictions: a?.contradictions ?? [],
-    not_document_questions: (a?.not_document_questions ?? []).map((t) => ({ title: t })),
+    // *** ONE CHANNEL — Audits Run 1c, ruling (b). *** A question no document can settle is a
+    // finding with word `not_a_document_question`; the separate top-level list is gone from the
+    // prompt. This collection is kept as a NAME so the case files' `not-a-document-question` check
+    // did not have to change, but it is now a VIEW over findings rather than a second field. Run
+    // 1b's census is why: 11 findings carried the word while the list carried 39 strings, so the
+    // same question was being written twice and counted twice.
+    not_document_questions: (a?.findings ?? [])
+      .filter((f) => norm(f?.word) === 'not a document question')
+      .map((f) => ({ title: f.title })),
   }
 }
 const ITEM_TEXT = (i) => Object.values(i ?? {}).filter((v) => typeof v === 'string').join(' / ')
@@ -193,11 +201,23 @@ function evaluate(check, answer, ctx) {
                              ? 'the word appears nowhere' : 'no positive claim about the company' }
     }
     case 'known_documents_only': {
+      // *** TWO WAYS TO NAME A DOCUMENT THAT DOES NOT EXIST — Audits Run 1c. ***
+      // A handle the block never carried is recorded as `handle_error` by `resolveHandles`, and it
+      // counts here: it is the same offence as an unknown id, caught earlier. An id that resolved
+      // but is not in the block is still checked, because `handles` and the block are built from
+      // the same query and a mismatch between them would be a bug in this script.
       const known = new Set(ctx.documentIds)
-      const bad = [...(cols.findings), ...(cols.dates)]
-        .map((i) => i.document_id).filter((id) => id && !known.has(id))
-      return bad.length ? { verdict: 'FAIL', detail: `unknown ids: ${[...new Set(bad)].slice(0, 3).join(', ')}` }
-                        : { verdict: 'PASS', detail: 'every document_id was given in the block' }
+      const items = [...cols.findings, ...cols.dates, ...cols.contradictions]
+      const badHandles = items.map((i) => i.handle_error).filter(Boolean)
+      const badIds = items.flatMap((i) => [i.document_id, i.document_a_id, i.document_b_id])
+        .filter((id) => id && !known.has(id))
+      if (badHandles.length || badIds.length) {
+        return { verdict: 'FAIL', detail: [
+          badHandles.length ? `${badHandles.length} bad handle(s): ${[...new Set(badHandles)].slice(0, 3).join(' · ')}` : null,
+          badIds.length ? `unknown ids: ${[...new Set(badIds)].slice(0, 3).join(', ')}` : null,
+        ].filter(Boolean).join('  ||  ') }
+      }
+      return { verdict: 'PASS', detail: `every document named was one of the ${known.size} handles given` }
     }
     case 'expected_not_duplicated': {
       const exp = cols.expected_not_seen.map((e) => squash(e.title))
@@ -268,9 +288,49 @@ async function oneCall(system, content, companyId) {
   return { raw, obj, wall_ms: Date.now() - t0, cost, tokens, sources: answer.sources.length }
 }
 
+/**
+ * HANDLES BACK TO IDS — Audits Run 1c, ruling (a).
+ *
+ * The model is shown D1, D2, D3 and never a UUID (`lib/audit.ts`). This turns them back into ids
+ * after parsing, in place, so every check downstream still reads `document_id` and nothing else had
+ * to change. A handle that is not in the map is NOT quietly dropped: the id becomes null and the
+ * finding carries `handle_error`, which `known_documents_only` counts — the same failure a wrong
+ * UUID used to be, but now catchable, because "D14" can be checked against a list of twelve where
+ * one wrong character in a UUID could not.
+ */
+function resolveHandles(answer, handles) {
+  if (!answer || typeof answer !== 'object') return { errors: [] }
+  const errors = []
+  const one = (item, field, into) => {
+    const h = item[field]
+    if (h == null || h === '') { item[into] = null; return }
+    const id = handles[String(h).trim().toUpperCase()]
+    if (id) { item[into] = id; return }
+    item[into] = null
+    item.handle_error = `"${String(h).slice(0, 40)}" is not a handle in this block`
+    errors.push(String(h).slice(0, 40))
+  }
+  for (const f of answer.findings ?? []) if (typeof f === 'object' && f) one(f, 'document', 'document_id')
+  for (const d of answer.dates ?? []) if (typeof d === 'object' && d) one(d, 'document', 'document_id')
+  for (const c of answer.contradictions ?? []) {
+    if (typeof c !== 'object' || !c) continue
+    one(c, 'document_a', 'document_a_id'); one(c, 'document_b', 'document_b_id')
+  }
+  const cov = answer.covers
+  if (cov && Array.isArray(cov.documents_read)) {
+    cov.documents_read_ids = cov.documents_read.map((h) => {
+      const id = handles[String(h).trim().toUpperCase()]
+      if (!id) errors.push(String(h).slice(0, 40))
+      return id ?? null
+    })
+  }
+  return { errors }
+}
+
 async function runWhole(built, companyId) {
   const r = await oneCall(auditAgencyPrompt(), built.block, companyId)
-  return { answer: r.obj, calls: [r] }
+  const { errors } = resolveHandles(r.obj, built.input.handles)
+  return { answer: r.obj, calls: [r], handleErrors: errors }
 }
 
 async function runSections(built, companyId) {
@@ -285,7 +345,10 @@ async function runSections(built, companyId) {
     // spent and the answer so far is still the answer. The run records which call failed.
     if (r.obj) carried = r.obj
   }
-  return { answer: carried, calls }
+  // Resolved once, at the end: each section is shown the earlier sections' JSON, and rewriting
+  // handles into ids mid-way would feed the model UUIDs it was told never to use.
+  const { errors } = resolveHandles(carried, built.input.handles)
+  return { answer: carried, calls, handleErrors: errors }
 }
 
 // ---------------------------------------------------------------------------
@@ -344,7 +407,81 @@ async function confirmFixtureFact(co) {
   return { key: p.switch_key, value: p.proposed_value, as_of: p.as_of }
 }
 
+/**
+ * LABEL CORRECTIONS AS FIXTURE SETUP, ONLY WHERE THE READING CONTRADICTS THE SPEC — Run 1c, (d).
+ *
+ * An audit is scoped by the agency label on a document (`lib/audit.ts` compares it exactly), so a
+ * record filed under the wrong regulator is invisible to the right regulator's audit and nothing in
+ * the audit can tell. Run 1b measured that: Haiku gave both forklift logs and the forklift TRAINING
+ * record `Oregon DEQ` and gave the emergency plan no agency at all, so the OSHA audit was shown none
+ * of the three documents its key is about.
+ *
+ * This does NOT improve the reading and must never be mistaken for it. It is the fixture being set
+ * up so the AUDIT can be measured — the same role `confirmFixtureFact` plays for the confirmed 42.
+ * A correction is written only where the label contradicts that document's own ANSWER KEY, the row
+ * carries a reason saying so in words, and every one written is printed. Where the reading already
+ * agrees with the spec, nothing is written and the report says so.
+ *
+ * `document_corrections` is read by `document_index_v` — `coalesce(c_ag.new_value, s.agencies, …)`,
+ * migration 045 — which is what `buildAuditInput` selects from. So a row here really does change
+ * what the audit sees; it is not a note nobody applies.
+ *
+ * WHAT EACH SPEC'S ANSWER KEY ACCEPTS, copied from its "agency includes" line and nothing else:
+ */
+const SPEC_AGENCY = {
+  '01-eap-chemical.pdf':                  { spec: '01', accept: ['osha'] },
+  '02-acdp-chemical.pdf':                 { spec: '02', accept: ['deq', 'department of environmental quality'] },
+  '05-sds-supplier.pdf':                  { spec: '05', accept: ['osha', 'dot', 'department of transportation'] },
+  '06a-forklift-log.pdf':                 { spec: '06', accept: ['osha'] },
+  '06b-forklift-log-photo.pdf':           { spec: '06', accept: ['osha'] },
+  '07-scrubber-log-record.pdf':           { spec: '07', accept: ['deq', 'department of environmental quality'] },
+  '08-deq-annual-report-2025.pdf':        { spec: '08', accept: ['deq', 'department of environmental quality'] },
+  '09-forklift-training-records.pdf':     { spec: '09', accept: ['osha'] },
+  '10-osha-300a-2025.pdf':                { spec: '10', accept: ['osha'] },
+  '11-fire-extinguisher-certificate.pdf': { spec: '11', accept: ['fire', 'osfm', 'osha'] },
+  // 12 and 13 name no required agency: spec 12 says "Oregon DEQ or none", spec 13 says
+  // "none, or a mix of Oregon DEQ and Oregon OSHA; either passes". Nothing can contradict that.
+}
+
+async function correctFixtureLabels(co) {
+  const { data: rows, error } = await db.from('document_index_v')
+    .select('document_id, file_name, agencies').eq('company_id', co.id).order('file_name')
+  if (error) die(`reading document_index_v for ${co.name}: ${error.message}`)
+  if (!rows?.length) die(`document_index_v returned no rows for ${co.name} — that is a query problem, `
+    + `not an empty company; the documents runner has uploaded fixtures for it.`)
+
+  const { data: labelRows, error: lErr } = await db.from('company_labels')
+    .select('label').eq('company_id', co.id).eq('kind', 'agency').order('label')
+  if (lErr) die(`reading company_labels for ${co.name}: ${lErr.message}`)
+  const labels = (labelRows ?? []).map((l) => l.label)
+
+  const written = [], agreed = [], unfixable = []
+  for (const r of rows) {
+    const want = SPEC_AGENCY[r.file_name]
+    if (!want) continue
+    const have = Array.isArray(r.agencies) ? r.agencies : []
+    const ok = have.some((a) => want.accept.some((w) => String(a).toLowerCase().includes(w)))
+    if (ok) { agreed.push({ file: r.file_name, have }); continue }
+
+    // The replacement is one of the COMPANY'S OWN labels that satisfies the spec — never a string
+    // invented here. The company's vocabulary is the company's; if it holds no label the spec
+    // accepts, that is reported and left alone rather than papered over with a new one.
+    const fix = labels.find((l) => want.accept.some((w) => l.toLowerCase().includes(w)))
+    if (!fix) { unfixable.push({ file: r.file_name, have, accept: want.accept }); continue }
+
+    const { error: wErr } = await db.from('document_corrections').insert({
+      document_id: r.document_id, company_id: co.id, field: 'agencies',
+      old_value: have, new_value: [fix],
+      reason: `fixture setup: agency per spec ${want.spec}`,
+    })
+    if (wErr) die(`writing the agency correction for ${r.file_name}: ${wErr.message}`)
+    written.push({ file: r.file_name, from: have, to: fix, spec: want.spec })
+  }
+  return { written, agreed, unfixable, labels }
+}
+
 const confirmed = {}
+const corrected = {}
 const summary = []
 for (const c of caseFiles) {
   const { data: co } = await db.from('companies').select('id, name').ilike('name', `%${c.company}%`).limit(1).maybeSingle()
@@ -357,6 +494,22 @@ for (const c of caseFiles) {
       ? `  fixture: nothing confirmed — ${r.skipped}`
       : `  fixture: confirmed ${r.key} = "${r.value}"${r.as_of ? `, as of ${r.as_of}` : ''}`
         + `  (every other proposal stays proposed)`)
+  }
+
+  if (!corrected[co.id]) {
+    corrected[co.id] = await correctFixtureLabels(co)
+    const r = corrected[co.id]
+    console.log(`  fixture: ${r.written.length} agency label correction(s) written`
+      + `, ${r.agreed.length} document(s) already agreed with their spec`
+      + (r.unfixable.length ? `, ${r.unfixable.length} could NOT be corrected` : ''))
+    for (const w of r.written) {
+      console.log(`           ${w.file.padEnd(38)} [${w.from.join(' · ') || 'none'}]  ->  ${w.to}`
+        + `   (spec ${w.spec})`)
+    }
+    for (const u of r.unfixable) {
+      console.log(`         ⚠ ${u.file.padEnd(38)} [${u.have.join(' · ') || 'none'}] satisfies none of `
+        + `${u.accept.join('/')} and this company holds no label that does — left alone`)
+    }
   }
 
   const labels = await auditAgenciesFor(db, co.id)
@@ -385,7 +538,7 @@ for (const c of caseFiles) {
   for (const mode of MODES) {
     const perRun = []
     for (let n = 1; n <= times; n++) {
-      const { answer, calls } = mode === 'whole'
+      const { answer, calls, handleErrors } = mode === 'whole'
         ? await runWhole(built, co.id) : await runSections(built, co.id)
       const verdicts = judge(c, answer, ctx)
       const count = (kind) => kind.filter((k) => verdicts[k.id]?.verdict === 'PASS').length
@@ -407,13 +560,17 @@ for (const c of caseFiles) {
           searches: r.tokens?.searches ?? null, json_parsed: !!r.obj, raw_text: r.raw,
         })),
         answer, verdicts, cost_usd: cost, wall_ms: wall,
+        // Every handle the model wrote that the block did not carry. Stored rather than only
+        // counted, so "which handle did it invent" is answerable from the run file.
+        handle_errors: handleErrors ?? [],
       }, null, 2) + '\n')
 
       perRun.push({ n, verdicts, mustPass, mustNotPass, okPass, cost, wall, answer, calls })
       process.stdout.write(`    ${mode.padEnd(8)} run ${n}/${times}  ${(wall / 1000).toFixed(1)}s  `
         + `$${cost.toFixed(4)}  must ${mustPass}/${c.must.length}  must-not ${mustNotPass}/${c.must_not.length}`
         + `  ok ${okPass}/${(c.acceptable ?? []).length}`
-        + `  ${calls.every((r) => r.obj) ? '' : '(a call came back unparseable) '}\n`)
+        + `  ${handleErrors?.length ? `⚠ ${handleErrors.length} bad handle(s) ` : ''}`
+        + `${calls.every((r) => r.obj) ? '' : '(a call came back unparseable) '}\n`)
     }
 
     // PER CHECK, ACROSS THE RUNS — the column that says whether a pass is a property of the answer or

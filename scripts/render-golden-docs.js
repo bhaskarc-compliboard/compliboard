@@ -18,13 +18,22 @@
 // multi-page text layout, table pagination and landscape properly. Same approach as the
 // layout-measurement harness: no new dependencies.
 //
+// *** A RE-RENDER CHANGES THE BINARIES EVEN WHEN NOTHING CHANGED. *** Chrome stamps its own
+// version into every PDF it prints — `HeadlessChrome/154.0.0.0`, `/Producer (Skia/PDF m154)` — so
+// when Chrome updates, running this script rewrites every fixture with a different byte or two and
+// identical content. On 29 September that showed up as six modified binaries in `git status` whose
+// only difference was `153` becoming `154`, found with `cmp -l` (two bytes per file). **Commit a
+// fixture only when the text check in the table below reports a change.** Binary churn from a
+// browser upgrade hides the one diff that matters, and the text check — not the file's bytes — is
+// what says whether a fixture still carries its spec's words.
+//
 // 06b IS A PHOTOGRAPH, NOT TEXT. Page 1 of the log is rendered tilted under uneven light,
 // captured as a JPEG, and wrapped in a one-page PDF whose only content is that image. It has
 // no text layer on purpose: it is the case that tests whether the model can read a photo of a
 // page, and a PDF with selectable text underneath would test nothing.
 
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs'
-import { spawn } from 'node:child_process'
+import { spawn, execFileSync } from 'node:child_process'
 import * as zlib from 'node:zlib'
 
 const DIR = 'tests/golden/documents'
@@ -644,8 +653,59 @@ function checkPdf(specText, buf, headerRow) {
 // ---------------------------------------------------------------------------
 // 4. CHROME
 // ---------------------------------------------------------------------------
+/**
+ * ONE CHROME, STARTED HERE AND CLOSED HERE — Audits Run 1c.
+ *
+ * *** `proc.kill()` KILLED THE LAUNCHER AND LEFT THE BROWSER RUNNING. *** `--headless=new`
+ * forks a separate browser process; SIGTERM to the process we spawned did not reach it. One was
+ * found orphaned on 29 September, parent PID 1, 2h54m old, still holding port 9333 — and because
+ * the readiness probe below only asks "is something answering on 9333", the next render DROVE THAT
+ * ORPHAN instead of a Chrome of its own. That is why six committed fixtures changed underneath a
+ * run: the stale browser was a different Chrome version (153 against 154), so the same HTML
+ * produced different PDF metadata. The output was still correct — the text check compares the
+ * PDF's own extracted text against the spec and passed — but a renderer that silently reuses
+ * whatever is listening on a port is not reproducible, which is the whole point of a fixture.
+ *
+ * So: refuse a port we do not own, and close what we opened.
+ */
+const CHROME_PORT = 9333
+
+/** Anything answering on the port that we did not start. */
+async function foreignChromeOn(port) {
+  try {
+    const r = await fetch(`http://127.0.0.1:${port}/json/version`, { signal: AbortSignal.timeout(1500) })
+    return r.ok ? await r.json() : null
+  } catch { return null }
+}
+
+// Only the BROWSER process, never its helpers: a `--type=renderer` or `--type=gpu-process` child
+// dies with its parent, and listing seven of them buried the one line a person needs to act on.
+const chromePids = () => {
+  try {
+    return execFileSync('/bin/sh', ['-c',
+      `ps -eo pid=,command= | grep -- '--remote-debugging-port=${CHROME_PORT}'`
+      + ` | grep -v grep | grep -v -- '--type=' || true`],
+      { encoding: 'utf8' }).trim().split('\n').filter(Boolean)
+  } catch { return [] }
+}
+
 async function withChrome(fn) {
-  const port = 9333
+  const port = CHROME_PORT
+
+  // *** REFUSE, DO NOT DRIVE. *** A browser on this port that we did not start is either another
+  // run of this script or the orphan described above. Either way its version is unknown, and a
+  // fixture rendered by an unknown engine is not a fixture. Say what to do about it.
+  const already = await foreignChromeOn(port)
+  if (already) {
+    const rows = chromePids()
+    die(`Something is already serving the DevTools protocol on port ${port}, and this script did not\n`
+      + `  start it: ${already.Browser ?? 'unknown build'}\n`
+      + (rows.length ? `\n  ${rows.length} matching process(es):\n${rows.map((r) => `    ${r.trim().slice(0, 110)}`).join('\n')}\n` : '')
+      + `\n  It is refused rather than reused: a fixture rendered by a Chrome of unknown version is not\n`
+      + `  reproducible, and reusing an orphan is how six committed fixtures changed under a run on\n`
+      + `  29 September. Close it and try again — e.g.  pkill -f 'remote-debugging-port=${port}'`)
+  }
+
   const proc = spawn(CHROME, [
     '--headless=new', `--remote-debugging-port=${port}`, '--remote-allow-origins=*',
     '--no-first-run', '--no-default-browser-check', '--disable-gpu',
@@ -655,11 +715,42 @@ async function withChrome(fn) {
     let version = null
     for (let i = 0; i < 60 && !version; i++) {
       await new Promise((r) => setTimeout(r, 250))
-      try { version = await (await fetch(`http://127.0.0.1:${port}/json/version`)).json() } catch { /* not up yet */ }
+      version = await foreignChromeOn(port)
     }
     if (!version) throw new Error('Chrome did not open its debugging port.')
+    console.log(`  engine   : ${version.Browser}\n`)
     return await fn(port)
-  } finally { proc.kill() }
+  } finally {
+    // *** ASK THE BROWSER TO CLOSE, THEN FALL BACK TO THE SIGNAL. *** `Browser.close` over the
+    // DevTools socket reaches the browser process itself, which `proc.kill()` does not.
+    let closed = false
+    try {
+      const { webSocketDebuggerUrl } = await foreignChromeOn(port) ?? {}
+      if (webSocketDebuggerUrl) {
+        const ws = new WebSocket(webSocketDebuggerUrl)
+        await new Promise((r, j) => { ws.onopen = r; ws.onerror = () => j(new Error('close socket failed')) })
+        await cdp(ws, 'Browser.close').catch(() => {})
+        try { ws.close() } catch { /* already gone with the browser */ }
+        closed = true
+      }
+    } catch { /* fall through to the signal */ }
+    proc.kill()
+
+    // *** AND VERIFY, BECAUSE A CLOSE THAT DID NOT CLOSE LOOKS LIKE ONE THAT DID. *** The whole
+    // defect above was a kill that returned cleanly and left a browser running.
+    let left = []
+    for (let i = 0; i < 20; i++) {
+      left = chromePids()
+      if (!left.length) break
+      await new Promise((r) => setTimeout(r, 250))
+    }
+    if (left.length) {
+      console.error(`\n  ⚠ ${left.length} Chrome process(es) on port ${port} SURVIVED `
+        + `${closed ? 'Browser.close and ' : ''}proc.kill():`)
+      for (const r of left) console.error(`      ${r.trim().slice(0, 110)}`)
+      console.error(`    Close them by hand:  pkill -f 'remote-debugging-port=${port}'\n`)
+    }
+  }
 }
 
 let msgId = 0

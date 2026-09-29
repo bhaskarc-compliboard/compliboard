@@ -14,15 +14,12 @@ Originally one document carried this label: **02-acdp-chemical.pdf**, read as a 
 `expiring`, 14 conditions, 4 deadlines, 0 open gaps, 2 expected-and-not-seen, with four other
 documents on file as titles only.
 
-**After the twelve-document pass the label set moved, and not in the direction the specs assume.**
-The readings of 29 September gave `Oregon DEQ` to **02, 06a, 06b, 07, 08, 09 and 12** — which puts
-both forklift logs and the forklift TRAINING record (09) inside this audit, though every one of them
-is an OSHA document and spec 09's key says so. Cascade's only other agency label is
-`U.S. Department of Labor - Occupational Safety and Health Administration`. The cause is at
-`prompts/document-scan.ts:132-134`: "Reuse these exactly where they fit … Add a new label only when
-the document needs one this list does not cover" — and on this pass Haiku judged `Oregon DEQ` covered
-a forklift log. **This key is not rewritten around that.** A key written from what a run produced
-measures nothing.
+**Run 1b, on Haiku, mis-scoped this audit.** `Oregon DEQ` was given to 02, 06a, 06b, 07, 08, 09 and
+12 — pulling both forklift logs and the forklift training record, all OSHA documents, into a DEQ
+audit. **Run 1c, on the real model (`claude-opus-5-5`), scoped it correctly**: `Oregon DEQ` went to
+02, 07, 08, 12 and (with OSHA) 13, and every OSHA document went to OSHA. No label correction had to be
+written. The DEQ audit is therefore about the air permit, the scrubber log, the annual report and the
+two checklists, which is what the specs assume.
 
 **The zero matters.** The permit's reading found nothing wrong with the permit, so every finding in a
 correct audit comes from its CONDITIONS measured against what is on file — not from a gap somebody
@@ -83,11 +80,11 @@ Each line names the spec's AUDIT USE section it comes from.
 3. **`no-forklift-as-scrubber`** — the forklift log never offered as the scrubber log. It is about a
    different machine; reaching for it is the single most tempting wrong move in this case, because
    the word "log" matches.
-   **This line's own reasoning changed on 29 September and is weaker for it.** It used to add "it is
-   on file for a different agency", and after the twelve-document pass that is no longer true: the
-   readings put both forklift logs under `Oregon DEQ`, so they are inside this audit's own document
-   list rather than in the titles-only tail. The must-not still stands on the machine, which is the
-   part that was always the real reason.
+   **The "different agency" half of this line was briefly false and is true again.** Run 1b's labels
+   put both forklift logs inside this audit's own document list, so the reason had to fall back on the
+   machine. The real model returns them to OSHA, so they are in the titles-only tail again and both
+   halves hold. The machine was always the sounder of the two reasons, because it does not depend on
+   a label a model chose.
 4. **`no-expected-as-finding`** — nothing from `expected_not_seen` duplicated into `findings`.
 5. **`no-ai-word`** — the word "AI" appears in no output string.
 

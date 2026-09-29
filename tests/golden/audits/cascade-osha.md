@@ -1,13 +1,11 @@
 # cascade-osha — the OSHA audit, Cascade Specialty Chemicals
 
-**Agency label, exactly as it exists on staging:**
-`U.S. Department of Labor - Occupational Safety and Health Administration`
-*(It was `Oregon OSHA` when this key was written on 29 September. The twelve-document pass the same
-afternoon produced this string instead and no `Oregon OSHA` row survives in `company_labels`. The
-case file's `agency` had to follow, or `buildAuditInput` matches zero documents — it compares the
-label exactly, `lib/audit.ts:123`. **The two strings are NOT merged**, per the brief; this records
-that the same regulator has now been named two ways by two passes, and that Oregon is a state-plan
-state so the federal DOL string is arguably the wrong one of the two.)*
+**Agency label, exactly as it exists on staging:** `Oregon OSHA`
+*(Run 1b, on Haiku, produced `U.S. Department of Labor - Occupational Safety and Health
+Administration` instead and left no `Oregon OSHA` row at all. The real-model pass on 29 September —
+`claude-opus-5-5`, as production runs it — produced `Oregon OSHA` for all six OSHA documents. Both
+strings are recorded and **not merged**: which name a company's vocabulary ends up carrying is the
+reading model's choice, and the two models chose differently for the same regulator.)*
 **Company:** Cascade Specialty Chemicals, LLC · Portland, Oregon
 **Run date the key is written for:** 2026-09-29
 
@@ -26,26 +24,29 @@ When this key was written, three documents carried the OSHA label:
 
 The permit and the supplier SDS are on file as titles only.
 
-**After the twelve-document pass, NONE of those three is in this audit any more.** The readings of
-29 September gave the OSHA label only to **10-osha-300a-2025.pdf**, **11-fire-extinguisher-certificate.pdf**
-and **13-company-self-check.docx**. The emergency plan came back with `agencies: []` — no agency at
-all — and both forklift logs and the forklift training record came back as `Oregon DEQ`. So musts 1,
-2 and 3 below are about documents this audit is no longer shown.
+**Run 1b, on Haiku, showed none of those three to this audit.** The labels came back `Oregon DEQ` for
+both forklift logs, `Oregon DEQ` for the forklift training record, and `agencies: []` for the
+emergency plan, so the OSHA audit was shown three entirely different documents and musts 1 to 3
+failed 0/3 for want of the documents they are about.
 
-**This key is not rewritten around that, and the failures it produces are the finding.** An audit is
-only ever as good as the agency label on a document: a record filed under the wrong regulator is
-invisible to the right regulator's audit, and nothing in the audit can tell. The mechanism is
-`prompts/document-scan.ts:132-134` — "Reuse these exactly where they fit … Add a new label only when
-the document needs one this list does not cover" — read strictly enough that an emergency plan needed
-no label and a forklift log was covered by `Oregon DEQ`.
+**Run 1c, on the real model, put every one of them back.** `claude-opus-5-5` gave `Oregon OSHA` to the
+emergency plan, both forklift logs, the training record, the 300A and the extinguisher certificate —
+six documents, each matching its own spec's answer key. **No label correction had to be written**; the
+fixture-correction step (`correctFixtureLabels`) found nothing to correct.
+
+That difference is the finding, and it is worth stating plainly: **the agency label is the audit's
+scope, and on the cheap model it was wrong often enough to hide half the evidence.** An audit cannot
+detect this — a document filed under the wrong regulator is simply absent, and absence is what the
+audit is designed to report. The label is not a caption; it is the join.
 
 ### No fire authority label, so case 11 is scored here
 
-The brief said a `cascade-fire.md` would be written **only if** the readings of 11 carried a fire
-authority label. They did not: 11 came back under the OSHA string above, with no
-`Portland Fire & Rescue`, `Fire Marshal` or `OSFM` anywhere in `company_labels`. So case 11's audit
-lines are in this key, as the brief directed for that outcome. Spec 11's own key blesses OSHA as one
-of the two acceptable choices (1910.157 governs portable extinguishers).
+A `cascade-fire.md` exists **only if** the readings of 11 carry a fire authority label. **Neither
+model gave it one.** Haiku filed it under the federal DOL string; the real model filed it under
+`Oregon OSHA`. `company_labels` for Cascade holds exactly two agency rows — `Oregon OSHA` and
+`Oregon DEQ` — and no `Portland Fire & Rescue`, `Fire Marshal` or `OSFM`. So case 11's audit lines
+are in this key, and spec 11's own answer key blesses that choice (1910.157 governs portable
+extinguishers).
 
 **The four gaps on the plan, in the reading's own words** — these are what a correct audit carries:
 

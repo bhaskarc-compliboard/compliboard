@@ -1,0 +1,264 @@
+{
+  "case": "08-deq-annual-report-2025",
+  "run": 1,
+  "run_date": "2026-09-29",
+  "model": "claude-opus-5-5",
+  "structured": true,
+  "searches": 0,
+  "cited_sources": 0,
+  "prompt_sha256": "1403e991b3afca938f5b59b4eb5bf24e156b7f6bc4cd8824a4c9b80327dcd626",
+  "scan_id": "5e134187-6588-4fcc-be20-36e51c770983",
+  "ai_call_id": "aef25d99-53d9-481c-85b1-c935c6a224e3",
+  "company_context": "WHO THIS COMPANY IS\n  Name: Cascade Specialty Chemicals, LLC\n  Industry: chemical manufacturing (recorded as chemical-manufacturing)\n  Address: Portland, Oregon\n  State: Oregon\nTheir sites:\n  - Portland — 4410 NW Front Ave, Portland, Oregon 97210 (primary)\n\nWHAT A PERSON HAS CONFIRMED FROM A DOCUMENT\nEach of these was read in the named document and then confirmed by a person.\n  employee count (Portland): 42 employees at Portland facility, as of 2021-02-01\n\nLABELS ALREADY IN USE FOR THIS COMPANY\nAgencies:\n  - Oregon DEQ\n  - Oregon OSHA\nSubjects:\n  - Air Quality\n  - Emergency Preparedness\n  - Fire Safety\n  - Hazard Communication\n  - Powered Industrial Trucks\n\nFACT KEYS ALREADY IN USE FOR THIS COMPANY\n  - acid_caustic_repackaging_lines\n  - air_permit_type_and_number\n  - carbon_adsorption_unit_c1\n  - certified_forklift_operators\n  - emergency_eyewash_shower_location\n  - employee_count\n  - employees_evacuate_during_fire\n  - employs_drivers\n  - fire_alarm_monitoring_vendor\n  - forklift_operating_shifts\n  - onsite_laboratory\n  - powered_industrial_trucks_on_site\n  - propane_forklift_cylinders\n  - sodium_hydroxide_50_on_site\n  - solvent_bulk_storage\n  - source_category",
+  "company_context_sha256": "9e075b14f336fcaaf5a8d6978951400f322e4a35b88919439e0c7c3617705e6c",
+  "wall_ms": 40808,
+  "cost_usd": 0.13872400000000001,
+  "input_tokens": 13306,
+  "output_tokens": 4275,
+  "json_parsed": true,
+  "compliant_found_in": [],
+  "alternative_pass": false,
+  "verdicts": {
+    "kind": {
+      "verdict": "PASS",
+      "detail": "identity.kind = \"record\""
+    },
+    "agency-deq": {
+      "verdict": "PASS",
+      "detail": "identity.agencies = [oregon deq]"
+    },
+    "subject": {
+      "verdict": "PASS",
+      "detail": "identity.subjects = [air quality]"
+    },
+    "site-portland": {
+      "verdict": "PASS",
+      "detail": "identity.site = \"portland\""
+    },
+    "doc-date": {
+      "verdict": "PASS",
+      "detail": "identity.doc_date = 2026-02-12"
+    },
+    "doc-date-kind-not-last-entry": {
+      "verdict": "PASS",
+      "detail": "identity.doc_date_kind = \"issued\""
+    },
+    "status": {
+      "verdict": "PASS",
+      "detail": "status = \"recorded\""
+    },
+    "no-gaps": {
+      "verdict": "FAIL",
+      "detail": "1: \"Confirm the C-1 carbon was replaced by March 14, 2026\""
+    },
+    "fact-at-least-one": {
+      "verdict": "PASS",
+      "detail": "facts: \"carbon_adsorption_unit_c1\" [carbon, march 14, 2025]"
+    },
+    "label-consistency": {
+      "verdict": "CROSS",
+      "detail": "judged across the three runs, below"
+    },
+    "no-2025-deviation-gap": {
+      "verdict": "PASS",
+      "detail": "not raised as such; 1 item(s) mention it — read below",
+      "soft": [
+        {
+          "where": "gaps",
+          "text": "Confirm the C-1 carbon was replaced by March 14, 2026 / The report says the next C-1 carbon replacement was due on or before March 14, 2026. That date passed more than six months ago. Nothing in this document shows it was done, and no replacement record for 2026 is in your files. / Find the 2026 carbon replacement record (vendor invoice or service ticket, date, carbon type and amount) and keep it with the permit records. If the carbon was not replaced on time, read Condition 3.3 and the deviation-reporting conditions (5.1/5.2) in the permit and decide whether DEQ needs to be told. / Standard ACDP 26-2841-ST-01, Condition 3.3 (as named in the report; the permit's exact wording was not checked here) / Page 3, Section 3 / inferred / The next scheduled replacement is on or before March 14, 2026."
+        }
+      ]
+    },
+    "fact-carbon-date": {
+      "verdict": "PASS",
+      "detail": "facts: \"carbon_adsorption_unit_c1\" [carbon, c-1, replaced, filtrasorb]"
+    },
+    "fact-report-received": {
+      "verdict": "PASS",
+      "detail": "notes: \"summary\" [annual report, received]"
+    },
+    "in-compliance-sentences": {
+      "verdict": "PASS",
+      "detail": "not raised",
+      "soft": []
+    },
+    "deadline-next-annual": {
+      "verdict": "FAIL",
+      "detail": "no item matched. deadlines held: Replace the carbon in unit C-1 (yearly sched | Keep this confirmation and the permit record | File the annual report for 2026 under Condit"
+    },
+    "deadline-carbon": {
+      "verdict": "PASS",
+      "detail": "deadlines: \"Replace the carbon in unit C-1 (yearly schedule, according to the repo\" [carbon]"
+    }
+  },
+  "scan": {
+    "identity": {
+      "kind": "record",
+      "title": "Air Permit Annual Report for 2025 (Standard ACDP 26-2841-ST-01) with Oregon DEQ Receipt Confirmation, Portland Facility",
+      "issuer": "Cascade Specialty Chemicals, LLC (report signed by Daniel Okafor, Plant Manager); receipt confirmation from the Oregon DEQ Air Quality Program (page 1)",
+      "agencies": [
+        "Oregon DEQ"
+      ],
+      "subjects": [
+        "Air Quality"
+      ],
+      "site": "Portland",
+      "jurisdiction": [
+        "Oregon"
+      ],
+      "doc_date": "2026-02-12",
+      "doc_date_kind": "issued",
+      "page_refs": {}
+    },
+    "summary": "This is your annual report on the Portland air permit for calendar year 2025, filed under Condition 4.1, plus DEQ's email confirming it was received on February 12, 2026. It is proof that the report was filed on time and a record of 2025 operations: throughput, the scrubber logs, C-1 carbon replacement, and one deviation that was reported. DEQ says plainly that the email confirms receipt only. It does not mean DEQ found the report complete or found the facility meeting its permit.",
+    "status": "recorded",
+    "significant_date": "2026-02-12",
+    "significant_date_kind": "last_entry",
+    "freshness_note": "This covers 2025, the most recent full reporting year, so it is the current report. The 2026 report will be due early in 2027 (the exact due date is in your permit, not in this document). One date in the report has already passed: it says the C-1 carbon was due for replacement by March 14, 2026. Check that the replacement record exists.",
+    "gaps": [
+      {
+        "title": "Confirm the C-1 carbon was replaced by March 14, 2026",
+        "description": "The report says the next C-1 carbon replacement was due on or before March 14, 2026. That date passed more than six months ago. Nothing in this document shows it was done, and no replacement record for 2026 is in your files.",
+        "fix": "Find the 2026 carbon replacement record (vendor invoice or service ticket, date, carbon type and amount) and keep it with the permit records. If the carbon was not replaced on time, read Condition 3.3 and the deviation-reporting conditions (5.1/5.2) in the permit and decide whether DEQ needs to be told.",
+        "citation": "Standard ACDP 26-2841-ST-01, Condition 3.3 (as named in the report; the permit's exact wording was not checked here)",
+        "citation_url": null,
+        "locator": "Page 3, Section 3",
+        "draftable": false,
+        "basis": "inferred",
+        "quote": "The next scheduled replacement is on or before March 14, 2026.",
+        "quote_verified": true,
+        "same_as_gap_id": null
+      }
+    ],
+    "conditions": [],
+    "deadlines": [
+      {
+        "title": "Replace the carbon in unit C-1 (yearly schedule, according to the report)",
+        "due_on": "2026-03-14",
+        "source_line": "The next scheduled replacement is on or before March 14, 2026.",
+        "recurs": true
+      },
+      {
+        "title": "Keep this confirmation and the permit records for five years (inferred: February 2031 counted from receipt)",
+        "due_on": "2031-02-12",
+        "source_line": "Records required by the permit must be kept for five years and made available to the Department on request.",
+        "recurs": false
+      },
+      {
+        "title": "File the annual report for 2026 under Condition 4.1 (due date is set in the permit, not stated here)",
+        "due_on": null,
+        "source_line": "Submitted under Condition 4.1 · Period: January 1 to December 31, 2025",
+        "recurs": true
+      }
+    ],
+    "facts": [
+      {
+        "key": "air_permit_type_and_number",
+        "value": "Standard Air Contaminant Discharge Permit 26-2841-ST-01",
+        "quote": "Standard Air Contaminant Discharge Permit 26-2841-ST-01",
+        "locator": "Page 2, header",
+        "as_of": "2026-02-10",
+        "affects": "Sets the reporting, monitoring and record-keeping conditions for the Portland site.",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "acid_caustic_repackaging_lines",
+        "value": "Acid line S-1 (hydrochloric, sulfuric, nitric acid solutions): 1,842,000 lb over 238 days in 2025. Caustic line S-2 (sodium and potassium hydroxide solutions): 1,210,000 lb over 231 days.",
+        "quote": "hydrochloric, sulfuric and nitric acid solutions",
+        "locator": "Page 2, Section 1 table",
+        "as_of": "2025-12-31",
+        "affects": "Volumes this large of listed acids may trigger EPCRA Tier II and TRI (Form R) reporting.",
+        "basis": "read",
+        "quote_verified": false
+      },
+      {
+        "key": "solvent_bulk_storage",
+        "value": "Tanks T-3 to T-6 hold acetone, isopropanol, toluene and xylene, vented through C-1. 3,960,000 gallons received in 2025.",
+        "quote": "acetone, isopropanol, toluene, xylene",
+        "locator": "Page 2, Section 1 table",
+        "as_of": "2025-12-31",
+        "affects": "Toluene and xylene at this volume matter for TRI, flammable-liquid fire code rules and Tier II.",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "carbon_adsorption_unit_c1",
+        "value": "Carbon last replaced March 14, 2025 (Calgon Filtrasorb 400, 1,800 lb, Northwest Carbon Services). Outlet checked weekly by detector tube; no breakthrough in 2025.",
+        "quote": "The carbon in C-1 was replaced on March 14, 2025 (Calgon Filtrasorb 400, 1,800 pounds, by Northwest Carbon Services).",
+        "locator": "Page 3, Section 3",
+        "as_of": "2025-12-31",
+        "affects": "Sets the yearly carbon replacement cycle. Spent carbon may also need a hazardous-waste determination.",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "air_permit_deviations_2025",
+        "value": "One deviation: S-2 recirculation pump failed August 22, 2025. DEQ notified August 23; written report sent September 2 (DEV-2025-0913).",
+        "quote": "The Department was notified by email on August 23, 2025 and a written report was submitted on September 2, 2025",
+        "locator": "Page 3, Section 4",
+        "as_of": "2025-12-31",
+        "affects": "This is the site's deviation history, which DEQ may look at during inspections or permit renewal.",
+        "basis": "read",
+        "quote_verified": true
+      }
+    ],
+    "version_of": {
+      "title": null,
+      "confidence": "high"
+    },
+    "expected_missing": [
+      {
+        "title": "Scrubber maintenance file with the 2025 quarterly inspection records (Condition 3.2)",
+        "why": "The report says the inspections are kept in this file. It is the evidence behind the report.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "C-1 carbon replacement records for 2025 and 2026 (vendor invoices or service tickets)",
+        "why": "These back up Condition 3.3 and the March 2026 due date.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Deviation report DEV-2025-0913 and DEQ's reply",
+        "why": "The report refers to it, and it should sit in the permit file.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "EPCRA Tier II inventory report / Oregon State Fire Marshal hazardous substance report",
+        "why": "Acids, caustics and solvents are stored on site in large amounts.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "EPA TRI Form R submissions",
+        "why": "Repackaging this much HCl, nitric acid, toluene and xylene may exceed TRI thresholds.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Industrial stormwater permit (Oregon DEQ 1200-Z) or a no-exposure certification",
+        "why": "Industrial chemical sites in Oregon commonly hold one or the other.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Hazardous waste generator records (EPA ID, waste determinations, e.g. for spent carbon)",
+        "why": "Spent solvent carbon and off-spec product usually produce regulated waste.",
+        "basis": "similar companies, not a checked requirement"
+      }
+    ],
+    "confidence_notes": "All three pages were clear and easy to read. Identity, dates, throughput and the deviation details were read directly from the document. The report looks internally consistent: days logged match operating days, and zero days fell outside the 2.0–6.0 in. w.c. range. This review did not check the report against the permit's own condition wording, and DEQ has not said the report is complete. The 2026 due date and the five-year retention end date were worked out, not read. The March 14, 2026 carbon item comes from a date that has passed with no record in your files. It is not a defect in the report itself.",
+    "could_not_read": {
+      "reason": null,
+      "way_forward": null
+    },
+    "raw_text": "{\"identity\":{\"kind\":\"record\",\"title\":\"Air Permit Annual Report for 2025 (Standard ACDP 26-2841-ST-01) with Oregon DEQ Receipt Confirmation, Portland Facility\",\"issuer\":\"Cascade Specialty Chemicals, LLC (report signed by Daniel Okafor, Plant Manager); receipt confirmation from the Oregon DEQ Air Quality Program (page 1)\",\"agencies\":[\"Oregon DEQ\"],\"subjects\":[\"Air Quality\"],\"site\":\"Portland\",\"jurisdiction\":[\"Oregon\"],\"doc_date\":\"2026-02-12\",\"doc_date_kind\":\"issued\"},\"summary\":\"This is your annual report on the Portland air permit for calendar year 2025, filed under Condition 4.1, plus DEQ's email confirming it was received on February 12, 2026. It is proof that the report was filed on time and a record of 2025 operations: throughput, the scrubber logs, C-1 carbon replacement, and one deviation that was reported. DEQ says plainly that the email confirms receipt only. It does not mean DEQ found the report complete or found the facility meeting its permit.\",\"status\":\"recorded\",\"significant_date\":\"2026-02-12\",\"significant_date_kind\":\"last_entry\",\"freshness_note\":\"This covers 2025, the most recent full reporting year, so it is the current report. The 2026 report will be due early in 2027 (the exact due date is in your permit, not in this document). One date in the report has already passed: it says the C-1 carbon was due for replacement by March 14, 2026. Check that the replacement record exists.\",\"gaps\":[{\"title\":\"Confirm the C-1 carbon was replaced by March 14, 2026\",\"description\":\"The report says the next C-1 carbon replacement was due on or before March 14, 2026. That date passed more than six months ago. Nothing in this document shows it was done, and no replacement record for 2026 is in your files.\",\"fix\":\"Find the 2026 carbon replacement record (vendor invoice or service ticket, date, carbon type and amount) and keep it with the permit records. If the carbon was not replaced on time, read Condition 3.3 and the deviation-reporting conditions (5.1/5.2) in the permit and decide whether DEQ needs to be told.\",\"citation\":\"Standard ACDP 26-2841-ST-01, Condition 3.3 (as named in the report; the permit's exact wording was not checked here)\",\"citation_url\":\"\",\"locator\":\"Page 3, Section 3\",\"draftable\":false,\"basis\":\"inferred\",\"quote\":\"The next scheduled replacement is on or before March 14, 2026.\",\"same_as_gap_id\":\"\"}],\"conditions\":[],\"deadlines\":[{\"title\":\"Replace the carbon in unit C-1 (yearly schedule, according to the report)\",\"due_on\":\"2026-03-14\",\"source_line\":\"The next scheduled replacement is on or before March 14, 2026.\",\"recurs\":true},{\"title\":\"Keep this confirmation and the permit records for five years (inferred: February 2031 counted from receipt)\",\"due_on\":\"2031-02-12\",\"source_line\":\"Records required by the permit must be kept for five years and made available to the Department on request.\",\"recurs\":false},{\"title\":\"File the annual report for 2026 under Condition 4.1 (due date is set in the permit, not stated here)\",\"due_on\":\"\",\"source_line\":\"Submitted under Condition 4.1 · Period: January 1 to December 31, 2025\",\"recurs\":true}],\"facts\":[{\"key\":\"air_permit_type_and_number\",\"value\":\"Standard Air Contaminant Discharge Permit 26-2841-ST-01\",\"basis\":\"read\",\"quote\":\"Standard Air Contaminant Discharge Permit 26-2841-ST-01\",\"locator\":\"Page 2, header\",\"as_of\":\"2026-02-10\",\"affects\":\"Sets the reporting, monitoring and record-keeping conditions for the Portland site.\"},{\"key\":\"acid_caustic_repackaging_lines\",\"value\":\"Acid line S-1 (hydrochloric, sulfuric, nitric acid solutions): 1,842,000 lb over 238 days in 2025. Caustic line S-2 (sodium and potassium hydroxide solutions): 1,210,000 lb over 231 days.\",\"basis\":\"read\",\"quote\":\"hydrochloric, sulfuric and nitric acid solutions\",\"locator\":\"Page 2, Section 1 table\",\"as_of\":\"2025-12-31\",\"affects\":\"Volumes this large of listed acids may trigger EPCRA Tier II and TRI (Form R) reporting.\"},{\"key\":\"solvent_bulk_storage\",\"value\":\"Tanks T-3 to T-6 hold acetone, isopropanol, toluene and xylene, vented through C-1. 3,960,000 gallons received in 2025.\",\"basis\":\"read\",\"quote\":\"acetone, isopropanol, toluene, xylene\",\"locator\":\"Page 2, Section 1 table\",\"as_of\":\"2025-12-31\",\"affects\":\"Toluene and xylene at this volume matter for TRI, flammable-liquid fire code rules and Tier II.\"},{\"key\":\"carbon_adsorption_unit_c1\",\"value\":\"Carbon last replaced March 14, 2025 (Calgon Filtrasorb 400, 1,800 lb, Northwest Carbon Services). Outlet checked weekly by detector tube; no breakthrough in 2025.\",\"basis\":\"read\",\"quote\":\"The carbon in C-1 was replaced on March 14, 2025 (Calgon Filtrasorb 400, 1,800 pounds, by Northwest Carbon Services).\",\"locator\":\"Page 3, Section 3\",\"as_of\":\"2025-12-31\",\"affects\":\"Sets the yearly carbon replacement cycle. Spent carbon may also need a hazardous-waste determination.\"},{\"key\":\"air_permit_deviations_2025\",\"value\":\"One deviation: S-2 recirculation pump failed August 22, 2025. DEQ notified August 23; written report sent September 2 (DEV-2025-0913).\",\"basis\":\"read\",\"quote\":\"The Department was notified by email on August 23, 2025 and a written report was submitted on September 2, 2025\",\"locator\":\"Page 3, Section 4\",\"as_of\":\"2025-12-31\",\"affects\":\"This is the site's deviation history, which DEQ may look at during inspections or permit renewal.\"}],\"version_of_title\":\"\",\"version_of_confidence\":\"high\",\"expected_missing\":[{\"title\":\"Scrubber maintenance file with the 2025 quarterly inspection records (Condition 3.2)\",\"why\":\"The report says the inspections are kept in this file. It is the evidence behind the report.\",\"basis\":\"similar companies, not a checked requirement\"},{\"title\":\"C-1 carbon replacement records for 2025 and 2026 (vendor invoices or service tickets)\",\"why\":\"These back up Condition 3.3 and the March 2026 due date.\",\"basis\":\"similar companies, not a checked requirement\"},{\"title\":\"Deviation report DEV-2025-0913 and DEQ's reply\",\"why\":\"The report refers to it, and it should sit in the permit file.\",\"basis\":\"similar companies, not a checked requirement\"},{\"title\":\"EPCRA Tier II inventory report / Oregon State Fire Marshal hazardous substance report\",\"why\":\"Acids, caustics and solvents are stored on site in large amounts.\",\"basis\":\"similar companies, not a checked requirement\"},{\"title\":\"EPA TRI Form R submissions\",\"why\":\"Repackaging this much HCl, nitric acid, toluene and xylene may exceed TRI thresholds.\",\"basis\":\"similar companies, not a checked requirement\"},{\"title\":\"Industrial stormwater permit (Oregon DEQ 1200-Z) or a no-exposure certification\",\"why\":\"Industrial chemical sites in Oregon commonly hold one or the other.\",\"basis\":\"similar companies, not a checked requirement\"},{\"title\":\"Hazardous waste generator records (EPA ID, waste determinations, e.g. for spent carbon)\",\"why\":\"Spent solvent carbon and off-spec product usually produce regulated waste.\",\"basis\":\"similar companies, not a checked requirement\"}],\"confidence_notes\":\"All three pages were clear and easy to read. Identity, dates, throughput and the deviation details were read directly from the document. The report looks internally consistent: days logged match operating days, and zero days fell outside the 2.0–6.0 in. w.c. range. This review did not check the report against the permit's own condition wording, and DEQ has not said the report is complete. The 2026 due date and the five-year retention end date were worked out, not read. The March 14, 2026 carbon item comes from a date that has passed with no record in your files. It is not a defect in the report itself.\",\"could_not_read_reason\":\"\",\"could_not_read_way_forward\":\"\"}",
+    "json_parsed": true,
+    "model": "claude-opus-5-5",
+    "cited_sources": 0,
+    "searches": null,
+    "structured": true,
+    "prompt_sha256": "1403e991b3afca938f5b59b4eb5bf24e156b7f6bc4cd8824a4c9b80327dcd626",
+    "quotes_checked": 6,
+    "quotes_verified": 5,
+    "extracted_text": "From: Oregon DEQ Air Quality Reporting <no-reply@deq.oregon.gov>\nTo: d.okafor@cascadespecialty.example\nDate: Thursday, February 12, 2026 9:41 AM\nSubject: Received — Annual Report, Permit 26-2841-ST-01, reporting year 2025\nYour annual report has been received.\nFacility: Cascade Specialty Chemicals, LLC — Portland\nPermit: 26-2841-ST-01 (Standard Air Contaminant Discharge Permit)\nReporting year: 2025\nSubmission ID: ACDP-AR-2025-262841\nReceived: February 12, 2026 09:41 PST\nSubmitted by: Daniel Okafor, Plant Manager\nThis message confirms receipt only. It is not a determination that the report is complete or that the facility is in\ncompliance with its permit. Keep this confirmation with your permit records. Records required by the permit\nmust be kept for five years and made available to the Department on request.\nOregon Department of Environmental Quality · Air Quality Program · 700 NE Multnomah Street, Suite 600,\nPortland, OR 97232\nANNUAL REPORT — REPORTING YEAR 2025\nCascade Specialty Chemicals, LLC — Portland Facility, 4410 NW Front Avenue,\nPortland, Oregon 97210\nStandard Air Contaminant Discharge Permit 26-2841-ST-01 · Submitted under\nCondition 4.1 · Period: January 1 to December 31, 2025\n1. Throughput by line\nLine Product repackaged 2025 throughput Operating\n(pounds) days\nAcid repackaging line (S-1) hydrochloric, sulfuric and nitric acid 1,842,000 238\nsolutions\nCaustic repackaging line (S- sodium and potassium hydroxide 1,210,000 231\n2) solutions\nSolvent storage T-3 to T-6 acetone, isopropanol, toluene, xylene 3,960,000 gallons —\n(C-1) received\n2. Scrubber log summary (Condition 3.1)\nScrubber Days logged Average pressure drop (in. w.c.) Lowest Highest Days outside 2.0 to 6.0\nS-1 238 3.8 3.1 4.6 0\nS-2 231 4.1 3.4 5.2 0\nQuarterly inspections under Condition 3.2 were carried out on March 27, June 26, September 25 and\nDecember 18, 2025, and are recorded in the scrubber maintenance file.\n3. Carbon adsorption unit C-1 (Condition 3.3)\nThe carbon in C-1 was replaced on March 14, 2025 (Calgon Filtrasorb 400, 1,800 pounds, by Northwest\nCarbon Services). Weekly detector-tube checks at the C-1 outlet were carried out every week in 2025 with\nno breakthrough detected. The next scheduled replacement is on or before March 14, 2026.\n4. Deviations and excess emissions (Conditions 5.1 and 5.2)\nOne deviation. On August 22, 2025 the S-2 recirculation pump failed at 14:10; the caustic repackaging\nline was stopped within four minutes and remained down until the pump was replaced on August 24. No\nproduct was repackaged on the caustic line while the scrubber was out of service. The Department was\nnotified by email on August 23, 2025 and a written report was submitted on September 2, 2025 (DEQ\nreference DEV-2025-0913).\nOpacity: no visible emissions above 20 percent were observed at any permitted source in 2025.\nI certify that the information in this report is true, accurate and complete to the best of my knowledge.\nDaniel Okafor, Plant Manager · Signed: February 10, 2026",
+    "started_at": "2026-09-29T21:19:16.237Z"
+  }
+}
