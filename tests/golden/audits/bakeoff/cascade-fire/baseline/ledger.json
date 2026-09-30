@@ -1,0 +1,83 @@
+[
+  {
+    "run": 1,
+    "run_file": "whole-2026-09-30T21-35-13-012Z-1.json",
+    "audit_run_id": "e37e8ec0-cae1-4698-a869-d1747ebfefd1",
+    "model": "claude-opus-5-5",
+    "sections": 1,
+    "window_from": "2026-09-30T21:34:32.319+00:00",
+    "window_to": "2026-09-30T21:35:12.544+00:00",
+    "section_ai_calls": 1,
+    "cost_sections_usd": 0.108192,
+    "run_ai_calls": 1,
+    "cost_run_usd": 0.108192,
+    "wall_ms": 40225,
+    "input_tokens": 8018,
+    "output_tokens": 3806,
+    "searches": 0,
+    "ledger_rows": [
+      {
+        "at": "2026-09-30T21:35:12.170454+00:00",
+        "model": "claude-opus-5-5",
+        "cost_usd": 0.108192,
+        "in": 8018,
+        "out": 3806,
+        "searches": 0
+      }
+    ]
+  },
+  {
+    "run": 2,
+    "run_file": "whole-2026-09-30T21-35-51-938Z-2.json",
+    "audit_run_id": "b5549a74-4498-4be0-be26-8d60affeda3f",
+    "model": "claude-opus-5-5",
+    "sections": 1,
+    "window_from": "2026-09-30T21:35:13.133+00:00",
+    "window_to": "2026-09-30T21:35:51.507+00:00",
+    "section_ai_calls": 1,
+    "cost_sections_usd": 0.104472,
+    "run_ai_calls": 1,
+    "cost_run_usd": 0.104472,
+    "wall_ms": 38374,
+    "input_tokens": 8018,
+    "output_tokens": 3620,
+    "searches": 0,
+    "ledger_rows": [
+      {
+        "at": "2026-09-30T21:35:51.135881+00:00",
+        "model": "claude-opus-5-5",
+        "cost_usd": 0.104472,
+        "in": 8018,
+        "out": 3620,
+        "searches": 0
+      }
+    ]
+  },
+  {
+    "run": 3,
+    "run_file": "whole-2026-09-30T21-36-34-996Z-3.json",
+    "audit_run_id": "2241da77-f9e7-450b-874d-64140baed829",
+    "model": "claude-opus-5-5",
+    "sections": 1,
+    "window_from": "2026-09-30T21:35:52.05+00:00",
+    "window_to": "2026-09-30T21:36:34.556+00:00",
+    "section_ai_calls": 1,
+    "cost_sections_usd": 0.109052,
+    "run_ai_calls": 1,
+    "cost_run_usd": 0.109052,
+    "wall_ms": 42506,
+    "input_tokens": 8018,
+    "output_tokens": 3849,
+    "searches": 0,
+    "ledger_rows": [
+      {
+        "at": "2026-09-30T21:36:34.202261+00:00",
+        "model": "claude-opus-5-5",
+        "cost_usd": 0.109052,
+        "in": 8018,
+        "out": 3849,
+        "searches": 0
+      }
+    ]
+  }
+]

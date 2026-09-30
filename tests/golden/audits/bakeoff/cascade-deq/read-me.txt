@@ -1,0 +1,151 @@
+MATCHER  must not-a-document-question  as judged FAIL/FAIL/FAIL  ->  corrected PASS/PASS/PASS  at least one not-a-document question
+        run 1: 2 finding(s) worded not_a_document_question, needs 1 (recomputed: the stored verdict came from a matcher that could not match)
+        run 2: 3 finding(s) worded not_a_document_question, needs 1 (recomputed: the stored verdict came from a matcher that could not match)
+        run 3: 3 finding(s) worded not_a_document_question, needs 1 (recomputed: the stored verdict came from a matcher that could not match)
+FAILED  must opacity-records  (3 of 3 runs)  opacity records, nothing on file, 3.4
+        run 1: no item matched with word=nothing_on_file. held: Air Contaminant Discharge Permit 2 | Permit renewal application and DEQ | Semi-annual monitoring report for | 2025 annual report and DEQ receipt | C-1 carbon replacement set for on | Quarterly scrubber inspections of | Scrubber pressure-drop and C-1 d
+        run 2: no item matched with word=nothing_on_file. held: Permit renewal application for ACD | Standard Air Contaminant Discharge | Semi-annual monitoring report for | C-1 carbon replacement due on or b | Annual report for reporting year 2 | Daily scrubber pressure-drop readi | S-2 reading above the permit r
+        run 3: no item matched with word=nothing_on_file. held: Permit renewal application for ACD | Standard Air Contaminant Discharge | Semi-annual monitoring report for | C-1 carbon replacement set for on | Annual report for reporting year 2 | Scrubber S-1/S-2 daily pressure-dr | S-2 pressure drop on September 
+FAILED  must scrubber-log-on-file  (2 of 3 runs)  condition 3.1 answered on file, the scrubber log, carrying the reading's own findings (spec 07 AUDIT USE)
+        run 2: no item matched with word=on_file. held: Permit renewal application for ACD | Standard Air Contaminant Discharge | Semi-annual monitoring report for | C-1 carbon replacement due on or b | Annual report for reporting year 2 | Daily scrubber pressure-drop readi | S-2 reading above the permit range | W
+        run 3: no item matched with word=on_file. held: Permit renewal application for ACD | Standard Air Contaminant Discharge | Semi-annual monitoring report for | C-1 carbon replacement set for on | Annual report for reporting year 2 | Scrubber S-1/S-2 daily pressure-dr | S-2 pressure drop on September 9, | Wee
+
+====================================================================================================
+cascade-deq — Oregon DEQ — Cascade Specialty Chemicals
+model claude-opus-5-5 · whole mode · 3 runs · run date 2026-09-30
+input sha 251fe7d55162b2d6  (runs 2 and 3: 251fe7d55162b2d6, 251fe7d55162b2d6)
+run 1  whole-2026-09-30T21-30-45-205Z-1.json  audit_run_id 2eaad409-84dc-495d-948c-864d07563adf
+run 2  whole-2026-09-30T21-33-18-317Z-2.json  audit_run_id 211b39f7-c003-4b85-b0da-19efe84b64ab
+run 3  whole-2026-09-30T21-34-31-837Z-3.json  audit_run_id a25ac01f-e75b-4f16-a582-07699f9dd6a5
+comparison: claude-haiku-4-5, 3 stored run(s) — whole-2026-09-30T18-19-31-264Z-1.json, whole-2026-09-30T18-20-02-278Z-2.json, whole-2026-09-30T18-20-35-203Z-3.json
+====================================================================================================
+
+CHECK                         kind      run1  run2  run3   n/3   claude-haiku-4-5 n/3
+(a check listed under MATCHER above is shown corrected here; every other verdict is as stored)
+renewal-passed                must      PASS  PASS  PASS   3/3   3/3
+expiry-date                   must      PASS  PASS  PASS   3/3   3/3
+quarterly-inspection          must      PASS  PASS  PASS   3/3   2/3
+carbon-records                must      PASS  PASS  PASS   3/3   3/3
+opacity-records               must      FAIL  FAIL  FAIL   0/3   0/3
+annual-report                 must      PASS  PASS  PASS   3/3   3/3
+semiannual-report             must      PASS  PASS  PASS   3/3   3/3
+not-a-document-question       must      PASS  PASS  PASS   3/3   0/3
+scrubber-log-on-file          must      PASS  FAIL  FAIL   1/3   0/3
+scrubber-log-findings-carried must      PASS  PASS  PASS   3/3   3/3
+annual-report-4-1-on-file     must      PASS  PASS  PASS   3/3   2/3
+semiannual-4-2-nothing        must      PASS  PASS  PASS   3/3   3/3
+carbon-due-2026-03-14         must      PASS  PASS  PASS   3/3   3/3
+sep9-deviation-nothing        must      PASS  PASS  PASS   3/3   3/3
+annual-2026-as-a-date         must      PASS  PASS  PASS   3/3   3/3
+no-satisfied                  must-not  PASS  PASS  PASS   3/3   3/3
+no-invented-document          must-not  PASS  PASS  PASS   3/3   3/3
+no-forklift-as-scrubber       must-not  PASS  PASS  PASS   3/3   3/3
+no-expected-as-finding        must-not  PASS  PASS  PASS   3/3   3/3
+no-ai-word                    must-not  PASS  PASS  PASS   3/3   3/3
+no-not-yet-due-as-nothing-on-file must-not  PASS  PASS  PASS   3/3   3/3
+scrubber-plan-expected        ok        PASS  PASS  PASS   3/3   3/3
+
+COUNT                         run1  run2  run3         claude-haiku-4-5 runs
+must passed                   14/15 13/15 13/15         11/15 / 12/15 / 11/15
+must-not held                 6/6   6/6   6/6           6/6 / 6/6 / 6/6
+findings                      22    25    21            19 / 10 / 8
+dates                         8     9     9             8 / 9 / 8
+contradictions                0     0     0             0 / 0 / 0
+expected and not seen         7     5     6             16 / 7 / 7
+reshaped to dates             0     0     0             0 / 0 / 0
+  word on_file                5     3     4             0 / 0 / 0
+  word stale                  0     1     0             1 / 0 / 0
+  word nothing_on_file        12    14    13            10 / 10 / 8
+  word not_a_document_question 2     3     3             0 / 0 / 0
+  findings with NO word       3     4     1             8 / 0 / 0
+handle errors                 0     0     0             0 / 0 / 0
+rows written                  37    39    36            43 / 26 / 23
+section status                done  done  done          done / done / done
+json parsed                   yes   yes   yes           yes / yes / yes
+searches                      0     0     0             0 / 0 / 0
+output tokens                 16600 16283 7821          4776 / 3304 / 3320
+
+FORBIDDEN WORDS               run1  run2  run3
+no-satisfied                  none  none  none  
+no-ai-word                    none  none  none  
+
+LEDGER                        run1      run2      run3      claude-haiku-4-5 (run files)
+cost, the whole run           $0.4508   $0.4445   $0.2158   $0.0351 / $0.0277 / $0.0278
+cost in the section windows   $0.4508   $0.4445   $0.2158   (what Past audits shows)
+ai_calls, run / sections      1/1       1/1       1/1       
+wall per audit                163.3s    152.4s    72.9s     47.0s / 31.0s / 32.9s
+
+OVERLAP ACROSS THE THREE RUNS — titles in all three over titles in any, normalised
+finding titles                3/56 = 0.05        0/35 = 0.00
+expected-not-seen titles      1/12 = 0.08        1/24 = 0.04
+
+in all three runs:
+  = semi annual monitoring report for january june 2026 conditio
+  = annual permit fee invoices and proof of payment condition 6 
+  = visible emissions at or below 20 opacity condition 3 4
+in some but not all:
+  ~ run 1: Air Contaminant Discharge Permit 26-2841-ST-01 for the Portland facility [on_file]
+  ~ run 1: Permit renewal application and DEQ acknowledgment (Condition 1.3, due on or before 2026-07 [nothing_on_file]
+  ~ run 1: 2025 annual report and DEQ receipt (Condition 4.1) [on_file]
+  ~ run 1: C-1 carbon replacement set for on or before 2026-03-14 (Condition 3.3) [nothing_on_file]
+  ~ run 1: Quarterly scrubber inspections of S-1 and S-2 for past quarters (Condition 3.2) [nothing_on_file]
+  ~ run 1: Scrubber pressure-drop and C-1 detector-tube log, August–September 2026 [on_file]
+  ~ run 1: August 17–21 daily pressure-drop readings missing [nothing_on_file]
+  ~ run 1: S-2 reading above the permit range on September 9 with no note or corrective action [nothing_on_file]
+  ~ run 1: Weekly C-1 check missing for the week of September 14 [nothing_on_file]
+  ~ run 1: Supervisor review not signed [nothing_on_file]
+  ~ run 1: No line-counter operating-day totals for September [nothing_on_file]
+  ~ run 1: Scrubber pressure-drop and C-1 detector-tube records before August 2026 (Conditions 3.1, 3 [nothing_on_file]
+  ~ run 1: August 2025 S-2 pump failure deviation: notice and written report (Conditions 5.1 and 5.2) [nothing_on_file]
+  ~ run 1: Changes in ownership or to sources since 2021 that would need notice to DEQ (Condition 1.4 [not_a_document_question]
+  ~ run 1: Monthly EHS self-check (air permit, scrubber and carbon-bed lines) [on_file]
+  ~ run 1: Blank DEQ air-permit inspection checklist [on_file]
+  ~ run 1: Annual permit fee (Condition 6.2) [null]
+  ~ run 1: Deviation notice within 24 hours and written report within 15 days (Condition 5.2) [null]
+  ~ run 1: Monthly EHS self-check with supervisor review [null]
+  ~ run 2: Permit renewal application for ACDP 26-2841-ST-01 (Condition 1.3). The deadline was 2026-0 [nothing_on_file]
+  ~ run 2: Standard Air Contaminant Discharge Permit 26-2841-ST-01, issued 2021-09-01, expires 2026-1 [stale]
+  ~ run 2: C-1 carbon replacement due on or before 2026-03-14 (Condition 3.3) [nothing_on_file]
+  ~ run 2: Annual report for reporting year 2025 (Condition 4.1), with DEQ's receipt dated 2026-02-12 [on_file]
+  ~ run 2: Daily scrubber pressure-drop readings for August 17–21, 2026 are missing (Condition 3.1) [nothing_on_file]
+  ~ run 2: S-2 reading above the permit range on 2026-09-09 (6.4 in. w.c. against a 6.0 limit), with  [nothing_on_file]
+  ~ run 2: Weekly C-1 outlet breakthrough check missing for the week of 2026-09-14 (Condition 3.3) [nothing_on_file]
+  ~ run 2: Supervisor review of the August–September 2026 scrubber and C-1 log has not been signed [nothing_on_file]
+  ~ run 2: No September 2026 line-counter operating-day totals, so the 18 September rows cannot be ch [nothing_on_file]
+  ~ run 2: Daily scrubber pressure-drop log before August 2026 (Conditions 3.1 and 4.3, five-year ret [nothing_on_file]
+  ~ run 2: Weekly C-1 detector-tube records before August 2026 (Conditions 3.3 and 4.3) [nothing_on_file]
+  ~ run 2: Quarterly inspections of the S-1 and S-2 pump, nozzles, packing and mist eliminator (Condi [nothing_on_file]
+  ~ run 2: Backup for the August 2025 S-2 pump failure deviation reported in the 2025 annual report ( [nothing_on_file]
+  ~ run 2: Deviation notices and reports for the last 12 months, or a record that there were none (Co [nothing_on_file]
+  ~ run 2: Whether ownership has changed or any source has been modified since 2021 in a way that wou [not_a_document_question]
+  ~ run 2: How the scrubbers, gauges and C-1 are running on the day of the inspection [not_a_document_question]
+  ~ run 2: Monthly EHS self-check, which covers air permit posting and scrubber and carbon-bed monito [on_file]
+  ~ run 2: Blank DEQ air-permit inspection checklist. It is not an inspection record. [on_file]
+  ~ run 2: Annual permit fee (Condition 6.2), due on the date printed on the invoice [null]
+  ~ run 2: Deviation notice within 24 hours and written report within 15 days, whenever a deviation i [null]
+  ~ run 2: Daily S-1 and S-2 pressure-drop reading on every operating day [null]
+  ~ run 2: Monthly EHS self-check with supervisor review [null]
+  ~ run 3: Permit renewal application for ACDP 26-2841-ST-01 (Condition 1.3). The deadline of 2026-07 [nothing_on_file]
+  ~ run 3: Standard Air Contaminant Discharge Permit 26-2841-ST-01. On file, issued 2021-09-01, expir [on_file]
+  ~ run 3: C-1 carbon replacement set for on or before 2026-03-14 (Condition 3.3). The date has passe [nothing_on_file]
+  ~ run 3: Annual report for reporting year 2025 (Condition 4.1). On file, with DEQ's receipt dated 2 [on_file]
+  ~ run 3: Scrubber S-1/S-2 daily pressure-drop readings for August 17–21, 2026 are missing [nothing_on_file]
+  ~ run 3: S-2 pressure drop on September 9, 2026 above the Condition 3.1 range, with no note or corr [nothing_on_file]
+  ~ run 3: Weekly C-1 outlet detector-tube check for the week of September 14, 2026 is missing [nothing_on_file]
+  ~ run 3: Supervisor review of the August–September 2026 scrubber and C-1 log is not signed [nothing_on_file]
+  ~ run 3: No line-counter operating-day totals for September 2026 [nothing_on_file]
+  ~ run 3: Daily scrubber pressure-drop records before August 2026 (Conditions 3.1 and 4.3, five-year [nothing_on_file]
+  ~ run 3: Weekly C-1 detector-tube records before August 2026 (Conditions 3.3 and 4.3) [nothing_on_file]
+  ~ run 3: Quarterly scrubber inspections of pump, nozzles, packing and mist eliminator for S-1 and S [nothing_on_file]
+  ~ run 3: Deviation notices and written reports (Condition 5.2), including the backup for the August [nothing_on_file]
+  ~ run 3: Any change of ownership or change to a source that would raise emissions since 2021 (Condi [not_a_document_question]
+  ~ run 3: Conditions on inspection day: scrubber gauges, C-1 unit, tanks T-3 to T-6, and operations  [not_a_document_question]
+  ~ run 3: Monthly EHS self-check. The template is on file, undated and blank [on_file]
+  ~ run 3: Blank DEQ air-permit inspection checklist. On file, undated; this is not a record of an in [on_file]
+  ~ run 3: Annual permit fee (due date on the invoice) (Condition 6.2) [null]
+
+WHAT THE DRAWER SAYS — the captured text is beside this file:
+  tests/golden/audits/bakeoff/cascade-deq/baseline/run-1.txt  326 line(s)
+  tests/golden/audits/bakeoff/cascade-deq/baseline/run-2.txt  379 line(s)
+  tests/golden/audits/bakeoff/cascade-deq/baseline/run-3.txt  358 line(s)
+

@@ -1,0 +1,131 @@
+FAILED  must B2  (3 of 3 runs)  B2 nothing on file; the annual report says four inspections were done in 2025 but the records are not on file
+        run 1: B2 = on_file, the key accepts nothing_on_file
+        run 2: B2 = on_file, the key accepts nothing_on_file
+        run 3: B2 = on_file, the key accepts nothing_on_file
+FAILED  must B6  (2 of 3 runs)  B6 not a document question, or on file by way of the records above; either passes
+        run 1: B6 = nothing_on_file, the key accepts not_a_document_question or on_file
+        run 2: B6 = nothing_on_file, the key accepts not_a_document_question or on_file
+FAILED  must C1  (2 of 3 runs)  C1 not a document question
+        run 1: C1 = on_file, the key accepts not_a_document_question
+        run 3: C1 = on_file, the key accepts not_a_document_question
+FAILED  must C2  (2 of 3 runs)  C2 not a document question
+        run 1: C2 = on_file, the key accepts not_a_document_question
+        run 3: C2 = on_file, the key accepts not_a_document_question
+FAILED  must C3  (3 of 3 runs)  C3 not a document question
+        run 1: C3 = on_file, the key accepts not_a_document_question
+        run 2: C3 = on_file, the key accepts not_a_document_question
+        run 3: C3 = on_file, the key accepts not_a_document_question
+FAILED  must-not no-satisfied  (1 of 3 runs)  no line worded satisfied, compliant or met
+        run 1: "met" claimed in "The 2025 annual report is on file with DEQ's receipt con"
+
+====================================================================================================
+cascade-template-12 — The DEQ inspector's field form, audited against Cascade
+model claude-opus-5-5 · whole mode · 3 runs · run date 2026-09-30
+input sha 3f28530e4a0c7513  (runs 2 and 3: 3f28530e4a0c7513, 3f28530e4a0c7513)
+run 1  whole-2026-09-30T21-48-01-678Z-1.json  audit_run_id deddbfe3-9d60-48f4-a188-e4c626e464ba
+run 2  whole-2026-09-30T21-49-44-619Z-2.json  audit_run_id a0e67e05-6053-4d13-b207-0ee839e02120
+run 3  whole-2026-09-30T21-51-34-185Z-3.json  audit_run_id f3b887f0-e323-49c7-abe2-70b780535b47
+comparison: claude-haiku-4-5, 3 stored run(s) — whole-2026-09-30T18-53-39-266Z-1.json, whole-2026-09-30T18-54-07-345Z-2.json, whole-2026-09-30T18-54-41-856Z-3.json
+====================================================================================================
+
+CHECK                         kind      run1  run2  run3   n/3   claude-haiku-4-5 n/3
+(a check listed under MATCHER above is shown corrected here; every other verdict is as stored)
+A1                            must      PASS  PASS  PASS   3/3   3/3
+A2                            must      PASS  PASS  PASS   3/3   2/3
+A3                            must      PASS  PASS  PASS   3/3   3/3
+A4                            must      PASS  PASS  PASS   3/3   3/3
+A5                            must      PASS  PASS  PASS   3/3   2/3
+B1                            must      PASS  PASS  PASS   3/3   2/3
+B2                            must      FAIL  FAIL  FAIL   0/3   3/3
+B3                            must      PASS  PASS  PASS   3/3   3/3
+B4                            must      PASS  PASS  PASS   3/3   3/3
+B5                            must      PASS  PASS  PASS   3/3   3/3
+B6                            must      FAIL  FAIL  PASS   1/3   3/3
+C1                            must      FAIL  PASS  FAIL   1/3   0/3
+C2                            must      FAIL  PASS  FAIL   1/3   1/3
+C3                            must      FAIL  FAIL  FAIL   0/3   2/3
+C4                            must      PASS  PASS  PASS   3/3   1/3
+C5                            must      PASS  PASS  PASS   3/3   3/3
+every-line-answered           must      PASS  PASS  PASS   3/3   3/3
+no-satisfied                  must-not  FAIL  PASS  PASS   2/3   3/3
+no-ai-word                    must-not  PASS  PASS  PASS   3/3   3/3
+no-score                      must-not  PASS  PASS  PASS   3/3   3/3
+
+COUNT                         run1  run2  run3         claude-haiku-4-5 runs
+must passed                   12/17 14/17 13/17         16/17 / 12/17 / 12/17
+must-not held                 2/3   3/3   3/3           3/3 / 3/3 / 3/3
+findings                      16    16    16            16 / 16 / 16
+dates                         0     0     0             0 / 0 / 0
+contradictions                0     0     0             0 / 0 / 0
+expected and not seen         0     0     0             0 / 0 / 0
+reshaped to dates             0     0     0             0 / 0 / 0
+  word on_file                8     6     9             4 / 5 / 5
+  word stale                  3     3     3             3 / 2 / 3
+  word nothing_on_file        5     5     4             7 / 8 / 8
+  word not_a_document_question 0     2     0             2 / 1 / 0
+  findings with NO word       0     0     0             0 / 0 / 0
+handle errors                 0     0     0             0 / 0 / 0
+rows written                  16    16    16            16 / 16 / 16
+section status                done  done  done          done / done / done
+json parsed                   yes   yes   yes           yes / yes / yes
+searches                      0     0     0             0 / 0 / 0
+output tokens                 0     0     0             0 / 0 / 0
+
+FORBIDDEN WORDS               run1  run2  run3
+no-satisfied                  FOUND none  none  
+        run 1: "met" claimed in "The 2025 annual report is on file with DEQ's receipt con"
+no-ai-word                    none  none  none  
+no-score                      none  none  none  
+
+LEDGER                        run1      run2      run3      claude-haiku-4-5 (run files)
+cost, the whole run           $0.5634   $0.5580   $0.5704   (not recorded) / (not recorded) / (not recorded)
+cost in the section windows   $0.5405   $0.5352   $0.5468   (what Past audits shows)
+ai_calls, run / sections      4/3       4/3       4/3       
+wall per audit                98.4s     95.1s     101.1s    27.6s / 28.1s / 34.5s
+
+OVERLAP ACROSS THE THREE RUNS — titles in all three over titles in any, normalised
+finding titles                16/16 = 1.00        16/16 = 1.00
+expected-not-seen titles      0/0 = —        0/0 = —
+
+in all three runs:
+  = each scrubber operating with the associated line pressure dr
+  = scrubber pressure drop log covering the last 12 months one r
+  = current acdp permit available at the facility and not expire
+  = solvent storage tanks t 3 to t 6 vented to the carbon unit n
+  = renewal application submitted at least 120 days before the p
+  = quarterly scrubber inspection records for the last four quar
+  = annual report for the previous calendar year submitted by fe
+  = carbon replacement record within the last 12 months or break
+  = tank and line labels legible permitted sources match the per
+  = weekly detector tube check records at the carbon unit outlet
+  = semi annual monitoring report for january to june submitted 
+  = facility employee count on the day for fee tier verification
+  = opacity observation records or a statement of the method use
+  = deviation reports any deviation in the last 12 months notifi
+  = emergency contact and emergency plan available at the facili
+  = records retained for five years and available on request
+in some but not all:
+
+PER LINE                      run1                  run2                  run3                  claude-haiku-4-5 (last run)   the key accepts
+A1                            on_file               on_file               on_file               on_file               on_file / stale
+A2                            nothing_on_file       nothing_on_file       nothing_on_file       stale                 nothing_on_file
+A3                            on_file               on_file               on_file               on_file               on_file
+A4                            nothing_on_file       nothing_on_file       nothing_on_file       nothing_on_file       nothing_on_file
+A5                            nothing_on_file       nothing_on_file       nothing_on_file       nothing_on_file       nothing_on_file
+B1                            on_file               on_file               on_file               stale                 on_file / stale
+B2                            on_file               on_file               on_file               nothing_on_file       nothing_on_file
+B3                            stale                 stale                 stale                 nothing_on_file       nothing_on_file / stale
+B4                            on_file               on_file               on_file               stale                 on_file / stale
+B5                            nothing_on_file       nothing_on_file       nothing_on_file       nothing_on_file       nothing_on_file
+B6                            nothing_on_file       nothing_on_file       on_file               on_file               not_a_document_question / on_file
+C1                            on_file               not_a_document_questionon_file               nothing_on_file       not_a_document_question
+C2                            on_file               not_a_document_questionon_file               nothing_on_file       not_a_document_question
+C3                            on_file               on_file               on_file               nothing_on_file       not_a_document_question
+C4                            stale                 stale                 stale                 on_file               stale / not_a_document_question
+C5                            stale                 stale                 stale                 on_file               on_file / stale
+
+WHAT THE DRAWER SAYS — the captured text is beside this file:
+  tests/golden/audits/bakeoff/cascade-template-12/baseline/run-1.txt  197 line(s)
+  tests/golden/audits/bakeoff/cascade-template-12/baseline/run-2.txt  189 line(s)
+  tests/golden/audits/bakeoff/cascade-template-12/baseline/run-3.txt  194 line(s)
+

@@ -1,0 +1,142 @@
+Oregon State Fire Marshal audit
+
+audited 30 September 2026 · 1 section · 1 document read, 11 held unread · readings as of 30 September 2026 · Printed September 30, 2026 · CompliBoard
+
+Oregon State Fire Marshal audit
+
+audited 30 September 2026 · 1 section · 1 document read, 11 held unread · readings as of 30 September 2026
+
+You asked: “golden: cascade-fire”
+
+▸
+WHAT THIS COVERS
+
+Documents read
+
+Certificate of Annual Maintenance, Portable Fire Extinguishers (14 units), service date August 20, 2025, Portland Facility
+Certificate · Current
+
+11 other documents you hold were listed by title only, for this audit to say what is NOT among them. Their contents were not read here.
+
+Readings as of 30 September 2026
+
+Company information as of 30 September 2026
+
+Every line below points at a document, or says what we do not see. None of it is a verdict on whether the company complies.
+
+▾
+FINDINGS
+5
+
+Monthly visual inspection of each extinguisher by the company, recorded on the unit tag
+
+nothing on file · Certificate of Annual Maintenance, Portable Fire Extinguishers (14 units), service date August 20, 2025, Portland Facility · page 1
+
+Find the initialed monthly tag entries or a monthly log covering all 14 units for the months since the 2025-08-20 service, and upload them. Photos of the tags will do if there is no separate log.
+
+Add a document
+Not right
+
+Hydrostatic test for CO2 unit L-1 in the laboratory (last test shown as 2020)
+
+nothing on file · worked out, not stated · Certificate of Annual Maintenance, Portable Fire Extinguishers (14 units), service date August 20, 2025, Portland Facility · page 1, unit table (unit L-1)
+
+Check the L-1 cylinder label or the contractor's records for a hydrostatic test after 2020 and upload what you find. The due date of 2025-12-31 was worked out by the reading. The document does not state it.
+
+Add a document
+Not right
+
+Annual maintenance of the 14 portable fire extinguishers at the Portland facility
+
+out of date · Certificate of Annual Maintenance, Portable Fire Extinguishers (14 units), service date August 20, 2025, Portland Facility · page 1
+
+“The next annual service was due August 20, 2026, which has passed”
+
+If the 2026 annual service has been done, get the contractor's certificate dated on or after 2026-08-20 and upload it. If it has not been done, book the contractor now and upload the certificate once the service is finished.
+
+Not right
+
+Dated service tags and monthly initials on the extinguishers themselves
+
+not a document question · worked out, not stated
+
+Before the inspection, walk all 14 units and check that each tag shows the latest annual service date and current monthly initials.
+
+Not right
+
+Whether extinguisher numbers, types and placement still match current operations (repackaging lines, tank farm, laboratory, boiler room, solvent cage, loading docks)
+
+not a document question · worked out, not stated
+
+Walk the plant against the unit table in D1. That table has only been proposed by the reading and nobody has confirmed it. Note any area that has changed since 2025-08-20.
+
+Not right
+▸
+DATES
+4
+
+Possible CO2 hydrostatic test for L-1 (5 years from the 2020 test; worked out by the reading, not stated in the document)
+
+31 December 2025 · passed · recurring · Certificate of Annual Maintenance, Portable Fire Extinguishers (14 units), service date August 20, 2025, Portland Facility
+
+Add to calendar
+
+Next annual maintenance of all 14 extinguishers
+
+20 August 2026 · passed · recurring · Certificate of Annual Maintenance, Portable Fire Extinguishers (14 units), service date August 20, 2025, Portland Facility
+
+Add to calendar
+
+Monthly visual inspection of each unit, recorded on the tag (the September 2026 inspection is already behind today; the next listed date is 2026-10-31)
+
+31 October 2026 · passed · recurring · Certificate of Annual Maintenance, Portable Fire Extinguishers (14 units), service date August 20, 2025, Portland Facility
+
+Add to calendar
+
+6-year internal maintenance for units W-3 and L-1
+
+31 October 2026 · recurring · Certificate of Annual Maintenance, Portable Fire Extinguishers (14 units), service date August 20, 2025, Portland Facility
+
+Add to calendar
+▸
+WHAT WE WOULD EXPECT AND DO NOT SEE · BASED ON SIMILAR COMPANIES
+5
+
+2026 annual extinguisher maintenance certificate
+
+The annual service was due August 20, 2026, and no newer certificate than D1 is on file.
+
+Fire Prevention Plan
+
+Chemical plants that store flammable and corrosive materials usually hold one alongside their Emergency Action Plan. No title like this is among the documents held.
+
+Hydrostatic test record for CO2 unit L-1
+
+Its last hydrostatic test is listed as 2020, and CO2 cylinders are commonly retested every 5 years.
+
+Monthly extinguisher inspection records (tags or log)
+
+D1 says these monthly inspections are the customer's job, and inspectors usually check them alongside the annual certificate.
+
+Portable fire extinguisher training records for employees
+
+These are usually held if employees are expected to use extinguishers rather than evacuate. No title like this is among the documents held.
+
+▸
+EARLIER AUDITS
+2
+
+30 September 2026 · 4 needed you
+
+Open
+
+30 September 2026 · 4 needed you
+
+Open
+DOCUMENTS THIS AUDIT READ
+1. Certificate of Annual Maintenance, Portable Fire Extinguishers (14 units), service date August 20, 2025, Portland Facility — page 1; page 1, unit table (unit L-1)
+Audit again
+Make a checklist
+Print
+Download the documents
+Not right

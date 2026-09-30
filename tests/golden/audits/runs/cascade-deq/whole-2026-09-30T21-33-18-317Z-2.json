@@ -1,0 +1,1339 @@
+{
+  "case": "cascade-deq",
+  "agency": "Oregon DEQ",
+  "mode": "whole",
+  "run": 2,
+  "run_date": "2026-09-30",
+  "model": "claude-opus-5-5",
+  "input_block": "TODAY IS 2026-09-30. Every \"passed\" or \"expiring\" judgement is against that date.\n\nTHE AGENCY THIS AUDIT IS ABOUT: Oregon DEQ\nOnly this agency. Another regulator's documents are listed at the end as titles only and\nare not yours to judge here.\n\nWHO THIS COMPANY IS\n  Name: Cascade Specialty Chemicals, LLC\n  Industry: chemical manufacturing (recorded as chemical-manufacturing)\n  Address: Portland, Oregon\nTheir sites:\n  - Portland — 4410 NW Front Ave, Portland, Oregon 97210 (primary)\n\nDOCUMENTS ON FILE FOR OREGON DEQ — 5\nEach is named by a HANDLE — D1, D2 — and that handle is how you refer to it. Nothing else.\n\n  --- D1 — Annual Report, Reporting Year 2025, for Standard Air Contaminant Discharge Permit 26-2841-ST-01, with Oregon DEQ Receipt Confirmation (Submission ACDP-AR-2025-262841), Portland Facility\n      file: 08-deq-annual-report-2025.pdf\n      kind: record · status: recorded · shown as: recorded\n      the document's own date: 2026-02-12 (issued)\n      the date that matters: 2026-02-12 (last_entry)\n      site: Portland\n      what the reading said it is: This is your own 2025 annual report under your Standard Air Contaminant Discharge Permit, plus DEQ's automatic email saying it was received on February 12, 2026. It is your proof that you filed on time. DEQ says plainly that the email confirms receipt only and is not a finding that the report is complete or that you met the permit. The report covers 2025 throughput, the scrubber pressure-drop summary, the quarterly inspections, the C-1 carbon changeout and weekly checks, and one deviation that was reported (the S-2 pump failure in August 2025). The one thing to follow up on now: the report set the next C-1 carbon replacement for on or before March 14, 2026, and that date has passed.\n      WHAT THE READING FOUND WRONG WITH IT: nothing\n      DATES THIS DOCUMENT SETS (3):\n        · Annual report for reporting year 2026 under Condition 4.1. The due date is not in this document; check Condition 4.1 of the permit — no date stated (recurring)\n        · Keep this confirmation and the records the permit requires for five years (worked out: five years from the February 12, 2026 receipt) — 2031-02-12\n        · Replace the carbon in adsorption unit C-1 (Condition 3.3). This date has passed; confirm it was done and keep the vendor record — 2026-03-14 (recurring)\n      WHAT THE READING SAID A COMPANY LIKE THIS USUALLY ALSO HOLDS (7) —\n        a suggestion from similar companies, NOT a checked requirement:\n        · C-1 carbon replacement record for the March 2026 changeout (vendor invoice or service ticket) — The report sets the replacement for on or before March 14, 2026; that date has passed and it is not in your file list.\n        · Deviation report DEV-2025-0913 and the August 23, 2025 notification email — This is the backup for the one deviation reported under Conditions 5.1 and 5.2.\n        · EPCRA Tier II chemical inventory report — Bulk acids, caustics and solvents are stored on site.\n        · Hazardous waste generator records (EPA ID, manifests) and the Oregon DEQ generator fee or report — Spent carbon and off-spec chemicals are typical waste streams.\n        · Oregon DEQ industrial stormwater permit (1200-Z) or a no-exposure certification — Chemical handling sites in Oregon often hold one of these.\n        · Scrubber maintenance file with the Condition 3.2 quarterly inspection records — The report says the 2025 inspections are recorded there; that file is not in your list.\n        · Weekly C-1 detector-tube logs and daily scrubber logs for 2025 — These are the raw records behind the summaries in this report, kept for five years.\n      WHAT THIS DOCUMENT SAYS, proposed by the reading, not confirmed by anyone (6):\n        · air emission sources: Acid scrubber S-1, caustic scrubber S-2, and carbon adsorption unit C-1 serving solvent storage tanks T-3 to T-6, as of 2025-12-31\n            it says: \"Solvent storage T-3 to T-6 (C-1)\"\n            where: Page 2, Section 1 table; Sections 2 and 3\n        · air permit type: Standard Air Contaminant Discharge Permit No. 26-2841-ST-01, as of 2026-02-12\n            it says: \"Permit: 26-2841-ST-01 (Standard Air Contaminant Discharge Permit)\"\n            where: Page 1, DEQ receipt email\n        · annual throughput: 2025: acid line 1,842,000 lb over 238 days; caustic line 1,210,000 lb over 231 days; 3,960,000 gallons of solvent received, as of 2025-12-31\n            it says: \"3,960,000 gallons received\"\n            where: Page 2, Section 1 table\n        · facility operations: Repackaging of hydrochloric, sulfuric and nitric acid solutions and of sodium and potassium hydroxide solutions, plus bulk solvent storage (acetone, isopropanol, toluene, xylene), as of 2025-12-31\n            it says: \"acetone, isopropanol, toluene, xylene\"\n            where: Page 2, Section 1 table\n        · hazardous waste streams: Spent activated carbon from C-1 (about 1,800 lb per changeout, handled by Northwest Carbon Services); whether it counts as hazardous waste is not stated (inferred), as of 2025-03-14\n            it says: \"Calgon Filtrasorb 400, 1,800 pounds, by Northwest Carbon Services\"\n            where: Page 3, Section 3\n        · workforce roles: Daniel Okafor, Plant Manager, submits and certifies air permit reports, as of 2026-02-12\n            it says: \"Submitted by: Daniel Okafor, Plant Manager\"\n            where: Page 1; signature on page 3\n\n  --- D2 — Monthly EHS Self-Check (blank internal checklist template), Portland Facility\n      file: 13-company-self-check.docx\n      kind: other · status: not_judged · shown as: on_file\n      the document's own date: none stated (unknown)\n      the date that matters: none\n      site: Portland\n      what the reading said it is: This is the company's own blank monthly checklist with eight lines. It covers air permit posting, scrubber and carbon-bed monitoring, forklift inspections, extinguishers, exits, eyewash stations and showers, and safety data sheets (SDSs). The Month, Completed by, Done, Initials and supervisor review fields are all empty, so it shows that the company has a monthly self-check routine but does not show that any check was actually done. A filled-in, signed copy for each month would be the record worth keeping.\n      WHAT THE READING FOUND WRONG WITH IT: nothing\n      DATES THIS DOCUMENT SETS (2):\n        · Complete the monthly EHS self-check and get supervisor review — no date stated (recurring)\n        · Report any items marked N to the Plant Manager — no date stated (recurring)\n      WHAT THE READING SAID A COMPANY LIKE THIS USUALLY ALSO HOLDS (5) —\n        a suggestion from similar companies, NOT a checked requirement:\n        · Completed and signed monthly self-check copies — The blank template proves nothing on its own. Filled-in months are the record.\n        · Eyewash and safety shower weekly flush log — Line 7 refers to a log that isn't in the company's list of documents.\n        · Hazardous waste generator records (manifests, waste determinations) — This is typical for specialty chemical manufacturing in Oregon.\n        · OSHA Form 300 log and Form 301 incident reports for 2025 — Only the 300A summary is in the company's list.\n        · Written Hazard Communication Program and SDS binder index — Line 8 refers to an SDS binder index, and a chemical manufacturer would normally have a written HazCom program.\n      WHAT THIS DOCUMENT SAYS, proposed by the reading, not confirmed by anyone (4):\n        · air emission sources: The facility has scrubbers S-1 and S-2, monitored by pressure drop, and a carbon unit C-1, checked weekly with detector tubes.\n            it says: \"Weekly C-1 detector-tube checks done and recorded every week this month\"\n            where: Line 3 (scrubbers appear in Line 2)\n        · emergency eyewash shower: Eyewash stations and safety showers are on site.\n            it says: \"Eyewash stations and safety showers flushed this week and logged\"\n            where: Line 7\n        · portable fire extinguishers: Portable fire extinguishers are on site with annual tags and monthly visual checks.\n            it says: \"Fire extinguishers tagged within the last 12 months; monthly visual check initialled on each tag\"\n            where: Line 5\n        · powered industrial trucks: At least one forklift is in use and gets a pre-shift inspection.\n            it says: \"Forklift pre-shift inspection log complete for every day the truck ran; any defect followed up\"\n            where: Line 4\n\n  --- D3 — Oregon DEQ Air Contaminant Discharge Permit Compliance Inspection Checklist (blank inspector's field form)\n      file: 12-auditor-checklist-deq-air.docx\n      kind: other · status: not_judged · shown as: on_file\n      the document's own date: none stated (unknown)\n      the date that matters: none\n      site: Portland\n      what the reading said it is: This is a blank inspector's field form for an Oregon DEQ air permit inspection. The facility, permit number, date, inspector, answers and signatures are all empty. It is not a record of an inspection and it is not Cascade's own document. Its real use is as a preview: it lists what a DEQ inspector would ask to see under Sections A (permit and submissions), B (records) and C (what is checked on the day). You can use it to check your air-permit file before an inspection.\n      WHAT THE READING FOUND WRONG WITH IT: nothing\n      DATES THIS DOCUMENT SETS (4):\n        · Annual report for calendar year 2026 (the checklist expects it by February 15). Check the actual due date against the conditions of Permit 26-2841-ST-01. — 2027-02-15 (recurring)\n        · Deviation notice within 24 hours, then a written report within 15 days, for any permit deviation — no date stated (recurring)\n        · Permit renewal application due at least 120 days before the permit expires. The date depends on the expiration date printed on Permit 26-2841-ST-01. — no date stated (recurring)\n        · Semi-annual monitoring report for January–June 2027 (the checklist expects it by July 31). Check against the permit's own reporting condition. The January–June 2026 report was due 2026-07-31 and is not among the documents you hold. — 2027-07-31 (recurring)\n      WHAT THE READING SAID A COMPANY LIKE THIS USUALLY ALSO HOLDS (9) —\n        a suggestion from similar companies, NOT a checked requirement:\n        · Carbon replacement record for C-1, or breakthrough records showing replacement was not needed — Line B3. You hold only weekly detector-tube checks for August–September 2026.\n        · Deviation log or deviation reports for the last 12 months (or a note that there were none) — Line A5.\n        · Opacity or visible-emissions observation records, or a written statement of the monitoring method — Line B5. Nothing on file covers it.\n        · Permit renewal application or DEQ acknowledgment, if the permit expires within 12 months — Line A2. Whether this applies depends on the permit's expiration date.\n        · Quarterly scrubber inspection records for the last four quarters (S-1 and S-2) — Line B2. None are among the documents you hold.\n        · Records retention procedure (five years) — Line B6.\n        · Scrubber pressure-drop log for the full 12 months (about October 2025 to September 2026) — Line B1 asks for 12 months of daily readings. The log you hold covers only August–September 2026.\n        · Semi-annual monitoring report for January–June 2026, with DEQ receipt — Checklist line A4 expects it by July 31. You hold only the 2025 annual report.\n        · Weekly C-1 detector-tube records before August 2026 — Line B4, together with the five-year retention in line B6. Only two months are on file.\n\n  --- D4 — Scrubber Pressure-Drop Log (S-1 and S-2) and Weekly C-1 Carbon Outlet Detector-Tube Check, August–September 2026, Portland Facility\n      file: 07-scrubber-log-record.pdf\n      kind: record · status: gaps_found · shown as: needs_work\n      the document's own date: 2026-09-25 (last_entry)\n      the date that matters: 2026-09-25 (last_entry)\n      site: Portland\n      what the reading said it is: This is your own monitoring log for Air Contaminant Discharge Permit 26-2841-ST-01. It records the daily pressure drop across scrubbers S-1 and S-2 (Condition 3.1) and the weekly breakthrough check at the outlet of carbon unit C-1 (Condition 3.3). It is the evidence that you are meeting those conditions, and it currently has holes: August is missing a week of readings, September is missing one weekly C-1 check, a reading on September 9 was above the permit limit with nothing recorded about it, and no supervisor has signed it.\n      WHAT THE READING FOUND WRONG WITH IT (5) — these are already findings; carry them, do not re-find them:\n        · August 17–21 daily pressure-drop readings missing\n            By the log's own line counters, the acid line ran 21 days and the caustic line 20 days in August, but only 16 rows were entered. The missing rows are the whole week of August 17–21. A C-1 check was logged on August 17, which suggests the plant was running that week. That makes about 5 operating days with no S-1 reading and 5 with no S-2 reading.\n            what it needs: Find out whether readings were taken that week and just not written down (check shift notes or any other records). If they were not taken, treat it as missed monitoring under Condition 3.1. Check what the permit says about reporting monitoring deviations, record the reason, and set up a daily check so a day cannot be skipped.\n            the rule: Air Contaminant Discharge Permit 26-2841-ST-01, Condition 3.1 (as quoted in the log header)\n        · S-2 reading above the permit range on September 9 with no note or corrective action\n            On September 9 the S-2 (caustic line) pressure drop was 6.4 inches of water column. That is above the 6.0 upper limit in Condition 3.1, and the caustic line was running. The Notes column is blank: nothing says what caused it, what was done, or when the reading came back into range. The next day it read 4.6.\n            what it needs: Write up what happened on September 9: the cause, the corrective action, and the time it returned to range. Check the permit's deviation and excess-emission reporting conditions. DEQ's excess emissions rules (which I believe are OAR 340-214-0300 through -0360, but please check) may require you to notify DEQ or include this in your periodic report. Keep that write-up with this log.\n            the rule: Permit 26-2841-ST-01, Condition 3.1. Possibly OAR 340 Division 214 excess emissions rules; section numbers not verified.\n        · Weekly C-1 check missing for the week of September 14\n            Condition 3.3 requires a weekly breakthrough check at the C-1 outlet. The September table has only the weeks of September 7 and 21. The week of September 14 is missing, and the pressure-drop rows show the plant ran September 14–18.\n            what it needs: Find out whether the check was done and not written down. If it was missed, record it as a missed weekly check and handle it the way the permit requires for monitoring deviations. Put the week of September 28 check on the schedule now.\n            the rule: Air Contaminant Discharge Permit 26-2841-ST-01, Condition 3.3 (as quoted in the log)\n        · Supervisor review not signed\n            The supervisor review signature and date lines at the bottom of the log are blank. Nobody has signed off on either month, which is also why the September 9 reading and the missing entries went unflagged.\n            what it needs: Have the supervisor review both months, sign and date the log, and write down how each gap above was handled.\n        · No line-counter operating-day totals for September  [worked out from the document, not stated in it]\n            August gives operating-day totals from the line counters, so you can check that every operating day was logged. September gives no totals, so it cannot be checked the same way.\n            what it needs: Add September's line-counter totals and compare them with the 18 rows entered.\n      DATES THIS DOCUMENT SETS (2):\n        · Record S-1 and S-2 pressure drop on every day each line runs; keep it between 2.0 and 6.0 in. w.c. — no date stated (recurring)\n        · Weekly C-1 carbon unit outlet breakthrough check (week of September 28 is due now) — 2026-10-02 (recurring)\n      WHAT THE READING SAID A COMPANY LIKE THIS USUALLY ALSO HOLDS (4) —\n        a suggestion from similar companies, NOT a checked requirement:\n        · ACDP annual report and fee submittals to Oregon DEQ — A Standard ACDP usually requires a periodic report that draws on these logs\n        · C-1 carbon change-out records and detector-tube lot records — Back up the breakthrough monitoring\n        · Deviation and corrective-action records for scrubber and carbon excursions — Needed to document the September 9 S-2 reading and the missed readings\n        · Magnehelic gauge calibration and maintenance records — Show that the pressure-drop readings can be relied on\n      WHAT THIS DOCUMENT SAYS, proposed by the reading, not confirmed by anyone (3):\n        · air emission sources: Two scrubbers, S-1 (acid repackaging line) and S-2 (caustic repackaging line), plus carbon unit C-1, all monitored under ACDP 26-2841-ST-01, as of 2026-09-25\n            it says: \"SCRUBBER PRESSURE-DROP LOG — S-1 (acid repackaging line) and S-2 (caustic repackaging line)\"\n            where: Page 1, header\n        · facility operations: Acid repackaging line and caustic repackaging line, running roughly every weekday, as of 2026-08-31\n            it says: \"August throughput (from the line counters): acid line ran 21 days, caustic line ran 20 days.\"\n            where: Page 1, below August table\n        · workforce roles: Line leads T. Nguyen and K. Sato take the scrubber and carbon readings, as of 2026-09-25\n            it says: \"T.N. = T. Nguyen, line lead · K.S. = K. Sato, line lead.\"\n            where: Page 2, footer\n\n  --- D5 — Standard Air Contaminant Discharge Permit No. 26-2841-ST-01 — Portland Facility\n      file: 02-acdp-chemical.pdf\n      kind: permit · status: expiring · shown as: expiring\n      the document's own date: 2021-09-01 (issued)\n      the date that matters: 2026-11-15 (expiry)\n      site: Portland\n      what the reading said it is: This is Oregon DEQ's Standard Air Contaminant Discharge Permit for the Portland facility. It covers two wet scrubbers and four solvent tanks vented to a carbon unit. Because it is the agency's own document, there is nothing in it to fix. What matters is renewing it on time and keeping the logs, inspections, carbon changes and reports it requires. It expires November 15, 2026, 46 days from today. The permit set the renewal application deadline at July 18, 2026, and that date has already passed.\n      WHAT THE READING FOUND WRONG WITH IT: nothing\n      WHAT THIS DOCUMENT OBLIGES THEM TO KEEP DOING (14), read out of the document itself:\n        · 1.1 — Operate the listed sources in line with all permit conditions and all applicable DEQ rules\n            the evidence you would expect to see: Records for the Section 3 and 4 conditions below, showing the sources are run as permitted\n        · 1.2 — Do not operate after expiry without a renewed permit or a timely renewal application\n            the evidence you would expect to see: The renewed permit, or proof a timely renewal application was filed\n        · 1.3 — Submit a complete renewal application on or before July 18, 2026\n            the evidence you would expect to see: A copy of the renewal application and DEQ's receipt or acknowledgment dated on or before 2026-07-18\n        · 1.4 — Notify DEQ in writing at least 60 days before a change in ownership, and before any change to a source that would increase emissions\n            the evidence you would expect to see: Copies of any notification letters, or a note that no such changes happened\n        · 3.1 — Keep scrubber S-1 and S-2 pressure drop between 2.0 and 6.0 in. w.c. and record it once each operating day\n            the evidence you would expect to see: A scrubber log with a daily pressure-drop reading for each scrubber on every operating day\n        · 3.2 — Inspect each scrubber's pump, nozzles, packing and mist eliminator at least once per calendar quarter\n            the evidence you would expect to see: Quarterly entries in the scrubber log with date, inspector and any corrective action\n        · 3.3 — Replace the carbon in C-1 at least every 12 months, or sooner if the weekly detector-tube check shows breakthrough\n            the evidence you would expect to see: Weekly detector-tube check records at the C-1 outlet, plus carbon replacement records or invoices no more than 12 months apart\n        · 3.4 — Keep visible emissions at or below 20% opacity (no more than 3 minutes in any hour)\n            the evidence you would expect to see: Visible-emissions observation records, or no deviation reports\n        · 4.1 — Submit the annual report by February 15 each year\n            the evidence you would expect to see: Copies of the annual reports and proof of submission, covering throughput by line, scrubber log summaries, carbon change dates and excess emissions\n        · 4.2 — Submit the semi-annual monitoring report by July 31 for January through June\n            the evidence you would expect to see: Copies of the semi-annual reports and proof of submission, including the report due July 31, 2026\n        · 4.3 — Keep all permit records for at least five years\n            the evidence you would expect to see: An organized file of logs and reports going back five years\n        · 5.1 — Minimize emissions during a scrubber malfunction, including stopping the associated line\n            the evidence you would expect to see: Malfunction and shutdown entries in the scrubber log\n        · 5.2 — Notify DEQ within 24 hours of finding any deviation, with a written report within 15 days\n            the evidence you would expect to see: Deviation notices and written reports, or a record that there were none\n        · 6.2 — Pay the annual permit fee by the due date on the invoice\n            the evidence you would expect to see: DEQ fee invoices and proof of payment\n      DATES THIS DOCUMENT SETS (7):\n        · Annual permit fee — no date stated (recurring)\n        · Annual report for calendar year 2026 — 2027-02-15 (recurring)\n        · Carbon replacement in C-1 (date depends on the last replacement, which is not in this document) — no date stated (recurring)\n        · Permit expires — 2026-11-15\n        · Quarterly scrubber inspection — 2026-09-30 (recurring)\n        · Renewal application due (date has passed; confirm it was filed) — 2026-07-18\n        · Semi-annual monitoring report for Jan–Jun 2026 (date has passed; confirm it was submitted) — 2026-07-31 (recurring)\n      WHAT THE READING SAID A COMPANY LIKE THIS USUALLY ALSO HOLDS (7) —\n        a suggestion from similar companies, NOT a checked requirement:\n        · ACDP renewal application and DEQ acknowledgment — Shows the July 18, 2026 filing was made, which allows operation to continue past November 15\n        · Annual and semi-annual DEQ air reports — Required submittals under Conditions 4.1 and 4.2\n        · Hazard Communication program and SDS library — Workers handle acids, caustics and solvents\n        · Hazardous substance / Tier II reporting to the Oregon State Fire Marshal — Bulk solvent, acid and caustic storage often goes over reporting thresholds\n        · Hazardous waste generator registration and records — Repackaging acids, caustics and solvents usually produces regulated waste\n        · Industrial stormwater permit (Oregon 1200-Z) or no-exposure certification — Chemical facilities in Portland often need industrial stormwater coverage\n        · Scrubber log and C-1 carbon replacement and detector-tube records — These are the day-to-day evidence for Conditions 3.1–3.3\n      WHAT THIS DOCUMENT SAYS, proposed by the reading, not confirmed by anyone (4):\n        · air emission sources: Scrubbers S-1 (acid line, 4,500 scfm) and S-2 (caustic line, 3,000 scfm); tanks T-3 to T-6 vented to carbon unit C-1, as of 2021-09-01\n            it says: \"Packed-bed wet scrubber S-1 serving the acid repackaging line (design flow 4,500 scfm).\"\n            where: Page 3, Sections 2.1–2.3\n        · air permit type: Standard ACDP under OAR 340-216, permit 26-2841-ST-01, as of 2021-09-01\n            it says: \"STANDARD AIR CONTAMINANT DISCHARGE PERMIT\"\n            where: Page 1\n        · chemical release hazard: Acid and caustic repackaging lines served by wet scrubbers, and four 10,000-gallon fixed-roof solvent storage tanks, as of 2021-09-01\n            it says: \"Solvent storage tanks T-3, T-4, T-5 and T-6 (each 10,000 gallons, fixed roof, vented to carbon adsorption unit C-1).\"\n            where: Page 3, Section 2.3\n        · facility operations: Chemical storage and repackaging with vapor control, as of 2021-09-01\n            it says: \"Source category: Chemical storage and repackaging with vapor control\"\n            where: Page 1\n\nFACTS THIS COMPANY HAS CONFIRMED, ACROSS EVERYTHING THEY HOLD\nEach was read in a document and then confirmed by a person. Nothing a reading merely\nproposed is here — an unconfirmed proposal is a question, not a fact.\n  employee count (Portland): 42 employees at the Portland facility, as of 2021-02-01 — from \"Emergency Action Plan — Portland Facility\"\n\nEVERYTHING ELSE THIS COMPANY HOLDS — 7, TITLES AND DATES ONLY\nListed so you can say what is NOT among them. You have not been shown their contents and\nmust not describe what is in them.\n  - D6 — Certificate of Annual Maintenance, Portable Fire Extinguishers (14 units), service date August 20, 2025, Portland Facility · certificate · expired · 2025-08-20\n  - D7 — Emergency Action Plan — Portland Facility · program · gaps_found · 2021-02-01\n  - D8 — Forklift Pre-Shift Inspection Log, Unit FL-2 (Toyota 8FGU25, propane), September 2026, Portland Warehouse · record · gaps_found · 2026-09-18\n  - D9 — Forklift Pre-Shift Inspection Log, Unit FL-2 (Toyota 8FGU25, propane), September 2026, Portland Warehouse · record · gaps_found · 2026-09-17\n  - D10 — OSHA Form 300A Summary of Work-Related Injuries and Illnesses, Calendar Year 2025, Portland Facility · record · recorded · 2026-02-01\n  - D11 — Powered Industrial Truck Operator Training and Evaluation Record, with Operator Certificate for Michael Chen, Portland Facility · record · gaps_found · 2025-06-02\n  - D12 — Safety Data Sheet: Sodium Hydroxide Solution, 50% (Northwest Alkali Products, Version 4.1) · supplier_document · not_judged · 2024-03-18\n\nTHE AGENCY AND SUBJECT WORDS THIS COMPANY ALREADY USES\n  agencies: Oregon DEQ · Oregon OSHA · Oregon State Fire Marshal · U.S. OSHA\n  subjects: Air Quality Permit · Emergency Action Plan · Emergency Preparedness · Hazard Communication · Injury and Illness Recordkeeping · Portable Fire Extinguishers · Powered Industrial Trucks",
+  "input_sha256": "251fe7d55162b2d614a18444ffa2a134edb7ca66414cd2c2967db31d9d3dd4f0",
+  "input": {
+    "today": "2026-09-30",
+    "agency": "Oregon DEQ",
+    "company": {
+      "name": "Cascade Specialty Chemicals, LLC",
+      "industrySlug": "chemical-manufacturing",
+      "industryWords": "chemical manufacturing",
+      "address": "Portland, Oregon",
+      "state": "Oregon",
+      "sites": [
+        {
+          "id": "5fb4e055-c138-4377-babc-47dd259cb9a9",
+          "name": "Portland",
+          "address": "4410 NW Front Ave, Portland, Oregon 97210",
+          "state": "Oregon",
+          "county": null,
+          "city": "Portland",
+          "primary": true
+        }
+      ]
+    },
+    "confirmed": [
+      {
+        "key": "employee_count",
+        "value": "42 employees at the Portland facility",
+        "basis": "read",
+        "entityId": "5fb4e055-c138-4377-babc-47dd259cb9a9",
+        "siteName": "Portland",
+        "asOf": "2021-02-01",
+        "sourceDocumentTitle": "Emergency Action Plan — Portland Facility",
+        "sourceDocumentId": "68cce076-2865-4ae4-a247-fd8e97d0baf7",
+        "sourceProposalId": "03e449d9-9295-41af-a057-8d603aad67ab"
+      }
+    ],
+    "labels": {
+      "agencies": [
+        "Oregon DEQ",
+        "Oregon OSHA",
+        "Oregon State Fire Marshal",
+        "U.S. OSHA"
+      ],
+      "subjects": [
+        "Air Quality Permit",
+        "Emergency Action Plan",
+        "Emergency Preparedness",
+        "Hazard Communication",
+        "Injury and Illness Recordkeeping",
+        "Portable Fire Extinguishers",
+        "Powered Industrial Trucks"
+      ]
+    },
+    "keys": [
+      "aed_on_site",
+      "air_emission_sources",
+      "air_permit_type",
+      "annual_throughput",
+      "chemical_release_hazard",
+      "emergency_eyewash_shower",
+      "employee_count",
+      "employee_count_site",
+      "facility_operations",
+      "fire_alarm_monitoring",
+      "hazardous_waste_streams",
+      "lpg_cylinder_use",
+      "naics_code",
+      "pit_operator_roster",
+      "portable_fire_extinguishers",
+      "powered_industrial_trucks",
+      "recordable_cases_2025",
+      "total_hours_worked",
+      "workforce_roles"
+    ],
+    "documents": [
+      {
+        "handle": "D1",
+        "document_id": "6f4d2ab2-ae2e-40e3-973f-8b615cac97c9",
+        "title": "Annual Report, Reporting Year 2025, for Standard Air Contaminant Discharge Permit 26-2841-ST-01, with Oregon DEQ Receipt Confirmation (Submission ACDP-AR-2025-262841), Portland Facility",
+        "file_name": "08-deq-annual-report-2025.pdf",
+        "kind": "record",
+        "status": "recorded",
+        "display_status": "recorded",
+        "doc_date": "2026-02-12",
+        "doc_date_kind": "issued",
+        "significant_date": "2026-02-12",
+        "significant_date_kind": "last_entry",
+        "scan_id": "3361ed63-790b-469d-ba6e-fb1b1fa34c3d",
+        "site": "Portland",
+        "summary": "This is your own 2025 annual report under your Standard Air Contaminant Discharge Permit, plus DEQ's automatic email saying it was received on February 12, 2026. It is your proof that you filed on time. DEQ says plainly that the email confirms receipt only and is not a finding that the report is complete or that you met the permit. The report covers 2025 throughput, the scrubber pressure-drop summary, the quarterly inspections, the C-1 carbon changeout and weekly checks, and one deviation that was reported (the S-2 pump failure in August 2025). The one thing to follow up on now: the report set the next C-1 carbon replacement for on or before March 14, 2026, and that date has passed.",
+        "open_gaps": [],
+        "conditions": [],
+        "deadlines": [
+          {
+            "title": "Annual report for reporting year 2026 under Condition 4.1. The due date is not in this document; check Condition 4.1 of the permit",
+            "due_on": null,
+            "recurs": true
+          },
+          {
+            "title": "Keep this confirmation and the records the permit requires for five years (worked out: five years from the February 12, 2026 receipt)",
+            "due_on": "2031-02-12",
+            "recurs": false
+          },
+          {
+            "title": "Replace the carbon in adsorption unit C-1 (Condition 3.3). This date has passed; confirm it was done and keep the vendor record",
+            "due_on": "2026-03-14",
+            "recurs": true
+          }
+        ],
+        "expected_missing": [
+          {
+            "title": "C-1 carbon replacement record for the March 2026 changeout (vendor invoice or service ticket)",
+            "why": "The report sets the replacement for on or before March 14, 2026; that date has passed and it is not in your file list.",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Deviation report DEV-2025-0913 and the August 23, 2025 notification email",
+            "why": "This is the backup for the one deviation reported under Conditions 5.1 and 5.2.",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "EPCRA Tier II chemical inventory report",
+            "why": "Bulk acids, caustics and solvents are stored on site.",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Hazardous waste generator records (EPA ID, manifests) and the Oregon DEQ generator fee or report",
+            "why": "Spent carbon and off-spec chemicals are typical waste streams.",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Oregon DEQ industrial stormwater permit (1200-Z) or a no-exposure certification",
+            "why": "Chemical handling sites in Oregon often hold one of these.",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Scrubber maintenance file with the Condition 3.2 quarterly inspection records",
+            "why": "The report says the 2025 inspections are recorded there; that file is not in your list.",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Weekly C-1 detector-tube logs and daily scrubber logs for 2025",
+            "why": "These are the raw records behind the summaries in this report, kept for five years.",
+            "basis": "similar companies, not a checked requirement"
+          }
+        ],
+        "confirmed_facts": [],
+        "proposed_facts": [
+          {
+            "key": "air_emission_sources",
+            "value": "Acid scrubber S-1, caustic scrubber S-2, and carbon adsorption unit C-1 serving solvent storage tanks T-3 to T-6",
+            "quote": "Solvent storage T-3 to T-6 (C-1)",
+            "locator": "Page 2, Section 1 table; Sections 2 and 3",
+            "as_of": "2025-12-31"
+          },
+          {
+            "key": "air_permit_type",
+            "value": "Standard Air Contaminant Discharge Permit No. 26-2841-ST-01",
+            "quote": "Permit: 26-2841-ST-01 (Standard Air Contaminant Discharge Permit)",
+            "locator": "Page 1, DEQ receipt email",
+            "as_of": "2026-02-12"
+          },
+          {
+            "key": "annual_throughput",
+            "value": "2025: acid line 1,842,000 lb over 238 days; caustic line 1,210,000 lb over 231 days; 3,960,000 gallons of solvent received",
+            "quote": "3,960,000 gallons received",
+            "locator": "Page 2, Section 1 table",
+            "as_of": "2025-12-31"
+          },
+          {
+            "key": "facility_operations",
+            "value": "Repackaging of hydrochloric, sulfuric and nitric acid solutions and of sodium and potassium hydroxide solutions, plus bulk solvent storage (acetone, isopropanol, toluene, xylene)",
+            "quote": "acetone, isopropanol, toluene, xylene",
+            "locator": "Page 2, Section 1 table",
+            "as_of": "2025-12-31"
+          },
+          {
+            "key": "hazardous_waste_streams",
+            "value": "Spent activated carbon from C-1 (about 1,800 lb per changeout, handled by Northwest Carbon Services); whether it counts as hazardous waste is not stated (inferred)",
+            "quote": "Calgon Filtrasorb 400, 1,800 pounds, by Northwest Carbon Services",
+            "locator": "Page 3, Section 3",
+            "as_of": "2025-03-14"
+          },
+          {
+            "key": "workforce_roles",
+            "value": "Daniel Okafor, Plant Manager, submits and certifies air permit reports",
+            "quote": "Submitted by: Daniel Okafor, Plant Manager",
+            "locator": "Page 1; signature on page 3",
+            "as_of": "2026-02-12"
+          }
+        ]
+      },
+      {
+        "handle": "D2",
+        "document_id": "ba3ca19a-efdc-4273-807d-579f060add9c",
+        "title": "Monthly EHS Self-Check (blank internal checklist template), Portland Facility",
+        "file_name": "13-company-self-check.docx",
+        "kind": "other",
+        "status": "not_judged",
+        "display_status": "on_file",
+        "doc_date": null,
+        "doc_date_kind": "unknown",
+        "significant_date": null,
+        "significant_date_kind": null,
+        "scan_id": "76184a42-cae8-458d-b4a3-f0902caa1bfb",
+        "site": "Portland",
+        "summary": "This is the company's own blank monthly checklist with eight lines. It covers air permit posting, scrubber and carbon-bed monitoring, forklift inspections, extinguishers, exits, eyewash stations and showers, and safety data sheets (SDSs). The Month, Completed by, Done, Initials and supervisor review fields are all empty, so it shows that the company has a monthly self-check routine but does not show that any check was actually done. A filled-in, signed copy for each month would be the record worth keeping.",
+        "open_gaps": [],
+        "conditions": [],
+        "deadlines": [
+          {
+            "title": "Complete the monthly EHS self-check and get supervisor review",
+            "due_on": null,
+            "recurs": true
+          },
+          {
+            "title": "Report any items marked N to the Plant Manager",
+            "due_on": null,
+            "recurs": true
+          }
+        ],
+        "expected_missing": [
+          {
+            "title": "Completed and signed monthly self-check copies",
+            "why": "The blank template proves nothing on its own. Filled-in months are the record.",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Eyewash and safety shower weekly flush log",
+            "why": "Line 7 refers to a log that isn't in the company's list of documents.",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Hazardous waste generator records (manifests, waste determinations)",
+            "why": "This is typical for specialty chemical manufacturing in Oregon.",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "OSHA Form 300 log and Form 301 incident reports for 2025",
+            "why": "Only the 300A summary is in the company's list.",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Written Hazard Communication Program and SDS binder index",
+            "why": "Line 8 refers to an SDS binder index, and a chemical manufacturer would normally have a written HazCom program.",
+            "basis": "similar companies, not a checked requirement"
+          }
+        ],
+        "confirmed_facts": [],
+        "proposed_facts": [
+          {
+            "key": "air_emission_sources",
+            "value": "The facility has scrubbers S-1 and S-2, monitored by pressure drop, and a carbon unit C-1, checked weekly with detector tubes.",
+            "quote": "Weekly C-1 detector-tube checks done and recorded every week this month",
+            "locator": "Line 3 (scrubbers appear in Line 2)",
+            "as_of": null
+          },
+          {
+            "key": "emergency_eyewash_shower",
+            "value": "Eyewash stations and safety showers are on site.",
+            "quote": "Eyewash stations and safety showers flushed this week and logged",
+            "locator": "Line 7",
+            "as_of": null
+          },
+          {
+            "key": "portable_fire_extinguishers",
+            "value": "Portable fire extinguishers are on site with annual tags and monthly visual checks.",
+            "quote": "Fire extinguishers tagged within the last 12 months; monthly visual check initialled on each tag",
+            "locator": "Line 5",
+            "as_of": null
+          },
+          {
+            "key": "powered_industrial_trucks",
+            "value": "At least one forklift is in use and gets a pre-shift inspection.",
+            "quote": "Forklift pre-shift inspection log complete for every day the truck ran; any defect followed up",
+            "locator": "Line 4",
+            "as_of": null
+          }
+        ]
+      },
+      {
+        "handle": "D3",
+        "document_id": "65d5a17d-0d20-493c-919d-234dd5f53fb3",
+        "title": "Oregon DEQ Air Contaminant Discharge Permit Compliance Inspection Checklist (blank inspector's field form)",
+        "file_name": "12-auditor-checklist-deq-air.docx",
+        "kind": "other",
+        "status": "not_judged",
+        "display_status": "on_file",
+        "doc_date": null,
+        "doc_date_kind": "unknown",
+        "significant_date": null,
+        "significant_date_kind": null,
+        "scan_id": "8a01ae9c-ee20-4620-a447-6b5bfcc7d7aa",
+        "site": "Portland",
+        "summary": "This is a blank inspector's field form for an Oregon DEQ air permit inspection. The facility, permit number, date, inspector, answers and signatures are all empty. It is not a record of an inspection and it is not Cascade's own document. Its real use is as a preview: it lists what a DEQ inspector would ask to see under Sections A (permit and submissions), B (records) and C (what is checked on the day). You can use it to check your air-permit file before an inspection.",
+        "open_gaps": [],
+        "conditions": [],
+        "deadlines": [
+          {
+            "title": "Annual report for calendar year 2026 (the checklist expects it by February 15). Check the actual due date against the conditions of Permit 26-2841-ST-01.",
+            "due_on": "2027-02-15",
+            "recurs": true
+          },
+          {
+            "title": "Deviation notice within 24 hours, then a written report within 15 days, for any permit deviation",
+            "due_on": null,
+            "recurs": true
+          },
+          {
+            "title": "Permit renewal application due at least 120 days before the permit expires. The date depends on the expiration date printed on Permit 26-2841-ST-01.",
+            "due_on": null,
+            "recurs": true
+          },
+          {
+            "title": "Semi-annual monitoring report for January–June 2027 (the checklist expects it by July 31). Check against the permit's own reporting condition. The January–June 2026 report was due 2026-07-31 and is not among the documents you hold.",
+            "due_on": "2027-07-31",
+            "recurs": true
+          }
+        ],
+        "expected_missing": [
+          {
+            "title": "Carbon replacement record for C-1, or breakthrough records showing replacement was not needed",
+            "why": "Line B3. You hold only weekly detector-tube checks for August–September 2026.",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Deviation log or deviation reports for the last 12 months (or a note that there were none)",
+            "why": "Line A5.",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Opacity or visible-emissions observation records, or a written statement of the monitoring method",
+            "why": "Line B5. Nothing on file covers it.",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Permit renewal application or DEQ acknowledgment, if the permit expires within 12 months",
+            "why": "Line A2. Whether this applies depends on the permit's expiration date.",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Quarterly scrubber inspection records for the last four quarters (S-1 and S-2)",
+            "why": "Line B2. None are among the documents you hold.",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Records retention procedure (five years)",
+            "why": "Line B6.",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Scrubber pressure-drop log for the full 12 months (about October 2025 to September 2026)",
+            "why": "Line B1 asks for 12 months of daily readings. The log you hold covers only August–September 2026.",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Semi-annual monitoring report for January–June 2026, with DEQ receipt",
+            "why": "Checklist line A4 expects it by July 31. You hold only the 2025 annual report.",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Weekly C-1 detector-tube records before August 2026",
+            "why": "Line B4, together with the five-year retention in line B6. Only two months are on file.",
+            "basis": "similar companies, not a checked requirement"
+          }
+        ],
+        "confirmed_facts": [],
+        "proposed_facts": []
+      },
+      {
+        "handle": "D4",
+        "document_id": "d484ba46-2378-4c65-869e-f0e7802e9b14",
+        "title": "Scrubber Pressure-Drop Log (S-1 and S-2) and Weekly C-1 Carbon Outlet Detector-Tube Check, August–September 2026, Portland Facility",
+        "file_name": "07-scrubber-log-record.pdf",
+        "kind": "record",
+        "status": "gaps_found",
+        "display_status": "needs_work",
+        "doc_date": "2026-09-25",
+        "doc_date_kind": "last_entry",
+        "significant_date": "2026-09-25",
+        "significant_date_kind": "last_entry",
+        "scan_id": "1c2f11ab-6b77-4b18-a352-ffc7fd3b571d",
+        "site": "Portland",
+        "summary": "This is your own monitoring log for Air Contaminant Discharge Permit 26-2841-ST-01. It records the daily pressure drop across scrubbers S-1 and S-2 (Condition 3.1) and the weekly breakthrough check at the outlet of carbon unit C-1 (Condition 3.3). It is the evidence that you are meeting those conditions, and it currently has holes: August is missing a week of readings, September is missing one weekly C-1 check, a reading on September 9 was above the permit limit with nothing recorded about it, and no supervisor has signed it.",
+        "open_gaps": [
+          {
+            "title": "August 17–21 daily pressure-drop readings missing",
+            "description": "By the log's own line counters, the acid line ran 21 days and the caustic line 20 days in August, but only 16 rows were entered. The missing rows are the whole week of August 17–21. A C-1 check was logged on August 17, which suggests the plant was running that week. That makes about 5 operating days with no S-1 reading and 5 with no S-2 reading.",
+            "fix": "Find out whether readings were taken that week and just not written down (check shift notes or any other records). If they were not taken, treat it as missed monitoring under Condition 3.1. Check what the permit says about reporting monitoring deviations, record the reason, and set up a daily check so a day cannot be skipped.",
+            "citation": "Air Contaminant Discharge Permit 26-2841-ST-01, Condition 3.1 (as quoted in the log header)",
+            "basis": "read"
+          },
+          {
+            "title": "S-2 reading above the permit range on September 9 with no note or corrective action",
+            "description": "On September 9 the S-2 (caustic line) pressure drop was 6.4 inches of water column. That is above the 6.0 upper limit in Condition 3.1, and the caustic line was running. The Notes column is blank: nothing says what caused it, what was done, or when the reading came back into range. The next day it read 4.6.",
+            "fix": "Write up what happened on September 9: the cause, the corrective action, and the time it returned to range. Check the permit's deviation and excess-emission reporting conditions. DEQ's excess emissions rules (which I believe are OAR 340-214-0300 through -0360, but please check) may require you to notify DEQ or include this in your periodic report. Keep that write-up with this log.",
+            "citation": "Permit 26-2841-ST-01, Condition 3.1. Possibly OAR 340 Division 214 excess emissions rules; section numbers not verified.",
+            "basis": "read"
+          },
+          {
+            "title": "Weekly C-1 check missing for the week of September 14",
+            "description": "Condition 3.3 requires a weekly breakthrough check at the C-1 outlet. The September table has only the weeks of September 7 and 21. The week of September 14 is missing, and the pressure-drop rows show the plant ran September 14–18.",
+            "fix": "Find out whether the check was done and not written down. If it was missed, record it as a missed weekly check and handle it the way the permit requires for monitoring deviations. Put the week of September 28 check on the schedule now.",
+            "citation": "Air Contaminant Discharge Permit 26-2841-ST-01, Condition 3.3 (as quoted in the log)",
+            "basis": "read"
+          },
+          {
+            "title": "Supervisor review not signed",
+            "description": "The supervisor review signature and date lines at the bottom of the log are blank. Nobody has signed off on either month, which is also why the September 9 reading and the missing entries went unflagged.",
+            "fix": "Have the supervisor review both months, sign and date the log, and write down how each gap above was handled.",
+            "citation": null,
+            "basis": "read"
+          },
+          {
+            "title": "No line-counter operating-day totals for September",
+            "description": "August gives operating-day totals from the line counters, so you can check that every operating day was logged. September gives no totals, so it cannot be checked the same way.",
+            "fix": "Add September's line-counter totals and compare them with the 18 rows entered.",
+            "citation": null,
+            "basis": "inferred"
+          }
+        ],
+        "conditions": [],
+        "deadlines": [
+          {
+            "title": "Record S-1 and S-2 pressure drop on every day each line runs; keep it between 2.0 and 6.0 in. w.c.",
+            "due_on": null,
+            "recurs": true
+          },
+          {
+            "title": "Weekly C-1 carbon unit outlet breakthrough check (week of September 28 is due now)",
+            "due_on": "2026-10-02",
+            "recurs": true
+          }
+        ],
+        "expected_missing": [
+          {
+            "title": "ACDP annual report and fee submittals to Oregon DEQ",
+            "why": "A Standard ACDP usually requires a periodic report that draws on these logs",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "C-1 carbon change-out records and detector-tube lot records",
+            "why": "Back up the breakthrough monitoring",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Deviation and corrective-action records for scrubber and carbon excursions",
+            "why": "Needed to document the September 9 S-2 reading and the missed readings",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Magnehelic gauge calibration and maintenance records",
+            "why": "Show that the pressure-drop readings can be relied on",
+            "basis": "similar companies, not a checked requirement"
+          }
+        ],
+        "confirmed_facts": [],
+        "proposed_facts": [
+          {
+            "key": "air_emission_sources",
+            "value": "Two scrubbers, S-1 (acid repackaging line) and S-2 (caustic repackaging line), plus carbon unit C-1, all monitored under ACDP 26-2841-ST-01",
+            "quote": "SCRUBBER PRESSURE-DROP LOG — S-1 (acid repackaging line) and S-2 (caustic repackaging line)",
+            "locator": "Page 1, header",
+            "as_of": "2026-09-25"
+          },
+          {
+            "key": "facility_operations",
+            "value": "Acid repackaging line and caustic repackaging line, running roughly every weekday",
+            "quote": "August throughput (from the line counters): acid line ran 21 days, caustic line ran 20 days.",
+            "locator": "Page 1, below August table",
+            "as_of": "2026-08-31"
+          },
+          {
+            "key": "workforce_roles",
+            "value": "Line leads T. Nguyen and K. Sato take the scrubber and carbon readings",
+            "quote": "T.N. = T. Nguyen, line lead · K.S. = K. Sato, line lead.",
+            "locator": "Page 2, footer",
+            "as_of": "2026-09-25"
+          }
+        ]
+      },
+      {
+        "handle": "D5",
+        "document_id": "97750a6f-3c78-4ce8-a851-2fe6ff22d351",
+        "title": "Standard Air Contaminant Discharge Permit No. 26-2841-ST-01 — Portland Facility",
+        "file_name": "02-acdp-chemical.pdf",
+        "kind": "permit",
+        "status": "expiring",
+        "display_status": "expiring",
+        "doc_date": "2021-09-01",
+        "doc_date_kind": "issued",
+        "significant_date": "2026-11-15",
+        "significant_date_kind": "expiry",
+        "scan_id": "30332c99-b526-4048-86fe-596dfc764335",
+        "site": "Portland",
+        "summary": "This is Oregon DEQ's Standard Air Contaminant Discharge Permit for the Portland facility. It covers two wet scrubbers and four solvent tanks vented to a carbon unit. Because it is the agency's own document, there is nothing in it to fix. What matters is renewing it on time and keeping the logs, inspections, carbon changes and reports it requires. It expires November 15, 2026, 46 days from today. The permit set the renewal application deadline at July 18, 2026, and that date has already passed.",
+        "open_gaps": [],
+        "conditions": [
+          {
+            "condition_ref": "1.1",
+            "title": "Operate the listed sources in line with all permit conditions and all applicable DEQ rules",
+            "evidence_expected": "Records for the Section 3 and 4 conditions below, showing the sources are run as permitted"
+          },
+          {
+            "condition_ref": "1.2",
+            "title": "Do not operate after expiry without a renewed permit or a timely renewal application",
+            "evidence_expected": "The renewed permit, or proof a timely renewal application was filed"
+          },
+          {
+            "condition_ref": "1.3",
+            "title": "Submit a complete renewal application on or before July 18, 2026",
+            "evidence_expected": "A copy of the renewal application and DEQ's receipt or acknowledgment dated on or before 2026-07-18"
+          },
+          {
+            "condition_ref": "1.4",
+            "title": "Notify DEQ in writing at least 60 days before a change in ownership, and before any change to a source that would increase emissions",
+            "evidence_expected": "Copies of any notification letters, or a note that no such changes happened"
+          },
+          {
+            "condition_ref": "3.1",
+            "title": "Keep scrubber S-1 and S-2 pressure drop between 2.0 and 6.0 in. w.c. and record it once each operating day",
+            "evidence_expected": "A scrubber log with a daily pressure-drop reading for each scrubber on every operating day"
+          },
+          {
+            "condition_ref": "3.2",
+            "title": "Inspect each scrubber's pump, nozzles, packing and mist eliminator at least once per calendar quarter",
+            "evidence_expected": "Quarterly entries in the scrubber log with date, inspector and any corrective action"
+          },
+          {
+            "condition_ref": "3.3",
+            "title": "Replace the carbon in C-1 at least every 12 months, or sooner if the weekly detector-tube check shows breakthrough",
+            "evidence_expected": "Weekly detector-tube check records at the C-1 outlet, plus carbon replacement records or invoices no more than 12 months apart"
+          },
+          {
+            "condition_ref": "3.4",
+            "title": "Keep visible emissions at or below 20% opacity (no more than 3 minutes in any hour)",
+            "evidence_expected": "Visible-emissions observation records, or no deviation reports"
+          },
+          {
+            "condition_ref": "4.1",
+            "title": "Submit the annual report by February 15 each year",
+            "evidence_expected": "Copies of the annual reports and proof of submission, covering throughput by line, scrubber log summaries, carbon change dates and excess emissions"
+          },
+          {
+            "condition_ref": "4.2",
+            "title": "Submit the semi-annual monitoring report by July 31 for January through June",
+            "evidence_expected": "Copies of the semi-annual reports and proof of submission, including the report due July 31, 2026"
+          },
+          {
+            "condition_ref": "4.3",
+            "title": "Keep all permit records for at least five years",
+            "evidence_expected": "An organized file of logs and reports going back five years"
+          },
+          {
+            "condition_ref": "5.1",
+            "title": "Minimize emissions during a scrubber malfunction, including stopping the associated line",
+            "evidence_expected": "Malfunction and shutdown entries in the scrubber log"
+          },
+          {
+            "condition_ref": "5.2",
+            "title": "Notify DEQ within 24 hours of finding any deviation, with a written report within 15 days",
+            "evidence_expected": "Deviation notices and written reports, or a record that there were none"
+          },
+          {
+            "condition_ref": "6.2",
+            "title": "Pay the annual permit fee by the due date on the invoice",
+            "evidence_expected": "DEQ fee invoices and proof of payment"
+          }
+        ],
+        "deadlines": [
+          {
+            "title": "Annual permit fee",
+            "due_on": null,
+            "recurs": true
+          },
+          {
+            "title": "Annual report for calendar year 2026",
+            "due_on": "2027-02-15",
+            "recurs": true
+          },
+          {
+            "title": "Carbon replacement in C-1 (date depends on the last replacement, which is not in this document)",
+            "due_on": null,
+            "recurs": true
+          },
+          {
+            "title": "Permit expires",
+            "due_on": "2026-11-15",
+            "recurs": false
+          },
+          {
+            "title": "Quarterly scrubber inspection",
+            "due_on": "2026-09-30",
+            "recurs": true
+          },
+          {
+            "title": "Renewal application due (date has passed; confirm it was filed)",
+            "due_on": "2026-07-18",
+            "recurs": false
+          },
+          {
+            "title": "Semi-annual monitoring report for Jan–Jun 2026 (date has passed; confirm it was submitted)",
+            "due_on": "2026-07-31",
+            "recurs": true
+          }
+        ],
+        "expected_missing": [
+          {
+            "title": "ACDP renewal application and DEQ acknowledgment",
+            "why": "Shows the July 18, 2026 filing was made, which allows operation to continue past November 15",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Annual and semi-annual DEQ air reports",
+            "why": "Required submittals under Conditions 4.1 and 4.2",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Hazard Communication program and SDS library",
+            "why": "Workers handle acids, caustics and solvents",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Hazardous substance / Tier II reporting to the Oregon State Fire Marshal",
+            "why": "Bulk solvent, acid and caustic storage often goes over reporting thresholds",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Hazardous waste generator registration and records",
+            "why": "Repackaging acids, caustics and solvents usually produces regulated waste",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Industrial stormwater permit (Oregon 1200-Z) or no-exposure certification",
+            "why": "Chemical facilities in Portland often need industrial stormwater coverage",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Scrubber log and C-1 carbon replacement and detector-tube records",
+            "why": "These are the day-to-day evidence for Conditions 3.1–3.3",
+            "basis": "similar companies, not a checked requirement"
+          }
+        ],
+        "confirmed_facts": [],
+        "proposed_facts": [
+          {
+            "key": "air_emission_sources",
+            "value": "Scrubbers S-1 (acid line, 4,500 scfm) and S-2 (caustic line, 3,000 scfm); tanks T-3 to T-6 vented to carbon unit C-1",
+            "quote": "Packed-bed wet scrubber S-1 serving the acid repackaging line (design flow 4,500 scfm).",
+            "locator": "Page 3, Sections 2.1–2.3",
+            "as_of": "2021-09-01"
+          },
+          {
+            "key": "air_permit_type",
+            "value": "Standard ACDP under OAR 340-216, permit 26-2841-ST-01",
+            "quote": "STANDARD AIR CONTAMINANT DISCHARGE PERMIT",
+            "locator": "Page 1",
+            "as_of": "2021-09-01"
+          },
+          {
+            "key": "chemical_release_hazard",
+            "value": "Acid and caustic repackaging lines served by wet scrubbers, and four 10,000-gallon fixed-roof solvent storage tanks",
+            "quote": "Solvent storage tanks T-3, T-4, T-5 and T-6 (each 10,000 gallons, fixed roof, vented to carbon adsorption unit C-1).",
+            "locator": "Page 3, Section 2.3",
+            "as_of": "2021-09-01"
+          },
+          {
+            "key": "facility_operations",
+            "value": "Chemical storage and repackaging with vapor control",
+            "quote": "Source category: Chemical storage and repackaging with vapor control",
+            "locator": "Page 1",
+            "as_of": "2021-09-01"
+          }
+        ]
+      }
+    ],
+    "other_documents": [
+      {
+        "handle": "D6",
+        "document_id": "f3f09cd2-7508-41ba-9a5b-c573f1638735",
+        "title": "Certificate of Annual Maintenance, Portable Fire Extinguishers (14 units), service date August 20, 2025, Portland Facility",
+        "kind": "certificate",
+        "status": "expired",
+        "significant_date": "2025-08-20"
+      },
+      {
+        "handle": "D7",
+        "document_id": "68cce076-2865-4ae4-a247-fd8e97d0baf7",
+        "title": "Emergency Action Plan — Portland Facility",
+        "kind": "program",
+        "status": "gaps_found",
+        "significant_date": "2021-02-01"
+      },
+      {
+        "handle": "D8",
+        "document_id": "83897345-30e2-4b8f-b4bf-6f5ba9f37d12",
+        "title": "Forklift Pre-Shift Inspection Log, Unit FL-2 (Toyota 8FGU25, propane), September 2026, Portland Warehouse",
+        "kind": "record",
+        "status": "gaps_found",
+        "significant_date": "2026-09-18"
+      },
+      {
+        "handle": "D9",
+        "document_id": "fee3f96f-603b-4faa-856c-b4ea92e66242",
+        "title": "Forklift Pre-Shift Inspection Log, Unit FL-2 (Toyota 8FGU25, propane), September 2026, Portland Warehouse",
+        "kind": "record",
+        "status": "gaps_found",
+        "significant_date": "2026-09-17"
+      },
+      {
+        "handle": "D10",
+        "document_id": "8c77e434-322a-45fd-bb2d-b2fe57d589fb",
+        "title": "OSHA Form 300A Summary of Work-Related Injuries and Illnesses, Calendar Year 2025, Portland Facility",
+        "kind": "record",
+        "status": "recorded",
+        "significant_date": "2026-02-01"
+      },
+      {
+        "handle": "D11",
+        "document_id": "4a174d10-989a-4944-9fb6-f66c248e81fd",
+        "title": "Powered Industrial Truck Operator Training and Evaluation Record, with Operator Certificate for Michael Chen, Portland Facility",
+        "kind": "record",
+        "status": "gaps_found",
+        "significant_date": "2025-06-02"
+      },
+      {
+        "handle": "D12",
+        "document_id": "d03f28cb-eba8-48ac-a852-4a909edfdc51",
+        "title": "Safety Data Sheet: Sodium Hydroxide Solution, 50% (Northwest Alkali Products, Version 4.1)",
+        "kind": "supplier_document",
+        "status": "not_judged",
+        "significant_date": "2024-03-18"
+      }
+    ],
+    "handles": {
+      "D1": "6f4d2ab2-ae2e-40e3-973f-8b615cac97c9",
+      "D2": "ba3ca19a-efdc-4273-807d-579f060add9c",
+      "D3": "65d5a17d-0d20-493c-919d-234dd5f53fb3",
+      "D4": "d484ba46-2378-4c65-869e-f0e7802e9b14",
+      "D5": "97750a6f-3c78-4ce8-a851-2fe6ff22d351",
+      "D6": "f3f09cd2-7508-41ba-9a5b-c573f1638735",
+      "D7": "68cce076-2865-4ae4-a247-fd8e97d0baf7",
+      "D8": "83897345-30e2-4b8f-b4bf-6f5ba9f37d12",
+      "D9": "fee3f96f-603b-4faa-856c-b4ea92e66242",
+      "D10": "8c77e434-322a-45fd-bb2d-b2fe57d589fb",
+      "D11": "4a174d10-989a-4944-9fb6-f66c248e81fd",
+      "D12": "d03f28cb-eba8-48ac-a852-4a909edfdc51"
+    }
+  },
+  "calls": [
+    {
+      "section": "whole",
+      "wall_ms": 153097,
+      "cost_usd": 0.444476,
+      "sources": 0,
+      "input_tokens": 29704,
+      "output_tokens": 16283,
+      "searches": 0,
+      "json_parsed": true,
+      "raw_text": "{\"covers\":{\"documents_read\":[\"D1\",\"D2\",\"D3\",\"D4\",\"D5\"],\"documents_held_but_not_read\":[\"Certificate of Annual Maintenance, Portable Fire Extinguishers (14 units), service date August 20, 2025, Portland Facility\",\"Emergency Action Plan — Portland Facility\",\"Forklift Pre-Shift Inspection Log, Unit FL-2 (Toyota 8FGU25, propane), September 2026, Portland Warehouse (last entry 2026-09-18)\",\"Forklift Pre-Shift Inspection Log, Unit FL-2 (Toyota 8FGU25, propane), September 2026, Portland Warehouse (last entry 2026-09-17)\",\"OSHA Form 300A Summary of Work-Related Injuries and Illnesses, Calendar Year 2025, Portland Facility\",\"Powered Industrial Truck Operator Training and Evaluation Record, with Operator Certificate for Michael Chen, Portland Facility\",\"Safety Data Sheet: Sodium Hydroxide Solution, 50% (Northwest Alkali Products, Version 4.1)\"],\"readings_as_of\":null},\"findings\":[{\"title\":\"Permit renewal application for ACDP 26-2841-ST-01 (Condition 1.3). The deadline was 2026-07-18 and has passed. The permit expires 2026-11-15.\",\"word\":\"nothing_on_file\",\"document\":\"D5\",\"locator\":\"Condition 1.3; Condition 1.2\",\"quote\":\"The permit set the renewal application deadline at July 18, 2026, and that date has already passed.\",\"what_to_do\":\"Find the renewal application and DEQ's receipt or acknowledgment dated on or before 2026-07-18 and upload them today. Condition 1.2 bars operating after 2026-11-15 without a renewed permit or a timely renewal application. If nothing was filed, contact DEQ about the renewal before 2026-11-15.\",\"basis\":\"read\",\"same_as\":null},{\"title\":\"Standard Air Contaminant Discharge Permit 26-2841-ST-01, issued 2021-09-01, expires 2026-11-15\",\"word\":\"stale\",\"document\":\"D5\",\"locator\":\"Page 1\",\"quote\":\"STANDARD AIR CONTAMINANT DISCHARGE PERMIT\",\"what_to_do\":\"Stale because it expires on 2026-11-15, 46 days from today, and no renewed permit or renewal filing is on file. Have the renewed permit or the renewal filing ready to put in front of the inspector next to this one.\",\"basis\":\"read\",\"same_as\":null},{\"title\":\"Semi-annual monitoring report for January–June 2026 (Condition 4.2), due 2026-07-31\",\"word\":\"nothing_on_file\",\"document\":\"D5\",\"locator\":\"Condition 4.2\",\"quote\":\"Submit the semi-annual monitoring report by July 31 for January through June\",\"what_to_do\":\"Upload the January–June 2026 semi-annual report and DEQ's receipt, if it was submitted. The due date was 2026-07-31.\",\"basis\":\"read\",\"same_as\":null},{\"title\":\"C-1 carbon replacement due on or before 2026-03-14 (Condition 3.3)\",\"word\":\"nothing_on_file\",\"document\":\"D1\",\"locator\":\"Page 3, Section 3\",\"quote\":\"the report set the next C-1 carbon replacement for on or before March 14, 2026, and that date has passed\",\"what_to_do\":\"Find the vendor invoice or service ticket for the March 2026 C-1 changeout and upload it. The previous changeout was by Northwest Carbon Services. Condition 3.3 requires replacement at least every 12 months.\",\"basis\":\"read\",\"same_as\":null},{\"title\":\"Annual report for reporting year 2025 (Condition 4.1), with DEQ's receipt dated 2026-02-12\",\"word\":\"on_file\",\"document\":\"D1\",\"locator\":\"Page 1, DEQ receipt email\",\"quote\":\"Permit: 26-2841-ST-01 (Standard Air Contaminant Discharge Permit)\",\"what_to_do\":\"DEQ's email confirms receipt only. It is not a DEQ finding on whether the report is complete. Bring the report and the email to the inspection.\",\"basis\":\"read\",\"same_as\":null},{\"title\":\"Daily scrubber pressure-drop readings for August 17–21, 2026 are missing (Condition 3.1)\",\"word\":\"nothing_on_file\",\"document\":\"D4\",\"locator\":\"Page 1, August table\",\"quote\":\"The missing rows are the whole week of August 17–21.\",\"what_to_do\":\"Check shift notes and other records to see whether readings were taken that week. If they were not, record it as missed monitoring under Condition 3.1 and handle it the way the permit's deviation conditions require.\",\"basis\":\"read\",\"same_as\":null},{\"title\":\"S-2 reading above the permit range on 2026-09-09 (6.4 in. w.c. against a 6.0 limit), with no note or corrective action\",\"word\":\"nothing_on_file\",\"document\":\"D4\",\"locator\":\"September table, September 9 row\",\"quote\":\"On September 9 the S-2 (caustic line) pressure drop was 6.4 inches of water column.\",\"what_to_do\":\"Write up the cause, the corrective action and the time the reading returned to range, and keep it with the log. Check whether this is a deviation that Condition 5.2 requires notifying DEQ about (within 24 hours, with a written report within 15 days). Also check the DEQ excess-emissions rules. The reading named them as OAR 340 Division 214 but said the section numbers are not verified.\",\"basis\":\"read\",\"same_as\":null},{\"title\":\"Weekly C-1 outlet breakthrough check missing for the week of 2026-09-14 (Condition 3.3)\",\"word\":\"nothing_on_file\",\"document\":\"D4\",\"locator\":\"September C-1 table\",\"quote\":\"The week of September 14 is missing, and the pressure-drop rows show the plant ran September 14–18.\",\"what_to_do\":\"Find out whether the check was done but not written down. If it was missed, record it as a missed weekly check and handle it the way the permit's monitoring-deviation conditions require. The check for the week of September 28 is due by 2026-10-02.\",\"basis\":\"read\",\"same_as\":null},{\"title\":\"Supervisor review of the August–September 2026 scrubber and C-1 log has not been signed\",\"word\":\"nothing_on_file\",\"document\":\"D4\",\"locator\":\"Bottom of log, supervisor review lines\",\"quote\":\"Nobody has signed off on either month, which is also why the September 9 reading and the missing entries went unflagged.\",\"what_to_do\":\"Have the supervisor review both months, sign and date the log, and write down how each gap was handled.\",\"basis\":\"read\",\"same_as\":null},{\"title\":\"No September 2026 line-counter operating-day totals, so the 18 September rows cannot be checked against days run\",\"word\":\"nothing_on_file\",\"document\":\"D4\",\"locator\":\"Below September table\",\"quote\":\"September gives no totals, so it cannot be checked the same way.\",\"what_to_do\":\"Add September's line-counter totals and compare them with the 18 rows entered.\",\"basis\":\"read\",\"same_as\":null},{\"title\":\"Daily scrubber pressure-drop log before August 2026 (Conditions 3.1 and 4.3, five-year retention)\",\"word\":\"nothing_on_file\",\"document\":\"D5\",\"locator\":\"Conditions 3.1 and 4.3\",\"quote\":\"Keep scrubber S-1 and S-2 pressure drop between 2.0 and 6.0 in. w.c. and record it once each operating day\",\"what_to_do\":\"Upload the daily S-1 and S-2 logs from before August 2026, at least October 2025 to July 2026 and the 2025 logs behind the D1 summary, if they are kept elsewhere.\",\"basis\":\"read\",\"same_as\":null},{\"title\":\"Weekly C-1 detector-tube records before August 2026 (Conditions 3.3 and 4.3)\",\"word\":\"nothing_on_file\",\"document\":\"D5\",\"locator\":\"Conditions 3.3 and 4.3\",\"quote\":\"Replace the carbon in C-1 at least every 12 months, or sooner if the weekly detector-tube check shows breakthrough\",\"what_to_do\":\"Upload the weekly C-1 outlet check records from before August 2026, if they exist.\",\"basis\":\"read\",\"same_as\":null},{\"title\":\"Quarterly inspections of the S-1 and S-2 pump, nozzles, packing and mist eliminator (Condition 3.2)\",\"word\":\"nothing_on_file\",\"document\":\"D5\",\"locator\":\"Condition 3.2\",\"quote\":\"Inspect each scrubber's pump, nozzles, packing and mist eliminator at least once per calendar quarter\",\"what_to_do\":\"Upload the quarterly inspection records for the last four quarters, including the scrubber maintenance file that D1 says holds the 2025 inspections. The inspection for the current quarter is due 2026-09-30, which is today.\",\"basis\":\"read\",\"same_as\":null},{\"title\":\"Backup for the August 2025 S-2 pump failure deviation reported in the 2025 annual report (Conditions 5.1 and 5.2)\",\"word\":\"nothing_on_file\",\"document\":\"D1\",\"locator\":\"Deviation section of the 2025 annual report\",\"quote\":null,\"what_to_do\":\"Upload the 24-hour notice to DEQ, the 15-day written report, and the malfunction or shutdown entries for that event, if they exist.\",\"basis\":\"read\",\"same_as\":null},{\"title\":\"Deviation notices and reports for the last 12 months, or a record that there were none (Condition 5.2)\",\"word\":\"nothing_on_file\",\"document\":\"D5\",\"locator\":\"Condition 5.2\",\"quote\":\"Notify DEQ within 24 hours of finding any deviation, with a written report within 15 days\",\"what_to_do\":\"Put together a deviation log for the last 12 months. It should show the September 9, 2026 S-2 reading and the missed readings once you have decided how each is classified.\",\"basis\":\"read\",\"same_as\":null},{\"title\":\"Annual permit fee invoices and proof of payment (Condition 6.2)\",\"word\":\"nothing_on_file\",\"document\":\"D5\",\"locator\":\"Condition 6.2\",\"quote\":\"Pay the annual permit fee by the due date on the invoice\",\"what_to_do\":\"Upload the most recent DEQ fee invoice and proof of payment.\",\"basis\":\"read\",\"same_as\":null},{\"title\":\"Visible emissions at or below 20% opacity (Condition 3.4)\",\"word\":\"not_a_document_question\",\"document\":null,\"locator\":null,\"quote\":null,\"what_to_do\":\"The inspector may look at the stacks on the day. If you have visible-emissions observation records or a written monitoring method, upload them.\",\"basis\":\"inferred\",\"same_as\":null},{\"title\":\"Whether ownership has changed or any source has been modified since 2021 in a way that would increase emissions (Condition 1.4)\",\"word\":\"not_a_document_question\",\"document\":null,\"locator\":null,\"quote\":null,\"what_to_do\":\"Be ready to say whether any such change has happened. If one did, upload the notification letter to DEQ.\",\"basis\":\"inferred\",\"same_as\":null},{\"title\":\"How the scrubbers, gauges and C-1 are running on the day of the inspection\",\"word\":\"not_a_document_question\",\"document\":null,\"locator\":null,\"quote\":null,\"what_to_do\":\"Walk through Section C of D3 with the line leads before the inspection.\",\"basis\":\"inferred\",\"same_as\":null},{\"title\":\"Monthly EHS self-check, which covers air permit posting and scrubber and carbon-bed monitoring. Only the blank template is on file.\",\"word\":\"on_file\",\"document\":\"D2\",\"locator\":\"Lines 1–3\",\"quote\":\"Weekly C-1 detector-tube checks done and recorded every week this month\",\"what_to_do\":\"The template does not show that any check was done. Upload the completed, signed monthly copies if they exist.\",\"basis\":\"read\",\"same_as\":null},{\"title\":\"Blank DEQ air-permit inspection checklist. It is not an inspection record.\",\"word\":\"on_file\",\"document\":\"D3\",\"locator\":\"Sections A, B and C\",\"quote\":null,\"what_to_do\":\"Use it to check the air-permit file line by line before the inspection.\",\"basis\":\"read\",\"same_as\":null}],\"dates\":[{\"title\":\"Renewal application for ACDP 26-2841-ST-01 (Condition 1.3)\",\"due_on\":\"2026-07-18\",\"recurs\":false,\"document\":\"D5\",\"passed\":true},{\"title\":\"Semi-annual monitoring report, January–June 2026 (Condition 4.2)\",\"due_on\":\"2026-07-31\",\"recurs\":true,\"document\":\"D5\",\"passed\":true},{\"title\":\"C-1 carbon replacement (Condition 3.3)\",\"due_on\":\"2026-03-14\",\"recurs\":true,\"document\":\"D1\",\"passed\":true},{\"title\":\"Quarterly scrubber inspection, current quarter (Condition 3.2)\",\"due_on\":\"2026-09-30\",\"recurs\":true,\"document\":\"D5\",\"passed\":false},{\"title\":\"Weekly C-1 outlet breakthrough check, week of September 28\",\"due_on\":\"2026-10-02\",\"recurs\":true,\"document\":\"D4\",\"passed\":false},{\"title\":\"Permit 26-2841-ST-01 expires\",\"due_on\":\"2026-11-15\",\"recurs\":false,\"document\":\"D5\",\"passed\":false},{\"title\":\"Annual report for calendar year 2026 (Condition 4.1)\",\"due_on\":\"2027-02-15\",\"recurs\":true,\"document\":\"D5\",\"passed\":false},{\"title\":\"Semi-annual monitoring report, January–June 2027\",\"due_on\":\"2027-07-31\",\"recurs\":true,\"document\":\"D3\",\"passed\":false},{\"title\":\"Keep the 2025 annual report receipt and supporting permit records (five years)\",\"due_on\":\"2031-02-12\",\"recurs\":false,\"document\":\"D1\",\"passed\":false},{\"title\":\"Annual permit fee (Condition 6.2), due on the date printed on the invoice\",\"due_on\":null,\"recurs\":true,\"document\":\"D5\",\"passed\":false},{\"title\":\"Deviation notice within 24 hours and written report within 15 days, whenever a deviation is found\",\"due_on\":null,\"recurs\":true,\"document\":\"D3\",\"passed\":false},{\"title\":\"Daily S-1 and S-2 pressure-drop reading on every operating day\",\"due_on\":null,\"recurs\":true,\"document\":\"D4\",\"passed\":false},{\"title\":\"Monthly EHS self-check with supervisor review\",\"due_on\":null,\"recurs\":true,\"document\":\"D2\",\"passed\":false}],\"expected_not_seen\":[{\"title\":\"Magnehelic gauge calibration and maintenance records\",\"why\":\"They show that the scrubber pressure-drop readings in D4 can be relied on.\"},{\"title\":\"C-1 detector-tube lot records\",\"why\":\"They back up the weekly breakthrough checks.\"},{\"title\":\"Records retention procedure (five years)\",\"why\":\"The D3 checklist asks for it at line B6, and Condition 4.3 requires five years of records.\"},{\"title\":\"Hazardous waste generator records, including the EPA ID, manifests, waste determination for spent C-1 carbon, and the DEQ generator report or fee\",\"why\":\"Spent carbon from about 1,800 lb changeouts and off-spec acids, caustics and solvents are typical waste streams for a repackager like this. Whether the spent carbon is hazardous has not been stated.\"},{\"title\":\"Oregon DEQ industrial stormwater permit (1200-Z) or a no-exposure certification\",\"why\":\"Chemical handling sites in Portland often hold one of these.\"}],\"contradictions\":[]}"
+    }
+  ],
+  "answer": {
+    "covers": {
+      "documents_read": [],
+      "documents_held_but_not_read": [],
+      "readings_as_of": null
+    },
+    "findings": [
+      {
+        "title": "Permit renewal application for ACDP 26-2841-ST-01 (Condition 1.3). The deadline was 2026-07-18 and has passed. The permit expires 2026-11-15.",
+        "word": "nothing_on_file",
+        "due_on": null,
+        "document_id": "97750a6f-3c78-4ce8-a851-2fe6ff22d351",
+        "locator": "Condition 1.3; Condition 1.2",
+        "quote": "The permit set the renewal application deadline at July 18, 2026, and that date has already passed.",
+        "what_to_do": "Find the renewal application and DEQ's receipt or acknowledgment dated on or before 2026-07-18 and upload them today. Condition 1.2 bars operating after 2026-11-15 without a renewed permit or a timely renewal application. If nothing was filed, contact DEQ about the renewal before 2026-11-15.",
+        "basis": "read"
+      },
+      {
+        "title": "Standard Air Contaminant Discharge Permit 26-2841-ST-01, issued 2021-09-01, expires 2026-11-15",
+        "word": "stale",
+        "due_on": null,
+        "document_id": "97750a6f-3c78-4ce8-a851-2fe6ff22d351",
+        "locator": "Page 1",
+        "quote": "STANDARD AIR CONTAMINANT DISCHARGE PERMIT",
+        "what_to_do": "Stale because it expires on 2026-11-15, 46 days from today, and no renewed permit or renewal filing is on file. Have the renewed permit or the renewal filing ready to put in front of the inspector next to this one.",
+        "basis": "read"
+      },
+      {
+        "title": "Semi-annual monitoring report for January–June 2026 (Condition 4.2), due 2026-07-31",
+        "word": "nothing_on_file",
+        "due_on": null,
+        "document_id": "97750a6f-3c78-4ce8-a851-2fe6ff22d351",
+        "locator": "Condition 4.2",
+        "quote": "Submit the semi-annual monitoring report by July 31 for January through June",
+        "what_to_do": "Upload the January–June 2026 semi-annual report and DEQ's receipt, if it was submitted. The due date was 2026-07-31.",
+        "basis": "read"
+      },
+      {
+        "title": "C-1 carbon replacement due on or before 2026-03-14 (Condition 3.3)",
+        "word": "nothing_on_file",
+        "due_on": null,
+        "document_id": "6f4d2ab2-ae2e-40e3-973f-8b615cac97c9",
+        "locator": "Page 3, Section 3",
+        "quote": "the report set the next C-1 carbon replacement for on or before March 14, 2026, and that date has passed",
+        "what_to_do": "Find the vendor invoice or service ticket for the March 2026 C-1 changeout and upload it. The previous changeout was by Northwest Carbon Services. Condition 3.3 requires replacement at least every 12 months.",
+        "basis": "read"
+      },
+      {
+        "title": "Annual report for reporting year 2025 (Condition 4.1), with DEQ's receipt dated 2026-02-12",
+        "word": "on_file",
+        "due_on": null,
+        "document_id": "6f4d2ab2-ae2e-40e3-973f-8b615cac97c9",
+        "locator": "Page 1, DEQ receipt email",
+        "quote": "Permit: 26-2841-ST-01 (Standard Air Contaminant Discharge Permit)",
+        "what_to_do": "DEQ's email confirms receipt only. It is not a DEQ finding on whether the report is complete. Bring the report and the email to the inspection.",
+        "basis": "read"
+      },
+      {
+        "title": "Daily scrubber pressure-drop readings for August 17–21, 2026 are missing (Condition 3.1)",
+        "word": "nothing_on_file",
+        "due_on": null,
+        "document_id": "d484ba46-2378-4c65-869e-f0e7802e9b14",
+        "locator": "Page 1, August table",
+        "quote": "The missing rows are the whole week of August 17–21.",
+        "what_to_do": "Check shift notes and other records to see whether readings were taken that week. If they were not, record it as missed monitoring under Condition 3.1 and handle it the way the permit's deviation conditions require.",
+        "basis": "read"
+      },
+      {
+        "title": "S-2 reading above the permit range on 2026-09-09 (6.4 in. w.c. against a 6.0 limit), with no note or corrective action",
+        "word": "nothing_on_file",
+        "due_on": null,
+        "document_id": "d484ba46-2378-4c65-869e-f0e7802e9b14",
+        "locator": "September table, September 9 row",
+        "quote": "On September 9 the S-2 (caustic line) pressure drop was 6.4 inches of water column.",
+        "what_to_do": "Write up the cause, the corrective action and the time the reading returned to range, and keep it with the log. Check whether this is a deviation that Condition 5.2 requires notifying DEQ about (within 24 hours, with a written report within 15 days). Also check the DEQ excess-emissions rules. The reading named them as OAR 340 Division 214 but said the section numbers are not verified.",
+        "basis": "read"
+      },
+      {
+        "title": "Weekly C-1 outlet breakthrough check missing for the week of 2026-09-14 (Condition 3.3)",
+        "word": "nothing_on_file",
+        "due_on": null,
+        "document_id": "d484ba46-2378-4c65-869e-f0e7802e9b14",
+        "locator": "September C-1 table",
+        "quote": "The week of September 14 is missing, and the pressure-drop rows show the plant ran September 14–18.",
+        "what_to_do": "Find out whether the check was done but not written down. If it was missed, record it as a missed weekly check and handle it the way the permit's monitoring-deviation conditions require. The check for the week of September 28 is due by 2026-10-02.",
+        "basis": "read"
+      },
+      {
+        "title": "Supervisor review of the August–September 2026 scrubber and C-1 log has not been signed",
+        "word": "nothing_on_file",
+        "due_on": null,
+        "document_id": "d484ba46-2378-4c65-869e-f0e7802e9b14",
+        "locator": "Bottom of log, supervisor review lines",
+        "quote": "Nobody has signed off on either month, which is also why the September 9 reading and the missing entries went unflagged.",
+        "what_to_do": "Have the supervisor review both months, sign and date the log, and write down how each gap was handled.",
+        "basis": "read"
+      },
+      {
+        "title": "No September 2026 line-counter operating-day totals, so the 18 September rows cannot be checked against days run",
+        "word": "nothing_on_file",
+        "due_on": null,
+        "document_id": "d484ba46-2378-4c65-869e-f0e7802e9b14",
+        "locator": "Below September table",
+        "quote": "September gives no totals, so it cannot be checked the same way.",
+        "what_to_do": "Add September's line-counter totals and compare them with the 18 rows entered.",
+        "basis": "read"
+      },
+      {
+        "title": "Daily scrubber pressure-drop log before August 2026 (Conditions 3.1 and 4.3, five-year retention)",
+        "word": "nothing_on_file",
+        "due_on": null,
+        "document_id": "97750a6f-3c78-4ce8-a851-2fe6ff22d351",
+        "locator": "Conditions 3.1 and 4.3",
+        "quote": "Keep scrubber S-1 and S-2 pressure drop between 2.0 and 6.0 in. w.c. and record it once each operating day",
+        "what_to_do": "Upload the daily S-1 and S-2 logs from before August 2026, at least October 2025 to July 2026 and the 2025 logs behind the D1 summary, if they are kept elsewhere.",
+        "basis": "read"
+      },
+      {
+        "title": "Weekly C-1 detector-tube records before August 2026 (Conditions 3.3 and 4.3)",
+        "word": "nothing_on_file",
+        "due_on": null,
+        "document_id": "97750a6f-3c78-4ce8-a851-2fe6ff22d351",
+        "locator": "Conditions 3.3 and 4.3",
+        "quote": "Replace the carbon in C-1 at least every 12 months, or sooner if the weekly detector-tube check shows breakthrough",
+        "what_to_do": "Upload the weekly C-1 outlet check records from before August 2026, if they exist.",
+        "basis": "read"
+      },
+      {
+        "title": "Quarterly inspections of the S-1 and S-2 pump, nozzles, packing and mist eliminator (Condition 3.2)",
+        "word": "nothing_on_file",
+        "due_on": null,
+        "document_id": "97750a6f-3c78-4ce8-a851-2fe6ff22d351",
+        "locator": "Condition 3.2",
+        "quote": "Inspect each scrubber's pump, nozzles, packing and mist eliminator at least once per calendar quarter",
+        "what_to_do": "Upload the quarterly inspection records for the last four quarters, including the scrubber maintenance file that D1 says holds the 2025 inspections. The inspection for the current quarter is due 2026-09-30, which is today.",
+        "basis": "read"
+      },
+      {
+        "title": "Backup for the August 2025 S-2 pump failure deviation reported in the 2025 annual report (Conditions 5.1 and 5.2)",
+        "word": "nothing_on_file",
+        "due_on": null,
+        "document_id": "6f4d2ab2-ae2e-40e3-973f-8b615cac97c9",
+        "locator": "Deviation section of the 2025 annual report",
+        "quote": null,
+        "what_to_do": "Upload the 24-hour notice to DEQ, the 15-day written report, and the malfunction or shutdown entries for that event, if they exist.",
+        "basis": "read"
+      },
+      {
+        "title": "Deviation notices and reports for the last 12 months, or a record that there were none (Condition 5.2)",
+        "word": "nothing_on_file",
+        "due_on": null,
+        "document_id": "97750a6f-3c78-4ce8-a851-2fe6ff22d351",
+        "locator": "Condition 5.2",
+        "quote": "Notify DEQ within 24 hours of finding any deviation, with a written report within 15 days",
+        "what_to_do": "Put together a deviation log for the last 12 months. It should show the September 9, 2026 S-2 reading and the missed readings once you have decided how each is classified.",
+        "basis": "read"
+      },
+      {
+        "title": "Annual permit fee invoices and proof of payment (Condition 6.2)",
+        "word": "nothing_on_file",
+        "due_on": null,
+        "document_id": "97750a6f-3c78-4ce8-a851-2fe6ff22d351",
+        "locator": "Condition 6.2",
+        "quote": "Pay the annual permit fee by the due date on the invoice",
+        "what_to_do": "Upload the most recent DEQ fee invoice and proof of payment.",
+        "basis": "read"
+      },
+      {
+        "title": "Visible emissions at or below 20% opacity (Condition 3.4)",
+        "word": "not_a_document_question",
+        "due_on": null,
+        "document_id": null,
+        "locator": null,
+        "quote": null,
+        "what_to_do": "The inspector may look at the stacks on the day. If you have visible-emissions observation records or a written monitoring method, upload them.",
+        "basis": "inferred"
+      },
+      {
+        "title": "Whether ownership has changed or any source has been modified since 2021 in a way that would increase emissions (Condition 1.4)",
+        "word": "not_a_document_question",
+        "due_on": null,
+        "document_id": null,
+        "locator": null,
+        "quote": null,
+        "what_to_do": "Be ready to say whether any such change has happened. If one did, upload the notification letter to DEQ.",
+        "basis": "inferred"
+      },
+      {
+        "title": "How the scrubbers, gauges and C-1 are running on the day of the inspection",
+        "word": "not_a_document_question",
+        "due_on": null,
+        "document_id": null,
+        "locator": null,
+        "quote": null,
+        "what_to_do": "Walk through Section C of D3 with the line leads before the inspection.",
+        "basis": "inferred"
+      },
+      {
+        "title": "Monthly EHS self-check, which covers air permit posting and scrubber and carbon-bed monitoring. Only the blank template is on file.",
+        "word": "on_file",
+        "due_on": null,
+        "document_id": "ba3ca19a-efdc-4273-807d-579f060add9c",
+        "locator": "Lines 1–3",
+        "quote": "Weekly C-1 detector-tube checks done and recorded every week this month",
+        "what_to_do": "The template does not show that any check was done. Upload the completed, signed monthly copies if they exist.",
+        "basis": "read"
+      },
+      {
+        "title": "Blank DEQ air-permit inspection checklist. It is not an inspection record.",
+        "word": "on_file",
+        "due_on": null,
+        "document_id": "65d5a17d-0d20-493c-919d-234dd5f53fb3",
+        "locator": "Sections A, B and C",
+        "quote": null,
+        "what_to_do": "Use it to check the air-permit file line by line before the inspection.",
+        "basis": "read"
+      },
+      {
+        "title": "Annual permit fee (Condition 6.2), due on the date printed on the invoice",
+        "word": null,
+        "due_on": null,
+        "document_id": "97750a6f-3c78-4ce8-a851-2fe6ff22d351",
+        "locator": null,
+        "quote": null,
+        "what_to_do": null,
+        "basis": "read"
+      },
+      {
+        "title": "Deviation notice within 24 hours and written report within 15 days, whenever a deviation is found",
+        "word": null,
+        "due_on": null,
+        "document_id": "65d5a17d-0d20-493c-919d-234dd5f53fb3",
+        "locator": null,
+        "quote": null,
+        "what_to_do": null,
+        "basis": "read"
+      },
+      {
+        "title": "Daily S-1 and S-2 pressure-drop reading on every operating day",
+        "word": null,
+        "due_on": null,
+        "document_id": "d484ba46-2378-4c65-869e-f0e7802e9b14",
+        "locator": null,
+        "quote": null,
+        "what_to_do": null,
+        "basis": "read"
+      },
+      {
+        "title": "Monthly EHS self-check with supervisor review",
+        "word": null,
+        "due_on": null,
+        "document_id": "ba3ca19a-efdc-4273-807d-579f060add9c",
+        "locator": null,
+        "quote": null,
+        "what_to_do": null,
+        "basis": "read"
+      }
+    ],
+    "dates": [
+      {
+        "title": "Renewal application for ACDP 26-2841-ST-01 (Condition 1.3)",
+        "due_on": "2026-07-18",
+        "recurs": false,
+        "document_id": "97750a6f-3c78-4ce8-a851-2fe6ff22d351",
+        "passed": true
+      },
+      {
+        "title": "Semi-annual monitoring report, January–June 2026 (Condition 4.2)",
+        "due_on": "2026-07-31",
+        "recurs": true,
+        "document_id": "97750a6f-3c78-4ce8-a851-2fe6ff22d351",
+        "passed": true
+      },
+      {
+        "title": "C-1 carbon replacement (Condition 3.3)",
+        "due_on": "2026-03-14",
+        "recurs": true,
+        "document_id": "6f4d2ab2-ae2e-40e3-973f-8b615cac97c9",
+        "passed": true
+      },
+      {
+        "title": "Quarterly scrubber inspection, current quarter (Condition 3.2)",
+        "due_on": "2026-09-30",
+        "recurs": true,
+        "document_id": "97750a6f-3c78-4ce8-a851-2fe6ff22d351",
+        "passed": false
+      },
+      {
+        "title": "Weekly C-1 outlet breakthrough check, week of September 28",
+        "due_on": "2026-10-02",
+        "recurs": true,
+        "document_id": "d484ba46-2378-4c65-869e-f0e7802e9b14",
+        "passed": false
+      },
+      {
+        "title": "Permit 26-2841-ST-01 expires",
+        "due_on": "2026-11-15",
+        "recurs": false,
+        "document_id": "97750a6f-3c78-4ce8-a851-2fe6ff22d351",
+        "passed": false
+      },
+      {
+        "title": "Annual report for calendar year 2026 (Condition 4.1)",
+        "due_on": "2027-02-15",
+        "recurs": true,
+        "document_id": "97750a6f-3c78-4ce8-a851-2fe6ff22d351",
+        "passed": false
+      },
+      {
+        "title": "Semi-annual monitoring report, January–June 2027",
+        "due_on": "2027-07-31",
+        "recurs": true,
+        "document_id": "65d5a17d-0d20-493c-919d-234dd5f53fb3",
+        "passed": false
+      },
+      {
+        "title": "Keep the 2025 annual report receipt and supporting permit records (five years)",
+        "due_on": "2031-02-12",
+        "recurs": false,
+        "document_id": "6f4d2ab2-ae2e-40e3-973f-8b615cac97c9",
+        "passed": false
+      }
+    ],
+    "contradictions": [],
+    "expected_not_seen": [
+      {
+        "title": "Magnehelic gauge calibration and maintenance records",
+        "why": "They show that the scrubber pressure-drop readings in D4 can be relied on."
+      },
+      {
+        "title": "C-1 detector-tube lot records",
+        "why": "They back up the weekly breakthrough checks."
+      },
+      {
+        "title": "Records retention procedure (five years)",
+        "why": "The D3 checklist asks for it at line B6, and Condition 4.3 requires five years of records."
+      },
+      {
+        "title": "Hazardous waste generator records, including the EPA ID, manifests, waste determination for spent C-1 carbon, and the DEQ generator report or fee",
+        "why": "Spent carbon from about 1,800 lb changeouts and off-spec acids, caustics and solvents are typical waste streams for a repackager like this. Whether the spent carbon is hazardous has not been stated."
+      },
+      {
+        "title": "Oregon DEQ industrial stormwater permit (1200-Z) or a no-exposure certification",
+        "why": "Chemical handling sites in Portland often hold one of these."
+      }
+    ]
+  },
+  "verdicts": {
+    "renewal-passed": {
+      "verdict": "PASS",
+      "detail": "findings: \"Permit renewal application for ACDP 26-2841-ST-01 (Condition 1.3). T\" [nothing_on_file]"
+    },
+    "expiry-date": {
+      "verdict": "PASS",
+      "detail": "findings: \"Permit renewal application for ACDP 26-2841-ST-01 (Condition 1.3). T\" [nothing_on_file]"
+    },
+    "quarterly-inspection": {
+      "verdict": "PASS",
+      "detail": "findings: \"Quarterly inspections of the S-1 and S-2 pump, nozzles, packing and \" [nothing_on_file]"
+    },
+    "carbon-records": {
+      "verdict": "PASS",
+      "detail": "findings: \"C-1 carbon replacement due on or before 2026-03-14 (Condition 3.3)\" [nothing_on_file]"
+    },
+    "opacity-records": {
+      "verdict": "FAIL",
+      "detail": "no item matched with word=nothing_on_file. held: Permit renewal application for ACD | Standard Air Contaminant Discharge | Semi-annual monitoring report for  | C-1 carbon replacement due on or b | Annual report for reporting year 2 | Daily scrubber pressure-drop readi | S-2 reading above the permit range | Weekly C-1 outlet breakthrough che | Supervisor review of the August–Se | No September 2026 line-counter ope | Daily scrubber pressure-drop log b | Weekly C-1 detector-tube records b | Quarterly inspections of the S-1 a | Backup for the August 2025 S-2 pum | Deviation notices and reports for  | Annual permit fee invoices and pro | Visible emissions at or below 20%  | Whether ownership has changed or a | How the scrubbers, gauges and C-1  | Monthly EHS self-check, which cove | Blank DEQ air-permit inspection ch | Annual permit fee (Condition 6.2), | Deviation notice within 24 hours a | Daily S-1 and S-2 pressure-drop re | Monthly EHS self-check with superv"
+    },
+    "annual-report": {
+      "verdict": "PASS",
+      "detail": "dates: \"Annual report for calendar year 2026 (Condition 4.1)\""
+    },
+    "semiannual-report": {
+      "verdict": "PASS",
+      "detail": "findings: \"Semi-annual monitoring report for January–June 2026 (Condition 4.2),\" [nothing_on_file]"
+    },
+    "not-a-document-question": {
+      "verdict": "FAIL",
+      "detail": "not_document_questions has 0, needs 1"
+    },
+    "scrubber-log-on-file": {
+      "verdict": "FAIL",
+      "detail": "no item matched with word=on_file. held: Permit renewal application for ACD | Standard Air Contaminant Discharge | Semi-annual monitoring report for  | C-1 carbon replacement due on or b | Annual report for reporting year 2 | Daily scrubber pressure-drop readi | S-2 reading above the permit range | Weekly C-1 outlet breakthrough che | Supervisor review of the August–Se | No September 2026 line-counter ope | Daily scrubber pressure-drop log b | Weekly C-1 detector-tube records b | Quarterly inspections of the S-1 a | Backup for the August 2025 S-2 pum | Deviation notices and reports for  | Annual permit fee invoices and pro | Visible emissions at or below 20%  | Whether ownership has changed or a | How the scrubbers, gauges and C-1  | Monthly EHS self-check, which cove | Blank DEQ air-permit inspection ch | Annual permit fee (Condition 6.2), | Deviation notice within 24 hours a | Daily S-1 and S-2 pressure-drop re | Monthly EHS self-check with superv"
+    },
+    "scrubber-log-findings-carried": {
+      "verdict": "PASS",
+      "detail": "3 of 5 carried"
+    },
+    "annual-report-4-1-on-file": {
+      "verdict": "PASS",
+      "detail": "findings: \"Annual report for reporting year 2025 (Condition 4.1), with DEQ's re\" [on_file]"
+    },
+    "semiannual-4-2-nothing": {
+      "verdict": "PASS",
+      "detail": "findings: \"Semi-annual monitoring report for January–June 2026 (Condition 4.2),\" [nothing_on_file]"
+    },
+    "carbon-due-2026-03-14": {
+      "verdict": "PASS",
+      "detail": "findings: \"C-1 carbon replacement due on or before 2026-03-14 (Condition 3.3)\" [nothing_on_file]"
+    },
+    "sep9-deviation-nothing": {
+      "verdict": "PASS",
+      "detail": "3 of 4 carried"
+    },
+    "annual-2026-as-a-date": {
+      "verdict": "PASS",
+      "detail": "dates: \"Annual report for calendar year 2026 (Condition 4.1)\""
+    },
+    "no-satisfied": {
+      "verdict": "PASS",
+      "detail": "no positive claim about the company"
+    },
+    "no-invented-document": {
+      "verdict": "PASS",
+      "detail": "every document named was one of the 12 handles given"
+    },
+    "no-forklift-as-scrubber": {
+      "verdict": "PASS",
+      "detail": "nothing matched"
+    },
+    "no-expected-as-finding": {
+      "verdict": "PASS",
+      "detail": "no expected item appears as a finding"
+    },
+    "no-ai-word": {
+      "verdict": "PASS",
+      "detail": "the word appears nowhere"
+    },
+    "no-not-yet-due-as-nothing-on-file": {
+      "verdict": "PASS",
+      "detail": "nothing not-yet-due is presented as missing"
+    },
+    "scrubber-plan-expected": {
+      "verdict": "PASS",
+      "detail": "expected_not_seen: \"Magnehelic gauge calibration and maintenance records\""
+    }
+  },
+  "cost_usd": 0.444476,
+  "wall_ms": 153097,
+  "handle_errors": [],
+  "audit_run_id": "211b39f7-c003-4b85-b0da-19efe84b64ab",
+  "audit_section_id": "d1967eb6-a7fc-433d-b406-22f09f510111",
+  "audit_section": {
+    "model": "claude-opus-5-5",
+    "prompt_sha256": "0e410e5b350249879a61564e76148f4876d3b80b4ec4000c0ed520ea8bae4215",
+    "input_sha256": "251fe7d55162b2d614a18444ffa2a134edb7ca66414cd2c2967db31d9d3dd4f0",
+    "ai_call_id": "d83c9905-3752-4cd6-ad90-33ee7e0f8f7e",
+    "json_parsed": true,
+    "status": "done",
+    "could_not_complete_reason": null,
+    "documents_read": [
+      "6f4d2ab2-ae2e-40e3-973f-8b615cac97c9",
+      "ba3ca19a-efdc-4273-807d-579f060add9c",
+      "65d5a17d-0d20-493c-919d-234dd5f53fb3",
+      "d484ba46-2378-4c65-869e-f0e7802e9b14",
+      "97750a6f-3c78-4ce8-a851-2fe6ff22d351"
+    ],
+    "documents_held_unread": [
+      "f3f09cd2-7508-41ba-9a5b-c573f1638735",
+      "68cce076-2865-4ae4-a247-fd8e97d0baf7",
+      "83897345-30e2-4b8f-b4bf-6f5ba9f37d12",
+      "fee3f96f-603b-4faa-856c-b4ea92e66242",
+      "8c77e434-322a-45fd-bb2d-b2fe57d589fb",
+      "4a174d10-989a-4944-9fb6-f66c248e81fd",
+      "d03f28cb-eba8-48ac-a852-4a909edfdc51"
+    ],
+    "raw_text": "{\"covers\":{\"documents_read\":[\"D1\",\"D2\",\"D3\",\"D4\",\"D5\"],\"documents_held_but_not_read\":[\"Certificate of Annual Maintenance, Portable Fire Extinguishers (14 units), service date August 20, 2025, Portland Facility\",\"Emergency Action Plan — Portland Facility\",\"Forklift Pre-Shift Inspection Log, Unit FL-2 (Toyota 8FGU25, propane), September 2026, Portland Warehouse (last entry 2026-09-18)\",\"Forklift Pre-Shift Inspection Log, Unit FL-2 (Toyota 8FGU25, propane), September 2026, Portland Warehouse (last entry 2026-09-17)\",\"OSHA Form 300A Summary of Work-Related Injuries and Illnesses, Calendar Year 2025, Portland Facility\",\"Powered Industrial Truck Operator Training and Evaluation Record, with Operator Certificate for Michael Chen, Portland Facility\",\"Safety Data Sheet: Sodium Hydroxide Solution, 50% (Northwest Alkali Products, Version 4.1)\"],\"readings_as_of\":null},\"findings\":[{\"title\":\"Permit renewal application for ACDP 26-2841-ST-01 (Condition 1.3). The deadline was 2026-07-18 and has passed. The permit expires 2026-11-15.\",\"word\":\"nothing_on_file\",\"document\":\"D5\",\"locator\":\"Condition 1.3; Condition 1.2\",\"quote\":\"The permit set the renewal application deadline at July 18, 2026, and that date has already passed.\",\"what_to_do\":\"Find the renewal application and DEQ's receipt or acknowledgment dated on or before 2026-07-18 and upload them today. Condition 1.2 bars operating after 2026-11-15 without a renewed permit or a timely renewal application. If nothing was filed, contact DEQ about the renewal before 2026-11-15.\",\"basis\":\"read\",\"same_as\":null},{\"title\":\"Standard Air Contaminant Discharge Permit 26-2841-ST-01, issued 2021-09-01, expires 2026-11-15\",\"word\":\"stale\",\"document\":\"D5\",\"locator\":\"Page 1\",\"quote\":\"STANDARD AIR CONTAMINANT DISCHARGE PERMIT\",\"what_to_do\":\"Stale because it expires on 2026-11-15, 46 days from today, and no renewed permit or renewal filing is on file. Have the renewed permit or the renewal filing ready to put in front of the inspector next to this one.\",\"basis\":\"read\",\"same_as\":null},{\"title\":\"Semi-annual monitoring report for January–June 2026 (Condition 4.2), due 2026-07-31\",\"word\":\"nothing_on_file\",\"document\":\"D5\",\"locator\":\"Condition 4.2\",\"quote\":\"Submit the semi-annual monitoring report by July 31 for January through June\",\"what_to_do\":\"Upload the January–June 2026 semi-annual report and DEQ's receipt, if it was submitted. The due date was 2026-07-31.\",\"basis\":\"read\",\"same_as\":null},{\"title\":\"C-1 carbon replacement due on or before 2026-03-14 (Condition 3.3)\",\"word\":\"nothing_on_file\",\"document\":\"D1\",\"locator\":\"Page 3, Section 3\",\"quote\":\"the report set the next C-1 carbon replacement for on or before March 14, 2026, and that date has passed\",\"what_to_do\":\"Find the vendor invoice or service ticket for the March 2026 C-1 changeout and upload it. The previous changeout was by Northwest Carbon Services. Condition 3.3 requires replacement at least every 12 months.\",\"basis\":\"read\",\"same_as\":null},{\"title\":\"Annual report for reporting year 2025 (Condition 4.1), with DEQ's receipt dated 2026-02-12\",\"word\":\"on_file\",\"document\":\"D1\",\"locator\":\"Page 1, DEQ receipt email\",\"quote\":\"Permit: 26-2841-ST-01 (Standard Air Contaminant Discharge Permit)\",\"what_to_do\":\"DEQ's email confirms receipt only. It is not a DEQ finding on whether the report is complete. Bring the report and the email to the inspection.\",\"basis\":\"read\",\"same_as\":null},{\"title\":\"Daily scrubber pressure-drop readings for August 17–21, 2026 are missing (Condition 3.1)\",\"word\":\"nothing_on_file\",\"document\":\"D4\",\"locator\":\"Page 1, August table\",\"quote\":\"The missing rows are the whole week of August 17–21.\",\"what_to_do\":\"Check shift notes and other records to see whether readings were taken that week. If they were not, record it as missed monitoring under Condition 3.1 and handle it the way the permit's deviation conditions require.\",\"basis\":\"read\",\"same_as\":null},{\"title\":\"S-2 reading above the permit range on 2026-09-09 (6.4 in. w.c. against a 6.0 limit), with no note or corrective action\",\"word\":\"nothing_on_file\",\"document\":\"D4\",\"locator\":\"September table, September 9 row\",\"quote\":\"On September 9 the S-2 (caustic line) pressure drop was 6.4 inches of water column.\",\"what_to_do\":\"Write up the cause, the corrective action and the time the reading returned to range, and keep it with the log. Check whether this is a deviation that Condition 5.2 requires notifying DEQ about (within 24 hours, with a written report within 15 days). Also check the DEQ excess-emissions rules. The reading named them as OAR 340 Division 214 but said the section numbers are not verified.\",\"basis\":\"read\",\"same_as\":null},{\"title\":\"Weekly C-1 outlet breakthrough check missing for the week of 2026-09-14 (Condition 3.3)\",\"word\":\"nothing_on_file\",\"document\":\"D4\",\"locator\":\"September C-1 table\",\"quote\":\"The week of September 14 is missing, and the pressure-drop rows show the plant ran September 14–18.\",\"what_to_do\":\"Find out whether the check was done but not written down. If it was missed, record it as a missed weekly check and handle it the way the permit's monitoring-deviation conditions require. The check for the week of September 28 is due by 2026-10-02.\",\"basis\":\"read\",\"same_as\":null},{\"title\":\"Supervisor review of the August–September 2026 scrubber and C-1 log has not been signed\",\"word\":\"nothing_on_file\",\"document\":\"D4\",\"locator\":\"Bottom of log, supervisor review lines\",\"quote\":\"Nobody has signed off on either month, which is also why the September 9 reading and the missing entries went unflagged.\",\"what_to_do\":\"Have the supervisor review both months, sign and date the log, and write down how each gap was handled.\",\"basis\":\"read\",\"same_as\":null},{\"title\":\"No September 2026 line-counter operating-day totals, so the 18 September rows cannot be checked against days run\",\"word\":\"nothing_on_file\",\"document\":\"D4\",\"locator\":\"Below September table\",\"quote\":\"September gives no totals, so it cannot be checked the same way.\",\"what_to_do\":\"Add September's line-counter totals and compare them with the 18 rows entered.\",\"basis\":\"read\",\"same_as\":null},{\"title\":\"Daily scrubber pressure-drop log before August 2026 (Conditions 3.1 and 4.3, five-year retention)\",\"word\":\"nothing_on_file\",\"document\":\"D5\",\"locator\":\"Conditions 3.1 and 4.3\",\"quote\":\"Keep scrubber S-1 and S-2 pressure drop between 2.0 and 6.0 in. w.c. and record it once each operating day\",\"what_to_do\":\"Upload the daily S-1 and S-2 logs from before August 2026, at least October 2025 to July 2026 and the 2025 logs behind the D1 summary, if they are kept elsewhere.\",\"basis\":\"read\",\"same_as\":null},{\"title\":\"Weekly C-1 detector-tube records before August 2026 (Conditions 3.3 and 4.3)\",\"word\":\"nothing_on_file\",\"document\":\"D5\",\"locator\":\"Conditions 3.3 and 4.3\",\"quote\":\"Replace the carbon in C-1 at least every 12 months, or sooner if the weekly detector-tube check shows breakthrough\",\"what_to_do\":\"Upload the weekly C-1 outlet check records from before August 2026, if they exist.\",\"basis\":\"read\",\"same_as\":null},{\"title\":\"Quarterly inspections of the S-1 and S-2 pump, nozzles, packing and mist eliminator (Condition 3.2)\",\"word\":\"nothing_on_file\",\"document\":\"D5\",\"locator\":\"Condition 3.2\",\"quote\":\"Inspect each scrubber's pump, nozzles, packing and mist eliminator at least once per calendar quarter\",\"what_to_do\":\"Upload the quarterly inspection records for the last four quarters, including the scrubber maintenance file that D1 says holds the 2025 inspections. The inspection for the current quarter is due 2026-09-30, which is today.\",\"basis\":\"read\",\"same_as\":null},{\"title\":\"Backup for the August 2025 S-2 pump failure deviation reported in the 2025 annual report (Conditions 5.1 and 5.2)\",\"word\":\"nothing_on_file\",\"document\":\"D1\",\"locator\":\"Deviation section of the 2025 annual report\",\"quote\":null,\"what_to_do\":\"Upload the 24-hour notice to DEQ, the 15-day written report, and the malfunction or shutdown entries for that event, if they exist.\",\"basis\":\"read\",\"same_as\":null},{\"title\":\"Deviation notices and reports for the last 12 months, or a record that there were none (Condition 5.2)\",\"word\":\"nothing_on_file\",\"document\":\"D5\",\"locator\":\"Condition 5.2\",\"quote\":\"Notify DEQ within 24 hours of finding any deviation, with a written report within 15 days\",\"what_to_do\":\"Put together a deviation log for the last 12 months. It should show the September 9, 2026 S-2 reading and the missed readings once you have decided how each is classified.\",\"basis\":\"read\",\"same_as\":null},{\"title\":\"Annual permit fee invoices and proof of payment (Condition 6.2)\",\"word\":\"nothing_on_file\",\"document\":\"D5\",\"locator\":\"Condition 6.2\",\"quote\":\"Pay the annual permit fee by the due date on the invoice\",\"what_to_do\":\"Upload the most recent DEQ fee invoice and proof of payment.\",\"basis\":\"read\",\"same_as\":null},{\"title\":\"Visible emissions at or below 20% opacity (Condition 3.4)\",\"word\":\"not_a_document_question\",\"document\":null,\"locator\":null,\"quote\":null,\"what_to_do\":\"The inspector may look at the stacks on the day. If you have visible-emissions observation records or a written monitoring method, upload them.\",\"basis\":\"inferred\",\"same_as\":null},{\"title\":\"Whether ownership has changed or any source has been modified since 2021 in a way that would increase emissions (Condition 1.4)\",\"word\":\"not_a_document_question\",\"document\":null,\"locator\":null,\"quote\":null,\"what_to_do\":\"Be ready to say whether any such change has happened. If one did, upload the notification letter to DEQ.\",\"basis\":\"inferred\",\"same_as\":null},{\"title\":\"How the scrubbers, gauges and C-1 are running on the day of the inspection\",\"word\":\"not_a_document_question\",\"document\":null,\"locator\":null,\"quote\":null,\"what_to_do\":\"Walk through Section C of D3 with the line leads before the inspection.\",\"basis\":\"inferred\",\"same_as\":null},{\"title\":\"Monthly EHS self-check, which covers air permit posting and scrubber and carbon-bed monitoring. Only the blank template is on file.\",\"word\":\"on_file\",\"document\":\"D2\",\"locator\":\"Lines 1–3\",\"quote\":\"Weekly C-1 detector-tube checks done and recorded every week this month\",\"what_to_do\":\"The template does not show that any check was done. Upload the completed, signed monthly copies if they exist.\",\"basis\":\"read\",\"same_as\":null},{\"title\":\"Blank DEQ air-permit inspection checklist. It is not an inspection record.\",\"word\":\"on_file\",\"document\":\"D3\",\"locator\":\"Sections A, B and C\",\"quote\":null,\"what_to_do\":\"Use it to check the air-permit file line by line before the inspection.\",\"basis\":\"read\",\"same_as\":null}],\"dates\":[{\"title\":\"Renewal application for ACDP 26-2841-ST-01 (Condition 1.3)\",\"due_on\":\"2026-07-18\",\"recurs\":false,\"document\":\"D5\",\"passed\":true},{\"title\":\"Semi-annual monitoring report, January–June 2026 (Condition 4.2)\",\"due_on\":\"2026-07-31\",\"recurs\":true,\"document\":\"D5\",\"passed\":true},{\"title\":\"C-1 carbon replacement (Condition 3.3)\",\"due_on\":\"2026-03-14\",\"recurs\":true,\"document\":\"D1\",\"passed\":true},{\"title\":\"Quarterly scrubber inspection, current quarter (Condition 3.2)\",\"due_on\":\"2026-09-30\",\"recurs\":true,\"document\":\"D5\",\"passed\":false},{\"title\":\"Weekly C-1 outlet breakthrough check, week of September 28\",\"due_on\":\"2026-10-02\",\"recurs\":true,\"document\":\"D4\",\"passed\":false},{\"title\":\"Permit 26-2841-ST-01 expires\",\"due_on\":\"2026-11-15\",\"recurs\":false,\"document\":\"D5\",\"passed\":false},{\"title\":\"Annual report for calendar year 2026 (Condition 4.1)\",\"due_on\":\"2027-02-15\",\"recurs\":true,\"document\":\"D5\",\"passed\":false},{\"title\":\"Semi-annual monitoring report, January–June 2027\",\"due_on\":\"2027-07-31\",\"recurs\":true,\"document\":\"D3\",\"passed\":false},{\"title\":\"Keep the 2025 annual report receipt and supporting permit records (five years)\",\"due_on\":\"2031-02-12\",\"recurs\":false,\"document\":\"D1\",\"passed\":false},{\"title\":\"Annual permit fee (Condition 6.2), due on the date printed on the invoice\",\"due_on\":null,\"recurs\":true,\"document\":\"D5\",\"passed\":false},{\"title\":\"Deviation notice within 24 hours and written report within 15 days, whenever a deviation is found\",\"due_on\":null,\"recurs\":true,\"document\":\"D3\",\"passed\":false},{\"title\":\"Daily S-1 and S-2 pressure-drop reading on every operating day\",\"due_on\":null,\"recurs\":true,\"document\":\"D4\",\"passed\":false},{\"title\":\"Monthly EHS self-check with supervisor review\",\"due_on\":null,\"recurs\":true,\"document\":\"D2\",\"passed\":false}],\"expected_not_seen\":[{\"title\":\"Magnehelic gauge calibration and maintenance records\",\"why\":\"They show that the scrubber pressure-drop readings in D4 can be relied on.\"},{\"title\":\"C-1 detector-tube lot records\",\"why\":\"They back up the weekly breakthrough checks.\"},{\"title\":\"Records retention procedure (five years)\",\"why\":\"The D3 checklist asks for it at line B6, and Condition 4.3 requires five years of records.\"},{\"title\":\"Hazardous waste generator records, including the EPA ID, manifests, waste determination for spent C-1 carbon, and the DEQ generator report or fee\",\"why\":\"Spent carbon from about 1,800 lb changeouts and off-spec acids, caustics and solvents are typical waste streams for a repackager like this. Whether the spent carbon is hazardous has not been stated.\"},{\"title\":\"Oregon DEQ industrial stormwater permit (1200-Z) or a no-exposure certification\",\"why\":\"Chemical handling sites in Portland often hold one of these.\"}],\"contradictions\":[]}"
+  },
+  "rows_written": 39,
+  "section_status": "done",
+  "run_summary": {
+    "total": 39,
+    "needs_person": 18,
+    "nothing_on_file": 14,
+    "stale": 1,
+    "on_file": 3,
+    "not_a_document_question": 3,
+    "contradictions": 0,
+    "dates_passed": 3,
+    "expected": 5,
+    "sections": 1,
+    "sections_done": 1,
+    "could_not_complete": 0,
+    "carried": 0,
+    "closed": 0,
+    "attention": [
+      {
+        "title": "Permit renewal application for ACDP 26-2841-ST-01 (Condition 1.3). The deadline was 2026-07-18 and has passed. The permit expires 2026-11-15.",
+        "word": "nothing_on_file",
+        "document": "Standard Air Contaminant Discharge Permit No. 26-2841-ST-01 — Portland Facility"
+      },
+      {
+        "title": "Standard Air Contaminant Discharge Permit 26-2841-ST-01, issued 2021-09-01, expires 2026-11-15",
+        "word": "stale",
+        "document": "Standard Air Contaminant Discharge Permit No. 26-2841-ST-01 — Portland Facility"
+      },
+      {
+        "title": "Semi-annual monitoring report for January–June 2026 (Condition 4.2), due 2026-07-31",
+        "word": "nothing_on_file",
+        "document": "Standard Air Contaminant Discharge Permit No. 26-2841-ST-01 — Portland Facility"
+      },
+      {
+        "title": "C-1 carbon replacement due on or before 2026-03-14 (Condition 3.3)",
+        "word": "nothing_on_file",
+        "document": "Annual Report, Reporting Year 2025, for Standard Air Contaminant Discharge Permit 26-2841-ST-01, with Oregon DEQ Receipt Confirmation (Submission ACDP-AR-2025-262841), Portland Facility"
+      },
+      {
+        "title": "Daily scrubber pressure-drop readings for August 17–21, 2026 are missing (Condition 3.1)",
+        "word": "nothing_on_file",
+        "document": "Scrubber Pressure-Drop Log (S-1 and S-2) and Weekly C-1 Carbon Outlet Detector-Tube Check, August–September 2026, Portland Facility"
+      },
+      {
+        "title": "S-2 reading above the permit range on 2026-09-09 (6.4 in. w.c. against a 6.0 limit), with no note or corrective action",
+        "word": "nothing_on_file",
+        "document": "Scrubber Pressure-Drop Log (S-1 and S-2) and Weekly C-1 Carbon Outlet Detector-Tube Check, August–September 2026, Portland Facility"
+      },
+      {
+        "title": "Weekly C-1 outlet breakthrough check missing for the week of 2026-09-14 (Condition 3.3)",
+        "word": "nothing_on_file",
+        "document": "Scrubber Pressure-Drop Log (S-1 and S-2) and Weekly C-1 Carbon Outlet Detector-Tube Check, August–September 2026, Portland Facility"
+      },
+      {
+        "title": "Supervisor review of the August–September 2026 scrubber and C-1 log has not been signed",
+        "word": "nothing_on_file",
+        "document": "Scrubber Pressure-Drop Log (S-1 and S-2) and Weekly C-1 Carbon Outlet Detector-Tube Check, August–September 2026, Portland Facility"
+      },
+      {
+        "title": "No September 2026 line-counter operating-day totals, so the 18 September rows cannot be checked against days run",
+        "word": "nothing_on_file",
+        "document": "Scrubber Pressure-Drop Log (S-1 and S-2) and Weekly C-1 Carbon Outlet Detector-Tube Check, August–September 2026, Portland Facility"
+      },
+      {
+        "title": "Daily scrubber pressure-drop log before August 2026 (Conditions 3.1 and 4.3, five-year retention)",
+        "word": "nothing_on_file",
+        "document": "Standard Air Contaminant Discharge Permit No. 26-2841-ST-01 — Portland Facility"
+      },
+      {
+        "title": "Weekly C-1 detector-tube records before August 2026 (Conditions 3.3 and 4.3)",
+        "word": "nothing_on_file",
+        "document": "Standard Air Contaminant Discharge Permit No. 26-2841-ST-01 — Portland Facility"
+      },
+      {
+        "title": "Quarterly inspections of the S-1 and S-2 pump, nozzles, packing and mist eliminator (Condition 3.2)",
+        "word": "nothing_on_file",
+        "document": "Standard Air Contaminant Discharge Permit No. 26-2841-ST-01 — Portland Facility"
+      },
+      {
+        "title": "Backup for the August 2025 S-2 pump failure deviation reported in the 2025 annual report (Conditions 5.1 and 5.2)",
+        "word": "nothing_on_file",
+        "document": "Annual Report, Reporting Year 2025, for Standard Air Contaminant Discharge Permit 26-2841-ST-01, with Oregon DEQ Receipt Confirmation (Submission ACDP-AR-2025-262841), Portland Facility"
+      },
+      {
+        "title": "Deviation notices and reports for the last 12 months, or a record that there were none (Condition 5.2)",
+        "word": "nothing_on_file",
+        "document": "Standard Air Contaminant Discharge Permit No. 26-2841-ST-01 — Portland Facility"
+      },
+      {
+        "title": "Annual permit fee invoices and proof of payment (Condition 6.2)",
+        "word": "nothing_on_file",
+        "document": "Standard Air Contaminant Discharge Permit No. 26-2841-ST-01 — Portland Facility"
+      }
+    ],
+    "agencies": [
+      "Oregon DEQ"
+    ],
+    "reshaped_to_dates": [],
+    "note": null
+  },
+  "reshaped_to_dates": []
+}

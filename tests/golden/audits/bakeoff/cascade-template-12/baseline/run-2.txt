@@ -1,0 +1,188 @@
+Against Oregon DEQ Air Contaminant Discharge Permit Compliance Inspection Checklist (blank inspector's field form)
+
+audited 30 September 2026 · 3 sections · 12 documents read · readings as of 30 September 2026 · Printed September 30, 2026 · CompliBoard
+
+Against Oregon DEQ Air Contaminant Discharge Permit Compliance Inspection Checklist (blank inspector's field form)
+
+audited 30 September 2026 · 3 sections · 12 documents read · readings as of 30 September 2026
+
+6 on file · 3 out of date · 5 nothing on file · 2 not a document question
+
+You asked: “golden: cascade-template-12”
+
+Every line below is a line of your checklist, answered against the documents you have given us. None of it is a verdict on whether the company complies.
+
+▸
+SECTION A — PERMIT AND SUBMISSIONS
+5
+
+A1Current ACDP permit available at the facility and not expired
+
+on file · Standard Air Contaminant Discharge Permit No. 26-2841-ST-01 — Portland Facility · Page 1
+
+“STANDARD AIR CONTAMINANT DISCHARGE PERMIT”
+
+Permit 26-2841-ST-01 is on file. It was issued 2021-09-01 and expires 2026-11-15, which is 46 days from today. It has not expired yet. The file cannot show whether a copy is kept at the facility, so confirm a copy is there for the inspector. Condition 1.2 of D12 says the source must not operate after expiry without a renewed permit or a timely renewal application (see A2).
+
+Not right
+
+A2Renewal application submitted at least 120 days before the permit expiration date, where expiration is within 12 months
+
+nothing on file · worked out, not stated
+
+The permit expires within 12 months, so this line applies. Condition 1.3 of D12 set the renewal application deadline at 2026-07-18, which is 120 days before the 2026-11-15 expiry. That date has passed, and there is no renewal application or DEQ acknowledgment on file. If the application was filed, upload it with DEQ's receipt dated on or before 2026-07-18. If it was not filed, contact Oregon DEQ now, before the 2026-11-15 expiry.
+
+Add a document
+Not right
+
+A3Annual report for the previous calendar year submitted by February 15
+
+on file · Annual Report, Reporting Year 2025, for Standard Air Contaminant Discharge Permit 26-2841-ST-01, with Oregon DEQ Receipt Confirmation (Submission ACDP-AR-2025-262841), Portland Facility · Page 1, DEQ receipt email
+
+“Permit: 26-2841-ST-01 (Standard Air Contaminant Discharge Permit)”
+
+The 2025 annual report is on file with DEQ's receipt email dated 2026-02-12, which is before the February 15 due date. DEQ says the email confirms receipt only. It does not find the report complete. Keep the confirmation and the records behind it until 2031-02-12. The next annual report, for 2026, is due 2027-02-15 under Condition 4.1 of D12. That is a date to diarise, not a finding.
+
+Not right
+
+A4Semi-annual monitoring report for January to June submitted by July 31
+
+nothing on file · worked out, not stated
+
+Condition 4.2 of D12 requires a semi-annual monitoring report for January to June by July 31. The January–June 2026 report was due 2026-07-31. That date has passed, and neither the report nor a DEQ receipt is on file. If it was submitted, upload the report and DEQ's receipt. If it was not, raise it with the Plant Manager, who signs air permit reports, before the inspection.
+
+Add a document
+Not right
+
+A5Deviation reports: any deviation in the last 12 months notified within 24 hours and reported in writing within 15 days
+
+nothing on file · worked out, not stated
+
+No deviation notice or written deviation report for the last 12 months (October 2025 to September 2026) is on file. The reading of D11 found an 'S-2 reading above the permit range on September 9 with no note or corrective action' (6.4 in. w.c. against the 6.0 limit in Condition 3.1). It also found that the daily pressure-drop readings for August 17–21 and the weekly C-1 check for the week of September 14 are missing. If the September 9 reading counts as a deviation under Condition 5.2 of D12, the 24-hour notice window and the 15-day written report window have both passed. Upload any notice or report that exists. If none exists, write up the event and check with DEQ how it must be reported. The only deviation reported in D1 was in August 2025, which is outside this 12-month window.
+
+Add a document
+Not right
+▸
+SECTION B — RECORDS
+6
+
+B1Scrubber pressure-drop log covering the last 12 months, one reading per operating day, readings within the permitted range
+
+on file · Scrubber Pressure-Drop Log (S-1 and S-2) and Weekly C-1 Carbon Outlet Detector-Tube Check, August–September 2026, Portland Facility · Page 1, header; August and September daily tables
+
+“SCRUBBER PRESSURE-DROP LOG — S-1 (acid repackaging line) and S-2 (caustic repackaging line)”
+
+The log covers only August and September 2026. The line asks for twelve months, roughly October 2025 to September 2026. If the October 2025 to July 2026 daily logs exist, upload them. D1 (the 2025 annual report) carries only a summary of pressure drop, not the daily log. The reading already found these problems in D11. The daily readings for August 17–21 are missing. On September 9 the S-2 pressure drop was 6.4 inches of water column, above the 6.0 upper limit in Condition 3.1, and nothing was recorded about the cause, the fix, or when it came back into range. September has no line-counter totals for operating days. The supervisor review is not signed. Write up September 9 and each gap, and have the supervisor sign and date the log.
+
+Not right
+
+B2Quarterly scrubber inspection records for the last four quarters
+
+on file · Annual Report, Reporting Year 2025, for Standard Air Contaminant Discharge Permit 26-2841-ST-01, with Oregon DEQ Receipt Confirmation (Submission ACDP-AR-2025-262841), Portland Facility · Annual report body, quarterly inspections summary (page not given by the reading)
+
+The only thing on file is the summary of 2025 quarterly inspections in the 2025 annual report. The reading notes the report says those inspections are recorded in a separate scrubber maintenance file, and that file is not on file. The line asks for inspection records for the last four quarters, which is Q4 2025 through Q3 2026. Nothing on file covers any 2026 quarter. Upload the scrubber maintenance file with dated inspection entries for S-1 and S-2 for each quarter. Condition 3.2 of D12 sets the Q3 2026 inspection for 2026-09-30, which is today, so record it now if it has been done.
+
+Not right
+
+B3Carbon replacement record within the last 12 months, or breakthrough records showing replacement was not required
+
+out of date · Annual Report, Reporting Year 2025, for Standard Air Contaminant Discharge Permit 26-2841-ST-01, with Oregon DEQ Receipt Confirmation (Submission ACDP-AR-2025-262841), Portland Facility · Page 3, Section 3
+
+“Calgon Filtrasorb 400, 1,800 pounds, by Northwest Carbon Services”
+
+The only record of a carbon replacement on file is the 2025 changeout in the 2025 annual report. That report set the next C-1 replacement for on or before March 14, 2026, and that date has passed. No replacement record from the last 12 months is on file. D12 Condition 3.3 requires replacement at least every 12 months, so the weekly detector-tube records in D11 (August–September 2026 only) cannot stand in for one. If the carbon was replaced around March 2026, upload the vendor invoice or service ticket. If it was not, raise it now as a missed replacement under Condition 3.3.
+
+Not right
+
+B4Weekly detector-tube check records at the carbon unit outlet
+
+on file · Scrubber Pressure-Drop Log (S-1 and S-2) and Weekly C-1 Carbon Outlet Detector-Tube Check, August–September 2026, Portland Facility · Weekly C-1 carbon outlet detector-tube tables, August and September 2026
+
+Weekly checks are on file for August and September 2026 only. D1 carries only a summary of the 2025 weekly checks. The reading already found that the check for the week of September 14 is missing, even though the plant ran September 14–18. Find out whether that check was done and not written down. If it was missed, record it as a missed weekly check under Condition 3.3. Upload any weekly detector-tube sheets from before August 2026. The check for the week of September 28 is due 2026-10-02.
+
+Not right
+
+B5Opacity observation records, or a statement of the method used to monitor visible emissions
+
+nothing on file · worked out, not stated
+
+No opacity observation records and no written statement of how visible emissions are monitored are on file. D12 Condition 3.4 sets a limit of 20% opacity, with no more than 3 minutes in any hour. If observation records or a written method statement exist, for example a routine visual check kept in the plant, upload them. If neither exists, write a short statement of the method used and start keeping dated observations.
+
+Add a document
+Not right
+
+B6Records retained for five years and available on request
+
+nothing on file · worked out, not stated
+
+I read this line as asking for evidence of a five-year file of permit records. D12 Condition 4.3 requires permit records to be kept for at least five years. The permit records on file are the 2025 annual report (D1) and two months of logs (D11, August–September 2026). There is no retention procedure and no archive going back five years. If earlier daily scrubber logs, weekly C-1 sheets, quarterly inspections, carbon invoices and past annual and semi-annual reports are kept elsewhere, upload them back to about September 2021. Also write a short retention note saying where the records are kept and who produces them when asked.
+
+Add a document
+Not right
+▸
+SECTION C — ON THE DAY
+5
+
+C1Each scrubber operating with the associated line, pressure drop within range at the time of inspection
+
+not a document question
+
+The inspector checks this by looking at the S-1 and S-2 gauges on the day, so no document can answer it. Before the visit, confirm each scrubber runs whenever its line runs, and check the gauge readings against the 2.0 to 6.0 in. w.c. range in Condition 3.1 of the permit (D12). The inspector is likely to ask for the log (D11) alongside the gauges. The reading of that log found a 'S-2 reading above the permit range on September 9 with no note or corrective action'. It also found the August 17–21 readings missing and no supervisor signature. Write up the September 9 reading, and have the supervisor sign the log, before the inspection.
+
+Not right
+
+C2Solvent storage tanks T-3 to T-6 vented to the carbon unit, no open vents or leaks observed
+
+not a document question
+
+Open vents and leaks are checked by looking at the tanks on the day, so no document can answer this. Walk T-3 to T-6 and the ducting to C-1 before the visit. The permit (D12, Section 2.3) lists these tanks as vented to C-1, and the inspector may ask for proof that C-1 is being kept up. The 2025 annual report (D1) set the next C-1 carbon replacement for on or before 2026-03-14. That date has passed and there is no replacement record on file. If the vendor record exists, upload it. The C-1 check for the week of September 28 is due 2026-10-02 (D11).
+
+Not right
+
+C3Tank and line labels legible; permitted sources match the permit's equipment list
+
+on file · Standard Air Contaminant Discharge Permit No. 26-2841-ST-01 — Portland Facility · Page 3, Sections 2.1–2.3
+
+“Solvent storage tanks T-3, T-4, T-5 and T-6 (each 10,000 gallons, fixed roof, vented to carbon adsorption unit C-1).”
+
+The permit's equipment list is on file: S-1, S-2, and T-3 to T-6 vented to C-1. Before the visit, walk the plant with that list and check that every tank and line label is readable and matches it. Label legibility can only be seen on the day. The permit expires 2026-11-15, and its renewal application was due 2026-07-18. There is no renewal application or DEQ acknowledgment on file. Upload the application and acknowledgment if they exist, because the inspector will check the equipment list against a permit that is either in force or covered by a timely renewal.
+
+Not right
+
+C4Facility employee count on the day, for fee tier verification
+
+out of date · Emergency Action Plan — Portland Facility · Section 1, page 2
+
+“It applies to all 42 employees at the Portland facility”
+
+The only confirmed headcount is 42, and it dates from February 2021, which is why this line is marked stale. The 2025 Form 300A (D8) proposes an annual average of 65 employees for 2025, but nobody has confirmed that figure, and it does not match the confirmed 42. Before the inspection, pull a current payroll or headcount record for the Portland site. Have it ready to show the count on the day for the fee tier.
+
+Not right
+
+C5Emergency contact and emergency plan available at the facility
+
+out of date · Emergency Action Plan — Portland Facility · Whole plan; Appendices A and B listed but not included
+
+“No named contact for questions about the plan”
+
+An emergency plan is on file, revised 2021-02-01. The reading found 'Annual reviews not shown; plan not updated since 2021'. It also found 'No procedure for reporting a fire or other emergency', and it found the evacuation map and warden roster appendices missing from the file. Review the plan now: add a contacts section with names or job titles and phone numbers, add the reporting procedure, and attach the current Appendix A and Appendix B with dates. Keep a printed copy at the facility, because whether the plan is actually available there can only be seen on the day.
+
+Not right
+DOCUMENTS THIS AUDIT READ
+1. Standard Air Contaminant Discharge Permit No. 26-2841-ST-01 — Portland Facility
+2. Scrubber Pressure-Drop Log (S-1 and S-2) and Weekly C-1 Carbon Outlet Detector-Tube Check, August–September 2026, Portland Facility
+3. Annual Report, Reporting Year 2025, for Standard Air Contaminant Discharge Permit 26-2841-ST-01, with Oregon DEQ Receipt Confirmation (Submission ACDP-AR-2025-262841), Portland Facility
+4. Emergency Action Plan — Portland Facility
+5. Certificate of Annual Maintenance, Portable Fire Extinguishers (14 units), service date August 20, 2025, Portland Facility
+6. Forklift Pre-Shift Inspection Log, Unit FL-2 (Toyota 8FGU25, propane), September 2026, Portland Warehouse
+7. Forklift Pre-Shift Inspection Log, Unit FL-2 (Toyota 8FGU25, propane), September 2026, Portland Warehouse
+8. Monthly EHS Self-Check (blank internal checklist template), Portland Facility
+9. Oregon DEQ Air Contaminant Discharge Permit Compliance Inspection Checklist (blank inspector's field form)
+10. OSHA Form 300A Summary of Work-Related Injuries and Illnesses, Calendar Year 2025, Portland Facility
+11. Powered Industrial Truck Operator Training and Evaluation Record, with Operator Certificate for Michael Chen, Portland Facility
+12. Safety Data Sheet: Sodium Hydroxide Solution, 50% (Northwest Alkali Products, Version 4.1)
+Audit again
+Make a checklist
+Print
+Download the documents
+Not right

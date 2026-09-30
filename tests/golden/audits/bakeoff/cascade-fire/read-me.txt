@@ -1,0 +1,86 @@
+FAILED  must six-year-nothing  (3 of 3 runs)  six-year maintenance for W-3 and L-1, due November 2026: nothing on file (spec 11 AUDIT USE line 2)
+        run 1: 0 of 4 carried, needs 1
+        run 2: 0 of 4 carried, needs 1
+        run 3: 0 of 4 carried, needs 1
+FAILED  ok on-file-too  (3 of 3 runs)  the certificate named on_file as well as stale; both are true of it
+        run 1: no item matched with word=on_file. held: Annual maintenance certificate for | Monthly visual inspection of each | Hydrostatic test for CO2 extinguis | Current dated service tag on each 
+        run 2: no item matched with word=on_file. held: Annual maintenance of the 14 porta | Monthly visual inspection of each | Hydrostatic test for CO2 unit L-1 | Dated service tags and monthly ini | Whether extinguisher numbers, type
+        run 3: no item matched with word=on_file. held: Annual maintenance of portable fir | Monthly visual inspections of each | Hydrostatic test for CO2 extinguis | A dated, current service tag on ea
+
+====================================================================================================
+cascade-fire — Oregon State Fire Marshal — Cascade Specialty Chemicals
+model claude-opus-5-5 · whole mode · 3 runs · run date 2026-09-30
+input sha 1eacf2715fd5a5ed  (runs 2 and 3: 1eacf2715fd5a5ed, 1eacf2715fd5a5ed)
+run 1  whole-2026-09-30T21-35-13-012Z-1.json  audit_run_id e37e8ec0-cae1-4698-a869-d1747ebfefd1
+run 2  whole-2026-09-30T21-35-51-938Z-2.json  audit_run_id b5549a74-4498-4be0-be26-8d60affeda3f
+run 3  whole-2026-09-30T21-36-34-996Z-3.json  audit_run_id 2241da77-f9e7-450b-874d-64140baed829
+comparison: claude-haiku-4-5, 3 stored run(s) — whole-2026-09-30T00-13-49-981Z-1.json, whole-2026-09-30T00-14-02-140Z-2.json, whole-2026-09-30T00-14-16-019Z-3.json
+====================================================================================================
+
+CHECK                         kind      run1  run2  run3   n/3   claude-haiku-4-5 n/3
+(a check listed under MATCHER above is shown corrected here; every other verdict is as stored)
+extinguisher-stale            must      PASS  PASS  PASS   3/3   3/3
+six-year-nothing              must      FAIL  FAIL  FAIL   0/3   3/3
+monthly-not-a-document-question must      PASS  PASS  PASS   3/3   3/3
+no-satisfied                  must-not  PASS  PASS  PASS   3/3   3/3
+no-invented-document          must-not  PASS  PASS  PASS   3/3   3/3
+no-deq-permit                 must-not  PASS  PASS  PASS   3/3   3/3
+no-ai-word                    must-not  PASS  PASS  PASS   3/3   3/3
+hydrostatic-dates             ok        PASS  PASS  PASS   3/3   3/3
+on-file-too                   ok        FAIL  FAIL  FAIL   0/3   0/3
+
+COUNT                         run1  run2  run3         claude-haiku-4-5 runs
+must passed                   2/3   2/3   2/3           3/3 / 3/3 / 3/3
+must-not held                 4/4   4/4   4/4           4/4 / 4/4 / 4/4
+findings                      4     5     4             4 / 4 / 4
+dates                         4     4     4             4 / 5 / 5
+contradictions                0     0     0             0 / 0 / 0
+expected and not seen         6     5     3             5 / 5 / 5
+reshaped to dates             0     0     0             0 / 0 / 0
+  word on_file                0     0     0             0 / 0 / 0
+  word stale                  1     1     1             1 / 1 / 1
+  word nothing_on_file        2     2     2             3 / 3 / 3
+  word not_a_document_question 1     2     1             0 / 0 / 0
+  findings with NO word       0     0     0             0 / 0 / 0
+handle errors                 0     0     0             0 / 0 / 0
+rows written                  14    14    11            13 / 14 / 14
+section status                done  done  done          done / done / done
+json parsed                   yes   yes   yes           yes / yes / yes
+searches                      0     0     0             0 / 0 / 0
+output tokens                 3806  3620  3849          1589 / 1306 / 1579
+
+FORBIDDEN WORDS               run1  run2  run3
+no-satisfied                  none  none  none  
+no-ai-word                    none  none  none  
+
+LEDGER                        run1      run2      run3      claude-haiku-4-5 (run files)
+cost, the whole run           $0.1082   $0.1045   $0.1091   $0.0139 / $0.0125 / $0.0138
+cost in the section windows   $0.1082   $0.1045   $0.1091   (what Past audits shows)
+ai_calls, run / sections      1/1       1/1       1/1       
+wall per audit                40.2s     38.4s     42.5s     14.2s / 12.2s / 13.9s
+
+OVERLAP ACROSS THE THREE RUNS — titles in all three over titles in any, normalised
+finding titles                0/12 = 0.00        1/9 = 0.11
+expected-not-seen titles      2/7 = 0.29        4/7 = 0.57
+
+in all three runs:
+in some but not all:
+  ~ run 1: Annual maintenance certificate for the portable fire extinguishers at the Portland facilit [stale]
+  ~ run 1: Monthly visual inspection of each extinguisher, recorded on the unit tag or in a log [nothing_on_file]
+  ~ run 1: Hydrostatic test for CO2 extinguisher L-1 (last test shown as 2020) [nothing_on_file]
+  ~ run 1: Current dated service tag on each extinguisher; units mounted, visible and unobstructed [not_a_document_question]
+  ~ run 2: Annual maintenance of the 14 portable fire extinguishers at the Portland facility [stale]
+  ~ run 2: Monthly visual inspection of each extinguisher by the company, recorded on the unit tag [nothing_on_file]
+  ~ run 2: Hydrostatic test for CO2 unit L-1 in the laboratory (last test shown as 2020) [nothing_on_file]
+  ~ run 2: Dated service tags and monthly initials on the extinguishers themselves [not_a_document_question]
+  ~ run 2: Whether extinguisher numbers, types and placement still match current operations (repackag [not_a_document_question]
+  ~ run 3: Annual maintenance of portable fire extinguishers, Portland facility [stale]
+  ~ run 3: Monthly visual inspections of each extinguisher, recorded on the unit tag or in a log [nothing_on_file]
+  ~ run 3: Hydrostatic test for CO2 extinguisher L-1 (last test shown as 2020) [nothing_on_file]
+  ~ run 3: A dated, current service tag on each extinguisher, with units in place and accessible [not_a_document_question]
+
+WHAT THE DRAWER SAYS — the captured text is beside this file:
+  tests/golden/audits/bakeoff/cascade-fire/baseline/run-1.txt  139 line(s)
+  tests/golden/audits/bakeoff/cascade-fire/baseline/run-2.txt  143 line(s)
+  tests/golden/audits/bakeoff/cascade-fire/baseline/run-3.txt  127 line(s)
+

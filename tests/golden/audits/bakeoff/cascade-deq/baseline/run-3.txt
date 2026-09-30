@@ -1,0 +1,357 @@
+Oregon DEQ audit
+
+audited 30 September 2026 · 1 section · 5 documents read, 7 held unread · readings as of 30 September 2026 · Printed September 30, 2026 · CompliBoard
+
+Oregon DEQ audit
+
+audited 30 September 2026 · 1 section · 5 documents read, 7 held unread · readings as of 30 September 2026
+
+You asked: “golden: cascade-deq”
+
+▸
+WHAT THIS COVERS
+
+Documents read
+
+Annual Report, Reporting Year 2025, for Standard Air Contaminant Discharge Permit 26-2841-ST-01, with Oregon DEQ Receipt Confirmation (Submission ACDP-AR-2025-262841), Portland Facility
+Record · Recorded
+Monthly EHS Self-Check (blank internal checklist template), Portland Facility
+Other · On file
+Oregon DEQ Air Contaminant Discharge Permit Compliance Inspection Checklist (blank inspector's field form)
+Other · On file
+Scrubber Pressure-Drop Log (S-1 and S-2) and Weekly C-1 Carbon Outlet Detector-Tube Check, August–September 2026, Portland Facility
+Record · Needs work
+Standard Air Contaminant Discharge Permit No. 26-2841-ST-01 — Portland Facility
+Permit · Expiring
+
+7 other documents you hold were listed by title only, for this audit to say what is NOT among them. Their contents were not read here.
+
+Readings as of 30 September 2026
+
+Company information as of 30 September 2026
+
+Every line below points at a document, or says what we do not see. None of it is a verdict on whether the company complies.
+
+▾
+FINDINGS
+21
+
+Annual permit fee (due date on the invoice) (Condition 6.2)
+
+· Standard Air Contaminant Discharge Permit No. 26-2841-ST-01 — Portland Facility
+
+Not right
+
+Permit renewal application for ACDP 26-2841-ST-01 (Condition 1.3). The deadline of 2026-07-18 has passed and there is no application or DEQ acknowledgment on file
+
+nothing on file · Standard Air Contaminant Discharge Permit No. 26-2841-ST-01 — Portland Facility · Condition 1.3 (and Condition 1.2 on operating after expiry)
+
+“Submit a complete renewal application on or before July 18, 2026”
+
+If the application was filed, upload it and DEQ's receipt or acknowledgment dated on or before 2026-07-18. The permit expires 2026-11-15, and under Condition 1.2 that proof is what lets you keep operating. If nothing was filed, contact DEQ now, before the inspection.
+
+Add a document
+Not right
+
+Semi-annual monitoring report for January–June 2026 (Condition 4.2). It was due 2026-07-31 and there is nothing on file
+
+nothing on file · Standard Air Contaminant Discharge Permit No. 26-2841-ST-01 — Portland Facility · Condition 4.2
+
+“Submit the semi-annual monitoring report by July 31 for January through June”
+
+If it was submitted, upload a copy of the report and DEQ's receipt. If it was not, talk to DEQ about a late submission before the inspection.
+
+Add a document
+Not right
+
+C-1 carbon replacement set for on or before 2026-03-14 (Condition 3.3). The date has passed and there is no replacement record on file
+
+nothing on file · Annual Report, Reporting Year 2025, for Standard Air Contaminant Discharge Permit 26-2841-ST-01, with Oregon DEQ Receipt Confirmation (Submission ACDP-AR-2025-262841), Portland Facility · Page 3, Section 3; Condition 3.3 of D5
+
+“the report set the next C-1 carbon replacement for on or before March 14, 2026, and that date has passed”
+
+Upload the vendor invoice or service ticket for the March 2026 C-1 changeout. If the carbon has not been replaced, raise it at once, because Condition 3.3 requires replacement at least every 12 months.
+
+Add a document
+Not right
+
+Scrubber S-1/S-2 daily pressure-drop readings for August 17–21, 2026 are missing
+
+nothing on file · Scrubber Pressure-Drop Log (S-1 and S-2) and Weekly C-1 Carbon Outlet Detector-Tube Check, August–September 2026, Portland Facility · Page 1, August table and line-counter totals
+
+“August 17–21 daily pressure-drop readings missing”
+
+Check shift notes to see whether readings were taken that week and not written down. If they were not taken, treat it as missed monitoring under Condition 3.1 and record the reason.
+
+Add a document
+Not right
+
+S-2 pressure drop on September 9, 2026 above the Condition 3.1 range, with no note or corrective action on file
+
+nothing on file · Scrubber Pressure-Drop Log (S-1 and S-2) and Weekly C-1 Carbon Outlet Detector-Tube Check, August–September 2026, Portland Facility · September table, 9 September row
+
+“S-2 reading above the permit range on September 9 with no note or corrective action”
+
+Write up the cause, the corrective action and the time the reading returned to range, and keep it with the log. Check whether Condition 5.2 (DEQ notice within 24 hours, written report within 15 days) applied, and put any notice on file.
+
+Add a document
+Not right
+
+Weekly C-1 outlet detector-tube check for the week of September 14, 2026 is missing
+
+nothing on file · Scrubber Pressure-Drop Log (S-1 and S-2) and Weekly C-1 Carbon Outlet Detector-Tube Check, August–September 2026, Portland Facility · September C-1 table
+
+“Weekly C-1 check missing for the week of September 14”
+
+Find out whether the check was done and not written down. If it was missed, record it as a missed weekly check and handle it the way the permit requires for monitoring deviations.
+
+Add a document
+Not right
+
+Supervisor review of the August–September 2026 scrubber and C-1 log is not signed
+
+nothing on file · Scrubber Pressure-Drop Log (S-1 and S-2) and Weekly C-1 Carbon Outlet Detector-Tube Check, August–September 2026, Portland Facility · Bottom of log, supervisor review lines
+
+“Supervisor review not signed”
+
+Have the supervisor review both months, sign and date the log, and write down how each gap was handled.
+
+Add a document
+Not right
+
+No line-counter operating-day totals for September 2026
+
+nothing on file · Scrubber Pressure-Drop Log (S-1 and S-2) and Weekly C-1 Carbon Outlet Detector-Tube Check, August–September 2026, Portland Facility · Below September table
+
+“No line-counter operating-day totals for September”
+
+Add September's line-counter totals and compare them with the 18 rows entered.
+
+Add a document
+Not right
+
+Daily scrubber pressure-drop records before August 2026 (Conditions 3.1 and 4.3, five-year retention)
+
+nothing on file · worked out, not stated · Standard Air Contaminant Discharge Permit No. 26-2841-ST-01 — Portland Facility · Conditions 3.1 and 4.3
+
+“Keep all permit records for at least five years”
+
+Upload the daily S-1/S-2 pressure-drop logs from at least October 2025 to July 2026, and earlier years if you hold them.
+
+Add a document
+Not right
+
+Weekly C-1 detector-tube records before August 2026 (Conditions 3.3 and 4.3)
+
+nothing on file · worked out, not stated · Standard Air Contaminant Discharge Permit No. 26-2841-ST-01 — Portland Facility · Conditions 3.3 and 4.3
+
+“Replace the carbon in C-1 at least every 12 months, or sooner if the weekly detector-tube check shows breakthrough”
+
+Upload the weekly C-1 outlet check records from before August 2026, including those for 2025 that sit behind the annual report.
+
+Add a document
+Not right
+
+Quarterly scrubber inspections of pump, nozzles, packing and mist eliminator for S-1 and S-2 (Condition 3.2)
+
+nothing on file · Standard Air Contaminant Discharge Permit No. 26-2841-ST-01 — Portland Facility · Condition 3.2
+
+“Inspect each scrubber's pump, nozzles, packing and mist eliminator at least once per calendar quarter”
+
+Upload the quarterly inspection records for at least the last four quarters, with date, inspector and any corrective action. The annual report (D1) says the 2025 inspections are kept in the scrubber maintenance file. The Q3 2026 inspection falls due today.
+
+Add a document
+Not right
+
+Deviation notices and written reports (Condition 5.2), including the backup for the August 2025 S-2 pump failure
+
+nothing on file · worked out, not stated · Standard Air Contaminant Discharge Permit No. 26-2841-ST-01 — Portland Facility · Condition 5.2; D1 deviation section
+
+“Notify DEQ within 24 hours of finding any deviation, with a written report within 15 days”
+
+Upload the notice and the 15-day written report for the August 2025 S-2 pump failure that the 2025 annual report records, plus any 2026 deviation notices. If there were none in 2026, keep a note saying so.
+
+Add a document
+Not right
+
+Annual permit fee invoices and proof of payment (Condition 6.2)
+
+nothing on file · Standard Air Contaminant Discharge Permit No. 26-2841-ST-01 — Portland Facility · Condition 6.2
+
+“Pay the annual permit fee by the due date on the invoice”
+
+Upload the most recent DEQ fee invoice and proof of payment.
+
+Add a document
+Not right
+
+Standard Air Contaminant Discharge Permit 26-2841-ST-01. On file, issued 2021-09-01, expires 2026-11-15
+
+on file · Standard Air Contaminant Discharge Permit No. 26-2841-ST-01 — Portland Facility · Page 1
+
+“It expires November 15, 2026, 46 days from today.”
+
+Keep the permit ready to show. Once a renewed permit or DEQ's acknowledgment of the renewal arrives, file it next to this one.
+
+Not right
+
+Annual report for reporting year 2025 (Condition 4.1). On file, with DEQ's receipt dated 2026-02-12
+
+on file · Annual Report, Reporting Year 2025, for Standard Air Contaminant Discharge Permit 26-2841-ST-01, with Oregon DEQ Receipt Confirmation (Submission ACDP-AR-2025-262841), Portland Facility · Page 1, DEQ receipt email
+
+“DEQ says plainly that the email confirms receipt only and is not a finding that the report is complete or that you met the permit.”
+
+Keep the report and the receipt together. They must be kept until at least 2031-02-12.
+
+Not right
+
+Monthly EHS self-check. The template is on file, undated and blank
+
+on file · Monthly EHS Self-Check (blank internal checklist template), Portland Facility · Header fields and Lines 1–8
+
+“The Month, Completed by, Done, Initials and supervisor review fields are all empty”
+
+Upload filled-in, signed monthly copies if they exist, especially the air-permit lines (Lines 1–3).
+
+Not right
+
+Blank DEQ air-permit inspection checklist. On file, undated; this is not a record of an inspection
+
+on file · Oregon DEQ Air Contaminant Discharge Permit Compliance Inspection Checklist (blank inspector's field form) · Sections A, B and C
+
+“It is not a record of an inspection and it is not Cascade's own document.”
+
+Use Sections A and B to check the air-permit file line by line before the inspection.
+
+Not right
+
+Visible emissions at or below 20% opacity (Condition 3.4)
+
+not a document question
+
+There are no opacity observation records and no written statement of the monitoring method on file. Be ready to explain how opacity is watched and to show the stacks on the day.
+
+Not right
+
+Any change of ownership or change to a source that would raise emissions since 2021 (Condition 1.4)
+
+not a document question
+
+Confirm with the Plant Manager whether any such change happened. If one did, upload the notification letter. If none did, keep a note saying so.
+
+Not right
+
+Conditions on inspection day: scrubber gauges, C-1 unit, tanks T-3 to T-6, and operations matching the permitted source list
+
+not a document question
+
+Walk the plant against Section C of the inspector's checklist (D3) before the visit.
+
+Not right
+▸
+DATES
+9
+
+C-1 carbon replacement (Condition 3.3)
+
+14 March 2026 · passed · recurring · Annual Report, Reporting Year 2025, for Standard Air Contaminant Discharge Permit 26-2841-ST-01, with Oregon DEQ Receipt Confirmation (Submission ACDP-AR-2025-262841), Portland Facility
+
+Add to calendar
+
+Permit renewal application due (Condition 1.3)
+
+18 July 2026 · passed · Standard Air Contaminant Discharge Permit No. 26-2841-ST-01 — Portland Facility
+
+Add to calendar
+
+Semi-annual monitoring report, January–June 2026 (Condition 4.2)
+
+31 July 2026 · passed · recurring · Standard Air Contaminant Discharge Permit No. 26-2841-ST-01 — Portland Facility
+
+Add to calendar
+
+Quarterly scrubber inspection, Q3 2026 (Condition 3.2)
+
+30 September 2026 · recurring · Standard Air Contaminant Discharge Permit No. 26-2841-ST-01 — Portland Facility
+
+Add to calendar
+
+Weekly C-1 outlet breakthrough check, week of September 28
+
+2 October 2026 · recurring · Scrubber Pressure-Drop Log (S-1 and S-2) and Weekly C-1 Carbon Outlet Detector-Tube Check, August–September 2026, Portland Facility
+
+Add to calendar
+
+Permit 26-2841-ST-01 expires
+
+15 November 2026 · Standard Air Contaminant Discharge Permit No. 26-2841-ST-01 — Portland Facility
+
+Add to calendar
+
+Annual report for calendar year 2026 (Condition 4.1)
+
+15 February 2027 · recurring · Standard Air Contaminant Discharge Permit No. 26-2841-ST-01 — Portland Facility
+
+Add to calendar
+
+Semi-annual monitoring report, January–June 2027
+
+31 July 2027 · recurring · Oregon DEQ Air Contaminant Discharge Permit Compliance Inspection Checklist (blank inspector's field form)
+
+Add to calendar
+
+Keep the 2025 annual report, its receipt and the permit records until
+
+12 February 2031 · Annual Report, Reporting Year 2025, for Standard Air Contaminant Discharge Permit 26-2841-ST-01, with Oregon DEQ Receipt Confirmation (Submission ACDP-AR-2025-262841), Portland Facility
+
+Add to calendar
+▸
+WHAT WE WOULD EXPECT AND DO NOT SEE · BASED ON SIMILAR COMPANIES
+6
+
+Hazardous waste generator records (EPA ID, waste determinations, manifests) and the Oregon DEQ generator fee or report
+
+Repackaging acids, caustics and solvents, and changing out C-1 carbon, usually produce regulated waste. Whether the spent carbon counts as hazardous waste is not stated.
+
+Oregon DEQ industrial stormwater permit (1200-Z) or a no-exposure certification
+
+Chemical-handling sites in Portland often hold one of these.
+
+Magnehelic gauge calibration and maintenance records
+
+These show the scrubber pressure-drop readings can be relied on.
+
+C-1 detector-tube lot records
+
+These back up the weekly breakthrough checks.
+
+Written records retention procedure (five years)
+
+The inspector's checklist (D3) asks for one at Line B6.
+
+Deviation log for the last 12 months, or a note that there were none
+
+The inspector's checklist (D3) asks for one at Line A5.
+
+▸
+EARLIER AUDITS
+2
+
+30 September 2026 · 18 needed you
+
+Open
+
+30 September 2026 · 14 needed you
+
+Open
+DOCUMENTS THIS AUDIT READ
+1. Standard Air Contaminant Discharge Permit No. 26-2841-ST-01 — Portland Facility — Condition 1.3 (and Condition 1.2 on operating after expiry); Page 1; Condition 4.2; Conditions 3.1 and 4.3; Conditions 3.3 and 4.3; Condition 3.2; Condition 5.2; D1 deviation section; Condition 6.2
+2. Annual Report, Reporting Year 2025, for Standard Air Contaminant Discharge Permit 26-2841-ST-01, with Oregon DEQ Receipt Confirmation (Submission ACDP-AR-2025-262841), Portland Facility — Page 3, Section 3; Condition 3.3 of D5; Page 1, DEQ receipt email
+3. Scrubber Pressure-Drop Log (S-1 and S-2) and Weekly C-1 Carbon Outlet Detector-Tube Check, August–September 2026, Portland Facility — Page 1, August table and line-counter totals; September table, 9 September row; September C-1 table; Bottom of log, supervisor review lines; Below September table
+4. Monthly EHS Self-Check (blank internal checklist template), Portland Facility — Header fields and Lines 1–8
+5. Oregon DEQ Air Contaminant Discharge Permit Compliance Inspection Checklist (blank inspector's field form) — Sections A, B and C
+Audit again
+Make a checklist
+Print
+Download the documents
+Not right

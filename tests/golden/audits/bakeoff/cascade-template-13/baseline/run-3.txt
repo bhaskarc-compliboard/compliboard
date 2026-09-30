@@ -1,0 +1,112 @@
+Against Monthly EHS Self-Check (blank internal checklist template), Portland Facility
+
+audited 30 September 2026 · 1 section · 12 documents read · readings as of 30 September 2026 · Printed September 30, 2026 · CompliBoard
+
+Against Monthly EHS Self-Check (blank internal checklist template), Portland Facility
+
+audited 30 September 2026 · 1 section · 12 documents read · readings as of 30 September 2026
+
+5 on file · 1 out of date · 1 nothing on file · 1 not a document question
+
+You asked: “golden: cascade-template-13”
+
+Every line below is a line of your checklist, answered against the documents you have given us. None of it is a verdict on whether the company complies.
+
+▾
+MONTHLY EHS SELF-CHECK
+8
+
+1Air permit posted in the front office and not expired
+
+on file · Standard Air Contaminant Discharge Permit No. 26-2841-ST-01 — Portland Facility · Page 1; expiry date and renewal condition 1.3
+
+“It expires November 15, 2026, 46 days from today.”
+
+I answered the half of this line a document can answer: whether the permit has expired. Whether it is posted in the front office cannot be shown from a file, so check the wall on the day. The permit on file expires 2026-11-15, which is after today. Condition 1.3 required a complete renewal application on or before 2026-07-18. That date has passed and there is no renewal application or DEQ acknowledgment on file. If it was filed, upload the application and DEQ's receipt. Without them, nothing on file shows you may keep operating after 2026-11-15.
+
+Not right
+
+2Scrubber pressure-drop log complete for the month, every operating day, readings between 2.0 and 6.0
+
+on file · Scrubber Pressure-Drop Log (S-1 and S-2) and Weekly C-1 Carbon Outlet Detector-Tube Check, August–September 2026, Portland Facility · September table; August table; supervisor review lines at the bottom of the log
+
+“On September 9 the S-2 (caustic line) pressure drop was 6.4 inches of water column.”
+
+I took 'the month' to mean September 2026. That reading of the S-2 scrubber is above the 6.0 upper limit in Condition 3.1, and the Notes column is blank. Write down the cause, what was done and when it came back into range. Then check the permit's deviation reporting conditions (5.2: notify DEQ within 24 hours, written report within 15 days). September gives no line-counter operating-day totals, so the 18 rows entered cannot be checked against the days the lines ran. Add those totals. The last entry is 2026-09-25, so add the remaining operating days. Have the supervisor sign and date the log. Separately, the reading found that the whole week of August 17–21 is missing from the August table.
+
+Not right
+
+3Weekly C-1 detector-tube checks done and recorded every week this month
+
+on file · Scrubber Pressure-Drop Log (S-1 and S-2) and Weekly C-1 Carbon Outlet Detector-Tube Check, August–September 2026, Portland Facility · September C-1 detector-tube table
+
+“The week of September 14 is missing, and the pressure-drop rows show the plant ran September 14–18.”
+
+The September table shows checks only for the weeks of September 7 and 21. Find out whether the week of September 14 check was done but not written down. If it was missed, record it as a missed weekly check under Condition 3.3 and handle it as the permit requires for monitoring deviations. The check for the week of September 28 is due 2026-10-02, so that is a date, not a finding yet.
+
+Not right
+
+4Forklift pre-shift inspection log complete for every day the truck ran; any defect followed up
+
+on file · Forklift Pre-Shift Inspection Log, Unit FL-2 (Toyota 8FGU25, propane), September 2026, Portland Warehouse · Page 1, Sep 3–4 gap, Sep 9 row, end of entries at Sep 18; supervisor review line
+
+“Nothing records whether the truck was taken out of service, who fixed the horn, or when.”
+
+There are four things to deal with. First, the horn defect on Sep 9: attach the repair record or work order, or add a dated note saying what was done. Second, Sep 3 and Sep 4 have no entries, but the hour meter went from 4,819 to 4,834. Ask the operators and the supervisor, and record what you find as a dated note. Do not tick the boxes after the fact. Third, there are no entries after Sep 18. Find the continuation sheet or confirm whether FL-2 was used from Sep 21 onward. Fourth, have the supervisor sign and date the sheet. D5 is a skewed, cropped photo of the FL-2 September log that ends at Sep 17. Keep a flat full-page scan as the record. This line covers FL-2 only, because that is the only truck with a log on file.
+
+Not right
+
+5Fire extinguishers tagged within the last 12 months; monthly visual check initialled on each tag
+
+out of date · Certificate of Annual Maintenance, Portable Fire Extinguishers (14 units), service date August 20, 2025, Portland Facility · Page 1, service date and unit table
+
+“The next annual service was due August 20, 2026, which has passed, and two units need their 6-year internal maintenance before November 2026.”
+
+The only annual maintenance certificate on file is dated 2025-08-20, more than 12 months before today. If the 2026 annual service was done, upload the certificate. If it was not, book it now. Nothing on file shows the monthly visual checks initialled on each tag. If the tags are initialled, photograph them or upload a monthly log covering all 14 units. Units W-3 and L-1 have their 6-year internal maintenance dated 2026-10-31.
+
+Not right
+
+6Exits, exit routes and aisles clear; exit signs lit
+
+not a document question · worked out, not stated
+
+This is a walk-through check on the day. The only record that could show it was done is a completed copy of your monthly self-check (D6), and the D6 on file is blank. Fill in, sign and upload the September copy.
+
+Not right
+
+7Eyewash stations and safety showers flushed this week and logged
+
+nothing on file · worked out, not stated
+
+No weekly eyewash or shower flush log is on file. The flushes may be recorded on a tag or clipboard at the stations. If they are, upload this week's entries.
+
+Add a document
+Not right
+
+8Safety data sheets on hand for every chemical received this month; binder index updated
+
+on file · Safety Data Sheet: Sodium Hydroxide Solution, 50% (Northwest Alkali Products, Version 4.1) · Whole document (supplier safety data sheet, Version 4.1, revised 2024-03-18)
+
+“This is the supplier's Safety Data Sheet for the 50% sodium hydroxide (caustic soda) solution it sells you.”
+
+Only one safety data sheet is on file (50% sodium hydroxide, revised 2024-03-18). Nothing on file lists what chemicals were received in September 2026, and no binder index is on file. Upload the safety data sheet binder index and the sheets for every chemical received in September.
+
+Not right
+DOCUMENTS THIS AUDIT READ
+1. Standard Air Contaminant Discharge Permit No. 26-2841-ST-01 — Portland Facility
+2. Scrubber Pressure-Drop Log (S-1 and S-2) and Weekly C-1 Carbon Outlet Detector-Tube Check, August–September 2026, Portland Facility
+3. Forklift Pre-Shift Inspection Log, Unit FL-2 (Toyota 8FGU25, propane), September 2026, Portland Warehouse
+4. Certificate of Annual Maintenance, Portable Fire Extinguishers (14 units), service date August 20, 2025, Portland Facility
+5. Safety Data Sheet: Sodium Hydroxide Solution, 50% (Northwest Alkali Products, Version 4.1)
+6. Annual Report, Reporting Year 2025, for Standard Air Contaminant Discharge Permit 26-2841-ST-01, with Oregon DEQ Receipt Confirmation (Submission ACDP-AR-2025-262841), Portland Facility
+7. Emergency Action Plan — Portland Facility
+8. Forklift Pre-Shift Inspection Log, Unit FL-2 (Toyota 8FGU25, propane), September 2026, Portland Warehouse
+9. Monthly EHS Self-Check (blank internal checklist template), Portland Facility
+10. Oregon DEQ Air Contaminant Discharge Permit Compliance Inspection Checklist (blank inspector's field form)
+11. OSHA Form 300A Summary of Work-Related Injuries and Illnesses, Calendar Year 2025, Portland Facility
+12. Powered Industrial Truck Operator Training and Evaluation Record, with Operator Certificate for Michael Chen, Portland Facility
+Audit again
+Make a checklist
+Print
+Download the documents
+Not right

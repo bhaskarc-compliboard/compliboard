@@ -1,0 +1,88 @@
+FAILED  nothing
+
+====================================================================================================
+cascade-template-13 — The company's own monthly EHS self-check, audited against Cascade
+model claude-opus-5-5 · whole mode · 3 runs · run date 2026-09-30
+input sha 3f28530e4a0c7513  (runs 2 and 3: 3f28530e4a0c7513, 3f28530e4a0c7513)
+run 1  whole-2026-09-30T21-52-26-391Z-1.json  audit_run_id 388c9959-714b-4d34-b7c1-ab3c0344b839
+run 2  whole-2026-09-30T21-53-14-200Z-2.json  audit_run_id 7ae673b5-071c-4d1f-b692-3ec4c9260ee0
+run 3  whole-2026-09-30T21-54-03-101Z-3.json  audit_run_id be30863d-4b5d-4508-9f0b-0f1b684cbf87
+comparison: claude-haiku-4-5, 3 stored run(s) — whole-2026-09-30T18-55-00-041Z-1.json, whole-2026-09-30T18-55-17-660Z-2.json, whole-2026-09-30T18-55-34-672Z-3.json
+====================================================================================================
+
+CHECK                         kind      run1  run2  run3   n/3   claude-haiku-4-5 n/3
+(a check listed under MATCHER above is shown corrected here; every other verdict is as stored)
+1                             must      PASS  PASS  PASS   3/3   2/3
+2                             must      PASS  PASS  PASS   3/3   0/3
+3                             must      PASS  PASS  PASS   3/3   0/3
+4                             must      PASS  PASS  PASS   3/3   1/3
+5                             must      PASS  PASS  PASS   3/3   3/3
+6                             must      PASS  PASS  PASS   3/3   3/3
+7                             must      PASS  PASS  PASS   3/3   3/3
+8                             must      PASS  PASS  PASS   3/3   3/3
+every-line-answered           must      PASS  PASS  PASS   3/3   2/3
+no-satisfied                  must-not  PASS  PASS  PASS   3/3   3/3
+no-ai-word                    must-not  PASS  PASS  PASS   3/3   3/3
+no-score                      must-not  PASS  PASS  PASS   3/3   3/3
+
+COUNT                         run1  run2  run3         claude-haiku-4-5 runs
+must passed                   9/9   9/9   9/9           4/9 / 7/9 / 6/9
+must-not held                 3/3   3/3   3/3           3/3 / 3/3 / 3/3
+findings                      8     8     8             8 / 8 / 8
+dates                         0     0     0             0 / 0 / 0
+contradictions                0     0     0             0 / 0 / 0
+expected and not seen         0     0     0             0 / 0 / 0
+reshaped to dates             0     0     0             0 / 0 / 0
+  word on_file                5     5     5             0 / 0 / 0
+  word stale                  1     1     1             1 / 2 / 1
+  word nothing_on_file        1     1     1             3 / 4 / 5
+  word not_a_document_question 1     1     1             1 / 2 / 2
+  findings with NO word       0     0     0             3 / 0 / 0
+handle errors                 0     0     0             0 / 0 / 0
+rows written                  8     8     8             8 / 8 / 8
+section status                done  done  done          done / done / done
+json parsed                   yes   yes   yes           yes / yes / yes
+searches                      0     0     0             0 / 0 / 0
+output tokens                 0     0     0             0 / 0 / 0
+
+FORBIDDEN WORDS               run1  run2  run3
+no-satisfied                  none  none  none  
+no-ai-word                    none  none  none  
+no-score                      none  none  none  
+
+LEDGER                        run1      run2      run3      claude-haiku-4-5 (run files)
+cost, the whole run           $0.1997   $0.2018   $0.2058   (not recorded) / (not recorded) / (not recorded)
+cost in the section windows   $0.1873   $0.1894   $0.1934   (what Past audits shows)
+ai_calls, run / sections      2/1       2/1       2/1       
+wall per audit                46.3s     41.8s     43.4s     17.9s / 17.6s / 17.0s
+
+OVERLAP ACROSS THE THREE RUNS — titles in all three over titles in any, normalised
+finding titles                8/8 = 1.00        8/8 = 1.00
+expected-not-seen titles      0/0 = —        0/0 = —
+
+in all three runs:
+  = air permit posted in the front office and not expired
+  = scrubber pressure drop log complete for the month every oper
+  = weekly c 1 detector tube checks done and recorded every week
+  = forklift pre shift inspection log complete for every day the
+  = fire extinguishers tagged within the last 12 months monthly 
+  = exits exit routes and aisles clear exit signs lit
+  = eyewash stations and safety showers flushed this week and lo
+  = safety data sheets on hand for every chemical received this 
+in some but not all:
+
+PER LINE                      run1                  run2                  run3                  claude-haiku-4-5 (last run)   the key accepts
+1                             on_file               on_file               on_file               not_a_document_questionon_file / stale / not_a_document_question
+2                             on_file               on_file               on_file               nothing_on_file       on_file / stale
+3                             on_file               on_file               on_file               nothing_on_file       on_file / stale
+4                             on_file               on_file               on_file               nothing_on_file       on_file / stale
+5                             stale                 stale                 stale                 stale                 stale / not_a_document_question / nothing_on_file
+6                             not_a_document_questionnot_a_document_questionnot_a_document_questionnot_a_document_questionnot_a_document_question
+7                             nothing_on_file       nothing_on_file       nothing_on_file       nothing_on_file       not_a_document_question / nothing_on_file
+8                             on_file               on_file               on_file               nothing_on_file       on_file / nothing_on_file
+
+WHAT THE DRAWER SAYS — the captured text is beside this file:
+  tests/golden/audits/bakeoff/cascade-template-13/baseline/run-1.txt  109 line(s)
+  tests/golden/audits/bakeoff/cascade-template-13/baseline/run-2.txt  107 line(s)
+  tests/golden/audits/bakeoff/cascade-template-13/baseline/run-3.txt  113 line(s)
+

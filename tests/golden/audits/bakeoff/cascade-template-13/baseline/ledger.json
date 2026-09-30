@@ -1,0 +1,107 @@
+[
+  {
+    "run": 1,
+    "run_file": "whole-2026-09-30T21-52-26-391Z-1.json",
+    "audit_run_id": "388c9959-714b-4d34-b7c1-ab3c0344b839",
+    "model": "claude-opus-5-5",
+    "sections": 1,
+    "window_from": "2026-09-30T21:51:39.426+00:00",
+    "window_to": "2026-09-30T21:52:25.732+00:00",
+    "section_ai_calls": 1,
+    "cost_sections_usd": 0.1873,
+    "run_ai_calls": 2,
+    "cost_run_usd": 0.199676,
+    "wall_ms": 46306,
+    "input_tokens": 28435,
+    "output_tokens": 3678,
+    "searches": 0,
+    "ledger_rows": [
+      {
+        "at": "2026-09-30T21:51:39.376002+00:00",
+        "model": "claude-opus-5-5",
+        "cost_usd": 0.012375999999999998,
+        "in": 1169,
+        "out": 385,
+        "searches": 0
+      },
+      {
+        "at": "2026-09-30T21:52:25.108462+00:00",
+        "model": "claude-opus-5-5",
+        "cost_usd": 0.1873,
+        "in": 28435,
+        "out": 3678,
+        "searches": 0
+      }
+    ]
+  },
+  {
+    "run": 2,
+    "run_file": "whole-2026-09-30T21-53-14-200Z-2.json",
+    "audit_run_id": "7ae673b5-071c-4d1f-b692-3ec4c9260ee0",
+    "model": "claude-opus-5-5",
+    "sections": 1,
+    "window_from": "2026-09-30T21:52:31.893+00:00",
+    "window_to": "2026-09-30T21:53:13.656+00:00",
+    "section_ai_calls": 1,
+    "cost_sections_usd": 0.18938,
+    "run_ai_calls": 2,
+    "cost_run_usd": 0.201756,
+    "wall_ms": 41763,
+    "input_tokens": 28435,
+    "output_tokens": 3782,
+    "searches": 0,
+    "ledger_rows": [
+      {
+        "at": "2026-09-30T21:52:31.845386+00:00",
+        "model": "claude-opus-5-5",
+        "cost_usd": 0.012375999999999998,
+        "in": 1169,
+        "out": 385,
+        "searches": 0
+      },
+      {
+        "at": "2026-09-30T21:53:13.272462+00:00",
+        "model": "claude-opus-5-5",
+        "cost_usd": 0.18938,
+        "in": 28435,
+        "out": 3782,
+        "searches": 0
+      }
+    ]
+  },
+  {
+    "run": 3,
+    "run_file": "whole-2026-09-30T21-54-03-101Z-3.json",
+    "audit_run_id": "be30863d-4b5d-4508-9f0b-0f1b684cbf87",
+    "model": "claude-opus-5-5",
+    "sections": 1,
+    "window_from": "2026-09-30T21:53:19.33+00:00",
+    "window_to": "2026-09-30T21:54:02.696+00:00",
+    "section_ai_calls": 1,
+    "cost_sections_usd": 0.1934,
+    "run_ai_calls": 2,
+    "cost_run_usd": 0.205776,
+    "wall_ms": 43366,
+    "input_tokens": 28435,
+    "output_tokens": 3983,
+    "searches": 0,
+    "ledger_rows": [
+      {
+        "at": "2026-09-30T21:53:19.2641+00:00",
+        "model": "claude-opus-5-5",
+        "cost_usd": 0.012375999999999998,
+        "in": 1169,
+        "out": 385,
+        "searches": 0
+      },
+      {
+        "at": "2026-09-30T21:54:02.170213+00:00",
+        "model": "claude-opus-5-5",
+        "cost_usd": 0.19340000000000002,
+        "in": 28435,
+        "out": 3983,
+        "searches": 0
+      }
+    ]
+  }
+]

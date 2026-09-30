@@ -1,0 +1,106 @@
+Against Monthly EHS Self-Check (blank internal checklist template), Portland Facility
+
+audited 30 September 2026 · 1 section · 12 documents read · readings as of 30 September 2026 · Printed September 30, 2026 · CompliBoard
+
+Against Monthly EHS Self-Check (blank internal checklist template), Portland Facility
+
+audited 30 September 2026 · 1 section · 12 documents read · readings as of 30 September 2026
+
+5 on file · 1 out of date · 1 nothing on file · 1 not a document question
+
+You asked: “golden: cascade-template-13”
+
+Every line below is a line of your checklist, answered against the documents you have given us. None of it is a verdict on whether the company complies.
+
+▾
+MONTHLY EHS SELF-CHECK
+8
+
+1Air permit posted in the front office and not expired
+
+on file · Standard Air Contaminant Discharge Permit No. 26-2841-ST-01 — Portland Facility · Page 1
+
+“STANDARD AIR CONTAMINANT DISCHARGE PERMIT”
+
+I took this line as two questions. First, is the permit current? Permit 26-2841-ST-01 (D12) is on file. It was issued 2021-09-01 and expires 2026-11-15, which is 46 days from today. The permit set 2026-07-18 as the deadline for the renewal application. That date has passed, and nothing on file shows an application was filed or that DEQ acknowledged one. Find the renewal application and DEQ's receipt and upload them. If none was filed, deal with it before 2026-11-15. Condition 1.2 of the permit says the sources may not run after expiry without a renewed permit or a timely renewal application. Second, is the permit posted in the front office? That is a practice, and no document can show it. Check the wall before the inspection.
+
+Not right
+
+2Scrubber pressure-drop log complete for the month, every operating day, readings between 2.0 and 6.0
+
+on file · Scrubber Pressure-Drop Log (S-1 and S-2) and Weekly C-1 Carbon Outlet Detector-Tube Check, August–September 2026, Portland Facility · Page 1, September table; supervisor review lines at the bottom of the log
+
+I took 'the month' to mean September 2026. D11 covers August and September 2026, with the last entry on 2026-09-25. The reading found these problems. (1) On September 9 the S-2 pressure drop was 6.4 inches of water column, above the 6.0 upper limit in Condition 3.1, and the Notes column is blank. Write up the cause, the corrective action and when the reading came back into range. Check the permit's deviation and excess-emission reporting conditions. (2) September has no line-counter totals of operating days, so the 18 rows entered cannot be checked against the days the lines ran. Add the totals and compare. (3) There are no rows after September 25. If the lines ran on September 28–30, upload those readings if they exist. (4) Nobody has signed the supervisor review for either month. Also carry the August gap from the prior month: the whole week of August 17–21 is missing, about 5 operating days with no reading for each scrubber.
+
+Not right
+
+3Weekly C-1 detector-tube checks done and recorded every week this month
+
+on file · Scrubber Pressure-Drop Log (S-1 and S-2) and Weekly C-1 Carbon Outlet Detector-Tube Check, August–September 2026, Portland Facility · Page 2, September C-1 table
+
+I took 'this month' to mean September 2026. D11 has C-1 checks only for the weeks of September 7 and 21. The reading found the week of September 14 missing, even though the pressure-drop rows show the plant ran September 14–18. Find out whether that check was done and never written down. If it was missed, record it as a missed weekly check and handle it the way the permit requires for monitoring deviations. The week of September 28 check is due 2026-10-02, so it is a date, not a finding. Separately, D1 set the next C-1 carbon replacement for on or before 2026-03-14. That date has passed and there is no replacement record on file. Upload the vendor record for that changeout.
+
+Not right
+
+4Forklift pre-shift inspection log complete for every day the truck ran; any defect followed up
+
+on file · Forklift Pre-Shift Inspection Log, Unit FL-2 (Toyota 8FGU25, propane), September 2026, Portland Warehouse · Page 1 (daily rows); Page 2 (operators line and supervisor review)
+
+“Truck: Toyota 8FGU25, unit FL-2, propane”
+
+I took 'the truck' to mean FL-2, the only truck with a log on file. D4 (last entry 2026-09-18) and a photo copy of the same September sheet (D5) are on file. The reading found these problems. (1) There are no entries for September 3 and 4, yet the hour meter went from 4,819 on September 2 to 4,834 on September 7. Ask the operators and supervisor whether the checks were done, and record what you find as a dated note. Do not backfill ticks. (2) On September 9 the horn was marked defective ('Horn not working') and the truck was operated that day. Nothing records whether it was taken out of service or repaired. Find the work order and attach it. (3) There are no entries after September 18. Find the continuation sheet, or confirm whether FL-2 was used from September 21 on. (4) Nobody has signed the supervisor review. D5 is a skewed, cropped photo, so keep a flat, full-page scan of the original as the record.
+
+Not right
+
+5Fire extinguishers tagged within the last 12 months; monthly visual check initialled on each tag
+
+out of date · Certificate of Annual Maintenance, Portable Fire Extinguishers (14 units), service date August 20, 2025, Portland Facility · page 1, below the unit table
+
+“Units serviced: 14. Units failed or removed from service: 0.”
+
+The only maintenance certificate on file (D2) is dated 2025-08-20. The next annual service was due 2026-08-20, which has passed, and no newer certificate is on file. If the 2026 service was done, upload the contractor's certificate. If it wasn't, book it. No monthly inspection record is on file (initialled tags or a log). The certificate says the monthly checks are the customer's job. Photograph the tags or upload the log if one exists. Two dates are coming up: units W-3 and L-1 need their 6-year internal maintenance by 2026-10-31. Also, the CO2 unit L-1's last hydrostatic test is listed as 2020. The reading worked out a possible retest date of 2025-12-31, which the document does not state. Confirm it.
+
+Not right
+
+6Exits, exit routes and aisles clear; exit signs lit
+
+not a document question · worked out, not stated
+
+This is a walk-through of the plant, not something a file can show. Separately, the reading found that the evacuation maps (Appendix A) listed in the Emergency Action Plan (D3) are not part of the file. Attach the current, dated maps so exit routes can be shown to the inspector.
+
+Not right
+
+7Eyewash stations and safety showers flushed this week and logged
+
+nothing on file · worked out, not stated
+
+No weekly flush log for eyewash stations or safety showers is on file. That doesn't mean the flushes weren't done. The log may be kept at the stations and never uploaded. If it exists, upload this week's entries.
+
+Add a document
+Not right
+
+8Safety data sheets on hand for every chemical received this month; binder index updated
+
+on file · Safety Data Sheet: Sodium Hydroxide Solution, 50% (Northwest Alkali Products, Version 4.1)
+
+Only one safety data sheet is on file: the supplier's sheet for 50% sodium hydroxide solution (D10, Version 4.1, revised 2024-03-18). Nothing on file lists what chemicals were received in September 2026, and there is no SDS binder index on file. Upload the September receiving list and the current binder index, then check the sheets against both.
+
+Not right
+DOCUMENTS THIS AUDIT READ
+1. Standard Air Contaminant Discharge Permit No. 26-2841-ST-01 — Portland Facility
+2. Scrubber Pressure-Drop Log (S-1 and S-2) and Weekly C-1 Carbon Outlet Detector-Tube Check, August–September 2026, Portland Facility
+3. Forklift Pre-Shift Inspection Log, Unit FL-2 (Toyota 8FGU25, propane), September 2026, Portland Warehouse
+4. Certificate of Annual Maintenance, Portable Fire Extinguishers (14 units), service date August 20, 2025, Portland Facility
+5. Safety Data Sheet: Sodium Hydroxide Solution, 50% (Northwest Alkali Products, Version 4.1)
+6. Annual Report, Reporting Year 2025, for Standard Air Contaminant Discharge Permit 26-2841-ST-01, with Oregon DEQ Receipt Confirmation (Submission ACDP-AR-2025-262841), Portland Facility
+7. Emergency Action Plan — Portland Facility
+8. Forklift Pre-Shift Inspection Log, Unit FL-2 (Toyota 8FGU25, propane), September 2026, Portland Warehouse
+9. Monthly EHS Self-Check (blank internal checklist template), Portland Facility
+10. Oregon DEQ Air Contaminant Discharge Permit Compliance Inspection Checklist (blank inspector's field form)
+11. OSHA Form 300A Summary of Work-Related Injuries and Illnesses, Calendar Year 2025, Portland Facility
+12. Powered Industrial Truck Operator Training and Evaluation Record, with Operator Certificate for Michael Chen, Portland Facility
+Audit again
+Make a checklist
+Print
+Download the documents
+Not right

@@ -1,0 +1,521 @@
+Oregon OSHA audit
+
+audited 30 September 2026 · 1 section · 8 documents read, 4 held unread · readings as of 30 September 2026 · Printed September 30, 2026 · CompliBoard
+
+Oregon OSHA audit
+
+audited 30 September 2026 · 1 section · 8 documents read, 4 held unread · readings as of 30 September 2026
+
+You asked: “golden: cascade-osha”
+
+▸
+WHAT THIS COVERS
+
+Documents read
+
+Certificate of Annual Maintenance, Portable Fire Extinguishers (14 units), service date August 20, 2025, Portland Facility
+Certificate · Current
+Emergency Action Plan — Portland Facility
+Program · Needs work
+Forklift Pre-Shift Inspection Log, Unit FL-2 (Toyota 8FGU25, propane), September 2026, Portland Warehouse
+Record · Needs work
+Forklift Pre-Shift Inspection Log, Unit FL-2 (Toyota 8FGU25, propane), September 2026, Portland Warehouse
+Record · Needs work
+Monthly EHS Self-Check (blank internal checklist template), Portland Facility
+Other · On file
+OSHA Form 300A Summary of Work-Related Injuries and Illnesses, Calendar Year 2025, Portland Facility
+Record · Recorded
+Powered Industrial Truck Operator Training and Evaluation Record, with Operator Certificate for Michael Chen, Portland Facility
+Record · Needs work
+Safety Data Sheet: Sodium Hydroxide Solution, 50% (Northwest Alkali Products, Version 4.1)
+Supplier's document · On file
+
+4 other documents you hold were listed by title only, for this audit to say what is NOT among them. Their contents were not read here.
+
+Readings as of 30 September 2026
+
+Company information as of 30 September 2026
+
+Every line below points at a document, or says what we do not see. None of it is a verdict on whether the company complies.
+
+▾
+FINDINGS
+34
+
+Annual training for floor wardens and first-aid responders
+
+· Emergency Action Plan — Portland Facility
+
+Not right
+
+Supervisor review and sign-off of the September 2026 FL-2 log
+
+· Forklift Pre-Shift Inspection Log, Unit FL-2 (Toyota 8FGU25, propane), September 2026, Portland Warehouse
+
+Not right
+
+Pre-shift inspection of FL-2 before each shift it is used
+
+· Forklift Pre-Shift Inspection Log, Unit FL-2 (Toyota 8FGU25, propane), September 2026, Portland Warehouse
+
+Not right
+
+Complete the monthly EHS self-check and get supervisor review
+
+· Monthly EHS Self-Check (blank internal checklist template), Portland Facility
+
+Not right
+
+Report any self-check items marked N to the Plant Manager
+
+· Monthly EHS Self-Check (blank internal checklist template), Portland Facility
+
+Not right
+
+Monthly visual inspection of each extinguisher, recorded on the unit tag
+
+nothing on file · Certificate of Annual Maintenance, Portable Fire Extinguishers (14 units), service date August 20, 2025, Portland Facility · page 1 (NFPA 10, Section 7.2, as stated)
+
+The certificate says the monthly checks are the customer's job. If the initialled tags or a monthly log for all 14 units exist, photograph or scan them and upload them.
+
+Add a document
+Not right
+
+CO2 extinguisher L-1 hydrostatic test (last test shown as 2020)
+
+nothing on file · worked out, not stated · Certificate of Annual Maintenance, Portable Fire Extinguishers (14 units), service date August 20, 2025, Portland Facility · page 1, unit table
+
+The document does not state a due date. The reading worked one out: five years from the 2020 test puts it at about the end of 2025. Nothing on file shows a newer test. Ask the extinguisher contractor for the L-1 hydrostatic test record or cylinder label and upload it.
+
+Add a document
+Not right
+
+Emergency Action Plan: no procedure for reporting a fire or other emergency
+
+nothing on file · Emergency Action Plan — Portland Facility · Sections 2 and 5
+
+Add a short 'Reporting an emergency' section. Say who pulls the alarm, who calls 911 and from which phones, who inside the company must be told, and how to report a chemical spill or release that does not set off the alarm. Rule cited by the reading: OAR 437-002-0042(2).
+
+Add a document
+Not right
+
+Emergency Action Plan: no procedure for shutting down chemical processes before evacuating
+
+nothing on file · worked out, not stated · Emergency Action Plan — Portland Facility · evacuation section
+
+“secure nothing that requires more than a few seconds”
+
+The reading worked this out from the document. State plainly either that no employee stays behind to run or shut down critical operations, or name the job titles that shut down specific equipment and say when they must leave. Tie the section to the actual processes in the lab and warehouse.
+
+Add a document
+Not right
+
+Emergency Action Plan: no named contact for questions about the plan
+
+nothing on file · Emergency Action Plan — Portland Facility
+
+Add a contacts section. Give the name or job title and phone number of the plan owner and the incident coordinator, and of anyone employees can ask about their duties. Rule cited by the reading: OAR 437-002-0042(2)(f).
+
+Add a document
+Not right
+
+Emergency Action Plan: earthquake is in scope but has no procedure
+
+nothing on file · Emergency Action Plan — Portland Facility · Section 1
+
+Add a short earthquake section. Cover what to do during the shaking, when and how to evacuate afterwards, and how to check for chemical spills and damaged storage.
+
+Add a document
+Not right
+
+Emergency Action Plan: Appendix A (evacuation maps) and Appendix B (warden and first-aid roster) not in the file
+
+nothing on file · Emergency Action Plan — Portland Facility · Appendices A and B (listed but not attached)
+
+Attach the current evacuation maps and the current warden and first-aid roster to the file on record, with dates.
+
+Add a document
+Not right
+
+Evacuation drill records and monthly fire alarm test records the plan commits to
+
+nothing on file · worked out, not stated · Emergency Action Plan — Portland Facility
+
+The plan sets twice-yearly drills (spring and autumn) and a monthly alarm test by the facilities lead. The spring 2026 drill and past monthly tests are behind today, and no reading has produced a record of them. If drill sheets or alarm test logs exist, upload them.
+
+Add a document
+Not right
+
+Annual training records for floor wardens and first-aid responders
+
+nothing on file · worked out, not stated · Emergency Action Plan — Portland Facility
+
+The plan requires annual training for wardens and responders but states no date. If sign-in sheets or certificates exist, upload them.
+
+Add a document
+Not right
+
+Forklift FL-2: no pre-shift entries for Sep 3 and Sep 4 (same gap on both copies of the September log)
+
+nothing on file · Forklift Pre-Shift Inspection Log, Unit FL-2 (Toyota 8FGU25, propane), September 2026, Portland Warehouse · Page 1
+
+The reading of D3 found that the hour meter went from 4,819 on Sep 2 to 4,834 on Sep 7, which is about two days of normal use. D4 shows the same gap. Ask the operators and supervisor whether the checks were done but not written down, and record the answer as a dated note. Do not backfill ticks.
+
+Add a document
+Not right
+
+Forklift FL-2: horn defect on Sep 9 with no record of repair or removal from service (same on both copies)
+
+nothing on file · Forklift Pre-Shift Inspection Log, Unit FL-2 (Toyota 8FGU25, propane), September 2026, Portland Warehouse · Page 1, Sep 9 row
+
+“Horn not working”
+
+Find the repair record or work order for the horn and attach it to the log, or add a dated note saying what was done. Add a defect follow-up column to the form: out of service Y/N, repaired by, date.
+
+Add a document
+Not right
+
+Forklift FL-2: no pre-shift entries after Sep 18 (D3) / after Sep 17 (D4)
+
+nothing on file · worked out, not stated · Forklift Pre-Shift Inspection Log, Unit FL-2 (Toyota 8FGU25, propane), September 2026, Portland Warehouse · Page 1
+
+The reading worked this out from the document. Find the continuation sheet, or confirm whether FL-2 was used from Sep 21 onward. If it was used, record the missing checks as a finding, not as ticks added after the fact.
+
+Add a document
+Not right
+
+Forklift FL-2 September log: supervisor review not signed
+
+nothing on file · Forklift Pre-Shift Inspection Log, Unit FL-2 (Toyota 8FGU25, propane), September 2026, Portland Warehouse · supervisor review line
+
+Have the supervisor review the sheet, note the missing days and the horn defect, then sign and date it. The reading notes this is the form's own requirement, not a regulation.
+
+Add a document
+Not right
+
+Completed monthly EHS self-checks
+
+nothing on file · worked out, not stated · Monthly EHS Self-Check (blank internal checklist template), Portland Facility · Month, Completed by, Done, Initials and supervisor review fields
+
+Only the blank template is on file, so it does not show that any check was done. If filled-in, signed monthly copies exist, upload them.
+
+Add a document
+Not right
+
+2025 Form 300A: no proof of electronic submission to OSHA's Injury Tracking Application
+
+nothing on file · worked out, not stated · OSHA Form 300A Summary of Work-Related Injuries and Illnesses, Calendar Year 2025, Portland Facility
+
+The reading worked this out. The due date was 2026-03-02 and has passed. Check whether this site's NAICS code is on Table 7 of OAR 437-001-0700. If it is, log into the ITA and confirm the 2025 300A was submitted. Submit it now if it was not, and keep the confirmation with the summary.
+
+Add a document
+Not right
+
+2025 OSHA 300 Log and DCBS 801 forms behind the 300A
+
+nothing on file · worked out, not stated · OSHA Form 300A Summary of Work-Related Injuries and Illnesses, Calendar Year 2025, Portland Facility
+
+The reading of D6 sets a retention date for the 300A, the 300 Log and the 801 forms, and the 300A records 3 cases. If the Log and the three 801s exist, upload them.
+
+Add a document
+Not right
+
+R. Patel three-year forklift operator evaluation overdue (due 2026-05-19)
+
+nothing on file · Powered Industrial Truck Operator Training and Evaluation Record, with Operator Certificate for Michael Chen, Portland Facility · Page 1, operator table
+
+Take R. Patel off FL-2 until a qualified evaluator evaluates her in the workplace and gives refresher training if needed. Then update the roster, file a signed certificate, and set her next due date three years out.
+
+Add a document
+Not right
+
+No operator certificate noted for R. Patel
+
+nothing on file · Powered Industrial Truck Operator Training and Evaluation Record, with Operator Certificate for Michael Chen, Portland Facility · Page 1, Notes column
+
+Find Patel's 2023 certificate, or issue a new one once her re-evaluation is done, and mark the Notes column.
+
+Add a document
+Not right
+
+J. Rivera operator certificate not in the training file
+
+nothing on file · worked out, not stated · Powered Industrial Truck Operator Training and Evaluation Record, with Operator Certificate for Michael Chen, Portland Facility · Page 2 (only Michael Chen's certificate attached)
+
+The reading worked this out from the document. Add Jose Rivera's signed certificate (evaluation 2025-06-02) to this file.
+
+Add a document
+Not right
+
+Annual maintenance certificate for the 14 portable fire extinguishers
+
+out of date · Certificate of Annual Maintenance, Portable Fire Extinguishers (14 units), service date August 20, 2025, Portland Facility · page 1
+
+The certificate on file is for service on 2025-08-20. It is good for one year, so the next annual service was due 2026-08-20 and that date has passed. Nothing newer is on file. If the 2026 service was done, upload the contractor's certificate. If it was not, book the service now.
+
+Not right
+
+Emergency Action Plan: annual reviews not shown; plan not updated since 2021
+
+out of date · Emergency Action Plan — Portland Facility · Section 6; revision date 2021-02-01
+
+The reading found that the plan promises a review every January but still carries the February 2021 revision date, and there is no review log or sign-off. Review the plan now. Update the headcount, roster, maps and contacts. Add a revision and review log with dates and signatures.
+
+Not right
+
+Forklift operator training roster not updated since June 2025
+
+out of date · Powered Industrial Truck Operator Training and Evaluation Record, with Operator Certificate for Michael Chen, Portland Facility · Page 1
+
+“in 2025 or 2026 to date”
+
+The record has not changed since 2025-06-02, even though an evaluation came due in May 2026. It also says no refresher training was required in 2025 or 2026, and there is no way to tell when that was written. Add a new 'last updated' date and confirm the refresher statement is still true.
+
+Not right
+
+Forklift FL-2 September log: photo copy is skewed and cropped
+
+on file · Forklift Pre-Shift Inspection Log, Unit FL-2 (Toyota 8FGU25, propane), September 2026, Portland Warehouse · Page 1, bottom edge
+
+The copy on file is an angled photo. The bottom of the table is cut off, and no signature block or rows below Sep 17 can be seen. Keep a flat, full-page scan of the original as the record.
+
+Not right
+
+2025 Form 300A summary for the Portland facility
+
+on file · OSHA Form 300A Summary of Work-Related Injuries and Illnesses, Calendar Year 2025, Portland Facility · page 1
+
+Not right
+
+Michael Chen operator training certificate
+
+on file · Powered Industrial Truck Operator Training and Evaluation Record, with Operator Certificate for Michael Chen, Portland Facility · Page 2
+
+Not right
+
+Safety Data Sheet for sodium hydroxide solution 50%, Version 4.1
+
+on file · Safety Data Sheet: Sodium Hydroxide Solution, 50% (Northwest Alkali Products, Version 4.1)
+
+The copy on file is dated 2024-03-18. Confirm with the supplier that this is still the current version, and that it is kept where workers can get to it.
+
+Not right
+
+Industry code on the 300A may not match what the Portland site actually does
+
+not a document question · worked out, not stated
+
+The reading of D6 found the site listed as a chemical merchant wholesaler (NAICS 424690), while the company profile says chemical manufacturing. Confirm the correct code, which could be in NAICS 325. Use the same code on the 300A, in the ITA and in other filings, because it decides which submission tables apply.
+
+Not right
+
+Whether the 2025 300A was posted from February 1 to April 30, 2026
+
+not a document question · worked out, not stated
+
+The reading notes the summary does not prove it was posted. Be ready to say where and when it was posted.
+
+Not right
+
+Whether R. Patel is still operating FL-2
+
+not a document question · worked out, not stated
+
+Find out from the warehouse supervisor before the inspection. Neither September FL-2 log shows initials for her. Only M.C. and J.R. appear.
+
+Not right
+▸
+DATES
+15
+
+Possible CO2 hydrostatic test for L-1 (worked out, not stated in the document)
+
+31 December 2025 · passed · recurring · Certificate of Annual Maintenance, Portable Fire Extinguishers (14 units), service date August 20, 2025, Portland Facility
+
+Add to calendar
+
+Submit 2025 300A data electronically through the ITA (if Table 7 applies)
+
+2 March 2026 · passed · recurring · OSHA Form 300A Summary of Work-Related Injuries and Illnesses, Calendar Year 2025, Portland Facility
+
+Add to calendar
+
+R. Patel three-year operator evaluation (FL-2)
+
+19 May 2026 · passed · recurring · Powered Industrial Truck Operator Training and Evaluation Record, with Operator Certificate for Michael Chen, Portland Facility
+
+Add to calendar
+
+Next annual maintenance of all 14 extinguishers
+
+20 August 2026 · passed · recurring · Certificate of Annual Maintenance, Portable Fire Extinguishers (14 units), service date August 20, 2025, Portland Facility
+
+Add to calendar
+
+Monthly fire alarm test by facilities lead
+
+5 October 2026 · recurring · Emergency Action Plan — Portland Facility
+
+Add to calendar
+
+6-year internal maintenance for units W-3 and L-1
+
+31 October 2026 · recurring · Certificate of Annual Maintenance, Portable Fire Extinguishers (14 units), service date August 20, 2025, Portland Facility
+
+Add to calendar
+
+Monthly visual inspection of each extinguisher, recorded on the tag
+
+31 October 2026 · recurring · Certificate of Annual Maintenance, Portable Fire Extinguishers (14 units), service date August 20, 2025, Portland Facility
+
+Add to calendar
+
+Autumn evacuation drill
+
+30 November 2026 · recurring · Emergency Action Plan — Portland Facility
+
+Add to calendar
+
+Annual Emergency Action Plan review by facilities lead
+
+31 January 2027 · recurring · Emergency Action Plan — Portland Facility
+
+Add to calendar
+
+Certify and post the 2026 Form 300A
+
+1 February 2027 · recurring · OSHA Form 300A Summary of Work-Related Injuries and Illnesses, Calendar Year 2025, Portland Facility
+
+Add to calendar
+
+Submit 2026 300A data electronically through the ITA (if Table 7 applies)
+
+2 March 2027 · recurring · OSHA Form 300A Summary of Work-Related Injuries and Illnesses, Calendar Year 2025, Portland Facility
+
+Add to calendar
+
+M. Chen three-year operator evaluation (FL-2, PJ-1)
+
+11 March 2027 · recurring · Powered Industrial Truck Operator Training and Evaluation Record, with Operator Certificate for Michael Chen, Portland Facility
+
+Add to calendar
+
+Keep the 2026 Form 300A posted until
+
+30 April 2027 · recurring · OSHA Form 300A Summary of Work-Related Injuries and Illnesses, Calendar Year 2025, Portland Facility
+
+Add to calendar
+
+J. Rivera three-year operator evaluation (FL-2, PJ-1)
+
+2 June 2028 · recurring · Powered Industrial Truck Operator Training and Evaluation Record, with Operator Certificate for Michael Chen, Portland Facility
+
+Add to calendar
+
+Keep the 2025 300A, 300 Log and DCBS 801 forms on file until
+
+31 December 2030 · OSHA Form 300A Summary of Work-Related Injuries and Illnesses, Calendar Year 2025, Portland Facility
+
+Add to calendar
+▸
+DISAGREEMENTS BETWEEN DOCUMENTS
+3
+
+Number of employees at the Portland facility
+
+Emergency Action Plan — Portland Facility says 42 employees, as of 2021-02-01 (confirmed)
+
+OSHA Form 300A Summary of Work-Related Injuries and Illnesses, Calendar Year 2025, Portland Facility says 65 annual average employees in 2025 (only proposed by the reading, not confirmed)
+
+The audit shows both and does not pick one.
+
+Settle it on Company information
+
+Last entry on the September 2026 FL-2 pre-shift log (two copies of the same log)
+
+Forklift Pre-Shift Inspection Log, Unit FL-2 (Toyota 8FGU25, propane), September 2026, Portland Warehouse says 2026-09-18
+
+Forklift Pre-Shift Inspection Log, Unit FL-2 (Toyota 8FGU25, propane), September 2026, Portland Warehouse says 2026-09-17 (photo cropped at the bottom)
+
+The audit shows both and does not pick one.
+
+Settle it on Company information
+
+Operators authorized on FL-2
+
+Forklift Pre-Shift Inspection Log, Unit FL-2 (Toyota 8FGU25, propane), September 2026, Portland Warehouse says Two operators, M. Chen and J. Rivera (only proposed, not confirmed)
+
+Powered Industrial Truck Operator Training and Evaluation Record, with Operator Certificate for Michael Chen, Portland Facility says Three operators, Michael Chen, Jose Rivera and Rina Patel (only proposed, not confirmed)
+
+The audit shows both and does not pick one.
+
+Settle it on Company information
+▸
+WHAT WE WOULD EXPECT AND DO NOT SEE · BASED ON SIMILAR COMPANIES
+10
+
+Written Hazard Communication program with chemical inventory and SDS index
+
+A chemical manufacturer holding SDSs usually keeps one. D5 line 8 refers to an SDS binder index, and only one SDS is on file.
+
+Employee hazard communication training records
+
+These usually show workers were trained on corrosives such as the 50% caustic on file.
+
+Fire Prevention Plan
+
+Usually written alongside the emergency action plan at facilities storing flammable or corrosive chemicals (OAR 437-002-0043).
+
+Eyewash and safety shower weekly flush log
+
+D5 line 7 refers to a flush log, and the caustic SDS recommends an eyewash and shower within 10 seconds of work areas.
+
+PPE hazard assessment certification
+
+The caustic SDS calls for goggles, face shield, gloves, apron and boots, and a written hazard assessment usually records this.
+
+Chemical Hygiene Plan
+
+Sites with a laboratory often come under the OSHA laboratory standard.
+
+Portable fire extinguisher training records
+
+Needed if employees are expected to use extinguishers rather than evacuate.
+
+Pre-shift inspection logs for other powered industrial trucks (e.g. pallet jack PJ-1, any FL-1)
+
+Only FL-2 logs are held. The unit numbering and the training roster suggest there are other trucks.
+
+Earlier years' 300A summaries and 300 Logs (2021–2024)
+
+The 5-year retention rule usually means these are still kept.
+
+Safety committee records
+
+Usual for an Oregon employer of this size.
+
+▸
+EARLIER AUDITS
+2
+
+30 September 2026 · 25 needed you
+
+Open
+
+30 September 2026 · 21 needed you
+
+Open
+DOCUMENTS THIS AUDIT READ
+1. Certificate of Annual Maintenance, Portable Fire Extinguishers (14 units), service date August 20, 2025, Portland Facility — page 1; page 1 (NFPA 10, Section 7.2, as stated); page 1, unit table
+2. Emergency Action Plan — Portland Facility — Section 6; revision date 2021-02-01; Sections 2 and 5; evacuation section; Section 1; Appendices A and B (listed but not attached)
+3. Forklift Pre-Shift Inspection Log, Unit FL-2 (Toyota 8FGU25, propane), September 2026, Portland Warehouse — Page 1; Page 1, Sep 9 row; supervisor review line
+4. Forklift Pre-Shift Inspection Log, Unit FL-2 (Toyota 8FGU25, propane), September 2026, Portland Warehouse — Page 1, bottom edge
+5. Monthly EHS Self-Check (blank internal checklist template), Portland Facility — Month, Completed by, Done, Initials and supervisor review fields
+6. OSHA Form 300A Summary of Work-Related Injuries and Illnesses, Calendar Year 2025, Portland Facility — page 1
+7. Powered Industrial Truck Operator Training and Evaluation Record, with Operator Certificate for Michael Chen, Portland Facility — Page 1, operator table; Page 1, Notes column; Page 2 (only Michael Chen's certificate attached); Page 1; Page 2
+8. Safety Data Sheet: Sodium Hydroxide Solution, 50% (Northwest Alkali Products, Version 4.1)
+Audit again
+Make a checklist
+Print
+Download the documents
+Not right

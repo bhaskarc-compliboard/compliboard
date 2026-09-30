@@ -104,8 +104,18 @@ function collections(a) {
     // did not have to change, but it is now a VIEW over findings rather than a second field. Run
     // 1b's census is why: 11 findings carried the word while the list carried 39 strings, so the
     // same question was being written twice and counted twice.
+    //
+    // *** AND THE COMPARISON WAS SPELLED WRONG, SO THIS VIEW COULD NEVER MATCH ANYTHING. ***
+    // It read `norm(f.word) === 'not a document question'` — with SPACES. `norm` collapses
+    // whitespace and lowercases; it does not touch underscores, so the word on the row,
+    // `not_a_document_question`, normalised to itself and never equalled a spaced string. The
+    // check `count_at_least not_document_questions n=1` therefore failed every run on the rows
+    // path while the answers held two, three and four such findings. Found by the rev 1 baseline
+    // (Audits Run 5b) and it is CLAUDE.md §9a's rule verbatim: a check that cannot see anything
+    // looks exactly like a check that found nothing. The word is compared to the constant now, so
+    // the comparison cannot drift from the vocabulary again.
     not_document_questions: (a?.findings ?? [])
-      .filter((f) => norm(f?.word) === 'not a document question')
+      .filter((f) => String(f?.word ?? '').trim() === 'not_a_document_question')
       .map((f) => ({ title: f.title })),
   }
 }

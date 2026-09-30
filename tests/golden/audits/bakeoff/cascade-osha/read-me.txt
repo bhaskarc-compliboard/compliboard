@@ -1,0 +1,170 @@
+FAILED  must forklift-on-file  (1 of 3 runs)  the forklift logs as on file
+        run 3: no item matched with word=on_file. held: Annual maintenance of the 14 porta | Monthly visual inspection of each | Hydrostatic test for CO2 extinguis | Emergency Action Plan last revised | Emergency Action Plan: the reading | Emergency Action Plan: the reading | Emergency Action Plan: the reading | E
+FAILED  must alarm-expected  (1 of 3 runs)  alarm testing or maintenance records as a finding against the plan's Section 2 condition
+        run 3: no item matched. held: Annual maintenance of the 14 porta | Monthly visual inspection of each | Hydrostatic test for CO2 extinguis | Emergency Action Plan last revised | Emergency Action Plan: the reading | Emergency Action Plan: the reading | Emergency Action Plan: the reading | Emergency Action Pl
+FAILED  must-not no-new-eap-gap  (2 of 3 runs)  no finding claiming a fault in the plan that the reading did not find. The allowed words are the plan's own open gaps and its own conditions, read live; only state words that belong to no row are listed here.
+        run 2: "Evacuation drill records and monthly fire alarm "
+        run 3: "Records of the twice-yearly evacuation drills th" · "Log of the monthly fire alarm tests by the facil"
+FAILED  ok sds-not-judged  (3 of 3 runs)  the supplier SDS named as not judged
+        run 1: no item matched. held: Annual maintenance certificate for | Monthly visual inspection of each | Hydrostatic test record for CO2 ex | Emergency action plan: no procedur | Emergency action plan: no procedur | Emergency action plan: no named co | Emergency action plan: annual Janu | Emergency action pl
+        run 2: no item matched. held: Annual maintenance certificate for | Monthly visual inspection of each | CO2 extinguisher L-1 hydrostatic t | Emergency Action Plan: annual revi | Emergency Action Plan: no procedur | Emergency Action Plan: no procedur | Emergency Action Plan: no named co | Emergency Action Pl
+        run 3: no item matched. held: Annual maintenance of the 14 porta | Monthly visual inspection of each | Hydrostatic test for CO2 extinguis | Emergency Action Plan last revised | Emergency Action Plan: the reading | Emergency Action Plan: the reading | Emergency Action Plan: the reading | Emergency Action Pl
+
+====================================================================================================
+cascade-osha — Oregon OSHA — Cascade Specialty Chemicals
+model claude-opus-5-5 · whole mode · 3 runs · run date 2026-09-30
+input sha 24f344196fa5e16e  (runs 2 and 3: 24f344196fa5e16e, 24f344196fa5e16e)
+run 1  whole-2026-09-30T21-39-35-929Z-1.json  audit_run_id 249c1837-5b60-416f-829a-478693eb3ddd
+run 2  whole-2026-09-30T21-43-00-564Z-2.json  audit_run_id 3a7aadbe-6512-4492-a4e3-f824e69da6a7
+run 3  whole-2026-09-30T21-46-14-574Z-3.json  audit_run_id 2a81fb0b-34ea-4ce5-97e4-49df4246b877
+comparison: claude-haiku-4-5, 3 stored run(s) — whole-2026-09-30T00-15-21-994Z-1.json, whole-2026-09-30T00-16-24-289Z-2.json, whole-2026-09-30T00-17-35-608Z-3.json
+====================================================================================================
+
+CHECK                         kind      run1  run2  run3   n/3   claude-haiku-4-5 n/3
+(a check listed under MATCHER above is shown corrected here; every other verdict is as stored)
+carry-eap-gaps                must      PASS  PASS  PASS   3/3   3/3
+plan-stale                    must      PASS  PASS  PASS   3/3   3/3
+forklift-on-file              must      PASS  PASS  FAIL   2/3   0/3
+alarm-expected                must      PASS  PASS  FAIL   2/3   0/3
+training-records-on-file      must      PASS  PASS  PASS   3/3   3/3
+employee-count-contradiction  must      PASS  PASS  PASS   3/3   3/3
+extinguisher-stale            must      PASS  PASS  PASS   3/3   3/3
+no-new-eap-gap                must-not  PASS  FAIL  FAIL   1/3   3/3
+no-deq-permit                 must-not  PASS  PASS  PASS   3/3   1/3
+no-satisfied                  must-not  PASS  PASS  PASS   3/3   3/3
+no-ai-word                    must-not  PASS  PASS  PASS   3/3   3/3
+sds-not-judged                ok        FAIL  FAIL  FAIL   0/3   1/3
+forklift-gaps                 ok        PASS  PASS  PASS   3/3   3/3
+
+COUNT                         run1  run2  run3         claude-haiku-4-5 runs
+must passed                   7/7   7/7   5/7           5/7 / 5/7 / 5/7
+must-not held                 4/4   3/4   3/4           3/4 / 4/4 / 3/4
+findings                      35    34    35            22 / 26 / 32
+dates                         14    15    15            15 / 16 / 17
+contradictions                2     3     3             1 / 1 / 1
+expected and not seen         11    10    11            19 / 21 / 22
+reshaped to dates             0     0     0             0 / 0 / 0
+  word on_file                11    4     8             1 / 0 / 1
+  word stale                  5     3     3             10 / 11 / 14
+  word nothing_on_file        11    19    16            9 / 9 / 11
+  word not_a_document_question 3     3     3             1 / 0 / 0
+  findings with NO word       5     5     5             1 / 6 / 6
+handle errors                 0     0     0             0 / 0 / 0
+rows written                  62    62    64            57 / 64 / 72
+section status                done  done  done          done / done / done
+json parsed                   yes   yes   yes           yes / yes / yes
+searches                      0     0     0             0 / 0 / 0
+output tokens                 17531 20254 18988         6873 / 6653 / 7651
+
+FORBIDDEN WORDS               run1  run2  run3
+no-satisfied                  none  none  none  
+no-ai-word                    none  none  none  
+
+LEDGER                        run1      run2      run3      claude-haiku-4-5 (run files)
+cost, the whole run           $0.5171   $0.5715   $0.5462   $0.0498 / $0.0487 / $0.0537
+cost in the section windows   $0.5171   $0.5715   $0.5462   (what Past audits shows)
+ai_calls, run / sections      1/1       1/1       1/1       
+wall per audit                179.4s    204.0s    193.3s    65.2s / 62.3s / 71.3s
+
+OVERLAP ACROSS THE THREE RUNS — titles in all three over titles in any, normalised
+finding titles                7/79 = 0.09        0/71 = 0.00
+expected-not-seen titles      7/16 = 0.44        4/48 = 0.08
+
+in all three runs:
+  = emergency action plan appendix a evacuation maps and appendi
+  = annual training records for floor wardens and first aid resp
+  = annual training for floor wardens and first aid responders
+  = supervisor review and sign off of the september 2026 fl 2 lo
+  = pre shift inspection of fl 2 before each shift it is used
+  = complete the monthly ehs self check and get supervisor revie
+  = report any self check items marked n to the plant manager
+in some but not all:
+  ~ run 1: Annual maintenance certificate for the 14 portable fire extinguishers [stale]
+  ~ run 1: Monthly visual inspection of each extinguisher, recorded on the unit tag [nothing_on_file]
+  ~ run 1: Hydrostatic test record for CO2 extinguisher L-1 (last test shown as 2020) [nothing_on_file]
+  ~ run 1: Emergency action plan: no procedure for reporting a fire or other emergency [on_file]
+  ~ run 1: Emergency action plan: no procedure for shutting down chemical processes before evacuating [on_file]
+  ~ run 1: Emergency action plan: no named contact for questions about the plan [on_file]
+  ~ run 1: Emergency action plan: annual January reviews not shown; plan not revised since February 2 [stale]
+  ~ run 1: Emergency action plan headcount is from 2021 [stale]
+  ~ run 1: Emergency action plan: earthquake is in scope but has no procedure [on_file]
+  ~ run 1: Evacuation drill records (twice a year, spring and autumn) and monthly fire alarm test log [nothing_on_file]
+  ~ run 1: Forklift FL-2 pre-shift log: no entries for Sep 3 and Sep 4 although the hour meter shows  [on_file]
+  ~ run 1: Forklift FL-2: horn defect on Sep 9 with no record of repair or removal from service [on_file]
+  ~ run 1: Forklift FL-2 pre-shift log: no entries after Sep 18 [on_file]
+  ~ run 1: Forklift FL-2 pre-shift log: supervisor review not signed [on_file]
+  ~ run 1: Forklift FL-2 log photo is skewed and cropped [on_file]
+  ~ run 1: Completed monthly EHS self-checks [nothing_on_file]
+  ~ run 1: Weekly eyewash and safety shower flush log [nothing_on_file]
+  ~ run 1: 2025 injury and illness summary (Form 300A): no proof of electronic submission [nothing_on_file]
+  ~ run 1: Industry code on the 300A may not match what the site does [on_file]
+  ~ run 1: 2025 OSHA 300 Log and DCBS Form 801 incident reports for the 3 recordable cases [nothing_on_file]
+  ~ run 1: Whether the 2025 300A was posted from February 1 to April 30, 2026 [not_a_document_question]
+  ~ run 1: R. Patel three-year forklift operator evaluation overdue [stale]
+  ~ run 1: No certificate noted on file for R. Patel [nothing_on_file]
+  ~ run 1: Forklift training roster not updated since June 2025 [stale]
+  ~ run 1: J. Rivera signed operator certificate not in the training file [nothing_on_file]
+  ~ run 1: Whether R. Patel has operated FL-2 since her evaluation lapsed [not_a_document_question]
+  ~ run 1: Safety Data Sheet for 50% sodium hydroxide solution (supplier's document) [on_file]
+  ~ run 1: Whether the eyewash and safety shower are within 10 seconds of where caustic is handled [not_a_document_question]
+  ~ run 2: Annual maintenance certificate for the 14 portable fire extinguishers [stale]
+  ~ run 2: Monthly visual inspection of each extinguisher, recorded on the unit tag [nothing_on_file]
+  ~ run 2: CO2 extinguisher L-1 hydrostatic test (last test shown as 2020) [nothing_on_file]
+  ~ run 2: Emergency Action Plan: annual reviews not shown; plan not updated since 2021 [stale]
+  ~ run 2: Emergency Action Plan: no procedure for reporting a fire or other emergency [nothing_on_file]
+  ~ run 2: Emergency Action Plan: no procedure for shutting down chemical processes before evacuating [nothing_on_file]
+  ~ run 2: Emergency Action Plan: no named contact for questions about the plan [nothing_on_file]
+  ~ run 2: Emergency Action Plan: earthquake is in scope but has no procedure [nothing_on_file]
+  ~ run 2: Evacuation drill records and monthly fire alarm test records the plan commits to [nothing_on_file]
+  ~ run 2: Forklift FL-2: no pre-shift entries for Sep 3 and Sep 4 (same gap on both copies of the Se [nothing_on_file]
+  ~ run 2: Forklift FL-2: horn defect on Sep 9 with no record of repair or removal from service (same [nothing_on_file]
+  ~ run 2: Forklift FL-2: no pre-shift entries after Sep 18 (D3) / after Sep 17 (D4) [nothing_on_file]
+  ~ run 2: Forklift FL-2 September log: supervisor review not signed [nothing_on_file]
+  ~ run 2: Forklift FL-2 September log: photo copy is skewed and cropped [on_file]
+  ~ run 2: Completed monthly EHS self-checks [nothing_on_file]
+  ~ run 2: 2025 Form 300A summary for the Portland facility [on_file]
+  ~ run 2: 2025 Form 300A: no proof of electronic submission to OSHA's Injury Tracking Application [nothing_on_file]
+  ~ run 2: 2025 OSHA 300 Log and DCBS 801 forms behind the 300A [nothing_on_file]
+  ~ run 2: Industry code on the 300A may not match what the Portland site actually does [not_a_document_question]
+  ~ run 2: Whether the 2025 300A was posted from February 1 to April 30, 2026 [not_a_document_question]
+  ~ run 2: R. Patel three-year forklift operator evaluation overdue (due 2026-05-19) [nothing_on_file]
+  ~ run 2: Whether R. Patel is still operating FL-2 [not_a_document_question]
+  ~ run 2: No operator certificate noted for R. Patel [nothing_on_file]
+  ~ run 2: J. Rivera operator certificate not in the training file [nothing_on_file]
+  ~ run 2: Forklift operator training roster not updated since June 2025 [stale]
+  ~ run 2: Michael Chen operator training certificate [on_file]
+  ~ run 2: Safety Data Sheet for sodium hydroxide solution 50%, Version 4.1 [on_file]
+  ~ run 3: Annual maintenance of the 14 portable fire extinguishers: the certificate on file is from  [stale]
+  ~ run 3: Monthly visual inspection of each extinguisher, initialled on the unit tag [nothing_on_file]
+  ~ run 3: Hydrostatic test for CO2 extinguisher L-1 (last test shown as 2020). The date was worked o [nothing_on_file]
+  ~ run 3: Emergency Action Plan last revised February 2021, even though it promises a review every J [stale]
+  ~ run 3: Emergency Action Plan: the reading found no procedure for reporting a fire or other emerge [on_file]
+  ~ run 3: Emergency Action Plan: the reading found no procedure for shutting down chemical processes [on_file]
+  ~ run 3: Emergency Action Plan: the reading found no named contact for questions about the plan [on_file]
+  ~ run 3: Emergency Action Plan: earthquake is listed in scope but has no procedure [on_file]
+  ~ run 3: Records of the twice-yearly evacuation drills the plan commits to (spring 2026 drill date  [nothing_on_file]
+  ~ run 3: Log of the monthly fire alarm tests by the facilities lead [nothing_on_file]
+  ~ run 3: Forklift FL-2 pre-shift checks: no entries for Sep 3 and Sep 4, although the hour meter sh [nothing_on_file]
+  ~ run 3: Forklift FL-2 horn defect on Sep 9: no record of the truck being taken out of service or r [nothing_on_file]
+  ~ run 3: Forklift FL-2 pre-shift checks: no entries after Sep 18 (worked out from the document) [nothing_on_file]
+  ~ run 3: Forklift FL-2 September log: the supervisor review line is not signed [nothing_on_file]
+  ~ run 3: Second copy of the FL-2 September log is an angled, cropped photo [on_file]
+  ~ run 3: Monthly EHS Self-Check: only the blank template is on file, with no completed or superviso [nothing_on_file]
+  ~ run 3: 2025 injury and illness summary (Form 300A), certified 2026-02-01 [on_file]
+  ~ run 3: No proof that the 2025 Form 300A data was submitted electronically through the Injury Trac [nothing_on_file]
+  ~ run 3: Industry code on the 300A (chemical merchant wholesaler) may not match what the site actua [on_file]
+  ~ run 3: 2025 OSHA 300 Log and DCBS 801 forms behind the 300A, which must be kept until 2030-12-31 [nothing_on_file]
+  ~ run 3: Whether the 2025 Form 300A was posted from February 1 to April 30, 2026 [not_a_document_question]
+  ~ run 3: R. Patel's three-year forklift operator evaluation was due 2026-05-19, and no re-evaluatio [nothing_on_file]
+  ~ run 3: No certificate noted on file for R. Patel [nothing_on_file]
+  ~ run 3: Forklift operator training roster not updated since 2025-06-02 [stale]
+  ~ run 3: J. Rivera's signed operator certificate is not in the training file (worked out from the d [nothing_on_file]
+  ~ run 3: Whether R. Patel is still operating FL-2 without a current evaluation [not_a_document_question]
+  ~ run 3: Safety Data Sheet for 50% sodium hydroxide solution (supplier document), revised 2024-03-1 [on_file]
+  ~ run 3: Whether an eyewash and safety shower is within 10 seconds of every area where caustic is h [not_a_document_question]
+
+WHAT THE DRAWER SAYS — the captured text is beside this file:
+  tests/golden/audits/bakeoff/cascade-osha/baseline/run-1.txt  518 line(s)
+  tests/golden/audits/bakeoff/cascade-osha/baseline/run-2.txt  522 line(s)
+  tests/golden/audits/bakeoff/cascade-osha/baseline/run-3.txt  551 line(s)
+

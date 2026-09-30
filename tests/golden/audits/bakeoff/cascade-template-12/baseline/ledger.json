@@ -1,0 +1,155 @@
+[
+  {
+    "run": 1,
+    "run_file": "whole-2026-09-30T21-48-01-678Z-1.json",
+    "audit_run_id": "deddbfe3-9d60-48f4-a188-e4c626e464ba",
+    "model": "claude-opus-5-5",
+    "sections": 3,
+    "window_from": "2026-09-30T21:46:22.543+00:00",
+    "window_to": "2026-09-30T21:48:01.273+00:00",
+    "section_ai_calls": 3,
+    "cost_sections_usd": 0.540532,
+    "run_ai_calls": 4,
+    "cost_run_usd": 0.563424,
+    "wall_ms": 98388,
+    "input_tokens": 85078,
+    "output_tokens": 10011,
+    "searches": 0,
+    "ledger_rows": [
+      {
+        "at": "2026-09-30T21:46:22.47403+00:00",
+        "model": "claude-opus-5-5",
+        "cost_usd": 0.022892000000000003,
+        "in": 2123,
+        "out": 720,
+        "searches": 0
+      },
+      {
+        "at": "2026-09-30T21:46:51.826323+00:00",
+        "model": "claude-opus-5-5",
+        "cost_usd": 0.173,
+        "in": 28360,
+        "out": 2978,
+        "searches": 0
+      },
+      {
+        "at": "2026-09-30T21:47:28.719589+00:00",
+        "model": "claude-opus-5-5",
+        "cost_usd": 0.187804,
+        "in": 28371,
+        "out": 3716,
+        "searches": 0
+      },
+      {
+        "at": "2026-09-30T21:48:00.901224+00:00",
+        "model": "claude-opus-5-5",
+        "cost_usd": 0.179728,
+        "in": 28347,
+        "out": 3317,
+        "searches": 0
+      }
+    ]
+  },
+  {
+    "run": 2,
+    "run_file": "whole-2026-09-30T21-49-44-619Z-2.json",
+    "audit_run_id": "a0e67e05-6053-4d13-b207-0ee839e02120",
+    "model": "claude-opus-5-5",
+    "sections": 3,
+    "window_from": "2026-09-30T21:48:09.044+00:00",
+    "window_to": "2026-09-30T21:49:44.238+00:00",
+    "section_ai_calls": 3,
+    "cost_sections_usd": 0.535152,
+    "run_ai_calls": 4,
+    "cost_run_usd": 0.558044,
+    "wall_ms": 95110,
+    "input_tokens": 85078,
+    "output_tokens": 9742,
+    "searches": 0,
+    "ledger_rows": [
+      {
+        "at": "2026-09-30T21:48:08.987599+00:00",
+        "model": "claude-opus-5-5",
+        "cost_usd": 0.022892000000000003,
+        "in": 2123,
+        "out": 720,
+        "searches": 0
+      },
+      {
+        "at": "2026-09-30T21:48:36.621402+00:00",
+        "model": "claude-opus-5-5",
+        "cost_usd": 0.17016,
+        "in": 28360,
+        "out": 2836,
+        "searches": 0
+      },
+      {
+        "at": "2026-09-30T21:49:13.784753+00:00",
+        "model": "claude-opus-5-5",
+        "cost_usd": 0.189544,
+        "in": 28371,
+        "out": 3803,
+        "searches": 0
+      },
+      {
+        "at": "2026-09-30T21:49:43.905788+00:00",
+        "model": "claude-opus-5-5",
+        "cost_usd": 0.175448,
+        "in": 28347,
+        "out": 3103,
+        "searches": 0
+      }
+    ]
+  },
+  {
+    "run": 3,
+    "run_file": "whole-2026-09-30T21-51-34-185Z-3.json",
+    "audit_run_id": "f3b887f0-e323-49c7-abe2-70b780535b47",
+    "model": "claude-opus-5-5",
+    "sections": 3,
+    "window_from": "2026-09-30T21:49:52.538+00:00",
+    "window_to": "2026-09-30T21:51:33.766+00:00",
+    "section_ai_calls": 3,
+    "cost_sections_usd": 0.546812,
+    "run_ai_calls": 4,
+    "cost_run_usd": 0.570384,
+    "wall_ms": 101138,
+    "input_tokens": 85078,
+    "output_tokens": 10325,
+    "searches": 0,
+    "ledger_rows": [
+      {
+        "at": "2026-09-30T21:49:52.481469+00:00",
+        "model": "claude-opus-5-5",
+        "cost_usd": 0.023572,
+        "in": 2123,
+        "out": 754,
+        "searches": 0
+      },
+      {
+        "at": "2026-09-30T21:50:19.965358+00:00",
+        "model": "claude-opus-5-5",
+        "cost_usd": 0.16896,
+        "in": 28360,
+        "out": 2776,
+        "searches": 0
+      },
+      {
+        "at": "2026-09-30T21:50:58.254793+00:00",
+        "model": "claude-opus-5-5",
+        "cost_usd": 0.195004,
+        "in": 28371,
+        "out": 4076,
+        "searches": 0
+      },
+      {
+        "at": "2026-09-30T21:51:33.400442+00:00",
+        "model": "claude-opus-5-5",
+        "cost_usd": 0.182848,
+        "in": 28347,
+        "out": 3473,
+        "searches": 0
+      }
+    ]
+  }
+]
