@@ -66,9 +66,13 @@ export async function POST(request: NextRequest) {
         companyId,
       })
 
+      // This company's own name, to compare against whatever the form prints.
+      const { data: company } = await db.from('companies').select('name').eq('id', companyId).maybeSingle()
+
       const run = await createRun(supabaseAdmin, {
         companyId, kind: 'template', scope, entityId, createdBy: userId,
         templateDocumentId, templateSections: extracted.sections, templateNote: extracted.note,
+        templateCompanyName: extracted.companyName, companyName: company?.name ?? null,
         previousRunId: body?.previous_run_id ? String(body.previous_run_id) : null,
       })
       const estimate = await estimateRun(supabaseAdmin, companyId, run.sectionIds.length)

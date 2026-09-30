@@ -231,12 +231,38 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
     return () => clearInterval(t)
   }, [rep, load])
 
+  /**
+   * *** A REPORT OPENS FOLDED — the owner's third review. ***
+   *
+   * Every section opened at once, so a DEQ report was twenty-four findings, eight dates, ten
+   * expected items and a covers list in one scroll — and the thing a person came for was somewhere
+   * in the middle of it. Closed with its count is a table of contents: you can see the shape of the
+   * answer before you read any of it.
+   *
+   * ONE EXCEPTION EACH WAY. A report with a single section opens it — folding one thing is a
+   * click that hides the only content. And on an agency report **Findings** opens, because it is
+   * what the report is for; What this covers is included in the folding rather than pinned open,
+   * which it was.
+   *
+   * The sentence "Every line below points at a document…" is outside the folds and always visible:
+   * it is what the report IS, not part of its contents.
+   */
   useEffect(() => {
-    // Everything open by default when it has content; the focus word, if one came in from a count
-    // on the page, decides nothing about folding — it only says which list the person meant.
-    setOpen({ covers: true, findings: true, dates: true, contradictions: true,
-              expected: true, failed: true, earlier: false })
-  }, [runId])
+    if (!rep) return
+    const sectionCount = [
+      rep.findings.some((f) => f.status === 'open' && f.kind === 'finding'),
+      rep.findings.some((f) => f.status === 'open' && f.kind === 'date'),
+      rep.findings.some((f) => f.status === 'open' && f.kind === 'contradiction'),
+      rep.findings.some((f) => f.status === 'open' && f.kind === 'expected'),
+      rep.sections.some((x) => x.status === 'could_not_complete'),
+      true, // What this covers always has content
+    ].filter(Boolean).length
+    const single = sectionCount <= 1
+    setOpen({
+      covers: single, findings: true, dates: single, contradictions: single,
+      expected: single, failed: single, earlier: false,
+    })
+  }, [runId, rep])
 
   if (error) {
     return <Drawer title="Audit" onClose={onClose}>
@@ -384,6 +410,11 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
     return (
       <Drawer title={`Against ${name}`} sub={sub} onClose={onClose} footer={footer}>
         <p className="text-[13px] text-gray-600">{bits.join(' · ') || 'Nothing was answered.'}</p>
+        {/* The sentence about the form itself, under the header: what we noticed before answering
+            a single line (Run 5a, item 6). */}
+        {run.summary?.note && (
+          <p className="mt-1 text-[13px] text-gray-500">{run.summary.note}</p>
+        )}
         {run.scope && <p className="mt-1 text-[12px] text-gray-400">You asked: &ldquo;{run.scope}&rdquo;</p>}
         {run.status !== 'done' && (
           <p className="mt-2 text-[13px] text-gray-600">
@@ -404,8 +435,11 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
             .sort((a, b) => a.ordinal - b.ordinal)
           const key = `t-${sec.id}`
           return (
+            // A one-section checklist opens; a three-section one starts closed with its counts,
+            // which is the form's own table of contents.
             <Section_ key={sec.id} title={sec.title} count={mine.length}
-              open={open[key] !== false} onToggle={() => setOpen((o) => ({ ...o, [key]: o[key] === false }))}>
+              open={open[key] ?? sections.length <= 1}
+              onToggle={() => setOpen((o) => ({ ...o, [key]: !(o[key] ?? sections.length <= 1) }))}>
               {sec.status === 'could_not_complete' ? (
                 <div>
                   <p className="text-[13px] text-gray-600">{sec.could_not_complete_reason}</p>

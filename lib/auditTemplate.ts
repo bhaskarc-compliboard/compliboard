@@ -26,6 +26,15 @@ export interface TemplateSection { title: string; lines: TemplateLine[] }
 
 export interface ExtractedTemplate {
   sections: TemplateSection[]
+  /**
+   * *** A COMPANY NAME PRINTED ON THE FORM, IF IT CARRIES ONE — Run 5a, item 6. ***
+   * The model refused a checklist outright when it named a company other than the one being
+   * audited: "the checklist is for CASCADE SPECIALTY CHEMICALS but the company information says…".
+   * The objection is worth keeping and the refusal is not: a person auditing themselves against
+   * somebody else's form is doing something normal — an auditor's field form, a trade body's
+   * template. So the name is READ, said out loud on the run, and the audit proceeds.
+   */
+  companyName: string | null
   /** Plain, for the run's summary when there is nothing to audit against. */
   note: string | null
   model: string
@@ -49,6 +58,7 @@ not add a line the document does not have.
 Respond with valid JSON only. No markdown, no backticks, no text around it.
 
 {
+  "company_name": "the company this form names, if it names one, else null",
   "sections": [
     {
       "title": "the section heading as written, or a short description if it has none",
@@ -59,6 +69,10 @@ Respond with valid JSON only. No markdown, no backticks, no text around it.
     }
   ]
 }
+
+"company_name" is whatever company the form is printed for or about, verbatim. Many forms name
+nobody; that is null, not a guess. Do not judge whether it is the right company — that is not your
+question here.
 
 A form with no headings is one section; give it a title that says what the form is.
 A line's "text" is what the form asks, verbatim. If a line is a heading with nothing under it, it is
@@ -83,7 +97,7 @@ export async function extractTemplate(args: {
   const parsed = await parseDocumentToBlocks(args.buffer, args.fileName, args.fileType)
   if (!parsed.ok) {
     return {
-      sections: [], model, prompt_sha256: promptSha, raw_text: '', json_parsed: false,
+      sections: [], companyName: null, model, prompt_sha256: promptSha, raw_text: '', json_parsed: false,
       // The parser's own message, because it knows what was wrong with the file and this does not.
       note: `We could not open that file: ${parsed.failure.message}`,
     }
@@ -106,7 +120,7 @@ export async function extractTemplate(args: {
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
     return {
-      sections: [], model, prompt_sha256: promptSha, raw_text: '', json_parsed: false,
+      sections: [], companyName: null, model, prompt_sha256: promptSha, raw_text: '', json_parsed: false,
       note: `We could not read that checklist just now: ${message}`,
     }
   }
@@ -115,15 +129,17 @@ export async function extractTemplate(args: {
   try { obj = JSON.parse(extractJsonText(raw)) as Record<string, unknown> } catch { obj = null }
   if (!obj) {
     return {
-      sections: [], model, prompt_sha256: promptSha, raw_text: raw.slice(0, 20000), json_parsed: false,
+      sections: [], companyName: null, model, prompt_sha256: promptSha, raw_text: raw.slice(0, 20000), json_parsed: false,
       note: 'That checklist came back in a shape we could not read, so there is nothing to audit '
         + 'against. The file is on file; nothing else happened.',
     }
   }
 
   const sections = shapeSections(obj)
+  const companyName = typeof obj.company_name === 'string' && obj.company_name.trim()
+    ? obj.company_name.trim().slice(0, 200) : null
   return {
-    sections, model, prompt_sha256: promptSha, raw_text: raw.slice(0, 20000), json_parsed: true,
+    sections, companyName, model, prompt_sha256: promptSha, raw_text: raw.slice(0, 20000), json_parsed: true,
     note: sections.length ? null
       : 'We could not find any checklist lines in that file. If it is a checklist, the lines may be '
         + 'in a picture rather than in text. Nothing was audited.',

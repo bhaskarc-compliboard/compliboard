@@ -36,7 +36,8 @@ export async function GET(request: NextRequest) {
         .eq('company_id', companyId).order('title'),
       db.from('audit_runs')
         .select('id, kind, scope, agency_label, status, section_count, done_count, readings_as_of, '
-              + 'created_at, started_at, finished_at, summary, notified_at, dismissed_at, previous_run_id')
+              + 'created_at, started_at, finished_at, summary, notified_at, dismissed_at, '
+            + 'previous_run_id, template_document_id')
         .eq('company_id', companyId).order('created_at', { ascending: false }).limit(100),
       db.from('entities').select('id, name').eq('company_id', companyId).order('name'),
       // *** THE FOLDER LIST, BECAUSE THE DOCUMENT REPORT OPENS HERE NOW — Run 3b, item 1. ***

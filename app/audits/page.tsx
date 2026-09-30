@@ -57,6 +57,7 @@ interface Run {
   section_count: number; done_count: number; readings_as_of: string | null; created_at: string
   started_at: string | null; finished_at: string | null; summary: RunSummary | null
   notified_at: string | null; dismissed_at: string | null; previous_run_id: string | null
+  template_document_id: string | null
   closed_count: number; estimate: string | null
 }
 interface Index {
@@ -148,6 +149,18 @@ function needsOf(s: RunSummary | null | undefined): number {
     + (s.not_a_document_question ?? 0)
 }
 
+/**
+ * The checklist's own title, from the document it is. Falls back to the run's scope and then to a
+ * plain noun — never to an id, and never to "All agencies", which is what a template run's
+ * `agency_label` is empty of (Run 5a, item 3).
+ */
+function checklistTitle(run: { template_document_id: string | null; scope: string | null }, idx: Index): string {
+  const d = run.template_document_id
+    ? idx.documents.find((x) => x.document_id === run.template_document_id)
+    : null
+  return d?.title ?? run.scope ?? 'your checklist'
+}
+
 const fmt = (iso: string | null | undefined) => {
   if (!iso) return ''
   const d = new Date(String(iso).length === 10 ? `${iso}T00:00:00` : String(iso))
@@ -193,6 +206,8 @@ function Audits() {
   const firstOpenDone = useRef(false)
   const checklistInput = useRef<HTMLInputElement>(null)
   const [attaching, setAttaching] = useState<string | null>(null)
+  /** Checklist runs whose "is done" line has been opened and so should not show again. */
+  const [seenTemplate, setSeenTemplate] = useState<string[]>([])
 
   const load = useCallback(async () => {
     try {
@@ -414,6 +429,19 @@ function Audits() {
   }
 
   const runCount = idx.runs.length
+  /** The newest finished run of any kind, for the line under the box. */
+  const newestDone = idx.runs.find((r) => r.status === 'done')?.finished_at
+    ?? idx.runs.find((r) => r.status === 'done')?.created_at ?? null
+  /**
+   * *** A CHECKLIST RUN IS THE ONE THING THE PAGE CANNOT OTHERWISE SHOW. ***
+   * It has no agency line to live on — its questions come from a form, not a regulator — so it gets
+   * one grey line under the box while it runs and one when it lands, and nothing else on the page
+   * changes for it. Opening it takes the line away, in browser state: there is nothing to record,
+   * because the run is in Past audits either way.
+   */
+  const templateRuns = idx.runs.filter((r) => r.kind === 'template')
+  const runningTemplate = templateRuns.find((r) => r.status !== 'done') ?? null
+  const landedTemplate = templateRuns.find((r) => r.status === 'done' && !seenTemplate.includes(r.id)) ?? null
 
   return (
     <AppLayout>
@@ -468,13 +496,19 @@ function Audits() {
               <div className="min-w-0">
                 {/* Real since Run 4b. It was inert and said so; now it opens a picker, uploads
                     through Documents' path, and starts a template audit. */}
-                <button onClick={() => checklistInput.current?.click()} disabled={!!attaching || busy}
-                  className="cursor-pointer text-[12px] text-gray-500 underline hover:text-gray-800 disabled:cursor-not-allowed disabled:text-gray-300 disabled:no-underline">
-                  {attaching ?? 'Attach a checklist, your own or your auditor\u2019s'}
-                </button>
-                <a href="/compliance" className="mt-1 inline-block text-[12px] text-gray-500 underline hover:text-gray-800">
-                  Or ask a question in the Compliance Workspace
-                </a>
+                {/* *** ONE LINE, WITH ITS SEPARATOR. *** The two were stacked and the " · " between
+                    them went when the attach control became a button (Run 4b). Same grey, same
+                    size, one line — they are two ways to ask for the same kind of help. */}
+                <p className="text-[12px] text-gray-500">
+                  <button onClick={() => checklistInput.current?.click()} disabled={!!attaching || busy}
+                    className="cursor-pointer underline hover:text-gray-800 disabled:cursor-not-allowed disabled:text-gray-300 disabled:no-underline">
+                    {attaching ?? 'Attach a checklist, your own or your auditor\u2019s'}
+                  </button>
+                  {' · '}
+                  <a href="/compliance" className="underline hover:text-gray-800">
+                    Or ask a question in the Compliance Workspace
+                  </a>
+                </p>
               </div>
               <button onClick={submitAsk} disabled={busy || !ask.trim()} className={ACTION_PRIMARY}>
                 {busy ? 'Starting…' : 'Audit'}
@@ -482,6 +516,22 @@ function Audits() {
             </div>
 
             {notice && <p className="no-print mb-4 text-[13px] text-gray-600">{notice}</p>}
+
+            {runningTemplate && (
+              <p className="no-print mb-4 text-[13px] text-gray-500">
+                Your audit against {checklistTitle(runningTemplate, idx)} is running
+                {' · '}{runningTemplate.estimate ?? idx.estimate}
+              </p>
+            )}
+            {!runningTemplate && landedTemplate && (
+              <p className="no-print mb-4 text-[13px] text-gray-600">
+                Your audit against {checklistTitle(landedTemplate, idx)} is done
+                {' · '}{needsOf(landedTemplate.summary)} to look at{' · '}
+                <button onClick={() => {
+                  setSeenTemplate((x) => [...x, landedTemplate.id]); setParam('run', landedTemplate.id)
+                }} className={ACTION_GREEN}>Open</button>
+              </p>
+            )}
             {choices && (
               <div className="no-print mb-5 rounded-lg border border-gray-200 bg-white px-4 py-3">
                 <p className="text-[13px] text-gray-700">
@@ -498,10 +548,13 @@ function Audits() {
 
             {/* ── the thin line ──────────────────────────────────────────── */}
             <div className="no-print flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 pb-3">
+              {/* The date the banners used to carry, where it belongs: on the line that already
+                  counts what the page is made of. Each agency line keeps its own date. */}
               <p className="text-[13px] text-gray-500">
                 {idx.counts.read} document{idx.counts.read === 1 ? '' : 's'} read
                 {idx.counts.held_unread ? ` · ${idx.counts.held_unread} held, not read yet` : ''}
                 {' · '}{idx.counts.agencies} agenc{idx.counts.agencies === 1 ? 'y' : 'ies'}
+                {newestDone ? ` · last audited ${fmt(newestDone)}` : ''}
               </p>
               <div className="flex items-center gap-2">
                 {idx.sites.length > 1 && (
@@ -529,24 +582,18 @@ function Audits() {
               <p className="mt-6 text-[14px] text-gray-600">None of your documents carries an agency yet.</p>
             ) : groupBy === 'agency' ? (
               <>
-                {/* The all-agencies runs waiting to be seen, newest first. One line each, not one
-                    per agency it covered. */}
-                {idx.runs.filter((r) => r.status === 'done' && r.section_count > 1
-                                        && idx.banners.includes(r.id)).slice(0, 2).map((r) => (
-                  <div key={r.id}
-                    className="mt-3 flex items-center gap-4 rounded-lg border border-gray-200 bg-white px-3 py-2">
-                    <p className="min-w-0 flex-1 text-[13px] text-gray-900">
-                      Your audit of everything is done · {needsOf(r.summary)} to look at
-                    </p>
-                    <button onClick={() => setParam('run', r.id)} className={ACTION_GREEN}>Open</button>
-                    <button onClick={() => dismissRun(r.id)} className={ACTION_QUIET}>Dismiss</button>
-                  </div>
-                ))}
+                {/*
+                  *** NO BANNERS — the owner's third review. ***
+                  Every finished run raised one, so two template runs in a morning put two "audit of
+                  everything is done" lines above a list whose every row already carried its own
+                  date and count. A banner is for news a page cannot otherwise show; this page shows
+                  all of it. `audit_runs.dismissed_at` stays as a column — a dismissal already
+                  recorded is not ours to erase — and nothing here reads it.
+                */}
                 <div className="mt-1">
                   {idx.agencies.map((label) => {
                     const v = agencyView(label)!
                     const open = !!openLines[label]
-                    const bannerId = v.lastRun && idx.banners.includes(v.lastRun.id) ? v.lastRun.id : null
                     return (
                       <div key={label} className="border-b border-gray-100">
                         {/* The WHOLE line opens it. A chevron three pixels wide was the only
@@ -594,21 +641,6 @@ function Audits() {
                             )}
                           </div>
                         </div>
-
-                        {/* *** A BANNER BELONGS TO A RUN, AND "Audit everything" IS ONE RUN. ***
-                            One banner per AGENCY line put four of them on the page after one
-                            action, each announcing a quarter of the same news. A single-agency run
-                            keeps its banner here, on the line it is about; an all-agencies run is
-                            announced once, above the list. */}
-                        {bannerId && v.lastRun && v.lastRun.section_count === 1 && (
-                          <div className="mb-3 flex items-center gap-4 rounded-lg border border-gray-200 bg-white px-3 py-2">
-                            <p className="min-w-0 flex-1 text-[13px] text-gray-900">
-                              Your {label} audit is done · {v.needs} to look at
-                            </p>
-                            <button onClick={() => setParam('run', bannerId)} className={ACTION_GREEN}>Open</button>
-                            <button onClick={() => dismissRun(bannerId)} className={ACTION_QUIET}>Dismiss</button>
-                          </div>
-                        )}
 
                         {open && <AgencyBody label={label} idx={idx} v={v}
                           onOpenRun={(w) => { setDrawerWord(w); setParam('run', v.lastRun!.id) }}
@@ -670,8 +702,13 @@ function Audits() {
                         <div className="min-w-0 flex-1">
                           <p className="text-[14px] text-gray-900">
                             {fmt(r.finished_at ?? r.created_at)}
+                            {/* *** A TEMPLATE RUN IS NAMED BY ITS CHECKLIST. *** Its `agency_label`
+                                is null — its questions came from a form — and the fallback read
+                                "All agencies", which is the one thing it is not. */}
                             <span className="ml-2 text-gray-600">
-                              {r.section_count > 1 ? 'All agencies' : (r.agency_label ?? 'All agencies')}
+                              {r.kind === 'template'
+                                ? `Against ${checklistTitle(r, idx)}`
+                                : (r.section_count > 1 ? 'All agencies' : (r.agency_label ?? 'All agencies'))}
                             </span>
                           </p>
                           <p className="mt-0.5 text-[12px] text-gray-500">

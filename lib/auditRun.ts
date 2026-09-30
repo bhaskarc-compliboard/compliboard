@@ -99,6 +99,10 @@ export async function createRun(db: Db, args: {
   templateSections?: TemplateSection[]
   /** What to say when the file held no lines. `extractTemplate` writes this sentence. */
   templateNote?: string | null
+  /** A company the checklist names, when it names one that is not this company. */
+  templateCompanyName?: string | null
+  /** This company's own name, to compare against. */
+  companyName?: string | null
 }): Promise<{ runId: string; sectionIds: string[]; agencies: string[]; status: string }> {
   const kind = args.kind ?? 'agency'
 
@@ -112,6 +116,26 @@ export async function createRun(db: Db, args: {
   if (kind === 'template') {
     if (!args.templateDocumentId) throw new Error('createRun: a template run needs a document')
     const sections = args.templateSections ?? []
+    /**
+     * *** A CHECKLIST NAMING SOMEBODY ELSE IS NOTED, AND AUDITED ANYWAY — Run 5a, item 6. ***
+     * An auditor's field form and a trade body's template both name somebody who is not you, and
+     * auditing yourself against one is a normal thing to want. The model's instinct was to refuse;
+     * the product's job is to say what it noticed and get on with it.
+     * Compared loosely — case and punctuation only — because "Cascade Specialty Chemicals, LLC" and
+     * "CASCADE SPECIALTY CHEMICALS LLC" are the same company and a strict compare would announce a
+     * mismatch that is not one.
+     */
+    const loose = (t: string) => t.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+    const named = (args.templateCompanyName ?? '').trim()
+    const mine = (args.companyName ?? '').trim()
+    const elsewhere = named && mine && loose(named) !== loose(mine) ? named : null
+    const noteLines = [
+      elsewhere ? `This checklist names ${elsewhere}; treated as a template for you.` : null,
+      sections.length ? null : (args.templateNote
+        ?? 'We could not find any checklist lines in that file, so there was nothing to audit '
+           + 'against. The file is on file.'),
+    ].filter(Boolean) as string[]
+
     const { data: run, error } = await db.from('audit_runs').insert({
       company_id: args.companyId,
       entity_id: args.entityId ?? null,
@@ -122,13 +146,15 @@ export async function createRun(db: Db, args: {
       section_count: sections.length,
       created_by: args.createdBy ?? null,
       status: sections.length ? 'queued' : 'done',
-      ...(sections.length ? {} : {
-        started_at: new Date().toISOString(),
-        finished_at: new Date().toISOString(),
-        summary: emptySummary(args.templateNote
-          ?? 'We could not find any checklist lines in that file, so there was nothing to audit '
-             + 'against. The file is on file.'),
-      }),
+      // The note goes on the run whether it finishes now or is about to run: a sentence about the
+      // form is true before any line is answered.
+      ...(sections.length
+        ? (noteLines.length ? { summary: { ...emptySummary(null), note: noteLines.join(' ') } } : {})
+        : {
+            started_at: new Date().toISOString(),
+            finished_at: new Date().toISOString(),
+            summary: emptySummary(noteLines.join(' ')),
+          }),
     }).select('id').single()
     if (error) throw new Error(`createRun (template): ${error.message}`)
     if (!sections.length) return { runId: run.id, sectionIds: [], agencies: [], status: 'done' }
@@ -196,7 +222,7 @@ export async function createRun(db: Db, args: {
   }
 }
 
-function emptySummary(note: string): RunSummary {
+function emptySummary(note: string | null): RunSummary {
   return { total: 0, needs_person: 0, nothing_on_file: 0, stale: 0, on_file: 0, not_a_document_question: 0,
            contradictions: 0, dates_passed: 0, expected: 0, sections: 0, sections_done: 0,
            could_not_complete: 0, carried: 0, closed: 0, reshaped_to_dates: [],
@@ -854,7 +880,9 @@ export async function summariseRun(db: Db, runId: string): Promise<RunSummary> {
     // row by the time it is in the table and is indistinguishable from a date the model wrote.
     reshaped_to_dates: (((run?.summary ?? {}) as Record<string, unknown>).reshaped_to_dates
       ?? []) as Array<{ title: string; due_on: string }>,
-    note: null,
+    // A note put on the run before it ran — "this checklist names somebody else" — is carried
+    // forward rather than overwritten when the run is summarised at the end.
+    note: (((run?.summary ?? {}) as Record<string, unknown>).note as string | null) ?? null,
   }
 }
 

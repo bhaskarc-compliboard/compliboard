@@ -274,6 +274,14 @@ A line asking about a practice rather than a document — whether something is p
 somebody was trained on the day — is not_a_document_question with "document": null. That is an
 answer, not a failure to answer.
 
+*** ON FILE MEANS A DOCUMENT ANSWERS IT, EVEN IN PART. ***
+A line is on_file when a document on file answers it at all — and you say what is missing in
+what_to_do. A scrubber log covering two of the twelve months the line asks for is ON FILE, with
+"the log covers August and September 2026; the line asks for twelve months" as the thing to do.
+nothing_on_file means NO document on file answers the line at all. Calling a partial answer nothing
+on file tells somebody they have nothing when they have most of it, and they stop trusting the
+report — which costs more than the line was worth.
+
 A line you can answer from a document the company holds is on_file, with the handle, and a quote if
 the reading carries one. A line whose document is old enough that an inspector will ask is stale, and
 say what makes it stale. A line nothing on file answers is nothing_on_file — which is not an
