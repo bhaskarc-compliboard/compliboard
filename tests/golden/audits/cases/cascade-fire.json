@@ -1,0 +1,152 @@
+{
+  "id": "cascade-fire",
+  "title": "Oregon State Fire Marshal \u2014 Cascade Specialty Chemicals",
+  "key": "cascade-fire.md",
+  "company": "cascade",
+  "agency": "Oregon State Fire Marshal",
+  "must": [
+    {
+      "id": "extinguisher-stale",
+      "line": "the annual maintenance as stale: certified 2025-08-20, next due 2026-08-20, passed, nothing on file since (spec 11 AUDIT USE line 1)",
+      "type": "item",
+      "collections": [
+        "findings",
+        "dates"
+      ],
+      "word": "stale",
+      "keywords": [
+        "extinguisher",
+        "maintenance",
+        "annual"
+      ],
+      "min_keywords": 1,
+      "date_or_text": [
+        "2026-08-20",
+        "august 20, 2026"
+      ]
+    },
+    {
+      "id": "six-year-nothing",
+      "line": "six-year maintenance for W-3 and L-1, due November 2026: nothing on file (spec 11 AUDIT USE line 2)",
+      "type": "count_matching",
+      "collection": "findings",
+      "n": 1,
+      "any_of": [
+        [
+          "six",
+          "w-3"
+        ],
+        [
+          "six",
+          "l-1"
+        ],
+        [
+          "six-year",
+          "nothing"
+        ],
+        [
+          "six year",
+          "2026"
+        ]
+      ]
+    },
+    {
+      "id": "monthly-not-a-document-question",
+      "line": "monthly visual inspections as a not-a-document question, or as nothing on file; the certificate says they are recorded on the unit tags (spec 11 AUDIT USE line 3)",
+      "type": "count_matching",
+      "collection": "findings",
+      "n": 1,
+      "any_of": [
+        [
+          "monthly",
+          "visual"
+        ],
+        [
+          "monthly",
+          "inspection"
+        ],
+        [
+          "monthly",
+          "tag"
+        ]
+      ]
+    }
+  ],
+  "must_not": [
+    {
+      "id": "no-satisfied",
+      "line": "no finding worded satisfied, compliant or met",
+      "type": "forbidden_words",
+      "words": [
+        "satisfied",
+        "compliant",
+        "in compliance",
+        " met ",
+        "all clear"
+      ],
+      "unless": [
+        "ansi-compliant",
+        "non-compliant"
+      ]
+    },
+    {
+      "id": "no-invented-document",
+      "line": "no handle the block did not carry, and no id that was not given",
+      "type": "known_documents_only"
+    },
+    {
+      "id": "no-deq-permit",
+      "line": "nothing about the air permit; it belongs to another agency and is a title only here",
+      "type": "absent_item",
+      "collections": [
+        "findings",
+        "dates"
+      ],
+      "subject": [
+        "air contaminant",
+        "acdp",
+        "air permit",
+        "scrubber"
+      ],
+      "absence": []
+    },
+    {
+      "id": "no-ai-word",
+      "line": "the word AI appears nowhere",
+      "type": "forbidden_words",
+      "words": [
+        "ai "
+      ],
+      "literal": true
+    }
+  ],
+  "acceptable": [
+    {
+      "id": "hydrostatic-dates",
+      "line": "the hydrostatic test dates for the CO2 and water units as dates",
+      "type": "item",
+      "collections": [
+        "dates",
+        "findings"
+      ],
+      "keywords": [
+        "hydrostatic"
+      ],
+      "min_keywords": 1
+    },
+    {
+      "id": "on-file-too",
+      "line": "the certificate named on_file as well as stale; both are true of it",
+      "type": "item",
+      "collections": [
+        "findings"
+      ],
+      "word": "on_file",
+      "keywords": [
+        "extinguisher",
+        "certificate"
+      ],
+      "min_keywords": 1
+    }
+  ]
+}

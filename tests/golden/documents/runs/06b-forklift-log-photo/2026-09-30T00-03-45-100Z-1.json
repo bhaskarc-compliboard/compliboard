@@ -1,0 +1,287 @@
+{
+  "case": "06b-forklift-log-photo",
+  "run": 1,
+  "run_date": "2026-09-29",
+  "model": "claude-opus-5-5",
+  "structured": true,
+  "searches": 0,
+  "cited_sources": 0,
+  "prompt_sha256": "f3f05eb0cb45610d86d23deb6b878a3effe061321b331a4938c290af34b5090f",
+  "scan_id": "8b5d1bb0-9102-4e8e-b257-6ac5cccc740f",
+  "ai_call_id": "94ad0a75-6760-46dd-a563-232c4330385f",
+  "company_context": "WHO THIS COMPANY IS\n  Name: Cascade Specialty Chemicals, LLC\n  Industry: chemical manufacturing (recorded as chemical-manufacturing)\n  Address: Portland, Oregon\n  State: Oregon\nTheir sites:\n  - Portland — 4410 NW Front Ave, Portland, Oregon 97210 (primary)\n\nWHAT A PERSON HAS CONFIRMED FROM A DOCUMENT\nEach of these was read in the named document and then confirmed by a person.\n  (nothing confirmed yet)\n\nLABELS ALREADY IN USE FOR THIS COMPANY\nAgencies:\n  - Oregon DEQ\n  - Oregon OSHA\nSubjects:\n  - Air Quality Permit\n  - Emergency Action Plan\n  - Emergency Preparedness\n  - Hazard Communication\n  - Powered Industrial Trucks\n\nFACT KEYS ALREADY IN USE FOR THIS COMPANY\n  - aed_on_site\n  - air_emission_sources\n  - air_permit_type\n  - chemical_release_hazard\n  - emergency_eyewash_shower\n  - employee_count_site\n  - facility_operations\n  - fire_alarm_monitoring\n  - hazardous_waste_streams\n  - lpg_cylinder_use\n  - powered_industrial_trucks\n  - workforce_roles",
+  "company_context_sha256": "58fd1e32a39784f79228875c98fafe4f3fb1f40e1c8233808038327039cfe166",
+  "wall_ms": 40979,
+  "cost_usd": 0.11978,
+  "input_tokens": 8665,
+  "output_tokens": 4256,
+  "json_parsed": true,
+  "compliant_found_in": [],
+  "alternative_pass": false,
+  "verdicts": {
+    "kind": {
+      "verdict": "PASS",
+      "detail": "identity.kind = \"record\""
+    },
+    "agency-osha": {
+      "verdict": "PASS",
+      "detail": "identity.agencies = [oregon osha]"
+    },
+    "subject": {
+      "verdict": "PASS",
+      "detail": "identity.subjects = [powered industrial trucks]"
+    },
+    "site-portland": {
+      "verdict": "PASS",
+      "detail": "identity.site = \"portland — 4410 nw front ave, portland, oregon 97210\""
+    },
+    "doc-date": {
+      "verdict": "PASS",
+      "detail": "identity.doc_date = 2026-09-17"
+    },
+    "doc-date-kind": {
+      "verdict": "PASS",
+      "detail": "identity.doc_date_kind = \"last entry\""
+    },
+    "status": {
+      "verdict": "PASS",
+      "detail": "status = \"gaps found\""
+    },
+    "finding-missing-days": {
+      "verdict": "PASS",
+      "detail": "gaps: \"No entries for Thursday Sep 3 and Friday Sep 4\" [sep 3, sep 4, missing, no entr]"
+    },
+    "finding-horn-defect": {
+      "verdict": "FAIL",
+      "detail": "no item matched. gaps/notes held: No entries for Thursday Sep 3 and Friday Sep | Horn defect found, but no record of it being | No entries you can see after Sep 17 | Photo copy is skewed and cropped | summary | freshness_note | confidence_notes | expected_missing | expected_missing | expected_missing | expected_missing"
+    },
+    "finding-no-entries-since": {
+      "verdict": "FAIL",
+      "detail": "no item matched. gaps/notes held: No entries for Thursday Sep 3 and Friday Sep | Horn defect found, but no record of it being | No entries you can see after Sep 17 | Photo copy is skewed and cropped | summary | freshness_note | confidence_notes | expected_missing | expected_missing | expected_missing | expected_missing"
+    },
+    "fact-truck": {
+      "verdict": "PASS",
+      "detail": "facts: \"powered_industrial_trucks\" [toyota, 8fgu25, fl-2, propane, forklift]"
+    },
+    "label-consistency": {
+      "verdict": "CROSS",
+      "detail": "judged across the three runs, below"
+    },
+    "no-false-certification-finding": {
+      "verdict": "PASS",
+      "detail": "not raised",
+      "soft": []
+    },
+    "no-false-form-finding": {
+      "verdict": "PASS",
+      "detail": "not raised",
+      "soft": []
+    },
+    "no-invented-maintenance-finding": {
+      "verdict": "PASS",
+      "detail": "not raised",
+      "soft": []
+    },
+    "citation-evaluation-rule": {
+      "verdict": "FAIL",
+      "detail": "\"1910.178(l)(4)(iii)\" not in deadlines, gaps, notes"
+    },
+    "two-operators-fact": {
+      "verdict": "FAIL",
+      "detail": "no item matched. facts held: powered_industrial_trucks | lpg_cylinder_use | facility_operations | workforce_roles"
+    },
+    "conditions-none": {
+      "verdict": "PASS",
+      "detail": "none"
+    },
+    "freshness-recent": {
+      "verdict": "PASS",
+      "detail": "[september]"
+    },
+    "last-entry-date": {
+      "verdict": "FAIL",
+      "detail": "2026-09-18 appears in none of significant_date, identity.doc_date"
+    },
+    "deadline-chen": {
+      "verdict": "FAIL",
+      "detail": "no item matched. deadlines held: Pre-shift inspection of FL-2 before each shi"
+    },
+    "deadline-rivera": {
+      "verdict": "FAIL",
+      "detail": "no item matched. deadlines held: Pre-shift inspection of FL-2 before each shi"
+    }
+  },
+  "scan": {
+    "identity": {
+      "kind": "record",
+      "title": "Forklift Pre-Shift Inspection Log, Unit FL-2 (Toyota 8FGU25, propane), September 2026, Portland Warehouse",
+      "issuer": "Cascade Specialty Chemicals, LLC (Portland Warehouse), from the header on page 1",
+      "agencies": [
+        "Oregon OSHA"
+      ],
+      "subjects": [
+        "Powered Industrial Trucks"
+      ],
+      "site": "Portland — 4410 NW Front Ave, Portland, Oregon 97210",
+      "jurisdiction": [
+        "Oregon",
+        "federal"
+      ],
+      "doc_date": "2026-09-17",
+      "doc_date_kind": "last_entry",
+      "page_refs": {}
+    },
+    "summary": "This is your own daily checklist for forklift FL-2 for September 2026. Each row records the pre-shift check before the day shift, with ticks for 13 items and the operator's initials. It shows that checks were done on the listed days. The photo shows 11 entries, from Sep 1 to Sep 17. One defect was written down (the horn on Sep 9), but the log does not show what was done about it. There are also missing weekdays and no entries after Sep 17.",
+    "status": "gaps_found",
+    "significant_date": "2026-09-17",
+    "significant_date_kind": "last_entry",
+    "freshness_note": "The last entry you can see is Sep 17, 2026, which is 13 days before today. The bottom of the photo is cropped, so the log may go on past that row. Ask for a full, uncropped scan of the whole September sheet. When October starts, ask for that month's log too.",
+    "gaps": [
+      {
+        "title": "No entries for Thursday Sep 3 and Friday Sep 4",
+        "description": "The log goes from Sep 2 to Sep 7, so the weekdays Sep 3 and Sep 4 are missing. Either the truck was not used on those days, or it was used without a check being written down. The log itself does not say which.",
+        "fix": "Find out whether FL-2 was used on Sep 3 and Sep 4. If it was not, write 'not in use' on those dates. If it was, remind operators that the truck must be checked before every shift it is used, and write down the check each time.",
+        "citation": "29 CFR 1910.178(q)(7), the rule the log itself names. Oregon OSHA adopts 1910.178 through OAR 437 Division 2, Subdivision N. I have not checked which Oregon rule section this is.",
+        "citation_url": "https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.178",
+        "locator": "Page 1, table rows between Sep 2 and Sep 7",
+        "draftable": false,
+        "basis": "inferred",
+        "quote": "examine before each shift; do not use if a defect affects safety.",
+        "quote_verified": null,
+        "same_as_gap_id": null
+      },
+      {
+        "title": "Horn defect found, but no record of it being taken out of service or repaired",
+        "description": "On Sep 9 the horn is marked X with the note 'Horn not working'. The same operator's initials appear on that row, and the log does not show whether the truck was parked or tagged out. On Sep 10 the horn is ticked OK, but nothing records a repair. It is not clear whether the truck was used on Sep 9 with a faulty horn.",
+        "fix": "Find the work order or repair record for the horn. Attach it to the log, or add a note on the Sep 9 row saying the truck was tagged out and giving the repair date. Consider adding 'removed from service Y/N' and 'repaired by/date' columns to the form.",
+        "citation": "29 CFR 1910.178(q)(1) and (q)(7): a truck that needs repair or is unsafe must be taken out of service until it is fixed.",
+        "citation_url": "https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.178",
+        "locator": "Page 1, Sep 9 row, Horn and Notes columns",
+        "draftable": false,
+        "basis": "read",
+        "quote": "Horn not working",
+        "quote_verified": null,
+        "same_as_gap_id": null
+      },
+      {
+        "title": "No entries you can see after Sep 17",
+        "description": "There are no rows for Sep 18 or for Sep 21 through Sep 30. The photo is cut off at the bottom, so this may only be a problem with the copy you uploaded.",
+        "fix": "Upload the full page, or any second page. If the checks really stopped, find out whether FL-2 was used after Sep 17.",
+        "citation": "29 CFR 1910.178(q)(7)",
+        "citation_url": "https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.178",
+        "locator": "Page 1, bottom of table (cropped)",
+        "draftable": false,
+        "basis": "inferred",
+        "quote": null,
+        "quote_verified": null,
+        "same_as_gap_id": null
+      },
+      {
+        "title": "Photo copy is skewed and cropped",
+        "description": "The file is an angled photo. The bottom edge of the table is cut off, and you cannot see a signature block or any rows below Sep 17.",
+        "fix": "Keep a flat, full-page scan of the original as the record.",
+        "citation": null,
+        "citation_url": null,
+        "locator": "Page 1, whole image",
+        "draftable": false,
+        "basis": "read",
+        "quote": null,
+        "quote_verified": null,
+        "same_as_gap_id": null
+      }
+    ],
+    "conditions": [],
+    "deadlines": [
+      {
+        "title": "Pre-shift inspection of FL-2 before each shift it is used",
+        "due_on": null,
+        "source_line": "Inspection per OSHA 29 CFR 1910.178(q)(7): examine before each shift; do not use if a defect affects safety.",
+        "recurs": true
+      }
+    ],
+    "facts": [
+      {
+        "key": "powered_industrial_trucks",
+        "value": "Toyota 8FGU25 forklift, unit FL-2, propane-fueled, in use at the Portland Warehouse, about 4,812–4,886 hours during Sep 2026",
+        "quote": "Truck: Toyota 8FGU25, unit FL-2, propane",
+        "locator": "Page 1, header",
+        "as_of": "2026-09-17",
+        "affects": "Brings in the Oregon OSHA powered industrial truck rules: operator training and evaluation, inspections, and removing unsafe trucks from service.",
+        "basis": "read",
+        "quote_verified": null
+      },
+      {
+        "key": "lpg_cylinder_use",
+        "value": "Propane (LPG) tanks for the forklift are changed on site",
+        "quote": "Tank changed",
+        "locator": "Page 1, Sep 15 row, Notes",
+        "as_of": "2026-09-15",
+        "affects": "Means you need safe handling and storage of propane cylinders, and training for the people who change them.",
+        "basis": "read",
+        "quote_verified": null
+      },
+      {
+        "key": "facility_operations",
+        "value": "Forklift FL-2 appears to run on the day shift only",
+        "quote": "Day",
+        "locator": "Page 1, Shift column (every visible row)",
+        "as_of": "2026-09-17",
+        "affects": "Sets how often inspections are expected: one per day shift the truck is used.",
+        "basis": "inferred",
+        "quote_verified": null
+      },
+      {
+        "key": "workforce_roles",
+        "value": "At least two forklift operators, identified by the initials M.C. and J.R.",
+        "quote": "J.R.",
+        "locator": "Page 1, Operator column",
+        "as_of": "2026-09-17",
+        "affects": "Each operator needs a current training and evaluation record under 1910.178(l).",
+        "basis": "inferred",
+        "quote_verified": null
+      }
+    ],
+    "version_of": {
+      "title": "Forklift Pre-Shift Inspection Log, Unit FL-2 (Toyota 8FGU25, propane), September 2026, Portland Warehouse (record)",
+      "confidence": "high"
+    },
+    "expected_missing": [
+      {
+        "title": "Forklift operator training and evaluation certificates (for M.C., J.R. and any other operators)",
+        "why": "Operators need to be trained and evaluated at least every 3 years. None of these records is in what you hold.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Maintenance and repair records for FL-2 (including the Sep 9 horn fix)",
+        "why": "These show that defects found on inspection were fixed before the truck went back into use.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Written Hazard Communication program",
+        "why": "A chemical manufacturer holding SDSs is normally expected to have a written program alongside them.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Hazardous waste generator records (manifests, generator status notice to Oregon DEQ)",
+        "why": "Chemical manufacturers usually produce regulated waste.",
+        "basis": "similar companies, not a checked requirement"
+      }
+    ],
+    "confidence_notes": "I am sure of what the photo shows: the header, the truck, the month, the 11 dated rows, the X on the horn on Sep 9, and the two notes. The days of the week are my own calculation (Sep 1, 2026 is a Tuesday), and that is how I decided Sep 3 and Sep 4 are missing weekdays. Because the bottom of the photo is cut off, I cannot tell whether there are entries after Sep 17. This looks like the same September FL-2 log you already hold, possibly a photo copy of it. The Oregon rule that adopts 1910.178 was not checked, and I am not sure of its section number.",
+    "could_not_read": {
+      "reason": null,
+      "way_forward": null
+    },
+    "raw_text": "{\"identity\":{\"kind\":\"record\",\"title\":\"Forklift Pre-Shift Inspection Log, Unit FL-2 (Toyota 8FGU25, propane), September 2026, Portland Warehouse\",\"issuer\":\"Cascade Specialty Chemicals, LLC (Portland Warehouse), from the header on page 1\",\"agencies\":[\"Oregon OSHA\"],\"subjects\":[\"Powered Industrial Trucks\"],\"site\":\"Portland — 4410 NW Front Ave, Portland, Oregon 97210\",\"jurisdiction\":[\"Oregon\",\"federal\"],\"doc_date\":\"2026-09-17\",\"doc_date_kind\":\"last_entry\"},\"summary\":\"This is your own daily checklist for forklift FL-2 for September 2026. Each row records the pre-shift check before the day shift, with ticks for 13 items and the operator's initials. It shows that checks were done on the listed days. The photo shows 11 entries, from Sep 1 to Sep 17. One defect was written down (the horn on Sep 9), but the log does not show what was done about it. There are also missing weekdays and no entries after Sep 17.\",\"status\":\"gaps_found\",\"significant_date\":\"2026-09-17\",\"significant_date_kind\":\"last_entry\",\"freshness_note\":\"The last entry you can see is Sep 17, 2026, which is 13 days before today. The bottom of the photo is cropped, so the log may go on past that row. Ask for a full, uncropped scan of the whole September sheet. When October starts, ask for that month's log too.\",\"gaps\":[{\"title\":\"No entries for Thursday Sep 3 and Friday Sep 4\",\"description\":\"The log goes from Sep 2 to Sep 7, so the weekdays Sep 3 and Sep 4 are missing. Either the truck was not used on those days, or it was used without a check being written down. The log itself does not say which.\",\"fix\":\"Find out whether FL-2 was used on Sep 3 and Sep 4. If it was not, write 'not in use' on those dates. If it was, remind operators that the truck must be checked before every shift it is used, and write down the check each time.\",\"citation\":\"29 CFR 1910.178(q)(7), the rule the log itself names. Oregon OSHA adopts 1910.178 through OAR 437 Division 2, Subdivision N. I have not checked which Oregon rule section this is.\",\"citation_url\":\"https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.178\",\"locator\":\"Page 1, table rows between Sep 2 and Sep 7\",\"draftable\":false,\"basis\":\"inferred\",\"quote\":\"examine before each shift; do not use if a defect affects safety.\",\"same_as_gap_id\":\"\"},{\"title\":\"Horn defect found, but no record of it being taken out of service or repaired\",\"description\":\"On Sep 9 the horn is marked X with the note 'Horn not working'. The same operator's initials appear on that row, and the log does not show whether the truck was parked or tagged out. On Sep 10 the horn is ticked OK, but nothing records a repair. It is not clear whether the truck was used on Sep 9 with a faulty horn.\",\"fix\":\"Find the work order or repair record for the horn. Attach it to the log, or add a note on the Sep 9 row saying the truck was tagged out and giving the repair date. Consider adding 'removed from service Y/N' and 'repaired by/date' columns to the form.\",\"citation\":\"29 CFR 1910.178(q)(1) and (q)(7): a truck that needs repair or is unsafe must be taken out of service until it is fixed.\",\"citation_url\":\"https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.178\",\"locator\":\"Page 1, Sep 9 row, Horn and Notes columns\",\"draftable\":false,\"basis\":\"read\",\"quote\":\"Horn not working\",\"same_as_gap_id\":\"\"},{\"title\":\"No entries you can see after Sep 17\",\"description\":\"There are no rows for Sep 18 or for Sep 21 through Sep 30. The photo is cut off at the bottom, so this may only be a problem with the copy you uploaded.\",\"fix\":\"Upload the full page, or any second page. If the checks really stopped, find out whether FL-2 was used after Sep 17.\",\"citation\":\"29 CFR 1910.178(q)(7)\",\"citation_url\":\"https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.178\",\"locator\":\"Page 1, bottom of table (cropped)\",\"draftable\":false,\"basis\":\"inferred\",\"quote\":\"\",\"same_as_gap_id\":\"\"},{\"title\":\"Photo copy is skewed and cropped\",\"description\":\"The file is an angled photo. The bottom edge of the table is cut off, and you cannot see a signature block or any rows below Sep 17.\",\"fix\":\"Keep a flat, full-page scan of the original as the record.\",\"citation\":\"\",\"citation_url\":\"\",\"locator\":\"Page 1, whole image\",\"draftable\":false,\"basis\":\"read\",\"quote\":\"\",\"same_as_gap_id\":\"\"}],\"conditions\":[],\"deadlines\":[{\"title\":\"Pre-shift inspection of FL-2 before each shift it is used\",\"due_on\":\"\",\"source_line\":\"Inspection per OSHA 29 CFR 1910.178(q)(7): examine before each shift; do not use if a defect affects safety.\",\"recurs\":true}],\"facts\":[{\"key\":\"powered_industrial_trucks\",\"value\":\"Toyota 8FGU25 forklift, unit FL-2, propane-fueled, in use at the Portland Warehouse, about 4,812–4,886 hours during Sep 2026\",\"basis\":\"read\",\"quote\":\"Truck: Toyota 8FGU25, unit FL-2, propane\",\"locator\":\"Page 1, header\",\"as_of\":\"2026-09-17\",\"affects\":\"Brings in the Oregon OSHA powered industrial truck rules: operator training and evaluation, inspections, and removing unsafe trucks from service.\"},{\"key\":\"lpg_cylinder_use\",\"value\":\"Propane (LPG) tanks for the forklift are changed on site\",\"basis\":\"read\",\"quote\":\"Tank changed\",\"locator\":\"Page 1, Sep 15 row, Notes\",\"as_of\":\"2026-09-15\",\"affects\":\"Means you need safe handling and storage of propane cylinders, and training for the people who change them.\"},{\"key\":\"facility_operations\",\"value\":\"Forklift FL-2 appears to run on the day shift only\",\"basis\":\"inferred\",\"quote\":\"Day\",\"locator\":\"Page 1, Shift column (every visible row)\",\"as_of\":\"2026-09-17\",\"affects\":\"Sets how often inspections are expected: one per day shift the truck is used.\"},{\"key\":\"workforce_roles\",\"value\":\"At least two forklift operators, identified by the initials M.C. and J.R.\",\"basis\":\"inferred\",\"quote\":\"J.R.\",\"locator\":\"Page 1, Operator column\",\"as_of\":\"2026-09-17\",\"affects\":\"Each operator needs a current training and evaluation record under 1910.178(l).\"}],\"version_of_title\":\"Forklift Pre-Shift Inspection Log, Unit FL-2 (Toyota 8FGU25, propane), September 2026, Portland Warehouse (record)\",\"version_of_confidence\":\"high\",\"expected_missing\":[{\"title\":\"Forklift operator training and evaluation certificates (for M.C., J.R. and any other operators)\",\"why\":\"Operators need to be trained and evaluated at least every 3 years. None of these records is in what you hold.\",\"basis\":\"similar companies, not a checked requirement\"},{\"title\":\"Maintenance and repair records for FL-2 (including the Sep 9 horn fix)\",\"why\":\"These show that defects found on inspection were fixed before the truck went back into use.\",\"basis\":\"similar companies, not a checked requirement\"},{\"title\":\"Written Hazard Communication program\",\"why\":\"A chemical manufacturer holding SDSs is normally expected to have a written program alongside them.\",\"basis\":\"similar companies, not a checked requirement\"},{\"title\":\"Hazardous waste generator records (manifests, generator status notice to Oregon DEQ)\",\"why\":\"Chemical manufacturers usually produce regulated waste.\",\"basis\":\"similar companies, not a checked requirement\"}],\"confidence_notes\":\"I am sure of what the photo shows: the header, the truck, the month, the 11 dated rows, the X on the horn on Sep 9, and the two notes. The days of the week are my own calculation (Sep 1, 2026 is a Tuesday), and that is how I decided Sep 3 and Sep 4 are missing weekdays. Because the bottom of the photo is cut off, I cannot tell whether there are entries after Sep 17. This looks like the same September FL-2 log you already hold, possibly a photo copy of it. The Oregon rule that adopts 1910.178 was not checked, and I am not sure of its section number.\",\"could_not_read_reason\":\"\",\"could_not_read_way_forward\":\"\"}",
+    "json_parsed": true,
+    "model": "claude-opus-5-5",
+    "cited_sources": 0,
+    "searches": null,
+    "structured": true,
+    "prompt_sha256": "f3f05eb0cb45610d86d23deb6b878a3effe061321b331a4938c290af34b5090f",
+    "quotes_checked": 0,
+    "quotes_verified": 0,
+    "extracted_text": "",
+    "started_at": "2026-09-30T00:03:03.238Z"
+  }
+}

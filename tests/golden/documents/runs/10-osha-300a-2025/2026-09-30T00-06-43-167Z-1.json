@@ -1,0 +1,262 @@
+{
+  "case": "10-osha-300a-2025",
+  "run": 1,
+  "run_date": "2026-09-29",
+  "model": "claude-opus-5-5",
+  "structured": true,
+  "searches": 1,
+  "cited_sources": 0,
+  "prompt_sha256": "06bb5232c86f3542b15a132e0e07bdbe56c6a0c5a62f6db723d0af6a9096cd1d",
+  "scan_id": "a0687572-7bff-4d4f-882d-2feb2719a5e8",
+  "ai_call_id": "7a56b1ef-dd28-4073-bf77-a37ab8e4dee9",
+  "company_context": "WHO THIS COMPANY IS\n  Name: Cascade Specialty Chemicals, LLC\n  Industry: chemical manufacturing (recorded as chemical-manufacturing)\n  Address: Portland, Oregon\n  State: Oregon\nTheir sites:\n  - Portland — 4410 NW Front Ave, Portland, Oregon 97210 (primary)\n\nWHAT A PERSON HAS CONFIRMED FROM A DOCUMENT\nEach of these was read in the named document and then confirmed by a person.\n  (nothing confirmed yet)\n\nLABELS ALREADY IN USE FOR THIS COMPANY\nAgencies:\n  - Oregon DEQ\n  - Oregon OSHA\nSubjects:\n  - Air Quality Permit\n  - Emergency Action Plan\n  - Emergency Preparedness\n  - Hazard Communication\n  - Powered Industrial Trucks\n\nFACT KEYS ALREADY IN USE FOR THIS COMPANY\n  - aed_on_site\n  - air_emission_sources\n  - air_permit_type\n  - annual_throughput\n  - chemical_release_hazard\n  - emergency_eyewash_shower\n  - employee_count_site\n  - facility_operations\n  - fire_alarm_monitoring\n  - hazardous_waste_streams\n  - lpg_cylinder_use\n  - pit_operator_roster\n  - powered_industrial_trucks\n  - workforce_roles",
+  "company_context_sha256": "d205b71624e51ab6a1f4cb0b9baffcd48c5e8482718daa14e1116c623c83d107",
+  "wall_ms": 48459,
+  "cost_usd": 0.222068,
+  "input_tokens": 28882,
+  "output_tokens": 4827,
+  "json_parsed": true,
+  "compliant_found_in": [],
+  "alternative_pass": false,
+  "verdicts": {
+    "kind": {
+      "verdict": "PASS",
+      "detail": "identity.kind = \"record\""
+    },
+    "agency-osha": {
+      "verdict": "PASS",
+      "detail": "identity.agencies = [oregon osha | u.s. osha]"
+    },
+    "subject": {
+      "verdict": "PASS",
+      "detail": "identity.subjects = [injury and illness recordkeeping]"
+    },
+    "site-portland": {
+      "verdict": "PASS",
+      "detail": "identity.site = \"portland — 4410 nw front ave, portland, oregon 97210\""
+    },
+    "doc-date": {
+      "verdict": "PASS",
+      "detail": "identity.doc_date = 2026-02-01"
+    },
+    "status": {
+      "verdict": "PASS",
+      "detail": "status = \"recorded\""
+    },
+    "no-gaps": {
+      "verdict": "FAIL",
+      "detail": "2: \"No proof of electronic submission to OSHA\"; \"Industry code may not match what the company actually does\""
+    },
+    "fact-65-employees": {
+      "verdict": "PASS",
+      "detail": "facts: \"employee_count_site\" [65, employee, annual average]"
+    },
+    "label-consistency": {
+      "verdict": "CROSS",
+      "detail": "judged across the three runs, below"
+    },
+    "no-case-count-gap": {
+      "verdict": "PASS",
+      "detail": "not raised",
+      "soft": []
+    },
+    "no-emergency-plan-claim": {
+      "verdict": "PASS",
+      "detail": "not raised",
+      "soft": []
+    },
+    "doc-date-kind": {
+      "verdict": "PASS",
+      "detail": "identity.doc_date_kind = \"issued\""
+    },
+    "deadline-posting": {
+      "verdict": "PASS",
+      "detail": "deadlines: \"Certify and post the 2026 Form 300A\" [post, summary]"
+    },
+    "facts-may-contain": {
+      "verdict": "PASS",
+      "detail": "facts: \"naics_code\" [424690]"
+    }
+  },
+  "scan": {
+    "identity": {
+      "kind": "record",
+      "title": "OSHA Form 300A Summary of Work-Related Injuries and Illnesses, Calendar Year 2025, Portland Facility",
+      "issuer": "Cascade Specialty Chemicals, LLC (certified by Daniel Okafor, Plant Manager), on the federal OSHA form",
+      "agencies": [
+        "Oregon OSHA",
+        "U.S. OSHA"
+      ],
+      "subjects": [
+        "Injury and Illness Recordkeeping"
+      ],
+      "site": "Portland — 4410 NW Front Ave, Portland, Oregon 97210",
+      "jurisdiction": [
+        "Oregon",
+        "federal"
+      ],
+      "doc_date": "2026-02-01",
+      "doc_date_kind": "issued",
+      "page_refs": {}
+    },
+    "summary": "This is the company's own 2025 annual injury and illness summary for the Portland facility (page 1). It shows 3 recordable injuries: 1 with 6 days away from work and 2 other recordable cases. There were no deaths, no job-transfer cases and no illnesses, among an average of 65 employees working 128,400 hours. It is a record, not a program. It proves that the 2025 summary was completed and certified on February 1, 2026. It does not prove that it was posted, that the underlying 300 Log and 801 forms are complete, or that it was submitted electronically to OSHA.",
+    "status": "recorded",
+    "significant_date": "2026-02-01",
+    "significant_date_kind": "last_entry",
+    "freshness_note": "This is the latest annual summary that can exist today. The 2026 summary is not due until February 1, 2027. The required posting period for this summary (February 1 to April 30, 2026) has ended. You must keep it, with the 2025 OSHA 300 Log and DCBS 801 forms, for 5 years after the end of 2025, which is through December 31, 2030.",
+    "gaps": [
+      {
+        "title": "No proof of electronic submission to OSHA",
+        "description": "Oregon rule OAR 437-001-0700(24)(b) says establishments with 20 to 249 employees in industries listed in its Table 7 must submit their 300A data each year through federal OSHA's Injury Tracking Application (ITA) by March 2. This site had 65 employees. I have not confirmed that NAICS 4246 is on Table 7, but wholesale industries largely are. Nothing in your holdings shows the 2025 data was submitted.",
+        "fix": "Check whether NAICS 4246 is on Table 7 of OAR 437-001-0700. If it is, log into the ITA and confirm the 2025 300A was submitted by March 2, 2026. If it was not, submit it now. Keep the ITA confirmation with this summary.",
+        "citation": "OAR 437-001-0700(24)(b); 29 CFR 1904.41(a)(2)",
+        "citation_url": "https://oregon.public.law/rules/oar_437-001-0700",
+        "locator": "not in the document",
+        "draftable": false,
+        "basis": "inferred",
+        "quote": "North American Industrial Classification (NAICS): 424690",
+        "quote_verified": true,
+        "same_as_gap_id": null
+      },
+      {
+        "title": "Industry code may not match what the company actually does",
+        "description": "The form lists the site as a chemical merchant wholesaler (NAICS 424690) that repackages chemicals. The company profile says chemical manufacturing, and the site holds an air permit with scrubbers and carbon controls. If the site actually manufactures or blends products, the correct code could be in NAICS 325. That would change which electronic-submission tables apply to you.",
+        "fix": "Confirm the correct NAICS code for the Portland site's main activity. Use the same code on the 300A, in the ITA, and in your other filings.",
+        "citation": "OAR 437-001-0700(24), Tables 7 and 8 (depend on NAICS)",
+        "citation_url": "https://oregon.public.law/rules/oar_437-001-0700",
+        "locator": "page 1, Establishment information",
+        "draftable": false,
+        "basis": "inferred",
+        "quote": "Chemical and allied products merchant wholesaler; repackaging of acids, caustics and solvents",
+        "quote_verified": true,
+        "same_as_gap_id": null
+      }
+    ],
+    "conditions": [],
+    "deadlines": [
+      {
+        "title": "Keep the 2025 300A, 300 Log and DCBS 801 forms on file",
+        "due_on": "2030-12-31",
+        "source_line": "Year 2025 (5-year retention rule, OAR 437-001-0700 / 29 CFR 1904.33)",
+        "recurs": false
+      },
+      {
+        "title": "Certify and post the 2026 Form 300A",
+        "due_on": "2027-02-01",
+        "source_line": "Post this Summary page from February 1 to April 30 of the year following the year covered by the form.",
+        "recurs": true
+      },
+      {
+        "title": "Keep the 2026 Form 300A posted until",
+        "due_on": "2027-04-30",
+        "source_line": "Post this Summary page from February 1 to April 30 of the year following the year covered by the form.",
+        "recurs": true
+      },
+      {
+        "title": "Submit 2026 300A data electronically through OSHA's ITA (if Table 7 applies)",
+        "due_on": "2027-03-02",
+        "source_line": "North American Industrial Classification (NAICS): 424690 (submission rule is OAR 437-001-0700(24), not stated on the form)",
+        "recurs": true
+      }
+    ],
+    "facts": [
+      {
+        "key": "employee_count_site",
+        "value": "65 (annual average, 2025)",
+        "quote": "Annual average number of employees: 65",
+        "locator": "page 1, Employment information",
+        "as_of": "2025-12-31",
+        "affects": "Places the site in the 20–249 employee band for electronic submission. It is below the 100-employee point where Form 300 and 801 case data must also be submitted.",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "naics_code",
+        "value": "424690",
+        "quote": "North American Industrial Classification (NAICS): 424690",
+        "locator": "page 1, Establishment information",
+        "as_of": "2026-02-01",
+        "affects": "Decides whether the site falls under Oregon's Table 7 and Table 8 electronic-submission rules.",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "facility_operations",
+        "value": "Chemical wholesaling and repackaging of acids, caustics and solvents",
+        "quote": "Chemical and allied products merchant wholesaler; repackaging of acids, caustics and solvents",
+        "locator": "page 1, Establishment information",
+        "as_of": "2026-02-01",
+        "affects": "Supports hazard communication, PPE, emergency eyewash and chemical-release planning obligations.",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "total_hours_worked",
+        "value": "128,400 hours in 2025",
+        "quote": "Total hours worked by all employees last year: 128,400",
+        "locator": "page 1, Employment information",
+        "as_of": "2025-12-31",
+        "affects": "Used to calculate injury rates (TRIR about 4.7 and DART about 1.6, both calculated, not stated on the form).",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "recordable_cases_2025",
+        "value": "3 recordable injuries: 1 with days away (6 days), 2 other recordable cases, 0 deaths, 0 illnesses",
+        "quote": "Total number of cases with days away from work: 1 (H)",
+        "locator": "page 1, Number of Cases",
+        "as_of": "2025-12-31",
+        "affects": "Injury history that an Oregon OSHA inspection or an insurer would review. It also means a 2025 300 Log and three DCBS 801 forms should exist.",
+        "basis": "read",
+        "quote_verified": true
+      }
+    ],
+    "version_of": {
+      "title": null,
+      "confidence": "high"
+    },
+    "expected_missing": [
+      {
+        "title": "OSHA 300 Log of Work-Related Injuries and Illnesses, 2025",
+        "why": "This summary is totaled from the Log. With 3 cases recorded, the Log should exist and be kept for 5 years.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "DCBS Form 801 (or equivalent) for each of the 3 recordable cases",
+        "why": "Oregon uses the 801 as its incident report for every entry on the Log.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "ITA electronic submission confirmation for the 2025 300A",
+        "why": "A site with 20–249 employees in a covered industry has to file by March 2.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Earlier years' 300A summaries and Logs (2021–2024)",
+        "why": "The 5-year retention rule means these should still be on file.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Personal protective equipment hazard assessment and a Safety Committee record",
+        "why": "These are usual for a chemical repackaging site with 65 workers in Oregon.",
+        "basis": "similar companies, not a checked requirement"
+      }
+    ],
+    "confidence_notes": "The single page was fully readable, and everything in the identity section and facts comes from it. The case totals add up: 1 + 0 + 2 = 3 cases, which matches the 3 injuries listed. The hours are reasonable for 65 employees. A Plant Manager signing is likely acceptable as the highest-ranking official at the site, but I did not check who counts as a company executive under the rule. I am not sure whether NAICS 4246 is on Oregon's Table 7, so the electronic-submission gap is marked as inferred. The form prints 'Rev. 01/2004'. I believe the federal form has a different revision label, but I did not check, and Oregon accepts equivalent forms, so I did not list it as a gap. I cannot tell from this page whether the summary was actually posted from February to April 2026.",
+    "could_not_read": {
+      "reason": null,
+      "way_forward": null
+    },
+    "raw_text": "{\"identity\":{\"kind\":\"record\",\"title\":\"OSHA Form 300A Summary of Work-Related Injuries and Illnesses, Calendar Year 2025, Portland Facility\",\"issuer\":\"Cascade Specialty Chemicals, LLC (certified by Daniel Okafor, Plant Manager), on the federal OSHA form\",\"agencies\":[\"Oregon OSHA\",\"U.S. OSHA\"],\"subjects\":[\"Injury and Illness Recordkeeping\"],\"site\":\"Portland — 4410 NW Front Ave, Portland, Oregon 97210\",\"jurisdiction\":[\"Oregon\",\"federal\"],\"doc_date\":\"2026-02-01\",\"doc_date_kind\":\"issued\"},\"summary\":\"This is the company's own 2025 annual injury and illness summary for the Portland facility (page 1). It shows 3 recordable injuries: 1 with 6 days away from work and 2 other recordable cases. There were no deaths, no job-transfer cases and no illnesses, among an average of 65 employees working 128,400 hours. It is a record, not a program. It proves that the 2025 summary was completed and certified on February 1, 2026. It does not prove that it was posted, that the underlying 300 Log and 801 forms are complete, or that it was submitted electronically to OSHA.\",\"status\":\"recorded\",\"significant_date\":\"2026-02-01\",\"significant_date_kind\":\"last_entry\",\"freshness_note\":\"This is the latest annual summary that can exist today. The 2026 summary is not due until February 1, 2027. The required posting period for this summary (February 1 to April 30, 2026) has ended. You must keep it, with the 2025 OSHA 300 Log and DCBS 801 forms, for 5 years after the end of 2025, which is through December 31, 2030.\",\"gaps\":[{\"title\":\"No proof of electronic submission to OSHA\",\"description\":\"Oregon rule OAR 437-001-0700(24)(b) says establishments with 20 to 249 employees in industries listed in its Table 7 must submit their 300A data each year through federal OSHA's Injury Tracking Application (ITA) by March 2. This site had 65 employees. I have not confirmed that NAICS 4246 is on Table 7, but wholesale industries largely are. Nothing in your holdings shows the 2025 data was submitted.\",\"fix\":\"Check whether NAICS 4246 is on Table 7 of OAR 437-001-0700. If it is, log into the ITA and confirm the 2025 300A was submitted by March 2, 2026. If it was not, submit it now. Keep the ITA confirmation with this summary.\",\"citation\":\"OAR 437-001-0700(24)(b); 29 CFR 1904.41(a)(2)\",\"citation_url\":\"https://oregon.public.law/rules/oar_437-001-0700\",\"locator\":\"not in the document\",\"draftable\":false,\"basis\":\"inferred\",\"quote\":\"North American Industrial Classification (NAICS): 424690\",\"same_as_gap_id\":\"\"},{\"title\":\"Industry code may not match what the company actually does\",\"description\":\"The form lists the site as a chemical merchant wholesaler (NAICS 424690) that repackages chemicals. The company profile says chemical manufacturing, and the site holds an air permit with scrubbers and carbon controls. If the site actually manufactures or blends products, the correct code could be in NAICS 325. That would change which electronic-submission tables apply to you.\",\"fix\":\"Confirm the correct NAICS code for the Portland site's main activity. Use the same code on the 300A, in the ITA, and in your other filings.\",\"citation\":\"OAR 437-001-0700(24), Tables 7 and 8 (depend on NAICS)\",\"citation_url\":\"https://oregon.public.law/rules/oar_437-001-0700\",\"locator\":\"page 1, Establishment information\",\"draftable\":false,\"basis\":\"inferred\",\"quote\":\"Chemical and allied products merchant wholesaler; repackaging of acids, caustics and solvents\",\"same_as_gap_id\":\"\"}],\"conditions\":[],\"deadlines\":[{\"title\":\"Keep the 2025 300A, 300 Log and DCBS 801 forms on file\",\"due_on\":\"2030-12-31\",\"source_line\":\"Year 2025 (5-year retention rule, OAR 437-001-0700 / 29 CFR 1904.33)\",\"recurs\":false},{\"title\":\"Certify and post the 2026 Form 300A\",\"due_on\":\"2027-02-01\",\"source_line\":\"Post this Summary page from February 1 to April 30 of the year following the year covered by the form.\",\"recurs\":true},{\"title\":\"Keep the 2026 Form 300A posted until\",\"due_on\":\"2027-04-30\",\"source_line\":\"Post this Summary page from February 1 to April 30 of the year following the year covered by the form.\",\"recurs\":true},{\"title\":\"Submit 2026 300A data electronically through OSHA's ITA (if Table 7 applies)\",\"due_on\":\"2027-03-02\",\"source_line\":\"North American Industrial Classification (NAICS): 424690 (submission rule is OAR 437-001-0700(24), not stated on the form)\",\"recurs\":true}],\"facts\":[{\"key\":\"employee_count_site\",\"value\":\"65 (annual average, 2025)\",\"basis\":\"read\",\"quote\":\"Annual average number of employees: 65\",\"locator\":\"page 1, Employment information\",\"as_of\":\"2025-12-31\",\"affects\":\"Places the site in the 20–249 employee band for electronic submission. It is below the 100-employee point where Form 300 and 801 case data must also be submitted.\"},{\"key\":\"naics_code\",\"value\":\"424690\",\"basis\":\"read\",\"quote\":\"North American Industrial Classification (NAICS): 424690\",\"locator\":\"page 1, Establishment information\",\"as_of\":\"2026-02-01\",\"affects\":\"Decides whether the site falls under Oregon's Table 7 and Table 8 electronic-submission rules.\"},{\"key\":\"facility_operations\",\"value\":\"Chemical wholesaling and repackaging of acids, caustics and solvents\",\"basis\":\"read\",\"quote\":\"Chemical and allied products merchant wholesaler; repackaging of acids, caustics and solvents\",\"locator\":\"page 1, Establishment information\",\"as_of\":\"2026-02-01\",\"affects\":\"Supports hazard communication, PPE, emergency eyewash and chemical-release planning obligations.\"},{\"key\":\"total_hours_worked\",\"value\":\"128,400 hours in 2025\",\"basis\":\"read\",\"quote\":\"Total hours worked by all employees last year: 128,400\",\"locator\":\"page 1, Employment information\",\"as_of\":\"2025-12-31\",\"affects\":\"Used to calculate injury rates (TRIR about 4.7 and DART about 1.6, both calculated, not stated on the form).\"},{\"key\":\"recordable_cases_2025\",\"value\":\"3 recordable injuries: 1 with days away (6 days), 2 other recordable cases, 0 deaths, 0 illnesses\",\"basis\":\"read\",\"quote\":\"Total number of cases with days away from work: 1 (H)\",\"locator\":\"page 1, Number of Cases\",\"as_of\":\"2025-12-31\",\"affects\":\"Injury history that an Oregon OSHA inspection or an insurer would review. It also means a 2025 300 Log and three DCBS 801 forms should exist.\"}],\"version_of_title\":\"\",\"version_of_confidence\":\"high\",\"expected_missing\":[{\"title\":\"OSHA 300 Log of Work-Related Injuries and Illnesses, 2025\",\"why\":\"This summary is totaled from the Log. With 3 cases recorded, the Log should exist and be kept for 5 years.\",\"basis\":\"similar companies, not a checked requirement\"},{\"title\":\"DCBS Form 801 (or equivalent) for each of the 3 recordable cases\",\"why\":\"Oregon uses the 801 as its incident report for every entry on the Log.\",\"basis\":\"similar companies, not a checked requirement\"},{\"title\":\"ITA electronic submission confirmation for the 2025 300A\",\"why\":\"A site with 20–249 employees in a covered industry has to file by March 2.\",\"basis\":\"similar companies, not a checked requirement\"},{\"title\":\"Earlier years' 300A summaries and Logs (2021–2024)\",\"why\":\"The 5-year retention rule means these should still be on file.\",\"basis\":\"similar companies, not a checked requirement\"},{\"title\":\"Personal protective equipment hazard assessment and a Safety Committee record\",\"why\":\"These are usual for a chemical repackaging site with 65 workers in Oregon.\",\"basis\":\"similar companies, not a checked requirement\"}],\"confidence_notes\":\"The single page was fully readable, and everything in the identity section and facts comes from it. The case totals add up: 1 + 0 + 2 = 3 cases, which matches the 3 injuries listed. The hours are reasonable for 65 employees. A Plant Manager signing is likely acceptable as the highest-ranking official at the site, but I did not check who counts as a company executive under the rule. I am not sure whether NAICS 4246 is on Oregon's Table 7, so the electronic-submission gap is marked as inferred. The form prints 'Rev. 01/2004'. I believe the federal form has a different revision label, but I did not check, and Oregon accepts equivalent forms, so I did not list it as a gap. I cannot tell from this page whether the summary was actually posted from February to April 2026.\",\"could_not_read_reason\":\"\",\"could_not_read_way_forward\":\"\"}",
+    "json_parsed": true,
+    "model": "claude-opus-5-5",
+    "cited_sources": 0,
+    "searches": null,
+    "structured": true,
+    "prompt_sha256": "06bb5232c86f3542b15a132e0e07bdbe56c6a0c5a62f6db723d0af6a9096cd1d",
+    "quotes_checked": 7,
+    "quotes_verified": 7,
+    "extracted_text": "OSHA's Form 300A (Rev. 01/2004)\nSummary of Work-Related Injuries and Illnesses\nYear 2025\nU.S. Department of Labor · Occupational Safety and Health Administration · Form\napproved OMB no. 1218-0176\nAll establishments covered by Part 1904 must complete this Summary page, even if no work-related injuries or illnesses occurred during the year. Remember to review the Log to verify that\nthe entries are complete and accurate before completing this summary. Using the Log, count the individual entries you made for each category. Then write the totals below, making sure\nyou've added the entries from every page of the Log. If you had no cases, write \"0.\" Employees, former employees, and their representatives have the right to review the OSHA Form 300 in\nits entirety.\nNumber of Cases\nTotal number of deaths: 0 (G)\nTotal number of cases with days away from work: 1 (H)\nTotal number of cases with job transfer or restriction: 0 (I)\nTotal number of other recordable cases: 2 (J)\nNumber of Days\nTotal number of days away from work: 6 (K)\nTotal number of days of job transfer or restriction: 0 (L)\nInjury and Illness Types\nTotal number of (M): Injuries 3 · Skin disorders 0 · Respiratory conditions 0 · Poisonings 0 · Hearing loss 0 · All other illnesses 0\nEstablishment information\nYour establishment name: Cascade Specialty Chemicals, LLC — Portland Facility\nStreet: 4410 NW Front Avenue\nCity: Portland · State: OR · ZIP: 97210\nIndustry description: Chemical and allied products merchant wholesaler; repackaging of acids, caustics and solvents\nNorth American Industrial Classification (NAICS): 424690\nEmployment information\nAnnual average number of employees: 65\nTotal hours worked by all employees last year: 128,400\nSign here\nKnowingly falsifying this document may result in a fine.\nI certify that I have examined this document and that to the best of my knowledge the entries are true, accurate, and complete.\nDaniel Okafor · Plant Manager · Phone (503) 555-0148 · Date: February 1, 2026\nPost this Summary page from February 1 to April 30 of the year following the year covered by the form.",
+    "started_at": "2026-09-30T00:05:54.256Z"
+  }
+}

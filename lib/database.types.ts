@@ -133,6 +133,360 @@ export type Database = {
           },
         ]
       }
+      audit_findings: {
+        Row: {
+          basis: string | null
+          closed_by_run_id: string | null
+          closed_reason: string | null
+          company_id: string
+          dismissed_reason: string | null
+          document_b_id: string | null
+          document_id: string | null
+          due_on: string | null
+          handle_error: boolean
+          id: string
+          kind: string
+          locator: string | null
+          ordinal: number
+          passed: boolean | null
+          quote: string | null
+          quote_verified: boolean | null
+          recurs: boolean | null
+          run_id: string
+          same_as: string | null
+          scan_id: string | null
+          section_id: string
+          source: string
+          status: string
+          title: string
+          value_a: string | null
+          value_b: string | null
+          what_to_do: string | null
+          word: string | null
+        }
+        Insert: {
+          basis?: string | null
+          closed_by_run_id?: string | null
+          closed_reason?: string | null
+          company_id: string
+          dismissed_reason?: string | null
+          document_b_id?: string | null
+          document_id?: string | null
+          due_on?: string | null
+          handle_error?: boolean
+          id?: string
+          kind: string
+          locator?: string | null
+          ordinal: number
+          passed?: boolean | null
+          quote?: string | null
+          quote_verified?: boolean | null
+          recurs?: boolean | null
+          run_id: string
+          same_as?: string | null
+          scan_id?: string | null
+          section_id: string
+          source?: string
+          status?: string
+          title: string
+          value_a?: string | null
+          value_b?: string | null
+          what_to_do?: string | null
+          word?: string | null
+        }
+        Update: {
+          basis?: string | null
+          closed_by_run_id?: string | null
+          closed_reason?: string | null
+          company_id?: string
+          dismissed_reason?: string | null
+          document_b_id?: string | null
+          document_id?: string | null
+          due_on?: string | null
+          handle_error?: boolean
+          id?: string
+          kind?: string
+          locator?: string | null
+          ordinal?: number
+          passed?: boolean | null
+          quote?: string | null
+          quote_verified?: boolean | null
+          recurs?: boolean | null
+          run_id?: string
+          same_as?: string | null
+          scan_id?: string | null
+          section_id?: string
+          source?: string
+          status?: string
+          title?: string
+          value_a?: string | null
+          value_b?: string | null
+          what_to_do?: string | null
+          word?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_findings_closed_by_run_id_fkey"
+            columns: ["closed_by_run_id"]
+            isOneToOne: false
+            referencedRelation: "audit_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "audit_findings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "audit_findings_document_b_in_same_company"
+            columns: ["company_id", "document_b_id"]
+            isOneToOne: false
+            referencedRelation: "document_index_v"
+            referencedColumns: ["company_id", "document_id"]
+          },
+          {
+            foreignKeyName: "audit_findings_document_b_in_same_company"
+            columns: ["company_id", "document_b_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["company_id", "id"]
+          },
+          {
+            foreignKeyName: "audit_findings_document_in_same_company"
+            columns: ["company_id", "document_id"]
+            isOneToOne: false
+            referencedRelation: "document_index_v"
+            referencedColumns: ["company_id", "document_id"]
+          },
+          {
+            foreignKeyName: "audit_findings_document_in_same_company"
+            columns: ["company_id", "document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["company_id", "id"]
+          },
+          {
+            foreignKeyName: "audit_findings_run_in_same_company"
+            columns: ["company_id", "run_id"]
+            isOneToOne: false
+            referencedRelation: "audit_runs"
+            referencedColumns: ["company_id", "id"]
+          },
+          {
+            foreignKeyName: "audit_findings_same_as_fkey"
+            columns: ["same_as"]
+            isOneToOne: false
+            referencedRelation: "audit_findings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "audit_findings_scan_in_same_company"
+            columns: ["company_id", "scan_id"]
+            isOneToOne: false
+            referencedRelation: "document_scans"
+            referencedColumns: ["company_id", "id"]
+          },
+          {
+            foreignKeyName: "audit_findings_section_in_same_company"
+            columns: ["company_id", "section_id"]
+            isOneToOne: false
+            referencedRelation: "audit_sections"
+            referencedColumns: ["company_id", "id"]
+          },
+        ]
+      }
+      audit_runs: {
+        Row: {
+          agency_label: string | null
+          company_id: string
+          created_at: string
+          created_by: string | null
+          dismissed_at: string | null
+          done_count: number
+          entity_id: string | null
+          finished_at: string | null
+          id: string
+          kind: string
+          notified_at: string | null
+          previous_run_id: string | null
+          readings_as_of: string | null
+          scope: string | null
+          section_count: number
+          started_at: string | null
+          status: string
+          summary: Json | null
+          template_document_id: string | null
+        }
+        Insert: {
+          agency_label?: string | null
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          dismissed_at?: string | null
+          done_count?: number
+          entity_id?: string | null
+          finished_at?: string | null
+          id?: string
+          kind: string
+          notified_at?: string | null
+          previous_run_id?: string | null
+          readings_as_of?: string | null
+          scope?: string | null
+          section_count?: number
+          started_at?: string | null
+          status?: string
+          summary?: Json | null
+          template_document_id?: string | null
+        }
+        Update: {
+          agency_label?: string | null
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          dismissed_at?: string | null
+          done_count?: number
+          entity_id?: string | null
+          finished_at?: string | null
+          id?: string
+          kind?: string
+          notified_at?: string | null
+          previous_run_id?: string | null
+          readings_as_of?: string | null
+          scope?: string | null
+          section_count?: number
+          started_at?: string | null
+          status?: string
+          summary?: Json | null
+          template_document_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_runs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "audit_runs_entity_in_same_company"
+            columns: ["company_id", "entity_id"]
+            isOneToOne: false
+            referencedRelation: "entities"
+            referencedColumns: ["company_id", "id"]
+          },
+          {
+            foreignKeyName: "audit_runs_previous_run_id_fkey"
+            columns: ["previous_run_id"]
+            isOneToOne: false
+            referencedRelation: "audit_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "audit_runs_template_in_same_company"
+            columns: ["company_id", "template_document_id"]
+            isOneToOne: false
+            referencedRelation: "document_index_v"
+            referencedColumns: ["company_id", "document_id"]
+          },
+          {
+            foreignKeyName: "audit_runs_template_in_same_company"
+            columns: ["company_id", "template_document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["company_id", "id"]
+          },
+        ]
+      }
+      audit_sections: {
+        Row: {
+          ai_call_id: string | null
+          claimed_at: string | null
+          company_id: string
+          could_not_complete_reason: string | null
+          documents_held_unread: string[]
+          documents_read: string[]
+          finished_at: string | null
+          handles: Json | null
+          id: string
+          input_sha256: string | null
+          json_parsed: boolean | null
+          model: string | null
+          ordinal: number
+          prompt_sha256: string | null
+          raw_text: string | null
+          run_id: string
+          started_at: string | null
+          status: string
+          title: string
+        }
+        Insert: {
+          ai_call_id?: string | null
+          claimed_at?: string | null
+          company_id: string
+          could_not_complete_reason?: string | null
+          documents_held_unread?: string[]
+          documents_read?: string[]
+          finished_at?: string | null
+          handles?: Json | null
+          id?: string
+          input_sha256?: string | null
+          json_parsed?: boolean | null
+          model?: string | null
+          ordinal: number
+          prompt_sha256?: string | null
+          raw_text?: string | null
+          run_id: string
+          started_at?: string | null
+          status?: string
+          title: string
+        }
+        Update: {
+          ai_call_id?: string | null
+          claimed_at?: string | null
+          company_id?: string
+          could_not_complete_reason?: string | null
+          documents_held_unread?: string[]
+          documents_read?: string[]
+          finished_at?: string | null
+          handles?: Json | null
+          id?: string
+          input_sha256?: string | null
+          json_parsed?: boolean | null
+          model?: string | null
+          ordinal?: number
+          prompt_sha256?: string | null
+          raw_text?: string | null
+          run_id?: string
+          started_at?: string | null
+          status?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_sections_ai_call_id_fkey"
+            columns: ["ai_call_id"]
+            isOneToOne: false
+            referencedRelation: "ai_calls"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "audit_sections_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "audit_sections_run_in_same_company"
+            columns: ["company_id", "run_id"]
+            isOneToOne: false
+            referencedRelation: "audit_runs"
+            referencedColumns: ["company_id", "id"]
+          },
+        ]
+      }
       audits: {
         Row: {
           company_id: string

@@ -7,28 +7,11 @@
   "must": [
     {
       "id": "carry-eap-gaps",
-      "line": "at least three of the plan's four gaps carried as findings",
-      "type": "count_matching",
+      "line": "at least three of the plan's own open gaps carried as findings, in the reading's own terms. The gaps are READ from document_gaps for the current scan, never typed: the four keyword pairs this check used to carry were Haiku's, and the real model's reading has seven gaps in different words.",
+      "type": "carries_own_gaps",
+      "file": "01-eap-chemical.pdf",
       "collection": "findings",
-      "n": 3,
-      "any_of": [
-        [
-          "contact",
-          "name"
-        ],
-        [
-          "critical",
-          "operations"
-        ],
-        [
-          "alarm",
-          "ansi"
-        ],
-        [
-          "review",
-          "2021"
-        ]
-      ]
+      "n": 3
     },
     {
       "id": "plan-stale",
@@ -143,18 +126,11 @@
   "must_not": [
     {
       "id": "no-new-eap-gap",
-      "line": "no finding claiming a fault the reading did not find",
+      "line": "no finding claiming a fault in the plan that the reading did not find. The allowed words are the plan's own open gaps and its own conditions, read live; only state words that belong to no row are listed here.",
       "type": "eap_gap_whitelist",
+      "file": "01-eap-chemical.pdf",
       "allowed": [
-        "contact",
-        "critical",
-        "alarm",
-        "review",
-        "2021",
-        "stale",
-        "ansi",
-        "duties",
-        "procedures"
+        "stale"
       ]
     },
     {
@@ -214,15 +190,11 @@
     },
     {
       "id": "forklift-gaps",
-      "line": "the forklift log's own gaps carried",
-      "type": "item",
-      "collections": [
-        "findings"
-      ],
-      "keywords": [
-        "horn"
-      ],
-      "min_keywords": 1
+      "line": "the forklift log's own gaps carried \u2014 read from document_gaps for the current scan, not from the word \"horn\", which was one model's phrasing of one of them.",
+      "type": "carries_own_gaps",
+      "file": "06a-forklift-log.pdf",
+      "collection": "findings",
+      "n": 1
     }
   ],
   "agency_was": "Run 1b, on Haiku, produced \"U.S. Department of Labor - Occupational Safety and Health Administration\" for this regulator and no Oregon OSHA row survived, so the case had to follow the label to be measurable at all. The real-model pass on 29 September (claude-opus-5-5) produced \"Oregon OSHA\" for all six OSHA documents, which is both the spec's string and the correct one for a state-plan state. Recorded, not merged: the same regulator has now been named two ways by two models, and which string a company ends up with is the model's choice, not the product's."

@@ -235,6 +235,18 @@ const DELETED_BY_CASCADE_OR_PARENT = [
   // documents ON DELETE CASCADE, both read from pg_constraint on 25 Sep, so the row is gone twice
   // over. Found by check-schema-contracts refusing the commit, which is what it is for.
   'document_corrections',
+  // ...and the three audit tables (migration 058). Every one carries
+  // `company_id -> companies ON DELETE CASCADE`, written in 058 itself and verified by its own
+  // probe, which deletes both throwaway companies at the end and would fail on a leftover row.
+  // `audit_sections` and `audit_findings` are taken twice over: their composite key
+  // (company_id, run_id) -> audit_runs ON DELETE CASCADE removes them with the run as well.
+  // They sit on this side of the list for the same reason the scan tables do — an audit is OUR
+  // reading of what the customer holds, not the customer's own rows — and the cascade still
+  // leaves nothing behind. Found by check-schema-contracts refusing the commit, which is what
+  // it is for; it has now caught this class three times.
+  'audit_runs',
+  'audit_sections',
+  'audit_findings',
   // ...and the seventh (migration 050). company_facts is what a PERSON confirmed about their own
   // company, so it is the most "theirs" of anything on this list — and it still belongs here,
   // because company_id -> companies ON DELETE CASCADE (confdeltype = c, read from pg_constraint

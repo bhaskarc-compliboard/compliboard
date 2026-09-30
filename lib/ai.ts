@@ -24,7 +24,7 @@ export type AIContent = string | any[]
  */
 import { recordAICall, describeCost, type LedgerTask } from './costLedger.ts'
 
-export type AITask = 'judgement' | 'critique' | 'prose' | 'default' | 'substeps' | 'summary' | 'document_scan' | 'document_draft'
+export type AITask = 'judgement' | 'critique' | 'prose' | 'default' | 'substeps' | 'summary' | 'document_scan' | 'document_draft' | 'audit'
 
 /**
  * What a caller passes so its call lands in the cost ledger (`DECISIONS.md` §128 J).
@@ -122,6 +122,13 @@ const TASK_MODELS: Record<AITask, () => string> = {
   // in the document's own voice decides nothing about what the law requires — the gap already
   // said what is missing and why. It is the cheapest tier that can write, which is the point.
   document_draft: () => process.env.AI_MODEL_DOCUMENT_DRAFT || TASK_MODELS.prose(),
+  // *** THE AUDIT IS ITS OWN TIER — Audits Run 2a, item 4. ***
+  // It was the only LedgerTask with no AITask beside it: the runner asked for `judgement` and wrote
+  // `audit` to the ledger, so the ledger could say what the spend was for and no variable could move
+  // it. An agency audit is one long reasoning call over a filing cabinet — the case for spending more
+  // on it is different from the case for a research answer, and it must be movable on its own.
+  // Falls back to the judgement tier when unset, exactly as `document_scan` does.
+  audit: () => process.env.AI_MODEL_AUDIT || TASK_MODELS.judgement(),
   default:   () => process.env.AI_MODEL           || 'claude-sonnet-4-5',
 }
 

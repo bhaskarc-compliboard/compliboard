@@ -3,8 +3,8 @@
 **GENERATED — do not edit.** `node --env-file=.env.local scripts/schema-doc.js`, and it runs
 inside `npm run db:migrate`, so it cannot be stale by more than one migration.
 
-**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-09-29 16:51 UTC
-**Migrations applied:** 58 — `000` to `057`
+**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-09-29 23:56 UTC
+**Migrations applied:** 59 — `000` to `058`
 
 *Every figure here was read from the catalog of that database. Nothing is copied from the
 migration files, which say what was intended rather than what is there — and the two have
@@ -50,7 +50,7 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 
 **Documents and evidence**
 
-- `documents` — 0 rows · touched by route audits, route calendar, route chat, route document-actions, route document-draft, +15 more
+- `documents` — 0 rows · touched by route audits, route calendar, route chat, route document-actions, route document-draft, +16 more
 - `document_reviews` — 0 rows · touched by route audits, lib attachedDocument, lib documentReview
 - `company_folders` — 0 rows · touched by route documents/index, route documents, route folders
 - `company_templates` — 0 rows · touched by route audits
@@ -68,9 +68,9 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 
 **Tenancy and accounts**
 
-- `companies` — 0 rows · touched by route account/export, route account, route audits, route company-information, route document-scan, +18 more
+- `companies` — 0 rows · touched by route account/export, route account, route audits, route company-information, route document-scan, +19 more
 - `profiles` — 0 rows · touched by route account/export, route account, route signup, screen audits, screen calendar, +8 more
-- `entities` — 0 rows · touched by route company-information, route document-actions, route documents/index, route documents/report, route switches/answer, +11 more
+- `entities` — 0 rows · touched by route company-information, route document-actions, route documents/index, route documents/report, route switches/answer, +12 more
 
 **Calendar**
 
@@ -80,7 +80,7 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 
 - `jobs` — 0 rows · **no code reads or writes it**
 
-**Not assigned to a module above:** `ai_calls`, `company_facts`, `company_labels`, `document_batches`, `document_conditions`, `document_corrections`, `document_deadlines`, `document_gaps`, `document_scans`, `fact_proposals`, `job_runs`, `turns`, `usage_counters`
+**Not assigned to a module above:** `ai_calls`, `audit_findings`, `audit_runs`, `audit_sections`, `company_facts`, `company_labels`, `document_batches`, `document_conditions`, `document_corrections`, `document_deadlines`, `document_gaps`, `document_scans`, `fact_proposals`, `job_runs`, `turns`, `usage_counters`
 
 ---
 
@@ -153,7 +153,7 @@ One row per model call, written at the call. Prices are copied onto the row so a
 
 **Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route document-draft`, `lib costLedger`, `lib documentScan`, `script cost-report`, `script run-golden-docs`, `script scan-document`
+**Read or written by:** `route document-draft`, `lib costLedger`, `lib documentScan`, `script cost-report`, `script run-golden-audit`, `script run-golden-docs`, `script scan-document`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -178,6 +178,7 @@ One row per model call, written at the call. Prices are copied onto the row so a
 
 **Pointed at by:**
 
+- `audit_sections.ai_call_id` — ON DELETE SET NULL
 - `document_gaps.draft_ai_call_id` — ON DELETE SET NULL
 - `document_scans.ai_call_id` — ON DELETE SET NULL
 
@@ -202,6 +203,233 @@ One row per model call, written at the call. Prices are copied onto the row so a
 | `ai_calls_select_own_company` | SELECT | authenticated | `(company_id = auth_company_id())` | — |
 
 **Indexes:** `ai_calls_pkey`, `idx_ai_calls_company_created`, `idx_ai_calls_task_created`
+
+### `audit_findings`
+
+Every row of an audit answer — finding, date, contradiction, expected — with one lifecycle and one matcher.
+
+**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+
+**Read or written by: NOTHING in app/, lib/ or scripts/.**
+
+| Column | Type | Null | Default |
+|---|---|---|---|
+| `id` | uuid | no | `gen_random_uuid()` |
+| `run_id` | uuid | no | — |
+| `section_id` | uuid | no | — |
+| `company_id` | uuid | no | — |
+| `ordinal` | integer | no | — |
+| `kind` | text | no | — |
+| `title` | text | no | — |
+| `word` | text | yes | — |
+| `basis` | text | yes | — |
+| `document_id` | uuid | yes | — |
+| `scan_id` | uuid | yes | — |
+| `locator` | text | yes | — |
+| `quote` | text | yes | — |
+| `quote_verified` | boolean | yes | — |
+| `what_to_do` | text | yes | — |
+| `due_on` | date | yes | — |
+| `recurs` | boolean | yes | — |
+| `passed` | boolean | yes | — |
+| `document_b_id` | uuid | yes | — |
+| `value_a` | text | yes | — |
+| `value_b` | text | yes | — |
+| `source` | text | no | `'reading'::text` |
+| `status` | text | no | `'open'::text` |
+| `same_as` | uuid | yes | — |
+| `closed_by_run_id` | uuid | yes | — |
+| `closed_reason` | text | yes | — |
+| `dismissed_reason` | text | yes | — |
+| `handle_error` | boolean | no | `false` |
+
+**Points at:**
+
+- `closed_by_run_id` → `audit_runs` — ON DELETE SET NULL
+- `company_id` → `audit_sections` — ON DELETE CASCADE
+- `company_id` → `companies` — ON DELETE CASCADE
+- `company_id` → `audit_runs` — ON DELETE CASCADE
+- `company_id` → `document_scans` — ON DELETE SET NULL
+- `company_id` → `documents` — ON DELETE SET NULL
+- `company_id` → `documents` — ON DELETE SET NULL
+- `document_b_id` → `documents` — ON DELETE SET NULL
+- `document_id` → `documents` — ON DELETE SET NULL
+- `run_id` → `audit_runs` — ON DELETE CASCADE
+- `same_as` → `audit_findings` — ON DELETE SET NULL
+- `scan_id` → `document_scans` — ON DELETE SET NULL
+- `section_id` → `audit_sections` — ON DELETE CASCADE
+
+**Pointed at by:**
+
+- `audit_findings.same_as` — ON DELETE SET NULL
+
+**Constraints:**
+
+- `audit_findings_basis_check` — `CHECK ((basis = ANY (ARRAY['read'::text, 'inferred'::text, 'expected'::text])))`
+- `audit_findings_contradiction_has_two_sides` — `CHECK (((kind <> 'contradiction'::text) OR ((document_b_id IS NOT NULL) AND (value_a IS NOT NULL) AND (value_b IS NOT NULL))))`
+- `audit_findings_date_has_a_date` — `CHECK (((kind <> 'date'::text) OR (due_on IS NOT NULL)))`
+- `audit_findings_expected_is_expected` — `CHECK (((kind <> 'expected'::text) OR ((basis = 'expected'::text) AND (word = 'nothing_on_file'::text))))`
+- `audit_findings_kind_check` — `CHECK ((kind = ANY (ARRAY['finding'::text, 'date'::text, 'contradiction'::text, 'expected'::text])))`
+- `audit_findings_ordinal_check` — `CHECK ((ordinal >= 0))`
+- `audit_findings_source_check` — `CHECK ((source = ANY (ARRAY['reading'::text, 'inspector'::text, 'person'::text])))`
+- `audit_findings_status_check` — `CHECK ((status = ANY (ARRAY['open'::text, 'closed'::text, 'dismissed'::text])))`
+- `audit_findings_word_check` — `CHECK ((word = ANY (ARRAY['on_file'::text, 'stale'::text, 'nothing_on_file'::text, 'not_a_document_question'::text])))`
+
+**Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
+
+- `anon` — **nothing**
+- `authenticated` — **nothing**
+- `service_role` — **nothing**
+
+**RLS policies:**
+
+| Policy | For | Roles | USING | WITH CHECK |
+|---|---|---|---|---|
+| `audit_findings_delete` | DELETE | authenticated | `(company_id = auth_company_id())` | — |
+| `audit_findings_insert` | INSERT | authenticated | — | `(company_id = auth_company_id())` |
+| `audit_findings_select` | SELECT | authenticated | `(company_id = auth_company_id())` | — |
+| `audit_findings_update` | UPDATE | authenticated | `(company_id = auth_company_id())` | `(company_id = auth_company_id())` |
+
+**Indexes:** `audit_findings_pkey`, `idx_audit_findings_company_run`, `idx_audit_findings_document`, `idx_audit_findings_open`
+
+### `audit_runs`
+
+One audit of one company at one moment. Sections are to a run what files are to a document batch.
+
+**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+
+**Read or written by: NOTHING in app/, lib/ or scripts/.**
+
+| Column | Type | Null | Default |
+|---|---|---|---|
+| `id` | uuid | no | `gen_random_uuid()` |
+| `company_id` | uuid | no | — |
+| `entity_id` | uuid | yes | — |
+| `kind` | text | no | — |
+| `scope` | text | yes | — |
+| `agency_label` | text | yes | — |
+| `template_document_id` | uuid | yes | — |
+| `previous_run_id` | uuid | yes | — |
+| `status` | text | no | `'queued'::text` |
+| `section_count` | integer | no | `0` |
+| `done_count` | integer | no | `0` |
+| `readings_as_of` | timestamp with time zone | yes | — |
+| `created_by` | uuid | yes | — |
+| `created_at` | timestamp with time zone | no | `now()` |
+| `started_at` | timestamp with time zone | yes | — |
+| `finished_at` | timestamp with time zone | yes | — |
+| `summary` | jsonb | yes | — |
+| `notified_at` | timestamp with time zone | yes | — |
+| `dismissed_at` | timestamp with time zone | yes | — |
+
+**Points at:**
+
+- `company_id` → `documents` — ON DELETE CASCADE
+- `company_id` → `entities` — ON DELETE CASCADE
+- `company_id` → `companies` — ON DELETE CASCADE
+- `created_by` → `auth.users` — ON DELETE SET NULL
+- `entity_id` → `entities` — ON DELETE CASCADE
+- `previous_run_id` → `audit_runs` — ON DELETE SET NULL
+- `template_document_id` → `documents` — ON DELETE CASCADE
+
+**Pointed at by:**
+
+- `audit_findings.closed_by_run_id` — ON DELETE SET NULL
+- `audit_findings.company_id` — ON DELETE CASCADE
+- `audit_findings.run_id` — ON DELETE CASCADE
+- `audit_runs.previous_run_id` — ON DELETE SET NULL
+- `audit_sections.company_id` — ON DELETE CASCADE
+- `audit_sections.run_id` — ON DELETE CASCADE
+
+**Constraints:**
+
+- `audit_runs_done_count_check` — `CHECK ((done_count >= 0))`
+- `audit_runs_kind_check` — `CHECK ((kind = ANY (ARRAY['agency'::text, 'template'::text])))`
+- `audit_runs_kind_has_its_subject` — `CHECK ((((kind = 'agency'::text) AND (agency_label IS NOT NULL) AND (template_document_id IS NULL)) OR ((kind = 'template'::text) AND (template_document_id IS NOT NULL) AND (agency_label IS NULL))))`
+- `audit_runs_section_count_check` — `CHECK ((section_count >= 0))`
+- `audit_runs_status_check` — `CHECK ((status = ANY (ARRAY['queued'::text, 'running'::text, 'done'::text])))`
+
+**Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
+
+- `anon` — **nothing**
+- `authenticated` — **nothing**
+- `service_role` — **nothing**
+
+**RLS policies:**
+
+| Policy | For | Roles | USING | WITH CHECK |
+|---|---|---|---|---|
+| `audit_runs_delete` | DELETE | authenticated | `(company_id = auth_company_id())` | — |
+| `audit_runs_insert` | INSERT | authenticated | — | `(company_id = auth_company_id())` |
+| `audit_runs_select` | SELECT | authenticated | `(company_id = auth_company_id())` | — |
+| `audit_runs_update` | UPDATE | authenticated | `(company_id = auth_company_id())` | `(company_id = auth_company_id())` |
+
+**Indexes:** `audit_runs_company_id_id_key`, `audit_runs_pkey`, `idx_audit_runs_company_created`, `idx_audit_runs_open`
+
+### `audit_sections`
+
+One agency (or one template), one model call. claimed_at is the sweep's compare-and-set.
+
+**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+
+**Read or written by: NOTHING in app/, lib/ or scripts/.**
+
+| Column | Type | Null | Default |
+|---|---|---|---|
+| `id` | uuid | no | `gen_random_uuid()` |
+| `run_id` | uuid | no | — |
+| `company_id` | uuid | no | — |
+| `ordinal` | integer | no | — |
+| `title` | text | no | — |
+| `status` | text | no | `'queued'::text` |
+| `claimed_at` | timestamp with time zone | yes | — |
+| `started_at` | timestamp with time zone | yes | — |
+| `finished_at` | timestamp with time zone | yes | — |
+| `model` | text | yes | — |
+| `prompt_sha256` | text | yes | — |
+| `input_sha256` | text | yes | — |
+| `ai_call_id` | uuid | yes | — |
+| `raw_text` | text | yes | — |
+| `json_parsed` | boolean | yes | — |
+| `could_not_complete_reason` | text | yes | — |
+| `handles` | jsonb | yes | — |
+| `documents_read` | ARRAY | no | `'{}'::uuid[]` |
+| `documents_held_unread` | ARRAY | no | `'{}'::uuid[]` |
+
+**Points at:**
+
+- `ai_call_id` → `ai_calls` — ON DELETE SET NULL
+- `company_id` → `companies` — ON DELETE CASCADE
+- `company_id` → `audit_runs` — ON DELETE CASCADE
+- `run_id` → `audit_runs` — ON DELETE CASCADE
+
+**Pointed at by:**
+
+- `audit_findings.company_id` — ON DELETE CASCADE
+- `audit_findings.section_id` — ON DELETE CASCADE
+
+**Constraints:**
+
+- `audit_sections_ordinal_check` — `CHECK ((ordinal >= 0))`
+- `audit_sections_reason_only_when_failed` — `CHECK ((((status = 'could_not_complete'::text) AND (could_not_complete_reason IS NOT NULL)) OR ((status <> 'could_not_complete'::text) AND (could_not_complete_reason IS NULL))))`
+- `audit_sections_status_check` — `CHECK ((status = ANY (ARRAY['queued'::text, 'running'::text, 'done'::text, 'could_not_complete'::text])))`
+
+**Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
+
+- `anon` — **nothing**
+- `authenticated` — **nothing**
+- `service_role` — **nothing**
+
+**RLS policies:**
+
+| Policy | For | Roles | USING | WITH CHECK |
+|---|---|---|---|---|
+| `audit_sections_delete` | DELETE | authenticated | `(company_id = auth_company_id())` | — |
+| `audit_sections_insert` | INSERT | authenticated | — | `(company_id = auth_company_id())` |
+| `audit_sections_select` | SELECT | authenticated | `(company_id = auth_company_id())` | — |
+| `audit_sections_update` | UPDATE | authenticated | `(company_id = auth_company_id())` | `(company_id = auth_company_id())` |
+
+**Indexes:** `audit_sections_company_id_id_key`, `audit_sections_pkey`, `idx_audit_sections_company_run`, `idx_audit_sections_queued`
 
 ### `audits`
 
@@ -419,7 +647,7 @@ One row per audit run. A frozen snapshot of results as checked that day — reus
 
 **Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route account/export`, `route account`, `route audits`, `route company-information`, `route document-scan`, `route jobs/scan-documents`, `route obligations`, `route signup`, `screen audits`, `screen compliance`, `screen dashboard`, `screen documents`, `screen hr`, `lib agencyScope`, `lib companyContext`, `lib obligationWriter`, `script check-prompt-determinism`, `script resolve-dryrun`, `script run-golden-docs`, `script run-golden`, `script scan-document`, `script seed-multisite-fixture`, `script seed-staging-testdata`
+**Read or written by:** `route account/export`, `route account`, `route audits`, `route company-information`, `route document-scan`, `route jobs/scan-documents`, `route obligations`, `route signup`, `screen audits`, `screen compliance`, `screen dashboard`, `screen documents`, `screen hr`, `lib agencyScope`, `lib companyContext`, `lib obligationWriter`, `script check-prompt-determinism`, `script resolve-dryrun`, `script run-golden-audit`, `script run-golden-docs`, `script run-golden`, `script scan-document`, `script seed-multisite-fixture`, `script seed-staging-testdata`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -441,6 +669,9 @@ One row per audit run. A frozen snapshot of results as checked that day — reus
 **Pointed at by:**
 
 - `ai_calls.company_id` — ON DELETE CASCADE
+- `audit_findings.company_id` — ON DELETE CASCADE
+- `audit_runs.company_id` — ON DELETE CASCADE
+- `audit_sections.company_id` — ON DELETE CASCADE
 - `audits.company_id` — ON DELETE CASCADE
 - `calendar_events.company_id` — ON DELETE CASCADE
 - `checklist_items.company_id` — ON DELETE CASCADE
@@ -554,7 +785,7 @@ What a company has confirmed about itself that is NOT one of the 95 switches. No
 
 **Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route company-information`, `route to-confirm`, `lib companyContext`
+**Read or written by:** `route company-information`, `route to-confirm`, `lib companyContext`, `script run-golden-audit`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -644,7 +875,7 @@ What a company has confirmed about itself that is NOT one of the 95 switches. No
 
 **Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route documents/report`, `lib companyContext`, `lib documentScan`, `script run-golden-docs`
+**Read or written by:** `route documents/report`, `lib audit`, `lib companyContext`, `lib documentScan`, `script run-golden-audit`, `script run-golden-docs`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -955,7 +1186,7 @@ One upload, however many files were in it. Exists so a folder drop can be answer
 
 **Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route documents/report`, `lib documentScan`
+**Read or written by:** `route documents/report`, `lib audit`, `lib documentScan`, `script run-golden-audit`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -995,7 +1226,7 @@ One row per correction a person makes to what a document IS. Newest per field wi
 
 **Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route document-actions`, `route documents/report`, `lib companyContext`
+**Read or written by:** `route document-actions`, `route documents/report`, `lib companyContext`, `script run-golden-audit`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -1037,7 +1268,7 @@ One row per correction a person makes to what a document IS. Newest per field wi
 
 **Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route document-actions`, `route documents/report`, `lib documentScan`
+**Read or written by:** `route document-actions`, `route documents/report`, `lib audit`, `lib documentScan`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -1078,7 +1309,7 @@ One row per correction a person makes to what a document IS. Newest per field wi
 
 **Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route document-actions`, `route document-checklist`, `route document-draft`, `route documents/report`, `lib companyContext`, `lib documentScan`
+**Read or written by:** `route document-actions`, `route document-checklist`, `route document-draft`, `route documents/report`, `lib audit`, `lib companyContext`, `lib documentScan`, `script run-golden-audit`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -1199,7 +1430,7 @@ One row per correction a person makes to what a document IS. Newest per field wi
 
 **Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route documents/index`, `route documents/report`, `lib attachedDocument`, `lib documentScan`
+**Read or written by:** `route documents/index`, `route documents/report`, `lib attachedDocument`, `lib audit`, `lib documentScan`, `script run-golden-audit`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -1248,6 +1479,8 @@ One row per correction a person makes to what a document IS. Newest per field wi
 
 **Pointed at by:**
 
+- `audit_findings.company_id` — ON DELETE SET NULL
+- `audit_findings.scan_id` — ON DELETE SET NULL
 - `document_conditions.scan_id` — ON DELETE CASCADE
 - `document_deadlines.scan_id` — ON DELETE CASCADE
 - `document_gaps.scan_id` — ON DELETE CASCADE
@@ -1271,13 +1504,13 @@ One row per correction a person makes to what a document IS. Newest per field wi
 |---|---|---|---|---|
 | `document_scans_select_own` | SELECT | authenticated | `(company_id = auth_company_id())` | — |
 
-**Indexes:** `document_scans_pkey`, `idx_document_scans_company_scanned`, `idx_document_scans_document_current`
+**Indexes:** `document_scans_company_id_id_key`, `document_scans_pkey`, `idx_document_scans_company_scanned`, `idx_document_scans_document_current`
 
 ### `documents`
 
 **Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route audits`, `route calendar`, `route chat`, `route document-actions`, `route document-draft`, `route document-rescan`, `route document-scan`, `route documents`, `route folders`, `route hr`, `route hr-audits`, `route jobs/scan-documents`, `screen compliance`, `lib attachedDocument`, `lib documentBatch`, `lib documentScan`, `lib storage`, `script check-live`, `script run-golden-docs`, `script scan-document`
+**Read or written by:** `route audits`, `route calendar`, `route chat`, `route document-actions`, `route document-draft`, `route document-rescan`, `route document-scan`, `route documents`, `route folders`, `route hr`, `route hr-audits`, `route jobs/scan-documents`, `screen compliance`, `lib attachedDocument`, `lib documentBatch`, `lib documentScan`, `lib storage`, `script check-live`, `script run-golden-audit`, `script run-golden-docs`, `script scan-document`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -1314,6 +1547,12 @@ One row per correction a person makes to what a document IS. Newest per field wi
 
 **Pointed at by:**
 
+- `audit_findings.company_id` — ON DELETE SET NULL
+- `audit_findings.company_id` — ON DELETE SET NULL
+- `audit_findings.document_b_id` — ON DELETE SET NULL
+- `audit_findings.document_id` — ON DELETE SET NULL
+- `audit_runs.company_id` — ON DELETE CASCADE
+- `audit_runs.template_document_id` — ON DELETE CASCADE
 - `calendar_events.document_id` — ON DELETE SET NULL
 - `checklists.document_id` — ON DELETE SET NULL
 - `company_facts.source_document_id` — ON DELETE SET NULL
@@ -1351,13 +1590,13 @@ One row per correction a person makes to what a document IS. Newest per field wi
 | `documents_select` | SELECT | authenticated | `(company_id = auth_company_id())` | — |
 | `documents_update` | UPDATE | authenticated | `(company_id = auth_company_id())` | `(company_id = auth_company_id())` |
 
-**Indexes:** `documents_id_company`, `documents_pkey`, `idx_documents_batch`, `idx_documents_entity`, `idx_documents_from_topic`, `idx_documents_queued`
+**Indexes:** `documents_company_id_id_key`, `documents_id_company`, `documents_pkey`, `idx_documents_batch`, `idx_documents_entity`, `idx_documents_from_topic`, `idx_documents_queued`
 
 ### `entities`
 
 **Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route company-information`, `route document-actions`, `route documents/index`, `route documents/report`, `route switches/answer`, `route switches/ask`, `route to-confirm`, `lib agencyScope`, `lib companyContext`, `lib obligationWriter`, `script check-live`, `script resolve-dryrun`, `script run-golden-docs`, `script run-golden`, `script seed-multisite-fixture`, `script seed-staging-testdata`
+**Read or written by:** `route company-information`, `route document-actions`, `route documents/index`, `route documents/report`, `route switches/answer`, `route switches/ask`, `route to-confirm`, `lib agencyScope`, `lib companyContext`, `lib obligationWriter`, `script check-live`, `script resolve-dryrun`, `script run-golden-audit`, `script run-golden-docs`, `script run-golden`, `script seed-multisite-fixture`, `script seed-staging-testdata`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -1384,6 +1623,8 @@ One row per correction a person makes to what a document IS. Newest per field wi
 
 **Pointed at by:**
 
+- `audit_runs.company_id` — ON DELETE CASCADE
+- `audit_runs.entity_id` — ON DELETE CASCADE
 - `calendar_events.entity_id` — ON DELETE SET NULL
 - `company_chemicals.entity_id` — ON DELETE CASCADE
 - `company_facts.company_id` — ON DELETE CASCADE
@@ -1424,7 +1665,7 @@ Candidate company facts read out of a conversation overnight. PROPOSED, never wr
 
 **Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route company-information`, `route document-actions`, `route documents/report`, `route jobs/summarise`, `route to-confirm`, `screen compliance`, `lib companyContext`, `lib documentScan`
+**Read or written by:** `route company-information`, `route document-actions`, `route documents/report`, `route jobs/summarise`, `route to-confirm`, `screen compliance`, `lib audit`, `lib companyContext`, `lib documentScan`, `script run-golden-audit`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -1450,8 +1691,8 @@ Candidate company facts read out of a conversation overnight. PROPOSED, never wr
 
 **Points at:**
 
-- `company_id` → `companies` — ON DELETE CASCADE
 - `company_id` → `entities` — ON DELETE SET NULL
+- `company_id` → `companies` — ON DELETE CASCADE
 - `document_id` → `documents` — ON DELETE CASCADE
 - `entity_id` → `entities` — ON DELETE SET NULL
 - `from_turn_id` → `turns` — ON DELETE SET NULL
@@ -1593,7 +1834,7 @@ One row per nightly run. Answers release gate 2 — did it run, and what did it 
 
 **Constraints:**
 
-- `job_runs_job_check` — `CHECK ((job = ANY (ARRAY['summarise'::text, 'delete'::text, 'account_delete'::text, 'scan_documents'::text])))`
+- `job_runs_job_check` — `CHECK ((job = ANY (ARRAY['summarise'::text, 'delete'::text, 'account_delete'::text, 'scan_documents'::text, 'audit_sections'::text])))`
 
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
@@ -2499,4 +2740,5 @@ filtered HERE so no consumer can forget it (CLAUDE.md §3.2). A corrected link
 055
 056
 057
+058
 ```

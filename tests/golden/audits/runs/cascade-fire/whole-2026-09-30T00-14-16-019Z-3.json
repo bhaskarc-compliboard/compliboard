@@ -1,0 +1,524 @@
+{
+  "case": "cascade-fire",
+  "agency": "Oregon State Fire Marshal",
+  "mode": "whole",
+  "run": 3,
+  "run_date": "2026-09-30",
+  "model": "claude-haiku-4-5",
+  "input_block": "TODAY IS 2026-09-30. Every \"passed\" or \"expiring\" judgement is against that date.\n\nTHE AGENCY THIS AUDIT IS ABOUT: Oregon State Fire Marshal\nOnly this agency. Another regulator's documents are listed at the end as titles only and\nare not yours to judge here.\n\nWHO THIS COMPANY IS\n  Name: Cascade Specialty Chemicals, LLC\n  Industry: chemical manufacturing (recorded as chemical-manufacturing)\n  Address: Portland, Oregon\nTheir sites:\n  - Portland — 4410 NW Front Ave, Portland, Oregon 97210 (primary)\n\nDOCUMENTS ON FILE FOR OREGON STATE FIRE MARSHAL — 1\nEach is named by a HANDLE — D1, D2 — and that handle is how you refer to it. Nothing else.\n\n  --- D1 — Certificate of Annual Maintenance, Portable Fire Extinguishers (14 units), service date August 20, 2025, Portland Facility\n      file: 11-fire-extinguisher-certificate.pdf\n      kind: certificate · status: expired · shown as: current\n      the document's own date: 2025-08-20 (issued)\n      the date that matters: 2025-08-20 (issued)\n      site: Portland\n      what the reading said it is: This is a service certificate from the company's fire extinguisher contractor. It records that all 14 portable extinguishers at the Portland facility got their annual maintenance on August 20, 2025, and all 14 passed. The document belongs to the contractor, so there is nothing in it for you to fix. What matters is that it is only good for one year. The next annual service was due August 20, 2026, which has passed, and two units need their 6-year internal maintenance before November 2026. Read with site, type, date, issuer and all details from the single page.\n      WHAT THE READING FOUND WRONG WITH IT: nothing\n      WHAT THIS DOCUMENT OBLIGES THEM TO KEEP DOING (4), read out of the document itself:\n        · NFPA 10 (2022) Chapter 7, as stated on page 1; I believe the Oregon OSHA equivalent is the adopted 29 CFR 1910.157(e)(3) — Annual maintenance of every portable extinguisher by a qualified person, with the service date on the unit tag\n            the evidence you would expect to see: A current annual maintenance certificate dated on or after August 20, 2026, plus a dated service tag on each unit\n        · NFPA 10, Section 7.2, as stated on page 1; I believe the matching rule is 29 CFR 1910.157(e)(2) — Monthly visual inspection of each extinguisher by the customer, recorded on the unit tag\n            the evidence you would expect to see: Initialed monthly entries on each unit tag, or a monthly inspection log covering all 14 units\n        · NFPA 10 six-year maintenance, as referenced on page 1 — 6-year internal maintenance for units W-3 and L-1\n            the evidence you would expect to see: A contractor record showing W-3 and L-1 got their six-year maintenance before November 2026\n        · I believe this is 29 CFR 1910.157(f) and NFPA 10 Chapter 8 (not checked against current text) — Hydrostatic testing at the required interval (CO2 every 5 years; ABC dry chemical every 12 years; wet chemical every 5 years)\n            the evidence you would expect to see: A hydrostatic test record or cylinder label for L-1 (last test shown as 2020), L-2, and O-2 as they come due\n      DATES THIS DOCUMENT SETS (4):\n        · 6-year internal maintenance for units W-3 and L-1 — 2026-10-31 (recurring)\n        · Monthly visual inspection of each unit, recorded on the tag — 2026-10-31 (recurring)\n        · Next annual maintenance of all 14 extinguishers (now overdue) — 2026-08-20 (recurring)\n        · Possible CO2 hydrostatic test for L-1 (5 years from the 2020 test; worked out, not stated in the document) — 2025-12-31 (recurring)\n      WHAT THE READING SAID A COMPANY LIKE THIS USUALLY ALSO HOLDS (5) —\n        a suggestion from similar companies, NOT a checked requirement:\n        · 2026 annual extinguisher maintenance certificate — The annual service was due August 20, 2026, and no newer certificate is on file\n        · Fire Prevention Plan — Chemical plants with flammable and corrosive storage usually hold one alongside the Emergency Action Plan\n        · Hydrostatic test record for CO2 unit L-1 — Its last hydrostatic test is listed as 2020, and CO2 cylinders are commonly retested every 5 years\n        · Monthly extinguisher inspection records (tags or log) — The certificate says these are the customer's job, and they usually get checked alongside it\n        · Portable fire extinguisher training records for employees — Needed if employees are expected to use extinguishers rather than evacuate\n      WHAT THIS DOCUMENT SAYS, proposed by the reading, not confirmed by anyone (2):\n        · facility operations: Acid and caustic repackaging lines, tank farm (T-3 to T-6), laboratory with fume hood, boiler room, warehouse solvent cage and drum rack, loading docks, as of 2025-08-20\n            it says: \"Caustic repackaging line\"\n            where: page 1, unit table (units A-1, A-2, T-1, L-1, L-2, B-1, W-3, W-4)\n        · portable fire extinguishers: 14 portable extinguishers at the Portland facility: 11 ABC dry chemical, 2 CO2 (laboratory), 1 Class K (break room), as of 2025-08-20\n            it says: \"Units serviced: 14. Units failed or removed from service: 0.\"\n            where: page 1, below the unit table\n\nFACTS THIS COMPANY HAS CONFIRMED, ACROSS EVERYTHING THEY HOLD\nEach was read in a document and then confirmed by a person. Nothing a reading merely\nproposed is here — an unconfirmed proposal is a question, not a fact.\n  employee count (Portland): 42 employees at the Portland facility, as of 2021-02-01 — from \"Emergency Action Plan — Portland Facility\"\n\nEVERYTHING ELSE THIS COMPANY HOLDS — 11, TITLES AND DATES ONLY\nListed so you can say what is NOT among them. You have not been shown their contents and\nmust not describe what is in them.\n  - D2 — Annual Report, Reporting Year 2025, for Standard Air Contaminant Discharge Permit 26-2841-ST-01, with Oregon DEQ Receipt Confirmation (Submission ACDP-AR-2025-262841), Portland Facility · record · recorded · 2026-02-12\n  - D3 — Emergency Action Plan — Portland Facility · program · gaps_found · 2021-02-01\n  - D4 — Forklift Pre-Shift Inspection Log, Unit FL-2 (Toyota 8FGU25, propane), September 2026, Portland Warehouse · record · gaps_found · 2026-09-17\n  - D5 — Forklift Pre-Shift Inspection Log, Unit FL-2 (Toyota 8FGU25, propane), September 2026, Portland Warehouse · record · gaps_found · 2026-09-18\n  - D6 — Monthly EHS Self-Check (blank internal checklist template), Portland Facility · other · not_judged\n  - D7 — Oregon DEQ Air Contaminant Discharge Permit Compliance Inspection Checklist (blank inspector's field form) · other · not_judged\n  - D8 — OSHA Form 300A Summary of Work-Related Injuries and Illnesses, Calendar Year 2025, Portland Facility · record · recorded · 2026-02-01\n  - D9 — Powered Industrial Truck Operator Training and Evaluation Record, with Operator Certificate for Michael Chen, Portland Facility · record · gaps_found · 2025-06-02\n  - D10 — Safety Data Sheet: Sodium Hydroxide Solution, 50% (Northwest Alkali Products, Version 4.1) · supplier_document · not_judged · 2024-03-18\n  - D11 — Scrubber Pressure-Drop Log (S-1 and S-2) and Weekly C-1 Carbon Outlet Detector-Tube Check, August–September 2026, Portland Facility · record · gaps_found · 2026-09-25\n  - D12 — Standard Air Contaminant Discharge Permit No. 26-2841-ST-01 — Portland Facility · permit · expiring · 2026-11-15\n\nTHE AGENCY AND SUBJECT WORDS THIS COMPANY ALREADY USES\n  agencies: Oregon DEQ · Oregon OSHA · Oregon State Fire Marshal · U.S. OSHA\n  subjects: Air Quality Permit · Emergency Action Plan · Emergency Preparedness · Hazard Communication · Injury and Illness Recordkeeping · Portable Fire Extinguishers · Powered Industrial Trucks",
+  "input_sha256": "c35c35097475885a86cef8330baba3250bc259dc260ca90441c03a619ffe7665",
+  "input": {
+    "today": "2026-09-30",
+    "agency": "Oregon State Fire Marshal",
+    "company": {
+      "name": "Cascade Specialty Chemicals, LLC",
+      "industrySlug": "chemical-manufacturing",
+      "industryWords": "chemical manufacturing",
+      "address": "Portland, Oregon",
+      "state": "Oregon",
+      "sites": [
+        {
+          "id": "78b2aea9-31de-4a92-a3fd-9391e24a8175",
+          "name": "Portland",
+          "address": "4410 NW Front Ave, Portland, Oregon 97210",
+          "state": "Oregon",
+          "county": null,
+          "city": "Portland",
+          "primary": true
+        }
+      ]
+    },
+    "confirmed": [
+      {
+        "key": "employee_count",
+        "value": "42 employees at the Portland facility",
+        "basis": "read",
+        "entityId": "78b2aea9-31de-4a92-a3fd-9391e24a8175",
+        "siteName": "Portland",
+        "asOf": "2021-02-01",
+        "sourceDocumentTitle": "Emergency Action Plan — Portland Facility",
+        "sourceDocumentId": "472908c9-2158-4bd7-ba7a-f3698822d929",
+        "sourceProposalId": "327349ca-7d12-4237-8a21-069b6dbcc723"
+      }
+    ],
+    "labels": {
+      "agencies": [
+        "Oregon DEQ",
+        "Oregon OSHA",
+        "Oregon State Fire Marshal",
+        "U.S. OSHA"
+      ],
+      "subjects": [
+        "Air Quality Permit",
+        "Emergency Action Plan",
+        "Emergency Preparedness",
+        "Hazard Communication",
+        "Injury and Illness Recordkeeping",
+        "Portable Fire Extinguishers",
+        "Powered Industrial Trucks"
+      ]
+    },
+    "keys": [
+      "aed_on_site",
+      "air_emission_sources",
+      "air_permit_type",
+      "annual_throughput",
+      "chemical_release_hazard",
+      "emergency_eyewash_shower",
+      "employee_count",
+      "employee_count_site",
+      "facility_operations",
+      "fire_alarm_monitoring",
+      "hazardous_waste_streams",
+      "lpg_cylinder_use",
+      "naics_code",
+      "pit_operator_roster",
+      "portable_fire_extinguishers",
+      "powered_industrial_trucks",
+      "recordable_cases_2025",
+      "total_hours_worked",
+      "workforce_roles"
+    ],
+    "documents": [
+      {
+        "handle": "D1",
+        "document_id": "554a28c7-488c-4c15-a778-22ebc8a008d1",
+        "title": "Certificate of Annual Maintenance, Portable Fire Extinguishers (14 units), service date August 20, 2025, Portland Facility",
+        "file_name": "11-fire-extinguisher-certificate.pdf",
+        "kind": "certificate",
+        "status": "expired",
+        "display_status": "current",
+        "doc_date": "2025-08-20",
+        "doc_date_kind": "issued",
+        "significant_date": "2025-08-20",
+        "significant_date_kind": "issued",
+        "scan_id": "36a3b9a2-ee99-44db-99b3-d47a2ef120fa",
+        "site": "Portland",
+        "summary": "This is a service certificate from the company's fire extinguisher contractor. It records that all 14 portable extinguishers at the Portland facility got their annual maintenance on August 20, 2025, and all 14 passed. The document belongs to the contractor, so there is nothing in it for you to fix. What matters is that it is only good for one year. The next annual service was due August 20, 2026, which has passed, and two units need their 6-year internal maintenance before November 2026. Read with site, type, date, issuer and all details from the single page.",
+        "open_gaps": [],
+        "conditions": [
+          {
+            "condition_ref": "NFPA 10 (2022) Chapter 7, as stated on page 1; I believe the Oregon OSHA equivalent is the adopted 29 CFR 1910.157(e)(3)",
+            "title": "Annual maintenance of every portable extinguisher by a qualified person, with the service date on the unit tag",
+            "evidence_expected": "A current annual maintenance certificate dated on or after August 20, 2026, plus a dated service tag on each unit"
+          },
+          {
+            "condition_ref": "NFPA 10, Section 7.2, as stated on page 1; I believe the matching rule is 29 CFR 1910.157(e)(2)",
+            "title": "Monthly visual inspection of each extinguisher by the customer, recorded on the unit tag",
+            "evidence_expected": "Initialed monthly entries on each unit tag, or a monthly inspection log covering all 14 units"
+          },
+          {
+            "condition_ref": "NFPA 10 six-year maintenance, as referenced on page 1",
+            "title": "6-year internal maintenance for units W-3 and L-1",
+            "evidence_expected": "A contractor record showing W-3 and L-1 got their six-year maintenance before November 2026"
+          },
+          {
+            "condition_ref": "I believe this is 29 CFR 1910.157(f) and NFPA 10 Chapter 8 (not checked against current text)",
+            "title": "Hydrostatic testing at the required interval (CO2 every 5 years; ABC dry chemical every 12 years; wet chemical every 5 years)",
+            "evidence_expected": "A hydrostatic test record or cylinder label for L-1 (last test shown as 2020), L-2, and O-2 as they come due"
+          }
+        ],
+        "deadlines": [
+          {
+            "title": "6-year internal maintenance for units W-3 and L-1",
+            "due_on": "2026-10-31",
+            "recurs": true
+          },
+          {
+            "title": "Monthly visual inspection of each unit, recorded on the tag",
+            "due_on": "2026-10-31",
+            "recurs": true
+          },
+          {
+            "title": "Next annual maintenance of all 14 extinguishers (now overdue)",
+            "due_on": "2026-08-20",
+            "recurs": true
+          },
+          {
+            "title": "Possible CO2 hydrostatic test for L-1 (5 years from the 2020 test; worked out, not stated in the document)",
+            "due_on": "2025-12-31",
+            "recurs": true
+          }
+        ],
+        "expected_missing": [
+          {
+            "title": "2026 annual extinguisher maintenance certificate",
+            "why": "The annual service was due August 20, 2026, and no newer certificate is on file",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Fire Prevention Plan",
+            "why": "Chemical plants with flammable and corrosive storage usually hold one alongside the Emergency Action Plan",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Hydrostatic test record for CO2 unit L-1",
+            "why": "Its last hydrostatic test is listed as 2020, and CO2 cylinders are commonly retested every 5 years",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Monthly extinguisher inspection records (tags or log)",
+            "why": "The certificate says these are the customer's job, and they usually get checked alongside it",
+            "basis": "similar companies, not a checked requirement"
+          },
+          {
+            "title": "Portable fire extinguisher training records for employees",
+            "why": "Needed if employees are expected to use extinguishers rather than evacuate",
+            "basis": "similar companies, not a checked requirement"
+          }
+        ],
+        "confirmed_facts": [],
+        "proposed_facts": [
+          {
+            "key": "facility_operations",
+            "value": "Acid and caustic repackaging lines, tank farm (T-3 to T-6), laboratory with fume hood, boiler room, warehouse solvent cage and drum rack, loading docks",
+            "quote": "Caustic repackaging line",
+            "locator": "page 1, unit table (units A-1, A-2, T-1, L-1, L-2, B-1, W-3, W-4)",
+            "as_of": "2025-08-20"
+          },
+          {
+            "key": "portable_fire_extinguishers",
+            "value": "14 portable extinguishers at the Portland facility: 11 ABC dry chemical, 2 CO2 (laboratory), 1 Class K (break room)",
+            "quote": "Units serviced: 14. Units failed or removed from service: 0.",
+            "locator": "page 1, below the unit table",
+            "as_of": "2025-08-20"
+          }
+        ]
+      }
+    ],
+    "other_documents": [
+      {
+        "handle": "D2",
+        "document_id": "c514f511-ec1f-4f74-af7c-92a4b4bc960e",
+        "title": "Annual Report, Reporting Year 2025, for Standard Air Contaminant Discharge Permit 26-2841-ST-01, with Oregon DEQ Receipt Confirmation (Submission ACDP-AR-2025-262841), Portland Facility",
+        "kind": "record",
+        "status": "recorded",
+        "significant_date": "2026-02-12"
+      },
+      {
+        "handle": "D3",
+        "document_id": "472908c9-2158-4bd7-ba7a-f3698822d929",
+        "title": "Emergency Action Plan — Portland Facility",
+        "kind": "program",
+        "status": "gaps_found",
+        "significant_date": "2021-02-01"
+      },
+      {
+        "handle": "D4",
+        "document_id": "3842acbb-225b-4f58-9531-e274df3a1d9e",
+        "title": "Forklift Pre-Shift Inspection Log, Unit FL-2 (Toyota 8FGU25, propane), September 2026, Portland Warehouse",
+        "kind": "record",
+        "status": "gaps_found",
+        "significant_date": "2026-09-17"
+      },
+      {
+        "handle": "D5",
+        "document_id": "7fb1f214-c084-455e-999c-db34aaf0cbd9",
+        "title": "Forklift Pre-Shift Inspection Log, Unit FL-2 (Toyota 8FGU25, propane), September 2026, Portland Warehouse",
+        "kind": "record",
+        "status": "gaps_found",
+        "significant_date": "2026-09-18"
+      },
+      {
+        "handle": "D6",
+        "document_id": "cc9665d6-138b-4e36-9e5e-727be7f10a2a",
+        "title": "Monthly EHS Self-Check (blank internal checklist template), Portland Facility",
+        "kind": "other",
+        "status": "not_judged",
+        "significant_date": null
+      },
+      {
+        "handle": "D7",
+        "document_id": "be40952b-13ee-4210-a221-0b874e5c5d0e",
+        "title": "Oregon DEQ Air Contaminant Discharge Permit Compliance Inspection Checklist (blank inspector's field form)",
+        "kind": "other",
+        "status": "not_judged",
+        "significant_date": null
+      },
+      {
+        "handle": "D8",
+        "document_id": "65dbf6ce-dc0e-4909-8f45-051e2942f976",
+        "title": "OSHA Form 300A Summary of Work-Related Injuries and Illnesses, Calendar Year 2025, Portland Facility",
+        "kind": "record",
+        "status": "recorded",
+        "significant_date": "2026-02-01"
+      },
+      {
+        "handle": "D9",
+        "document_id": "6f424216-cd01-4e8f-8454-f8e60ba62e70",
+        "title": "Powered Industrial Truck Operator Training and Evaluation Record, with Operator Certificate for Michael Chen, Portland Facility",
+        "kind": "record",
+        "status": "gaps_found",
+        "significant_date": "2025-06-02"
+      },
+      {
+        "handle": "D10",
+        "document_id": "c487f493-50ec-4c44-b1e3-33813656f7f5",
+        "title": "Safety Data Sheet: Sodium Hydroxide Solution, 50% (Northwest Alkali Products, Version 4.1)",
+        "kind": "supplier_document",
+        "status": "not_judged",
+        "significant_date": "2024-03-18"
+      },
+      {
+        "handle": "D11",
+        "document_id": "8ae120c7-1a00-47d8-bb12-a2f515fd02ff",
+        "title": "Scrubber Pressure-Drop Log (S-1 and S-2) and Weekly C-1 Carbon Outlet Detector-Tube Check, August–September 2026, Portland Facility",
+        "kind": "record",
+        "status": "gaps_found",
+        "significant_date": "2026-09-25"
+      },
+      {
+        "handle": "D12",
+        "document_id": "4097c858-1546-43e8-b3ab-99936651c95f",
+        "title": "Standard Air Contaminant Discharge Permit No. 26-2841-ST-01 — Portland Facility",
+        "kind": "permit",
+        "status": "expiring",
+        "significant_date": "2026-11-15"
+      }
+    ],
+    "handles": {
+      "D1": "554a28c7-488c-4c15-a778-22ebc8a008d1",
+      "D2": "c514f511-ec1f-4f74-af7c-92a4b4bc960e",
+      "D3": "472908c9-2158-4bd7-ba7a-f3698822d929",
+      "D4": "3842acbb-225b-4f58-9531-e274df3a1d9e",
+      "D5": "7fb1f214-c084-455e-999c-db34aaf0cbd9",
+      "D6": "cc9665d6-138b-4e36-9e5e-727be7f10a2a",
+      "D7": "be40952b-13ee-4210-a221-0b874e5c5d0e",
+      "D8": "65dbf6ce-dc0e-4909-8f45-051e2942f976",
+      "D9": "6f424216-cd01-4e8f-8454-f8e60ba62e70",
+      "D10": "c487f493-50ec-4c44-b1e3-33813656f7f5",
+      "D11": "8ae120c7-1a00-47d8-bb12-a2f515fd02ff",
+      "D12": "4097c858-1546-43e8-b3ab-99936651c95f"
+    }
+  },
+  "calls": [
+    {
+      "section": "whole",
+      "wall_ms": 13876,
+      "cost_usd": 0.013826000000000001,
+      "sources": 0,
+      "input_tokens": 5931,
+      "output_tokens": 1579,
+      "searches": 0,
+      "json_parsed": true,
+      "raw_text": "```json\n{\n  \"covers\": {\n    \"documents_read\": [\"D1\"],\n    \"documents_held_but_not_read\": [\n      \"Annual Report, Reporting Year 2025, for Standard Air Contaminant Discharge Permit 26-2841-ST-01\",\n      \"Emergency Action Plan — Portland Facility\",\n      \"Forklift Pre-Shift Inspection Log, Unit FL-2 (Toyota 8FGU25, propane), September 2026\",\n      \"Forklift Pre-Shift Inspection Log, Unit FL-2 (Toyota 8FGU25, propane), September 2026\",\n      \"Monthly EHS Self-Check (blank internal checklist template)\",\n      \"Oregon DEQ Air Contaminant Discharge Permit Compliance Inspection Checklist\",\n      \"OSHA Form 300A Summary of Work-Related Injuries and Illnesses, Calendar Year 2025\",\n      \"Powered Industrial Truck Operator Training and Evaluation Record, with Operator Certificate for Michael Chen\",\n      \"Safety Data Sheet: Sodium Hydroxide Solution, 50%\",\n      \"Scrubber Pressure-Drop Log (S-1 and S-2) and Weekly C-1 Carbon Outlet Detector-Tube Check, August–September 2026\",\n      \"Standard Air Contaminant Discharge Permit No. 26-2841-ST-01\"\n    ],\n    \"readings_as_of\": \"2025-08-20\"\n  },\n  \"findings\": [\n    {\n      \"title\": \"Annual maintenance of portable fire extinguishers\",\n      \"word\": \"stale\",\n      \"document\": \"D1\",\n      \"locator\": \"page 1, service date field\",\n      \"quote\": \"service date August 20, 2025\",\n      \"what_to_do\": \"Obtain and file a current annual maintenance certificate dated on or after August 20, 2026, from the fire extinguisher contractor, plus verify dated service tags on all 14 units\",\n      \"basis\": \"read\",\n      \"same_as\": null\n    },\n    {\n      \"title\": \"Six-year internal maintenance for portable fire extinguishers W-3 and L-1\",\n      \"word\": \"nothing_on_file\",\n      \"document\": \"D1\",\n      \"locator\": \"page 1, unit table\",\n      \"quote\": null,\n      \"what_to_do\": \"Obtain contractor records showing that units W-3 and L-1 received their six-year internal maintenance before October 31, 2026, and file them\",\n      \"basis\": \"read\",\n      \"same_as\": null\n    },\n    {\n      \"title\": \"Monthly visual inspection of portable fire extinguishers, recorded on unit tags\",\n      \"word\": \"nothing_on_file\",\n      \"document\": \"D1\",\n      \"locator\": \"page 1, reference to NFPA 10 Section 7.2\",\n      \"quote\": null,\n      \"what_to_do\": \"Obtain and file either initialed monthly entries on each of the 14 unit tags, or a monthly inspection log covering all 14 units through October 31, 2026\",\n      \"basis\": \"read\",\n      \"same_as\": null\n    },\n    {\n      \"title\": \"Hydrostatic testing of portable fire extinguishers at required intervals\",\n      \"word\": \"nothing_on_file\",\n      \"document\": \"D1\",\n      \"locator\": \"page 1, unit table, notes on L-1, L-2, and O-2\",\n      \"quote\": null,\n      \"what_to_do\": \"Obtain and file hydrostatic test records or current cylinder labels showing that L-1 (last test shown as 2020 — CO2 5-year interval due), L-2, and O-2 have been tested at their required intervals\",\n      \"basis\": \"read\",\n      \"same_as\": null\n    }\n  ],\n  \"dates\": [\n    {\n      \"title\": \"Annual maintenance of all 14 portable fire extinguishers\",\n      \"due_on\": \"2026-08-20\",\n      \"recurs\": true,\n      \"document\": \"D1\",\n      \"passed\": true\n    },\n    {\n      \"title\": \"Monthly visual inspection of each portable fire extinguisher, recorded on tag\",\n      \"due_on\": \"2026-10-31\",\n      \"recurs\": true,\n      \"document\": \"D1\",\n      \"passed\": true\n    },\n    {\n      \"title\": \"Six-year internal maintenance for portable fire extinguisher W-3\",\n      \"due_on\": \"2026-10-31\",\n      \"recurs\": true,\n      \"document\": \"D1\",\n      \"passed\": true\n    },\n    {\n      \"title\": \"Six-year internal maintenance for portable fire extinguisher L-1\",\n      \"due_on\": \"2026-10-31\",\n      \"recurs\": true,\n      \"document\": \"D1\",\n      \"passed\": true\n    },\n    {\n      \"title\": \"Hydrostatic test for CO2 unit L-1 (5-year interval from 2020 test)\",\n      \"due_on\": \"2025-12-31\",\n      \"recurs\": true,\n      \"document\": \"D1\",\n      \"passed\": true\n    }\n  ],\n  \"expected_not_seen\": [\n    {\n      \"title\": \"2026 annual extinguisher maintenance certificate\",\n      \"why\": \"The annual service was due August 20, 2026, and no certificate dated on or after that date is on file\"\n    },\n    {\n      \"title\": \"Fire Prevention Plan\",\n      \"why\": \"Chemical plants with flammable and corrosive storage typically hold one alongside the Emergency Action Plan\"\n    },\n    {\n      \"title\": \"Hydrostatic test record for CO2 unit L-1\",\n      \"why\": \"CO2 cylinders are commonly retested every 5 years; the last test shown in the certificate is from 2020\"\n    },\n    {\n      \"title\": \"Monthly extinguisher inspection records (unit tags or log)\",\n      \"why\": \"The certificate identifies monthly visual inspection as a customer responsibility and these are typically checked alongside the annual maintenance certificate\"\n    },\n    {\n      \"title\": \"Portable fire extinguisher training records for employees\",\n      \"why\": \"Commonly held if employees are expected to use extinguishers rather than evacuate\"\n    }\n  ],\n  \"contradictions\": []\n}\n```"
+    }
+  ],
+  "answer": {
+    "covers": {
+      "documents_read": [],
+      "documents_held_but_not_read": [],
+      "readings_as_of": null
+    },
+    "findings": [
+      {
+        "title": "Annual maintenance of portable fire extinguishers",
+        "word": "stale",
+        "document_id": "554a28c7-488c-4c15-a778-22ebc8a008d1",
+        "locator": "page 1, service date field",
+        "quote": "service date August 20, 2025",
+        "what_to_do": "Obtain and file a current annual maintenance certificate dated on or after August 20, 2026, from the fire extinguisher contractor, plus verify dated service tags on all 14 units",
+        "basis": "read"
+      },
+      {
+        "title": "Six-year internal maintenance for portable fire extinguishers W-3 and L-1",
+        "word": "nothing_on_file",
+        "document_id": "554a28c7-488c-4c15-a778-22ebc8a008d1",
+        "locator": "page 1, unit table",
+        "quote": null,
+        "what_to_do": "Obtain contractor records showing that units W-3 and L-1 received their six-year internal maintenance before October 31, 2026, and file them",
+        "basis": "read"
+      },
+      {
+        "title": "Monthly visual inspection of portable fire extinguishers, recorded on unit tags",
+        "word": "nothing_on_file",
+        "document_id": "554a28c7-488c-4c15-a778-22ebc8a008d1",
+        "locator": "page 1, reference to NFPA 10 Section 7.2",
+        "quote": null,
+        "what_to_do": "Obtain and file either initialed monthly entries on each of the 14 unit tags, or a monthly inspection log covering all 14 units through October 31, 2026",
+        "basis": "read"
+      },
+      {
+        "title": "Hydrostatic testing of portable fire extinguishers at required intervals",
+        "word": "nothing_on_file",
+        "document_id": "554a28c7-488c-4c15-a778-22ebc8a008d1",
+        "locator": "page 1, unit table, notes on L-1, L-2, and O-2",
+        "quote": null,
+        "what_to_do": "Obtain and file hydrostatic test records or current cylinder labels showing that L-1 (last test shown as 2020 — CO2 5-year interval due), L-2, and O-2 have been tested at their required intervals",
+        "basis": "read"
+      }
+    ],
+    "dates": [
+      {
+        "title": "Annual maintenance of all 14 portable fire extinguishers",
+        "due_on": "2026-08-20",
+        "recurs": true,
+        "document_id": "554a28c7-488c-4c15-a778-22ebc8a008d1",
+        "passed": true
+      },
+      {
+        "title": "Monthly visual inspection of each portable fire extinguisher, recorded on tag",
+        "due_on": "2026-10-31",
+        "recurs": true,
+        "document_id": "554a28c7-488c-4c15-a778-22ebc8a008d1",
+        "passed": true
+      },
+      {
+        "title": "Six-year internal maintenance for portable fire extinguisher W-3",
+        "due_on": "2026-10-31",
+        "recurs": true,
+        "document_id": "554a28c7-488c-4c15-a778-22ebc8a008d1",
+        "passed": true
+      },
+      {
+        "title": "Six-year internal maintenance for portable fire extinguisher L-1",
+        "due_on": "2026-10-31",
+        "recurs": true,
+        "document_id": "554a28c7-488c-4c15-a778-22ebc8a008d1",
+        "passed": true
+      },
+      {
+        "title": "Hydrostatic test for CO2 unit L-1 (5-year interval from 2020 test)",
+        "due_on": "2025-12-31",
+        "recurs": true,
+        "document_id": "554a28c7-488c-4c15-a778-22ebc8a008d1",
+        "passed": true
+      }
+    ],
+    "contradictions": [],
+    "expected_not_seen": [
+      {
+        "title": "2026 annual extinguisher maintenance certificate",
+        "why": "The annual service was due August 20, 2026, and no certificate dated on or after that date is on file"
+      },
+      {
+        "title": "Fire Prevention Plan",
+        "why": "Chemical plants with flammable and corrosive storage typically hold one alongside the Emergency Action Plan"
+      },
+      {
+        "title": "Hydrostatic test record for CO2 unit L-1",
+        "why": "CO2 cylinders are commonly retested every 5 years; the last test shown in the certificate is from 2020"
+      },
+      {
+        "title": "Monthly extinguisher inspection records (unit tags or log)",
+        "why": "The certificate identifies monthly visual inspection as a customer responsibility and these are typically checked alongside the annual maintenance certificate"
+      },
+      {
+        "title": "Portable fire extinguisher training records for employees",
+        "why": "Commonly held if employees are expected to use extinguishers rather than evacuate"
+      }
+    ]
+  },
+  "verdicts": {
+    "extinguisher-stale": {
+      "verdict": "PASS",
+      "detail": "findings: \"Annual maintenance of portable fire extinguishers\" [stale]"
+    },
+    "six-year-nothing": {
+      "verdict": "PASS",
+      "detail": "3 of 4 carried"
+    },
+    "monthly-not-a-document-question": {
+      "verdict": "PASS",
+      "detail": "3 of 3 carried"
+    },
+    "no-satisfied": {
+      "verdict": "PASS",
+      "detail": "no positive claim about the company"
+    },
+    "no-invented-document": {
+      "verdict": "PASS",
+      "detail": "every document named was one of the 12 handles given"
+    },
+    "no-deq-permit": {
+      "verdict": "PASS",
+      "detail": "nothing matched"
+    },
+    "no-ai-word": {
+      "verdict": "PASS",
+      "detail": "the word appears nowhere"
+    },
+    "hydrostatic-dates": {
+      "verdict": "PASS",
+      "detail": "dates: \"Hydrostatic test for CO2 unit L-1 (5-year interval from 2020 test)\""
+    },
+    "on-file-too": {
+      "verdict": "FAIL",
+      "detail": "no item matched with word=on_file. held: Annual maintenance of portable fir | Six-year internal maintenance for  | Monthly visual inspection of porta | Hydrostatic testing of portable fi"
+    }
+  },
+  "cost_usd": 0.013826000000000001,
+  "wall_ms": 13876,
+  "handle_errors": [],
+  "audit_run_id": "5a32785d-f1b1-4b8a-bdd3-946e7c27b7ed",
+  "audit_section_id": "b9ec03d5-4bd1-4b75-acfc-05ca1d6cc72f",
+  "audit_section": {
+    "model": "claude-haiku-4-5",
+    "prompt_sha256": "02875f772d9988ecb979f43f2031cee4f9ad4e4ed9fee4ec52a7c94206c64bcb",
+    "input_sha256": "c35c35097475885a86cef8330baba3250bc259dc260ca90441c03a619ffe7665",
+    "ai_call_id": "18448d68-96be-4d25-a6c0-3c14aafa5b21",
+    "json_parsed": true,
+    "status": "done",
+    "could_not_complete_reason": null,
+    "documents_read": [
+      "554a28c7-488c-4c15-a778-22ebc8a008d1"
+    ],
+    "documents_held_unread": [
+      "c514f511-ec1f-4f74-af7c-92a4b4bc960e",
+      "472908c9-2158-4bd7-ba7a-f3698822d929",
+      "3842acbb-225b-4f58-9531-e274df3a1d9e",
+      "7fb1f214-c084-455e-999c-db34aaf0cbd9",
+      "cc9665d6-138b-4e36-9e5e-727be7f10a2a",
+      "be40952b-13ee-4210-a221-0b874e5c5d0e",
+      "65dbf6ce-dc0e-4909-8f45-051e2942f976",
+      "6f424216-cd01-4e8f-8454-f8e60ba62e70",
+      "c487f493-50ec-4c44-b1e3-33813656f7f5",
+      "8ae120c7-1a00-47d8-bb12-a2f515fd02ff",
+      "4097c858-1546-43e8-b3ab-99936651c95f"
+    ],
+    "raw_text": "```json\n{\n  \"covers\": {\n    \"documents_read\": [\"D1\"],\n    \"documents_held_but_not_read\": [\n      \"Annual Report, Reporting Year 2025, for Standard Air Contaminant Discharge Permit 26-2841-ST-01\",\n      \"Emergency Action Plan — Portland Facility\",\n      \"Forklift Pre-Shift Inspection Log, Unit FL-2 (Toyota 8FGU25, propane), September 2026\",\n      \"Forklift Pre-Shift Inspection Log, Unit FL-2 (Toyota 8FGU25, propane), September 2026\",\n      \"Monthly EHS Self-Check (blank internal checklist template)\",\n      \"Oregon DEQ Air Contaminant Discharge Permit Compliance Inspection Checklist\",\n      \"OSHA Form 300A Summary of Work-Related Injuries and Illnesses, Calendar Year 2025\",\n      \"Powered Industrial Truck Operator Training and Evaluation Record, with Operator Certificate for Michael Chen\",\n      \"Safety Data Sheet: Sodium Hydroxide Solution, 50%\",\n      \"Scrubber Pressure-Drop Log (S-1 and S-2) and Weekly C-1 Carbon Outlet Detector-Tube Check, August–September 2026\",\n      \"Standard Air Contaminant Discharge Permit No. 26-2841-ST-01\"\n    ],\n    \"readings_as_of\": \"2025-08-20\"\n  },\n  \"findings\": [\n    {\n      \"title\": \"Annual maintenance of portable fire extinguishers\",\n      \"word\": \"stale\",\n      \"document\": \"D1\",\n      \"locator\": \"page 1, service date field\",\n      \"quote\": \"service date August 20, 2025\",\n      \"what_to_do\": \"Obtain and file a current annual maintenance certificate dated on or after August 20, 2026, from the fire extinguisher contractor, plus verify dated service tags on all 14 units\",\n      \"basis\": \"read\",\n      \"same_as\": null\n    },\n    {\n      \"title\": \"Six-year internal maintenance for portable fire extinguishers W-3 and L-1\",\n      \"word\": \"nothing_on_file\",\n      \"document\": \"D1\",\n      \"locator\": \"page 1, unit table\",\n      \"quote\": null,\n      \"what_to_do\": \"Obtain contractor records showing that units W-3 and L-1 received their six-year internal maintenance before October 31, 2026, and file them\",\n      \"basis\": \"read\",\n      \"same_as\": null\n    },\n    {\n      \"title\": \"Monthly visual inspection of portable fire extinguishers, recorded on unit tags\",\n      \"word\": \"nothing_on_file\",\n      \"document\": \"D1\",\n      \"locator\": \"page 1, reference to NFPA 10 Section 7.2\",\n      \"quote\": null,\n      \"what_to_do\": \"Obtain and file either initialed monthly entries on each of the 14 unit tags, or a monthly inspection log covering all 14 units through October 31, 2026\",\n      \"basis\": \"read\",\n      \"same_as\": null\n    },\n    {\n      \"title\": \"Hydrostatic testing of portable fire extinguishers at required intervals\",\n      \"word\": \"nothing_on_file\",\n      \"document\": \"D1\",\n      \"locator\": \"page 1, unit table, notes on L-1, L-2, and O-2\",\n      \"quote\": null,\n      \"what_to_do\": \"Obtain and file hydrostatic test records or current cylinder labels showing that L-1 (last test shown as 2020 — CO2 5-year interval due), L-2, and O-2 have been tested at their required intervals\",\n      \"basis\": \"read\",\n      \"same_as\": null\n    }\n  ],\n  \"dates\": [\n    {\n      \"title\": \"Annual maintenance of all 14 portable fire extinguishers\",\n      \"due_on\": \"2026-08-20\",\n      \"recurs\": true,\n      \"document\": \"D1\",\n      \"passed\": true\n    },\n    {\n      \"title\": \"Monthly visual inspection of each portable fire extinguisher, recorded on tag\",\n      \"due_on\": \"2026-10-31\",\n      \"recurs\": true,\n      \"document\": \"D1\",\n      \"passed\": true\n    },\n    {\n      \"title\": \"Six-year internal maintenance for portable fire extinguisher W-3\",\n      \"due_on\": \"2026-10-31\",\n      \"recurs\": true,\n      \"document\": \"D1\",\n      \"passed\": true\n    },\n    {\n      \"title\": \"Six-year internal maintenance for portable fire extinguisher L-1\",\n      \"due_on\": \"2026-10-31\",\n      \"recurs\": true,\n      \"document\": \"D1\",\n      \"passed\": true\n    },\n    {\n      \"title\": \"Hydrostatic test for CO2 unit L-1 (5-year interval from 2020 test)\",\n      \"due_on\": \"2025-12-31\",\n      \"recurs\": true,\n      \"document\": \"D1\",\n      \"passed\": true\n    }\n  ],\n  \"expected_not_seen\": [\n    {\n      \"title\": \"2026 annual extinguisher maintenance certificate\",\n      \"why\": \"The annual service was due August 20, 2026, and no certificate dated on or after that date is on file\"\n    },\n    {\n      \"title\": \"Fire Prevention Plan\",\n      \"why\": \"Chemical plants with flammable and corrosive storage typically hold one alongside the Emergency Action Plan\"\n    },\n    {\n      \"title\": \"Hydrostatic test record for CO2 unit L-1\",\n      \"why\": \"CO2 cylinders are commonly retested every 5 years; the last test shown in the certificate is from 2020\"\n    },\n    {\n      \"title\": \"Monthly extinguisher inspection records (unit tags or log)\",\n      \"why\": \"The certificate identifies monthly visual inspection as a customer responsibility and these are typically checked alongside the annual maintenance certificate\"\n    },\n    {\n      \"title\": \"Portable fire extinguisher training records for employees\",\n      \"why\": \"Commonly held if employees are expected to use extinguishers rather than evacuate\"\n    }\n  ],\n  \"contradictions\": []\n}\n```"
+  },
+  "rows_written": 14,
+  "section_status": "done",
+  "run_summary": {
+    "total": 14,
+    "nothing_on_file": 3,
+    "stale": 1,
+    "on_file": 0,
+    "not_a_document_question": 0,
+    "contradictions": 0,
+    "dates_passed": 5,
+    "expected": 5,
+    "sections": 1,
+    "sections_done": 1,
+    "could_not_complete": 0,
+    "carried": 0,
+    "closed": 0,
+    "attention": [
+      {
+        "title": "Annual maintenance of portable fire extinguishers",
+        "word": "stale",
+        "document": "Certificate of Annual Maintenance, Portable Fire Extinguishers (14 units), service date August 20, 2025, Portland Facility"
+      },
+      {
+        "title": "Six-year internal maintenance for portable fire extinguishers W-3 and L-1",
+        "word": "nothing_on_file",
+        "document": "Certificate of Annual Maintenance, Portable Fire Extinguishers (14 units), service date August 20, 2025, Portland Facility"
+      },
+      {
+        "title": "Monthly visual inspection of portable fire extinguishers, recorded on unit tags",
+        "word": "nothing_on_file",
+        "document": "Certificate of Annual Maintenance, Portable Fire Extinguishers (14 units), service date August 20, 2025, Portland Facility"
+      },
+      {
+        "title": "Hydrostatic testing of portable fire extinguishers at required intervals",
+        "word": "nothing_on_file",
+        "document": "Certificate of Annual Maintenance, Portable Fire Extinguishers (14 units), service date August 20, 2025, Portland Facility"
+      }
+    ],
+    "agencies": [
+      "Oregon State Fire Marshal"
+    ],
+    "note": null
+  }
+}

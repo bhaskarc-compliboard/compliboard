@@ -26,6 +26,7 @@ import { createHash } from 'node:crypto'
 import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync } from 'node:fs'
 import { askAIWithCitations, extractJsonText, modelForTask } from '../lib/ai.ts'
 import { buildAuditInput, auditAgenciesFor } from '../lib/audit.ts'
+import { createRun, runSection, finishRunIfDone, summariseRun } from '../lib/auditRun.ts'
 import { auditAgencyPrompt, auditSectionPrompt, AUDIT_SECTIONS } from '../prompts/audit-agency.ts'
 
 const PROD_REF = 'dsfwmafnphdlfogetsus'
@@ -37,7 +38,9 @@ const args = process.argv.slice(2)
 const flag = (n, d = null) => { const i = args.indexOf(n); return i >= 0 && args[i + 1] ? args[i + 1] : d }
 const times = Number(flag('--times', '3'))
 const modeArg = flag('--mode', null)
-const VALUE_FLAGS = ['--times', '--mode']
+const jsonPath = args.includes('--json-path')
+const previousRun = flag('--previous', null)
+const VALUE_FLAGS = ['--times', '--mode', '--previous']
 const only = args.find((a, i) => !a.startsWith('--') && !VALUE_FLAGS.includes(args[i - 1]))
 const die = (m) => { console.error(`\n  ${m}\n`); process.exit(1) }
 
@@ -61,7 +64,7 @@ const TODAY = new Date().toISOString().slice(0, 10)
 // So the model comes from the JUDGEMENT tier — an audit decides things, and `.env.local` points that
 // at Haiku, which is what this run is meant to be on — and the ledger still says `audit`. Adding an
 // `audit` tier to `lib/ai.ts` is a routing change (§3.1) and not this run's to make.
-const MODEL = modelForTask('judgement')
+const MODEL = modelForTask('audit')   // its own tier since Run 2a, item 4
 const MODES = modeArg ? [modeArg] : ['whole', 'sections']
 
 const caseFiles = readdirSync(CASES).filter((f) => f.endsWith('.json'))
@@ -226,6 +229,29 @@ function evaluate(check, answer, ctx) {
         ? { verdict: 'FAIL', detail: bad.map((f) => `"${String(f.title).slice(0, 44)}"`).join(' · ') }
         : { verdict: 'PASS', detail: 'no expected item appears as a finding' }
     }
+    case 'carries_own_gaps': {
+      // How many of the document's OWN open gaps the audit carried. A gap counts as carried when a
+      // finding repeats at least half of the significant words in that gap's title (minimum two),
+      // which is what "in the reading's own terms" means without naming the terms.
+      const live = ctx.own?.[check.file]
+      if (!live) return { verdict: 'FAIL', detail: `no live reading was loaded for ${check.file}` }
+      if (!live.documentId) return { verdict: 'FAIL', detail: `${check.file} is not on file for this company` }
+      if (!live.gaps.length) {
+        return { verdict: 'N/A', detail: `the current scan of ${check.file} has 0 open gaps, `
+          + `so there is nothing to carry (scan ${String(live.scanId).slice(0, 8)})`, notTestable: true }
+      }
+      const texts = (cols[check.collection ?? 'findings'] ?? []).map((f) => norm(ITEM_TEXT(f)))
+      const carried = live.gaps.filter((gap) => {
+        const need = Math.max(2, Math.ceil(gap.words.length / 2))
+        return texts.some((t) => gap.words.filter((w) => t.includes(w)).length >= need)
+      })
+      const n = check.n ?? live.gaps.length
+      return carried.length >= n
+        ? { verdict: 'PASS', detail: `${carried.length} of ${live.gaps.length} own gap(s) carried, needs ${n}`
+            + `  [${carried.map((g) => g.title.slice(0, 30)).join(' | ')}]` }
+        : { verdict: 'FAIL', detail: `${carried.length} of ${live.gaps.length} own gap(s) carried, needs ${n}. `
+            + `the reading's gaps are: ${live.gaps.map((g) => `"${g.title.slice(0, 40)}"`).join(' · ')}` }
+    }
     case 'eap_gap_whitelist': {
       // A finding about the Emergency Action Plan whose words match none of the reading's four gaps
       // is a fifth gap nobody found. Printed as a candidate rather than failed outright when it does
@@ -237,17 +263,84 @@ function evaluate(check, answer, ctx) {
       // require. The whitelist allowed only the four GAP words, so it flagged the designed behaviour
       // as an invented fault. The conditions come from the input block, so this cannot drift from what
       // the model was actually shown.
-      const doc = ctx.documentIdByFile['01-eap-chemical.pdf']
-      const allowed = [...check.allowed, ...(ctx.conditionWords[doc] ?? [])]
+      // *** THE WHITELIST IS READ, NOT TYPED — Audits Run 2a, item 2. *** It was nine words copied
+      // from Haiku's four gaps; the real model's seven gaps use different words, so every one of
+      // them looked invented. Now: the words of the plan's OWN open gaps and its OWN conditions,
+      // both from the tables for the current scan, plus `check.allowed` for the few state words
+      // ("stale") that are not faults and belong to no row.
+      const file = check.file ?? '01-eap-chemical.pdf'
+      const live = ctx.own?.[file]
+      if (!live) return { verdict: 'FAIL', detail: `no live reading was loaded for ${file}` }
+      const doc = live.documentId
+      const allowed = [...(check.allowed ?? []),
+                       ...live.gaps.flatMap((g) => g.words), ...live.conditions]
       const bad = cols.findings.filter((f) => f.document_id === doc
         && ['nothing_on_file'].includes(norm(f.word))
         && !allowed.some((a) => norm(ITEM_TEXT(f)).includes(norm(a))))
       return bad.length
         ? { verdict: 'FAIL', detail: bad.map((f) => `"${String(f.title).slice(0, 48)}"`).join(' · ') }
-        : { verdict: 'PASS', detail: 'no fault on the plan beyond the four the reading found' }
+        : { verdict: 'PASS', detail: `no fault on ${file} beyond the `
+            + `${live.gaps.length} the reading found and its ${live.conditions.length} condition word(s)` }
     }
     default: return { verdict: 'FAIL', detail: `unknown check type ${check.type}` }
   }
+}
+
+/**
+ * A DOCUMENT'S OWN FINDINGS, READ FROM THE TABLES AT CHECK TIME — Audits Run 2a, item 2.
+ *
+ * *** A KEY THAT NAMES ONE MODEL'S READING MEASURES THAT MODEL, NOT THE AUDIT. ***
+ * `carry-eap-gaps` used to carry four typed keyword pairs — ["contact","name"], ["alarm","ansi"] —
+ * copied out of Haiku's reading of the plan. The real model reads the same plan and finds SEVEN
+ * gaps in its own words, so the check scored 1 of 4 and `no-new-eap-gap` failed 0/3 while the audit
+ * was doing exactly what it should: carrying the findings it was shown. The failure was the key's.
+ *
+ * So the expectation is now READ, never typed: the plan's open gaps and its conditions come from
+ * `document_gaps` and `document_conditions` for the CURRENT scan, so whatever the reading found is
+ * what the audit is asked to carry. The significant words come from the row's own title.
+ */
+const SIGNIFICANT = (text) => [...new Set(norm(text).split(/[^a-z0-9]+/).filter((w) => w.length > 4))]
+
+async function readOwnFindings(companyId, fileNames) {
+  const out = {}
+  for (const file of fileNames) {
+    const { data: doc, error: dErr } = await db.from('documents')
+      .select('id').eq('company_id', companyId).eq('name', file)
+      .order('uploaded_at', { ascending: false }).limit(1).maybeSingle()
+    if (dErr) die(`reading the document row for ${file}: ${dErr.message}`)
+    if (!doc) { out[file] = { documentId: null, gaps: [], conditions: [] }; continue }
+
+    // *** `is_current`, NOT "the newest by date". *** The first version of this ordered by
+    // `document_scans.created_at`, which does not exist — the column is `scanned_at` — and the
+    // error came back as null data, so the very next line threw on `scan.id`. That throw is the
+    // only reason it was caught in ten seconds instead of becoming a silent "0 open gaps". The
+    // column the app itself uses to mean "the reading that counts" is `is_current`
+    // (`lib/attachedDocument.ts:148`), so this uses that, with `scanned_at` as the tie-break.
+    const { data: scan, error: sErr } = await db.from('document_scans')
+      .select('id, scanned_at').eq('document_id', doc.id).eq('is_current', true)
+      .order('scanned_at', { ascending: false }).limit(1).maybeSingle()
+    if (sErr) die(`reading the scan for ${file}: ${sErr.message}`)
+    if (!scan) { out[file] = { documentId: doc.id, scanId: null, gaps: [], conditions: [] }; continue }
+
+    const [g, c] = await Promise.all([
+      db.from('document_gaps').select('title, description, citation, ordinal')
+        .eq('scan_id', scan.id).eq('status', 'open').order('ordinal'),
+      db.from('document_conditions').select('condition_ref, title, evidence_expected, ordinal')
+        .eq('scan_id', scan.id).order('ordinal'),
+    ])
+    if (g.error) die(`reading document_gaps for ${file}: ${g.error.message}`)
+    if (c.error) die(`reading document_conditions for ${file}: ${c.error.message}`)
+    // *** PROVE IT CAN SEE A PRESENCE. *** A scan with zero open gaps is a real state (case 02 has
+    // none), so an empty list is not an error — but a check that ASKS for n gaps and is handed zero
+    // would pass vacuously or fail mysteriously. `carries_own_gaps` reports the count it read, so
+    // the report shows the input rather than the conclusion.
+    out[file] = {
+      documentId: doc.id, scanId: scan.id,
+      gaps: (g.data ?? []).map((r) => ({ title: r.title, words: SIGNIFICANT(r.title) })),
+      conditions: (c.data ?? []).flatMap((r) => SIGNIFICANT(`${r.condition_ref ?? ''} ${r.title}`)),
+    }
+  }
+  return out
 }
 
 function judge(c, answer, ctx) {
@@ -327,6 +420,94 @@ function resolveHandles(answer, handles) {
   return { errors }
 }
 
+/**
+ * THE ROWS PATH — Audits Run 2a, item 5.
+ *
+ * *** THE JUDGE NOW READS THE ROWS, NOT THE MODEL'S JSON. *** That is the point of the change, and
+ * it is a stronger test than what it replaces: everything between the answer and the database —
+ * handle resolution, the per-kind CHECKs, the demotion of a half-built date to a plain finding — is
+ * now inside what the key measures. A run that scores 12/14 scored it on what a customer would see.
+ *
+ * The JSON run files are still written, because the input block, its sha and the raw text are the
+ * only way to attribute a result six weeks later.
+ */
+async function runAsRows(built, co, c, previousRunId) {
+  const t0 = Date.now()
+  const { runId, sectionIds, agencies } = await createRun(db, {
+    companyId: co.id, kind: 'agency', agency: c.agency,
+    scope: `golden: ${c.id}`, previousRunId: previousRunId ?? null,
+  })
+  if (sectionIds.length !== 1) {
+    die(`${c.id}: expected one section for "${c.agency}", got ${sectionIds.length} (${agencies.join(' · ')})`)
+  }
+  const r = await runSection(db, sectionIds[0], { today: TODAY })
+  const fin = await finishRunIfDone(db, runId)
+
+  // The section's own receipt, read back off the row rather than kept in memory: if a column did
+  // not take a value, the report must show the column and not the variable.
+  const { data: sec } = await db.from('audit_sections')
+    .select('model, prompt_sha256, input_sha256, ai_call_id, json_parsed, status, '
+          + 'could_not_complete_reason, documents_read, documents_held_unread, raw_text')
+    .eq('id', sectionIds[0]).maybeSingle()
+
+  const { data: call } = sec?.ai_call_id
+    ? await db.from('ai_calls').select('cost_usd, input_tokens, output_tokens, searches')
+        .eq('id', sec.ai_call_id).maybeSingle()
+    : { data: null }
+
+  const answer = await answerFromRows(db, runId)
+  const { data: heRows } = await db.from('audit_findings')
+    .select('title').eq('run_id', runId).eq('handle_error', true)
+
+  return {
+    answer,
+    runId,
+    sectionId: sectionIds[0],
+    summary: fin.summary ?? await summariseRun(db, runId),
+    handleErrors: (heRows ?? []).map((x) => x.title.slice(0, 40)),
+    calls: [{
+      wall_ms: Date.now() - t0, cost: call?.cost_usd ?? null, tokens: call ?? null,
+      sources: 0, obj: sec?.json_parsed ?? false, raw: sec?.raw_text ?? '',
+    }],
+    section: sec ?? null,
+    rowsWritten: r.findings,
+    sectionStatus: r.status,
+  }
+}
+
+/**
+ * THE ROWS, BACK IN THE SHAPE THE KEY ALREADY SPEAKS. The checks were written against the model's
+ * four collections; the table holds one `kind` column. Rebuilding the four from the rows means the
+ * fifteen checks in each case file did not have to be rewritten to measure the new path — and where
+ * a row lost something on the way in, the key now fails, which is the behaviour that was wanted.
+ */
+async function answerFromRows(db, runId) {
+  const { data, error } = await db.from('audit_findings')
+    .select('kind, title, word, basis, document_id, document_b_id, locator, quote, what_to_do, '
+          + 'due_on, recurs, passed, value_a, value_b, same_as, handle_error, ordinal')
+    .eq('run_id', runId).order('ordinal')
+  if (error) die(`reading the findings back for run ${runId}: ${error.message}`)
+  const rows = data ?? []
+  return {
+    covers: { documents_read: [], documents_held_but_not_read: [], readings_as_of: null },
+    findings: rows.filter((r) => r.kind === 'finding').map((r) => ({
+      title: r.title, word: r.word, document_id: r.document_id, locator: r.locator,
+      quote: r.quote, what_to_do: r.what_to_do, basis: r.basis,
+      ...(r.handle_error ? { handle_error: 'the block did not carry that handle' } : {}),
+    })),
+    dates: rows.filter((r) => r.kind === 'date').map((r) => ({
+      title: r.title, due_on: r.due_on, recurs: r.recurs, document_id: r.document_id, passed: r.passed,
+    })),
+    contradictions: rows.filter((r) => r.kind === 'contradiction').map((r) => ({
+      what: r.title, document_a_id: r.document_id, value_a: r.value_a,
+      document_b_id: r.document_b_id, value_b: r.value_b,
+    })),
+    expected_not_seen: rows.filter((r) => r.kind === 'expected').map((r) => ({
+      title: r.title, why: r.what_to_do,
+    })),
+  }
+}
+
 async function runWhole(built, companyId) {
   const r = await oneCall(auditAgencyPrompt(), built.block, companyId)
   const { errors } = resolveHandles(r.obj, built.input.handles)
@@ -353,7 +534,9 @@ async function runSections(built, companyId) {
 
 // ---------------------------------------------------------------------------
 console.log(`\n  Target   : ${url.replace(/https:\/\/([^.]+).*/, '$1')} (staging — there is no production target)`)
-console.log(`  Model    : ${MODEL}   (the judgement tier; the ledger task is 'audit')`)
+console.log(`  Model    : ${MODEL}   (the audit tier: AI_MODEL_AUDIT, else the judgement tier)`)
+console.log(`  Path     : ${jsonPath ? "the model's JSON, judged directly (--json-path)"
+  : 'audit_runs / audit_sections / audit_findings — the judge reads the rows'}`)
 console.log(`  Searches : ${process.env.DEV_MAX_SEARCHES ? `CAPPED AT ${process.env.DEV_MAX_SEARCHES}` : 'UNCAPPED'}`)
 console.log(`  Run date : ${TODAY}`)
 console.log(`  Cases    : ${caseFiles.length} x ${MODES.length} mode(s) x ${times} run(s)`)
@@ -375,36 +558,77 @@ console.log('')
  * Idempotent: the upsert replaces the same row and the proposal is already `accepted` on a rerun.
  */
 async function confirmFixtureFact(co) {
-  // *** AN ERROR IS NOT AN ABSENCE, AND THIS FUNCTION LEARNED THAT THE HARD WAY. ***
-  // The first version ordered by `documents.created_at`, which does not exist — the column is
-  // `uploaded_at`. PostgREST returned an ERROR, `data` came back null, and the function reported
-  // "the emergency plan is not on file for this company" about a document that was right there.
-  // Three audit runs were bought against an input with no confirmed fact in it before anybody
-  // looked. So every read here checks `error` first and dies on it, rather than letting a broken
-  // query wear the same face as an empty table (CLAUDE.md §9a).
+  // *** THE FACT IS WRITTEN DIRECTLY, NOT FISHED OUT OF A PROPOSAL — Audits Run 2a, item 1. ***
+  //
+  // It used to look for a `fact_proposals` row with `switch_key = 'employee_count'` from the plan
+  // and confirm that. That worked on Haiku's readings and became a silent no-op on the real model's:
+  // `claude-opus-5-5` reads the same sentence and proposes `employs_drivers`, `onsite_laboratory`,
+  // `employees_evacuate_during_fire` — never a headcount. So the fixture depended on one model's
+  // choice of key, and the contradiction the OSHA key is about became unreachable again.
+  //
+  // A fixture must not depend on that. The plan SAYS 42 — "It applies to all 42 employees at the
+  // Portland facility" — so the fixture asserts it, and writes an `accepted` proposal beside it for
+  // history, the way a person confirming one would leave. Idempotent, and it relinks
+  // `source_document_id` after a reset has nulled it.
+  //
+  // *** AN ERROR IS NOT AN ABSENCE. *** Every read below checks `error` and dies on it. The first
+  // version of this function ordered by `documents.created_at`, a column that does not exist; the
+  // error came back as null data and it reported a document that was on file as missing, and six
+  // audit runs were bought before anyone looked (CLAUDE.md §9a).
+  const KEY = 'employee_count'
+  const VALUE = '42 employees at the Portland facility'
+  const QUOTE = 'It applies to all 42 employees at the Portland facility, including warehouse, '
+    + 'drivers, laboratory and office staff, and to contractors and visitors while on site.'
+  const AS_OF = '2021-02-01'
+
   const { data: doc, error: dErr } = await db.from('documents')
     .select('id').eq('company_id', co.id).eq('name', '01-eap-chemical.pdf')
     .order('uploaded_at', { ascending: false }).limit(1).maybeSingle()
   if (dErr) die(`looking for the emergency plan on ${co.name}: ${dErr.message}`)
   if (!doc) return { skipped: 'the emergency plan (01-eap-chemical.pdf) is not on file for this company' }
 
-  const { data: p, error: pErr } = await db.from('fact_proposals')
-    .select('id, switch_key, proposed_value, basis, entity_id, as_of, document_id')
-    .eq('company_id', co.id).eq('document_id', doc.id).eq('switch_key', 'employee_count')
+  // The Portland site. Named, not "the first entity": a two-site fixture must not silently attach
+  // the headcount to whichever row came back first.
+  const { data: site, error: sErr } = await db.from('entities')
+    .select('id, name').eq('company_id', co.id).eq('name', 'Portland').limit(1).maybeSingle()
+  if (sErr) die(`looking for the Portland site on ${co.name}: ${sErr.message}`)
+  if (!site) return { skipped: `${co.name} has no site named "Portland"` }
+
+  // The proposal first, so the fact can point at it. `source` and `status` are named rather than
+  // left to defaults, because what this row means — a reading proposed it and a person accepted
+  // it — is the whole reason it exists.
+  const { data: existing, error: eErr } = await db.from('fact_proposals')
+    .select('id').eq('company_id', co.id).eq('document_id', doc.id).eq('switch_key', KEY)
     .order('created_at', { ascending: false }).limit(1).maybeSingle()
-  if (pErr) die(`looking for the employee_count proposal on ${co.name}: ${pErr.message}`)
-  if (!p) return { skipped: 'no employee_count proposal from the emergency plan' }
+  if (eErr) die(`looking for an existing ${KEY} proposal on ${co.name}: ${eErr.message}`)
+
+  let proposalId = existing?.id ?? null
+  if (proposalId) {
+    const { error } = await db.from('fact_proposals').update({
+      proposed_value: VALUE, quote: QUOTE, locator: 'section 1', as_of: AS_OF,
+      entity_id: site.id, basis: 'read', status: 'accepted', document_id: doc.id,
+    }).eq('id', proposalId)
+    if (error) die(`updating the ${KEY} proposal on ${co.name}: ${error.message}`)
+  } else {
+    const { data, error } = await db.from('fact_proposals').insert({
+      company_id: co.id, document_id: doc.id, entity_id: site.id,
+      switch_key: KEY, proposed_value: VALUE, quote: QUOTE, locator: 'section 1',
+      as_of: AS_OF, basis: 'read', source: 'document', status: 'accepted',
+    }).select('id').single()
+    if (error) die(`writing the ${KEY} proposal on ${co.name}: ${error.message}`)
+    proposalId = data.id
+  }
 
   const { error } = await db.from('company_facts').upsert({
-    company_id: co.id, key: p.switch_key, value: p.proposed_value,
-    basis: p.basis ?? 'read',
-    source_document_id: p.document_id, source_proposal_id: p.id,
-    entity_id: p.entity_id, as_of: p.as_of,
+    company_id: co.id, key: KEY, value: VALUE, basis: 'read',
+    source_document_id: doc.id, source_proposal_id: proposalId,
+    entity_id: site.id, as_of: AS_OF,
     confirmed_by: null, confirmed_at: new Date().toISOString(),
   }, { onConflict: 'company_id,key,entity_id' })
-  if (error) die(`confirming employee_count for ${co.name}: ${error.message}`)
-  await db.from('fact_proposals').update({ status: 'accepted' }).eq('id', p.id)
-  return { key: p.switch_key, value: p.proposed_value, as_of: p.as_of }
+  if (error) die(`confirming ${KEY} for ${co.name}: ${error.message}`)
+
+  return { key: KEY, value: VALUE, as_of: AS_OF, site: site.name,
+           relinked: !!existing, document_id: doc.id, proposal_id: proposalId }
 }
 
 /**
@@ -492,8 +716,9 @@ for (const c of caseFiles) {
     const r = confirmed[co.id]
     console.log(r.skipped
       ? `  fixture: nothing confirmed — ${r.skipped}`
-      : `  fixture: confirmed ${r.key} = "${r.value}"${r.as_of ? `, as of ${r.as_of}` : ''}`
-        + `  (every other proposal stays proposed)`)
+      : `  fixture: confirmed ${r.key} = "${r.value}", as of ${r.as_of}, site ${r.site}`
+        + `  (${r.relinked ? 'relinked an existing proposal' : 'wrote a new accepted proposal'}`
+        + `; every other proposal stays proposed)`)
   }
 
   if (!corrected[co.id]) {
@@ -519,7 +744,18 @@ for (const c of caseFiles) {
   }
 
   const built = await buildAuditInput(db, co.id, c.agency, { today: TODAY })
+
+  // Every file any check in this case wants a live reading of, read once per case.
+  const wantFiles = [...new Set([...c.must, ...c.must_not, ...(c.acceptable ?? [])]
+    .map((k) => k.file).filter(Boolean))]
+  const own = await readOwnFindings(co.id, wantFiles)
+  for (const [f, v] of Object.entries(own)) {
+    console.log(`  live    : ${f.padEnd(30)} ${v.gaps.length} open gap(s), `
+      + `${v.conditions.length} condition word(s)  (scan ${String(v.scanId ?? 'none').slice(0, 8)})`)
+  }
+
   const ctx = {
+    own,
     documentIds: [...built.input.documents.map((d) => d.document_id),
                   ...built.input.other_documents.map((d) => d.document_id)],
     documentIdByFile: Object.fromEntries(built.input.documents.map((d) => [d.file_name, d.document_id])),
@@ -538,8 +774,14 @@ for (const c of caseFiles) {
   for (const mode of MODES) {
     const perRun = []
     for (let n = 1; n <= times; n++) {
-      const { answer, calls, handleErrors } = mode === 'whole'
-        ? await runWhole(built, co.id) : await runSections(built, co.id)
+      // *** THE ROWS ARE THE ANSWER NOW. *** `--json-path` keeps the old behaviour for a
+      // comparison run; without it every mode goes through `lib/auditRun.ts` and the judge reads
+      // `audit_findings`. `previousRunId` is set by `--previous <run id>` for the matcher run.
+      const viaRows = mode === 'whole' && !jsonPath
+      const r = viaRows
+        ? await runAsRows(built, co, c, previousRun)
+        : (mode === 'whole' ? await runWhole(built, co.id) : await runSections(built, co.id))
+      const { answer, calls, handleErrors } = r
       const verdicts = judge(c, answer, ctx)
       const count = (kind) => kind.filter((k) => verdicts[k.id]?.verdict === 'PASS').length
       const mustPass = count(c.must), mustNotPass = count(c.must_not), okPass = count(c.acceptable ?? [])
@@ -563,12 +805,21 @@ for (const c of caseFiles) {
         // Every handle the model wrote that the block did not carry. Stored rather than only
         // counted, so "which handle did it invent" is answerable from the run file.
         handle_errors: handleErrors ?? [],
+        // THE ROWS THIS ANSWER CAME FROM. The run and section ids make the JSON file and the
+        // database two views of one thing rather than two records that can drift.
+        audit_run_id: r.runId ?? null, audit_section_id: r.sectionId ?? null,
+        audit_section: r.section ?? null, rows_written: r.rowsWritten ?? null,
+        section_status: r.sectionStatus ?? null, run_summary: r.summary ?? null,
       }, null, 2) + '\n')
 
-      perRun.push({ n, verdicts, mustPass, mustNotPass, okPass, cost, wall, answer, calls })
+      perRun.push({ n, verdicts, mustPass, mustNotPass, okPass, cost, wall, answer, calls,
+                    runId: r.runId ?? null, summary: r.summary ?? null,
+                    rowsWritten: r.rowsWritten ?? null, sectionStatus: r.sectionStatus ?? null })
       process.stdout.write(`    ${mode.padEnd(8)} run ${n}/${times}  ${(wall / 1000).toFixed(1)}s  `
         + `$${cost.toFixed(4)}  must ${mustPass}/${c.must.length}  must-not ${mustNotPass}/${c.must_not.length}`
         + `  ok ${okPass}/${(c.acceptable ?? []).length}`
+        + `${r.rowsWritten != null ? `  ${r.rowsWritten} row(s)` : ''}`
+        + `${r.sectionStatus === 'could_not_complete' ? '  ⚠ could_not_complete' : ''}`
         + `  ${handleErrors?.length ? `⚠ ${handleErrors.length} bad handle(s) ` : ''}`
         + `${calls.every((r) => r.obj) ? '' : '(a call came back unparseable) '}\n`)
     }

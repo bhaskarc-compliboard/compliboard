@@ -91,7 +91,8 @@ const SHAPE = `Respond with valid JSON only. No markdown, no backticks, no text 
       "locator": "where in that document, or null",
       "quote": "word for word from the reading, or null",
       "what_to_do": "one concrete next step, or null when there is nothing to do",
-      "basis": "read | inferred | expected"
+      "basis": "read | inferred | expected",
+      "same_as": "the handle of the previous audit's finding this is the same as, or null"
     }
   ],
   "dates": [
@@ -136,8 +137,36 @@ occurrence is behind today is passed.
 CONTRADICTIONS are between TWO DIFFERENT DOCUMENTS. One document does not contradict itself: its
 latest reading is what it says. If you have only one document, the list is empty.`
 
-export function auditAgencyPrompt(): string {
-  return [ROLE, HONESTY, SHAPE].join('\n\n')
+/** One of the previous audit's still-open findings, as the model is shown it. */
+export interface PreviousFinding {
+  handle: string
+  title: string
+  word: string | null
+  kind: string
+}
+
+/**
+ * *** THE PREVIOUS AUDIT'S FINDINGS, BY HANDLE, AND WHY THEY ARE NOT MATCHED BY TEXT. ***
+ * Two runs write the same finding in different words — that is exactly why Run 1c's keys had to
+ * stop naming one model's phrasing. So the model is shown what was open last time as F1, F2 and
+ * asked which of its own findings is the same one. Code closes the rest.
+ */
+function previousBlock(previous: PreviousFinding[]): string {
+  return [
+    'WHAT THE LAST AUDIT OF THIS AGENCY LEFT OPEN',
+    'Each carries a handle. For every finding you write, if it is the SAME thing as one of these,',
+    'put that handle in "same_as". If it is new, leave "same_as" null. Anything here that none of',
+    'your findings claims will be recorded as no longer raised, so do not leave one out because it',
+    'is worded differently from how you would word it — match on what it is about.',
+    '',
+    ...previous.map((p) => `  ${p.handle} — ${p.title}${p.word ? `  [${p.word}]` : ''}`),
+  ].join('\n')
+}
+
+export function auditAgencyPrompt(opts?: { previous?: PreviousFinding[] }): string {
+  const parts = [ROLE, HONESTY, SHAPE]
+  if (opts?.previous?.length) parts.push(previousBlock(opts.previous))
+  return parts.join('\n\n')
 }
 
 /**

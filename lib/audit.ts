@@ -61,6 +61,8 @@ export interface AuditDocument {
   doc_date_kind: string | null
   significant_date: string | null
   significant_date_kind: string | null
+  /** The reading these findings and conditions came from, so a row can point at it. */
+  scan_id: string | null
   site: string | null
   summary: string | null
   open_gaps: AuditGap[]
@@ -221,6 +223,7 @@ export async function buildAuditInput(
       doc_date_kind: (r.doc_date_kind as string) ?? null,
       significant_date: (r.significant_date as string) ?? null,
       significant_date_kind: (r.significant_date_kind as string) ?? null,
+      scan_id: (r.scan_id as string) ?? null,
       site: (r.site_name as string) ?? null,
       summary: (r.summary as string) ?? null,
       open_gaps: ((gapsBy.get(id) ?? []) as unknown as Array<Record<string, unknown>>).map((g) => ({
