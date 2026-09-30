@@ -337,7 +337,7 @@ export function normaliseCritique(raw: unknown): CriticResult {
  *
  * The remaining `kept` case is worth being able to count on its own. A blocking finding with
  * `item: null` (questions 6 and 7 are whole-answer findings) matches no item name, so the route's
- * filter drops nothing — and `/api/audits` never removes line items at all. **So "blocking" and
+ * filter drops nothing — and the old audit route never removed line items at all. **So "blocking" and
  * "acted on" are different populations**, and recording severity alone would hide the gap.
  */
 export function dispositionOf(f: Finding, withheld: ReadonlySet<string>): 'withheld' | 'kept' | 'counted' {

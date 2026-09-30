@@ -49,9 +49,17 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ id: str
     const secs = (sections ?? []) as unknown as Array<Record<string, unknown> & { ai_call_id: string | null }>
     const runRow = run as unknown as Record<string, unknown> & { status: string }
 
-    // Every document either side of a finding, in one read.
-    const docIds = [...new Set(rows.flatMap((f) =>
-      [f.document_id, f.document_b_id]).filter(Boolean))] as string[]
+    // *** EVERY DOCUMENT THE RUN TOUCHED, NOT ONLY THE ONES A FINDING CITES. ***
+    // It read only the cited ones, so "What this covers" and the print's last page showed a raw
+    // UUID for any document the run read and no finding mentioned — two of five on the first DEQ
+    // run. Showing a person an id is worse than showing one to the model, which is what the
+    // handles ruling was about (§145).
+    const secRows = (sections ?? []) as unknown as Array<{
+      documents_read: string[] | null; documents_held_unread: string[] | null }>
+    const docIds = [...new Set([
+      ...rows.flatMap((f) => [f.document_id, f.document_b_id]),
+      ...secRows.flatMap((s) => [...(s.documents_read ?? []), ...(s.documents_held_unread ?? [])]),
+    ].filter(Boolean))] as string[]
     const doc = new Map<string, { title: string; file_name: string }>()
     if (docIds.length) {
       const { data: docs } = await db.from('document_index_v')
@@ -64,6 +72,9 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ id: str
 
     return NextResponse.json({
       run: { ...runRow, cost_usd: cost, estimate },
+      // The title of every document the run touched, keyed by id, so the drawer never has to
+      // reach into the findings to name one — and never falls back to an id when it cannot.
+      documents: Object.fromEntries([...doc.entries()]),
       sections: secs,
       findings: rows.map((f) => ({
         ...f,

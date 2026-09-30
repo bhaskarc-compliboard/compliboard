@@ -202,7 +202,11 @@ const MODULES = [
     'obligation_evidence', 'agencies', 'industry_coverage', 'library_candidates', 'corrections']],
   ['Documents and evidence',
    ['documents', 'document_reviews', 'company_folders', 'company_templates', 'standard_templates']],
-  ['Audits (M2)', ['audits', 'hr_audits']],
+  // `audits` and `hr_audits` are the OLD engine's tables. The engine was retired on 30 September
+  // 2026 (Run 3) and the tables were deliberately kept: they hold what customers were shown, and
+  // an audit somebody acted on is not ours to delete. The new tables are the three below them.
+  ['Audits (M2) — the retired engine, tables kept', ['audits', 'hr_audits']],
+  ['Audits', ['audit_runs', 'audit_sections', 'audit_findings']],
   ['Chemicals and substances', ['company_chemicals', 'regulated_substances']],
   ['Tenancy and accounts', ['companies', 'profiles', 'entities']],
   ['Calendar', ['calendar_events']],

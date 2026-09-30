@@ -37,6 +37,16 @@ const KINDS = [
 export interface RunSummary {
   /** Every row the run wrote, however it is counted below. */
   total: number
+  /**
+   * *** THE ONLY NUMBER THAT LEADS — ruled 30 September, Run 3 item 1. ***
+   * Nothing on file, plus stale, plus disagreements between documents, plus questions no
+   * document can settle. `total` counts every row the audit wrote, and most of them are things
+   * that are FINE — a permit on file, a date in the future, an expected item that is a
+   * suggestion. A subject line reading "115 things to look at" when 19 need a person is the
+   * omniscient status tracker pointing the other way: alarming rather than reassuring, and
+   * wrong either way. On-file and expected rows are listed after, in their own words.
+   */
+  needs_person: number
   nothing_on_file: number
   stale: number
   on_file: number
@@ -134,7 +144,7 @@ export async function createRun(db: Db, args: {
 }
 
 function emptySummary(note: string): RunSummary {
-  return { total: 0, nothing_on_file: 0, stale: 0, on_file: 0, not_a_document_question: 0,
+  return { total: 0, needs_person: 0, nothing_on_file: 0, stale: 0, on_file: 0, not_a_document_question: 0,
            contradictions: 0, dates_passed: 0, expected: 0, sections: 0, sections_done: 0,
            could_not_complete: 0, carried: 0, closed: 0, attention: [], agencies: [], note }
 }
@@ -509,19 +519,30 @@ export async function summariseRun(db: Db, runId: string): Promise<RunSummary> {
     closed = n ?? 0
   }
 
+  const nothingOnFile = count((r) => r.word === 'nothing_on_file' && r.kind !== 'expected')
+  const stale = count((r) => r.word === 'stale')
+  const contradictions = count((r) => r.kind === 'contradiction')
+  const notADocument = count((r) => r.word === 'not_a_document_question')
+
   return {
     total: f.length,
-    nothing_on_file: count((r) => r.word === 'nothing_on_file' && r.kind !== 'expected'),
-    stale: count((r) => r.word === 'stale'),
+    needs_person: nothingOnFile + stale + contradictions + notADocument,
+    nothing_on_file: nothingOnFile,
+    stale,
     on_file: count((r) => r.word === 'on_file'),
-    not_a_document_question: count((r) => r.word === 'not_a_document_question'),
-    contradictions: count((r) => r.kind === 'contradiction'),
+    not_a_document_question: notADocument,
+    contradictions,
     dates_passed: count((r) => r.kind === 'date' && r.passed === true),
     expected: count((r) => r.kind === 'expected'),
     sections: sections.length,
     sections_done: sections.filter((s: { status: string }) => s.status === 'done').length,
     could_not_complete: sections.filter((s: { status: string }) => s.status === 'could_not_complete').length,
-    carried: count((r) => !!r.same_as),
+    // *** DISTINCT PREVIOUS FINDINGS, NOT LINKS — ruled 30 September, Run 3 item 1. ***
+    // The matcher reported "carried 30" against a previous run holding 29 open findings, because
+    // one previous finding was claimed by two new ones: the audit split it. Counting links made
+    // the number exceed what it was counting out of, which is not a number anybody can read.
+    // It counts the previous findings still being raised.
+    carried: new Set(f.map((r: Record<string, unknown>) => r.same_as).filter(Boolean)).size,
     closed,
     // What an inspector would ask about first: nothing on file, and stale. Not the expected items,
     // which are a suggestion and say so.
@@ -547,7 +568,9 @@ export function runSummaryLine(s: RunSummary): string {
   if (s.stale) bits.push(`${s.stale} out of date`)
   if (s.contradictions) bits.push(`${s.contradictions} disagreement${s.contradictions === 1 ? '' : 's'} between documents`)
   if (s.not_a_document_question) bits.push(`${s.not_a_document_question} no document can answer`)
-  const head = `Your ${who} found ${s.total} thing${s.total === 1 ? '' : 's'} to look at`
+  const head = s.needs_person
+    ? `Your ${who} found ${s.needs_person} thing${s.needs_person === 1 ? '' : 's'} that need${s.needs_person === 1 ? 's' : ''} you`
+    : `Your ${who} found nothing that needs you`
   const tail = bits.length ? `: ${bits.join(', ')}.` : '.'
   const failed = s.could_not_complete
     ? ` ${s.could_not_complete} of ${s.sections} section${s.sections === 1 ? '' : 's'} could not be finished.`

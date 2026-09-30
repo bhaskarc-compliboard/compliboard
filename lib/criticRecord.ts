@@ -13,7 +13,11 @@
  * UNTESTABLE BY CONSTRUCTION, and `dispositionOf` is the one piece here that had a defect worth a
  * test. It is a rule about reading a `CriticResult`, which is `criticPass`'s subject anyway.
  *
- * *** ONE FUNCTION, TWO CALLERS, ON PURPOSE. *** `/api/chat` checklist mode and `/api/audits`
+ * *** ONE FUNCTION, ONE CALLER SINCE THE AUDIT ENGINE WENT. *** `/api/chat` checklist mode is the
+ * only caller now; `/api/audits` was the second until it was deleted (Run 3, 30 September 2026).
+ * The function is NOT collapsed into its caller for that: a critic record written by one route is
+ * still the shape the audit section will write when its own critic pass arrives, and the reasoning
+ * below is what that will be built from. Originally:
  * both produce critiques. Two copies of this write would be two definitions of what a finding is
  * (§43), and the disposition rule below is exactly the kind of thing that drifts between copies.
  *
@@ -22,7 +26,8 @@
  *
  * `CLAUDE.md` §3.6 permits the service-role key "for a named statement with a comment explaining
  * it". This is the comment. The same shape as the `standard_templates` insert in
- * `app/api/audits/route.ts`, where the reasoning sits beside the call.
+ * `app/api/audits/route.ts` — a file that no longer exists; the reasoning it held is summarised
+ * above rather than pointed at, because a cross-reference to a deleted file is worse than none.
  *
  * **Migration 029 leaves `authenticated` at ZERO on both tables, read and write.** Both calling
  * routes run under the caller's token (`requireCompany()` → `authed.db`, since 0.9), so writing

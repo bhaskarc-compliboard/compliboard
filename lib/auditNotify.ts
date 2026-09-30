@@ -14,12 +14,19 @@
 
 import { Resend } from 'resend'
 
-import { supabaseAdmin } from './auth.ts'
-
 import { runSummaryLine, type RunSummary } from './auditRun.ts'
 
+/**
+ * *** THIS FILE MUST NOT IMPORT `lib/auth.ts`, AND THAT IS NOT A STYLE POINT. ***
+ * `lib/auth.ts` imports `next/server`, which plain Node cannot resolve — so importing
+ * `supabaseAdmin` here made `lib/auditNotify.ts` unloadable outside a Next request, which broke
+ * the one-line way to read an email body that `docs/TESTING.md`'s audit set tells a person to use.
+ * Found by running that line. The caller already holds a service-role client (the sweep passes
+ * `supabaseAdmin`), so the login's address is looked up through THAT client rather than a second
+ * one imported here.
+ */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type Db = { from: (t: string) => any }
+type Db = { from: (t: string) => any; auth?: { admin?: { getUserById: (id: string) => Promise<any> } } }
 
 const WORD: Record<string, string> = {
   nothing_on_file: 'nothing on file',
@@ -67,18 +74,33 @@ export async function notifyRun(
   // (`app/api/jobs/scan-documents/route.ts:350`) and so does this.
   let realTo = ''
   if (run.created_by) {
-    const { data: user } = await supabaseAdmin.auth.admin.getUserById(run.created_by as string)
-    realTo = user?.user?.email ?? ''
+    const admin = db.auth?.admin
+    if (!admin) {
+      // Said out loud rather than silently addressed to nobody: a client without admin rights
+      // cannot read `auth.users`, and an email with no recipient is a failure worth a log line.
+      console.error('AUDIT EMAIL: the client given to notifyRun cannot read auth.users, so the '
+        + 'login on this run could not be resolved. Pass the service-role client.')
+    } else {
+      const { data: user } = await admin.getUserById(run.created_by as string)
+      realTo = user?.user?.email ?? ''
+    }
   }
 
   const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? '').trim().replace(/\/+$/, '')
   const override = (process.env.NOTIFY_TEST_TO ?? '').trim()
   const to = override || realTo
 
+  // *** THE SUBJECT COUNTS WHAT NEEDS A PERSON, NOT EVERY ROW — ruled 30 September. ***
+  // `total` includes the permit that IS on file, the date that is months away, and the expected
+  // item that is only a suggestion. A subject line that counts those is alarming and wrong.
   const subject = summary.note
     ? 'Your audit is done'
-    : `Your ${summary.agencies.length === 1 ? summary.agencies[0] : 'compliance'} audit: `
-      + `${summary.total} thing${summary.total === 1 ? '' : 's'} to look at`
+    : summary.needs_person
+      ? `Your ${summary.agencies.length === 1 ? summary.agencies[0] : 'compliance'} audit: `
+        + `${summary.needs_person} thing${summary.needs_person === 1 ? '' : 's'} that need`
+        + `${summary.needs_person === 1 ? 's' : ''} you`
+      : `Your ${summary.agencies.length === 1 ? summary.agencies[0] : 'compliance'} audit: `
+        + 'nothing needs you'
 
   const lines: string[] = []
   if (override && override !== realTo) lines.push(`[staging: this would have gone to ${realTo || '(nobody)'}]`, '')
@@ -89,7 +111,7 @@ export async function notifyRun(
   }
 
   if (summary.attention.length) {
-    lines.push('What an inspector would ask about:')
+    lines.push('What needs you:')
     for (const a of summary.attention) {
       const w = a.word ? WORD[a.word] ?? a.word : null
       lines.push(`  ${a.title}${w ? ` — ${w}` : ''}${a.document ? ` (${a.document})` : ''}`)
@@ -99,6 +121,17 @@ export async function notifyRun(
     }
     lines.push('')
   }
+
+  // *** AND THEN THE GOOD NEWS, IN ITS OWN WORDS. *** On-file and expected rows are most of what
+  // an audit writes and none of it needs anybody today, so it sits after the list that does — but
+  // it is not left out: "12 on file" is the half of the answer a person actually wanted.
+  const after: string[] = []
+  if (summary.on_file) after.push(`${summary.on_file} on file`)
+  if (summary.expected) {
+    after.push(`${summary.expected} we would expect a company like yours to hold `
+      + `and did not see — a suggestion, not a checked requirement`)
+  }
+  if (after.length) lines.push(`Also: ${after.join('; ')}.`, '')
 
   if (summary.contradictions) {
     lines.push(`Two of your documents disagree, in ${summary.contradictions} place`
@@ -116,7 +149,9 @@ export async function notifyRun(
       + `yours — you can run those again from the page.`, '')
   }
 
-  lines.push(`See it all: ${appUrl}/audits`)
+  // The link opens THIS run's report, not the page it sits on. An email whose link lands a person
+  // on a list they then have to search is an email that made them do the work twice.
+  lines.push(`See it all: ${appUrl}/audits?run=${runId}`)
   const text = lines.join('\n')
   if (opts.dryRun) return { notified: false, error: 'dry run — nothing was sent', to, subject, text }
 

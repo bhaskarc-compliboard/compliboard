@@ -150,8 +150,9 @@ export function modelForTask(task: AITask = 'default'): string {
  *   claude-sonnet-4-5          accepts
  *
  * THIS WAS A LATENT BUG BEFORE TASK ROUTING EXISTED, and routing only surfaced it. Six call
- * sites pass `temperature: 0.1` — the determination gate, both audit classify calls, the
- * audit match call, document review. Setting `AI_MODEL=claude-sonnet-5`, which reads like an
+ * sites pass `temperature: 0.1` — the determination gate, and (until Run 3 retired them on
+ * 30 September 2026) both audit classify calls, the audit match call and document review.
+ * Setting `AI_MODEL=claude-sonnet-5`, which reads like an
  * ordinary upgrade, would have 400'd every one of them and left the gate returning nothing.
  *
  * So the parameter is DROPPED rather than passed, for models that do not take it. Dropping is
@@ -455,7 +456,8 @@ export async function askAIWithCitations(
 
 /**
  * Same as askAI, but for when we expect JSON back.
- * Strips markdown fences and parses. Used by review, extract-dates, audit.
+ * Strips markdown fences and parses. Used by extract-dates and the document scan; review and the
+ * old audit route were callers until Run 3 retired them (30 September 2026).
  */
 export async function askAIJson<T = any>(
   systemPrompt: string,

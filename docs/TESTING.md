@@ -2598,3 +2598,93 @@ finished, because re-running one would write a second set of findings for the sa
 run and the report would show everything twice.
 
 **What none of this tells you:** whether the findings are right. That is `npm run golden:audit`.
+
+---
+
+## Audits — the page and the drawer (30 September 2026)
+
+Audits Run 3, item 5. **Signed in against staging as `testcascade@example.com`** — a login created in
+this run because Cascade had none, and without one the only company with twelve documents and four
+agencies could not be opened at all. Confirm the dev server points at staging first (§3.8).
+
+### (a) The perfect case: one agency, start to finish
+
+1. **Open `/audits`.** The title is Audits; the line under it says where you stand with each agency.
+   Tab one is "Where you stand"; tab two says "Past audits" with the run count.
+2. **Type `Audit us for Oregon DEQ`** in the white box. The three grey example lines vanish on the
+   first keystroke — they are an overlay, not a placeholder. Press **Audit**.
+   **Pass:** a line appears saying it started, with an estimate that **names its sample size** —
+   "About 1 minute, from 10 earlier sections". **No model call happened to get here**: the sentence
+   was matched against the company's own agency labels in code, and if you type an agency it does not
+   hold, the page says which ones it does.
+3. **Watch the Oregon DEQ line.** It reads **"Audit running · <estimate>"**, and on a multi-agency
+   run the right-hand side reads "section k of n". The page polls every ten seconds **and stops when
+   nothing is running** — a poll that runs when nothing is moving is a request every ten seconds for
+   ever.
+4. **Wait.** When it lands the line carries a banner: **"Your Oregon DEQ audit is done · N to look
+   at"** with Open and Dismiss. **N counts what needs a person** — nothing on file, out of date,
+   disagreements, questions no document can settle. It does not count the permit that IS on file.
+   Press **Dismiss** and reload: it stays dismissed, because the dismissal is a row and not browser
+   state.
+5. **Press Open.** The drawer is 720 wide with the agency in the serif, then audited-date · sections
+   · documents read · readings as of · cost. Every section is open when it has content.
+   **Pass:** "What this covers" lists every document **by title** — never an id — including ones the
+   run read that no finding cites, and ends with: *"Every line below points at a document, or says
+   what we do not see. None of it is a verdict on whether the company complies."*
+6. **Read a nothing-on-file finding.** It carries the word in amber, the document as a link with the
+   locator, the quote in italics when there is one, and what to do. It offers **Add a document**.
+7. **Click its document.** The drawer shows that document with **"← Back to the Oregon DEQ audit"** at
+   the top. Press it and you are back where you were.
+8. **Press Print.** The chrome disappears, the print header carries the company and the date, and
+   **every folded section prints open** — a printed report with a collapsed section is a report
+   missing a page. **The last page is "Documents this audit read"**, numbered in the order the
+   findings cite them, each with the page or section its findings point at.
+9. **Press Download the documents.** The zip is named for the agency and the date. Open it:
+   **one file per document, numbered the same way the print's last page is**, named by the
+   document's title with its original extension, plus **`index.txt`** listing the findings under each
+   document. Nothing is converted. **A file that could not be fetched is listed in the index as
+   missing rather than failing the download** — check this by pointing a document's `file_url` at a
+   path that does not exist and downloading again: the zip still arrives with the other files.
+10. **Switch to Past audits.** The run is there, newest first, with its date, the agency, "N to look
+    at", how many sections, and the cost off the ledger. Under the list:
+    *"Every audit is kept. Open one and its report is exactly what it said on the day, against the
+    documents as they stood then."*
+
+### (b) The edge case: the second audit, and what it does to the first
+
+1. **Open that report and press Audit again.** It starts a run with `previous_run_id` set to this
+   one, and the drawer follows the **new** run rather than leaving you on a report that has just been
+   superseded.
+2. **Wait, then open the new run.** Under **Earlier audits** it reads
+   **"N of M findings from <date> are closed"** — computed from `closed_by_run_id`, so it is a count
+   of rows and not a claim. **Expect 0 closed when the readings have not changed**: the same documents
+   produce the same findings, and every one of them carries forward. A closed finding means the audit
+   stopped raising it, which is the thing worth knowing.
+3. **Press Not right on one finding**, type a reason, save.
+   **Pass:** it leaves the open list and appears under **Dismissed** with the reason. **A reason is
+   required** — "Not right" with nothing behind it is a row that disappears and teaches nobody
+   anything. Reload: it is still dismissed.
+4. **Type `Audit everything`** in the box and press Audit. It queues one section per agency the
+   company holds — four for Cascade. **Watch the lines change one after another**, not together:
+   one section at a time is running and the others say "waiting, section k of n". That is the claim
+   living in `claimed_at` and not in `status`; if several lines say running at once, the product is
+   describing work that is not happening.
+5. **Open a document's own drawer from `/documents`.** **Pass: nothing there has changed.** The audit
+   writes `audit_findings` and reads Documents' tables; it does not write a gap, a condition or a
+   proposal. If a document's report looks different after an audit, something is writing where it
+   should be reading.
+
+### What neither set tells you
+
+Whether the findings are right. Every line could be wrong and all fifteen steps would pass. That is
+`npm run golden:audit` against `tests/golden/audits/cascade-*.md`, three runs per agency, judged
+against keys written from the specs.
+
+### One thing that is on the page and is not the page's
+
+**The footer says "Answers are generated by AI … AI can make mistakes."** It comes from
+`components/AppLayout.tsx:305-307` and is on **every** signed-in page, so the word appears on Audits,
+and on Company information, which `HANDOFF-AUDITS.md` §5.0 calls "the first page held to this rule end
+to end". The page's own content contains it nowhere. **Whether the shell's disclaimer changes is a
+product decision, not this run's** — it is a legal line on every screen — and it is recorded here so
+the next person does not find it and assume the rule was forgotten.

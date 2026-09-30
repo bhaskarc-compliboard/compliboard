@@ -46,7 +46,7 @@ type LoadFailure = {
 // wrong, and it hid the real cause. A .docx used to be base64'd and labelled image/jpeg —
 // which produced confident nonsense — so the format was banned rather than parsed. The
 // parsers existed all along; /api/extract-dates had been reading Word, Excel, CSV and
-// PowerPoint for as long as this route had been rejecting them, and /api/audits read Word
+// PowerPoint for as long as this route had been rejecting them, and the old audit route read Word
 // and PowerPoint successfully.
 //
 // So the restriction was a workaround for a missing wire-up, recorded as though it were a

@@ -26,7 +26,7 @@ import { createHash } from 'node:crypto'
 import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync } from 'node:fs'
 import { askAIWithCitations, extractJsonText, modelForTask } from '../lib/ai.ts'
 import { buildAuditInput, auditAgenciesFor } from '../lib/audit.ts'
-import { createRun, runSection, finishRunIfDone, summariseRun } from '../lib/auditRun.ts'
+import { createRun, runSection, finishRunIfDone, summariseRun, shapeFindings } from '../lib/auditRun.ts'
 import { auditAgencyPrompt, auditSectionPrompt, AUDIT_SECTIONS } from '../prompts/audit-agency.ts'
 
 const PROD_REF = 'dsfwmafnphdlfogetsus'
@@ -508,6 +508,47 @@ async function answerFromRows(db, runId) {
   }
 }
 
+/**
+ * SECTIONS MODE, ALSO AS ROWS — Run 3 item 1.
+ *
+ * Whole mode goes through `runSection`, which owns the call and the writes together. Sections mode
+ * is four calls in this script, so the answer arrives here rather than in the library — and it still
+ * has to land in the same three tables, or a sections run could not be compared with a whole one at
+ * all. So the run and its one section are created the same way, the answer goes through the SAME
+ * `shapeFindings` (handles, the per-kind demotions, the CHECKs), and the section is closed by hand.
+ * Nothing about the shaping is duplicated; only the call loop differs, which is what the two modes
+ * are.
+ */
+async function storeSectionsAnswer(built, co, c, answer, calls) {
+  const { runId, sectionIds } = await createRun(db, {
+    companyId: co.id, kind: 'agency', agency: c.agency, scope: `golden: ${c.id} (sections)`,
+  })
+  const sectionId = sectionIds[0]
+  const startedAt = new Date().toISOString()
+
+  const { rows, handleErrors, readIds, unreadIds } =
+    shapeFindings(answer ?? {}, built.input, { runId, sectionId, companyId: co.id })
+  if (rows.length) {
+    const { error } = await db.from('audit_findings').insert(rows)
+    if (error) die(`writing the sections-mode findings: ${error.message}`)
+  }
+
+  const lastCall = calls[calls.length - 1] ?? {}
+  await db.from('audit_sections').update({
+    status: answer ? 'done' : 'could_not_complete',
+    could_not_complete_reason: answer ? null : 'no section of the four returned readable JSON',
+    started_at: startedAt, finished_at: new Date().toISOString(),
+    model: MODEL, input_sha256: built.sha256, json_parsed: !!answer,
+    raw_text: String(lastCall.raw ?? '').slice(0, 20000),
+    handles: built.input.handles,
+    documents_read: readIds, documents_held_unread: unreadIds,
+  }).eq('id', sectionId)
+
+  const fin = await finishRunIfDone(db, runId)
+  return { runId, sectionId, rowsWritten: rows.length, handleErrors,
+           summary: fin.summary ?? await summariseRun(db, runId) }
+}
+
 async function runWhole(built, companyId) {
   const r = await oneCall(auditAgencyPrompt(), built.block, companyId)
   const { errors } = resolveHandles(r.obj, built.input.handles)
@@ -777,10 +818,16 @@ for (const c of caseFiles) {
       // *** THE ROWS ARE THE ANSWER NOW. *** `--json-path` keeps the old behaviour for a
       // comparison run; without it every mode goes through `lib/auditRun.ts` and the judge reads
       // `audit_findings`. `previousRunId` is set by `--previous <run id>` for the matcher run.
-      const viaRows = mode === 'whole' && !jsonPath
-      const r = viaRows
-        ? await runAsRows(built, co, c, previousRun)
-        : (mode === 'whole' ? await runWhole(built, co.id) : await runSections(built, co.id))
+      const viaRows = !jsonPath
+      let r
+      if (viaRows && mode === 'whole') {
+        r = await runAsRows(built, co, c, previousRun)
+      } else if (viaRows) {
+        const got = await runSections(built, co.id)
+        r = { ...got, ...(await storeSectionsAnswer(built, co, c, got.answer, got.calls)) }
+      } else {
+        r = mode === 'whole' ? await runWhole(built, co.id) : await runSections(built, co.id)
+      }
       const { answer, calls, handleErrors } = r
       const verdicts = judge(c, answer, ctx)
       const count = (kind) => kind.filter((k) => verdicts[k.id]?.verdict === 'PASS').length
