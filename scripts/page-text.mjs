@@ -92,7 +92,10 @@ try {
     if (result.value === 'ready') break
   }
   const expr = process.argv[3] || 'document.body.innerText'
-  const { result } = await cdp(ws, 'Runtime.evaluate', { expression: expr, returnByValue: true })
+  // `awaitPromise` so an expression can wait for something — a drawer that fetches after mount,
+  // for instance. Without it a promise came back as `{}` and looked like an empty page.
+  const { result } = await cdp(ws, 'Runtime.evaluate',
+    { expression: expr, returnByValue: true, awaitPromise: true })
   console.log(typeof result.value === 'string' ? result.value : JSON.stringify(result.value, null, 2))
 } finally {
   try {

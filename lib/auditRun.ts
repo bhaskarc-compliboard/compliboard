@@ -577,3 +577,46 @@ export function runSummaryLine(s: RunSummary): string {
     : ''
   return head + tail + failed
 }
+
+/**
+ * WHAT A SECTION COST, SUMMED FROM THE LEDGER OVER ITS OWN TIME WINDOW — Run 3b, item 4.
+ *
+ * *** `ai_call_id` IS THE FIRST CALL, NOT THE ONLY ONE. *** A section in sections mode makes four
+ * model calls and records one id, so every cost the page showed for one was a quarter of the truth:
+ * the golden sections run billed $0.1535 and Past audits read $0.0000 for it, because the run file
+ * carried the cost and the row carried one call's id — and the page reads rows.
+ *
+ * So the number is summed rather than looked up: every `ai_calls` row for this company with task
+ * `audit` between the section's `started_at` and `finished_at`. The id stays on the row as the
+ * pointer to the first call, which is what makes one call's tokens and searches findable.
+ *
+ * *** THE WINDOWS MUST NOT OVERLAP, AND THEY DO NOT. *** The sweep claims one company at a time and
+ * runs its sections one after another (`app/api/jobs/audit-sections/route.ts`), so two sections of
+ * one company are never in flight together and no call is counted twice. If that ever changes, this
+ * double-counts — which is why it is one function and not three copies.
+ */
+export async function costOfSections(
+  db: Db, companyId: string,
+  sections: Array<{ started_at: string | null; finished_at: string | null }>,
+): Promise<number> {
+  const windows = sections.filter((s) => s.started_at && s.finished_at)
+  if (!windows.length) return 0
+  const from = windows.map((s) => s.started_at as string).sort()[0]
+  const to = windows.map((s) => s.finished_at as string).sort().slice(-1)[0]
+
+  const { data, error } = await db.from('ai_calls')
+    .select('cost_usd, created_at').eq('company_id', companyId).eq('task', 'audit')
+    .gte('created_at', from).lte('created_at', to)
+  if (error) throw new Error(`costOfSections: ${error.message}`)
+
+  const rows = (data ?? []) as Array<{ cost_usd: number | null; created_at: string }>
+  let total = 0
+  for (const r of rows) {
+    // Inside ONE of the windows, not merely inside the outer span: a run whose sections were
+    // separated by an hour must not pick up an unrelated audit that happened in the gap.
+    if (windows.some((w) => r.created_at >= (w.started_at as string) && r.created_at <= (w.finished_at as string))) {
+      total += Number(r.cost_usd ?? 0)
+    }
+  }
+  return total
+}

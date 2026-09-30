@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { Suspense, useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { createClient, authHeaders } from '@/lib/supabase'
 import AppLayout from '@/components/AppLayout'
 
@@ -35,6 +36,14 @@ function getFirstDayOfMonth(year: number, month: number) {
 }
 
 export default function CalendarPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-[14px] text-gray-400">Loading…</div>}>
+      <Calendar />
+    </Suspense>
+  )
+}
+
+function Calendar() {
   const supabase = createClient()
   const today = new Date()
 
@@ -55,6 +64,28 @@ export default function CalendarPage() {
   const [newRecurring, setNewRecurring] = useState(false)
   const [newRecurrencePeriod, setNewRecurrencePeriod] = useState('annually')
   const [saving, setSaving] = useState(false)
+
+  /**
+   * *** THE ADD FORM PREFILLS FROM THE ADDRESS — Audits Run 3b, item 5. ***
+   *
+   * The audit report's "Add to calendar" sent `?add=<title>&on=<date>` and **this page read no
+   * parameter at all** — it opened the calendar and nothing else, so the link looked like an action
+   * and was a navigation. Checked by grepping this file for `useSearchParams`: no match.
+   *
+   * It is the smallest thing that makes the link true: the form opens with the title and the date
+   * already in it, and the person presses Save. Nothing is written without them.
+   */
+  const params = useSearchParams()
+  useEffect(() => {
+    const add = params.get('add')
+    if (!add) return
+    setNewTitle(add.slice(0, 200))
+    const on = params.get('on')
+    // Only a date we can actually put in a date input; anything else is left blank rather than
+    // guessed at, and the person picks it.
+    if (on && /^\d{4}-\d{2}-\d{2}$/.test(on)) { setNewDate(on); setSelectedDate(on) }
+    setShowAddForm(true)
+  }, [params])
   const [saveError, setSaveError] = useState('')
   const [importFile, setImportFile] = useState<File | null>(null)
   const [importing, setImporting] = useState(false)

@@ -13,6 +13,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 
 import { requireCompany } from '@/lib/auth'
 import { estimateRun } from '@/lib/auditEstimate'
+import { costOfSections } from '@/lib/auditRun'
 
 export async function GET(request: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   try {
@@ -46,7 +47,8 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ id: str
     // Asserted once, as in the collection route: the generated types cannot narrow a
     // multi-column select made through a policy. The columns are the ones named above.
     const rows = (findings ?? []) as unknown as Array<Record<string, unknown>>
-    const secs = (sections ?? []) as unknown as Array<Record<string, unknown> & { ai_call_id: string | null }>
+    const secs = (sections ?? []) as unknown as Array<Record<string, unknown> & {
+      ai_call_id: string | null; started_at: string | null; finished_at: string | null }>
     const runRow = run as unknown as Record<string, unknown> & { status: string }
 
     // *** EVERY DOCUMENT THE RUN TOUCHED, NOT ONLY THE ONES A FINDING CITES. ***
@@ -55,20 +57,26 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ id: str
     // run. Showing a person an id is worse than showing one to the model, which is what the
     // handles ruling was about (§145).
     const secRows = (sections ?? []) as unknown as Array<{
-      documents_read: string[] | null; documents_held_unread: string[] | null }>
+      documents_read: string[] | null; documents_held_unread: string[] | null
+      started_at: string | null; finished_at: string | null }>
     const docIds = [...new Set([
       ...rows.flatMap((f) => [f.document_id, f.document_b_id]),
       ...secRows.flatMap((s) => [...(s.documents_read ?? []), ...(s.documents_held_unread ?? [])]),
     ].filter(Boolean))] as string[]
-    const doc = new Map<string, { title: string; file_name: string }>()
+    // Kind and status travel with the title: "What this covers" shows title · kind · status on one
+    // line, so a reader can see what each document IS without opening it.
+    const doc = new Map<string, { title: string; file_name: string; kind: string | null; display_status: string | null }>()
     if (docIds.length) {
       const { data: docs } = await db.from('document_index_v')
-        .select('document_id, title, file_name').in('document_id', docIds)
-      for (const d of docs ?? []) doc.set(d.document_id, { title: d.title, file_name: d.file_name })
+        .select('document_id, title, file_name, kind, display_status').in('document_id', docIds)
+      for (const d of docs ?? []) {
+        doc.set(d.document_id, { title: d.title, file_name: d.file_name,
+                                 kind: d.kind ?? null, display_status: d.display_status ?? null })
+      }
     }
 
     const estimate = runRow.status === 'done' ? null : (await estimateRun(db, companyId, 1)).line
-    const cost = await costOfRun(db, secs)
+    const cost = await costOfSections(db, companyId, secs)
 
     return NextResponse.json({
       run: { ...runRow, cost_usd: cost, estimate },
@@ -86,14 +94,6 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ id: str
     console.error('audit-runs/[id] GET:', error)
     return NextResponse.json({ error: 'We could not read that audit just now.' }, { status: 500 })
   }
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function costOfRun(db: { from: (t: string) => any }, sections: Array<{ ai_call_id: string | null }>) {
-  const callIds = sections.map((s) => s.ai_call_id).filter(Boolean) as string[]
-  if (!callIds.length) return 0
-  const { data } = await db.from('ai_calls').select('cost_usd').in('id', callIds)
-  return (data ?? []).reduce((sum: number, c: { cost_usd: number | null }) => sum + Number(c.cost_usd ?? 0), 0)
 }
 
 export async function PATCH(request: NextRequest, ctx: { params: Promise<{ id: string }> }) {

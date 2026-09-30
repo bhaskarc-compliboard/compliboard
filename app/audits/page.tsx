@@ -23,6 +23,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 
 import AppLayout from '@/components/AppLayout'
 import AuditReport from '@/components/AuditReport'
+import DocumentReport from '@/components/DocumentReport'
 import { authHeaders } from '@/lib/supabase'
 
 /* ── the shapes the one read returns ──────────────────────────────────────── */
@@ -62,6 +63,7 @@ interface Index {
   agencies: string[]
   subjects: string[]
   sites: Array<{ id: string; name: string }>
+  folders: Array<{ id: string; name: string }>
   counts: { read: number; held_unread: number; agencies: number }
   documents: Doc[]
   unplaced: Doc[]
@@ -98,6 +100,26 @@ const DOC_STATUS: Record<string, string> = {
   current: 'Current', recorded: 'Recorded', on_file: 'On file',
 }
 const AMBER_DOC = new Set(['needs_work', 'expiring', 'expired', 'could_not_read'])
+
+/**
+ * *** A TITLE IS TEXT, NOT A LINK-SHAPED OBJECT — the owner's review, 30 September. ***
+ *
+ * Every document title on the first build was a full-width underlined link. Twelve of them down a
+ * page is twelve blue-ish bars, and the eye reads the underline before the words: the list stopped
+ * looking like a list of documents and started looking like a list of links. A title is the content.
+ * So it is plain dark text, ONE line, cut with an ellipsis, the whole title in `title=` for a hover,
+ * and the underline arrives only when the pointer is on it.
+ *
+ * `cursor-pointer` is explicit because a `<button>` defaults to an arrow — the same fix Company
+ * information needed in Task 0 commit 4, and the same reason.
+ */
+const TITLE_LINE =
+  'block w-full truncate text-left text-[13px] text-gray-800 cursor-pointer ' +
+  'hover:underline hover:text-gray-900'
+/** An agency line: clickable across its whole width, with the wash and the pointer to say so. */
+const AGENCY_ROW =
+  'flex w-full items-start gap-3 py-3 text-left cursor-pointer rounded-md ' +
+  'hover:bg-gray-50/70 transition-colors'
 
 const ACTION_GREEN =
   'cursor-pointer text-[13px] text-[var(--green)] underline hover:text-[var(--green-ink)] ' +
@@ -156,6 +178,15 @@ function Audits() {
   const [choices, setChoices] = useState<string[] | null>(null)
   const [openLines, setOpenLines] = useState<Record<string, boolean>>({})
   const [drawerWord, setDrawerWord] = useState<string | null>(null)
+  /**
+   * *** THE DOCUMENT'S OWN REPORT, HERE, NOT A STUB THAT SENDS PEOPLE AWAY — Run 3b, item 1. ***
+   * The first build opened a panel saying "open it in Documents for its full reading", which is the
+   * product telling somebody to go and do the thing themselves. `DocumentReport` is one component
+   * and it mounts here as readily as it mounts on Documents. `fromAudit` remembers which audit to
+   * go back to, so Back returns to the report rather than closing everything.
+   */
+  const [openDoc, setOpenDoc] = useState<string | null>(null)
+  const [fromAudit, setFromAudit] = useState<string | null>(null)
   const [site, setSite] = useState('all')
   const [groupBy, setGroupBy] = useState<'agency' | 'subject' | 'site'>('agency')
   const firstOpenDone = useRef(false)
@@ -423,6 +454,19 @@ function Audits() {
               <p className="mt-6 text-[14px] text-gray-600">None of your documents carries an agency yet.</p>
             ) : groupBy === 'agency' ? (
               <>
+                {/* The all-agencies runs waiting to be seen, newest first. One line each, not one
+                    per agency it covered. */}
+                {idx.runs.filter((r) => r.status === 'done' && r.section_count > 1
+                                        && idx.banners.includes(r.id)).slice(0, 2).map((r) => (
+                  <div key={r.id}
+                    className="mt-3 flex items-center gap-4 rounded-lg border border-gray-200 bg-white px-3 py-2">
+                    <p className="min-w-0 flex-1 text-[13px] text-gray-900">
+                      Your audit of everything is done · {needsOf(r.summary)} to look at
+                    </p>
+                    <button onClick={() => setParam('run', r.id)} className={ACTION_GREEN}>Open</button>
+                    <button onClick={() => dismissRun(r.id)} className={ACTION_QUIET}>Dismiss</button>
+                  </div>
+                ))}
                 <div className="mt-1">
                   {idx.agencies.map((label) => {
                     const v = agencyView(label)!
@@ -430,11 +474,15 @@ function Audits() {
                     const bannerId = v.lastRun && idx.banners.includes(v.lastRun.id) ? v.lastRun.id : null
                     return (
                       <div key={label} className="border-b border-gray-100">
-                        <div className="flex items-start gap-3 py-3">
-                          <button onClick={() => setOpenLines((o) => ({ ...o, [label]: !o[label] }))}
-                            className="mt-0.5 w-3 shrink-0 text-[12px] text-gray-400 hover:text-gray-700">
-                            {open ? '▾' : '▸'}
-                          </button>
+                        {/* The WHOLE line opens it. A chevron three pixels wide was the only
+                            thing you could hit, and nothing said the rest of the line was
+                            clickable — no pointer, no wash. */}
+                        <div className={AGENCY_ROW} role="button" tabIndex={0}
+                          onClick={() => setOpenLines((o) => ({ ...o, [label]: !o[label] }))}
+                          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault(); setOpenLines((o) => ({ ...o, [label]: !o[label] })) } }}>
+                          <span className={`mt-0.5 w-3 shrink-0 text-[12px] text-gray-400 transition-transform ${
+                            open ? 'rotate-90' : ''}`}>▸</span>
                           <div className="min-w-0 flex-1">
                             <p className="text-[14px] text-gray-900">{label}</p>
                             {v.activeRun ? (
@@ -463,17 +511,21 @@ function Audits() {
                                 {v.n > 1 ? `section ${v.k} of ${v.n}` : ''}
                               </p>
                             ) : (
-                              <button disabled={busy} onClick={() => startRun(label)} className={ACTION_GREEN}>
+                              <button disabled={busy}
+                                onClick={(e) => { e.stopPropagation(); startRun(label) }}
+                                className={ACTION_GREEN}>
                                 {v.lastRun ? 'Audit again' : 'Audit'}
                               </button>
                             )}
                           </div>
                         </div>
 
-                        {/* THE BANNER, ON THE LINE IT IS ABOUT. Documents puts its batch banner at
-                            the top of the page because a batch has no row of its own; an audit does,
-                            so the news sits where the person will look for it. */}
-                        {bannerId && v.lastRun && (
+                        {/* *** A BANNER BELONGS TO A RUN, AND "Audit everything" IS ONE RUN. ***
+                            One banner per AGENCY line put four of them on the page after one
+                            action, each announcing a quarter of the same news. A single-agency run
+                            keeps its banner here, on the line it is about; an all-agencies run is
+                            announced once, above the list. */}
+                        {bannerId && v.lastRun && v.lastRun.section_count === 1 && (
                           <div className="mb-3 flex items-center gap-4 rounded-lg border border-gray-200 bg-white px-3 py-2">
                             <p className="min-w-0 flex-1 text-[13px] text-gray-900">
                               Your {label} audit is done · {v.needs} to look at
@@ -484,7 +536,8 @@ function Audits() {
                         )}
 
                         {open && <AgencyBody label={label} idx={idx} v={v}
-                          onOpenRun={(w) => { setDrawerWord(w); setParam('run', v.lastRun!.id) }} />}
+                          onOpenRun={(w) => { setDrawerWord(w); setParam('run', v.lastRun!.id) }}
+                          onOpenDoc={(d) => { setFromAudit(null); setOpenDoc(d) }} />}
                       </div>
                     )
                   })}
@@ -495,7 +548,8 @@ function Audits() {
                 </p>
               </>
             ) : (
-              <GroupedByOther by={groupBy} idx={idx} docs={visibleDocs} onAudit={startRun} busy={busy} />
+              <GroupedByOther by={groupBy} idx={idx} docs={visibleDocs} onAudit={startRun} busy={busy}
+                onOpenDoc={(d) => { setFromAudit(null); setOpenDoc(d) }} />
             )}
 
             {/* ── the last group, only when it has something in it ────────── */}
@@ -508,11 +562,13 @@ function Audits() {
                 <div className="mt-2">
                   {idx.unplaced.map((d) => (
                     <div key={d.document_id} className="flex items-center gap-3 border-b border-gray-100 py-2">
-                      <p className="min-w-0 flex-1 truncate text-[13px] text-gray-800">{d.title}</p>
+                      <button onClick={() => { setFromAudit(null); setOpenDoc(d.document_id) }}
+                        title={d.title} className={`min-w-0 flex-1 ${TITLE_LINE}`}>{d.title}</button>
                       <p className={`shrink-0 text-[12px] ${AMBER_DOC.has(d.display_status) ? 'text-[var(--amber)]' : 'text-gray-500'}`}>
                         {DOC_STATUS[d.display_status] ?? d.display_status}
                       </p>
-                      <a href={`/documents?doc=${d.document_id}`} className={ACTION_GREEN}>Open</a>
+                      <button onClick={() => { setFromAudit(null); setOpenDoc(d.document_id) }}
+                        className={ACTION_GREEN}>Open</button>
                     </div>
                   ))}
                 </div>
@@ -577,13 +633,53 @@ function Audits() {
         )}
       </div>
 
+      {/* The audit report. Hidden, not unmounted, while a document's report is on top of it, so
+          Back returns to it at the same scroll position rather than re-rendering from the top. */}
       {openRun && (
-        <>
+        <div className={openDoc ? 'hidden' : ''}>
           <div className="no-print fixed inset-0 z-[45] bg-gray-900/20"
             onClick={() => { setParam('run', null); setDrawerWord(null) }} />
           <AuditReport runId={openRun} focusWord={drawerWord}
             onClose={() => { setParam('run', null); setDrawerWord(null) }}
-            onChanged={load} />
+            onChanged={load}
+            onOpenDoc={(d) => { setFromAudit(openRun); setOpenDoc(d) }} />
+        </div>
+      )}
+
+      {/* THE DOCUMENT'S OWN REPORT, THE SAME COMPONENT DOCUMENTS MOUNTS. */}
+      {openDoc && (
+        <>
+          <div className="no-print fixed inset-0 z-[45] bg-gray-900/30"
+            onClick={() => { setOpenDoc(null); setFromAudit(null) }} />
+          <div className="relative">
+            <DocumentReport
+              documentId={openDoc}
+              companyName={null}
+              onClose={() => { setOpenDoc(null); setFromAudit(null) }}
+              onChanged={load}
+              folders={idx.folders ?? []}
+              onMove={async (documentId, folderId) => {
+                await fetch('/api/documents', {
+                  method: 'PATCH',
+                  headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
+                  body: JSON.stringify({ id: documentId, folder_id: folderId }),
+                })
+                await load()
+              }}
+              /* This page has no file picker of its own, and building a second upload path here
+                 would be two of them. Documents is the upload surface, and it now shows the
+                 hint it is sent (Run 3b, item 5), so this lands somewhere that does the thing. */
+              onPickFile={() => { window.location.href = '/documents?add=a+clearer+copy' }}
+            />
+            {/* The way back, drawn over the report's own header. It is the whole point of opening
+                the document here rather than sending somebody to another page. */}
+            <div className="no-print fixed right-0 top-0 z-[60] max-w-[720px] w-full px-6 pt-2">
+              <button onClick={() => { setOpenDoc(null) }}
+                className="cursor-pointer text-[13px] text-[var(--green)] underline hover:text-[var(--green-ink)]">
+                ← {fromAudit ? 'Back to the audit' : 'Back to Audits'}
+              </button>
+            </div>
+          </div>
         </>
       )}
     </AppLayout>
@@ -591,11 +687,12 @@ function Audits() {
 }
 
 /* ── what is inside an agency line ────────────────────────────────────────── */
-function AgencyBody({ label, idx, v, onOpenRun }: {
+function AgencyBody({ label, idx, v, onOpenRun, onOpenDoc }: {
   label: string
   idx: Index
   v: { docs: Doc[]; lastRun: Run | null; byWord: Record<string, number>; needs: number }
   onOpenRun: (word: string | null) => void
+  onOpenDoc: (documentId: string) => void
 }) {
   const docIds = new Set(v.docs.map((d) => d.document_id))
   const subjects = [...new Set(v.docs.flatMap((d) => d.subjects ?? []))].sort()
@@ -623,10 +720,10 @@ function AgencyBody({ label, idx, v, onOpenRun }: {
           </h3>
           {g.docs.map((d) => (
             <div key={d.document_id} className="flex items-center gap-3 border-b border-gray-100 py-1.5">
-              <a href={`/documents?doc=${d.document_id}`}
-                className="min-w-0 flex-1 truncate text-[13px] text-gray-800 underline hover:text-gray-900">
-                {d.title}
-              </a>
+              {/* Opens the document's OWN report here. `/documents?doc=` was a link that landed on
+                  a page which does not read the parameter — it opened Documents and nothing else. */}
+              <button onClick={() => onOpenDoc(d.document_id)} title={d.title}
+                className={`min-w-0 flex-1 ${TITLE_LINE}`}>{d.title}</button>
               <p className={`shrink-0 text-[12px] ${AMBER_DOC.has(d.display_status) ? 'text-[var(--amber)]' : 'text-gray-500'}`}>
                 {DOC_STATUS[d.display_status] ?? d.display_status}
                 {/* A record's date IS its last entry, which is the only thing that says whether it
@@ -703,9 +800,10 @@ function AgencyBody({ label, idx, v, onOpenRun }: {
  * action stays on the agency names inside each group. Offering "Audit" on a subject would promise a
  * run the engine cannot do.
  */
-function GroupedByOther({ by, idx, docs, onAudit, busy }: {
+function GroupedByOther({ by, idx, docs, onAudit, busy, onOpenDoc }: {
   by: 'subject' | 'site'; idx: Index; docs: Doc[]
   onAudit: (agency: string) => void; busy: boolean
+  onOpenDoc: (documentId: string) => void
 }) {
   const keyOf = (d: Doc): string[] =>
     by === 'subject' ? (d.subjects ?? []) : [d.site_name ?? 'No site recorded']
@@ -739,8 +837,8 @@ function GroupedByOther({ by, idx, docs, onAudit, busy }: {
             <div className="mt-1.5 pl-0">
               {g.docs.map((d) => (
                 <div key={d.document_id} className="flex items-center gap-3 py-1">
-                  <a href={`/documents?doc=${d.document_id}`}
-                    className="min-w-0 flex-1 truncate text-[13px] text-gray-700 underline hover:text-gray-900">{d.title}</a>
+                  <button onClick={() => onOpenDoc(d.document_id)} title={d.title}
+                    className={`min-w-0 flex-1 ${TITLE_LINE}`}>{d.title}</button>
                   <p className={`shrink-0 text-[12px] ${AMBER_DOC.has(d.display_status) ? 'text-[var(--amber)]' : 'text-gray-500'}`}>
                     {DOC_STATUS[d.display_status] ?? d.display_status}
                   </p>

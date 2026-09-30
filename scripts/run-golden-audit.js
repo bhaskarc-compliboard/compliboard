@@ -378,7 +378,10 @@ async function oneCall(system, content, companyId) {
       .order('created_at', { ascending: false }).limit(1).maybeSingle()
     if (data) { cost = data.cost_usd; tokens = data }
   }
-  return { raw, obj, wall_ms: Date.now() - t0, cost, tokens, sources: answer.sources.length }
+  // The window this call happened in, so a section made of several calls can record a window that
+  // actually contains them. `costOfSections` sums the ledger between a section's timestamps.
+  return { raw, obj, wall_ms: Date.now() - t0, cost, tokens, sources: answer.sources.length,
+           started_at: started, finished_at: new Date().toISOString() }
 }
 
 /**
@@ -524,7 +527,13 @@ async function storeSectionsAnswer(built, co, c, answer, calls) {
     companyId: co.id, kind: 'agency', agency: c.agency, scope: `golden: ${c.id} (sections)`,
   })
   const sectionId = sectionIds[0]
-  const startedAt = new Date().toISOString()
+  // *** THE WINDOW HAS TO CONTAIN THE CALLS, AND THIS ONE DID NOT. ***
+  // It was `new Date()` here — after all four model calls had already returned — so the section's
+  // started_at was later than every ledger row it was supposed to cover and `costOfSections`
+  // summed nothing. Past audits read "$0.0000" for a run that billed $0.1535. The window is the
+  // first call's start to the last call's end.
+  const startedAt = calls[0]?.started_at ?? new Date().toISOString()
+  const finishedAt = calls[calls.length - 1]?.finished_at ?? new Date().toISOString()
 
   const { rows, handleErrors, readIds, unreadIds } =
     shapeFindings(answer ?? {}, built.input, { runId, sectionId, companyId: co.id })
@@ -537,7 +546,7 @@ async function storeSectionsAnswer(built, co, c, answer, calls) {
   await db.from('audit_sections').update({
     status: answer ? 'done' : 'could_not_complete',
     could_not_complete_reason: answer ? null : 'no section of the four returned readable JSON',
-    started_at: startedAt, finished_at: new Date().toISOString(),
+    started_at: startedAt, finished_at: finishedAt,
     model: MODEL, input_sha256: built.sha256, json_parsed: !!answer,
     raw_text: String(lastCall.raw ?? '').slice(0, 20000),
     handles: built.input.handles,
@@ -745,12 +754,55 @@ async function correctFixtureLabels(co) {
   return { written, agreed, unfixable, labels }
 }
 
+/**
+ * THE TEST LOGIN FOLLOWS THE COMPANY — Audits Run 3b, item 8.
+ *
+ * `testcascade@example.com` exists so a person can OPEN Cascade's Audits page; without it the one
+ * company with twelve documents and four agencies could not be looked at. Its `profiles` row points
+ * at a company id, and `npm run db:reset` drops `profiles` while leaving `auth.users` alone — so
+ * after a reset the login exists, the company is recreated with a NEW id by the documents runner,
+ * and the two are no longer connected. The person signs in and sees an empty product.
+ *
+ * Relinked here beside the fact relink, for the same reason and at the same moment: this script is
+ * what puts Cascade back together after a reset, and a fixture that needs two commands is a fixture
+ * that gets half run.
+ */
+async function relinkFixtureLogin(co) {
+  const EMAIL = 'testcascade@example.com'
+  const { data: list, error: lErr } = await db.auth.admin.listUsers({ perPage: 200 })
+  if (lErr) die(`listing logins: ${lErr.message}`)
+  const user = (list?.users ?? []).find((u) => u.email === EMAIL)
+  if (!user) return { skipped: `${EMAIL} does not exist as a login` }
+
+  const { data: before, error: bErr } = await db.from('profiles')
+    .select('id, company_id').eq('id', user.id).maybeSingle()
+  if (bErr) die(`reading the ${EMAIL} profile: ${bErr.message}`)
+  if (before && before.company_id === co.id) {
+    return { already: true, email: EMAIL, company_id: co.id }
+  }
+
+  const { data: row, error } = await db.from('profiles')
+    .upsert({ id: user.id, company_id: co.id, full_name: 'Cascade Tester' }, { onConflict: 'id' })
+    .select('id, company_id').single()
+  if (error) die(`relinking ${EMAIL} to ${co.name}: ${error.message}`)
+  return { email: EMAIL, was: before?.company_id ?? null, now: row.company_id, id: row.id }
+}
+
 const confirmed = {}
+const relinked = {}
 const corrected = {}
 const summary = []
 for (const c of caseFiles) {
   const { data: co } = await db.from('companies').select('id, name').ilike('name', `%${c.company}%`).limit(1).maybeSingle()
   if (!co) die(`No company matching "${c.company}" on staging. Run: npm run golden:docs -- --seed-only`)
+
+  if (!relinked[co.id] && /cascade/i.test(co.name)) {
+    relinked[co.id] = await relinkFixtureLogin(co)
+    const r = relinked[co.id]
+    console.log(r.skipped ? `  fixture: login not relinked — ${r.skipped}`
+      : r.already ? `  fixture: testcascade@example.com already points at ${co.name}`
+      : `  fixture: relinked ${r.email} to ${co.name} (was ${r.was ?? 'no company'}, now ${r.now})`)
+  }
 
   if (!confirmed[co.id]) {
     confirmed[co.id] = await confirmFixtureFact(co)

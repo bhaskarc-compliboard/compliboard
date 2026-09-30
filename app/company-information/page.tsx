@@ -83,6 +83,10 @@ interface Record_ {
   declared: Declared[]
   confirmed: Confirmed[]
   counts: { settled: number; declared: number; confirmed: number; waiting: number }
+  /** The company's own vocabulary, from `company_labels`, as the context block reads it. */
+  labels?: { agencies: string[]; subjects: string[] }
+  /** How many documents carry each name, so the confirm sentence can say it before the write. */
+  labelCounts?: { agency: Record<string, number>; subject: Record<string, number> }
 }
 
 /**
@@ -165,6 +169,11 @@ function YourCompanyContent() {
   const [companyDraft, setCompanyDraft] = useState({ name: '', industry: '', city: '', state: '' })
   const [editingLine, setEditingLine] = useState<string | null>(null)
   const [lineDraft, setLineDraft] = useState('')
+  /** Which label is being renamed or merged, and into what. One at a time, in place. */
+  const [labelEdit, setLabelEdit] = useState<
+    { kind: 'agency' | 'subject'; label: string; mode: 'rename' | 'merge' } | null>(null)
+  const [labelDraft, setLabelDraft] = useState('')
+  const [labelNotice, setLabelNotice] = useState<string | null>(null)
 
   /**
    * ONE PLACE FIRES THE EVENT, AND IT IS THE RELOAD — not each of the four writes.
@@ -274,6 +283,39 @@ function YourCompanyContent() {
       const j = await res.json().catch(() => null)
       if (!res.ok) { setNotice(j?.error ?? 'We could not save that just now.'); return }
       setEditingCompany(false); setNotice(null); await load()
+    } finally { setBusy(false) }
+  }
+
+  /**
+   * *** ONE NAME, CHANGED EVERYWHERE IT IS USED. *** The route writes one correction per document
+   * carrying the label, so `document_index_v` applies it and every prompt that reads labels sees
+   * the merged vocabulary. Past audit reports keep the old string, because a report says what it
+   * said on the day.
+   */
+  /** How many documents carry a name, off the read. Zero is a real answer: a label can outlive
+   *  the correction that took it off the last document, and the sentence should say so. */
+  const labelCount = (kind: 'agency' | 'subject', label: string) =>
+    rec?.labelCounts?.[kind]?.[label] ?? 0
+
+  async function changeLabel(kind: 'agency' | 'subject', label: string,
+                             action: 'rename' | 'merge', to: string) {
+    setBusy(true); setLabelNotice(null)
+    try {
+      const res = await fetch('/api/company-labels', {
+        method: 'PATCH',
+        headers: await authHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ kind, label, action, to }),
+      })
+      const json = await res.json().catch(() => null)
+      if (!res.ok) { setLabelNotice(json?.error ?? 'We could not change that name just now.'); return }
+      setLabelEdit(null); setLabelDraft('')
+      setLabelNotice(action === 'merge'
+        ? `Merged into ${to} on ${json.documents} document${json.documents === 1 ? '' : 's'}.`
+        : `Renamed to ${to} on ${json.documents} document${json.documents === 1 ? '' : 's'}.`)
+      await load()
+      // Other screens read these labels; the event the page already fires after a write is what
+      // tells the sidebar and anything else listening.
+      window.dispatchEvent(new Event('FACTS_CHANGED'))
     } finally { setBusy(false) }
   }
 
@@ -674,6 +716,107 @@ function YourCompanyContent() {
                   changing a site yet.
                 </p>
               </div>
+
+              {/* ====================== NAMES IN USE ====================== */}
+              {/*
+                *** THE VOCABULARY IS THE COMPANY'S, AND A PERSON HAS TO BE ABLE TO TIDY IT. ***
+                Nothing holds a canonical list of regulators, so two readings of the same one can
+                name it two ways — `U.S. OSHA` beside `Oregon OSHA` on one document is a real case
+                (§145). An audit is scoped by this string, so a split name silently splits the
+                evidence, and the audit cannot tell.
+              */}
+              <h2 className="mt-6 border-b border-gray-200 pb-2 text-[12px] font-medium uppercase tracking-wide text-gray-500">
+                Names in use
+                <span className="ml-1 text-gray-400">
+                  {(rec.labels?.agencies.length ?? 0) + (rec.labels?.subjects.length ?? 0)}
+                </span>
+              </h2>
+              {!rec.labels || (!rec.labels.agencies.length && !rec.labels.subjects.length) ? (
+                <p className="py-3 text-[12px] text-gray-500">
+                  None yet. These are the words your documents&rsquo; readings use for agencies and
+                  subjects, and they appear as soon as a document is read.
+                </p>
+              ) : (
+                <>
+                  <p className="py-2 text-[12px] text-gray-500">
+                    The words your documents are grouped and audited by. If one regulator ended up
+                    with two names, merge them.
+                  </p>
+                  {labelNotice && (
+                    <p className="no-print pb-2 text-[12px] text-gray-700">{labelNotice}</p>
+                  )}
+                  {([['agency', rec.labels.agencies], ['subject', rec.labels.subjects]] as const)
+                    .filter(([, list]) => list.length)
+                    .map(([kind, list]) => (
+                      <div key={kind} className="mt-1">
+                        <p className="text-[12px] uppercase tracking-wide text-gray-400">
+                          {kind === 'agency' ? 'Agencies' : 'Subjects'}
+                          <span className="ml-1.5">{list.length}</span>
+                        </p>
+                        <div className="divide-y divide-gray-50">
+                          {list.map((l: string) => (
+                            <div key={`${kind}-${l}`} className="py-2.5">
+                              <div className="flex items-baseline gap-3">
+                                <span className="min-w-0 flex-1 truncate text-[14px] text-gray-900" title={l}>{l}</span>
+                                <div className="no-print flex shrink-0 items-center gap-3">
+                                  <button onClick={() => {
+                                    setLabelEdit({ kind, label: l, mode: 'rename' }); setLabelDraft(l)
+                                  }} className={ACTION_GREY}>Rename</button>
+                                  {list.length > 1 && (
+                                    <button onClick={() => {
+                                      setLabelEdit({ kind, label: l, mode: 'merge' })
+                                      setLabelDraft(list.find((x: string) => x !== l) ?? '')
+                                    }} className={ACTION_GREY}>Merge</button>
+                                  )}
+                                </div>
+                              </div>
+
+                              {labelEdit && labelEdit.kind === kind && labelEdit.label === l && (
+                                <div className="no-print mt-2 max-w-[460px] rounded-lg border border-gray-200 bg-gray-50 p-3">
+                                  {labelEdit.mode === 'rename' ? (
+                                    <input autoFocus value={labelDraft}
+                                      onChange={(e) => setLabelDraft(e.target.value)}
+                                      className="w-full rounded border border-gray-200 px-2 py-1.5 text-[14px]" />
+                                  ) : (
+                                    <select autoFocus value={labelDraft}
+                                      onChange={(e) => setLabelDraft(e.target.value)}
+                                      className="w-full rounded border border-gray-200 px-2 py-1.5 text-[14px]">
+                                      {list.filter((x: string) => x !== l).map((x: string) => (
+                                        <option key={x} value={x}>{x}</option>
+                                      ))}
+                                    </select>
+                                  )}
+                                  {/* *** THE SENTENCE BEFORE THE WRITE, WITH THE COUNT IN IT. ***
+                                      A merge rewrites every document carrying the name, and the
+                                      number is the only thing that tells a person whether they are
+                                      about to touch one document or twelve. */}
+                                  <p className="mt-2 text-[13px] text-gray-800">
+                                    {labelEdit.mode === 'merge'
+                                      ? `Merge ${l} into ${labelDraft || '…'} on ${labelCount(kind, l)} document${labelCount(kind, l) === 1 ? '' : 's'}?`
+                                      : `Rename ${l} to ${labelDraft || '…'} on ${labelCount(kind, l)} document${labelCount(kind, l) === 1 ? '' : 's'}?`}
+                                  </p>
+                                  <p className="mt-1 text-[12px] text-gray-500">
+                                    Past audit reports keep the old name, because a report says what
+                                    it said on the day.
+                                  </p>
+                                  <div className="mt-2 flex items-center gap-4">
+                                    <button disabled={busy || !labelDraft.trim() || labelDraft.trim() === l}
+                                      onClick={() => changeLabel(kind, l, labelEdit.mode, labelDraft.trim())}
+                                      className={ACTION_GREEN}>
+                                      {busy ? 'Working…' : (labelEdit.mode === 'merge' ? 'Merge' : 'Rename')}
+                                    </button>
+                                    <button onClick={() => { setLabelEdit(null); setLabelDraft('') }}
+                                      className={ACTION_QUIET}>Cancel</button>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                </>
+              )}
             </section>
 
             {/* ============================== CONTROLS ============================== */}

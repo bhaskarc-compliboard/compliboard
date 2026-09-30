@@ -38,6 +38,8 @@
 
 import { useState, useEffect, useRef, useMemo, Suspense } from 'react'
 import { createClient, authHeaders } from '@/lib/supabase'
+import { useSearchParams } from 'next/navigation'
+
 import AppLayout from '@/components/AppLayout'
 import { STATUS_WORD, STATUS_GROUP_LABEL, isAmber, statusWord } from '@/lib/documentStatus'
 import { ACCEPTED_FILE_TYPES } from '@/lib/acceptedFiles'
@@ -167,6 +169,18 @@ function DocumentsPageContent() {
   const supabase = createClient()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const folderInputRef = useRef<HTMLInputElement>(null)
+
+  /**
+   * *** THE HINT AN AUDIT SENT — Audits Run 3b, item 5. ***
+   *
+   * An audit finding of "nothing on file" offers "Add a document", and it passed the finding's
+   * title as `?add=`. **This page read no parameter at all** — checked by grepping it for
+   * `useSearchParams`: no match — so the link opened Documents and the person was left to remember
+   * what they had come for. It is shown above the upload control, as a sentence and not a form
+   * field: what to upload is the person's decision, and we do not know their file name.
+   */
+  const searchParams = useSearchParams()
+  const addHint = (searchParams.get('add') ?? '').trim().slice(0, 200)
 
   const [rows, setRows] = useState<IndexRow[]>([])
   const [folders, setFolders] = useState<Folder[]>([])
@@ -787,6 +801,11 @@ function DocumentsPageContent() {
           )}
 
           <div className="ml-auto flex items-center gap-3">
+            {addHint && (
+              <span className="max-w-[300px] truncate text-[12px] text-gray-600" title={addHint}>
+                Add: {addHint}
+              </span>
+            )}
             {progress && <span className="text-[12px] text-gray-500">{progress}</span>}
             <button onClick={() => fileInputRef.current?.click()} disabled={uploading}
               className="rounded-md bg-[var(--green)] px-5 py-2.5 text-[14px] font-medium text-white hover:opacity-90 disabled:opacity-50">

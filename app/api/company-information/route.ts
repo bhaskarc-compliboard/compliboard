@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
     const { companyId, db } = authed.auth
 
     const ctx = await buildCompanyContext(db, companyId, {
-      parts: ['company', 'declared', 'confirmed'],
+      parts: ['company', 'declared', 'confirmed', 'labels'],
     })
 
     // The question's own metadata, for grouping and for the editor. Ordered, like every read that
@@ -96,6 +96,29 @@ export async function GET(request: NextRequest) {
         ...f,
         locator: f.sourceProposalId ? (locatorById[f.sourceProposalId] ?? null) : null,
       })),
+      // *** THE NAMES IN USE — Run 3b, item 7. *** The company's own agency and subject
+      // vocabulary, so a person can say "these two are the same regulator" once and have every
+      // document, and every prompt that reads labels, follow.
+      labels: ctx.parts.labels,
+      // *** HOW MANY DOCUMENTS EACH NAME IS ON. *** The confirm sentence says "on N documents", and
+      // N has to be known BEFORE the write — a person deciding whether to merge is deciding whether
+      // to touch one document or twelve. Counted off `document_index_v`, so corrections already
+      // made are reflected.
+      labelCounts: await (async () => {
+        const { data } = await db.from('document_index_v')
+          .select('agencies, subjects').eq('company_id', companyId)
+        const out: { agency: Record<string, number>; subject: Record<string, number> } =
+          { agency: {}, subject: {} }
+        for (const d of (data ?? []) as unknown as Array<Record<string, unknown>>) {
+          for (const a of (Array.isArray(d.agencies) ? d.agencies as string[] : [])) {
+            out.agency[a] = (out.agency[a] ?? 0) + 1
+          }
+          for (const sj of (Array.isArray(d.subjects) ? d.subjects as string[] : [])) {
+            out.subject[sj] = (out.subject[sj] ?? 0) + 1
+          }
+        }
+        return out
+      })(),
       counts: {
         // SETTLED is both tables, because both are things a person has settled. The header says
         // "N facts settled" and a reader counting the rows on the page must arrive at the same N.

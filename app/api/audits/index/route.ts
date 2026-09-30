@@ -14,6 +14,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 
 import { requireCompany } from '@/lib/auth'
 import { estimateRun } from '@/lib/auditEstimate'
+import { costOfSections } from '@/lib/auditRun'
 
 /** A deadline is worth showing on the page when it has passed or lands within this window. */
 const SOON_DAYS = 90
@@ -27,7 +28,7 @@ export async function GET(request: NextRequest) {
     const today = new Date().toISOString().slice(0, 10)
     const soon = new Date(Date.now() + SOON_DAYS * 86400_000).toISOString().slice(0, 10)
 
-    const [labelsQ, docsQ, runsQ, sitesQ] = await Promise.all([
+    const [labelsQ, docsQ, runsQ, sitesQ, foldersQ] = await Promise.all([
       db.from('company_labels').select('label, kind').eq('company_id', companyId).order('label'),
       db.from('document_index_v')
         .select('document_id, title, file_name, kind, agencies, subjects, site_name, doc_date, '
@@ -39,9 +40,14 @@ export async function GET(request: NextRequest) {
               + 'created_at, started_at, finished_at, summary, notified_at, dismissed_at, previous_run_id')
         .eq('company_id', companyId).order('created_at', { ascending: false }).limit(100),
       db.from('entities').select('id, name').eq('company_id', companyId).order('name'),
+      // *** THE FOLDER LIST, BECAUSE THE DOCUMENT REPORT OPENS HERE NOW — Run 3b, item 1. ***
+      // `components/DocumentReport.tsx` is handed the folders rather than fetching them, so the
+      // page that mounts it has to hold them. Documents does the same; this is the second page.
+      db.from('company_folders').select('id, name').eq('company_id', companyId).order('name'),
     ])
     for (const [what, q] of [['company_labels', labelsQ], ['document_index_v', docsQ],
-                             ['audit_runs', runsQ], ['entities', sitesQ]] as const) {
+                             ['audit_runs', runsQ], ['entities', sitesQ],
+                             ['company_folders', foldersQ]] as const) {
       if (q.error) throw new Error(`${what}: ${q.error.message}`)
     }
 
@@ -123,16 +129,15 @@ export async function GET(request: NextRequest) {
       }))
     }
 
-    // ---- cost per run, through the sections' ledger rows ----
-    const callIds = sections.map((s) => s.ai_call_id).filter(Boolean) as string[]
-    const costById = new Map<string, number>()
-    if (callIds.length) {
-      const { data } = await db.from('ai_calls').select('id, cost_usd').in('id', callIds)
-      for (const c of data ?? []) costById.set(c.id, Number(c.cost_usd ?? 0))
+    // ---- cost per run, summed from the ledger over each section's window ----
+    // Not `ai_call_id`: one section can be four calls and records one id (`lib/auditRun.ts`).
+    const costByRun = new Map<string, number>()
+    for (const r of runs) {
+      const mine = sections.filter((s) => s.run_id === r.id) as
+        Array<{ started_at: string | null; finished_at: string | null }>
+      costByRun.set(r.id as string, await costOfSections(db, companyId, mine))
     }
-    const costOf = (runId: string) => sections
-      .filter((s) => s.run_id === runId && s.ai_call_id)
-      .reduce((sum, s) => sum + (costById.get(s.ai_call_id as string) ?? 0), 0)
+    const costOf = (runId: string) => costByRun.get(runId) ?? 0
 
     // ---- how many of a previous run's findings this run closed ----
     const closedByRun = new Map<string, number>()
@@ -157,6 +162,7 @@ export async function GET(request: NextRequest) {
       agencies,
       subjects: [...new Set(docs.flatMap((d) => (Array.isArray(d.subjects) ? d.subjects as string[] : [])))].sort(),
       sites: sitesQ.data ?? [],
+      folders: foldersQ.data ?? [],
       counts: { read: read.length, held_unread: heldUnread.length, agencies: agencies.length },
       documents: docs,
       unplaced,

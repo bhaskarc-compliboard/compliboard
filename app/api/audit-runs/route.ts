@@ -16,6 +16,7 @@ import { requireCompany, supabaseAdmin } from '@/lib/auth'
 import { createRun } from '@/lib/auditRun'
 import { estimateRun } from '@/lib/auditEstimate'
 import { auditAgenciesFor } from '@/lib/audit'
+import { costOfSections } from '@/lib/auditRun'
 import { sweep } from '@/app/api/jobs/audit-sections/route'
 
 export async function POST(request: NextRequest) {
@@ -125,15 +126,11 @@ export async function GET(request: NextRequest) {
         if (!sectionsByRun.has(s.run_id)) sectionsByRun.set(s.run_id, [])
         sectionsByRun.get(s.run_id)!.push(s)
       }
-      const callIds = (secs ?? []).map((s: { ai_call_id: string | null }) => s.ai_call_id).filter(Boolean)
-      if (callIds.length) {
-        const { data: calls } = await db.from('ai_calls').select('id, cost_usd').in('id', callIds)
-        const costById = new Map((calls ?? []).map((c: { id: string; cost_usd: number | null }) =>
-          [c.id, Number(c.cost_usd ?? 0)]))
-        for (const s of secs ?? []) {
-          if (!s.ai_call_id) continue
-          costByRun.set(s.run_id, (costByRun.get(s.run_id) ?? 0) + (costById.get(s.ai_call_id) ?? 0))
-        }
+      // Summed from the ledger over each run's own windows, not looked up by `ai_call_id` — a
+      // sections-mode run makes four calls and records one id (`lib/auditRun.ts`).
+      for (const runId of ids) {
+        costByRun.set(runId, await costOfSections(db, companyId,
+          (sectionsByRun.get(runId) ?? []) as Array<{ started_at: string | null; finished_at: string | null }>))
       }
     }
 

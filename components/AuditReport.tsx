@@ -22,7 +22,28 @@ import { useCallback, useEffect, useState } from 'react'
 import { Drawer, printDrawer } from '@/components/Drawer'
 import { authHeaders } from '@/lib/supabase'
 
-interface DocRef { title: string; file_name: string }
+interface DocRef { title: string; file_name: string; kind?: string | null; display_status?: string | null }
+
+/** Documents' own words for a status, so the audit does not invent a second vocabulary for them. */
+const DOC_STATUS: Record<string, string> = {
+  needs_work: 'Needs work', expiring: 'Expiring', expired: 'Expired',
+  could_not_read: 'Could not read', not_yet_read: 'Not read yet',
+  current: 'Current', recorded: 'Recorded', on_file: 'On file',
+}
+const KIND_LABEL: Record<string, string> = {
+  permit: 'Permit', certificate: 'Certificate', program: 'Program', policy: 'Policy',
+  record: 'Record', supplier_document: "Supplier's document", other: 'Other',
+}
+
+/**
+ * *** A TITLE IS TEXT, NOT A LINK-SHAPED OBJECT — the owner's review, 30 September. ***
+ * One line, cut with an ellipsis, the whole title on hover, underlined only under the pointer.
+ * The same class the page uses, for the same reason: a column of underlines reads as a column of
+ * links rather than a list of documents.
+ */
+const TITLE_LINE =
+  'block max-w-full truncate text-left text-[13px] text-gray-800 cursor-pointer ' +
+  'hover:underline hover:text-gray-900'
 interface Finding {
   id: string; section_id: string; ordinal: number; kind: string; title: string
   word: string | null; basis: string | null
@@ -124,15 +145,22 @@ function ReasonBox({ onCancel, onSave }: { onCancel: () => void; onSave: (r: str
   )
 }
 
-export default function AuditReport({ runId, focusWord, onClose, onChanged }: {
+export default function AuditReport({ runId, focusWord, onClose, onChanged, onOpenDoc }: {
   runId: string; focusWord?: string | null; onClose: () => void; onChanged: () => void
+  /**
+   * *** THE PAGE OPENS THE DOCUMENT, NOT THIS COMPONENT — Run 3b, item 1. ***
+   * This used to render its own panel saying "open it in Documents for its full reading", which is
+   * the product asking somebody to go and do it themselves. The real report is
+   * `components/DocumentReport.tsx`, it needs the folder list and the page holds it, so the click
+   * goes up and the page mounts it with a Back line.
+   */
+  onOpenDoc: (documentId: string) => void
 }) {
   const [rep, setRep] = useState<Report | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
   const [reasonFor, setReasonFor] = useState<string | null>(null)
-  const [nested, setNested] = useState<string | null>(null)
   const [earlier, setEarlier] = useState<Run[]>([])
   const [open, setOpen] = useState<Record<string, boolean>>({})
 
@@ -183,7 +211,16 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged }: {
   if (!rep) return <Drawer title="Reading…" onClose={onClose}><p className="text-[14px] text-gray-400">Opening…</p></Drawer>
 
   const { run, sections, findings } = rep
-  const agency = run.agency_label ?? 'All agencies'
+  /**
+   * *** AN ALL-AGENCIES RUN IS NOT NAMED BY STRINGING ITS AGENCIES TOGETHER. ***
+   * `agency_label` holds "Oregon DEQ · Oregon OSHA · Oregon State Fire Marshal · U.S. OSHA" for a
+   * run of everything, because the column has to say what the run was about and a four-agency run
+   * was about four. As a drawer title that is a wall of text; the agencies belong in What this
+   * covers, where there is room for them and each is a section heading anyway.
+   */
+  const everything = run.section_count > 1
+  const agency = everything ? 'Audit of everything' : (run.agency_label ?? 'All agencies')
+  const agencyList = String(run.agency_label ?? '').split(' · ').map((x) => x.trim()).filter(Boolean)
   const openF = findings.filter((f) => f.status === 'open')
   const dismissed = findings.filter((f) => f.status === 'dismissed')
   const plain = openF.filter((f) => f.kind === 'finding')
@@ -221,7 +258,8 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged }: {
       const res = await fetch('/api/audit-runs', {
         method: 'POST',
         headers: { 'content-type': 'application/json', ...(await authHeaders()) },
-        body: JSON.stringify({ kind: 'agency', agency, previous_run_id: run.id, scope: run.scope }),
+        body: JSON.stringify({ kind: 'agency', agency: everything ? 'all' : agency,
+                               previous_run_id: run.id, scope: run.scope }),
       })
       const json = await res.json()
       if (!res.ok) { setNotice(json?.error ?? 'We could not start that audit just now.'); return }
@@ -273,25 +311,9 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged }: {
     </>
   )
 
-  /* A document's own report, opened inside this drawer, with the way back at the top. */
-  if (nested) {
-    return (
-      <Drawer title="Document" onClose={onClose}>
-        <button onClick={() => setNested(null)} className="no-print mb-3 text-[13px] text-[var(--green)] underline">
-          ← Back to the {agency} audit
-        </button>
-        <p className="text-[14px] text-gray-600">
-          {titleOf(nested) ?? 'This document'} — open it in Documents for its full reading.
-        </p>
-        <a href={`/documents?doc=${nested}`} className="mt-2 inline-block text-[13px] text-[var(--green)] underline">
-          Open in Documents
-        </a>
-      </Drawer>
-    )
-  }
-
   return (
-    <Drawer title={`${agency} audit`} sub={sub} onClose={onClose} footer={footer}>
+    <Drawer title={everything ? `Audit of everything · ${run.section_count} sections` : `${agency} audit`}
+      sub={sub} onClose={onClose} footer={footer}>
       <p className="text-[13px] text-gray-500">
         Audited {fmt(run.finished_at ?? run.created_at)} · {sub}
         {run.cost_usd > 0 ? ` · $${run.cost_usd.toFixed(4)}` : ''}
@@ -312,18 +334,32 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged }: {
       {/* ── WHAT THIS COVERS ─────────────────────────────────────────────── */}
       <Section_ title="What this covers" open={!!open.covers}
         onToggle={() => setOpen((o) => ({ ...o, covers: !o.covers }))}>
+        {everything && agencyList.length > 1 && (
+          <p className="mb-2 text-[12px] text-gray-500">
+            Agencies: {agencyList.join(' · ')}
+          </p>
+        )}
         {docsRead.length > 0 && (
           <>
             <p className="text-[12px] text-gray-500">Documents read</p>
-            <ul className="mt-1 space-y-0.5">
-              {docsRead.map((id) => (
-                <li key={id}>
-                  <button onClick={() => setNested(id)} className="text-[13px] text-gray-800 underline hover:text-gray-900">
-                    {/* Never the id. A document whose row has gone says so in words. */}
-                    {titleOf(id) ?? 'a document that is no longer on file'}
-                  </button>
-                </li>
-              ))}
+            <ul className="mt-1 space-y-1">
+              {docsRead.map((id) => {
+                const d = rep.documents?.[id]
+                return (
+                  <li key={id} className="flex items-baseline gap-2">
+                    <button onClick={() => onOpenDoc(id)} title={d?.title ?? undefined}
+                      className={`min-w-0 flex-1 ${TITLE_LINE}`}>
+                      {/* Never the id. A document whose row has gone says so in words. */}
+                      {titleOf(id) ?? 'a document that is no longer on file'}
+                    </button>
+                    <span className="shrink-0 text-[12px] text-gray-500">
+                      {d?.kind ? (KIND_LABEL[d.kind] ?? d.kind) : ''}
+                      {d?.kind && d?.display_status ? ' · ' : ''}
+                      {d?.display_status ? (DOC_STATUS[d.display_status] ?? d.display_status) : ''}
+                    </span>
+                  </li>
+                )
+              })}
             </ul>
           </>
         )}
@@ -362,8 +398,11 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged }: {
                 {f.document && (
                   <>
                     {' · '}
-                    <button onClick={() => f.document_id && setNested(f.document_id)}
-                      className="underline text-gray-600 hover:text-gray-900">{f.document.title}</button>
+                    <button onClick={() => f.document_id && onOpenDoc(f.document_id)}
+                      title={f.document.title}
+                      className="cursor-pointer text-gray-600 hover:underline hover:text-gray-900">
+                      {f.document.title}
+                    </button>
                     {f.locator ? <span className="text-gray-500"> · {f.locator}</span> : null}
                   </>
                 )}
@@ -430,13 +469,15 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged }: {
             <div key={f.id} className="border-b border-gray-100 py-3 last:border-b-0">
               <p className="text-[15px] text-gray-900">{f.title}</p>
               <p className="mt-1 text-[13px] text-gray-700">
-                <button onClick={() => f.document_id && setNested(f.document_id)}
-                  className="underline hover:text-gray-900">{f.document?.title ?? 'one document'}</button>
+                <button onClick={() => f.document_id && onOpenDoc(f.document_id)}
+                  title={f.document?.title ?? undefined}
+                  className="cursor-pointer hover:underline hover:text-gray-900">{f.document?.title ?? 'one document'}</button>
                 {' says '}<span className="text-gray-900">{f.value_a}</span>
               </p>
               <p className="mt-0.5 text-[13px] text-gray-700">
-                <button onClick={() => f.document_b_id && setNested(f.document_b_id)}
-                  className="underline hover:text-gray-900">{f.document_b?.title ?? 'the other'}</button>
+                <button onClick={() => f.document_b_id && onOpenDoc(f.document_b_id)}
+                  title={f.document_b?.title ?? undefined}
+                  className="cursor-pointer hover:underline hover:text-gray-900">{f.document_b?.title ?? 'the other'}</button>
                 {' says '}<span className="text-gray-900">{f.value_b}</span>
               </p>
               <p className="mt-1 text-[12px] text-gray-500">The audit shows both and does not pick one.</p>
