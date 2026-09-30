@@ -38,6 +38,13 @@ const args = process.argv.slice(2)
 const flag = (n, d = null) => { const i = args.indexOf(n); return i >= 0 && args[i + 1] ? args[i + 1] : d }
 const times = Number(flag('--times', '3'))
 const modeArg = flag('--mode', null)
+/**
+ * *** THE FIXTURE WORK, WITHOUT BUYING AN AUDIT — Audits Run 4a, item 4. ***
+ * `db:restore` needs the confirmed headcount and the relinked login after a reset, and neither
+ * needs a model call. `--fixtures-only` does them and stops, so the restore does not have to buy
+ * an audit to get its fixtures set up.
+ */
+const fixturesOnly = args.includes('--fixtures-only')
 const jsonPath = args.includes('--json-path')
 const previousRun = flag('--previous', null)
 const VALUE_FLAGS = ['--times', '--mode', '--previous']
@@ -228,6 +235,17 @@ function evaluate(check, answer, ctx) {
       return bad.length
         ? { verdict: 'FAIL', detail: bad.map((f) => `"${String(f.title).slice(0, 44)}"`).join(' · ') }
         : { verdict: 'PASS', detail: 'no expected item appears as a finding' }
+    }
+    case 'no_future_nothing_on_file': {
+      // *** READ OFF THE ROWS, NOT THE PROSE. *** The offence is structural: a finding whose word
+      // is nothing_on_file and whose due date is in the future. `answerFromRows` carries `due_on`
+      // on a finding only when the row has one, so this sees exactly what the table holds.
+      const bad = (cols.findings ?? []).filter((f) =>
+        norm(f.word) === 'nothing on file' && f.due_on && String(f.due_on) > ctx.today)
+      return bad.length
+        ? { verdict: 'FAIL', detail: bad.map((f) =>
+            `"${String(f.title).slice(0, 46)}" due ${f.due_on}`).join(' · ') }
+        : { verdict: 'PASS', detail: 'nothing not-yet-due is presented as missing' }
     }
     case 'carries_own_gaps': {
       // How many of the document's OWN open gaps the audit carried. A gap counts as carried when a
@@ -459,6 +477,7 @@ async function runAsRows(built, co, c, previousRunId) {
     : { data: null }
 
   const answer = await answerFromRows(db, runId)
+  const reshaped = r.reshaped ?? []
   const { data: heRows } = await db.from('audit_findings')
     .select('title').eq('run_id', runId).eq('handle_error', true)
 
@@ -475,6 +494,7 @@ async function runAsRows(built, co, c, previousRunId) {
     section: sec ?? null,
     rowsWritten: r.findings,
     sectionStatus: r.status,
+    reshaped,
   }
 }
 
@@ -494,7 +514,9 @@ async function answerFromRows(db, runId) {
   return {
     covers: { documents_read: [], documents_held_but_not_read: [], readings_as_of: null },
     findings: rows.filter((r) => r.kind === 'finding').map((r) => ({
-      title: r.title, word: r.word, document_id: r.document_id, locator: r.locator,
+      // `due_on` travels with a finding so `no_future_nothing_on_file` can see it. A finding with a
+      // due date is the shape the rule is about.
+      title: r.title, word: r.word, due_on: r.due_on, document_id: r.document_id, locator: r.locator,
       quote: r.quote, what_to_do: r.what_to_do, basis: r.basis,
       ...(r.handle_error ? { handle_error: 'the block did not carry that handle' } : {}),
     })),
@@ -830,6 +852,8 @@ for (const c of caseFiles) {
     }
   }
 
+  if (fixturesOnly) continue
+
   const labels = await auditAgenciesFor(db, co.id)
   if (!labels.includes(c.agency)) {
     die(`"${c.agency}" is not one of ${co.name}'s agency labels. Staging has: ${labels.join(' · ') || '(none)'}\n`
@@ -848,6 +872,7 @@ for (const c of caseFiles) {
   }
 
   const ctx = {
+    today: TODAY,
     own,
     documentIds: [...built.input.documents.map((d) => d.document_id),
                   ...built.input.other_documents.map((d) => d.document_id)],
@@ -909,6 +934,7 @@ for (const c of caseFiles) {
         audit_run_id: r.runId ?? null, audit_section_id: r.sectionId ?? null,
         audit_section: r.section ?? null, rows_written: r.rowsWritten ?? null,
         section_status: r.sectionStatus ?? null, run_summary: r.summary ?? null,
+        reshaped_to_dates: r.reshaped ?? [],
       }, null, 2) + '\n')
 
       perRun.push({ n, verdicts, mustPass, mustNotPass, okPass, cost, wall, answer, calls,
@@ -919,6 +945,7 @@ for (const c of caseFiles) {
         + `  ok ${okPass}/${(c.acceptable ?? []).length}`
         + `${r.rowsWritten != null ? `  ${r.rowsWritten} row(s)` : ''}`
         + `${r.sectionStatus === 'could_not_complete' ? '  ⚠ could_not_complete' : ''}`
+        + `${r.reshaped?.length ? `  ${r.reshaped.length} not-yet-due -> dates` : ''}`
         + `  ${handleErrors?.length ? `⚠ ${handleErrors.length} bad handle(s) ` : ''}`
         + `${calls.every((r) => r.obj) ? '' : '(a call came back unparseable) '}\n`)
     }

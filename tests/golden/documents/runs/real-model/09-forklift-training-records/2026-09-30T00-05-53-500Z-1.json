@@ -1,0 +1,292 @@
+{
+  "case": "09-forklift-training-records",
+  "run": 1,
+  "run_date": "2026-09-29",
+  "model": "claude-opus-5-5",
+  "structured": true,
+  "searches": 0,
+  "cited_sources": 0,
+  "prompt_sha256": "5fd47c70e2b91792db3d1d717a0afa1d5da5ec1254728e6e1ab63e9fcd828c38",
+  "scan_id": "ef431801-4761-4119-8e8e-0489a15bf127",
+  "ai_call_id": "aae37bd9-8ecb-481a-84a8-4f0e900e5139",
+  "company_context": "WHO THIS COMPANY IS\n  Name: Cascade Specialty Chemicals, LLC\n  Industry: chemical manufacturing (recorded as chemical-manufacturing)\n  Address: Portland, Oregon\n  State: Oregon\nTheir sites:\n  - Portland — 4410 NW Front Ave, Portland, Oregon 97210 (primary)\n\nWHAT A PERSON HAS CONFIRMED FROM A DOCUMENT\nEach of these was read in the named document and then confirmed by a person.\n  (nothing confirmed yet)\n\nLABELS ALREADY IN USE FOR THIS COMPANY\nAgencies:\n  - Oregon DEQ\n  - Oregon OSHA\nSubjects:\n  - Air Quality Permit\n  - Emergency Action Plan\n  - Emergency Preparedness\n  - Hazard Communication\n  - Powered Industrial Trucks\n\nFACT KEYS ALREADY IN USE FOR THIS COMPANY\n  - aed_on_site\n  - air_emission_sources\n  - air_permit_type\n  - annual_throughput\n  - chemical_release_hazard\n  - emergency_eyewash_shower\n  - employee_count_site\n  - facility_operations\n  - fire_alarm_monitoring\n  - hazardous_waste_streams\n  - lpg_cylinder_use\n  - powered_industrial_trucks\n  - workforce_roles",
+  "company_context_sha256": "2a5f37ad47637efbae44b1df93d820ccd6f6d6df943dd6821616c5c7c0a88102",
+  "wall_ms": 42069,
+  "cost_usd": 0.1345,
+  "input_tokens": 11350,
+  "output_tokens": 4455,
+  "json_parsed": true,
+  "compliant_found_in": [],
+  "alternative_pass": false,
+  "verdicts": {
+    "kind": {
+      "verdict": "PASS",
+      "detail": "identity.kind = \"record\""
+    },
+    "agency-osha": {
+      "verdict": "PASS",
+      "detail": "identity.agencies = [oregon osha]"
+    },
+    "subject": {
+      "verdict": "PASS",
+      "detail": "identity.subjects = [powered industrial trucks]"
+    },
+    "site-portland": {
+      "verdict": "PASS",
+      "detail": "identity.site = \"portland — 4410 nw front ave, portland, oregon 97210\""
+    },
+    "doc-date": {
+      "verdict": "PASS",
+      "detail": "identity.doc_date = 2025-06-02"
+    },
+    "status": {
+      "verdict": "PASS",
+      "detail": "status = \"gaps found\""
+    },
+    "finding-patel-overdue": {
+      "verdict": "PASS",
+      "detail": "gaps: \"R. Patel three-year evaluation overdue\" [patel, 2026, three years, evaluation]"
+    },
+    "deadline-chen": {
+      "verdict": "PASS",
+      "detail": "deadlines: \"M. Chen three-year operator evaluation (FL-2, PJ-1)\" [chen, evaluation, operator]"
+    },
+    "deadline-rivera": {
+      "verdict": "PASS",
+      "detail": "deadlines: \"J. Rivera three-year operator evaluation (FL-2, PJ-1)\" [rivera, evaluation, operator]"
+    },
+    "deadline-patel": {
+      "verdict": "PASS",
+      "detail": "deadlines: \"R. Patel three-year operator evaluation (FL-2), overdue\" [patel, evaluation, operator]"
+    },
+    "label-consistency": {
+      "verdict": "CROSS",
+      "detail": "judged across the three runs, below"
+    },
+    "no-chen-or-rivera-gap": {
+      "verdict": "PASS",
+      "detail": "not raised as such; 2 item(s) mention it — read below",
+      "soft": [
+        {
+          "where": "gaps",
+          "text": "No certificate on file noted for R. Patel / The Notes column says \"certificate on file\" for Chen and Rivera but is blank for Patel. The table itself has the name, dates and trainer, but you cannot tell whether a signed certificate exists for her. / Find Patel's 2023 certificate, or issue a new one when her re-evaluation is done, and mark the Notes column. / 29 CFR 1910.178(l)(6) (certification that each operator has been trained and evaluated) / https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.178 / Page 1, operator table, R. Patel row, Notes column / read / R. Patel (Rina Patel)"
+        },
+        {
+          "where": "gaps",
+          "text": "Rivera certificate not in this file / The roster says a certificate is on file for J. Rivera, but only Michael Chen's certificate is attached (page 2). / Add Jose Rivera's signed certificate (evaluation 2025-06-02) to this file so the whole set is in one place. / 29 CFR 1910.178(l)(6) / https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.178 / not in the document / inferred / certificate on file"
+        }
+      ]
+    },
+    "no-trainer-gap": {
+      "verdict": "PASS",
+      "detail": "not raised as such; 2 item(s) mention it — read below",
+      "soft": [
+        {
+          "where": "gaps",
+          "text": "R. Patel three-year evaluation overdue / The roster shows R. Patel's most recent evaluation as 2023-05-19 and her next evaluation due 2026-05-19. As of 2026-09-30 that date is more than four months past, and the record shows no re-evaluation. If she is still operating FL-2, she is doing so without a current evaluation. / Take R. Patel off FL-2 until Sandra Ortiz (or another qualified evaluator) evaluates her in the workplace and gives refresher training if needed. Then update the roster, file a signed certificate, and set her next due date three years out. / 29 CFR 1910.178(l)(4)(iii) (an evaluation of each operator's performance at least once every three years), adopted in Oregon under Oregon OSHA Division 2, Subdivision N / https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.178 / Page 1, operator table, R. Patel row / read / 2023-05-19 2023-05-19 2026-05-19 S. Ortiz"
+        },
+        {
+          "where": "gaps",
+          "text": "No certificate on file noted for R. Patel / The Notes column says \"certificate on file\" for Chen and Rivera but is blank for Patel. The table itself has the name, dates and trainer, but you cannot tell whether a signed certificate exists for her. / Find Patel's 2023 certificate, or issue a new one when her re-evaluation is done, and mark the Notes column. / 29 CFR 1910.178(l)(6) (certification that each operator has been trained and evaluated) / https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.178 / Page 1, operator table, R. Patel row, Notes column / read / R. Patel (Rina Patel)"
+        }
+      ]
+    },
+    "citation-evaluation-rule": {
+      "verdict": "PASS",
+      "detail": "\"1910.178(l)(4)(iii)\" found"
+    },
+    "doc-date-kind": {
+      "verdict": "PASS",
+      "detail": "identity.doc_date_kind = \"last entry\""
+    },
+    "facts-operators-trained": {
+      "verdict": "PASS",
+      "detail": "facts: \"powered_industrial_trucks\" [operator, training, forklift, propane]"
+    }
+  },
+  "scan": {
+    "identity": {
+      "kind": "record",
+      "title": "Powered Industrial Truck Operator Training and Evaluation Record, with Operator Certificate for Michael Chen, Portland Facility",
+      "issuer": "Cascade Specialty Chemicals, LLC (Warehouse Supervisor Sandra Ortiz, trainer and evaluator)",
+      "agencies": [
+        "Oregon OSHA"
+      ],
+      "subjects": [
+        "Powered Industrial Trucks"
+      ],
+      "site": "Portland — 4410 NW Front Ave, Portland, Oregon 97210",
+      "jurisdiction": [
+        "Oregon",
+        "federal"
+      ],
+      "doc_date": "2025-06-02",
+      "doc_date_kind": "last_entry",
+      "page_refs": {}
+    },
+    "summary": "This is the company's own training and evaluation roster for forklift and powered pallet jack operators at the Portland facility (page 1). A signed training certificate for one operator, Michael Chen, is on page 2. It lists three operators with their training and evaluation dates. One of them, R. Patel, was due for a three-year re-evaluation on 2026-05-19, and nothing shows it was done. The record itself has not been updated since June 2, 2025.",
+    "status": "gaps_found",
+    "significant_date": "2025-06-02",
+    "significant_date_kind": "last_entry",
+    "freshness_note": "The roster was last updated June 2, 2025, about 16 months ago. Since then R. Patel's re-evaluation date (2026-05-19) has passed and no new entry was made. Ask the Warehouse Supervisor for a current roster that shows whether Patel was re-evaluated, whether she has stopped operating FL-2, and whether any operators have been added or have left.",
+    "gaps": [
+      {
+        "title": "R. Patel three-year evaluation overdue",
+        "description": "The roster shows R. Patel's most recent evaluation as 2023-05-19 and her next evaluation due 2026-05-19. As of 2026-09-30 that date is more than four months past, and the record shows no re-evaluation. If she is still operating FL-2, she is doing so without a current evaluation.",
+        "fix": "Take R. Patel off FL-2 until Sandra Ortiz (or another qualified evaluator) evaluates her in the workplace and gives refresher training if needed. Then update the roster, file a signed certificate, and set her next due date three years out.",
+        "citation": "29 CFR 1910.178(l)(4)(iii) (an evaluation of each operator's performance at least once every three years), adopted in Oregon under Oregon OSHA Division 2, Subdivision N",
+        "citation_url": "https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.178",
+        "locator": "Page 1, operator table, R. Patel row",
+        "draftable": false,
+        "basis": "read",
+        "quote": "2023-05-19 2023-05-19 2026-05-19 S. Ortiz",
+        "quote_verified": true,
+        "same_as_gap_id": null
+      },
+      {
+        "title": "No certificate on file noted for R. Patel",
+        "description": "The Notes column says \"certificate on file\" for Chen and Rivera but is blank for Patel. The table itself has the name, dates and trainer, but you cannot tell whether a signed certificate exists for her.",
+        "fix": "Find Patel's 2023 certificate, or issue a new one when her re-evaluation is done, and mark the Notes column.",
+        "citation": "29 CFR 1910.178(l)(6) (certification that each operator has been trained and evaluated)",
+        "citation_url": "https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.178",
+        "locator": "Page 1, operator table, R. Patel row, Notes column",
+        "draftable": true,
+        "basis": "read",
+        "quote": "R. Patel (Rina Patel)",
+        "quote_verified": false,
+        "same_as_gap_id": null
+      },
+      {
+        "title": "Record not updated since June 2025",
+        "description": "The record has not been touched since June 2, 2025, even though an evaluation came due in May 2026. It also says no refresher training was required \"in 2025 or 2026 to date\", but you cannot tell when that statement was written.",
+        "fix": "Review the roster at least whenever a due date passes or staff change. Add a new 'last updated' date and confirm the refresher statement is still true.",
+        "citation": "29 CFR 1910.178(l)(4) and (l)(6)",
+        "citation_url": "https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.178",
+        "locator": "Page 1, footer",
+        "draftable": false,
+        "basis": "read",
+        "quote": "Record maintained by: Warehouse Supervisor · Last updated: June 2, 2025",
+        "quote_verified": true,
+        "same_as_gap_id": null
+      },
+      {
+        "title": "Rivera certificate not in this file",
+        "description": "The roster says a certificate is on file for J. Rivera, but only Michael Chen's certificate is attached (page 2).",
+        "fix": "Add Jose Rivera's signed certificate (evaluation 2025-06-02) to this file so the whole set is in one place.",
+        "citation": "29 CFR 1910.178(l)(6)",
+        "citation_url": "https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.178",
+        "locator": "not in the document",
+        "draftable": false,
+        "basis": "inferred",
+        "quote": "certificate on file",
+        "quote_verified": false,
+        "same_as_gap_id": null
+      }
+    ],
+    "conditions": [],
+    "deadlines": [
+      {
+        "title": "R. Patel three-year operator evaluation (FL-2), overdue",
+        "due_on": "2026-05-19",
+        "source_line": "R. Patel (Rina Patel) FL-2 2023-05-15 2023-05-17 2023-05-19 2023-05-19 2026-05-19 S. Ortiz",
+        "recurs": true
+      },
+      {
+        "title": "M. Chen three-year operator evaluation (FL-2, PJ-1)",
+        "due_on": "2027-03-11",
+        "source_line": "Evaluation date: March 11, 2024 · Next evaluation due: March 11, 2027",
+        "recurs": true
+      },
+      {
+        "title": "J. Rivera three-year operator evaluation (FL-2, PJ-1)",
+        "due_on": "2028-06-02",
+        "source_line": "J. Rivera (Jose Rivera) FL-2, PJ-1 2025-05-27 2025-05-29 2025-06-02 2025-06-02 2028-06-02 S. Ortiz",
+        "recurs": true
+      }
+    ],
+    "facts": [
+      {
+        "key": "powered_industrial_trucks",
+        "value": "Two trucks in service: Toyota 8FGU25 propane counterbalance forklift (FL-2) and Crown WP 3000 electric pallet jack (PJ-1)",
+        "quote": "Trucks in service: Toyota 8FGU25 propane counterbalance, unit FL-2; Crown WP 3000 electric pallet jack, unit PJ-1.",
+        "locator": "Page 1, header paragraph",
+        "as_of": "2025-06-02",
+        "affects": "Which trucks need operator training, daily inspection records and maintenance; PJ-1 needs its own inspection log alongside FL-2's.",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "lpg_cylinder_use",
+        "value": "The FL-2 forklift runs on propane",
+        "quote": "Toyota 8FGU25 propane counterbalance",
+        "locator": "Page 1, header paragraph",
+        "as_of": "2025-06-02",
+        "affects": "Brings in rules for LPG cylinder changing, storage and fire code, plus training on handling the cylinders.",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "pit_operator_roster",
+        "value": "Three authorized operators: Michael Chen (FL-2, PJ-1), Jose Rivera (FL-2, PJ-1), Rina Patel (FL-2 only)",
+        "quote": "J. Rivera (Jose Rivera) FL-2, PJ-1",
+        "locator": "Page 1, operator table",
+        "as_of": "2025-06-02",
+        "affects": "Only these people are shown as trained. Patel is not shown as trained on PJ-1, and her FL-2 evaluation has lapsed.",
+        "basis": "read",
+        "quote_verified": false
+      },
+      {
+        "key": "workforce_roles",
+        "value": "Warehouse Supervisor Sandra Ortiz is the in-house powered industrial truck trainer and evaluator",
+        "quote": "Trainer: Sandra Ortiz, Warehouse Supervisor, certified powered industrial truck trainer",
+        "locator": "Page 1, below table",
+        "as_of": "2025-06-02",
+        "affects": "Re-evaluations can be done in-house. If she leaves, the company needs a replacement trainer.",
+        "basis": "read",
+        "quote_verified": true
+      }
+    ],
+    "version_of": {
+      "title": "none",
+      "confidence": "high"
+    },
+    "expected_missing": [
+      {
+        "title": "Daily pre-shift inspection log for the electric pallet jack PJ-1",
+        "why": "Only FL-2 inspection logs are held, but PJ-1 is also a powered industrial truck in service.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Signed training certificates for J. Rivera and R. Patel",
+        "why": "The roster refers to certificates, but only Chen's is on hand.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Written Hazard Communication program and employee HazCom training records",
+        "why": "The company holds an SDS and chemical hazards, but no written HazCom program appears in its list.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Hazardous waste generator records (manifests, generator status)",
+        "why": "Chemical manufacturers usually produce hazardous waste that Oregon DEQ regulates.",
+        "basis": "similar companies, not a checked requirement"
+      }
+    ],
+    "confidence_notes": "The document was fully legible and I read everything on both pages. I am certain the Patel due date of 2026-05-19 has passed as of 2026-09-30, and the document shows no re-evaluation. It may have happened and not been recorded; I cannot tell which. The three-year evaluation and certification requirements are in 29 CFR 1910.178(l)(4)(iii) and (l)(6). I believe Oregon OSHA adopts 1910.178 by reference in Division 2, Subdivision N (the rule number I recall is OAR 437-002-0227), but I did not check the current Oregon rule text. The Rivera-certificate gap is inferred from what is missing from this file, not from anything wrong in the roster. I have not judged whether the trainer's qualifications meet the standard's knowledge-and-experience test.",
+    "could_not_read": {
+      "reason": null,
+      "way_forward": null
+    },
+    "raw_text": "{\"identity\":{\"kind\":\"record\",\"title\":\"Powered Industrial Truck Operator Training and Evaluation Record, with Operator Certificate for Michael Chen, Portland Facility\",\"issuer\":\"Cascade Specialty Chemicals, LLC (Warehouse Supervisor Sandra Ortiz, trainer and evaluator)\",\"agencies\":[\"Oregon OSHA\"],\"subjects\":[\"Powered Industrial Trucks\"],\"site\":\"Portland — 4410 NW Front Ave, Portland, Oregon 97210\",\"jurisdiction\":[\"Oregon\",\"federal\"],\"doc_date\":\"2025-06-02\",\"doc_date_kind\":\"last_entry\"},\"summary\":\"This is the company's own training and evaluation roster for forklift and powered pallet jack operators at the Portland facility (page 1). A signed training certificate for one operator, Michael Chen, is on page 2. It lists three operators with their training and evaluation dates. One of them, R. Patel, was due for a three-year re-evaluation on 2026-05-19, and nothing shows it was done. The record itself has not been updated since June 2, 2025.\",\"status\":\"gaps_found\",\"significant_date\":\"2025-06-02\",\"significant_date_kind\":\"last_entry\",\"freshness_note\":\"The roster was last updated June 2, 2025, about 16 months ago. Since then R. Patel's re-evaluation date (2026-05-19) has passed and no new entry was made. Ask the Warehouse Supervisor for a current roster that shows whether Patel was re-evaluated, whether she has stopped operating FL-2, and whether any operators have been added or have left.\",\"gaps\":[{\"title\":\"R. Patel three-year evaluation overdue\",\"description\":\"The roster shows R. Patel's most recent evaluation as 2023-05-19 and her next evaluation due 2026-05-19. As of 2026-09-30 that date is more than four months past, and the record shows no re-evaluation. If she is still operating FL-2, she is doing so without a current evaluation.\",\"fix\":\"Take R. Patel off FL-2 until Sandra Ortiz (or another qualified evaluator) evaluates her in the workplace and gives refresher training if needed. Then update the roster, file a signed certificate, and set her next due date three years out.\",\"citation\":\"29 CFR 1910.178(l)(4)(iii) (an evaluation of each operator's performance at least once every three years), adopted in Oregon under Oregon OSHA Division 2, Subdivision N\",\"citation_url\":\"https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.178\",\"locator\":\"Page 1, operator table, R. Patel row\",\"draftable\":false,\"basis\":\"read\",\"quote\":\"2023-05-19 2023-05-19 2026-05-19 S. Ortiz\",\"same_as_gap_id\":\"\"},{\"title\":\"No certificate on file noted for R. Patel\",\"description\":\"The Notes column says \\\"certificate on file\\\" for Chen and Rivera but is blank for Patel. The table itself has the name, dates and trainer, but you cannot tell whether a signed certificate exists for her.\",\"fix\":\"Find Patel's 2023 certificate, or issue a new one when her re-evaluation is done, and mark the Notes column.\",\"citation\":\"29 CFR 1910.178(l)(6) (certification that each operator has been trained and evaluated)\",\"citation_url\":\"https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.178\",\"locator\":\"Page 1, operator table, R. Patel row, Notes column\",\"draftable\":true,\"basis\":\"read\",\"quote\":\"R. Patel (Rina Patel)\",\"same_as_gap_id\":\"\"},{\"title\":\"Record not updated since June 2025\",\"description\":\"The record has not been touched since June 2, 2025, even though an evaluation came due in May 2026. It also says no refresher training was required \\\"in 2025 or 2026 to date\\\", but you cannot tell when that statement was written.\",\"fix\":\"Review the roster at least whenever a due date passes or staff change. Add a new 'last updated' date and confirm the refresher statement is still true.\",\"citation\":\"29 CFR 1910.178(l)(4) and (l)(6)\",\"citation_url\":\"https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.178\",\"locator\":\"Page 1, footer\",\"draftable\":false,\"basis\":\"read\",\"quote\":\"Record maintained by: Warehouse Supervisor · Last updated: June 2, 2025\",\"same_as_gap_id\":\"\"},{\"title\":\"Rivera certificate not in this file\",\"description\":\"The roster says a certificate is on file for J. Rivera, but only Michael Chen's certificate is attached (page 2).\",\"fix\":\"Add Jose Rivera's signed certificate (evaluation 2025-06-02) to this file so the whole set is in one place.\",\"citation\":\"29 CFR 1910.178(l)(6)\",\"citation_url\":\"https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.178\",\"locator\":\"not in the document\",\"draftable\":false,\"basis\":\"inferred\",\"quote\":\"certificate on file\",\"same_as_gap_id\":\"\"}],\"conditions\":[],\"deadlines\":[{\"title\":\"R. Patel three-year operator evaluation (FL-2), overdue\",\"due_on\":\"2026-05-19\",\"source_line\":\"R. Patel (Rina Patel) FL-2 2023-05-15 2023-05-17 2023-05-19 2023-05-19 2026-05-19 S. Ortiz\",\"recurs\":true},{\"title\":\"M. Chen three-year operator evaluation (FL-2, PJ-1)\",\"due_on\":\"2027-03-11\",\"source_line\":\"Evaluation date: March 11, 2024 · Next evaluation due: March 11, 2027\",\"recurs\":true},{\"title\":\"J. Rivera three-year operator evaluation (FL-2, PJ-1)\",\"due_on\":\"2028-06-02\",\"source_line\":\"J. Rivera (Jose Rivera) FL-2, PJ-1 2025-05-27 2025-05-29 2025-06-02 2025-06-02 2028-06-02 S. Ortiz\",\"recurs\":true}],\"facts\":[{\"key\":\"powered_industrial_trucks\",\"value\":\"Two trucks in service: Toyota 8FGU25 propane counterbalance forklift (FL-2) and Crown WP 3000 electric pallet jack (PJ-1)\",\"basis\":\"read\",\"quote\":\"Trucks in service: Toyota 8FGU25 propane counterbalance, unit FL-2; Crown WP 3000 electric pallet jack, unit PJ-1.\",\"locator\":\"Page 1, header paragraph\",\"as_of\":\"2025-06-02\",\"affects\":\"Which trucks need operator training, daily inspection records and maintenance; PJ-1 needs its own inspection log alongside FL-2's.\"},{\"key\":\"lpg_cylinder_use\",\"value\":\"The FL-2 forklift runs on propane\",\"basis\":\"read\",\"quote\":\"Toyota 8FGU25 propane counterbalance\",\"locator\":\"Page 1, header paragraph\",\"as_of\":\"2025-06-02\",\"affects\":\"Brings in rules for LPG cylinder changing, storage and fire code, plus training on handling the cylinders.\"},{\"key\":\"pit_operator_roster\",\"value\":\"Three authorized operators: Michael Chen (FL-2, PJ-1), Jose Rivera (FL-2, PJ-1), Rina Patel (FL-2 only)\",\"basis\":\"read\",\"quote\":\"J. Rivera (Jose Rivera) FL-2, PJ-1\",\"locator\":\"Page 1, operator table\",\"as_of\":\"2025-06-02\",\"affects\":\"Only these people are shown as trained. Patel is not shown as trained on PJ-1, and her FL-2 evaluation has lapsed.\"},{\"key\":\"workforce_roles\",\"value\":\"Warehouse Supervisor Sandra Ortiz is the in-house powered industrial truck trainer and evaluator\",\"basis\":\"read\",\"quote\":\"Trainer: Sandra Ortiz, Warehouse Supervisor, certified powered industrial truck trainer\",\"locator\":\"Page 1, below table\",\"as_of\":\"2025-06-02\",\"affects\":\"Re-evaluations can be done in-house. If she leaves, the company needs a replacement trainer.\"}],\"version_of_title\":\"none\",\"version_of_confidence\":\"high\",\"expected_missing\":[{\"title\":\"Daily pre-shift inspection log for the electric pallet jack PJ-1\",\"why\":\"Only FL-2 inspection logs are held, but PJ-1 is also a powered industrial truck in service.\",\"basis\":\"similar companies, not a checked requirement\"},{\"title\":\"Signed training certificates for J. Rivera and R. Patel\",\"why\":\"The roster refers to certificates, but only Chen's is on hand.\",\"basis\":\"similar companies, not a checked requirement\"},{\"title\":\"Written Hazard Communication program and employee HazCom training records\",\"why\":\"The company holds an SDS and chemical hazards, but no written HazCom program appears in its list.\",\"basis\":\"similar companies, not a checked requirement\"},{\"title\":\"Hazardous waste generator records (manifests, generator status)\",\"why\":\"Chemical manufacturers usually produce hazardous waste that Oregon DEQ regulates.\",\"basis\":\"similar companies, not a checked requirement\"}],\"confidence_notes\":\"The document was fully legible and I read everything on both pages. I am certain the Patel due date of 2026-05-19 has passed as of 2026-09-30, and the document shows no re-evaluation. It may have happened and not been recorded; I cannot tell which. The three-year evaluation and certification requirements are in 29 CFR 1910.178(l)(4)(iii) and (l)(6). I believe Oregon OSHA adopts 1910.178 by reference in Division 2, Subdivision N (the rule number I recall is OAR 437-002-0227), but I did not check the current Oregon rule text. The Rivera-certificate gap is inferred from what is missing from this file, not from anything wrong in the roster. I have not judged whether the trainer's qualifications meet the standard's knowledge-and-experience test.\",\"could_not_read_reason\":\"\",\"could_not_read_way_forward\":\"\"}",
+    "json_parsed": true,
+    "model": "claude-opus-5-5",
+    "cited_sources": 0,
+    "searches": null,
+    "structured": true,
+    "prompt_sha256": "5fd47c70e2b91792db3d1d717a0afa1d5da5ec1254728e6e1ab63e9fcd828c38",
+    "quotes_checked": 8,
+    "quotes_verified": 5,
+    "extracted_text": "CASCADE SPECIALTY CHEMICALS, LLC — PORTLAND FACILITY\nPOWERED INDUSTRIAL TRUCK OPERATOR TRAINING AND EVALUATION RECORD\nProgram reference: OSHA 29 CFR 1910.178(l) and Oregon OSHA Division 2/N. Each operator\nreceives formal instruction, practical training and an evaluation of performance in the\nworkplace before operating without supervision, refresher training when required, and an\nevaluation at least once every three years. Trucks in service: Toyota 8FGU25 propane\ncounterbalance, unit FL-2; Crown WP 3000 electric pallet jack, unit PJ-1.\nOperator Trucks Formal Practical Initial Most recent Next Trainer / Notes\ninstruction training evaluation evaluation evaluation evaluator\ndue\nM. Chen FL-2, 2024-03-04 2024-03-06 2024-03-11 2024-03-11 2027-03-11 S. Ortiz certificate\n(Michael PJ-1 on file\nChen)\nJ. Rivera FL-2, 2025-05-27 2025-05-29 2025-06-02 2025-06-02 2028-06-02 S. Ortiz certificate\n(Jose Rivera) PJ-1 on file\nR. Patel (Rina FL-2 2023-05-15 2023-05-17 2023-05-19 2023-05-19 2026-05-19 S. Ortiz\nPatel)\nRefresher training is given after an accident or near miss, an observed unsafe operation, an evaluation\nfinding, or a change of truck or workplace conditions. None was required in 2025 or 2026 to date.\nTrainer: Sandra Ortiz, Warehouse Supervisor, certified powered industrial truck trainer (Northwest Safety\nTraining Institute, course PIT-T-2022-0417).\nRecord maintained by: Warehouse Supervisor · Last updated: June 2, 2025\nCERTIFICATE OF TRAINING\nThis certifies that Michael Chen has completed formal instruction, practical training and an\nevaluation of performance for the operation of powered industrial trucks (Toyota 8FGU25\npropane counterbalance, Crown WP 3000 electric pallet jack) at Cascade Specialty Chemicals,\nLLC, Portland facility, in accordance with 29 CFR 1910.178(l).\nEvaluation date: March 11, 2024 · Next evaluation due: March 11, 2027\nSandra Ortiz, Warehouse Supervisor, Trainer and Evaluator · Signed: March 11, 2024",
+    "started_at": "2026-09-30T00:05:10.635Z"
+  }
+}

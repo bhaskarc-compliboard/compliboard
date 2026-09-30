@@ -13,7 +13,6 @@ import { NextResponse, type NextRequest } from 'next/server'
 
 import { requireCompany } from '@/lib/auth'
 import { estimateRun } from '@/lib/auditEstimate'
-import { costOfSections } from '@/lib/auditRun'
 
 export async function GET(request: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   try {
@@ -76,10 +75,10 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ id: str
     }
 
     const estimate = runRow.status === 'done' ? null : (await estimateRun(db, companyId, 1)).line
-    const cost = await costOfSections(db, companyId, secs)
 
     return NextResponse.json({
-      run: { ...runRow, cost_usd: cost, estimate },
+      // No `cost_usd`: §147 takes it off every customer screen.
+      run: { ...runRow, estimate },
       // The title of every document the run touched, keyed by id, so the drawer never has to
       // reach into the findings to name one — and never falls back to an id when it cannot.
       documents: Object.fromEntries([...doc.entries()]),

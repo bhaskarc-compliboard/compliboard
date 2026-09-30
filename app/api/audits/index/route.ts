@@ -14,7 +14,6 @@ import { NextResponse, type NextRequest } from 'next/server'
 
 import { requireCompany } from '@/lib/auth'
 import { estimateRun } from '@/lib/auditEstimate'
-import { costOfSections } from '@/lib/auditRun'
 
 /** A deadline is worth showing on the page when it has passed or lands within this window. */
 const SOON_DAYS = 90
@@ -129,16 +128,6 @@ export async function GET(request: NextRequest) {
       }))
     }
 
-    // ---- cost per run, summed from the ledger over each section's window ----
-    // Not `ai_call_id`: one section can be four calls and records one id (`lib/auditRun.ts`).
-    const costByRun = new Map<string, number>()
-    for (const r of runs) {
-      const mine = sections.filter((s) => s.run_id === r.id) as
-        Array<{ started_at: string | null; finished_at: string | null }>
-      costByRun.set(r.id as string, await costOfSections(db, companyId, mine))
-    }
-    const costOf = (runId: string) => costByRun.get(runId) ?? 0
-
     // ---- how many of a previous run's findings this run closed ----
     const closedByRun = new Map<string, number>()
     if (runIds.length) {
@@ -174,7 +163,6 @@ export async function GET(request: NextRequest) {
       active: Object.fromEntries([...activeByAgency.entries()].map(([l, r]) => [l, r.id])),
       runs: runs.map((r) => ({
         ...r,
-        cost_usd: costOf(r.id as string),
         closed_count: closedByRun.get(r.id as string) ?? 0,
         estimate: r.status === 'done' ? null : estimate.line,
       })),

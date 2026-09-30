@@ -192,7 +192,7 @@ function FilingLine({ row, folders, onMove, onChanged }: {
 
 /* ── the drawer ───────────────────────────────────────────────────────────── */
 export default function DocumentReport({
-  documentId, companyName, onClose, onChanged, onPickFile, folders, onMove,
+  documentId, companyName, onClose, onChanged, onPickFile, folders, onMove, topLine,
 }: {
   documentId: string
   companyName: string | null
@@ -215,6 +215,8 @@ export default function DocumentReport({
   onMove: (documentId: string, folderId: string | null) => Promise<void> | void
   /** Opens the page's own file picker — used by "Upload a clearer copy" and "Add a newer version". */
   onPickFile: (versionOf?: string) => void
+  /** A line above the title — the Audits section's way back to the audit it came from. */
+  topLine?: React.ReactNode
 }) {
   const [r, setR] = useState<Report | null>(null)
   const [busy, setBusy] = useState(false)
@@ -491,7 +493,8 @@ export default function DocumentReport({
   /* ── a document we could not read: the reason, the way forward, nothing else ── */
   if (row.display_status === 'could_not_read') {
     return (
-      <Drawer title={row.title} sub={sub} company={companyName} onClose={onClose} footer={footer}>
+      <Drawer title={row.title} sub={sub} company={companyName} onClose={onClose} footer={footer}
+        topLine={topLine}>
         {deletePanel}
         <FilingLine row={row} folders={folders} onMove={onMove} onChanged={onChanged} />
         <p className="text-[13px] text-[var(--amber)]">Could not read</p>
@@ -523,7 +526,8 @@ export default function DocumentReport({
   ]
 
   return (
-    <Drawer title={row.title} sub={sub} company={companyName} onClose={onClose} footer={footer}>
+    <Drawer title={row.title} sub={sub} company={companyName} onClose={onClose} footer={footer}
+        topLine={topLine}>
       {deletePanel}
       {notice && (
         <p className="mb-4 rounded-lg bg-[var(--green-wash)] px-3 py-2 text-[13px] text-gray-800">{notice}</p>

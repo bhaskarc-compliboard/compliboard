@@ -1,0 +1,114 @@
+{
+  "from": "tests/golden/documents/runs/real-model",
+  "at": "2026-09-30T18:34:17.224Z",
+  "restored": [
+    {
+      "id": "01-eap-chemical",
+      "scanId": "e33b3e0d-6ead-44f7-8a6a-f2c403f68070",
+      "documentId": "3fb2b197-a4a7-4bea-a00f-dda34a7eb28b",
+      "file": "2026-09-30T00-00-42-449Z-1.json",
+      "model": "claude-opus-5-5",
+      "status": "gaps_found",
+      "sha": "b000dd4e060c70f666141afaaaa749d547a3506bab899bdcf46217111bd0799c"
+    },
+    {
+      "id": "02-acdp-chemical",
+      "scanId": "f07f58e2-4958-4bfa-b8e3-ead2c83d1d1a",
+      "documentId": "daf3b6bb-fc0b-4ef1-b857-eef18cdb3e59",
+      "file": "2026-09-30T00-01-28-311Z-1.json",
+      "model": "claude-opus-5-5",
+      "status": "expiring",
+      "sha": "262616644cd40bcf5613d6cbe997f147036417ed62e2b7b170e3ed56750c6841"
+    },
+    {
+      "id": "05-sds-supplier",
+      "scanId": "47d2b9f0-8a7a-467f-b4bb-3cb11b45fc13",
+      "documentId": "4243acc8-5441-41a2-8293-9336a9456f2b",
+      "file": "2026-09-30T00-02-16-254Z-1.json",
+      "model": "claude-opus-5-5",
+      "status": "not_judged",
+      "sha": "2e61df5aae0946254b3f4de2526a974b192a9f03a57df18448caf3b714664f1e"
+    },
+    {
+      "id": "06a-forklift-log",
+      "scanId": "7db20964-12c2-44a0-ad3d-3bb6a735d792",
+      "documentId": "5445c67f-0068-41f2-a387-d9fece0fb778",
+      "file": "2026-09-30T00-03-02-030Z-1.json",
+      "model": "claude-opus-5-5",
+      "status": "gaps_found",
+      "sha": "74c56fb78ea71e74e63c722640f0107aac55e22f511377335a0a971236495cae"
+    },
+    {
+      "id": "06b-forklift-log-photo",
+      "scanId": "cabbc4b9-0097-4e25-b124-27ab83bf27e5",
+      "documentId": "2b38cf9c-b70a-42e8-b60f-c51451a94fef",
+      "file": "2026-09-30T00-03-45-100Z-1.json",
+      "model": "claude-opus-5-5",
+      "status": "gaps_found",
+      "sha": "e87d45806950c95423f04dbbe6facf18d67fe2b60197e12a4a186ec13511993f"
+    },
+    {
+      "id": "07-scrubber-log-record",
+      "scanId": "367fb358-a3dd-4d38-820e-78f1c08526bd",
+      "documentId": "1e8e3b15-dc3d-4fce-b295-f5fbbab179b6",
+      "file": "2026-09-30T00-04-31-576Z-1.json",
+      "model": "claude-opus-5-5",
+      "status": "gaps_found",
+      "sha": "c5e19b6c7d4fb2e9a59d412502a46e0f2d3ce756d36e761973e7ccd69f998c28"
+    },
+    {
+      "id": "08-deq-annual-report-2025",
+      "scanId": "57cf6733-5dbc-4934-870f-467f86d7bbfc",
+      "documentId": "c97f09d1-b06d-4585-9e28-10b1901e246d",
+      "file": "2026-09-30T00-05-09-670Z-1.json",
+      "model": "claude-opus-5-5",
+      "status": "recorded",
+      "sha": "b8b9b8762acd9f31756a7a65005e72944982bb6068426ab25a10066efdcb356d"
+    },
+    {
+      "id": "09-forklift-training-records",
+      "scanId": "ede76ad9-8f40-4518-b1c0-e9c664b32f47",
+      "documentId": "6f2fad27-f742-4d5a-bc46-4905855fc518",
+      "file": "2026-09-30T00-05-53-500Z-1.json",
+      "model": "claude-opus-5-5",
+      "status": "gaps_found",
+      "sha": "da687f9d7250df1024292b062cd24e6c0409bf21f14971a764ecd7cd0f478175"
+    },
+    {
+      "id": "10-osha-300a-2025",
+      "scanId": "6a102daa-dcae-495d-86a7-dcb10fca6dd3",
+      "documentId": "1474b5f0-c070-47fc-9b86-f6f00e985603",
+      "file": "2026-09-30T00-06-43-167Z-1.json",
+      "model": "claude-opus-5-5",
+      "status": "recorded",
+      "sha": "e82a6b48249eaee1200487e151fdce96074e24fdfac615640d96c7f688995e28"
+    },
+    {
+      "id": "11-fire-extinguisher-certificate",
+      "scanId": "ccbc8b9b-9c1a-4abe-ac80-8b15db4e3932",
+      "documentId": "be31c296-44f4-4389-a747-7cfc9f439702",
+      "file": "2026-09-30T00-07-24-597Z-1.json",
+      "model": "claude-opus-5-5",
+      "status": "expired",
+      "sha": "c3c2498ead8c13c9faded94613809b383bb73130da604eaf02001dbf49f7faf2"
+    },
+    {
+      "id": "12-auditor-checklist-deq-air",
+      "scanId": "8449d507-afb4-4f4a-834a-6c8efce28b54",
+      "documentId": "3af90778-f74b-4e0a-a772-40d289c8632a",
+      "file": "2026-09-30T00-07-52-491Z-1.json",
+      "model": "claude-opus-5-5",
+      "status": "not_judged",
+      "sha": "671bdfb67bc2e4c7e6d56656728f78e02cb33775bf337d810a76005dc56f4dab"
+    },
+    {
+      "id": "13-company-self-check",
+      "scanId": "b8d42534-fed7-4611-8902-a934c3d5f8b7",
+      "documentId": "d2a3cc24-aa8b-4892-af72-2fb961db8361",
+      "file": "2026-09-30T00-08-19-454Z-1.json",
+      "model": "claude-opus-5-5",
+      "status": "not_judged",
+      "sha": "c2f051f99d176ee17f10277ee67291d252500b0d6762ec7ba2d76122982e6fe9"
+    }
+  ]
+}

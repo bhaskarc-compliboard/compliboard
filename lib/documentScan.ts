@@ -697,9 +697,21 @@ export async function runDocumentScan(input: RunScanInput): Promise<DocumentScan
  * table is not this scan's business.
  */
 export async function saveScan(
-  db: Db, scan: DocumentScan, args: { documentId: string; companyId: string; entityId?: string | null },
+  db: Db, scan: DocumentScan,
+  args: { documentId: string; companyId: string; entityId?: string | null
+          /**
+           * *** FALSE WHEN NO CALL WAS MADE — Audits Run 4a, item 4. ***
+           * The ledger row is found BY TIME (`created_at >= scan.started_at`), which is right for a
+           * reading that has just happened and wrong for one being restored from a stored run: the
+           * stored `started_at` is hours or days old, so the poll would attach whichever
+           * `document_scan` row happened to be the newest since then — somebody else's receipt on
+           * this reading. A restore passes false and the scan is saved with `ai_call_id` null,
+           * which is the truth: no call was made for it.
+           */
+          linkLedger?: boolean },
 ): Promise<{ scanId: string | null; aiCallId: string | null }> {
   const { documentId, companyId, entityId } = args
+  const linkLedger = args.linkLedger !== false
 
   // The ledger row this call wrote. `recordAICall` is deliberately not awaited inside lib/ai.ts
   // — bookkeeping must never delay an answer — so it is found by time rather than by id.
@@ -709,7 +721,7 @@ export async function saveScan(
   // than delayed, because the reading matters more than the link to its receipt.
   let aiCallId: string | null = null
   let billedSearches: number | null = null
-  for (let attempt = 0; attempt < 5 && !aiCallId; attempt++) {
+  for (let attempt = 0; linkLedger && attempt < 5 && !aiCallId; attempt++) {
     if (attempt) await new Promise((r) => setTimeout(r, 250))
     const { data: call } = await db.from('ai_calls')
       .select('id, searches').eq('company_id', companyId).eq('task', 'document_scan')
@@ -717,7 +729,9 @@ export async function saveScan(
     aiCallId = call?.id ?? null
     billedSearches = call?.searches ?? null
   }
-  if (!aiCallId) console.warn('document scan: saved with no ai_calls link — the ledger write had not landed')
+  if (!aiCallId && linkLedger) {
+    console.warn('document scan: saved with no ai_calls link — the ledger write had not landed')
+  }
 
   // Only the newest scan of a document is current.
   await db.from('document_scans').update({ is_current: false }).eq('document_id', documentId)

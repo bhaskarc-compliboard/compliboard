@@ -16,7 +16,6 @@ import { requireCompany, supabaseAdmin } from '@/lib/auth'
 import { createRun } from '@/lib/auditRun'
 import { estimateRun } from '@/lib/auditEstimate'
 import { auditAgenciesFor } from '@/lib/audit'
-import { costOfSections } from '@/lib/auditRun'
 import { sweep } from '@/app/api/jobs/audit-sections/route'
 
 export async function POST(request: NextRequest) {
@@ -116,21 +115,18 @@ export async function GET(request: NextRequest) {
     // *** THE COST, THROUGH THE SECTIONS' LEDGER ROWS. *** `ai_calls` is not scoped to a run, so
     // the join is the sections' `ai_call_id`s. Two reads for every run on the page rather than one
     // per run, because a list that costs N+1 queries is a list that gets slow quietly.
-    const costByRun = new Map<string, number>()
+    // *** COST IS NOT ON A CUSTOMER SCREEN — §147, the owner's second review. ***
+    // What a reading cost us is our business. It stays in `ai_calls`, in `npm run cost`, and in the
+    // golden runner's tables, which is where the question "is this worth what it costs" is actually
+    // asked. `lib/auditRun.ts` keeps `costOfSections` for those readers.
     const sectionsByRun = new Map<string, Array<Record<string, unknown>>>()
     if (ids.length) {
       const { data: secs } = await db.from('audit_sections')
-        .select('id, run_id, ordinal, title, status, ai_call_id, started_at, finished_at')
+        .select('id, run_id, ordinal, title, status, started_at, finished_at')
         .in('run_id', ids).order('ordinal')
       for (const s of secs ?? []) {
         if (!sectionsByRun.has(s.run_id)) sectionsByRun.set(s.run_id, [])
         sectionsByRun.get(s.run_id)!.push(s)
-      }
-      // Summed from the ledger over each run's own windows, not looked up by `ai_call_id` — a
-      // sections-mode run makes four calls and records one id (`lib/auditRun.ts`).
-      for (const runId of ids) {
-        costByRun.set(runId, await costOfSections(db, companyId,
-          (sectionsByRun.get(runId) ?? []) as Array<{ started_at: string | null; finished_at: string | null }>))
       }
     }
 
@@ -139,7 +135,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       runs: rows.map((r) => ({
         ...r,
-        cost_usd: costByRun.get(r.id as string) ?? 0,
         sections: sectionsByRun.get(r.id as string) ?? [],
         // The estimate only means anything for a run still going. On a finished one the real
         // duration is on the row, and showing a guess next to a fact is how a product loses trust.

@@ -99,10 +99,14 @@ let FROM = 1;
 if (fromArg) {
   const inline = fromArg.includes("=") ? fromArg.split("=")[1] : process.argv[process.argv.indexOf(fromArg) + 1];
   FROM = Number(inline);
-  if (!Number.isInteger(FROM) || FROM < 1 || FROM > 8) {
-    die(`--from takes a step number from 1 to 8; got "${inline ?? "(nothing)"}".\n\n` +
-        `  Step 1 is the reset. Steps 2-8 are the loaders and the fixtures — run\n` +
-        `  \`npm run db:restore\` with no flag to do all eight.`);
+  // *** THE UPPER BOUND IS COUNTED, NOT TYPED. *** It read "8" and two steps were added in Run 4a,
+  // so `--from=9` was refused for a step that exists — §43's rule about a copy that drifts, in the
+  // smallest possible form. `STEPS` is defined further down, so the range is checked there; this
+  // only rejects what is not a positive integer at all.
+  if (!Number.isInteger(FROM) || FROM < 1) {
+    die(`--from takes a step number; got "${inline ?? "(nothing)"}".\n\n` +
+        `  Step 1 is the reset. The rest are the loaders and the fixtures — run\n` +
+        `  \`npm run db:restore\` with no flag to do all of them.`);
   }
 }
 
@@ -210,7 +214,35 @@ const coverageRows = industries.reduce(
 
 const migrationFiles = readdirSync(MIGRATIONS_DIR).filter((f) => f.endsWith(".sql")).sort();
 
+/**
+ * *** A CHECK MEASURES WHAT ITS STEP DID, NOT WHAT THE DATABASE HAPPENS TO HOLD — Run 4a. ***
+ *
+ * Steps 7 and 8 counted `companies` and `entities` outright, which was exact while nothing else
+ * created either. Run 4a's readings-restore step creates the three GOLDEN companies (Cascade,
+ * Evergreen, Willamette), so those counts became 6 and 7 — and the resume gate, which re-reads a
+ * skipped step's checks to prove it happened, refused every resume past step 9 with "got 6, the
+ * sources say 3". The step had happened; the check was measuring the wrong thing.
+ *
+ * So the two checks name the fixture companies they are about. The list comes from PLAN, never
+ * typed here (§43).
+ */
+const FIXTURE_NAMES_SQL = PLAN.map((p) => `'${String(p.company?.name ?? p.name).replace(/'/g, "''")}'`).join(", ");
+
+const RESTORE_DIR = join(ROOT, "tests/golden/documents/runs/real-model");
+const restoredReadingCount = existsSync(RESTORE_DIR)
+  ? readdirSync(RESTORE_DIR).filter((d) => {
+      const files = existsSync(join(RESTORE_DIR, d))
+        ? readdirSync(join(RESTORE_DIR, d)).filter((f) => f.endsWith(".json")) : [];
+      if (!files.length) return false;
+      try {
+        return !!JSON.parse(readFileSync(join(RESTORE_DIR, d, files[files.length - 1]), "utf8")).scan;
+      } catch { return false; }
+    }).length
+  : 0;
+
 const EXPECT = {
+  restoredReadings: { n: restoredReadingCount,
+                      from: "tests/golden/documents/runs/real-model/*/ — folders holding a run with a scan" },
   migrations:   { n: migrationFiles.length,                              from: rel(MIGRATIONS_DIR) + "/*.sql" },
   requirements: { n: sheet.length,                                       from: rel(XLSX_PATH) + " — Requirements sheet" },
   agencies:     { n: agencies.length,                                    from: rel(agenciesFile.path) },
@@ -468,20 +500,75 @@ const STEPS = [
     title: "the staging test accounts",
     cmd: ["node", ["--env-file=.env.local", "scripts/seed-staging-testdata.js"]],
     checks: [
-      ["companies", "select count(*) from public.companies", EXPECT.companies],
+      ["the fixture companies",
+       `select count(*) from public.companies where name in (${FIXTURE_NAMES_SQL})`, EXPECT.companies],
       ["profiles", "select count(*) from public.profiles", EXPECT.profiles],
-      ["entities", "select count(*) from public.entities", EXPECT.entitiesAfter7],
+      // *** WHAT STEP 7 GUARANTEES IS THAT EACH ONE HAS A SITE, NOT THAT THERE ARE EXACTLY THREE. ***
+      // Counting sites made this check fail the moment step 8 gave Alpha a second one, so any
+      // resume past step 8 was refused for a step that had plainly succeeded. Distinct companies
+      // holding at least one site is the thing step 7 actually does, and it stays true afterwards.
+      ["fixture companies with a site",
+       `select count(distinct c.id) from public.companies c`
+       + ` join public.entities e on e.company_id = c.id`
+       + ` where c.name in (${FIXTURE_NAMES_SQL})`, EXPECT.companies],
     ],
   },
   {
     title: "Alpha's second site and its facts",
     cmd: ["node", ["--env-file=.env.local", "scripts/seed-multisite-fixture.js", "--apply"]],
     checks: [
-      ["entities", "select count(*) from public.entities", EXPECT.entitiesAfter8],
+      ["their sites",
+       `select count(*) from public.entities e join public.companies c on c.id = e.company_id`
+       + ` where c.name in (${FIXTURE_NAMES_SQL})`, EXPECT.entitiesAfter8],
       ["company_switches", "select count(*) from public.company_switches", EXPECT.facts],
     ],
   },
+  {
+    // *** THE GOLDEN READINGS, BACK WITHOUT BUYING THEM AGAIN — Audits Run 4a, item 4. ***
+    //
+    // §145 recorded the cost of a reset: Cascade's twelve documents had to be re-read on the real
+    // model, $2.36 and ten minutes, every time the chain was proved from zero. That is a rule
+    // expensive to obey, which §3.7 says is a rule that gets skipped — and the thing it made
+    // expensive is the one check that proves the migration chain builds a database from nothing.
+    //
+    // The readings are on disk in `tests/golden/documents/runs/real-model/`, each a complete
+    // normalised answer with the model and prompt hash that produced it. This puts them back
+    // through the same `saveScan` a live scan uses, so gaps, conditions, deadlines, labels and
+    // proposals land identically. **No model call.** `ai_call_id` is null on every restored scan,
+    // because none was made for it.
+    title: "Cascade's golden readings, restored from stored runs (no model call)",
+    cmd: ["npm", ["run", "golden:docs", "--",
+                  "--restore-from", "tests/golden/documents/runs/real-model"]],
+    // *** THE COUNT IS DERIVED FROM THE FILES, NOT TYPED. *** §98's rule: a hardcoded number is a
+    // copy and a copy drifts. It is how many case folders under `real-model/` hold a run with a
+    // scan in it, counted here from the directory.
+    checks: [
+      ["document_scans", "select count(*) from public.document_scans", EXPECT.restoredReadings],
+      ["documents", "select count(*) from public.documents", "nonzero"],
+      // Not one of them may carry a ledger link: a restored reading that claimed a receipt would
+      // be attributing somebody else's call to it.
+      ["scans with an ai_call_id",
+       "select count(*) from public.document_scans where ai_call_id is not null", "zero"],
+    ],
+  },
+  {
+    // The audit fixture's own steps, which the audit runner owns: the confirmed 42, and the
+    // testcascade login relinked to whatever company id the restore above created. Running the
+    // golden audit with `--times 0` would do nothing, so it is asked for one cheap agency — the
+    // fixture work happens before any model call and the run is what proves it happened.
+    title: "the audit fixtures: the confirmed headcount and the Cascade login",
+    cmd: ["node", ["--env-file=.env.local", "scripts/run-golden-audit.js",
+                   "--fixtures-only"]],
+    checks: [
+      ["company_facts", "select count(*) from public.company_facts", "nonzero"],
+    ],
+  },
 ];
+
+if (FROM > STEPS.length) {
+  die(`--from=${FROM} is past the last step; there are ${STEPS.length}.\n\n` +
+      STEPS.map((st, i) => `    ${i + 1}. ${st.title}`).join("\n"));
+}
 
 // ---------------------------------------------------------------------------
 // THE RESUME GATE. Every check belonging to a skipped step must already pass.
@@ -503,7 +590,12 @@ if (FROM > 1) {
     for (const [label, sql, expect] of step.checks) {
       let got;
       try { got = scalar(sql); } catch (e) { failures.push(`step ${i + 1} "${label}": unreadable — ${e.message}`); continue; }
-      if (expect === "nonzero") {
+      // The pair of the branch in the step runner above. A new kind of expectation goes in both; the
+    // formats differ because this one reports per SKIPPED step.
+    if (expect === "zero") {
+      console.log(`    step ${i + 1}  ${label.padEnd(28)} ${String(got).padStart(5)}   expected: 0${got === 0 ? OK : "   NOT MET"}`);
+      if (got !== 0) failures.push(`step ${i + 1} "${label}" came back ${got}; it must be 0.`);
+      } else if (expect === "nonzero") {
         console.log(`    step ${i + 1}  ${label.padEnd(28)} ${String(got).padStart(5)}   expected: more than 0${got === 0 ? "   NOT MET" : OK}`);
         if (got === 0) failures.push(`step ${i + 1} "${label}" is zero.`);
       } else {
@@ -585,7 +677,19 @@ for (const [i, step] of STEPS.entries()) {
       console.log(`  ${label.padEnd(28)} ??    UNREADABLE`);
       continue;
     }
-    if (expect === "nonzero") {
+    // *** ZERO AS THE ANSWER, NOT AS A SYMPTOM. *** The `else` below treats "got 0 and expected 0"
+    // as an empty source file, which is right for a count derived from a seed sheet and wrong for a
+    // check whose whole point is that nothing is there — "no restored reading carries a ledger
+    // link". Its own sentinel, beside "nonzero", rather than weakening that guard.
+    //
+    // *** AND IT IS HERE TWICE, IN TWO FORMATS, ON PURPOSE. *** The resume gate below has its own
+    // judge because it reports per skipped step and in a different shape. Adding this sentinel to
+    // the gate first and not here produced "expected undefined undefined MISMATCH" from this one —
+    // so the two are marked as a pair: a new kind of expectation goes in both.
+    if (expect === "zero") {
+      console.log(`  ${label.padEnd(28)} ${String(got).padStart(5)}   expected: 0`);
+      if (got !== 0) failed = `"${label}" came back ${got}; it must be 0.`;
+    } else if (expect === "nonzero") {
       console.log(`  ${label.padEnd(28)} ${String(got).padStart(5)}   expected: more than 0 (no file-derived count — see the note in this script)`);
       if (got === 0) failed = `"${label}" came back ZERO.`;
     } else {

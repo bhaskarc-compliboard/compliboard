@@ -239,6 +239,23 @@
           "september 9"
         ]
       ]
+    },
+    {
+      "id": "annual-2026-as-a-date",
+      "line": "the 2026 annual report as a DATE due 15 February 2027, not a finding. Condition 4.1 is recurring and the next one is five months out; nobody has failed to do something they still have five months to do.",
+      "type": "item",
+      "collections": [
+        "dates"
+      ],
+      "keywords": [
+        "annual",
+        "report"
+      ],
+      "min_keywords": 1,
+      "date_or_text": [
+        "2027-02-15",
+        "february 15, 2027"
+      ]
     }
   ],
   "must_not": [
@@ -290,6 +307,11 @@
         "ai "
       ],
       "literal": true
+    },
+    {
+      "id": "no-not-yet-due-as-nothing-on-file",
+      "line": "a submission not yet due presented as nothing on file. Read off the rows: any finding with word nothing_on_file whose due_on is after the run date.",
+      "type": "no_future_nothing_on_file"
     }
   ],
   "acceptable": [

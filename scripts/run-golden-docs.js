@@ -68,11 +68,28 @@ const times = Number(flagIndex >= 0 && args[flagIndex + 1] ? args[flagIndex + 1]
 // `--model claude-opus-5` made "claude-opus-5" the case filter and the runner died with "No case
 // matching". Every value-taking flag is now excluded by name, in one list, so adding a third flag
 // cannot reintroduce it.
-const VALUE_FLAGS = ['--times', '--model', '--structured', '--since']
+const VALUE_FLAGS = ['--times', '--model', '--structured', '--since', '--restore-from']
 const valueIndices = new Set(VALUE_FLAGS.map((f) => args.indexOf(f)).filter((i) => i >= 0).map((i) => i + 1))
 const only = args.filter((a, i) => !a.startsWith('--') && !valueIndices.has(i))[0]
 // Re-judge the runs already on disk instead of buying new ones. No model call, no database.
 const fromRuns = args.includes('--from-runs')
+/**
+ * *** PUT THE READINGS BACK WITHOUT BUYING THEM AGAIN — Audits Run 4a, item 4. ***
+ *
+ *   npm run golden:docs -- --restore-from tests/golden/documents/runs/real-model
+ *
+ * §145 recorded the problem: a `db:reset` wipes Cascade's twelve readings, and getting them back
+ * meant re-reading twelve documents on the real model — $2.36 and ten minutes, every time the
+ * migration chain is proved from zero. The readings are already on disk; every stored run carries
+ * the whole normalised answer, the model that produced it, the prompt hash and the structured flag.
+ *
+ * So this uploads each fixture exactly as a live run does and writes the reading through the SAME
+ * `saveScan` — so labels, gaps, conditions, deadlines and proposals land the way a live scan lands
+ * them, because it is the same function doing it. `ai_call_id` is null and `linkLedger: false` says
+ * why: no call was made. **Zero model calls, and the cost line is the proof.**
+ */
+const restoreIdx = args.indexOf('--restore-from')
+const restoreFrom = restoreIdx >= 0 && args[restoreIdx + 1] ? args[restoreIdx + 1] : null
 // Re-judge every stored run from this date instead of the newest `--times`; and write the new
 // verdicts back beside the originals. Both only mean anything with `--from-runs`.
 const since = flagValueEarly('--since')
@@ -125,7 +142,7 @@ const TODAY = new Date().toISOString().slice(0, 10)
 //    measures what a document reading is WORTH, and the answer to that depends on how widely the
 //    model looked. Twenty-one scans at a cap of 2 is a real bill for a number nobody can use, so
 //    it refuses rather than prints a warning nobody reads at the top of a 600-line log.
-if (!fromRuns && process.env.DEV_MAX_SEARCHES) {
+if (!fromRuns && !restoreFrom && process.env.DEV_MAX_SEARCHES) {
   die([
     `DEV_MAX_SEARCHES is set to ${process.env.DEV_MAX_SEARCHES}, which caps web_search.max_uses.`,
     '  This suite is the OPEN BASELINE — search uncapped, as production runs it — and a capped run',
@@ -140,7 +157,7 @@ if (!fromRuns && process.env.DEV_MAX_SEARCHES) {
 //    and an id missing from it costs `null` — which is "not priced", never "free". A bake-off whose
 //    point is cost per scan must not run a configuration it cannot cost, and the failure would be
 //    invisible: the table would simply read "$—" for one row and look like a rendering problem.
-if (!fromRuns && !priceFor(MODEL)) {
+if (!fromRuns && !restoreFrom && !priceFor(MODEL)) {
   die([
     `${MODEL} is not in config/pricing.ts, so every call would record its tokens and NO cost.`,
     "  Add its input and output price from Anthropic's published page — with the date checked —",
@@ -702,6 +719,56 @@ if (fromRuns) {
       + (writeBack ? ', verdicts_rejudged written' : ''))
     results.push({ c, co: { name: COMPANIES[c.company].name }, runs })
   }
+}
+
+// ---------------------------------------------------------------------------
+// RESTORE, NO MODEL CALL
+// ---------------------------------------------------------------------------
+if (restoreFrom) {
+  if (!existsSync(restoreFrom)) die(`No such directory: ${restoreFrom}`)
+  console.log(`  Restoring readings from ${restoreFrom}/ — NO model call is made.\n`)
+  const restored = []
+
+  for (const c of caseFiles) {
+    const dir = `${restoreFrom}/${c.id}`
+    if (!existsSync(dir)) { console.log(`  ${c.id.padEnd(30)} no stored run in that folder`); continue }
+    const files = readdirSync(dir).filter((f) => f.endsWith('.json')).sort()
+    if (!files.length) { console.log(`  ${c.id.padEnd(30)} folder is empty`); continue }
+    // The newest, because a folder may hold several passes and the last one is the reading we mean.
+    const stored = JSON.parse(readFileSync(`${dir}/${files[files.length - 1]}`, 'utf8'))
+    if (!stored.scan) { console.log(`  ${c.id.padEnd(30)} that run has no scan in it`); continue }
+
+    const co = companies[c.company]
+    const { documentId } = await uploadFixture(co, c)
+
+    // The stored answer IS a normalised `DocumentScan` — the runner writes it that way. The three
+    // fields that live beside it on the run file are put back where `saveScan` reads them.
+    const scan = {
+      ...stored.scan,
+      model: stored.model ?? stored.scan.model ?? '(restored)',
+      prompt_sha256: stored.prompt_sha256 ?? stored.scan.prompt_sha256 ?? '',
+      structured: stored.structured ?? stored.scan.structured ?? null,
+    }
+    const { scanId } = await saveScan(db, scan, {
+      documentId, companyId: co.id, entityId: co.entityId, linkLedger: false,
+    })
+
+    // The hash of what went in, so the round trip can be PROVED rather than assumed. Over the
+    // parsed answer only — not the row — because the row carries ids and timestamps the stored
+    // file never had.
+    const sha = createHash('sha256').update(JSON.stringify(stored.scan)).digest('hex')
+    restored.push({ id: c.id, scanId, documentId, file: files[files.length - 1],
+                    model: scan.model, status: scan.status, sha })
+    console.log(`  ${c.id.padEnd(30)} ${String(scan.status).padEnd(14)} ${scan.model}`
+      + `   scan ${String(scanId).slice(0, 8)}  sha ${sha.slice(0, 12)}…`)
+  }
+
+  console.log(`\n  ${restored.length} reading(s) restored. 0 model calls — check with npm run cost.`)
+  mkdirSync(RUNS, { recursive: true })
+  writeFileSync(`${RUNS}/last-restore.json`,
+    JSON.stringify({ from: restoreFrom, at: new Date().toISOString(), restored }, null, 2) + '\n')
+  console.log(`  what was restored, with each answer's hash: ${RUNS}/last-restore.json\n`)
+  process.exit(0)
 }
 
 for (const c of (fromRuns ? [] : caseFiles)) {

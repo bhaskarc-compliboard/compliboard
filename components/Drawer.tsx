@@ -39,9 +39,18 @@ function printDrawer() {
  * one-paragraph summary — and at 560 the summary was a narrow column of serif. `w-full` keeps
  * it filling the screen on anything narrower, so this only widens where there is room.
  */
-function Drawer({ title, sub, children, footer, onClose, company }: {
+function Drawer({ title, sub, children, footer, onClose, company, topLine }: {
   title: string; sub?: string; children: React.ReactNode; footer?: React.ReactNode
   onClose: () => void; company?: string | null
+  /**
+   * *** A LINE ABOVE THE TITLE, IN THE HEADER — Audits Run 4a. ***
+   * The audit section opens a document's report inside its own drawer and needs a way back to the
+   * audit. It was drawn as a fixed overlay at `top-0`, which had no air under it; moving it to the
+   * header's own padding would have put it on top of the title. It belongs in the flow, above the
+   * title, with the same `mt-0.5` gap the sub line has below it — so it is a slot, not an overlay.
+   * `no-print`: a printed report is not navigable.
+   */
+  topLine?: React.ReactNode
 }) {
   return (
     <aside className="print-drawer fixed inset-y-0 right-0 z-50 flex w-full max-w-[720px] flex-col border-l border-gray-200 bg-white shadow-2xl">
@@ -59,6 +68,7 @@ function Drawer({ title, sub, children, footer, onClose, company }: {
       </div>
       <header className="no-print flex items-start justify-between gap-4 px-6 pt-5">
         <div className="min-w-0">
+          {topLine && <div className="no-print mb-2">{topLine}</div>}
           <h2 className="text-lg font-medium leading-snug text-gray-900">{title}</h2>
           {sub && <p className="mt-0.5 text-[12.5px] text-gray-500">{sub}</p>}
         </div>

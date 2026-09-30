@@ -1,0 +1,225 @@
+{
+  "case": "05-sds-supplier",
+  "run": 1,
+  "run_date": "2026-09-29",
+  "model": "claude-opus-5-5",
+  "structured": true,
+  "searches": 1,
+  "cited_sources": 0,
+  "prompt_sha256": "cac86528b1cf869b017a3b164f6bc7de9ff4462a8944fe25932d69dd65918219",
+  "scan_id": "6ef4494a-2309-491a-b9ba-56faffa344ad",
+  "ai_call_id": "01021f08-bb12-4505-8a4f-329b512a2b99",
+  "company_context": "WHO THIS COMPANY IS\n  Name: Cascade Specialty Chemicals, LLC\n  Industry: chemical manufacturing (recorded as chemical-manufacturing)\n  Address: Portland, Oregon\n  State: Oregon\nTheir sites:\n  - Portland — 4410 NW Front Ave, Portland, Oregon 97210 (primary)\n\nWHAT A PERSON HAS CONFIRMED FROM A DOCUMENT\nEach of these was read in the named document and then confirmed by a person.\n  (nothing confirmed yet)\n\nLABELS ALREADY IN USE FOR THIS COMPANY\nAgencies:\n  - Oregon DEQ\n  - Oregon OSHA\nSubjects:\n  - Air Quality Permit\n  - Emergency Action Plan\n  - Emergency Preparedness\n\nFACT KEYS ALREADY IN USE FOR THIS COMPANY\n  - aed_on_site\n  - air_emission_sources\n  - air_permit_type\n  - chemical_release_hazard\n  - emergency_eyewash_shower\n  - employee_count_site\n  - facility_operations\n  - fire_alarm_monitoring\n  - workforce_roles",
+  "company_context_sha256": "6981b061c861d6a6cffcc9c186d4243a6262d06c0d3f3965397fd8f76d22d352",
+  "wall_ms": 45888,
+  "cost_usd": 0.256132,
+  "input_tokens": 40748,
+  "output_tokens": 4157,
+  "json_parsed": true,
+  "compliant_found_in": [],
+  "alternative_pass": false,
+  "verdicts": {
+    "kind": {
+      "verdict": "PASS",
+      "detail": "identity.kind = \"supplier document\""
+    },
+    "issuer-supplier": {
+      "verdict": "PASS",
+      "detail": "identity.issuer = \"northwest alkali products, inc., tacoma, washington (page 1, section 1; section 16 on page 4 names northwest alkali products, regulatory affairs as preparer)\""
+    },
+    "agency-osha": {
+      "verdict": "PASS",
+      "detail": "identity.agencies = [oregon osha]"
+    },
+    "site-not-invented": {
+      "verdict": "FAIL",
+      "detail": "identity.site = \"portland — 4410 nw front ave, portland, oregon 97210\""
+    },
+    "doc-date": {
+      "verdict": "PASS",
+      "detail": "identity.doc_date = 2024-03-18"
+    },
+    "doc-date-kind": {
+      "verdict": "PASS",
+      "detail": "identity.doc_date_kind = \"revised\""
+    },
+    "status": {
+      "verdict": "PASS",
+      "detail": "status = \"not judged\""
+    },
+    "no-gaps": {
+      "verdict": "PASS",
+      "detail": "none"
+    },
+    "no-deadlines": {
+      "verdict": "PASS",
+      "detail": "none"
+    },
+    "no-conditions": {
+      "verdict": "PASS",
+      "detail": "none"
+    },
+    "summary-supplier-document": {
+      "verdict": "PASS",
+      "detail": "[supplier, hazard communication, nothing, fix, current version]"
+    },
+    "label-consistency": {
+      "verdict": "CROSS",
+      "detail": "judged across the three runs, below"
+    },
+    "company-fact-is-inferred": {
+      "verdict": "PASS",
+      "detail": "no such fact was proposed — the spec does not require one"
+    },
+    "no-supplier-or-chemical-facts": {
+      "verdict": "FAIL",
+      "detail": "facts: \"chemical_release_hazard / Company has 50% sodium hydroxide solution on site, a corrosive (Skin Corrosion 1A, Serious Eye Damage 1, Corrosive to Metals 1). CERCLA reportable quantity is 1,000 lb of sodium hydroxide. / CER\"  ||  facts: \"emergency_eyewash_shower / Supplier recommends an emergency eyewash and safety shower within 10 seconds of areas where the caustic is handled / emergency eyewash and safety shower within 10 seconds of work areas / Sectio\"  ||  facts: \"hazardous_waste_streams / Unneutralized spent or spilled caustic is a RCRA D002 corrosive hazardous waste / Unneutralised product is a corrosive hazardous waste (RCRA D002). / Section 13, page 4 / 2024-03-18 / Counts tow\"",
+      "quotes": [
+        {
+          "where": "facts",
+          "text": "chemical_release_hazard / Company has 50% sodium hydroxide solution on site, a corrosive (Skin Corrosion 1A, Serious Eye Damage 1, Corrosive to Metals 1). CERCLA reportable quantity is 1,000 lb of sodium hydroxide. / CERCLA RQ: 1,000 lb. / Section 15, page 4 / 2024-03-18 / A release of 1,000 lb or more must be reported to the National Response Center, and the Emergency Action Plan needs caustic spill procedures. That you hold this product is inferred from having its SDS; your quantities are not stated. / inferred"
+        },
+        {
+          "where": "facts",
+          "text": "emergency_eyewash_shower / Supplier recommends an emergency eyewash and safety shower within 10 seconds of areas where the caustic is handled / emergency eyewash and safety shower within 10 seconds of work areas / Section 8, page 3 / 2024-03-18 / Supports placing and checking eyewash and shower stations at caustic handling and storage points (OSHA 29 CFR 1910.151(c), which Oregon OSHA adopts). / read"
+        },
+        {
+          "where": "facts",
+          "text": "hazardous_waste_streams / Unneutralized spent or spilled caustic is a RCRA D002 corrosive hazardous waste / Unneutralised product is a corrosive hazardous waste (RCRA D002). / Section 13, page 4 / 2024-03-18 / Counts toward the company's hazardous waste generator category and reporting with Oregon DEQ if caustic waste is generated. / inferred"
+        }
+      ],
+      "soft": []
+    },
+    "hazcom-accessible-note": {
+      "verdict": "FAIL",
+      "detail": "only [nothing] of the spec's words appear"
+    },
+    "freshness-2024": {
+      "verdict": "PASS",
+      "detail": "[2024, newer]"
+    }
+  },
+  "scan": {
+    "identity": {
+      "kind": "supplier_document",
+      "title": "Safety Data Sheet: Sodium Hydroxide Solution, 50% (Northwest Alkali Products, Version 4.1)",
+      "issuer": "Northwest Alkali Products, Inc., Tacoma, Washington (page 1, Section 1; Section 16 on page 4 names Northwest Alkali Products, Regulatory Affairs as preparer)",
+      "agencies": [
+        "Oregon OSHA"
+      ],
+      "subjects": [
+        "Hazard Communication"
+      ],
+      "site": "Portland — 4410 NW Front Ave, Portland, Oregon 97210",
+      "jurisdiction": [
+        "Oregon",
+        "federal"
+      ],
+      "doc_date": "2024-03-18",
+      "doc_date_kind": "revised",
+      "page_refs": {}
+    },
+    "summary": "This is the supplier's Safety Data Sheet for the 50% sodium hydroxide (caustic soda) solution it sells you. It is Northwest Alkali's document, not Cascade's, so there is nothing in it for you to fix or judge. What matters on your side: keep the current version where workers can get to it, use it in your hazard communication training and container labels, and have the eyewash and shower, PPE, storage separation and spill response it calls for.",
+    "status": "not_judged",
+    "significant_date": "2024-03-18",
+    "significant_date_kind": "revised",
+    "freshness_note": "Revised March 18, 2024 (Version 4.1, replacing 4.0 from August 2, 2021). That makes it about 2.5 years old, and it was written before federal OSHA's May 20, 2024 update to the Hazard Communication Standard. Suppliers had deadlines to reissue SDSs under the updated rule, and Oregon OSHA adopted the update in 2026 with its own delayed effective dates (OAR 437-002-0376). Ask Northwest Alkali whether a newer version has been issued. The date gives no sign it is wrong, but a reissued version is likely out there or on the way.",
+    "gaps": [],
+    "conditions": [],
+    "deadlines": [],
+    "facts": [
+      {
+        "key": "chemical_release_hazard",
+        "value": "Company has 50% sodium hydroxide solution on site, a corrosive (Skin Corrosion 1A, Serious Eye Damage 1, Corrosive to Metals 1). CERCLA reportable quantity is 1,000 lb of sodium hydroxide.",
+        "quote": "CERCLA RQ: 1,000 lb.",
+        "locator": "Section 15, page 4",
+        "as_of": "2024-03-18",
+        "affects": "A release of 1,000 lb or more must be reported to the National Response Center, and the Emergency Action Plan needs caustic spill procedures. That you hold this product is inferred from having its SDS; your quantities are not stated.",
+        "basis": "inferred",
+        "quote_verified": true
+      },
+      {
+        "key": "emergency_eyewash_shower",
+        "value": "Supplier recommends an emergency eyewash and safety shower within 10 seconds of areas where the caustic is handled",
+        "quote": "emergency eyewash and safety shower within 10 seconds of work areas",
+        "locator": "Section 8, page 3",
+        "as_of": "2024-03-18",
+        "affects": "Supports placing and checking eyewash and shower stations at caustic handling and storage points (OSHA 29 CFR 1910.151(c), which Oregon OSHA adopts).",
+        "basis": "read",
+        "quote_verified": true
+      },
+      {
+        "key": "hazardous_waste_streams",
+        "value": "Unneutralized spent or spilled caustic is a RCRA D002 corrosive hazardous waste",
+        "quote": "Unneutralised product is a corrosive hazardous waste (RCRA D002).",
+        "locator": "Section 13, page 4",
+        "as_of": "2024-03-18",
+        "affects": "Counts toward the company's hazardous waste generator category and reporting with Oregon DEQ if caustic waste is generated.",
+        "basis": "inferred",
+        "quote_verified": true
+      }
+    ],
+    "version_of": {
+      "title": null,
+      "confidence": "high"
+    },
+    "expected_missing": [
+      {
+        "title": "Written Hazard Communication Program with chemical inventory",
+        "why": "The program ties SDSs like this one to labeling, SDS access and employee training at the Portland site.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "SDS library or index covering every hazardous chemical on site",
+        "why": "Only this one SDS is in the file set, and a chemical manufacturer usually has many.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Employee hazard communication training records",
+        "why": "Shows workers were trained on corrosives like this caustic, and on the updated HazCom labels and SDS format once Oregon's dates apply.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "PPE hazard assessment certification",
+        "why": "Section 8 calls for goggles, face shield, chemical gloves, apron and boots. A written hazard assessment usually records this.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Eyewash and safety shower inspection or flush log",
+        "why": "Backs up the 10-second-access recommendation in Section 8.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Hazardous substance reporting (EPCRA Tier II / Oregon State Fire Marshal hazardous substance survey)",
+        "why": "Sodium hydroxide stored above reporting thresholds is usually reported every year. On-site quantities are unknown.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Hazardous waste generator registration or records with Oregon DEQ",
+        "why": "D002 corrosive waste is a common waste stream at chemical plants.",
+        "basis": "similar companies, not a checked requirement"
+      },
+      {
+        "title": "Spill response or spill prevention plan",
+        "why": "Covers caustic containment, neutralization and keeping it out of drains, as Section 6 describes.",
+        "basis": "similar companies, not a checked requirement"
+      }
+    ],
+    "confidence_notes": "All four pages were clear and readable. I am sure of what the SDS says, its revision date, its version and who supplied it. The site is inferred: the SDS names no customer or location, so I put it at Portland because that is the company's only site. The facts about your own operations (that you hold this product, that you may generate D002 waste) are inferred from having the SDS, not stated in it. On the regulatory timing: federal OSHA amended HazCom on May 20, 2024 and later pushed its compliance deadlines back by four months. Oregon OSHA adopted the amended standard in 2026 with its own delayed effective dates under OAR 437-002-0376. I have not confirmed those Oregon dates, so no deadline is listed here. Check them with Oregon OSHA. I also cannot tell whether OSHA treats this 50% aqueous solution as a substance or a mixture for transition timing. I did not judge the SDS's content because it is the supplier's document.",
+    "could_not_read": {
+      "reason": null,
+      "way_forward": null
+    },
+    "raw_text": "{\"identity\":{\"kind\":\"supplier_document\",\"title\":\"Safety Data Sheet: Sodium Hydroxide Solution, 50% (Northwest Alkali Products, Version 4.1)\",\"issuer\":\"Northwest Alkali Products, Inc., Tacoma, Washington (page 1, Section 1; Section 16 on page 4 names Northwest Alkali Products, Regulatory Affairs as preparer)\",\"agencies\":[\"Oregon OSHA\"],\"subjects\":[\"Hazard Communication\"],\"site\":\"Portland — 4410 NW Front Ave, Portland, Oregon 97210\",\"jurisdiction\":[\"Oregon\",\"federal\"],\"doc_date\":\"2024-03-18\",\"doc_date_kind\":\"revised\"},\"summary\":\"This is the supplier's Safety Data Sheet for the 50% sodium hydroxide (caustic soda) solution it sells you. It is Northwest Alkali's document, not Cascade's, so there is nothing in it for you to fix or judge. What matters on your side: keep the current version where workers can get to it, use it in your hazard communication training and container labels, and have the eyewash and shower, PPE, storage separation and spill response it calls for.\",\"status\":\"not_judged\",\"significant_date\":\"2024-03-18\",\"significant_date_kind\":\"revised_on\",\"freshness_note\":\"Revised March 18, 2024 (Version 4.1, replacing 4.0 from August 2, 2021). That makes it about 2.5 years old, and it was written before federal OSHA's May 20, 2024 update to the Hazard Communication Standard. Suppliers had deadlines to reissue SDSs under the updated rule, and Oregon OSHA adopted the update in 2026 with its own delayed effective dates (OAR 437-002-0376). Ask Northwest Alkali whether a newer version has been issued. The date gives no sign it is wrong, but a reissued version is likely out there or on the way.\",\"gaps\":[],\"conditions\":[],\"deadlines\":[],\"facts\":[{\"key\":\"chemical_release_hazard\",\"value\":\"Company has 50% sodium hydroxide solution on site, a corrosive (Skin Corrosion 1A, Serious Eye Damage 1, Corrosive to Metals 1). CERCLA reportable quantity is 1,000 lb of sodium hydroxide.\",\"basis\":\"inferred\",\"quote\":\"CERCLA RQ: 1,000 lb.\",\"locator\":\"Section 15, page 4\",\"as_of\":\"2024-03-18\",\"affects\":\"A release of 1,000 lb or more must be reported to the National Response Center, and the Emergency Action Plan needs caustic spill procedures. That you hold this product is inferred from having its SDS; your quantities are not stated.\"},{\"key\":\"emergency_eyewash_shower\",\"value\":\"Supplier recommends an emergency eyewash and safety shower within 10 seconds of areas where the caustic is handled\",\"basis\":\"read\",\"quote\":\"emergency eyewash and safety shower within 10 seconds of work areas\",\"locator\":\"Section 8, page 3\",\"as_of\":\"2024-03-18\",\"affects\":\"Supports placing and checking eyewash and shower stations at caustic handling and storage points (OSHA 29 CFR 1910.151(c), which Oregon OSHA adopts).\"},{\"key\":\"hazardous_waste_streams\",\"value\":\"Unneutralized spent or spilled caustic is a RCRA D002 corrosive hazardous waste\",\"basis\":\"inferred\",\"quote\":\"Unneutralised product is a corrosive hazardous waste (RCRA D002).\",\"locator\":\"Section 13, page 4\",\"as_of\":\"2024-03-18\",\"affects\":\"Counts toward the company's hazardous waste generator category and reporting with Oregon DEQ if caustic waste is generated.\"}],\"version_of_title\":\"\",\"version_of_confidence\":\"high\",\"expected_missing\":[{\"title\":\"Written Hazard Communication Program with chemical inventory\",\"why\":\"The program ties SDSs like this one to labeling, SDS access and employee training at the Portland site.\",\"basis\":\"similar companies, not a checked requirement\"},{\"title\":\"SDS library or index covering every hazardous chemical on site\",\"why\":\"Only this one SDS is in the file set, and a chemical manufacturer usually has many.\",\"basis\":\"similar companies, not a checked requirement\"},{\"title\":\"Employee hazard communication training records\",\"why\":\"Shows workers were trained on corrosives like this caustic, and on the updated HazCom labels and SDS format once Oregon's dates apply.\",\"basis\":\"similar companies, not a checked requirement\"},{\"title\":\"PPE hazard assessment certification\",\"why\":\"Section 8 calls for goggles, face shield, chemical gloves, apron and boots. A written hazard assessment usually records this.\",\"basis\":\"similar companies, not a checked requirement\"},{\"title\":\"Eyewash and safety shower inspection or flush log\",\"why\":\"Backs up the 10-second-access recommendation in Section 8.\",\"basis\":\"similar companies, not a checked requirement\"},{\"title\":\"Hazardous substance reporting (EPCRA Tier II / Oregon State Fire Marshal hazardous substance survey)\",\"why\":\"Sodium hydroxide stored above reporting thresholds is usually reported every year. On-site quantities are unknown.\",\"basis\":\"similar companies, not a checked requirement\"},{\"title\":\"Hazardous waste generator registration or records with Oregon DEQ\",\"why\":\"D002 corrosive waste is a common waste stream at chemical plants.\",\"basis\":\"similar companies, not a checked requirement\"},{\"title\":\"Spill response or spill prevention plan\",\"why\":\"Covers caustic containment, neutralization and keeping it out of drains, as Section 6 describes.\",\"basis\":\"similar companies, not a checked requirement\"}],\"confidence_notes\":\"All four pages were clear and readable. I am sure of what the SDS says, its revision date, its version and who supplied it. The site is inferred: the SDS names no customer or location, so I put it at Portland because that is the company's only site. The facts about your own operations (that you hold this product, that you may generate D002 waste) are inferred from having the SDS, not stated in it. On the regulatory timing: federal OSHA amended HazCom on May 20, 2024 and later pushed its compliance deadlines back by four months. Oregon OSHA adopted the amended standard in 2026 with its own delayed effective dates under OAR 437-002-0376. I have not confirmed those Oregon dates, so no deadline is listed here. Check them with Oregon OSHA. I also cannot tell whether OSHA treats this 50% aqueous solution as a substance or a mixture for transition timing. I did not judge the SDS's content because it is the supplier's document.\",\"could_not_read_reason\":\"\",\"could_not_read_way_forward\":\"\"}",
+    "json_parsed": true,
+    "model": "claude-opus-5-5",
+    "cited_sources": 0,
+    "searches": null,
+    "structured": true,
+    "prompt_sha256": "cac86528b1cf869b017a3b164f6bc7de9ff4462a8944fe25932d69dd65918219",
+    "quotes_checked": 3,
+    "quotes_verified": 3,
+    "extracted_text": "SAFETY DATA SHEET\nSodium Hydroxide Solution, 50%\nAccording to OSHA Hazard Communication Standard, 29 CFR 1910.1200\nRevision date: March 18, 2024 · Version 4.1 · Supersedes version 4.0 (August\n2, 2021)\nSECTION 1. IDENTIFICATION\nProduct identifier: Sodium Hydroxide Solution, 50% (w/w)\nSynonyms: Caustic soda solution, lye solution, NaOH 50%\nRecommended use: Industrial pH adjustment, cleaning, chemical manufacturing\nSupplier: Northwest Alkali Products, Inc., 3420 Taylor Way, Tacoma, Washington 98421 · Telephone (253) 555-0140\nEmergency telephone: CHEMTREC 1-800-424-9300 (24 hours)\nSECTION 2. HAZARD IDENTIFICATION\nClassification: Skin corrosion, Category 1A (H314); Serious eye damage, Category 1 (H318); Corrosive to metals, Category 1\n(H290)\nSignal word: DANGER\nHazard statements: H290 May be corrosive to metals. H314 Causes severe skin burns and eye damage.\nPrecautionary statements: P260 Do not breathe mist or vapours. P280 Wear protective gloves, protective clothing, eye protection\nand face protection. P301+P330+P331 If swallowed: rinse mouth, do NOT induce vomiting. P303+P361+P353 If on skin (or\nhair): take off immediately all contaminated clothing, rinse skin with water. P305+P351+P338 If in eyes: rinse cautiously with\nwater for several minutes; remove contact lenses if present and easy to do; continue rinsing. P310 Immediately call a poison\ncenter or doctor. P390 Absorb spillage to prevent material damage. P406 Store in a corrosion-resistant container with a resistant\ninner liner.\nPictograms: Corrosion\nSECTION 3. COMPOSITION / INFORMATION ON INGREDIENTS\nSodium hydroxide, CAS 1310-73-2, 48–52%. Water, CAS 7732-18-5, 48–52%.\nSECTION 4. FIRST-AID MEASURES\nEyes: Immediately flush with plenty of water for at least 30 minutes, lifting the eyelids. Get medical attention immediately.\nSkin: Immediately flush with plenty of water for at least 30 minutes while removing contaminated clothing and shoes. Get\nmedical attention immediately. Inhalation: Move to fresh air. If breathing is difficult, give oxygen. Get medical attention.\nIngestion: Do not induce vomiting. Rinse mouth, give water to drink if the person is conscious. Get medical attention\nimmediately.\nSECTION 5. FIRE-FIGHTING MEASURES\nThe product is not flammable. Contact with aluminium, zinc, tin and their alloys generates hydrogen gas, which is flammable.\nUse extinguishing media appropriate to surrounding materials. Wear self-contained breathing apparatus and full protective\nclothing.\nSECTION 6. ACCIDENTAL RELEASE MEASURES\nEvacuate unnecessary personnel. Wear the protective equipment in Section 8. Contain the spill with inert absorbent (sand,\nvermiculite). Neutralise carefully with dilute acid if trained to do so. Do not allow to enter drains or waterways. Collect into a\nsuitable corrosion-resistant container for disposal.\nSECTION 7. HANDLING AND STORAGE\nHandling: Avoid contact with skin, eyes and clothing. Do not breathe mist. Add caustic to water slowly, never water to caustic.\nStorage: Store in a cool, dry, well-ventilated area in the original corrosion-resistant container (polyethylene, lined steel, or\nstainless steel). Keep away from acids, aluminium, zinc, tin, organic halogens and nitro compounds. Keep containers closed.\nSolution may freeze below 54°F (12°C).\nSECTION 8. EXPOSURE CONTROLS / PERSONAL PROTECTION\nExposure limits: Sodium hydroxide — OSHA PEL 2 mg/m³ (TWA); ACGIH TLV 2 mg/m³ (ceiling); NIOSH REL 2 mg/m³\n(ceiling). Engineering controls: Local exhaust ventilation where mist may be generated; emergency eyewash and safety shower\nwithin 10 seconds of work areas. Eye and face protection: Chemical splash goggles and face shield. Skin protection: Neoprene,\nnitrile or butyl rubber gloves, chemical-resistant apron or suit, rubber boots. Respiratory protection: Where mist exceeds\nexposure limits, a NIOSH-approved respirator with particulate filter.\nSECTION 9. PHYSICAL AND CHEMICAL PROPERTIES\nAppearance: Clear, colourless to slightly turbid liquid. Odour: Odourless. pH: 14. Freezing point: 54°F (12°C). Boiling point:\n293°F (145°C). Specific gravity: 1.52 at 68°F (20°C). Solubility in water: Complete. Vapour pressure: 1.5 mm Hg at 68°F.\nSECTION 10. STABILITY AND REACTIVITY\nStable under recommended storage conditions. Reacts violently with acids. Reacts with aluminium, zinc, tin, brass and bronze to\nproduce hydrogen. Absorbs carbon dioxide from the air. Hazardous decomposition: none under normal use.\nSECTION 11. TOXICOLOGICAL INFORMATION\nAcute effects: Severe burns to skin, eyes and mucous membranes on contact; ingestion causes severe burns to the mouth, throat\nand stomach, possibly perforation. Chronic effects: Repeated exposure to mist may cause dermatitis and damage to the\nrespiratory tract. Carcinogenicity: Not listed by IARC, NTP or OSHA.\nSECTION 12. ECOLOGICAL INFORMATION\nHarmful to aquatic life through pH change. Do not release to the environment. Rapidly neutralised in the environment; does not\nbioaccumulate.\nSECTION 13. DISPOSAL CONSIDERATIONS\nDispose of in accordance with federal, state and local regulations. Unneutralised product is a corrosive hazardous waste (RCRA\nD002).\nSECTION 14. TRANSPORT INFORMATION\nUN number: UN1824. Proper shipping name: Sodium hydroxide solution. Hazard class: 8. Packing group: II. DOT reportable\nquantity (RQ): 1,000 lb (sodium hydroxide).\nSECTION 15. REGULATORY INFORMATION\nTSCA: Listed. CERCLA RQ: 1,000 lb. SARA 311/312 hazard categories: Skin corrosion, Serious eye damage, Corrosive to\nmetals. California Proposition 65: Not listed.\nSECTION 16. OTHER INFORMATION\nPrepared by: Northwest Alkali Products, Regulatory Affairs. Revision date: March 18, 2024. Changes from version 4.0: Section\n8 updated to current ACGIH TLV; Section 14 packing group corrected. Disclaimer: The information in this SDS is believed to\nbe accurate as of the revision date. It is the user's responsibility to determine suitability for their use.",
+    "started_at": "2026-09-30T00:01:29.113Z"
+  }
+}

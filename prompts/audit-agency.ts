@@ -65,6 +65,12 @@ CARRY THE READING'S OWN FINDINGS. Where a reading already found something wrong 
 IS a finding — reuse its words rather than re-deriving it in yours, and cite the document. Do not
 invent a new fault in a document whose reading found none.
 
+A SUBMISSION THAT IS NOT DUE YET IS A DATE, NOT A FINDING. If a report, renewal or record is due
+after today, it belongs in "dates" with its due date — not in "findings" as nothing on file. Nobody
+has failed to do something they still have five months to do, and telling them they have is the
+fastest way to make a real finding invisible among false ones. It becomes a finding only once the
+date has passed and nothing is on file; then say so, with the date it was due.
+
 A PROPOSAL IS NOT A FACT. Under a document you may see a list headed "proposed by the reading, not
 confirmed by anyone". Nobody has agreed to those. Never state one as true and never rest a finding on
 one being true. You MAY say that two documents propose different values for the same thing, or that a

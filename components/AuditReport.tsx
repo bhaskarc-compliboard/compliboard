@@ -71,7 +71,7 @@ interface Run {
   id: string; kind: string; scope: string | null; agency_label: string | null; status: string
   section_count: number; done_count: number; readings_as_of: string | null
   created_at: string; finished_at: string | null; summary: RunSummary | null
-  previous_run_id: string | null; cost_usd: number; estimate: string | null
+  previous_run_id: string | null; estimate: string | null
 }
 interface Report { run: Run; sections: Section[]; findings: Finding[]
   /** id -> title, for every document the run read or held. */
@@ -288,8 +288,13 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
     } finally { setBusy(false) }
   }
 
-  const sub = `${run.section_count} section${run.section_count === 1 ? '' : 's'} · `
+  // THE ONE META LINE. Audited date, sections, what it read and what it only listed, and how fresh
+  // the evidence was. No cost: what a reading cost us is our business, not a line on the report
+  // somebody takes to an inspector.
+  const sub = `audited ${fmt(run.finished_at ?? run.created_at)} · `
+    + `${run.section_count} section${run.section_count === 1 ? '' : 's'} · `
     + `${docsRead.length} document${docsRead.length === 1 ? '' : 's'} read`
+    + (docsUnread.length ? `, ${docsUnread.length} held unread` : '')
     + (run.readings_as_of ? ` · readings as of ${fmt(run.readings_as_of)}` : '')
 
   const footer = (
@@ -314,10 +319,13 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
   return (
     <Drawer title={everything ? `Audit of everything · ${run.section_count} sections` : `${agency} audit`}
       sub={sub} onClose={onClose} footer={footer}>
-      <p className="text-[13px] text-gray-500">
-        Audited {fmt(run.finished_at ?? run.created_at)} · {sub}
-        {run.cost_usd > 0 ? ` · $${run.cost_usd.toFixed(4)}` : ''}
-      </p>
+      {/*
+        *** THE HEADER SAID THE SAME THING TWICE, AND ONE OF THEM CARRIED A PRICE. ***
+        The drawer's own `sub` already reads "n sections · m documents read · readings as of …", and
+        this line repeated it with the date and the cost bolted on. The date belongs in the meta
+        line; the cost does not belong on a customer's screen at all (§147). One line now, built
+        once, passed to the Drawer as `sub`.
+      */}
       {run.status !== 'done' && (
         <p className="mt-2 text-[13px] text-gray-600">
           Still running · {run.done_count} of {run.section_count} section

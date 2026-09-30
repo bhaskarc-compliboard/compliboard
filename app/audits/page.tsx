@@ -56,7 +56,7 @@ interface Run {
   section_count: number; done_count: number; readings_as_of: string | null; created_at: string
   started_at: string | null; finished_at: string | null; summary: RunSummary | null
   notified_at: string | null; dismissed_at: string | null; previous_run_id: string | null
-  cost_usd: number; closed_count: number; estimate: string | null
+  closed_count: number; estimate: string | null
 }
 interface Index {
   today: string
@@ -608,7 +608,6 @@ function Audits() {
                                   {prev && r.closed_count > 0
                                     ? ` · ${r.closed_count} of ${prevOpen} from ${fmt(prev.finished_at ?? prev.created_at)} closed`
                                     : ''}
-                                  {r.cost_usd > 0 ? ` · $${r.cost_usd.toFixed(4)}` : ''}
                                 </>}
                           </p>
                           {failed.length > 0 && (
@@ -651,13 +650,20 @@ function Audits() {
         <>
           <div className="no-print fixed inset-0 z-[45] bg-gray-900/30"
             onClick={() => { setOpenDoc(null); setFromAudit(null) }} />
-          <div className="relative">
-            <DocumentReport
+          <DocumentReport
               documentId={openDoc}
               companyName={null}
               onClose={() => { setOpenDoc(null); setFromAudit(null) }}
               onChanged={load}
               folders={idx.folders ?? []}
+              /* The way back, in the header's own flow above the title rather than as an overlay
+                 pinned to the top with nothing under it (§147). `Drawer`'s `topLine` slot. */
+              topLine={
+                <button onClick={() => { setOpenDoc(null) }}
+                  className="cursor-pointer text-[13px] text-[var(--green)] underline hover:text-[var(--green-ink)]">
+                  ← {fromAudit ? 'Back to the audit' : 'Back to Audits'}
+                </button>
+              }
               onMove={async (documentId, folderId) => {
                 await fetch('/api/documents', {
                   method: 'PATCH',
@@ -670,16 +676,7 @@ function Audits() {
                  would be two of them. Documents is the upload surface, and it now shows the
                  hint it is sent (Run 3b, item 5), so this lands somewhere that does the thing. */
               onPickFile={() => { window.location.href = '/documents?add=a+clearer+copy' }}
-            />
-            {/* The way back, drawn over the report's own header. It is the whole point of opening
-                the document here rather than sending somebody to another page. */}
-            <div className="no-print fixed right-0 top-0 z-[60] max-w-[720px] w-full px-6 pt-2">
-              <button onClick={() => { setOpenDoc(null) }}
-                className="cursor-pointer text-[13px] text-[var(--green)] underline hover:text-[var(--green-ink)]">
-                ← {fromAudit ? 'Back to the audit' : 'Back to Audits'}
-              </button>
-            </div>
-          </div>
+          />
         </>
       )}
     </AppLayout>

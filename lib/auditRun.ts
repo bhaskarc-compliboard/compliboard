@@ -60,6 +60,8 @@ export interface RunSummary {
   /** Carried and closed, when this run had a previous one to match against. */
   carried: number
   closed: number
+  /** Findings the code turned into dates because they were not due yet (Run 4a, item 2). */
+  reshaped_to_dates?: Array<{ title: string; due_on: string }>
   /** The titles behind the counts, so a number is never shown without what it is made of. */
   attention: Array<{ title: string; word: string | null; document: string | null }>
   agencies: string[]
@@ -146,7 +148,8 @@ export async function createRun(db: Db, args: {
 function emptySummary(note: string): RunSummary {
   return { total: 0, needs_person: 0, nothing_on_file: 0, stale: 0, on_file: 0, not_a_document_question: 0,
            contradictions: 0, dates_passed: 0, expected: 0, sections: 0, sections_done: 0,
-           could_not_complete: 0, carried: 0, closed: 0, attention: [], agencies: [], note }
+           could_not_complete: 0, carried: 0, closed: 0, reshaped_to_dates: [],
+           attention: [], agencies: [], note }
 }
 
 // ---------------------------------------------------------------------------
@@ -162,7 +165,8 @@ function emptySummary(note: string): RunSummary {
  * than only logged — §5.1, a failure the customer can see is a failure somebody can act on.
  */
 export async function runSection(db: Db, sectionId: string, opts: { today?: string } = {}):
-  Promise<{ status: 'done' | 'could_not_complete'; findings: number; reason?: string }> {
+  Promise<{ status: 'done' | 'could_not_complete'; findings: number; reason?: string
+            reshaped?: Array<{ title: string; due_on: string }> }> {
   const startedAt = new Date().toISOString()
 
   const { data: sec, error: sErr } = await db.from('audit_sections')
@@ -229,9 +233,9 @@ export async function runSection(db: Db, sectionId: string, opts: { today?: stri
         + 'for this agency; the answer itself is kept so it can be looked at.')
     }
 
-    const { rows, handleErrors, readIds, unreadIds } = shapeFindings(obj, built.input, {
+    const { rows, handleErrors, readIds, unreadIds, reshaped } = shapeFindings(obj, built.input, {
       runId: sec.run_id, sectionId, companyId: sec.company_id,
-    })
+    }, { today: opts.today })
 
     if (rows.length) {
       const { error } = await db.from('audit_findings').insert(rows)
@@ -242,6 +246,20 @@ export async function runSection(db: Db, sectionId: string, opts: { today?: stri
         }).eq('id', sectionId)
         return await fail(`The audit was read but its rows would not save: ${error.message}`)
       }
+    }
+
+    // *** THE RESHAPED COUNT, ON THE RUN, SO IT SURVIVES THE REQUEST. ***
+    // A rule enforced in code and reported nowhere is a rule nobody can tell is firing. There is no
+    // column for it on a section, so it accumulates on the run's `summary` jsonb — read-modify-write,
+    // which is safe because the sweep claims one company at a time and runs its sections one after
+    // another (`app/api/jobs/audit-sections/route.ts`). `summariseRun` carries it forward.
+    if (reshaped.length) {
+      const { data: cur } = await db.from('audit_runs').select('summary').eq('id', sec.run_id).maybeSingle()
+      const prevSummary = (cur?.summary ?? {}) as Record<string, unknown>
+      const before = Array.isArray(prevSummary.reshaped_to_dates) ? prevSummary.reshaped_to_dates : []
+      await db.from('audit_runs').update({
+        summary: { ...prevSummary, reshaped_to_dates: [...before, ...reshaped] },
+      }).eq('id', sec.run_id)
     }
 
     if (previous.length) await matchAgainstPrevious(db, sec, previous, obj)
@@ -259,7 +277,7 @@ export async function runSection(db: Db, sectionId: string, opts: { today?: stri
       console.warn(`audit section ${sectionId}: ${handleErrors.length} handle(s) the block did not `
         + `carry: ${handleErrors.slice(0, 5).join(', ')}`)
     }
-    return { status: 'done', findings: rows.length }
+    return { status: 'done', findings: rows.length, reshaped }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
     return await fail(`We could not finish this agency: ${message}`)
@@ -277,12 +295,19 @@ export function shapeFindings(
   obj: Record<string, unknown>,
   input: AuditInput,
   ids: { runId: string; sectionId: string; companyId: string },
+  opts: { today?: string } = {},
 ) {
+  // *** TODAY, FROM THE INPUT THE MODEL WAS GIVEN. *** `input.today` is the date the block told it
+  // to judge against, so the reshaping below uses the same one rather than the server's clock —
+  // otherwise a run judged at 23:59 and shaped at 00:01 would apply two different todays.
+  const today = opts.today ?? input.today ?? new Date().toISOString().slice(0, 10)
   const handles = input.handles
   const scanByDoc = new Map<string, string | null>()
   for (const d of input.documents) scanByDoc.set(d.document_id, d.scan_id ?? null)
 
   const handleErrors: string[] = []
+  /** Findings turned into dates because they were not due yet. Reported and stored. */
+  const reshaped: Array<{ title: string; due_on: string }> = []
   const resolve = (h: unknown): { id: string | null; bad: boolean } => {
     if (h == null || h === '') return { id: null, bad: false }
     const id = handles[String(h).trim().toUpperCase()]
@@ -315,9 +340,27 @@ export function shapeFindings(
       if (kind === 'date' && !str(item.due_on)) useKind = 'finding'
       if (kind === 'contradiction' && !(b.id && str(item.value_a) && str(item.value_b))) useKind = 'finding'
 
-      const word = useKind === 'expected' ? 'nothing_on_file'
+      let word = useKind === 'expected' ? 'nothing_on_file'
         : (str(item.word) && ['on_file', 'stale', 'nothing_on_file', 'not_a_document_question']
             .includes(String(item.word)) ? String(item.word) : null)
+
+      // *** A SUBMISSION NOT YET DUE IS A DATE, ENFORCED — Audits Run 4a, item 2. ***
+      //
+      // The prompt says it (`prompts/audit-agency.ts`) and the prompt is not enough: the first DEQ
+      // runs wrote "Annual report for reporting year 2026 — nothing on file" against a report due
+      // 15 February 2027, five months out. Nobody has failed to do something they still have five
+      // months to do, and a page full of those buries the renewal that really is late.
+      //
+      // So a `nothing_on_file` finding carrying a due date in the future is written as a DATE. Not
+      // dropped — the model saw something real and the date is the useful half of it. Counted, and
+      // the count is reported, because a rule enforced in code silently is a rule nobody can tell
+      // is firing.
+      const due = str(item.due_on)
+      if (useKind === 'finding' && word === 'nothing_on_file' && due && due > today) {
+        useKind = 'date'
+        word = null
+        reshaped.push({ title: title.slice(0, 120), due_on: due })
+      }
 
       rows.push({
         run_id: ids.runId, section_id: ids.sectionId, company_id: ids.companyId,
@@ -330,7 +373,7 @@ export function shapeFindings(
         locator: str(item.locator),
         quote: str(item.quote),
         what_to_do: str(item.what_to_do) ?? str(item.why),
-        due_on: useKind === 'date' ? str(item.due_on) : null,
+        due_on: useKind === 'date' ? due : null,
         recurs: typeof item.recurs === 'boolean' ? item.recurs : null,
         passed: typeof item.passed === 'boolean' ? item.passed : null,
         document_b_id: useKind === 'contradiction' ? b.id : null,
@@ -349,7 +392,7 @@ export function shapeFindings(
   // claimed, because `covers.documents_read` is the model's account of itself.
   const readIds = input.documents.map((d) => d.document_id)
   const unreadIds = input.other_documents.map((d) => d.document_id)
-  return { rows, handleErrors, readIds, unreadIds }
+  return { rows, handleErrors, readIds, unreadIds, reshaped }
 }
 
 // ---------------------------------------------------------------------------
@@ -498,7 +541,7 @@ export async function summariseRun(db: Db, runId: string): Promise<RunSummary> {
     db.from('audit_findings').select('title, kind, word, status, passed, document_id, same_as')
       .eq('run_id', runId).order('ordinal'),
     db.from('audit_sections').select('title, status').eq('run_id', runId).order('ordinal'),
-    db.from('audit_runs').select('previous_run_id').eq('id', runId).maybeSingle(),
+    db.from('audit_runs').select('previous_run_id, summary').eq('id', runId).maybeSingle(),
   ])
   const f = rows ?? []
   const sections = secs ?? []
@@ -554,6 +597,10 @@ export async function summariseRun(db: Db, runId: string): Promise<RunSummary> {
         document: r.document_id ? (titleById.get(r.document_id as string) ?? null) : null,
       })),
     agencies: sections.map((s: { title: string }) => s.title),
+    // Carried forward from what the sections recorded, never recomputed: a reshaped row is a date
+    // row by the time it is in the table and is indistinguishable from a date the model wrote.
+    reshaped_to_dates: (((run?.summary ?? {}) as Record<string, unknown>).reshaped_to_dates
+      ?? []) as Array<{ title: string; due_on: string }>,
     note: null,
   }
 }
