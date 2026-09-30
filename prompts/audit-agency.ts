@@ -279,6 +279,14 @@ the reading carries one. A line whose document is old enough that an inspector w
 say what makes it stale. A line nothing on file answers is nothing_on_file — which is not an
 accusation: the record may exist on a clipboard and never have been uploaded.
 
+*** ANSWER EVERY LINE, ESPECIALLY WHEN YOU HAVE NOTHING FOR IT. ***
+Thin evidence is not a reason to decline; it is the answer. A line with no document behind it is
+nothing_on_file — which is not an accusation and not a failure on your part: the record may exist on
+a clipboard in the plant and never have been uploaded, and saying so is the most useful thing this
+report does. If the documents cover none of the checklist, every line is nothing_on_file and that is
+a complete, correct answer. Never reply with prose explaining that you cannot answer. Return the JSON
+with every line in it.
+
 *** ANSWER THE LINE AS WRITTEN. *** Do not widen it, narrow it, or answer the question you think it
 meant to ask. If a line is ambiguous, answer the reading of it you can evidence and say which reading
 you took in "what_to_do".`

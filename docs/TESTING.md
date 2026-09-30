@@ -2734,3 +2734,53 @@ words your documents' readings use, with how many documents carry each.
 **Rename** works the same way and may invent a new string, which is what renaming is. **Merge may
 not** — it only offers names the company already holds, because a merge onto a name nobody uses is a
 rename with the wrong word.
+
+---
+
+## Audits — against a checklist (30 September 2026)
+
+Audits Run 4c, item 10. Signed in against staging as `testcascade@example.com`.
+
+1. **Open `/audits`** and press **Attach a checklist, your own or your auditor's** under the box. It
+   was inert text until Run 4b and said so; it opens a file picker now. Choose
+   `tests/golden/audits/fixtures/12-auditor-checklist-deq-air.docx` — the DEQ inspector's field form.
+   *(Typing "Audit us against the attached checklist" in the box opens the same picker: the third
+   example line works now.)*
+2. **Pass:** a line appears reading "Auditing against 12-auditor-checklist-deq-air.docx — 16 lines in
+   3 sections", and the report opens. **16 is the point**: the form has A1–A5, B1–B6 and C1–C5, and
+   the count says the whole form was read rather than some of it. The file is also now in Documents,
+   because a checklist is a document and went in through Documents' own path.
+3. **Watch it run.** One section per checklist section, one at a time. The drawer follows it.
+4. **Read the report.** **Pass:**
+   - The header counts by word — "4 on file · 3 out of date · 7 nothing on file · 1 not a document
+     question" — and **carries no score.** *Fail if anything reads "11 of 16"*: a checklist is not a
+     test, and a mark invites the reader to treat five lines as a fail when one of them may be a
+     record kept on a clipboard and never uploaded.
+   - One folded group per section, in the form's order.
+   - Every line shows **its own reference** (A1, B4, C5), the line **as written**, its word, and where
+     a document answers it, that document as a one-line link with the locator and the quote in
+     italics.
+   - A line the model answered with something outside the four words reads **"we did not get an
+     answer for this line"** in amber. That is honest and it is rare; `expiring` and `expired` are
+     mapped to `stale` because they are the same claim in Documents' words, and nothing else is.
+5. **Press Print.** Every folded section prints open, and the last page lists the documents the audit
+   read.
+6. **Attach the same checklist again.** **Pass:** under **Earlier audits against this checklist** the
+   first run is listed, and for each line whose word moved it says so — "B4 stale → on file". Nothing
+   is listed for a line that did not change. This is what `audit_runs.template_lines` exists for: the
+   same questions in the same order, or the comparison is meaningless.
+7. **Attach something that is not a checklist** — a permit, a photo. **Pass:** one plain sentence,
+   "We could not find any checklist lines in that file…", and **no run that looks broken**.
+
+### What this set cannot tell you
+
+Whether the words are right. `npm run golden:audit -- cascade-template` runs both template cases three
+times and judges every line against the key from its spec's AUDIT USE section.
+
+### One thing worth knowing before you write a fixture
+
+**The model will refuse a checklist that names another company**, and it is right to. `check:live`'s
+probe first used Cascade's own form against the Test Gamma fixture company and got back "the checklist
+is for CASCADE SPECIALTY CHEMICALS but the company information says…" instead of JSON. The probe
+writes its own four-line form now, named after nobody. A checklist naming somebody else is worth
+flagging rather than silently auditing.

@@ -26,7 +26,11 @@
  * A grant without a policy and a policy without a grant fail identically from the caller's side —
  * `permission denied` either way — so both directions are checked. AUDIT-CHECKS.md check 27.
  */
+import { existsSync, readFileSync } from 'node:fs'
+
 import { createClient } from '@supabase/supabase-js'
+
+import { costOfSections } from '../lib/auditRun.ts'
 
 const STAGING_REF = 'amzsavsrabrlcprltpom'
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
@@ -679,6 +683,60 @@ if (!(await reachable())) {
   else { console.log(`  ✗ history             the follow-up did not name the prior subject: ${JSON.stringify(followUp.slice(0, 120))}`); failures++ }
 }
 
+/**
+ * ONE SEEDED DOCUMENT, SHARED BY BOTH AUDIT FLOWS — Audits Run 4c.
+ *
+ * Test Gamma Solvents holds no documents, which is right for what it is: a company with a login and
+ * nothing in it. Both audit flows need at least one reading to audit against — and the template flow
+ * found out the hard way, by asking a model to answer eight checklist lines against an empty filing
+ * cabinet and getting prose back instead of JSON.
+ *
+ * *** THE EXPIRY IS A DEADLINE, NOT A COLUMN. *** `document_scans` has no `significant_date`;
+ * migration 049 moved it into `document_index_v`, computed from `document_deadlines` for a permit as
+ * the latest non-recurring deadline whose title matches 'expir'. So the title here is what makes this
+ * read as a permit expiring in 2027 rather than one issued in 2024.
+ */
+const PROBE_AGENCY = 'Oregon DEQ'
+
+async function seedRow(admin, table, row, select) {
+  const q = admin.from(table).insert(row)
+  const { data, error } = select ? await q.select(select).single() : await q
+  // Every write checked: an error read as an absence is how "Cannot read properties of null" ends up
+  // three lines away from its cause (§9a).
+  if (error) throw new Error(`seeding ${table}: ${error.code} ${error.message}`)
+  return data
+}
+
+async function seedProbeDocument(admin, companyId, siteId, fileName) {
+  const doc = await seedRow(admin, 'documents', {
+    company_id: companyId, name: fileName, file_url: `probe/${fileName}`,
+    file_type: 'application/pdf', source: 'upload', status: 'read', entity_id: siteId ?? null,
+  }, 'id')
+  const scan = await seedRow(admin, 'document_scans', {
+    document_id: doc.id, company_id: companyId, entity_id: siteId ?? null,
+    kind: 'permit', status: 'current', is_current: true,
+    title: 'Air Contaminant Discharge Permit (check:live probe)',
+    agencies: [PROBE_AGENCY], subjects: ['Air Quality'],
+    doc_date: '2024-01-01', doc_date_kind: 'issued',
+    summary: 'A probe permit written by check:live. It expires on 1 January 2027 and requires a '
+      + 'daily scrubber pressure-drop log under condition 3.1.',
+  }, 'id')
+  await seedRow(admin, 'document_deadlines', {
+    scan_id: scan.id, document_id: doc.id, company_id: companyId,
+    title: 'Permit expires', due_on: '2027-01-01', recurs: false,
+  })
+  await seedRow(admin, 'document_conditions', {
+    scan_id: scan.id, document_id: doc.id, company_id: companyId, ordinal: 1,
+    condition_ref: '3.1', title: 'Record one scrubber pressure-drop reading per operating day',
+    evidence_expected: 'a daily log',
+  })
+  const { error: lErr } = await admin.from('company_labels')
+    .upsert({ company_id: companyId, kind: 'agency', label: PROBE_AGENCY },
+            { onConflict: 'company_id,kind,label' })
+  if (lErr) throw new Error(`seeding company_labels: ${lErr.code} ${lErr.message}`)
+  return doc.id
+}
+
 // ---------------------------------------------------------------------------
 // THE AUDIT, START TO FINISH, THROUGH THE ROUTES — Audits Run 2c, item 12.
 //
@@ -710,47 +768,9 @@ if (want('audit')) {
       // and the failure surfaced as "Cannot read properties of null (reading 'id')" three lines
       // later — an error read as an absence, for the third time in two runs. `die` here would take
       // the whole check down, so each one raises with the column the database actually objected to.
-      const seed = async (table, row, select) => {
-        const q = admin.from(table).insert(row)
-        const { data, error } = select ? await q.select(select).single() : await q
-        if (error) throw new Error(`seeding ${table}: ${error.code} ${error.message}`)
-        return data
-      }
-
-      const doc = await seed('documents', {
-        company_id: companyId, name: FIXTURE_NAME, file_url: `probe/${FIXTURE_NAME}`,
-        file_type: 'application/pdf', source: 'upload', status: 'read', entity_id: site?.id ?? null,
-      }, 'id')
-      docId = doc.id
-
-      const scan = await seed('document_scans', {
-        document_id: docId, company_id: companyId, entity_id: site?.id ?? null,
-        kind: 'permit', status: 'current', is_current: true,
-        title: 'Air Contaminant Discharge Permit (check:live probe)',
-        agencies: [LABEL], subjects: ['Air Quality'],
-        doc_date: '2024-01-01', doc_date_kind: 'issued',
-        summary: 'A probe permit written by check:live. It expires on 1 January 2027 and requires a '
-          + 'daily scrubber pressure-drop log under condition 3.1.',
-      }, 'id')
-
-      // *** THE EXPIRY IS A DEADLINE, NOT A COLUMN. *** `document_scans` has no
-      // `significant_date`: migration 049 moved it into `document_index_v`, computed at read time
-      // from `document_deadlines` — "a derived field stored is a field that goes stale the first
-      // time you learn something", in that migration's words. For a permit the view takes the
-      // latest non-recurring deadline whose TITLE matches 'expir', so the title here is what makes
-      // this document read as a permit expiring in 2027 rather than one issued in 2024.
-      await seed('document_deadlines', {
-        scan_id: scan.id, document_id: docId, company_id: companyId,
-        title: 'Permit expires', due_on: '2027-01-01', recurs: false,
-      })
-      await seed('document_conditions', {
-        scan_id: scan.id, document_id: docId, company_id: companyId, ordinal: 1,
-        condition_ref: '3.1', title: 'Record one scrubber pressure-drop reading per operating day',
-        evidence_expected: 'a daily log',
-      })
-      const { error: lErr } = await admin.from('company_labels')
-        .upsert({ company_id: companyId, kind: 'agency', label: LABEL }, { onConflict: 'company_id,kind,label' })
-      if (lErr) throw new Error(`seeding company_labels: ${lErr.code} ${lErr.message}`)
+      // The same seed the template flow uses, so there is one definition of "a company with one
+      // readable permit in it".
+      docId = await seedProbeDocument(admin, companyId, site?.id ?? null, FIXTURE_NAME)
 
       // ---- POST, as the signed-in user ----
       const t0 = Date.now()
@@ -793,7 +813,13 @@ if (want('audit')) {
           const wall = ((Date.now() - t0) / 1000).toFixed(1)
           const doneSections = sections.filter((x) => x.status === 'done' && x.ai_call_id)
           const resolved = findings.filter((f) => f.document_id && f.document)
-          const cost = Number(run.cost_usd ?? 0)
+          // *** THE COST COMES OFF THE LEDGER, BECAUSE IT NO LONGER COMES OFF THE ROUTE. ***
+          // Run 4a took `cost_usd` off every customer screen and out of the three routes that
+          // served it (§147). A check is not a customer screen, so it reads `ai_calls` itself —
+          // the same window `lib/auditRun.ts`'s `costOfSections` uses — and the assertion is
+          // unchanged: a real model call leaves a receipt.
+          const cost = await costOfSections(admin, companyId,
+            sections.map((x) => ({ started_at: x.started_at, finished_at: x.finished_at })))
 
           if (doneSections.length) {
             console.log(`  ✓ audit sections       ${doneSections.length} done with an ai_call_id `
@@ -825,6 +851,144 @@ if (want('audit')) {
     if (runId) await admin.from('audit_runs').delete().eq('id', runId)
     if (docId) await admin.from('documents').delete().eq('id', docId)
     await admin.from('company_labels').delete().eq('company_id', companyId).eq('label', LABEL)
+  }
+}
+
+// ---------------------------------------------------------------------------
+// THE TEMPLATE AUDIT, THROUGH THE ROUTES — Audits Run 4c, item 10.
+//
+// The checklist here is the golden case 13 fixture, a real .docx with eight numbered lines. It is
+// uploaded as a document (Documents' path, the same one the box uses), then audited against.
+// What is asserted is the SHAPE the feature promises: one finding per line, each carrying the
+// checklist's own reference. Whether the words are right is `npm run golden:audit` against
+// `tests/golden/audits/cases/cascade-template-13.json`, three runs, judged line by line.
+// ---------------------------------------------------------------------------
+if (want('template')) {
+  const admin = createClient(url, process.env.SUPABASE_SERVICE_ROLE_KEY ?? '', { auth: { persistSession: false } })
+  /**
+   * *** THE CHECKLIST IS NEUTRAL, AND IT HAS TO BE. ***
+   * This used the golden case 13 fixture — Cascade's own monthly form — and the model refused it
+   * twice, both times correctly. First: "you have shown me only 2 documents… neither contains…",
+   * which the template prompt now answers (thin evidence is the answer, not a reason to decline).
+   * Then: "the checklist is for CASCADE SPECIALTY CHEMICALS but the company information says…" —
+   * and that objection is RIGHT. A checklist naming another company is worth flagging rather than
+   * silently auditing, and a probe must not depend on the model ignoring that.
+   *
+   * So the probe writes its own four-line form, named after nobody, as plain text. What is being
+   * checked is the SHAPE — one row per line, each with its reference — not the answers, which is
+   * `npm run golden:audit` against the two template cases.
+   */
+  const CHECKLIST = [
+    'MONTHLY COMPLIANCE SELF-CHECK',
+    '',
+    '1. Current air permit on file and not expired',
+    '2. Scrubber pressure-drop log complete for the month',
+    '3. Records retained for five years and available on request',
+    '4. Emergency contact information posted at the facility',
+  ].join('\n')
+  let docId = null, runId = null, storagePath = null, evidenceId = null
+
+  try {
+    const alive = await fetch(`${BASE}/api/industries`).then((r) => r.ok).catch(() => false)
+    if (!alive) {
+      console.log(`\n  ! template flow SKIPPED — no server at ${BASE}.\n`)
+    } else {
+      // *** A CHECKLIST NEEDS SOMETHING TO BE ANSWERED AGAINST. ***
+      // Without this the model was asked to answer eight lines against an empty filing cabinet and
+      // returned prose instead of JSON — the section came back `could_not_complete (unparseable)`,
+      // which was the honest outcome of an unanswerable question.
+      evidenceId = await seedProbeDocument(admin, companyId, site?.id ?? null,
+        'check-live-template-evidence.pdf')
+
+      const bytes = Buffer.from(CHECKLIST, 'utf8')
+      storagePath = `${companyId}/probe/${Date.now()}-check-live-checklist.txt`
+      const { error: upErr } = await admin.storage.from('company-documents')
+        .upload(storagePath, bytes, { contentType: 'text/plain' })
+      if (upErr) throw new Error(`uploading the checklist: ${upErr.message}`)
+
+      const { data: doc, error: dErr } = await admin.from('documents').insert({
+        company_id: companyId, name: 'check-live-checklist.txt', file_url: storagePath,
+        file_type: 'text/plain', file_size: bytes.length, source: 'upload', status: 'uploaded',
+      }).select('id').single()
+      if (dErr) throw new Error(`the document row: ${dErr.code} ${dErr.message}`)
+      docId = doc.id
+
+      const start = await fetch(`${BASE}/api/audit-runs`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+        body: JSON.stringify({ kind: 'template', template_document_id: docId }),
+      })
+      const started = await start.json().catch(() => ({}))
+      if (!start.ok || !started.id) {
+        console.log(`  ✗ template start       POST -> ${start.status} ${JSON.stringify(started).slice(0, 160)}`)
+        failures++
+      } else {
+        runId = started.id
+        console.log(`  ✓ template start       run ${runId}, ${started.sections} section(s), `
+          + `${started.lines} line(s) read off the checklist`)
+
+        let run = null, findings = []
+        const deadline = Date.now() + 300_000
+        for (;;) {
+          const r = await fetch(`${BASE}/api/audit-runs/${runId}`, { headers: { authorization: `Bearer ${token}` } })
+          const body = await r.json().catch(() => ({}))
+          if (!r.ok) { console.log(`  ✗ template poll        GET -> ${r.status}`); failures++; break }
+          run = body.run; findings = body.findings ?? []
+          if (run?.status === 'done') break
+          if (Date.now() > deadline) {
+            console.log(`  ✗ template poll        still ${run?.status} after 5 minutes`); failures++; break
+          }
+          await new Promise((res) => setTimeout(res, 5000))
+        }
+
+        if (run?.status === 'done') {
+          const withLine = findings.filter((f) => f.template_line)
+          // *** ONE ROW PER LINE, WHATEVER THE ANSWER. *** A checklist with eight lines and seven
+          // rows is a report that lost a question, and the lost one is the one nobody notices.
+          if (withLine.length === started.lines && started.lines > 0) {
+            console.log(`  ✓ template findings    ${withLine.length} finding(s), one per line, each with a `
+              + `template_line — e.g. ${withLine[0].template_line}: `
+              + `"${String(withLine[0].template_text ?? '').slice(0, 44)}"`)
+          } else {
+            // *** A CHECK THAT REPORTS ITS INPUTS, NOT ITS CONCLUSION (§9a). *** The first version
+            // said only "0 rows with a template_line", and the run it was about had already been
+            // cleaned up, so there was nothing left to look at. The section's own state is what
+            // says whether the call failed, came back unparseable, or answered nothing.
+            const secs = (await (await fetch(`${BASE}/api/audit-runs/${runId}`,
+              { headers: { authorization: `Bearer ${token}` } })).json().catch(() => ({}))).sections ?? []
+            console.log(`  ✗ template findings    ${withLine.length} row(s) with a template_line, `
+              + `the checklist has ${started.lines} line(s)`)
+            // The model's own first words, read with the service role because the route does not
+            // expose `raw_text`. Without them "unparseable" is a conclusion with no input behind it.
+            const { data: rawSecs } = await admin.from('audit_sections')
+              .select('title, status, json_parsed, raw_text').eq('run_id', runId)
+            for (const rs of rawSecs ?? []) {
+              console.log(`      ${rs.title.slice(0, 30)} → ${rs.status}, parsed=${rs.json_parsed}`)
+              console.log(`      it said: ${JSON.stringify(String(rs.raw_text ?? '').slice(0, 220))}`)
+            }
+            console.log(`      ${findings.length} finding(s) in total; sections: `
+              + (secs.map((x) => `${x.title.slice(0, 24)}=${x.status}`
+                  + `${x.json_parsed === false ? ' (unparseable)' : ''}`
+                  + `${x.could_not_complete_reason ? ` — ${x.could_not_complete_reason}` : ''}`).join(' · ')
+                 || '(none)'))
+            failures++
+          }
+          const answered = withLine.filter((f) => f.word).length
+          // Not a failure: a word the model wrote outside the four is rejected on purpose and the
+          // report says so. Printed so a drop is visible rather than silent.
+          console.log(`  · template words       ${answered} of ${withLine.length} line(s) carry one of the four words`)
+        }
+      }
+    }
+  } catch (e) {
+    console.log(`  ✗ template flow        threw: ${e instanceof Error ? e.message : String(e)}`)
+    failures++
+  } finally {
+    if (runId) await admin.from('audit_runs').delete().eq('id', runId)
+    if (docId) await admin.from('documents').delete().eq('id', docId)
+    if (evidenceId) await admin.from('documents').delete().eq('id', evidenceId)
+    if (storagePath) await admin.storage.from('company-documents').remove([storagePath])
+    await admin.from('company_labels').delete().eq('company_id', companyId).eq('label', PROBE_AGENCY)
   }
 }
 

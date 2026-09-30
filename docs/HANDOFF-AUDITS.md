@@ -72,6 +72,19 @@ email and the banner did not have to be designed twice.
 | `audit_sections` | One agency, one model call, one claim. `claimed_at` is the compare-and-set the sweep claims with and the recovery releases, exactly as `documents.reading_since` is; `model`, `prompt_sha256`, `input_sha256` and `ai_call_id` are the receipt, so "what produced this" is answerable from the row months later. A section that could not finish carries its reason, and a CHECK means only a failed one may. |
 | `audit_findings` | Every row of an answer — a finding, a date, a contradiction, an expected item — in one table with a `kind`, because they share a lifecycle (`open`, `closed`, `dismissed`), a matcher (`same_as`, `closed_by_run_id`) and a document pointer, and four tables would need four of each. A CHECK per kind means the table cannot hold a half-built row: a date carries `due_on`, a contradiction carries the second document and both values, an expected row is `basis expected` with `word nothing_on_file`. |
 
+Migration 059 adds two columns to `audit_findings` and one to `audit_runs`, for the template audit:
+
+| Column | What it is |
+|---|---|
+| `audit_findings.template_line` / `template_text` | The checklist reference this finding answers, as printed — `A2`, `B4`, `7` — and that line as written. The reference alone means nothing without the form in front of you, so the text is stored too: it is what makes a printed report readable on its own, which is the case the feature exists for. Null on an agency audit. |
+| `audit_runs.template_lines` | The sections and lines as extracted, kept with the run. A re-audit asks the same questions in the same order rather than paying to extract them again — and "what changed since last time" then compares two runs of one questionnaire instead of two questionnaires. |
+
+**The template rule, in one sentence:** an agency audit reads what Documents made of a file and never
+opens one; a template audit opens exactly one — the checklist — because a checklist is not evidence,
+it is the question, and nothing else in the product has read it. `lib/auditTemplate.ts` is that one
+place, it extracts and does not judge, and the judging is a second call with the same audit input an
+agency audit gets, over **every** document the company holds, because a checklist spans regulators.
+
 Every pointer out of these into Documents' tables is a **composite** foreign key on
 `(company_id, <id>)`, so a finding cannot cite another company's document or reading. RLS would not
 catch that on its own — the policy checks the finding's own `company_id`, which is correct, and never
