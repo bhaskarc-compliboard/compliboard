@@ -138,7 +138,15 @@ export async function buildAuditInput(
     .eq('company_id', companyId).order('title').order('document_id')
 
   const all = (indexRows ?? []) as Array<Record<string, unknown>>
+  // *** `'*'` MEANS EVERY DOCUMENT — Audits Run 4b. ***
+  // A template audit is measured against a checklist that spans regulators (case 13's own form
+  // covers the air permit, the forklifts and the extinguishers), so scoping it to one agency label
+  // would answer half its lines "nothing on file" about documents sitting in the next group. The
+  // sentinel is a label no reading can produce: `company_labels` holds what a model wrote, and no
+  // model writes a bare asterisk.
+  const everything = agencyLabel === '*'
   const carries = (row: Record<string, unknown>) => {
+    if (everything) return true
     const a = row.agencies
     const list: string[] = Array.isArray(a) ? (a as string[]) : []
     return list.includes(agencyLabel)
@@ -284,9 +292,15 @@ export function renderAuditInput(i: AuditInput): string {
 
   out.push(`TODAY IS ${i.today}. Every "passed" or "expiring" judgement is against that date.`)
   out.push('')
-  out.push(`THE AGENCY THIS AUDIT IS ABOUT: ${i.agency}`)
-  out.push('Only this agency. Another regulator\'s documents are listed at the end as titles only and')
-  out.push('are not yours to judge here.')
+  if (i.agency === '*') {
+    out.push('THIS AUDIT IS AGAINST A CHECKLIST, NOT ONE AGENCY.')
+    out.push('Every document this company holds is below, because a checklist can ask about any of')
+    out.push('them. Answer only the lines you are given.')
+  } else {
+    out.push(`THE AGENCY THIS AUDIT IS ABOUT: ${i.agency}`)
+    out.push('Only this agency. Another regulator\'s documents are listed at the end as titles only and')
+    out.push('are not yours to judge here.')
+  }
   out.push('')
   out.push('WHO THIS COMPANY IS')
   out.push(`  Name: ${c.name || 'not recorded'}`)
@@ -303,7 +317,9 @@ export function renderAuditInput(i: AuditInput): string {
     : '  (no sites recorded)')
 
   out.push('')
-  out.push(`DOCUMENTS ON FILE FOR ${i.agency.toUpperCase()} — ${i.documents.length}`)
+  out.push(i.agency === '*'
+    ? `EVERY DOCUMENT ON FILE — ${i.documents.length}`
+    : `DOCUMENTS ON FILE FOR ${i.agency.toUpperCase()} — ${i.documents.length}`)
   out.push('Each is named by a HANDLE — D1, D2 — and that handle is how you refer to it. Nothing else.')
   if (!i.documents.length) {
     out.push('  (none — this company holds no document any reading attributed to this agency)')

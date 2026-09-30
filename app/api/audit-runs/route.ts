@@ -14,6 +14,7 @@ import { after } from 'next/server'
 
 import { requireCompany, supabaseAdmin } from '@/lib/auth'
 import { createRun } from '@/lib/auditRun'
+import { extractTemplate, countLines } from '@/lib/auditTemplate'
 import { estimateRun } from '@/lib/auditEstimate'
 import { auditAgenciesFor } from '@/lib/audit'
 import { sweep } from '@/app/api/jobs/audit-sections/route'
@@ -30,14 +31,61 @@ export async function POST(request: NextRequest) {
     const scope = body?.scope == null ? null : String(body.scope).trim().slice(0, 300)
     const entityId = body?.entity_id == null ? null : String(body.entity_id)
 
-    // *** THE TEMPLATE KIND IS REFUSED IN A SENTENCE, NOT A CODE. *** It is the next thing to
-    // build and the table already carries it (058), so the honest answer is that it is not ready —
-    // not a shrug, and not silently treating it as an agency audit (§5.1).
+    // ---------------------------------------------------------------------------
+    // A TEMPLATE AUDIT — Audits Run 4b, item 8.
+    //
+    // The checklist is a document the company has already uploaded, so it has been through
+    // Documents' own path and has a row. This reads it for its LINES — the one place Audits opens a
+    // file, because a checklist is the question and nothing else in the product has read it — and
+    // then makes one section per checklist section.
+    // ---------------------------------------------------------------------------
     if (kind === 'template') {
+      const templateDocumentId = String(body?.template_document_id ?? '').trim()
+      if (!templateDocumentId) {
+        return NextResponse.json({ error: 'Attach the checklist you want to be audited against.' },
+          { status: 400 })
+      }
+      // Ownership on the caller's own client: another company's document is simply not there, and
+      // 058's composite key would refuse the write anyway.
+      const { data: doc } = await db.from('documents')
+        .select('id, name, file_url, file_type').eq('id', templateDocumentId).maybeSingle()
+      if (!doc) return NextResponse.json({ error: 'That file was not found.' }, { status: 404 })
+
+      const { data: blob, error: dlError } = await supabaseAdmin.storage
+        .from('company-documents').download(doc.file_url as string)
+      if (dlError || !blob) {
+        // §5.1: the failure is ours and it says so, and it does not imply the file is at fault.
+        return NextResponse.json({
+          error: 'We could not open that file just now. Nothing was audited; try again in a moment.',
+        }, { status: 502 })
+      }
+
+      const extracted = await extractTemplate({
+        buffer: await blob.arrayBuffer(),
+        fileName: String(doc.name), fileType: String(doc.file_type),
+        companyId,
+      })
+
+      const run = await createRun(supabaseAdmin, {
+        companyId, kind: 'template', scope, entityId, createdBy: userId,
+        templateDocumentId, templateSections: extracted.sections, templateNote: extracted.note,
+        previousRunId: body?.previous_run_id ? String(body.previous_run_id) : null,
+      })
+      const estimate = await estimateRun(supabaseAdmin, companyId, run.sectionIds.length)
+
+      if (run.sectionIds.length) {
+        after(async () => {
+          try { await sweep() } catch (e) { console.error('kicked audit sweep failed:', e) }
+        })
+      }
       return NextResponse.json({
-        error: 'Auditing against one of your own checklists is not ready yet. '
-          + 'You can run an audit by agency in the meantime.',
-      }, { status: 400 })
+        ok: true, id: run.runId, status: run.status, kind: 'template',
+        sections: run.sectionIds.length, lines: countLines(extracted.sections),
+        // The sentence when a file held no lines, so the box can say it rather than showing a run
+        // that looks broken.
+        note: extracted.note,
+        estimate: run.sectionIds.length ? estimate.line : null,
+      })
     }
     if (kind !== 'agency') {
       return NextResponse.json({ error: `We do not know how to run a "${kind}" audit.` }, { status: 400 })

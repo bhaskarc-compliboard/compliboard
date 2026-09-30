@@ -24,7 +24,8 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import AppLayout from '@/components/AppLayout'
 import AuditReport from '@/components/AuditReport'
 import DocumentReport from '@/components/DocumentReport'
-import { authHeaders } from '@/lib/supabase'
+import { authHeaders, createClient } from '@/lib/supabase'
+import { ACCEPTED_FILE_TYPES } from '@/lib/acceptedFiles'
 
 /* ── the shapes the one read returns ──────────────────────────────────────── */
 interface Doc {
@@ -190,6 +191,8 @@ function Audits() {
   const [site, setSite] = useState('all')
   const [groupBy, setGroupBy] = useState<'agency' | 'subject' | 'site'>('agency')
   const firstOpenDone = useRef(false)
+  const checklistInput = useRef<HTMLInputElement>(null)
+  const [attaching, setAttaching] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     try {
@@ -250,6 +253,67 @@ function Audits() {
   }
 
   /**
+   * *** ATTACHING A CHECKLIST — Audits Run 4b, item 8. ***
+   *
+   * It goes in through DOCUMENTS' path — storage, then `POST /api/documents` — because a checklist
+   * IS a document: it belongs in the list, it gets read like anything else, and a second upload
+   * path would mean two places that decide where a file lives. §143's batch is deliberately not
+   * used: a batch exists so a folder drop can be answered once by email, and this is one file the
+   * person is standing in front of.
+   *
+   * Then the audit. The reading of the checklist AS A DOCUMENT and the extraction of its LINES are
+   * different questions asked of the same file, and the second does not wait for the first: a
+   * template audit needs the lines, not the scan's verdict.
+   */
+  async function attachChecklist(file: File) {
+    setAttaching('Uploading…'); setNotice(null); setChoices(null)
+    try {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      const { data: profile } = await supabase.from('profiles')
+        .select('company_id').eq('id', user?.id ?? '').single()
+      const companyId = profile?.company_id
+      if (!companyId) { setNotice('We could not tell which company this is. Try reloading.'); return }
+
+      const path = `${companyId}/unfiled/${Date.now()}-${file.name.replace(/[^\w.\-]/g, '_')}`
+      const { error: upErr } = await supabase.storage.from('company-documents').upload(path, file)
+      if (upErr) { setNotice(`We could not upload that file: ${upErr.message}`); return }
+
+      const dbRes = await fetch('/api/documents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
+        body: JSON.stringify({
+          name: file.name, file_url: path,
+          file_type: file.type || 'application/octet-stream',
+          file_size: file.size, folder_id: null,
+        }),
+      })
+      if (!dbRes.ok) { setNotice(`We could not save ${file.name}.`); return }
+      const { id: documentId } = await dbRes.json()
+
+      setAttaching('Reading the checklist…')
+      const res = await fetch('/api/audit-runs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
+        body: JSON.stringify({
+          kind: 'template', template_document_id: documentId,
+          ...(ask.trim() ? { scope: ask.trim() } : {}),
+        }),
+      })
+      const json = await res.json()
+      if (!res.ok) { setNotice(json?.error ?? 'We could not audit against that just now.'); return }
+      setAsk('')
+      setNotice(json.note
+        ? json.note
+        : `Auditing against ${file.name} — ${json.lines} line`
+          + `${json.lines === 1 ? '' : 's'} in ${json.sections} section`
+          + `${json.sections === 1 ? '' : 's'}.${json.estimate ? ` ${json.estimate}` : ''}`)
+      await load()
+      if (json.id && json.sections) setParam('run', json.id)
+    } finally { setAttaching(null) }
+  }
+
+  /**
    * THE BOX, AND WHAT IT DOES WITH A SENTENCE.
    *
    * Case-insensitive substring against the company's own agency labels, longest label first so
@@ -264,6 +328,13 @@ function Audits() {
     if (!idx.agencies.length) { setNotice('None of your documents carries an agency yet.'); return }
 
     const lower = text.toLowerCase()
+    // "Audit us against the attached checklist" — the third example line. It cannot be answered
+    // without a file, so it opens the picker rather than refusing.
+    if (/\b(checklist|template|attached|attach)\b/.test(lower)) {
+      setNotice('Choose the checklist and we will audit against every line of it.')
+      checklistInput.current?.click()
+      return
+    }
     if (/\b(everything|all|every agency|all agencies)\b/.test(lower)) {
       startRun('all', text); return
     }
@@ -346,6 +417,9 @@ function Audits() {
 
   return (
     <AppLayout>
+      <input ref={checklistInput} type="file" accept={ACCEPTED_FILE_TYPES} className="hidden"
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) attachChecklist(f); e.target.value = '' }} />
+
       <div className="print-page mx-auto w-full max-w-[900px] px-4 pb-16 sm:px-6">
         <div className="no-print pt-6">
           <h1 className="font-serif text-[28px] font-normal text-gray-900">Audits</h1>
@@ -392,11 +466,12 @@ function Audits() {
 
             <div className="no-print mb-6 flex items-start justify-between gap-4">
               <div className="min-w-0">
-                {/* Inert on purpose, and it says so. An affordance that looks live and does nothing
-                    is worse than a sentence that admits it is not here yet (§5.1). */}
-                <p className="text-[12px] text-gray-400">
-                  Attach a checklist, your own or your auditor&rsquo;s · coming next
-                </p>
+                {/* Real since Run 4b. It was inert and said so; now it opens a picker, uploads
+                    through Documents' path, and starts a template audit. */}
+                <button onClick={() => checklistInput.current?.click()} disabled={!!attaching || busy}
+                  className="cursor-pointer text-[12px] text-gray-500 underline hover:text-gray-800 disabled:cursor-not-allowed disabled:text-gray-300 disabled:no-underline">
+                  {attaching ?? 'Attach a checklist, your own or your auditor\u2019s'}
+                </button>
                 <a href="/compliance" className="mt-1 inline-block text-[12px] text-gray-500 underline hover:text-gray-800">
                   Or ask a question in the Compliance Workspace
                 </a>

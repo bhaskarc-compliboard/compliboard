@@ -46,6 +46,8 @@ const TITLE_LINE =
   'hover:underline hover:text-gray-900'
 interface Finding {
   id: string; section_id: string; ordinal: number; kind: string; title: string
+  /** A template finding answers a checklist line; an agency finding leaves both null. */
+  template_line: string | null; template_text: string | null
   word: string | null; basis: string | null
   document_id: string | null; document: DocRef | null
   document_b_id: string | null; document_b: DocRef | null
@@ -67,8 +69,10 @@ interface RunSummary {
   sections: number; sections_done: number; could_not_complete: number
   carried: number; closed: number; agencies: string[]; note: string | null
 }
+interface TemplateSection { title: string; lines: Array<{ ref: string; text: string }> }
 interface Run {
   id: string; kind: string; scope: string | null; agency_label: string | null; status: string
+  template_document_id: string | null; template_lines: TemplateSection[] | null
   section_count: number; done_count: number; readings_as_of: string | null
   created_at: string; finished_at: string | null; summary: RunSummary | null
   previous_run_id: string | null; estimate: string | null
@@ -162,6 +166,12 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
   const [notice, setNotice] = useState<string | null>(null)
   const [reasonFor, setReasonFor] = useState<string | null>(null)
   const [earlier, setEarlier] = useState<Run[]>([])
+  /**
+   * Earlier runs against the SAME checklist, with which lines moved. The comparison is by
+   * `template_line`, which is the only thing that makes two runs comparable — see migration 059.
+   */
+  const [earlierTemplate, setEarlierTemplate] = useState<Array<{
+    run: Run; changed: Array<{ ref: string; was: string | null; now: string | null }> }>>([])
   const [open, setOpen] = useState<Record<string, boolean>>({})
 
   const load = useCallback(async () => {
@@ -182,9 +192,35 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
       const res = await fetch('/api/audit-runs', { headers: await authHeaders() })
       if (!res.ok) return
       const json = await res.json()
-      const mine = (json.runs ?? []).filter((r: Run) =>
-        r.id !== rep.run.id && r.status === 'done' && r.agency_label === rep.run.agency_label)
-      setEarlier(mine)
+      const all: Run[] = json.runs ?? []
+      if (rep.run.kind === 'template') {
+        const same = all.filter((r) => r.id !== rep.run.id && r.status === 'done'
+          && r.template_document_id && r.template_document_id === rep.run.template_document_id)
+        // This run's word per line, to compare against.
+        const nowByRef = new Map(rep.findings.filter((f) => f.template_line)
+          .map((f) => [f.template_line as string, f.word]))
+        const out: Array<{ run: Run; changed: Array<{ ref: string; was: string | null; now: string | null }> }> = []
+        for (const r of same.slice(0, 5)) {
+          const res2 = await fetch(`/api/audit-runs/${r.id}`, { headers: await authHeaders() })
+          if (!res2.ok) continue
+          const body = await res2.json()
+          const changed: Array<{ ref: string; was: string | null; now: string | null }> = []
+          for (const f of (body.findings ?? []) as Finding[]) {
+            if (!f.template_line) continue
+            const now = nowByRef.get(f.template_line) ?? null
+            if (nowByRef.has(f.template_line) && now !== f.word) {
+              changed.push({ ref: f.template_line, was: f.word, now })
+            }
+          }
+          out.push({ run: r, changed })
+        }
+        setEarlierTemplate(out)
+        setEarlier([])
+      } else {
+        setEarlier(all.filter((r) => r.id !== rep.run.id && r.status === 'done'
+          && r.agency_label === rep.run.agency_label))
+        setEarlierTemplate([])
+      }
     })()
   }, [rep])
 
@@ -252,6 +288,19 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
     } finally { setBusy(false) }
   }
 
+  /** One section again, used by both reports. */
+  async function retry(sectionId: string, title: string) {
+    setBusy(true)
+    try {
+      const res = await fetch(`/api/audit-runs/${run.id}/sections/${sectionId}/retry`, {
+        method: 'POST', headers: await authHeaders(),
+      })
+      const j = await res.json().catch(() => null)
+      setNotice(res.ok ? `Running ${title} again.` : (j?.error ?? 'We could not run that again.'))
+      await load(); onChanged()
+    } finally { setBusy(false) }
+  }
+
   async function auditAgain() {
     setBusy(true)
     try {
@@ -315,6 +364,151 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
       </button>
     </>
   )
+
+  /* ── BOARD G: THE REPORT AGAINST A CHECKLIST ─────────────────────────────── */
+  if (run.kind === 'template') {
+    const name = rep.documents?.[run.template_document_id ?? '']?.title ?? 'the checklist'
+    // Counts by word, and no score. *** A CHECKLIST IS NOT A TEST AND HAS NO MARK. *** "11 of 15"
+    // invites the reader to treat four lines as a fail and eleven as a pass, when one of the four
+    // may be a record kept on a clipboard and never uploaded. The words carry what is true.
+    const byWord = (w: string) => openF.filter((f) => f.word === w).length
+    const noAnswer = openF.filter((f) => f.template_line && !f.word).length
+    const bits = [
+      byWord('on_file') ? `${byWord('on_file')} on file` : null,
+      byWord('stale') ? `${byWord('stale')} out of date` : null,
+      byWord('nothing_on_file') ? `${byWord('nothing_on_file')} nothing on file` : null,
+      byWord('not_a_document_question') ? `${byWord('not_a_document_question')} not a document question` : null,
+      noAnswer ? `${noAnswer} we did not get an answer for` : null,
+    ].filter(Boolean)
+
+    return (
+      <Drawer title={`Against ${name}`} sub={sub} onClose={onClose} footer={footer}>
+        <p className="text-[13px] text-gray-600">{bits.join(' · ') || 'Nothing was answered.'}</p>
+        {run.scope && <p className="mt-1 text-[12px] text-gray-400">You asked: &ldquo;{run.scope}&rdquo;</p>}
+        {run.status !== 'done' && (
+          <p className="mt-2 text-[13px] text-gray-600">
+            Still running · {run.done_count} of {run.section_count} section
+            {run.section_count === 1 ? '' : 's'} done{run.estimate ? ` · ${run.estimate}` : ''}
+          </p>
+        )}
+        {notice && <p className="no-print mt-2 text-[13px] text-gray-700">{notice}</p>}
+
+        <p className="mt-3 font-serif text-[15px] leading-relaxed text-gray-800">
+          Every line below is a line of your checklist, answered against the documents you have given
+          us. None of it is a verdict on whether the company complies.
+        </p>
+
+        {/* One folded group per checklist section, in the checklist's own order. */}
+        {sections.map((sec) => {
+          const mine = openF.filter((f) => f.section_id === sec.id)
+            .sort((a, b) => a.ordinal - b.ordinal)
+          const key = `t-${sec.id}`
+          return (
+            <Section_ key={sec.id} title={sec.title} count={mine.length}
+              open={open[key] !== false} onToggle={() => setOpen((o) => ({ ...o, [key]: o[key] === false }))}>
+              {sec.status === 'could_not_complete' ? (
+                <div>
+                  <p className="text-[13px] text-gray-600">{sec.could_not_complete_reason}</p>
+                  <button disabled={busy} onClick={() => retry(sec.id, sec.title)}
+                    className="no-print mt-1 text-[13px] text-[var(--green)] underline disabled:text-gray-300">
+                    Run this section again
+                  </button>
+                </div>
+              ) : mine.map((f) => (
+                <div key={f.id} className="border-b border-gray-100 py-3 last:border-b-0">
+                  <p className="text-[14px] text-gray-900">
+                    <span className="mr-2 font-medium text-gray-500">{f.template_line}</span>
+                    {f.template_text ?? f.title}
+                  </p>
+                  <p className="mt-1 text-[12px]">
+                    {f.word ? (
+                      <span className={AMBER_WORD.has(f.word) ? 'text-[var(--amber)]' : 'text-gray-600'}>
+                        {WORD[f.word] ?? f.word}
+                      </span>
+                    ) : (
+                      <span className="text-[var(--amber)]">we did not get an answer for this line</span>
+                    )}
+                    {f.basis === 'inferred' && <span className="text-gray-400"> · worked out, not stated</span>}
+                    {f.document && (
+                      <>
+                        {' · '}
+                        <button onClick={() => f.document_id && onOpenDoc(f.document_id)}
+                          title={f.document.title}
+                          className="cursor-pointer text-gray-600 hover:underline hover:text-gray-900">
+                          {f.document.title}
+                        </button>
+                        {f.locator ? <span className="text-gray-500"> · {f.locator}</span> : null}
+                      </>
+                    )}
+                    {f.handle_error && (
+                      <span className="text-[var(--amber)]"> · we could not match this to a document</span>
+                    )}
+                  </p>
+                  {f.quote && <p className="mt-1 text-[13px] italic text-gray-600">&ldquo;{f.quote}&rdquo;</p>}
+                  {f.what_to_do && <p className="mt-1 text-[13px] text-gray-700">{f.what_to_do}</p>}
+                  <div className="no-print mt-1.5 flex items-center gap-4">
+                    {f.word === 'nothing_on_file' && (
+                      <a href={`/documents?add=${encodeURIComponent(f.template_text ?? f.title)}`}
+                        className="text-[13px] text-[var(--green)] underline hover:text-[var(--green-ink)]">Add a document</a>
+                    )}
+                    <button onClick={() => setReasonFor(f.id)} className="text-[13px] text-gray-500 hover:text-gray-800">Not right</button>
+                  </div>
+                  {reasonFor === f.id && (
+                    <ReasonBox onCancel={() => setReasonFor(null)} onSave={(rr) => dismiss(f.id, rr)} />
+                  )}
+                </div>
+              ))}
+            </Section_>
+          )
+        })}
+
+        {/* *** EARLIER AUDITS AGAINST THIS CHECKLIST, AND WHAT MOVED. *** The whole reason to keep
+            the lines on the run: the same questions in the same order, so a line's word can be
+            compared. Anything else would be comparing two questionnaires. */}
+        {earlierTemplate.length > 0 && (
+          <Section_ title="Earlier audits against this checklist" count={earlierTemplate.length}
+            open={!!open.earlier} onToggle={() => setOpen((o) => ({ ...o, earlier: !o.earlier }))}>
+            {earlierTemplate.map((e) => (
+              <div key={e.run.id} className="border-b border-gray-100 py-2 last:border-b-0">
+                <p className="text-[13px] text-gray-700">
+                  {fmt(e.run.finished_at ?? e.run.created_at)}
+                  <a href={`/audits?run=${e.run.id}`} className="ml-2 text-[13px] text-[var(--green)] underline">Open</a>
+                </p>
+                {e.changed.length === 0 ? (
+                  <p className="mt-0.5 text-[12px] text-gray-500">No line changed.</p>
+                ) : (
+                  <ul className="mt-0.5 space-y-0.5">
+                    {e.changed.map((c) => (
+                      <li key={c.ref} className="text-[12px] text-gray-600">
+                        <span className="font-medium text-gray-500">{c.ref}</span>{' '}
+                        {(c.was && WORD[c.was]) ?? c.was ?? 'no answer'}
+                        {' → '}
+                        {(c.now && WORD[c.now]) ?? c.now ?? 'no answer'}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ))}
+          </Section_>
+        )}
+
+        {/* The print's last page, as the agency report has. */}
+        <div className="hidden print:block" style={{ breakBefore: 'page' }}>
+          <h3 className="mb-2 mt-6 text-[12px] font-medium uppercase tracking-wide text-gray-700">
+            Documents this audit read
+          </h3>
+          <ol className="space-y-1">
+            {citationOrder(findings, docsRead).map((id, i) => (
+              <li key={id} className="text-[12px] text-gray-700">
+                {i + 1}. {titleOf(id) ?? 'a document that is no longer on file'}
+              </li>
+            ))}
+          </ol>
+        </div>
+      </Drawer>
+    )
+  }
 
   return (
     <Drawer title={everything ? `Audit of everything · ${run.section_count} sections` : `${agency} audit`}
@@ -519,17 +713,8 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
             <div key={s.id} className="border-b border-gray-100 py-2 last:border-b-0">
               <p className="text-[14px] text-gray-900">{s.title}</p>
               <p className="mt-0.5 text-[13px] text-gray-600">{s.could_not_complete_reason}</p>
-              <button disabled={busy} onClick={async () => {
-                setBusy(true)
-                try {
-                  const res = await fetch(`/api/audit-runs/${run.id}/sections/${s.id}/retry`, {
-                    method: 'POST', headers: await authHeaders(),
-                  })
-                  const j = await res.json().catch(() => null)
-                  setNotice(res.ok ? `Running ${s.title} again.` : (j?.error ?? 'We could not run that again.'))
-                  await load(); onChanged()
-                } finally { setBusy(false) }
-              }} className="no-print mt-1 text-[13px] text-[var(--green)] underline disabled:text-gray-300">
+              <button disabled={busy} onClick={() => retry(s.id, s.title)}
+                className="no-print mt-1 text-[13px] text-[var(--green)] underline disabled:text-gray-300">
                 Run this section again
               </button>
             </div>

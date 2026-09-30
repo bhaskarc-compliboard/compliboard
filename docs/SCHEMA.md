@@ -3,8 +3,8 @@
 **GENERATED — do not edit.** `node --env-file=.env.local scripts/schema-doc.js`, and it runs
 inside `npm run db:migrate`, so it cannot be stale by more than one migration.
 
-**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-09-30 18:23 UTC
-**Migrations applied:** 59 — `000` to `058`
+**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-09-30 18:38 UTC
+**Migrations applied:** 60 — `000` to `059`
 
 *Every figure here was read from the catalog of that database. Nothing is copied from the
 migration files, which say what was intended rather than what is there — and the two have
@@ -248,6 +248,8 @@ Every row of an audit answer — finding, date, contradiction, expected — with
 | `closed_reason` | text | yes | — |
 | `dismissed_reason` | text | yes | — |
 | `handle_error` | boolean | no | `false` |
+| `template_line` | text | yes | — |
+| `template_text` | text | yes | — |
 
 **Points at:**
 
@@ -255,8 +257,8 @@ Every row of an audit answer — finding, date, contradiction, expected — with
 - `company_id` → `documents` — ON DELETE SET NULL
 - `company_id` → `companies` — ON DELETE CASCADE
 - `company_id` → `audit_runs` — ON DELETE CASCADE
-- `company_id` → `document_scans` — ON DELETE SET NULL
 - `company_id` → `audit_sections` — ON DELETE CASCADE
+- `company_id` → `document_scans` — ON DELETE SET NULL
 - `company_id` → `documents` — ON DELETE SET NULL
 - `document_b_id` → `documents` — ON DELETE SET NULL
 - `document_id` → `documents` — ON DELETE SET NULL
@@ -296,7 +298,7 @@ Every row of an audit answer — finding, date, contradiction, expected — with
 | `audit_findings_select` | SELECT | authenticated | `(company_id = auth_company_id())` | — |
 | `audit_findings_update` | UPDATE | authenticated | `(company_id = auth_company_id())` | `(company_id = auth_company_id())` |
 
-**Indexes:** `audit_findings_pkey`, `idx_audit_findings_company_run`, `idx_audit_findings_document`, `idx_audit_findings_open`
+**Indexes:** `audit_findings_pkey`, `idx_audit_findings_company_run`, `idx_audit_findings_document`, `idx_audit_findings_open`, `idx_audit_findings_template_line`
 
 ### `audit_runs`
 
@@ -327,6 +329,7 @@ One audit of one company at one moment. Sections are to a run what files are to 
 | `summary` | jsonb | yes | — |
 | `notified_at` | timestamp with time zone | yes | — |
 | `dismissed_at` | timestamp with time zone | yes | — |
+| `template_lines` | jsonb | yes | — |
 
 **Points at:**
 
@@ -405,8 +408,8 @@ One agency (or one template), one model call. claimed_at is the sweep's compare-
 **Points at:**
 
 - `ai_call_id` → `ai_calls` — ON DELETE SET NULL
-- `company_id` → `audit_runs` — ON DELETE CASCADE
 - `company_id` → `companies` — ON DELETE CASCADE
+- `company_id` → `audit_runs` — ON DELETE CASCADE
 - `run_id` → `audit_runs` — ON DELETE CASCADE
 
 **Pointed at by:**
@@ -1975,8 +1978,8 @@ One row per nightly run. Answers release gate 2 — did it run, and what did it 
 **Points at:**
 
 - `added_by` → `auth.users` — ON DELETE SET NULL
-- `company_id` → `companies` — ON DELETE CASCADE
 - `company_id` → `documents` — ON DELETE CASCADE
+- `company_id` → `companies` — ON DELETE CASCADE
 - `document_id` → `documents` — ON DELETE CASCADE
 - `document_id` → `documents` — ON DELETE CASCADE
 - `entity_id` → `entities` — ON DELETE CASCADE
@@ -2747,4 +2750,5 @@ filtered HERE so no consumer can forget it (CLAUDE.md §3.2). A corrected link
 056
 057
 058
+059
 ```

@@ -27,6 +27,7 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync } from 
 import { askAIWithCitations, extractJsonText, modelForTask } from '../lib/ai.ts'
 import { buildAuditInput, auditAgenciesFor } from '../lib/audit.ts'
 import { createRun, runSection, finishRunIfDone, summariseRun, shapeFindings } from '../lib/auditRun.ts'
+import { extractTemplate } from '../lib/auditTemplate.ts'
 import { auditAgencyPrompt, auditSectionPrompt, AUDIT_SECTIONS } from '../prompts/audit-agency.ts'
 
 const PROD_REF = 'dsfwmafnphdlfogetsus'
@@ -235,6 +236,35 @@ function evaluate(check, answer, ctx) {
       return bad.length
         ? { verdict: 'FAIL', detail: bad.map((f) => `"${String(f.title).slice(0, 44)}"`).join(' · ') }
         : { verdict: 'PASS', detail: 'no expected item appears as a finding' }
+    }
+    case 'line_word': {
+      // *** READ OFF THE ROWS, BY THE CHECKLIST'S OWN REFERENCE. *** A template report is only
+      // readable beside the form if line A2 is the same line it was last month, so the check names
+      // the ref and nothing else. A line with no row at all is a different failure from a line with
+      // the wrong word, and both are said.
+      const row = (ctx.lines ?? []).find((l) => String(l.template_line).toUpperCase() === check.ref.toUpperCase())
+      if (!row) return { verdict: 'FAIL', detail: `no row for line ${check.ref}` }
+      if (!row.word) return { verdict: 'FAIL', detail: `line ${check.ref} got no word at all` }
+      return check.accept.includes(row.word)
+        ? { verdict: 'PASS', detail: `${check.ref} = ${row.word}` }
+        : { verdict: 'FAIL', detail: `${check.ref} = ${row.word}, the key accepts ${check.accept.join(' or ')}` }
+    }
+    case 'every_line_answered': {
+      const lines = ctx.lines ?? []
+      const blank = lines.filter((l) => !l.word)
+      if (!lines.length) return { verdict: 'FAIL', detail: 'no line rows at all' }
+      return blank.length === 0
+        ? { verdict: 'PASS', detail: `${lines.length} line(s), every one answered` }
+        : { verdict: 'FAIL', detail: `${blank.length} of ${lines.length} got no word: `
+            + blank.map((l) => l.template_line).join(', ') }
+    }
+    case 'no_score': {
+      // A mark out of a total, anywhere in the answer. "11 of 15" invites a reader to treat four
+      // lines as a fail when one of them may be a record kept on a clipboard.
+      const hits = allStrings(answer).filter((t) => /\b\d+\s*(?:of|\/|out of)\s*\d+\b/i.test(t))
+      return hits.length
+        ? { verdict: 'FAIL', detail: hits.slice(0, 2).map((h) => `"${h.slice(0, 60)}"`).join(' · ') }
+        : { verdict: 'PASS', detail: 'nothing carries a score' }
     }
     case 'no_future_nothing_on_file': {
       // *** READ OFF THE ROWS, NOT THE PROSE. *** The offence is structural: a finding whose word
@@ -452,6 +482,58 @@ function resolveHandles(answer, handles) {
  * The JSON run files are still written, because the input block, its sha and the raw text are the
  * only way to attribute a result six weeks later.
  */
+/**
+ * A TEMPLATE CASE, AS ROWS — Audits Run 4b, item 9.
+ *
+ * The checklist is one of the company's own documents (the fixture the documents runner uploaded),
+ * so this finds it by file name, extracts its lines — a model call, task `audit`, the same one the
+ * route makes — creates the run and runs every section. The judge then reads the FINDING ROWS by
+ * `template_line`, which is the only thing that makes two runs of the same checklist comparable.
+ */
+async function runTemplateAsRows(co, c) {
+  const t0 = Date.now()
+  const { data: doc, error } = await db.from('documents')
+    .select('id, name, file_url, file_type').eq('company_id', co.id).eq('name', c.template_file)
+    .order('uploaded_at', { ascending: false }).limit(1).maybeSingle()
+  if (error) die(`looking for ${c.template_file}: ${error.message}`)
+  if (!doc) die(`${c.template_file} is not on file for ${co.name}. Run: npm run golden:docs`)
+
+  const { data: blob, error: dl } = await db.storage.from('company-documents').download(doc.file_url)
+  if (dl || !blob) die(`downloading ${c.template_file}: ${dl?.message ?? 'no file'}`)
+
+  const extracted = await extractTemplate({
+    buffer: await blob.arrayBuffer(), fileName: doc.name, fileType: doc.file_type, companyId: co.id,
+  })
+  const { runId, sectionIds } = await createRun(db, {
+    companyId: co.id, kind: 'template', scope: `golden: ${c.id}`,
+    templateDocumentId: doc.id, templateSections: extracted.sections, templateNote: extracted.note,
+  })
+
+  const mapped = []
+  const reshaped = []
+  for (const sid of sectionIds) {
+    const r = await runSection(db, sid, { today: TODAY })
+    for (const m of r.mappedWords ?? []) mapped.push(m)
+    for (const x of r.reshaped ?? []) reshaped.push(x)
+  }
+  const fin = await finishRunIfDone(db, runId)
+
+  const { data: lines } = await db.from('audit_findings')
+    .select('template_line, template_text, word, document_id, locator, quote, what_to_do, basis, ordinal, kind')
+    .eq('run_id', runId).not('template_line', 'is', null).order('ordinal')
+
+  const answer = await answerFromRows(db, runId)
+  return {
+    answer, runId, lines: lines ?? [],
+    summary: fin.summary ?? await summariseRun(db, runId),
+    handleErrors: [], mapped, reshaped,
+    sections: extracted.sections,
+    calls: [{ wall_ms: Date.now() - t0, cost: null, tokens: null, sources: 0, obj: true, raw: '' }],
+    rowsWritten: (lines ?? []).length,
+    sectionStatus: 'done',
+  }
+}
+
 async function runAsRows(built, co, c, previousRunId) {
   const t0 = Date.now()
   const { runId, sectionIds, agencies } = await createRun(db, {
@@ -854,13 +936,18 @@ for (const c of caseFiles) {
 
   if (fixturesOnly) continue
 
+  if (c.kind !== 'template') {
   const labels = await auditAgenciesFor(db, co.id)
   if (!labels.includes(c.agency)) {
     die(`"${c.agency}" is not one of ${co.name}'s agency labels. Staging has: ${labels.join(' · ') || '(none)'}\n`
       + `  A label is the company's own vocabulary, so this is a state problem, not a typo to fix in the case.`)
   }
+  }
 
-  const built = await buildAuditInput(db, co.id, c.agency, { today: TODAY })
+  // A template case has no agency: its questions come from a checklist and its evidence is every
+  // document the company holds.
+  const isTemplateCase = c.kind === 'template'
+  const built = await buildAuditInput(db, co.id, isTemplateCase ? '*' : c.agency, { today: TODAY })
 
   // Every file any check in this case wants a live reading of, read once per case.
   const wantFiles = [...new Set([...c.must, ...c.must_not, ...(c.acceptable ?? [])]
@@ -874,6 +961,7 @@ for (const c of caseFiles) {
   const ctx = {
     today: TODAY,
     own,
+    lines: [],
     documentIds: [...built.input.documents.map((d) => d.document_id),
                   ...built.input.other_documents.map((d) => d.document_id)],
     documentIdByFile: Object.fromEntries(built.input.documents.map((d) => [d.file_name, d.document_id])),
@@ -884,7 +972,7 @@ for (const c of caseFiles) {
   }
 
   console.log(`  ${'='.repeat(74)}`)
-  console.log(`  ${c.id} — ${c.agency} — ${co.name}`)
+  console.log(`  ${c.id} — ${isTemplateCase ? `against ${c.template_file}` : c.agency} — ${co.name}`)
   console.log(`  input: ${built.input.documents.length} document(s) for this agency, `
             + `${built.input.other_documents.length} other on file · block sha ${built.sha256.slice(0, 12)}…`)
   console.log(`  ${'='.repeat(74)}`)
@@ -897,7 +985,9 @@ for (const c of caseFiles) {
       // `audit_findings`. `previousRunId` is set by `--previous <run id>` for the matcher run.
       const viaRows = !jsonPath
       let r
-      if (viaRows && mode === 'whole') {
+      if (isTemplateCase) {
+        r = await runTemplateAsRows(co, c)
+      } else if (viaRows && mode === 'whole') {
         r = await runAsRows(built, co, c, previousRun)
       } else if (viaRows) {
         const got = await runSections(built, co.id)
@@ -906,7 +996,8 @@ for (const c of caseFiles) {
         r = mode === 'whole' ? await runWhole(built, co.id) : await runSections(built, co.id)
       }
       const { answer, calls, handleErrors } = r
-      const verdicts = judge(c, answer, ctx)
+      // The template checks read the line rows, so they go into the context this run's judging uses.
+      const verdicts = judge(c, answer, { ...ctx, lines: r.lines ?? [] })
       const count = (kind) => kind.filter((k) => verdicts[k.id]?.verdict === 'PASS').length
       const mustPass = count(c.must), mustNotPass = count(c.must_not), okPass = count(c.acceptable ?? [])
       const cost = calls.reduce((s, r) => s + Number(r.cost ?? 0), 0)

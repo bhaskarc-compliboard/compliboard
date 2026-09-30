@@ -1,0 +1,130 @@
+{
+  "id": "cascade-template-13",
+  "title": "The company's own monthly EHS self-check, audited against Cascade",
+  "key": "13-company-self-check.md",
+  "company": "cascade",
+  "kind": "template",
+  "template_file": "13-company-self-check.docx",
+  "note": "Lines and words from spec 13's AUDIT USE section. Its lines are numbered 1 to 8 by the form itself.",
+  "must": [
+    {
+      "id": "1",
+      "line": "1 on file, the permit, expiring November 15, 2026; whether it is posted is not a document question",
+      "type": "line_word",
+      "ref": "1",
+      "accept": [
+        "on_file",
+        "stale",
+        "not_a_document_question"
+      ]
+    },
+    {
+      "id": "2",
+      "line": "2 on file, the scrubber log (case 07), with the August week missing and the September 9 reading above 6.0",
+      "type": "line_word",
+      "ref": "2",
+      "accept": [
+        "on_file",
+        "stale"
+      ]
+    },
+    {
+      "id": "3",
+      "line": "3 on file, the weekly checks in case 07, with the week of September 14 missing",
+      "type": "line_word",
+      "ref": "3",
+      "accept": [
+        "on_file",
+        "stale"
+      ]
+    },
+    {
+      "id": "4",
+      "line": "4 on file, the forklift log (case 06), with its missing days and the horn defect",
+      "type": "line_word",
+      "ref": "4",
+      "accept": [
+        "on_file",
+        "stale"
+      ]
+    },
+    {
+      "id": "5",
+      "line": "5 stale for the annual tag (case 11, due August 20, 2026, passed); the monthly visual check is not a document question",
+      "type": "line_word",
+      "ref": "5",
+      "accept": [
+        "stale",
+        "not_a_document_question",
+        "nothing_on_file"
+      ]
+    },
+    {
+      "id": "6",
+      "line": "6 not a document question",
+      "type": "line_word",
+      "ref": "6",
+      "accept": [
+        "not_a_document_question"
+      ]
+    },
+    {
+      "id": "7",
+      "line": "7 not a document question; nothing on file records the flushing",
+      "type": "line_word",
+      "ref": "7",
+      "accept": [
+        "not_a_document_question",
+        "nothing_on_file"
+      ]
+    },
+    {
+      "id": "8",
+      "line": "8 on file for one supplier's SDS (case 05); nothing on file shows a binder index",
+      "type": "line_word",
+      "ref": "8",
+      "accept": [
+        "on_file",
+        "nothing_on_file"
+      ]
+    },
+    {
+      "id": "every-line-answered",
+      "line": "every line of the checklist gets a row, and no line is left without a word",
+      "type": "every_line_answered"
+    }
+  ],
+  "must_not": [
+    {
+      "id": "no-satisfied",
+      "line": "no line worded satisfied, compliant or met",
+      "type": "forbidden_words",
+      "words": [
+        "satisfied",
+        "compliant",
+        "in compliance",
+        " met ",
+        "all clear"
+      ],
+      "unless": [
+        "ansi-compliant",
+        "non-compliant"
+      ]
+    },
+    {
+      "id": "no-ai-word",
+      "line": "the word AI appears nowhere",
+      "type": "forbidden_words",
+      "words": [
+        "ai "
+      ],
+      "literal": true
+    },
+    {
+      "id": "no-score",
+      "line": "no score: the header counts by word and shows no mark",
+      "type": "no_score"
+    }
+  ],
+  "acceptable": []
+}

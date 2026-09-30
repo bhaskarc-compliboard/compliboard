@@ -158,6 +158,8 @@ export type Database = {
           section_id: string
           source: string
           status: string
+          template_line: string | null
+          template_text: string | null
           title: string
           value_a: string | null
           value_b: string | null
@@ -188,6 +190,8 @@ export type Database = {
           section_id: string
           source?: string
           status?: string
+          template_line?: string | null
+          template_text?: string | null
           title: string
           value_a?: string | null
           value_b?: string | null
@@ -218,6 +222,8 @@ export type Database = {
           section_id?: string
           source?: string
           status?: string
+          template_line?: string | null
+          template_text?: string | null
           title?: string
           value_a?: string | null
           value_b?: string | null
@@ -318,6 +324,7 @@ export type Database = {
           status: string
           summary: Json | null
           template_document_id: string | null
+          template_lines: Json | null
         }
         Insert: {
           agency_label?: string | null
@@ -339,6 +346,7 @@ export type Database = {
           status?: string
           summary?: Json | null
           template_document_id?: string | null
+          template_lines?: Json | null
         }
         Update: {
           agency_label?: string | null
@@ -360,6 +368,7 @@ export type Database = {
           status?: string
           summary?: Json | null
           template_document_id?: string | null
+          template_lines?: Json | null
         }
         Relationships: [
           {

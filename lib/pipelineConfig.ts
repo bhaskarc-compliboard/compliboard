@@ -48,6 +48,13 @@ export type PipelineSwitch =
   // Fix Round 1 C. The one piece here that is not about answer QUALITY: it is about whether the
   // model will stand behind the sources of its own earlier turns. `DECISIONS.md` §128.
   | 'RESEARCH_PROVENANCE'
+  // *** AUDITS RUN 4B. THE TEMPLATE AUDIT'S JSON SCHEMA, AND IT FOLLOWS THIS FILE'S CONVENTION,
+  // NOT THE SCAN'S. *** `AI_SCAN_STRUCTURED` is inverted — it is ON unless the string is exactly
+  // "false" — which made "is the schema on?" a question you had to read code to answer. Every
+  // switch here defaults OFF and an unset variable IS the behaviour (§113), so this one does too:
+  // unset means off, and turning it on is a deliberate act with a measurement behind it. Nothing
+  // is measured in Run 4b; the switch exists so the probe has something to ask about.
+  | 'AI_AUDIT_STRUCTURED'
 
 export const PIPELINE_SWITCHES: readonly PipelineSwitch[] = [
   'RESEARCH_GATE',
@@ -59,6 +66,7 @@ export const PIPELINE_SWITCHES: readonly PipelineSwitch[] = [
   'RESEARCH_PREFER_GOV',
   'RESEARCH_SPECIALIST',
   'RESEARCH_PROVENANCE',
+  'AI_AUDIT_STRUCTURED',
 ] as const
 
 /**

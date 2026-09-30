@@ -45,6 +45,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { modelForTask, devMaxSearches } from '../lib/ai.ts'
 import { SCAN_JSON_SCHEMA } from '../prompts/document-scan.ts'
+import { AUDIT_TEMPLATE_JSON_SCHEMA } from '../prompts/audit-agency.ts'
 
 if (!process.env.ANTHROPIC_API_KEY) { console.error('\n  ANTHROPIC_API_KEY is not set.\n'); process.exit(1) }
 const arg = (name) => { const i = process.argv.indexOf(name); return i >= 0 ? process.argv[i + 1] : null }
@@ -52,6 +53,21 @@ const arg = (name) => { const i = process.argv.indexOf(name); return i >= 0 ? pr
 // model id anywhere in this file — `CLAUDE.md` §3.4a, and the bug that rule was written for.
 const model = arg('--model') || modelForTask('document_scan')
 const schemaOnly = process.argv.includes('--schema-only')
+/**
+ * *** WHICH SCHEMA — Audits Run 4b, item 7. ***
+ *   npm run probe:structured -- --schema audit-template
+ * The real object the template audit would send, imported rather than copied: §136's lesson is
+ * that a probe testing a copy of a schema tests the copy, which is how the scan's schema passed a
+ * probe and then 400'd in production.
+ */
+const schemaIdx = process.argv.indexOf('--schema')
+const schemaName = schemaIdx >= 0 && process.argv[schemaIdx + 1] ? process.argv[schemaIdx + 1] : 'document-scan'
+const SCHEMAS = { 'document-scan': SCAN_JSON_SCHEMA, 'audit-template': AUDIT_TEMPLATE_JSON_SCHEMA }
+const THE_SCHEMA = SCHEMAS[schemaName]
+if (!THE_SCHEMA) {
+  console.error(`\n  --schema takes one of: ${Object.keys(SCHEMAS).join(', ')}; got "${schemaName}".\n`)
+  process.exit(1)
+}
 const cap = devMaxSearches()
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 const searchTool = { type: 'web_search_20250305', name: 'web_search', ...(cap ? { max_uses: cap } : {}) }
@@ -142,8 +158,8 @@ function measure(schema) {
            bytes: JSON.stringify(schema).length }
 }
 
-const m = measure(SCAN_JSON_SCHEMA)
-console.log('  SCAN_JSON_SCHEMA, counted from the object itself:')
+const m = measure(THE_SCHEMA)
+console.log(`  the ${schemaName} schema, counted from the object itself:`)
 console.log(`    objects ${m.objects} · properties ${m.props} · arrays ${m.arrays}`)
 console.log(`    enums ${m.enums} (${m.enumMembers} members) · union types ${m.unions} · descriptions ${m.descriptions}`)
 console.log(`    serialised ${m.bytes} bytes\n`)
@@ -174,14 +190,14 @@ const r3 = schemaOnly ? { ok: null } : await probe('3. the scan-shaped schema + 
 // 4. THE REAL ONE. Asked for the smallest possible answer — the question is whether the schema is
 // ACCEPTED, and a full reading would cost real money to learn the same thing. max_tokens is low and
 // the document is one sentence; a refusal happens before any of that is billed.
-const r4 = await probe('4. THE REAL SCAN_JSON_SCHEMA + web_search', {
+const r4 = await probe(`4. THE REAL ${schemaName} schema + web_search`, {
   ...base,
   max_tokens: 2000,
   messages: [{ role: 'user', content:
     'Read this one-line document: "Air Contaminant Discharge Permit 12-3456, Oregon DEQ, expires '
     + '2027-04-30." Fill in what you can and leave the rest empty.' }],
   tools: [searchTool],
-  output_config: { format: { type: 'json_schema', schema: SCAN_JSON_SCHEMA } },
+  output_config: { format: { type: 'json_schema', schema: THE_SCHEMA } },
 })
 
 const say = (r) => r.ok === null ? 'skipped' : r.ok ? 'accepted' : 'REFUSED'
@@ -190,8 +206,8 @@ console.log(`    model                        : ${model}`)
 console.log(`    schema alone                 : ${say(r1)}`)
 console.log(`    schema + web_search          : ${say(r2)}`)
 console.log(`    scan-shaped schema + search  : ${say(r3)}`)
-console.log(`    *** REAL SCAN_JSON_SCHEMA    : ${say(r4)}`)
+console.log(`    *** the real schema         : ${say(r4)}`)
 // The real schema is the only one of the four that decides anything, so it is the only one the
 // verdict reads. A stand-in that passes while the real schema 400s is the failure this line closes.
-console.log(`\n  Usable for the scan on ${model}: ${r4.ok ? 'YES' : 'NO'}\n`)
+console.log(`\n  Usable for ${schemaName} on ${model}: ${r4.ok ? 'YES' : 'NO'}\n`)
 process.exit(r4.ok ? 0 : 1)

@@ -1,0 +1,200 @@
+{
+  "id": "cascade-template-12",
+  "title": "The DEQ inspector's field form, audited against Cascade",
+  "key": "12-auditor-checklist-deq-air.md",
+  "company": "cascade",
+  "kind": "template",
+  "template_file": "12-auditor-checklist-deq-air.docx",
+  "note": "Lines and words from spec 12's AUDIT USE section. Every check reads the rows by template_line.",
+  "must": [
+    {
+      "id": "A1",
+      "line": "A1 on file, the permit, expiring November 15, 2026",
+      "type": "line_word",
+      "ref": "A1",
+      "accept": [
+        "on_file",
+        "stale"
+      ]
+    },
+    {
+      "id": "A2",
+      "line": "A2 nothing on file; the renewal was due July 18, 2026 by condition 1.3",
+      "type": "line_word",
+      "ref": "A2",
+      "accept": [
+        "nothing_on_file"
+      ]
+    },
+    {
+      "id": "A3",
+      "line": "A3 on file for 2025, the annual report (case 08)",
+      "type": "line_word",
+      "ref": "A3",
+      "accept": [
+        "on_file"
+      ]
+    },
+    {
+      "id": "A4",
+      "line": "A4 nothing on file for 2026",
+      "type": "line_word",
+      "ref": "A4",
+      "accept": [
+        "nothing_on_file"
+      ]
+    },
+    {
+      "id": "A5",
+      "line": "A5 nothing on file for the September 9, 2026 excursion in the scrubber log",
+      "type": "line_word",
+      "ref": "A5",
+      "accept": [
+        "nothing_on_file"
+      ]
+    },
+    {
+      "id": "B1",
+      "line": "B1 on file, the scrubber log (case 07), with its missing August week and the September 9 reading",
+      "type": "line_word",
+      "ref": "B1",
+      "accept": [
+        "on_file",
+        "stale"
+      ]
+    },
+    {
+      "id": "B2",
+      "line": "B2 nothing on file; the annual report says four inspections were done in 2025 but the records are not on file",
+      "type": "line_word",
+      "ref": "B2",
+      "accept": [
+        "nothing_on_file"
+      ]
+    },
+    {
+      "id": "B3",
+      "line": "B3 nothing on file for 2026; last replacement March 14, 2025 per the annual report",
+      "type": "line_word",
+      "ref": "B3",
+      "accept": [
+        "nothing_on_file",
+        "stale"
+      ]
+    },
+    {
+      "id": "B4",
+      "line": "B4 on file, the weekly checks in case 07, with the week of September 14 missing",
+      "type": "line_word",
+      "ref": "B4",
+      "accept": [
+        "on_file",
+        "stale"
+      ]
+    },
+    {
+      "id": "B5",
+      "line": "B5 nothing on file",
+      "type": "line_word",
+      "ref": "B5",
+      "accept": [
+        "nothing_on_file"
+      ]
+    },
+    {
+      "id": "B6",
+      "line": "B6 not a document question, or on file by way of the records above; either passes",
+      "type": "line_word",
+      "ref": "B6",
+      "accept": [
+        "not_a_document_question",
+        "on_file"
+      ]
+    },
+    {
+      "id": "C1",
+      "line": "C1 not a document question",
+      "type": "line_word",
+      "ref": "C1",
+      "accept": [
+        "not_a_document_question"
+      ]
+    },
+    {
+      "id": "C2",
+      "line": "C2 not a document question",
+      "type": "line_word",
+      "ref": "C2",
+      "accept": [
+        "not_a_document_question"
+      ]
+    },
+    {
+      "id": "C3",
+      "line": "C3 not a document question",
+      "type": "line_word",
+      "ref": "C3",
+      "accept": [
+        "not_a_document_question"
+      ]
+    },
+    {
+      "id": "C4",
+      "line": "C4 stale; 42 as of February 2021 in the plan against 65 for 2025 in the 300A",
+      "type": "line_word",
+      "ref": "C4",
+      "accept": [
+        "stale",
+        "not_a_document_question"
+      ]
+    },
+    {
+      "id": "C5",
+      "line": "C5 on file, the Emergency Action Plan (case 01), with its open findings noted",
+      "type": "line_word",
+      "ref": "C5",
+      "accept": [
+        "on_file",
+        "stale"
+      ]
+    },
+    {
+      "id": "every-line-answered",
+      "line": "every line of the checklist gets a row, and no line is left without a word",
+      "type": "every_line_answered"
+    }
+  ],
+  "must_not": [
+    {
+      "id": "no-satisfied",
+      "line": "no line worded satisfied, compliant or met",
+      "type": "forbidden_words",
+      "words": [
+        "satisfied",
+        "compliant",
+        "in compliance",
+        " met ",
+        "all clear"
+      ],
+      "unless": [
+        "ansi-compliant",
+        "non-compliant"
+      ]
+    },
+    {
+      "id": "no-ai-word",
+      "line": "the word AI appears nowhere",
+      "type": "forbidden_words",
+      "words": [
+        "ai "
+      ],
+      "literal": true
+    },
+    {
+      "id": "no-score",
+      "line": "no score: the header counts by word and shows no mark. Read off the rows \u2014 nothing carries a number out of a total.",
+      "type": "no_score"
+    }
+  ],
+  "acceptable": []
+}

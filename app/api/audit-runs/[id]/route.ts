@@ -26,7 +26,7 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ id: str
     const { data: run } = await db.from('audit_runs')
       .select('id, kind, scope, agency_label, entity_id, status, section_count, done_count, '
             + 'readings_as_of, created_at, started_at, finished_at, summary, notified_at, '
-            + 'dismissed_at, previous_run_id, template_document_id')
+            + 'dismissed_at, previous_run_id, template_document_id, template_lines')
       .eq('id', id).maybeSingle()
     if (!run) return NextResponse.json({ error: 'That audit was not found.' }, { status: 404 })
 
@@ -39,7 +39,7 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ id: str
         .select('id, section_id, ordinal, kind, title, word, basis, document_id, scan_id, locator, '
               + 'quote, quote_verified, what_to_do, due_on, recurs, passed, document_b_id, '
               + 'value_a, value_b, source, status, same_as, closed_by_run_id, closed_reason, '
-              + 'dismissed_reason, handle_error')
+              + 'dismissed_reason, handle_error, template_line, template_text')
         .eq('run_id', id).order('ordinal'),
     ])
 
@@ -59,6 +59,8 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ id: str
       documents_read: string[] | null; documents_held_unread: string[] | null
       started_at: string | null; finished_at: string | null }>
     const docIds = [...new Set([
+      // The checklist itself, so the template report can title itself with its name.
+      runRow.template_document_id,
       ...rows.flatMap((f) => [f.document_id, f.document_b_id]),
       ...secRows.flatMap((s) => [...(s.documents_read ?? []), ...(s.documents_held_unread ?? [])]),
     ].filter(Boolean))] as string[]

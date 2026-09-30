@@ -21,7 +21,8 @@ import { createHash } from 'node:crypto'
 
 import { askAIWithCitations, extractJsonText, modelForTask } from './ai.ts'
 import { buildAuditInput, auditAgenciesFor, type AuditInput } from './audit.ts'
-import { auditAgencyPrompt, type PreviousFinding } from '../prompts/audit-agency.ts'
+import { auditAgencyPrompt, auditTemplatePrompt, type PreviousFinding } from '../prompts/audit-agency.ts'
+import { countLines, type TemplateSection } from './auditTemplate.ts'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = { from: (t: string) => any }
@@ -93,9 +94,59 @@ export async function createRun(db: Db, args: {
   entityId?: string | null
   createdBy?: string | null
   previousRunId?: string | null
+  /** A template run: the document the checklist is, and the lines read off it. */
+  templateDocumentId?: string | null
+  templateSections?: TemplateSection[]
+  /** What to say when the file held no lines. `extractTemplate` writes this sentence. */
+  templateNote?: string | null
 }): Promise<{ runId: string; sectionIds: string[]; agencies: string[]; status: string }> {
   const kind = args.kind ?? 'agency'
-  if (kind !== 'agency') throw new Error(`createRun: only the agency kind is built; got "${kind}"`)
+
+  // ---------------------------------------------------------------------------
+  // A TEMPLATE RUN: ONE SECTION PER CHECKLIST SECTION — Audits Run 4b, item 7.
+  //
+  // The sections come from the checklist, not from the company's agencies: a checklist may span
+  // regulators (case 13's own form covers the air permit, forklifts and extinguishers), which is
+  // exactly why a template audit is shown EVERY document the company holds rather than one agency's.
+  // ---------------------------------------------------------------------------
+  if (kind === 'template') {
+    if (!args.templateDocumentId) throw new Error('createRun: a template run needs a document')
+    const sections = args.templateSections ?? []
+    const { data: run, error } = await db.from('audit_runs').insert({
+      company_id: args.companyId,
+      entity_id: args.entityId ?? null,
+      kind: 'template', scope: args.scope ?? null,
+      template_document_id: args.templateDocumentId,
+      template_lines: sections,
+      previous_run_id: args.previousRunId ?? null,
+      section_count: sections.length,
+      created_by: args.createdBy ?? null,
+      status: sections.length ? 'queued' : 'done',
+      ...(sections.length ? {} : {
+        started_at: new Date().toISOString(),
+        finished_at: new Date().toISOString(),
+        summary: emptySummary(args.templateNote
+          ?? 'We could not find any checklist lines in that file, so there was nothing to audit '
+             + 'against. The file is on file.'),
+      }),
+    }).select('id').single()
+    if (error) throw new Error(`createRun (template): ${error.message}`)
+    if (!sections.length) return { runId: run.id, sectionIds: [], agencies: [], status: 'done' }
+
+    const rows = sections.map((sec, i) => ({
+      run_id: run.id, company_id: args.companyId, ordinal: i, title: sec.title,
+    }))
+    const { data: secs, error: sErr } = await db.from('audit_sections').insert(rows).select('id, ordinal')
+    if (sErr) throw new Error(`createRun (template): writing sections: ${sErr.message}`)
+    return {
+      runId: run.id,
+      sectionIds: (secs ?? []).sort((a: { ordinal: number }, b: { ordinal: number }) => a.ordinal - b.ordinal)
+        .map((x: { id: string }) => x.id),
+      agencies: sections.map((x) => x.title), status: 'queued',
+    }
+  }
+
+  if (kind !== 'agency') throw new Error(`createRun: only agency and template are built; got "${kind}"`)
 
   const held = await auditAgenciesFor(db, args.companyId)
   const agencies = !args.agency || args.agency === 'all'
@@ -166,7 +217,8 @@ function emptySummary(note: string): RunSummary {
  */
 export async function runSection(db: Db, sectionId: string, opts: { today?: string } = {}):
   Promise<{ status: 'done' | 'could_not_complete'; findings: number; reason?: string
-            reshaped?: Array<{ title: string; due_on: string }> }> {
+            reshaped?: Array<{ title: string; due_on: string }>
+            mappedWords?: Array<{ ref: string; from: string; to: string }> }> {
   const startedAt = new Date().toISOString()
 
   const { data: sec, error: sErr } = await db.from('audit_sections')
@@ -189,18 +241,36 @@ export async function runSection(db: Db, sectionId: string, opts: { today?: stri
     await db.from('audit_runs').update({ status: 'running', started_at: startedAt })
       .eq('id', sec.run_id).eq('status', 'queued')
 
-    const built = await buildAuditInput(db, sec.company_id, sec.title, { today: opts.today })
+    // *** A TEMPLATE SECTION IS A DIFFERENT QUESTION OVER THE SAME EVIDENCE. ***
+    // The run's kind decides. A template section is shown EVERY document the company holds, because
+    // a checklist spans regulators; the sentinel `'*'` is what `buildAuditInput` takes to mean that.
+    const { data: runRow } = await db.from('audit_runs')
+      .select('kind, template_lines, previous_run_id, template_document_id').eq('id', sec.run_id).maybeSingle()
+    const isTemplate = runRow?.kind === 'template'
+
+    const built = await buildAuditInput(db, sec.company_id, isTemplate ? '*' : sec.title,
+      { today: opts.today })
 
     // The previous run's open findings, if this run is a re-audit. Shown as F1, F2 — the same
     // reason documents are shown as D1, D2: the model must be able to point at one without
     // copying an identifier it can get wrong (§144).
-    const { data: run } = await db.from('audit_runs')
-      .select('previous_run_id').eq('id', sec.run_id).maybeSingle()
-    const previous = run?.previous_run_id
-      ? await previousOpenFindings(db, sec.company_id, run.previous_run_id, sec.title)
+    const previous = runRow?.previous_run_id
+      ? await previousOpenFindings(db, sec.company_id, runRow.previous_run_id, sec.title)
       : []
 
-    const system = auditAgencyPrompt(previous.length ? { previous: previous.map((p) => p.shown) } : undefined)
+    // The section's own lines, off the run, so a re-audit asks the same questions in the same order
+    // rather than paying to extract them again (migration 059's header).
+    const templateSection = isTemplate
+      ? ((runRow?.template_lines ?? []) as TemplateSection[])[sec.ordinal] ?? null
+      : null
+    if (isTemplate && !templateSection) {
+      return await fail('We could not find this part of the checklist on the run any more. '
+        + 'Nothing was recorded for it.')
+    }
+
+    const system = isTemplate
+      ? auditTemplatePrompt(templateSection!)
+      : auditAgencyPrompt(previous.length ? { previous: previous.map((p) => p.shown) } : undefined)
     const promptSha = createHash('sha256').update(system).digest('hex')
     const model = modelForTask('audit')
 
@@ -233,9 +303,23 @@ export async function runSection(db: Db, sectionId: string, opts: { today?: stri
         + 'for this agency; the answer itself is kept so it can be looked at.')
     }
 
-    const { rows, handleErrors, readIds, unreadIds, reshaped } = shapeFindings(obj, built.input, {
-      runId: sec.run_id, sectionId, companyId: sec.company_id,
-    }, { today: opts.today })
+    const shaped = isTemplate
+      ? shapeTemplateFindings(obj, built.input, templateSection!, {
+          runId: sec.run_id, sectionId, companyId: sec.company_id,
+        }, { today: opts.today })
+      : shapeFindings(obj, built.input, {
+          runId: sec.run_id, sectionId, companyId: sec.company_id,
+        }, { today: opts.today })
+    const { rows, handleErrors, readIds, unreadIds, reshaped } = shaped
+    // Only the template shaper produces these; the agency one has no line refs to name.
+    const mappedWords: Array<{ ref: string; from: string; to: string }> =
+      'mappedWords' in shaped ? (shaped.mappedWords as Array<{ ref: string; from: string; to: string }>) : []
+    if (mappedWords.length) {
+      // Counted out loud: a normalisation nobody can see is a normalisation nobody can argue with.
+      console.warn(`audit section ${sectionId}: ${mappedWords.length} word(s) were another `
+        + `section's vocabulary for the same claim: `
+        + mappedWords.map((m) => `${m.ref} ${m.from}→${m.to}`).join(', '))
+    }
 
     if (rows.length) {
       const { error } = await db.from('audit_findings').insert(rows)
@@ -277,7 +361,7 @@ export async function runSection(db: Db, sectionId: string, opts: { today?: stri
       console.warn(`audit section ${sectionId}: ${handleErrors.length} handle(s) the block did not `
         + `carry: ${handleErrors.slice(0, 5).join(', ')}`)
     }
-    return { status: 'done', findings: rows.length, reshaped }
+    return { status: 'done', findings: rows.length, reshaped, mappedWords }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
     return await fail(`We could not finish this agency: ${message}`)
@@ -340,9 +424,8 @@ export function shapeFindings(
       if (kind === 'date' && !str(item.due_on)) useKind = 'finding'
       if (kind === 'contradiction' && !(b.id && str(item.value_a) && str(item.value_b))) useKind = 'finding'
 
-      let word = useKind === 'expected' ? 'nothing_on_file'
-        : (str(item.word) && ['on_file', 'stale', 'nothing_on_file', 'not_a_document_question']
-            .includes(String(item.word)) ? String(item.word) : null)
+      const nw = normaliseWord(item.word)
+      let word = useKind === 'expected' ? 'nothing_on_file' : nw.word
 
       // *** A SUBMISSION NOT YET DUE IS A DATE, ENFORCED — Audits Run 4a, item 2. ***
       //
@@ -393,6 +476,176 @@ export function shapeFindings(
   const readIds = input.documents.map((d) => d.document_id)
   const unreadIds = input.other_documents.map((d) => d.document_id)
   return { rows, handleErrors, readIds, unreadIds, reshaped }
+}
+
+/**
+ * *** A NEAR-MISS WORD IS NORMALISED, NARROWLY, AND COUNTED — Audits Run 4b. ***
+ *
+ * The first template run answered checklist line A1 with `"word": "expiring"` — Documents' status
+ * vocabulary, not the audit's four — and the shaper correctly wrote null, so the report honestly
+ * said "we did not get an answer for this line" about a line the model HAD answered: on file, with
+ * the document, the locator and a quote. The honest report and the lost answer were both real.
+ *
+ * `expiring` and `expired` mean exactly what `stale` means here — the prompt's own definition is
+ * "on file, and old enough or superseded enough that an inspector will ask" — so those two map, and
+ * NOTHING ELSE DOES. A wider mapping would be this function deciding what the model meant; these
+ * two are the same claim in another section's words. The prompt now says so as well, and every
+ * mapping is counted so the report can say how often it happened.
+ */
+const NEAR_MISS: Record<string, string> = { expiring: 'stale', expired: 'stale' }
+const WORDS = ['on_file', 'stale', 'nothing_on_file', 'not_a_document_question']
+
+export function normaliseWord(raw: unknown): { word: string | null; mapped: string | null } {
+  const w = typeof raw === 'string' ? raw.trim().toLowerCase() : ''
+  if (!w) return { word: null, mapped: null }
+  if (WORDS.includes(w)) return { word: w, mapped: null }
+  if (NEAR_MISS[w]) return { word: NEAR_MISS[w], mapped: w }
+  return { word: null, mapped: null }
+}
+
+/**
+ * ONE FINDING PER CHECKLIST LINE, IN THE CHECKLIST'S ORDER — Audits Run 4b, item 7.
+ *
+ * *** THE ORDER AND THE COUNT COME FROM THE CHECKLIST, NOT FROM THE ANSWER. ***
+ * The lines are walked, and each one is matched to whatever the model returned for it. A line the
+ * model skipped still gets a row — `could_not_answer`, said in words — because a checklist with
+ * fourteen lines and thirteen answers is a report that silently lost a question, and the one it lost
+ * is the one nobody will notice. A `ref` the model invented is dropped and counted.
+ *
+ * Everything else is `shapeFindings`' behaviour on purpose: the same four words, the same handle
+ * resolution, the same not-yet-due reshaping. A template finding is a finding; what it adds is the
+ * line it answers.
+ */
+export function shapeTemplateFindings(
+  obj: Record<string, unknown>,
+  input: AuditInput,
+  section: TemplateSection,
+  ids: { runId: string; sectionId: string; companyId: string },
+  opts: { today?: string } = {},
+) {
+  const today = opts.today ?? input.today ?? new Date().toISOString().slice(0, 10)
+  const handles = input.handles
+  const scanByDoc = new Map<string, string | null>()
+  for (const d of input.documents) scanByDoc.set(d.document_id, d.scan_id ?? null)
+
+  const handleErrors: string[] = []
+  const reshaped: Array<{ title: string; due_on: string }> = []
+  /** Words that were another section's vocabulary for the same claim. Counted, never silent. */
+  const mappedWords: Array<{ ref: string; from: string; to: string }> = []
+  const str = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : null)
+
+  /**
+   * *** A REF THE MODEL WROTE AS THE WHOLE LINE IS STILL THAT LINE — Audits Run 4b. ***
+   *
+   * Case 13's run answered every line with `"ref": "1. Air permit posted in the front office and
+   * not expired"` — the reference AND the text. An exact match found nothing, so all eight lines
+   * were written as "we did not get an answer" while the model had answered all eight. The report
+   * was honest and the answer was lost, which is the same shape of failure as the `expiring` word.
+   *
+   * So three attempts, narrowest first, and each is unambiguous:
+   *   1. the ref exactly;
+   *   2. the ref followed by a separator — "1." or "A2 " — which is the ref with the line stuck to it;
+   *   3. the line's own text, when the model sent that instead.
+   * Anything else is unmatched and counted. No fuzzy matching: a ref that merely CONTAINS "1"
+   * would match line 11.
+   */
+  const rawLines = Array.isArray(obj.lines) ? (obj.lines as unknown[]) : []
+  const given: Array<{ ref: string; item: Record<string, unknown> }> = []
+  for (const a of rawLines) {
+    if (!a || typeof a !== 'object') continue
+    const ref = str((a as Record<string, unknown>).ref)
+    if (ref) given.push({ ref, item: a as Record<string, unknown> })
+  }
+
+  const norm = (t: string) => t.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+  const answers = new Map<string, Record<string, unknown>>()
+  const used = new Set<number>()
+  for (const line of section.lines) {
+    const want = line.ref.toUpperCase()
+    let hit = given.findIndex((g, i) => !used.has(i) && g.ref.toUpperCase() === want)
+    if (hit < 0) {
+      hit = given.findIndex((g, i) => {
+        if (used.has(i)) return false
+        const up = g.ref.toUpperCase()
+        return up.startsWith(want) && /[^A-Z0-9]/.test(up.slice(want.length, want.length + 1))
+      })
+    }
+    if (hit < 0) hit = given.findIndex((g, i) => !used.has(i) && norm(g.ref) === norm(line.text))
+    if (hit >= 0) { used.add(hit); answers.set(want, given[hit].item) }
+  }
+  // Refs the model returned that no line claimed. Counted with the handle errors, because both are
+  // the model naming something it was not given.
+  given.forEach((g, i) => { if (!used.has(i)) handleErrors.push(`line "${g.ref.slice(0, 40)}"`) })
+
+  const rows: Array<Record<string, unknown>> = []
+  let ordinal = 0
+
+  for (const line of section.lines) {
+    const a = answers.get(line.ref.toUpperCase())
+    const base = {
+      run_id: ids.runId, section_id: ids.sectionId, company_id: ids.companyId,
+      ordinal: ordinal++, kind: 'finding',
+      template_line: line.ref, template_text: line.text.slice(0, 1000),
+      source: 'reading', same_as: null,
+    }
+
+    if (!a) {
+      // *** A LINE WITH NO ANSWER IS A ROW SAYING SO. *** §5.1: when the failure is ours, say so
+      // plainly. The alternative is a report that looks complete and is not.
+      rows.push({
+        ...base,
+        title: line.text.slice(0, 2000),
+        word: null, basis: 'read', document_id: null, scan_id: null,
+        locator: null, quote: null,
+        what_to_do: 'We did not get an answer for this line. Run this part of the audit again.',
+        due_on: null, recurs: null, passed: null,
+        document_b_id: null, value_a: null, value_b: null, handle_error: false,
+      })
+      continue
+    }
+
+    const h = a.document
+    let docId: string | null = null
+    let bad = false
+    if (h != null && h !== '') {
+      const id = handles[String(h).trim().toUpperCase()]
+      if (id) docId = id
+      else { bad = true; handleErrors.push(String(h).slice(0, 40)) }
+    }
+
+    const norm = normaliseWord(a.word)
+    let word = norm.word
+    if (norm.mapped) mappedWords.push({ ref: line.ref, from: norm.mapped, to: norm.word! })
+    const due = str(a.due_on)
+    let kind = 'finding'
+    // The same rule as an agency audit: not yet due is a date, not a failure (Run 4a, item 2).
+    if (word === 'nothing_on_file' && due && due > today) {
+      kind = 'date'; word = null
+      reshaped.push({ title: line.text.slice(0, 120), due_on: due })
+    }
+
+    rows.push({
+      ...base, kind,
+      title: line.text.slice(0, 2000),
+      word,
+      basis: ['read', 'inferred', 'expected'].includes(String(a.basis)) ? String(a.basis) : 'read',
+      document_id: docId,
+      scan_id: docId ? (scanByDoc.get(docId) ?? null) : null,
+      locator: str(a.locator), quote: str(a.quote),
+      what_to_do: str(a.what_to_do),
+      due_on: kind === 'date' ? due : null,
+      recurs: typeof a.recurs === 'boolean' ? a.recurs : null,
+      passed: typeof a.passed === 'boolean' ? a.passed : null,
+      document_b_id: null, value_a: null, value_b: null,
+      handle_error: bad,
+    })
+  }
+
+  return {
+    rows, handleErrors, reshaped, mappedWords,
+    readIds: input.documents.map((d) => d.document_id),
+    unreadIds: input.other_documents.map((d) => d.document_id),
+  }
 }
 
 // ---------------------------------------------------------------------------

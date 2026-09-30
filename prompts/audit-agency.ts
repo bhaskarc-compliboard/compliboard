@@ -92,7 +92,7 @@ const SHAPE = `Respond with valid JSON only. No markdown, no backticks, no text 
   "findings": [
     {
       "title": "what an inspector would ask about, in the company's own terms",
-      "word": "on_file | stale | nothing_on_file | not_a_document_question",
+      "word": "on_file | stale | nothing_on_file | not_a_document_question — one of these four and no other",
       "document": "<document handle, e.g. D3> or null",
       "locator": "where in that document, or null",
       "quote": "word for word from the reading, or null",
@@ -230,3 +230,93 @@ export function auditSectionPrompt(sectionIndex: number): string {
         + ' contradict it and do not restate its items differently — carry them across exactly.',
   ].join('\n\n')
 }
+
+/* ── THE TEMPLATE AUDIT ────────────────────────────────────────────────────── */
+/**
+ * *** THE SAME AUDITOR, ANSWERING SOMEBODY ELSE'S QUESTIONS — Audits Run 4b, item 7. ***
+ *
+ * An agency audit works out what to ask from the documents' own conditions. A template audit is
+ * handed the questions: a checklist section, its lines, and their references as printed. So ROLE and
+ * HONESTY are unchanged — the four words mean the same things, "nothing on file" is still not an
+ * accusation, a quote is still word for word, and nothing names what did the reading — and only the
+ * SHAPE differs: one answer per line, in the checklist's order, carrying the line's own reference.
+ *
+ * *** IT IS SHOWN EVERY DOCUMENT THE COMPANY HOLDS, NOT ONE AGENCY'S. *** A checklist spans
+ * regulators: case 13's own monthly form covers the air permit, the forklifts and the
+ * extinguishers. Scoping it to one agency would answer half its lines "nothing on file" about
+ * documents sitting in the next group.
+ */
+export function auditTemplatePrompt(section: { title: string; lines: Array<{ ref: string; text: string }> }): string {
+  const lines = section.lines.map((l) => `  ${l.ref}. ${l.text}`).join('\n')
+  const SHAPE_T = `THIS SECTION OF THE CHECKLIST: ${section.title}
+
+Answer EVERY line below, in this order, and answer no line twice. Use the line's own reference.
+
+${lines}
+
+Respond with valid JSON only. No markdown, no backticks, no text around it.
+
+{
+  "lines": [
+    {
+      "ref": "the line's reference, exactly as given above",
+      "word": "on_file | stale | nothing_on_file | not_a_document_question — one of these four and no other",
+      "document": "<document handle, e.g. D3> or null",
+      "locator": "where in that document, or null",
+      "quote": "word for word from the reading, or null",
+      "what_to_do": "one concrete next step, or null when there is nothing to do",
+      "basis": "read | inferred | expected"
+    }
+  ]
+}
+
+A line asking about a practice rather than a document — whether something is posted, whether
+somebody was trained on the day — is not_a_document_question with "document": null. That is an
+answer, not a failure to answer.
+
+A line you can answer from a document the company holds is on_file, with the handle, and a quote if
+the reading carries one. A line whose document is old enough that an inspector will ask is stale, and
+say what makes it stale. A line nothing on file answers is nothing_on_file — which is not an
+accusation: the record may exist on a clipboard and never have been uploaded.
+
+*** ANSWER THE LINE AS WRITTEN. *** Do not widen it, narrow it, or answer the question you think it
+meant to ask. If a line is ambiguous, answer the reading of it you can evidence and say which reading
+you took in "what_to_do".`
+  return [ROLE, HONESTY, SHAPE_T].join('\n\n')
+}
+
+/**
+ * THE TEMPLATE SECTION'S SCHEMA, BESIDE THE PROMPT THAT ASKS FOR IT — Audits Run 4b, item 7.
+ *
+ * *** IT IS NOT ON. *** `AI_AUDIT_STRUCTURED` is unset, which means off, following
+ * `lib/pipelineConfig.ts`'s convention rather than the scan's inverted one. It exists so
+ * `npm run probe:structured -- --schema audit-template` has the REAL object to send: §136's lesson
+ * is that a probe testing a copy of a schema tests the copy, and the scan's schema had to be
+ * flattened by two object shapes after a probe on a copy said it was fine.
+ *
+ * Nothing is measured in Run 4b. The switch and this object are what a later run measures with.
+ */
+export const AUDIT_TEMPLATE_JSON_SCHEMA = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['lines'],
+  properties: {
+    lines: {
+      type: 'array',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['ref', 'word'],
+        properties: {
+          ref: { type: 'string' },
+          word: { type: 'string', enum: ['on_file', 'stale', 'nothing_on_file', 'not_a_document_question'] },
+          document: { type: ['string', 'null'] },
+          locator: { type: ['string', 'null'] },
+          quote: { type: ['string', 'null'] },
+          what_to_do: { type: ['string', 'null'] },
+          basis: { type: 'string', enum: ['read', 'inferred', 'expected'] },
+        },
+      },
+    },
+  },
+} as const
