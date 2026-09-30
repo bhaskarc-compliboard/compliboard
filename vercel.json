@@ -2,6 +2,7 @@
   "crons": [
     { "path": "/api/jobs/summarise", "schedule": "0 3 * * *" },
     { "path": "/api/jobs/delete", "schedule": "30 3 * * *" },
-    { "path": "/api/jobs/scan-documents", "schedule": "*/5 * * * *" }
+    { "path": "/api/jobs/scan-documents", "schedule": "*/5 * * * *" },
+    { "path": "/api/jobs/audit-sections", "schedule": "*/5 * * * *" }
   ]
 }

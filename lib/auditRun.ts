@@ -540,13 +540,14 @@ export async function summariseRun(db: Db, runId: string): Promise<RunSummary> {
 /** One sentence, for the banner and the email subject. The same rule as `summaryLine`. */
 export function runSummaryLine(s: RunSummary): string {
   if (s.note) return s.note
-  const who = s.agencies.length === 1 ? s.agencies[0] : `${s.agencies.length} agencies`
+  const who = s.agencies.length === 1 ? `${s.agencies[0]} audit`
+    : `compliance audit across ${s.agencies.length} agencies`
   const bits: string[] = []
   if (s.nothing_on_file) bits.push(`${s.nothing_on_file} with nothing on file`)
   if (s.stale) bits.push(`${s.stale} out of date`)
   if (s.contradictions) bits.push(`${s.contradictions} disagreement${s.contradictions === 1 ? '' : 's'} between documents`)
   if (s.not_a_document_question) bits.push(`${s.not_a_document_question} no document can answer`)
-  const head = `Your ${who} audit found ${s.total} thing${s.total === 1 ? '' : 's'} to look at`
+  const head = `Your ${who} found ${s.total} thing${s.total === 1 ? '' : 's'} to look at`
   const tail = bits.length ? `: ${bits.join(', ')}.` : '.'
   const failed = s.could_not_complete
     ? ` ${s.could_not_complete} of ${s.sections} section${s.sections === 1 ? '' : 's'} could not be finished.`

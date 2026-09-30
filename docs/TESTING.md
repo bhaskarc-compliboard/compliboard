@@ -2412,3 +2412,120 @@ Whether the **new** reading is better than the old one. It is a different readin
 the same model; `TESTING.md`'s own rule is that the golden set can only tell you the output moved. The
 thing worth a person's eyes is the case where the two readings disagree, and neither of these tests
 creates it.
+
+---
+
+## Audits — a run goes through the sweep, not the page (30 September 2026)
+
+Audits Run 2b, item 10. **The point of this test is the SWEEP**, not the audit's answer: whether a run
+queued by a route is picked up by a cron, claimed one company at a time, finished exactly once, and
+emailed. The answer's quality is what `npm run golden:audit` measures, and it is a different question.
+
+Nothing here has a page yet, so the two middle steps are read from the tables. That is deliberate: if
+this only works when a page is watching, it does not work.
+
+### 1. Queue a run and let the sweep do it
+
+Confirm the dev server is pointed at **staging** first (§3.8 — the company names differ from
+production's; Cascade Specialty Chemicals is a staging fixture).
+
+```
+# one run, every agency the company's readings name
+node --env-file=.env.local -e "
+  const {createClient}=await import('@supabase/supabase-js')
+  const {createRun}=await import('./lib/auditRun.ts')
+  const db=createClient(process.env.NEXT_PUBLIC_SUPABASE_URL,process.env.SUPABASE_SERVICE_ROLE_KEY)
+  const {data:co}=await db.from('companies').select('id').ilike('name','%cascade%').limit(1).single()
+  const {data:p}=await db.from('profiles').select('id').eq('company_id',co.id).limit(1).maybeSingle()
+  console.log(await createRun(db,{companyId:co.id,agency:'all',createdBy:p?.id??null}))"
+```
+
+**Watch the rows move, in three snapshots.** Run this before the sweep, once during, and after:
+
+```
+node --env-file=.env.local -e "
+  const {createClient}=await import('@supabase/supabase-js')
+  const db=createClient(process.env.NEXT_PUBLIC_SUPABASE_URL,process.env.SUPABASE_SERVICE_ROLE_KEY)
+  const {data}=await db.from('audit_sections').select('title,status,claimed_at,finished_at')
+    .order('ordinal'); console.table(data)"
+```
+
+- **Before:** every section `queued`, `claimed_at` null.
+- **During:** all of one company's sections carry a `claimed_at`, and **exactly one** is `running`.
+  *That is the thing to look at.* If several say `running`, the claim has leaked into the status and
+  the product is describing work that is not happening — the mistake the document sweep records
+  against itself for putting "Reading…" on eight rows at once.
+- **After:** every section `done`, each with a `model` and an `ai_call_id`.
+
+Then fire the sweep the way Vercel Cron does — **the header is `x-cron-secret`, not
+`Authorization`**, and a wrong one returns 404 rather than 401 so a stranger cannot confirm the route
+exists:
+
+```
+curl -s -X POST -H "x-cron-secret: $(grep '^CRON_SECRET=' .env.local | cut -d= -f2-)" \
+  http://localhost:3000/api/jobs/audit-sections | python3 -m json.tool
+```
+
+**Pass:** `done` equals the number of sections, `runs_finished` 1, `notified` 1, `errors` empty, and
+`sent[]` carries a Resend id.
+
+### 2. The sweep recorded itself
+
+```
+node --env-file=.env.local -e "
+  const {createClient}=await import('@supabase/supabase-js')
+  const db=createClient(process.env.NEXT_PUBLIC_SUPABASE_URL,process.env.SUPABASE_SERVICE_ROLE_KEY)
+  const {data}=await db.from('job_runs').select('*').eq('job','audit_sections')
+    .order('started_at',{ascending:false}).limit(1).single(); console.log(JSON.stringify(data,null,2))"
+```
+
+**Pass:** `finished_at` is set (a null one is a run that crashed half way, which is a visible failure
+rather than an absence indistinguishable from "cron never fired"), `ok` true, and `counts` carries
+`companies, done, could_not_complete, recovered, runs_finished, notified, sent, stopped_for_time,
+wall_ms` — the same nine names the document sweep uses.
+
+### 3. The email
+
+`NOTIFY_TEST_TO` must be set in `.env.local`, or the email goes to the login on the run — and the
+staging fixture companies carry `example.com` logins nobody receives. **It is confirmed absent on
+production and must stay absent** (`RELEASE.md`), because set there, every customer's audit goes to
+that address instead of to them.
+
+To read the body without sending anything, which is also how to check the wording after a change:
+
+```
+node --env-file=.env.local -e "
+  const {createClient}=await import('@supabase/supabase-js')
+  const {notifyRun}=await import('./lib/auditNotify.ts')
+  const {summariseRun}=await import('./lib/auditRun.ts')
+  const db=createClient(process.env.NEXT_PUBLIC_SUPABASE_URL,process.env.SUPABASE_SERVICE_ROLE_KEY)
+  const {data:r}=await db.from('audit_runs').select('id').order('created_at',{ascending:false}).limit(1).single()
+  const out=await notifyRun(db,r.id,await summariseRun(db,r.id),{dryRun:true})
+  console.log(out.subject,'\n---\n',out.text)"
+```
+
+**Pass:** the first line names the agencies and the counts; every line after it is one of this
+company's own findings with the document it came from; the last line is a working link. **Fail if any
+line gives advice, encourages, or explains what the product is for** — a person reading this on a
+phone should be able to decide in four seconds whether to open the laptop, and anything that is not
+one of their documents is in the way of that.
+
+**And fail if the word "AI" appears, or any word that says the company is in a good state** —
+compliant, satisfied, met, all clear. The audit prompt forbids them and the golden runner sweeps for
+them, but the email is assembled in code and is the one place that sweep does not reach.
+
+### 4. The edge case, and it is the one that matters
+
+**Kill the sweep half way and fire it again.** Queue a four-agency run, start the sweep, and stop the
+dev server while a section is `running`.
+
+- Fire the sweep again **inside** fifteen minutes: the interrupted section is still `running` with an
+  old `claimed_at`, and it is **not** picked up. That is correct and it is the cost of the guard —
+  a section being read by a process that is still alive must not be read twice.
+- Fire it again **after** fifteen minutes: `recovered` is 1, the section goes back to `queued`, and the
+  next pass completes it. The run then finishes and emails **once** — `notified_at` is the proof, and
+  it is written only after Resend accepted the send.
+
+**What this test cannot tell you:** whether the audit is any good. Every section here could be
+nonsense and all four steps would pass. That is `npm run golden:audit` against
+`tests/golden/audits/cascade-*.md`, and it is the only thing that measures the answer.
