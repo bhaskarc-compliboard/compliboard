@@ -61,6 +61,23 @@ Two Audits-shaped tables exist from an earlier design and are empty: `obligation
 
 What the old audit engine does today, and must stop doing: `app/api/audits/route.ts` loops over documents, calls `reviewDocument()` directly (the old review path, not the new scan), silently skips a document on any failure, matches against one-line coverage descriptions, and computes readiness numbers from `document_reviews`. Rev 1 of Audits reads `document_index_v` and the gap, condition and deadline tables instead, and retires that loop. `document_reviews` has no writer left in the app.
 
+### And what Audits now owns, as of migration 058 (30 September 2026)
+
+Three tables of its own, in the shape Documents' batches/scans/gaps already use, so the sweep, the
+email and the banner did not have to be designed twice.
+
+| Table | What it is |
+|---|---|
+| `audit_runs` | One audit of one company at one moment — `kind` agency or template, the `agency_label` or `template_document_id` it was about, `section_count` against `done_count` for the banner, `readings_as_of` for how fresh the evidence was, and `previous_run_id` pointing at the run it is being matched against. `notified_at` and `dismissed_at` are proof, so neither the email nor the banner can arrive twice. |
+| `audit_sections` | One agency, one model call, one claim. `claimed_at` is the compare-and-set the sweep claims with and the recovery releases, exactly as `documents.reading_since` is; `model`, `prompt_sha256`, `input_sha256` and `ai_call_id` are the receipt, so "what produced this" is answerable from the row months later. A section that could not finish carries its reason, and a CHECK means only a failed one may. |
+| `audit_findings` | Every row of an answer — a finding, a date, a contradiction, an expected item — in one table with a `kind`, because they share a lifecycle (`open`, `closed`, `dismissed`), a matcher (`same_as`, `closed_by_run_id`) and a document pointer, and four tables would need four of each. A CHECK per kind means the table cannot hold a half-built row: a date carries `due_on`, a contradiction carries the second document and both values, an expected row is `basis expected` with `word nothing_on_file`. |
+
+Every pointer out of these into Documents' tables is a **composite** foreign key on
+`(company_id, <id>)`, so a finding cannot cite another company's document or reading. RLS would not
+catch that on its own — the policy checks the finding's own `company_id`, which is correct, and never
+looks at where the document went.
+
+
 ## 5. The design template (every section follows it)
 
 Read `docs/DESIGN.md` in full; it is authoritative. The layout chat owns it; additions from a section go in as marked additions. What follows is the template as Documents applied it, so Audits and the Workspace match it exactly.

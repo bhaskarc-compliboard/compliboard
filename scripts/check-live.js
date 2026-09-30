@@ -117,9 +117,69 @@ const CASES = [
     cleanup: (db, id) => db.from('company_chemicals').delete().eq('id', id),
     note: 'nothing has ever written this from a request — sdsExtraction is unrouted (check 29)',
   },
+  // *** THE AUDIT TABLES ARE THE OTHER DIRECTION, AND THE PROBE HAD TO SAY SO — Run 2c, item 12. ***
+  //
+  // Every case above asserts "authenticated CAN write". Migration 058 grants `authenticated` no
+  // INSERT on any of these three — the server writes an audit, a person does not — so the same
+  // assertion would report a correct grant as a failure, and a check that invents failures is worse
+  // than no check. `reads_only` inverts it: the caller must be able to SELECT its own rows and must
+  // be REFUSED the insert, and anon must be refused both. The tenancy question is the same one; the
+  // answer the grant should give is the opposite.
+  {
+    table: 'audit_runs',
+    reads_only: true,
+    row: { company_id: companyId, kind: 'agency', agency_label: 'check:live probe' },
+    note: 'migration 058 — the server writes a run; a person may read it and dismiss it',
+  },
+  {
+    table: 'audit_sections',
+    reads_only: true,
+    row: { company_id: companyId, run_id: '00000000-0000-0000-0000-000000000000',
+           ordinal: 0, title: 'check:live probe' },
+    note: 'migration 058 — read only to the caller; not even UPDATE',
+  },
+  {
+    table: 'audit_findings',
+    reads_only: true,
+    row: { company_id: companyId, run_id: '00000000-0000-0000-0000-000000000000',
+           section_id: '00000000-0000-0000-0000-000000000000', ordinal: 0,
+           kind: 'finding', title: 'check:live probe' },
+    note: 'migration 058 — the caller reads, and updates only to dismiss one',
+  },
 ]
 
 for (const c of CASES) {
+  if (c.reads_only) {
+    // The caller must be able to READ its own rows. An empty table is a pass — the question is
+    // whether the SELECT is permitted, not whether anything is there yet — but an ERROR is not.
+    const { error: readErr } = await asUser.from(c.table).select('id').limit(1)
+    if (readErr) {
+      console.log(`  ✗ ${c.table.padEnd(26)} authenticated CANNOT read — ${readErr.code} ${readErr.message}`)
+      console.log(`      ${c.note}`)
+      failures++
+    } else {
+      console.log(`  ✓ ${c.table.padEnd(26)} authenticated can read`)
+    }
+    // ...and must NOT be able to insert. A grant that appeared by accident — which is exactly what
+    // this project's default privileges do to a new table (§3.6) — shows up here.
+    const { error: insErr } = await asUser.from(c.table).insert(c.row)
+    if (!insErr) {
+      console.log(`  ✗ ${c.table.padEnd(26)} AUTHENTICATED CAN INSERT — 058 granted no INSERT on it`)
+      failures++
+    } else {
+      console.log(`  ✓ ${c.table.padEnd(26)} authenticated refused INSERT (${insErr.code})`)
+    }
+    const { error: anonRead } = await asAnon.from(c.table).select('id').limit(1)
+    const { error: anonIns } = await asAnon.from(c.table).insert(c.row)
+    if (!anonRead || !anonIns) {
+      console.log(`  ✗ ${c.table.padEnd(26)} ANON CAN ${!anonRead ? 'READ' : 'WRITE'} — the boundary is not there`)
+      failures++
+    } else {
+      console.log(`  ✓ ${c.table.padEnd(26)} anon refused (${anonRead.code})`)
+    }
+    continue
+  }
+
   // 1. the signed-in caller must be able to write.
   const { data: written, error: userErr } = await asUser.from(c.table).insert(c.row).select('id').maybeSingle()
   if (userErr) {
@@ -619,9 +679,163 @@ if (!(await reachable())) {
   else { console.log(`  ✗ history             the follow-up did not name the prior subject: ${JSON.stringify(followUp.slice(0, 120))}`); failures++ }
 }
 
+// ---------------------------------------------------------------------------
+// THE AUDIT, START TO FINISH, THROUGH THE ROUTES — Audits Run 2c, item 12.
+//
+// The probes above prove a grant. This proves the PATH: a run started through POST /api/audit-runs,
+// picked up, a real model call, findings written with a document resolved, and a cost on the ledger.
+//
+// *** IT SEEDS ITS OWN EVIDENCE, AND DOES NOT CALL THE SCAN. *** Test Gamma Solvents holds no
+// documents and no agency labels, so an audit of it would correctly return a finished run with zero
+// sections — which asserts nothing. The alternative, uploading and scanning a document here, would
+// put a second document-scan call into every `npm run db:migrate` and would be testing Documents,
+// not Audits. So the document and its reading are written directly, as a fixture, and only the AUDIT
+// is real. One Haiku call.
+//
+// It needs a server, and skips loudly without one, for the same reason the route blocks above do.
+// ---------------------------------------------------------------------------
+if (want('audit')) {
+  const admin = createClient(url, process.env.SUPABASE_SERVICE_ROLE_KEY ?? '', { auth: { persistSession: false } })
+  const LABEL = 'Oregon DEQ'
+  const FIXTURE_NAME = 'check-live-audit-probe.pdf'
+  let docId = null, runId = null
+
+  try {
+    const alive = await fetch(`${BASE}/api/industries`).then((r) => r.ok).catch(() => false)
+    if (!alive) {
+      console.log(`\n  ! audit flow SKIPPED — no server at ${BASE}. Nothing about the audit routes was tested.\n`)
+    } else {
+      // ---- the fixture: one document, one reading, one agency label ----
+      // *** EVERY SEED WRITE IS CHECKED. *** The first version of this block checked none of them,
+      // and the failure surfaced as "Cannot read properties of null (reading 'id')" three lines
+      // later — an error read as an absence, for the third time in two runs. `die` here would take
+      // the whole check down, so each one raises with the column the database actually objected to.
+      const seed = async (table, row, select) => {
+        const q = admin.from(table).insert(row)
+        const { data, error } = select ? await q.select(select).single() : await q
+        if (error) throw new Error(`seeding ${table}: ${error.code} ${error.message}`)
+        return data
+      }
+
+      const doc = await seed('documents', {
+        company_id: companyId, name: FIXTURE_NAME, file_url: `probe/${FIXTURE_NAME}`,
+        file_type: 'application/pdf', source: 'upload', status: 'read', entity_id: site?.id ?? null,
+      }, 'id')
+      docId = doc.id
+
+      const scan = await seed('document_scans', {
+        document_id: docId, company_id: companyId, entity_id: site?.id ?? null,
+        kind: 'permit', status: 'current', is_current: true,
+        title: 'Air Contaminant Discharge Permit (check:live probe)',
+        agencies: [LABEL], subjects: ['Air Quality'],
+        doc_date: '2024-01-01', doc_date_kind: 'issued',
+        summary: 'A probe permit written by check:live. It expires on 1 January 2027 and requires a '
+          + 'daily scrubber pressure-drop log under condition 3.1.',
+      }, 'id')
+
+      // *** THE EXPIRY IS A DEADLINE, NOT A COLUMN. *** `document_scans` has no
+      // `significant_date`: migration 049 moved it into `document_index_v`, computed at read time
+      // from `document_deadlines` — "a derived field stored is a field that goes stale the first
+      // time you learn something", in that migration's words. For a permit the view takes the
+      // latest non-recurring deadline whose TITLE matches 'expir', so the title here is what makes
+      // this document read as a permit expiring in 2027 rather than one issued in 2024.
+      await seed('document_deadlines', {
+        scan_id: scan.id, document_id: docId, company_id: companyId,
+        title: 'Permit expires', due_on: '2027-01-01', recurs: false,
+      })
+      await seed('document_conditions', {
+        scan_id: scan.id, document_id: docId, company_id: companyId, ordinal: 1,
+        condition_ref: '3.1', title: 'Record one scrubber pressure-drop reading per operating day',
+        evidence_expected: 'a daily log',
+      })
+      const { error: lErr } = await admin.from('company_labels')
+        .upsert({ company_id: companyId, kind: 'agency', label: LABEL }, { onConflict: 'company_id,kind,label' })
+      if (lErr) throw new Error(`seeding company_labels: ${lErr.code} ${lErr.message}`)
+
+      // ---- POST, as the signed-in user ----
+      const t0 = Date.now()
+      const start = await fetch(`${BASE}/api/audit-runs`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+        body: JSON.stringify({ kind: 'agency', agency: LABEL, scope: 'check:live probe' }),
+      })
+      const started = await start.json().catch(() => ({}))
+      if (!start.ok || !started.id) {
+        console.log(`  ✗ audit start          POST /api/audit-runs -> ${start.status} `
+          + `${JSON.stringify(started).slice(0, 160)}`)
+        failures++
+      } else {
+        runId = started.id
+        console.log(`  ✓ audit start          run ${runId}, ${started.sections} section(s), `
+          + `estimate: ${started.estimate}`)
+
+        // ---- poll GET until done, or five minutes ----
+        let run = null, sections = [], findings = []
+        const deadline = Date.now() + 300_000
+        for (;;) {
+          const r = await fetch(`${BASE}/api/audit-runs/${runId}`, {
+            headers: { authorization: `Bearer ${token}` },
+          })
+          const body = await r.json().catch(() => ({}))
+          if (!r.ok) { console.log(`  ✗ audit poll           GET -> ${r.status}`); failures++; break }
+          run = body.run; sections = body.sections ?? []; findings = body.findings ?? []
+          if (run?.status === 'done') break
+          if (Date.now() > deadline) {
+            console.log(`  ✗ audit poll           still ${run?.status} after 5 minutes `
+              + `(${run?.done_count}/${run?.section_count} sections)`)
+            failures++
+            break
+          }
+          await new Promise((res) => setTimeout(res, 5000))
+        }
+
+        if (run?.status === 'done') {
+          const wall = ((Date.now() - t0) / 1000).toFixed(1)
+          const doneSections = sections.filter((x) => x.status === 'done' && x.ai_call_id)
+          const resolved = findings.filter((f) => f.document_id && f.document)
+          const cost = Number(run.cost_usd ?? 0)
+
+          if (doneSections.length) {
+            console.log(`  ✓ audit sections       ${doneSections.length} done with an ai_call_id `
+              + `(model ${doneSections[0].model})`)
+          } else {
+            console.log(`  ✗ audit sections       no section is done with an ai_call_id — `
+              + sections.map((x) => `${x.title}:${x.status}`).join(', '))
+            failures++
+          }
+          if (resolved.length) {
+            console.log(`  ✓ audit findings       ${findings.length} finding(s), ${resolved.length} `
+              + `with a resolved document — e.g. "${String(resolved[0].title).slice(0, 44)}" `
+              + `-> ${resolved[0].document.file_name}`)
+          } else {
+            console.log(`  ✗ audit findings       ${findings.length} finding(s), none with a resolved document`)
+            failures++
+          }
+          if (cost > 0) console.log(`  ✓ audit cost           $${cost.toFixed(4)} off the ledger, ${wall}s end to end`)
+          else { console.log('  ✗ audit cost           the run cost 0 — no ai_calls row reached its section'); failures++ }
+        }
+      }
+    }
+  } catch (e) {
+    console.log(`  ✗ audit flow           threw: ${e instanceof Error ? e.message : String(e)}`)
+    failures++
+  } finally {
+    // The probe leaves nothing behind. The run goes first: its findings point at the document, and
+    // 058's composite key means the document cannot be removed from under them.
+    if (runId) await admin.from('audit_runs').delete().eq('id', runId)
+    if (docId) await admin.from('documents').delete().eq('id', docId)
+    await admin.from('company_labels').delete().eq('company_id', companyId).eq('label', LABEL)
+  }
+}
+
 console.log()
 if (failures > 0) {
   console.error(`  check:live FAILED — ${failures} problem(s). These are invisible to npm run check.\n`)
   process.exit(1)
 }
-console.log(`  check:live: ok — ${CASES.length} tenant table(s), each writable by a signed-in user and refused to anon.\n`)
+// Not "each writable": three of them are deliberately read-only to a signed-in caller (058), and a
+// summary line that said otherwise would be the check describing a test it did not run.
+const writable = CASES.filter((c) => !c.reads_only).length
+const readable = CASES.length - writable
+console.log(`  check:live: ok — ${CASES.length} tenant table(s): ${writable} writable by a signed-in `
+  + `user, ${readable} read-only to them by design, all ${CASES.length} refused to anon.\n`)

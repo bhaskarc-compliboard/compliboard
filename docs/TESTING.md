@@ -2529,3 +2529,72 @@ dev server while a section is `running`.
 **What this test cannot tell you:** whether the audit is any good. Every section here could be
 nonsense and all four steps would pass. That is `npm run golden:audit` against
 `tests/golden/audits/cascade-*.md`, and it is the only thing that measures the answer.
+
+---
+
+## Audits — the routes, as a signed-in person (30 September 2026)
+
+Audits Run 2c, item 12. The sweep test above proves the background path. This proves the **request**
+path: that a person can start an audit, read it back, dismiss it, and run a failed part again, and that
+another company's audit is invisible rather than forbidden.
+
+**`npm run check:live` already runs the happy path of this** — start, poll to done, assert a section
+with an `ai_call_id`, a finding with a resolved document, and a cost above zero. What is below is the
+part a script should not do: the refusals, and the two-company test.
+
+### 1. Start one, and read it back
+
+```
+TOKEN=…            # a signed-in access token; check:live prints how it gets one
+curl -s -X POST -H "authorization: Bearer $TOKEN" -H 'content-type: application/json' \
+  -d '{"kind":"agency","agency":"all"}' http://localhost:3000/api/audit-runs | python3 -m json.tool
+curl -s -H "authorization: Bearer $TOKEN" http://localhost:3000/api/audit-runs | python3 -m json.tool
+curl -s -H "authorization: Bearer $TOKEN" http://localhost:3000/api/audit-runs/<id> | python3 -m json.tool
+```
+
+**Pass:** POST returns an id, the section count, and an estimate sentence that **names its sample
+size** — "About 3 minutes, from 10 earlier sections", never a bare number. GET returns the run with a
+`cost_usd` and, while it is running, the estimate; a finished run's estimate is **null**, because
+showing a guess next to a real duration is how a product loses trust. The detail route returns the run,
+its sections and its findings **in one response**, each finding carrying its document's title and file
+name already resolved.
+
+### 2. The four refusals, and each says something a person can act on
+
+| Ask for | Expect |
+|---|---|
+| `{"kind":"template", …}` | **400** and a sentence: auditing against your own checklist is not ready yet, run one by agency meanwhile. Not a code, not silence, and **not** an agency audit run under a template's name. |
+| `{"kind":"agency","agency":"Texas TCEQ"}` | **400** naming the agencies your documents *do* mention. A typo and an agency that has never appeared in a document look identical from the server, so it says which it holds. |
+| an agency for a company whose documents name none | **400** telling them to upload a permit, a plan or a record first — not an empty audit. |
+| `{"entity_id": "<another company's site>"}` | **404**, not 403 (§3.6). |
+
+### 3. The two-company test, which is the one worth doing by hand
+
+Start an audit as one fixture login. Then, **as a different company's login**, ask for that run by id:
+
+```
+curl -s -o /dev/null -w '%{http_code}\n' -H "authorization: Bearer $OTHER_TOKEN" \
+  http://localhost:3000/api/audit-runs/<the first company's run id>
+```
+
+**Pass: 404.** Not 403, and not a run. Then try to dismiss it and to retry one of its sections — both
+**404**. Ownership is proved on the caller's own client before any service-role write, so the row is
+not there rather than being there and refused; a 403 would confirm the id exists, which is the whole
+reason §3.6 says 404.
+
+### 4. Retry, and what it refuses
+
+Find a section that says `could_not_complete` (the cheapest way to make one is to point
+`AI_MODEL_AUDIT` at a model id that does not exist, run the sweep, then unset it):
+
+```
+curl -s -X POST -H "authorization: Bearer $TOKEN" \
+  http://localhost:3000/api/audit-runs/<id>/sections/<sid>/retry
+```
+
+**Pass:** it goes back to `queued`, the run goes back to `running`, the sweep completes it, and the run
+finishes and emails once. **And it refuses a section that is already `done`** with a sentence saying it
+finished, because re-running one would write a second set of findings for the same agency into the same
+run and the report would show everything twice.
+
+**What none of this tells you:** whether the findings are right. That is `npm run golden:audit`.
