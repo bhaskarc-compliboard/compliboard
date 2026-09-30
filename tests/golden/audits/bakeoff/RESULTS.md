@@ -1,3 +1,51 @@
+# The rev 1 audit baseline — `claude-opus-5-5`, one open call, nothing switched on
+
+**This file is the reference every later switch and every cheaper model is measured against.** It is
+one configuration, not a bake-off: the model the owner set for rev 1, run as rev 1 will run it, over
+all five golden audit cases, three times each. When the sections split is tried, when
+`AI_AUDIT_STRUCTURED` goes on, when somebody asks whether Haiku or Sonnet would do — the question is
+"against this", one change at a time, and the comparison is these tables.
+
+**Run date:** 2026-09-30 · **Runs:** 15 (5 cases × 3) · **Configuration:** `AI_MODEL_AUDIT =
+claude-opus-5-5`, **whole mode** (one open call per agency; three per template, one section each),
+`AI_AUDIT_STRUCTURED` **unset — the schema is OFF**, **search UNCAPPED** (`DEV_MAX_SEARCHES` empty on
+the command line; `.env.local` was not edited). **Target: staging.**
+
+**Total from the ledger: $5.3667**, $0.3578 a run.
+
+The tables below are generated — no figure in them is typed:
+
+```
+node --env-file=.env.local scripts/bakeoff-audit-capture.mjs claude-opus-5-5 baseline
+node scripts/bakeoff-audit-report.js --model claude-opus-5-5 --label baseline
+```
+
+The capture step reads the ledger and opens each run's drawer once. **The report step calls no model
+and reads no database**: every number traces to a stored run in `tests/golden/audits/runs/<case>/` or
+to the ledger and drawer text in `<case>/baseline/`, which is the rule `DECISIONS.md` §139 set for
+the documents bake-off. Per-case detail, with the text of every failed check, is in
+`<case>/read-me.txt`.
+
+## The comparison column
+
+**`claude-haiku-4-5` is not a re-run.** It is the last stored batch of three whole-mode runs of the
+same case, from the same fixture state — what Haiku last said, beside what the baseline says now. It
+is there because every build session up to this one was measured on it (`CLAUDE.md` §3.4a), so it is
+the only thing the baseline can be read against today. Two of its columns are blank on the template
+cases and say so: the runner had no `ai_calls` id to look up on a template run, so its cost was never
+recorded. **`(not recorded)` is not `$0.0000`.**
+
+## Two verdict columns, and the difference is a matcher
+
+`not-a-document-question` failed every run on cascade-deq while the answers held 2, 3 and 3 findings
+worded `not_a_document_question`. The harness's `collections()` view compared the word — underscores
+intact — against the same words **spaced**, so it could never match anything. It is fixed in
+`scripts/run-golden-audit.js`; the fifteen stored verdicts are left exactly as they were written, and
+the tables carry both columns. A re-judged verdict that overwrites the original leaves nobody able to
+say which of the two a report was built on — §139's second report exists for that reason.
+
+## Per case
+
 | Case | Musts (run 1 / 2 / 3) | Musts in all three, as judged | Musts in all three, matcher corrected | Must-nots (all three) | claude-haiku-4-5: musts in all three, corrected |
 |---|---|---|---|---|---|
 | `cascade-deq` | 14 / 13 / 13 of 15 | 12 of 15 | **13 of 15** ⚠ | 6 of 6 | 10 of 15 |
@@ -23,6 +71,11 @@
 | `cascade-template-13` | $0.1997 / $0.2018 / $0.2058 | **$0.2024** | 43.8s | (not recorded) / (not recorded) / (not recorded) | (not recorded) | 17.5s |
 
 **Total on the 15 baseline runs, from the ledger: $5.3667.**
+
+## Per check, across the three runs
+
+**Anything that is not 3/3 is not settled**, and 0/3 and 2/3 are different problems: 0/3 is the model
+and the key disagreeing, 2/3 is the model disagreeing with itself.
 
 ### `cascade-deq` — per check, across the three runs
 
@@ -135,3 +188,35 @@
 | 7 | `nothing_on_file` | `nothing_on_file` | `nothing_on_file` | `nothing_on_file` | not_a_document_question or nothing_on_file |
 | 8 | `on_file` | `on_file` | `on_file` | `nothing_on_file` | on_file or nothing_on_file |
 
+
+## What the numbers show
+
+Forty-one of the fifty-one must-lines held in all three runs, against thirty-two for Haiku, and no
+case got worse; `cascade-template-13` went from 4 of 9 to 9 of 9 and every one of its eight
+checklist lines carried the same word in all three runs. The four words were the only words used:
+one must-not violation in fifteen runs, and it matched ` met ` inside *"It does not say the report is
+complete or that the permit conditions were met"* — the model declining the claim the check forbids.
+Zero handle errors, zero not-yet-due findings reshaped into dates, zero unparseable calls. The two
+template cases answered every line, and their finding titles were identical across all three runs
+(overlap 1.00); the three agency cases answered the same subjects in freshly worded titles every
+time, and the title overlap is 0.00 to 0.09 — the same audit, never twice in the same words, which
+is a matcher problem for anything that has to recognise a finding again. Twenty-three finding rows
+across the fifteen runs carry **no word at all** — a title, a document and nothing else, rendered at
+the top of FINDINGS — and Haiku's stored batches carry them too, so they are the shaping and not the
+model (`lib/auditRun.ts:450`). It costs $0.3578 a run against Haiku's $0.0315 on the three agency
+cases, 10.8× for 3.1× the wall clock, and five of the fifteen runs were truncated at 8000 output
+tokens and retried at 16000, which is paid for twice inside every figure here: cascade-deq cost
+$0.4508 and $0.2158 for the same audit, and that retry is the whole difference.
+
+## What this file cannot say
+
+It cannot say `claude-opus-5-5` is the right model, because nothing else was run: one configuration
+measures itself. It cannot say a must-line that failed 0/3 is the model's fault — `opacity-records`
+wants opacity records "nothing on file" and the baseline answered opacity
+`not_a_document_question` in all three runs, which is arguably the better answer and is the kind of
+disagreement §139 recorded rather than fixed. And it says nothing about a real company: five cases,
+one fixture, twelve documents.
+
+**Reversal condition:** the model is one Vercel variable and is meant to be moved. Re-run this file's
+two commands against any new configuration and compare; the runs on disk are what make that
+comparison possible six weeks later.

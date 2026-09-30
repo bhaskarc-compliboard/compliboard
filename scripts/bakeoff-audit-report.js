@@ -305,6 +305,23 @@ m()
 const totalCost = summary.reduce((s, x) => s + x.ledger.reduce((y, l) => y + l.cost_run_usd, 0), 0)
 m(`**Total on the ${summary.reduce((s, x) => s + x.base.length, 0)} baseline runs, from the ledger: $${totalCost.toFixed(4)}.**`)
 m()
+// PER CHECK, ACROSS THE THREE RUNS — the column that says whether a pass is a property of the
+// answer or of the run. Anything not 3/3 is not settled, and a 1/3 and a 2/3 are different problems.
+for (const s of summary) {
+  m(`### \`${s.dir}\` — per check, across the three runs`)
+  m()
+  m(`| Check | Kind | Baseline | ${HAIKU} | The line |`)
+  m('|---|---|---|---|---|')
+  for (const k of s.checks) {
+    if (k.type === 'line_word') continue
+    const n = s.base.filter((b) => verdictOf(k, b.j).verdict === 'PASS').length
+    const h = s.hai.length === 3 ? `${s.hai.filter((b) => verdictOf(k, b.j).verdict === 'PASS').length}/3` : '—'
+    const cell = n === 3 ? '**3/3**' : n === 0 ? '**0/3**' : `${n}/3`
+    m(`| \`${k.id}\` | ${k.kind} | ${cell} | ${h} | ${String(k.line).replace(/\|/g, '\\|').slice(0, 150)} |`)
+  }
+  m()
+}
+
 for (const s of summary.filter((x) => x.lineChecks.length)) {
   m(`### \`${s.dir}\` — per checklist line`)
   m()
