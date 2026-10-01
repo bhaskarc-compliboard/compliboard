@@ -367,6 +367,117 @@ reconciled with them — where they disagree, they win.
    unset in production; each ships only on that comparison, against an incognito chat (§115).
 4. **R1.5 before either gate is switched on**, because the page cannot render `outcome: 'ask'`.
 
+## 8a. Before the first customer with a big folder — not simulated, to check at the line
+
+*Added 1 October 2026 (Audits Run 8a, item 8). Carried into `docs/HANDOFF-FOLDER-TEST.md` by
+reference rather than copied, so there is one copy of it.*
+
+> ### ⚠ NONE OF THE THREE BELOW HAS BEEN TESTED UNDER LOAD, BECAUSE NO LOAD EXISTS.
+>
+> Every queue this product has run has been one document at a time, or twelve fixtures read one after
+> another with nothing else waiting. **The folder test is the first time a real queue will exist** —
+> twenty to forty documents dropped as one batch, then an audit of everything over the result. Each
+> item below is therefore a **hypothesis with the file to open**, not a finding. Reading the line is
+> cheap; discovering it with a customer's folder in the queue is not.
+
+### (a) What happens when the model refuses a call for rate limiting
+
+**Hypothesis: nothing backs off, and one refusal costs the whole unit of work.**
+
+`lib/ai.ts` retries on exactly one condition — `grep -c 429 lib/ai.ts` returns **0**, and the only
+retry is:
+
+```ts
+// lib/ai.ts
+if ((message as any).stop_reason === 'max_tokens' && maxTokens < HARD_CEILING && attempt < MAX_RETRIES) {
+  maxTokens = Math.min(maxTokens * 2, HARD_CEILING)
+```
+
+So a `429` or an `overloaded_error` is **thrown**, not retried. What each sweep then does with the
+throw differs, and both are worth reading:
+
+- **The audit sweep** — `app/api/jobs/audit-sections/route.ts`, the `catch` at line 135 — lands it as
+  `runSection`'s `fail()`: the section becomes `could_not_complete` with the message on the row. That
+  is recoverable: `POST /api/audit-runs/[id]/sections/[sid]/retry` re-buys one section, and the
+  report shows the reason. **One rate-limited section does not spoil the run.**
+- **The document scan** — `refusedScan` in `lib/documentScan.ts:553` — writes
+  `status: 'could_not_read'` with *"The reading service refused our request to read this document, so
+  nothing was read."* The document is left needing a re-scan. That wording exists because of
+  `DECISIONS.md` §136: before it, a refusal read *"the file did not arrive as something we can
+  open"*, which was a claim about twelve perfectly readable documents.
+
+**What to check at the line:** whether a batch of forty uploads can trip the account's rate limit at
+all, and if it can, whether forty documents come back `could_not_read` with a refusal message — which
+is honest and is also forty re-scans a person has to ask for one at a time.
+
+### (b) How long the sweep that an upload kicks is allowed to live
+
+**Hypothesis: it is that route's own function limit, and that is shorter than the cron's 800 seconds.**
+
+The cron paths say so explicitly:
+
+```
+app/api/jobs/audit-sections/route.ts:25   export const maxDuration = 800
+app/api/jobs/scan-documents/route.ts:70   export const maxDuration = 800
+```
+
+The routes that **kick** a sweep inline do not:
+
+```
+$ grep -n maxDuration app/api/audit-runs/route.ts app/api/documents/route.ts
+(no output)
+```
+
+`POST /api/audit-runs` starts the sweep with `after()` (lines 89 and 139), and `after()` work runs
+inside the invocation that scheduled it — so it gets that route's limit, which with no
+`maxDuration` is the platform default and is **not** 800. The audit sweep's own budget assumes it has
+640 s with 130 s held back (`BUDGET_MS`/`RESERVE_MS`, lines 35–36), and it stops *starting* sections
+at 510 s. **A kicked sweep that is killed at the platform default will be cut off long before its own
+budget thinks it should stop** — mid-section, with `claimed_at` set.
+
+**Why that is survivable and still worth knowing:** the stuck-section recovery at the top of every
+cycle returns a `running` section with an old `claimed_at` to `queued`, so the cron picks the work
+up. The cost is a wasted model call and a delay of up to five minutes, invisible to the person except
+as an audit that takes longer than its estimate. **What to check at the line:** whether
+`app/api/audit-runs/route.ts` should carry `maxDuration = 800` like the cron does, which is a
+one-line change nobody should make without measuring what a kicked sweep currently gets.
+
+### (c) What a backlog looks like, and what it is the trigger for
+
+**Hypothesis: the cron drains one company at a time, oldest first, and a backlog is visible in
+`job_runs` before anybody complains.**
+
+The queue picks a company, claims **all** of that company's queued sections in one statement, and
+loops:
+
+```ts
+// app/api/jobs/audit-sections/route.ts
+const { data: claimed } = await supabaseAdmin.from('audit_sections')
+  .update({ claimed_at: nowIso })
+  .eq('company_id', companyId).eq('status', 'queued').is('claimed_at', null)
+  .select('id, run_id, ordinal')
+```
+
+and stops starting new ones when the budget runs out:
+
+```ts
+if (Date.now() - startedAt > BUDGET_MS - RESERVE_MS) { stoppedForTime = true; break }
+```
+
+writing `stopped_for_time` onto the `job_runs` row (line 173). **So a backlog reads as:
+`job_runs` rows for `audit_sections`, tick after tick, each ending `stopped_for_time: true` with
+sections still `queued` afterwards.** One such row is a busy five minutes; the same row every five
+minutes for an hour is a queue that is not draining.
+
+**That is the worker's trigger** — `CLAUDE.md` §4 — and nothing else needs to be designed first,
+because **the claim mechanism already supports several workers**: the claim is a
+compare-and-set (`.eq('status','queued').is('claimed_at', null)`) and a second sweep claiming the same
+company gets an empty result and moves to another one. A second instance is therefore additive, not a
+race. **What to check at the line:** the one production `job_runs` row that exists for
+`audit_sections` reads `stopped_for_time: false` with `wall_ms: 176995` — three sections in 177
+seconds. Forty documents and a dozen agencies is the first case where that number could exceed the
+budget.
+
 ## 9. Commands worth knowing
 
 ```

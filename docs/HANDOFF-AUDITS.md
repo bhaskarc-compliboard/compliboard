@@ -174,6 +174,229 @@ what it noticed and get on with it.
 
 ---
 
+## 5a. The page and the drawer, element by element
+
+*Added 1 October 2026 (Run 8b, item 6). **For HR, and for anybody rebuilding a section in this
+shape.** Every element in order of appearance, with the table and columns behind it, when it changes,
+what it says when there is nothing, and the sentence it uses **verbatim**. Where a sentence is quoted
+it is copied out of the file, not from memory.*
+
+### Tab one — "Where you stand"
+
+**The title and the line under it.** `Audits`, then:
+
+> Where you stand with each agency, from the documents you have given us. Every line points at a
+> document, or at something we do not see.
+
+Static. It is the promise the whole page is measured against, and the second sentence is the one that
+keeps "compliant" off the screen.
+
+**The tabs.** `Where you stand` · `Past audits (n)`. The count is `audit_runs` for the company, every
+status; it is in the tab rather than the body so a person can see there is history without opening it.
+No count when there are none.
+
+**The box.** A textarea and an `Audit` button. Three grey example lines, shown when it is empty:
+
+> e.g. Audit us for Oregon DEQ
+> e.g. Audit everything
+> e.g. Audit us against the attached checklist
+
+**How a sentence is matched** (`submitAsk`, and the order matters):
+
+1. `/\b(checklist|template|attached|attach)\b/` → it cannot be answered without a file, so it opens
+   the file picker and says *"Choose the checklist and we will audit against every line of it."*
+2. `/\b(everything|all|every agency|all agencies)\b/` → a run with `agency: 'all'`.
+3. Otherwise a **case-insensitive substring against the company's own agency labels, longest label
+   first**, so `Oregon OSHA` wins over a shorter label contained in it. The rest of the sentence is
+   kept verbatim as the run's `scope`: *"for the Portland plant only"* is the person's own words about
+   what they meant, and the report shows it back to them.
+4. No match → the agency names as one-click choices. The page knows exactly which agencies it can
+   audit, so it says them rather than guessing.
+
+Reads `company_labels` (kind `agency`) through `/api/audits/index`. With no labels at all it refuses
+before matching: *"None of your documents carries an agency yet."*
+
+**The attach control and the workspace link**, one line, one separator:
+
+> Attach a checklist, your own or your auditor's · Or ask a question in the Compliance Workspace
+
+The first is a `<button>` over a hidden file input — a checklist is a document, so it goes through
+Documents' own upload path and then `POST /api/audit-runs` with `kind: 'template'`. The second is a
+link to `/compliance`, because a question is not an audit and the page should not pretend to answer
+one.
+
+**The counts line.** One line, from `document_index_v` and `company_labels`:
+
+> 12 documents read · 4 agencies · last audited 1 October 2026
+
+The date is the newest `audit_runs.finished_at`; the clause is dropped entirely when there is none.
+**This line is where the banners went** — every finished run used to raise one above a list whose
+every row already carried its own date.
+
+**The group-by.** `Group by: Agency` / `Subject` / `Site`. Agency is the only grouping that can be
+audited, so under Subject or Site the page says so:
+
+> Audits are run by agency. Grouping by subject arranges what you hold; the action stays on the
+> agency it would be run for.
+
+**An agency line, folded.** One row per `company_labels` agency, from `/api/audits/index`:
+
+```
+▸  Oregon DEQ          5 documents · last audited 1 October 2026 · 4 to look at      Audit again
+```
+
+`▸` is the only affordance; the whole row is the control (`role="button"`, Enter and Space). The
+counts come from the newest done run's `summary`. Never audited: `5 documents · not audited yet`, and
+the button reads `Audit`. While a run is going: `Audit running · <estimate>`, or
+`waiting, section 2 of 4` for a queued section, and the button becomes `section 2 of 4`. A section
+that failed adds an amber line: *"1 part of the last audit did not finish."*
+
+**An agency line, open** (`AgencyBody`), in this order:
+
+- **Subject rows.** One heading per distinct `document_scans.subjects` value, with a count, and
+  `No subject yet` for the documents carrying none.
+- **Document lines.** `document_index_v` — title, truncated, left-aligned, clickable (it opens that
+  document's own report in the same drawer); the status on the right in Documents' own vocabulary
+  (`Needs work`, `Expiring`, `Expired`, `Could not read`, `Not read yet`, `Current`, `Recorded`,
+  `On file`), amber for the first four. A **record** also shows `· last entry <date>`, because a
+  record's last entry is the only thing that says whether it is being kept.
+- **Date lines**, from `document_deadlines`, **once per document** and not once per subject — the
+  self-check carries five subjects and printed its two deadlines five times until that was fixed.
+  Three forms: `<title> — 15 February 2027 · in 137 days`; `<title> — 14 March 2026 · passed` with
+  passed in amber; and `<title> — recurs · no date in the reading` when `due_on` is null.
+- **The last-audit sentence**, with every number a link into the report filtered to that word:
+
+  > The last audit, on 1 October 2026, found 3 things with nothing on file, 5 things on file, and 1
+  > thing out of date.
+
+  A word with a count of zero is left out of the sentence. Nothing open at all: *"The last audit, on
+  <date>, found nothing open."* No run yet: the sentence is absent.
+- **The expected sentence**, from the run's `expected` findings:
+
+  > Based on similar companies, we would also expect: <three titles>, and 29 more.
+
+  Three, then a count — a sentence with six names in it is a list again. The full list is in the
+  report.
+
+**The checklist status line.** A template run has no agency row to live on, so it gets one grey line
+under the box — the only thing on this page that is not a row:
+
+> Your audit against Monthly EHS Self-Check (blank internal checklist template), Portland Facility
+> is running · about 2 minutes
+
+and when it lands, `is done · 8 to look at · Open`. Opening it takes the line away.
+
+**The closing sentence.**
+
+> An audit of everything runs one section per agency, in this order. Each line updates as its
+> section lands. We will email you when the last one is done.
+
+**The empty states**, in the order they are checked. No documents at all: *"Read some documents
+first. Audits are built from their readings."* with a `Go to Documents` action. Documents but no
+agency label: *"None of your documents carries an agency yet."*
+
+### Tab two — "Past audits"
+
+One row per `audit_runs`, newest first. Empty: *"No audits yet."* Two forms:
+
+```
+1 October 2026   All agencies
+                 12 to look at · 4 of 4 sections · 5 of 17 from 30 September 2026 closed   Open
+
+1 October 2026   Against Monthly EHS Self-Check (blank internal checklist template)
+                 8 to look at · 1 of 1 section                                             Open
+```
+
+A **template** run is named by its checklist: its `agency_label` is null because its questions came
+from a form, and the fallback read `All agencies`, which is the one thing it is not. Still running:
+`Running · <estimate>`. A failed section adds `<section title> did not finish.` in amber. The
+person's own words, when they typed any, are quoted underneath.
+
+### The drawer — the report
+
+**The header.** `Oregon DEQ audit`, or `Audit of everything · 4 sections` when `section_count > 1`.
+Not the agency list: four agencies is a wall of text in a title, and they are each a group heading
+below anyway.
+
+**The meta line**, one line, built once:
+
+> audited 1 October 2026 · 4 sections · 12 documents read, 12 held unread · readings as of 1 October 2026
+
+`readings as of` is the newest `document_scans.scanned_at` of what was read — the audit's date says
+when we looked, that says how old what we looked at was. **"held unread" is what NO section read**
+(Run 8a, item 1b): the plain union of each section's unread list is the same twelve documents on a
+whole-company run.
+
+**The "You asked" line.** `run.scope`, quoted, when the person typed something. Absent otherwise.
+
+**The sentence that says what the report is**, outside every fold:
+
+> Every line below points at a document, or says what we do not see. None of it is a verdict on
+> whether the company complies.
+
+**The filter pills.** `all` and one per word with a count above zero: `all · 25 nothing on file · 9
+out of date · 5 on file · 2 not a document question`. Clicking one narrows every group below;
+`all` clears it. `no-print`, with the same counts printed as a plain line instead. A checklist report
+adds `n we did not get an answer for`.
+
+**A section group.** One `audit_sections` row, folded, titled with the agency and carrying its own
+count; its counts by word on the first line inside. All closed, **except a single-section run, which
+opens its one group** — folding the only content is a click that hides everything. A section that
+could not complete shows its reason and a `Run this section again` action.
+
+**A document group.** The document each finding cites, **once**, left-aligned, one line, truncated,
+with its status on the right. Findings with no document go in one group at the end titled *"Not tied
+to one document"*.
+
+**A finding line, closed.** The word, then the title, truncated to one line. `▸`, and the whole line
+is the control. A collapsed duplicate adds `also under <agency>` in grey; a handle the block did not
+carry adds `no document matched` in amber.
+
+**A finding line, open.** The locator, the quote in italics, what to do, then `Add a document` (only
+for `nothing_on_file`) and `Not right`, which opens a reason box. **Rendered and hidden, never
+unmounted** — so Print carries it.
+
+**Dates** · `kind = 'date'`, passed first, then by date, then undated last; each with `Add to
+calendar`, except an undated recurring one, which has no link because a calendar row with no date is
+false precision. **Disagreements between documents** · `kind = 'contradiction'`, both documents and
+both values, and it does not pick one. **What we would expect and do not see · based on similar
+companies** · `kind = 'expected'`, a suggestion and it says so. **Could not complete** · sections
+with that status, each with its reason and a retry. **Earlier audits** · previous done runs of the
+same agency, or, for a checklist, earlier runs against that checklist with what moved per line.
+
+**The actions**, in the footer: `Audit again` (a new run with `previous_run_id` set, so the next
+report can say what closed), `Make a checklist`, `Print`, `Download the documents`, and a quiet
+`Not right` for the run as a whole.
+
+**What Print adds.** Every group and every finding, open, whatever was folded or filtered on screen —
+the detail is `hidden print:block`, and the filter hides rather than removes. The drawer prints as
+the page (`body.printing-drawer`), the pills are dropped and the counts print as a line.
+
+**What the zip holds.** `GET /api/audit-runs/[id]/documents` — exactly the documents that audit read,
+from `audit_sections.documents_read`, streamed. Not the whole filing cabinet: the zip is the evidence
+behind this report.
+
+### The email
+
+**Subject:** the run's one-sentence summary. **Body:** plain text, in this order — the summary
+sentence; `Read against your documents as they stood on <date>.`; `What needs you:` and up to the
+first few attention items with their word and document, then `…and n more.`; `It also found 5 things
+on file and 3 things we would expect a company like yours to hold and did not see — a suggestion, not
+a checked requirement.`; the disagreements sentence; what carried or closed against the last audit;
+the sections that could not be finished; and `See it all: <url>/audits?run=<id>`. Every finished run
+is emailed; there is no batch-of-one silence. **No price, ever.**
+
+### How HR takes this shape
+
+**One agency group and one document.** An HR audit is this page with `company_labels` holding one
+label — the employer's own obligations rather than a regulator's — and most findings citing one
+handbook rather than twelve permits. Everything else is unchanged: the four words, the one-line
+finding opening on click, the counts as filters, the folded group that opens because it is the only
+one, the email, the zip. **What it must not do is add a fifth word or a score**, which is the thing a
+staffing report is always tempted to do; and `hr_audits` is the retired engine's table, so the rows
+are `audit_runs`, `audit_sections` and `audit_findings` with a `kind` of its own, not a second set of
+tables with a second vocabulary.
+
 ## 6. The four words, and the design rules
 
 **Four words, and no fifth.**

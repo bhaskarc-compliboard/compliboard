@@ -31,7 +31,8 @@ folder's own README names what supersedes each, and it is the only place this in
 | | |
 |---|---|
 | **`VISION-DOCUMENTS.md`** | The Documents module's vision. The source, not an export |
-| **`HANDOFF-AUDITS.md`** | The brief for the section after Documents — **and the first thing any new section's chat reads.** §5 is the design template every section follows, §6 the file structure |
+| **`HANDOFF-AUDITS.md`** | **The STATE of the Audits section after rev 1** — rewritten from a pre-build brief on 1 October 2026 (Run 6b). What Audits reads, its tables and routes, the sweep and the email, the four words and the design rules, the golden cases and the baseline, what is owed and what has not been judged. **§5 is still the design template every section follows and §6 the file structure**, and **§5a is the page and the drawer element by element** — the first thing any new section's chat reads |
+| **`HANDOFF-FOLDER-TEST.md`** | The brief for the next chat: the whole product judged on a folder of twenty to forty files the way a customer arrives, one of them a two-site company. One page. Points at `HANDOFF-CODE.md` §8a for the three load questions nobody has tested |
 | **`DESIGN.md`** | The layout template: widths, type, colour, the components |
 
 ### Specs for what is built
