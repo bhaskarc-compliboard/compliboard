@@ -43,20 +43,50 @@ with Documents rev 1. Everything since — the bake-off, the six answer-key corr
 "Read it again" fix — is committed locally and **not pushed**. `git log origin/main..HEAD` is the list.
 A push to `main` deploys (`RELEASE.md`), so that list is also the next release's contents.
 
-## 2. Migration state — 054 ON BOTH. NOTHING PENDING.
+## 2. Migration state — 057 ON PRODUCTION, 060 ON STAGING. THREE PENDING: 058, 059, 060.
 
-*(Rewritten 28 September 2026. This section was headed "039 ON BOTH" and had been since 23 September;
-migrations 040–054 went to production on the 26th.)*
+*(Rewritten 1 October 2026, from `npm run preflight` and not from memory. This section was headed
+"054 ON BOTH" and before that "039 ON BOTH" — the heading is the fact most often out of date in this
+file, so it states the numbers and not a date.)*
 
 ```
 $ ls supabase/migrations/*.sql | wc -l
-55                                    # 000 … 054
+61                                    # 000 … 060
 
 $ npm run preflight          # READ-ONLY. Prints both lists and derives the difference.
-  PENDING COUNT: 0           # production, dsfwmafnphdlfogetsus
+  INPUT 1 — supabase/migrations/*.sql on disk: 61
+  INPUT 2 — schema_migrations on dsfwmafnphdlfogetsus, every row (58)
+  DERIVED — INPUT 1 minus INPUT 2:
+    058_the_audit_as_rows.sql
+    059_the_checklist_is_the_question.sql
+    060_a_recurring_date_need_not_have_a_day.sql
+  DERIVED — INPUT 2 minus INPUT 1 (applied but absent from disk): (none)
+  PENDING COUNT: 3
 ```
 
-**Nothing is pending on either database. Both are on `000`–`054`, 55 migrations each.** The fifteen
+> ### THIS PARAGRAPH WAS WRONG WHEN FIRST WRITTEN, AND THE PREFLIGHT IS WHY IT IS NOT.
+> It said 055, 056 and 057 were on staging and not on production. **They are on production** —
+> `INPUT 2` lists all three among its 58 rows. They went up with the Documents follow-ups and nobody
+> recorded it here. The three pending are the Audits contract and nothing else.
+>
+> **Which is the point of the rule, not an aside:** `npm run preflight` prints both lists and derives
+> the difference, so the subtraction is checkable without trusting the script or this file. A
+> migration-state sentence written from memory is a guess wearing a number. Read the preflight; if the
+> two disagree, the preflight wins and this gets corrected again.
+
+**The Audits contract, 058 to 060 — what each one's verify block proves by trying to break it:**
+
+| | |
+|---|---|
+| **058** | `audit_runs`, `audit_sections`, `audit_findings`. The part that matters is not RLS: every finding is tied to its run, section, document and scan by **composite foreign keys on `(company_id, <id>)`**, so a finding cannot cite another company's document even when written by the service role, which passes every policy. The verify block attempts exactly that write and requires the `foreign_key_violation`. It also attempts an INSERT as `authenticated` and requires the refusal, and reads every grant back with `has_table_privilege` rather than trusting its own grant list. |
+| **059** | `audit_findings.template_line` / `template_text`, `audit_runs.template_lines` jsonb. Proves the lines store and come back as the same count; proves a template run still may not also claim an agency; proves an agency finding may leave both columns null; proves deleting a run takes its findings **and leaves the checklist document**; and re-reads the privileges, because adding a column is a chance to widen one by accident. |
+| **060** | One CHECK narrowed by one case: a `date` may have a null `due_on` when `recurs is true`. Proves the recurring undated row lands as kind `date` with a null day and no word; proves a one-off with no day is **still refused**; proves `recurs` null — "the model did not say" — is **also refused**, which is the clause the comment is about; proves dates with days are unaffected; proves the other two per-kind CHECKs and 058's cross-tenant FK still refuse what they refused. |
+
+**Nothing in 058–060 touches an existing customer row**, and nothing in them is destructive: 058 and
+059 create tables and columns, 060 replaces one CHECK with a strictly looser one, so no row already in
+the table can be made illegal by it.
+
+The fifteen from the Documents release are below, unchanged. The fifteen
 that landed on 26 September are the Documents contract, and the release note
 (`docs/releases/2026-09-26-documents-rev1.md` §2) tabulates every one of them with what its verify
 block writes and removes. The four worth naming here:
@@ -268,6 +298,34 @@ was charged**. Quote the corrected column.
 > The `document_review` task still has **zero rows**, and the reason is different and worth stating:
 > its one remaining caller is the audit engine's auto-index loop, and **no audit has been run on
 > staging or production since the ledger existed** (production's six `audits` rows are from 25 July).
+>
+> **⚠ CORRECTED AGAIN, 1 October 2026: that loop's engine no longer exists.** Audits Run 3 deleted
+> `app/api/audits/route.ts` and the old page on 30 September. `document_review` therefore has zero
+> rows and now also has **no live caller**, which is a different kind of nothing and should not be
+> read as "untested". The `audits` and `hr_audits` tables are kept and unread.
+
+### The `audit` tier, added 30 September 2026
+
+`AITask` gained `audit`, and `TASK_MODELS.audit = () => process.env.AI_MODEL_AUDIT || TASK_MODELS.judgement()`.
+
+It is worth knowing **why it exists**, because the shape catches people out: `audit` was already a
+`LedgerTask` — in `LEDGER_TASKS` and in migration 038's CHECK — while being absent from `AITask`. So
+the ledger could say `audit` and `modelForTask('audit')` threw *"TASK_MODELS[task] is not a function"*.
+The spend was recorded as `audit` while the model was whatever `judgement` happened to be, and the one
+thing a bake-off needs is to move one model without moving three others.
+
+- **`AI_MODEL_AUDIT`** is the variable. Unset means the judgement tier, exactly as
+  `AI_MODEL_DOCUMENT_SCAN` behaves. **`docs/RELEASE.md` is the authoritative record of what Vercel
+  holds**; this file carries the name, never the value (§3.4a's rule, and the reason for it).
+- **Every audit call writes a cost row**, task `audit`: the section's call in `lib/auditRun.ts` and
+  the checklist extraction in `lib/auditTemplate.ts`.
+- **16,000 output tokens from the first attempt.** It was 8,000, and the rev 1 baseline measured the
+  cost of that: five of fifteen runs came back `stop_reason=max_tokens` and were retried at 16,000,
+  and `lib/ai.ts` accumulates the ledger **across** retries, so the truncated attempt is bought and
+  thrown away — $0.4508 against $0.2158 for the same audit. The doubling retry stays as the backstop
+  and now climbs from 16,000 to the 21,333 hard ceiling.
+- **`AI_AUDIT_STRUCTURED`** exists in `lib/pipelineConfig.ts` and **unset means OFF** — deliberately
+  not the scan's inverted convention. It has never been measured against the baseline.
 > So the call site is counted and simply has not been called. *"A call site with no `ledger:`
 > argument is a call nobody is counting"* is still the rule; this is no longer an instance of it.
 > **The owner measured a two-page PDF scan at $1.10 on live on 23 September** (the owner's
@@ -290,6 +348,8 @@ was charged**. Quote the corrected column.
 | **The company's industry never reaches the answer** | `lib/determinationGate.ts` | The gate puts state/county/city in `known` and not the industry. §105 defers it. Dormant — the gate is off |
 | **Citations discarded for every non-research caller** | `lib/ai.ts` — `askAI` returns `.text` only | `/api/audits` runs web search on two calls and drops its sources |
 | **`expires_at` set by nothing** | `company_switches` | An expired fact must read `unknown`; a stale `false` is a false green |
+| **A checklist audit on the thinnest fixture is refused in prose** | Haiku, via `scripts/check-live.js`'s template flow | Four checklist lines against two documents, one of which is the checklist. `prompts/audit-agency.ts:290` says *"Never reply with prose explaining that you cannot answer"* and Haiku replies with prose anyway — *"I need clarification to proceed. You've provided: 1. A checklist with 4 lines … 2. Two documents on file (D1 and D2)"*. Reproduced twice on 1 October; the same code answers all eight lines of `cascade-template-13` against Cascade's twelve documents (7/9 musts, Haiku). So it is thin evidence, not the plumbing. **`check:live` fails on it and the failure is left standing**: the fixture was not enriched to make it pass, because a fixture tuned until the model complies measures the fixture |
+| **`not_a_document_question` had a matcher that could never match** | `scripts/run-golden-audit.js` — FIXED 30 Sep | It compared the word with underscores against the same words with spaces, so the check failed every run while the answers held two and three of them. Named here because the class is the dangerous part: a check that cannot see anything looks exactly like a check that found nothing |
 
 ## 8. The next steps — THIS FILE'S READING, not the two handoffs'
 
@@ -310,18 +370,64 @@ reconciled with them — where they disagree, they win.
 ## 9. Commands worth knowing
 
 ```
-npm run check         typecheck · schema contracts · 544 tests · build. Green as of this commit.
-                      (was written as 457 until 28 Sep; the committed floor had been 528 for days.)
+npm run check         typecheck · schema contracts · 559 tests · build. Green as of this commit.
+                      (was written as 457 until 28 Sep and 544 until 1 Oct; the floor is committed,
+                       so the number here is the one thing in this block that goes stale silently.)
 npm run check:live    signs in as a real staging fixture and writes as that user.
   -- --only sources      the third-turn citation step alone
   -- --only attachment   attach a PDF and ask about it (Fix Round 2)
+  -- --only template     the checklist audit alone — start, lines, one row per line, the cost
 npm run cost          READ-ONLY. Where the money went, and what the total does not include.
 npm run golden:facts  the owner's five questions, three runs each, priced.
   -- --model claude-sonnet-5   compare a model WITHOUT changing any default
+npm run golden:audit  the five audit cases. The judge reads the ROWS, not the model's JSON.
+  -- cascade-deq --mode whole --times 1        one case, one run
+  -- --fixtures-only                           the confirmed fact and the relinked login, no model call
 npm run schema:doc    regenerates docs/SCHEMA.md from the live catalog. Runs inside db:migrate.
-npm run db:restore    rebuilds STAGING from zero. Refuses production four ways.
+npm run db:reset      wipes STAGING and replays 000…060. Typed RESET, no bypass flag.
+npm run db:restore    rebuilds STAGING's data after a reset. Refuses production four ways.
 npm run preflight     READ-ONLY. Both migration lists, and the pending set derived in front of you.
+node scripts/page-text.mjs '/audits?run=<id>' '<expr>'
+                      what a signed-in page ACTUALLY says, in headless Chrome. Not a test.
+node --env-file=.env.local scripts/bakeoff-audit-capture.mjs <model> baseline
+                      the ledger and every run's drawer text, written to disk, once.
+node scripts/bakeoff-audit-report.js --model <model> --label baseline
+                      the bake-off tables. Calls NO model and reads NO database.
 ```
+
+### Getting a working database back after a reset — the two commands, and what each is for
+
+**`npm run db:reset` rebuilds the SCHEMA and nothing else.** It replays 000 to 060 from empty, which
+is the only thing that proves the chain can build a database from nothing. **Take the result from the
+database, never from the exit code** — twice on 22 September it appeared to run and did nothing
+because the automation never matched the confirmation prompt:
+
+```
+$ npx supabase db query --project-ref <staging> --linked \
+    "select max(version) as newest, count(*) as total from supabase_migrations.schema_migrations;"
+  newest 060 · total 61
+```
+
+**`npm run db:restore` then rebuilds the DATA**, ten steps, every count checked against the file it
+came from. The two that matter to Audits:
+
+- **Step 9 — Cascade's twelve readings, restored from stored runs with NO model call.** It replays
+  `tests/golden/documents/runs/real-model/` through the same `saveScan` with `linkLedger: false`.
+  Its own line reads `12 reading(s) restored. 0 model calls — check with npm run cost.` A reset used
+  to mean re-buying twelve real-model reads.
+- **Step 10 — `run-golden-audit.js --fixtures-only`.** A reset drops `profiles` and leaves
+  `auth.users`, so `testcascade@example.com` survives pointing at a company that no longer exists;
+  this relinks it to the recreated one. It also confirms the single fact the OSHA contradiction needs
+  (the plan's 42, written directly rather than fished out of a proposal, because the real model
+  proposes different switch keys from Haiku's for the same sentence) and writes agency-label
+  corrections only where a reading contradicts that document's own answer key. **No model call.**
+
+> ### AND THE ONE THAT HAS COST A WHOLE CYCLE TWICE: `rm -rf .next` UNDER A RUNNING `next dev`.
+>
+> The dev server does not die. It keeps answering, and it answers **HTTP 000** to everything, so
+> `check:live` fails every route and the failure looks like the code. **Stop the server, clear
+> `.next`, start it again, and wait for `/login` to return 200 before running anything against it.**
+> `DECISIONS.md` §147.
 
 **The staging fixtures are `testalpha@`, `testalpha2@`, `testbeta@`, `testgamma@example.com`.**
 Gamma is the empty one — chemical manufacturing, Oregon. All four are in

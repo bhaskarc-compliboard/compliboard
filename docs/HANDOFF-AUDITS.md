@@ -1,281 +1,319 @@
-# HANDOFF — AUDITS
+# HANDOFF — THE AUDITS SECTION
 
-*Written 26 September 2026 by the Documents chat, on the day Documents rev 1 reached production. This is the first thing the Audits chat reads. It says what the section is for, how we work, what is already decided, what the code and both databases look like today, the design template every section follows, the structure of a reading report, and how a change reaches production. Where a fact is the owner's to supply, it is marked **OWNER**.*
+*Rewritten 1 October 2026, the day Audits rev 1 was prepared for production. The previous version of
+this file was the brief the Audits chat was handed on 26 September, before the section existed; it has
+been replaced rather than appended to, because a brief and a state are different documents and keeping
+both in one file is how a plan comes to be read as a description.*
+
+**This file is the state of the section.** What Audits is and what it reads; the tables and the routes;
+the sweep, the cron and the email; the page and the drawer as they finally are; the four words and the
+design rules that are not open to reinterpretation; the golden cases and how to get a working fixture
+back; what is owed after release, in order; what this section handed to other sections; and what has
+not been judged.
+
+What it is **not**: the method. `HOW-WE-BUILD.md` holds that, unchanged, and it worked —
+`DECISIONS.md` §144 to §149 are this section's decisions in the order they were made.
 
 ---
 
-## 1. What this chat is for
+## 1. What Audits is, and what it reads
 
-Build the Audits section, rev 1, on production. An audit is a by-product of Documents. Everything an audit needs already lives in the document readings: what each document is, what is wrong with it, what it obliges the company to keep doing, which dates it sets, which facts it proved, what a company like this usually holds and does not. The Audits section does not read files. It reads readings, and it says, per agency or per subject, where the company stands and what to do next.
+An audit is a by-product of Documents. **It does not read files.** It reads readings, and says — per
+agency, or per line of a checklist somebody hands us — where the company stands against what its own
+documents say, and what is not there at all.
 
-The rules from Documents carry over unchanged: rev 1 is raw Claude plus the interface, no requirement table; the owner's vision comes first, in his own words, before any design; one instruction to Claude Code at a time, in a single code block; every model call writes a cost row; nothing about a company is written silently; unreadable or unknown is said out loud; "compliant" is never a status; build on Haiku, judge on the real model; every saving is a switch measured against the open baseline, never built into it.
+Everything it needs already exists after a document is read: what each document is, what is wrong with
+it, what it obliges the company to keep doing, the dates it sets, the facts it proved, and what a
+company like this usually holds. `buildAuditInput` in `lib/audit.ts` assembles exactly that into one
+block:
 
-**Finish line for rev 1 (draft, until the owner's vision revises it).** A person opens Audits and sees, grouped by agency and by subject, what the readings say: open gaps, passed deadlines, expired or expiring permits, conditions with no evidence on file, and what we would expect and do not see. They can open an audit report in the same drawer as a document report, make a checklist from it, print it, and correct it. The old audit engine (readiness numbers computed from `document_reviews`, documents silently dropped when unreadable) is retired. Every audit call writes a cost row. All of it on production, judged on the golden documents.
+- `document_index_v` for the company's documents — kind, title, agencies, status, significant date.
+  The view is where `document_corrections` is applied, so a corrected label really does change what an
+  audit sees.
+- the four tables hanging off a scan: `document_gaps`, `document_conditions`, `document_deadlines`,
+  `fact_proposals`.
+- `company_facts` for what a person has confirmed, kept apart from what a reading merely proposed.
+- every other document the company holds, **by title only**, so the audit can say what is *not* among
+  them without being shown their contents.
 
-## 2. The method, in short
+**Two scopes.** An agency audit is scoped by the agency label on a document — compared exactly, which
+is why a record filed under the wrong regulator is invisible to the right regulator's audit. A template
+audit passes the `'*'` sentinel and is shown **every** document the company holds, because a checklist
+spans regulators: case 13's own monthly form covers the air permit, the forklifts and the
+extinguishers.
 
-Three roles. **Chat** designs, decides with the owner, reads Claude Code's reports critically, writes one instruction at a time; it never touches the repo or either database. **Claude Code** reads and writes code, runs migrations against staging, tests, commits; it never applies anything to production, never invents regulatory content, never decides a product question; if it needs a decision it stops and asks with the fact it is missing. **The owner** decides product questions, supplies domain judgment, runs production migrations, and presses every irreversible button.
+**The handles.** The model never sees a UUID. Documents arrive as `D1 … Dn` and `resolveHandles` /
+`shapeFindings` map them back. A handle the block did not carry does not vanish: the row is written
+with `handle_error = true`, which the golden runner counts. "D14" can be checked against a list of
+twelve; one wrong character in a UUID could not.
 
-The loop, as it ran for Documents and should run here: the owner's vision first, in his words; the chat asks questions after, wearing two hats (data presentation, software); gaps sorted into schema, data or truth, with "later" named; the design drawn on the canvas and iterated until the owner says "that one"; the contract read off the screen, not the other way round; then runs of a day or two, each one instruction, each ending with a report and the session's cost; then release per RELEASE.md; then the bake-off on the real models. Measurement before building when a number is missing (Documents started with "why does a scan cost $1.10", not with a feature).
+---
 
-Reports are read critically. The chat corrects the record when a report states an inference as a fact or a wrong cause for a right effect (D-0's cost comparison, Run 2's "the probe settled it"). Hypotheses are checked, not asserted.
+## 2. The tables
 
-Every instruction names what to read first, what to build, what not to do, and the exact shape of the report. Every run ends with `npm run cost -- --since <date>`.
+Three, from **migration 058**, plus what 059 and 060 added.
 
-## 3. Standing rules (from DECISIONS, do not relitigate)
-
-- **Best result first, no conditions.** The baseline is the strongest model, one open call, search allowed, no shortcuts however obvious. Savings are switches, measured on golden cases run three times.
-- **Build on Haiku, judge on the real model.** `.env.local` is Haiku. Quality is not chased on Haiku; mechanical failures are.
-- **Every model call writes a cost row** (`ai_calls`, via `ledger: { companyId, task }`), with its own task in `LEDGER_TASKS` and the CHECK constraint.
-- **Facts are proposed, never written silently** (§108). One queue, `fact_proposals`, both sources; one question per key; confirmed anywhere is confirmed everywhere.
-- **Close, never delete.** Dismissed, rejected, withdrawn, superseded, held: statuses, with reasons, never deletions. Delete exists only for a file the person uploaded.
-- **Honest words.** No "compliant". No green for routine. No numeric readiness aggregate (§58.3: no score, no percentage, no "satisfied"). "What we'd expect and don't see" is labelled as based on similar companies until the requirement table makes it a finding. Progress shown on screen is what actually happened.
-- **A conclusion beats an absence.** A row never says "Queued" for something that already failed (§132).
-- **Derived values are computed when read**, in the view, never stored (the significant date, §134). Stored derived values went stale on the first rule fix.
-- **Server-only writes for the model's conclusions.** RLS can say "your company"; it cannot say "only the server". Scan rows, corrections, batches, company facts are written on the service role after ownership is proved on the caller's client (§132).
-- **One company's model calls run one after another, never in parallel**, so labels, keys and corrections feed forward (§135).
-- **The scan (or the audit) is the matcher** for identity across re-reads: it is shown the previous findings with ids and says which are the same; string matching is the fallback (§135).
-- **Claude Code may reset staging under a pty** (CLAUDE.md §3.7); the production guard is never automated.
-- **RELEASE.md in `docs/` governs every release.** Migrations first, then variables, then code.
-- **One company context, every section benefits from every other (decided 27 Sep 2026; vision doc, "One company context").** Everything a person confirms or corrects anywhere (declared switches, `company_facts`, `document_corrections`, labels and keys in use) is assembled by one function and every prompt in the product reads that block and nothing else for "who is this company". Nothing the model concluded on its own goes in it; pending proposals stay in the queue. It comes with a "Your company" screen where a person sees the same list and can change any line. *(The screen shipped on 28 September and is called **Company information** — `/company-information`. The wording of this rule is left as it was decided on 27 Sep; the name changed in Task 0 commit 3.)* Build the function and the screen before Audits reads anything, so Audits is the first section built on the rule. As it is built: fact keys gain a site scope, confirmed facts carry the as-of date of their source, and an alias table will map fact keys to switch keys when the requirement table returns.
-
-## 4. What Documents provides to Audits
-
-Read these tables; they are the audit's inputs. All in `docs/SCHEMA.md`, regenerated from staging.
-
-| Table or view | What an audit reads from it |
+| Table | What a row is |
 |---|---|
-| `document_index_v` | one row per document: kind, title, agencies[], subjects[], site, folder, doc_date, computed significant_date and kind, display_status (needs_work, expiring, expired, could_not_read, not_yet_read, current, recorded, on_file), open_gap_count, corrections applied |
-| `document_scans` (current row per document) | summary, jurisdiction, expected_missing[], confidence notes, extracted_text, provenance (model, searches billed, cited_sources, prompt_sha256, ai_call_id, structured or extractor path) |
-| `document_gaps` | title, description, fix, citation, locator, basis, quote_verified, draftable, status open/closed/dismissed/superseded with reason, not_seen_at, draft_text, superseded_by |
-| `document_conditions` | what a permit or certificate obliges, condition_ref, evidence_expected |
-| `document_deadlines` | title, due_on, source_line, recurs, calendar_event_id |
-| `fact_proposals` (source document) | proposed facts with quote, locator, basis, affects, quote_verified, status proposed/accepted/rejected/withdrawn |
-| `company_facts` | confirmed facts, one per company per key, with source document and proposal |
-| `company_labels` | the agency and subject vocabulary in use for this company |
-| `document_corrections` | what the person said the scan got wrong |
-| `checklists` with `document_id`, `document_gap_id` | work already made from a gap, with progress |
-| `document_batches`, `job_runs` | what was read when, and what the sweep did |
+| `audit_runs` | one audit a person asked for. `kind` is `agency` or `template`; `agency_label` or `template_document_id`, never both (`audit_runs_kind_has_its_subject`). Carries `summary` jsonb, `section_count`, `previous_run_id`, `status`, `started_at`/`finished_at`, `notified_at`, `dismissed_at`. |
+| `audit_sections` | one agency, or one section of a checklist. The unit of work the sweep claims. Carries its own `model`, `prompt_sha256`, `input_sha256`, `ai_call_id`, `json_parsed`, `raw_text`, `documents_read`, `documents_held_unread`, `handles`, `claimed_at`, `could_not_complete_reason`. |
+| `audit_findings` | one line of a report. `kind` is `finding`, `date`, `contradiction` or `expected`; a CHECK per kind enforces the shape. |
 
-Two Audits-shaped tables exist from an earlier design and are empty: `obligation_evidence` (`valid_from`, `valid_until`, `superseded_by`, `matched_by`) and `switch_determinations`. Both are parked until the requirement table returns; do not write them in rev 1 unless the owner's vision says so.
+**The thing in 058 that matters most is not RLS.** Every finding carries `company_id` and is tied to
+its run, its section, its document and its scan by **composite foreign keys on `(company_id, <id>)`**.
+So a finding cannot cite another company's document — not because a policy forbids the read, but
+because the row will not go in. RLS cannot catch that: a service-role writer passes every policy. The
+migration's verify block tries the write and requires the refusal.
 
-What the old audit engine does today, and must stop doing: `app/api/audits/route.ts` loops over documents, calls `reviewDocument()` directly (the old review path, not the new scan), silently skips a document on any failure, matches against one-line coverage descriptions, and computes readiness numbers from `document_reviews`. Rev 1 of Audits reads `document_index_v` and the gap, condition and deadline tables instead, and retires that loop. `document_reviews` has no writer left in the app.
+**059** added `audit_findings.template_line` / `template_text` and `audit_runs.template_lines`. The
+line's own reference *and the line as printed*, because "A2" is not a question unless you have the form
+in front of you — and the run stores the questions it was asked so a re-audit asks the same ones
+without paying to extract them again.
 
-### And what Audits now owns, as of migration 058 (30 September 2026)
+**060** narrowed one CHECK by one case: a `date` may have a null `due_on` **when `recurs is true`**.
+A non-recurring date with no day is still refused. The rev 1 baseline is why: eighteen date items came
+back as real recurring obligations with no day in them ("Annual permit fee (Condition 6.2)"), the old
+CHECK refused them, and `shapeFindings` demoted each one to a finding — which carries no word, so
+twenty-three rows rendered as a title, a document and nothing else. `recurs is true` and not
+`recurs is not false` is deliberate: null means the model did not say, and that is a reading which did
+not finish.
 
-Three tables of its own, in the shape Documents' batches/scans/gaps already use, so the sweep, the
-email and the banner did not have to be designed twice.
+Every one of the three tables is `REVOKE`d from `anon` and `authenticated` and then granted
+`select, update` to `authenticated` only — **no INSERT**. A person reads and annotates an audit; only
+the server writes one. 058's verify block reads the grants back with `has_table_privilege` rather than
+trusting its own grant list.
 
-| Table | What it is |
+---
+
+## 3. The routes
+
+| Route | What it does |
 |---|---|
-| `audit_runs` | One audit of one company at one moment — `kind` agency or template, the `agency_label` or `template_document_id` it was about, `section_count` against `done_count` for the banner, `readings_as_of` for how fresh the evidence was, and `previous_run_id` pointing at the run it is being matched against. `notified_at` and `dismissed_at` are proof, so neither the email nor the banner can arrive twice. |
-| `audit_sections` | One agency, one model call, one claim. `claimed_at` is the compare-and-set the sweep claims with and the recovery releases, exactly as `documents.reading_since` is; `model`, `prompt_sha256`, `input_sha256` and `ai_call_id` are the receipt, so "what produced this" is answerable from the row months later. A section that could not finish carries its reason, and a CHECK means only a failed one may. |
-| `audit_findings` | Every row of an answer — a finding, a date, a contradiction, an expected item — in one table with a `kind`, because they share a lifecycle (`open`, `closed`, `dismissed`), a matcher (`same_as`, `closed_by_run_id`) and a document pointer, and four tables would need four of each. A CHECK per kind means the table cannot hold a half-built row: a date carries `due_on`, a contradiction carries the second document and both values, an expected row is `basis expected` with `word nothing_on_file`. |
+| `GET /api/audits/index` | the page's **one** read: every run, its sections, the agency lines, the documents-read count, the estimate. |
+| `POST /api/audit-runs` | start one. `kind: agency` with an agency or `all`; `kind: template` with `template_document_id`. Returns the run, its section count and the estimate, and kicks the sweep with `after()`. |
+| `GET /api/audit-runs/[id]` | one run, its sections and its findings in one request — everything the drawer renders. `PATCH` dismisses the banner, once. |
+| `POST /api/audit-runs/[id]/sections/[sid]/retry` | run one section again. A section that failed is the only thing re-bought. |
+| `GET /api/audit-runs/[id]/documents` | the documents that audit read, as a zip, streamed. |
+| `POST /api/audit-checklist` | a checklist from an audit, or from chosen findings. |
+| `PATCH /api/audit-findings` | a person's own edits: dismiss with a reason, correct, mark done. |
+| `GET/POST /api/jobs/audit-sections` | the sweep. `CRON_SECRET` on the cron path. |
 
-Migration 059 adds two columns to `audit_findings` and one to `audit_runs`, for the template audit:
+All of them derive `company_id` from the verified session through `requireCompany()`, never from the
+body, and return **404 rather than 403** for another company's row so ids cannot be probed.
 
-| Column | What it is |
-|---|---|
-| `audit_findings.template_line` / `template_text` | The checklist reference this finding answers, as printed — `A2`, `B4`, `7` — and that line as written. The reference alone means nothing without the form in front of you, so the text is stored too: it is what makes a printed report readable on its own, which is the case the feature exists for. Null on an agency audit. |
-| `audit_runs.template_lines` | The sections and lines as extracted, kept with the run. A re-audit asks the same questions in the same order rather than paying to extract them again — and "what changed since last time" then compares two runs of one questionnaire instead of two questionnaires. |
+**The old engine is gone.** `app/api/audits/route.ts` and the old page were deleted in Run 3, in the
+same commit that built the new ones. The `audits` and `hr_audits` tables are **kept and unread by this
+section** — `scripts/schema-doc.js` labels them "the retired engine, tables kept". Nothing in
+`app/dashboard` or `components/` reads them; that was swept and re-swept on 1 October and the grep
+returns nothing.
 
-**The template rule, in one sentence:** an agency audit reads what Documents made of a file and never
-opens one; a template audit opens exactly one — the checklist — because a checklist is not evidence,
-it is the question, and nothing else in the product has read it. `lib/auditTemplate.ts` is that one
-place, it extracts and does not judge, and the judging is a second call with the same audit input an
-agency audit gets, over **every** document the company holds, because a checklist spans regulators.
+---
 
-Every pointer out of these into Documents' tables is a **composite** foreign key on
-`(company_id, <id>)`, so a finding cannot cite another company's document or reading. RLS would not
-catch that on its own — the policy checks the finding's own `company_id`, which is correct, and never
-looks at where the document went.
+## 4. The sweep, the cron and the email
 
+**An audit is queued rows and a cron, not a request.** One agency is 30–70 seconds on Haiku and three
+minutes on the real model; a four-agency company is most of a coffee break. The person has left.
 
-## 5. The design template (every section follows it)
+- `createRun` writes the run and one `audit_sections` row per agency or per checklist section, all
+  `queued`.
+- `POST /api/audit-runs` kicks `sweep()` through `after()` so the first section starts at once; the
+  cron in `vercel.json` — `/api/jobs/audit-sections`, `*/5 * * * *` — is what finishes the rest and
+  what picks the work up if the kick is lost.
+- The sweep claims **a whole company's** queued sections in one statement and writes `claimed_at`,
+  **not** `status = 'running'`: the same reason the document sweep claims on `reading_since`. A second
+  overlapping sweep sees nothing unclaimed for that company and moves on, which keeps one company's
+  audits strictly one after another.
+- Stuck sections — `running` with an old `claimed_at` — are returned to `queued` at the top of every
+  cycle, guarded so a section that finished in between is not clobbered.
+- `runSection` **never throws.** Every failure lands as `could_not_complete` with a sentence a person
+  can read, stored on the row. One section's death costs one section.
+- `finishRunIfDone` closes the run and `notifyRun` emails it. **Every finished run is emailed** —
+  there is no batch-of-one silence, because an audit that finishes silently is an audit nobody reads.
+  Plain text, the summary and the link, `notified_at` set only on a send that actually succeeded, the
+  `NEXT_PUBLIC_APP_URL` refusal and the `NOTIFY_TEST_TO` override that says at the top where it really
+  went.
+- `estimateRun` is **measured, never guessed**, from this company's own finished sections and then
+  from everyone's, and it says which it used. With nothing to go on it declines to estimate rather
+  than inventing a number.
 
-Read `docs/DESIGN.md` in full; it is authoritative. The layout chat owns it; additions from a section go in as marked additions. What follows is the template as Documents applied it, so Audits and the Workspace match it exactly.
+---
 
-### 5.0 The rule about who is speaking
+## 5. The page and the drawer, in their final shape
 
-**The product never names what does the reading. It reads, finds, asks and says.**
-*(Added 28 September 2026, Task 0 commit 2.)*
+`app/audits/page.tsx` and `components/AuditReport.tsx`. Three owner reviews shaped them; what follows
+is where they landed, and the reasons are the part worth keeping.
 
-No screen, empty state, button or error says what performs a reading. "We read your permit", "this
-is what we found", "is that still right?" — the product is the subject of every sentence. A person
-confirming a fact about their own business is helped by the quote and the page it came from, never by
-being told what read it; and a line that names the reader invites the reader to be argued with
-instead of the fact.
+**The page.** A box you type into ("Audit us for Oregon DEQ", "Audit everything", "Audit us against the
+attached checklist"), the attach line and the Workspace link under it on one line, then one thin line —
+`12 documents read · 4 agencies · last audited 30 September 2026` — then one row per agency with its
+own count and date and its own Audit button, and a Past audits tab.
 
-This is not a euphemism. `CLAUDE.md` §6 requires a verified row and a generated row to look
-different, and they do — through `basis`, `quote_verified`, "inferred", "these words were not found
-in the file", and the amber that carries each. Those say **how sure we are**, which is what a person
-can act on. What did the reading is not.
+**No banners.** Every finished run used to raise one, so two runs in a morning put two "audit of
+everything is done" lines above a list whose every row already carried its own date. The date they
+carried moved to the thin line. `dismissed_at` stays a column and **nothing reads it**: a dismissal
+already recorded is not ours to erase.
 
-It applies hardest where the product is least sure, which is where the temptation is worst: an
-apology that names a mechanism reads as the product blaming a component rather than owning a failure
-(§5.1's worked example is the same instinct one step along). **`/company-information` is the first page held
-to this rule end to end** and the assertion is in its manual set: the word does not appear on it.
+**One exception, because it has nowhere else to live.** A checklist run has no agency row, so it gets
+one grey line under the box while it runs and one when it lands, and opening it takes the line away.
+Past audits names such a run by its checklist, not "All agencies", which is the one thing it is not.
 
-### 5.1 Tokens
-- Interface type: IBM Plex Sans. Reading and page titles: Source Serif 4.
-- Page background cool grey (`#F7F8FA`), white surfaces, near-black ink (`#14171A`), soft ink (`#5B6470`), light grey for light headings and counts (`#8A929C`), hairline (`#E6E9ED`).
-- One green (`#2F7D52`) for the primary action and the active state only. Amber (`#B7791F`) for attention. Grey for routine. Never green for routine.
-- Radius small; hairlines instead of boxes; lists sit on the page background.
+**The drawer opens folded** when a report has more than one section — every section closed with its
+count, a table of contents, so you can see the shape of the answer before reading it. An agency report
+opens **Findings** and nothing else, because that is what it is for; a one-section report opens its one
+section. The sentence saying what the report is stays outside the folds. Folded sections are hidden
+with CSS and still render, so printing gives every page and `scripts/page-text.mjs` can read the whole
+report.
 
-### 5.2 The shell
-- 57px white header with the wordmark; 224px left sidebar with the section list, active item in green wash; "To confirm" carries a count badge.
-- Reading surfaces are 775 wide (the Workspace). Working surfaces (Documents, Audits, Calendar) are 900: with the sidebar that leaves 78px margins at 1280, 121 at 1366, 158 at 1440. The drawer is 720.
+**A date that recurs with no day** reads `<title> — recurs, no date in the reading`, and has no "Add to
+calendar" link: a calendar row with no date is the same false precision one step on.
 
-### 5.3 A section page
-1. Title in the serif at 28px, one line under it at 14px soft ink saying what the page is.
-2. A controls row, hairline under it: filters on the left as "Label value ▾" dropdowns (Folder, Group by, Site when the company has more than one), the primary action on the right as the one filled green button ("Add files"), a tertiary text action beside it if needed ("Add a folder"). No form controls inside the list.
-3. The list, grouped: group headings at 12px uppercase with the count in light grey after them. Headings that carry a name (Agency, Subject, Kind, Site, Folder) in the darker grey; headings that carry a state or a date (Status) in the light grey. Default grouping is status, "what needs me today" first. Group by None is the flat sortable table.
-4. Rows, three columns, hairline between rows, no boxes: left, the reading's title at 13px and a 12px meta line (filename · folder · read <date> · N older versions); middle (230px), agency and kind · site; right (160px, right-aligned), the status word (amber for attention, grey for routine) and the date that matters under it at 12px. Rows with no value for the grouped column sit in a last group ("No agency yet"), never dropped. Could-not-read rows carry the reason as a second line and an "Upload a clearer copy" action. Groups over eight rows collapse to eight with "Show all N".
-5. Under an Agency grouping only, one amber-wash line per group beginning "What we'd expect and don't see:" and ending "Based on what similar companies hold, not on a checked requirement.", three items and "and N more".
-6. A banner at the top when a batch has finished, dismissable, the same summary as the email.
+**A checklist naming another company** is noted and audited anyway — *"This checklist names X; treated
+as a template for you."* An auditor's field form names somebody who is not you, and auditing yourself
+against one is a normal thing to want. The model's instinct was to refuse; the product's job is to say
+what it noticed and get on with it.
 
-### 5.4 The drawer (the report)
-- Opens from the right on row click, 720 wide, scrim over the dimmed page. Sticky header: 18px medium title, 13px sub line (kind · agency · site · filename · read <date>), a "Filed in ▾" control, close. Scrolling body. Footer with the button vocabulary: at most one outlined green button (the model-call action), the rest text actions, Download at the far right, Delete last and smallest.
-- Section headings in the body at 12px uppercase; "Status" light, the rest dark (they name parts of the report).
-- The summary in the serif at 17px; item names at 16px; descriptions at 15px; source lines and locators at 12px soft ink.
-- Print: a print-only header (company | title | sub line | printed date | CompliBoard), chrome hidden, drawer static, text-only styling; the rules live in `globals.css`, one copy for every screen.
+---
 
-### 5.5 The report structure (the template for any reading)
-The Documents report is the pattern for every report the product produces, including an audit report. Sections appear only when they have content, in this order:
-1. **Status and the date that matters**, one line: the status word (amber or grey) · the count that qualifies it · the date with its kind.
-2. **What this says**: two or three sentences in the serif saying what kind of thing this is and what that means for the reader. Written to be read once.
-3. **The nudge**, amber wash, only when a rule produces one (freshness over three years for a program; a non-recurring deadline that has passed), always with the way forward as two text actions.
-4. **What this is**: a two-column list of identity facts, each with where it came from (page, section, condition number), and one link: "Not right? Change what this is", opening an inline correction form that writes correction rows.
-5. **Gaps**: numbered; each with title, description, "Fix." paragraph, citation as a link, locator, "inferred" after the title when the basis is inferred, then the actions in one line: Draft this section (when draftable), Make a checklist, Research this, Not right. A linked checklist shows as its title with "checklist made <date> · N of M done". Dismissed gaps under a "Dismissed" subheading with the reason; gaps from earlier readings under "From earlier readings"; a gap the latest reading did not mention carries "not seen in the latest reading".
-6. **Dates this document sets**: title, date, source line, recurs; "Add to calendar" or "In your calendar"; a passed non-recurring date reads "Passed" in amber.
-7. **Conditions to keep**: title, condition number, the evidence you would hold, "Add the log".
-8. **Facts we found, please confirm**: the fact, the verbatim quote and its locator, "inferred" when inferred, "quote not found in the file" in amber when unverified; Confirm / Not right (reason required); confirmed reads as confirmed; withdrawn reads "no longer proposed by the latest reading".
-9. **Versions**: each with issue date and upload date, "This version" / "Superseded", "Same document" / "Not the same document?".
-10. **A quiet last line**: read on <date> · quotes are word for word and inferences are marked · N sources looked up · read by <model> · Not legal advice.
-- For a reading that failed: the reason, the way forward, one action, nothing else.
-- Footer: [Make a checklist for all N gaps] outlined · Open the file · Read it again · Delete this file · Download.
+## 6. The four words, and the design rules
 
-An audit report uses the same skeleton with the nouns changed: status by agency; what the readings say; the nudge for the most urgent passed date; what this covers (agency, subjects, sites, documents read, documents held or unread); findings in place of gaps (each pointing at the document and gap it came from); dates across documents; conditions with no evidence on file; facts the audit relied on; earlier audits in place of versions; the quiet last line.
-
-### 5.6 The "To confirm" page and the queue
-- 900 wide; title; one line; the ranking rule printed on the page; three at a time with "Show more"; each key once with every source under it; Confirm settles the key, or asks when sources disagree; Not right rejects the group with one reason. The sidebar count is keys, not rows.
-
-### 5.7 Email and banner
-- Subject "We've read your N documents". Body: the summary, one line per document needing attention, "On file and nothing to do: N", one link to the page from `NEXT_PUBLIC_APP_URL`. The email has nothing of its own; every line is a row in the index. The banner shows the same summary until dismissed.
-
-## 6. The file structure (every section follows it)
+**Four words, and no fifth.**
 
 ```
-app/<section>/page.tsx                      the page: controls row, grouped list, banner, opens the drawer
-app/api/<section>-scan/route.ts             the model call route (requireCompany; ledger; never a 500 on model or parse failure)
-app/api/<section>s/index/route.ts           the page's one read (a view)
-app/api/<section>s/report/route.ts          the drawer's one read (everything a report needs, six tables, one request)
-app/api/<section>-actions/route.ts          the free writes: corrections, dismissals, confirmations, versions, delete (one route, several verbs, ownership proved first)
-app/api/<section>-checklist/route.ts        model-call actions each get their own route and ledger task
-app/api/jobs/<section>-sweep/route.ts       the background sweep in the cron pattern (CRON_SECRET, job_runs, per-item errors, time budget, one company at a time)
-lib/<section>Scan.ts                        buildContext, the call, normalise (trust nothing that comes back), verifyQuote, chooseSignificantDate, saveScan (server-only writes)
-lib/<section>Batch.ts                       summariseBatch, notifyBatch
-prompts/<section>-scan.ts                   the prompt, plain voice, "say what to do, not what not to do"; the JSON shape and its schema side by side; edit freely, no code depends on wording
-prompts/<section>-draft.ts, -checklist.ts   one prompt per model-call action
-components/Drawer.tsx                       the shared drawer shell
-components/<Section>Report.tsx              the report body, sections in the order above
-supabase/migrations/NNN_<what>.sql          one migration per change, opens with why, ends with a verify block that tries to break its own constraints and reads privileges back; probes use a throwaway company; additive except where stated
-docs/SCHEMA.md                              regenerated, never hand-edited
-tests/golden/<section>/README.md            how cases are judged
-tests/golden/<section>/NN-<case>.md         spec: render-as, company context, DOCUMENT TEXT, ANSWER KEY (must, must-not, near misses)
-tests/golden/<section>/fixtures/            rendered from the spec text, verified against the PDF text layer, timestamps pinned
-tests/golden/<section>/cases/*.json         one per fixture, built from the answer key, never adding expectations the spec does not state
-tests/golden/<section>/runs/<case>/         every run's full JSON, so a person can read what the model said
-scripts/run-golden-<section>.js             npm run golden:<section> [-- prefix] [--times 3] [--from-runs] [--seed-only]; judges by concept, never by count; prints one table per case
-scripts/render-golden-<section>.js          renders fixtures from spec text
-scripts/<section>-scan.js                   run the scan on one file, N times, context rebuilt per run
-docs/TESTING.md                             the manual set per run: perfect case and edge case per feature, run signed in against staging
-docs/DECISIONS.md                           one entry per run, written by the chat from the report
-docs/releases/<date>-<section>-rev1.md      the release note: commits, migrations with probe behaviour, variables, what changes on the day, smoke test
+on_file   stale   nothing_on_file   not_a_document_question
 ```
 
-Shared code every section uses and must not copy: `lib/ai.ts` (askAIWithCitations, askAIJson, extractJsonText with the balanced-brace scan, modelForTask, the streaming path), `lib/costLedger.ts`, `lib/documentContent.ts` (parseDocumentToBlocks), `lib/jobAuth.ts`, `lib/auth.ts` (requireCompany, supabaseAdmin), `config/pricing.ts`.
+`lib/auditRun.ts`'s `WORDS`. `normaliseWord` maps two near misses it has actually seen — `expiring`
+and `expired`, which are Documents' status vocabulary for the same claim — and records that it did so.
+Anything else is **not** a fifth state: it is dropped, counted as `dropped_wordless` on the run, and
+reported in the log. There is no score, no percentage and no grade anywhere in the section.
 
-## 7. What the code and both databases look like today (26 September 2026)
+**And the rules that are not open to reinterpretation:**
 
-- **Migrations:** 000 through 054 on both staging and production; the chain builds from empty (proven twice on 26 Sep). `npm run db:restore` rebuilds staging in eight steps (library, fixtures) and must follow any reset; `npm run golden:docs -- --seed-only` re-seeds the three golden companies.
-- **Production Vercel variables:** the six from June, the nine from 23 Sep (`CRON_SECRET`, `AI_MODEL_PROSE`, `AI_MODEL_JUDGEMENT = claude-opus-5`, `AI_MODEL_SUBSTEPS`, `AI_MODEL_SUMMARY`, `AI_EFFORT`, `RESEARCH_PREFER_GOV`, `RESEARCH_SPECIALIST`, `RESEARCH_PROVENANCE`), and from 26 Sep `NEXT_PUBLIC_APP_URL`, `AI_MODEL_DOCUMENT_SCAN = claude-opus-5`, `AI_SCAN_STRUCTURED = false`. `NOTIFY_TEST_TO` must never exist on production. The bare `AI_MODEL` is not set. **OWNER** confirms the values of the 23 Sep model variables if a section depends on them.
-- **The scan:** `lib/documentScan.ts`, task `document_scan`, native document block for PDF and images, shared parser for the rest, extracted text kept for quote checks, web search on and uncapped in production (`DEV_MAX_SEARCHES=2` in dev), maxTokens 16000, JSON via the extractor (the schema is off on production: Opus 5 refuses it as "compiled grammar too large"; Haiku accepts it).
-- **The sweep:** `/api/jobs/scan-documents`, cron `*/5 * * * *` on Vercel Pro, plus an `after()` kick-off at upload; 800s budget, stops starting new documents at 640s; stuck claims recovered at 900s; one company at a time. `LIVE_SCAN_MAX = 3`.
-- **Cost:** a five-page program on Opus 5 with search uncapped, $0.517. On Sonnet 4.5 about $0.38; on Haiku with search capped at 2 about $0.05. Cost is not a product decision now; it informs the subscription price later.
-- **Quality, recorded not acted on:** Haiku misses planted gaps and invents rule numbers with zero searches; Opus 5 found all three planted EAP gaps on its first production read. The bake-off (Opus 5.5, Sonnet 5, Haiku; schema on and off; search uncapped; seven fixtures × 3) has not run. Opus 5.5 needs a pricing row first.
-- **Known debts touching Audits:** the old audit engine's loop and silent drop (above); `/api/extract-dates` has no auth check and no caller on the Documents page; `document_scans.entity_id` is not checked against the document's company; `job_runs.ok` is always true; fact keys are company-scoped and should be site-scoped.
+- **"Compliant" is never a status.** Not in a prompt, not in a label, not in a summary. Every report
+  carries the sentence: *every line points at a document, or says what we do not see; none of it is a
+  verdict on whether the company complies.* The golden keys forbid `satisfied`, `compliant`,
+  `in compliance`, `met` and `all clear` as claims about the company.
+- **Never name what did the reading.** No "AI", no model name, on any customer surface. The golden
+  keys sweep for the bare word.
+- **Cost is never on a customer screen.** It stays in `ai_calls`, in `npm run cost`, in the golden
+  tables and in `costOfSections` for those readers. Three routes served it once; §147 took it out.
+- **A submission not yet due is a date, not a finding.** "Annual report for 2026 — nothing on file",
+  against a report due five months out, is a page full of noise burying the renewal that really is
+  late. Said in the prompt *and* enforced in `shapeFindings`, which reshapes it and counts the
+  reshaping.
+- **A line answered in part is `on_file`**, with what is missing in `what_to_do`. Calling a partial
+  answer `nothing_on_file` tells somebody they have nothing when they have most of it, and they stop
+  trusting the report.
+- **A finding is never written without a word.** The backstop is in `shapeFindings`. The one deliberate
+  exception is a checklist line the model skipped, which gets a row saying *"We did not get an answer
+  for this line"* — wordless and saying so is a different thing from wordless and saying nothing.
+- **Every model call writes a cost row**, task `audit`, and the model comes from the `audit` tier
+  (`AI_MODEL_AUDIT`, else the judgement tier). 16,000 output tokens from the first attempt; the
+  doubling retry in `lib/ai.ts` stays as the backstop.
 
-## 8. Operations: what Claude Code may run, and how
+---
 
-- Local dev (`npm run dev`) points at staging via `.env.local`. Never at production.
-- `npm run check` (typecheck, schema contracts, tests with a floor, build) before every commit. `npm run check:live` signs in as a fixture and drives routes against staging; it is the gate for any migration touching a tenant table.
+## 7. The golden cases, the fixtures, the restore and the baseline
 
-  > **⚠ MORE THAN TWO OF ITS ASSERTIONS FAIL ON THE HAIKU TIER, AND THE SET IS NOT FIXED.**
-  > *(Corrected 28 September 2026 from two runs; a third added 29 September.)* This bullet named two —
-  > `attachment/tier` and `attachment/errors`, the content assertions that pass on production's
-  > configuration. Measured:
-  >
-  > | assertion | run 1 | run 2 | run 3 |
-  > |---|---|---|---|
-  > | `convert complete` — expects both origins, Haiku returns `{"conversation": N}` only | ✗ | ✗ | ✗ |
-  > | `attachment/errors` — named 2, then 3, then 4 of the policy's 5 errors | ✗ | ✗ | ✗ |
-  > | `attachment/tier` — the 25 + 31 = 56 headcount | ✗ | **✓** | ✗ |
-  >
-  > Three runs: two fail every time, one fails two in three. `attachment/errors` got *closer* each
-  > run (2, 3, 4 of 5) without passing, which is worth knowing — it is a threshold assertion on a
-  > model's recall, not a binary about wiring.
-  >
-  > **So the honest statement is not "two" or "three" but "two reliably and a third intermittently",**
-  > and `convert complete` is the one the documentation never named. It is a model-quality outcome
-  > rather than a wiring fault, and that was checked rather than assumed:
-  > `app/api/checklists/from-topic/route.ts` and `prompts/convert.ts` are untouched by Task 0, and
-  > that route reads no company context — its prompts are constants.
-  >
-  > **And one line is neither a pass nor a failure:** `sources` reports `NEITHER a denial nor a clear
-  > affirmation`, the standing third-turn citation defect in `HANDOFF-CODE.md` §7.
-  >
-  > Why this matters more than the count: a run reporting "3 problems" against a document saying "2
-  > are expected" is a run somebody reads as green — and a *flapping* assertion is worse than a
-  > failing one, because the first green run is the one that gets quoted.
-- `npm run db:reset` and `npm run db:restore` on staging, under a pty, after any new migration; the result is read from `supabase_migrations.schema_migrations`, not from the command (twice the pty automation silently did nothing).
-- `npm run golden:docs`, `npm run cost -- --since <date>`, `npm run preflight` (read-only against production; the only production access Claude Code has).
-- Claude Code commits and does not push. A push to `main` deploys production. Migrations run on production only by the owner, via `npm run db:migrate:prod` and the word PRODUCTION.
-- Before a long run, `/clear` Claude Code's context; the instruction carries its own reading list and the repo is the memory.
+**Five cases**, `tests/golden/audits/cases/`: `cascade-deq`, `cascade-osha`, `cascade-fire`,
+`cascade-template-12`, `cascade-template-13`. Run with `npm run golden:audit`. The judge reads the
+**rows**, not the model's JSON, so handle resolution, the per-kind CHECKs and every demotion are inside
+what the key measures.
 
-## 9. How a change reaches production
+**Seven fixtures, 07 to 13**, `tests/golden/audits/`, written so every honest word appears at least
+once and the template intake has two real checklists:
 
-`docs/RELEASE.md`. Preconditions: `npm run check` green with the test count; `check:live` run on staging with every pending migration applied; the owner's manual tests from TESTING.md done against staging. Then: `npm run preflight` (the pending list must be exactly this release's migrations); `npm run db:migrate:prod` and the word PRODUCTION; variables on Vercel (Config type for anything readable; `NEXT_PUBLIC_*` before the push because it is baked into the build); `git status --porcelain && npm run typecheck`; `git push`; the smoke test on the live site, including the `ai_calls` row's model and cost and the `job_runs` row within five minutes. Rollback of code is a revert and a push; of a switch or model, one variable; of a migration, never (a new migration).
+| | |
+|---|---|
+| 07 scrubber log | condition 3.1 answered `on_file`, carrying the record's own findings |
+| 08 DEQ annual report 2025 | 4.1 on file while 4.2 stays nothing-on-file; a carbon date that makes 2026 overdue by the report's own words. Its status is **reported-only**: a receipt is not a compliance determination, and the document says so |
+| 09 forklift training | the OSHA expected item answered `on_file`, one operator `stale` |
+| 10 OSHA 300A 2025 | the contradiction: 65 employees for 2025 against the plan's 42 as of February 2021 |
+| 11 extinguisher certificate | a `stale` document under a third agency |
+| 12 DEQ inspector's field form | the template intake, fifteen lines, an agency's own form |
+| 13 company self-check | the second template, eight lines, walk-through items included |
 
-## 10. Parked, from Documents
+Read in order — 01, 02, 05, 06a, 06b, then 07–11, then 12, 13 — so labels accumulate the way they do
+for a customer.
 
-**File types (vision doc, "File types"; one small run after the bake-off and before drive connection).** Eleven types read today (PDF, JPEG, PNG, GIF, WebP, .xlsx, .xls, CSV, text, .docx, .pptx). The picker also promises `.doc`, `.ppt` and `image/*`, and those fail on read (HEIC from every iPhone, TIFF from every scanner). To add: server-side conversion for HEIC/TIFF/BMP; `.eml`/`.msg` and `.zip` expanded into batches; `.md`/`.rtf` as text; honest refusals with export instructions for `.doc`/`.ppt`/Apple formats; PDFs over 100 pages or 32 MB split or text-read and said so; password-protected PDFs asked for, not failed generically; the picker's list generated from the parser's table; one fixture per type. The rule: every type the picker offers is one the product reads, or the picker does not offer it.
+**Getting a working fixture back after a reset.** `npm run db:reset` rebuilds the schema and nothing
+else. Then `npm run db:restore`, which has ten steps; step 9 restores Cascade's twelve readings from
+`tests/golden/documents/runs/real-model/` **through the same `saveScan` with `linkLedger: false`** and
+makes **zero model calls**, and step 10 runs `run-golden-audit.js --fixtures-only`, which relinks
+`testcascade@example.com` to the recreated company, confirms the one fact the OSHA contradiction needs
+(the plan's 42), and writes agency-label corrections only where a reading contradicts that document's
+own answer key. A reset costs nothing and takes minutes.
 
-**The audit binder (recorded 29 September 2026; `DECISIONS.md` §143).** *After the audit section ships,
-and after the file-types run above* — in that order, because the binder needs the conversion container
-that run brings. One PDF: a cover, then **each cited document as pages behind a tab sheet**, then the
-audit report at the back. It is the thing a person carries into an inspection, and it is why the
-file-types work is a prerequisite rather than a nicety — a binder that silently omits the HEIC photo
-of the forklift log is worse than no binder. Recorded for the landing page.
+**The baseline is the reference.** `tests/golden/audits/bakeoff/RESULTS.md` — five cases, three runs
+each, `claude-opus-5-5`, one open call, nothing switched on, **$5.37**. 41 of 51 must-lines held in all
+three runs against Haiku's 32, no case worse, zero handle errors, zero unparseable calls. Cost per
+audit from $0.11 for one document to $0.56 for a three-section checklist. **Every later switch and
+every cheaper model is measured against it, one change at a time**, with the two commands named in its
+own header; the drawer text of all fifteen runs is stored beside it.
 
-*(This went into §10 and not §9 as the instruction said: §9 is "How a change reaches production" and
-§10 is the parked list the instruction described. Numbering noted rather than followed.)*
+---
 
-Drive connection (its own run when the owner's Google and Microsoft accounts exist). The requirement table's return (`evidence_types` on the library, canonical agencies, `switch_determinations` and `obligation_evidence` written, the seven "never infer" rules as measured switches). Chat over documents. Pinned views. Nested grouping. Site-scoped fact keys. A rule for gaps not seen twice. The structured-output schema simplified and measured. Prompt caching and Batch API as measured switches. The weekly email.
+## 8. What is owed to the section after release, in this order
 
-## 11. What only the owner can supply (ask before designing)
+This order is the owner's, and the reasoning for it is in each line.
 
-- **OWNER** The vision for Audits, in his own words, before any design: what an audit is to an EHS person and to an owner, what they do with it, how often, who sees it, whether it is per agency, per subject, per site, or all three; what "we're ready for an inspection" means to him; what he wants the first screen to answer.
-- **OWNER** Whether an audit is a standing view over the readings (recomputed on every visit, no model call) or a dated report the person asks for (a model call, kept, with earlier audits as versions), or both. The Documents pattern suggests both: a standing page grouped by agency, and "Audit this agency" as the one model-call action that produces a report in the drawer.
-- **OWNER** What the old audit screens are used for today (Audits, HR audits), and whether HR audits are part of Audits rev 1 or of HR.
-- **OWNER** Golden cases for audits: which combinations of the seven golden documents make a good audit case, and what a correct audit must say about each. The chat writes the specs and answer keys; Claude Code renders and judges.
-- **OWNER** Whether "ready for inspection" language is allowed anywhere; §58.3 says no numeric readiness, and the honest vocabulary is per agency: findings open, dates passed, conditions without evidence, expected and not seen.
+1. **The sites screen.** `switch_scope` says 73 of the 95 switches are per-site, and an audit is scoped
+   to a company. A second plant has its own permit, its own generator category and its own forklifts,
+   and until a person can say which site a document belongs to, a two-site company gets one audit that
+   is wrong for both. **Nothing in this section has been judged on a two-site company** (§10).
+2. **The question path from the box.** The box accepts "Audit us for Oregon DEQ" and "Audit everything".
+   A person who types a question — "do we need a stormwater permit?" — gets nothing. It belongs in the
+   Workspace and the box should route it there rather than failing to parse.
+3. **The inspector's findings letter as an intake.** The template intake reads a blank checklist. The
+   document a customer actually has after an inspection is a letter listing what the inspector found,
+   and it is the same shape of problem: lines in, one answer per line out, against the documents on
+   file. It is the first intake a real customer will want and it needs no new table.
+4. **Prompt caching, as a measured switch.** An agency audit sends 20–30k input tokens and most of it
+   is the same block on every run of the same company. Input was 43% of this section's bill. It is a
+   switch measured against the baseline, never built into it.
+5. **The worker — on the day `job_runs` shows budget exhaustion, and not before.** The sweep runs in a
+   serverless route under a cron and finishes four sections comfortably. A company with twelve agencies
+   on the real model will not finish inside the limit. `job_runs` is where that will show; move it when
+   it does.
+6. **The binder — after the file-types run.** Printing one report works. A binder is every report, the
+   documents behind them and a cover sheet, and it depends on reading file types the scan cannot open
+   today. Doing it before that produces a binder with holes in it.
 
-## 12. First tasks
+---
 
-0. The company context, before anything reads for Audits: one function in `lib/` assembling declared switches, confirmed facts (with site scope and as-of date), corrections, labels and keys; every existing prompt builder (document scan, research, checklist, draft) switched to read it and nothing else for the company; a "Your company" page at 900 with the settled list and an edit per line — **built, and named Company information** (`/company-information`, Task 0 commit 3); golden runs re-run once on Haiku to show nothing mechanical changed. One run, its own DECISIONS entry.
-1. The owner's vision, then questions, then the canvas: the Audits page (900, the template above), the audit report drawer (the report structure above with audit nouns), and where "Audit this agency" lives.
-2. The contract, read off the drawer: what an audit row and an audit report store, in the same shape as `document_scans` and `document_gaps` (findings as rows with ids and a lifecycle; the audit as the matcher across re-runs).
-3. Run 1: the audit as a script over the readings of one golden company, three times on Haiku, mechanics only; the old engine's loop retired in the same run or the next.
-4. Then the page, the drawer, actions, and the sweep if audits are scheduled.
-5. Release per RELEASE.md; then the bake-off across models for both the scan and the audit.
+## 9. What this section handed to other sections
+
+- **To Documents: three real-model reading behaviours.** On `claude-opus-5-5`, the same sentence that
+  made Haiku propose a headcount proposes `employs_drivers`, `onsite_laboratory` and
+  `employees_evacuate_during_fire` instead — so a fixture that fished a proposal out by `switch_key`
+  became a silent no-op. The real model also returns Documents' own status words (`expiring`,
+  `expired`) where an audit word belongs, and returns a whole line where a reference was asked for.
+  All three are in `lib/auditRun.ts`'s normalisation and in `scripts/run-golden-audit.js`'s matching;
+  Documents' golden set has not been re-judged against any of them.
+- **Label drift and the merge.** An audit is scoped by an exact agency label, which made label drift a
+  visible defect for the first time: `Oregon OSHA` and `OSHA` on two documents are two agencies to an
+  audit. The merge and `document_corrections` through `document_index_v` are the mechanism; the
+  **cause** is in the scan, and that is Documents' to fix.
+- **To research: the facts switch.** Confirmed facts and proposed facts have to be shown to a model
+  differently or it states a proposal as true — the 300A's 65 against the plan's confirmed 42. The same
+  distinction applies to every prompt that is shown `company_facts`.
+- **To HR audits: this shape.** `hr_audits` is still the old engine's table. When HR audits are
+  rebuilt, the shape is the one here — runs, sections, findings, one word per line, a cron, an email —
+  not readiness numbers computed from reviews.
+
+---
+
+## 10. What has not been judged
+
+- **A two-site company.** Everything in this section has been measured on Cascade, which has one site
+  called Portland. An audit is scoped to a company, documents carry a site, and nothing has tested what
+  a report looks like when two sites hold different permits. This is item 1 of §8 for that reason.
+- **A company with no documents at all.** `createRun` returns a finished run with a sentence instead of
+  an empty report, and that path has unit coverage but no manual pass.
+- **More than four agencies on the real model**, which is where the serverless limit is.
+- **A checklist longer than fifteen lines**, and a checklist whose lines are in a picture rather than
+  in text — the extraction says so plainly and audits nothing, which is the right behaviour and has
+  not been seen by a person.
+- **The six-word negation window** in the golden judge excuses "has never said the conditions were
+  met" and does **not** excuse the baseline's own sentence, where the negation is eleven words back.
+  A keyword check cannot be made to see that sentence; it is recorded, not solved.

@@ -2812,3 +2812,103 @@ SPECIALTY CHEMICALS LLC" do not raise it.
 
 `check:live`'s probe still writes its own four-line form named after nobody, because a probe must not
 depend on this behaviour to pass.
+
+---
+
+## Audits — the three Run 6a fixes (1 October 2026)
+
+Audits Run 6a. Three things the rev 1 baseline found in the product, and the manual pass for each.
+**Signed in against staging as `testcascade@example.com`.** Each one is a perfect case and an edge
+case, as every set here is.
+
+### 1. A date the reading cannot pin to a day
+
+The baseline returned eighteen date items shaped like this, over fifteen runs:
+
+```json
+{"title": "Annual permit fee (Condition 6.2)", "due_on": null, "recurs": true,
+ "document": "D5", "passed": false}
+```
+
+True, useful, and with no day in it: the permit says the fee is annual and the day is on an invoice
+nobody has given us. Migration 058's CHECK refused the row, `shapeFindings` demoted it to a plain
+finding, and a date item carries no `word` — so **23 rows across fifteen runs rendered at the top of
+FINDINGS as a title, a document and nothing else.** No word, no locator, no quote, nothing to do.
+
+**The perfect case.** Audit Cascade for Oregon DEQ. Open the report, open **Dates**. Pass: any line
+with no day reads
+
+> Annual permit fee (Condition 6.2) — recurs, no date in the reading
+
+in grey after the title, sits **at the bottom** of the Dates list (passed first, then by date, then
+the undated), and has **no "Add to calendar" link** — a calendar row with no date is the same false
+precision one step further on. Fail: a blank where a date should be, an invented day like
+31 December, or a line in FINDINGS with no word beside it.
+
+**The edge case.** A date that does **not** claim to recur and has no day — "the permit expires",
+no date — is a reading that did not finish. It is **dropped**, never shown and never given a day, and
+the count is on the run's summary as `dropped_undated` beside `reshaped_to_dates`. There is nothing to
+look at on the page, which is the point; to see it fired, read the run's `summary` or the server log:
+
+```
+audit section <id>: dropped 1 date(s) with no day and no claim to recur, 0 item(s) that would
+have landed with no word
+```
+
+**And the backstop, which has no screen at all.** A finding is never written without a word. The one
+deliberate exception is a checklist line the model skipped, which gets a row reading *"We did not get
+an answer for this line. Run this part of the audit again."* — **wordless and saying so is a different
+thing from wordless and saying nothing**, and the difference is the only reason one of them is allowed.
+
+### 2. The token cap
+
+Five of the baseline's fifteen runs came back `stop_reason=max_tokens` at 8,000 and were retried at
+16,000. `lib/ai.ts` accumulates the ledger **across** retries, so the truncated attempt is bought and
+discarded: cascade-deq cost **$0.4508** with the retry and **$0.2158** without it, for the same audit.
+The audit call now asks for 16,000 from the first attempt.
+
+**There is nothing to see on a screen, and that is why it is here.** To check it, audit a company with
+a dozen documents and read the server log: pass is **no** `AI response truncated` line. Fail is that
+line appearing, which now means the answer genuinely needed more than 16,000 and the retry — which is
+still there, climbing to the 21,333 ceiling — earned its place.
+
+### 3. What a checklist audit cost
+
+`costOfSections` summed `ai_calls` between each **section's** own timestamps. A template audit's first
+call reads the checklist **before any section exists**, so the figure was short by that call on every
+template audit ever run: **$0.5405 reported against $0.5634 spent.**
+
+`createRun` now inserts the run, stamps `started_at`, and only then spends anything; the extraction's
+ledger id is recorded on the run's summary as `extraction_ai_call_id`.
+
+**Cost is not on a customer screen** (§147), so this is checked by script, not by eye.
+`npm run check:live -- --only template` ends with:
+
+```
+✓ template cost        $0.0065 reported = $0.0065 in the ledger over 2 call(s),
+                       extraction included by id
+```
+
+Two calls, not one. Fail is a mismatch, and the line says which way and by how much.
+
+**The edge case is the one that caught the first attempt.** `runSection` used to write
+`audit_runs.started_at` on every section start, which moved the run's window forward past the
+extraction and put the cost back outside it — the same defect one layer down. The check said
+*"$0.0073 reported against $0.0060 in the ledger over 1 call(s)"* and that is what it is for. The run's
+start is now set once and never moved. **Two zeros agree perfectly and measure nothing**, so an empty
+window fails this check rather than passing it.
+
+### What this set cannot tell you
+
+Whether Haiku will answer a checklist at all when the evidence is thin. On 1 October, twice,
+`check:live`'s template flow — four checklist lines against two documents, one of which **is** the
+checklist — came back as prose:
+
+> I need clarification to proceed. You've provided: 1. **A checklist with 4 lines** to audit (air
+> permit, scrubber log, records retention, emergency contact) 2. **Two documents on file** (D1 and D2)
+
+`prompts/audit-agency.ts:290` already says *"Thin evidence is not a reason to decline; it is the
+answer … Never reply with prose explaining that you cannot answer."* The same code answers all eight
+lines of `cascade-template-13` against Cascade's twelve documents, so it is the thinness of the
+fixture and not the plumbing. **`check:live` fails on it and the failure is left standing**: a fixture
+enriched until the model complies measures the fixture.
