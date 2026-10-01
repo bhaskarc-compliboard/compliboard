@@ -84,7 +84,21 @@ export interface ContextCompany {
    * `agencies.industries` and `requirement_templates.industries` join on, not a description.
    */
   industrySlug: string | null
-  /** The same slug as words, when the two differ. Null when the slug is already words. */
+  /**
+   * The industry in words, when the slug is not already words.
+   *
+   * Two sources, in this order. **What the person typed**, when they chose "Don't see your
+   * industry?" at signup — `companies.scan_result.custom_industry`, written by
+   * `app/signup/page.tsx` and inserted by `/api/signup` as part of `scan_result`. Otherwise the
+   * slug with its hyphens and underscores turned into spaces, which is all `wordsFor` can do.
+   *
+   * *** AND THIS IS WHY IT MATTERS, NOT A TIDINESS POINT — Audits Run 7a, item 2. ***
+   * `wordsFor('other')` is null, because "other" contains no separator to expand. So every company
+   * that signed up as "other" had `Industry: other` put in front of the model — a word that says
+   * nothing about what the company does, while the sentence the person actually typed sat unread in
+   * `scan_result`. The model was being asked what a business must comply with and told only that its
+   * industry is "other".
+   */
   industryWords: string | null
   address: string | null
   state: string | null
@@ -216,7 +230,7 @@ export async function buildCompanyContext(
 
   // --- company and its sites -------------------------------------------------
   const { data: companyRow } = await db.from('companies')
-    .select('name, industry, city, state').eq('id', companyId).maybeSingle()
+    .select('name, industry, city, state, scan_result').eq('id', companyId).maybeSingle()
   const { data: siteRows } = await db.from('entities')
     .select('id, name, address, state, county, city, is_primary')
     .eq('company_id', companyId).order('name')
@@ -233,10 +247,18 @@ export async function buildCompanyContext(
   const siteNameById = new Map(sites.map((s) => [s.id, s.name]))
 
   const slug = ((companyRow?.industry as string) ?? null) || null
+  /**
+   * What the person typed when the dropdown had nothing for them. Trimmed and length-capped the way
+   * every other free-text value here is, and **only used when it is really words** — an empty string
+   * or whitespace falls through to `wordsFor`, because "" in front of a model is worse than "other".
+   */
+  const typedRaw = (companyRow?.scan_result as Record<string, unknown> | null)?.custom_industry
+  const typed = typeof typedRaw === 'string' && typedRaw.trim()
+    ? typedRaw.trim().slice(0, 120) : null
   const company: ContextCompany = {
     name: (companyRow?.name as string) ?? '',
     industrySlug: slug,
-    industryWords: wordsFor(slug),
+    industryWords: typed ?? wordsFor(slug),
     address: [companyRow?.city, companyRow?.state].filter(Boolean).join(', ') || null,
     state: (companyRow?.state as string) ?? null,
     sites,

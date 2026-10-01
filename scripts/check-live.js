@@ -661,6 +661,63 @@ if (!(await reachable())) {
       const { error } = await asUser.storage.from('company-documents').remove([attachPath])
       if (error) console.log(`  · attachment/cleanup  the stored file would not delete: ${error.message}`)
     }
+    /**
+     * *** AND THE LABELS THE POLICY CAUSED, WHICH DELETING THE DOCUMENT DOES NOT TAKE — Run 7a. ***
+     *
+     * Deleting a document deletes its scan. It does NOT delete `company_labels`: those are the
+     * COMPANY's vocabulary, upserted from each reading, and nothing removes one when the reading
+     * that caused it goes. Run 6a's cleanup removed the Harbor Kitchen policy and left behind what
+     * reading it had written, so on 1 October `Test Gamma Solvents` — a chemical manufacturer in
+     * Portland, Oregon, holding **zero documents** — carried:
+     *
+     *   agency : Washington State Department of Health · City of Seattle Office of Labor Standards
+     *            · Washington State Liquor and Cannabis Board
+     *   subject: food_worker_certification · workplace_wages · alcohol_service_training
+     *            · paid_sick_leave
+     *
+     * **That confirms `DECISIONS.md` §141's unverified hypothesis** about where the Seattle labels on
+     * the fixture company came from: this block.
+     *
+     * It is not cosmetic. `auditAgenciesFor` reads `company_labels`, so an "audit everything" on this
+     * company would have run a section per phantom agency with no document behind it, and the
+     * template audit was shown a Portland chemical plant whose own agency list is Seattle labour
+     * standards. A label no surviving scan supports is an orphan, and this removes exactly those —
+     * never a label a remaining reading still asserts.
+     */
+    /**
+     * *** AND THIS ONE NEEDS THE SERVICE ROLE, WHICH IS A FACT ABOUT THE PRODUCT. ***
+     * The first version used `asUser` and got `permission denied for table company_labels`. Read
+     * back with `has_table_privilege` rather than from a grant list — `information_schema.role_table_grants`
+     * returned ZERO rows for this table, which is the view's own limitation and not an answer:
+     *
+     *   authenticated SELECT: true · INSERT: false · UPDATE: false · DELETE: false
+     *
+     * So a person may READ the company's vocabulary and may never change it: labels come from
+     * readings, and only the server writes one. That is the right rule and it is not being changed
+     * here — it simply means a probe that created a label must clean it up as the server, the way
+     * the audit flows below already delete their own label.
+     */
+    const svc = createClient(url, process.env.SUPABASE_SERVICE_ROLE_KEY ?? '', { auth: { persistSession: false } })
+    const { data: scans } = await svc.from('document_scans')
+      .select('agencies, subjects').eq('company_id', companyId).eq('is_current', true)
+    const alive = new Set()
+    for (const sc of scans ?? []) {
+      for (const a of sc.agencies ?? []) alive.add(`agency:${a}`)
+      for (const b of sc.subjects ?? []) alive.add(`subject:${b}`)
+    }
+    const { data: labels } = await svc.from('company_labels')
+      .select('id, kind, label').eq('company_id', companyId)
+    const orphans = (labels ?? []).filter((l) => !alive.has(`${l.kind}:${l.label}`))
+    if (orphans.length) {
+      const { error } = await svc.from('company_labels').delete().in('id', orphans.map((l) => l.id))
+      if (error) { console.log(`  ✗ attachment/cleanup  ${orphans.length} orphan label(s) would not delete: ${error.message}`); failures++ }
+      else console.log(`  ✓ attachment/cleanup  ${orphans.length} orphan label(s) removed — `
+        + orphans.slice(0, 4).map((l) => `${l.kind}:${l.label}`).join(' · ')
+        + (orphans.length > 4 ? ` · +${orphans.length - 4} more` : ''))
+    } else {
+      console.log('  ✓ attachment/cleanup  no orphan label left behind')
+    }
+
     // Said out loud, and with the count READ BACK rather than assumed: the whole reason this block
     // changed is that nobody noticed copies piling up — four of them by the time anyone looked.
     const { count, error: cErr } = await asUser.from('documents')
@@ -937,13 +994,42 @@ if (want('template')) {
    * checked is the SHAPE — one row per line, each with its reference — not the answers, which is
    * `npm run golden:audit` against the two template cases.
    */
+  /**
+   * *** AND EVERY LINE IS ANSWERABLE FROM THE DOCUMENT THIS FLOW SEEDS — Audits Run 7a, item 1. ***
+   *
+   * The four lines used to ask about a scrubber log for the month, five-year retention and a posted
+   * emergency contact. `seedProbeDocument` seeds **one** document — an air permit with a title, an
+   * agency, a site, an expiry deadline of 1 January 2027 and condition 3.1 — and it answers none of
+   * those three. So the model was shown a four-line form and two documents, one of which was the
+   * form, and nothing in the filing cabinet addressed three of the four lines. On 1 October it
+   * replied in prose three times running: *"I need clarification to proceed. You've provided: 1. A
+   * checklist with 4 lines … 2. Two documents on file (D1 and D2)"*. The prompt already forbids that
+   * (`prompts/audit-agency.ts`, "Never reply with prose explaining that you cannot answer") and the
+   * model did it anyway — but a gate that depends on a model obeying an instruction under the
+   * thinnest possible evidence is a gate that fails for a reason it was not built to test.
+   *
+   * Each line below is now answerable from the seeded permit and from nothing else:
+   *
+   *   1. the permit is on file         <- the scan's kind and title
+   *   2. it expires on 1 January 2027  <- document_deadlines, "Permit expires", due_on 2027-01-01
+   *   3. it is a DEQ permit            <- the scan's agencies array, PROBE_AGENCY
+   *   4. it names the site             <- the document's entity_id, the company's primary site
+   *
+   * *** THIS IS A PLUMBING PROBE AND NOT A QUALITY TEST, AND THE DISTINCTION IS THE POINT. ***
+   * What it proves is that a checklist reaches the model, comes back, and lands as one row per line
+   * with one of the four words on each. **Whether those words are the RIGHT words is the golden
+   * set's job** — `npm run golden:audit` against `cascade-template-12` and `cascade-template-13`,
+   * three runs each, every line judged against its spec's own AUDIT USE section. Making the lines
+   * answerable is therefore not softening the check: the check never measured the answers. It is
+   * removing a second variable from a question that only ever had one.
+   */
   const CHECKLIST = [
     'MONTHLY COMPLIANCE SELF-CHECK',
     '',
-    '1. Current air permit on file and not expired',
-    '2. Scrubber pressure-drop log complete for the month',
-    '3. Records retained for five years and available on request',
-    '4. Emergency contact information posted at the facility',
+    '1. An air quality permit for this facility is on file',
+    '2. The permit expiry date is recorded',
+    '3. The permit names the agency that issued it',
+    '4. The permit is tied to the site it covers',
   ].join('\n')
   let docId = null, runId = null, storagePath = null, evidenceId = null
 
