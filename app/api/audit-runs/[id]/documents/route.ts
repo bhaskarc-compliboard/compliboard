@@ -191,10 +191,25 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ id: str
 
     const name = `${safe(String(run.agency_label ?? 'audit'))} audit `
       + `${String(run.finished_at ?? run.created_at).slice(0, 10)}.zip`
+    /**
+     * *** THE FILENAME TWICE, AND THE SECOND ONE IS THE REAL ANSWER — Audits Run 9, item 1. ***
+     *
+     * An HTTP header is latin-1. An agency label contains `·`, which is two UTF-8 bytes, and a
+     * browser saving the file decoded them as latin-1 — so the file landed on disk called
+     * "Oregon DEQ Â· Oregon OSHA … .zip". Seen only once the download actually worked; before this
+     * run it never got that far on production.
+     *
+     * RFC 6266: `filename*=UTF-8''<percent-encoded>` carries the real name, and the plain
+     * `filename=` stays as the fallback for anything that does not read the starred form. The
+     * fallback is ASCII-folded rather than left as raw UTF-8, because a byte above 127 in a header
+     * is what caused this.
+     */
+    const asciiName = name.replace(/[^\x20-\x7E]+/g, '-').replace(/-+/g, '-')
     return new NextResponse(new Uint8Array(zip), {
       headers: {
         'content-type': 'application/zip',
-        'content-disposition': `attachment; filename="${name}"`,
+        'content-disposition': `attachment; filename="${asciiName}"; `
+          + `filename*=UTF-8''${encodeURIComponent(name)}`,
         'content-length': String(zip.length),
       },
     })

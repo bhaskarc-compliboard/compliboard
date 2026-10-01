@@ -366,6 +366,11 @@ reconciled with them — where they disagree, they win.
 3. **The three research switches await the owner's comparison** (§128). They are on locally and
    unset in production; each ships only on that comparison, against an incognito chat (§115).
 4. **R1.5 before either gate is switched on**, because the page cannot render `outcome: 'ask'`.
+5. **Email deliverability: verify the sending domain in Resend with its DNS records before
+   customers. The batch email and the audit email use the same sender.** Added 1 October 2026. The
+   audit email from the rev 1 smoke test **arrived and went to junk**. The send is not the problem —
+   the production `job_runs` row shows Resend accepted it with an id and no error — so this is a DNS
+   job, and it is one job for both emails because both go through the same sender.
 
 ## 8a. Before the first customer with a big folder — not simulated, to check at the line
 

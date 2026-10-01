@@ -574,6 +574,68 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
     } finally { setBusy(false) }
   }
 
+  /**
+   * *** THE ZIP, FETCHED WITH THE SIGN-IN HEADER — Audits Run 9, item 1. ***
+   *
+   * It was a plain `<a href="/api/audit-runs/<id>/documents">`. On production that returned
+   * `{"error":"Unauthorized"}`, and the cause is three lines:
+   *
+   *   · the link was a browser NAVIGATION, which sends cookies and no `Authorization` header;
+   *   · `lib/auth.ts:71` reads the token only from `request.headers.get('authorization')`;
+   *   · `lib/auth.ts:80` returns `{ error: 'Unauthorized' }` when there is no valid token, and the
+   *     zip route calls `requireCompany` at `app/api/audit-runs/[id]/documents/route.ts:95`.
+   *
+   * Print was unaffected because it never makes a request: it is `window.print()` on the open
+   * drawer.
+   *
+   * So the button now does what every other call on this screen does — `fetch` with
+   * `authHeaders()` — and saves the response. The filename comes from the route's own
+   * `content-disposition`, so the name a person gets is still the route's decision and not a second
+   * copy of that logic here.
+   *
+   * *** AND IT MUST BE PRESSED IN A BROWSER TO BE PROVEN. *** A script that fetches the route with a
+   * header proves the ROUTE. It cannot prove the button: the defect was entirely in how the browser
+   * made the request, so only a real press exercises it. `docs/TESTING.md` says so in the audit set.
+   */
+  async function downloadDocuments() {
+    setBusy(true)
+    try {
+      const res = await fetch(`/api/audit-runs/${run.id}/documents`, { headers: await authHeaders() })
+      if (!res.ok) {
+        // §5.1: when the failure is ours, say so, and never imply the person did something wrong.
+        const json = await res.json().catch(() => null)
+        setNotice(json?.error === 'Unauthorized'
+          ? 'Your sign-in has expired. Reload the page and try again.'
+          : 'We could not build that download just now. Nothing was changed; try again in a moment.')
+        return
+      }
+      /**
+       * The route's own filename, read off the header it already sets. The starred form first: an
+       * HTTP header is latin-1, so the plain `filename=` is the ASCII fallback and `filename*` is
+       * the real name (RFC 6266). Reading the fallback is what saved the file as
+       * "Oregon DEQ Â· Oregon OSHA … .zip".
+       */
+      const disp = res.headers.get('content-disposition') ?? ''
+      const starred = /filename\*=UTF-8''([^;]+)/i.exec(disp)
+      const plain = /filename="([^"]+)"/.exec(disp)
+      const name = starred ? decodeURIComponent(starred[1])
+        : plain ? plain[1] : 'audit documents.zip'
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = name
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      // Revoked on the next tick, not immediately: Safari cancels a download whose blob URL is
+      // revoked in the same frame as the click.
+      setTimeout(() => URL.revokeObjectURL(url), 0)
+    } catch {
+      setNotice('We could not build that download just now. Nothing was changed; try again in a moment.')
+    } finally { setBusy(false) }
+  }
+
   // THE ONE META LINE. Audited date, sections, what it read and what it only listed, and how fresh
   // the evidence was. No cost: what a reading cost us is our business, not a line on the report
   // somebody takes to an inspector.
@@ -594,8 +656,10 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
         Make a checklist
       </button>
       <button onClick={printDrawer} className="text-[14px] text-gray-600 hover:text-gray-900 hover:underline">Print</button>
-      <a href={`/api/audit-runs/${run.id}/documents`}
-        className="ml-auto text-[14px] text-gray-600 hover:text-gray-900 hover:underline">Download the documents</a>
+      <button disabled={busy} onClick={downloadDocuments}
+        className="ml-auto text-[14px] text-gray-600 hover:text-gray-900 hover:underline disabled:text-gray-300">
+        Download the documents
+      </button>
       <button onClick={() => setReasonFor('run')} className="text-[12px] text-gray-400 hover:text-gray-700 hover:underline">
         Not right
       </button>

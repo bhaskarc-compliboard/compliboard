@@ -480,27 +480,56 @@ own header; the drawer text of all fifteen runs is stored beside it.
 
 This order is the owner's, and the reasoning for it is in each line.
 
-1. **The sites screen.** `switch_scope` says 73 of the 95 switches are per-site, and an audit is scoped
-   to a company. A second plant has its own permit, its own generator category and its own forklifts,
-   and until a person can say which site a document belongs to, a two-site company gets one audit that
-   is wrong for both. **Nothing in this section has been judged on a two-site company** (§10).
-2. **The question path from the box.** The box accepts "Audit us for Oregon DEQ" and "Audit everything".
-   A person who types a question — "do we need a stormwater permit?" — gets nothing. It belongs in the
-   Workspace and the box should route it there rather than failing to parse.
-3. **The inspector's findings letter as an intake.** The template intake reads a blank checklist. The
-   document a customer actually has after an inspection is a letter listing what the inspector found,
-   and it is the same shape of problem: lines in, one answer per line out, against the documents on
-   file. It is the first intake a real customer will want and it needs no new table.
-4. **Prompt caching, as a measured switch.** An agency audit sends 20–30k input tokens and most of it
-   is the same block on every run of the same company. Input was 43% of this section's bill. It is a
-   switch measured against the baseline, never built into it.
-5. **The worker — on the day `job_runs` shows budget exhaustion, and not before.** The sweep runs in a
+*Rewritten 1 October 2026 (Run 9, item 5). **Three were missing and one was incomplete.** Items 3, 5
+and 6 are new — a two-site company, the template probe refusal and email deliverability were recorded
+elsewhere in this file or in another file and were not in the list a reader of this section works
+from. Item 4 gained the owner's decision about the button. The three the owner did not name — the
+inspector's letter, prompt caching, the worker — were kept and moved below the six.*
+
+1. **The sites screen.** `switch_scope` says 73 of the 95 switches are per-site, and an audit is
+   scoped to a company. A second plant has its own permit, its own generator category and its own
+   forklifts. Until a person can say which site a document belongs to, a two-site company gets one
+   audit that is wrong for both.
+2. **The question path from the box.** The box accepts "Audit us for Oregon DEQ" and "Audit
+   everything". A person who types a question — "do we need a stormwater permit?" — gets nothing. It
+   belongs in the Workspace, and the box should send it there rather than failing to parse.
+3. **A two-site company has never been judged.** Every reading of this section has been on Cascade,
+   which has one site called Portland. Nothing has tested what a report looks like when two sites hold
+   different permits. This is not a design question; it is a thing nobody has looked at yet, and the
+   folder test (`docs/HANDOFF-FOLDER-TEST.md`) puts a two-site folder in the first batch for that
+   reason.
+4. **The binder, after the file-types run.** Printing one report works. A binder is every report, the
+   documents behind them, and a cover sheet. It depends on reading file types the scan cannot open
+   today, so doing it first produces a binder with holes in it.
+
+   **The owner's decision, 1 October 2026: when the binder lands it replaces the download.
+   "Download the documents" becomes "Download the binder". One button, not two.** A person wants the
+   folder they can hand over, not a choice between two kinds of archive.
+5. **The template probe refusal on Haiku with one document.** `check:live`'s template flow fails on
+   the Haiku tier: shown a four-line checklist and two documents, one of which is the checklist, the
+   model replies in prose asking for lines it was already given. Four hypotheses were disproved at the
+   line (see the gate table below). The real model answers every line, so this is not blocking the
+   release — but it is the first thing that will fail if a cheaper model is ever measured against the
+   baseline, and the fixture was deliberately not enriched to make the gate green.
+6. **Email deliverability.** The audit email reached the owner's inbox on 1 October and **landed in
+   junk**, because DNS for the sending domain is not set up. The send itself is fine — Resend accepted
+   it with an id. This is a DNS job, not a code job, and it is in `docs/HANDOFF-CODE.md`'s owed list
+   as well, because the batch email and the audit email use the same sender and fixing it fixes both.
+
+The three below are owed too. They are after the six because the owner did not name them in this
+pass, not because they are smaller.
+
+7. **The inspector's findings letter as an intake.** The template intake reads a blank checklist. What
+   a customer actually has after an inspection is a letter listing what the inspector found, and it is
+   the same shape of problem: lines in, one answer per line out, against the documents on file. It is
+   the first intake a real customer will want and it needs no new table.
+8. **Prompt caching, as a measured switch.** An agency audit sends 20–30k input tokens and most of it
+   is the same block on every run of the same company. Input was 43% of this section's bill. A switch
+   measured against the baseline, never built into it.
+9. **The worker — on the day `job_runs` shows budget exhaustion, and not before.** The sweep runs in a
    serverless route under a cron and finishes four sections comfortably. A company with twelve agencies
-   on the real model will not finish inside the limit. `job_runs` is where that will show; move it when
-   it does.
-6. **The binder — after the file-types run.** Printing one report works. A binder is every report, the
-   documents behind them and a cover sheet, and it depends on reading file types the scan cannot open
-   today. Doing it before that produces a binder with holes in it.
+   on the real model will not. `job_runs` is where that shows, and
+   `docs/HANDOFF-CODE.md` §8a (c) says what the row looks like.
 
 ---
 

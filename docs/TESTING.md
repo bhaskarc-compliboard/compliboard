@@ -3059,3 +3059,57 @@ A person would call those the same thing. The rule as specified — same documen
 the significant words — does not, and it was left as specified rather than loosened to catch one
 pair, because a looser rule collapses findings that are not the same and the closed row is the one
 nobody reads again.
+
+---
+
+## Audits — Download the documents must be pressed in a browser (1 October 2026)
+
+Audits Run 9, item 1. **This one check cannot be done by a script, and that is the whole point of
+writing it down.**
+
+It failed on production with `{"error":"Unauthorized"}` while Print worked. The cause was in how the
+browser made the request, not in the route:
+
+- `components/AuditReport.tsx` had `<a href={`/api/audit-runs/${run.id}/documents`}>` — a plain
+  link, so pressing it was a browser **navigation**, which sends cookies and no `Authorization`
+  header.
+- `lib/auth.ts:71` reads the token only from `request.headers.get('authorization')`, and line 80
+  returns `{ error: 'Unauthorized' }` when there is none.
+- The zip route calls `requireCompany` at `app/api/audit-runs/[id]/documents/route.ts:95`.
+
+Print was unaffected because it makes no request at all — it is `window.print()` on the open drawer.
+
+**So a script that fetches the route with a header proves the ROUTE and proves nothing about the
+button.** The route was working the whole time:
+
+```
+$ curl -s "http://localhost:3000/api/audit-runs/<id>/documents"            # no header, as a link
+{"error":"Unauthorized"}                                                   HTTP 401
+$ curl -s -H "authorization: Bearer <token>" ".../documents"               # the header the button sends
+HTTP 200  1223388 bytes  application/zip
+```
+
+### The test
+
+**Press the button in a real browser, signed in.** Pass: a `.zip` lands in the downloads folder,
+its name reads `Oregon DEQ · Oregon OSHA · … audit 2026-10-01.zip` with a real `·`, and opening it
+gives one file per document the audit read plus `index.txt`. Fail: a JSON error on screen, nothing
+downloaded, or a name containing `Â·`.
+
+**Check the name, not only that a file arrived.** An HTTP header is latin-1 and an agency label
+contains `·`, so the first working download saved itself as `Oregon DEQ Â· Oregon OSHA …`. The route
+now sends the name twice — `filename=` ASCII-folded as the fallback and `filename*=UTF-8''…` as the
+real one (RFC 6266) — and the button reads the starred form first.
+
+**One thing that looks like a defect and is not.** `unzip -l` on macOS prints the entry names with
+`���` where an em dash belongs. The archive is correct: Info-ZIP ignores the UTF-8 flag, and the
+names read back properly with any UTF-8-aware tool —
+
+```
+$ python3 -c "import zipfile; [print('0x%04x' % i.flag_bits, i.filename[:60]) for i in zipfile.ZipFile('…').infolist()[:1]]"
+0x0800 1-Standard Air Contaminant Discharge Permit No. 26-2841-ST-01 — Portla
+```
+
+`0x0800` is bit 11, and `zipOf` sets it in both the local and the central header. **Do not "fix"
+this.** It was checked before anything was changed, and changing it would break the names that
+currently work.
