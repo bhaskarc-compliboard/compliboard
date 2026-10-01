@@ -98,7 +98,8 @@ const SHAPE = `Respond with valid JSON only. No markdown, no backticks, no text 
       "quote": "word for word from the reading, or null",
       "what_to_do": "one concrete next step, or null when there is nothing to do",
       "basis": "read | inferred | expected",
-      "same_as": "the handle of the previous audit's finding this is the same as, or null"
+      "same_as": "the handle of the previous audit's finding this is the same as, or null",
+      "same_as_in_run": "the handle of a finding an EARLIER AGENCY OF THIS SAME AUDIT already raised, when it is the same thing, or null"
     }
   ],
   "dates": [
@@ -169,9 +170,51 @@ function previousBlock(previous: PreviousFinding[]): string {
   ].join('\n')
 }
 
-export function auditAgencyPrompt(opts?: { previous?: PreviousFinding[] }): string {
+/**
+ * *** WHAT THE EARLIER SECTIONS OF THIS SAME AUDIT ALREADY RAISED — Audits Run 8a, item 4. ***
+ *
+ * The same shape as `previousBlock`, and for a sharper reason. Two regulators genuinely want the
+ * same record: OSHA wants the forklift training log for its own rule and the Department of
+ * Agriculture wants it for theirs. Each section is a separate call shown the same filing cabinet and
+ * told nothing about the others, so both say it is not on file, and **both are right.** One report
+ * that says the same thing twice reads as a report nobody looked at — which is what the owner found
+ * in 43 findings across three sections on the live site.
+ *
+ * Run 7 tried to catch it afterwards, in code: same document, same locator, half the significant
+ * words. On Cascade's four-agency re-run that collapsed **nothing**, and the one real pair it should
+ * have caught shared **0 of 3** significant words —
+ *
+ *     "No proof of electronic submission of 2025 300A"
+ *     "OSHA 300A summary may not have been electronic"
+ *
+ * A person calls those the same thing; a word-overlap rule cannot. So the question goes to the thing
+ * that can read: the model is shown what the earlier sections of THIS run already raised, as R1, R2,
+ * and asked which of its own findings is the same one. That is the lesson Run 1c's keys already
+ * learned about matching one model's phrasing, applied to the one place still doing it.
+ *
+ * WHY A SEPARATE FIELD FROM `same_as`. `same_as` means "the same as the LAST audit's finding" and
+ * drives carry-forward; this means "already raised by another agency in this audit" and drives a
+ * collapse. Two different questions with two different consequences, so two fields: a model that has
+ * to overload one of them will get both wrong.
+ */
+function inRunBlock(raised: PreviousFinding[]): string {
+  return [
+    'WHAT THE EARLIER PARTS OF THIS SAME AUDIT ALREADY RAISED',
+    'This audit covers several agencies and you are answering one of them. Each carries a handle.',
+    'Two agencies often want the same record, and when they do, BOTH are right — so raise it for',
+    'your agency as well, and put that handle in "same_as_in_run". The report then shows it once',
+    'under each agency instead of twice in a row.',
+    'Same THING, not same wording: match on what the finding is about. If nothing here is the same',
+    'as the finding you are writing, leave "same_as_in_run" null.',
+    '',
+    ...raised.map((p) => `  ${p.handle} — ${p.title}${p.word ? `  [${p.word}]` : ''}`),
+  ].join('\n')
+}
+
+export function auditAgencyPrompt(opts?: { previous?: PreviousFinding[]; raisedInRun?: PreviousFinding[] }): string {
   const parts = [ROLE, HONESTY, SHAPE]
   if (opts?.previous?.length) parts.push(previousBlock(opts.previous))
+  if (opts?.raisedInRun?.length) parts.push(inRunBlock(opts.raisedInRun))
   return parts.join('\n\n')
 }
 

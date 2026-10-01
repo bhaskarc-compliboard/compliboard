@@ -281,6 +281,48 @@ This order is the owner's, and the reasoning for it is in each line.
 
 ---
 
+### The gate failures this section knows about and accepts
+
+*Added 1 October 2026 (Run 8a, item 2). **There was no gate table in this file before** — it recorded
+what was owed and what had not been judged, and nowhere said which `check:live` checks fail on
+purpose. A reader running the gate found red and had nothing to compare it against.*
+
+**Every one of these is a Haiku-tier line.** `.env.local` points the chat and judgement tiers at
+`claude-haiku-4-5` because a build session spends its calls on shape (`CLAUDE.md` §3.4a). Production
+runs `claude-opus-5-5` for the audit tier. **A failure here is not a failure on production**, and the
+column that says so is the last one.
+
+| `check:live` check | What fails | Judged on the real model |
+|---|---|---|
+| `template findings` | Haiku, shown a four-line checklist and **two** documents — one of which is the checklist — replies in prose asking for the checklist lines it was already given. Four runs on 1 October, four refusals, three different wordings. | **Passes.** The rev 1 baseline answered **16 of 16** lines of the fifteen-line inspector's form and **8 of 8** of the self-check on `claude-opus-5-5`, three runs each, finding-title overlap 1.00. |
+| `convert complete` | The §143 chat-tier pair's intermittent half: it returns one origin where the check wants both. Fails on some runs and passes on others an hour apart. | Not Audits. The chat tiers are not Haiku on production. |
+| `checklist` | **Newly seen 1 October 2026** and intermittent in the same way: `POST /api/chat` with `mode: 'checklist'` came back with no `must_do` array, then on the next run returned 8 `must_do` and 4 `good_to_have` with the shape intact. Nothing Audits changed reaches that route — `grep -c` for `auditRun`, `audit-agency` and `companyLabels` in `app/api/chat/route.ts` all return 0. | Not Audits. |
+| `attachment/tier`, `attachment/errors` | §143's reliable pair: Haiku names three of the staff policy's seven errors where the check wants five, and does not name the tier. | Not Audits. |
+
+**`template findings` is the one worth reading twice, because four hypotheses died proving it is not
+ours.** In order, each disproved at the line:
+
+1. **The checklist lines were unanswerable from the seeded evidence.** They were — three of the four
+   asked about records the one seeded document does not mention. Rewritten so each is answerable from
+   it (the permit on file, its expiry, its agency, its site). **Still refused.**
+2. **The lines never reached the prompt.** They did. The section's stored `prompt_sha256` equals
+   `sha256(auditTemplatePrompt(storedSection))`, and the rendered prompt contains
+   `1. An air quality permit for this facility is on file` … `4. The permit is tied to the site it
+   covers`. The stored `audit_runs.template_lines` holds all four.
+3. **The lines are in the system prompt and the model follows the user turn.** Measured both ways
+   against Cascade: **both parse, four lines each.** Placement is not the variable.
+4. **The fixture company's stale agency labels contradict the checklist.** `Test Gamma Solvents`, a
+   Portland chemical manufacturer, really did carry three Washington/Seattle agencies. Pruned to
+   zero and re-run. **Still refused.**
+
+What is left is the measured fact: the same prompt and the same lines parse cleanly against
+Cascade's **twelve** documents and are refused against **one**, with `buildAuditInput` putting that
+one in the block as `D1` in a 1648-character block. **So it is a product behaviour on a
+one-document company on a cheap model, not a fixture defect** — and the fixture was deliberately not
+enriched to make the gate green, because a fixture tuned until the model complies measures the
+fixture. If a cheaper model is ever measured against the baseline (§8 item 4's neighbour), this is
+the first thing that will fail and the reason is already written down.
+
 ## 9. What this section handed to other sections
 
 - **To Documents: three real-model reading behaviours.** On `claude-opus-5-5`, the same sentence that

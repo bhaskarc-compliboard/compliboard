@@ -10,7 +10,8 @@
 // instead of past them.
 
 import { NextRequest, NextResponse } from 'next/server'
-import { requireCompany } from '@/lib/auth'
+import { requireCompany, supabaseAdmin } from '@/lib/auth'
+import { pruneOrphanLabels } from '@/lib/companyLabels'
 
 const BUCKET = 'company-documents'
 
@@ -281,7 +282,27 @@ export async function DELETE(request: NextRequest) {
       .eq('company_id', companyId)
 
     if (error) throw error
-    return NextResponse.json({ success: true })
+
+    /**
+     * *** THE LABELS THAT DOCUMENT'S READING WROTE LEAVE WITH IT — Audits Run 8a, item 3. ***
+     *
+     * Deleting the row deletes its scan. It did NOT touch `company_labels`, so a company could keep
+     * agencies and subjects that no document of theirs supports — and `auditAgenciesFor` reads that
+     * table to decide what "audit everything" audits, so an orphan label is a section of an audit
+     * with no evidence behind it.
+     *
+     * On the service role because `authenticated` holds SELECT on `company_labels` and nothing else,
+     * which is the right rule (labels come from readings; only the server writes one). `companyId`
+     * is still the session's, never the caller's parameter — the service role here widens WHAT may
+     * be written, never WHOSE.
+     *
+     * It never fails the delete. The document is gone, which is what the person asked for; a tidy-up
+     * that turned that into a 500 would leave them unable to tell what happened (§5.1).
+     */
+    const pruned = await pruneOrphanLabels(supabaseAdmin, companyId)
+    if (pruned.error) console.error('Document delete: orphan labels not pruned:', pruned.error)
+
+    return NextResponse.json({ success: true, labels_removed: pruned.removed })
   } catch (error) {
     console.error('Document delete error:', error)
     return NextResponse.json(

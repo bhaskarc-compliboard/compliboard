@@ -489,7 +489,22 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
   const expected = openF.filter((f) => f.kind === 'expected')
   const failed = sections.filter((s) => s.status === 'could_not_complete')
   const docsRead = [...new Set(sections.flatMap((s) => s.documents_read ?? []))]
+  /**
+   * *** HELD UNREAD IS WHAT NO SECTION READ — Audits Run 8a, item 1(b). ***
+   *
+   * This was the plain union of every section's `documents_held_unread`, and on a whole-company run
+   * that is the same list as `documents_read`. Each section is shown ITS agency's documents and the
+   * rest by title only, so the DEQ section reads 5 and holds 7 unread, the OSHA section reads 8 and
+   * holds 4 — and the unions come out 12 and 12 on a company that holds **twelve documents**. Read
+   * off the rows of run 60d33549: `in BOTH unions: 12`, every held-unread id also a read id. The
+   * meta line therefore said "12 documents read, 12 held unread", which reads as twenty-four.
+   *
+   * A document is held-but-not-read only when **no** section read it. Subtracting the read set is
+   * the whole fix, and on a single-agency run it changes nothing: there the other documents really
+   * were not read by anybody.
+   */
   const docsUnread = [...new Set(sections.flatMap((s) => s.documents_held_unread ?? []))]
+    .filter((id) => !docsRead.includes(id))
   // The route's own map first; the findings are the fallback for an older response shape. A
   // document the run read and no finding cites has a title here and had none before.
   const titleOf = (id: string) =>

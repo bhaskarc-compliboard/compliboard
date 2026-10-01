@@ -403,9 +403,23 @@ export async function runSection(db: Db, sectionId: string, opts: { today?: stri
         + 'Nothing was recorded for it.')
     }
 
+    /**
+     * *** WHAT THE EARLIER SECTIONS OF THIS RUN ALREADY RAISED — Audits Run 8a, item 4. ***
+     *
+     * Only for an agency section, and only when there is an earlier one: the sweep claims a
+     * company's queued sections together and runs them one after another
+     * (`app/api/jobs/audit-sections/route.ts`), so by the time section 2 runs, section 1's findings
+     * are rows. A template run asks one question per checklist line and cannot duplicate across its
+     * sections, so it is not shown this.
+     */
+    const raisedInRun = isTemplate ? [] : await raisedEarlierInRun(db, sec.run_id, sectionId)
+
     const system = isTemplate
       ? auditTemplatePrompt(templateSection!)
-      : auditAgencyPrompt(previous.length ? { previous: previous.map((p) => p.shown) } : undefined)
+      : auditAgencyPrompt({
+          ...(previous.length ? { previous: previous.map((p) => p.shown) } : {}),
+          ...(raisedInRun.length ? { raisedInRun: raisedInRun.map((p) => p.shown) } : {}),
+        })
     const promptSha = createHash('sha256').update(system).digest('hex')
     const model = modelForTask('audit')
 
@@ -516,6 +530,18 @@ export async function runSection(db: Db, sectionId: string, opts: { today?: stri
     }
 
     if (previous.length) await matchAgainstPrevious(db, sec, previous, obj)
+    // Per section, as its findings land: the handles only mean anything to the call shown them.
+    const collapsedHere = raisedInRun.length
+      ? await collapseAgainstEarlier(db, sec, raisedInRun, obj)
+      : 0
+    if (collapsedHere) {
+      const { data: cur } = await db.from('audit_runs').select('summary').eq('id', sec.run_id).maybeSingle()
+      const prev = (cur?.summary ?? {}) as Record<string, unknown>
+      await db.from('audit_runs').update({
+        summary: { ...prev,
+          collapsed_duplicates: (Number(prev.collapsed_duplicates) || 0) + collapsedHere },
+      }).eq('id', sec.run_id)
+    }
 
     await db.from('audit_sections').update({
       status: 'done', could_not_complete_reason: null,
@@ -973,16 +999,17 @@ export async function finishRunIfDone(db: Db, runId: string):
   if (!sections.length || settled.length < sections.length) return { finished: false, summary: null }
 
   /**
-   * *** THE SAME FINDING FROM TWO SECTIONS, COLLAPSED ONCE, HERE — Audits Run 7b, item 5. ***
-   *
-   * Before the summary, because the summary counts rows and a collapsed duplicate must not be in
-   * the count. And only when every section has settled: collapsing while a third section is still
-   * running would close a row against a report that is not finished, and the next section's own
-   * duplicate would have nothing to collapse into.
+   * *** THE COLLAPSE NO LONGER HAPPENS HERE — Audits Run 8a, item 4. ***
+   * Run 7b collapsed at the end of the run by comparing titles in code, and on Cascade's
+   * four-agency re-run that caught nothing. It is the model's own `same_as_in_run` answer now,
+   * resolved by `collapseAgainstEarlier` as each section lands — so by the time a run finishes the
+   * duplicates are already closed and already out of the summary's counts. What is left here is to
+   * read the running total each section added.
    */
-  const collapsed = await collapseDuplicates(db, runId)
-
   const summary = await summariseRun(db, runId)
+  const { data: runNow } = await db.from('audit_runs').select('summary').eq('id', runId).maybeSingle()
+  const collapsed = Number(((runNow?.summary ?? {}) as Record<string, unknown>)
+    .collapsed_duplicates) || 0
 
   // How fresh the evidence was: the newest reading any section was shown. Read from the scans of
   // the documents the sections recorded, not from the run's own clock — the run's date says when we
@@ -1008,110 +1035,141 @@ export async function finishRunIfDone(db: Db, runId: string):
   return { finished: true, summary: { ...summary, collapsed_duplicates: collapsed } }
 }
 
-/**
- * TWO SECTIONS, ONE FINDING — Audits Run 7b, item 5.
- *
- * Two regulators genuinely want the same record, each section is a separate call shown the same
- * filing cabinet, neither is told what the other said, and both correctly say it is not on file.
- * Both are right. **One report that says the same thing twice reads as a report nobody looked at**,
- * which is what the owner's smoke test found in 43 findings across three sections.
- *
- * WHAT COUNTS AS THE SAME. All three of:
- *
- *   · a different section of the same run — a section never duplicates itself, and if it did that
- *     would be a different problem with a different fix;
- *   · the same document and the same locator, compared exactly after trimming and lowercasing —
- *     two findings about different pages of one permit are two findings;
- *   · titles sharing **at least half** their significant words.
- *
- * The third is the only soft one, and the half is deliberately generous in the strict direction: it
- * is computed against the SHORTER title's word set, so "Training records for forklift operators" and
- * "Forklift operator training records" collapse, while "Permit renewal application" and "Permit fee
- * payment" do not. Words of four characters or fewer are dropped before comparing, which is the same
- * rule `scripts/run-golden-audit.js` uses on the same kind of text, so "the", "for" and "and" cannot
- * carry a match on their own.
- *
- * WHAT IT NEVER DOES. It never deletes. The duplicate is `status = 'closed'` with a reason naming
- * the row it duplicates, so the model's full output is still there to be read, counted and argued
- * with. And it only ever touches `kind = 'finding'`: a date is deduplicated by its date and a
- * contradiction by its two sides, and neither has been asked for.
- */
-async function collapseDuplicates(db: Db, runId: string): Promise<number> {
-  const { data, error } = await db.from('audit_findings')
-    .select('id, section_id, title, document_id, locator, also_in_sections, ordinal')
-    .eq('run_id', runId).eq('kind', 'finding').eq('status', 'open').order('ordinal')
-  if (error) throw new Error(`collapseDuplicates: ${error.message}`)
-  const rows = (data ?? []) as Array<{
-    id: string; section_id: string; title: string; document_id: string | null
-    locator: string | null; also_in_sections: string[] | null; ordinal: number
-  }>
-  if (rows.length < 2) return 0
-
-  const sig = (t: string) => new Set(String(t ?? '').toLowerCase()
-    .split(/[^a-z0-9]+/).filter((w) => w.length > 4))
-  const norm = (v: string | null) => String(v ?? '').trim().toLowerCase()
-
-  /** Shared significant words over the SHORTER set — a long title cannot swallow a short one. */
-  const halfSame = (a: Set<string>, b: Set<string>) => {
-    const small = a.size <= b.size ? a : b
-    const big = a.size <= b.size ? b : a
-    if (!small.size) return false
-    let hit = 0
-    for (const w of small) if (big.has(w)) hit++
-    return hit * 2 >= small.size
-  }
-
-  const keepers: Array<{ id: string; section_id: string; words: Set<string>; doc: string; loc: string
-                         also: Set<string> }> = []
-  const closures: Array<{ id: string; keeper: string }> = []
-
-  for (const r of rows) {
-    // A finding with no document cannot be matched this way: there is nothing to anchor it to, and
-    // guessing from the title alone would collapse two different things that happen to rhyme.
-    if (!r.document_id) { continue }
-    const words = sig(r.title)
-    const doc = r.document_id
-    const loc = norm(r.locator)
-    const hit = keepers.find((k) => k.doc === doc && k.loc === loc
-      && k.section_id !== r.section_id && !k.also.has(r.section_id)
-      && halfSame(k.words, words))
-    if (hit) {
-      hit.also.add(r.section_id)
-      closures.push({ id: r.id, keeper: hit.id })
-    } else {
-      keepers.push({ id: r.id, section_id: r.section_id, words, doc, loc,
-                     also: new Set(r.also_in_sections ?? []) })
-    }
-  }
-
-  if (!closures.length) return 0
-
-  for (const k of keepers) {
-    if (!k.also.size) continue
-    const { error: uErr } = await db.from('audit_findings')
-      .update({ also_in_sections: [...k.also] }).eq('id', k.id)
-    if (uErr) throw new Error(`collapseDuplicates: carrying the other sections: ${uErr.message}`)
-  }
-  for (const c of closures) {
-    const { error: cErr } = await db.from('audit_findings').update({
-      status: 'closed',
-      closed_reason: `same as ${c.keeper} from another section`,
-      closed_by_run_id: runId,
-    }).eq('id', c.id)
-    if (cErr) throw new Error(`collapseDuplicates: closing a duplicate: ${cErr.message}`)
-  }
-  // Said out loud as well as stored: a rule that fires silently is a rule nobody can tell is firing.
-  console.warn(`audit run ${runId}: collapsed ${closures.length} duplicate finding(s) raised by more `
-    + `than one section`)
-  return closures.length
-}
-
+/** Every document any section of this run recorded as read, deduplicated. */
 async function sectionDocumentIds(db: Db, runId: string): Promise<string[]> {
   const { data } = await db.from('audit_sections').select('documents_read').eq('run_id', runId)
   const rows = (data ?? []) as Array<{ documents_read: string[] | null }>
   return [...new Set(rows.flatMap((s) => s.documents_read ?? []))]
 }
 
+/**
+ * WHAT THE EARLIER SECTIONS OF THIS RUN ALREADY RAISED, BY HANDLE — Audits Run 8a, item 4.
+ *
+ * The same shape as `previousOpenFindings`, over sections of the SAME run with a lower ordinal.
+ * Only open plain findings: a date is matched by its date, a contradiction by its two sides, and an
+ * expected item is a suggestion rather than a claim — none of the three has been asked for.
+ */
+async function raisedEarlierInRun(db: Db, runId: string, sectionId: string):
+  Promise<Array<{ id: string; sectionId: string; shown: PreviousFinding }>> {
+  const { data: secs, error: sErr } = await db.from('audit_sections')
+    .select('id, ordinal, title').eq('run_id', runId).order('ordinal')
+  if (sErr) throw new Error(`raisedEarlierInRun: ${sErr.message}`)
+  const all = (secs ?? []) as Array<{ id: string; ordinal: number; title: string }>
+  const here = all.find((x) => x.id === sectionId)
+  if (!here) return []
+  const earlier = all.filter((x) => x.ordinal < here.ordinal).map((x) => x.id)
+  if (!earlier.length) return []
+
+  const { data, error } = await db.from('audit_findings')
+    .select('id, title, word, kind, ordinal, section_id')
+    .eq('run_id', runId).eq('kind', 'finding').eq('status', 'open')
+    .in('section_id', earlier).order('ordinal')
+  if (error) throw new Error(`raisedEarlierInRun: ${error.message}`)
+
+  return ((data ?? []) as Array<{ id: string; title: string; word: string | null; kind: string;
+                                 section_id: string }>)
+    .map((f, i) => ({
+      id: f.id, sectionId: f.section_id,
+      shown: { handle: `R${i + 1}`, title: f.title, word: f.word, kind: f.kind },
+    }))
+}
+
+/**
+ * THE SAME FINDING FROM TWO AGENCIES, COLLAPSED BY THE MODEL'S OWN ANSWER — Audits Run 8a, item 4.
+ *
+ * *** WHAT THIS REPLACES, AND WHY. *** Run 7b collapsed in code: same document, same locator, and
+ * titles sharing half their significant words. On Cascade's four-agency re-run that collapsed
+ * **nothing** — of 39 findings carrying a document there was exactly one cross-section pair sharing
+ * a document and locator, and its titles shared **0 of 3** significant words:
+ *
+ *     [U.S. OSHA]    "No proof of electronic submission of 2025 300A"
+ *     [Oregon OSHA]  "OSHA 300A summary may not have been electronic"
+ *
+ * A person reads those as one thing. No word-overlap threshold reaches them without also collapsing
+ * findings that are genuinely different, and the row a collapse closes is the row nobody reads
+ * again — so a wrong collapse costs more than a missed one. The judgement goes to the thing that can
+ * read: the model is shown the earlier sections' findings as R1, R2 and answers `same_as_in_run`.
+ * That is the lesson Run 1c's keys already learned about matching one model's phrasing, applied to
+ * the last place still doing it.
+ *
+ * WHAT IT DOES WITH THE ANSWER is exactly what Run 7b did, unchanged: the earlier finding **keeps**
+ * the row and gains this section in `also_in_sections`; this section's duplicate is closed with a
+ * reason naming the row it duplicates and is **never deleted**. The drawer then shows it once under
+ * each agency with "also under <agency>".
+ *
+ * A handle the model invents is ignored and counted out loud, the same way an invented document
+ * handle is: `R9` against a list of three is checkable, which is the whole reason handles are used.
+ */
+async function collapseAgainstEarlier(
+  db: Db,
+  sec: { id: string; run_id: string; company_id: string },
+  raised: Array<{ id: string; sectionId: string; shown: PreviousFinding }>,
+  answer: Record<string, unknown>,
+): Promise<number> {
+  const items = Array.isArray(answer.findings) ? (answer.findings as unknown[]) : []
+  if (!items.length) return 0
+
+  const byHandle = new Map(raised.map((r) => [r.shown.handle.toUpperCase(), r]))
+  const { data: rows, error } = await db.from('audit_findings')
+    .select('id, ordinal, title').eq('section_id', sec.id).eq('kind', 'finding').order('ordinal')
+  if (error) throw new Error(`collapseAgainstEarlier: ${error.message}`)
+  const mine = (rows ?? []) as Array<{ id: string; ordinal: number; title: string }>
+
+  /**
+   * *** THE MODEL'S LIST AND THE ROWS ARE NOT THE SAME LENGTH, AND THAT IS NOT A BUG. ***
+   * `shapeFindings` drops an undated non-recurring date and anything that would land without a word
+   * (Run 6a, item 1), so indexing one list by the other's position would attach an answer to the
+   * wrong row. The rows are matched back by TITLE, which `shapeFindings` copies through unchanged
+   * apart from a 2000-character cap.
+   */
+  const rowByTitle = new Map<string, string>()
+  for (const r of mine) rowByTitle.set(String(r.title).slice(0, 2000), r.id)
+
+  const closures: Array<{ id: string; keeper: string }> = []
+  const badHandles: string[] = []
+  for (const raw of items) {
+    const item = raw as Record<string, unknown>
+    const h = typeof item?.same_as_in_run === 'string' ? item.same_as_in_run.trim().toUpperCase() : ''
+    if (!h) continue
+    const hit = byHandle.get(h)
+    if (!hit) { badHandles.push(h.slice(0, 20)); continue }
+    const title = typeof item.title === 'string' ? item.title.trim().slice(0, 2000) : ''
+    const rowId = rowByTitle.get(title)
+    if (!rowId) continue
+    // A section cannot collapse into itself.
+    if (hit.sectionId === sec.id) continue
+    closures.push({ id: rowId, keeper: hit.id })
+  }
+  if (badHandles.length) {
+    console.warn(`audit section ${sec.id}: ${badHandles.length} same_as_in_run handle(s) the block `
+      + `did not carry: ${[...new Set(badHandles)].slice(0, 5).join(', ')}`)
+  }
+  if (!closures.length) return 0
+
+  // The keeper gains this section. Read-modify-write is safe because the sweep runs one company's
+  // sections strictly one after another.
+  for (const keeperId of [...new Set(closures.map((c) => c.keeper))]) {
+    const { data: cur, error: rErr } = await db.from('audit_findings')
+      .select('also_in_sections').eq('id', keeperId).maybeSingle()
+    if (rErr) throw new Error(`collapseAgainstEarlier: reading the keeper: ${rErr.message}`)
+    const have = new Set((cur?.also_in_sections ?? []) as string[])
+    have.add(sec.id)
+    const { error: uErr } = await db.from('audit_findings')
+      .update({ also_in_sections: [...have] }).eq('id', keeperId)
+    if (uErr) throw new Error(`collapseAgainstEarlier: carrying the section: ${uErr.message}`)
+  }
+  for (const c of closures) {
+    const { error: cErr } = await db.from('audit_findings').update({
+      status: 'closed',
+      closed_reason: `same as ${c.keeper} from another section`,
+      closed_by_run_id: sec.run_id,
+    }).eq('id', c.id)
+    if (cErr) throw new Error(`collapseAgainstEarlier: closing a duplicate: ${cErr.message}`)
+  }
+  console.warn(`audit section ${sec.id}: collapsed ${closures.length} finding(s) the model said an `
+    + `earlier agency of this run had already raised`)
+  return closures.length
+}
 /**
  * THE SUMMARY, AND IT HAS NOTHING OF ITS OWN. Every number is a count of `audit_findings` rows and
  * every line in `attention` is one of them — the same rule `summariseBatch` follows, and the reason
