@@ -60,19 +60,27 @@ export async function POST(request: NextRequest) {
         }, { status: 502 })
       }
 
-      const extracted = await extractTemplate({
-        buffer: await blob.arrayBuffer(),
-        fileName: String(doc.name), fileType: String(doc.file_type),
-        companyId,
-      })
-
       // This company's own name, to compare against whatever the form prints.
       const { data: company } = await db.from('companies').select('name').eq('id', companyId).maybeSingle()
 
+      /**
+       * *** THE CHECKLIST IS READ INSIDE createRun, NOT BEFORE IT — Audits Run 6a, item 3. ***
+       *
+       * It used to be `extractTemplate(...)` here and then `createRun(..., templateSections)`, which
+       * meant the extraction — a model call, billed to task `audit` — happened before any run row
+       * existed to hang it on. Every template audit therefore under-reported what it cost by one
+       * call: $0.5405 against $0.5634 on the rev 1 baseline. Passing the reading as a function lets
+       * `createRun` insert the run, stamp `started_at`, and only then spend the money.
+       */
+      const buffer = await blob.arrayBuffer()
       const run = await createRun(supabaseAdmin, {
         companyId, kind: 'template', scope, entityId, createdBy: userId,
-        templateDocumentId, templateSections: extracted.sections, templateNote: extracted.note,
-        templateCompanyName: extracted.companyName, companyName: company?.name ?? null,
+        templateDocumentId,
+        templateExtract: () => extractTemplate({
+          buffer, fileName: String(doc.name), fileType: String(doc.file_type),
+          companyId, db: supabaseAdmin,
+        }),
+        companyName: company?.name ?? null,
         previousRunId: body?.previous_run_id ? String(body.previous_run_id) : null,
       })
       const estimate = await estimateRun(supabaseAdmin, companyId, run.sectionIds.length)
@@ -84,10 +92,10 @@ export async function POST(request: NextRequest) {
       }
       return NextResponse.json({
         ok: true, id: run.runId, status: run.status, kind: 'template',
-        sections: run.sectionIds.length, lines: countLines(extracted.sections),
+        sections: run.sectionIds.length, lines: countLines(run.templateSections ?? []),
         // The sentence when a file held no lines, so the box can say it rather than showing a run
         // that looks broken.
-        note: extracted.note,
+        note: run.note ?? null,
         estimate: run.sectionIds.length ? estimate.line : null,
       })
     }

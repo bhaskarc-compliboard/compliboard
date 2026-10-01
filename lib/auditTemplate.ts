@@ -38,6 +38,15 @@ export interface ExtractedTemplate {
   /** Plain, for the run's summary when there is nothing to audit against. */
   note: string | null
   model: string
+  /**
+   * *** THE LEDGER ROW THIS EXTRACTION WROTE — Audits Run 6a, item 3. ***
+   * Reading a checklist is a model call and it is billed to task `audit`, but it happens before the
+   * run's sections exist, so `costOfSections` — which sums between each section's own timestamps —
+   * could not see it. A template audit's reported cost was short by this call every time: $0.5405
+   * against $0.5634 on the rev 1 baseline. The id makes the attribution exact rather than a window
+   * somebody has to trust.
+   */
+  ai_call_id: string | null
   prompt_sha256: string
   raw_text: string
   json_parsed: boolean
@@ -90,6 +99,12 @@ If the document is not a checklist — it answers nothing, asks nothing, or is p
  */
 export async function extractTemplate(args: {
   buffer: ArrayBuffer; fileName: string; fileType: string; companyId: string
+  /**
+   * Optional, and only so the ledger row this call writes can be found and named on the run
+   * (Run 6a, item 3). Nothing about the extraction depends on it: without a client the extraction
+   * works exactly as before and `ai_call_id` comes back null.
+   */
+  db?: { from: (t: string) => any }
 }): Promise<ExtractedTemplate> {
   const model = modelForTask('audit')
   const promptSha = createHash('sha256').update(EXTRACT).digest('hex')
@@ -98,6 +113,8 @@ export async function extractTemplate(args: {
   if (!parsed.ok) {
     return {
       sections: [], companyName: null, model, prompt_sha256: promptSha, raw_text: '', json_parsed: false,
+      // No call was made, so there is no ledger row to point at — not a lost receipt, an unspent one.
+      ai_call_id: null,
       // The parser's own message, because it knows what was wrong with the file and this does not.
       note: `We could not open that file: ${parsed.failure.message}`,
     }
@@ -109,6 +126,8 @@ export async function extractTemplate(args: {
   ] as AIContent
 
   let raw = ''
+  let aiCallId: string | null = null
+  const calledAt = new Date().toISOString()
   try {
     // No web search: a checklist is a closed document and there is nothing to look up in order to
     // list what it asks.
@@ -117,10 +136,23 @@ export async function extractTemplate(args: {
       task: 'audit', ledger: { companyId: args.companyId, task: 'audit' },
     })
     raw = answer.text ?? ''
+    // The ledger row, found by time and polled, because `recordAICall` is deliberately not awaited
+    // in `lib/ai.ts`. The same five tries `runSection` uses. A missing link loses the receipt, never
+    // the answer — and `costOfSections` falls back to its window when the id is null.
+    if (args.db) {
+      for (let i = 0; i < 5 && !aiCallId; i++) {
+        if (i) await new Promise((r) => setTimeout(r, 250))
+        const { data: call } = await args.db.from('ai_calls')
+          .select('id').eq('company_id', args.companyId).eq('task', 'audit')
+          .gte('created_at', calledAt).order('created_at', { ascending: false }).limit(1).maybeSingle()
+        aiCallId = (call as { id: string } | null)?.id ?? null
+      }
+    }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
     return {
       sections: [], companyName: null, model, prompt_sha256: promptSha, raw_text: '', json_parsed: false,
+      ai_call_id: null,
       note: `We could not read that checklist just now: ${message}`,
     }
   }
@@ -130,6 +162,7 @@ export async function extractTemplate(args: {
   if (!obj) {
     return {
       sections: [], companyName: null, model, prompt_sha256: promptSha, raw_text: raw.slice(0, 20000), json_parsed: false,
+      ai_call_id: aiCallId,
       note: 'That checklist came back in a shape we could not read, so there is nothing to audit '
         + 'against. The file is on file; nothing else happened.',
     }
@@ -140,6 +173,7 @@ export async function extractTemplate(args: {
     ? obj.company_name.trim().slice(0, 200) : null
   return {
     sections, companyName, model, prompt_sha256: promptSha, raw_text: raw.slice(0, 20000), json_parsed: true,
+    ai_call_id: aiCallId,
     note: sections.length ? null
       : 'We could not find any checklist lines in that file. If it is a checklist, the lines may be '
         + 'in a picture rather than in text. Nothing was audited.',

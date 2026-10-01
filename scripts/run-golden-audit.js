@@ -203,6 +203,8 @@ function evaluate(check, answer, ctx) {
       // check survives only for `literal: true` checks, which is how the "AI" sweep still works —
       // that word is forbidden outright, in any construction.
       const hits = []
+      /** Hits excused by a negation standing within six words before them. Printed, never hidden. */
+      const ignored = []
       const verbs = check.claim_verbs ?? ['is', 'are', 'was', 'were', 'has been', 'have been', 'remains']
       for (const raw of allStrings(answer)) {
         for (const w of check.words) {
@@ -210,16 +212,49 @@ function evaluate(check, answer, ctx) {
           if (!token) continue
           const esc = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
           const re = check.literal
-            ? new RegExp(`\\b${esc(token)}\\b`, 'i')
+            ? new RegExp(`\\b${esc(token)}\\b`, 'gi')
             // "is compliant", "are in compliance", "has been met" — and NOT "not compliant",
             // because a negated claim is a finding rather than a reassurance.
-            : new RegExp(`\\b(?:${verbs.map(esc).join('|')})\\s+(?!not\\b)(?:\\w+\\s+){0,2}${esc(token)}\\b`, 'i')
-          if (re.test(raw)) hits.push(`"${token}" claimed in "${raw.slice(0, 56)}"`)
+            : new RegExp(`\\b(?:${verbs.map(esc).join('|')})\\s+(?!not\\b)(?:\\w+\\s+){0,2}${esc(token)}\\b`, 'gi')
+          /**
+           * *** AND THE NEGATION CAN BE FURTHER BACK THAN THE VERB — Audits Run 6a, item 4. ***
+           *
+           * The `(?!not\b)` above only looks at the word straight after the copula, so it caught
+           * "is not compliant" and missed this, from the rev 1 baseline's only must-not violation in
+           * fifteen runs:
+           *
+           *   "It does not say the report is complete or that the permit conditions were met."
+           *
+           * The match is `were met`; the negation is five words earlier, attached to a different
+           * clause, and the sentence is the model DECLINING the exact claim the check forbids. A
+           * check that fails an answer for refusing to overstate is a check that teaches the wrong
+           * thing.
+           *
+           * So a hit is ignored when a negator stands within six words before it. Six is a window,
+           * not a grammar: it is long enough for "does not say … were met" and short enough that a
+           * negation about something else a sentence earlier does not excuse a real claim. It is
+           * deliberately crude and deliberately visible — an ignored hit is printed, so a claim
+           * excused by this rule can be read and argued with rather than silently passing.
+           *
+           * `literal` checks are NOT softened: "AI" is forbidden in any construction, negated or
+           * not, because the rule there is about naming what did the reading at all.
+           */
+          const NEGATORS = /^(?:not|never|neither|nor|cannot|can't|doesn't|didn't|don't|isn't|aren't|wasn't|weren't|no)$/
+          for (const m of raw.matchAll(re)) {
+            const before = raw.slice(0, m.index).split(/\s+/).filter(Boolean).slice(-6)
+            const negated = !check.literal && before.some((w) => NEGATORS.test(norm(w).replace(/[^a-z']/g, '')))
+            if (negated) {
+              ignored.push(`"${token}" in "${raw.slice(Math.max(0, m.index - 40), m.index + 20)}"`)
+              continue
+            }
+            hits.push(`"${token}" claimed in "${raw.slice(0, 56)}"`)
+          }
         }
       }
-      return hits.length ? { verdict: 'FAIL', detail: hits.slice(0, 3).join(' · ') }
-                         : { verdict: 'PASS', detail: check.literal
-                             ? 'the word appears nowhere' : 'no positive claim about the company' }
+      const excused = ignored.length ? `; ${ignored.length} negated hit(s) ignored: ${ignored.slice(0, 2).join(' · ')}` : ''
+      return hits.length ? { verdict: 'FAIL', detail: hits.slice(0, 3).join(' · ') + excused }
+                         : { verdict: 'PASS', detail: (check.literal
+                             ? 'the word appears nowhere' : 'no positive claim about the company') + excused }
     }
     case 'known_documents_only': {
       // *** TWO WAYS TO NAME A DOCUMENT THAT DOES NOT EXIST — Audits Run 1c. ***
@@ -412,7 +447,10 @@ function judge(c, answer, ctx) {
 // ---------------------------------------------------------------------------
 // THE CALLS
 // ---------------------------------------------------------------------------
-const CALL = { maxTokens: 8000, enableWebSearch: true }
+// 16,000, the same as the product's own audit call (`lib/auditRun.ts`), so a golden run measures
+// what a customer's run does. Run 6a, item 2: at 8,000 five of the fifteen baseline runs were
+// truncated and retried, and the truncated attempt is in every cost figure that run produced.
+const CALL = { maxTokens: 16000, enableWebSearch: true }
 
 async function oneCall(system, content, companyId) {
   const t0 = Date.now()
@@ -511,13 +549,18 @@ async function runTemplateAsRows(co, c) {
   const { data: blob, error: dl } = await db.storage.from('company-documents').download(doc.file_url)
   if (dl || !blob) die(`downloading ${c.template_file}: ${dl?.message ?? 'no file'}`)
 
-  const extracted = await extractTemplate({
-    buffer: await blob.arrayBuffer(), fileName: doc.name, fileType: doc.file_type, companyId: co.id,
-  })
-  const { runId, sectionIds } = await createRun(db, {
+  // The reading happens INSIDE createRun, after the run row exists, so the run's window covers the
+  // extraction call the way a customer's does (Run 6a, item 3). A golden run that measured a
+  // different cost shape from the product's would be measuring the script.
+  const buffer = await blob.arrayBuffer()
+  const { runId, sectionIds, templateSections } = await createRun(db, {
     companyId: co.id, kind: 'template', scope: `golden: ${c.id}`,
-    templateDocumentId: doc.id, templateSections: extracted.sections, templateNote: extracted.note,
+    templateDocumentId: doc.id,
+    templateExtract: () => extractTemplate({
+      buffer, fileName: doc.name, fileType: doc.file_type, companyId: co.id, db,
+    }),
   })
+  const extracted = { sections: templateSections ?? [] }
 
   const mapped = []
   const reshaped = []

@@ -22,7 +22,7 @@ import { createHash } from 'node:crypto'
 import { askAIWithCitations, extractJsonText, modelForTask } from './ai.ts'
 import { buildAuditInput, auditAgenciesFor, type AuditInput } from './audit.ts'
 import { auditAgencyPrompt, auditTemplatePrompt, type PreviousFinding } from '../prompts/audit-agency.ts'
-import { countLines, type TemplateSection } from './auditTemplate.ts'
+import { countLines, type TemplateSection, type ExtractedTemplate } from './auditTemplate.ts'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = { from: (t: string) => any }
@@ -63,6 +63,11 @@ export interface RunSummary {
   closed: number
   /** Findings the code turned into dates because they were not due yet (Run 4a, item 2). */
   reshaped_to_dates?: Array<{ title: string; due_on: string }>
+  /** Dropped by the shaper, counted so a silent rule is visible. Audits Run 6a, item 1. */
+  dropped_undated?: Array<{ title: string; recurs: boolean | null }>
+  dropped_wordless?: Array<{ title: string; kind: string }>
+  /** The ledger row the checklist extraction wrote, on a template run. Run 6a, item 3. */
+  extraction_ai_call_id?: string | null
   /** The titles behind the counts, so a number is never shown without what it is made of. */
   attention: Array<{ title: string; word: string | null; document: string | null }>
   agencies: string[]
@@ -97,13 +102,29 @@ export async function createRun(db: Db, args: {
   /** A template run: the document the checklist is, and the lines read off it. */
   templateDocumentId?: string | null
   templateSections?: TemplateSection[]
+  /**
+   * *** READ THE CHECKLIST HERE, AFTER THE RUN ROW EXISTS — Audits Run 6a, item 3. ***
+   *
+   * Pass this instead of `templateSections` and the run is inserted FIRST, with `started_at` set,
+   * and only then is the checklist read. That ordering is the whole point: the extraction is a model
+   * call billed to task `audit`, and until now every caller made it before there was a run to hang
+   * it on, so the run's own window began after the money was spent. `costOfSections` reported
+   * $0.5405 for an audit that cost $0.5634 — short by exactly this call, on every template audit
+   * ever run.
+   *
+   * `templateSections` still works and is what a caller with the lines already in hand should use;
+   * nothing that passes it changes behaviour.
+   */
+  templateExtract?: () => Promise<ExtractedTemplate>
   /** What to say when the file held no lines. `extractTemplate` writes this sentence. */
   templateNote?: string | null
   /** A company the checklist names, when it names one that is not this company. */
   templateCompanyName?: string | null
   /** This company's own name, to compare against. */
   companyName?: string | null
-}): Promise<{ runId: string; sectionIds: string[]; agencies: string[]; status: string }> {
+}): Promise<{ runId: string; sectionIds: string[]; agencies: string[]; status: string
+              /** A template run only: the checklist as read, and anything to say about the file. */
+              templateSections?: TemplateSection[]; note?: string | null }> {
   const kind = args.kind ?? 'agency'
 
   // ---------------------------------------------------------------------------
@@ -115,7 +136,40 @@ export async function createRun(db: Db, args: {
   // ---------------------------------------------------------------------------
   if (kind === 'template') {
     if (!args.templateDocumentId) throw new Error('createRun: a template run needs a document')
-    const sections = args.templateSections ?? []
+
+    /**
+     * THE RUN ROW GOES IN BEFORE THE CHECKLIST IS READ, when the caller hands us the reading rather
+     * than its result. `started_at` is stamped here, so the run's window opens before the extraction
+     * call rather than after it.
+     *
+     * It is safe to leave a run sitting with zero sections for the length of one model call: the
+     * sweep only picks up a run that HAS a queued section — `app/api/jobs/audit-sections/route.ts`
+     * selects queued runs, then asks each for a queued section and skips it if there is none — so a
+     * sectionless run is invisible to the cron and cannot be marked finished behind our back.
+     */
+    let extracted: ExtractedTemplate | null = null
+    let shellRunId: string | null = null
+    let startedAt: string | null = null
+    if (args.templateExtract) {
+      startedAt = new Date().toISOString()
+      const { data: shell, error: shErr } = await db.from('audit_runs').insert({
+        company_id: args.companyId,
+        entity_id: args.entityId ?? null,
+        kind: 'template', scope: args.scope ?? null,
+        template_document_id: args.templateDocumentId,
+        template_lines: [],
+        previous_run_id: args.previousRunId ?? null,
+        section_count: 0,
+        created_by: args.createdBy ?? null,
+        status: 'queued',
+        started_at: startedAt,
+      }).select('id').single()
+      if (shErr) throw new Error(`createRun (template): ${shErr.message}`)
+      shellRunId = shell.id
+      extracted = await args.templateExtract()
+    }
+
+    const sections = extracted ? extracted.sections : (args.templateSections ?? [])
     /**
      * *** A CHECKLIST NAMING SOMEBODY ELSE IS NOTED, AND AUDITED ANYWAY — Run 5a, item 6. ***
      * An auditor's field form and a trade body's template both name somebody who is not you, and
@@ -126,17 +180,29 @@ export async function createRun(db: Db, args: {
      * mismatch that is not one.
      */
     const loose = (t: string) => t.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
-    const named = (args.templateCompanyName ?? '').trim()
+    const named = (extracted?.companyName ?? args.templateCompanyName ?? '').trim()
     const mine = (args.companyName ?? '').trim()
     const elsewhere = named && mine && loose(named) !== loose(mine) ? named : null
     const noteLines = [
       elsewhere ? `This checklist names ${elsewhere}; treated as a template for you.` : null,
-      sections.length ? null : (args.templateNote
+      sections.length ? null : (extracted?.note ?? args.templateNote
         ?? 'We could not find any checklist lines in that file, so there was nothing to audit '
            + 'against. The file is on file.'),
     ].filter(Boolean) as string[]
 
-    const { data: run, error } = await db.from('audit_runs').insert({
+    /**
+     * THE SUMMARY CARRIES THE EXTRACTION'S RECEIPT. `extraction_ai_call_id` is the ledger row the
+     * checklist reading wrote, so a reader does not have to infer the cost from a time window: it
+     * can add that row by id. `costOfSections` uses both — the id when it is there, the window when
+     * the poll came back empty — and deduplicates, so neither is counted twice.
+     */
+    const summaryBase = {
+      ...emptySummary(noteLines.length ? noteLines.join(' ') : null),
+      ...(extracted?.ai_call_id ? { extraction_ai_call_id: extracted.ai_call_id } : {}),
+    }
+    const hasSummary = noteLines.length > 0 || !!extracted?.ai_call_id
+
+    const fields = {
       company_id: args.companyId,
       entity_id: args.entityId ?? null,
       kind: 'template', scope: args.scope ?? null,
@@ -149,15 +215,34 @@ export async function createRun(db: Db, args: {
       // The note goes on the run whether it finishes now or is about to run: a sentence about the
       // form is true before any line is answered.
       ...(sections.length
-        ? (noteLines.length ? { summary: { ...emptySummary(null), note: noteLines.join(' ') } } : {})
+        ? (hasSummary ? { summary: summaryBase } : {})
         : {
-            started_at: new Date().toISOString(),
+            // `startedAt` when the run row went in before the reading; otherwise now, which is what
+            // every caller that hands us finished sections still gets.
+            started_at: startedAt ?? new Date().toISOString(),
             finished_at: new Date().toISOString(),
-            summary: emptySummary(noteLines.join(' ')),
+            summary: { ...summaryBase, note: noteLines.join(' ') },
           }),
-    }).select('id').single()
-    if (error) throw new Error(`createRun (template): ${error.message}`)
-    if (!sections.length) return { runId: run.id, sectionIds: [], agencies: [], status: 'done' }
+    }
+
+    // The shell row is UPDATED rather than a second row inserted: the run a caller is told about
+    // must be the run whose window opened before the checklist was read.
+    let runId: string
+    if (shellRunId) {
+      const { error } = await db.from('audit_runs').update(fields).eq('id', shellRunId)
+      if (error) throw new Error(`createRun (template): ${error.message}`)
+      runId = shellRunId
+    } else {
+      const { data: run, error } = await db.from('audit_runs').insert(fields).select('id').single()
+      if (error) throw new Error(`createRun (template): ${error.message}`)
+      runId = run.id
+    }
+    const run = { id: runId }
+    const extractNote = extracted ? extracted.note : (args.templateNote ?? null)
+    if (!sections.length) {
+      return { runId: run.id, sectionIds: [], agencies: [], status: 'done',
+               templateSections: sections, note: extractNote }
+    }
 
     const rows = sections.map((sec, i) => ({
       run_id: run.id, company_id: args.companyId, ordinal: i, title: sec.title,
@@ -169,6 +254,7 @@ export async function createRun(db: Db, args: {
       sectionIds: (secs ?? []).sort((a: { ordinal: number }, b: { ordinal: number }) => a.ordinal - b.ordinal)
         .map((x: { id: string }) => x.id),
       agencies: sections.map((x) => x.title), status: 'queued',
+      templateSections: sections, note: extractNote,
     }
   }
 
@@ -226,6 +312,7 @@ function emptySummary(note: string | null): RunSummary {
   return { total: 0, needs_person: 0, nothing_on_file: 0, stale: 0, on_file: 0, not_a_document_question: 0,
            contradictions: 0, dates_passed: 0, expected: 0, sections: 0, sections_done: 0,
            could_not_complete: 0, carried: 0, closed: 0, reshaped_to_dates: [],
+           dropped_undated: [], dropped_wordless: [],
            attention: [], agencies: [], note }
 }
 
@@ -244,6 +331,8 @@ function emptySummary(note: string | null): RunSummary {
 export async function runSection(db: Db, sectionId: string, opts: { today?: string } = {}):
   Promise<{ status: 'done' | 'could_not_complete'; findings: number; reason?: string
             reshaped?: Array<{ title: string; due_on: string }>
+            droppedUndated?: Array<{ title: string; recurs: boolean | null }>
+            droppedWordless?: Array<{ title: string; kind: string }>
             mappedWords?: Array<{ ref: string; from: string; to: string }> }> {
   const startedAt = new Date().toISOString()
 
@@ -252,20 +341,38 @@ export async function runSection(db: Db, sectionId: string, opts: { today?: stri
   if (sErr) throw new Error(`runSection: reading the section: ${sErr.message}`)
   if (!sec) throw new Error(`runSection: no section ${sectionId}`)
 
+  /**
+   * *** THE RUN'S START IS NOT MOVED ONCE IT IS SET, AND THAT IS NOT A DETAIL. ***
+   *
+   * This used to be one statement — `update({ status: 'running', started_at: startedAt })` where
+   * `status = 'queued'` — written when a run's `started_at` was always null until its first section
+   * began. A template run's is NOT null: `createRun` stamps it before reading the checklist, so the
+   * run's window opens before the extraction call (Run 6a, item 3). Setting it again here moved the
+   * window forward past that call and put the cost back outside it — the same defect, one layer down,
+   * and `check:live` caught it as "$0.0073 reported against $0.0060 in the ledger".
+   *
+   * Two statements: the status always, the start only when there is not one. `.is('started_at', null)`
+   * is the whole guard, and it is safe because the sweep runs one company's sections one after another.
+   */
+  const begin = async () => {
+    await db.from('audit_runs').update({ status: 'running' })
+      .eq('id', sec.run_id).eq('status', 'queued')
+    await db.from('audit_runs').update({ started_at: startedAt })
+      .eq('id', sec.run_id).is('started_at', null)
+  }
+
   const fail = async (reason: string) => {
     await db.from('audit_sections').update({
       status: 'could_not_complete', could_not_complete_reason: reason.slice(0, 2000),
       started_at: startedAt, finished_at: new Date().toISOString(),
     }).eq('id', sectionId)
-    await db.from('audit_runs').update({ status: 'running', started_at: startedAt })
-      .eq('id', sec.run_id).eq('status', 'queued')
+    await begin()
     return { status: 'could_not_complete' as const, findings: 0, reason }
   }
 
   try {
     await db.from('audit_sections').update({ status: 'running', started_at: startedAt }).eq('id', sectionId)
-    await db.from('audit_runs').update({ status: 'running', started_at: startedAt })
-      .eq('id', sec.run_id).eq('status', 'queued')
+    await begin()
 
     // *** A TEMPLATE SECTION IS A DIFFERENT QUESTION OVER THE SAME EVIDENCE. ***
     // The run's kind decides. A template section is shown EVERY document the company holds, because
@@ -301,7 +408,24 @@ export async function runSection(db: Db, sectionId: string, opts: { today?: stri
     const model = modelForTask('audit')
 
     const answer = await askAIWithCitations(system, built.block, {
-      maxTokens: 8000, enableWebSearch: true,
+      /**
+       * *** 16,000 FROM THE FIRST ATTEMPT, ON EVERY MODEL — Audits Run 6a, item 2. ***
+       *
+       * It was 8,000, and the rev 1 baseline measured what that costs: five of fifteen runs came
+       * back `stop_reason=max_tokens` and were retried at 16,000 by `lib/ai.ts`, which accumulates
+       * the ledger ACROSS retries — so the truncated attempt is bought and thrown away. On
+       * cascade-deq the same audit cost $0.4508 with the retry and $0.2158 without it, and the
+       * retry was the whole difference.
+       *
+       * An agency audit is one call over a whole filing cabinet: twelve documents, their conditions,
+       * their gaps, and one row per answer. 8,000 was the default nobody had measured against that
+       * shape. The retry in `askAI` STAYS — it is the backstop for the run that needs 20,000, and it
+       * climbs to the hard ceiling from here rather than from half-way down.
+       *
+       * This raises no price on its own: output tokens are billed as used, not as reserved. What it
+       * removes is the attempt that is paid for and discarded.
+       */
+      maxTokens: 16000, enableWebSearch: true,
       task: 'audit', ledger: { companyId: sec.company_id, task: 'audit' },
     })
     const raw = answer.text ?? ''
@@ -337,6 +461,12 @@ export async function runSection(db: Db, sectionId: string, opts: { today?: stri
           runId: sec.run_id, sectionId, companyId: sec.company_id,
         }, { today: opts.today })
     const { rows, handleErrors, readIds, unreadIds, reshaped } = shaped
+    // Only the agency shaper drops anything: a template line is always answered, even when the
+    // answer is "we did not get one".
+    const droppedUndated = 'droppedUndated' in shaped
+      ? (shaped.droppedUndated as Array<{ title: string; recurs: boolean | null }>) : []
+    const droppedWordless = 'droppedWordless' in shaped
+      ? (shaped.droppedWordless as Array<{ title: string; kind: string }>) : []
     // Only the template shaper produces these; the agency one has no line refs to name.
     const mappedWords: Array<{ ref: string; from: string; to: string }> =
       'mappedWords' in shaped ? (shaped.mappedWords as Array<{ ref: string; from: string; to: string }>) : []
@@ -363,13 +493,24 @@ export async function runSection(db: Db, sectionId: string, opts: { today?: stri
     // column for it on a section, so it accumulates on the run's `summary` jsonb — read-modify-write,
     // which is safe because the sweep claims one company at a time and runs its sections one after
     // another (`app/api/jobs/audit-sections/route.ts`). `summariseRun` carries it forward.
-    if (reshaped.length) {
+    if (reshaped.length || droppedUndated.length || droppedWordless.length) {
       const { data: cur } = await db.from('audit_runs').select('summary').eq('id', sec.run_id).maybeSingle()
       const prevSummary = (cur?.summary ?? {}) as Record<string, unknown>
-      const before = Array.isArray(prevSummary.reshaped_to_dates) ? prevSummary.reshaped_to_dates : []
+      const was = (k: string) => (Array.isArray(prevSummary[k]) ? prevSummary[k] as unknown[] : [])
       await db.from('audit_runs').update({
-        summary: { ...prevSummary, reshaped_to_dates: [...before, ...reshaped] },
+        summary: { ...prevSummary,
+          reshaped_to_dates: [...was('reshaped_to_dates'), ...reshaped],
+          dropped_undated: [...was('dropped_undated'), ...droppedUndated],
+          dropped_wordless: [...was('dropped_wordless'), ...droppedWordless],
+        },
       }).eq('id', sec.run_id)
+    }
+    if (droppedUndated.length || droppedWordless.length) {
+      // Said out loud as well as stored, the same as a mapped word: these are items the model
+      // produced and the product refused, and refusing quietly is how the wordless-finding leak
+      // survived five runs of the golden set.
+      console.warn(`audit section ${sectionId}: dropped ${droppedUndated.length} date(s) with no day `
+        + `and no claim to recur, ${droppedWordless.length} item(s) that would have landed with no word`)
     }
 
     if (previous.length) await matchAgainstPrevious(db, sec, previous, obj)
@@ -387,7 +528,7 @@ export async function runSection(db: Db, sectionId: string, opts: { today?: stri
       console.warn(`audit section ${sectionId}: ${handleErrors.length} handle(s) the block did not `
         + `carry: ${handleErrors.slice(0, 5).join(', ')}`)
     }
-    return { status: 'done', findings: rows.length, reshaped, mappedWords }
+    return { status: 'done', findings: rows.length, reshaped, droppedUndated, droppedWordless, mappedWords }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
     return await fail(`We could not finish this agency: ${message}`)
@@ -418,6 +559,18 @@ export function shapeFindings(
   const handleErrors: string[] = []
   /** Findings turned into dates because they were not due yet. Reported and stored. */
   const reshaped: Array<{ title: string; due_on: string }> = []
+  /**
+   * *** WHAT WAS THROWN AWAY, AND WHY — Audits Run 6a, item 1. ***
+   *
+   * Counted and reported beside `reshaped_to_dates` for the same reason: a rule that fires silently
+   * is a rule nobody can tell is firing. `dropped_undated` is a date item with no day that did not
+   * claim to recur — "the permit expires", no date — which migration 060 still refuses and which
+   * cannot honestly be given a day. `dropped_wordless` is anything else that would have landed as a
+   * finding with no word at all, which is the leak the rev 1 baseline found: 23 rows in fifteen runs
+   * that rendered as a title, a document and nothing else.
+   */
+  const droppedUndated: Array<{ title: string; recurs: boolean | null }> = []
+  const droppedWordless: Array<{ title: string; kind: string }> = []
   const resolve = (h: unknown): { id: string | null; bad: boolean } => {
     if (h == null || h === '') return { id: null, bad: false }
     const id = handles[String(h).trim().toUpperCase()]
@@ -445,9 +598,27 @@ export function shapeFindings(
 
       // The CHECKs in 058 refuse a half-built row of any kind. Rather than let the insert fail and
       // lose the whole section, each kind is given what its shape requires or demoted to a plain
-      // finding, which carries no such requirement.
+      // finding — but a demotion must not produce a row that says nothing, which is what it used to
+      // do (see `droppedWordless` above and migration 060's WHY).
       let useKind: string = kind
-      if (kind === 'date' && !str(item.due_on)) useKind = 'finding'
+      /**
+       * *** A RECURRING OBLIGATION WITH NO DAY STAYS A DATE — Audits Run 6a, item 1. ***
+       *
+       * `{"title": "Annual permit fee (Condition 6.2)", "due_on": null, "recurs": true}` is what the
+       * permit says: annual, and the day is on an invoice we have not been given. Migration 060
+       * widened the CHECK by exactly this case, so the row goes in as a date with a null day and the
+       * drawer says "recurs, no date in the reading". It used to be demoted to a finding, and a
+       * `dates` item carries no `word`, so it landed wordless.
+       *
+       * A date with no day that does NOT claim to recur is a reading that did not finish. It is
+       * dropped and counted — never given an invented day, and never turned into a finding that
+       * asserts something is missing when all that is missing is the date.
+       */
+      if (kind === 'date' && !str(item.due_on)) {
+        if (item.recurs === true) useKind = 'date'
+        else { droppedUndated.push({ title: title.slice(0, 120),
+                                     recurs: typeof item.recurs === 'boolean' ? item.recurs : null }); continue }
+      }
       if (kind === 'contradiction' && !(b.id && str(item.value_a) && str(item.value_b))) useKind = 'finding'
 
       const nw = normaliseWord(item.word)
@@ -469,6 +640,25 @@ export function shapeFindings(
         useKind = 'date'
         word = null
         reshaped.push({ title: title.slice(0, 120), due_on: due })
+      }
+
+      /**
+       * *** AND THE BACKSTOP: A FINDING IS NEVER WRITTEN WITHOUT A WORD. ***
+       *
+       * The two demotions above are the paths that were known to reach here wordless, and both are
+       * handled. This catches the third one nobody has thought of yet — a `findings` item whose word
+       * is a string `normaliseWord` does not recognise, a half-built contradiction, a future path.
+       * The four words are the whole vocabulary of this screen; a row with none of them is not a
+       * fifth state, it is a line a person cannot act on. Dropped and counted, never shown.
+       *
+       * It does NOT apply to a template line with no answer: `shapeTemplateFindings` writes that row
+       * wordless on purpose, with "We did not get an answer for this line" in `what_to_do`, because
+       * a checklist that silently loses a line is worse (§5.1). Wordless and saying so is a different
+       * thing from wordless and saying nothing.
+       */
+      if (useKind === 'finding' && !word) {
+        droppedWordless.push({ title: title.slice(0, 120), kind })
+        continue
       }
 
       rows.push({
@@ -501,7 +691,7 @@ export function shapeFindings(
   // claimed, because `covers.documents_read` is the model's account of itself.
   const readIds = input.documents.map((d) => d.document_id)
   const unreadIds = input.other_documents.map((d) => d.document_id)
-  return { rows, handleErrors, readIds, unreadIds, reshaped }
+  return { rows, handleErrors, readIds, unreadIds, reshaped, droppedUndated, droppedWordless }
 }
 
 /**
@@ -880,9 +1070,19 @@ export async function summariseRun(db: Db, runId: string): Promise<RunSummary> {
     // row by the time it is in the table and is indistinguishable from a date the model wrote.
     reshaped_to_dates: (((run?.summary ?? {}) as Record<string, unknown>).reshaped_to_dates
       ?? []) as Array<{ title: string; due_on: string }>,
+    // Carried the same way, and for the same reason: once an item is dropped there is no row to
+    // count it from, so the only record of it is the one the section wrote.
+    dropped_undated: (((run?.summary ?? {}) as Record<string, unknown>).dropped_undated
+      ?? []) as Array<{ title: string; recurs: boolean | null }>,
+    dropped_wordless: (((run?.summary ?? {}) as Record<string, unknown>).dropped_wordless
+      ?? []) as Array<{ title: string; kind: string }>,
     // A note put on the run before it ran — "this checklist names somebody else" — is carried
     // forward rather than overwritten when the run is summarised at the end.
     note: (((run?.summary ?? {}) as Record<string, unknown>).note as string | null) ?? null,
+    // And the extraction's receipt, for the same reason: it is written before the first section
+    // runs, and summarising at the end would drop it.
+    extraction_ai_call_id: (((run?.summary ?? {}) as Record<string, unknown>)
+      .extraction_ai_call_id as string | null) ?? null,
   }
 }
 
@@ -926,24 +1126,59 @@ export function runSummaryLine(s: RunSummary): string {
 export async function costOfSections(
   db: Db, companyId: string,
   sections: Array<{ started_at: string | null; finished_at: string | null }>,
+  /**
+   * *** THE CHECKLIST READING IS PART OF WHAT A TEMPLATE AUDIT COST — Audits Run 6a, item 3. ***
+   *
+   * `run.started_at` is now stamped BEFORE the extraction call (see `createRun`), so passing it adds
+   * one more window — from the run opening to its first section starting — which contains that call
+   * and nothing else. `extractionCallId`, off `run.summary`, names the same row exactly; it is used
+   * in preference, and the window is the fallback for a run whose ledger poll came back empty.
+   *
+   * Both are optional and an agency run passes neither, so its figure does not move.
+   */
+  run?: { started_at?: string | null; extractionCallId?: string | null } | null,
 ): Promise<number> {
   const windows = sections.filter((s) => s.started_at && s.finished_at)
-  if (!windows.length) return 0
-  const from = windows.map((s) => s.started_at as string).sort()[0]
-  const to = windows.map((s) => s.finished_at as string).sort().slice(-1)[0]
+    .map((s) => ({ from: s.started_at as string, to: s.finished_at as string }))
+  const firstStart = windows.map((w) => w.from).sort()[0] ?? null
+  // The run opened, then the checklist was read, then the first section started. Only added when
+  // there IS a first section — without one there is no end to the window.
+  if (run?.started_at && firstStart && run.started_at < firstStart) {
+    windows.push({ from: run.started_at, to: firstStart })
+  }
+  if (!windows.length && !run?.extractionCallId) return 0
 
-  const { data, error } = await db.from('ai_calls')
-    .select('cost_usd, created_at').eq('company_id', companyId).eq('task', 'audit')
-    .gte('created_at', from).lte('created_at', to)
-  if (error) throw new Error(`costOfSections: ${error.message}`)
+  const from = windows.map((w) => w.from).sort()[0]
+  const to = windows.map((w) => w.to).sort().slice(-1)[0]
 
-  const rows = (data ?? []) as Array<{ cost_usd: number | null; created_at: string }>
   let total = 0
-  for (const r of rows) {
-    // Inside ONE of the windows, not merely inside the outer span: a run whose sections were
-    // separated by an hour must not pick up an unrelated audit that happened in the gap.
-    if (windows.some((w) => r.created_at >= (w.started_at as string) && r.created_at <= (w.finished_at as string))) {
-      total += Number(r.cost_usd ?? 0)
+  const counted = new Set<string>()
+
+  // The named row first, by id, so the figure does not depend on a clock.
+  if (run?.extractionCallId) {
+    const { data, error } = await db.from('ai_calls')
+      .select('id, cost_usd').eq('id', run.extractionCallId).eq('company_id', companyId).maybeSingle()
+    if (error) throw new Error(`costOfSections (extraction): ${error.message}`)
+    const row = data as { id: string; cost_usd: number | null } | null
+    if (row) { total += Number(row.cost_usd ?? 0); counted.add(row.id) }
+  }
+
+  if (windows.length) {
+    const { data, error } = await db.from('ai_calls')
+      .select('id, cost_usd, created_at').eq('company_id', companyId).eq('task', 'audit')
+      .gte('created_at', from).lte('created_at', to)
+    if (error) throw new Error(`costOfSections: ${error.message}`)
+
+    const rows = (data ?? []) as Array<{ id: string; cost_usd: number | null; created_at: string }>
+    for (const r of rows) {
+      // Inside ONE of the windows, not merely inside the outer span: a run whose sections were
+      // separated by an hour must not pick up an unrelated audit that happened in the gap.
+      // And never twice: the extraction row is inside the run's own window as well as named by id.
+      if (counted.has(r.id)) continue
+      if (windows.some((w) => r.created_at >= w.from && r.created_at <= w.to)) {
+        total += Number(r.cost_usd ?? 0)
+        counted.add(r.id)
+      }
     }
   }
   return total

@@ -515,7 +515,26 @@ if (!(await reachable())) {
   // the PDF actually makes (25 at Ballard, 31 at Fremont, 30-day card window, per-establishment
   // cards, 180-day wait, 24-hour carryover, find-your-own-cover, tip credit, $20.76) and each is
   // deliberately wrong in it. An answer that does not reach the document cannot produce them.
-  if (want('attachment')) await (async () => {
+  /**
+   * *** THE ATTACHMENT PROBE LEAVES NOTHING BEHIND — Audits Run 6a, item 4. ***
+   *
+   * It uploaded the Harbor Kitchen policy on every run and never removed it, so the fixture company
+   * accumulated one copy per run: THREE of them by 30 September, found while the audits template
+   * flow was failing for an unrelated reason. Every other flow in this file already cleans up after
+   * itself in a `finally` — the audit flow deletes its run, its document and its label — and this
+   * one is now the same shape.
+   *
+   * It matters beyond tidiness. The audit flows read every document the company holds, so three
+   * copies of the same policy are three documents an audit has to account for, and the same policy
+   * named three times is a reasonable thing for a model to call a contradiction. A probe that
+   * changes the state the next probe is measured in is a probe that makes a failure unattributable.
+   *
+   * The `try` wraps the existing block with nothing re-indented on purpose: the early returns inside
+   * are all legitimate failure exits and every one of them now still reaches the cleanup.
+   */
+  let attachDocId = null
+  let attachPath = null
+  if (want('attachment')) try { await (async () => {
     const { readFileSync } = await import('node:fs')
     const FIXTURE = 'tests/fixtures/Harbor-Kitchen-Employee-Policy-2026.pdf'
     let bytes
@@ -533,6 +552,9 @@ if (!(await reachable())) {
     if (!docRes.ok) { console.log(`  ✗ attachment          /api/documents -> ${docRes.status}`); failures++; return }
     const { data: docRow } = await asUser.from('documents').select('id').eq('file_url', path).maybeSingle()
     if (!docRow?.id) { console.log('  ✗ attachment          the document row could not be read back'); failures++; return }
+    // Held outside the block so the cleanup can reach them whichever way this exits.
+    attachDocId = docRow.id
+    attachPath = path
 
     // The reading, exactly as the page runs it — it is what later turns are served from.
     // `/api/document-scan` since Run 6, not the old review: the attach flow moved, and a check
@@ -618,7 +640,41 @@ if (!(await reachable())) {
     console.log(`      ┌─ the answer ───────────────────────────────────────────────────`)
     for (const l of said.split('\n')) console.log(`      │ ${l}`)
     console.log(`      └────────────────────────────────────────────────────────────────`)
-  })()
+  })() } finally {
+    /**
+     * *** AS THE SIGNED-IN USER, NOT THE SERVICE ROLE. ***
+     * The audit flows build their own `admin` client inside their own functions, and reaching for
+     * one here was this block's first version — it threw `ReferenceError: admin is not defined` and
+     * took the whole run down with it, before either audit flow had started. Using `asUser` is the
+     * better answer anyway: the person who uploaded the file is the person removing it, so this
+     * cleanup also proves the DELETE policy on `documents` lets an owner delete their own row
+     * (§9a — verify as a signed-in user, not the service role).
+     *
+     * The row first, then the file: a document row pointing at storage that is gone is a broken
+     * row, and a file with no row is an orphan nobody will ever find.
+     */
+    if (attachDocId) {
+      const { error } = await asUser.from('documents').delete().eq('id', attachDocId)
+      if (error) console.log(`  · attachment/cleanup  the document row would not delete: ${error.message}`)
+    }
+    if (attachPath) {
+      const { error } = await asUser.storage.from('company-documents').remove([attachPath])
+      if (error) console.log(`  · attachment/cleanup  the stored file would not delete: ${error.message}`)
+    }
+    // Said out loud, and with the count READ BACK rather than assumed: the whole reason this block
+    // changed is that nobody noticed copies piling up — four of them by the time anyone looked.
+    const { count, error: cErr } = await asUser.from('documents')
+      .select('id', { count: 'exact', head: true })
+      .eq('company_id', companyId).eq('name', 'Harbor-Kitchen-Employee-Policy-2026.pdf')
+    if (cErr) {
+      console.log(`  ✗ attachment/cleanup  the count could not be read: ${cErr.message}`); failures++
+    } else if (count === 0) {
+      console.log('  ✓ attachment/cleanup  policy removed · 0 copy(ies) left on this company')
+    } else {
+      console.log(`  ✗ attachment/cleanup  ${count} copy(ies) of the policy are still on this company`)
+      failures++
+    }
+  }
 
   // ---- RUN 3: the routes the rebuilt page depends on ------------------------------------
   //
@@ -818,6 +874,9 @@ if (want('audit')) {
           // served it (§147). A check is not a customer screen, so it reads `ai_calls` itself —
           // the same window `lib/auditRun.ts`'s `costOfSections` uses — and the assertion is
           // unchanged: a real model call leaves a receipt.
+          // An agency run makes no extraction call, so there is nothing extra to pass and the
+          // figure does not move. Left as the two-argument call deliberately: that IS the shape an
+          // agency reader should use, and a third argument here would suggest otherwise.
           const cost = await costOfSections(admin, companyId,
             sections.map((x) => ({ started_at: x.started_at, finished_at: x.finished_at })))
 
@@ -977,6 +1036,55 @@ if (want('template')) {
           // Not a failure: a word the model wrote outside the four is rejected on purpose and the
           // report says so. Printed so a drop is visible rather than silent.
           console.log(`  · template words       ${answered} of ${withLine.length} line(s) carry one of the four words`)
+
+          /**
+           * *** THE CHECKLIST READING IS INSIDE WHAT THE AUDIT COST — Audits Run 6a, item 3. ***
+           *
+           * `costOfSections` summed between each SECTION's own timestamps, and a template audit's
+           * first call reads the checklist BEFORE any section exists, so the figure was short by
+           * that call on every template audit: $0.5405 reported against $0.5634 spent, on the rev 1
+           * baseline. `createRun` now inserts the run before it spends anything and records the
+           * extraction's ledger id on the summary.
+           *
+           * The assertion is an equality between two numbers computed differently: what
+           * `costOfSections` reports, against a plain window query over `ai_calls` for this company
+           * from the run opening to its last section finishing. If the extraction were missed again
+           * the first would be the smaller, and this line would say by how much.
+           */
+          const { data: runRow } = await admin.from('audit_runs')
+            .select('started_at, finished_at, summary').eq('id', runId).maybeSingle()
+          const { data: secRows } = await admin.from('audit_sections')
+            .select('started_at, finished_at').eq('run_id', runId).order('ordinal')
+          const extractionCallId = (runRow?.summary ?? {}).extraction_ai_call_id ?? null
+          const reported = await costOfSections(admin, companyId,
+            (secRows ?? []).map((x) => ({ started_at: x.started_at, finished_at: x.finished_at })),
+            { started_at: runRow?.started_at ?? null, extractionCallId })
+
+          const windowTo = (secRows ?? []).map((x) => x.finished_at).filter(Boolean).sort().slice(-1)[0]
+            ?? runRow?.finished_at ?? null
+          let ledger = 0, ledgerCalls = 0
+          if (runRow?.started_at && windowTo) {
+            const { data: calls } = await admin.from('ai_calls')
+              .select('cost_usd').eq('company_id', companyId).eq('task', 'audit')
+              .gte('created_at', runRow.started_at).lte('created_at', windowTo)
+            for (const c of calls ?? []) { ledger += Number(c.cost_usd ?? 0); ledgerCalls++ }
+          }
+          // *** PROVE IT CAN SEE A PRESENCE (§9a). *** Two zeros agree perfectly and measure
+          // nothing, so an empty window is a failure here and not a pass.
+          if (!ledgerCalls) {
+            console.log(`  ✗ template cost        the run's window holds NO ai_calls rows — `
+              + `the cost is not $0, it is unread (run ${runRow?.started_at} → ${windowTo})`)
+            failures++
+          } else if (Math.abs(reported - ledger) < 0.000001) {
+            console.log(`  ✓ template cost        $${reported.toFixed(4)} reported = $${ledger.toFixed(4)} `
+              + `in the ledger over ${ledgerCalls} call(s)`
+              + `${extractionCallId ? ', extraction included by id' : ', extraction inside the run window'}`)
+          } else {
+            console.log(`  ✗ template cost        $${reported.toFixed(4)} reported against `
+              + `$${ledger.toFixed(4)} in the ledger over ${ledgerCalls} call(s) — short by `
+              + `$${(ledger - reported).toFixed(4)}`)
+            failures++
+          }
         }
       }
     }

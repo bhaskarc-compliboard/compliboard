@@ -287,8 +287,12 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
   const dismissed = findings.filter((f) => f.status === 'dismissed')
   const plain = openF.filter((f) => f.kind === 'finding')
     .sort((a, b) => WORD_ORDER.indexOf(a.word ?? '') - WORD_ORDER.indexOf(b.word ?? ''))
+  // Passed first, then by date, and a recurring date with no day last: it is a real obligation and
+  // it is not a deadline, so it does not belong in the middle of a list ordered by one.
   const dates = openF.filter((f) => f.kind === 'date')
-    .sort((a, b) => Number(!!b.passed) - Number(!!a.passed) || String(a.due_on).localeCompare(String(b.due_on)))
+    .sort((a, b) => Number(!!b.passed) - Number(!!a.passed)
+      || Number(!a.due_on) - Number(!b.due_on)
+      || String(a.due_on ?? '').localeCompare(String(b.due_on ?? '')))
   const contradictions = openF.filter((f) => f.kind === 'contradiction')
   const expected = openF.filter((f) => f.kind === 'expected')
   const failed = sections.filter((s) => s.status === 'could_not_complete')
@@ -677,23 +681,46 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
       {dates.length > 0 && (
         <Section_ title="Dates" count={dates.length} open={!!open.dates}
           onToggle={() => setOpen((o) => ({ ...o, dates: !o.dates }))}>
-          {dates.map((f) => (
+          {dates.map((f) => {
+            /**
+             * *** A RECURRING OBLIGATION WITH NO DAY — Audits Run 6a, item 1. ***
+             *
+             * Migration 060 lets a date carry a null day when it recurs, because that is what some
+             * permits say: the fee is annual and the day is on an invoice nobody has given us. The
+             * line says so in words rather than showing a blank where a date goes — a blank reads
+             * as a bug, and an invented day would be a deadline nobody set.
+             *
+             * No "Add to calendar" on one of these: the link would put a row on the calendar with
+             * no date, which is the same false precision one step further on.
+             */
+            const undated = !f.due_on
+            const meta = [
+              fmt(f.due_on),
+              f.recurs && !f.due_on ? null : (f.recurs ? 'recurring' : null),
+              f.document ? f.document.title : null,
+            ].filter(Boolean) as string[]
+            return (
             <div key={f.id} className="flex items-start gap-3 border-b border-gray-100 py-2 last:border-b-0">
               <div className="min-w-0 flex-1">
-                <p className="text-[14px] text-gray-900">{f.title}</p>
+                <p className="text-[14px] text-gray-900">
+                  {f.title}
+                  {undated && <span className="text-gray-500"> — recurs, no date in the reading</span>}
+                </p>
                 <p className="mt-0.5 text-[12px] text-gray-500">
-                  {fmt(f.due_on)}
-                  {f.passed ? <span className="text-[var(--amber)]"> · passed</span> : ''}
-                  {f.recurs ? ' · recurring' : ''}
-                  {f.document ? ` · ${f.document.title}` : ''}
+                  {meta[0] ?? ''}
+                  {f.passed ? <span className="text-[var(--amber)]">{meta.length ? ' · ' : ''}passed</span> : ''}
+                  {meta.slice(1).map((x) => ` · ${x}`).join('')}
                 </p>
               </div>
-              <a href={`/calendar?add=${encodeURIComponent(f.title)}&on=${f.due_on ?? ''}`}
-                className="no-print shrink-0 text-[13px] text-[var(--green)] underline hover:text-[var(--green-ink)]">
-                Add to calendar
-              </a>
+              {!undated && (
+                <a href={`/calendar?add=${encodeURIComponent(f.title)}&on=${f.due_on ?? ''}`}
+                  className="no-print shrink-0 text-[13px] text-[var(--green)] underline hover:text-[var(--green-ink)]">
+                  Add to calendar
+                </a>
+              )}
             </div>
-          ))}
+            )
+          })}
         </Section_>
       )}
 
