@@ -25,6 +25,12 @@ import { authHeaders } from '@/lib/supabase'
 interface DocRef { title: string; file_name: string; kind?: string | null; display_status?: string | null }
 
 /** Documents' own words for a status, so the audit does not invent a second vocabulary for them. */
+/**
+ * Documents' own amber statuses, the same set `app/audits/page.tsx` carries. Duplicated rather than
+ * imported because that file is a page, not a module — importing from it would pull a client page
+ * into this component. If a third copy is ever wanted, the set moves to a module first.
+ */
+const AMBER_DOC = new Set(['needs_work', 'expiring', 'expired', 'could_not_read'])
 const DOC_STATUS: Record<string, string> = {
   needs_work: 'Needs work', expiring: 'Expiring', expired: 'Expired',
   could_not_read: 'Could not read', not_yet_read: 'Not read yet',
@@ -55,6 +61,8 @@ interface Finding {
   what_to_do: string | null; due_on: string | null; recurs: boolean | null; passed: boolean | null
   value_a: string | null; value_b: string | null
   status: string; same_as: string | null; dismissed_reason: string | null; handle_error: boolean
+  /** Other sections of this run that raised the same thing (migration 061, Run 7b item 5). */
+  also_in_sections?: string[] | null
 }
 interface Section {
   id: string; ordinal: number; title: string; status: string
@@ -133,6 +141,173 @@ function Section_({ title, count, children, open, onToggle }: {
   )
 }
 
+/**
+ * ONE FINDING, ONE LINE — Audits Run 7b, item 4.
+ *
+ * It was five lines: title, then word · document · locator, then the quote, then what to do, then
+ * two actions. Forty-three of those is the wall the owner saw. A finding is now **the word and the
+ * title**, and everything else appears when you click it.
+ *
+ * *** THE DETAIL IS RENDERED AND HIDDEN, NOT UNMOUNTED. *** `hidden print:block` means a printed
+ * report carries every finding in full whether or not anybody expanded it on screen — the same rule
+ * `Section_` follows, and for the same reason: a printed report with a collapsed finding is a report
+ * missing its evidence, and nobody reading it on paper can click.
+ */
+function FindingLine({ f, open, onToggle, onOpenDoc, onNotRight, reasonOpen, onCancelReason, onSaveReason, highlight, alsoUnder, off }: {
+  f: Finding
+  /** The other agencies that raised this same finding, already joined into words. */
+  alsoUnder?: string | null
+  open: boolean
+  onToggle: () => void
+  onOpenDoc: (documentId: string) => void
+  onNotRight: () => void
+  reasonOpen: boolean
+  onCancelReason: () => void
+  onSaveReason: (r: string) => void
+  highlight?: boolean
+  /**
+   * Filtered out on screen. **Hidden, not unmounted** — a printed report carries every finding
+   * whatever the reader had filtered to when they pressed Print, which is the same rule the
+   * expanded detail follows.
+   */
+  off?: boolean
+}) {
+  const word = f.word
+    ? <span className={AMBER_WORD.has(f.word) ? 'text-[var(--amber)]' : 'text-gray-600'}>{WORD[f.word] ?? f.word}</span>
+    : <span className="text-[var(--amber)]">no answer</span>
+  return (
+    <div className={`border-b border-gray-100 last:border-b-0 ${highlight ? 'bg-amber-50/40' : ''} ${
+      off ? 'hidden print:block' : ''}`}>
+      {/* The whole line is the control. A title that is clickable only on its first few words is a
+          control nothing announces (the same note the Audits page carries about its agency rows). */}
+      <div role="button" tabIndex={0} onClick={onToggle}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggle() } }}
+        className="flex cursor-pointer items-baseline gap-2 py-1.5 hover:bg-gray-50">
+        <span className={`no-print w-3 shrink-0 text-[11px] text-gray-400 transition-transform ${open ? 'rotate-90' : ''}`}>▸</span>
+        <span className="shrink-0 text-[12px]">{word}</span>
+        <span className="min-w-0 flex-1 truncate text-[14px] text-gray-900" title={f.title}>
+          {f.template_line ? <span className="mr-2 font-medium text-gray-500">{f.template_line}</span> : null}
+          {f.template_text ?? f.title}
+        </span>
+        {alsoUnder && (
+          /* *** THE SAME FINDING, SHOWN ONCE UNDER EACH AGENCY IT BELONGS TO — Run 7b, item 5. ***
+             Two regulators wanting the same record is a fact about the company, not a mistake, and
+             a person reading the OSHA group should know the Department of Agriculture wants it too.
+             Grey, after the title, because it is context and not the finding. */
+          <span className="shrink-0 text-[11px] text-gray-400">also under {alsoUnder}</span>
+        )}
+        {f.handle_error && (
+          <span className="shrink-0 text-[11px] text-[var(--amber)]">no document matched</span>
+        )}
+      </div>
+
+      <div className={open ? 'pb-3 pl-5' : 'hidden pb-3 pl-5 print:block'}>
+        {/* The full title, because the line above it is truncated. */}
+        <p className="text-[13px] text-gray-800">{f.template_text ? f.title : null}</p>
+        <p className="text-[12px] text-gray-500">
+          {f.document && (
+            <button onClick={(e) => { e.stopPropagation(); f.document_id && onOpenDoc(f.document_id) }}
+              title={f.document.title}
+              className="cursor-pointer text-gray-600 hover:underline hover:text-gray-900">
+              {f.document.title}
+            </button>
+          )}
+          {f.locator ? <span>{f.document ? ' · ' : ''}{f.locator}</span> : null}
+          {f.basis === 'inferred' && <span className="text-gray-400"> · worked out, not stated</span>}
+        </p>
+        {f.quote && <p className="mt-1 text-[13px] italic text-gray-600">&ldquo;{f.quote}&rdquo;</p>}
+        {f.what_to_do && <p className="mt-1 text-[13px] text-gray-700">{f.what_to_do}</p>}
+        <div className="no-print mt-1.5 flex items-center gap-4">
+          {f.word === 'nothing_on_file' && (
+            <a href={`/documents?add=${encodeURIComponent(f.title)}`} onClick={(e) => e.stopPropagation()}
+              className="text-[13px] text-[var(--green)] underline hover:text-[var(--green-ink)]">Add a document</a>
+          )}
+          <button onClick={(e) => { e.stopPropagation(); onNotRight() }}
+            className="text-[13px] text-gray-500 hover:text-gray-800">Not right</button>
+        </div>
+        {reasonOpen && <ReasonBox onCancel={onCancelReason} onSave={onSaveReason} />}
+      </div>
+    </div>
+  )
+}
+
+/**
+ * THE DOCUMENT ONCE, THEN ITS FINDINGS — Audits Run 7b, item 4.
+ *
+ * Every finding used to repeat the document it cites, so eleven findings about one permit printed
+ * its title eleven times. The title goes above them once, **left-aligned, one line, truncated** —
+ * the owner's review found a centred document line, and `TITLE_LINE` is the class the rest of the
+ * product already uses for exactly this.
+ */
+function DocGroup({ doc, docId, children, onOpenDoc, off }: {
+  doc: DocRef | null; docId: string | null; children: React.ReactNode
+  onOpenDoc: (documentId: string) => void
+  /** Every finding under it is filtered out. Hidden on screen, printed anyway. */
+  off?: boolean
+}) {
+  return (
+    <div className={`mt-3 first:mt-0 ${off ? 'hidden print:block' : ''}`}>
+      <div className="flex items-baseline gap-2 border-b border-gray-200 pb-0.5">
+        {doc && docId ? (
+          <button onClick={() => onOpenDoc(docId)} title={doc.title} className={`min-w-0 flex-1 ${TITLE_LINE}`}>
+            {doc.title}
+          </button>
+        ) : (
+          <p className="min-w-0 flex-1 text-left text-[13px] text-gray-500">Not tied to one document</p>
+        )}
+        {doc?.display_status && (
+          <p className={`shrink-0 text-[12px] ${
+            AMBER_DOC.has(doc.display_status) ? 'text-[var(--amber)]' : 'text-gray-500'}`}>
+            {DOC_STATUS[doc.display_status] ?? doc.display_status}
+          </p>
+        )}
+      </div>
+      {children}
+    </div>
+  )
+}
+
+/**
+ * THE COUNTS BY WORD, AS FILTERS — Audits Run 7b, item 4.
+ *
+ * The owner's live report was 43 findings in one unfolded list. Counts at the top are the shape of
+ * the answer; making each one narrow the groups below is what turns "43 findings" into "show me the
+ * eleven with nothing on file". "all" clears it, and is shown as selected when nothing is filtered,
+ * so the control always says which state it is in rather than leaving a person to infer it from
+ * nothing being highlighted.
+ */
+function WordFilter({ counts, value, onChange, extra }: {
+  counts: Array<{ word: string; label: string; n: number }>
+  value: string | null
+  onChange: (w: string | null) => void
+  extra?: React.ReactNode
+}) {
+  const live = counts.filter((c) => c.n > 0)
+  if (!live.length) return <p className="text-[13px] text-gray-600">Nothing was answered.</p>
+  const pill = (on: boolean) =>
+    `rounded-full px-2 py-0.5 text-[12px] transition-colors ${
+      on ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`
+  return (
+    <div className="no-print flex flex-wrap items-center gap-1.5">
+      <button onClick={() => onChange(null)} className={pill(value === null)}>all</button>
+      {live.map((c) => (
+        <button key={c.word} onClick={() => onChange(value === c.word ? null : c.word)}
+          className={pill(value === c.word)}>
+          {c.n} {c.label}
+        </button>
+      ))}
+      {extra}
+    </div>
+  )
+}
+
+/** The same counts as plain text, for print — a pill row prints as a row of grey boxes. */
+function WordCountsPrint({ counts }: { counts: Array<{ word: string; label: string; n: number }> }) {
+  const bits = counts.filter((c) => c.n > 0).map((c) => `${c.n} ${c.label}`)
+  if (!bits.length) return null
+  return <p className="hidden text-[13px] text-gray-700 print:block">{bits.join(' · ')}</p>
+}
+
 function ReasonBox({ onCancel, onSave }: { onCancel: () => void; onSave: (r: string) => void }) {
   const [v, setV] = useState('')
   return (
@@ -173,6 +348,17 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
   const [earlierTemplate, setEarlierTemplate] = useState<Array<{
     run: Run; changed: Array<{ ref: string; was: string | null; now: string | null }> }>>([])
   const [open, setOpen] = useState<Record<string, boolean>>({})
+  /**
+   * WHICH WORD IS BEING SHOWN, AND WHICH FINDINGS ARE EXPANDED — Audits Run 7b, item 4.
+   *
+   * `focusWord` is what the Audits page passes when somebody clicks a count in an agency's
+   * sentence, so it is the filter's starting value rather than a highlight. It used to tint the
+   * matching rows amber and leave the other forty of them on screen, which is a highlight in a wall
+   * of text; filtering is what the person asked for by clicking a number.
+   */
+  const [wordFilter, setWordFilter] = useState<string | null>(focusWord ?? null)
+  const [openFinding, setOpenFinding] = useState<Record<string, boolean>>({})
+  const toggleFinding = (id: string) => setOpenFinding((o) => ({ ...o, [id]: !o[id] }))
 
   const load = useCallback(async () => {
     try {
@@ -258,9 +444,15 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
       true, // What this covers always has content
     ].filter(Boolean).length
     const single = sectionCount <= 1
+    /**
+     * *** `findings: true` IS GONE, BECAUSE THERE IS NO LONGER ONE "Findings" GROUP — Run 7b. ***
+     * The findings are now one group per section, keyed `a-<section id>`, each opening only when the
+     * run has a single section. That is what the owner's review asked for: 43 findings arrived in
+     * one unfolded list, and the fix is not a shorter list but a list with a shape.
+     */
     setOpen({
-      covers: single, findings: true, dates: single, contradictions: single,
-      expected: single, failed: single, earlier: false,
+      covers: single, dates: single, contradictions: single,
+      expected: single, failed: single, earlier: false, dismissed: false,
     })
   }, [runId, rep])
 
@@ -395,25 +587,76 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
     </>
   )
 
+  /**
+   * THE COUNTS, AND THE FILTER, SHARED BY BOTH REPORTS — Audits Run 7b, items 4 and 6.
+   *
+   * One definition so the agency report and the checklist report cannot drift into two vocabularies
+   * for the same five numbers. `noAnswer` is only ever non-zero on a checklist: it is the row
+   * `shapeTemplateFindings` writes for a line nobody answered.
+   */
+  const WORDS_IN_ORDER: Array<{ word: string; label: string }> = [
+    { word: 'nothing_on_file', label: 'nothing on file' },
+    { word: 'stale', label: 'out of date' },
+    { word: 'on_file', label: 'on file' },
+    { word: 'not_a_document_question', label: 'not a document question' },
+  ]
+  const countOf = (w: string, list: Finding[]) => list.filter((f) => f.word === w).length
+  const countsFor = (list: Finding[]) => WORDS_IN_ORDER.map((x) => ({ ...x, n: countOf(x.word, list) }))
+  /** The filter applies to findings only; a date or a disagreement carries no word to filter on. */
+  const keep = (list: Finding[]) => (wordFilter ? list.filter((f) => f.word === wordFilter) : list)
+
+  /**
+   * FINDINGS UNDER THE DOCUMENT THEY CITE, in the order the documents were first cited.
+   * Everything with no document goes in one group at the end rather than one group each.
+   */
+  const byDocument = (list: Finding[]) => {
+    const order: Array<string | null> = []
+    const map = new Map<string | null, Finding[]>()
+    for (const f of [...list].sort((a, b) => a.ordinal - b.ordinal)) {
+      const k = f.document_id ?? null
+      if (!map.has(k)) { map.set(k, []); order.push(k) }
+      map.get(k)!.push(f)
+    }
+    // Null last: "not tied to one document" is a footnote, not a heading to read first.
+    order.sort((a, b) => Number(a === null) - Number(b === null))
+    return order.map((k) => ({ docId: k, doc: k ? (map.get(k)![0].document ?? null) : null, items: map.get(k)! }))
+  }
+
+  /**
+   * The OTHER agencies a collapsed finding belongs to, as words, for the group being rendered.
+   * Section titles are the agency names, so the ids are turned back into the names a person reads.
+   */
+  const sectionTitleById = new Map(sections.map((x) => [x.id, x.title]))
+  const otherAgencies = (f: Finding, hereId: string): string | null => {
+    const ids = [f.section_id, ...(f.also_in_sections ?? [])]
+    const names = [...new Set(ids.filter((id) => id !== hereId)
+      .map((id) => sectionTitleById.get(id)).filter(Boolean) as string[])]
+    if (!names.length) return null
+    return names.length === 1 ? names[0]
+      : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`
+  }
+
   /* ── BOARD G: THE REPORT AGAINST A CHECKLIST ─────────────────────────────── */
   if (run.kind === 'template') {
     const name = rep.documents?.[run.template_document_id ?? '']?.title ?? 'the checklist'
     // Counts by word, and no score. *** A CHECKLIST IS NOT A TEST AND HAS NO MARK. *** "11 of 15"
     // invites the reader to treat four lines as a fail and eleven as a pass, when one of the four
     // may be a record kept on a clipboard and never uploaded. The words carry what is true.
-    const byWord = (w: string) => openF.filter((f) => f.word === w).length
     const noAnswer = openF.filter((f) => f.template_line && !f.word).length
-    const bits = [
-      byWord('on_file') ? `${byWord('on_file')} on file` : null,
-      byWord('stale') ? `${byWord('stale')} out of date` : null,
-      byWord('nothing_on_file') ? `${byWord('nothing_on_file')} nothing on file` : null,
-      byWord('not_a_document_question') ? `${byWord('not_a_document_question')} not a document question` : null,
-      noAnswer ? `${noAnswer} we did not get an answer for` : null,
-    ].filter(Boolean)
+    // The counts are now the FILTER (Run 7b, item 6) — the same control the agency report has, and
+    // one more entry for the rows that carry no word at all, which only a checklist produces.
+    const tCounts = [...countsFor(openF),
+                     ...(noAnswer ? [{ word: '__none', label: 'we did not get an answer for', n: noAnswer }] : [])]
+    // `__none` is not a word, so it cannot be compared with one: it selects the rows whose word is
+    // null, which is what the person clicking it is asking for.
+    const tKeep = (list: Finding[]) => (wordFilter === '__none'
+      ? list.filter((f) => !f.word)
+      : wordFilter ? list.filter((f) => f.word === wordFilter) : list)
 
     return (
       <Drawer title={`Against ${name}`} sub={sub} onClose={onClose} footer={footer}>
-        <p className="text-[13px] text-gray-600">{bits.join(' · ') || 'Nothing was answered.'}</p>
+        <WordFilter counts={tCounts} value={wordFilter} onChange={setWordFilter} />
+        <WordCountsPrint counts={tCounts} />
         {/* The sentence about the form itself, under the header: what we noticed before answering
             a single line (Run 5a, item 6). */}
         {run.summary?.note && (
@@ -435,8 +678,9 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
 
         {/* One folded group per checklist section, in the checklist's own order. */}
         {sections.map((sec) => {
-          const mine = openF.filter((f) => f.section_id === sec.id)
+          const allT = openF.filter((f) => f.section_id === sec.id)
             .sort((a, b) => a.ordinal - b.ordinal)
+          const mine = tKeep(allT)
           const key = `t-${sec.id}`
           return (
             // A one-section checklist opens; a three-section one starts closed with its counts,
@@ -452,50 +696,28 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
                     Run this section again
                   </button>
                 </div>
-              ) : mine.map((f) => (
-                <div key={f.id} className="border-b border-gray-100 py-3 last:border-b-0">
-                  <p className="text-[14px] text-gray-900">
-                    <span className="mr-2 font-medium text-gray-500">{f.template_line}</span>
-                    {f.template_text ?? f.title}
+              ) : allT.length === 0 ? (
+                <p className="text-[13px] text-gray-500">Nothing was recorded here.</p>
+              ) : (<>
+                {mine.length === 0 && (
+                  <p className="no-print text-[13px] text-gray-500">
+                    No line in this section carries that word.
                   </p>
-                  <p className="mt-1 text-[12px]">
-                    {f.word ? (
-                      <span className={AMBER_WORD.has(f.word) ? 'text-[var(--amber)]' : 'text-gray-600'}>
-                        {WORD[f.word] ?? f.word}
-                      </span>
-                    ) : (
-                      <span className="text-[var(--amber)]">we did not get an answer for this line</span>
-                    )}
-                    {f.basis === 'inferred' && <span className="text-gray-400"> · worked out, not stated</span>}
-                    {f.document && (
-                      <>
-                        {' · '}
-                        <button onClick={() => f.document_id && onOpenDoc(f.document_id)}
-                          title={f.document.title}
-                          className="cursor-pointer text-gray-600 hover:underline hover:text-gray-900">
-                          {f.document.title}
-                        </button>
-                        {f.locator ? <span className="text-gray-500"> · {f.locator}</span> : null}
-                      </>
-                    )}
-                    {f.handle_error && (
-                      <span className="text-[var(--amber)]"> · we could not match this to a document</span>
-                    )}
-                  </p>
-                  {f.quote && <p className="mt-1 text-[13px] italic text-gray-600">&ldquo;{f.quote}&rdquo;</p>}
-                  {f.what_to_do && <p className="mt-1 text-[13px] text-gray-700">{f.what_to_do}</p>}
-                  <div className="no-print mt-1.5 flex items-center gap-4">
-                    {f.word === 'nothing_on_file' && (
-                      <a href={`/documents?add=${encodeURIComponent(f.template_text ?? f.title)}`}
-                        className="text-[13px] text-[var(--green)] underline hover:text-[var(--green-ink)]">Add a document</a>
-                    )}
-                    <button onClick={() => setReasonFor(f.id)} className="text-[13px] text-gray-500 hover:text-gray-800">Not right</button>
-                  </div>
-                  {reasonFor === f.id && (
-                    <ReasonBox onCancel={() => setReasonFor(null)} onSave={(rr) => dismiss(f.id, rr)} />
-                  )}
-                </div>
-              ))}
+                )}
+                {allT.map((f) => (
+                /* *** ONE LINE PER CHECKLIST LINE — Audits Run 7b, item 6. ***
+                   The reference, the word and the text; the document, locator, quote and what to do
+                   appear on click. The same component the agency report uses, so the two reports
+                   cannot drift into two ways of showing one finding. */
+                <FindingLine key={f.id} f={f}
+                  off={!mine.includes(f)}
+                  open={!!openFinding[f.id]} onToggle={() => toggleFinding(f.id)}
+                  onOpenDoc={onOpenDoc}
+                  onNotRight={() => setReasonFor(f.id)}
+                  reasonOpen={reasonFor === f.id}
+                  onCancelReason={() => setReasonFor(null)}
+                  onSaveReason={(rr) => dismiss(f.id, rr)} />
+              ))}</>)}
             </Section_>
           )
         })}
@@ -621,59 +843,87 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
         </p>
       </Section_>
 
-      {/* ── FINDINGS ─────────────────────────────────────────────────────── */}
+      {/* *** THE COUNTS BY WORD, AS FILTERS — Audits Run 7b, item 4. ***
+          The same row the checklist report has carried since Run 4b, now on the agency report too
+          and now doing something: each one narrows every section group below it. */}
       {plain.length > 0 && (
-        <Section_ title="Findings" count={plain.length} open={!!open.findings}
-          onToggle={() => setOpen((o) => ({ ...o, findings: !o.findings }))}>
-          {plain.map((f) => (
-            <div key={f.id}
-              className={`border-b border-gray-100 py-3 last:border-b-0 ${
-                focusWord && f.word === focusWord ? 'bg-amber-50/40' : ''}`}>
-              <p className="text-[15px] text-gray-900">{f.title}</p>
-              <p className="mt-0.5 text-[12px]">
-                <span className={AMBER_WORD.has(f.word ?? '') ? 'text-[var(--amber)]' : 'text-gray-500'}>
-                  {WORD[f.word ?? ''] ?? f.word}
-                </span>
-                {f.basis === 'inferred' && <span className="text-gray-400"> · worked out, not stated</span>}
-                {f.document && (
-                  <>
-                    {' · '}
-                    <button onClick={() => f.document_id && onOpenDoc(f.document_id)}
-                      title={f.document.title}
-                      className="cursor-pointer text-gray-600 hover:underline hover:text-gray-900">
-                      {f.document.title}
-                    </button>
-                    {f.locator ? <span className="text-gray-500"> · {f.locator}</span> : null}
-                  </>
+        <div className="mt-3">
+          <WordFilter counts={countsFor(plain)} value={wordFilter} onChange={setWordFilter} />
+          <WordCountsPrint counts={countsFor(plain)} />
+        </div>
+      )}
+
+      {/* ── FINDINGS, ONE FOLDED GROUP PER SECTION ───────────────────────── */}
+      {plain.length > 0 && sections.map((sec) => {
+        /**
+         * *** A COLLAPSED FINDING APPEARS UNDER EVERY AGENCY THAT RAISED IT — Run 7b, item 5. ***
+         *
+         * `collapseDuplicates` kept one row and closed the others, so the closed rows are not in
+         * `plain` at all. Filtering only on `section_id` would therefore drop the finding from every
+         * agency but the one whose row survived — which is worse than printing it twice: the
+         * Department of Agriculture's report would be missing something it genuinely asked for.
+         *
+         * So a section's findings are its own rows PLUS any row that names this section in
+         * `also_in_sections`. Once per group, never twice in one.
+         */
+        const belongs = (f: Finding) =>
+          f.section_id === sec.id || (f.also_in_sections ?? []).includes(sec.id)
+        const mine = keep(plain.filter(belongs))
+        const all = plain.filter(belongs)
+        const key = `a-${sec.id}`
+        // A one-section run opens its one group: folding the only content is a click that hides
+        // everything. A three-agency run starts closed with its counts, which is the table of
+        // contents the owner's review asked for.
+        const isOpen = open[key] ?? sections.length <= 1
+        const bits = countsFor(all).filter((c) => c.n > 0).map((c) => `${c.n} ${c.label}`)
+        return (
+          <Section_ key={sec.id} title={sec.title} count={mine.length} open={isOpen}
+            onToggle={() => setOpen((o) => ({ ...o, [key]: !(o[key] ?? sections.length <= 1) }))}>
+            <p className="mb-1 text-[12px] text-gray-500">{bits.join(' · ')}</p>
+            {all.length === 0 ? (
+              <p className="text-[13px] text-gray-500">Nothing was recorded here.</p>
+            ) : (
+              <>
+                {mine.length === 0 && (
+                  <p className="no-print text-[13px] text-gray-500">
+                    Nothing in this section carries that word.
+                  </p>
                 )}
-                {/* A handle the block did not carry. The row was kept rather than dropped, so the
-                    report says plainly that this one points at nothing. */}
-                {f.handle_error && <span className="text-[var(--amber)]"> · we could not match this to a document</span>}
-              </p>
-              {f.quote && <p className="mt-1 text-[13px] italic text-gray-600">&ldquo;{f.quote}&rdquo;</p>}
-              {f.what_to_do && <p className="mt-1 text-[13px] text-gray-700">{f.what_to_do}</p>}
-              <div className="no-print mt-1.5 flex items-center gap-4">
-                {f.word === 'nothing_on_file' && (
-                  <a href={`/documents?add=${encodeURIComponent(f.title)}`}
-                    className="text-[13px] text-[var(--green)] underline hover:text-[var(--green-ink)]">Add a document</a>
-                )}
-                <button onClick={() => setReasonFor(f.id)} className="text-[13px] text-gray-500 hover:text-gray-800">Not right</button>
-              </div>
-              {reasonFor === f.id && (
-                <ReasonBox onCancel={() => setReasonFor(null)} onSave={(r) => dismiss(f.id, r)} />
-              )}
-            </div>
+                {byDocument(all).map((g) => {
+                  const shown = g.items.filter((f) => !wordFilter || f.word === wordFilter)
+                  return (
+                    <DocGroup key={g.docId ?? 'none'} doc={g.doc} docId={g.docId}
+                      onOpenDoc={onOpenDoc} off={shown.length === 0}>
+                      {g.items.map((f) => (
+                        <FindingLine key={f.id} f={f}
+                          alsoUnder={otherAgencies(f, sec.id)}
+                          off={!!wordFilter && f.word !== wordFilter}
+                          open={!!openFinding[f.id]} onToggle={() => toggleFinding(f.id)}
+                          onOpenDoc={onOpenDoc}
+                          onNotRight={() => setReasonFor(f.id)}
+                          reasonOpen={reasonFor === f.id}
+                          onCancelReason={() => setReasonFor(null)}
+                          onSaveReason={(r) => dismiss(f.id, r)} />
+                      ))}
+                    </DocGroup>
+                  )
+                })}
+              </>
+            )}
+          </Section_>
+        )
+      })}
+
+      {/* Dismissed findings, once for the whole run rather than once per section: they are what a
+          person has already said is not a problem, and they are not part of the answer. */}
+      {dismissed.length > 0 && (
+        <Section_ title="Dismissed" count={dismissed.length} open={!!open.dismissed}
+          onToggle={() => setOpen((o) => ({ ...o, dismissed: !o.dismissed }))}>
+          {dismissed.map((f) => (
+            <p key={f.id} className="mt-1 text-[12px] text-gray-500">
+              {f.title}{f.dismissed_reason ? ` — ${f.dismissed_reason}` : ''}
+            </p>
           ))}
-          {dismissed.length > 0 && (
-            <div className="mt-3">
-              <p className="text-[12px] font-medium uppercase tracking-wide text-gray-400">Dismissed</p>
-              {dismissed.map((f) => (
-                <p key={f.id} className="mt-1 text-[12px] text-gray-500">
-                  {f.title}{f.dismissed_reason ? ` — ${f.dismissed_reason}` : ''}
-                </p>
-              ))}
-            </div>
-          )}
         </Section_>
       )}
 

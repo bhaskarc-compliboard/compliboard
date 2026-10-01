@@ -135,6 +135,7 @@ export type Database = {
       }
       audit_findings: {
         Row: {
+          also_in_sections: string[]
           basis: string | null
           closed_by_run_id: string | null
           closed_reason: string | null
@@ -167,6 +168,7 @@ export type Database = {
           word: string | null
         }
         Insert: {
+          also_in_sections?: string[]
           basis?: string | null
           closed_by_run_id?: string | null
           closed_reason?: string | null
@@ -199,6 +201,7 @@ export type Database = {
           word?: string | null
         }
         Update: {
+          also_in_sections?: string[]
           basis?: string | null
           closed_by_run_id?: string | null
           closed_reason?: string | null

@@ -68,6 +68,8 @@ export interface RunSummary {
   dropped_wordless?: Array<{ title: string; kind: string }>
   /** The ledger row the checklist extraction wrote, on a template run. Run 6a, item 3. */
   extraction_ai_call_id?: string | null
+  /** How many findings two sections both raised and were collapsed into one. Run 7b, item 5. */
+  collapsed_duplicates?: number
   /** The titles behind the counts, so a number is never shown without what it is made of. */
   attention: Array<{ title: string; word: string | null; document: string | null }>
   agencies: string[]
@@ -970,6 +972,16 @@ export async function finishRunIfDone(db: Db, runId: string):
   await db.from('audit_runs').update({ done_count: done.length }).eq('id', runId)
   if (!sections.length || settled.length < sections.length) return { finished: false, summary: null }
 
+  /**
+   * *** THE SAME FINDING FROM TWO SECTIONS, COLLAPSED ONCE, HERE — Audits Run 7b, item 5. ***
+   *
+   * Before the summary, because the summary counts rows and a collapsed duplicate must not be in
+   * the count. And only when every section has settled: collapsing while a third section is still
+   * running would close a row against a report that is not finished, and the next section's own
+   * duplicate would have nothing to collapse into.
+   */
+  const collapsed = await collapseDuplicates(db, runId)
+
   const summary = await summariseRun(db, runId)
 
   // How fresh the evidence was: the newest reading any section was shown. Read from the scans of
@@ -986,12 +998,112 @@ export async function finishRunIfDone(db: Db, runId: string):
 
   const { data: claimed, error: cErr } = await db.from('audit_runs').update({
     status: 'done', finished_at: new Date().toISOString(),
-    done_count: done.length, readings_as_of: readingsAsOf, summary,
+    done_count: done.length, readings_as_of: readingsAsOf,
+    // The collapse count travels on the summary, beside the other things a rule did quietly.
+    summary: { ...summary, collapsed_duplicates: collapsed },
   }).eq('id', runId).neq('status', 'done').select('id')
   if (cErr) throw new Error(`finishRunIfDone: claiming done: ${cErr.message}`)
   if (!claimed?.length) return { finished: false, summary: null }
 
-  return { finished: true, summary }
+  return { finished: true, summary: { ...summary, collapsed_duplicates: collapsed } }
+}
+
+/**
+ * TWO SECTIONS, ONE FINDING — Audits Run 7b, item 5.
+ *
+ * Two regulators genuinely want the same record, each section is a separate call shown the same
+ * filing cabinet, neither is told what the other said, and both correctly say it is not on file.
+ * Both are right. **One report that says the same thing twice reads as a report nobody looked at**,
+ * which is what the owner's smoke test found in 43 findings across three sections.
+ *
+ * WHAT COUNTS AS THE SAME. All three of:
+ *
+ *   · a different section of the same run — a section never duplicates itself, and if it did that
+ *     would be a different problem with a different fix;
+ *   · the same document and the same locator, compared exactly after trimming and lowercasing —
+ *     two findings about different pages of one permit are two findings;
+ *   · titles sharing **at least half** their significant words.
+ *
+ * The third is the only soft one, and the half is deliberately generous in the strict direction: it
+ * is computed against the SHORTER title's word set, so "Training records for forklift operators" and
+ * "Forklift operator training records" collapse, while "Permit renewal application" and "Permit fee
+ * payment" do not. Words of four characters or fewer are dropped before comparing, which is the same
+ * rule `scripts/run-golden-audit.js` uses on the same kind of text, so "the", "for" and "and" cannot
+ * carry a match on their own.
+ *
+ * WHAT IT NEVER DOES. It never deletes. The duplicate is `status = 'closed'` with a reason naming
+ * the row it duplicates, so the model's full output is still there to be read, counted and argued
+ * with. And it only ever touches `kind = 'finding'`: a date is deduplicated by its date and a
+ * contradiction by its two sides, and neither has been asked for.
+ */
+async function collapseDuplicates(db: Db, runId: string): Promise<number> {
+  const { data, error } = await db.from('audit_findings')
+    .select('id, section_id, title, document_id, locator, also_in_sections, ordinal')
+    .eq('run_id', runId).eq('kind', 'finding').eq('status', 'open').order('ordinal')
+  if (error) throw new Error(`collapseDuplicates: ${error.message}`)
+  const rows = (data ?? []) as Array<{
+    id: string; section_id: string; title: string; document_id: string | null
+    locator: string | null; also_in_sections: string[] | null; ordinal: number
+  }>
+  if (rows.length < 2) return 0
+
+  const sig = (t: string) => new Set(String(t ?? '').toLowerCase()
+    .split(/[^a-z0-9]+/).filter((w) => w.length > 4))
+  const norm = (v: string | null) => String(v ?? '').trim().toLowerCase()
+
+  /** Shared significant words over the SHORTER set — a long title cannot swallow a short one. */
+  const halfSame = (a: Set<string>, b: Set<string>) => {
+    const small = a.size <= b.size ? a : b
+    const big = a.size <= b.size ? b : a
+    if (!small.size) return false
+    let hit = 0
+    for (const w of small) if (big.has(w)) hit++
+    return hit * 2 >= small.size
+  }
+
+  const keepers: Array<{ id: string; section_id: string; words: Set<string>; doc: string; loc: string
+                         also: Set<string> }> = []
+  const closures: Array<{ id: string; keeper: string }> = []
+
+  for (const r of rows) {
+    // A finding with no document cannot be matched this way: there is nothing to anchor it to, and
+    // guessing from the title alone would collapse two different things that happen to rhyme.
+    if (!r.document_id) { continue }
+    const words = sig(r.title)
+    const doc = r.document_id
+    const loc = norm(r.locator)
+    const hit = keepers.find((k) => k.doc === doc && k.loc === loc
+      && k.section_id !== r.section_id && !k.also.has(r.section_id)
+      && halfSame(k.words, words))
+    if (hit) {
+      hit.also.add(r.section_id)
+      closures.push({ id: r.id, keeper: hit.id })
+    } else {
+      keepers.push({ id: r.id, section_id: r.section_id, words, doc, loc,
+                     also: new Set(r.also_in_sections ?? []) })
+    }
+  }
+
+  if (!closures.length) return 0
+
+  for (const k of keepers) {
+    if (!k.also.size) continue
+    const { error: uErr } = await db.from('audit_findings')
+      .update({ also_in_sections: [...k.also] }).eq('id', k.id)
+    if (uErr) throw new Error(`collapseDuplicates: carrying the other sections: ${uErr.message}`)
+  }
+  for (const c of closures) {
+    const { error: cErr } = await db.from('audit_findings').update({
+      status: 'closed',
+      closed_reason: `same as ${c.keeper} from another section`,
+      closed_by_run_id: runId,
+    }).eq('id', c.id)
+    if (cErr) throw new Error(`collapseDuplicates: closing a duplicate: ${cErr.message}`)
+  }
+  // Said out loud as well as stored: a rule that fires silently is a rule nobody can tell is firing.
+  console.warn(`audit run ${runId}: collapsed ${closures.length} duplicate finding(s) raised by more `
+    + `than one section`)
+  return closures.length
 }
 
 async function sectionDocumentIds(db: Db, runId: string): Promise<string[]> {
@@ -1091,15 +1203,31 @@ export function runSummaryLine(s: RunSummary): string {
   if (s.note) return s.note
   const who = s.agencies.length === 1 ? `${s.agencies[0]} audit`
     : `compliance audit across ${s.agencies.length} agencies`
+  /**
+   * *** THE SAME SENTENCE SHAPES AS THE PAGE — Audits Run 7b, item 7. ***
+   *
+   * The Audits page says "found 4 things with nothing on file, 1 disagreement between documents,
+   * and 2 things on file." The email said "4 with nothing on file, 1 disagreements between
+   * documents" — the same numbers, shorter, and with the plural wrong at one. A person who reads
+   * the email and then opens the page should recognise the second from the first, so the clauses are
+   * written once in the same shape and joined the same way.
+   *
+   * **Every plural is per clause and right at one**, which is the whole reason these are expressions
+   * and not one template string.
+   */
   const bits: string[] = []
-  if (s.nothing_on_file) bits.push(`${s.nothing_on_file} with nothing on file`)
-  if (s.stale) bits.push(`${s.stale} out of date`)
+  if (s.nothing_on_file) bits.push(`${s.nothing_on_file} thing${s.nothing_on_file === 1 ? '' : 's'} with nothing on file`)
+  if (s.stale) bits.push(`${s.stale} thing${s.stale === 1 ? '' : 's'} out of date`)
   if (s.contradictions) bits.push(`${s.contradictions} disagreement${s.contradictions === 1 ? '' : 's'} between documents`)
-  if (s.not_a_document_question) bits.push(`${s.not_a_document_question} no document can answer`)
+  if (s.not_a_document_question) bits.push(`${s.not_a_document_question} thing${s.not_a_document_question === 1 ? '' : 's'} no document can answer`)
   const head = s.needs_person
     ? `Your ${who} found ${s.needs_person} thing${s.needs_person === 1 ? '' : 's'} that need${s.needs_person === 1 ? 's' : ''} you`
     : `Your ${who} found nothing that needs you`
-  const tail = bits.length ? `: ${bits.join(', ')}.` : '.'
+  /** "a, b, and c" — the same join the page uses, so the two read alike. */
+  const joined = bits.length <= 1 ? bits.join('')
+    : bits.length === 2 ? `${bits[0]} and ${bits[1]}`
+    : `${bits.slice(0, -1).join(', ')}, and ${bits[bits.length - 1]}`
+  const tail = bits.length ? `: ${joined}.` : '.'
   const failed = s.could_not_complete
     ? ` ${s.could_not_complete} of ${s.sections} section${s.sections === 1 ? '' : 's'} could not be finished.`
     : ''

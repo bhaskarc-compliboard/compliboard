@@ -88,12 +88,37 @@ const WORD: Record<string, string> = {
   not_a_document_question: 'not a document question',
 }
 /** The plural the counts line uses, which is not always the word itself. */
-const WORD_COUNT: Record<string, (n: number) => string> = {
-  nothing_on_file: (n) => `${n} nothing on file`,
-  stale: (n) => `${n} out of date`,
-  contradiction: (n) => `${n} disagreement${n === 1 ? '' : 's'}`,
-  not_a_document_question: (n) => `${n} not a document question`,
-  on_file: (n) => `${n} on file`,
+/**
+ * THE COUNTS, AS THE CLAUSES OF A SENTENCE — Audits Run 7b, item 3.
+ *
+ * What stood here was `WORD_COUNT`, which read as a list because it was built for one:
+ * "4 nothing on file · 2 out of date". The owner's review of the live report said the two lines
+ * under an open agency read as lists, and they did. These are the same numbers written as something
+ * a person says out loud, so they can be joined with commas and an "and". `WORD_COUNT` is gone
+ * rather than left beside this one: two vocabularies for the same five numbers is how a screen ends
+ * up saying it both ways.
+ *
+ * **The plural is per clause and it has to be right at one**, which is the whole reason this is a
+ * function and not a template string: "1 things with nothing on file" is the kind of mistake that
+ * makes a reader stop trusting everything around it.
+ */
+const WORD_CLAUSE: Record<string, (n: number) => string> = {
+  nothing_on_file: (n) => `${n} thing${n === 1 ? '' : 's'} with nothing on file`,
+  contradiction: (n) => `${n} disagreement${n === 1 ? '' : 's'} between documents`,
+  not_a_document_question: (n) => `${n} thing${n === 1 ? '' : 's'} no document can answer`,
+  on_file: (n) => `${n} thing${n === 1 ? '' : 's'} on file`,
+  stale: (n) => `${n} thing${n === 1 ? '' : 's'} out of date`,
+}
+/** "a, b, and c" — the Oxford comma kept, because these clauses carry commas of their own. */
+function joinClauses(parts: React.ReactNode[]): React.ReactNode[] {
+  if (parts.length <= 1) return parts
+  const out: React.ReactNode[] = []
+  parts.forEach((p, i) => {
+    out.push(p)
+    if (i < parts.length - 2) out.push(', ')
+    else if (i === parts.length - 2) out.push(parts.length === 2 ? ' and ' : ', and ')
+  })
+  return out
 }
 /** Documents' own statuses, unchanged — this page must not invent a second vocabulary for them. */
 const DOC_STATUS: Record<string, string> = {
@@ -203,7 +228,6 @@ function Audits() {
   const [fromAudit, setFromAudit] = useState<string | null>(null)
   const [site, setSite] = useState('all')
   const [groupBy, setGroupBy] = useState<'agency' | 'subject' | 'site'>('agency')
-  const firstOpenDone = useRef(false)
   const checklistInput = useRef<HTMLInputElement>(null)
   const [attaching, setAttaching] = useState<string | null>(null)
   /** Checklist runs whose "is done" line has been opened and so should not show again. */
@@ -235,13 +259,16 @@ function Audits() {
     return () => clearInterval(t)
   }, [anyActive, load])
 
-  /** The first audited agency opens itself, once. After that the person's clicks decide. */
-  useEffect(() => {
-    if (!idx || firstOpenDone.current) return
-    firstOpenDone.current = true
-    const first = idx.agencies.find((a) => idx.last_done[a])
-    if (first) setOpenLines({ [first]: true })
-  }, [idx])
+  /**
+   * *** NOTHING OPENS ITSELF — Audits Run 7b, item 3. ***
+   *
+   * This opened the first audited agency on load. One line of thirty documents is most of a screen,
+   * and the owner's review of the live report put it plainly: the page opened long. A page whose job
+   * is "where do I stand" should answer that in one screen of one-line answers, and then let the
+   * person choose what to read. `openLines` starts empty and only a click changes it.
+   *
+   * The ref the old effect guarded with is kept and unused by nothing: it is gone too.
+   */
 
   const visibleDocs = useMemo(() => {
     if (!idx) return []
@@ -650,8 +677,8 @@ function Audits() {
                   })}
                 </div>
                 <p className="mt-4 text-[12px] text-gray-500">
-                  An audit of everything runs one section per agency, in this order. Each line updates
-                  as its section lands. We email you when the last one does.
+                  An audit of everything runs one section per agency, in this order. Each line
+                  updates as its section lands. We will email you when the last one is done.
                 </p>
               </>
             ) : (
@@ -870,30 +897,38 @@ function AgencyBody({ label, idx, v, onOpenRun, onOpenDoc }: {
         </div>
       ))}
 
-      {/* THE LAST AUDIT'S OPEN FINDINGS, BY WORD, ON ONE LINE. Each count opens the report at
-          that word — a number a person cannot get to the inside of is a number they have to
-          take on trust. */}
-      {v.lastRun && (
-        <p className="mt-2 text-[12px] text-gray-600">
-          Last audit, {fmt(v.lastRun.finished_at ?? v.lastRun.created_at)}:{' '}
-          {(['nothing_on_file', 'stale', 'contradiction', 'not_a_document_question', 'on_file'] as const)
-            .filter((w) => v.byWord[w] > 0)
-            .map((w, i, arr) => (
-              <span key={w}>
-                <button onClick={() => onOpenRun(w)} className="underline hover:text-gray-900">
-                  {WORD_COUNT[w](v.byWord[w])}
-                </button>
-                {i < arr.length - 1 ? ' · ' : ''}
-              </span>
-            ))}
-          {v.needs === 0 && v.byWord.on_file === 0 && <span>nothing open</span>}
-        </p>
-      )}
+      {/* *** THE LAST AUDIT'S OPEN FINDINGS, AS A SENTENCE — Audits Run 7b, item 3. ***
+          Same numbers, same links, said rather than listed. Each number still opens the report
+          filtered to that word: a number a person cannot get to the inside of is a number they have
+          to take on trust. A word with none of them is left out of the sentence entirely — "0
+          disagreements between documents" is a clause that costs a reader time and tells them
+          nothing. */}
+      {v.lastRun && (() => {
+        const clauses = (['nothing_on_file', 'contradiction', 'not_a_document_question', 'on_file', 'stale'] as const)
+          .filter((w) => v.byWord[w] > 0)
+          .map((w) => (
+            <button key={w} onClick={() => onOpenRun(w)} className="underline hover:text-gray-900">
+              {WORD_CLAUSE[w](v.byWord[w])}
+            </button>
+          ))
+        return (
+          <p className="mt-2 text-[12px] text-gray-600">
+            The last audit, on {fmt(v.lastRun.finished_at ?? v.lastRun.created_at)},{' '}
+            {clauses.length
+              ? <>found {joinClauses(clauses)}.</>
+              : <>found nothing open.</>}
+          </p>
+        )
+      })()}
 
+      {/* The same, for what similar companies hold and this one does not. Three titles, because a
+          sentence with six names in it is a list again; the rest are in the report. */}
       {expectedTitles.length > 0 && (
         <p className="mt-2 text-[12px] text-gray-400">
-          Based on similar companies we would also expect: {expectedTitles.slice(0, 6).join(' · ')}
-          {expectedTitles.length > 6 ? ` · and ${expectedTitles.length - 6} more` : ''}
+          Based on similar companies, we would also expect: {expectedTitles.slice(0, 3).join(', ')}
+          {expectedTitles.length > 3
+            ? `, and ${expectedTitles.length - 3} more.`
+            : '.'}
         </p>
       )}
     </div>

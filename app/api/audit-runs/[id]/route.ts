@@ -39,7 +39,7 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ id: str
         .select('id, section_id, ordinal, kind, title, word, basis, document_id, scan_id, locator, '
               + 'quote, quote_verified, what_to_do, due_on, recurs, passed, document_b_id, '
               + 'value_a, value_b, source, status, same_as, closed_by_run_id, closed_reason, '
-              + 'dismissed_reason, handle_error, template_line, template_text')
+              + 'dismissed_reason, handle_error, template_line, template_text, also_in_sections')
         .eq('run_id', id).order('ordinal'),
     ])
 

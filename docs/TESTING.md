@@ -2912,3 +2912,150 @@ answer … Never reply with prose explaining that you cannot answer."* The same 
 lines of `cascade-template-13` against Cascade's twelve documents, so it is the thinness of the
 fixture and not the plumbing. **`check:live` fails on it and the failure is left standing**: a fixture
 enriched until the model complies measures the fixture.
+
+---
+
+## Audits — folded lines, one-line findings, filters, dedupe (1 October 2026)
+
+Audits Run 7b, from the owner's review of the live report: 43 findings arrived in one unfolded list,
+the same finding appeared twice from two sections, a document line was centred, the agency lines on
+the page were unfolded, and two lines read as lists. **Signed in against staging as
+`testcascade@example.com`.**
+
+### 1. Where you stand opens short
+
+**Open `/audits`.** Pass: every agency line is folded — `▸` on each, nothing opened — and the whole
+tab fits a screen. The closing line reads:
+
+> An audit of everything runs one section per agency, in this order. Each line updates as its
+> section lands. We will email you when the last one is done.
+
+Fail: a line already open on arrival, or "We email you when the last one does" (the grammar slip the
+owner caught). **The old behaviour was deliberate** — the first audited agency opened itself, once —
+so this is a change and not a bug fix: a page whose job is "where do I stand" answers that in one
+screen of one-line answers and lets the person choose what to read.
+
+### 2. The two lines under an open line are sentences
+
+**Click one agency.** Pass: the two summary lines read as sentences, not lists, and every number is
+still a link into the report filtered to that word:
+
+> The last audit, on 1 October 2026, found 3 things with nothing on file, 5 things on file, and 1
+> thing out of date.
+>
+> Based on similar companies, we would also expect: Deviation and corrective-action records for
+> scrubber and carbon excursions, Magnehelic gauge calibration and maintenance records, C-1 carbon
+> change-out records and detector-tube lot records, and 29 more.
+
+**The edge case is the plural, and it is where to look first.** Find an agency with exactly one of
+something. Pass: "1 thing out of date", "1 disagreement between documents". Fail: "1 things", or a
+clause for a word with a count of zero — a zero-count clause costs a reader time and tells them
+nothing, so it is left out of the sentence entirely.
+
+### 3. The report: counts as filters, sections as folded groups
+
+**Open an all-agencies report.** Pass, in this order: one meta line; the counts by word as a row of
+pills with **all** selected; then one folded group per agency, each with its own count; then Dates,
+Disagreements, Expected, Could not complete and Earlier audits as folded groups after them. A
+four-section run shows this:
+
+```
+audited 1 October 2026 · 4 sections · 12 documents read, 12 held unread · readings as of 1 October 2026
+
+  all · 25 nothing on file · 9 out of date · 5 on file · 2 not a document question
+
+▸ OREGON DEQ                  9
+▸ OREGON OSHA                25
+▸ OREGON STATE FIRE MARSHAL   5
+▸ U.S. OSHA                   2
+▸ DATES                      38
+▸ DISAGREEMENTS BETWEEN DOCUMENTS  3
+▸ WHAT WE WOULD EXPECT AND DO NOT SEE · BASED ON SIMILAR COMPANIES  37
+```
+
+A **single-section** run opens its one group: folding the only content is a click that hides
+everything.
+
+**Click a count.** Pass: every group below narrows to that word, and a group with none of it
+disappears from the screen. **all** brings them back. Clicking a count in an agency's sentence on
+the page opens the report already filtered to that word — that is what the link is for.
+
+### 4. A finding is one line until you ask
+
+**Open a group.** Pass: the document each finding cites appears **once**, left-aligned, on one line,
+truncated, with its status on the right; under it, one line per finding — the word, then the title.
+Fail: a centred document line (what the owner saw), or the document repeated under every finding.
+
+**Click a finding.** Pass: it opens to the locator, the quote in italics, what to do, and Add a
+document / Not right; a second click closes it. The other findings stay one line each:
+
+```
+▾ OREGON STATE FIRE MARSHAL  5
+  4 nothing on file · 1 out of date
+
+  Certificate of Annual Maintenance, Portable Fire Extinguishers (14 units)…      Current
+  ▸ nothing on file   Annual maintenance of portable fire extinguishers
+      … · page 1, service date and annual maintenance obligation
+      "Units serviced: 14. Units failed or removed from service: 0."
+      Obtain and upload the 2026 annual maintenance certificate dated on or after…
+      Add a document   Not right
+  ▸ nothing on file   Monthly visual inspection of portable fire extinguishers, recorded on unit tags
+  ▸ nothing on file   Six-year internal maintenance for portable fire extinguishers W-3 and L-1
+```
+
+### 5. Print, which is the check the folding could have broken
+
+**Press Print with everything closed and a filter on.** Pass: every group, every finding and every
+finding's detail appear in the printed output. Fail: anything missing.
+
+**This is the one that matters most and it has no screen.** The detail is rendered and hidden
+(`hidden print:block`), never unmounted, and a finding filtered out on screen is hidden the same way
+rather than removed — so a printed report carries the whole answer whatever the reader had folded or
+filtered when they pressed the button. A printed report with a collapsed finding is a report missing
+its evidence, and nobody reading it on paper can click.
+
+### 6. The same finding from two sections
+
+Two regulators genuinely want the same record. Each section is a separate call shown the same filing
+cabinet and told nothing about what the other said, so both say it is not on file, and **both are
+right** — printing both is what is wrong.
+
+**To see it work**, the manual check is the one the probe runs: seed one run with two sections, put
+two findings on the same document and the same locator with titles sharing most of their significant
+words, finish the run. Pass:
+
+```
+collapsed_duplicates: 1
+ open   [Oregon OSHA]                Forklift operator training records for every operator
+          also_in_sections -> Oregon Dept of Agriculture
+ closed [Oregon Dept of Agriculture] Training records for forklift operators
+          same as d9835d9b-… from another section
+ open   [Oregon Dept of Agriculture] Annual permit fee invoices and proof of payment
+rows still present  : 3 (nothing deleted)
+```
+
+The third row is the control: same document, same locator, unrelated words, left alone. **Nothing is
+ever deleted** — the duplicate is `status = 'closed'` with a reason naming the row it duplicates, so
+the model's full output is still there to be counted and argued with.
+
+**In the drawer**, pass: the collapsed finding appears under **each** agency that raised it, once per
+group, with "also under &lt;agency&gt;" in grey after the title. Fail: it appears under only the
+agency whose row survived — which is worse than printing it twice, because the other agency's report
+is then missing something it genuinely asked for.
+
+### What this set cannot tell you
+
+**Whether the rule catches what a person would call a duplicate.** On Cascade's four-agency re-run
+it collapsed **nothing**, and the reason is worth knowing rather than guessing: of 39 findings with a
+document, there was exactly **one** cross-section pair sharing a document and locator, and its titles
+share **0 of 3** significant words —
+
+```
+  no  [U.S. OSHA]    "No proof of electronic submission of 2025 300A"
+      [Oregon OSHA]  "OSHA 300A summary may not have been electronic"   shared 0/3
+```
+
+A person would call those the same thing. The rule as specified — same document, same locator, half
+the significant words — does not, and it was left as specified rather than loosened to catch one
+pair, because a looser rule collapses findings that are not the same and the closed row is the one
+nobody reads again.

@@ -3,8 +3,8 @@
 **GENERATED — do not edit.** `node --env-file=.env.local scripts/schema-doc.js`, and it runs
 inside `npm run db:migrate`, so it cannot be stale by more than one migration.
 
-**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-10-01 15:30 UTC
-**Migrations applied:** 61 — `000` to `060`
+**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-10-01 16:52 UTC
+**Migrations applied:** 62 — `000` to `061`
 
 *Every figure here was read from the catalog of that database. Nothing is copied from the
 migration files, which say what was intended rather than what is there — and the two have
@@ -29,28 +29,28 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 
 **Compliance Workspace (M1) — research, conversations, checklists**
 
-- `topics` — 0 rows · touched by route chat, route checklists/from-topic, route documents, route jobs/delete, route jobs/summarise, +6 more
-- `checklists` — 0 rows · touched by route account, route audit-checklist, route checklists/from-topic, route document-checklist, route documents/report, +5 more
-- `checklist_items` — 0 rows · touched by route account/export, route account, route audit-checklist, route checklists/from-topic, route document-checklist, +3 more
+- `topics` — 30 rows · touched by route chat, route checklists/from-topic, route documents, route jobs/delete, route jobs/summarise, +6 more
+- `checklists` — 8 rows · touched by route account, route audit-checklist, route checklists/from-topic, route document-checklist, route documents/report, +5 more
+- `checklist_items` — 29 rows · touched by route account/export, route account, route audit-checklist, route checklists/from-topic, route document-checklist, +3 more
 - `critic_reviews` — 0 rows · touched by lib criticRecord
 - `critic_findings` — 0 rows · touched by lib criticRecord
 
 **Requirements (the deterministic spine)**
 
-- `requirement_templates` — 0 rows · touched by route industries, route obligations, route switches/answer, route switches/ask, lib obligationWriter, +4 more
-- `switches` — 0 rows · touched by route chat, route company-information, route obligations, route switches/answer, route switches/ask, +7 more
-- `company_switches` — 0 rows · touched by route switches/answer, route switches/ask, route to-confirm, lib companyContext, lib obligationWriter, +3 more
-- `switch_determinations` — 0 rows · touched by route switches/answer, script audit-data-checks, script check-live
+- `requirement_templates` — 205 rows · touched by route industries, route obligations, route switches/answer, route switches/ask, lib obligationWriter, +4 more
+- `switches` — 95 rows · touched by route chat, route company-information, route obligations, route switches/answer, route switches/ask, +7 more
+- `company_switches` — 16 rows · touched by route switches/answer, route switches/ask, route to-confirm, lib companyContext, lib obligationWriter, +3 more
+- `switch_determinations` — 1 rows · touched by route switches/answer, script audit-data-checks, script check-live
 - `obligations` — 0 rows · touched by route account, route obligations, route switches/answer
 - `obligation_evidence` — 0 rows · touched by route account/export, route account
-- `agencies` — 0 rows · touched by route obligations, lib agencyScope, script load-agencies
-- `industry_coverage` — 0 rows · touched by script assign-agencies
+- `agencies` — 33 rows · touched by route obligations, lib agencyScope, script load-agencies
+- `industry_coverage` — 56 rows · touched by script assign-agencies
 - `library_candidates` — 0 rows · **no code reads or writes it**
 - `corrections` — 0 rows · **no code reads or writes it**
 
 **Documents and evidence**
 
-- `documents` — 0 rows · touched by route audit-runs/[id]/documents, route audit-runs, route calendar, route chat, route document-actions, +17 more
+- `documents` — 12 rows · touched by route audit-runs/[id]/documents, route audit-runs, route calendar, route chat, route document-actions, +17 more
 - `document_reviews` — 0 rows · touched by lib attachedDocument
 - `company_folders` — 0 rows · touched by route audits/index, route documents/index, route documents, route folders
 - `company_templates` — 0 rows · **no code reads or writes it**
@@ -63,20 +63,20 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 
 **Audits**
 
-- `audit_runs` — 0 rows · touched by route audit-checklist, route audit-runs/[id]/documents, route audit-runs/[id], route audit-runs/[id]/sections/[sid]/retry, route audit-runs, +5 more
-- `audit_sections` — 0 rows · touched by route audit-runs/[id]/documents, route audit-runs/[id], route audit-runs/[id]/sections/[sid]/retry, route audit-runs, route audits/index, +5 more
-- `audit_findings` — 0 rows · touched by route audit-checklist, route audit-findings, route audit-runs/[id]/documents, route audit-runs/[id], route audits/index, +2 more
+- `audit_runs` — 1 rows · touched by route audit-checklist, route audit-runs/[id]/documents, route audit-runs/[id], route audit-runs/[id]/sections/[sid]/retry, route audit-runs, +5 more
+- `audit_sections` — 1 rows · touched by route audit-runs/[id]/documents, route audit-runs/[id], route audit-runs/[id]/sections/[sid]/retry, route audit-runs, route audits/index, +5 more
+- `audit_findings` — 8 rows · touched by route audit-checklist, route audit-findings, route audit-runs/[id]/documents, route audit-runs/[id], route audits/index, +2 more
 
 **Chemicals and substances**
 
-- `company_chemicals` — 0 rows · touched by script audit-data-checks, script check-live
+- `company_chemicals` — 1 rows · touched by script audit-data-checks, script check-live
 - `regulated_substances` — 0 rows · touched by script audit-data-checks
 
 **Tenancy and accounts**
 
-- `companies` — 0 rows · touched by route account/export, route account, route audit-runs, route company-information, route document-scan, +18 more
-- `profiles` — 0 rows · touched by route account/export, route account, route signup, screen audits, screen calendar, +9 more
-- `entities` — 0 rows · touched by route audit-runs, route audits/index, route company-information, route document-actions, route documents/index, +14 more
+- `companies` — 7 rows · touched by route account/export, route account, route audit-runs, route company-information, route document-scan, +18 more
+- `profiles` — 5 rows · touched by route account/export, route account, route signup, screen audits, screen calendar, +9 more
+- `entities` — 8 rows · touched by route audit-runs, route audits/index, route company-information, route document-actions, route documents/index, +14 more
 
 **Calendar**
 
@@ -96,7 +96,7 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 
 Regulators. Reference data, not customer data: readable by any authenticated user, written only by the service role. Empty until Phase 2.1.
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 33 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route obligations`, `lib agencyScope`, `script load-agencies`
 
@@ -157,7 +157,7 @@ END)`
 
 One row per model call, written at the call. Prices are copied onto the row so a later change to config/pricing.ts cannot rewrite what a past call cost. cost_usd NULL = the model was not in the price table, which is not the same as free. DECISIONS.md §128 J.
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 88 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route document-draft`, `lib auditRun`, `lib auditTemplate`, `lib costLedger`, `lib documentScan`, `script check-live`, `script cost-report`, `script run-golden-audit`, `script run-golden-docs`, `script scan-document`
 
@@ -214,7 +214,7 @@ One row per model call, written at the call. Prices are copied onto the row so a
 
 Every row of an audit answer — finding, date, contradiction, expected — with one lifecycle and one matcher.
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 8 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route audit-checklist`, `route audit-findings`, `route audit-runs/[id]/documents`, `route audit-runs/[id]`, `route audits/index`, `lib auditRun`, `script run-golden-audit`
 
@@ -250,6 +250,7 @@ Every row of an audit answer — finding, date, contradiction, expected — with
 | `handle_error` | boolean | no | `false` |
 | `template_line` | text | yes | — |
 | `template_text` | text | yes | — |
+| `also_in_sections` | ARRAY | no | `'{}'::uuid[]` |
 
 **Points at:**
 
@@ -304,7 +305,7 @@ Every row of an audit answer — finding, date, contradiction, expected — with
 
 One audit of one company at one moment. Sections are to a run what files are to a document batch.
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 1 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route audit-checklist`, `route audit-runs/[id]/documents`, `route audit-runs/[id]`, `route audit-runs/[id]/sections/[sid]/retry`, `route audit-runs`, `route audits/index`, `route jobs/audit-sections`, `lib auditNotify`, `lib auditRun`, `script check-live`
 
@@ -379,7 +380,7 @@ One audit of one company at one moment. Sections are to a run what files are to 
 
 One agency (or one template), one model call. claimed_at is the sweep's compare-and-set.
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 1 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route audit-runs/[id]/documents`, `route audit-runs/[id]`, `route audit-runs/[id]/sections/[sid]/retry`, `route audit-runs`, `route audits/index`, `route jobs/audit-sections`, `lib auditEstimate`, `lib auditRun`, `script check-live`, `script run-golden-audit`
 
@@ -540,7 +541,7 @@ One row per audit run. A frozen snapshot of results as checked that day — reus
 
 ### `checklist_items`
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 29 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route account/export`, `route account`, `route audit-checklist`, `route checklists/from-topic`, `route document-checklist`, `route substeps`, `screen compliance`, `script check-live`
 
@@ -601,7 +602,7 @@ One row per audit run. A frozen snapshot of results as checked that day — reus
 
 ### `checklists`
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 8 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route account`, `route audit-checklist`, `route checklists/from-topic`, `route document-checklist`, `route documents/report`, `route link-research`, `route substeps`, `screen compliance`, `screen dashboard`, `lib documentScan`
 
@@ -654,7 +655,7 @@ One row per audit run. A frozen snapshot of results as checked that day — reus
 
 ### `companies`
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 7 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route account/export`, `route account`, `route audit-runs`, `route company-information`, `route document-scan`, `route jobs/scan-documents`, `route obligations`, `route signup`, `screen compliance`, `screen dashboard`, `screen documents`, `screen hr`, `lib agencyScope`, `lib companyContext`, `lib obligationWriter`, `script check-prompt-determinism`, `script resolve-dryrun`, `script run-golden-audit`, `script run-golden-docs`, `script run-golden`, `script scan-document`, `script seed-multisite-fixture`, `script seed-staging-testdata`
 
@@ -735,7 +736,7 @@ One row per audit run. A frozen snapshot of results as checked that day — reus
 
 What one SITE holds, by CAS where identified. Tenant data. Replaces four boolean switches that were stand-ins for a per-substance calculation: a site with 9,000 lb each of five chemicals is below every threshold and reports nothing, which is correct and is not expressible as a boolean. Does NOT replace the exposure_* switches, which are airborne concentration rather than quantity held. Migration 013.
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 1 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `script audit-data-checks`, `script check-live`
 
@@ -792,7 +793,7 @@ What one SITE holds, by CAS where identified. Tenant data. Replaces four boolean
 
 What a company has confirmed about itself that is NOT one of the 95 switches. Nothing computes from it — company_switches is what the obligation engine reads. This is kept so the next scan can be shown it and so a person is not asked the same thing twice.
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 1 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route company-information`, `route to-confirm`, `lib companyContext`, `script run-golden-audit`
 
@@ -882,7 +883,7 @@ What a company has confirmed about itself that is NOT one of the 95 switches. No
 
 ### `company_labels`
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 11 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route audits/index`, `route company-labels`, `route documents/report`, `lib audit`, `lib companyContext`, `lib documentScan`, `script check-live`, `script run-golden-audit`, `script run-golden-docs`
 
@@ -918,7 +919,7 @@ What a company has confirmed about itself that is NOT one of the 95 switches. No
 
 ### `company_switches`
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 16 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route switches/answer`, `route switches/ask`, `route to-confirm`, `lib companyContext`, `lib obligationWriter`, `script resolve-dryrun`, `script run-golden`, `script seed-multisite-fixture`
 
@@ -1193,7 +1194,7 @@ One upload, however many files were in it. Exists so a folder drop can be answer
 
 ### `document_conditions`
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 17 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route documents/report`, `lib audit`, `lib documentScan`, `script run-golden-audit`
 
@@ -1275,7 +1276,7 @@ One row per correction a person makes to what a document IS. Newest per field wi
 
 ### `document_deadlines`
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 37 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route audits/index`, `route document-actions`, `route documents/report`, `lib audit`, `lib documentScan`
 
@@ -1316,7 +1317,7 @@ One row per correction a person makes to what a document IS. Newest per field wi
 
 ### `document_gaps`
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 25 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route document-actions`, `route document-checklist`, `route document-draft`, `route documents/report`, `lib audit`, `lib companyContext`, `lib documentScan`, `script run-golden-audit`
 
@@ -1437,9 +1438,9 @@ One row per correction a person makes to what a document IS. Newest per field wi
 
 ### `document_scans`
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 12 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route audits/index`, `route documents/index`, `route documents/report`, `lib attachedDocument`, `lib audit`, `lib auditRun`, `lib documentScan`, `script run-golden-audit`
+**Read or written by:** `route audits/index`, `route documents/index`, `route documents/report`, `lib attachedDocument`, `lib audit`, `lib auditRun`, `lib documentScan`, `script check-live`, `script run-golden-audit`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -1517,7 +1518,7 @@ One row per correction a person makes to what a document IS. Newest per field wi
 
 ### `documents`
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 12 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route audit-runs/[id]/documents`, `route audit-runs`, `route calendar`, `route chat`, `route document-actions`, `route document-draft`, `route document-rescan`, `route document-scan`, `route documents`, `route folders`, `route hr`, `route hr-audits`, `route jobs/scan-documents`, `screen compliance`, `lib attachedDocument`, `lib documentBatch`, `lib documentScan`, `lib storage`, `script check-live`, `script run-golden-audit`, `script run-golden-docs`, `script scan-document`
 
@@ -1603,7 +1604,7 @@ One row per correction a person makes to what a document IS. Newest per field wi
 
 ### `entities`
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 8 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route audit-runs`, `route audits/index`, `route company-information`, `route document-actions`, `route documents/index`, `route documents/report`, `route switches/answer`, `route switches/ask`, `route to-confirm`, `lib agencyScope`, `lib companyContext`, `lib obligationWriter`, `script check-live`, `script resolve-dryrun`, `script run-golden-audit`, `script run-golden-docs`, `script run-golden`, `script seed-multisite-fixture`, `script seed-staging-testdata`
 
@@ -1672,7 +1673,7 @@ One row per correction a person makes to what a document IS. Newest per field wi
 
 Candidate company facts read out of a conversation overnight. PROPOSED, never written to company_switches — DECISIONS.md §108. The quote is copied because the turn it came from is cleared after 7 days.
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 46 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route company-information`, `route document-actions`, `route documents/report`, `route jobs/summarise`, `route to-confirm`, `screen compliance`, `lib audit`, `lib companyContext`, `lib documentScan`, `script run-golden-audit`
 
@@ -1780,7 +1781,7 @@ Saved HR handbook audit results, one row per audit run.
 
 industry x jurisdiction x agency -> how far we have got. Reads the same way to the pipeline and to the user: the coverage strip is this table rendered. Empty until the agencies table is populated (Phase 2.1), because every row names an agency.
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 56 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `script assign-agencies`
 
@@ -1827,7 +1828,7 @@ industry x jurisdiction x agency -> how far we have got. Reads the same way to t
 
 One row per nightly run. Answers release gate 2 — did it run, and what did it remove (DECISIONS.md §116, §125). Operational, not tenant data: closed to authenticated.
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 11 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route account`, `lib jobAuth`
 
@@ -2073,7 +2074,7 @@ The resolved list: which library rows apply to this company. Produced by CODE, n
 
 ### `profiles`
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 5 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route account/export`, `route account`, `route signup`, `screen audits`, `screen calendar`, `screen compliance`, `screen dashboard`, `screen documents`, `screen hr`, `lib auth`, `script check-live`, `script run-golden-audit`, `script scan-document`, `script seed-staging-testdata`
 
@@ -2165,7 +2166,7 @@ The federal lists, keyed by CAS. Reference data: identical for every customer, s
 
 THE LIBRARY. What the law requires, by industry and jurisdiction. Reference data: global, readable by any authenticated user, written only by the service role. Rows are VERSIONED, never edited in place — a change is a new row with version + 1 and the old row gets effective_to. CLAUDE.md §3.2.
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 205 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route industries`, `route obligations`, `route switches/answer`, `route switches/ask`, `lib obligationWriter`, `script assign-agencies`, `script load-expressions`, `script load-requirements`, `script resolve-dryrun`
 
@@ -2296,7 +2297,7 @@ document-versus-document disagreement is recorded WITHOUT reusing user_locked, w
 PERSON decided and must keep meaning only that. DECISIONS.md §24.1, §47;
 docs/SWITCH-DETERMINATION.md §7.
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 1 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route switches/answer`, `script audit-data-checks`, `script check-live`
 
@@ -2357,7 +2358,7 @@ docs/SWITCH-DETERMINATION.md §7.
 
 The ~59 facts about a company that determine which requirements apply. Reference data: global, readable by any authenticated user, written only by the service role. CHEMICAL-OR-WA.md §2.2 and §2.4.
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 95 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route chat`, `route company-information`, `route obligations`, `route switches/answer`, `route switches/ask`, `route to-confirm`, `lib determinationGate`, `lib obligationWriter`, `script load-switches`, `script resolve-dryrun`, `script run-golden`, `script seed-multisite-fixture`
 
@@ -2419,7 +2420,7 @@ The ~59 facts about a company that determine which requirements apply. Reference
 
 One exploration. The transcript is disposable (WORKSPACE.md §6.4); the summary is what survives. Holds NO facts — a hypothetical is never stored (DECISIONS.md §78) and a real fact goes to company_switches. Migration 028.
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 30 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route chat`, `route checklists/from-topic`, `route documents`, `route jobs/delete`, `route jobs/summarise`, `route to-confirm`, `route topics/[id]`, `route topics/[id]/summarise`, `screen compliance`, `lib conversation`, `script check-live`
 
@@ -2480,7 +2481,7 @@ One exploration. The transcript is disposable (WORKSPACE.md §6.4); the summary 
 
 One message in a conversation. Cleared 7 days after the topic is summarised (DECISIONS.md §125, superseding §110's 15 days); the topic row and its summary survive.
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 89 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route jobs/delete`, `route jobs/summarise`, `route topics/[id]`, `screen compliance`, `lib attachedDocument`, `lib conversation`, `script check-live`
 
@@ -2531,7 +2532,7 @@ One message in a conversation. Cleared 7 days after the topic is summarised (DEC
 
 Events, not inventory. Never decremented, never derived from row counts — transcripts are cleared after 7 days and checklists can be deleted, and neither rewrites what happened. DECISIONS.md §125.
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `company_id`
+**Rows:** 1 · **RLS:** enabled · **Primary key:** `company_id`
 
 **Read or written by:** `lib conversation`, `script check-live`
 
@@ -2752,4 +2753,5 @@ filtered HERE so no consumer can forget it (CLAUDE.md §3.2). A corrected link
 058
 059
 060
+061
 ```

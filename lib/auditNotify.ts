@@ -125,17 +125,25 @@ export async function notifyRun(
   // *** AND THEN THE GOOD NEWS, IN ITS OWN WORDS. *** On-file and expected rows are most of what
   // an audit writes and none of it needs anybody today, so it sits after the list that does — but
   // it is not left out: "12 on file" is the half of the answer a person actually wanted.
+  // Sentence shapes, the same as the page's and the summary line's (Run 7b, item 7): a clause per
+  // number, plurals right at one, joined with a comma and an "and".
   const after: string[] = []
-  if (summary.on_file) after.push(`${summary.on_file} on file`)
-  if (summary.expected) {
-    after.push(`${summary.expected} we would expect a company like yours to hold `
-      + `and did not see — a suggestion, not a checked requirement`)
+  if (summary.on_file) {
+    after.push(`${summary.on_file} thing${summary.on_file === 1 ? '' : 's'} on file`)
   }
-  if (after.length) lines.push(`Also: ${after.join('; ')}.`, '')
+  if (summary.expected) {
+    after.push(`${summary.expected} thing${summary.expected === 1 ? '' : 's'} we would expect a `
+      + `company like yours to hold and did not see — a suggestion, not a checked requirement`)
+  }
+  if (after.length) {
+    lines.push(`It also found ${after.length === 2 ? `${after[0]} and ${after[1]}` : after[0]}.`, '')
+  }
 
   if (summary.contradictions) {
-    lines.push(`Two of your documents disagree, in ${summary.contradictions} place`
-      + `${summary.contradictions === 1 ? '' : 's'}. The audit shows both and does not pick one.`, '')
+    lines.push(summary.contradictions === 1
+      ? 'Two of your documents disagree in one place. The audit shows both and does not pick one.'
+      : `Two of your documents disagree in ${summary.contradictions} places. The audit shows both `
+        + 'and does not pick one.', '')
   }
   if (summary.carried || summary.closed) {
     lines.push(`Against your last audit: ${summary.carried} still open, `
