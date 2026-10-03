@@ -1,34 +1,41 @@
 /**
- * THE EXAMPLE QUESTIONS UNDER THE OPENING BOX — Run 3.
+ * THE EXAMPLE QUESTIONS IN THE OPENING BOX — rewritten for Workspace layout Task 2b.
  *
  * *** THIS FILE IS THE OWNER'S TO EDIT. *** It is config, not code: the examples are
- * per-vertical, they change as the product moves from chemical manufacturing to the next
- * vertical, and changing them must never need a developer or a deploy of anything but this file.
+ * per-vertical, they change as the product moves from one vertical to the next, and changing them
+ * must never need a developer or a deploy of anything but this file.
  *
- * They are NOT a prompt and they are NOT a switch (`CLAUDE.md` §3.1) — each one is simply typed
- * into the box for the person, exactly as written, when they click it.
+ * WHAT THEY ARE NOW: GUIDANCE, NOT BUTTONS. On the first visit, before anything is asked, the three
+ * `question`s are shown inside the empty box as grey lines, each prefixed "e.g." — the way the
+ * Audits box shows its examples. They go the moment anything is typed.
  *
- * THREE. The prototype shows three and the line is meant to fit on one row at 820px; a fourth
- * wraps and reads as a menu rather than as a nudge.
+ *   · They are NOT clickable. Seeing one, or clicking on one, types nothing and sends nothing.
+ *   · They are NOT a prompt and NOT a switch (`CLAUDE.md` §3.1) — nothing here reaches a model.
+ *
+ * THREE. Each is one line in the box and is cut with an ellipsis if it is longer, so a short
+ * sentence a person would actually type reads better than a long one.
+ *
+ * `label` is a short name for each example. The page uses it only as the list key; it is not
+ * shown on screen.
  */
 export interface ExampleQuestion {
-  /** The short words on the button. */
+  /** A short name for the example. Not shown; used as the list key. */
   label: string
-  /** What is actually put in the box. Written as a person would type it. */
+  /** The sentence shown in the box after "e.g.". Written as a person would type it. */
   question: string
 }
 
 export const EXAMPLE_QUESTIONS: ExampleQuestion[] = [
   {
-    label: 'Second restaurant in Seattle, 25 staff',
-    question: "We're opening a second restaurant in Seattle with about 25 staff. What do we need on food handler permits and paid sick leave?",
+    label: 'Safe storage of acids and solvents',
+    question: 'We store acids and solvents at our plant. What do we need for safe storage?',
   },
   {
-    label: 'Hospice caregivers driving to patients',
-    question: "California hospice agency, 12 caregivers driving to patients' homes. How do mileage and overtime work?",
+    label: 'Opening a cannabis dispensary',
+    question: "We're opening a cannabis dispensary in Oregon. What licenses do we need?",
   },
   {
-    label: 'Roofing crew and fall protection',
-    question: '40-person roofing contractor in Texas. What do we owe on fall protection and safety training?',
+    label: 'Hospice nurses and mileage',
+    question: "Our hospice nurses drive to patients' homes. How do we pay for mileage?",
   },
 ]

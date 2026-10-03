@@ -45,6 +45,15 @@ them, and everybody has to reason about them. No decimal pixels.
 AnswerBody. The off-scale ones are listed in §7. Treat the table as the
 rule for anything new, and the leftovers as debt.
 
+**Also there, and missing from that count until Workspace layout Task 1
+(1 October 2026) read the files:** the **18px** drawer title
+(`text-lg`, `components/Drawer.tsx:72` — every drawer in the product);
+AnswerBody's **11px** source-card host (`components/AnswerBody.tsx:86`)
+and "Sources" heading (`:134`), and its **10px** on the citation card's
+"Source n" label (`:84`) and the printed marker (`:81`) as well as the
+marker itself (`:77`); and the **15px** empty-state title outside any
+drawer (`app/compliance/page.tsx`, `Empty`).
+
 13 exists because a list is **scanned**, not read. File lists everywhere
 sit at 13–14. A drawer is **worked from**, so its item text is 16. Those
 two are allowed to differ; that difference is the point.
@@ -69,9 +78,9 @@ Tokens on `:root` in `app/globals.css`:
 --measure:     775px
 ```
 
-`--measure` is defined and unused. The column width is the
-`max-w-[775px]` literal, because the token silently produced no rule in
-dev. Do not reach for `--measure` until someone works out why.
+`--measure` is defined and unused. The column width is a literal —
+`max-w-[900px]` since 3 October 2026, `max-w-[775px]` before — because
+the token silently produced no rule in dev. Do not reach for `--measure` until someone works out why.
 
 **One green, and only where it means something.** Green marks state or
 the primary action. It does not decorate. Specifically it is allowed on:
@@ -92,11 +101,30 @@ a dark theme nobody designed is worse than none.
 
 ## 3. Layout
 
-**775px.** One column width, everywhere, centred. Wider is unreadable
-for serif body text; narrower wastes the screen. The page title, tabs,
-content, composer and the footer's contents all share those two edges.
+**900px, and the Compliance Workspace is in it.** *(Changed 3 October
+2026 by the owner's decision, Workspace layout.)* The workspace was the
+one 775 page; it now takes the same column as Documents, Audits and
+Company information — `max-w-[900px] px-4 pb-16 sm:px-6`, as
+`app/audits/page.tsx:478` has it. The page title, tabs, content,
+composer and the footer's contents share the column's two content edges.
 Alignment on two edges instead of four is most of what makes a page look
 deliberate.
+
+**No page in the code is a 775 reading surface any more.** A grep for
+775 in `app/` and `components/` finds the `--measure` token
+(`app/globals.css:26`, still 775, still unused — §2) and comments,
+nothing else. The paragraph below still says "reading surfaces stay at
+775"; read that as the rule there was, not a page that exists. The five
+pages outside the template — /calendar, /requirements, /dashboard, /hr,
+/account — keep their own Tailwind widths (`max-w-6xl`, `4xl`, `5xl`,
+`6xl`, `3xl`).
+
+**The footer is in the column.** `components/AppLayout.tsx:306` is
+`mx-auto w-full max-w-[900px] px-4 sm:px-6` — the page column's own box
+and padding. Measured at 1280 on 3 October: the footer's text starts at
+the page title's x on all four template pages (319 with a vertical
+scrollbar, 326 without). On the five pages above it does not, because
+their columns are not 900 (§7).
 
 **Width, as an addition from the Documents section.** Reading surfaces
 stay at 775; working surfaces — Documents, then Audits and Calendar —
@@ -117,21 +145,45 @@ Three things keep a box, because each is a control you act on: the
 composer, a drawer, and a modal sheet. Nothing else.
 
 **Spacing.** Equal gaps above and below a group say the group is one
-thing. Unequal gaps say what belongs to what — the attach line sits 24px
-under the composer and 16px above the buttons, because it belongs to the
-box, not to the buttons.
+thing. Unequal gaps say what belongs to what. *(The example that stood
+here — the attach line 24px under the composer and 16px above the
+buttons — described the workspace before 3 October. The attach line now
+sits 10px under the box, on one line with the buttons, as on Audits:
+measured, box bottom y=345, attach line y=355.)*
 
 ## 4. The components
 
-**Button vocabulary.** Three levels, and a screen should not need a
-fourth:
+**Button vocabulary — Audits' strings are the standard.** *(3 October
+2026, the owner: where this section and Audits disagreed, Audits won.)*
+This section used to give the primary as `px-5 py-2.5` and the outline's
+hover as `--green-wash`; the strings below are what ships.
 
-1. *Primary* — filled `--green`, white text, `px-5 py-2.5`, sized to its
+1. *Primary* — `cursor-pointer rounded-md bg-[var(--green)] px-4 py-2
+   text-[14px] font-medium text-white hover:bg-[var(--green-ink)]
+   disabled:cursor-not-allowed disabled:opacity-50`.
+   Source: `app/audits/page.tsx:155–157`, `ACTION_PRIMARY`. Sized to its
    own text, never full width.
-2. *Secondary* — outlined `--green`, green text, `hover:--green-wash`.
-   This is the default for an action in a footer or under an answer.
-3. *Tertiary* — plain text, `text-gray-600 hover:text-gray-900`,
-   underline on hover. No border, no background.
+2. *The outlined pair beside it* — the primary's box, outlined:
+   `cursor-pointer rounded-md border border-[var(--green)] px-4 py-2
+   text-[14px] font-medium text-[var(--green)] hover:bg-green-50
+   disabled:cursor-not-allowed disabled:opacity-50`.
+   `SECONDARY_LARGE`, `app/compliance/page.tsx:102`. Used only beside a
+   primary, so the two are one size.
+3. *Outline* — `rounded-md border border-[var(--green)] px-3 py-1.5
+   text-[14px] font-medium text-[var(--green)] hover:bg-green-50
+   disabled:opacity-50`. Source: `components/AuditReport.tsx:651`, the
+   footer's "Audit again". The default for an action in a footer or under
+   an answer.
+4. *Text action* — `text-[14px] text-gray-600 hover:text-gray-900
+   hover:underline disabled:text-gray-300`. Source:
+   `components/AuditReport.tsx:655`. No border, no background.
+
+**Copied page-locally, in three pages today:** `ACTION_PRIMARY` in
+`app/audits/page.tsx:155` and `app/company-information/page.tsx:137`;
+`PRIMARY`, `SECONDARY_LARGE`, `OUTLINE` and `TEXT_ACTION` in
+`app/compliance/page.tsx:98–109`. Audits and Company information also
+carry `ACTION_GREEN` (`:151`, `:132`), a 13px underlined green text action
+this list does not name. One file for all of them is owed (§7).
 
 Three bordered buttons in a row is three boxes. One outline and two text
 actions says the same thing and shouts less.
@@ -169,6 +221,28 @@ max 85% width, 16px. The answer runs full width underneath with no
 container. That contrast is the entire navigation system for a long
 thread — without it you cannot find where you asked something.
 
+**The first-visit box, as Audits shows its own.** *(Workspace layout,
+3 October 2026.)* The examples are guidance only: three grey lines
+prefixed "e.g.", an overlay from the top of the box
+(`pointer-events-none absolute inset-0 flex flex-col gap-3 p-5`, copied
+from `app/audits/page.tsx:511–518`), with no placeholder behind them.
+They are not clickable — a click lands on the box — and they go the
+moment anything is typed. Measured: the first example's first glyph at
+the same x as typed text (Δ0) and on the same line top; three lines
+before typing, none after one character, three again when cleared. The
+sentences live in `config/examples.ts`, which is the owner's to edit.
+Once a conversation has started, the docked composer keeps its
+placeholder.
+
+Under the box, one line: the attach control on the left — the docked
+composer's paperclip at 13px, then "Attach a file and ask any compliance
+question about it", 12px, underlined — and the outlined pair and the
+primary on the right. **One click opens the file picker**, from the line
+and from the docked paperclip alike; there is no sheet in between.
+Measured with `--file-chooser`: `Page.fileChooserOpened` fired once for
+each. Under that, the counts line in Audits' own classes
+(`app/audits/page.tsx:576`, `:579`).
+
 ## 5. Print
 
 A printed page is evidence, so printing is a first-class output.
@@ -183,7 +257,7 @@ it means when a print bug disappears without anyone fixing print.
 ## 6. Building the next section
 
 1. Page title in serif 28, one line of explanation in 14 grey.
-2. Column at 775, centred. Footer contents in the same column.
+2. Column at 900, centred. Footer contents in the same column.
 3. Start with no boxes. Add one only for a control you act on.
 4. Pick sizes from the six. If you need a seventh, you are wrong.
 5. One green. Before using it, say out loud what state it means.
@@ -192,9 +266,32 @@ it means when a print bug disappears without anyone fixing print.
 7. Long reading text gets the serif at 17.
 8. Buttons: one primary, and everything else outlined or text.
 9. Check it prints.
-10. Measure rather than look. There is a harness for this — a selector
-    scoped to a class alone will match things you did not mean and
-    report a page fault that isn't one.
+10. Measure rather than look. **The harness is `npm run measure`**
+    (`scripts/measure-layout.mjs`). It prints the title's x, the
+    column's box and content edges, the tab row, the footer's content
+    edges and text start, and — when one is open — the drawer's edges,
+    title and sub sizes, footer actions, checkbox x positions and body
+    text sizes; on a page with a composer, where typed text starts and
+    where each overlay line's first glyph sits against it.
+    - `<path>` — the page, default `/compliance`
+    - `--as <email>` — the fixture login, default `testcascade@example.com`
+    - `--width <px>` — default 1280; the height is 900
+    - `--click "<text>"` — click the first visible control whose words
+      (or, with none, aria-label) start with the text; repeatable
+    - `--click key=<id>` — click the row whose React key is that id, for
+      rows that share their words
+    - `--wait <ms>` — the pause after load and after each click, default
+      2500
+    - `--shot <file>` — a screenshot
+    - `--file-chooser` — intercept the file picker and print whether a
+      click opened it
+    It starts from a fresh profile with the cache off, **fails every
+    request to a paid route and every write**, and prints `BLOCKED` with
+    the list — an empty list is the evidence a run cost nothing and
+    changed nothing. Screenshots go to `.next/shots/`, and **`npm run
+    check` wipes `.next/`** (`next build` clears it), so take them after a
+    check, not before. A selector scoped to a class alone will match
+    things you did not mean and report a page fault that isn't one.
 
 ## 7. Known open, not layout
 
@@ -219,5 +316,15 @@ it means when a print bug disappears without anyone fixing print.
   this pass; check each before moving it, since the print-header date
   is on paper, not screen. AnswerBody's 19px serif heading and 10px
   citation marker are deliberate and stay.
+- **Owed by the Workspace layout pass (3 October 2026):**
+  - the shared drawer's 18px title and 12.5px sub line
+    (`components/Drawer.tsx:72–73`) — one change, felt in three sections
+    (the workspace, Documents, Audits);
+  - the button strings copied in three pages (§4) — lift them to one file;
+  - the boxes this pass left: Working, the empty states, the notice, the
+    file card (`app/compliance/page.tsx`);
+  - the five pages with their own columns (/calendar, /requirements,
+    /dashboard, /hr, /account), so the footer, now in the 900 column,
+    does not line up with them.
 - **Phone.** Not designed. Desktop is the intended surface and phone
   widths mostly work. Revisit before anyone is asked to use it there.

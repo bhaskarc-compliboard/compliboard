@@ -32,6 +32,7 @@
     "mutation": "node scripts/mutation-check.js",
     "audit:data": "node --env-file=.env.local scripts/audit-data-checks.js",
     "preflight": "node --env-file=.env.local scripts/preflight-prod.js",
+    "measure": "node --env-file=.env.local scripts/measure-layout.mjs",
     "check:live": "node --env-file=.env.local scripts/check-live.js",
     "schema:doc": "node --env-file=.env.local scripts/schema-doc.js"
   },

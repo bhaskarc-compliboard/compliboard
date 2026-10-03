@@ -10780,3 +10780,20 @@ there, still exercised by the golden set, and measured at zero parse failures ov
 **And one decision from the owner: when the binder lands it replaces the download button. "Download the documents" becomes "Download the binder". One button, not two.** A person wants the folder they can hand over, not a choice between two kinds of archive.
 
 Commits 358647d, 1e34fc2.
+
+## 153. THE WORKSPACE LAYOUT PASS: THE COMPLIANCE WORKSPACE IN THE AUDITS SHELL — 3 October 2026
+
+§153 — Workspace layout, Tasks 1, 2, 2b and 3 (1–3 October 2026). Layout only: no prompt, model, route, schema or pipeline switch changed. The owner's decisions, each as made:
+
+- **The column is 900**, the same as Documents, Audits and Company information (`app/compliance/page.tsx`, `max-w-[900px] px-4 pb-16 sm:px-6`). No page is 775 any more.
+- **The drawer is the shared `components/Drawer.tsx` as shipped**, the actions in its footer; its 18px title and 12.5px sub line are owed as one change across three sections (`DESIGN.md` §7).
+- **Audits' button and tab strings over `DESIGN.md`'s**: primary `app/audits/page.tsx:155–157`, outline `components/AuditReport.tsx:651`, text action `:655`; `DESIGN.md` §4 rewritten to them.
+- **The footer is aligned with the column** (`components/AppLayout.tsx:306`, `max-w-[900px] px-4 sm:px-6`); measured equal to the title's x on all four template pages.
+- **`/compliance?checklist=<id>` is left for later**; it opens nothing, and is recorded in `HANDOFF-CODE.md` §7.
+- **Two sentences rewritten**: the stopped-early line no longer names "the model", and the wrap-up nudge no longer says "Want me to".
+- **"60+"**: one constant, `LIST_CAP`, for both list reads, the counts line and the Checklists tab; a full read is said as "60+", never a bare count.
+- **The examples are guidance, as on Audits**: an overlay in the box, not clickable, gone on typing; the three are now safe storage of acids and solvents, a cannabis dispensary in Oregon, and hospice nurses' mileage (`config/examples.ts`). Clicking an example used to send it straight to research.
+- **The attach line** reads "Attach a file and ask any compliance question about it", carries the paperclip, and **opens the file picker in one click**; the "Attach a file" sheet is deleted.
+- **The measuring script is kept**: `npm run measure` (`scripts/measure-layout.mjs`) — it blocks paid routes and writes and prints `BLOCKED`; `DESIGN.md` §6 item 10 points at it.
+
+**The cost of the pass: $0.01** — one `substeps` call on `claude-haiku-4-5`, approved by the owner, to see the checklist drawer with its steps for the first time. Every other run was measured with paid routes blocked and printed `BLOCKED (0)`. The element-by-element record is `docs/HANDOFF-WORKSPACE.md`. Committed locally; not pushed.

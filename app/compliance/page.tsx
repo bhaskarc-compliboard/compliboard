@@ -76,6 +76,46 @@ interface Proposal { id: string; switch_key: string; proposed_value: string; quo
 
 const MAX_STEPS_IN_FLIGHT = 3
 
+/**
+ * HOW MANY CONVERSATIONS AND CHECKLISTS ONE LOAD READS — Task 2b. It was the literal 60 in two
+ * places. One name, used by both reads and by the counts line, which says "60+" when a list holds
+ * exactly this many: a full read means there may be more, and a bare "60" would be a count we do
+ * not have.
+ */
+const LIST_CAP = 60
+/** "47", or "60+" for a read that came back full. The one rule, for the counts line and the tab. */
+const countOf = (n: number) => (n >= LIST_CAP ? `${LIST_CAP}+` : String(n))
+/** "1 conversation", "47 conversations", "60+ conversations". */
+const countWord = (n: number, word: string) =>
+  `${countOf(n)} ${word}${n === 1 ? '' : 's'}`
+
+/*
+ * THE BUTTONS, COPIED FROM AUDITS CHARACTER FOR CHARACTER — Workspace layout, Task 2.
+ * The owner's decision: where `DESIGN.md` and Audits disagree, Audits wins, so these are its strings
+ * rather than a fourth reading of §4. Copied, not imported, because Audits keeps them page-local too.
+ */
+/** `app/audits/page.tsx:155–157`, ACTION_PRIMARY. */
+const PRIMARY =
+  'cursor-pointer rounded-md bg-[var(--green)] px-4 py-2 text-[14px] font-medium text-white ' +
+  'hover:bg-[var(--green-ink)] disabled:cursor-not-allowed disabled:opacity-50'
+/** PRIMARY's box, outlined. Used ONLY beside PRIMARY on the first visit, so the pair is one size. */
+const SECONDARY_LARGE =
+  'cursor-pointer rounded-md border border-[var(--green)] px-4 py-2 text-[14px] font-medium text-[var(--green)] ' +
+  'hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-50'
+/** `components/AuditReport.tsx:651`, the footer's "Audit again". */
+const OUTLINE =
+  'rounded-md border border-[var(--green)] px-3 py-1.5 text-[14px] font-medium text-[var(--green)] hover:bg-green-50 disabled:opacity-50'
+/** `components/AuditReport.tsx:655`, the footer's text actions. */
+const TEXT_ACTION = 'text-[14px] text-gray-600 hover:text-gray-900 hover:underline disabled:text-gray-300'
+
+/** How Audits writes a date — `app/audits/page.tsx:189–194`, copied: "30 September 2026". */
+const fmtDate = (iso: string | null | undefined) => {
+  if (!iso) return ''
+  const d = new Date(String(iso).length === 10 ? `${iso}T00:00:00` : String(iso))
+  return Number.isNaN(d.getTime()) ? ''
+    : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+}
+
 export default function CompliancePage() {
   const supabase = createClient()
 
@@ -147,7 +187,6 @@ export default function CompliancePage() {
   const [summaryDrawer, setSummaryDrawer] = useState<TopicRow | null>(null)
   const [listDrawer, setListDrawer] = useState<{ row: ChecklistRow; items: ItemRow[] } | null>(null)
   const [scopeFor, setScopeFor] = useState<string | null>(null)
-  const [attachOpen, setAttachOpen] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
   const [working, setWorking] = useState<string | null>(null)
 
@@ -209,7 +248,7 @@ export default function CompliancePage() {
     const { data } = await supabase
       .from('topics')
       .select('id, title, summary, summarised_at, summary_source, delete_after, last_turn_at, created_at')
-      .order('created_at', { ascending: false }).limit(60)
+      .order('created_at', { ascending: false }).limit(LIST_CAP)
     const rows = (data ?? []) as Array<Omit<TopicRow, 'turnCount' | 'checklistId'>>
     // Turn counts decide "cleared" vs "kept" — the DATE only says when it may go, and between
     // the due date and the 03:30 run the conversation is still open. lib/conversationStatus.ts.
@@ -223,7 +262,7 @@ export default function CompliancePage() {
 
   const loadChecklists = useCallback(async () => {
     const { data } = await supabase
-      .from('checklists').select('id, title, created_at').order('created_at', { ascending: false }).limit(60)
+      .from('checklists').select('id, title, created_at').order('created_at', { ascending: false }).limit(LIST_CAP)
     const rows = (data ?? []) as Array<{ id: string; title: string | null; created_at: string }>
     const withCounts = await Promise.all(rows.map(async (c) => {
       const { data: items } = await supabase
@@ -387,7 +426,6 @@ export default function CompliancePage() {
    * where the answer about it belongs.
    */
   async function onFilePicked(file: File) {
-    setAttachOpen(false)
     const id = `f${Date.now()}`
     const card = (patchCard: Partial<NonNullable<Exchange['file']>>, note?: string) =>
       setExchanges((prev) => [...prev, {
@@ -767,9 +805,23 @@ export default function CompliancePage() {
   const proposal = proposals[0] ?? null
   const answered = exchanges.filter((x) => x.phase === 'done' && !x.file).length
   const showNudge = answered >= 4 && !nudgeDismissed && !busy
+  // "last asked" on the counts line: the most recent activity across the conversations loaded,
+  // each one's last turn or, with none, when it was opened.
+  const lastAsked = topics.reduce<string | null>((max, t) => {
+    const at = t.last_turn_at ?? t.created_at
+    return !max || at > max ? at : max
+  }, null)
 
   return (
     <AppLayout>
+      {/* THE FILE PICKER, AT PAGE LEVEL, AS ON AUDITS (`app/audits/page.tsx:475–476`) — Task 2b.
+          It lived inside an "Attach a file" sheet, so attaching was three clicks: open the sheet,
+          press "Choose a file", pick. Now the attach line, the docked paperclip and the file card's
+          "Upload a clearer copy" each call `.click()` on this. The handler is unchanged, and it
+          already cleared the value after a pick, as Audits' does, so the same file can be chosen
+          twice. */}
+      <input ref={fileInput} type="file" className="hidden"
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) onFilePicked(f); e.target.value = '' }} />
       <style jsx global>{`
         @media print {
           .no-print { display: none !important; }
@@ -799,7 +851,12 @@ export default function CompliancePage() {
       `}</style>
 
       {/*
-        775 AS A LITERAL, NOT `max-w-[var(--measure)]`, AND THE REASON IS A TRAP WORTH KNOWING.
+        900, THE SAME COLUMN AS DOCUMENTS, AUDITS AND COMPANY INFORMATION — Workspace layout, Task 2.
+        It was 775, the reading measure; the owner put this page in the same shell as the working
+        surfaces, so it now takes their width and their `pb-16` (`app/audits/page.tsx:478`).
+
+        A LITERAL, NOT `max-w-[var(--measure)]`, AND THE REASON IS A TRAP WORTH KNOWING. (The token
+        holds 775 in any case, so it would no longer be this width even if it worked.)
         The token route looks identical and silently did nothing on localhost: Tailwind
         regenerated the utility `.max-w-[var(--measure)]{max-width:var(--measure)}` — it scans
         this file for classes — while the dev server kept serving a stale `globals.css` whose
@@ -812,7 +869,7 @@ export default function CompliancePage() {
         `--measure` stays defined in `globals.css` for `DESIGN.md` to point at; the number that
         has to survive a stale cache is written here.
       */}
-      <div className="print-page mx-auto w-full max-w-[775px] px-4 pb-12 sm:px-6">
+      <div className="print-page mx-auto w-full max-w-[900px] px-4 pb-16 sm:px-6">
         <div className="no-print pt-6">
           {/* Serif at 28 reads heavier than sans at 24, so the weight comes off — the typeface
               carries the emphasis. font-normal is explicit rather than inherited. */}
@@ -822,22 +879,23 @@ export default function CompliancePage() {
           </p>
         </div>
 
-        <div className="no-print mt-5 flex items-end justify-between gap-4 border-b border-gray-200">
-          <div className="flex gap-5">
+        {/* THE TABS ARE AUDITS' TABS — `app/audits/page.tsx:488–501`, classes copied. The count sits
+            inside the label as Audits writes it, "Checklists (3)", and is absent at none. Tab state
+            stays in React state here: nothing links to a tab of this page. */}
+        <div className="no-print mb-5 mt-5 flex items-center justify-between gap-6 border-b border-gray-200">
+          <div className="flex items-center gap-6">
             {([['ask', 'Ask a question'], ['conversations', 'Conversations'], ['checklists', 'Checklists']] as const)
               .map(([k, label]) => (
                 <button key={k} onClick={() => setTab(k)}
-                  className={`-mb-px border-b-2 pb-2.5 text-[14px] transition-colors ${
-                    tab === k ? 'border-[var(--green)] font-medium text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-800'}`}>
-                  {label}
-                  {k === 'checklists' && checklists.length > 0 && (
-                    <span className="ml-1.5 text-[12px] text-gray-500">{checklists.length}</span>
-                  )}
+                  className={`-mb-px border-b-2 pb-3 text-[14px] font-medium transition-colors ${
+                    tab === k ? 'border-[var(--green)] text-[var(--green-ink)]'
+                              : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
+                  {label}{k === 'checklists' && checklists.length > 0 ? ` (${countOf(checklists.length)})` : ''}
                 </button>
               ))}
           </div>
           <button onClick={() => newConversation()}
-            className="mb-2 flex shrink-0 items-center gap-1.5 text-[14px] text-gray-500 hover:text-gray-900">
+            className="-mb-px flex shrink-0 items-center gap-1.5 pb-3 text-[14px] text-gray-500 hover:text-gray-900">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
             <span className="hidden sm:inline">New conversation</span>
           </button>
@@ -852,7 +910,7 @@ export default function CompliancePage() {
 
         {/* ================= ASK ================= */}
         {tab === 'ask' && (
-          <div className="pt-6">
+          <div className={started ? 'pt-1' : ''}>
             {exchanges.map((x) => (
               <div key={x.id} className="mb-8">
                 {/* The question was `text-[15px] font-medium` and nothing else, so in a long
@@ -860,7 +918,7 @@ export default function CompliancePage() {
                     grey bubble it is findable when scrolling back. GREY, not green: green is
                     carrying state on this page — the active tab, the primary action — and every
                     question you have ever asked is not a state. */}
-                {x.file ? <FileCard file={x.file} onRetry={() => setAttachOpen(true)} /> : (
+                {x.file ? <FileCard file={x.file} onRetry={() => fileInput.current?.click()} /> : (
                   <div className="mb-5 flex justify-end">
                     <p className="max-w-[85%] rounded-2xl bg-gray-200 px-4 py-3 text-[16px] leading-relaxed text-gray-900">{x.question}</p>
                   </div>
@@ -882,16 +940,13 @@ export default function CompliancePage() {
                         button and is still reachable from the Conversations drawer. */}
                     {x.phase === 'done' && !x.file && topicId && x.id === exchanges[exchanges.length - 1]?.id && (
                       <div className="no-print mt-4 flex flex-wrap items-center gap-3">
-                        <button onClick={() => setScopeFor(topicId)}
-                          className="rounded-lg border border-[var(--green)] px-3.5 py-1.5 text-[14px] font-medium text-[var(--green)] hover:bg-[var(--green-wash)]">
+                        <button onClick={() => setScopeFor(topicId)} className={OUTLINE}>
                           Turn this into a checklist
                         </button>
-                        <button onClick={() => summarise(topicId)}
-                          className="px-1 text-[14px] text-gray-600 hover:text-gray-900 hover:underline">
+                        <button onClick={() => summarise(topicId)} className={TEXT_ACTION}>
                           Summarise this
                         </button>
-                        <button onClick={() => window.print()}
-                          className="px-1 text-[14px] text-gray-600 hover:text-gray-900 hover:underline">
+                        <button onClick={() => window.print()} className={TEXT_ACTION}>
                           Download
                         </button>
                       </div>
@@ -904,8 +959,8 @@ export default function CompliancePage() {
                 {x.phase === 'stopped_early' && (
                   <div className="mt-2 border-l-2 border-amber-400 pl-3 text-[14px] text-amber-900">
                     <b className="font-semibold">This answer stopped early.</b>{' '}
-                    The connection to the model ended before the answer was finished, so what is above
-                    is incomplete. Nothing was saved for it.
+                    The answer stopped before it was finished, so what is above is incomplete. Nothing
+                    was saved for it.
                     <button onClick={() => ask(x.question, 'research')}
                       className="ml-2 font-medium underline hover:no-underline">Try again</button>
                   </div>
@@ -929,8 +984,8 @@ export default function CompliancePage() {
               <div className="no-print mb-8 border-t border-gray-200 pt-4">
                 <p className="text-[14px] leading-relaxed text-gray-600">
                   <b className="font-semibold">This one has covered a fair bit.</b>{' '}
-                  Want me to wrap it up as a summary and start fresh? The new conversation carries the
-                  summary forward, so nothing gets lost.
+                  When you&apos;re done with this topic, you could wrap it up as a summary and start a
+                  new one. The new conversation carries the summary forward, so nothing gets lost.
                 </p>
                 <div className="mt-3 flex flex-wrap items-center gap-3">
                   <button
@@ -940,11 +995,10 @@ export default function CompliancePage() {
                       const { data } = await supabase.from('topics').select('summary').eq('id', t).maybeSingle()
                       newConversation((data as { summary?: string } | null)?.summary ?? undefined)
                     }}
-                    className="rounded-lg border border-[var(--green)] px-3.5 py-1.5 text-[14px] font-medium text-[var(--green)] hover:bg-[var(--green-wash)]">
+                    className={OUTLINE}>
                     Wrap up and start fresh
                   </button>
-                  <button onClick={() => setNudgeDismissed(true)}
-                    className="px-1 text-[14px] text-gray-600 hover:text-gray-900 hover:underline">
+                  <button onClick={() => setNudgeDismissed(true)} className={TEXT_ACTION}>
                     Keep going
                   </button>
                 </div>
@@ -960,7 +1014,7 @@ export default function CompliancePage() {
               reserve room for itself. Now it simply follows the last exchange, inside the page
               column, which means it lines up with the answers instead of spanning past them.
             */}
-            <div className="no-print mt-8">
+            <div className={`no-print ${started ? 'mt-8' : ''}`}>
               <div>
                 {/* WHAT IS COMING WITH THE QUESTION, SAID ON SCREEN — Documents Run 5.
                     `pendingDoc` was set by the paperclip and read only when sending, so arriving
@@ -975,7 +1029,7 @@ export default function CompliancePage() {
                       className="ml-2 text-gray-400 underline hover:text-gray-700">remove</button>
                   </p>
                 )}
-                <div className="rounded-xl border border-gray-300 bg-white focus-within:border-emerald-500">
+                <div className="relative rounded-xl border border-gray-200 bg-white focus-within:border-[var(--green)]">
                   <div className="flex items-end gap-2 p-3.5">
                     <textarea
                       ref={composerRef}
@@ -983,12 +1037,12 @@ export default function CompliancePage() {
                       onChange={(e) => setBox(e.target.value)}
                       onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); ask(box, 'research') } }}
                       rows={1}
-                      placeholder="Ask about a rule, or describe a job you need the steps for…"
+                      placeholder={started ? 'Ask about a rule, or describe a job you need the steps for…' : undefined}
                       className="max-h-36 min-h-[92px] flex-1 resize-none border-0 bg-transparent px-1.5 py-1.5 text-[16px] text-gray-900 outline-none placeholder:text-[16px] placeholder:text-gray-400"
                     />
                     {started && (
                       <>
-                        <button onClick={() => setAttachOpen(true)} title="Attach a file" aria-label="Attach a file"
+                        <button onClick={() => fileInput.current?.click()} title="Attach a file" aria-label="Attach a file"
                           className="rounded-lg p-2 text-gray-500 hover:bg-gray-100">
                           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"><path d="M21.4 11.05 12.25 20.2a5.5 5.5 0 0 1-7.78-7.78l9.19-9.19a3.67 3.67 0 0 1 5.18 5.18l-9.2 9.2a1.83 1.83 0 0 1-2.59-2.6l8.49-8.48" /></svg>
                         </button>
@@ -1008,76 +1062,79 @@ export default function CompliancePage() {
                   </div>
 
                   {/*
-                    THE EXAMPLES LIVE IN THE BOX. Under it they were a second row of bordered
-                    shapes beneath a row of bordered buttons, and the third wrapped to its own
-                    line. Inside the empty box they read as things you could have typed — which
-                    is why this shows `e.question`, the whole sentence, and not `e.label`. The
-                    label was written for a chip.
+                    THE EXAMPLES, AS AUDITS SHOWS THEM — `app/audits/page.tsx:511–518`, Workspace
+                    layout Task 2b. An OVERLAY from the top of the box, not a placeholder (a
+                    placeholder holds one line) and not buttons: guidance to read, gone the moment
+                    anything is typed. They are NOT clickable. They used to be, and a click sent the
+                    sentence straight to research — a paid call from a click on an example.
 
-                    They go the moment there is text: the box is then doing its own job.
-
-                    px-3.5 on the container and px-1.5 on the button mirrors the textarea's own
-                    inset exactly, so an example starts on the same pixel as the placeholder it
-                    is standing in for.
+                    *** THE INSET IS THE TEXTAREA'S OWN. *** `p-5` is 20px: the box's `p-3.5` (14)
+                    plus the textarea's `px-1.5 py-1.5` (6), so "e.g." starts on the pixel typed
+                    text starts on. Measured with `npm run measure`, not assumed.
                   */}
-                  {!started && !box.trim() && (
-                    <div className="mt-2 px-3.5 pb-3.5">
+                  {!started && !box && (
+                    <div className="pointer-events-none absolute inset-0 flex flex-col gap-3 p-5">
                       {EXAMPLE_QUESTIONS.map((e) => (
-                        <button key={e.label} onClick={() => ask(e.question, 'research')}
-                          className="block w-full truncate px-1.5 py-0.5 text-left text-[14px] text-gray-400 hover:text-gray-700">
-                          {e.question}
-                        </button>
+                        <p key={e.label} className="truncate text-[14px] text-gray-400">e.g. {e.question}</p>
                       ))}
                     </div>
                   )}
                 </div>
 
                 {/*
-                  ATTACHING IS NOT A THIRD OUTCOME. Research and checklist are two things the
-                  answer can be; attaching is something you do BEFORE you ask. Giving it equal
-                  width and a border said the three were alternatives, which is false — and it
-                  disagreed with the docked composer, where attach has always been a paperclip.
+                  ONE LINE UNDER THE BOX, IN AUDITS' SHAPE — Workspace layout, Task 2 (board A).
+                  `app/audits/page.tsx:522–542`: the attach control on the left as a quiet 12px
+                  underlined line, the actions on the right. Attaching is still not a third outcome
+                  — it is something you do before you ask, so it reads as a line, not a button.
 
-                  The gaps carry the grouping: 24px from the box, then 16px to the buttons, so
-                  this line reads as belonging to the box above rather than to the row below.
+                  *** THE ACTIONS ARE NOT DISABLED ON AN EMPTY BOX. *** `!box.trim()` in the
+                  disabled condition once rendered the primary action as a pale rectangle at 40%
+                  opacity on every first visit, so nothing on the page looked like the thing to do.
+                  A click with an empty box puts the cursor in the box; nothing is sent and no
+                  route is called. `busy` still disables, because during a request they genuinely
+                  cannot be pressed.
                 */}
                 {!started && (
-                  <button onClick={() => setAttachOpen(true)} disabled={busy}
-                    className="mt-6 flex items-center gap-2 text-[14px] text-gray-500 hover:text-gray-800 disabled:opacity-40">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"><path d="M21.4 11.05 12.25 20.2a5.5 5.5 0 0 1-7.78-7.78l9.19-9.19a3.67 3.67 0 0 1 5.18 5.18l-9.2 9.2a1.83 1.83 0 0 1-2.59-2.6l8.49-8.48" /></svg>
-                    Attach a lease, a policy, a permit, or anything you want checked against the rules.
-                  </button>
+                  <div className="mt-[10px] flex items-start justify-between gap-4">
+                    <p className="min-w-0 text-[12px] text-gray-500">
+                      {/* ONE CLICK OPENS THE PICKER, AS ON AUDITS (Task 2b). The pin is the docked
+                          composer's paperclip path, at 13px, in the line's own colour. */}
+                      <button onClick={() => fileInput.current?.click()} disabled={busy}
+                        className="inline-flex cursor-pointer items-center gap-1.5 text-left hover:text-gray-800 disabled:cursor-not-allowed disabled:text-gray-300">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" className="shrink-0" aria-hidden="true"><path d="M21.4 11.05 12.25 20.2a5.5 5.5 0 0 1-7.78-7.78l9.19-9.19a3.67 3.67 0 0 1 5.18 5.18l-9.2 9.2a1.83 1.83 0 0 1-2.59-2.6l8.49-8.48" /></svg>
+                        <span className="underline">Attach a file and ask any compliance question about it</span>
+                      </button>
+                    </p>
+                    <div className="flex shrink-0 items-center gap-3">
+                      <button
+                        onClick={() => { if (!box.trim()) { composerRef.current?.focus(); return } ask(box, 'checklist') }}
+                        disabled={busy}
+                        className={SECONDARY_LARGE}>
+                        Make a checklist
+                      </button>
+                      <button
+                        onClick={() => { if (!box.trim()) { composerRef.current?.focus(); return } ask(box, 'research') }}
+                        disabled={busy}
+                        className={PRIMARY}>
+                        Research this
+                      </button>
+                    </div>
+                  </div>
                 )}
 
                 {/*
-                  THE BUTTONS ARE A SIBLING OF THE BOX, NOT INSIDE IT. One rounded card holding
-                  both the textarea and the actions read as a single heavy object; split, the
-                  box is the thing you type in and the buttons are things you press. They size to
-                  themselves and sit left: stretched across three columns they read as a segmented
-                  control, one choice of three, which they are not.
-
-                  *** AND THEY ARE NOT DISABLED ON AN EMPTY BOX. *** `!box.trim()` in the disabled
-                  condition meant that on every first visit — the only state this screen has
-                  before a question — the primary action rendered as a pale mint rectangle at 40%
-                  opacity. Nothing on the page looked like the thing to do. A click with an empty
-                  box puts the cursor in the box, which is the answer to "what do I do here";
-                  nothing is sent and no route is called. `busy` still disables, because during a
-                  request they genuinely cannot be pressed.
+                  THE COUNTS LINE — Audits' "thin line", `app/audits/page.tsx:576` and `:579`, classes
+                  copied. What this page is made of, said once, before anything is asked. Built from
+                  the topics and checklists the page already loads (`loadTopics`, `loadChecklists`);
+                  both read at most LIST_CAP rows, and a full read is said as "60+".
                 */}
                 {!started && (
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    <button
-                      onClick={() => { if (!box.trim()) { composerRef.current?.focus(); return } ask(box, 'research') }}
-                      disabled={busy}
-                      className="rounded-lg bg-[var(--green)] px-5 py-2.5 text-[14px] font-medium text-white hover:bg-[var(--green-ink)] disabled:opacity-40">
-                      Research this
-                    </button>
-                    <button
-                      onClick={() => { if (!box.trim()) { composerRef.current?.focus(); return } ask(box, 'checklist') }}
-                      disabled={busy}
-                      className="rounded-lg border border-[var(--green)] px-5 py-2.5 text-[14px] font-medium text-[var(--green)] hover:bg-[var(--green-wash)] disabled:opacity-40">
-                      Make a checklist
-                    </button>
+                  <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 pb-3">
+                    <p className="text-[13px] text-gray-500">
+                      {countWord(topics.length, 'conversation')}
+                      {' · '}{countWord(checklists.length, 'checklist')}
+                      {topics.length > 0 ? ` · last asked ${fmtDate(lastAsked)}` : ''}
+                    </p>
                   </div>
                 )}
 
@@ -1088,33 +1145,38 @@ export default function CompliancePage() {
 
         {/* ================= CONVERSATIONS ================= */}
         {tab === 'conversations' && (
-          <div className="pt-6">
+          <div className="pt-1">
+            {/* THE RETENTION LINE, AT THE TOP, AS AUDITS' COUNTS LINE — `app/audits/page.tsx:576`
+                and `:579`, classes copied (Workspace layout, Task 2, board D). Words unchanged. */}
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 pb-3">
+              <p className="text-[13px] text-gray-500">
+                Summaries are kept until you delete them. The full back-and-forth is cleared 7 days after a
+                conversation is summarised. Anything you uploaded stays in Documents.
+              </p>
+            </div>
+
+            {/* THE PROPOSAL, OUT OF ITS BOX. It was the one emerald card on a page with no other
+                cards. A hairline above and below says "one thing to decide" without a fill; the
+                words and their sizes are unchanged. */}
             {proposal && (
-              <div className="no-print mb-5 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+              <div className="no-print mt-5 border-y border-gray-200 py-3.5">
                 <p className="text-[14px] leading-relaxed text-gray-800">
                   <b className="font-semibold">One thing from a recent conversation.</b>{' '}
                   It sounded like <b>{proposal.switch_key.replace(/_/g, ' ')}</b> is <b>{proposal.proposed_value}</b>.
                 </p>
                 {proposal.quote && <p className="mt-1 text-[13px] italic text-gray-600">“{proposal.quote}”</p>}
                 <p className="mt-1 text-[13px] text-gray-600">Saving it means we stop asking, and your requirements get sharper.</p>
-                <div className="mt-3 flex gap-2">
-                  <button onClick={() => saveProposal(proposal)}
-                    className="rounded-lg bg-emerald-600 px-3 py-1.5 text-[13px] font-medium text-white hover:bg-emerald-700">Save it</button>
-                  <button onClick={() => dismissProposal(proposal)}
-                    className="rounded-lg border border-gray-300 px-3 py-1.5 text-[13px] text-gray-700 hover:bg-gray-50">Not now</button>
+                <div className="mt-3 flex items-center gap-3">
+                  <button onClick={() => saveProposal(proposal)} className={OUTLINE}>Save it</button>
+                  <button onClick={() => dismissProposal(proposal)} className={TEXT_ACTION}>Not now</button>
                 </div>
               </div>
             )}
 
-            <p className="mb-4 text-[14px] leading-relaxed text-gray-500">
-              Summaries are kept until you delete them. The full back-and-forth is cleared 7 days after a
-              conversation is summarised. Anything you uploaded stays in Documents.
-            </p>
-
             {topics.length === 0 ? (
-              <Empty title="No conversations yet" note="Ask a question and it will appear here." />
+              <div className="mt-4"><Empty title="No conversations yet" note="Ask a question and it will appear here." /></div>
             ) : (
-              <div>
+              <div className="mt-4">
                 {groupByDay(topics, (t) => friendlyDate(t.last_turn_at ?? t.created_at)).map((g, gi) => (
                   <div key={g.day + gi} className={gi === 0 ? '' : 'mt-6'}>
                     <p className="mb-1 text-[12px] font-medium uppercase tracking-wide text-gray-400">{g.day}</p>
@@ -1168,7 +1230,7 @@ export default function CompliancePage() {
 
         {/* ================= CHECKLISTS ================= */}
         {tab === 'checklists' && (
-          <div className="pt-6">
+          <div className="pt-1">
             {checklists.length === 0 ? (
               <Empty title="No checklists yet" note="Ask a question, then turn the answer into a checklist." />
             ) : (
@@ -1232,19 +1294,17 @@ export default function CompliancePage() {
             <>
               {/* HONEST TO WHAT EXISTS: "Open the conversation" only while turns are there. */}
               {summaryDrawer.turnCount > 0 && (
-                <button onClick={() => openConversation(summaryDrawer)}
-                  className="rounded-lg border border-[var(--green)] px-3.5 py-1.5 text-[14px] font-medium text-[var(--green)] hover:bg-[var(--green-wash)]">
+                <button onClick={() => openConversation(summaryDrawer)} className={OUTLINE}>
                   Open the conversation
                 </button>
               )}
               {summaryDrawer.checklistId && (
                 <button onClick={() => { const id = summaryDrawer.checklistId!; setSummaryDrawer(null); openChecklist(id) }}
-                  className="text-[14px] text-gray-600 hover:text-gray-900 hover:underline">
+                  className={TEXT_ACTION}>
                   Open the checklist
                 </button>
               )}
-              <button onClick={printDrawer}
-                className="ml-auto text-[14px] text-gray-600 hover:text-gray-900 hover:underline">
+              <button onClick={printDrawer} className={`ml-auto ${TEXT_ACTION}`}>
                 Download
               </button>
             </>
@@ -1273,8 +1333,7 @@ export default function CompliancePage() {
           onClose={() => setListDrawer(null)}
           footer={
             <>
-              <button onClick={printDrawer}
-                className="rounded-lg border border-[var(--green)] px-3.5 py-1.5 text-[14px] font-medium text-[var(--green)] hover:bg-[var(--green-wash)]">Download</button>
+              <button onClick={printDrawer} className={OUTLINE}>Download</button>
               <button onClick={() => deleteChecklist(listDrawer.row.id)}
                 className="ml-auto text-[14px] text-gray-400 hover:text-red-600">Delete</button>
             </>
@@ -1365,18 +1424,6 @@ export default function CompliancePage() {
         </Sheet>
       )}
 
-      {attachOpen && (
-        <Sheet onClose={() => setAttachOpen(false)} title="Attach a file"
-          lede="Anything you upload is saved to your documents so you can find it later.">
-          <input ref={fileInput} type="file" className="hidden"
-            onChange={(e) => { const f = e.target.files?.[0]; if (f) onFilePicked(f); e.target.value = '' }} />
-          <button onClick={() => fileInput.current?.click()}
-            className="w-full rounded-lg border border-dashed border-gray-300 px-4 py-6 text-[14px] text-gray-600 hover:border-emerald-400 hover:bg-emerald-50/40">
-            Choose a file from your computer
-          </button>
-          <button onClick={() => setAttachOpen(false)} className="mt-3 w-full py-2 text-[13px] text-gray-500 hover:text-gray-800">Cancel</button>
-        </Sheet>
-      )}
     </AppLayout>
   )
 }

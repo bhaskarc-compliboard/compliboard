@@ -4,7 +4,8 @@
 figure below came from a command run today, and the command is shown.** Nothing is from memory.
 Where a figure is not measured, it says so.
 
-*(§1–§4 were rewritten on 28 September. §5–§9 keep their 23 September text except where a fact in
+*(§1 and §2 corrected 3 October 2026, from commands run that day and the 1 October preflight; §7
+gained four rows the same day. §1–§4 were rewritten on 28 September. §5–§9 keep their 23 September text except where a fact in
 them was wrong; those carry dated notes. The structure is unchanged on purpose — this is the file
 the next chat trusts, and a reader who knows where §6 is should still find it there.)*
 
@@ -27,52 +28,59 @@ and §12, then `docs/SCHEMA.md` for the database. This file is state, not method
 
 ## 1. Git
 
-```
-$ git log --oneline -5
-2f4d380 Read it again survives closing the drawer
-5bf3b7e Bake-off part 2: six answer keys corrected, 147 answers re-judged
-f2dcbc7 The bake-off: seven configurations, 135 answers, and four answer keys that are wrong
-6301b73 Bake-off: the runs from configurations 1 to 5
-8fd5588 Bake-off report: the table that tells a spec problem from a model problem
-```
-
-One branch, `main`, tracking `origin/main`.
-
-**⚠ THE LOCAL TREE IS AHEAD OF PRODUCTION.** The commit deployed is the one pushed on **26 September**
-with Documents rev 1. Everything since — the bake-off, the six answer-key corrections and the
-"Read it again" fix — is committed locally and **not pushed**. `git log origin/main..HEAD` is the list.
-A push to `main` deploys (`RELEASE.md`), so that list is also the next release's contents.
-
-## 2. Migration state — 057 ON PRODUCTION, 060 ON STAGING. THREE PENDING: 058, 059, 060.
-
-*(Rewritten 1 October 2026, from `npm run preflight` and not from memory. This section was headed
-"054 ON BOTH" and before that "039 ON BOTH" — the heading is the fact most often out of date in this
-file, so it states the numbers and not a date.)*
+*(Corrected 3 October 2026, at the close of the Workspace layout pass. This section said the local
+tree was ahead of production with the bake-off and the "Read it again" fix unpushed; that stopped
+being true with the 1 October pushes (`DECISIONS.md` §151, §152).)*
 
 ```
-$ ls supabase/migrations/*.sql | wc -l
-61                                    # 000 … 060
+$ git fetch origin && git log --oneline -3          # 3 October 2026, before the layout commit
+ec8e070 Audits Run 9: the zip downloads from a browser; the close-out records
+1e34fc2 Audits Run 8b: the page explained element by element; the folder-test brief
+358647d Audits Run 8a: the email answered, labels leave with their document, the record straight
 
-$ npm run preflight          # READ-ONLY. Prints both lists and derives the difference.
-  INPUT 1 — supabase/migrations/*.sql on disk: 61
-  INPUT 2 — schema_migrations on dsfwmafnphdlfogetsus, every row (58)
-  DERIVED — INPUT 1 minus INPUT 2:
-    058_the_audit_as_rows.sql
-    059_the_checklist_is_the_question.sql
-    060_a_recurring_date_need_not_have_a_day.sql
+$ git rev-parse --short origin/main
+ec8e070
+$ git log --oneline origin/main..HEAD               # ahead
+(nothing)
+$ git log --oneline HEAD..origin/main               # behind
+(nothing)
+```
+
+One branch, `main`, tracking `origin/main`. **On 3 October, before the layout commit, `HEAD` and
+`origin/main` were the same commit, `ec8e070`.** The Workspace layout pass is one local commit on top
+of it, and is **not pushed**: `git log origin/main..HEAD` lists it. A push to `main` deploys
+(`RELEASE.md`), so that list is the next release's contents. What Vercel last built was not read here
+— the dashboard is the owner's.
+
+## 2. Migration state — 062 ON DISK, 062 APPLIED ON PRODUCTION, NONE PENDING.
+
+*(Corrected 3 October 2026. This section was headed "057 ON PRODUCTION, 060 ON STAGING. THREE
+PENDING: 058, 059, 060" — true when written on 1 October, and false later the same day, when 058–060
+and then 061 went up (`DECISIONS.md` §150, §151). The heading is the fact most often out of date in
+this file, so it states the numbers.)*
+
+```
+$ ls supabase/migrations/*.sql | wc -l              # 3 October 2026
+62                                    # 000 … 061
+
+$ npm run preflight          # READ-ONLY. Run in Workspace layout Task 1 (1 October 2026, after the pushes).
+  TARGET REF : dsfwmafnphdlfogetsus
+  INPUT 1 — supabase/migrations/, every file (62)
+  INPUT 2 — supabase_migrations.schema_migrations on dsfwmafnphdlfogetsus, every row (62)
+  DERIVED — INPUT 1 minus INPUT 2: (nothing pending)
   DERIVED — INPUT 2 minus INPUT 1 (applied but absent from disk): (none)
-  PENDING COUNT: 3
+  PENDING COUNT: 0
 ```
 
-> ### THIS PARAGRAPH WAS WRONG WHEN FIRST WRITTEN, AND THE PREFLIGHT IS WHY IT IS NOT.
-> It said 055, 056 and 057 were on staging and not on production. **They are on production** —
-> `INPUT 2` lists all three among its 58 rows. They went up with the Documents follow-ups and nobody
-> recorded it here. The three pending are the Audits contract and nothing else.
->
-> **Which is the point of the rule, not an aside:** `npm run preflight` prints both lists and derives
-> the difference, so the subtraction is checkable without trusting the script or this file. A
-> migration-state sentence written from memory is a guess wearing a number. Read the preflight; if the
-> two disagree, the preflight wins and this gets corrected again.
+**The layout pass adds no migration**, so the release that carries it is code only. The preflight is
+re-run before that push (Workspace layout Task 3, after the commit), and the release note carries its
+output, not this file.
+
+> ### THE PREFLIGHT WINS, AND THIS SECTION HAS NOW BEEN WRONG TWICE.
+> On 1 October this file said three migrations were pending while `DECISIONS.md` §150–§152 said they
+> had gone up; Task 1's preflight settled it in the decisions' favour. **A migration-state sentence
+> written from memory is a guess wearing a number.** Read the preflight; if the two disagree, the
+> preflight wins and this gets corrected again.
 
 **The Audits contract, 058 to 060 — what each one's verify block proves by trying to break it:**
 
@@ -350,6 +358,10 @@ thing a bake-off needs is to move one model without moving three others.
 | **`expires_at` set by nothing** | `company_switches` | An expired fact must read `unknown`; a stale `false` is a false green |
 | **A checklist audit on the thinnest fixture is refused in prose** | Haiku, via `scripts/check-live.js`'s template flow | Four checklist lines against two documents, one of which is the checklist. `prompts/audit-agency.ts:290` says *"Never reply with prose explaining that you cannot answer"* and Haiku replies with prose anyway — *"I need clarification to proceed. You've provided: 1. A checklist with 4 lines … 2. Two documents on file (D1 and D2)"*. Reproduced twice on 1 October; the same code answers all eight lines of `cascade-template-13` against Cascade's twelve documents (7/9 musts, Haiku). So it is thin evidence, not the plumbing. **`check:live` fails on it and the failure is left standing**: the fixture was not enriched to make it pass, because a fixture tuned until the model complies measures the fixture |
 | **`not_a_document_question` had a matcher that could never match** | `scripts/run-golden-audit.js` — FIXED 30 Sep | It compared the word with underscores against the same words with spaces, so the check failed every run while the answers held two and three of them. Named here because the class is the dangerous part: a check that cannot see anything looks exactly like a check that found nothing |
+| **/compliance?checklist=<id> opens nothing (DocumentReport.tsx:701, :760; page reads only ask and document). The owner will look after this pass.** | `components/DocumentReport.tsx:701`, `:760`; `app/compliance/page.tsx`, the `?ask=`/`?document=` effect | Added 3 October 2026 (Workspace layout). Confirmed on screen in Task 1 with a real checklist id and a non-existent one: no drawer, the Ask tab, no notice, the parameter left in the URL |
+| **The Audits box's typed question is not carried to the workspace (audits/page.tsx:533; HANDOFF-AUDITS §8 item 2).** | `app/audits/page.tsx:533`, a plain `href="/compliance"` | Added 3 October 2026. Seen in Task 1: a sentence typed into the Audits box, the link followed, the workspace's box empty |
+| **The failed line can show a raw provider message (lib/ai.ts:833–834 via route.ts:382), and several messages end with two instructions.** | `app/compliance/page.tsx`, the failed line; `app/api/chat/route.ts:382`; `lib/ai.ts:833–834` | Added 3 October 2026. Every string that can reach `x.error`, each followed on screen by *"You can ask again, or rephrase the question."*: **a JSON answer instead of a stream** — "Unauthorized" (`lib/auth.ts:80`), "Company not found" (`:109`), the conversation-lost sentence (`route.ts:77–79`, from 524, 540, 568), "This topic is closed. Ask your question again and we’ll open a new one." (`:546`), the AI module's own error on the checklist path (`:382` ← `lib/ai.ts:833`, the provider's message as is, or `:834`, "The model returned no message."), "The checklist came back in a shape we could not read. Please try again." (`:393`), "We could not start this conversation. Please try that again." (`:606`), "Something went wrong" (`:803`), and the page's fallback "That request could not be completed."; **a stream that failed** — "The answer stopped part-way through. Please try again." (`route.ts:477`), or `lib/answerStream.ts:93`'s fallback; **a request that threw** — "The answer could not be completed." Not reachable from this page: "No question or file provided" (`:187`) and the file-parse message (`:239`, multipart only). Unchanged by the layout pass, by decision: the owner decides |
+| **conversation_reset is sent by the route and read by no page.** | `app/api/chat/route.ts:82` | Added 3 October 2026. `grep -rn conversation_reset app components lib` finds the route alone. So "start fresh" in the conversation-lost sentence is not done by the page: the conversation on screen is not cleared |
 
 ## 8. The next steps — THIS FILE'S READING, not the two handoffs'
 
