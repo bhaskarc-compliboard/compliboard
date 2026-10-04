@@ -19,7 +19,9 @@
 import { NextResponse, type NextRequest } from 'next/server'
 
 import { supabaseAdmin } from '@/lib/auth'
-import { requireCronSecret, startJobRun } from '@/lib/jobAuth'
+import { requireCronSecret } from '@/lib/jobAuth'
+// A ROW ONLY WHEN THERE WAS WORK OR AN ERROR — not one every five minutes saying nothing (`lib/jobRun.ts`).
+import { lazyJobRun } from '@/lib/jobRun'
 import { runSection, finishRunIfDone, runSummaryLine, type RunSummary } from '@/lib/auditRun'
 import { notifyRun } from '@/lib/auditNotify'
 
@@ -58,7 +60,8 @@ export async function POST(request: NextRequest) {
  */
 export async function sweep() {
   const startedAt = Date.now()
-  const run = await startJobRun(supabaseAdmin, 'audit_sections')
+  // Opened when the sweep finds work, before that work; an empty sweep writes no row (`lib/jobRun.ts`).
+  const run = lazyJobRun(supabaseAdmin, 'audit_sections')
   const errors: Array<{ section: string; error: string }> = []
   let recovered = 0, done = 0, couldNotComplete = 0, companies = 0, runsFinished = 0, notified = 0
   // WHAT WENT OUT, ON THE RUN'S OWN ROW — the document sweep's reasoning: the provider's id is the
@@ -71,6 +74,7 @@ export async function sweep() {
     const stuckBefore = new Date(Date.now() - STUCK_AFTER_MS).toISOString()
     const { data: stuck } = await supabaseAdmin.from('audit_sections')
       .select('id').eq('status', 'running').lt('claimed_at', stuckBefore)
+    if (stuck?.length) await run.open()
     for (const s of (stuck ?? []) as Array<{ id: string }>) {
       // Guarded on the claim still being old, so a run that picked it up between the SELECT and
       // the UPDATE is not robbed of it (§4).
@@ -113,6 +117,7 @@ export async function sweep() {
         .select('id, run_id, ordinal')
       const queue = ((claimed ?? []) as Array<{ id: string; run_id: string; ordinal: number }>)
       if (!queue.length) continue
+      await run.open()   // work found: the row exists before any section runs
       companies++
 
       // Run order, then ordinal: an older run's sections before a newer run's, and within a run

@@ -58,7 +58,9 @@
  * ---------------------------------------------------------------------------
  */
 import { NextRequest, NextResponse } from 'next/server'
-import { requireCronSecret, startJobRun } from '@/lib/jobAuth'
+import { requireCronSecret } from '@/lib/jobAuth'
+// A ROW ONLY WHEN THERE WAS WORK OR AN ERROR — not one every five minutes saying nothing (`lib/jobRun.ts`).
+import { lazyJobRun } from '@/lib/jobRun'
 import { supabaseAdmin } from '@/lib/auth'
 import { runDocumentScan, saveScan, buildScanContext, failedScan } from '@/lib/documentScan'
 import { summariseBatch, notifyBatch } from '@/lib/documentBatch'
@@ -128,7 +130,8 @@ export async function POST(request: NextRequest) {
  */
 export async function sweep() {
   const startedAt = Date.now()
-  const run = await startJobRun(supabaseAdmin, 'scan_documents')
+  // Opened when the sweep finds work, before that work; an empty sweep writes no row (`lib/jobRun.ts`).
+  const run = lazyJobRun(supabaseAdmin, 'scan_documents')
   const errors: Array<{ document: string; error: string }> = []
   let recovered = 0, read = 0, couldNotRead = 0, companies = 0, batchesFinished = 0, notified = 0
   // WHAT WENT OUT, ON THE RUN'S OWN ROW. `job_runs` answers "did it run and what did it touch"
@@ -143,6 +146,7 @@ export async function sweep() {
     const stuckBefore = new Date(Date.now() - STUCK_AFTER_MS).toISOString()
     const { data: stuck } = await supabaseAdmin.from('documents')
       .select('id').in('status', ['uploaded', 'reading']).lt('reading_since', stuckBefore)
+    if (stuck?.length) await run.open()
     for (const d of (stuck ?? []) as Array<{ id: string }>) {
       // Guarded on the claim still being old, so a run that picked the row up between the
       // SELECT and the UPDATE is not robbed of it (`CLAUDE.md` §4).
@@ -182,6 +186,7 @@ export async function sweep() {
       const queue = ((claimed ?? []) as QueuedDoc[])
         .sort((a, b) => a.uploaded_at.localeCompare(b.uploaded_at))
       if (!queue.length) continue
+      await run.open()   // work found: the row exists before any document is read
       companies++
 
       const { data: company } = await supabaseAdmin.from('companies')

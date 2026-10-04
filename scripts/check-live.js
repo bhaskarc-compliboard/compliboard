@@ -305,13 +305,19 @@ if (!(await reachable())) {
     const f = items[0]
     const missing = ['name', 'description', 'why'].filter((k) => !f?.[k])
     if (missing.length) { console.log(`  ✗ checklist           first item missing ${missing.join(', ')}`); failures++ }
-    else console.log(`  ✓ checklist           ${items.length} must_do, ${(clJson.good_to_have ?? []).length} good_to_have, shape intact`)
+    else console.log(`  ✓ checklist           ${items.length} must_do, ${(clJson.good_to_have ?? []).length} good_to_have, ${(clJson.to_confirm ?? []).length} to_confirm, shape intact`)
 
     // *** AND THE ROWS EXIST — Workspace Task 2, checkpoint 5. *** The shape alone passed for ten
     // days while this path saved nothing and the page said "saved to your checklists"
     // (`docs/WORKSPACE-MACHINERY.md` N1). Read back AS THE USER, with the query the Checklists tab
     // runs (`app/compliance/page.tsx` loadChecklists), so "it appears in the tab" is what is proved.
-    const expected = [...items, ...(clJson.good_to_have ?? [])].filter((i) => String(i?.name ?? '').trim()).length
+    // EVERY GROUP THE ROUTE SAVES (`app/api/chat/route.ts`, the checklist branch): must do, good to
+    // have, and since Workspace Task 6 to confirm. Counting only the first two reported "13 item rows
+    // for 9 items returned" on a run that saved exactly what it returned (cron release follow-up).
+    const GROUPS = ['must_do', 'good_to_have', 'to_confirm']
+    const named = (g) => (clJson[g] ?? []).filter((i) => String(i?.name ?? '').trim()).length
+    const expected = GROUPS.reduce((n, g) => n + named(g), 0)
+    const byGroup = GROUPS.map((g) => `${named(g)} ${g}`).join(' + ')
     const savedId = clJson.checklistId
     if (!savedId) { console.log('  ✗ checklist/saved     no checklistId came back — nothing was saved'); failures++ }
     else {
@@ -325,8 +331,8 @@ if (!(await reachable())) {
       else if (row?.question !== 'Starting a small auto repair shop in Oregon') {
         console.log(`  ✗ checklist/saved     question stored as ${JSON.stringify(row?.question)}`); failures++
       } else if (itemCount !== expected) {
-        console.log(`  ✗ checklist/saved     ${itemCount} item rows for ${expected} items returned`); failures++
-      } else console.log(`  ✓ checklist/saved     row ${savedId.slice(0, 8)} in the tab's list, question kept, ${itemCount} item rows`)
+        console.log(`  ✗ checklist/saved     ${itemCount} item rows for ${expected} items returned (${byGroup})`); failures++
+      } else console.log(`  ✓ checklist/saved     row ${savedId.slice(0, 8)} in the tab's list, question kept, ${itemCount} item rows (${byGroup})`)
       // The probe's own checklist is removed so runs do not pile up in the fixture's tab.
       await asUser.from('checklist_items').delete().eq('checklist_id', savedId)
       await asUser.from('checklists').delete().eq('id', savedId)

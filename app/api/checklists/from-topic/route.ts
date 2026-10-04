@@ -215,7 +215,7 @@ async function buildChecklist(args: {
     try { data = JSON.parse(extractJsonText(stripMarkers(answer.text))) as Converted }
     catch (e) {
       console.error('convert (complete): the answer did not parse:', String(e), answer.text.slice(0, 3000))
-      return { ok: false, error: 'the checklist came back in a shape we could not use (discussed)' }
+      return { ok: false, error: 'the checklist came back in a shape we could not use (complete)' }
     }
     modelTitle = String(data?.title ?? '').trim() || null
     const clean = (list: ConvertedItem[] | undefined, category: ItemGroup) =>
