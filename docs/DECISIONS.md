@@ -10915,3 +10915,21 @@ Commits 358647d, 1e34fc2.
 - **The check proves provenance, not support**: a step's link is a page this call's search returned, not proof the page says the step. A quote check is owed (`HANDOFF-CODE.md` §7).
 
 **Cost of the task: $1.7686** in 22 calls on staging. That is the accidental `check:live` through port 3000 ($0.2981: `db:migrate` chains into it, which was not known); A5 $0.4278; the third item at medium $0.4486; the IAA re-run at medium $0.2212; "Everything on this subject" on Haiku $0.3729 (estimated $0.10–0.15; it ran 13 searches uncapped, which is why the limits exist).
+
+## 158. THE TASK 6 RELEASE AND THE PLAN — 4 October 2026
+
+§158 — Workspace Task 6 is on production, and the owner's plan for what is left is in the repository (`docs/WORKSPACE-PLAN.md`).
+
+**The release (the owner, 4 October):**
+- `CHECK_LIVE_BASE_URL=http://localhost:3999 npm run check:live`, then `npm run preflight` (064 pending), then `npm run db:migrate:prod` (064 applied), then the push. `git log origin/main..HEAD` is empty at `a701436`; `npm run preflight` afterwards reads 65 on disk, 65 on production, `PENDING COUNT: 0`.
+- On Vercel Production, all visible: `AI_MODEL_HOWTO = claude-opus-5-5`, `AI_SEARCH_MAX_HOWTO = 6`, `AI_SEARCH_MAX_COMPLETE = 8`. `AI_EFFORT_HOWTO` is not set, so it falls back to `AI_EFFORT`.
+- **`AI_EFFORT` is now visible `medium`.** It was saved hidden on 23 September and its value was never recorded, so every production result before 4 October ran at an effort nobody can now name. `docs/RELEASE.md` carries the table.
+- The owner's live checks: a checklist shows the three groups and must-do counts (T6-1); one paid "How do I do this?" on MNBP registration gave 7 steps, all official, and the checklist printed correctly (T6-3).
+
+**The owner's decision: small fixes found during testing are HELD** until every feature runs on its final models and settings. Then they are tested again, and dropped if they are no longer needed. The held list is in `docs/WORKSPACE-PLAN.md`, Stage 3, "Held for the final-model run".
+
+**The evidence from the owner's paid check:**
+- **a. The research contradicts its own item.** "How do I do this?" on MNBP registration found 27 CFR 17.21: registration happens with the first drawback claim each year, not up front (the owner's reading of the step and its page). The checklist item says *"Register with TTB as a Manufacturer of Nonbeverage Products under 27 CFR Part 17. Do this before you start production."* It came from the original conversation, whose answer reads *"Register as a Manufacturer of Nonbeverage Products under 27 CFR Part 17 before you start."* (staging fixture `4d2c20fc`, turn 4).
+- **b. A number is wrong by a factor of about 3.8.** The old checklist's *"about $5,400 per 55-gallon drum"* came from the original research answer (*"roughly $25.92 per gallon at the full rate — about $5,400 per 55-gallon drum"*, the same fixture, turn 2). 55 × 1.92 × $13.50 = $1,425.60. 208 × 1.92 × $13.50 = $5,391.36: the $5,400 treats a drum's 208 litres as 208 gallons.
+
+Both are on the held list as "research contradicting its own item" and "a numbers check". Neither is fixed by this section.

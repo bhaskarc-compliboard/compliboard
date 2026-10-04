@@ -1,7 +1,9 @@
 # How We Build CompliBoard
 
-**Version:** 17 · **Updated:** 22 September 2026
-**Supersedes:** version 16 (22 Sep). §4's restore table is corrected: `applies_expression` lands on
+**Version:** 18 · **Updated:** 4 October 2026
+**Supersedes:** version 17 (22 Sep). Adds **§3c — two traps from Workspace Task 6**: `npm run db:migrate`
+chains into `check:live`, and `next dev` refuses a second server in the same folder.
+Version 17: version 16 (22 Sep). §4's restore table is corrected: `applies_expression` lands on
 **199** of the 200 live rows, not 205; the worksheet is named `REQUIREMENTS.xlsx`; **the switches
 must load before the expressions** (§120); and the eight steps are now one command,
 `npm run db:restore`, which was run to completion on 22 Sep — **§98's owed reset is CLOSED**.
@@ -350,6 +352,41 @@ nearly recorded as a defect. The lines were there, in the other file, as JSON:
 
 **It will cost the next one too**, which is why it is here rather than in a commit message. When a
 route's logging appears to be missing, check that file before concluding anything.
+
+## 3c. TWO TRAPS FROM WORKSPACE TASK 6 — 4 October 2026
+
+**1. `npm run db:migrate` runs `check:live` at the end, and `check:live` calls port 3000.**
+
+```
+"db:migrate": "… scripts/db-migrate.js && … scripts/db-types.js && … scripts/schema-doc.js && npm run check:live"
+```
+
+That is `package.json:12`. With no `CHECK_LIVE_BASE_URL`, `check:live` sends its full run — research,
+a checklist, conversions, a summary, a document scan and audit runs — to `http://localhost:3000`. If the owner's dev
+server is up there, those are real model calls. **On 4 October 2026 this spent $0.2981 by accident:
+16 calls, 15 on Haiku and one summary on Opus 5.5** (`DECISIONS.md` §157), in a task whose brief said
+to run `check:live` only on an unused port. So every migration runs as:
+
+```
+CHECK_LIVE_BASE_URL=http://localhost:3999 npm run db:migrate
+```
+
+Nothing listens on 3999, so the table probes run and the paid steps cost nothing.
+
+**2. `next dev` refuses a second dev server in the same folder.** Next 16.2.6 holds a lock at
+`.next/dev/lock` and stops a second `next dev` with *"… is already running in this directory."* So a
+model override for one run — `AI_MODEL_HOWTO=claude-opus-5-5 npx next dev -p 3998`, never an edit to
+`.env.local` — cannot start beside the owner's server on 3000. **What worked on 4 October:** an isolated
+copy of the working tree on another port, deleted afterwards because it holds a copy of `.env.local`:
+
+```
+rsync -a --exclude .next --exclude node_modules --exclude .git ./ <scratch>/app3998/
+cp -cR node_modules <scratch>/app3998/       # an APFS clone: about 4 seconds, no data copied
+cd <scratch>/app3998 && AI_MODEL_HOWTO=… npx next dev -p 3998
+```
+
+It cost nothing by itself; the cost was the time to find out. Changing `distDir` in `next.config.ts`
+instead would restart the owner's running server, which reads the same config.
 
 ---
 

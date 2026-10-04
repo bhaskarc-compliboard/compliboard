@@ -173,7 +173,12 @@ untested — applies to the runner as much as to anything it runs.
 | **T6-2** | **Open an item that already has steps** *(live, free; only after T6-3 has run once)* | Close the drawer, reload the page, open the same checklist | Under the item: a grey left rule, *How to do it · checked against N sources on ‹date›*, the numbered steps, each with *[n] ‹title›* and *· official source*, or the line *This comes from ‹host›, not the agency itself. It looks correct, but check it before you rely on it.* No spinner: **nothing is looked up again** |
 | **T6-3** | **"How do I do this?" on one real item** *(production, PAID, owner only)* | In a checklist made from a conversation, under one **Must do** item → **How do I do this?** → wait. While it runs, open the same checklist in a second tab | At once: a spinner and *Looking this up — checking sources…*. **The second tab shows the same spinner** and no second lookup starts. Then 3 to 7 numbered steps, each with its source and label. Read each official step against its page. Any step whose page does not say it is a finding for the quality pass (the check proves the link came from the search, not that the page says the step). **Estimated $0.25–0.45 on Opus 5.5** at medium effort, up to 6 searches. That is an estimate from the staging runs of $0.2212 (3 searches) and $0.4486 (5 searches) |
 
-*(Before the commit, on staging: the conversion of the ethanol fixture and three "How do I do this?" runs on Opus 5.5 (`DECISIONS.md` §157); screenshots of every drawer state as `testgamma` and one Audits checklist as `testcascade`; the tab read once through `checklist_list_v`. **No person has run this set yet. The printed checklist was not looked at.**)*
+*(Before the commit, on staging: the conversion of the ethanol fixture and three "How do I do this?" runs on Opus 5.5 (`DECISIONS.md` §157); screenshots of every drawer state as `testgamma` and one Audits checklist as `testcascade`; the tab read once through `checklist_list_v`.)*
+
+**Run by the owner on production, 4 October 2026, after the Task 6 release (`DECISIONS.md` §158):**
+- **T6-1 — passed.** A checklist shows the three groups and the must-do counts.
+- **T6-3 — passed, with a finding.** "How do I do this?" on MNBP registration gave 7 steps, all official, and the checklist printed correctly. The steps cite 27 CFR 17.21, which puts registration with the first drawback claim each year, not up front — contradicting the checklist item, which came from the original conversation. Held for the final-model run (`docs/WORKSPACE-PLAN.md`).
+- **T6-2 — not run.**
 
 ## Manual set — Workspace Task 5 — 3 October 2026 (`docs/HANDOFF-WORKSPACE.md` v4)
 

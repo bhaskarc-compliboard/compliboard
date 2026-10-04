@@ -3,6 +3,10 @@
 **Version:** 5 · **Written:** 3 October 2026, at the close of the Workspace layout pass (Tasks 1, 2,
 2b and 3). In the shape of `docs/HANDOFF-AUDITS.md` §5a.
 
+> **4 October 2026: v5 is live on production.** The Task 6 release is pushed (`a701436`) and migration 064 is
+> applied (`npm run preflight`: 65 on disk, 65 on production, `PENDING COUNT: 0`). The owner's live checks are in
+> `docs/TESTING.md`, "Workspace Task 6", and `DECISIONS.md` §158.
+
 > **Version 5, 4 October 2026 — Workspace feature Task 6 (`eec4d22`): the checklist in three groups and
 > "How do I do this?".** §4 (the Checklists tab) and the checklist drawer in §5 are rewritten in place,
 > marked *Changed 4 October 2026, Workspace Task 6*, with their lines at `eec4d22`.

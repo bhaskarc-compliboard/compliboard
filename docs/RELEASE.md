@@ -68,41 +68,43 @@ Sign in with a test account and run the first three manual tests for the feature
 - Credential rotation (see `docs/HANDOFF-CODE.md` and `TODO.md`).
 - The privacy-policy line stating that conversation transcripts are cleared 7 days after summarising (gate four of the retention promise).
 
-## Variables currently set on Vercel Production (as of 1 Oct 2026)
+## Variables currently set on Vercel Production (as of 4 Oct 2026, after the Workspace Task 6 release)
 
 **This list is the authoritative record of what Vercel holds.** `CLAUDE.md` §3.4a points here and deliberately does not keep a second copy: on 26 September that section and this one disagreed about whether the `AI_MODEL_*` variables are set at all, which made the model that reads a customer's document unknowable from the repository. It was settled by reading the dashboard, §3.4a was the one that was wrong, and the rule now is **the dashboard wins and this list gets corrected.** `DECISIONS.md` §136.
 
-> ### THE MODELS IN PRODUCTION — CORRECTED 4 OCTOBER 2026 (THE OWNER).
+> ### THE MODELS, EFFORT AND SEARCH LIMITS IN PRODUCTION — 4 OCTOBER 2026 (THE OWNER), AFTER THE TASK 6 RELEASE.
 >
-> **The 3 October statement below was wrong for one variable.** On 4 October the owner found that
-> production's `AI_MODEL_SUMMARY` was **Sonnet**, not Opus. He then set **every** model variable the
-> code reads to `claude-opus-5-5` on Vercel Production, saved each one as **visible** (not sensitive,
-> so it can be read back), and redeployed. So the Task 5 paid check on production (the summary
-> report) ran first on Sonnet, then, after the redeploy, on Opus 5.5.
+> **Every value in this table is saved on Vercel Production as VISIBLE (not sensitive)**, so each can
+> be read back from the dashboard — and **the dashboard wins** over this file. Line numbers are
+> `lib/ai.ts` at `a701436`.
 >
 > | Variable | Production value (owner, 4 October 2026, visible) | Read by |
 > |---|---|---|
-> | `AI_MODEL_PROSE` | `claude-opus-5-5` | `lib/ai.ts:106` |
-> | `AI_MODEL_JUDGEMENT` | `claude-opus-5-5` | `lib/ai.ts:104` |
-> | `AI_MODEL_SUBSTEPS` | `claude-opus-5-5` | `lib/ai.ts:112` |
-> | `AI_MODEL_SUMMARY` | `claude-opus-5-5` (was Sonnet until 4 October) | `lib/ai.ts:113` |
-> | `AI_MODEL_DOCUMENT_SCAN` | `claude-opus-5-5` | `lib/ai.ts:120` |
-> | `AI_MODEL_DOCUMENT_DRAFT` | `claude-opus-5-5` | `lib/ai.ts:124` |
-> | `AI_MODEL_AUDIT` | `claude-opus-5-5` | `lib/ai.ts:131` |
-> | `AI_MODEL_CRITIQUE` | `claude-opus-5-5` | `lib/ai.ts:102` |
-> | `AI_MODEL` (the fallback for all of them) | `claude-opus-5-5` | `lib/ai.ts:102–116`, `:132` |
+> | `AI_MODEL_PROSE` | `claude-opus-5-5` | `lib/ai.ts:108` |
+> | `AI_MODEL_JUDGEMENT` | `claude-opus-5-5` | `lib/ai.ts:106` |
+> | `AI_MODEL_SUBSTEPS` | `claude-opus-5-5` | `lib/ai.ts:114` |
+> | `AI_MODEL_SUMMARY` | `claude-opus-5-5` (was Sonnet until 4 October) | `lib/ai.ts:115` |
+> | `AI_MODEL_DOCUMENT_SCAN` | `claude-opus-5-5` | `lib/ai.ts:122` |
+> | `AI_MODEL_DOCUMENT_DRAFT` | `claude-opus-5-5` | `lib/ai.ts:126` |
+> | `AI_MODEL_AUDIT` | `claude-opus-5-5` | `lib/ai.ts:133` |
+> | `AI_MODEL_CRITIQUE` | `claude-opus-5-5` | `lib/ai.ts:104` |
+> | `AI_MODEL_HOWTO` | `claude-opus-5-5` — **added 4 October with the Task 6 release** | `lib/ai.ts:138` |
+> | `AI_MODEL` (the fallback for all of them) | `claude-opus-5-5` | `lib/ai.ts:104–115`, `:139` |
+> | `AI_EFFORT` | **`medium`** — **re-entered 4 October as visible.** Before that it was hidden and its value unknown, so **every production result before 4 October ran at an unknown effort**. `lib/ai.ts:794` `DEFAULT_EFFORT` is also medium, so unset would mean the same | `lib/ai.ts:797` |
+> | `AI_EFFORT_HOWTO` | **unset** — so "How do I do this?" falls back to `AI_EFFORT`, i.e. medium | `lib/ai.ts:815` |
+> | `AI_SEARCH_MAX_HOWTO` | `6` — added 4 October with the Task 6 release | `lib/ai.ts:240` `searchLimit` |
+> | `AI_SEARCH_MAX_COMPLETE` | `8` — added 4 October with the Task 6 release | `lib/ai.ts:240` `searchLimit` |
 >
-> These are the nine model variables `lib/ai.ts` reads (`grep -o "AI_MODEL[A-Z_]*" lib/ai.ts`). Because
-> they are now visible, **this table can be checked against the dashboard, and the dashboard wins.**
-> Workspace Task 6 adds a tenth, `AI_MODEL_HOWTO`; it is listed with that release.
->
-> *Kept as written, and wrong for `AI_MODEL_SUMMARY`:* "THE MODELS IN PRODUCTION — PER THE OWNER,
-> 3 OCTOBER 2026. Every `AI_MODEL_*` variable set on Vercel Production is `claude-opus-5-5`. This is
-> the owner's statement, not a reading: Vercel hides these values once saved."
+> **The 4 October correction it replaces:** the 3 October statement *"Every `AI_MODEL_*` variable set
+> on Vercel Production is `claude-opus-5-5`"* was wrong for `AI_MODEL_SUMMARY`, which was Sonnet until
+> 4 October. The owner then set every model variable to `claude-opus-5-5`, visible, and redeployed; so
+> the Task 5 paid check on production ran first on Sonnet, then on Opus 5.5. `DECISIONS.md` §154, §156.
 
 From June: `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `ANTHROPIC_API_KEY`, `RESEND_API_KEY`, `FEEDBACK_EMAIL`.
 
-Added 23 Sep: `CRON_SECRET`, `AI_MODEL_PROSE`, `AI_MODEL_JUDGEMENT`, `AI_MODEL_SUBSTEPS`, `AI_MODEL_SUMMARY`, `AI_EFFORT`, `RESEARCH_PREFER_GOV`, `RESEARCH_SPECIALIST`, `RESEARCH_PROVENANCE`.
+Added 23 Sep: `CRON_SECRET`, `AI_MODEL_PROSE`, `AI_MODEL_JUDGEMENT`, `AI_MODEL_SUBSTEPS`, `AI_MODEL_SUMMARY`, `AI_EFFORT`, `RESEARCH_PREFER_GOV`, `RESEARCH_SPECIALIST`, `RESEARCH_PROVENANCE`. *(Corrected 4 October 2026: `AI_EFFORT` was saved hidden on 23 September and its value was never recorded. On 4 October the owner re-entered it as visible `medium`; see the table above. Results on production before 4 October ran at an effort nobody can now name.)*
+
+**Added 4 Oct, with the Workspace Task 6 release (owner), all visible:** `AI_MODEL_HOWTO = claude-opus-5-5`, `AI_SEARCH_MAX_HOWTO = 6`, `AI_SEARCH_MAX_COMPLETE = 8`. `AI_EFFORT_HOWTO` is deliberately **not** set, so it falls back to `AI_EFFORT`. Migration 064 was applied first (`npm run preflight` afterwards: 65 on disk, 65 on production, `PENDING COUNT: 0`).
 
 **Added 26 Sep, with Documents rev 1 — values given, because these four decide what a customer's document costs and who reads it:**
 

@@ -17,6 +17,7 @@ folder's own README names what supersedes each, and it is the only place this in
 | **`HOW-WE-BUILD.md`** | The working method — the three roles, the loop, what counts as verification |
 | **`../STATUS.md`** | One line per module with the date it was last actually checked |
 | **`HANDOFF-CODE.md`** | The state of the code: git, migrations, production, row counts. What a new chat trusts |
+| **`WORKSPACE-PLAN.md`** | The owner's plan for the Compliance Workspace, five stages in order — mirrors his Claude Doc "Compliance Workspace — the map of what's left". Where the next workspace session starts |
 
 ### Decisions and releases
 

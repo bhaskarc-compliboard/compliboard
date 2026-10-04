@@ -7,7 +7,9 @@ Where a figure is not measured, it says so.
 *(§1 and §2 corrected 3 October 2026, from commands run that day and the 1 October preflight; §7
 gained four rows the same day, after Workspace Task 3 one open row (the cron jobs) and seven
 resolved ones, and after Task 4 two more resolved. After Task 5 (`cfa3738`), §7 gained four open rows and two
-resolved ones, and §2's heading was corrected to 063 pending. §1–§4 were rewritten on 28 September. §5–§9 keep their 23 September text except where a fact in
+resolved ones, and §2's heading was corrected to 063 pending. On 4 October 2026, after the Task 6
+release, §1 and §2 were brought to that day's `git` and `npm run preflight` output and §7's Task 6 rows
+marked released. §1–§4 were rewritten on 28 September. §5–§9 keep their 23 September text except where a fact in
 them was wrong; those carry dated notes. The structure is unchanged on purpose — this is the file
 the next chat trusts, and a reader who knows where §6 is should still find it there.)*
 
@@ -29,6 +31,24 @@ and §12, then `docs/SCHEMA.md` for the database. This file is state, not method
 ---
 
 ## 1. Git
+
+> ### UPDATED 4 OCTOBER 2026, AFTER THE WORKSPACE TASK 6 RELEASE.
+> ```
+> $ git fetch && git log --oneline -5                  # 4 October 2026
+> a701436 Workspace Task 6 docs: decisions (§157), handoff v5, the Task 6 test set, resolved and open defects
+> eec4d22 Workspace Task 6: the checklist in three groups, … the Checklists tab in one read
+> d353f2b Docs: production's AI_MODEL_SUMMARY was Sonnet until 4 October; every model variable is now Opus 5.5, visible (owner)
+> 5601dda Workspace Task 5 docs: decisions (§156), handoff, the Task 5 test set, resolved and open defects
+> cfa3738 Workspace Task 5: the summary report … and the Conversations list in one read …
+> $ git rev-parse --short origin/main
+> a701436
+> $ git log --oneline origin/main..HEAD               # ahead
+> (nothing)
+> $ git log --oneline HEAD..origin/main               # behind
+> (nothing)
+> ```
+> **`HEAD` and `origin/main` are the same commit, `a701436`**: Workspace Tasks 1–6 are pushed, so they
+> are what Vercel builds from. The paragraphs below are kept as they were.
 
 *(Corrected 3 October 2026, at the close of the Workspace layout pass. This section said the local
 tree was ahead of production with the bake-off and the "Read it again" fix unpushed; that stopped
@@ -54,7 +74,15 @@ of it, and is **not pushed**: `git log origin/main..HEAD` lists it. A push to `m
 (`RELEASE.md`), so that list is the next release's contents. What Vercel last built was not read here
 — the dashboard is the owner's.
 
-## 2. Migration state — 064 ON DISK, 063 APPLIED ON PRODUCTION, ONE PENDING: 064.
+## 2. Migration state — 065 FILES (000 … 064), ALL 65 APPLIED ON PRODUCTION, NONE PENDING.
+
+> ### UPDATED 4 OCTOBER 2026, AFTER THE WORKSPACE TASK 6 RELEASE.
+> The owner ran `npm run db:migrate:prod`, which applied `064_the_checklist_in_three_groups.sql`.
+> `npm run preflight` (read-only; one query, `select version || '_' || name as f from
+> supabase_migrations.schema_migrations order by 1`, through the Supabase CLI's management API), run
+> afterwards: **INPUT 1, 65 files on disk; INPUT 2, 65 rows on production (`dsfwmafnphdlfogetsus`), 064
+> among them; `PENDING COUNT: 0`.** Staging also holds 064. **The replay from empty (`npm run db:reset`)
+> is still owed, for the final workspace release.** The paragraphs below are kept as they were.
 
 > ### UPDATED 4 OCTOBER 2026, AFTER WORKSPACE TASK 6 (`eec4d22`).
 > Task 6 added `064_the_checklist_in_three_groups.sql`, applied on staging. `npm run preflight`, run after the
@@ -385,15 +413,15 @@ thing a bake-off needs is to move one model without moving three others.
 | **The failed line can show a raw provider message (lib/ai.ts:833–834 via route.ts:382), and several messages end with two instructions.** | `app/compliance/page.tsx`, the failed line; `app/api/chat/route.ts:382`; `lib/ai.ts:833–834` | Added 3 October 2026. Every string that can reach `x.error`, each followed on screen by *"You can ask again, or rephrase the question."*: **a JSON answer instead of a stream** — "Unauthorized" (`lib/auth.ts:80`), "Company not found" (`:109`), the conversation-lost sentence (`route.ts:77–79`, from 524, 540, 568), "This topic is closed. Ask your question again and we’ll open a new one." (`:546`), the AI module's own error on the checklist path (`:382` ← `lib/ai.ts:833`, the provider's message as is, or `:834`, "The model returned no message."), "The checklist came back in a shape we could not read. Please try again." (`:393`), "We could not start this conversation. Please try that again." (`:606`), "Something went wrong" (`:803`), and the page's fallback "That request could not be completed."; **a stream that failed** — "The answer stopped part-way through. Please try again." (`route.ts:477`), or `lib/answerStream.ts:93`'s fallback; **a request that threw** — "The answer could not be completed." Not reachable from this page: "No question or file provided" (`:187`) and the file-parse message (`:239`, multipart only). Unchanged by the layout pass, by decision: the owner decides |
 | **conversation_reset is sent by the route and read by no page.** | `app/api/chat/route.ts:82` | Added 3 October 2026. `grep -rn conversation_reset app components lib` finds the route alone. So "start fresh" in the conversation-lost sentence is not done by the page: the conversation on screen is not cleared |
 | **Cron jobs never run: GET → 405.** | `lib/jobAuth.ts:33`, `:36`; the four `app/api/jobs/*` routes export only `POST` | Added 3 October 2026. **OPEN.** Vercel calls the jobs with GET and `Authorization: Bearer <CRON_SECRET>`; the routes take POST and `x-cron-secret`. Vercel's logs on 3 October: every scheduled call GET → 405, every 5 minutes. Production `job_runs` has never held a `summarise` or `delete` row. The fix is written up, not done — `docs/reports/workspace-task2.md`, "For the cron release" — and is deferred to one release for all four jobs (`DECISIONS.md` §154) |
-| ~~The Checklists tab still reads 1 + N~~ | `app/compliance/page.tsx:429` `loadChecklists`; `supabase/migrations/064_the_checklist_in_three_groups.sql` | **RESOLVED 4 October 2026, `eec4d22`.** Workspace Task 6. One read through `checklist_list_v`, `security_invoker`, with must-do counts. Measured: 1 request for 19 checklists. **Migration 064 is on staging only until `npm run db:migrate:prod`** |
+| ~~The Checklists tab still reads 1 + N~~ | `app/compliance/page.tsx:429` `loadChecklists`; `supabase/migrations/064_the_checklist_in_three_groups.sql` | **RESOLVED 4 October 2026, `eec4d22`.** Workspace Task 6. One read through `checklist_list_v`, `security_invoker`, with must-do counts. Measured: 1 request for 19 checklists. **Released 4 October 2026**: migration 064 on production (`npm run preflight`: `PENDING COUNT: 0`), the code pushed (`a701436`) |
 | ~~`prompts/summarise.ts` is now unused~~ | `prompts/summarise.ts` | **RESOLVED 4 October 2026, `eec4d22`: deleted.** No importer, and no reference to `SUMMARISE_PROMPT` outside the file. `prompts/summary-report.ts`'s header says where to read it (`git show cfa3738:prompts/summarise.ts`) |
-| **Items that depend on something under To confirm are stated as settled.** | `prompts/summary-report.ts` rule 8; `prompts/convert.ts` `CONVERT_DISCUSSED` rule 6 | Added 4 October 2026 (Workspace Task 6, STOP 1; `DECISIONS.md` §157). The checklist stated drawback as settled in items 3 and 16 while *whether drawback applies to imported spirits* was under To confirm, and softened secondary containment. **The owner's plan: a consistency check — a separate, narrow pass asking which items depend on something under To confirm — covering the summary AND the checklist.** No prompt change was made. Not built |
-| **"How do I do this?" proves a step's link, not its words.** | `lib/howTo.ts` `checkHowTo` | Added 4 October 2026 (Workspace Task 6, STOP 1). The check confirms a step's URL is a page this call's search returned; it does not confirm the page says the step. **For the quality pass:** each step carries words from its page, and code confirms they appear in that page's text |
-| **Effort is not the lever for the mothership rule.** | `lib/ai.ts` `effortForHowto`; `AI_EFFORT_HOWTO` | Added 4 October 2026 (Workspace Task 6, STOP 2). At medium, "How do I do this?" searched more (3 against 1 for the OLCC Industrial Alcohol Authority) but cited unofficial copies of the rules (oregon.public.law, Justia) where low had used the Secretary of State's site: 1 of 6 steps official against 4 of 6. For the quality pass |
-| **Copy sites compete with the official text in search.** | `lib/ai.ts`, where the web-search tool is configured | Added 4 October 2026 (Workspace Task 6). **For the quality pass:** measure blocking known copy sites (Justia, public.law, FindLaw, Casetext and similar) from the search, so the official text is the only full text found. Not built |
-| **"Everything on this subject" re-adds discussed points as "added".** | `app/api/checklists/from-topic/route.ts`, the `complete` branch, `origin` | Added 4 October 2026 (Workspace Task 6, STOP 2). An item is `added` when its link is not one the conversation cited, so a discussed point (FDA Prior Notice, the facility registration) comes back as *newly checked* when the search finds a new link for it. Behaviour older than Task 6, made visible by search. For the quality pass |
-| **`check:live` has no probe for `checklist_items`, `checklist_list_v` or the how-to route.** | `scripts/check-live.js` | Added 4 October 2026 (Workspace Task 6). The table probes all pass, but none touches what Task 6 added. The `to_confirm` write and the view were proved by hand as `testgamma` on staging (`DECISIONS.md` §157) |
-| **The print of a checklist with how-to steps has not been looked at on paper.** | `app/compliance/page.tsx` `HowToSteps`, `printDrawer` | Added 4 October 2026 (Workspace Task 6). Buttons and spinners are `no-print`; the groups and steps are meant to print. Not seen printed |
+| **Items that depend on something under To confirm are stated as settled.** | `prompts/summary-report.ts` rule 8; `prompts/convert.ts` `CONVERT_DISCUSSED` rule 6 | Added 4 October 2026 (Workspace Task 6, STOP 1; `DECISIONS.md` §157). The checklist stated drawback as settled in items 3 and 16 while *whether drawback applies to imported spirits* was under To confirm, and softened secondary containment. **The owner's plan: a consistency check — a separate, narrow pass asking which items depend on something under To confirm — covering the summary AND the checklist.** No prompt change was made. Not built *(4 October 2026: the Task 6 code is on production; this row stays OPEN — see `docs/WORKSPACE-PLAN.md` Stage 3.)* |
+| **"How do I do this?" proves a step's link, not its words.** | `lib/howTo.ts` `checkHowTo` | Added 4 October 2026 (Workspace Task 6, STOP 1). The check confirms a step's URL is a page this call's search returned; it does not confirm the page says the step. **For the quality pass:** each step carries words from its page, and code confirms they appear in that page's text *(4 October 2026: the Task 6 code is on production; this row stays OPEN — see `docs/WORKSPACE-PLAN.md` Stage 3.)* |
+| **Effort is not the lever for the mothership rule.** | `lib/ai.ts` `effortForHowto`; `AI_EFFORT_HOWTO` | Added 4 October 2026 (Workspace Task 6, STOP 2). At medium, "How do I do this?" searched more (3 against 1 for the OLCC Industrial Alcohol Authority) but cited unofficial copies of the rules (oregon.public.law, Justia) where low had used the Secretary of State's site: 1 of 6 steps official against 4 of 6. For the quality pass *(4 October 2026: the Task 6 code is on production; this row stays OPEN — see `docs/WORKSPACE-PLAN.md` Stage 3.)* |
+| **Copy sites compete with the official text in search.** | `lib/ai.ts`, where the web-search tool is configured | Added 4 October 2026 (Workspace Task 6). **For the quality pass:** measure blocking known copy sites (Justia, public.law, FindLaw, Casetext and similar) from the search, so the official text is the only full text found. Not built *(4 October 2026: the Task 6 code is on production; this row stays OPEN — see `docs/WORKSPACE-PLAN.md` Stage 3.)* |
+| **"Everything on this subject" re-adds discussed points as "added".** | `app/api/checklists/from-topic/route.ts`, the `complete` branch, `origin` | Added 4 October 2026 (Workspace Task 6, STOP 2). An item is `added` when its link is not one the conversation cited, so a discussed point (FDA Prior Notice, the facility registration) comes back as *newly checked* when the search finds a new link for it. Behaviour older than Task 6, made visible by search. For the quality pass *(4 October 2026: the Task 6 code is on production; this row stays OPEN — see `docs/WORKSPACE-PLAN.md` Stage 3.)* |
+| **`check:live` has no probe for `checklist_items`, `checklist_list_v` or the how-to route.** | `scripts/check-live.js` | Added 4 October 2026 (Workspace Task 6). The table probes all pass, but none touches what Task 6 added. The `to_confirm` write and the view were proved by hand as `testgamma` on staging (`DECISIONS.md` §157) *(4 October 2026: the Task 6 code is on production; this row stays OPEN — see `docs/WORKSPACE-PLAN.md` Stage 3.)* |
+| ~~The print of a checklist with how-to steps has not been looked at on paper~~ | `app/compliance/page.tsx` `HowToSteps`, `printDrawer` | **RESOLVED 4 October 2026 by the owner's live check on production**: a checklist with "How do I do this?" steps (MNBP registration, 7 steps) printed correctly (`DECISIONS.md` §158) |
 | **Rule 8's condition was applied to one of two dependent items in one run.** | `prompts/summary-report.ts:72` | Added 3 October 2026 (`DECISIONS.md` §156). In the Part B run on Opus 5.5, the TTB drawback item said it depends on what is still to confirm; **the CBP excise item read as settled while drawback was under *Still to confirm***. One run, so not a rate. Watch it at the quality test; no prompt change was made |
 | **DEFERRED POLISH — after Task 6, before the quality test (owner, 4 October).** | `app/compliance/page.tsx` `ReportView` (`:1764`) | (1) The summary drawer as an accordion, per the canvas feature boards, board 6b: each authority folded with *N things to do*; *Still to confirm* never folded; *Open all*; print always open. (2) One-line source links: *[n] host · title*, cut with *…*, the full title on hover. Not started |
 | ~~The notice stays across the workspace's tabs until Dismiss~~ | `app/compliance/page.tsx` | **RESOLVED 3 October 2026, `2937b0b`.** Machinery (iii). It clears on a tab change, on New conversation and on opening a conversation |
@@ -406,7 +434,7 @@ thing a bake-off needs is to move one model without moving three others.
 | ~~Attaching a file first removes "Make a checklist"~~ | `app/compliance/page.tsx` | **RESOLVED 3 October 2026, `76f8c42`.** Machinery N4. A chosen file is only staged as a chip in the box; it no longer becomes an exchange, so the first visit keeps both buttons |
 | ~~Reopening a conversation hides its attachments~~ | `app/compliance/page.tsx` `openConversation` | **RESOLVED 3 October 2026, `76f8c42`.** Machinery N5. Each turn's file card comes back, from one `document_index_v` read for the whole conversation; a file deleted since keeps its name and says so |
 | ~~Summarising again could propose the same fact twice~~ | `lib/summaryReport.ts:370` `proposalsToInsert` | **RESOLVED 3 October 2026, `cfa3738`.** Workspace Task 5. A pending proposal for the same conversation with the same key and value is not inserted again. A repeated fact within one summary is inserted once. Both are covered by `tests/unit/summaryReport.test.ts:196–210` |
-| ~~The Conversations list makes 1 + 2N reads~~ | `app/compliance/page.tsx:384` `loadTopics`; `supabase/migrations/063_the_summary_as_a_report.sql` | **RESOLVED 3 October 2026, `cfa3738`.** Workspace Task 5. One read through the view `topic_list_v`, `security_invoker`, so the caller's policies apply. **Migration 063 is on staging only until `npm run db:migrate:prod`** |
+| ~~The Conversations list makes 1 + 2N reads~~ | `app/compliance/page.tsx:384` `loadTopics`; `supabase/migrations/063_the_summary_as_a_report.sql` | **RESOLVED 3 October 2026, `cfa3738`.** Workspace Task 5. One read through the view `topic_list_v`, `security_invoker`, so the caller's policies apply. **Migration 063 is on staging only until `npm run db:migrate:prod`** *(4 October 2026: 063 is on production — `npm run preflight`, 65 and 65)* |
 
 ## 8. The next steps — THIS FILE'S READING, not the two handoffs'
 
