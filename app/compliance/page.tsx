@@ -14,9 +14,10 @@
  * ---------------------------------------------------------------------------
  * WHAT THIS FILE DOES NOT DO
  *   · It does not touch a prompt or a pipeline switch (`CLAUDE.md` §3.1).
- *   · It does not read or write requirements, obligations or switches — except the ONE write a
- *     fact proposal makes, which goes through `/api/switches/answer`, the same route a person
- *     answering a question uses. Never the service role, never from a job (§108).
+ *   · It does not read or write requirements, obligations or switches. It used to make ONE such
+ *     write — "Save it" on a fact proposal, through `/api/switches/answer` — and that card is gone
+ *     (Workspace Task 3, the owner's decision: facts belong to Company information). The page now
+ *     only COUNTS a conversation's pending proposals, in the summary drawer, and links there.
  * ---------------------------------------------------------------------------
  */
 import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react'
@@ -72,7 +73,6 @@ interface ItemRow {
   parent_item_index: number | null
 }
 
-interface Proposal { id: string; switch_key: string; proposed_value: string; quote: string | null }
 
 const MAX_STEPS_IN_FLIGHT = 3
 
@@ -107,6 +107,18 @@ const OUTLINE =
   'rounded-md border border-[var(--green)] px-3 py-1.5 text-[14px] font-medium text-[var(--green)] hover:bg-green-50 disabled:opacity-50'
 /** `components/AuditReport.tsx:655`, the footer's text actions. */
 const TEXT_ACTION = 'text-[14px] text-gray-600 hover:text-gray-900 hover:underline disabled:text-gray-300'
+
+/**
+ * A CONVERSATION'S TITLE, AS SHOWN — Workspace Task 3. Titles are stored as typed (the first
+ * question, verbatim — `lib/conversation.ts` `titleFromQuestion`), so many start lowercase. This
+ * upper-cases the FIRST character only when it is a lowercase letter and leaves every other
+ * character exactly as it is. Display only: the stored title and every other section (To-confirm
+ * shows the same titles) are untouched. A title starting with a quote, a digit or anything else
+ * that is not a lowercase letter — "'m opening…" — is left alone; null stays null so each caller's
+ * fallback still applies.
+ */
+const displayTitle = (title: string | null): string | null =>
+  title && /^\p{Ll}/u.test(title) ? title.charAt(0).toUpperCase() + title.slice(1) : title
 
 /** How Audits writes a date — `app/audits/page.tsx:189–194`, copied: "30 September 2026". */
 const fmtDate = (iso: string | null | undefined) => {
@@ -173,7 +185,6 @@ export default function CompliancePage() {
   const [box, setBox] = useState('')
   const inFlight = useRef<AbortController | null>(null)
   const [busy, setBusy] = useState(false)
-  const [nudgeDismissed, setNudgeDismissed] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   /** The composer, so a click with an empty box puts the cursor there rather than doing nothing. */
   const composerRef = useRef<HTMLTextAreaElement>(null)
@@ -181,12 +192,21 @@ export default function CompliancePage() {
   // ---- lists ----
   const [topics, setTopics] = useState<TopicRow[]>([])
   const [checklists, setChecklists] = useState<ChecklistRow[]>([])
-  const [proposals, setProposals] = useState<Proposal[]>([])
 
   // ---- drawers and sheets ----
   const [summaryDrawer, setSummaryDrawer] = useState<TopicRow | null>(null)
   const [listDrawer, setListDrawer] = useState<{ row: ChecklistRow; items: ItemRow[] } | null>(null)
   const [scopeFor, setScopeFor] = useState<string | null>(null)
+  /**
+   * WHAT IS BEING DELETED, IN THE PAGE'S OWN CONFIRMATION — Workspace Task 3, board 7. It was the
+   * browser's `confirm()`, a pop-up that offered no way to keep a copy first; the owner rejected it.
+   * `deleteBusy` disables "Delete for good" while the request runs; `deleteFailed` keeps the sheet
+   * open with one plain line instead of closing on a failure nobody would then see.
+   */
+  const [deleting, setDeleting] = useState<
+    { kind: 'conversation'; topic: TopicRow } | { kind: 'checklist'; id: string } | null>(null)
+  const [deleteBusy, setDeleteBusy] = useState(false)
+  const [deleteFailed, setDeleteFailed] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
   const [working, setWorking] = useState<string | null>(null)
 
@@ -279,16 +299,32 @@ export default function CompliancePage() {
     setChecklists(withCounts)
   }, [supabase])
 
-  const loadProposals = useCallback(async () => {
-    const { data } = await supabase
-      .from('fact_proposals').select('id, switch_key, proposed_value, quote')
-      .eq('status', 'proposed').order('created_at', { ascending: true }).limit(20)
-    setProposals((data ?? []) as Proposal[])
-  }, [supabase])
-
   useEffect(() => {
-    if (companyId) { loadTopics(); loadChecklists(); loadProposals() }
-  }, [companyId, loadTopics, loadChecklists, loadProposals])
+    if (companyId) { loadTopics(); loadChecklists() }
+  }, [companyId, loadTopics, loadChecklists])
+
+  /**
+   * THE FACTS LINE IN THE SUMMARY DRAWER — Workspace Task 3, board 6.
+   *
+   * How many facts read out of THIS conversation are still waiting for a person. Counted, not
+   * shown: the facts themselves are confirmed in Company information, which is where the line
+   * links. Read as the caller under RLS, like every other row on this page; `fact_proposals` grants
+   * `authenticated` SELECT (migration 034). Null while unknown, so nothing flashes "0".
+   */
+  const [drawerFacts, setDrawerFacts] = useState<number | null>(null)
+  const drawerTopicId = summaryDrawer?.id ?? null
+  useEffect(() => {
+    setDrawerFacts(null)
+    if (!drawerTopicId) return
+    let live = true
+    ;(async () => {
+      const { count } = await supabase.from('fact_proposals')
+        .select('id', { count: 'exact', head: true })
+        .eq('topic_id', drawerTopicId).eq('status', 'proposed')
+      if (live) setDrawerFacts(count ?? 0)
+    })()
+    return () => { live = false }
+  }, [drawerTopicId, supabase])
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [exchanges.length])
 
@@ -382,13 +418,19 @@ export default function CompliancePage() {
     inFlight.current = null
   }
 
-  function newConversation(carrySummary?: string) {
+  function newConversation() {
     stop()
     setExchanges([])
     setTopicId('')
-    setBox(carrySummary ? `Carrying on from the last conversation.\n\nSummary so far: ${carrySummary}\n\n` : '')
-    setNudgeDismissed(false)
+    setBox('')
+    setNotice(null)
     setTab('ask')
+  }
+
+  /** A tab change is a change of context: a notice about the last thing done does not follow you. */
+  function switchTab(next: Tab) {
+    setTab(next)
+    setNotice(null)
   }
 
   // ------------------------------------------------------------------ uploads
@@ -577,6 +619,7 @@ export default function CompliancePage() {
 
   // ------------------------------------------------------------------ conversations
   async function openConversation(t: TopicRow) {
+    setNotice(null)
     setWorking('Opening…')
     try {
       const res = await fetch(`/api/topics/${t.id}`, { headers: await authHeaders() })
@@ -596,18 +639,32 @@ export default function CompliancePage() {
       setExchanges(rebuilt)
       setTopicId(t.id)
       setSummaryDrawer(null)
-      setNudgeDismissed(false)
       setTab('ask')
     } finally { setWorking(null) }
   }
 
-  async function deleteConversation(t: TopicRow) {
-    if (!confirm(`Delete "${t.title ?? 'this conversation'}"? The summary and the messages both go, and this cannot be undone.`)) return
-    const res = await fetch(`/api/topics/${t.id}`, { method: 'DELETE', headers: await authHeaders() })
-    if (!res.ok) { setNotice('That conversation could not be deleted. Please try again.'); return }
+  /** Opens the confirmation. Nothing is deleted until "Delete for good". */
+  function askToDelete(what: { kind: 'conversation'; topic: TopicRow } | { kind: 'checklist'; id: string }) {
+    setDeleteFailed(false)
+    setDeleting(what)
+  }
+
+  function cancelDelete() {
+    if (deleteBusy) return
+    setDeleting(null)
+    setDeleteFailed(false)
+  }
+
+  /** Returns whether the conversation is gone. A refusal or a request that never landed is false. */
+  async function deleteConversation(t: TopicRow): Promise<boolean> {
+    try {
+      const res = await fetch(`/api/topics/${t.id}`, { method: 'DELETE', headers: await authHeaders() })
+      if (!res.ok) return false
+    } catch { return false }
     if (topicId === t.id) { setExchanges([]); setTopicId('') }
     setSummaryDrawer(null)
     await loadTopics()
+    return true
   }
 
   // ------------------------------------------------------------------ checklists
@@ -655,13 +712,34 @@ export default function CompliancePage() {
     loadChecklists()
   }
 
-  async function deleteChecklist(id: string) {
-    if (!companyId) return
-    if (!confirm('Delete this checklist? This cannot be undone.')) return
-    await supabase.from('checklist_items').delete().eq('checklist_id', id).eq('company_id', companyId)
-    await supabase.from('checklists').delete().eq('id', id).eq('company_id', companyId)
+  /**
+   * Returns whether the checklist is gone. *** BOTH DELETES ARE CHECKED NOW *** (machinery N8):
+   * they were awaited and their errors dropped, so a refused delete closed the drawer as though it
+   * had worked. Items first; if they cannot go, the checklist is not touched.
+   */
+  async function deleteChecklist(id: string): Promise<boolean> {
+    if (!companyId) return false
+    try {
+      const { error: iErr } = await supabase.from('checklist_items').delete().eq('checklist_id', id).eq('company_id', companyId)
+      if (iErr) return false
+      const { error: cErr } = await supabase.from('checklists').delete().eq('id', id).eq('company_id', companyId)
+      if (cErr) return false
+    } catch { return false }
     setListDrawer(null)
     await loadChecklists()
+    return true
+  }
+
+  async function confirmDelete() {
+    if (!deleting || deleteBusy) return
+    setDeleteBusy(true)
+    setDeleteFailed(false)
+    const ok = deleting.kind === 'conversation'
+      ? await deleteConversation(deleting.topic)
+      : await deleteChecklist(deleting.id)
+    setDeleteBusy(false)
+    if (ok) setDeleting(null)
+    else setDeleteFailed(true)
   }
 
   /**
@@ -754,34 +832,6 @@ export default function CompliancePage() {
     stepRunning.current = false
   }
 
-  // ------------------------------------------------------------------ fact proposals
-  async function saveProposal(p: Proposal) {
-    setWorking('Saving…')
-    try {
-      // THE SAME ROUTE A PERSON ANSWERING A QUESTION USES. Never the service role, never from a
-      // job — §108: a fact inferred from prose is proposed, and only a person's click writes it.
-      const res = await fetch('/api/switches/answer', {
-        method: 'POST', headers: await authHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ switch_id: p.switch_key, value: p.proposed_value }),
-      })
-      if (!res.ok) {
-        const j = await res.json().catch(() => null)
-        setNotice(j?.error ?? 'We could not save that one — it may not match a fact we track yet. Nothing was changed.')
-        return
-      }
-      await supabase.from('fact_proposals').update({ status: 'accepted' }).eq('id', p.id)
-      await loadProposals()
-    } finally { setWorking(null) }
-  }
-
-  async function dismissProposal(p: Proposal) {
-    // 'rejected' is the stored value (migration 034's CHECK); "Not now" is what it is called on
-    // screen. Rejecting is a status rather than a deletion — "we looked and said no" is worth
-    // keeping, and a deleted proposal would be proposed again on the next nightly run.
-    await supabase.from('fact_proposals').update({ status: 'rejected' }).eq('id', p.id)
-    await loadProposals()
-  }
-
   /**
    * GROUP BY THE DAY, RATHER THAN PRINTING IT ON EVERY ROW.
    *
@@ -802,9 +852,8 @@ export default function CompliancePage() {
   }
 
   // ------------------------------------------------------------------ render
-  const proposal = proposals[0] ?? null
-  const answered = exchanges.filter((x) => x.phase === 'done' && !x.file).length
-  const showNudge = answered >= 4 && !nudgeDismissed && !busy
+  // The conversation's actions under the box need an answer to act on, and a topic to act on it.
+  const hasAnswer = exchanges.some((x) => x.phase === 'done' && !x.file && !!x.text)
   // "last asked" on the counts line: the most recent activity across the conversations loaded,
   // each one's last turn or, with none, when it was opened.
   const lastAsked = topics.reduce<string | null>((max, t) => {
@@ -846,8 +895,6 @@ export default function CompliancePage() {
             overflow: visible !important; padding: 0 !important; flex: none !important;
           }
         }
-        /* Touch has no hover, so Delete is always visible on a narrow screen. */
-        @media (max-width: 820px) { .hover-del { opacity: 1 !important; } }
       `}</style>
 
       {/*
@@ -886,7 +933,7 @@ export default function CompliancePage() {
           <div className="flex items-center gap-6">
             {([['ask', 'Ask a question'], ['conversations', 'Conversations'], ['checklists', 'Checklists']] as const)
               .map(([k, label]) => (
-                <button key={k} onClick={() => setTab(k)}
+                <button key={k} onClick={() => switchTab(k)}
                   className={`-mb-px border-b-2 pb-3 text-[14px] font-medium transition-colors ${
                     tab === k ? 'border-[var(--green)] text-[var(--green-ink)]'
                               : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
@@ -929,28 +976,12 @@ export default function CompliancePage() {
                 )}
 
                 {/* NO CARD. The thing you read was inside a bordered white rectangle on a grey
-                    page, which framed it as a widget rather than as the answer. The prose, its
-                    sources and its actions now sit on the page itself. */}
+                    page, which framed it as a widget rather than as the answer. The prose and its
+                    sources sit on the page itself; the conversation's actions are under the box. */}
                 {x.text && (
                   <>
                     <AnswerBody text={x.text} sources={x.sources} />
                     <div className="sources-print"><SourceList sources={x.sources} /></div>
-                    {/* ONLY UNDER THE LAST EXCHANGE. Repeated per answer, a four-turn thread
-                        carried twelve of these. An older answer does not need its own download
-                        button and is still reachable from the Conversations drawer. */}
-                    {x.phase === 'done' && !x.file && topicId && x.id === exchanges[exchanges.length - 1]?.id && (
-                      <div className="no-print mt-4 flex flex-wrap items-center gap-3">
-                        <button onClick={() => setScopeFor(topicId)} className={OUTLINE}>
-                          Turn this into a checklist
-                        </button>
-                        <button onClick={() => summarise(topicId)} className={TEXT_ACTION}>
-                          Summarise this
-                        </button>
-                        <button onClick={() => window.print()} className={TEXT_ACTION}>
-                          Download
-                        </button>
-                      </div>
-                    )}
                   </>
                 )}
 
@@ -977,33 +1008,6 @@ export default function CompliancePage() {
                 )}
               </div>
             ))}
-
-            {/* Unboxed for the same reason as the answer: on a page with no cards left, a card
-                is the loudest thing on it. A hairline says "this is a new thought" quietly. */}
-            {showNudge && (
-              <div className="no-print mb-8 border-t border-gray-200 pt-4">
-                <p className="text-[14px] leading-relaxed text-gray-600">
-                  <b className="font-semibold">This one has covered a fair bit.</b>{' '}
-                  When you&apos;re done with this topic, you could wrap it up as a summary and start a
-                  new one. The new conversation carries the summary forward, so nothing gets lost.
-                </p>
-                <div className="mt-3 flex flex-wrap items-center gap-3">
-                  <button
-                    onClick={async () => {
-                      const t = topicId
-                      await summarise(t)
-                      const { data } = await supabase.from('topics').select('summary').eq('id', t).maybeSingle()
-                      newConversation((data as { summary?: string } | null)?.summary ?? undefined)
-                    }}
-                    className={OUTLINE}>
-                    Wrap up and start fresh
-                  </button>
-                  <button onClick={() => setNudgeDismissed(true)} className={TEXT_ACTION}>
-                    Keep going
-                  </button>
-                </div>
-              </div>
-            )}
 
             <div ref={bottomRef} />
 
@@ -1082,6 +1086,38 @@ export default function CompliancePage() {
                 </div>
 
                 {/*
+                  THE CONVERSATION'S ACTIONS, UNDER THE BOX — Workspace Task 3, board 1.
+                  They sat under the newest answer, so they moved down the page with every question
+                  and acted on "this" when what they act on is the whole conversation. Under the box
+                  they stay where the next thing is typed. Shown once there is an answer to act on
+                  and a topic to act on it; every one is disabled while a request is in flight.
+                  The checklist is the step forward, so it carries the green; the other two are the
+                  page's text actions. The line beneath replaces the four-answer nudge: said once,
+                  always, rather than interrupting the fourth answer.
+                */}
+                {started && (
+                  <div className="no-print">
+                    {hasAnswer && topicId && (
+                      <div className="mt-[10px] flex flex-wrap items-center gap-5">
+                        <button onClick={() => setScopeFor(topicId)} disabled={busy}
+                          className="text-[14px] font-medium text-[var(--green-ink)] hover:underline disabled:text-gray-300">
+                          Turn this into a checklist
+                        </button>
+                        <button onClick={() => summarise(topicId)} disabled={busy} className={TEXT_ACTION}>
+                          Summarise this conversation
+                        </button>
+                        <button onClick={() => window.print()} disabled={busy} className={TEXT_ACTION}>
+                          Download
+                        </button>
+                      </div>
+                    )}
+                    <p className="mt-2 text-[12px] text-gray-500">
+                      One topic per conversation. When you are done, summarise it. Start a new conversation for the next topic.
+                    </p>
+                  </div>
+                )}
+
+                {/*
                   ONE LINE UNDER THE BOX, IN AUDITS' SHAPE — Workspace layout, Task 2 (board A).
                   `app/audits/page.tsx:522–542`: the attach control on the left as a quiet 12px
                   underlined line, the actions on the right. Attaching is still not a third outcome
@@ -1156,24 +1192,6 @@ export default function CompliancePage() {
               </p>
             </div>
 
-            {/* THE PROPOSAL, OUT OF ITS BOX. It was the one emerald card on a page with no other
-                cards. A hairline above and below says "one thing to decide" without a fill; the
-                words and their sizes are unchanged. */}
-            {proposal && (
-              <div className="no-print mt-5 border-y border-gray-200 py-3.5">
-                <p className="text-[14px] leading-relaxed text-gray-800">
-                  <b className="font-semibold">One thing from a recent conversation.</b>{' '}
-                  It sounded like <b>{proposal.switch_key.replace(/_/g, ' ')}</b> is <b>{proposal.proposed_value}</b>.
-                </p>
-                {proposal.quote && <p className="mt-1 text-[13px] italic text-gray-600">“{proposal.quote}”</p>}
-                <p className="mt-1 text-[13px] text-gray-600">Saving it means we stop asking, and your requirements get sharper.</p>
-                <div className="mt-3 flex items-center gap-3">
-                  <button onClick={() => saveProposal(proposal)} className={OUTLINE}>Save it</button>
-                  <button onClick={() => dismissProposal(proposal)} className={TEXT_ACTION}>Not now</button>
-                </div>
-              </div>
-            )}
-
             {topics.length === 0 ? (
               <div className="mt-4"><Empty title="No conversations yet" note="Ask a question and it will appear here." /></div>
             ) : (
@@ -1195,28 +1213,25 @@ export default function CompliancePage() {
                         matching `px-3` lets the hover fill sit slightly proud of the text
                         WITHOUT moving the text, so titles stay aligned with the page column.
                         The title turns green because the title is the thing you are aiming at.
-                        Delete keeps its own red hover — it is a sibling, so the row's hover does
-                        not swallow it. The Checklists row below is the same pattern.
+                        The Checklists row below is the same pattern.
+
+                        NO DELETE ON THE ROW — Workspace Task 3, board 7. Deleting is done from the
+                        drawer, where the thing is open in front of you and its confirmation can
+                        offer a download first. A Delete beside every row was one stray click from
+                        the browser's pop-up and no copy.
                       */}
                       {g.rows.map((t) => {
                         const st = conversationStatus(t, t.turnCount > 0)
                         return (
                           <div key={t.id} className="group -mx-3 flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 transition-colors hover:bg-white">
                             <button onClick={() => setSummaryDrawer(t)} className="min-w-0 flex-1 text-left">
-                              <p className="truncate text-[13px] text-gray-900 group-hover:text-[var(--green)]">{t.title ?? 'Untitled conversation'}</p>
+                              <p className="truncate text-[13px] text-gray-900 group-hover:text-[var(--green)]">{displayTitle(t.title) ?? 'Untitled conversation'}</p>
                               {/* NO COLOUR HERE. Amber is reserved for a real attention state and
                                   "not summarised yet" is the normal condition of anything asked
                                   today; green for a routine fact is the same mistake the other way. */}
                               <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-gray-500">
                                 <span>{st.label}</span>
                               </div>
-                            </button>
-                            {/* Always visible. It was opacity-0 until you hovered a row that gave
-                                no sign it was hoverable. The fixed w-14 means every title in the
-                                list truncates at the same x. */}
-                            <button onClick={(e) => { e.stopPropagation(); deleteConversation(t) }}
-                              className="hover-del w-14 shrink-0 text-right text-[12px] text-gray-300 hover:text-red-600">
-                              Delete
                             </button>
                           </div>
                         )
@@ -1256,10 +1271,6 @@ export default function CompliancePage() {
                               )}
                             </div>
                           </button>
-                          <button onClick={(e) => { e.stopPropagation(); deleteChecklist(c.id) }}
-                            className="hover-del w-14 shrink-0 text-right text-[12px] text-gray-300 hover:text-red-600">
-                            Delete
-                          </button>
                         </div>
                       ))}
                     </div>
@@ -1287,7 +1298,7 @@ export default function CompliancePage() {
       )}
 
       {summaryDrawer && (
-        <Drawer title={summaryDrawer.title ?? 'Conversation'}
+        <Drawer title={displayTitle(summaryDrawer.title) ?? 'Conversation'}
           sub={`${friendlyDate(summaryDrawer.last_turn_at ?? summaryDrawer.created_at)} · ${conversationStatus(summaryDrawer, summaryDrawer.turnCount > 0).label}`}
           company={companyName}
           onClose={() => setSummaryDrawer(null)}
@@ -1308,8 +1319,17 @@ export default function CompliancePage() {
               <button onClick={printDrawer} className={`ml-auto ${TEXT_ACTION}`}>
                 Download
               </button>
+              {/* At the far right, after Download, in the same quiet grey as the checklist
+                  drawer's Delete. It opens the page's own confirmation, never the browser's. */}
+              <button onClick={() => askToDelete({ kind: 'conversation', topic: summaryDrawer })}
+                className="ml-3 text-[14px] text-gray-400 hover:text-red-600">
+                Delete
+              </button>
             </>
           }>
+          {/* A full-height column, so the facts line below can sit at the foot of the drawer,
+              directly above its footer, however short the summary is (`mt-auto`). */}
+          <div className="flex min-h-full flex-col">
           {summaryDrawer.summary ? (
             <AnswerBody text={summaryDrawer.summary} sources={[]} />
           ) : (
@@ -1324,6 +1344,22 @@ export default function CompliancePage() {
               above is kept.
             </p>
           )}
+          {/* FACTS FROM THIS CONVERSATION, WAITING — Workspace Task 3, board 6. Counted here and
+              confirmed in Company information, which is where the sidebar's badge points
+              (`components/AppLayout.tsx:41`). No line at none. */}
+          {!!drawerFacts && (
+            <div className="no-print mt-auto flex items-center justify-between gap-4 border-y border-gray-200 py-3">
+              <p className="text-[14px] text-gray-600">
+                {drawerFacts === 1
+                  ? '1 fact from this conversation is waiting in Company information'
+                  : `${drawerFacts} facts from this conversation are waiting in Company information`}
+              </p>
+              <a href="/company-information" className="shrink-0 text-[14px] text-[var(--green-ink)] hover:underline">
+                Review →
+              </a>
+            </div>
+          )}
+          </div>
         </Drawer>
       )}
 
@@ -1335,7 +1371,7 @@ export default function CompliancePage() {
           footer={
             <>
               <button onClick={printDrawer} className={OUTLINE}>Download</button>
-              <button onClick={() => deleteChecklist(listDrawer.row.id)}
+              <button onClick={() => askToDelete({ kind: 'checklist', id: listDrawer.row.id })}
                 className="ml-auto text-[14px] text-gray-400 hover:text-red-600">Delete</button>
             </>
           }>
@@ -1422,6 +1458,41 @@ export default function CompliancePage() {
             <span className="mt-0.5 block text-[13px] text-gray-600">The items we discussed, plus what we did not reach — those are checked now and marked as newly researched.</span>
           </button>
           <button onClick={() => setScopeFor(null)} className="mt-3 w-full py-2 text-[13px] text-gray-500 hover:text-gray-800">Not now</button>
+        </Sheet>
+      )}
+
+      {/* THE PAGE'S OWN DELETE CONFIRMATION — Workspace Task 3, board 7. It replaces `confirm()`.
+          It says what goes and what stays, and offers the copy first: "Download the summary" /
+          "Download the checklist" print the drawer still open beneath it, exactly as the drawer's
+          own Download does. Cancel has the focus, so Enter does not delete; Escape and a click
+          outside cancel. A failure keeps the sheet open and says so in one plain line. */}
+      {deleting && (
+        <Sheet onClose={cancelDelete}
+          title={deleting.kind === 'conversation' ? 'Delete this conversation?' : 'Delete this checklist?'}
+          lede={deleting.kind === 'conversation'
+            ? 'This deletes the conversation and its summary for good. You cannot undo it.'
+            : 'This deletes the checklist and every box you ticked, for good. You cannot undo it.'}>
+          <p className="text-[13px] leading-relaxed text-gray-600">
+            {deleting.kind === 'conversation'
+              ? 'Download the summary first if you may need it. Checklists, files and facts that came from it stay.'
+              : 'Download it first if you may need it.'}
+          </p>
+          {deleteFailed && (
+            <p className="mt-3 text-[13px] text-amber-900">That could not be deleted. Nothing was changed. Please try again.</p>
+          )}
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <button onClick={printDrawer} className={OUTLINE}>
+              {deleting.kind === 'conversation' ? 'Download the summary' : 'Download the checklist'}
+            </button>
+            {/* OUTLINE's box in red: the one destructive action, the same size as its neighbour. */}
+            <button onClick={confirmDelete} disabled={deleteBusy}
+              className="rounded-md border border-[#B42318] px-3 py-1.5 text-[14px] font-medium text-[#B42318] hover:bg-red-50 disabled:opacity-50">
+              Delete for good
+            </button>
+            <button onClick={cancelDelete} autoFocus className={`ml-auto ${TEXT_ACTION}`}>
+              Cancel
+            </button>
+          </div>
         </Sheet>
       )}
 
@@ -1533,6 +1604,12 @@ function FileCard({ file, onRetry }: { file: NonNullable<Exchange['file']>; onRe
 function Sheet({ title, lede, children, onClose }: {
   title: string; lede?: string; children: React.ReactNode; onClose: () => void
 }) {
+  // Escape closes a sheet, as a click outside it already does (Workspace Task 3).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
   return (
     <div className="no-print fixed inset-0 z-50 flex items-end justify-center bg-gray-900/40 p-4 sm:items-center" onClick={onClose}>
       <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>

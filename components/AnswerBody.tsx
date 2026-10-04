@@ -126,17 +126,32 @@ export function AnswerBody({ text, sources }: { text: string; sources: AnswerSou
 /**
  * THE SOURCES LIST. Not `no-print`: on paper it is the only way a citation can be followed, and
  * the print rule in `globals`/page CSS appends each URL after its title.
+ *
+ * *** IT FOLDS AT THREE — Workspace Task 3, board 1. *** An answer that searched widely carried a
+ * dozen sources under it, and the list was taller than the answer. The first three show; one line
+ * offers the rest, and the state is this list's own, so each answer folds and unfolds by itself.
+ *
+ *   · ON PAPER EVERY SOURCE PRINTS. The folded rows are `hidden print:flex`, not left out of the
+ *     markup, and the fold line is `no-print` — a downloaded answer must carry every citation.
+ *   · A MARKER STILL OPENS ITS SOURCE. `CiteMarker`'s card reads the answer's full `sources`
+ *     (`byN`, built from the prop, not from this list), so marker 7 shows source 7 whether or not
+ *     row 7 is folded away. Nothing here has to unfold for it.
  */
+const SOURCES_SHOWN = 3
+
 export function SourceList({ sources }: { sources: AnswerSource[] }) {
+  const [all, setAll] = useState(false)
   if (!sources.length) return null
+  const folds = sources.length > SOURCES_SHOWN
   return (
     <div className="mt-4 border-t border-gray-100 pt-3">
       <h4 className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-gray-400">Sources</h4>
       <ol className="space-y-1.5">
-        {sources.map((s) => {
+        {sources.map((s, i) => {
           const shown = displaySource(s.title, s.url)
+          const hidden = folds && !all && i >= SOURCES_SHOWN
           return (
-            <li key={s.n} className="flex gap-2 text-[13px] leading-snug">
+            <li key={s.n} className={`${hidden ? 'hidden print:flex' : 'flex'} gap-2 text-[13px] leading-snug`}>
               <span className="shrink-0 text-gray-400">{s.n}.</span>
               <span>
                 <a href={s.url} target="_blank" rel="noopener noreferrer"
@@ -147,6 +162,12 @@ export function SourceList({ sources }: { sources: AnswerSource[] }) {
           )
         })}
       </ol>
+      {folds && (
+        <button type="button" onClick={() => setAll((v) => !v)}
+          className="no-print mt-2 text-[13px] text-[var(--green-ink)] underline">
+          {all ? 'Show fewer' : `Show all ${sources.length} sources`}
+        </button>
+      )}
     </div>
   )
 }
