@@ -157,6 +157,28 @@ untested — applies to the runner as much as to anything it runs.
 
 ---
 
+## Live checks — The cron release — 4 October 2026 (commit `14eb03b`, `DECISIONS.md` §162)
+
+**All four nightly jobs answer Vercel Cron's GET.** No migration, nothing to change in Vercel (`CRON_SECRET` is already there). All three checks are free except the summary the first night writes (about $0.20 on Opus 5.5, one conversation).
+
+| # | Check | Where | What must be true |
+|---|---|---|---|
+| **CR-1** | **The sweeps answer within 5 minutes of the push** | Vercel → the project → **Settings → Cron Jobs** → `/api/jobs/scan-documents` → **View Logs**; the same for `/api/jobs/audit-sections` | Within 5 minutes of the deployment going live: **`GET` with status `200`**, not `405`, and again every 5 minutes after. A `404` means the secret did not match — `CRON_SECRET` on Vercel is not the value the code compares |
+| **CR-2** | **The nightly pair ran** | The next morning, one read-only query on production (printed below) | A **`summarise`** row started about **03:00 UTC** and a **`delete`** row about **03:30 UTC**, both `ok = true` with `finished_at` set. The first summarise row: `considered` 1, `summarised` 1 (CB-Test-3's conversation, quiet since 23 September), `errors` empty. The first delete row: `topics_cleared` 0 |
+| **CR-3** | **The summary it wrote** | Sign in as CB-Test-3 → Compliance Workspace → **Conversations** | That conversation reads *Summary ready* and its drawer shows the report. Any facts it proposed wait in **Company information** |
+
+The CR-2 query (SELECT only):
+```sql
+select job, started_at, finished_at, ok, counts, errors
+  from public.job_runs
+ where job in ('summarise', 'delete') and started_at > now() - interval '1 day'
+ order by started_at;
+```
+
+**What starts happening, and is expected:** `scan_documents` and `audit_sections` each write a `job_runs` row every 5 minutes — **288 a day each** — even with nothing to do. Nothing clears `job_runs`; that is a row in `docs/HANDOFF-CODE.md` §7.
+
+*(Before the commit, on staging through an isolated server on Haiku: every door on all four jobs, both refused with `CRON_SECRET` unset, two overlapping summarise runs and two overlapping delete runs, each with one result. **No person has run these checks yet.**)*
+
 ## Manual set — Workspace Stage 4 — 4 October 2026 (`docs/HANDOFF-WORKSPACE.md`, the Stage 4 note)
 
 **One press, one call, and work that survives leaving the page — commit `cfe1889`, migration 065.** `DECISIONS.md` §161.

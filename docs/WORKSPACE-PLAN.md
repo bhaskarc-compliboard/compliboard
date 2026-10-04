@@ -1,6 +1,6 @@
 # The Compliance Workspace — what's left
 
-**Version:** 2 · **Updated:** 4 October 2026 — Stage 4's first item built (Part 2) and the rebuild-from-empty rehearsal done. Version 1 was written after the Workspace Task 6 release.
+**Version:** 3 · **Updated:** 4 October 2026 — Stage 4's cron release built (Part 3). Version 2: Stage 4's first item built (Part 2) and the rebuild-from-empty rehearsal done. Version 1 was written after the Workspace Task 6 release.
 
 > **The owner's working copy is a Claude Doc, "Compliance Workspace — the map of what's left".
 > This file mirrors it**, so the next session can read the plan from the repository. When the two
@@ -74,7 +74,7 @@ and dropped if it is no longer needed.
   answer at once and work after the reply; a second press waits; the row and the drawer say "Summary
   being written…" / "Checklist being built…". The paid production test in `docs/TESTING.md` proves it
   on Vercel.
-- **The cron release for all four jobs** (Part 3). The write-up is `docs/reports/workspace-task2.md`.
+- **The cron release for all four jobs — DONE 4 October 2026** (Part 3, `14eb03b`, `DECISIONS.md` §162), to be released. Each job answers Vercel Cron's GET; the audit sweep and the deleter are safe against a double delivery. Proven on production by `docs/TESTING.md`, "The cron release" (the sweeps' GET 200 within 5 minutes; the next morning's `summarise` and `delete` rows).
 - **Rebuild staging from empty — the REHEARSAL is DONE**, 4 October 2026, on staging, by the
   `npm run db:restore` run after migration 065: 66 migrations, `000` → `065`, every verify block
   passing (`DECISIONS.md` §161). It ran early, under the old rule, and wiped staging's conversations,
