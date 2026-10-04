@@ -652,6 +652,7 @@ export type Database = {
       checklist_items: {
         Row: {
           agency_name: string | null
+          basis: string | null
           category: Database["public"]["Enums"]["checklist_item_category"]
           checklist_id: string | null
           clarifying_questions: Json | null
@@ -660,6 +661,8 @@ export type Database = {
           completed_at: string | null
           cost_note: string | null
           description: string | null
+          howto: Json | null
+          howto_started_at: string | null
           id: string
           is_determination: boolean | null
           name: string
@@ -674,12 +677,14 @@ export type Database = {
           source: string | null
           source_title: string | null
           source_url: string | null
+          sources: Json | null
           time_estimate: string | null
           what_you_need: string | null
           why: string | null
         }
         Insert: {
           agency_name?: string | null
+          basis?: string | null
           category: Database["public"]["Enums"]["checklist_item_category"]
           checklist_id?: string | null
           clarifying_questions?: Json | null
@@ -688,6 +693,8 @@ export type Database = {
           completed_at?: string | null
           cost_note?: string | null
           description?: string | null
+          howto?: Json | null
+          howto_started_at?: string | null
           id?: string
           is_determination?: boolean | null
           name: string
@@ -702,12 +709,14 @@ export type Database = {
           source?: string | null
           source_title?: string | null
           source_url?: string | null
+          sources?: Json | null
           time_estimate?: string | null
           what_you_need?: string | null
           why?: string | null
         }
         Update: {
           agency_name?: string | null
+          basis?: string | null
           category?: Database["public"]["Enums"]["checklist_item_category"]
           checklist_id?: string | null
           clarifying_questions?: Json | null
@@ -716,6 +725,8 @@ export type Database = {
           completed_at?: string | null
           cost_note?: string | null
           description?: string | null
+          howto?: Json | null
+          howto_started_at?: string | null
           id?: string
           is_determination?: boolean | null
           name?: string
@@ -730,11 +741,19 @@ export type Database = {
           source?: string | null
           source_title?: string | null
           source_url?: string | null
+          sources?: Json | null
           time_estimate?: string | null
           what_you_need?: string | null
           why?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "checklist_items_checklist_id_fkey"
+            columns: ["checklist_id"]
+            isOneToOne: false
+            referencedRelation: "checklist_list_v"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "checklist_items_checklist_id_fkey"
             columns: ["checklist_id"]
@@ -810,6 +829,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checklists_converted_to_checklist_id_fkey"
+            columns: ["converted_to_checklist_id"]
+            isOneToOne: false
+            referencedRelation: "checklist_list_v"
             referencedColumns: ["id"]
           },
           {
@@ -3482,6 +3508,68 @@ export type Database = {
       }
     }
     Views: {
+      checklist_list_v: {
+        Row: {
+          added: number | null
+          company_id: string | null
+          created_at: string | null
+          document_gap_id: string | null
+          document_id: string | null
+          done: number | null
+          from_conversation: number | null
+          from_topic_id: string | null
+          id: string | null
+          must_done: number | null
+          must_total: number | null
+          question: string | null
+          title: string | null
+          total: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checklists_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checklists_document_gap_id_fkey"
+            columns: ["document_gap_id"]
+            isOneToOne: false
+            referencedRelation: "document_gaps"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checklists_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "document_index_v"
+            referencedColumns: ["document_id"]
+          },
+          {
+            foreignKeyName: "checklists_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checklists_from_topic_fk"
+            columns: ["from_topic_id"]
+            isOneToOne: false
+            referencedRelation: "topic_list_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checklists_from_topic_fk"
+            columns: ["from_topic_id"]
+            isOneToOne: false
+            referencedRelation: "topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_index_v: {
         Row: {
           agencies: Json | null
@@ -3613,7 +3701,7 @@ export type Database = {
     }
     Enums: {
       applies_mode: "conditional" | "universal"
-      checklist_item_category: "must_do" | "good_to_have"
+      checklist_item_category: "must_do" | "good_to_have" | "to_confirm"
       chemical_state: "solid" | "liquid" | "gas"
       chemical_unit: "lb" | "gal" | "ft3"
       coverage_status: "not_built" | "generated" | "verified"
@@ -3806,7 +3894,7 @@ export const Constants = {
   public: {
     Enums: {
       applies_mode: ["conditional", "universal"],
-      checklist_item_category: ["must_do", "good_to_have"],
+      checklist_item_category: ["must_do", "good_to_have", "to_confirm"],
       chemical_state: ["solid", "liquid", "gas"],
       chemical_unit: ["lb", "gal", "ft3"],
       coverage_status: ["not_built", "generated", "verified"],

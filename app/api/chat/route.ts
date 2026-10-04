@@ -403,6 +403,8 @@ export async function POST(request: NextRequest) {
         const items = [
           ...(data.must_do ?? []).map((i) => ({ ...i, category: 'must_do' as const })),
           ...(data.good_to_have ?? []).map((i) => ({ ...i, category: 'good_to_have' as const })),
+          // Workspace Task 6: the third group, open questions to check (board 8).
+          ...(data.to_confirm ?? []).map((i) => ({ ...i, category: 'to_confirm' as const })),
         ].filter((i) => String(i?.name ?? '').trim());
         const title = String(data.title ?? '').trim().slice(0, 160) || userQuestion.slice(0, 160);
         const { data: saved, error: cErr } = await db.from('checklists').insert({

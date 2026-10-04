@@ -72,7 +72,7 @@ describe('RESEARCH_PREFER_GOV — on', () => {
     withSwitch('true', () => {
       const p = buildSystemPrompt('checklist', null, { open: true })
       assert.ok(p.includes(PREFER_GOV_SOURCES), 'the sentence is present')
-      assert.ok(p.trimEnd().endsWith('"good_to_have" is what is advisable but not required.'),
+      assert.ok(p.trimEnd().endsWith('Write in short, simple sentences.'),
         'the shape instruction is still the last thing in the prompt')
       // The only difference from the off case is the inserted sentence.
       assert.equal(p.replace(`\n\n${PREFER_GOV_SOURCES}`, ''), OPEN_CHECKLIST_SHAPE)

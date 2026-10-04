@@ -106,10 +106,11 @@ describe('the task list matches the CHECK constraint', () => {
     // this test earned its place by catching exactly that when `document_scan` was added to the
     // code — and again when `document_draft` was. Migration 038 wrote the original list;
     // **migration 050 owns it now**, having dropped and recreated the constraint to add
-    // `document_draft` beside `document_scan`.
+    // `document_draft` beside `document_scan`. **Migration 064 owns it now** (Workspace Task 6),
+    // having recreated it again to add `howto`.
     const inMigration = [
       'research', 'checklist', 'substeps', 'convert', 'summarise',
-      'gate', 'critique', 'audit', 'document_review', 'document_scan', 'document_draft', 'other',
+      'gate', 'critique', 'audit', 'document_review', 'document_scan', 'document_draft', 'howto', 'other',
     ]
     assert.deepEqual([...LEDGER_TASKS].sort(), inMigration.sort())
   })

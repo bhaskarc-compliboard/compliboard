@@ -70,7 +70,7 @@ describe('RESEARCH_SPECIALIST — on', () => {
     withSwitches(false, true, () => {
       const p = buildSystemPrompt('checklist', null, { open: true })
       assert.ok(p.startsWith(`${OPEN_ROLE}\n\n${RESEARCH_SPECIALIST_BLOCK}`))
-      assert.ok(p.trimEnd().endsWith('"good_to_have" is what is advisable but not required.'))
+      assert.ok(p.trimEnd().endsWith('Write in short, simple sentences.'))
       // Nothing but the block was inserted: strip it and the original shape is back.
       assert.equal(p.replace(`\n\n${RESEARCH_SPECIALIST_BLOCK}`, ''), OPEN_CHECKLIST_SHAPE)
     })

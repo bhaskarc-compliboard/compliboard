@@ -3,8 +3,8 @@
 **GENERATED — do not edit.** `node --env-file=.env.local scripts/schema-doc.js`, and it runs
 inside `npm run db:migrate`, so it cannot be stale by more than one migration.
 
-**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-10-04 03:03 UTC
-**Migrations applied:** 64 — `000` to `063`
+**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-10-04 05:13 UTC
+**Migrations applied:** 65 — `000` to `064`
 
 *Every figure here was read from the catalog of that database. Nothing is copied from the
 migration files, which say what was intended rather than what is there — and the two have
@@ -29,9 +29,9 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 
 **Compliance Workspace (M1) — research, conversations, checklists**
 
-- `topics` — 55 rows · touched by route chat, route checklists/from-topic, route documents, route jobs/delete, route jobs/summarise, +6 more
-- `checklists` — 16 rows · touched by route account, route audit-checklist, route chat, route checklists/from-topic, route document-checklist, +7 more
-- `checklist_items` — 65 rows · touched by route account/export, route account, route audit-checklist, route chat, route checklists/from-topic, +4 more
+- `topics` — 55 rows · touched by route chat, route checklists/from-topic, route documents, route jobs/delete, route jobs/summarise, +7 more
+- `checklists` — 16 rows · touched by route account, route audit-checklist, route chat, route checklist-items/[id]/how-to, route checklists/from-topic, +8 more
+- `checklist_items` — 65 rows · touched by route account/export, route account, route audit-checklist, route chat, route checklist-items/[id]/how-to, +5 more
 - `critic_reviews` — 0 rows · touched by lib criticRecord
 - `critic_findings` — 0 rows · touched by lib criticRecord
 
@@ -157,7 +157,7 @@ END)`
 
 One row per model call, written at the call. Prices are copied onto the row so a later change to config/pricing.ts cannot rewrite what a past call cost. cost_usd NULL = the model was not in the price table, which is not the same as free. DECISIONS.md §128 J.
 
-**Rows:** 177 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 183 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route document-draft`, `lib auditRun`, `lib auditTemplate`, `lib costLedger`, `lib documentScan`, `script check-live`, `script cost-report`, `script run-golden-audit`, `script run-golden-docs`, `script scan-document`
 
@@ -193,7 +193,7 @@ One row per model call, written at the call. Prices are copied onto the row so a
 - `ai_calls_input_tokens_check` — `CHECK ((input_tokens >= 0))`
 - `ai_calls_output_tokens_check` — `CHECK ((output_tokens >= 0))`
 - `ai_calls_searches_check` — `CHECK ((searches >= 0))`
-- `ai_calls_task_check` — `CHECK ((task = ANY (ARRAY['research'::text, 'checklist'::text, 'substeps'::text, 'convert'::text, 'summarise'::text, 'gate'::text, 'critique'::text, 'audit'::text, 'document_review'::text, 'document_scan'::text, 'document_draft'::text, 'other'::text])))`
+- `ai_calls_task_check` — `CHECK ((task = ANY (ARRAY['research'::text, 'checklist'::text, 'substeps'::text, 'convert'::text, 'summarise'::text, 'gate'::text, 'critique'::text, 'audit'::text, 'document_review'::text, 'document_scan'::text, 'document_draft'::text, 'howto'::text, 'other'::text])))`
 - `ai_calls_wall_ms_check` — `CHECK ((wall_ms >= 0))`
 
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
@@ -543,7 +543,7 @@ One row per audit run. A frozen snapshot of results as checked that day — reus
 
 **Rows:** 65 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route account/export`, `route account`, `route audit-checklist`, `route chat`, `route checklists/from-topic`, `route document-checklist`, `route substeps`, `screen compliance`, `script check-live`
+**Read or written by:** `route account/export`, `route account`, `route audit-checklist`, `route chat`, `route checklist-items/[id]/how-to`, `route checklists/from-topic`, `route document-checklist`, `route substeps`, `screen compliance`, `script check-live`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -573,6 +573,10 @@ One row per audit run. A frozen snapshot of results as checked that day — reus
 | `company_id` | uuid | no | — |
 | `origin` | text | yes | — |
 | `source_title` | text | yes | — |
+| `basis` | text | yes | — |
+| `sources` | jsonb | yes | — |
+| `howto` | jsonb | yes | — |
+| `howto_started_at` | timestamp with time zone | yes | — |
 
 **Points at:**
 
@@ -581,7 +585,9 @@ One row per audit run. A frozen snapshot of results as checked that day — reus
 
 **Constraints:**
 
+- `checklist_items_howto_is_an_object` — `CHECK (((howto IS NULL) OR (jsonb_typeof(howto) = 'object'::text)))`
 - `checklist_items_origin_is_known` — `CHECK (((origin IS NULL) OR (origin = ANY (ARRAY['conversation'::text, 'added'::text, 'document'::text]))))`
+- `checklist_items_sources_is_a_list` — `CHECK (((sources IS NULL) OR (jsonb_typeof(sources) = 'array'::text)))`
 
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
@@ -604,7 +610,7 @@ One row per audit run. A frozen snapshot of results as checked that day — reus
 
 **Rows:** 16 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route account`, `route audit-checklist`, `route chat`, `route checklists/from-topic`, `route document-checklist`, `route documents/report`, `route link-research`, `route substeps`, `screen compliance`, `screen dashboard`, `lib documentScan`, `script check-live`
+**Read or written by:** `route account`, `route audit-checklist`, `route chat`, `route checklist-items/[id]/how-to`, `route checklists/from-topic`, `route document-checklist`, `route documents/report`, `route link-research`, `route substeps`, `screen compliance`, `screen dashboard`, `lib documentScan`, `script check-live`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -1673,9 +1679,9 @@ One row per correction a person makes to what a document IS. Newest per field wi
 
 Candidate company facts read out of a conversation overnight. PROPOSED, never written to company_switches — DECISIONS.md §108. The quote is copied because the turn it came from is cleared after 7 days.
 
-**Rows:** 60 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 65 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route company-information`, `route document-actions`, `route documents/report`, `route jobs/summarise`, `route to-confirm`, `screen compliance`, `lib audit`, `lib companyContext`, `lib documentScan`, `script run-golden-audit`
+**Read or written by:** `route company-information`, `route document-actions`, `route documents/report`, `route to-confirm`, `screen compliance`, `lib audit`, `lib companyContext`, `lib documentScan`, `lib summaryReport`, `script run-golden-audit`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -2423,7 +2429,7 @@ One exploration. The transcript is disposable (WORKSPACE.md §6.4); the summary 
 
 **Rows:** 55 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route chat`, `route checklists/from-topic`, `route documents`, `route jobs/delete`, `route jobs/summarise`, `route to-confirm`, `route topics/[id]`, `route topics/[id]/summarise`, `screen compliance`, `lib conversation`, `script check-live`
+**Read or written by:** `route chat`, `route checklists/from-topic`, `route documents`, `route jobs/delete`, `route jobs/summarise`, `route to-confirm`, `route topics/[id]`, `route topics/[id]/summarise`, `screen compliance`, `lib conversation`, `lib summaryReport`, `script check-live`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -2486,7 +2492,7 @@ One message in a conversation. Cleared 7 days after the topic is summarised (DEC
 
 **Rows:** 169 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route jobs/delete`, `route jobs/summarise`, `route topics/[id]`, `screen compliance`, `lib attachedDocument`, `lib conversation`, `script check-live`
+**Read or written by:** `route jobs/delete`, `route jobs/summarise`, `route topics/[id]`, `lib attachedDocument`, `lib conversation`, `script check-live`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -2579,7 +2585,7 @@ Events, not inventory. Never decremented, never derived from row counts — tran
 | Type | Values |
 |---|---|
 | `applies_mode` | conditional | universal |
-| `checklist_item_category` | must_do | good_to_have |
+| `checklist_item_category` | must_do | good_to_have | to_confirm |
 | `chemical_state` | solid | liquid | gas |
 | `chemical_unit` | lb | gal | ft3 |
 | `coverage_status` | not_built | generated | verified |
@@ -2663,6 +2669,8 @@ Advances updated_at on UPDATE. Attached to every table carrying the column. Befo
 Does this SITE hold ANY ONE substance at or above ITS OWN threshold on the named list? An EXISTS, never a sum. THREE-VALUED: true when a known substance is over its threshold (safe even if the rest of the inventory is incomplete); NULL when nothing is recorded OR when any row is unidentified, unquantified, or in a unit we cannot compare; false only when every row is evaluable and none qualifies. An unidentified drum is absence of evidence, and absence of evidence never produces a clear — CLAUDE.md §3.2. Migrations 013 and 014.
 
 ## Views
+
+### `checklist_list_v`
 
 ### `document_index_v`
 
@@ -2766,4 +2774,5 @@ filtered HERE so no consumer can forget it (CLAUDE.md §3.2). A corrected link
 061
 062
 063
+064
 ```

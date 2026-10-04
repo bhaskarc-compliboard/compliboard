@@ -24,7 +24,7 @@ export type AIContent = string | any[]
  */
 import { recordAICall, describeCost, type LedgerTask } from './costLedger.ts'
 
-export type AITask = 'judgement' | 'critique' | 'prose' | 'default' | 'substeps' | 'summary' | 'document_scan' | 'document_draft' | 'audit'
+export type AITask = 'judgement' | 'critique' | 'prose' | 'default' | 'substeps' | 'summary' | 'document_scan' | 'document_draft' | 'audit' | 'howto'
 
 /**
  * What a caller passes so its call lands in the cost ledger (`DECISIONS.md` §128 J).
@@ -60,6 +60,8 @@ export interface AskAIOptions {
    *  This is a server-side tool: Anthropic runs the search and returns the
    *  final answer in this same call, no second round-trip needed. */
   enableWebSearch?: boolean
+  /** `web_search.max_uses` for this call (`searchLimit`); the development cap still applies. */
+  maxSearches?: number
   /**
    * A JSON schema the answer must conform to — `output_config.format`, structured outputs.
    *
@@ -129,6 +131,11 @@ const TASK_MODELS: Record<AITask, () => string> = {
   // on it is different from the case for a research answer, and it must be movable on its own.
   // Falls back to the judgement tier when unset, exactly as `document_scan` does.
   audit: () => process.env.AI_MODEL_AUDIT || TASK_MODELS.judgement(),
+  // *** "HOW DO I DO THIS?" IS RESEARCH, AND IT GETS ITS OWN NAME — Workspace Task 6. ***
+  // It searches the web for one checklist item and returns steps, each checked against what the
+  // search returned. It is research, so unset it falls back to the research tier (`prose`, the tier
+  // `/api/chat` research answers run on) — exactly as `document_scan` falls back to judgement.
+  howto: () => process.env.AI_MODEL_HOWTO || TASK_MODELS.prose(),
   default:   () => process.env.AI_MODEL           || 'claude-sonnet-4-5',
 }
 
@@ -214,6 +221,36 @@ export function modelAcceptsEffort(model: string): boolean {
  */
 export function scanStructuredOutput(): boolean {
   return (process.env.AI_SCAN_STRUCTURED ?? '').trim().toLowerCase() !== 'false'
+}
+
+/**
+ * *** A PER-CALL SEARCH LIMIT, AS A SAFETY RAIL — the owner's decision, Workspace Task 6 Part C. ***
+ *
+ * Read from the named variable, else the default. It is `web_search.max_uses`, set where the tool is
+ * configured (`callWithCitations` and `askAIOpenStream` below), and the smaller of it and the
+ * development cap (`devMaxSearches`) wins. Not a quality setting: the numbers are tuned at the quality
+ * pass. Uncapped, one "Everything on this subject" on Haiku ran 13 searches and 205k input tokens
+ * ($0.37) on 4 October 2026.
+ *
+ *   AI_SEARCH_MAX_HOWTO     "How do I do this?"           default 6
+ *   AI_SEARCH_MAX_COMPLETE  "Everything on this subject"  default 8
+ *
+ * A value that is not a whole number above zero is a loud warning and then the default.
+ */
+export function searchLimit(name: 'AI_SEARCH_MAX_HOWTO' | 'AI_SEARCH_MAX_COMPLETE', fallback: number): number {
+  const raw = String(process.env[name] ?? '').trim()
+  if (!raw) return fallback
+  const n = Number(raw)
+  if (Number.isInteger(n) && n > 0) return n
+  console.warn(`AI: ${name}=${JSON.stringify(process.env[name])} is not a whole number above zero — using ${fallback}.`)
+  return fallback
+}
+
+/** The `max_uses` actually sent: the smaller of the call's own limit and the development cap. */
+export function effectiveSearchCap(callLimit: number | undefined): number | null {
+  const dev = devMaxSearches()
+  const caps = [dev, callLimit].filter((v): v is number => typeof v === 'number' && v > 0)
+  return caps.length ? Math.min(...caps) : null
 }
 
 export function devMaxSearches(): number | null {
@@ -324,6 +361,27 @@ export async function askAIWithCitations(
   content: AIContent,
   options: AskAIOptions = {}
 ): Promise<AIAnswer> {
+  return (await callWithCitations(systemPrompt, content, options)).answer
+}
+
+/**
+ * The same call, also returning every page the web search RETURNED (`searchResults`), cited or not —
+ * Workspace Task 6. "Everything on this subject" must prove that each added item's link came from this
+ * call's search; the cited sources alone cannot prove a link the model wrote into a JSON field.
+ */
+export async function askAIWithSearchResults(
+  systemPrompt: string,
+  content: AIContent,
+  options: AskAIOptions = {}
+): Promise<{ answer: AIAnswer; searched: SearchResult[] }> {
+  return callWithCitations(systemPrompt, content, options)
+}
+
+async function callWithCitations(
+  systemPrompt: string,
+  content: AIContent,
+  options: AskAIOptions = {}
+): Promise<{ answer: AIAnswer; searched: SearchResult[] }> {
   const provider = process.env.AI_PROVIDER || 'claude'
   /**
    * *** THE CEILING IS THE SDK'S, AND IT IS READ FROM THE SDK RATHER THAN CHOSEN. ***
@@ -399,7 +457,7 @@ export async function askAIWithCitations(
           : {}),
         ...(options.enableWebSearch
           ? { tools: [{ type: 'web_search_20250305', name: 'web_search',
-                        ...(devMaxSearches() ? { max_uses: devMaxSearches() } : {}) }] }
+                        ...(effectiveSearchCap(options.maxSearches) ? { max_uses: effectiveSearchCap(options.maxSearches) } : {}) }] }
           : {}),
       } as any)
 
@@ -446,9 +504,9 @@ export async function askAIWithCitations(
         console.log(describeCost(row))
         void recordAICall(row)      // not awaited: bookkeeping never delays the answer
       }
-      return answer
+      return { answer, searched: searchResults(message.content as unknown as Array<Record<string, unknown>>) }
     }
-    return { text: '', sources: [] }
+    return { answer: { text: '', sources: [] }, searched: [] }
   }
 
   throw new Error(`Unknown AI_PROVIDER: "${provider}". Supported: claude`)
@@ -579,7 +637,10 @@ export type OpenStreamEvent =
   // `inputTokens` and `searches` are here for the cost report (§128 J): output tokens alone
   // cannot price a call, and on these answers the input side is the larger half of the bill.
   | { type: 'done'; answer: AIAnswer; stopReason: string | null; outputTokens: number | null
-      inputTokens: number | null; searches: number }
+      inputTokens: number | null; searches: number
+      // Every page the web search RETURNED in this call, cited or not (`searchResults`). A caller
+      // that must prove a link came from this call's search reads this; nothing else needs it.
+      searched: SearchResult[] }
   | { type: 'error'; message: string }
 
 /**
@@ -653,6 +714,30 @@ export function stripNarration(
   return content.filter((b, i) => !(i < lastToolUse && b.type === 'text'))
 }
 
+/** One page a web search returned. */
+export interface SearchResult { url: string; title: string }
+
+/**
+ * EVERY PAGE THE WEB SEARCH RETURNED IN ONE RESPONSE — Workspace Task 6.
+ *
+ * `reassemble` keeps only what the answer CITED. "How do I do this?" must prove that each step's link
+ * is a page this call's search actually returned, and a step's link need not be a cited span. So the
+ * `web_search_tool_result` blocks are read directly: each holds a list of `web_search_result` entries
+ * with a `url` and a `title`. A refused search (`web_search_tool_result_error`) holds no list and adds
+ * nothing. Deduplicated by URL, in the order returned.
+ */
+export function searchResults(content: Array<Record<string, unknown>>): SearchResult[] {
+  const out: SearchResult[] = []
+  for (const block of content) {
+    if (block.type !== 'web_search_tool_result' || !Array.isArray(block.content)) continue
+    for (const r of block.content as Array<{ type?: string; url?: string; title?: string }>) {
+      if (r?.type !== 'web_search_result' || !r.url) continue
+      if (!out.some((o) => o.url === r.url)) out.push({ url: r.url, title: String(r.title ?? '').trim() || r.url })
+    }
+  }
+  return out
+}
+
 /** The open answer: narration removed, then the existing reassembly — prose joined, citations numbered. */
 export function openAnswer(content: Array<Record<string, unknown>>): AIAnswer {
   return reassemble(stripNarration(content))
@@ -680,10 +765,11 @@ export type Effort = (typeof EFFORT_LEVELS)[number]
 /**
  * The effort this process runs at, from `AI_EFFORT`.
  *
- * Unset means the field is not sent at all, which is the API's own default (`high`). An
- * UNRECOGNISED value is a loud warning and then the same absence — never a silent downgrade,
- * because a typo that quietly halves the reasoning depth is indistinguishable from the model
- * getting worse.
+ * Unset means `DEFAULT_EFFORT` (medium), which IS sent — not the API's own default (`high`); see
+ * below. An UNRECOGNISED value is a loud warning and then the same default — never a silent change,
+ * because a typo that quietly moves the reasoning depth is indistinguishable from the model getting
+ * better or worse. (Corrected 4 October 2026, Workspace Task 6: this said "unset = not sent, the
+ * API's default high", which the code below has not done since §128.)
  */
 /**
  * *** THE DEFAULT IS `medium`, AND IT IS A DELIBERATE DEFAULT RATHER THAN THE API's. ***
@@ -716,6 +802,24 @@ export function effortFromEnv(): Effort | null {
   return DEFAULT_EFFORT
 }
 
+/**
+ * *** "HOW DO I DO THIS?" HAS ITS OWN EFFORT — the owner's decision, Workspace Task 6 STOP 1. ***
+ *
+ * Read exactly like `AI_EFFORT`, from `AI_EFFORT_HOWTO`, and falling back to `effortFromEnv()` when
+ * unset — so with neither set it is `DEFAULT_EFFORT` (medium), which is what production runs. It
+ * exists because a local `AI_EFFORT=low` (cheap builds, CLAUDE.md §3.4a) made Opus search ONCE per
+ * item on the first measured runs, and research that searches once cannot find the mothership's own
+ * page. An unreadable value is a loud warning and then the same fallback.
+ */
+export function effortForHowto(): Effort | null {
+  const raw = String(process.env.AI_EFFORT_HOWTO ?? '').trim().toLowerCase()
+  if (!raw) return effortFromEnv()
+  if ((EFFORT_LEVELS as readonly string[]).includes(raw)) return raw as Effort
+  console.warn(`AI: AI_EFFORT_HOWTO=${JSON.stringify(process.env.AI_EFFORT_HOWTO)} is not one of ` +
+               `${EFFORT_LEVELS.join(', ')} — falling back to AI_EFFORT.`)
+  return effortFromEnv()
+}
+
 export interface OpenCallOptions {
   task?: AITask
   model?: string
@@ -726,6 +830,8 @@ export interface OpenCallOptions {
   signal?: AbortSignal
   /** Default true. The MODEL decides whether to search; this only makes the tool available. */
   enableWebSearch?: boolean
+  /** `web_search.max_uses` for this call (`searchLimit`); the development cap still applies. */
+  maxSearches?: number
   /** Records this call in the cost ledger. Omitted = not counted; see LedgerRef. */
   ledger?: LedgerRef
 }
@@ -755,7 +861,7 @@ export async function* askAIOpenStream(
   if (wantedEffort && !effort) {
     console.warn(`AI: dropping effort=${wantedEffort} — ${model} does not accept it. The model answers at its own depth, so the intent is preserved.`)
   }
-  const searchCap = devMaxSearches()
+  const searchCap = effectiveSearchCap(options.maxSearches)
   // The exact parameter, in the log, so what was SENT is recoverable from a request days later
   // rather than inferred from the answer's length.
   console.log(`AI: open call model=${model} ` +
@@ -865,5 +971,6 @@ export async function* askAIOpenStream(
     outputTokens: (final as any).usage?.output_tokens ?? null,
     inputTokens: (final as any).usage?.input_tokens ?? null,
     searches,
+    searched: searchResults(final.content as unknown as Array<Record<string, unknown>>),
   }
 }

@@ -308,10 +308,19 @@ Respond with a single JSON object and nothing else — no prose around it, no ma
       "source_title": "the name of the source, or an empty string",
       "source_url": "a link to it, or an empty string"
     }
+  ],
+  "to_confirm": [
+    {
+      "name": "the question to settle, in a few words",
+      "description": "what to check, and with whom",
+      "why": "what depends on the answer",
+      "source_title": "the name of the source, or an empty string",
+      "source_url": "a link to it, or an empty string"
+    }
   ]
 }
 
-"must_do" is what is required. "good_to_have" is what is advisable but not required.`
+"must_do" is what the law requires, in the order the person has to act. "good_to_have" is advice that is not a legal rule; never put advice in "must_do". "to_confirm" is an open question to check: a point that is unverified, uncertain, or depends on a fact you do not have. Never state an item more firmly than its source does. Write in short, simple sentences.`
 
 
 export function buildSystemPrompt(

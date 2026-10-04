@@ -20,7 +20,8 @@
  * reports an answer the conversation withdrew.
  *
  * The voice and the facts rules are carried over from `prompts/summarise.ts`, which they were
- * measured into (Fix Round 1 (I), §108).
+ * measured into (Fix Round 1 (I), §108). That file had no importer after Task 5 and was deleted in
+ * Workspace Task 6; `git show cfa3738:prompts/summarise.ts` reads it.
  */
 /** Whether this prompt asks for a `basis` on every item; the check enforces it when true. */
 export const SUMMARY_PROMPT_ASKS_FOR_BASIS = true

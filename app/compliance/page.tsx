@@ -36,8 +36,12 @@ import { ACCEPTED_FILE_TYPES } from '@/lib/acceptedFiles'
 import type { SummaryReport, ReportItem } from '@/lib/summaryReport'
 import DocumentReport from '@/components/DocumentReport'
 import {
-  conversationStatus, progressLabel, progressPercent, friendlyDate,
+  conversationStatus, progressPercent, friendlyDate,
 } from '@/lib/conversationStatus'
+import {
+  groupItems, madeInWorkspace, mustDoLabel, noSourceText, itemSources, isResearching, howToHeading, stepSourceNumbers,
+} from '@/lib/checklistView'
+import { OTHER_SOURCE_LINE, DROPPED_LINE, urlKey, sourceCount, type HowToResult } from '@/lib/howTo'
 
 type Tab = 'ask' | 'conversations' | 'checklists'
 
@@ -127,17 +131,28 @@ const toTopicRow = (r: TopicListRow): TopicRow => ({
 interface ChecklistRow {
   id: string; title: string | null; created_at: string
   total: number; done: number; fromConversation: number; added: number
+  /** Must do only — the drawer's progress and the tab's count (Workspace Task 6, board 8). */
+  mustTotal: number; mustDone: number
 }
+
+/** One row of `checklist_list_v` (migration 064): the Checklists tab in one read. */
+interface ChecklistListRow {
+  id: string; title: string | null; created_at: string
+  total: number; done: number; must_total: number; must_done: number
+  from_conversation: number; added: number
+}
+const CHECKLIST_LIST_COLUMNS = 'id, title, created_at, total, done, must_total, must_done, from_conversation, added'
 
 interface ItemRow {
   id: string; name: string; description: string | null; why: string | null
   source_url: string | null; source_title: string | null
   origin: string | null; completed: boolean; category: string; sort_order: number
   parent_item_index: number | null
+  /** Task 6: every source the citation check let stand; "How do I do this?" and its claim. */
+  sources: unknown; howto: HowToResult | null; howto_started_at: string | null
 }
-
-
-const MAX_STEPS_IN_FLIGHT = 3
+const ITEM_COLUMNS = 'id, name, description, why, source_url, source_title, origin, completed, category, sort_order, '
+  + 'parent_item_index, sources, howto, howto_started_at'
 
 /**
  * HOW MANY CONVERSATIONS AND CHECKLISTS ONE LOAD READS — Task 2b. It was the literal 60 in two
@@ -297,7 +312,7 @@ export default function CompliancePage() {
 
   // ---- drawers and sheets ----
   const [summaryDrawer, setSummaryDrawer] = useState<TopicRow | null>(null)
-  const [listDrawer, setListDrawer] = useState<{ row: ChecklistRow; items: ItemRow[] } | null>(null)
+  const [listDrawer, setListDrawer] = useState<{ row: ChecklistRow; items: ItemRow[]; ordered: boolean } | null>(null)
   const [scopeFor, setScopeFor] = useState<string | null>(null)
   /**
    * THE DOCUMENTS REPORT, OPENED FROM A FILE CARD — Workspace Task 4, board 4. The same component
@@ -322,12 +337,27 @@ export default function CompliancePage() {
 
   const fileInput = useRef<HTMLInputElement>(null)
 
-  // micro-steps, generated in the background — Run 1's rules, three at a time
-  const [steps, setSteps] = useState<Record<string, ItemRow[]>>({})
-  const [stepsPending, setStepsPending] = useState<Record<string, boolean>>({})
-  const stepQueue = useRef<Array<{ checklistId: string; index: number; item: ItemRow }>>([])
-  const stepStarted = useRef<Set<string>>(new Set())
-  const stepRunning = useRef(false)
+  /**
+   * "HOW DO I DO THIS?" — Workspace Task 6, board 9. `howToBusy` is this tab's own click; the item's
+   * `howto_started_at`, read from the database, is everyone's (a reload, a second tab). Either shows
+   * the spinner. `howToError` holds the route's plain sentence for an item whose run failed.
+   *
+   * The machine-written micro-steps are gone: never generated, never shown. The rows already stored
+   * (`parent_item_index` set) stay in the database untouched; the drawer simply does not read them.
+   */
+  const [howToBusy, setHowToBusy] = useState<Record<string, boolean>>({})
+  const [howToError, setHowToError] = useState<Record<string, string>>({})
+  /**
+   * The clock the "researching" test reads, kept in state so rendering stays pure. It only has to be
+   * good to the minute: it decides whether a claim is older than `HOWTO_LOCK_MS` (10 minutes).
+   */
+  const [clock, setClock] = useState(0)
+  useEffect(() => {
+    const tick = () => setClock(Date.now())
+    const first = setTimeout(tick, 0)
+    const t = setInterval(tick, 30_000)
+    return () => { clearTimeout(first); clearInterval(t) }
+  }, [])
 
   const started = exchanges.length > 0
 
@@ -391,23 +421,20 @@ export default function CompliancePage() {
     setTopics(((data ?? []) as unknown as TopicListRow[]).map(toTopicRow))
   }, [supabase])
 
+  /**
+   * THE CHECKLISTS TAB IN ONE READ — Workspace Task 6, B3. It was 1 + N: the checklists, then each
+   * one's items (`docs/HANDOFF-CODE.md` §7). `checklist_list_v` (migration 064) counts top-level items
+   * and must-dos in the database, as the caller, under every base-table policy.
+   */
   const loadChecklists = useCallback(async () => {
-    const { data } = await supabase
-      .from('checklists').select('id, title, created_at').order('created_at', { ascending: false }).limit(LIST_CAP)
-    const rows = (data ?? []) as Array<{ id: string; title: string | null; created_at: string }>
-    const withCounts = await Promise.all(rows.map(async (c) => {
-      const { data: items } = await supabase
-        .from('checklist_items').select('completed, origin').eq('checklist_id', c.id).is('parent_item_index', null)
-      const list = (items ?? []) as Array<{ completed: boolean; origin: string | null }>
-      return {
-        ...c,
-        total: list.length,
-        done: list.filter((i) => i.completed).length,
-        fromConversation: list.filter((i) => i.origin === 'conversation').length,
-        added: list.filter((i) => i.origin === 'added').length,
-      }
-    }))
-    setChecklists(withCounts)
+    const { data, error } = await supabase
+      .from('checklist_list_v').select(CHECKLIST_LIST_COLUMNS)
+      .order('created_at', { ascending: false }).limit(LIST_CAP)
+    if (error) { setNotice('Your checklists could not be loaded. Please reload the page.'); return }
+    setChecklists(((data ?? []) as unknown as ChecklistListRow[]).map((c) => ({
+      id: c.id, title: c.title, created_at: c.created_at, total: c.total, done: c.done,
+      mustTotal: c.must_total, mustDone: c.must_done, fromConversation: c.from_conversation, added: c.added,
+    })))
   }, [supabase])
 
   useEffect(() => {
@@ -809,48 +836,116 @@ export default function CompliancePage() {
 
   // ------------------------------------------------------------------ checklists
   async function openChecklist(id: string) {
-    const { data: row } = await supabase.from('checklists').select('id, title, created_at').eq('id', id).maybeSingle()
+    const { data: row } = await supabase.from('checklists').select('id, title, created_at, document_id').eq('id', id).maybeSingle()
     if (!row) { setNotice('That checklist could not be opened. Please try again.'); return }
-    const { data: items } = await supabase
-      .from('checklist_items')
-      .select('id, name, description, why, source_url, source_title, origin, completed, category, sort_order, parent_item_index')
-      .eq('checklist_id', id).order('sort_order')
-    const all = (items ?? []) as ItemRow[]
-    const parents = all.filter((i) => i.parent_item_index === null)
-    const kids: Record<string, ItemRow[]> = {}
-    for (const k of all.filter((i) => i.parent_item_index !== null)) {
-      const key = `${id}-${k.parent_item_index}`
-      ;(kids[key] ||= []).push(k)
-    }
-    setSteps((prev) => ({ ...prev, ...kids }))
-    const r = row as unknown as { id: string; title: string | null; created_at: string }
-    setListDrawer({
-      row: {
-        id, title: r.title, created_at: r.created_at,
-        total: parents.length, done: parents.filter((i) => i.completed).length,
-        fromConversation: parents.filter((i) => i.origin === 'conversation').length,
-        added: parents.filter((i) => i.origin === 'added').length,
-      },
-      items: parents,
-    })
-    queueSteps(id, parents, kids)
+    // Top-level items only. The old micro-steps (`parent_item_index` set) are not read or shown.
+    const { data: items, error } = await supabase
+      .from('checklist_items').select(ITEM_COLUMNS)
+      .eq('checklist_id', id).is('parent_item_index', null).order('sort_order')
+    if (error) { setNotice('That checklist could not be opened. Please try again.'); return }
+    const parents = (items ?? []) as unknown as ItemRow[]
+    const r = row as unknown as { id: string; title: string | null; created_at: string; document_id: string | null }
+    setHowToError({})
+    // Numbered "in the order to do them" only when the workspace made it (`madeInWorkspace`).
+    setListDrawer({ row: rowFor(r, parents), items: parents, ordered: madeInWorkspace(r, parents) })
   }
 
+  /** The drawer's counts, from the items it holds. Must do only for the progress (board 8). */
+  function rowFor(r: { id: string; title: string | null; created_at: string }, items: ItemRow[]): ChecklistRow {
+    const must = items.filter((i) => i.category === 'must_do')
+    return {
+      id: r.id, title: r.title, created_at: r.created_at,
+      total: items.length, done: items.filter((i) => i.completed).length,
+      mustTotal: must.length, mustDone: must.filter((i) => i.completed).length,
+      fromConversation: items.filter((i) => i.origin === 'conversation').length,
+      added: items.filter((i) => i.origin === 'added').length,
+    }
+  }
+
+  function setDrawerItems(update: (items: ItemRow[]) => ItemRow[]) {
+    setListDrawer((d) => {
+      if (!d) return d
+      const items = update(d.items)
+      return { ...d, items, row: rowFor(d.row, items) }
+    })
+  }
+
+  /**
+   * THE TICK CHECKS ITS OWN WRITE NOW (machinery N8). It was awaited and its error dropped, so a
+   * refused write left a tick on screen that the database never held. On a failure the tick is taken
+   * back and the page says so.
+   */
   async function toggleItem(item: ItemRow) {
     if (!listDrawer || !companyId) return
     const next = !item.completed
-    setListDrawer((d) => d && ({
-      ...d,
-      items: d.items.map((i) => (i.id === item.id ? { ...i, completed: next } : i)),
-      row: { ...d.row, done: d.row.done + (next ? 1 : -1) },
-    }))
+    setDrawerItems((items) => items.map((i) => (i.id === item.id ? { ...i, completed: next } : i)))
     // `.eq('company_id')` beside `.eq('id')` — RLS already restricts this, and the second
     // filter is what keeps that true if a policy is ever loosened.
-    await supabase.from('checklist_items')
-      .update({ completed: next, completed_at: next ? new Date().toISOString() : null })
-      .eq('id', item.id).eq('company_id', companyId)
+    let failed = false
+    try {
+      const { data, error } = await supabase.from('checklist_items')
+        .update({ completed: next, completed_at: next ? new Date().toISOString() : null })
+        .eq('id', item.id).eq('company_id', companyId).select('id')
+      // Under RLS a refused update changes zero rows rather than erroring; both are a failure.
+      failed = !!error || !data?.length
+    } catch { failed = true }
+    if (failed) {
+      setDrawerItems((items) => items.map((i) => (i.id === item.id ? { ...i, completed: !next } : i)))
+      setNotice(`"${item.name}" could not be marked ${next ? 'done' : 'not done'}. Nothing was changed. Please try again.`)
+      return
+    }
     loadChecklists()
   }
+
+  /**
+   * "HOW DO I DO THIS?" — ONE CLICK, ONE CALL (`app/api/checklist-items/[id]/how-to/route.ts`).
+   * The route claims the item in the database before it calls anything; a 409 means another click or
+   * tab holds it, and this one waits for that result instead of paying for a second.
+   */
+  async function howTo(item: ItemRow) {
+    if (howToBusy[item.id] || (clock > 0 && isResearching(item.howto_started_at, clock))) return
+    setHowToBusy((b) => ({ ...b, [item.id]: true }))
+    setHowToError((e) => { const n = { ...e }; delete n[item.id]; return n })
+    try {
+      const res = await fetch(`/api/checklist-items/${item.id}/how-to`, {
+        method: 'POST', headers: await authHeaders() })
+      const j = await res.json().catch(() => null)
+      if (res.ok && j?.howto) {
+        setDrawerItems((items) => items.map((i) => (i.id === item.id ? { ...i, howto: j.howto, howto_started_at: null } : i)))
+      } else if (res.status === 409) {
+        setDrawerItems((items) => items.map((i) => (i.id === item.id ? { ...i, howto_started_at: new Date().toISOString() } : i)))
+      } else {
+        setHowToError((e) => ({ ...e, [item.id]: j?.error ?? 'We could not look this up just now. Nothing was saved. Please try again.' }))
+      }
+    } catch {
+      setHowToError((e) => ({ ...e, [item.id]: 'We could not look this up just now. Nothing was saved. Please try again.' }))
+    } finally {
+      setHowToBusy((b) => ({ ...b, [item.id]: false }))
+    }
+  }
+
+  /**
+   * WAITING FOR A RUN SOMEBODY ELSE STARTED — a reload, a second tab, or a 409. While an item in the
+   * open drawer is marked researching in the database and this tab has no request of its own in
+   * flight, re-read just those items every 5 seconds until the claim clears. Reads only; no call.
+   */
+  const waitingIds = (listDrawer?.items ?? [])
+    .filter((i) => !i.howto && !howToBusy[i.id] && clock > 0 && isResearching(i.howto_started_at, clock)).map((i) => i.id).join(',')
+  useEffect(() => {
+    if (!waitingIds) return
+    const ids = waitingIds.split(',')
+    const t = setInterval(async () => {
+      const { data } = await supabase.from('checklist_items').select('id, howto, howto_started_at').in('id', ids)
+      const fresh = new Map(((data ?? []) as Array<{ id: string; howto: HowToResult | null; howto_started_at: string | null }>)
+        .map((r) => [r.id, r]))
+      setDrawerItems((items) => items.map((i) => {
+        const f = fresh.get(i.id)
+        return f ? { ...i, howto: f.howto, howto_started_at: f.howto_started_at } : i
+      }))
+    }, 5000)
+    return () => clearInterval(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [waitingIds, supabase])
 
   /**
    * Returns whether the checklist is gone. *** BOTH DELETES ARE CHECKED NOW *** (machinery N8):
@@ -880,96 +975,6 @@ export default function CompliancePage() {
     setDeleteBusy(false)
     if (ok) setDeleting(null)
     else setDeleteFailed(true)
-  }
-
-  /**
-   * MICRO-STEPS IN THE BACKGROUND — at most three in flight, never repeated, never lost.
-   *
-   * *** THEY WERE REPEATED, AND IT COST ABOUT $2 IN A SESSION THAT BUILT NO CHECKLIST. ***
-   *
-   * The rule was always "build the queue from what is ABSENT from storage", and the queue did
-   * exactly that. The defect was one layer down: **a generated step never reached storage.**
-   * `runStepQueue` ended at `setSteps(...)`, which is React state, and nothing wrote the rows
-   * back to `checklist_items`. So `loaded` — read from the database on every open — was empty
-   * every time, every item looked missing every time, and `stepStarted` is a `useRef` that dies
-   * with the page. Opening a checklist after a reload regenerated all of it.
-   *
-   * During the 23-24 September layout passes the harness opened checklist drawers repeatedly
-   * across fresh page loads, and each open re-bought the same micro-steps. `substeps` went from
-   * 0 ledger rows to 65.
-   *
-   * The fix is persistence, not a new guard: the steps are written as `checklist_items` rows
-   * with `parent_item_index` set, which is the shape `openChecklist` already reads back. The
-   * three existing guards then do what they always claimed — `loaded` stops an item that has
-   * them, `stepStarted` stops one in flight, and neither survives being wrong.
-   */
-  function queueSteps(checklistId: string, items: ItemRow[], loaded: Record<string, ItemRow[]>) {
-    const missing = items
-      .map((item, index) => ({ checklistId, index, item }))
-      .filter(({ index }) => {
-        const key = `${checklistId}-${index}`
-        return !loaded[key] && !steps[key] && !stepStarted.current.has(key)
-      })
-    if (!missing.length) return
-    for (const m of missing) stepStarted.current.add(`${m.checklistId}-${m.index}`)
-    stepQueue.current.push(...missing)
-    if (!stepRunning.current) void runStepQueue()
-  }
-
-  async function runStepQueue() {
-    stepRunning.current = true
-    const worker = async () => {
-      for (;;) {
-        const job = stepQueue.current.shift()
-        if (!job) return
-        const key = `${job.checklistId}-${job.index}`
-        setStepsPending((p) => ({ ...p, [key]: true }))
-        try {
-          const res = await fetch('/api/chat', {
-            method: 'POST', headers: await authHeaders({ 'Content-Type': 'application/json' }),
-            body: JSON.stringify({
-              mode: 'substeps',
-              question: `Main checklist item: "${job.item.name}"\nDescription: "${job.item.description ?? ''}"\n\nGenerate 3 to 6 specific micro-steps to complete this one item only. Every step must include a direct deep link (not a homepage), a time estimate, a cost, and what to prepare.`,
-            }),
-          })
-          const json = await res.json().catch(() => null)
-          // Steps inherit the parent's source and origin and carry none of their own (§125).
-          const subs = ((json?.data?.must_do ?? []) as ItemRow[]).map((s) => ({
-            ...s, source_url: job.item.source_url, source_title: job.item.source_title, origin: job.item.origin,
-          }))
-          setSteps((prev) => ({ ...prev, [key]: subs }))
-
-          // *** WRITE THEM DOWN. *** Without this the next page load regenerates them, which is
-          // the whole defect. `parent_item_index` is what `openChecklist` reads back as `loaded`.
-          if (subs.length && companyId) {
-            const { error } = await supabase.from('checklist_items').insert(
-              subs.map((sub, n) => ({
-                checklist_id: job.checklistId,
-                company_id: companyId,
-                name: String(sub.name ?? '').trim().slice(0, 500),
-                description: String(sub.description ?? '').trim() || null,
-                why: String((sub as { why?: string }).why ?? '').trim() || null,
-                source_url: job.item.source_url, source_title: job.item.source_title,
-                origin: job.item.origin, category: job.item.category,
-                parent_item_index: job.index, sort_order: n,
-              })))
-            // A failed write must not lose the steps on screen — but it MUST allow a retry,
-            // or the item is stuck with steps nobody can see again.
-            if (error) {
-              console.error(`micro-steps: generated but not saved for ${key}: ${error.message}`)
-              stepStarted.current.delete(key)
-            }
-          }
-        } catch {
-          // One item failing must not stop the other two. Let the next open retry it.
-          stepStarted.current.delete(key)
-        } finally {
-          setStepsPending((p) => ({ ...p, [key]: false }))
-        }
-      }
-    }
-    await Promise.all(Array.from({ length: MAX_STEPS_IN_FLIGHT }, worker))
-    stepRunning.current = false
   }
 
   /**
@@ -1469,8 +1474,8 @@ export default function CompliancePage() {
                               {/* GREEN ONLY WHEN IT IS ACTUALLY DONE. Every row was green,
                                   including rows at zero, which made the colour mean "this is a
                                   checklist" rather than "this is finished". */}
-                              <span className={c.total > 0 && c.done === c.total ? 'text-[var(--green)]' : undefined}>
-                                {progressLabel(c.total, c.done)}
+                              <span className={c.mustTotal > 0 && c.mustDone === c.mustTotal ? 'text-[var(--green)]' : undefined}>
+                                {mustDoLabel(c.mustTotal, c.mustDone)}
                               </span>
                               {(c.fromConversation > 0 || c.added > 0) && (
                                 <span>{c.fromConversation} from the conversation · {c.added} newly checked</span>
@@ -1564,7 +1569,7 @@ export default function CompliancePage() {
 
       {listDrawer && (
         <Drawer title={listDrawer.row.title ?? 'Checklist'}
-          sub={`${friendlyDate(listDrawer.row.created_at)} · ${listDrawer.row.fromConversation} from the conversation · ${listDrawer.row.added} newly checked`}
+          sub={checklistSub(listDrawer.row)}
           company={companyName}
           onClose={() => setListDrawer(null)}
           footer={
@@ -1574,72 +1579,89 @@ export default function CompliancePage() {
                 className="ml-auto text-[14px] text-gray-400 hover:text-red-600">Delete</button>
             </>
           }>
+          {/* MUST DO ONLY — the bar and the line count legal obligations, not advice or questions (board 8). */}
           <div className="mb-4">
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
               <div className="h-full bg-[var(--green)] transition-all"
-                style={{ width: `${progressPercent(listDrawer.row.total, listDrawer.row.done)}%` }} />
+                style={{ width: `${progressPercent(listDrawer.row.mustTotal, listDrawer.row.mustDone)}%` }} />
             </div>
-            <p className="mt-1.5 text-[12px] text-gray-500">{progressLabel(listDrawer.row.total, listDrawer.row.done)}</p>
+            <p className="mt-1.5 text-[12px] text-gray-500">{mustDoLabel(listDrawer.row.mustTotal, listDrawer.row.mustDone)}</p>
           </div>
           {/*
-            ROWS, NOT CARDS. Twenty bordered cards in a narrow column is the disease we took off
-            the answer, twenty times over: every card drew a box around one line, and because
-            each checkbox sat inside its own card nothing lined up.
+            THREE GROUPS — Workspace Task 6, board 8. Must do (numbered, in the order to do them),
+            Worth doing (advice, not a legal rule), To confirm (open questions). An empty group is
+            not shown. Checklists from Documents and Audits use the first two and render the same way.
 
-            *** THE COLUMN OF CHECKBOXES IS THE POINT. *** The checkbox is the first child at a
-            fixed size, so every one sits at the same x and every text block indents to the same
-            left margin — that is what makes a list you can run your eye down. The hairlines
-            separate the rows; the fade still marks what is done.
+            ROWS, NOT CARDS (unchanged): the checkbox is the first child at a fixed size, so every one
+            sits at the same x and every text block indents to the same left margin.
           */}
-          <div className="divide-y divide-gray-100 border-t border-gray-100">
-            {listDrawer.items.map((item, i) => {
-              const key = `${listDrawer.row.id}-${i}`
-              const subs = steps[key]
-              return (
-                <div key={item.id} className={`py-4 ${item.completed ? 'opacity-60' : ''}`}>
-                  <div className="flex items-start gap-3">
-                    <button onClick={() => toggleItem(item)} aria-label="Mark done"
-                      className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 text-[11px] ${
-                        item.completed ? 'border-[var(--green)] bg-[var(--green)] text-white' : 'border-gray-300 hover:border-[var(--green)]'}`}>
-                      {item.completed && '✓'}
-                    </button>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[16px] font-medium text-gray-900">{item.name}</p>
-                      {item.description && <p className="mt-1 text-[15px] leading-relaxed text-gray-600">{item.description}</p>}
-                      {/* Two coloured pills per item was forty boxes on top of the twenty. Where
-                          an item came from is an ordinary fact, not a state, so both values read
-                          the same and neither is green. */}
-                      <div className="mt-2 flex flex-wrap items-center gap-2 text-[12px]">
-                        {item.origin && (
-                          <span className="text-gray-500">
-                            {item.origin === 'conversation' ? 'from this conversation' : 'newly checked'}
-                          </span>
-                        )}
-                        {item.origin && item.source_url && <span className="text-gray-300">·</span>}
-                        {item.source_url && (
-                          <a href={item.source_url} target="_blank" rel="noopener noreferrer"
-                             className="text-gray-500 hover:text-gray-800 hover:underline">
-                            {displaySource(item.source_title ?? '', item.source_url).title}
-                          </a>
-                        )}
-                      </div>
-                      {/* A progress note, never part of the printed checklist (Fix Round 1 E). */}
-                      {stepsPending[key] && !subs && (
-                        <p className="no-print mt-2 text-[13px] italic text-gray-400">steps being written…</p>
-                      )}
-                      {subs && subs.length > 0 && (
-                        <ol className="mt-2 list-decimal space-y-1 border-l-2 border-gray-100 pl-5">
-                          {subs.map((s, n) => (
-                            <li key={s.id ?? n} className="text-[14px] leading-relaxed text-gray-600">{s.name}</li>
+          {groupItems(listDrawer.items, { ordered: listDrawer.ordered }).map(({ group, items }) => (
+            <section key={group.key} className="mt-6 first:mt-2">
+              <div className="flex items-baseline justify-between pb-2">
+                <h3 className="text-[12px] font-medium uppercase tracking-wide text-gray-700">{group.title}</h3>
+                <span className="text-[12px] text-gray-500">{group.hint(items.length)}</span>
+              </div>
+              <div className="divide-y divide-gray-100 border-t border-gray-200">
+                {items.map((item, n) => {
+                  const sources = itemSources(item)
+                  const researching = !!howToBusy[item.id] || (clock > 0 && isResearching(item.howto_started_at, clock))
+                  return (
+                    <div key={item.id} className="py-4">
+                      <div className="flex items-start gap-3">
+                        <button onClick={() => toggleItem(item)} aria-label={item.completed ? 'Mark not done' : 'Mark done'}
+                          className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 text-[11px] ${
+                            item.completed ? 'border-[var(--green)] bg-[var(--green)] text-white' : 'border-gray-300 hover:border-[var(--green)]'}`}>
+                          {item.completed && '✓'}
+                        </button>
+                        <div className={`min-w-0 flex-1 ${item.completed ? 'opacity-60' : ''}`}>
+                          <p className="text-[16px] font-medium text-gray-900">
+                            {group.numbered && <span className="mr-1.5 text-gray-400">{n + 1}.</span>}
+                            {item.name}
+                          </p>
+                          {item.description && <p className="mt-1 text-[15px] leading-relaxed text-gray-600">{item.description}</p>}
+                          <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-gray-500">
+                            {item.origin && item.origin !== 'document' && (
+                              <span>{item.origin === 'conversation' ? 'from this conversation' : 'newly checked'}</span>
+                            )}
+                            {item.origin && item.origin !== 'document' && <span className="text-gray-300">·</span>}
+                            {sources.length ? sources.map((src, k) => (
+                              <React.Fragment key={k}>
+                                {k > 0 && <span className="text-gray-300">·</span>}
+                                {src.url
+                                  ? <a href={src.url} target="_blank" rel="noopener noreferrer"
+                                       className="hover:text-gray-800 hover:underline">{displaySource(src.title, src.url).title}</a>
+                                  : <span>{src.title}</span>}
+                              </React.Fragment>
+                            )) : <span className="text-gray-400">{noSourceText(item.origin)}</span>}
+                          </div>
+                          {sources.filter((src) => src.label === 'other' && src.url).map((src, k) => (
+                            <p key={k} className="mt-1 text-[12px] text-gray-500">{OTHER_SOURCE_LINE(hostLabel(src.url as string))}</p>
                           ))}
-                        </ol>
-                      )}
+                          {group.howTo && (
+                            item.howto ? <HowToSteps result={item.howto} />
+                            : researching ? (
+                              <p className="no-print mt-2 flex items-center gap-2.5 text-[13px] text-gray-900">
+                                <span aria-hidden className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-[var(--green)] border-r-transparent" />
+                                Looking this up — checking sources…
+                              </p>
+                            ) : (
+                              <button onClick={() => howTo(item)}
+                                className="no-print mt-2 text-[13px] text-[var(--green-ink)] underline underline-offset-2 hover:text-gray-900">
+                                How do I do this?
+                              </button>
+                            )
+                          )}
+                          {howToError[item.id] && !researching && (
+                            <p className="no-print mt-1 text-[13px] text-gray-600">{howToError[item.id]}</p>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
+                  )
+                })}
+              </div>
+            </section>
+          ))}
         </Drawer>
       )}
 
@@ -2011,6 +2033,53 @@ function Empty({ title, note }: { title: string; note: string }) {
     <div className="rounded-xl border border-gray-200 bg-white px-5 py-12 text-center">
       <b className="block text-[15px] font-medium text-gray-900">{title}</b>
       <span className="mt-1 block text-[13px] text-gray-500">{note}</span>
+    </div>
+  )
+}
+
+/** The drawer's second line: the date, then where the items came from, in words. */
+function checklistSub(r: ChecklistRow): string {
+  const n = (k: number, one: string) => `${k} ${one}${k === 1 ? '' : 's'}`
+  const where = r.added > 0 ? `${r.fromConversation} from the conversation · ${r.added} newly checked`
+    : r.fromConversation > 0 ? `${n(r.fromConversation, 'item')} from the conversation`
+    : n(r.total, 'item')
+  return `${friendlyDate(r.created_at)} · ${where}`
+}
+
+function hostLabel(url: string): string {
+  try { return new URL(url).hostname.replace(/^www\./, '') } catch { return url }
+}
+
+/**
+ * "HOW TO DO IT" UNDER AN ITEM — Workspace Task 6, board 9. A grey left rule, the line saying how many
+ * sources it was checked against and when, the numbered steps each with its source and label, then the
+ * dropped-steps line if any. Printed with the checklist (no `no-print`): Download carries it.
+ */
+function HowToSteps({ result }: { result: HowToResult }) {
+  const nums = stepSourceNumbers(result.steps, urlKey)
+  return (
+    <div className="mt-3 border-l-2 border-gray-200 pl-3">
+      <p className="text-[12px] text-gray-500">{howToHeading(sourceCount(result), result.checked_on)}</p>
+      {result.steps.length > 0 && (
+        <ol className="mt-1 list-decimal space-y-2 pl-5">
+          {result.steps.map((st, k) => (
+            <li key={k} className="text-[14px] leading-relaxed text-gray-800">
+              {st.text}
+              <span className="sources-print block text-[12px] text-gray-500">
+                <a href={st.url} target="_blank" rel="noopener noreferrer" className="hover:text-gray-800 hover:underline">
+                  [{nums.get(urlKey(st.url))}] {displaySource(st.title, st.url).title}
+                </a>
+                {st.label === 'official' ? ' · official source' : ''}
+              </span>
+              {st.label === 'other' && (
+                <span className="block text-[12px] text-gray-500">{OTHER_SOURCE_LINE(st.host)}</span>
+              )}
+            </li>
+          ))}
+        </ol>
+      )}
+      {result.note && <p className="mt-2 text-[12px] text-gray-600">{result.note}</p>}
+      {result.dropped > 0 && <p className="mt-1.5 text-[12px] text-gray-500">{DROPPED_LINE(result.dropped)}</p>}
     </div>
   )
 }

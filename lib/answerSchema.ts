@@ -79,6 +79,11 @@ export interface ChecklistAnswer {
   safety_alert?: string
   must_do: ChecklistItem[]
   good_to_have: Array<Omit<ChecklistItem, 'providers'>>
+  /** *** A GROUP, NOT A HEDGE ON AN ITEM — Workspace Task 6, the owner's decision (`DECISIONS.md` §154). ***
+   *  Open questions to check, listed as items of their own. It does not soften a `must_do` item, and no
+   *  field on an item says "maybe": a point the model cannot settle goes HERE instead of into `must_do`.
+   *  Optional, because answers stored before Task 6 have no such group. */
+  to_confirm?: Array<Omit<ChecklistItem, 'providers'>>
   // NO conditional_on. NO follow_up_questions — that was the additive question slot
   // removed on 11 Sep; questions come from lib/determinationGate.ts, before the answer.
 }

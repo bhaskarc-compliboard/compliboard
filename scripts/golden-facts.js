@@ -192,7 +192,7 @@ const cases = CASES.filter((c) => !only || c.id.startsWith(only))
 if (!cases.length) { console.error(`\n  No case id starts with "${only}". Known: ${CASES.map((c) => c.id).join(', ')}\n`); process.exit(1) }
 
 console.log(`\n  Model   : ${modelArg || modelForTask('prose')}${modelArg ? '   (--model override; no default changed)' : ''}`)
-console.log(`  Effort  : ${effortArg ?? `${process.env.AI_EFFORT || '(unset — API default high)'} (from the environment)`}`)
+console.log(`  Effort  : ${effortArg ?? `${process.env.AI_EFFORT || '(unset — the code default, medium: lib/ai.ts DEFAULT_EFFORT)'} (from the environment)`}`)
 console.log(`  Cases   : ${cases.length}${runs > 1 ? ` × ${runs} runs` : ''}`)
 console.log(`  ${describePipelineConfig()}\n`)
 

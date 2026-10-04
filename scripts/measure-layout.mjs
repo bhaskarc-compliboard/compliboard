@@ -37,6 +37,19 @@
 // `--click key=<id>` clicks the row whose React key is <id> — a checklist or conversation id —
 // for when several rows carry the same words.
 //
+// `--base <origin>` opens another server than http://localhost:3000 — Workspace Task 6, so a
+// screenshot need not touch the owner's own dev server.
+//
+// `--allow <text>` lets through the ONE request whose URL contains <text>, even a paid one. It is the
+// only way this script spends money, and it exists for one real click ("How do I do this?" while it
+// researches). Every request it lets through is printed, beside the blocked list.
+//
+// `--log <text>` prints every request whose URL contains <text>, in order, after the clicks — the
+// round trips a page makes, counted from the browser rather than from reading the code.
+//
+// `--scroll "<text>"` scrolls the first visible element whose text starts with <text> to the top of
+// its scrolling box, after the clicks, before the screenshot.
+//
 // `--click "<text>"` clicks the first visible button, link or row whose text (or, with none, aria-label) starts with <text>,
 // then waits. Repeat it to walk a path (a tab, a row, a button in the drawer). It is the only way
 // to open a drawer, and the block above is what makes it safe.
@@ -50,7 +63,8 @@ import { createClient } from '@supabase/supabase-js'
 const argv = process.argv.slice(2)
 let fileChooser = false
 let path = '/compliance', email = 'testcascade@example.com', width = 1280, shot = null, waitMs = 2500
-const clicks = []
+let base = 'http://localhost:3000', allow = null, logFilter = null
+const clicks = [], scrolls = []
 for (let i = 0; i < argv.length; i++) {
   const a = argv[i]
   if (a === '--as') email = argv[++i]
@@ -59,6 +73,10 @@ for (let i = 0; i < argv.length; i++) {
   else if (a === '--click') clicks.push(argv[++i])
   else if (a === '--wait') waitMs = Number(argv[++i])
   else if (a === '--file-chooser') fileChooser = true
+  else if (a === '--base') base = argv[++i].replace(/\/+$/, '')
+  else if (a === '--allow') allow = argv[++i]
+  else if (a === '--log') logFilter = argv[++i]
+  else if (a === '--scroll') scrolls.push(argv[++i])
   else if (a.startsWith('/')) path = a
   else { console.error(`unknown argument: ${a}`); process.exit(2) }
 }
@@ -89,8 +107,11 @@ const cdp = (ws, method, params = {}) => new Promise((res, rej) => {
 })
 
 // ---- the block. Paid routes: anything that can reach a model. Writes: anything that can change a row.
-const PAID = /\/api\/(chat|document-scan|document-rescan|checklists|document-actions|switches\/answer)|\/summarise\b/
+const PAID = /\/api\/(chat|document-scan|document-rescan|checklists|checklist-items|document-actions|switches\/answer)|\/summarise\b/
+const allowed = []
+const seen = []
 const isBlocked = (u, method) => {
+  if (allow && u.includes(allow) && method !== 'OPTIONS') { allowed.push(`${method} ${u.replace(/\?.*$/, '')}`); return null }
   if (PAID.test(u)) return 'paid route'
   if (/\/api\/(audit-runs|documents)/.test(u) && method !== 'GET') return 'paid route'
   if (/\/api\//.test(u) && method !== 'GET') return 'write'
@@ -128,6 +149,7 @@ try {
     const m = JSON.parse(e.data)
     if (m.method !== 'Fetch.requestPaused') return
     const { url: u, method } = m.params.request
+    if (logFilter && u.includes(logFilter) && method !== 'OPTIONS') seen.push(`${method} ${decodeURIComponent(u.replace(/^https?:\/\/[^/]+/, ''))}`)
     const why = isBlocked(u, method)
     if (why) blocked.push(`${why}: ${method} ${u.replace(/\?.*$/, '')}`)
     ws.send(JSON.stringify(why
@@ -162,7 +184,7 @@ try {
     return result.value
   }
 
-  await cdp(ws, 'Page.navigate', { url: `http://localhost:3000${path}` })
+  await cdp(ws, 'Page.navigate', { url: `${base}${path}` })
   for (let i = 0; i < 40; i++) {
     await new Promise((r) => setTimeout(r, 1000))
     const state = await evaluate(`document.querySelector('h1') && !document.body.innerText.includes('Loading…') ? 'ready' : 'wait'`)
@@ -320,6 +342,22 @@ try {
       console.log(`  font ${label.padEnd(11)} ${declared}   rendered: ${fonts.map((f) => `${f.familyName} (${f.isCustomFont ? 'web font' : 'system'}, ${f.glyphCount} glyphs)`).join(' + ')}`)
     }
   }
+
+  for (const text of scrolls) {
+    const hit = await evaluate(`(() => {
+      const want = ${JSON.stringify(text)}
+      const all = [...document.querySelectorAll('aside.print-drawer *, main *')]
+        .filter((e) => { const b = e.getBoundingClientRect(); return b.width > 0 && b.height > 0 })
+      const el = all.find((e) => e.textContent.trim().startsWith(want) && ![...e.children].some((c) => c.textContent.trim().startsWith(want)))
+      if (!el) return null
+      el.scrollIntoView({ block: 'start' }); return el.textContent.trim().slice(0, 60)
+    })()`)
+    if (!hit) throw new Error(`--scroll: nothing visible starts with "${text}"`)
+    await new Promise((r) => setTimeout(r, 400))
+    console.log(`scrolled to: ${hit}`)
+  }
+  if (allowed.length) console.log(`  let through (--allow ${allow}): ${allowed.join(' · ')}`)
+  if (logFilter) { console.log(`  requests matching "${logFilter}": ${seen.length}`); for (const r of seen) console.log(`    ${r.slice(0, 220)}`) }
 
   if (shot) {
     const s = await cdp(ws, 'Page.captureScreenshot', { format: 'png' })

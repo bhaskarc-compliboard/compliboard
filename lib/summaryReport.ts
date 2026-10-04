@@ -179,8 +179,11 @@ function paragraphs(turn: TurnLike): Array<{ norm: string; markers: number[] }> 
  *     the numbers are range-checked only, and the check says it did not look;
  *   · a basis that is not in any answer: every source is cleared — the item shows "no source";
  *   · a basis found: only numbers that are markers in THAT paragraph of THAT answer are kept.
+ *
+ * Exported for the conversation-to-checklist check (`lib/checklistConvert.ts`, Workspace Task 6), which
+ * holds its items to the same rule. One copy, so the two can never drift apart.
  */
-function checkCitations(item: { basis: string | null; sources: number[] }, turns: TurnLike[],
+export function checkCitations(item: { basis: string | null; sources: number[] }, turns: TurnLike[],
   perTurn: Array<Map<number, number>>, basisRequired: boolean): { found: boolean | null; kept: number[]; dropped: number[] } {
   if (!basisRequired && item.basis === null) return { found: null, kept: item.sources, dropped: [] }
   const needle = item.basis ? quoteKey(item.basis) : ''
