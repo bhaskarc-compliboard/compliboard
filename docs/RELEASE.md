@@ -72,6 +72,27 @@ Sign in with a test account and run the first three manual tests for the feature
 
 **This list is the authoritative record of what Vercel holds.** `CLAUDE.md` §3.4a points here and deliberately does not keep a second copy: on 26 September that section and this one disagreed about whether the `AI_MODEL_*` variables are set at all, which made the model that reads a customer's document unknowable from the repository. It was settled by reading the dashboard, §3.4a was the one that was wrong, and the rule now is **the dashboard wins and this list gets corrected.** `DECISIONS.md` §136.
 
+> ### THE MODELS IN PRODUCTION — PER THE OWNER, 3 OCTOBER 2026.
+> **Every `AI_MODEL_*` variable set on Vercel Production is `claude-opus-5-5`.** This is the owner's
+> statement, not a reading: Vercel hides these values once saved, so the repository cannot confirm
+> them. Sonnet was an early trial and is not what production runs. It corrects the older values below:
+> `AI_MODEL_JUDGEMENT` was recorded as `claude-opus-5`, and the four added on 23 September had no
+> recorded value.
+>
+> | Variable | Production value (per the owner, 3 October 2026) |
+> |---|---|
+> | `AI_MODEL_PROSE` | `claude-opus-5-5` |
+> | `AI_MODEL_JUDGEMENT` | `claude-opus-5-5` |
+> | `AI_MODEL_SUBSTEPS` | `claude-opus-5-5` |
+> | `AI_MODEL_SUMMARY` | `claude-opus-5-5` |
+> | `AI_MODEL_DOCUMENT_SCAN` | `claude-opus-5-5` |
+> | `AI_MODEL_AUDIT` | `claude-opus-5-5` |
+>
+> **Not covered by that statement:** the code also reads `AI_MODEL_CRITIQUE`, `AI_MODEL_DOCUMENT_DRAFT`
+> and `AI_MODEL` (`lib/ai.ts:102`, `:124`, `:132`). None is recorded here as set.
+> - Unset, `AI_MODEL_DOCUMENT_DRAFT` falls back to the prose tier (`:124`), so it runs `claude-opus-5-5`.
+> - Unset, `AI_MODEL_CRITIQUE` falls back to `claude-opus-5` (`:102`). The critic is switched off in production (`CHECKLIST_CRITIC`, `lib/pipelineConfig.ts`).
+
 From June: `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `ANTHROPIC_API_KEY`, `RESEND_API_KEY`, `FEEDBACK_EMAIL`.
 
 Added 23 Sep: `CRON_SECRET`, `AI_MODEL_PROSE`, `AI_MODEL_JUDGEMENT`, `AI_MODEL_SUBSTEPS`, `AI_MODEL_SUMMARY`, `AI_EFFORT`, `RESEARCH_PREFER_GOV`, `RESEARCH_SPECIALIST`, `RESEARCH_PROVENANCE`.
@@ -83,10 +104,13 @@ Added 23 Sep: `CRON_SECRET`, `AI_MODEL_PROSE`, `AI_MODEL_JUDGEMENT`, `AI_MODEL_S
 | `NEXT_PUBLIC_APP_URL` | the site's public origin, no trailing slash | The only source of the link in the batch email. `NEXT_PUBLIC_*`, so it is inlined at build time and must exist **before** the push that builds |
 | `AI_MODEL_DOCUMENT_SCAN` | **`claude-opus-5-5`** | What reads a document. *(Corrected 27 September 2026: was `claude-opus-5`. The bake-off — `tests/golden/documents/bakeoff/2026-09-27-rejudged.md`, `DECISIONS.md` §139 — measured Opus 5.5 at 42% of Opus 5's cost per scan and 59s against 113s, with zero must-not violations against Opus 5's nine.)* |
 | `AI_SCAN_STRUCTURED` | **`true`** | **The JSON schema is ON, as of 28 September 2026.** *(Was `false` from 26 to 28 September: Opus 5 refused the request outright — "the compiled grammar is too large" — and the schema was flattened by two object shapes afterwards so all four models accept it. `DECISIONS.md` §136, §139, §140.)* **Turned on as its own redeploy, after the code push, not with it** — a variable change is itself a redeploy, and riding the two together would leave nobody able to say which one moved a result. Smoke result on production: read on **`claude-opus-5-5`**, **$0.2531**. |
-| `AI_MODEL_JUDGEMENT` | `claude-opus-5` | **Re-added as a Config variable, not a secret, so it can be read back** rather than only overwritten. That is the change that made this list checkable |
+| `AI_MODEL_JUDGEMENT` | ~~`claude-opus-5`~~ **`claude-opus-5-5`** (owner, 3 Oct; see the box above) | **Re-added as a Config variable, not a secret, so it can be read back** rather than only overwritten. That is the change that made this list checkable |
 | `AI_MODEL_AUDIT` | **`claude-opus-5-5`** | **This row is the Audits release's value and is owed one dashboard action — see the note under this table.** What runs an audit. It is named so the audit can be moved on its own: it was the only ledger task with no tier of its own, so the spend was recorded as `audit` while the model was whatever `judgement` happened to be. **Set BEFORE the push**, so the first deployment of the Audits code already carried it — a variable change is itself a redeploy, and doing it afterwards leaves a window in which audits ran on a model nobody chose. Unset it and `lib/ai.ts` falls back to the judgement tier, which here is `claude-opus-5`: a different model from the one the baseline measured, and the dearer one ($0.5153 a scan against $0.2809 on the same seven documents, `DECISIONS.md` §139). The reference it was chosen against is `tests/golden/audits/bakeoff/RESULTS.md` — fifteen runs, five cases, $5.37, 41 of 51 must-lines holding in all three runs against Haiku's 32, at $0.3578 an audit. `DECISIONS.md` §148, §149. |
 
 > ### ⏳ `AI_MODEL_AUDIT` IS THE ONE ROW IN THIS TABLE THAT THE DASHBOARD DOES NOT HOLD YET.
+>
+> *(3 October 2026: per the owner, every `AI_MODEL_*` on Vercel Production is `claude-opus-5-5`,
+> `AI_MODEL_AUDIT` included — see the box at the top of this list. The box below is kept as written.)*
 >
 > It is written here with its value because the value is decided and the release note depends on it
 > (`docs/releases/2026-10-01-audits-rev1.md` §3), and it is marked because **this list is the record

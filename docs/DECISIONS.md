@@ -10829,6 +10829,8 @@ Commits 358647d, 1e34fc2.
 - **Everything else — Task 1, the font fix and Task 3 — cost $0.00.**
 - Not counted here: two calls on 4 October at 00:44–00:45 UTC ($0.0435), made by someone using localhost as the Cascade test company, not by the build.
 
+**Correction, 3 October 2026 (the owner).** The line above saying *"Production runs Sonnet today"* is wrong. **Production runs `claude-opus-5-5` for every model setting**; Sonnet was an early trial. `docs/RELEASE.md` now records it, marked as the owner's statement, because Vercel hides the values.
+
 **The release state, read after `2937b0b`.**
 - `npm run preflight` (read-only) reads 63 migration files on disk and 63 rows on production (`dsfwmafnphdlfogetsus`), with `062_a_fact_outlives_its_conversation.sql` among them: `PENDING COUNT: 0`. So 062 went to production with the Task 2 release.
 - Task 3 adds no migration.
