@@ -233,3 +233,81 @@ the deleter calls.
 - **`docs/HANDOFF-WORKSPACE.md` §3** quotes the old retention line. It is a dated record, left as written.
 - **`docs/WORKSPACE-MACHINERY.md`** 4e and N2 describe the old rule. Left as the record of what was found.
 - **Nothing in Documents or Audits reads `topics` or `turns`.**
+
+---
+
+## Checkpoint 3 — For the cron release (written up, not done; no code changed)
+
+**Why the jobs never run.** The owner read it in Vercel's logs on 3 October: every scheduled call
+is `GET` → 405. The routes export only `POST` (`jobs/summarise:48`, `jobs/delete:32`,
+`jobs/scan-documents:107`, `jobs/audit-sections:40`). Even with GET accepted, the secret check reads
+`x-cron-secret` (`lib/jobAuth.ts:33`), and Vercel does not send that header.
+
+**What Vercel sends.** From https://vercel.com/docs/cron-jobs/manage-cron-jobs, read 3 October:
+- *"The value of the variable will be automatically sent as an `Authorization` header when Vercel invokes your cron job"*;
+- *"The `authorization` header will have the `Bearer` prefix for the value."*;
+- its examples are `GET` handlers.
+
+The method itself is settled by the owner's logs, not by a sentence on that page.
+
+### What to change
+
+1. **`lib/jobAuth.ts`, `requireCronSecret` (:35–55), once for all four routes.**
+   - Keep reading `process.env.CRON_SECRET` (:36) and keep refusing when it is unset (:37–43).
+   - Accept the request when **either** `x-cron-secret: <secret>` (:33, manual runs) **or** `authorization: Bearer <secret>` (Vercel) matches.
+   - Compare both with `timingSafeEqual`, as :44–48 already does for the first.
+   - **Decision for the owner:** what a refusal answers. Today it is 404 (:52), deliberately opaque, so the route cannot be confirmed to exist; Vercel's example answers 401. Keeping 404 changes nothing anyone relies on.
+2. **The four routes** each gain `export async function GET(request: NextRequest) { return POST(request) }` beside the existing `POST`:
+   - `app/api/jobs/summarise/route.ts:48`
+   - `app/api/jobs/delete/route.ts:32`
+   - `app/api/jobs/scan-documents/route.ts:107`
+   - `app/api/jobs/audit-sections/route.ts:40`
+
+   POST + `x-cron-secret` stays exactly as it is, so `docs/TESTING.md:2505–2510` and the runbooks keep working.
+3. **Tests:**
+   - GET with the right bearer runs;
+   - GET with no bearer, or a wrong one, is refused;
+   - POST with `x-cron-secret` still runs;
+   - unset `CRON_SECRET` refuses both.
+4. **`vercel.json`: no change.** The four paths and schedules are right.
+5. **Vercel: nothing to add.** `CRON_SECRET` already exists there (owner, 3 October; `docs/RELEASE.md:77`). It must hold the same value as the one used for manual runs. **It takes effect only with the push that ships the change above.**
+
+### What each job will do on its first run
+
+Counts read from production on 3 October (checkpoint 1(d)), with the 12-month rule from checkpoint 2:
+
+| Job | Schedule (`vercel.json`) | First run | Per-run limit |
+|---|---|---|---|
+| summarise | `0 3 * * *` | **1 topic, 1 model call** (staging ledger: $0.0010 median, $0.0011 worst on Haiku; production's `AI_MODEL_SUMMARY` value is unrecorded). Then any conversation idle for 24 hours, every night | **None.** Every candidate in one loop (`jobs/summarise:83`), bounded only by `maxDuration = 800` (`:40`) |
+| delete | `30 3 * * *` | **Nothing.** The oldest production topic is 23 September 2026, so the first turns can fall due on 23 September 2027 | **None** (`jobs/delete:51`), `maxDuration = 800` (`:30`) |
+| scan-documents | `*/5 * * * *` | **Nothing waiting** (0 `uploaded`); the 39 `held` documents are never picked up by construction | Stops starting documents at 510 s: `BUDGET_MS − RESERVE_MS`, 640 000 − 130 000 ms (`scan-documents:88`, `:90`) |
+| audit-sections | `*/5 * * * *` | **Nothing waiting** (3 sections, 1 run, all `done`) | 510 s the same way (`audit-sections:35–36`); at most 50 runs considered per pass (`:83`) |
+
+These counts are from 3 October and will be read again before the release. A small first night
+means **no per-run cap on the summariser is forced**. If the release waits until there are hundreds
+of idle conversations, cap it then: oldest first, 50 a night.
+
+### One risk the release should carry
+
+Vercel's page says delivery *"can also occasionally invoke the same scheduled run more than once"*.
+
+| Job | Safe if invoked twice? |
+|---|---|
+| delete | **Yes.** A cleared topic has 0 turns and is skipped |
+| scan-documents | **Yes.** It claims by compare-and-set (`scan-documents.ts` header, rule 2) |
+| audit-sections | **Yes.** It claims by compare-and-set |
+| **summarise** | **No.** It claims nothing |
+
+**HYPOTHESIS, from reading `jobs/summarise:58–83`; not run.** Two summarise invocations alive at the
+same time would each pick up the same idle topic:
+- two `summarise` model calls;
+- the summary written twice;
+- **every fact proposal inserted twice** (`:158`; no unique index, `055:114–116`).
+
+The fix is a claim, as the sweeps do — for example a compare-and-set on `extracted_at`. It belongs
+in the cron release.
+
+**Touches other sections:**
+- **Documents:** `scan-documents` starts sweeping every 5 minutes. It picks up `status='uploaded'` documents a folder upload leaves behind (today it runs only when a request kicks it).
+- **Audits:** `audit-sections` starts sweeping every 5 minutes. It runs `queued` sections and sends the run's email on finish (`lib/auditNotify.ts`).
+- **Workspace:** summaries and conversation fact proposals start appearing overnight. Those proposals reach **Company information / To confirm** and the workspace's proposal slot.
