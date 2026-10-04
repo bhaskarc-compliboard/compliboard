@@ -175,7 +175,7 @@ select job, started_at, finished_at, ok, counts, errors
  order by started_at;
 ```
 
-**What starts happening, and is expected:** `scan_documents` and `audit_sections` each write a `job_runs` row every 5 minutes — **288 a day each** — even with nothing to do. Nothing clears `job_runs`; that is a row in `docs/HANDOFF-CODE.md` §7.
+**A sweep with nothing to do writes NO `job_runs` row** (cron release follow-up, `DECISIONS.md` §163): `scan_documents` and `audit_sections` record a row only when they find work or hit an error. So on a quiet day the database shows nothing for them, and **CR-1 relies on Vercel's cron logs, as written** — the GET 200 every 5 minutes is the evidence they run. `summarise` and `delete` still write a row every night, which is what CR-2 reads.
 
 *(Before the commit, on staging through an isolated server on Haiku: every door on all four jobs, both refused with `CRON_SECRET` unset, two overlapping summarise runs and two overlapping delete runs, each with one result. **No person has run these checks yet.**)*
 

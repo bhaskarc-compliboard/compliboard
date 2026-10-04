@@ -11007,3 +11007,12 @@ After migration 065 was applied, Claude Code ran `npm run db:restore` under `CLA
 **Words that become true with this release:** the summary drawer's *"The summary is written overnight"* (`app/compliance/page.tsx:1690`) — unchanged, and true once the summarise job runs at 03:00 UTC; `STATUS.md`'s nightly-jobs row.
 
 **Cost of the session: $0.0046** — one summary on Haiku, in the overlap proof.
+
+## 163. TWO FOLLOW-UPS FROM THE CRON RELEASE — 4 October 2026
+
+§163 — Before the cron release shipped. One line each:
+- **`check:live`'s checklist count.** The hypothesis in §161 is confirmed from the code: `scripts/check-live.js` counted must-do and good-to-have, while the chat route saves and returns to-confirm too (`app/api/chat/route.ts:404–407`, `:441`). It now counts every group and names them (`scripts/check-live.js:317`). Next full run: *10 item rows (4 must_do + 3 good_to_have + 3 to_confirm)* ✓.
+- **An empty sweep writes no `job_runs` row.** `scan-documents` and `audit-sections` open their row only when they find work — a stuck row to recover, or a company's queue claimed — and before that work, so a crash still leaves an unfinished row; a run with no work but an error writes one complete row; a run with neither writes nothing (`lib/jobRun.ts`, tested in `tests/unit/jobRun.test.ts`). That ends the 576 rows a day §162 would have started. `summarise` and `delete` keep a row every night: it is the evidence they ran. For the sweeps, Vercel's cron log is (`docs/TESTING.md`, CR-1). **Proven on staging:** two empty sweeps, 6 sweep rows before and after (`"run": null`); one document re-queued (`13-company-self-check.docx`, read again on Haiku, $0.0533), 7 — `companies 1, read 1`, closed 20 s later.
+- **Full `check:live` on Haiku: 4 failures, none from this change.** Three are the Haiku-tier failures on record (`attachment/tier`, `attachment/errors`, `template findings`; `docs/HANDOFF-AUDITS.md:549–552`). The fourth, `convert complete`, failed a new way: Haiku answered *"I need to clarify your request…"* in prose, the conversion saved nothing, and the claim cleared — the route behaving as designed on a model that did not answer. It also showed a log label of mine from §161 calling the complete branch's failure "(discussed)"; corrected (`app/api/checklists/from-topic/route.ts:218`).
+
+**Cost: $0.32**, 17 calls on Haiku: one document scan for the proof, the rest the full `check:live`.

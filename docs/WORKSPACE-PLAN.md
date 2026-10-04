@@ -75,6 +75,7 @@ and dropped if it is no longer needed.
   being written…" / "Checklist being built…". The paid production test in `docs/TESTING.md` proves it
   on Vercel.
 - **The cron release for all four jobs — DONE 4 October 2026** (Part 3, `14eb03b`, `DECISIONS.md` §162), to be released. Each job answers Vercel Cron's GET; the audit sweep and the deleter are safe against a double delivery. Proven on production by `docs/TESTING.md`, "The cron release" (the sweeps' GET 200 within 5 minutes; the next morning's `summarise` and `delete` rows).
+  **Its two follow-ups are done** (`DECISIONS.md` §163): `check:live` counts every checklist group, and an empty sweep writes no `job_runs` row.
 - **Rebuild staging from empty — the REHEARSAL is DONE**, 4 October 2026, on staging, by the
   `npm run db:restore` run after migration 065: 66 migrations, `000` → `065`, every verify block
   passing (`DECISIONS.md` §161). It ran early, under the old rule, and wiped staging's conversations,
