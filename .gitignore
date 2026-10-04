@@ -52,3 +52,7 @@ next-env.d.ts
 # macOS text clippings dragged into the repo while writing fixtures (Audits Run 1b).
 # Not source: a clipping is a copy of text that already lives in a spec.
 *.textClipping
+
+# Screenshots and print captures from every task (Workspace Stage 2 onward). Kept out of .next/,
+# which a build wipes, and out of git.
+/shots/

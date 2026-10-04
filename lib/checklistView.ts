@@ -1,12 +1,13 @@
 /**
  * HOW A CHECKLIST IS SHOWN — Workspace Task 6, boards 8 and 9. Pure, and safe for the browser: it
- * imports nothing. The page (`app/compliance/page.tsx`) and the "How do I do this?" route share it;
+ * imports only `lib/sourceTitle.ts`, which imports nothing. The page (`app/compliance/page.tsx`) and the "How do I do this?" route share it;
  * `tests/unit/checklistView.test.ts` holds it.
  *
  * THREE GROUPS, in this order: Must do (numbered, legal obligations in the order to do them), Worth
  * doing (advice, stored as `good_to_have`), To confirm (open questions). An empty group is not shown.
  * Checklists from Documents and Audits use the first two categories only and open in the same drawer.
  */
+import { displaySource } from './sourceTitle.ts'
 
 export interface ViewGroup {
   key: string
@@ -134,4 +135,46 @@ export function stepSourceNumbers(steps: Array<{ url: string }>, key: (u: string
   const m = new Map<string, number>()
   for (const s of steps) { const k = key(s.url); if (!m.has(k)) m.set(k, m.size + 1) }
   return m
+}
+
+// ---------------------------------------------------------------------------
+// ONE-LINE SOURCE LINKS — Workspace Stage 2 (the canvas feature boards, 6b and 8).
+// ---------------------------------------------------------------------------
+
+/**
+ * A SOURCE ON ONE LINE: "[n] host · title". The title is the page's own (`displaySource`, which
+ * already replaces junk titles from the URL), cut down to its subject:
+ *   · a site prefix ending in " :: " goes — "eCFR :: 27 CFR Part 17 -- …" keeps the part after the
+ *     LAST " :: ", which on eCFR, the Federal Register and Justia is the rule itself;
+ *   · a trailing " | Site name" goes, always: a pipe in a page title is almost always the site;
+ *   · a trailing " - Site name" goes ONLY when the tail is the site — it has a dot ("CCOF.org") or
+ *     names the host ("Oregon.gov" on oregon.gov) — because " - " is also how statutes title
+ *     themselves ("Chapter 471 - Alcoholic Liquors"), and that half is the subject.
+ * Nothing is ever cut down to nothing: if a rule would leave fewer than 4 characters, it is skipped.
+ * `full` is the cleaned title before any cut, for the link's hover text and for print.
+ */
+
+export function shortTitle(title: string, host: string): string {
+  let t = title.replace(/\s+/g, ' ').trim()
+  const keep = (next: string) => { if (next.trim().length >= 4) t = next.trim() }
+  if (t.includes(' :: ')) keep(t.slice(t.lastIndexOf(' :: ') + 4))
+  const pipe = t.lastIndexOf(' | ')
+  if (pipe > 0) keep(t.slice(0, pipe))
+  const dash = t.lastIndexOf(' - ')
+  if (dash > 0) {
+    const tail = t.slice(dash + 3).trim().toLowerCase()
+    const site = host.toLowerCase().split('.').slice(-2, -1)[0] ?? ''
+    if (/\.[a-z]{2,}$/.test(tail) || (site.length >= 3 && tail.replace(/[^a-z]/g, '').includes(site))) keep(t.slice(0, dash))
+  }
+  return t
+}
+
+export function oneLineSource(rawTitle: string, url: string): { host: string; title: string; full: string } {
+  const shown = displaySource(rawTitle, url)
+  return { host: shown.host, title: shortTitle(shown.title, shown.host), full: shown.title }
+}
+
+/** "1 thing to do" / "N things to do" — the accordion's counts. */
+export function thingsToDo(n: number): string {
+  return `${n} thing${n === 1 ? '' : 's'} to do`
 }

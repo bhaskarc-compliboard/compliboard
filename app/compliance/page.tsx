@@ -20,7 +20,7 @@
  *     only COUNTS a conversation's pending proposals, in the summary drawer, and links there.
  * ---------------------------------------------------------------------------
  */
-import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useLayoutEffect, useRef, useCallback, useId } from 'react'
 import { createClient, authHeaders } from '@/lib/supabase'
 import AppLayout from '@/components/AppLayout'
 // Lifted to components/Drawer.tsx in Documents Run 4 so the Documents report uses the same one.
@@ -39,7 +39,7 @@ import {
   conversationStatus, progressPercent, friendlyDate,
 } from '@/lib/conversationStatus'
 import {
-  groupItems, madeInWorkspace, mustDoLabel, noSourceText, itemSources, isResearching, howToHeading, stepSourceNumbers,
+  groupItems, madeInWorkspace, mustDoLabel, oneLineSource, thingsToDo, noSourceText, itemSources, isResearching, howToHeading, stepSourceNumbers,
 } from '@/lib/checklistView'
 import { OTHER_SOURCE_LINE, DROPPED_LINE, urlKey, sourceCount, type HowToResult } from '@/lib/howTo'
 
@@ -1037,9 +1037,19 @@ export default function CompliancePage() {
         accept={ACCEPTED_FILE_TYPES}
         onChange={(e) => { const f = e.target.files?.[0]; if (f) stageFile(f); e.target.value = '' }} />
       <style jsx global>{`
+        .print-only { display: none; }
+        .fold-closed { display: none; }
         @media print {
           .no-print { display: none !important; }
           .sources-print a::after { content: " — " attr(href); font-size: 10px; color: #444; word-break: break-all; }
+
+          /* WORKSPACE STAGE 2 — PRINT IS ALWAYS OPEN, AND LINKS ARE READABLE ON PAPER.
+           * A folded accordion panel is hidden on screen only; on paper every panel is open,
+           * whatever was folded, and the screen is not touched (no state change). A one-line
+           * link prints its full title and its full address instead of the cut-down line. */
+          .fold-closed { display: block !important; }
+          .screen-only { display: none !important; }
+          .print-only { display: inline !important; }
 
           /* ----------------------------------------------------------------------------
            * DOWNLOAD FROM A DRAWER PRINTS THE DRAWER, AND NOTHING ELSE — Fix Round 1 (E).
@@ -1542,7 +1552,8 @@ export default function CompliancePage() {
               directly above its footer, however short the summary is (`mt-auto`). */}
           <div className="flex min-h-full flex-col">
           {drawerReport ? (
-            <ReportView report={drawerReport} factsLine={factsLine} />
+            // Keyed by the topic: a new drawer is a new mount, so every open starts folded (Stage 2).
+            <ReportView key={summaryDrawer.id} report={drawerReport} factsLine={factsLine} />
           ) : summaryDrawer.summary ? (
             <AnswerBody text={summaryDrawer.summary} sources={[]} />
           ) : (
@@ -1619,21 +1630,23 @@ export default function CompliancePage() {
                             {item.name}
                           </p>
                           {item.description && <p className="mt-1 text-[15px] leading-relaxed text-gray-600">{item.description}</p>}
-                          <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-gray-500">
-                            {item.origin && item.origin !== 'document' && (
-                              <span>{item.origin === 'conversation' ? 'from this conversation' : 'newly checked'}</span>
-                            )}
-                            {item.origin && item.origin !== 'document' && <span className="text-gray-300">·</span>}
-                            {sources.length ? sources.map((src, k) => (
-                              <React.Fragment key={k}>
-                                {k > 0 && <span className="text-gray-300">·</span>}
-                                {src.url
-                                  ? <a href={src.url} target="_blank" rel="noopener noreferrer"
-                                       className="hover:text-gray-800 hover:underline">{displaySource(src.title, src.url).title}</a>
-                                  : <span>{src.title}</span>}
-                              </React.Fragment>
-                            )) : <span className="text-gray-400">{noSourceText(item.origin)}</span>}
-                          </div>
+                          {/* WHERE IT CAME FROM, then EACH SOURCE ON ONE LINE — Workspace Stage 2:
+                              "[n] host · title", cut with "…", the full title on hover; full on paper.
+                              A Documents or Audits item names its document or audit, unlinked. */}
+                          {((item.origin && item.origin !== 'document') || !sources.length) && (
+                            <p className="mt-2 text-[12px] text-gray-500">
+                              {item.origin && item.origin !== 'document' && (item.origin === 'conversation' ? 'from this conversation' : 'newly checked')}
+                              {item.origin && item.origin !== 'document' && !sources.length && <span className="text-gray-300"> · </span>}
+                              {!sources.length && <span className="text-gray-400">{noSourceText(item.origin)}</span>}
+                            </p>
+                          )}
+                          {sources.length > 0 && (
+                            <div className="mt-1 space-y-0.5">
+                              {sources.map((src, k) => src.url
+                                ? <OneLineLink key={k} n={k + 1} title={src.title} url={src.url} />
+                                : <p key={k} className="text-[12px] text-gray-500">{src.title}</p>)}
+                            </div>
+                          )}
                           {sources.filter((src) => src.label === 'other' && src.url).map((src, k) => (
                             <p key={k} className="mt-1 text-[12px] text-gray-500">{OTHER_SOURCE_LINE(hostLabel(src.url as string))}</p>
                           ))}
@@ -1783,26 +1796,77 @@ const AS_OF_LINE = (asOf: string) => {
  * line, and the sources as one numbered list. An item's sources are "[n] title" links to the list's
  * own entries; an item with none says so in grey. Download prints all of it (`printDrawer`).
  */
+/**
+ * ONE SOURCE ON ONE LINE — Workspace Stage 2. On screen: "[n] host · title", cut with "…" by CSS, the
+ * full title on hover (`oneLineSource`, `lib/checklistView.ts`). On paper: the full title and the full
+ * address, because a link on paper is only useful if its address can be read.
+ */
+function OneLineLink({ n, title, url, after }: { n?: number; title: string; url: string; after?: React.ReactNode }) {
+  const one = oneLineSource(title, url)
+  const num = n === undefined ? '' : `[${n}] `
+  return (
+    <span className="flex min-w-0 items-baseline text-[12.5px]">
+      <a href={url} target="_blank" rel="noopener noreferrer" title={one.full}
+         className="min-w-0 text-emerald-800 underline underline-offset-2">
+        <span className="screen-only block truncate">{num}{one.host} · {one.title}</span>
+        <span className="print-only break-all">{num}{one.full} — {url}</span>
+      </a>
+      {after && <span className="shrink-0 whitespace-pre text-gray-500">{after}</span>}
+    </span>
+  )
+}
+
+/**
+ * ONE FOLDING ROW OF THE SUMMARY — a real button: Enter and Space work, `aria-expanded` says its state,
+ * `aria-controls` names the panel. A chevron (screen only), the label, and the count at the right.
+ */
+function FoldRow({ label, right, expanded, controls, onClick }: {
+  label: string; right: string; expanded: boolean; controls: string; onClick: () => void }) {
+  return (
+    <button type="button" onClick={onClick} aria-expanded={expanded} aria-controls={controls}
+      className="flex w-full items-center gap-2 py-2.5 text-left hover:bg-gray-50">
+      <svg aria-hidden width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+        strokeLinecap="round" strokeLinejoin="round" className={`no-print shrink-0 text-gray-400 transition-transform ${expanded ? 'rotate-90' : ''}`}>
+        <path d="m9 6 6 6-6 6" />
+      </svg>
+      <span className="min-w-0 flex-1 text-[14px] font-semibold text-gray-900">{label}</span>
+      <span className="shrink-0 text-[12px] text-gray-500">{right}</span>
+    </button>
+  )
+}
+
+/**
+ * THE SUMMARY AS AN ACCORDION — Workspace Stage 2, the canvas feature boards, board 6b, with the
+ * owner's one change: Still to confirm comes AFTER the agencies. The order is the one Task 5 built.
+ *   · Open on first view: the as-of line, Your situation, Still to confirm (NEVER folded), Asked and
+ *     not answered, the facts line.
+ *   · Folded on first view: each authority under What applies (one row: chevron, the authority,
+ *     "N things to do"), and Sources (one row: "Sources" and the count).
+ *   · "Open all" / "Close all" beside "What applies · N things to do".
+ *   · Rows are real buttons with aria-expanded and aria-controls. Nothing is remembered: the drawer
+ *     mounts this with the topic as its key, so every open starts folded.
+ *   · PRINT IS ALWAYS OPEN: a folded panel carries `fold-closed`, hidden on screen and shown by the
+ *     page's print CSS. The screen state is not changed to print.
+ */
 function ReportView({ report, factsLine }: { report: SummaryReport; factsLine: React.ReactNode }) {
   const byN = new Map(report.sources.map((src) => [src.n, src]))
   const heading = 'mb-2 text-[11px] font-semibold uppercase tracking-wide text-gray-400'
+  const uid = useId()
+  const [open, setOpen] = useState<Set<number>>(() => new Set())
+  const [sourcesOpen, setSourcesOpen] = useState(false)
+  const total = report.applies.reduce((n, g) => n + g.items.length, 0)
+  const allOpen = report.applies.length > 0 && open.size === report.applies.length
+  const toggle = (gi: number) => setOpen((o) => { const n = new Set(o); if (n.has(gi)) n.delete(gi); else n.add(gi); return n })
   const item = (it: ReportItem, key: string) => (
     <li key={key} className="py-2.5">
       <p className="text-[15px] font-medium text-gray-900">{it.name}</p>
       <p className="mt-0.5 text-[14px] leading-relaxed text-gray-600">{it.what_to_do}</p>
-      <p className="mt-1 text-[12.5px]">
-        {it.sources.length ? it.sources.map((n, i) => {
+      <div className="mt-1 space-y-0.5">
+        {it.sources.length ? it.sources.map((n) => {
           const src = byN.get(n)
-          if (!src) return null
-          return (
-            <span key={n}>
-              {i > 0 && <span className="text-gray-300"> · </span>}
-              <a href={src.url} target="_blank" rel="noopener noreferrer"
-                 className="text-emerald-800 underline underline-offset-2">[{n}] {displaySource(src.title, src.url).title}</a>
-            </span>
-          )
-        }) : <span className="text-gray-400">{NO_SOURCE}</span>}
-      </p>
+          return src ? <OneLineLink key={n} n={n} title={src.title} url={src.url} /> : null
+        }) : <p className="text-[12.5px] text-gray-400">{NO_SOURCE}</p>}
+      </div>
     </li>
   )
   return (
@@ -1814,13 +1878,26 @@ function ReportView({ report, factsLine }: { report: SummaryReport; factsLine: R
       </section>
       {report.applies.length > 0 && (
         <section>
-          <h4 className={heading}>What applies</h4>
-          {report.applies.map((g, gi) => (
-            <div key={g.authority + gi} className={gi === 0 ? '' : 'mt-4'}>
-              <p className="text-[13px] font-semibold text-gray-700">{g.authority}</p>
-              <ul className="divide-y divide-gray-100">{g.items.map((it, i) => item(it, `${gi}-${i}`))}</ul>
-            </div>
-          ))}
+          <div className="mb-2 flex items-baseline justify-between gap-4">
+            <h4 className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">What applies · {thingsToDo(total)}</h4>
+            <button type="button" className="no-print text-[12px] text-[var(--green-ink)] hover:underline"
+              onClick={() => setOpen(allOpen ? new Set() : new Set(report.applies.map((_, gi) => gi)))}>
+              {allOpen ? 'Close all' : 'Open all'}
+            </button>
+          </div>
+          <div className="divide-y divide-gray-200 border-y border-gray-200">
+            {report.applies.map((g, gi) => {
+              const id = `${uid}-a${gi}`
+              return (
+                <div key={g.authority + gi}>
+                  <FoldRow label={g.authority} right={thingsToDo(g.items.length)} expanded={open.has(gi)} controls={id} onClick={() => toggle(gi)} />
+                  <ul id={id} className={`divide-y divide-gray-100 pb-2 pl-[22px] ${open.has(gi) ? '' : 'fold-closed'}`}>
+                    {g.items.map((it, i) => item(it, `${gi}-${i}`))}
+                  </ul>
+                </div>
+              )
+            })}
+          </div>
         </section>
       )}
       {report.to_confirm.length > 0 && (
@@ -1839,9 +1916,11 @@ function ReportView({ report, factsLine }: { report: SummaryReport; factsLine: R
       )}
       {factsLine}
       {report.sources.length > 0 && (
-        <section>
-          <h4 className={heading}>Sources</h4>
-          <ol className="space-y-1.5">
+        <section className="border-y border-gray-200">
+          <FoldRow label="Sources" right={String(report.sources.length)} expanded={sourcesOpen}
+            controls={`${uid}-src`} onClick={() => setSourcesOpen((v) => !v)} />
+          {/* The full titles, as before: the list is where a source is read in full. */}
+          <ol id={`${uid}-src`} className={`space-y-1.5 pb-3 ${sourcesOpen ? '' : 'fold-closed'}`}>
             {report.sources.map((src) => {
               const shown = displaySource(src.title, src.url)
               return (
@@ -2065,12 +2144,9 @@ function HowToSteps({ result }: { result: HowToResult }) {
           {result.steps.map((st, k) => (
             <li key={k} className="text-[14px] leading-relaxed text-gray-800">
               {st.text}
-              <span className="sources-print block text-[12px] text-gray-500">
-                <a href={st.url} target="_blank" rel="noopener noreferrer" className="hover:text-gray-800 hover:underline">
-                  [{nums.get(urlKey(st.url))}] {displaySource(st.title, st.url).title}
-                </a>
-                {st.label === 'official' ? ' · official source' : ''}
-              </span>
+              {/* The same one-line link (Stage 2); the label stays outside the cut, so it is never lost. */}
+              <OneLineLink n={nums.get(urlKey(st.url))} title={st.title} url={st.url}
+                after={st.label === 'official' ? ' · official source' : undefined} />
               {st.label === 'other' && (
                 <span className="block text-[12px] text-gray-500">{OTHER_SOURCE_LINE(st.host)}</span>
               )}

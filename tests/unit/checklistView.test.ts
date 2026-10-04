@@ -5,7 +5,7 @@ import test, { describe } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import {
-  groupItems, madeInWorkspace, mustDoLabel, noSourceText, itemSources, isResearching, howToHeading, stepSourceNumbers,
+  groupItems, madeInWorkspace, mustDoLabel, oneLineSource, shortTitle, thingsToDo, noSourceText, itemSources, isResearching, howToHeading, stepSourceNumbers,
   NO_SOURCE, NO_SOURCE_FOUND, HOWTO_LOCK_MS,
 } from '../../lib/checklistView.ts'
 import { NO_SOURCE as REPORT_NO_SOURCE } from '../../lib/summaryReport.ts'
@@ -98,5 +98,72 @@ describe('numbering tells the truth — only the workspace promises an order', (
   })
   test('Worth doing is unchanged either way', () => {
     assert.equal(groupItems([{ category: 'good_to_have' }], { ordered: false })[0].group.hint(1), 'advice, not a legal rule · 1')
+  })
+})
+
+describe('one-line source links — Workspace Stage 2, on the ethanol fixture\'s real titles', () => {
+  test('"eCFR :: …" keeps the rule, with the host beside it', () => {
+    const o = oneLineSource('eCFR :: 27 CFR Part 17 -- Drawback on Taxpaid Distilled Spirits Used in Manufacturing Nonbeverage Products',
+      'https://www.ecfr.gov/current/title-27/chapter-I/subchapter-A/part-17')
+    assert.equal(o.host, 'ecfr.gov')
+    assert.equal(o.title, '27 CFR Part 17 -- Drawback on Taxpaid Distilled Spirits Used in Manufacturing Nonbeverage Products')
+    assert.equal(o.full, 'eCFR :: 27 CFR Part 17 -- Drawback on Taxpaid Distilled Spirits Used in Manufacturing Nonbeverage Products')
+  })
+  test('"… - CCOF.org" loses the site name', () => {
+    assert.equal(oneLineSource('Strengthening Organic Enforcement: NOP Import Certificates - CCOF.org',
+      'https://ccof.org/news/strengthening-organic-enforcement-nop-import-certificates/').title,
+      'Strengthening Organic Enforcement: NOP Import Certificates')
+    assert.equal(oneLineSource('National Organic Program Import Certificate Update: Cutoff Date September 19, 2024 - CCOF.org',
+      'https://www.ccof.org/news/x').title, 'National Organic Program Import Certificate Update: Cutoff Date September 19, 2024')
+  })
+  test('"OAR 845-004-0101" is left alone — its hyphens are not a site name', () => {
+    assert.deepEqual(oneLineSource('OAR 845-004-0101', 'https://oregon.public.law/rules/oar_845-004-0101'),
+      { host: 'oregon.public.law', title: 'OAR 845-004-0101', full: 'OAR 845-004-0101' })
+  })
+  test('a statute\'s own " - " is kept; a site\'s " - Oregon.gov" or " | PHMSA" goes', () => {
+    assert.equal(shortTitle('Chapter 471 - Alcoholic Liquors', 'oregonlegislature.gov'), 'Chapter 471 - Alcoholic Liquors')
+    assert.equal(shortTitle('Industrial Alcohol Authority - Oregon.gov', 'oregon.gov'), 'Industrial Alcohol Authority')
+    assert.equal(shortTitle('Hazardous Materials | PHMSA', 'phmsa.dot.gov'), 'Hazardous Materials')
+  })
+  test('Justia\'s chain of " :: " keeps the last link, the section itself', () => {
+    assert.equal(shortTitle('2023 Oregon Revised Statutes :: Volume : 14 - Drugs and Alcohol :: Chapter 471 - Alcoholic Liquors Generally :: Section 471.404 - Importing liquor without license prohibited; exceptions; fee.', 'law.justia.com'),
+      'Section 471.404 - Importing liquor without license prohibited; exceptions; fee.')
+  })
+  test('never cut to nothing', () => {
+    assert.equal(shortTitle('ab :: c', 'x.gov'), 'ab :: c')
+    assert.equal(shortTitle('TTB | x', 'ttb.gov'), 'TTB | x')
+  })
+  test('the counts', () => {
+    assert.equal(thingsToDo(1), '1 thing to do')
+    assert.equal(thingsToDo(4), '4 things to do')
+  })
+})
+
+describe('the summary as an accordion — the page holds the rules (Stage 2)', () => {
+  const page = readFileSync('app/compliance/page.tsx', 'utf8')
+  const report = page.slice(page.indexOf('function ReportView('), page.indexOf('/** The words for each stage'))
+  test('each authority and Sources fold; Still to confirm has no fold', () => {
+    assert.match(report, /aria-expanded=\{expanded\}|<FoldRow label=\{g\.authority\}/)
+    const confirm = report.slice(report.indexOf('Still to confirm'), report.indexOf('Asked and not answered'))
+    assert.ok(!/fold-closed|FoldRow/.test(confirm), 'Still to confirm must never fold')
+    assert.match(report, /<FoldRow label="Sources"/)
+  })
+  test('the order is the one Task 5 built: situation, What applies, Still to confirm, Asked, facts, Sources', () => {
+    const at = (t: string) => report.indexOf(t)
+    const order = ['AS_OF_LINE(report.as_of)', 'Your situation', 'What applies ·', 'Still to confirm', 'Asked and not answered', '{factsLine}', 'label="Sources"']
+    for (let i = 1; i < order.length; i++) assert.ok(at(order[i - 1]) < at(order[i]), `${order[i - 1]} before ${order[i]}`)
+  })
+  test('rows are real buttons with aria-expanded and aria-controls', () => {
+    const row = page.slice(page.indexOf('function FoldRow('), page.indexOf('/**\n * THE SUMMARY AS AN ACCORDION'))
+    assert.match(row, /<button type="button" onClick=\{onClick\} aria-expanded=\{expanded\} aria-controls=\{controls\}/)
+  })
+  test('print opens every fold and prints full links, by CSS — not by changing state', () => {
+    assert.match(page, /\.fold-closed \{ display: none; \}/)
+    assert.match(page, /@media print \{[\s\S]*\.fold-closed \{ display: block !important; \}/)
+    assert.match(page, /\.screen-only \{ display: none !important; \}/)
+    assert.match(page, /\.print-only \{ display: inline !important; \}/)
+  })
+  test('every drawer opens folded: the report is keyed by its topic', () => {
+    assert.match(page, /<ReportView key=\{summaryDrawer\.id\}/)
   })
 })

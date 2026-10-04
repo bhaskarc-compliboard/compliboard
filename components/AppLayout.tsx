@@ -214,8 +214,10 @@ export default function AppLayout({ children, title, didYouKnow }: AppLayoutProp
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
 
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between sticky top-0 z-40">
+      {/* Header. `no-print` (app/globals.css, @media print only): the site header never prints. It is
+          sticky, so on paper it landed wherever the page behind a drawer was scrolled to — across the
+          summary's "Your situation" in Workspace Stage 2's print check. On screen nothing changes. */}
+      <header className="no-print bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between sticky top-0 z-40">
         <div className="flex items-center gap-3">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
