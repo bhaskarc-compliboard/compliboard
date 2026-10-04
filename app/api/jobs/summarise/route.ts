@@ -1,8 +1,14 @@
 /**
  * THE NIGHTLY SUMMARISER — `DECISIONS.md` §108, §125. Run 2 Task 4.
  *
- * For every conversation that has gone quiet: write a summary, read candidate company facts out
- * of it as PROPOSALS, and stamp the date the transcript may be cleared.
+ * For every conversation that has gone quiet: write a summary and read candidate company facts out
+ * of it as PROPOSALS.
+ *
+ * *** IT NO LONGER STAMPS `delete_after` — Workspace Task 2. *** Clearing is 12 months after the
+ * last turn, computed from `last_turn_at` by `lib/retention.ts`, and the deleter reads that. The
+ * 7-day clock this job used to start is gone. What this job still owes the deleter is the SUMMARY:
+ * the deleter will not clear a topic whose summary is missing or older than its last turn, and this
+ * job's candidate rule (never summarised, or spoken to since) is exactly the set it skips.
  *
  * ---------------------------------------------------------------------------
  * THE TWO RULES THAT ARE EASY TO GET WRONG, STATED BEFORE THE CODE
@@ -33,8 +39,6 @@ import type { Source } from '@/lib/ai'
 
 export const maxDuration = 800
 
-/** Seven days after summarising (§125, superseding §110's fifteen). */
-const RETAIN_DAYS = 7
 /** A conversation is idle once nothing has been said for a day. */
 const IDLE_HOURS = 24
 
@@ -120,7 +124,6 @@ export async function POST(request: NextRequest) {
         if (!summary) throw new Error('the model returned no summary')
 
         const now = new Date()
-        const deleteAfter = new Date(now.getTime() + RETAIN_DAYS * 86400_000)
 
         const { error: uErr } = await supabaseAdmin.from('topics').update({
           summary,
@@ -128,9 +131,6 @@ export async function POST(request: NextRequest) {
           summary_source: 'nightly',
           idle_at: topic.last_turn_at,
           extracted_at: now.toISOString(),
-          // THE CLOCK STARTS AT SUMMARISING, NOT AT THE CONVERSATION. The summary is what makes
-          // the transcript disposable, so the seven days run from here.
-          delete_after: deleteAfter.toISOString(),
         }).eq('id', topic.id)
         if (uErr) throw new Error(`stamping the topic: ${uErr.message}`)
 

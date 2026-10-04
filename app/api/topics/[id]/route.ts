@@ -50,7 +50,7 @@ export async function GET(
       turns,
       transcript_cleared: cleared,
       note: cleared
-        ? 'The messages in this conversation were cleared 7 days after it was summarised. The summary below is kept.'
+        ? 'The messages in this conversation were cleared 12 months after the last message. The summary below is kept.'
         : null,
     })
   } catch (e) {

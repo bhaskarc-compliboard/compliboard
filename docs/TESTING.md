@@ -470,7 +470,7 @@ sit on the page, never how good an answer reads.**
 | # | Action | Steps | What must be true |
 |---|---|---|---|
 | **C1** | **Open a summarised conversation** *(rewritten 3 Oct)* | Conversations tab → a row marked summarised | The summary is **in the serif**. The footer has **"Open the conversation" as an outlined green button**; **Open the checklist** (only if one was made) and **Download** are plain text, Download on the right. Press **Download**: the summary prints **alone, with no page behind it** |
-| **C2** | **One whose transcript has been cleared** | Open a conversation summarised more than 7 days ago, so its `turnCount` is 0 | **"Open the conversation" is absent**, the note about cleared messages shows, and **Download still works** |
+| **C2** | **One whose transcript has been cleared** | Open a conversation whose turns the deleter has cleared (12 months after its last message, since Workspace Task 2), so its `turnCount` is 0 | **"Open the conversation" is absent**, the note about cleared messages shows, and **Download still works** |
 
 ### D — The lists
 
@@ -593,7 +593,7 @@ replicates.**
 | | |
 |---|---|
 | **Perfect** | Ask a question, wait for the answer, reload the page, reopen the conversation. Both messages are there, in order, with the answer's sources. Ask a follow-up — it carries the subject. |
-| **Edge — the cleared transcript** | Open a conversation whose turns the nightly deleter has already removed. **It must say so** — "the messages were cleared 7 days after it was summarised; the summary is kept" — and show the summary. **What a script cannot judge:** whether that reads as the product working as promised or as the product having lost something. If it reads as loss, the wording is wrong, not the deletion. |
+| **Edge — the cleared transcript** | Open a conversation whose turns the nightly deleter has already removed. **It must say so** — "the messages were cleared 12 months after the last message; the summary is kept" — and show the summary. **What a script cannot judge:** whether that reads as the product working as promised or as the product having lost something. If it reads as loss, the wording is wrong, not the deletion. |
 
 ### Stop
 
@@ -613,8 +613,8 @@ replicates.**
 
 | | |
 |---|---|
-| **Perfect** | A topic past its `delete_after` loses its turns and keeps its summary. `job_runs` names the topic and the count. |
-| **Edge — the backstop** | Disable the summariser for a month (or backdate a topic 31 days with no summary). **The deleter must still clear it.** This is the case that only fails when something else is already broken, which is exactly why it is worth testing deliberately rather than waiting for it. |
+| **Perfect** | *(Rule changed in Workspace Task 2, `lib/retention.ts`.)* A topic whose last turn is more than 12 months old, with a summary written at or after that turn, loses its turns and keeps its summary. `job_runs` names the topic and the count. |
+| **Edge — no summary** | *(Replaces the 30-day backstop, Workspace Task 2.)* Backdate a topic's last turn 13 months with no summary. **The deleter must SKIP it** — turns kept, its id listed under `skipped_no_summary` in `job_runs` — and the next nightly summary picks it up first. No conversation loses its turns with nothing kept. |
 
 ### Conversion with scope
 

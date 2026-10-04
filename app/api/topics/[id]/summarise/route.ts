@@ -15,10 +15,10 @@
  * it hours later, which is the behaviour the rule exists to prevent.
  * ---------------------------------------------------------------------------
  *
- * IT DOES NOT STAMP `delete_after`. Asking for a summary is not asking for the transcript to be
- * cleared in seven days — the person is still working in that conversation. The nightly job sets
- * the clock when it summarises an IDLE topic, which is the state the seven days were reasoned
- * about. Nor does it extract fact proposals: that is the overnight reader's job (§108), and doing
+ * IT SETS NO CLEARING DATE, AND NEITHER DOES ANYTHING ELSE NOW. Clearing is 12 months after the
+ * last turn, computed by `lib/retention.ts` (Workspace Task 2); a summary made here counts exactly
+ * as a nightly one does, so it no longer stops the transcript ever being cleared (machinery N2).
+ * Nor does it extract fact proposals: that is the overnight reader's job (§108), and doing
  * it here would put an inference in front of somebody who asked for a summary.
  */
 import { NextRequest, NextResponse } from 'next/server'

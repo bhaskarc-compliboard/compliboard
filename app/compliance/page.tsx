@@ -1147,11 +1147,12 @@ export default function CompliancePage() {
         {tab === 'conversations' && (
           <div className="pt-1">
             {/* THE RETENTION LINE, AT THE TOP, AS AUDITS' COUNTS LINE — `app/audits/page.tsx:576`
-                and `:579`, classes copied (Workspace layout, Task 2, board D). Words unchanged. */}
+                and `:579`, classes copied (Workspace layout, Task 2, board D). Words: the owner's 12-month rule, Workspace
+                features Task 2 (`lib/retention.ts`). */}
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 pb-3">
               <p className="text-[13px] text-gray-500">
-                Summaries are kept until you delete them. The full back-and-forth is cleared 7 days after a
-                conversation is summarised. Anything you uploaded stays in Documents.
+                Full conversations are kept for 12 months after the last message. Summaries are kept until you
+                delete them.
               </p>
             </div>
 
@@ -1319,7 +1320,7 @@ export default function CompliancePage() {
           )}
           {summaryDrawer.summarised_at && summaryDrawer.turnCount === 0 && (
             <p className="mt-4 rounded-lg bg-gray-50 px-3 py-2 text-[12.5px] text-gray-500">
-              The messages in this conversation were cleared 7 days after it was summarised. The summary
+              The messages in this conversation were cleared 12 months after the last message. The summary
               above is kept.
             </p>
           )}

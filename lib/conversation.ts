@@ -45,8 +45,10 @@ export interface TurnRow {
  * A NEW TURN CLEARS THE CLOCKS. An active conversation is never summarised or deleted under
  * someone — that is the promise, and this is the one line that keeps it.
  *
- * `idle_at` and `delete_after` go back to NULL, `last_turn_at` moves forward. A conversation
- * someone returns to on day six is not cleared on day seven.
+ * `idle_at` goes back to NULL and `last_turn_at` moves forward — and `last_turn_at` IS the clearing
+ * clock: turns are kept 12 months after it (`lib/retention.ts`), so a conversation someone returns
+ * to is never cleared on the old date. `delete_after` is also nulled; no job reads or writes it
+ * since Workspace Task 2, and nulling it keeps a stale value from an older build from lingering.
  */
 export async function touchTopic(db: Db, topicId: string): Promise<void> {
   const { error } = await db
@@ -162,7 +164,7 @@ export async function loadTurns(db: Db, topicId: string): Promise<TurnRow[]> {
 /**
  * COUNTERS NEVER GO DOWN, AND ARE NEVER DERIVED FROM ROWS THAT CAN BE DELETED.
  *
- * Transcripts are cleared after seven days and checklists can be deleted; a `count(*)` would
+ * Transcripts are cleared 12 months after the last turn and checklists can be deleted; a `count(*)` would
  * fall on both, and tell a customer who asked forty questions that they asked six. These record
  * events.
  *
