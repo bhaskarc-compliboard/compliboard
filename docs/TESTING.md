@@ -159,9 +159,9 @@ untested — applies to the runner as much as to anything it runs.
 
 ## Manual set — Workspace Stage 2 — 4 October 2026 (`docs/HANDOFF-WORKSPACE.md`, the Stage 2 note)
 
-**The summary as an accordion, one-line source links, the header off paper — commit `04f81c6`.** `DECISIONS.md` §159.
+**The summary as an accordion, one-line source links, the header off paper — commit `04f81c6`; the print frame — commit `94f630b`.** `DECISIONS.md` §159, §160.
 
-> ### ALL FIVE ARE FREE LIVE CHECKS AFTER THE PUSH. NONE PRESSES SUMMARISE OR CALLS A MODEL.
+> ### ALL SIX ARE FREE LIVE CHECKS AFTER THE PUSH. NONE PRESSES SUMMARISE OR CALLS A MODEL.
 > Hard-reload first (Cmd+Shift+R). Use a conversation already summarised after the Task 5 release; a
 > summary written before it has no report and shows as text, unchanged.
 
@@ -170,8 +170,9 @@ untested — applies to the runner as much as to anything it runs.
 | **S2-1** | **The folded first view** | **Conversations** → a row reading *Summary ready* | Open: the as-of line, **Your situation**, **Still to confirm** (every item, no fold), **Asked and not answered**, the facts line. Folded: **WHAT APPLIES · N THINGS TO DO**, then one row per authority with a chevron and *N things to do* at the right; **Sources** with its count. The counts add up to the total |
 | **S2-2** | **Open one agency** | Click one authority's row (or Tab to it and press Enter) | Only that group opens, its items as before; the chevron turns; *Open all* still says *Open all*. Click again: it closes |
 | **S2-3** | **Open all** | Click **Open all** | Every authority opens; the link now says **Close all**; clicking it folds them again. Close the drawer and reopen it: **everything is folded again** |
-| **S2-4** | **Print** | With everything folded, press **Download** → the print preview | **Every authority prints open**, and Sources prints its list. Each item's source shows its full title and its full address. **The site header (Refer a friend, Feedback, Log out) is not on any page.** The screen is still folded after closing the preview |
+| **S2-4** | **Print** | With everything folded, press **Download** → the print preview. **Tick "Headers and footers" in the print dialog's More settings** | **Every authority prints open**, and Sources prints its list. Each item's source shows its full title and its full address. **The site header (Refer a friend, Feedback, Log out) is not on any page.** **The print frame (board 10):** every page has the company top left and *Summary report* top right with a hairline, and *Prepared with CompliBoard* and *Page n of N* at the bottom; page 1 has the title and *Summarised ‹date› · Printed ‹date›*. **Even with "Headers and footers" ticked, no browser date, page title, web address or "1/5" appears.** The screen is still folded after closing the preview |
 | **S2-5** | **A checklist's one-line links** | **Checklists** → a checklist made from a conversation → an item with a source, and one with *How to do it* steps | Each source sits on **one line**, *"[n] host · title"*, cut with *…* when long; hovering shows the full title. Steps keep *· official source* or the *This comes from ‹host›…* line |
+| **S2-6** | **Every other print has the same frame** | Print, each with "Headers and footers" ticked: a checklist (**Download**); a conversation (**Open the conversation** → **Download** under the box); in Company Documents, a document's report (**Download**); in Audits, an audit's report (**Print**) | Top right reads *Checklist*, *Conversation*, *Document report*, *Audit report*; the company is top left on every page, **including the Audits report**, which printed with no company before; page 1 has the title and one line of dates, never *Today*; *Page n of N* at the bottom; no browser header or footer |
 
 *(Before the commit, on staging as `testgamma` with the ethanol fixture, and as `testcascade` for a Documents and an Audits report: every check above was captured by script, screenshots and print PDFs in `shots/s2-*`. **No person has run this set yet.**)*
 

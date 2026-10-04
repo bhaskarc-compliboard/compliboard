@@ -15,10 +15,13 @@ The plan has five stages, in this order. **The next session starts at Stage 3.**
 Migration 064 is on production, the code is pushed (`a701436`), and the new settings are on Vercel.
 The owner's live checks passed. `DECISIONS.md` §158.
 
-## Stage 2 — The polish pass · DONE, 4 October 2026 (`04f81c6`)
+## Stage 2 — The polish pass · DONE, 4 October 2026 (`04f81c6`, `94f630b`)
 
 Built as below, plus one fix the print check found: the site header no longer prints over a drawer
-(`components/AppLayout.tsx`). `DECISIONS.md` §159. The owner's live checks: `docs/TESTING.md`,
+(`components/AppLayout.tsx`). `DECISIONS.md` §159. **And the print frame** (board 10, `94f630b`,
+`DECISIONS.md` §160): the four drawers and the printed conversation carry the company, the document
+type, "Prepared with CompliBoard" and "Page n of N" on every page, with the browser's own header and
+footer off. **The app-wide print sweep waits** until every section has its new look. The owner's live checks: `docs/TESTING.md`,
 "Workspace Stage 2".
 
 1. **The summary drawer as an accordion.** The canvas "CompliBoard Compliance Workspace — the feature

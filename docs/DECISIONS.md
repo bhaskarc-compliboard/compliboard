@@ -10946,3 +10946,18 @@ Both are on the held list as "research contradicting its own item" and "a number
 **Measured:** the ethanol report's drawer body is 1,558px folded against 3,860px before, in a 775px window.
 
 **Cost of the pass: $0.00.** No model call; `npm run cost` read 205 calls, $6.39, before and after.
+
+## 160. THE PRINT FRAME — 4 October 2026
+
+§160 — Board 10 of the canvas feature boards, built in Workspace Stage 2 (`94f630b`) and approved by the owner. One line each:
+- **One print frame, one path.** The four drawers (summary, checklist, Documents report, Audits report) and the workspace conversation's Download print through `printWithFrame()` (`lib/printFrame.ts`); `components/Drawer.tsx` `printDrawer()` and `app/compliance/page.tsx` call it, and neither prints by itself.
+- **Top of every page:** the company, the document type (*Summary report*, *Checklist*, *Document report*, *Audit report*, *Conversation*), a hairline. **Bottom:** a hairline, *Prepared with CompliBoard*, *Page n of N*.
+- **Page 1:** the title in the serif, then one grey line of absolute dates — never *Today* or *Yesterday*, and no *CompliBoard* on it.
+- **The browser's own header and footer are off**, whatever the person's print settings. The frame is drawn in CSS page margin boxes, and Chrome draws nothing of its own in margins the page fills. **Measured in Chrome 154 with "Headers and footers" forced on** (`Page.printToPDF` with `displayHeaderFooter: true`): without the frame, Chrome printed its date, the page title, the URL and *1/5*; with it, none of them, on all four drawers and the conversation.
+- ***Page n of N* is the browser's own count** (`counter(page)`, `counter(pages)`), so it is never a guess: 5, 8, 4, 17 and 12 pages on the measured prints.
+- **"CompliBoard" is not heavier than "Prepared with".** A margin box holds one run of text in one style. Two weights would mean giving up margin boxes, and with them the page count and the guaranteed removal of the browser's own lines.
+- **Side margins are 10mm.** At 16mm the right edge clipped on every print in Chrome 154, whatever the capture's own margins; at 10mm — inside Chrome's default 0.4in — nothing does.
+- **Three files outside the workspace changed for the shared frame:** `app/audits/page.tsx` now reads the company and passes it to the Audits report and to the Documents report it opens (it passed none, and `null`); `components/AuditReport.tsx` takes `companyName` and gives both audit drawers their type and dates; `components/DocumentReport.tsx` gives its drawer its type and dates (*Revised ‹date› · Read ‹date›*).
+- **Not changed:** print anywhere else in the app. The app-wide sweep waits until every section has its new look (the owner). Safari and Firefox are untested (`docs/HANDOFF-CODE.md` §7).
+
+**Cost: $0.00.** No model call; `npm run cost` read 205 calls, $6.39, before and after.

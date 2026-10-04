@@ -386,6 +386,31 @@ x=1178.
   content when the page behind was scrolled. Measured: on screen `display: flex`, 57px; in print media
   `display: none`. Printed without it: the summary, a checklist, a Documents report and an Audits report
   (`shots/s2-*-print.pdf`).
+- **The print frame** *(Changed 4 October 2026, Workspace Stage 2, `94f630b`; the canvas feature boards, board 10)*.
+  Every printed drawer, and the printed conversation, is framed the same way, through one path:
+  `printWithFrame()` (`lib/printFrame.ts:70`), called by `printDrawer()` (`components/Drawer.tsx:29`) and by the
+  conversation's Download (`app/compliance/page.tsx:1332`).
+  - **Top of every page:** the company, 10px uppercase grey, spaced, on the left; the document type on the
+    right — *Summary report* (1550), *Checklist* (1614), *Document report* (`components/DocumentReport.tsx:503`,
+    `:537`), *Audit report* (`components/AuditReport.tsx:742`, `:861`), *Conversation* (1332); a hairline under them.
+  - **Page 1:** the title in the serif and ONE grey line of absolute dates (`components/Drawer.tsx:74`): *Summarised
+    3 October 2026 · Printed 4 October 2026*; *Made …*; *Revised … · Read …* (the document's own date and when it was
+    read); *Audited … · Readings as of …*; for the conversation *Started … · Last message …* (1150, flush with the
+    frame). Never *Today* or *Yesterday*; no *CompliBoard* on this line.
+  - **Bottom of every page:** a hairline, *Prepared with CompliBoard* (one style — a margin box cannot set one word
+    heavier), and *Page n of N* from the browser's own page counters.
+  - **The browser's own header and footer are off**, whatever the print settings: the frame is drawn in CSS page
+    margin boxes (`printFrameCss`, `lib/printFrame.ts:39`), and Chrome draws nothing of its own in margins the page
+    fills. Measured with Chrome's "Headers and footers" forced on.
+  - **Side margins are 10mm**: at 16mm the right edge clipped in Chrome 154.
+  - **For the frame, three files outside the workspace changed:** `app/audits/page.tsx` reads the company (252) and
+    passes it to the Audits report (799) and the Documents report it opens (810, was `null`);
+    `components/AuditReport.tsx` takes `companyName` and gives both audit drawers their type and dates;
+    `components/DocumentReport.tsx` gives its drawer its type and dates. Nothing else about their printing changed.
+  - **Not tested:** Safari and Firefox. To my understanding neither draws CSS margin boxes yet, so the top and
+    bottom lines would be missing there and their own header and footer would follow their print settings; the
+    page-1 title block prints in every browser.
+  - Measured: `shots/s2p-{summary,checklist,documents-report,audits-report,conversation}-{page1,last}.png`.
 - Footer: `Download` (1577, prints all groups and any steps already researched; buttons and spinners are
   `no-print`) and `Delete`, as before.
 - **Measured** as Gamma on the ethanol checklist and as Cascade on an Audits checklist:
