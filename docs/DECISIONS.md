@@ -10797,3 +10797,39 @@ Commits 358647d, 1e34fc2.
 - **The measuring script is kept**: `npm run measure` (`scripts/measure-layout.mjs`) — it blocks paid routes and writes and prints `BLOCKED`; `DESIGN.md` §6 item 10 points at it.
 
 **The cost of the pass: $0.01** — one `substeps` call on `claude-haiku-4-5`, approved by the owner, to see the checklist drawer with its steps for the first time. Every other run was measured with paid routes blocked and printed `BLOCKED (0)`. The element-by-element record is `docs/HANDOFF-WORKSPACE.md`. Committed locally; not pushed.
+
+## 154. THE WORKSPACE FEATURE VISION AND ITS FIRST TASKS — 3 October 2026
+
+§154 — The owner's decisions for the Compliance Workspace, approved on the canvas "CompliBoard Compliance Workspace — the feature boards", and the first three tasks built under them. One line each:
+
+- **The section is pure research.** The summary is the deliverable: it holds the last state of the conversation, organised by authority, with its sources.
+- **No "doesn't apply" section in the summary.** A confident wrong exclusion is worse than an extra item.
+- **Full conversations are kept 12 months after the last message; summaries until the person deletes them.** Built in Task 2 (`lib/retention.ts`): clearing is computed from `last_turn_at`, a topic is cleared only with a summary that covers its last turn, and one without is skipped for the nightly summary to pick up.
+- **Facts go to Company information's To-confirm queue and never interrupt the chat.** The workspace's "Save it" card is removed (Task 3); the summary drawer counts a conversation's waiting facts and links there. Deleting a conversation no longer deletes its facts (migration 062, Task 2).
+- **Deleting is done only from a drawer, with the product's own confirmation offering the download first** — never the browser's pop-up (Task 3).
+- **Files are staged in the box and read only on send, with the real stages shown.** Task 4; not built.
+- **The checklist comes in three groups** — must do, in order; worth doing; to confirm. The machine-written micro-steps are replaced by "How do I do this?", which researches one item and shows only steps with a source. Task 5; not built.
+- **Everything the product writes for the customer is in short, simple sentences.**
+- **The build runs on Haiku; the quality test is at the end, on Opus 5.5,** with the ethanol conversation as the fixed case. (That is production topic `7e23648b`, *"we are going to import 192 proof organi ethyl alcholo from Columbia…"*; `docs/WORKSPACE-MACHINERY.md` part 9.) **Production runs Sonnet today** — the owner's statement. The repository does not settle it: `docs/RELEASE.md:77` names `AI_MODEL_PROSE` without its value, and `:86` records `AI_MODEL_JUDGEMENT = claude-opus-5`. The Vercel dashboard is the authority (`CLAUDE.md` §3.4a).
+- **The cron fix is deferred to one release for all four jobs.** Vercel's logs on 3 October showed every scheduled call GET → 405, every 5 minutes; production `job_runs` holds no `summarise` or `delete` run ever. The write-up is `docs/reports/workspace-task2.md`, "For the cron release".
+- **Fonts are self-hosted with `next/font/local`,** because `next/font/google` fetches at build time and two production builds failed on vercel/next.js#99114.
+
+**The commits:**
+- `6a77339` — Task 2, checkpoint 2: conversations kept 12 months after the last message.
+- `e2cd8e4` — Task 2, checkpoint 3: the cron release written up, not done.
+- `055df59` — Task 2, checkpoint 4: migration 062, a fact outlives the conversation it came from.
+- `cbdc99c` — Task 2, checkpoint 5: "Make a checklist" from the box saves what it says it saved.
+- `e6809cf` — Fonts self-hosted with `next/font/local` (vercel/next.js#99114).
+- `2937b0b` — Task 3: the actions under the box and the one-topic line; sources fold after 3; the notice clears on a change of context; the Save it card removed; the facts line in the summary drawer; titles shown capitalised; delete only from a drawer, with the page's own confirmation.
+
+**The cost.**
+- **Task 2: $0.31** (11 calls, all `claude-haiku-4-5` on staging).
+  - **$0.26 of it was not allowed.** `npm run check:live` was started without first checking whether a server was on port 3000. One was, so the full run began and was stopped after ten calls.
+  - The other $0.05 was the one call checkpoint 5 allowed.
+- **Everything else — Task 1, the font fix and Task 3 — cost $0.00.**
+- Not counted here: two calls on 4 October at 00:44–00:45 UTC ($0.0435), made by someone using localhost as the Cascade test company, not by the build.
+
+**The release state, read after `2937b0b`.**
+- `npm run preflight` (read-only) reads 63 migration files on disk and 63 rows on production (`dsfwmafnphdlfogetsus`), with `062_a_fact_outlives_its_conversation.sql` among them: `PENDING COUNT: 0`. So 062 went to production with the Task 2 release.
+- Task 3 adds no migration.
+- Its release is the push alone.

@@ -1,7 +1,13 @@
 # Handoff — the Compliance Workspace, element by element
 
-**Version:** 1 · **Written:** 3 October 2026, at the close of the Workspace layout pass (Tasks 1, 2,
+**Version:** 2 · **Written:** 3 October 2026, at the close of the Workspace layout pass (Tasks 1, 2,
 2b and 3). In the shape of `docs/HANDOFF-AUDITS.md` §5a.
+
+> **Version 2, 3 October 2026 — Workspace feature Task 3 (`2937b0b`).** Every element Task 3 changed
+> is rewritten in place and marked *Changed 3 October 2026*, with its line at `2937b0b`.
+>
+> **Line numbers of the elements Task 3 did NOT change are still those of `6a1382f`, and most have
+> moved.** Read them as "near", and find the element by its words.
 
 **What this is.** Every element of `/compliance` in order of appearance, as built: its words, its size,
 its line in `app/compliance/page.tsx` (unless another file is named), and its measured position where a
@@ -39,8 +45,14 @@ and reads `(60+)` when the read came back full (`countOf`, 87). `+ New conversat
 the row (900), 14px gray-500. Tab state is React state, not the URL. **Measured:** tab row 326–1178;
 `Checklists (14)` as Gamma; `Checklists` as Cascade.
 
-**The notice** (905). A route's error or the page's own refusal, with `Dismiss`. Amber-50 fill,
-amber-200 border, `text-sm`. **From code.**
+**The notice** (951). A route's error or the page's own refusal, with `Dismiss`. Amber-50 fill,
+amber-200 border, `text-sm`. *(Changed 3 October 2026, Workspace Task 3, `2937b0b`.)* It now clears on a change of context:
+- a tab change (`switchTab`, 431–434);
+- New conversation (`newConversation`);
+- opening a conversation (`openConversation`, its first line);
+- and, as before, at the start of every question and on Dismiss.
+
+It used to stay across all three tabs until Dismiss (machinery (iii)). **From code.**
 
 **"Asking about"** (1027). *"Asking about ‹file name› remove"*, 12px gray-500, the name gray-700.
 Above the box, only when a document is attached before the question — arriving from "Research this"
@@ -100,10 +112,19 @@ sources…"*, *"Writing the answer…"*, and `Stop`. A box: gray-200 border, whi
 12.5px. **From code.**
 
 **The answer** (936). `AnswerBody` (`components/AnswerBody.tsx:118`): serif 17, leading 1.65, no box.
-**The sources** (937; `AnswerBody.tsx:130–151`): heading `SOURCES` 11px, rows 13px.
+**The sources** (`components/AnswerBody.tsx:126–172`): heading `SOURCES` 11px, rows 13px. *(Changed 3 October 2026, Workspace Task 3, `2937b0b`.)*
+- **They fold at three** (`SOURCES_SHOWN`, `:140`). Under a longer list, *"Show all N sources"*, 13px `--green-ink`, underlined, toggles to *"Show fewer"*. The state is per answer.
+- **Every source still prints:** the folded rows are `hidden print:flex` (`:154`).
+- **A citation marker's card reads the answer's full list** (`:101`, `:109`), so marker 6 shows source 6 while row 6 is folded.
 
-**The action row, under the newest answer only** (941–953). `Turn this into a checklist` (`OUTLINE`),
-`Summarise this` and `Download` (`TEXT_ACTION`). **Seen** in the conversation screenshot.
+**Measured** as Gamma on `320822cd` (6 sources):
+- 3 rows visible and *"Show all 6 sources"*;
+- 6 after clicking it; 3 after *"Show fewer"*;
+- all 6 under print emulation;
+- marker 6's card open on *"Seattle WA Revises Paid Sick Leave Ordinance"* with the list folded.
+
+**The action row under the newest answer — removed.** *(Changed 3 October 2026, Workspace Task 3, `2937b0b`.)* It moved under the box; see *The conversation's
+actions* below.
 
 **Stopped early** (959–967). *"**This answer stopped early.** The answer stopped before it was
 finished, so what is above is incomplete. Nothing was saved for it."* and `Try again`. 14px
@@ -115,14 +136,37 @@ question."* 14px gray-500. **From code.**
 **Failed** (973–977). *"‹error› You can ask again, or rephrase the question."* 14px amber-900, amber
 left rule. Every string that can reach `‹error›` is listed in `HANDOFF-CODE.md` §7. **From code.**
 
-**The wrap-up nudge** (983–1006), after four answers. *"**This one has covered a fair bit.** When
-you're done with this topic, you could wrap it up as a summary and start a new one. The new
-conversation carries the summary forward, so nothing gets lost."* 14px gray-600, hairline above.
-`Wrap up and start fresh` (`OUTLINE`), `Keep going` (`TEXT_ACTION`). **From code.**
+**The wrap-up nudge — removed.** *(Changed 3 October 2026, Workspace Task 3, `2937b0b`.)* Gone:
+- the nudge, `Wrap up and start fresh` and `Keep going`;
+- `nudgeDismissed`, `answered` and `showNudge`;
+- the `newConversation(carrySummary)` pre-fill. That pre-fill put *"Carrying on from the last conversation…"* in the box, and that text became the next conversation's title (machinery N3).
+
+The one-topic line under the box replaces it.
 
 **The docked composer** (1032–1060). The same box. The paperclip (1045, `aria-label="Attach a file"`)
 opens the picker in one click — **measured**, `Page.fileChooserOpened` fired 1. `Send` (1055), green;
 `Stop` (1050) while busy, gray-900.
+
+**The conversation's actions, under the box** (1088–1118). *(Changed 3 October 2026, Workspace Task 3, `2937b0b`.)* Shown once the conversation has a finished
+answer and a topic (`hasAnswer`, and 1100):
+- `Turn this into a checklist` (1104): 14px, font-medium, `--green-ink`, no border or fill; opens the scope sheet;
+- `Summarise this conversation` (1107): `TEXT_ACTION`;
+- `Download`: `TEXT_ACTION`, `window.print()`.
+
+The gap is 20px, and all three are disabled while a question is in flight.
+
+**The one-topic line** (1115) sits under them, 12px gray-500, always shown with the docked composer:
+*"One topic per conversation. When you are done, summarise it. Start a new conversation for the next
+topic."*
+
+**Measured** as Gamma on `320822cd`:
+- composer bottom y=699; row 709–730;
+- `Turn this into a checklist` x=319–474 (14px, weight 500, `--green-ink`);
+- `Summarise this conversation` 494–676;
+- `Download` 696–759;
+- the line at y=738, 12px.
+
+The first visit is unchanged: `Make a checklist` and `Research this` beside the box.
 
 **The file card** (`FileCard`, 1474). *"Read as: ‹kind› — ‹title›. Saved to Documents → ‹folder›."*,
 then agency and status, then the scan's summary; unreadable: the scan's own reason and `Upload a
@@ -133,28 +177,37 @@ clearer copy`, which now opens the picker directly. A box (gray-200, or amber wh
 
 **Measured** as Gamma: title x=319, column 295–1195, tab row 319–1171, footer text x=319.
 
-**The retention line** (1151–1156), at the top. *"Summaries are kept until you delete them. The full
-back-and-forth is cleared 7 days after a conversation is summarised. Anything you uploaded stays in
-Documents."* Audits' counts-line classes: 13px gray-500 over a hairline. **Seen.**
+**The retention line** (1185–1193), at the top. *"Full conversations are kept for 12 months after the last
+message. Summaries are kept until you delete them."* *(Changed in Workspace Task 2, `6a77339`, the owner's
+12-month rule.)* Audits' counts-line classes: 13px gray-500 over a hairline. **Seen.**
 
-**The proposal** (1162–1174). No box: hairlines above and below (`border-y border-gray-200 py-3.5`).
-*"**One thing from a recent conversation.** It sounded like ‹fact› is ‹value›."*, the quote in 13px
-italic, *"Saving it means we stop asking, and your requirements get sharper."* `Save it` (`OUTLINE`),
-`Not now` (`TEXT_ACTION`). **From code** — no fixture had a pending proposal.
+**The proposal card — removed.** *(Changed 3 October 2026, Workspace Task 3, `2937b0b`.)* Facts belong to Company information (the owner's decision), and the card's
+`Save it` could only write a key that is a switch id. Production's two pending keys were not, so the
+person saw *"Not found"* (machinery (i)).
+
+Removed with it: the proposals state and its load, `saveProposal`, `dismissProposal`, and the page's
+only call to `/api/switches/answer`.
+
+**Measured:** with a pending proposal on Gamma, the tab shows no card.
 
 **Day headings** (1182). 12px, uppercase, gray-400: from `friendlyDate` (`lib/conversationStatus.ts:80–92`): "Today", "Yesterday", then the date. **Seen:** `1 OCTOBER` (3 October), `TODAY` (Task 1, 1 October).
 
-**Rows** (1204–1219). Title 13px gray-900, green on hover; status 12px gray-500 (`Not summarised
-yet`, `Summarised · full conversation kept…`); `Delete` in a fixed `w-14` slot, 12px gray-300, asking
-first (605). **Seen.**
+**Rows** (1223–1238). Title 13px gray-900, green on hover; status 12px gray-500 (`Not summarised
+yet`, `Summarised · full conversation kept until ‹date›`). *(Changed 3 October 2026, Workspace Task 3, `2937b0b`.)*
+- **No Delete on the row.** Deleting is done from the drawer.
+- **The title is shown with its first letter capitalised** when that letter is lowercase: `displayTitle`, 111–121, used at 1228. Nothing stored changes. A title starting with a quote or a digit is left as it is.
+
+**Measured:** 0 Delete buttons on the rows; *"Check this policy against Seattle's paid sick leave rules"*,
+stored as *"check…"*.
 
 **Empty** (1177). *"No conversations yet"* / *"Ask a question and it will appear here."* A box (`Empty`,
 1546; title 15px). **From code.**
 
 ## 4. The Checklists tab
 
-The same rows and day headings (1240–1262). The status line is *"n of m done"* — green only when every
-item is done — then *"n from the conversation · n newly checked"*. `Delete` asks first (660). Empty:
+The same rows and day headings. The status line is *"n of m done"* — green only when every
+item is done — then *"n from the conversation · n newly checked"*. **No Delete on the row** *(Changed 3 October 2026, Workspace Task 3, `2937b0b`.)* — it
+is in the checklist drawer. **Measured:** 0 Delete buttons on the rows. Empty:
 *"No checklists yet"* / *"Ask a question, then turn the answer into a checklist."* (1235). **Rows
 seen** in the checklist-drawer screenshot, under the scrim.
 
@@ -164,7 +217,8 @@ Both are `components/Drawer.tsx`, unchanged by this pass: 720 wide, title 18px (
 line 12.5px (`:73`), footer `border-t px-6 py-3` (`:80`), a print-only header with company, title and
 date (`:62–68`).
 
-**The summary drawer** (1289–1327). Title: the conversation's. Sub: *"‹date› · ‹status›"*. Body: the
+**The summary drawer** (1301–1363). Title: the conversation's, through `displayTitle` (1301), which the drawer
+also prints in its header. Sub: *"‹date› · ‹status›"*. Body: the
 summary in serif 17, or *"This one hasn't been summarised yet. The summary is written overnight, and
 the full conversation is here until then."* (1316). When the transcript is gone, a 12.5px note on a
 gray-50 fill (1322). Footer: `Open the conversation` (`OUTLINE`, only while turns exist), `Open the
@@ -172,11 +226,19 @@ checklist` (`TEXT_ACTION`, only if one was made), `Download` (`TEXT_ACTION`, `ml
 545–1265 (720); title 18px, sub 12.5px; `Open the conversation` outlined at x=570, `Download` at
 x=1178.
 
+*(Changed 3 October 2026, Workspace Task 3, `2937b0b`.)*
+- **Footer.** `Delete` is added at the far right, after `Download`: 14px gray-400, as the checklist drawer's (1324). It opens the delete sheet (§6a). **Measured:** `Download` x=1117, `Delete` x=1200.
+- **The facts line** (1350–1361), at the foot of the body, directly above the footer. The body is wrapped in a full-height column (1332) so the line can take `mt-auto`.
+  - It shows only when this conversation has pending `fact_proposals`, counted as the caller under RLS (`drawerFacts`, 314; the read follows it).
+  - It sits between hairlines and reads *"1 fact from this conversation is waiting in Company information"*, or *"N facts … are waiting…"*. No line at 0.
+  - `Review →`, 14px `--green-ink`, goes to `/company-information`, the link behind the sidebar's badge (`components/AppLayout.tsx:41`).
+  - **Measured** with one fixture proposal on Gamma, inserted on staging and then deleted: the line, then no line once the row was gone.
+
 **The checklist drawer** (1330–1407). Title: the checklist's. Sub: *"‹date› · n from the conversation
 · n newly checked"*. A progress bar (1342) and *"n of m done"*. Items as rows: the checkbox (1365),
 the name 16px (1371), the description 15px, origin and source 12px, the steps 14px in a numbered list
 with a left rule (1395); *"steps being written…"* (1392) on screen only. Footer: `Download`
-(`OUTLINE`), `Delete` (14px gray-400). **Measured** on `16b613cc` as Gamma: 545–1265 (720); one
+(`OUTLINE`), `Delete` (14px gray-400; it now opens the delete sheet, 1374, *(Changed 3 October 2026, Workspace Task 3, `2937b0b`.)*). **Measured** on `16b613cc` as Gamma: 545–1265 (720); one
 checkbox, at x=570; body sizes 16px ×1, 15px ×1, 14px ×6, 12px ×2; `Download` outlined at x=570,
 `Delete` at x=1200.
 
@@ -192,6 +254,40 @@ finished."* Two bordered choices — *"Just what we discussed"* / *"Drawn from t
 the sources it cited — nothing else."* and *"Everything on this subject"* / *"The items we discussed,
 plus what we did not reach — those are checked now and marked as newly researched."* — and `Not now`.
 A 448px panel (`max-w-md`). **From code**; not opened in this pass.
+
+## 6a. The delete sheets *(Changed 3 October 2026, Workspace Task 3, `2937b0b`.)*
+
+The same `Sheet` (1604). **Escape now closes any sheet** (1607–1612), as a click outside always did. The
+browser's `confirm()` is gone from the page.
+
+The delete sheets are at 1469–1496; state at 206, functions at 646–743.
+
+**For a conversation**, opened from the summary drawer's `Delete`:
+- title *"Delete this conversation?"*;
+- *"This deletes the conversation and its summary for good. You cannot undo it."*;
+- *"Download the summary first if you may need it. Checklists, files and facts that came from it stay."*
+
+**For a checklist**, from the checklist drawer's `Delete`:
+- title *"Delete this checklist?"*;
+- *"This deletes the checklist and every box you ticked, for good. You cannot undo it."*;
+- *"Download it first if you may need it."*
+
+**Buttons, left to right:**
+1. `Download the summary` / `Download the checklist` (`OUTLINE`; prints the drawer beneath, as its own Download does);
+2. `Delete for good` (1490; OUTLINE's box in `#B42318`; disabled while deleting);
+3. `Cancel` (`TEXT_ACTION`, `ml-auto`, focused on open, 1492).
+
+**On success**, the sheet and the drawer close and the list reloads.
+
+**On failure**, the sheet stays, with *"That could not be deleted. Nothing was changed. Please try again."*
+(1481). The checklist delete now checks both writes, items first, and does not touch the checklist if
+the items fail.
+
+**Measured** as Gamma:
+- both sheets' words and buttons; the red border as `rgb(180, 35, 24)`; `Cancel` focused;
+- Escape closes the sheet and leaves the drawer open;
+- **a forced failure** (the measuring script fails the request in the browser) shows the line, and leaves the rows in place;
+- **a real delete** of a throwaway conversation and a throwaway checklist, inserted on staging, removed both rows.
 
 **The "Attach a file" sheet is gone** (Task 2b). Attaching is one click. Its sentence — *"Anything you
 upload is saved to your documents so you can find it later."* — went with it.

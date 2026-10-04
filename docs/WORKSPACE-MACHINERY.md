@@ -1,5 +1,32 @@
 # The Compliance Workspace — how it works, end to end
 
+> ### NOTE, 3 OCTOBER 2026, AFTER WORKSPACE TASKS 2 AND 3. THIS MAP IS NOT REWRITTEN.
+> It describes the code at `6a1382f`. These findings have since changed:
+>
+> | Finding | Now | Commit |
+> |---|---|---|
+> | **N1** — "Make a checklist" from the box saves nothing | Saved as the caller; `check:live` asserts the rows | `cbdc99c` |
+> | **N2** and **4e** — the 7-day clearing; a hand summary stops it | 12 months after the last turn (`lib/retention.ts`); runs once the cron release ships | `6a77339` |
+> | **N3** — "Carrying on…" as the next title | The nudge and its pre-fill are removed | `2937b0b` |
+> | **N7** — deleting a conversation deletes its facts | Migration 062: proposals outlive it, with its title; on production | `055df59` |
+> | **N8** — unchecked deletes (only the deletes) | Both checklist deletes are checked, items first | `2937b0b` |
+> | **(i)**, **(ii)**, **N10**, **4g** — "Save it" / "Not found" / "from a recent conversation" | The proposal card and the page's `/api/switches/answer` call are removed; the summary drawer counts waiting facts and links to Company information | `2937b0b` |
+> | **(iii)**, **4i** — the notice across tabs | Clears on a tab change, New conversation, and opening a conversation | `2937b0b` |
+> | **4j** — the title as shown | Shown with a capital first letter; storage unchanged | `2937b0b` |
+> | **4h** — delete | Only from a drawer, through the page's own confirmation; `confirm()` is gone | `2937b0b` |
+> | **H1** — the nightly jobs | **Still open, now confirmed:** Vercel's logs, 3 October, GET → 405 every 5 minutes. Fix written up in `docs/reports/workspace-task2.md` | — |
+>
+> **Unchanged and still open:**
+> - **(iv)**, the file card has no link to the document;
+> - **(v)**, the lost first character — settled only as "before the route";
+> - **N4–N6**, **N9**;
+> - **K1–K4**.
+>
+> Part 1's and part 2's line numbers have moved.
+>
+> Part 9's forklift query first named `documents.created_at`, which does not exist; the corrected
+> statement is in part 9.
+
 **Written:** 3 October 2026, Workspace feature work, Task 1. **Read-only.** Nothing was changed, fixed
 or proposed. Every claim points at `file:line` or a query result; a claim that cannot is labelled
 **HYPOTHESIS** with what would settle it.

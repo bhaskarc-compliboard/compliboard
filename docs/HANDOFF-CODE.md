@@ -5,7 +5,8 @@ figure below came from a command run today, and the command is shown.** Nothing 
 Where a figure is not measured, it says so.
 
 *(§1 and §2 corrected 3 October 2026, from commands run that day and the 1 October preflight; §7
-gained four rows the same day. §1–§4 were rewritten on 28 September. §5–§9 keep their 23 September text except where a fact in
+gained four rows the same day, and after Workspace Task 3 one open row (the cron jobs) and seven
+resolved ones. §1–§4 were rewritten on 28 September. §5–§9 keep their 23 September text except where a fact in
 them was wrong; those carry dated notes. The structure is unchanged on purpose — this is the file
 the next chat trusts, and a reader who knows where §6 is should still find it there.)*
 
@@ -53,6 +54,12 @@ of it, and is **not pushed**: `git log origin/main..HEAD` lists it. A push to `m
 — the dashboard is the owner's.
 
 ## 2. Migration state — 062 ON DISK, 062 APPLIED ON PRODUCTION, NONE PENDING.
+
+> ### UPDATED 3 OCTOBER 2026, AFTER WORKSPACE TASK 3 (`2937b0b`).
+> Workspace Task 2 added `062_a_fact_outlives_its_conversation.sql` (`055df59`), so there are now
+> **63 files, 000 … 062**. `npm run preflight`, run after the Task 3 commit, read **63 on disk, 63 on
+> production (`dsfwmafnphdlfogetsus`), 062 among them, `PENDING COUNT: 0`** — 062 went to production
+> with the Task 2 release. The figures in the block below are from 1 October and are kept as they were.
 
 *(Corrected 3 October 2026. This section was headed "057 ON PRODUCTION, 060 ON STAGING. THREE
 PENDING: 058, 059, 060" — true when written on 1 October, and false later the same day, when 058–060
@@ -362,6 +369,14 @@ thing a bake-off needs is to move one model without moving three others.
 | **The Audits box's typed question is not carried to the workspace (audits/page.tsx:533; HANDOFF-AUDITS §8 item 2).** | `app/audits/page.tsx:533`, a plain `href="/compliance"` | Added 3 October 2026. Seen in Task 1: a sentence typed into the Audits box, the link followed, the workspace's box empty |
 | **The failed line can show a raw provider message (lib/ai.ts:833–834 via route.ts:382), and several messages end with two instructions.** | `app/compliance/page.tsx`, the failed line; `app/api/chat/route.ts:382`; `lib/ai.ts:833–834` | Added 3 October 2026. Every string that can reach `x.error`, each followed on screen by *"You can ask again, or rephrase the question."*: **a JSON answer instead of a stream** — "Unauthorized" (`lib/auth.ts:80`), "Company not found" (`:109`), the conversation-lost sentence (`route.ts:77–79`, from 524, 540, 568), "This topic is closed. Ask your question again and we’ll open a new one." (`:546`), the AI module's own error on the checklist path (`:382` ← `lib/ai.ts:833`, the provider's message as is, or `:834`, "The model returned no message."), "The checklist came back in a shape we could not read. Please try again." (`:393`), "We could not start this conversation. Please try that again." (`:606`), "Something went wrong" (`:803`), and the page's fallback "That request could not be completed."; **a stream that failed** — "The answer stopped part-way through. Please try again." (`route.ts:477`), or `lib/answerStream.ts:93`'s fallback; **a request that threw** — "The answer could not be completed." Not reachable from this page: "No question or file provided" (`:187`) and the file-parse message (`:239`, multipart only). Unchanged by the layout pass, by decision: the owner decides |
 | **conversation_reset is sent by the route and read by no page.** | `app/api/chat/route.ts:82` | Added 3 October 2026. `grep -rn conversation_reset app components lib` finds the route alone. So "start fresh" in the conversation-lost sentence is not done by the page: the conversation on screen is not cleared |
+| **Cron jobs never run: GET → 405.** | `lib/jobAuth.ts:33`, `:36`; the four `app/api/jobs/*` routes export only `POST` | Added 3 October 2026. **OPEN.** Vercel calls the jobs with GET and `Authorization: Bearer <CRON_SECRET>`; the routes take POST and `x-cron-secret`. Vercel's logs on 3 October: every scheduled call GET → 405, every 5 minutes. Production `job_runs` has never held a `summarise` or `delete` row. The fix is written up, not done — `docs/reports/workspace-task2.md`, "For the cron release" — and is deferred to one release for all four jobs (`DECISIONS.md` §154) |
+| ~~The notice stays across the workspace's tabs until Dismiss~~ | `app/compliance/page.tsx` | **RESOLVED 3 October 2026, `2937b0b`.** Machinery (iii). It clears on a tab change, on New conversation and on opening a conversation |
+| ~~"Save it" on a proposal shows "Not found"~~ | `app/compliance/page.tsx` → `/api/switches/answer:53` | **RESOLVED by removal, 3 October 2026, `2937b0b`.** Machinery (i): the proposal's key was not a switch id. The card is gone; facts are confirmed in Company information, and the summary drawer links there |
+| ~~"Make a checklist" from the box saves nothing~~ | `app/api/chat/route.ts`, the open checklist branch | **RESOLVED 3 October 2026, `cbdc99c`.** Machinery N1. The checklist and its items are written as the caller; `check:live` asserts the rows |
+| ~~A summary made by hand stops the transcript ever being cleared~~ | `app/api/jobs/delete/route.ts`, `lib/retention.ts` | **RESOLVED in code 3 October 2026, `6a77339`.** Machinery N2. Clearing is 12 months after the last turn, whoever wrote the summary. **It runs only once the cron release ships** (row above) |
+| ~~"Wrap up and start fresh" titles the next conversation "Carrying on…"~~ | `app/compliance/page.tsx` | **RESOLVED by removal, 3 October 2026, `2937b0b`.** Machinery N3. The nudge and its pre-fill are gone |
+| ~~Deleting a conversation deletes its facts, decided ones included~~ | `supabase/migrations/062_a_fact_outlives_its_conversation.sql`, `app/api/to-confirm/route.ts` | **RESOLVED 3 October 2026, `055df59`.** Machinery N7. Migration 062 is on staging and on production (`npm run preflight`, 3 October, after `2937b0b`: 63 and 63, `PENDING COUNT: 0`) |
+| ~~The checklist delete ignores its errors~~ | `app/compliance/page.tsx` `deleteChecklist` | **RESOLVED 3 October 2026, `2937b0b`** — the deletes only. Machinery N8: both deletes are checked, items first, and a failure keeps the confirmation open with a plain line. N8's other unchecked writes are not covered here: the checklist tick still ignores its error, and the proposal updates went with the card |
 
 ## 8. The next steps — THIS FILE'S READING, not the two handoffs'
 
