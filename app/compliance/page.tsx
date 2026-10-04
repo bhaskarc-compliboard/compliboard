@@ -24,7 +24,8 @@ import React, { useState, useEffect, useLayoutEffect, useRef, useCallback, useId
 import { createClient, authHeaders } from '@/lib/supabase'
 import AppLayout from '@/components/AppLayout'
 // Lifted to components/Drawer.tsx in Documents Run 4 so the Documents report uses the same one.
-import { Drawer, printDrawer } from '@/components/Drawer'
+import { Drawer, printDrawer, printDate } from '@/components/Drawer'
+import { printWithFrame } from '@/lib/printFrame'
 import { AnswerBody, SourceList, type AnswerSource } from '@/components/AnswerBody'
 import { EXAMPLE_QUESTIONS } from '@/config/examples'
 import { displaySource } from '@/lib/sourceTitle'
@@ -1133,6 +1134,27 @@ export default function CompliancePage() {
         {/* ================= ASK ================= */}
         {tab === 'ask' && (
           <div className={started ? 'pt-1' : ''}>
+            {/* THE PRINTED TITLE BLOCK, page 1 of a printed conversation (board 10), the same as a
+                drawer's: the title in the serif, then one grey line of absolute dates. The company,
+                "Conversation" and the page numbers are in the shared frame (`printWithFrame`). */}
+            {started && (() => {
+              const convo = topics.find((t) => t.id === topicId)
+              const dates = [
+                convo?.created_at ? `Started ${printDate(convo.created_at)}` : null,
+                convo?.last_turn_at ? `Last message ${printDate(convo.last_turn_at)}` : null,
+                `Printed ${printDate(new Date())}`,
+              ].filter(Boolean).join(' · ')
+              return (
+                // Flush with the frame's header, as a drawer's title is: the column's own padding
+                // (`.print-page` px-4 sm:px-6) is taken back, on paper only — the block is hidden on screen.
+                <div className="hidden print:block mb-6 -ml-4 sm:-ml-6">
+                  <p className="font-serif text-[22px] font-semibold leading-tight text-gray-900">
+                    {displayTitle(convo?.title ?? null) ?? 'Conversation'}
+                  </p>
+                  <p className="mt-1.5 text-[11px] text-gray-500">{dates}</p>
+                </div>
+              )
+            })()}
             {exchanges.map((x) => (
               <div key={x.id} className="mb-8">
                 {/* The question was `text-[15px] font-medium` and nothing else, so in a long
@@ -1306,7 +1328,9 @@ export default function CompliancePage() {
                         <button onClick={() => summarise(topicId)} disabled={busy} className={TEXT_ACTION}>
                           Summarise this conversation
                         </button>
-                        <button onClick={() => window.print()} disabled={busy} className={TEXT_ACTION}>
+                        {/* The shared print frame (board 10), the same path the drawers take — not a copy. */}
+                        <button onClick={() => printWithFrame({ company: companyName ?? '', type: 'Conversation' })}
+                          disabled={busy} className={TEXT_ACTION}>
                           Download
                         </button>
                       </div>
@@ -1522,6 +1546,11 @@ export default function CompliancePage() {
         <Drawer title={displayTitle(summaryDrawer.title) ?? 'Conversation'}
           sub={`${friendlyDate(summaryDrawer.last_turn_at ?? summaryDrawer.created_at)} · ${conversationStatus(summaryDrawer, summaryDrawer.turnCount > 0).label}`}
           company={companyName}
+          // On paper (board 10): absolute dates only, never "Today" or "Yesterday".
+          printType="Summary report"
+          printDates={summaryDrawer.summarised_at
+            ? `Summarised ${printDate(summaryDrawer.summarised_at)}`
+            : `Last message ${printDate(summaryDrawer.last_turn_at ?? summaryDrawer.created_at)}`}
           onClose={() => setSummaryDrawer(null)}
           footer={
             <>
@@ -1582,6 +1611,8 @@ export default function CompliancePage() {
         <Drawer title={listDrawer.row.title ?? 'Checklist'}
           sub={checklistSub(listDrawer.row)}
           company={companyName}
+          printType="Checklist"
+          printDates={`Made ${printDate(listDrawer.row.created_at)}`}
           onClose={() => setListDrawer(null)}
           footer={
             <>

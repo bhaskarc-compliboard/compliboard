@@ -12,6 +12,8 @@
  */
 'use client'
 
+import { printWithFrame, printDate } from '@/lib/printFrame'
+
 /**
  * PRINTING A DRAWER PRINTS THE DRAWER — Fix Round 1 (E).
  *
@@ -25,13 +27,16 @@
  * closes in some browsers — but the listener is removed either way so a second print is clean.
  */
 function printDrawer() {
-  const body = document.body
-  const done = () => { body.classList.remove('printing-drawer'); window.removeEventListener('afterprint', done) }
-  window.addEventListener('afterprint', done)
-  body.classList.add('printing-drawer')
-  window.print()
-  // A belt-and-braces removal: if `afterprint` never fires, the class must not survive the page.
-  setTimeout(done, 1000)
+  // The shared path (`lib/printFrame.ts`): the frame, this class, print, then both removed.
+  printWithFrame(visibleDrawer(), 'printing-drawer')
+}
+
+/** The drawer being printed: the last one on the page that is actually shown. On `/audits` a
+ *  document's report opens over the audit, which stays in the page under `hidden`. */
+function visibleDrawer(): { company: string; type: string } {
+  const all = [...document.querySelectorAll<HTMLElement>('aside.print-drawer')].filter((a) => a.getClientRects().length > 0)
+  const d = all[all.length - 1]
+  return { company: d?.dataset.printCompany ?? '', type: d?.dataset.printType ?? '' }
 }
 
 /**
@@ -39,9 +44,14 @@ function printDrawer() {
  * one-paragraph summary — and at 560 the summary was a narrow column of serif. `w-full` keeps
  * it filling the screen on anything narrower, so this only widens where there is room.
  */
-function Drawer({ title, sub, children, footer, onClose, company, topLine }: {
+function Drawer({ title, sub, children, footer, onClose, company, topLine, printType, printDates }: {
   title: string; sub?: string; children: React.ReactNode; footer?: React.ReactNode
   onClose: () => void; company?: string | null
+  /** On paper, top right of every page: "Summary report", "Checklist", "Document report", "Audit report". */
+  printType?: string
+  /** On paper, the one grey line under the title: this document's own absolute dates, e.g.
+   *  "Summarised 3 October 2026". "Printed ‹date›" is added after it. Never a relative date. */
+  printDates?: string
   /**
    * *** A LINE ABOVE THE TITLE, IN THE HEADER — Audits Run 4a. ***
    * The audit section opens a document's report inside its own drawer and needs a way back to the
@@ -53,17 +63,18 @@ function Drawer({ title, sub, children, footer, onClose, company, topLine }: {
   topLine?: React.ReactNode
 }) {
   return (
-    <aside className="print-drawer fixed inset-y-0 right-0 z-50 flex w-full max-w-[720px] flex-col border-l border-gray-200 bg-white shadow-2xl">
+    <aside className="print-drawer fixed inset-y-0 right-0 z-50 flex w-full max-w-[720px] flex-col border-l border-gray-200 bg-white shadow-2xl"
+      data-print-company={company ?? ''} data-print-type={printType ?? ''}>
       {/*
-        THE PRINTED HEADER. On screen this is not there at all; on paper it is the only thing
-        that says whose document this is and when it was taken. A printed compliance page with
-        no company and no date is not evidence of anything.
+        THE PRINTED TITLE BLOCK, page 1 only (board 10). On screen this is not there at all. The
+        company and the document type are on EVERY page, in the running header (`printFrameCss`);
+        here: the title in the serif, then one grey line of absolute dates. A printed compliance
+        page with no company and no date is not evidence of anything.
       */}
-      <div className="hidden print:block border-b border-gray-300 pb-2 mb-4">
-        {company && <p className="text-[13px] font-semibold text-gray-900">{company}</p>}
-        <p className="text-[15px] font-medium text-gray-900">{title}</p>
-        <p className="text-[11px] text-gray-600">
-          {sub ? `${sub} · ` : ''}Printed {new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })} · CompliBoard
+      <div className="hidden print:block mb-5">
+        <p className="font-serif text-[22px] font-semibold leading-tight text-gray-900">{title}</p>
+        <p className="mt-1.5 text-[11px] text-gray-500">
+          {printDates ? `${printDates} · ` : ''}Printed {printDate(new Date())}
         </p>
       </div>
       <header className="no-print flex items-start justify-between gap-4 px-6 pt-5">
@@ -82,4 +93,4 @@ function Drawer({ title, sub, children, footer, onClose, company, topLine }: {
   )
 }
 
-export { Drawer, printDrawer }
+export { Drawer, printDrawer, printDate }

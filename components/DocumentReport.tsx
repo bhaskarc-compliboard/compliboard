@@ -385,6 +385,12 @@ export default function DocumentReport({
       : row.document_status === 'uploaded' ? 'Queued to be read again'
       : row.scanned_at ? `read ${fmt(row.scanned_at)}` : null,
   ].filter(Boolean).join(' · ')
+  // ON PAPER (board 10): one line of this document's own dates, absolute — its own date (DATE_LABEL,
+  // e.g. "Revised 1 February 2021") and when it was read. Kind, agency and site print in the body.
+  const printDates = [
+    row.doc_date ? `${(row.doc_date_kind && DATE_LABEL[row.doc_date_kind]) || 'Dated'} ${fmt(row.doc_date)}` : null,
+    row.scanned_at ? `Read ${fmt(row.scanned_at)}` : null,
+  ].filter(Boolean).join(' · ')
 
   const footer = (
     <>
@@ -494,6 +500,7 @@ export default function DocumentReport({
   if (row.display_status === 'could_not_read') {
     return (
       <Drawer title={row.title} sub={sub} company={companyName} onClose={onClose} footer={footer}
+        printType="Document report" printDates={printDates}
         topLine={topLine}>
         {deletePanel}
         <FilingLine row={row} folders={folders} onMove={onMove} onChanged={onChanged} />
@@ -527,6 +534,7 @@ export default function DocumentReport({
 
   return (
     <Drawer title={row.title} sub={sub} company={companyName} onClose={onClose} footer={footer}
+        printType="Document report" printDates={printDates}
         topLine={topLine}>
       {deletePanel}
       {notice && (

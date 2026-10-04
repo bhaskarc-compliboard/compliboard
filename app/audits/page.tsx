@@ -247,6 +247,21 @@ function Audits() {
 
   useEffect(() => { load() }, [load])
 
+  // THE COMPANY, FOR PAPER — board 10. Every printed drawer names the company at the top of every
+  // page; this page passed none (the audit) or `null` (a document's report). Read as /documents reads it.
+  const [companyName, setCompanyName] = useState<string | null>(null)
+  useEffect(() => {
+    (async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { data: p } = await supabase.from('profiles').select('company_id').eq('id', user.id).single()
+      if (!p?.company_id) return
+      const { data: c } = await supabase.from('companies').select('name').eq('id', p.company_id).single()
+      setCompanyName(c?.name ?? null)
+    })()
+  }, [])
+
   /**
    * *** TEN SECONDS, AND ONLY WHILE SOMETHING IS ACTUALLY RUNNING. ***
    * Documents polls its own list on the same interval. A poll that runs when nothing is moving is
@@ -780,7 +795,8 @@ function Audits() {
           <AuditReport runId={openRun} focusWord={drawerWord}
             onClose={() => { setParam('run', null); setDrawerWord(null) }}
             onChanged={load}
-            onOpenDoc={(d) => { setFromAudit(openRun); setOpenDoc(d) }} />
+            onOpenDoc={(d) => { setFromAudit(openRun); setOpenDoc(d) }}
+            companyName={companyName} />
         </div>
       )}
 
@@ -791,7 +807,7 @@ function Audits() {
             onClick={() => { setOpenDoc(null); setFromAudit(null) }} />
           <DocumentReport
               documentId={openDoc}
-              companyName={null}
+              companyName={companyName}
               onClose={() => { setOpenDoc(null); setFromAudit(null) }}
               onChanged={load}
               folders={idx.folders ?? []}

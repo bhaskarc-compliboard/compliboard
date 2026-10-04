@@ -324,8 +324,10 @@ function ReasonBox({ onCancel, onSave }: { onCancel: () => void; onSave: (r: str
   )
 }
 
-export default function AuditReport({ runId, focusWord, onClose, onChanged, onOpenDoc }: {
+export default function AuditReport({ runId, focusWord, onClose, onChanged, onOpenDoc, companyName }: {
   runId: string; focusWord?: string | null; onClose: () => void; onChanged: () => void
+  /** On paper, top left of every page (board 10). The page reads it; this component has no session. */
+  companyName?: string | null
   /**
    * *** THE PAGE OPENS THE DOCUMENT, NOT THIS COMPONENT — Run 3b, item 1. ***
    * This used to render its own panel saying "open it in Documents for its full reading", which is
@@ -644,6 +646,9 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
     + `${docsRead.length} document${docsRead.length === 1 ? '' : 's'} read`
     + (docsUnread.length ? `, ${docsUnread.length} held unread` : '')
     + (run.readings_as_of ? ` · readings as of ${fmt(run.readings_as_of)}` : '')
+  // ON PAPER (board 10): one line of this audit's own dates, absolute. Sections and documents print in the body.
+  const printDates = `Audited ${fmt(run.finished_at ?? run.created_at)}`
+    + (run.readings_as_of ? ` · Readings as of ${fmt(run.readings_as_of)}` : '')
 
   const footer = (
     <>
@@ -733,7 +738,8 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
       : wordFilter ? list.filter((f) => f.word === wordFilter) : list)
 
     return (
-      <Drawer title={`Against ${name}`} sub={sub} onClose={onClose} footer={footer}>
+      <Drawer title={`Against ${name}`} sub={sub} onClose={onClose} footer={footer}
+        company={companyName} printType="Audit report" printDates={printDates}>
         <WordFilter counts={tCounts} value={wordFilter} onChange={setWordFilter} />
         <WordCountsPrint counts={tCounts} />
         {/* The sentence about the form itself, under the header: what we noticed before answering
@@ -851,7 +857,8 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
 
   return (
     <Drawer title={everything ? `Audit of everything · ${run.section_count} sections` : `${agency} audit`}
-      sub={sub} onClose={onClose} footer={footer}>
+      sub={sub} onClose={onClose} footer={footer}
+      company={companyName} printType="Audit report" printDates={printDates}>
       {/*
         *** THE HEADER SAID THE SAME THING TWICE, AND ONE OF THEM CARRIED A PRICE. ***
         The drawer's own `sub` already reads "n sections · m documents read · readings as of …", and
