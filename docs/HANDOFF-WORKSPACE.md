@@ -3,6 +3,10 @@
 **Version:** 5 · **Written:** 3 October 2026, at the close of the Workspace layout pass (Tasks 1, 2,
 2b and 3). In the shape of `docs/HANDOFF-AUDITS.md` §5a.
 
+> **Workspace Stage 2, 4 October 2026 (`04f81c6`): the summary as an accordion, one-line source links, and
+> the site header off paper.** The summary drawer below, the checklist drawer's sources (§5) and the how-to
+> steps are changed in place, marked *Changed 4 October 2026, Workspace Stage 2*, with lines at `04f81c6`.
+
 > **4 October 2026: v5 is live on production.** The Task 6 release is pushed (`a701436`) and migration 064 is
 > applied (`npm run preflight`: 65 on disk, 65 on production, `PENDING COUNT: 0`). The owner's live checks are in
 > `docs/TESTING.md`, "Workspace Task 6", and `DECISIONS.md` §158.
@@ -305,7 +309,16 @@ Both are `components/Drawer.tsx`, unchanged by this pass: 720 wide, title 18px (
 line 12.5px (`:73`), footer `border-t px-6 py-3` (`:80`), a print-only header with company, title and
 date (`:62–68`).
 
-**The summary drawer.** *(Changed 4 October 2026, Workspace Task 5, `cfa3738`.)* When the conversation has a report (`topics.summary_report`, read when the drawer opens, 445), the body is `ReportView` (1764; mounted at 1540). In this order:
+**The summary drawer as an accordion.** *(Changed 4 October 2026, Workspace Stage 2, `04f81c6`; the canvas feature boards, board 6b, with the owner's change that Still to confirm comes after the agencies.)* `ReportView` (`app/compliance/page.tsx:1851`), mounted with the topic as its key (1556), so **every drawer opens folded** and nothing is remembered.
+- **Open on first view:** the as-of line, Your situation, **Still to confirm (never folded)**, Asked and not answered, the facts line.
+- **Folded on first view:** each authority under What applies is one row (`FoldRow`, 1823): a chevron, the authority 14px semibold, and *"N things to do"* (*"1 thing to do"*) 12px gray at the right. A real button with `aria-expanded` and `aria-controls`; click, Enter or Space opens or closes it. The items inside are as before.
+- The heading reads *"What applies · N things to do"* (1882), the total computed, with *Open all* / *Close all* at its right, 12px `var(--green-ink)` (1885).
+- **Sources** is one folded row, *"Sources"* and the count (1920); open, the numbered list with full titles as before.
+- **Print is always open**: a folded panel carries `fold-closed`, hidden on screen and shown by the page's print CSS (1041, 1050); the screen is not changed to print.
+- **Each source under an item is one line** (`OneLineLink`, 1804): *"[n] host · title"* (`lib/checklistView.ts` `oneLineSource`), cut with *"…"*, the full title on hover; on paper the full title and the full address (1052).
+- **Measured** as Gamma on the ethanol report: the drawer body is **1,558px folded** against **3,860px** before (one agency open 2,063px; Open all 3,824px), in a 775px window. All 10 rows read `aria-expanded=false` on opening. Screenshots: `shots/s2-a-folded.png`, `s2-b-one-open.png`, `s2-c-open-all.png`; the print: `shots/s2-d-summary-print.pdf` (5 pages, every agency open).
+
+*(Changed 4 October 2026, Workspace Task 5, `cfa3738`, and kept below for the item shape.)* When the conversation has a report (`topics.summary_report`, read when the drawer opens, 445), the body is `ReportView` (1764; mounted at 1540). In this order:
 1. the as-of line, 13px gray-500: *"What applies to you as of ‹date›, from this conversation. Rules and tariffs change. Check before you act."*;
 2. **Your situation**, 15px;
 3. **What applies**, grouped by authority (13px semibold heading). Each item: its name (15px, medium), what to do (14px, gray-600), and its sources as *[n] title* links, or *No source cited in the conversation* in gray-400;
@@ -363,6 +376,16 @@ x=1178.
   checked against a source, so they are not shown."* if any were dropped. Shown again on every later open
   with no call. A failed run shows the route's sentence under the item.
 - **Micro-steps are gone**: never generated, never shown; the drawer reads top-level items only (838).
+- **Sources on one line** *(Changed 4 October 2026, Workspace Stage 2, `04f81c6`)*: under the origin line
+  (*from this conversation* / *newly checked*), each source is *"[n] host · title"* on one line (1646), cut
+  with *"…"*, the full title on hover, full title and address on paper. The how-to steps use the same link,
+  with *· official source* kept outside the cut (2148). A Documents or Audits item's document or audit
+  name is unlinked, as before. Screenshots: `shots/s2-e-checklist-links.png`, `shots/s2-f-howto-steps.png`.
+- **The site header never prints** *(Workspace Stage 2)*: `components/AppLayout.tsx:220` carries `no-print`
+  (hidden in `@media print` only, `app/globals.css:80–81`). It is sticky, and printed across a drawer's
+  content when the page behind was scrolled. Measured: on screen `display: flex`, 57px; in print media
+  `display: none`. Printed without it: the summary, a checklist, a Documents report and an Audits report
+  (`shots/s2-*-print.pdf`).
 - Footer: `Download` (1577, prints all groups and any steps already researched; buttons and spinners are
   `no-print`) and `Delete`, as before.
 - **Measured** as Gamma on the ethanol checklist and as Cascade on an Audits checklist:

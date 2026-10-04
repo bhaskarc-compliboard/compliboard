@@ -10933,3 +10933,16 @@ Commits 358647d, 1e34fc2.
 - **b. A number is wrong by a factor of about 3.8.** The old checklist's *"about $5,400 per 55-gallon drum"* came from the original research answer (*"roughly $25.92 per gallon at the full rate — about $5,400 per 55-gallon drum"*, the same fixture, turn 2). 55 × 1.92 × $13.50 = $1,425.60. 208 × 1.92 × $13.50 = $5,391.36: the $5,400 treats a drum's 208 litres as 208 gallons.
 
 Both are on the held list as "research contradicting its own item" and "a numbers check". Neither is fixed by this section.
+
+## 159. WORKSPACE STAGE 2 — THE SUMMARY AS AN ACCORDION AND ONE-LINE SOURCE LINKS — 4 October 2026
+
+§159 — The polish pass (`04f81c6`), approved by the owner on localhost. One line each:
+- **The summary drawer is an accordion** (the canvas feature boards, board 6b, with the owner's change: Still to confirm comes after the agencies). Open on first view: the as-of line, Your situation, Still to confirm (never folded), Asked and not answered, the facts line. Folded: each authority, as one row with *N things to do*; Sources, with its count. *Open all* / *Close all* beside *What applies · N things to do*. Every drawer opens folded; nothing is remembered.
+- **Print is always open**, by print CSS, not by changing what is on screen.
+- **Sources show on one line**, *"[n] host · title"*, under summary items, checklist items and how-to steps (`lib/checklistView.ts` `oneLineSource`): site prefixes before " :: " and trailing " | Site" go; a trailing " - Site" goes only when it is the site, so a statute's own " - " title stays. On paper, the full title and the full address.
+- **The site header never prints** (`components/AppLayout.tsx:220`, `no-print`). Found by the Stage 2 print check: it is sticky, and printed across the summary's first section when the page behind was scrolled. The committed code before Stage 2 printed the same overlap, so it was older than this pass. Measured: on screen unchanged (`display: flex`, 57px); in print `display: none`; the summary, a checklist, a Documents report and an Audits report printed without it.
+- **Screenshots go in `shots/`** at the project root (gitignored), because `npm run check` builds and a build wipes `.next/`. The owner's rule for every task from now on.
+
+**Measured:** the ethanol report's drawer body is 1,558px folded against 3,860px before, in a 775px window.
+
+**Cost of the pass: $0.00.** No model call; `npm run cost` read 205 calls, $6.39, before and after.

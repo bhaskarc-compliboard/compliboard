@@ -6,7 +6,7 @@
 > This file mirrors it**, so the next session can read the plan from the repository. When the two
 > disagree, the owner's doc wins and this file is corrected.
 
-The plan has five stages, in this order. **The next session starts at Stage 2.**
+The plan has five stages, in this order. **The next session starts at Stage 3.** *(Stage 2 done 4 October 2026.)*
 
 ---
 
@@ -15,7 +15,11 @@ The plan has five stages, in this order. **The next session starts at Stage 2.**
 Migration 064 is on production, the code is pushed (`a701436`), and the new settings are on Vercel.
 The owner's live checks passed. `DECISIONS.md` §158.
 
-## Stage 2 — The polish pass · NEXT
+## Stage 2 — The polish pass · DONE, 4 October 2026 (`04f81c6`)
+
+Built as below, plus one fix the print check found: the site header no longer prints over a drawer
+(`components/AppLayout.tsx`). `DECISIONS.md` §159. The owner's live checks: `docs/TESTING.md`,
+"Workspace Stage 2".
 
 1. **The summary drawer as an accordion.** The canvas "CompliBoard Compliance Workspace — the feature
    boards", board 6b:
