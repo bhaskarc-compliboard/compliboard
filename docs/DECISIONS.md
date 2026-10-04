@@ -10858,3 +10858,31 @@ Commits 358647d, 1e34fc2.
 **Open, for the owner:** a file stopped during saving is `uploaded`, which is the Documents sweep's queue. Once the cron runs, the sweep will read it, and charge for it. The line *"was not read"* is true when shown, not forever.
 
 **Cost of the task:** 2 document reads and 1 research answer on Haiku, on staging, $0.0730. Everything they created was removed from staging afterwards.
+
+## 156. WORKSPACE TASK 5 — THE SUMMARY REPORT AND THE CONVERSATIONS LIST — 4 October 2026
+
+§156 — The owner's decisions in Workspace Task 5 (`cfa3738`), approved on localhost as built. One line each:
+
+- **The summary's shape and order:** your situation; what applies, grouped by authority; still to confirm; asked and not answered; the facts line; the sources (`app/compliance/page.tsx` `ReportView`).
+- **Sources are numbered by code.** Every turn's sources are gathered, deduplicated by URL and numbered 1..N before the model reads the conversation; each answer's own `[n]` markers are rewritten to match (`lib/summaryReport.ts` `gatherSources`, `numberedTranscript`). The report then keeps only the sources it cites, renumbered 1..k.
+- **Every citation is proven by an exact quoted basis.** Each item carries 6–20 words copied from an answer. If the words are not found, the item's sources are cleared and it shows "No source cited in the conversation". If they are found, only the markers in that same paragraph survive (`checkCitations`). Matching ignores whitespace, `[n]` markers, markdown emphasis, letter case and one trailing full stop; a paraphrase still fails.
+- **Facts only from the person's own words.** A fact whose quote is not in one of the person's messages is dropped, and the report records how many and why.
+- **No phone numbers, street addresses, email addresses or web portals** in any item. The sources carry the links.
+- **"Not repeating is not withdrawing."** An earlier point that no later answer changed or withdrew still applies and stays in the report.
+- **Pre-conditions are items of their own** ("do not ship before the permit is issued"), in the group of the authority that issues the permit.
+- **Advice is left out.** The report holds obligations and things to confirm, not which certifier or vendor to use.
+- **One call returns the report, the title and the facts** (`prompts/summary-report.ts`, `summariseTopic`).
+- **The facts are proposed on Summarise**, with a duplicate guard. A pending proposal for the same conversation with the same key and value is not inserted again (`proposalsToInsert`). The nightly job uses the same writer.
+- **`AI_MODEL_SUMMARY` is `claude-opus-5-5` in `.env.local`** for development. Its only readers are the two summary call sites. Shared variables stay as they were.
+- **The summary call's output limit is 12,000 tokens**, raised from 4,000 (`lib/summaryReport.ts`, the `askAIJson` call in `summariseTopic`).
+- **The Conversations list is one read**, through the view `topic_list_v` (migration 063). It was 1 + 2N.
+- **Search covers only the 60 conversations loaded.** It does not query the database.
+
+**The evidence from stop 1** (the ethanol fixture, through the real route, on staging):
+- **C1 (Opus 5.5, the original prompt)** left out EPCRA Tier II and the FDA vinegar standard.
+- **C2 (Opus 5.5, the changed prompt)** had all four named points: EPCRA, the vinegar standard, the MPF/HMF fees, and "don't ship before the IAA and certificate". **On Opus, rules 2 ("not repeating is not withdrawing") and 9 (pre-conditions as their own items) made the visible difference.**
+- **C3 (Haiku, the changed prompt)** missed three of the four named points (EPCRA, the vinegar standard, "don't ship"), had the MPF but not the HMF, and paraphrased 12 of its 23 bases.
+- **A fourth Opus run** then found all 28 bases and dropped no cited number. The citations C2 had lost to the paragraph rule were kept, once the prompt said to quote the sentence that carries the marker.
+- **The rule 8 condition,** added before Part B, was applied to one of two dependent items in the Part B run. The drawback claims item carries it; the excise item still reads as settled. It is recorded as open, to watch at the quality test.
+
+**Cost of the task:** $0.86 ($0.8599) in 6 summary calls on staging. That is A7 $0.0173; C1–C3 $0.4455; the fourth run $0.1995; the Part B proof $0.1976.

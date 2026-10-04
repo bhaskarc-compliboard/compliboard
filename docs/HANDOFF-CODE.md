@@ -6,7 +6,8 @@ Where a figure is not measured, it says so.
 
 *(§1 and §2 corrected 3 October 2026, from commands run that day and the 1 October preflight; §7
 gained four rows the same day, after Workspace Task 3 one open row (the cron jobs) and seven
-resolved ones, and after Task 4 two more resolved. §1–§4 were rewritten on 28 September. §5–§9 keep their 23 September text except where a fact in
+resolved ones, and after Task 4 two more resolved. After Task 5 (`cfa3738`), §7 gained four open rows and two
+resolved ones, and §2's heading was corrected to 063 pending. §1–§4 were rewritten on 28 September. §5–§9 keep their 23 September text except where a fact in
 them was wrong; those carry dated notes. The structure is unchanged on purpose — this is the file
 the next chat trusts, and a reader who knows where §6 is should still find it there.)*
 
@@ -53,7 +54,13 @@ of it, and is **not pushed**: `git log origin/main..HEAD` lists it. A push to `m
 (`RELEASE.md`), so that list is the next release's contents. What Vercel last built was not read here
 — the dashboard is the owner's.
 
-## 2. Migration state — 062 ON DISK, 062 APPLIED ON PRODUCTION, NONE PENDING.
+## 2. Migration state — 063 ON DISK, 062 APPLIED ON PRODUCTION, ONE PENDING: 063.
+
+> ### UPDATED 3 OCTOBER 2026, AFTER WORKSPACE TASK 5 (`cfa3738`).
+> Task 5 added `063_the_summary_as_a_report.sql`, applied on staging. `npm run preflight`, run after the
+> Task 5 code commit, read **64 on disk, 63 on production (`dsfwmafnphdlfogetsus`), `PENDING COUNT: 1`**, and
+> the one pending file is `063_the_summary_as_a_report.sql`. It goes to production with the Task 5
+> release (`npm run db:migrate:prod`, the owner's action). The paragraphs below are kept as they were.
 
 > ### UPDATED 3 OCTOBER 2026, AFTER WORKSPACE TASK 3 (`2937b0b`).
 > Workspace Task 2 added `062_a_fact_outlives_its_conversation.sql` (`055df59`), so there are now
@@ -370,6 +377,10 @@ thing a bake-off needs is to move one model without moving three others.
 | **The failed line can show a raw provider message (lib/ai.ts:833–834 via route.ts:382), and several messages end with two instructions.** | `app/compliance/page.tsx`, the failed line; `app/api/chat/route.ts:382`; `lib/ai.ts:833–834` | Added 3 October 2026. Every string that can reach `x.error`, each followed on screen by *"You can ask again, or rephrase the question."*: **a JSON answer instead of a stream** — "Unauthorized" (`lib/auth.ts:80`), "Company not found" (`:109`), the conversation-lost sentence (`route.ts:77–79`, from 524, 540, 568), "This topic is closed. Ask your question again and we’ll open a new one." (`:546`), the AI module's own error on the checklist path (`:382` ← `lib/ai.ts:833`, the provider's message as is, or `:834`, "The model returned no message."), "The checklist came back in a shape we could not read. Please try again." (`:393`), "We could not start this conversation. Please try that again." (`:606`), "Something went wrong" (`:803`), and the page's fallback "That request could not be completed."; **a stream that failed** — "The answer stopped part-way through. Please try again." (`route.ts:477`), or `lib/answerStream.ts:93`'s fallback; **a request that threw** — "The answer could not be completed." Not reachable from this page: "No question or file provided" (`:187`) and the file-parse message (`:239`, multipart only). Unchanged by the layout pass, by decision: the owner decides |
 | **conversation_reset is sent by the route and read by no page.** | `app/api/chat/route.ts:82` | Added 3 October 2026. `grep -rn conversation_reset app components lib` finds the route alone. So "start fresh" in the conversation-lost sentence is not done by the page: the conversation on screen is not cleared |
 | **Cron jobs never run: GET → 405.** | `lib/jobAuth.ts:33`, `:36`; the four `app/api/jobs/*` routes export only `POST` | Added 3 October 2026. **OPEN.** Vercel calls the jobs with GET and `Authorization: Bearer <CRON_SECRET>`; the routes take POST and `x-cron-secret`. Vercel's logs on 3 October: every scheduled call GET → 405, every 5 minutes. Production `job_runs` has never held a `summarise` or `delete` row. The fix is written up, not done — `docs/reports/workspace-task2.md`, "For the cron release" — and is deferred to one release for all four jobs (`DECISIONS.md` §154) |
+| **The Checklists tab still reads 1 + N.** | `app/compliance/page.tsx:393–400`, `loadChecklists` | Added 3 October 2026 (Workspace Task 5). One read for the checklists, then one `checklist_items` read per checklist. The Conversations list was moved to one read in Task 5 (`topic_list_v`); this tab was not. **Task 6** |
+| **`prompts/summarise.ts` is now unused.** | `prompts/summarise.ts` | Added 3 October 2026, `cfa3738`. Both summary routes call `summariseTopic` (`lib/summaryReport.ts:398`), which uses `prompts/summary-report.ts`; `grep -rn "prompts/summarise" app lib scripts tests components` finds no importer. Delete it later; it was kept so the report's voice and facts rules can be traced to where they were measured (§108) |
+| **Rule 8's condition was applied to one of two dependent items in one run.** | `prompts/summary-report.ts:72` | Added 3 October 2026 (`DECISIONS.md` §156). In the Part B run on Opus 5.5, the TTB drawback item said it depends on what is still to confirm; **the CBP excise item read as settled while drawback was under *Still to confirm***. One run, so not a rate. Watch it at the quality test; no prompt change was made |
+| **DEFERRED POLISH — after Task 6, before the quality test (owner, 4 October).** | `app/compliance/page.tsx` `ReportView` (`:1764`) | (1) The summary drawer as an accordion, per the canvas feature boards, board 6b: each authority folded with *N things to do*; *Still to confirm* never folded; *Open all*; print always open. (2) One-line source links: *[n] host · title*, cut with *…*, the full title on hover. Not started |
 | ~~The notice stays across the workspace's tabs until Dismiss~~ | `app/compliance/page.tsx` | **RESOLVED 3 October 2026, `2937b0b`.** Machinery (iii). It clears on a tab change, on New conversation and on opening a conversation |
 | ~~"Save it" on a proposal shows "Not found"~~ | `app/compliance/page.tsx` → `/api/switches/answer:53` | **RESOLVED by removal, 3 October 2026, `2937b0b`.** Machinery (i): the proposal's key was not a switch id. The card is gone; facts are confirmed in Company information, and the summary drawer links there |
 | ~~"Make a checklist" from the box saves nothing~~ | `app/api/chat/route.ts`, the open checklist branch | **RESOLVED 3 October 2026, `cbdc99c`.** Machinery N1. The checklist and its items are written as the caller; `check:live` asserts the rows |
@@ -379,6 +390,8 @@ thing a bake-off needs is to move one model without moving three others.
 | ~~The checklist delete ignores its errors~~ | `app/compliance/page.tsx` `deleteChecklist` | **RESOLVED 3 October 2026, `2937b0b`** — the deletes only. Machinery N8: both deletes are checked, items first, and a failure keeps the confirmation open with a plain line. N8's other unchecked writes are not covered here: the checklist tick still ignores its error, and the proposal updates went with the card |
 | ~~Attaching a file first removes "Make a checklist"~~ | `app/compliance/page.tsx` | **RESOLVED 3 October 2026, `76f8c42`.** Machinery N4. A chosen file is only staged as a chip in the box; it no longer becomes an exchange, so the first visit keeps both buttons |
 | ~~Reopening a conversation hides its attachments~~ | `app/compliance/page.tsx` `openConversation` | **RESOLVED 3 October 2026, `76f8c42`.** Machinery N5. Each turn's file card comes back, from one `document_index_v` read for the whole conversation; a file deleted since keeps its name and says so |
+| ~~Summarising again could propose the same fact twice~~ | `lib/summaryReport.ts:370` `proposalsToInsert` | **RESOLVED 3 October 2026, `cfa3738`.** Workspace Task 5. A pending proposal for the same conversation with the same key and value is not inserted again. A repeated fact within one summary is inserted once. Both are covered by `tests/unit/summaryReport.test.ts:196–210` |
+| ~~The Conversations list makes 1 + 2N reads~~ | `app/compliance/page.tsx:384` `loadTopics`; `supabase/migrations/063_the_summary_as_a_report.sql` | **RESOLVED 3 October 2026, `cfa3738`.** Workspace Task 5. One read through the view `topic_list_v`, `security_invoker`, so the caller's policies apply. **Migration 063 is on staging only until `npm run db:migrate:prod`** |
 
 ## 8. The next steps — THIS FILE'S READING, not the two handoffs'
 

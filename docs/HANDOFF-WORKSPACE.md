@@ -1,8 +1,12 @@
 # Handoff — the Compliance Workspace, element by element
 
-**Version:** 3 · **Written:** 3 October 2026, at the close of the Workspace layout pass (Tasks 1, 2,
+**Version:** 4 · **Written:** 3 October 2026, at the close of the Workspace layout pass (Tasks 1, 2,
 2b and 3). In the shape of `docs/HANDOFF-AUDITS.md` §5a.
 
+> **Version 4, 4 October 2026 — Workspace feature Task 5 (`cfa3738`): the summary report and the
+> Conversations list.** The list's groups, rows and search, and the summary drawer's report, are
+> rewritten in place, marked *Changed 4 October 2026, Workspace Task 5*, with their lines at `cfa3738`.
+>
 > **Version 3, 3 October 2026 — Workspace feature Task 4 (`76f8c42`): files.** Every element Task 4 changed
 > is rewritten in place and marked *Changed 3 October 2026, Workspace Task 4*, with its line at
 > `76f8c42`. Elements marked for Task 3 keep their `2937b0b` lines, which have moved again.
@@ -249,10 +253,22 @@ only call to `/api/switches/answer`.
 
 **Measured:** with a pending proposal on Gamma, the tab shows no card.
 
-**Day headings** (1182). 12px, uppercase, gray-400: from `friendlyDate` (`lib/conversationStatus.ts:80–92`): "Today", "Yesterday", then the date. **Seen:** `1 OCTOBER` (3 October), `TODAY` (Task 1, 1 October).
+**Group headings** (1392). 12px, uppercase, gray-400. *(Changed 4 October 2026, Workspace Task 5, `cfa3738`.)* From `listGroup` (195): *Today*, *This week* (the six days before today), then one heading per month (*September 2026*). **Seen** as Gamma: `TODAY`, `THIS WEEK`. No month heading was seen, because every staging conversation is less than a week old.
 
-**Rows** (1223–1238). Title 13px gray-900, green on hover; status 12px gray-500 (`Not summarised
-yet`, `Summarised · full conversation kept until ‹date›`). *(Changed 3 October 2026, Workspace Task 3, `2937b0b`.)*
+**Search** (input at 1378; state at 295; filter at 1011). *(Changed 4 October 2026, Workspace Task 5, `cfa3738`.)* Shown at the right of the retention line once there are more than 20 conversations. It filters as you type, by title and summary text. **It searches only the conversations loaded — at most 60 (`LIST_CAP`)** — and does not query the database. With no match it says *"No conversation's title or summary contains "…"."* **Measured** as Gamma (52 conversations): the box at x=947–1171, y=232; *ethanol* left 1 row.
+
+**Rows** (built at 1417). Title 13px gray-900, green on hover. *(Changed 4 October 2026, Workspace Task 5, `cfa3738`.)* Under it, **one 12px gray-500 line**, its parts separated by " · ":
+- **when** (`listWhen`, 203): today the time (*8:01 pm*); this week the day (*Thu 1 Oct*); older the date (*18 Sep 2025*);
+- *N questions*;
+- the first file's name with a paperclip, and *+N* for more;
+- the summary (`summaryWords`, 212): *Summary ready*, *Not summarised yet*, or *Summary only — the full conversation was cleared*;
+- *Checklist n of m done*, when the conversation has a checklist.
+
+**The whole list is one read**: `topic_list_v`, migration 063 (`loadTopics`, 384). It was 1 + 2N.
+
+**Measured** as Gamma: *"8:01 pm · 3 questions · Summary ready"*, *"5:07 pm · 1 question · Harbor-Kitchen-Employee-Policy-2026.pdf · Not summarised yet"*, *"5:06 pm · 3 questions · Not summarised yet · Checklist 0 of 7 done"*. The page load made one `GET /rest/v1/topic_list_v` for the list.
+
+*(Changed 3 October 2026, Workspace Task 3, `2937b0b`.)*
 - **No Delete on the row.** Deleting is done from the drawer.
 - **The title is shown with its first letter capitalised** when that letter is lowercase: `displayTitle`, 111–121, used at 1228. Nothing stored changes. A title starting with a quote or a digit is left as it is.
 
@@ -276,8 +292,21 @@ Both are `components/Drawer.tsx`, unchanged by this pass: 720 wide, title 18px (
 line 12.5px (`:73`), footer `border-t px-6 py-3` (`:80`), a print-only header with company, title and
 date (`:62–68`).
 
-**The summary drawer** (1301–1363). Title: the conversation's, through `displayTitle` (1301), which the drawer
-also prints in its header. Sub: *"‹date› · ‹status›"*. Body: the
+**The summary drawer.** *(Changed 4 October 2026, Workspace Task 5, `cfa3738`.)* When the conversation has a report (`topics.summary_report`, read when the drawer opens, 445), the body is `ReportView` (1764; mounted at 1540). In this order:
+1. the as-of line, 13px gray-500: *"What applies to you as of ‹date›, from this conversation. Rules and tariffs change. Check before you act."*;
+2. **Your situation**, 15px;
+3. **What applies**, grouped by authority (13px semibold heading). Each item: its name (15px, medium), what to do (14px, gray-600), and its sources as *[n] title* links, or *No source cited in the conversation* in gray-400;
+4. **Still to confirm**, the same item shape;
+5. **Asked and not answered**, a bullet list;
+6. the facts line (Task 3's words, built at 996);
+7. **Sources**, one numbered list with each host.
+
+Section headings are 11px uppercase gray-400. The title is the generated one, at most 70 characters. **A conversation summarised before migration 063 has no report** and shows its summary text exactly as before, with the facts line at the foot. Download prints the report.
+
+**Measured** as Gamma on the ethanol fixture: the report rendered after one Summarise; six screenshots scrolled the whole of it (`.next/shots/t5-drawer-report-1…6.png`, not committed).
+
+The rest below is from Task 3 and earlier. Title: the conversation's, through `displayTitle` (1301), which the drawer
+also prints in its header. Sub: *"‹date› · ‹status›"*. Body (no report): the
 summary in serif 17, or *"This one hasn't been summarised yet. The summary is written overnight, and
 the full conversation is here until then."* (1316). When the transcript is gone, a 12.5px note on a
 gray-50 fill (1322). Footer: `Open the conversation` (`OUTLINE`, only while turns exist), `Open the

@@ -157,6 +157,27 @@ untested — applies to the runner as much as to anything it runs.
 
 ---
 
+## Manual set — Workspace Task 5 — 3 October 2026 (`docs/HANDOFF-WORKSPACE.md` v4)
+
+**The summary report and the Conversations list, commit `cfa3738`.** `DECISIONS.md` §156.
+
+> ### T5-1 TO T5-3 ARE THE OWNER'S FREE LIVE CHECKS AFTER THE PUSH.
+> **None of them presses Summarise or calls a model.** Hard-reload first (Cmd+Shift+R). Migration
+> 063 must be on production first (`npm run db:migrate:prod`). Without it, the list reads a view
+> that does not exist and shows nothing.
+>
+> **Group headings replace day headings.** This replaces the "day group" wording in D1 and D2 below:
+> the groups are now *Today*, *This week*, then one per month (`listGroup`, `app/compliance/page.tsx:195`).
+
+| # | Action | Steps | What must be true |
+|---|---|---|---|
+| **T5-1** | **Read a report** *(live, free)* | **Conversations** → a row reading *Summary ready* that was summarised **after the push**. A summary written before it has no report and shows as text, as before | Top to bottom (`ReportView`, `app/compliance/page.tsx:1764`): the grey line *What applies to you as of ‹date›, from this conversation. Rules and tariffs change. Check before you act.*; **Your situation**; **What applies**, one block per authority, each item a name, what to do and its source links *[n] title*; **Still to confirm** (if any); **Asked and not answered** (if any); the facts line *N facts … waiting in Company information · Review →* (if any); **Sources**, numbered 1, 2, 3 … with no gap. An item with no source reads *No source cited in the conversation*. No phone number, street address or email appears in any item |
+| **T5-2** | **Read the list's rows** *(live, free)* | **Conversations** tab | Each row has the title, then **one grey line** with its parts separated by *·* (`app/compliance/page.tsx:1417`): the time today, *Wed 30 Sep* this week, *18 Sep 2025* before that; *N questions* (*1 question* for one); the first file's name with a paperclip, and *+N* if there were more, only when a file was attached; *Not summarised yet*, *Summary ready*, or *Summary only — the full conversation was cleared*; *Checklist N of M done*, only when a checklist was made from it. There is no colour on the line |
+| **T5-3** | **Search** *(live, free; only if the account has more than 20 conversations)* | Type part of a title in **Search conversations**, at the right of the retention line. Then type something nothing contains | The box appears **only above 20 conversations** (`app/compliance/page.tsx:1378`). The list narrows to rows whose title or summary contains the words. With no match it reads *No conversation's title or summary contains "‹words›".* Clearing the box brings every row back. Search covers only the loaded rows. With 20 or fewer conversations there is no box, and that is correct |
+| **T5-4** | **Summarise one real conversation** *(production, PAID, owner only)* | Open a conversation that has answers → **Summarise this conversation** → wait → **Conversations** → its row → read the report as in T5-1 | The report appears in the T5-1 order. The **title** may have changed, to at most 70 characters. Every item says what the conversation concluded **last**: nothing the conversation later withdrew. An item that depends on something under *Still to confirm* says so in the item (rule 8). This was applied to one of two such items in the staging run, so read for it (`DECISIONS.md` §156). Facts appear only if you stated them about your business; they wait in **Company information**, not in the conversation. **Estimated ≈$0.20** on Opus 5.5 for a conversation the size of the ethanol one. This is an estimate, from the $0.1995 staging run with the same model and limit. A longer conversation costs more |
+
+*(Before the commit, on staging as `testgamma`: three report runs (C1–C3) and a fourth on Opus 5.5 read the ethanol conversation. They are recorded in `DECISIONS.md` §156. The list was read once through `topic_list_v`. **No person has run this set yet. Month groups were not exercised by the staging data.**)*
+
 ## Manual set — Workspace Task 4 — 3 October 2026 (`docs/HANDOFF-WORKSPACE.md` v3)
 
 **Files, commit `76f8c42`:**
