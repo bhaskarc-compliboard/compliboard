@@ -2269,6 +2269,7 @@ export type Database = {
           status: string
           switch_key: string
           topic_id: string | null
+          topic_title: string | null
           updated_at: string
         }
         Insert: {
@@ -2290,6 +2291,7 @@ export type Database = {
           status?: string
           switch_key: string
           topic_id?: string | null
+          topic_title?: string | null
           updated_at?: string
         }
         Update: {
@@ -2311,6 +2313,7 @@ export type Database = {
           status?: string
           switch_key?: string
           topic_id?: string | null
+          topic_title?: string | null
           updated_at?: string
         }
         Relationships: [

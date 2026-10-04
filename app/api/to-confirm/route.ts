@@ -121,7 +121,10 @@ export async function GET(request: NextRequest) {
         .slice()
         .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))
         .filter((r) => {
-          const place = `${r.document_id ?? r.topic_id ?? ''}|${String(r.proposed_value ?? '').trim().toLowerCase()}`
+          // A proposal whose conversation was deleted has no topic id (migration 062); its place is
+          // the conversation's title, so two deleted conversations do not collapse into one source.
+          const from = r.document_id ?? r.topic_id ?? `deleted:${r.topic_title ?? r.id}`
+          const place = `${from}|${String(r.proposed_value ?? '').trim().toLowerCase()}`
           if (seen.has(place)) return false
           seen.add(place)
           return true
@@ -152,7 +155,10 @@ export async function GET(request: NextRequest) {
           as_of: r.as_of ?? null,
           from: r.document_id
             ? { kind: 'document' as const, title: docTitle[r.document_id] ?? 'a document', locator: r.locator }
-            : { kind: 'conversation' as const, title: topicTitle[r.topic_id ?? ''] ?? 'a conversation', locator: null },
+            // The live title when the conversation exists; the title copied onto the proposal when it
+            // was written (migration 062) when it has since been deleted — so a fact told us in a
+            // conversation still says which one after the transcript is gone.
+            : { kind: 'conversation' as const, title: topicTitle[r.topic_id ?? ''] ?? r.topic_title ?? 'a conversation', locator: null },
         }))
 
       const values = sources.map((s) => String(s.value ?? ''))

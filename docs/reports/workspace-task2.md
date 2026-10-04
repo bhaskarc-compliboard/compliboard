@@ -311,3 +311,130 @@ in the cron release.
 - **Documents:** `scan-documents` starts sweeping every 5 minutes. It picks up `status='uploaded'` documents a folder upload leaves behind (today it runs only when a request kicks it).
 - **Audits:** `audit-sections` starts sweeping every 5 minutes. It runs `queued` sections and sends the run's email on finish (`lib/auditNotify.ts`).
 - **Workspace:** summaries and conversation fact proposals start appearing overnight. Those proposals reach **Company information / To confirm** and the workspace's proposal slot.
+
+---
+
+## Checkpoint 4 — facts survive a deleted conversation
+
+### ⚠ First, an unauthorised spend: $0.2599, 10 model calls. My error.
+
+- I meant to run `check:live` against no server, which runs only the table probes and costs nothing.
+- I did not check port 3000 first. A `next dev` started on 1 October was listening there (pid 91087, pointed at staging).
+- So the full run started. I stopped it after about two minutes.
+- The ledger shows exactly what it bought: 10 rows on `claude-haiku-4-5` between 00:05:58 and 00:07:52 UTC (6 research, 1 checklist, 2 convert, 1 document_scan), **$0.2599**. Total moved from 159/$3.31 to 169/$3.57.
+
+```
+2026-10-04T00:05:58 research $0.0041 · 00:06:16 checklist $0.0443 · 00:06:19 research $0.0220
+00:06:20 research $0.0026 · 00:06:26 convert $0.0016 · 00:06:36 convert $0.0060
+00:06:42 research $0.0219 · 00:06:48 research $0.0400 · 00:06:56 research $0.0425
+00:07:52 document_scan $0.0749                                   rows 10 · sum $0.2599
+```
+
+**What it left, and what I cleaned on staging.** The kill came before the attachment block's cleanup
+in `finally` (`scripts/check-live.js:643–651`). One copy of `Harbor-Kitchen-Employee-Policy-2026.pdf`
+was left in Gamma's company: document `416e95df-…`, its stored file, 8 document proposals, and 6
+labels no reading supports. I removed exactly what that cleanup and the orphan-label step
+(`:700–712`) would have removed, and read it back: *"copies left: 0 · its proposals left: 0"*.
+
+The run's conversation and convert rows stay in Gamma's account; every `check:live` run leaves those.
+
+**`check:live` then ran as intended:** `CHECK_LIVE_BASE_URL=http://localhost:3999`, an unreachable
+port, so every `/api/chat` block is skipped (`:144–157`). The output reads *"check:live: ok — 6 tenant
+table(s): 3 writable by a signed-in user, 3 read-only to them by design, all 6 refused to anon."*
+The ledger did not move: 169 calls.
+
+**A trap worth knowing for checkpoint 5:** the `history` block (`check-live.js:776–781`) is not behind
+`--only`. So `--only checklist` against a live server makes **two** calls — the checklist and one research.
+
+### The readers of `fact_proposals.topic_id`, checked before writing the migration
+
+| Reader | Reads | A row with no topic |
+|---|---|---|
+| `app/api/to-confirm/route.ts` GET | `topic_id` → `topics.title` for the source label (:80, :87, :97, :155); `document_id ?? topic_id ?? ''` as the "place" key (:124) | **Would break two ways.** The label falls back to the generic "a conversation". And every orphan's place is `''`, so orphans from **different** deleted conversations with the same value would collapse into one source. **Fixed:** the label falls back to the new `topic_title`; the place falls back to `deleted:<topic_title>` |
+| `app/api/to-confirm/route.ts` POST | `select('*')` by key or id; writes status | Unaffected |
+| `app/api/company-information/route.ts:66–80` | `id, locator` by id; count by status | Unaffected |
+| `lib/companyContext.ts:356–363` | `switch_key` by status | Unaffected |
+| `app/compliance/page.tsx:283–285` | `id, switch_key, proposed_value, quote` | Unaffected |
+| `app/api/document-actions/route.ts:110`, `app/api/documents/report/route.ts:44`, `lib/audit.ts:189` | by `document_id` | Unaffected (document rows) |
+| `lib/confirmationQueue.ts`, `app/company-information/page.tsx:53` | the `from` object to-confirm builds | Unaffected; they receive the fixed label |
+
+### The migration: `supabase/migrations/062_a_fact_outlives_its_conversation.sql`
+
+- **`topic_title`** (new column). The conversation's title, written onto a conversation proposal **at insert** by a `BEFORE INSERT` trigger, `fact_proposals_stamp_topic_title`. That covers every writer, including the nightly job, which this task may not change. Existing conversation rows are back-filled (staging had 0).
+- **Insert, not delete.** I copied the title at insert rather than at delete because a title never changes after the first turn (`lib/conversation.ts` `setTitleIfFirst`), and a delete trigger would run inside the cascade of a whole-company delete.
+- **`topic_id`'s link** → `ON DELETE SET NULL` (was `CASCADE`). The constraint name `fact_proposals_topic_id_fkey` was read from staging's `pg_constraint` before writing the `DROP`.
+- **The check, before** (040:184–188; read from staging, identical):
+  ```
+  ((topic_id IS NOT NULL) AND (document_id IS NULL)) OR ((topic_id IS NULL) AND (document_id IS NOT NULL))
+  ```
+- **The check, after** (read back from staging's `pg_constraint`):
+  ```
+  ((topic_id IS NOT NULL) AND (document_id IS NULL)) OR ((topic_id IS NULL) AND (document_id IS NOT NULL))
+  OR ((topic_id IS NULL) AND (document_id IS NULL) AND (source = 'conversation') AND (topic_title IS NOT NULL))
+  ```
+- **The verify block tries the writes.** It checks that:
+  - a conversation proposal is stamped with its title;
+  - a document proposal is unchanged and untitled;
+  - deleting the topic keeps a pending, an accepted and a rejected proposal with the title and an empty link;
+  - a decision survives;
+  - the check still refuses no-source-no-title, a `document` row with no document, and both links at once;
+  - a deleted document still takes its proposals;
+  - a deleted company takes everything;
+  - privileges are unchanged.
+
+  It raised nothing, and the push recorded `062`.
+- **Documents writes this table** (`lib/documentScan.ts:933`), which is the brief's stop condition. I went ahead because checkpoint 4 names this exact change. The change is invisible to Documents: its rows meet the second arm exactly as before, the trigger does nothing when `topic_id` is null, and the verify block proves both.
+
+**Applied to staging only** (`node scripts/db-migrate.js` → *"Migrations pending: 1 — 062… Finished supabase db push."*).
+Read back:
+- `schema_migrations` holds `062 | a_fact_outlives_its_conversation`;
+- 0 probe rows left;
+- `has_table_privilege`: `authenticated` SELECT ✓ UPDATE ✓ INSERT ✗ DELETE ✗; `anon` nothing.
+
+`information_schema.role_table_grants` returned **zero rows**, even for the privileges `authenticated`
+plainly holds. That is the view's own blind spot, also recorded at `check-live.js:689–691`, so it was
+not trusted.
+
+Types regenerated (`lib/database.types.ts`, +3 lines) and `docs/SCHEMA.md` regenerated. Its diff is
+mostly the generator's own churn: date, staging row counts, ordering.
+
+**Not run: `npm run db:reset`.**
+- `CLAUDE.md` §3.7 asks for a from-zero rebuild after a migration.
+- A reset plus `db:restore` rebuilds the schema and the reference library only (`scripts/db-restore.js` header). It would wipe staging's test accounts: Gamma's conversations, and Cascade's documents and audits, which `npm run measure` and `check:live` depend on.
+- I left it for the owner to decide. **The chain has therefore been proven incrementally (061 → 062) and not from empty.**
+
+### The test, on staging, through the routes (no model call)
+
+As `testgamma`, against the local `next dev` (staging):
+1. create a topic;
+2. insert a proposal from it as the nightly summariser would (service role, `source` default);
+3. read `/api/to-confirm`;
+4. `DELETE /api/topics/:id`;
+5. read `/api/to-confirm` again.
+
+```
+topic created 072b1a53-… as testgamma
+proposal 2601786e-…: source=conversation topic_id=072b1a53-… topic_title="Checkpoint 4 probe: forklifts at the Salem plant"  (stamped by the 062 trigger)
+BEFORE delete: GET /api/to-confirm -> 200; probe key LISTED
+    source: kind=conversation title="Checkpoint 4 probe: forklifts at the Salem plant" value="yes"
+DELETE /api/topics/072b1a53-… -> 200 {"deleted":true,"turns_deleted":0}
+topic rows left: 0
+proposal row after delete: {"status":"proposed","topic_id":null,"topic_title":"Checkpoint 4 probe: forklifts at the Salem plant","source":"conversation"}
+AFTER delete: GET /api/to-confirm -> 200; probe key LISTED
+    source: kind=conversation title="Checkpoint 4 probe: forklifts at the Salem plant" value="yes"
+cleanup: probe proposal rows left 0
+PASS
+```
+
+After the delete the label can only have come from `topic_title`, because the topic row is gone. So
+this run proves the reader fix as well as the migration.
+
+**Gate:** `npm run check` exit 0; `check-schema-contracts: ok — 198 files, 47 relations`;
+`569 tests … floor 559. OK`.
+
+**Touches other sections:**
+- **Company information / To confirm** (`app/api/to-confirm/route.ts`, read by `app/company-information/page.tsx` and `app/to-confirm/page.tsx`): proposals from a deleted conversation stay in the queue, labelled with that conversation's title.
+- **Documents** (`lib/documentScan.ts:933`): inserts unchanged, by proof.
+- **Account deletion** (`app/api/account/route.ts:382`): it deletes `topics` and then `fact_proposals` by company. The topic delete now empties links instead of deleting rows, and the next statement deletes them. The verify block's company delete shows nothing is left behind.
+- **`docs/SCHEMA.md`, `lib/database.types.ts`**: regenerated.
+- **Production**: not touched. 062 is pending there.
