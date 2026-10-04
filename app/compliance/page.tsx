@@ -31,6 +31,9 @@ import { displaySource } from '@/lib/sourceTitle'
 import { readAnswerStream, ndjsonLines } from '@/lib/answerStream'
 import { DOCUMENTS_BUCKET } from '@/lib/storage'
 import { ACCEPTED_FILE_TYPES } from '@/lib/acceptedFiles'
+// TYPES ONLY. `lib/summaryReport.ts` imports the model client and must not reach the browser; a type
+// import is erased at build. The two strings it displays are copied below and pinned by a unit test.
+import type { SummaryReport, ReportItem } from '@/lib/summaryReport'
 import DocumentReport from '@/components/DocumentReport'
 import {
   conversationStatus, progressLabel, progressPercent, friendlyDate,
@@ -95,7 +98,31 @@ interface TopicRow {
   summarised_at: string | null; summary_source: string | null
   delete_after: string | null; last_turn_at: string | null; created_at: string
   turnCount: number; checklistId: string | null
+  /** From `topic_list_v` (migration 063) — Workspace Task 5, board 5. */
+  questionCount: number; documentCount: number; firstDocumentName: string | null
+  hasReport: boolean; checklistTotal: number; checklistDone: number
 }
+
+/** One `topic_list_v` row, as the database returns it. */
+interface TopicListRow {
+  id: string; title: string | null; summary: string | null
+  summarised_at: string | null; summary_source: string | null
+  delete_after: string | null; last_turn_at: string | null; created_at: string
+  has_report: boolean; turn_count: number; question_count: number; document_count: number
+  first_document_name: string | null; checklist_id: string | null; checklist_total: number; checklist_done: number
+}
+
+const TOPIC_LIST_COLUMNS = 'id, title, summary, summarised_at, summary_source, delete_after, last_turn_at, created_at, '
+  + 'has_report, turn_count, question_count, document_count, first_document_name, checklist_id, checklist_total, checklist_done'
+
+const toTopicRow = (r: TopicListRow): TopicRow => ({
+  id: r.id, title: r.title, summary: r.summary, summarised_at: r.summarised_at, summary_source: r.summary_source,
+  delete_after: r.delete_after, last_turn_at: r.last_turn_at, created_at: r.created_at,
+  turnCount: Number(r.turn_count ?? 0), checklistId: r.checklist_id,
+  questionCount: Number(r.question_count ?? 0), documentCount: Number(r.document_count ?? 0),
+  firstDocumentName: r.first_document_name, hasReport: !!r.has_report,
+  checklistTotal: Number(r.checklist_total ?? 0), checklistDone: Number(r.checklist_done ?? 0),
+})
 
 interface ChecklistRow {
   id: string; title: string | null; created_at: string
@@ -155,6 +182,37 @@ const TEXT_ACTION = 'text-[14px] text-gray-600 hover:text-gray-900 hover:underli
  */
 const displayTitle = (title: string | null): string | null =>
   title && /^\p{Ll}/u.test(title) ? title.charAt(0).toUpperCase() + title.slice(1) : title
+
+/**
+ * THE CONVERSATIONS LIST'S DATES — Workspace Task 5, board 5. A row says WHEN in the shortest way that
+ * is still exact for its age, and rows are grouped Today, This week, then by month.
+ * "This week" is the six days before today; older is a month heading.
+ */
+const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
+const daysAgo = (iso: string, now: Date) => Math.round((startOfDay(now) - startOfDay(new Date(iso))) / 86_400_000)
+
+/** "Today", "This week", or "September 2026". */
+function listGroup(iso: string, now: Date = new Date()): string {
+  const days = daysAgo(iso, now)
+  if (days <= 0) return 'Today'
+  if (days <= 6) return 'This week'
+  return new Date(iso).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
+}
+
+/** "3:42 pm" today; "Wed 30 Sep" this week; "18 Sep 2025" before that. */
+function listWhen(iso: string, now: Date = new Date()): string {
+  const d = new Date(iso)
+  const days = daysAgo(iso, now)
+  if (days <= 0) return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).toLowerCase()
+  if (days <= 6) return d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }).replace(',', '')
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+/** What the conversation's summary is, in the words the row uses. */
+function summaryWords(t: { summarised_at: string | null; turnCount: number }): string {
+  if (!t.summarised_at) return 'Not summarised yet'
+  return t.turnCount > 0 ? 'Summary ready' : 'Summary only — the full conversation was cleared'
+}
 
 /** How Audits writes a date — `app/audits/page.tsx:189–194`, copied: "30 September 2026". */
 const fmtDate = (iso: string | null | undefined) => {
@@ -228,6 +286,13 @@ export default function CompliancePage() {
 
   // ---- lists ----
   const [topics, setTopics] = useState<TopicRow[]>([])
+  /**
+   * SEARCH — Workspace Task 5, board 5. Shown once there are more than 20 conversations. It filters,
+   * as you type, by title and summary text — *** OVER THE CONVERSATIONS ALREADY LOADED ONLY, at most
+   * `LIST_CAP` (60). *** It does not query the database, so an older conversation beyond the 60 is
+   * not found by it.
+   */
+  const [search, setSearch] = useState('')
   const [checklists, setChecklists] = useState<ChecklistRow[]>([])
 
   // ---- drawers and sheets ----
@@ -309,20 +374,21 @@ export default function CompliancePage() {
     })()
   }, [supabase])
 
+  /**
+   * THE CONVERSATIONS LIST IN ONE READ — Workspace Task 5, board 5. It was 1 + 2N reads: a turn count
+   * and a checklist per topic (`docs/WORKSPACE-MACHINERY.md` 2a). `topic_list_v` (migration 063)
+   * computes every row's counts in the database, as the caller, so the list is ONE round trip
+   * whatever N is. Turn counts still decide "cleared" vs "kept"; the date only says when it may go.
+   * Newest activity first; a topic with no turns falls back to when it was opened.
+   */
   const loadTopics = useCallback(async () => {
     const { data } = await supabase
-      .from('topics')
-      .select('id, title, summary, summarised_at, summary_source, delete_after, last_turn_at, created_at')
-      .order('created_at', { ascending: false }).limit(LIST_CAP)
-    const rows = (data ?? []) as Array<Omit<TopicRow, 'turnCount' | 'checklistId'>>
-    // Turn counts decide "cleared" vs "kept" — the DATE only says when it may go, and between
-    // the due date and the 03:30 run the conversation is still open. lib/conversationStatus.ts.
-    const withCounts = await Promise.all(rows.map(async (t) => {
-      const { count } = await supabase.from('turns').select('*', { count: 'exact', head: true }).eq('topic_id', t.id)
-      const { data: cl } = await supabase.from('checklists').select('id').eq('from_topic_id', t.id).limit(1).maybeSingle()
-      return { ...t, turnCount: count ?? 0, checklistId: (cl?.id as string) ?? null }
-    }))
-    setTopics(withCounts)
+      .from('topic_list_v')
+      .select(TOPIC_LIST_COLUMNS)
+      .order('last_turn_at', { ascending: false, nullsFirst: false })
+      .order('created_at', { ascending: false })
+      .limit(LIST_CAP)
+    setTopics(((data ?? []) as unknown as TopicListRow[]).map(toTopicRow))
   }, [supabase])
 
   const loadChecklists = useCallback(async () => {
@@ -370,6 +436,24 @@ export default function CompliancePage() {
     })()
     return () => { live = false }
   }, [drawerTopicId, supabase])
+
+  /**
+   * THE SUMMARY REPORT, FOR THE OPEN DRAWER — Workspace Task 5, board 6. Read when the drawer opens,
+   * as the caller under RLS, so the list never carries every report. Null while unknown or absent: a
+   * conversation summarised before migration 063 has text only, and the drawer shows that as before.
+   */
+  const [drawerReport, setDrawerReport] = useState<SummaryReport | null>(null)
+  const drawerSummarisedAt = summaryDrawer?.summarised_at ?? null
+  useEffect(() => {
+    setDrawerReport(null)
+    if (!drawerTopicId || !drawerSummarisedAt) return
+    let live = true
+    ;(async () => {
+      const { data } = await supabase.from('topics').select('summary_report').eq('id', drawerTopicId).maybeSingle()
+      if (live) setDrawerReport(((data as { summary_report?: SummaryReport | null } | null)?.summary_report) ?? null)
+    })()
+    return () => { live = false }
+  }, [drawerTopicId, drawerSummarisedAt, supabase])
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [exchanges.length])
 
@@ -636,17 +720,8 @@ export default function CompliancePage() {
       const j = await res.json().catch(() => null)
       if (!res.ok) { setNotice(j?.error ?? 'That conversation could not be summarised just now. Please try again.'); return }
       await loadTopics()
-      const { data } = await supabase.from('topics')
-        .select('id, title, summary, summarised_at, summary_source, delete_after, last_turn_at, created_at')
-        .eq('id', t).maybeSingle()
-      if (data) {
-        const { count } = await supabase.from('turns').select('*', { count: 'exact', head: true }).eq('topic_id', t)
-        const { data: cl } = await supabase.from('checklists').select('id').eq('from_topic_id', t).limit(1).maybeSingle()
-        setSummaryDrawer({
-          ...(data as unknown as Omit<TopicRow, 'turnCount' | 'checklistId'>),
-          turnCount: count ?? 0, checklistId: (cl?.id as string) ?? null,
-        })
-      }
+      const { data } = await supabase.from('topic_list_v').select(TOPIC_LIST_COLUMNS).eq('id', t).maybeSingle()
+      if (data) setSummaryDrawer(toTopicRow(data as unknown as TopicListRow))
     } finally { setWorking(null) }
   }
 
@@ -917,6 +992,25 @@ export default function CompliancePage() {
   }
 
   // ------------------------------------------------------------------ render
+  // THE FACTS LINE — Task 3, unchanged in its words; Task 5 lets the report place it (board 6).
+  const factsLine = drawerFacts ? (
+    <div className="no-print flex items-center justify-between gap-4 border-y border-gray-200 py-3">
+      <p className="text-[14px] text-gray-600">
+        {drawerFacts === 1
+          ? '1 fact from this conversation is waiting in Company information'
+          : `${drawerFacts} facts from this conversation are waiting in Company information`}
+      </p>
+      <a href="/company-information" className="shrink-0 text-[14px] text-[var(--green-ink)] hover:underline">
+        Review →
+      </a>
+    </div>
+  ) : null
+
+  // The list as searched (Task 5). Matching is on title and summary text, over the loaded rows only.
+  const q = search.trim().toLowerCase()
+  const shownTopics = !q ? topics
+    : topics.filter((t) => `${t.title ?? ''}\n${t.summary ?? ''}`.toLowerCase().includes(q))
+
   // The conversation's actions under the box need an answer to act on, and a topic to act on it.
   const hasAnswer = exchanges.some((x) => x.phase === 'done' && !x.file && !!x.text)
   // "last asked" on the counts line: the most recent activity across the conversations loaded,
@@ -1276,18 +1370,26 @@ export default function CompliancePage() {
             {/* THE RETENTION LINE, AT THE TOP, AS AUDITS' COUNTS LINE — `app/audits/page.tsx:576`
                 and `:579`, classes copied (Workspace layout, Task 2, board D). Words: the owner's 12-month rule, Workspace
                 features Task 2 (`lib/retention.ts`). */}
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 pb-3">
-              <p className="text-[13px] text-gray-500">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 pb-3 sm:flex-nowrap">
+              <p className="min-w-0 flex-1 text-[13px] text-gray-500">
                 Full conversations are kept for 12 months after the last message. Summaries are kept until you
                 delete them.
               </p>
+              {topics.length > 20 && (
+                <input type="search" value={search} onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search conversations" aria-label="Search conversations"
+                  className="w-56 shrink-0 rounded-md border border-gray-200 bg-white px-2.5 py-1 text-[13px] text-gray-900 outline-none placeholder:text-gray-400 focus:border-[var(--green)]" />
+              )}
             </div>
 
+            {topics.length > 0 && shownTopics.length === 0 && (
+              <p className="mt-4 text-[13px] text-gray-500">No conversation’s title or summary contains “{search.trim()}”.</p>
+            )}
             {topics.length === 0 ? (
               <div className="mt-4"><Empty title="No conversations yet" note="Ask a question and it will appear here." /></div>
             ) : (
               <div className="mt-4">
-                {groupByDay(topics, (t) => friendlyDate(t.last_turn_at ?? t.created_at)).map((g, gi) => (
+                {groupByDay(shownTopics, (t) => listGroup(t.last_turn_at ?? t.created_at)).map((g, gi) => (
                   <div key={g.day + gi} className={gi === 0 ? '' : 'mt-6'}>
                     <p className="mb-1 text-[12px] font-medium uppercase tracking-wide text-gray-400">{g.day}</p>
                     <div className="divide-y divide-gray-100 border-y border-gray-100">
@@ -1312,7 +1414,18 @@ export default function CompliancePage() {
                         the browser's pop-up and no copy.
                       */}
                       {g.rows.map((t) => {
-                        const st = conversationStatus(t, t.turnCount > 0)
+                        // ONE GREY LINE, ITS PARTS SEPARATED BY " · " — Workspace Task 5, board 5.
+                        const parts: React.ReactNode[] = [
+                          listWhen(t.last_turn_at ?? t.created_at),
+                          `${t.questionCount} question${t.questionCount === 1 ? '' : 's'}`,
+                        ]
+                        if (t.firstDocumentName) parts.push(
+                          <span key="file" className="inline-flex min-w-0 items-center gap-1">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="shrink-0" aria-hidden="true"><path d="M21.4 11.05 12.25 20.2a5.5 5.5 0 0 1-7.78-7.78l9.19-9.19a3.67 3.67 0 0 1 5.18 5.18l-9.2 9.2a1.83 1.83 0 0 1-2.59-2.6l8.49-8.48" /></svg>
+                            <span className="truncate">{t.firstDocumentName}{t.documentCount > 1 ? ` +${t.documentCount - 1}` : ''}</span>
+                          </span>)
+                        parts.push(summaryWords(t))
+                        if (t.checklistId) parts.push(`Checklist ${t.checklistDone} of ${t.checklistTotal} done`)
                         return (
                           <div key={t.id} className="group -mx-3 flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 transition-colors hover:bg-white">
                             <button onClick={() => setSummaryDrawer(t)} className="min-w-0 flex-1 text-left">
@@ -1320,9 +1433,11 @@ export default function CompliancePage() {
                               {/* NO COLOUR HERE. Amber is reserved for a real attention state and
                                   "not summarised yet" is the normal condition of anything asked
                                   today; green for a routine fact is the same mistake the other way. */}
-                              <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-gray-500">
-                                <span>{st.label}</span>
-                              </div>
+                              <p className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-1 text-[12px] text-gray-500">
+                                {parts.map((part, i) => (
+                                  <React.Fragment key={i}>{i > 0 && <span aria-hidden="true">·</span>}{part}</React.Fragment>
+                                ))}
+                              </p>
                             </button>
                           </div>
                         )
@@ -1421,7 +1536,9 @@ export default function CompliancePage() {
           {/* A full-height column, so the facts line below can sit at the foot of the drawer,
               directly above its footer, however short the summary is (`mt-auto`). */}
           <div className="flex min-h-full flex-col">
-          {summaryDrawer.summary ? (
+          {drawerReport ? (
+            <ReportView report={drawerReport} factsLine={factsLine} />
+          ) : summaryDrawer.summary ? (
             <AnswerBody text={summaryDrawer.summary} sources={[]} />
           ) : (
             <p className="text-[14px] leading-relaxed text-gray-600">
@@ -1438,18 +1555,9 @@ export default function CompliancePage() {
           {/* FACTS FROM THIS CONVERSATION, WAITING — Workspace Task 3, board 6. Counted here and
               confirmed in Company information, which is where the sidebar's badge points
               (`components/AppLayout.tsx:41`). No line at none. */}
-          {!!drawerFacts && (
-            <div className="no-print mt-auto flex items-center justify-between gap-4 border-y border-gray-200 py-3">
-              <p className="text-[14px] text-gray-600">
-                {drawerFacts === 1
-                  ? '1 fact from this conversation is waiting in Company information'
-                  : `${drawerFacts} facts from this conversation are waiting in Company information`}
-              </p>
-              <a href="/company-information" className="shrink-0 text-[14px] text-[var(--green-ink)] hover:underline">
-                Review →
-              </a>
-            </div>
-          )}
+          {/* A text-only summary keeps the facts line at the foot, as in Task 3; a report carries it
+              between "Asked and not answered" and the sources (board 6). */}
+          {!drawerReport && factsLine && <div className="mt-auto">{factsLine}</div>}
           </div>
         </Drawer>
       )}
@@ -1633,6 +1741,101 @@ function Working({ phase, searches, onStop }: { phase: string; searches: number;
       <span className="h-3 w-3 shrink-0 animate-spin rounded-full border-2 border-gray-300 border-t-emerald-600" />
       <span className="text-[13px] text-gray-600">{label}</span>
       <button onClick={onStop} className="ml-auto text-[12.5px] text-gray-400 underline hover:text-gray-700">Stop</button>
+    </div>
+  )
+}
+
+/** Copies of `lib/summaryReport.ts`' `NO_SOURCE` and `AS_OF_LINE` — that file is server-only (see the
+ *  import above). `tests/unit/summaryReport.test.ts` fails if these two drift from the originals. */
+const NO_SOURCE = 'No source cited in the conversation'
+const AS_OF_LINE = (asOf: string) => {
+  const d = new Date(`${asOf.slice(0, 10)}T00:00:00Z`)
+  const when = Number.isNaN(d.getTime()) ? asOf
+    : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
+  return `What applies to you as of ${when}, from this conversation. Rules and tariffs change. Check before you act.`
+}
+
+/**
+ * THE SUMMARY REPORT IN THE DRAWER — Workspace Task 5, board 6. In this order: the as-of line, your
+ * situation, what applies grouped by authority, still to confirm, asked and not answered, the facts
+ * line, and the sources as one numbered list. An item's sources are "[n] title" links to the list's
+ * own entries; an item with none says so in grey. Download prints all of it (`printDrawer`).
+ */
+function ReportView({ report, factsLine }: { report: SummaryReport; factsLine: React.ReactNode }) {
+  const byN = new Map(report.sources.map((src) => [src.n, src]))
+  const heading = 'mb-2 text-[11px] font-semibold uppercase tracking-wide text-gray-400'
+  const item = (it: ReportItem, key: string) => (
+    <li key={key} className="py-2.5">
+      <p className="text-[15px] font-medium text-gray-900">{it.name}</p>
+      <p className="mt-0.5 text-[14px] leading-relaxed text-gray-600">{it.what_to_do}</p>
+      <p className="mt-1 text-[12.5px]">
+        {it.sources.length ? it.sources.map((n, i) => {
+          const src = byN.get(n)
+          if (!src) return null
+          return (
+            <span key={n}>
+              {i > 0 && <span className="text-gray-300"> · </span>}
+              <a href={src.url} target="_blank" rel="noopener noreferrer"
+                 className="text-emerald-800 underline underline-offset-2">[{n}] {displaySource(src.title, src.url).title}</a>
+            </span>
+          )
+        }) : <span className="text-gray-400">{NO_SOURCE}</span>}
+      </p>
+    </li>
+  )
+  return (
+    <div className="space-y-6">
+      <p className="text-[13px] text-gray-500">{AS_OF_LINE(report.as_of)}</p>
+      <section>
+        <h4 className={heading}>Your situation</h4>
+        <p className="text-[15px] leading-relaxed text-gray-800">{report.situation}</p>
+      </section>
+      {report.applies.length > 0 && (
+        <section>
+          <h4 className={heading}>What applies</h4>
+          {report.applies.map((g, gi) => (
+            <div key={g.authority + gi} className={gi === 0 ? '' : 'mt-4'}>
+              <p className="text-[13px] font-semibold text-gray-700">{g.authority}</p>
+              <ul className="divide-y divide-gray-100">{g.items.map((it, i) => item(it, `${gi}-${i}`))}</ul>
+            </div>
+          ))}
+        </section>
+      )}
+      {report.to_confirm.length > 0 && (
+        <section>
+          <h4 className={heading}>Still to confirm</h4>
+          <ul className="divide-y divide-gray-100">{report.to_confirm.map((it, i) => item(it, `c-${i}`))}</ul>
+        </section>
+      )}
+      {report.unanswered.length > 0 && (
+        <section>
+          <h4 className={heading}>Asked and not answered</h4>
+          <ul className="list-disc space-y-1 pl-5 text-[14px] text-gray-700">
+            {report.unanswered.map((q, i) => <li key={i}>{q}</li>)}
+          </ul>
+        </section>
+      )}
+      {factsLine}
+      {report.sources.length > 0 && (
+        <section>
+          <h4 className={heading}>Sources</h4>
+          <ol className="space-y-1.5">
+            {report.sources.map((src) => {
+              const shown = displaySource(src.title, src.url)
+              return (
+                <li key={src.n} className="flex gap-2 text-[13px] leading-snug">
+                  <span className="shrink-0 text-gray-400">{src.n}.</span>
+                  <span>
+                    <a href={src.url} target="_blank" rel="noopener noreferrer"
+                       className="text-emerald-800 underline underline-offset-2">{shown.title}</a>
+                    {' '}<span className="text-gray-400">{shown.host}</span>
+                  </span>
+                </li>
+              )
+            })}
+          </ol>
+        </section>
+      )}
     </div>
   )
 }

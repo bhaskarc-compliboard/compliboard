@@ -1,8 +1,9 @@
 /**
  * THE NIGHTLY SUMMARISER — `DECISIONS.md` §108, §125. Run 2 Task 4.
  *
- * For every conversation that has gone quiet: write a summary and read candidate company facts out
- * of it as PROPOSALS.
+ * For every conversation that has gone quiet: write the summary report and read candidate company
+ * facts out of it as PROPOSALS — through `summariseTopic` (`lib/summaryReport.ts`), the writer the
+ * person's own "Summarise this conversation" uses (Workspace Task 5).
  *
  * *** IT NO LONGER STAMPS `delete_after` — Workspace Task 2. *** Clearing is 12 months after the
  * last turn, computed from `last_turn_at` by `lib/retention.ts`, and the deleter reads that. The
@@ -29,21 +30,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireCronSecret, startJobRun } from '@/lib/jobAuth'
 import { supabaseAdmin } from '@/lib/auth'
-import { askAIJson } from '@/lib/ai'
-import { SUMMARISE_PROMPT } from '@/prompts/summarise'
-// THE SUMMARY IS ARCHIVED; THE TRANSCRIPT IS NOT. A turn that says its own citations were
-// never retrieved (§127) would be summarised as fact and outlive the evidence that refutes it,
-// so each answer reaches the summariser with the sources its `[n]` markers point at.
-import { appendSources } from '@/lib/historySources'
-import type { Source } from '@/lib/ai'
+// THE SUMMARY REPORT — Workspace Task 5. The same writer, prompt and check the person's own
+// "Summarise this conversation" uses; each answer reaches it with its sources numbered once (§127).
+import { summariseTopic } from '@/lib/summaryReport'
 
 export const maxDuration = 800
 
 /** A conversation is idle once nothing has been said for a day. */
 const IDLE_HOURS = 24
 
-interface ProposedFact { key?: string; value?: string; quote?: string }
-interface Summarised { summary?: string; facts?: ProposedFact[] }
 
 export async function POST(request: NextRequest) {
   const auth = requireCronSecret(request)
@@ -103,62 +98,17 @@ export async function POST(request: NextRequest) {
           continue
         }
 
-        const transcript = turns
-          .map((t) => appendSources(
-            `${t.role === 'user' ? 'USER' : 'ANSWER'}${t.stopped ? ' (stopped)' : ''}` +
-            // An attachment is part of what the conversation was about, and the summary
-            // is what outlives the transcript. §129.
-            `${t.document_name ? ` [attached the file: ${t.document_name}]` : ''}: ${t.text}`,
-            t.sources as Source[] | null,
-          ))
-          .join('\n\n')
-
-        const result = await askAIJson<Summarised>(
-          SUMMARISE_PROMPT,
-          `Conversation title: ${topic.title ?? '(none)'}\n\n${transcript}`,
-          { maxTokens: 4000, task: 'summary',
-            ledger: { companyId: topic.company_id as string, task: 'summarise' } },
-        )
-
-        const summary = String(result?.summary ?? '').trim()
-        if (!summary) throw new Error('the model returned no summary')
-
-        const now = new Date()
-
-        const { error: uErr } = await supabaseAdmin.from('topics').update({
-          summary,
-          summarised_at: now.toISOString(),
-          summary_source: 'nightly',
-          idle_at: topic.last_turn_at,
-          extracted_at: now.toISOString(),
-        }).eq('id', topic.id)
-        if (uErr) throw new Error(`stamping the topic: ${uErr.message}`)
-
-        // PROPOSALS, NEVER FACTS (§108).
-        const facts = Array.isArray(result?.facts) ? result.facts : []
-        const rows = facts
-          .filter((f) => String(f?.key ?? '').trim() && String(f?.value ?? '').trim())
-          .map((f) => {
-            // The quote is matched back to the turn it came from, so a proposal can be traced.
-            // If it matches nothing, the proposal is still written with a null turn — losing a
-            // proposal because its provenance is imperfect is the worse trade.
-            const q = String(f.quote ?? '').trim()
-            const from = q ? turns.find((t) => t.text.includes(q.slice(0, 60))) : undefined
-            return {
-              company_id: topic.company_id,
-              topic_id: topic.id,
-              switch_key: String(f.key).trim().slice(0, 120),
-              proposed_value: String(f.value).trim().slice(0, 500),
-              from_turn_id: from?.id ?? null,
-              quote: q ? q.slice(0, 2000) : null,
-            }
-          })
-
-        if (rows.length) {
-          const { error: pErr } = await supabaseAdmin.from('fact_proposals').insert(rows)
-          if (pErr) throw new Error(`writing proposals: ${pErr.message}`)
-          proposals += rows.length
-        }
+        // THE SAME WRITER AS "SUMMARISE THIS CONVERSATION" — Workspace Task 5 (`lib/summaryReport.ts`).
+        // One call, the 12,000-token limit set there, the same check, the report, its plain text and
+        // the title in one update, then the facts proposed with the duplicate guard. Both clients are
+        // the service role here: this job has no user session (CLAUDE.md §3.6).
+        const result = await summariseTopic(supabaseAdmin, supabaseAdmin, {
+          topicId: topic.id as string, companyId: topic.company_id as string,
+          title: (topic.title as string | null) ?? null, turns, source: 'nightly',
+          extra: { idle_at: topic.last_turn_at, extracted_at: new Date().toISOString() },
+        })
+        if (!result.ok) throw new Error(result.error)
+        proposals += result.proposed
 
         summarised++
       } catch (e) {

@@ -743,6 +743,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "checklist_items_checklist_id_fkey"
+            columns: ["checklist_id"]
+            isOneToOne: false
+            referencedRelation: "topic_list_v"
+            referencedColumns: ["checklist_id"]
+          },
+          {
             foreignKeyName: "checklist_items_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
@@ -813,6 +820,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "checklists_converted_to_checklist_id_fkey"
+            columns: ["converted_to_checklist_id"]
+            isOneToOne: false
+            referencedRelation: "topic_list_v"
+            referencedColumns: ["checklist_id"]
+          },
+          {
             foreignKeyName: "checklists_document_gap_id_fkey"
             columns: ["document_gap_id"]
             isOneToOne: false
@@ -831,6 +845,13 @@ export type Database = {
             columns: ["document_id"]
             isOneToOne: false
             referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checklists_from_topic_fk"
+            columns: ["from_topic_id"]
+            isOneToOne: false
+            referencedRelation: "topic_list_v"
             referencedColumns: ["id"]
           },
           {
@@ -2161,6 +2182,13 @@ export type Database = {
             foreignKeyName: "documents_from_topic_fk"
             columns: ["from_topic_id"]
             isOneToOne: false
+            referencedRelation: "topic_list_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_from_topic_fk"
+            columns: ["from_topic_id"]
+            isOneToOne: false
             referencedRelation: "topics"
             referencedColumns: ["id"]
           },
@@ -2350,6 +2378,13 @@ export type Database = {
             columns: ["from_turn_id"]
             isOneToOne: false
             referencedRelation: "turns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fact_proposals_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "topic_list_v"
             referencedColumns: ["id"]
           },
           {
@@ -3284,6 +3319,7 @@ export type Database = {
           status: Database["public"]["Enums"]["topic_status"]
           summarised_at: string | null
           summary: string | null
+          summary_report: Json | null
           summary_source: string | null
           title: string
           updated_at: string
@@ -3301,6 +3337,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["topic_status"]
           summarised_at?: string | null
           summary?: string | null
+          summary_report?: Json | null
           summary_source?: string | null
           title: string
           updated_at?: string
@@ -3318,6 +3355,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["topic_status"]
           summarised_at?: string | null
           summary?: string | null
+          summary_report?: Json | null
           summary_source?: string | null
           title?: string
           updated_at?: string
@@ -3392,6 +3430,13 @@ export type Database = {
             columns: ["document_id"]
             isOneToOne: false
             referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "turns_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "topic_list_v"
             referencedColumns: ["id"]
           },
           {
@@ -3512,6 +3557,36 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "obligations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      topic_list_v: {
+        Row: {
+          checklist_done: number | null
+          checklist_id: string | null
+          checklist_total: number | null
+          company_id: string | null
+          created_at: string | null
+          delete_after: string | null
+          document_count: number | null
+          first_document_name: string | null
+          has_report: boolean | null
+          id: string | null
+          last_turn_at: string | null
+          question_count: number | null
+          summarised_at: string | null
+          summary: string | null
+          summary_source: string | null
+          title: string | null
+          turn_count: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "topics_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
