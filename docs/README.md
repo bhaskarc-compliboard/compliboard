@@ -1,6 +1,6 @@
 # docs/
 
-**Version:** 12 · **Updated:** 4 October 2026, at the close of the workspace work — indexes `HANDOFF-WORKSPACE.md`, `HANDOFF-WORKSPACE-TO-HR.md` and `WORKSPACE-MACHINERY.md`; marks `WORKSPACE.md` as a design never built; corrects where `HANDOFF-DOCUMENTS.md` and `HANDOFF-LAYOUT.md` live.
+**Version:** 13 · **Updated:** 4 October 2026, HR Step 2 — indexes `HR-PLAN.md` and `HR-MACHINERY.md`. Version 12: at the close of the workspace work — indexes `HANDOFF-WORKSPACE.md`, `HANDOFF-WORKSPACE-TO-HR.md` and `WORKSPACE-MACHINERY.md`; marks `WORKSPACE.md` as a design never built; corrects where `HANDOFF-DOCUMENTS.md` and `HANDOFF-LAYOUT.md` live.
 
 **This is the index of what is LIVE.** Eight files moved to **`archive/`** on 28 September; that
 folder's own README names what supersedes each, and it is the only place this index points at them.
@@ -38,6 +38,8 @@ folder's own README names what supersedes each, and it is the only place this in
 | **`HANDOFF-WORKSPACE.md`** | **The STATE of the Compliance Workspace**, element by element with file and line — live through Stage 4 (v7, 4 October 2026). The template for the next section |
 | **`HANDOFF-WORKSPACE-TO-HR.md`** | **The brief for the HR section's chat** (4 October 2026): what the workspace is, which pieces HR reuses, the rules every section follows, how the owner and Claude work. Checked against the repository the same day |
 | **`WORKSPACE-MACHINERY.md`** | The read-only map of how the workspace worked at `6a1382f`, the first commit of the 3–4 October rebuild, with file and line (not rewritten since; its top note lists what changed) — the shape a new section's first instruction copies |
+| **`HR-PLAN.md`** | **The HR section's plan** (4 October 2026): the owner's vision, the 31 decisions, the steps, and every decision's effect on other sections. `DECISIONS.md` §164 records it |
+| **`HR-MACHINERY.md`** | The read-only map of how HR, and everything HR will touch, worked on 4 October 2026, with file and line — the input to `HR-PLAN.md` |
 
 ### Specs for what is built
 

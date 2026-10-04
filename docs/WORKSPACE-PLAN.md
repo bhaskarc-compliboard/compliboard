@@ -1,6 +1,6 @@
 # The Compliance Workspace — what's left
 
-**Version:** 4 · **Updated:** 4 October 2026, at the close of the workspace work (housekeeping), to mirror
+**Version:** 5 · **Updated:** 4 October 2026, HR Step 2: adds "Coming from the HR section". Version 4: at the close of the workspace work (housekeeping), to mirror
 the owner's map as it stood that evening. Version 3: Stage 4's cron release built. Version 2: Stage 4's first
 item built and the rebuild-from-empty rehearsal done. Version 1 was written after the Workspace Task 6 release.
 
@@ -141,6 +141,47 @@ Checks across the whole app, held until every section has its new look:
 - **Every print action uses the one print frame.** List every print action (`window.print`, `printDrawer`, any
   print CSS), with file and line, and make each use the same shared print style (`lib/printFrame.ts`): our
   header, footer and page numbers, the browser's own header off. One shared style, never a copy per page.
+
+---
+
+## Coming from the HR section — 4 October 2026
+
+The HR section is being rebuilt as a copy of this workspace (`docs/HR-PLAN.md`, `DECISIONS.md` §164). Five
+things in that plan change files this workspace owns. **The HR chat does them, in its foundations task (HR
+step 3) and its operations task (HR step 10).** Until then, the workspace chat should not change these files
+without the owner knowing, or the two sections will edit the same lines at once.
+
+1. **The shared pieces (HR decision 1).**
+   - These move out of `app/compliance/page.tsx` into shared files:
+     - the four button strings `PRIMARY`, `SECONDARY_LARGE`, `OUTLINE` and `TEXT_ACTION`, into one file
+       (`DESIGN.md:190` says this is owed);
+     - `Sheet`, `Empty`, `FoldRow`, `OneLineLink`, `Working`, the stages and the tabs;
+     - the page's print CSS, into `app/globals.css`;
+     - `ReportView`, with the source shape as a parameter.
+   - The workspace imports them. **No visible change:** `npm run measure` before and after proves the screen
+     is the same.
+   - The workspace's own logic stays in its page.
+2. **A section column on `topics` (HR decision 5).**
+   - `'workspace'` or `'hr'`, default `'workspace'`, so every existing insert keeps working.
+   - `topic_list_v` exposes it, and the workspace's Conversations list filters to `'workspace'`.
+   - The usage counter stays one count per company.
+3. **Same-night timing (HR decision 13).**
+   - The summary job moves to 10:00 UTC and the deleter to 10:30 UTC (`vercel.json`).
+   - The quiet rule goes from 24 hours to 6 (`lib/topicClaim.ts` `IDLE_HOURS`, and its test).
+   - A workspace conversation that ends at 5 pm is summarised that night. One picked up again the next day is
+     summarised again the following night (HR decision 23, accepted).
+   - This reverses part of `DECISIONS.md` §161. No screen words change: "The summary is written overnight"
+     stays true, since 10:00 UTC is 3 am in Oregon in summer and 2 am in winter.
+4. **The nightly summary job chooses the writer by section (HR decision 14).** A workspace conversation gets
+   the same writer as today.
+5. **Three workspace rows added to `docs/HANDOFF-CODE.md` §7** by HR Step 1 (`docs/HR-MACHINERY.md` B2, B3):
+   - a failed attachment is answered around when other files loaded (`app/api/chat/route.ts:270–275`, `:472`);
+   - carried files past three, and carried files that fail to load, drop silently, and only the model is told
+     (`lib/attachedDocument.ts:199–206`; `app/api/chat/route.ts:228–230`);
+   - the failed line shows the provider's raw error text for a refused large file (`lib/ai.ts:939`;
+     `app/api/chat/route.ts:510`).
+
+   These are the workspace's to fix, not HR's: HR uses its own loader (HR decision 3).
 
 ---
 

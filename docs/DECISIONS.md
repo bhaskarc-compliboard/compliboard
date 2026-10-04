@@ -11016,3 +11016,42 @@ After migration 065 was applied, Claude Code ran `npm run db:restore` under `CLA
 - **Full `check:live` on Haiku: 4 failures, none from this change.** Three are the Haiku-tier failures on record (`attachment/tier`, `attachment/errors`, `template findings`; `docs/HANDOFF-AUDITS.md:549–552`). The fourth, `convert complete`, failed a new way: Haiku answered *"I need to clarify your request…"* in prose, the conversion saved nothing, and the claim cleared — the route behaving as designed on a model that did not answer. It also showed a log label of mine from §161 calling the complete branch's failure "(discussed)"; corrected (`app/api/checklists/from-topic/route.ts:218`).
 
 **Cost: $0.32**, 17 calls on Haiku: one document scan for the proof, the rest the full `check:live`.
+
+## 164. THE HR SECTION — THE MAP AND THE PLAN — 4 October 2026
+
+§164 — HR Steps 1 and 2. The read-only map is `docs/HR-MACHINERY.md`; the plan, the owner's vision and every decision in full are `docs/HR-PLAN.md` (§2.3 the decisions, §2.6 their effects on other sections). The owner decided all of these on 4 October 2026. One line each; numbers as in `docs/HR-PLAN.md` §2.3:
+1. **Share the look, not the logic.** The workspace's display-only pieces (the four button strings, `Sheet`, `Empty`, `FoldRow`, `OneLineLink`, `Working`, the stages, the tabs, the print CSS, and `ReportView` with the source shape as a parameter) move into shared files. The workspace's screen must not change, measured before and after. HR keeps its own logic. Map B10.
+2. **The handbook check has its own tables:** a run per handbook version, sections with text and fingerprint, findings as rows. It copies Audits' patterns, not its tables, because fitting `audit_runs` changes 13 places and an audit section never sees full text. Map B4.
+3. **HR's own handbook loader.** It reads the site's whole set, names any handbook it could not read, and gives no answer if none load. Map B3.
+4. **One quote check for handbook quotes:** `verifyQuote`'s rule plus a 6-word floor. A failed quote is never shown as a source. Made precise by 20. Map B1e.
+5. **`topics` gains a section column,** `'workspace'` or `'hr'`, default `'workspace'`. Each list shows its own section. The usage counter stays one per company. Map B5.
+6. ~~A handbook flag on `documents`~~ — replaced by 18 and 21.
+7. ~~The site on `documents.entity_id`~~ — replaced by 18 and 22.
+8. ~~Versions as in Documents~~ — replaced by 18 (versions on HR's own rows; the newest is used).
+9. **Ledger tasks `'hr'` and `'hr_check'`,** with model settings `AI_MODEL_HR` and `AI_MODEL_HR_CHECK`, both `claude-opus-5-5` on production and saved visible. Summaries keep `'summarise'`. Map B9.
+10. **HR reads the company context:** sites, declared and confirmed facts. Where employees work is asked under "Still to confirm". A quality change, shown with a real Opus run. Map B8.
+11. **The HR summary has its own writer.** A source is a handbook passage or a web page, grouped by authority. Map B7.
+12. **Big handbooks:** a size and page check, and a split over 100 pages. Made HR's alone by 28. Map B2.
+13. **Same night:** summary 10:00 UTC, deleter 10:30 UTC, the handbook queue 10:00 UTC; the quiet rule goes from 24 hours to 6. **This reverses part of §161**, whose nightly-job line reads "both candidate lists wait for 24 hours of quiet". Map B6.
+14. **The nightly summary job picks the HR writer** for an HR conversation.
+15. **Old HR is retired in the polish step:** the old page body, `app/api/hr/route.ts`, `app/api/hr-audits/route.ts` and `prompts/hr.ts`. `hr_audits` stays (production holds 1 row, a test company).
+16. **Two fixes in foundations:** the `scripts/schema-doc.js` grants read (map B12). ~~`app/api/document-scan/route.ts` `maxDuration`~~ moves to `HANDOFF-CODE.md` §7 by 27.
+17. **Build first, then test.** One real Opus run at each prompt-adding stop, estimated first, $3 cap per task. The quality judgement comes at the end.
+18. **Handbooks are HR's own:** their own table, reading, check, site and versions, stored under an HR prefix in the company's own folder of `company-documents`. Nothing in Documents, the sweep, the dashboard or Audits sees a handbook. **Accepted:** Audits will not cite a handbook.
+19. **Facts come only from HR conversations,** in the person's own words, into Company information's one queue, labelled with the conversation's title. The handbook reading proposes none in rev 1.
+20. **A new HR-only quote function** against HR's stored text. `verifyQuote`, Documents' flags and the golden set do not move.
+21. **Dropped:** "Use in HR" in Documents and "add from Company Documents" in HR. The Documents scan prompt does not change.
+22. **HR never writes `documents.entity_id`.** The "Company-wide" correction gap (`049_significant_date_at_read_time.sql:52`) goes to `HANDOFF-CODE.md` §7 as a dormant Documents defect.
+23. **Accepted:** a workspace conversation picked up the next day is summarised again that night.
+24. **Account delete and export cover HR's tables,** and delete removes HR's stored files. The handbook queue gets its own `job_runs` job name. The impact check found that account delete walks storage only two levels deep (`app/api/account/route.ts:134–152`), so HR's files must sit at `<company>/<hr-prefix>/<file>`, or the walk must be extended.
+25. **The two handbooks from old HR stay in Company Documents** as test data.
+26. **A Dashboard row in `HANDOFF-CODE.md` §7:** "Questions answered" counts checklists.
+27. **The `document-scan` `maxDuration` fix goes to `HANDOFF-CODE.md` §7;** the `schema-doc.js` grants fix stays in HR foundations.
+28. **The size and page check and the split are HR's alone.**
+29. **HR dates go to the one calendar** through "Add to calendar" only: category `'hr'`, the handbook's site, and a new nullable `calendar_events.handbook_id` `ON DELETE SET NULL`. It is a Calendar effect: the main calendar shows the grey word "hr" with no link (`app/calendar/page.tsx:526`). Per-employee dates stay as text.
+30. **HR gets a Dates tab** over the company's `'hr'` calendar events. The main calendar's display belongs to the Calendar's rebuild.
+31. **Per-employee dates are a later version.** They wait for user roles and the owner's legal review.
+
+**Corrected in the same commit:** `docs/HOW-WE-BUILD.md` §5 still let Claude Code reset and restore staging. It now matches `CLAUDE.md` §3.7 and §161 (only on the owner's say-so). `docs/VISION-DOCUMENTS.md`'s matching line is marked as superseded.
+
+**Cost of Steps 1 and 2: $0.** No model call; `npm run cost` read 42 calls, $0.72, before and after both steps.

@@ -1,5 +1,7 @@
 # Handoff — from the Compliance Workspace to the HR section
 
+**Picked up 4 October 2026. The plan is `docs/HR-PLAN.md`; the map is `docs/HR-MACHINERY.md`.**
+
 **Written:** 4 October 2026, at the close of the Compliance Workspace feature work.
 **For:** the new chat that builds the HR section. Read this first, then the files it points to.
 **Checked:** 4 October 2026, every fact against the repository, by Claude Code; three corrections, listed in the housekeeping commit's report.

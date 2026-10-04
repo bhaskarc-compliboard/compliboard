@@ -1,7 +1,8 @@
 # How We Build CompliBoard
 
-**Version:** 20 · **Updated:** 4 October 2026, at the close of the workspace work
-**Supersedes:** version 19 (4 Oct). Adds **§3d — three more working rules from the workspace**: screenshots in `shots/`, the claim + `after()` pattern for long paid work (`lib/topicClaim.ts`), and every report naming its effects on other sections. §3c already carries the port-3999 rule. `CLAUDE.md` §3.11 holds all four as rules.
+**Version:** 21 · **Updated:** 4 October 2026, HR Step 2
+**Supersedes:** version 20 (4 Oct). §5's staging bullet now says reset and restore run only on the owner's say-so, matching §4 and `CLAUDE.md` §3.7 (`DECISIONS.md` §161); it still said Claude Code may and should reset.
+Version 20: version 19 (4 Oct). Adds **§3d — three more working rules from the workspace**: screenshots in `shots/`, the claim + `after()` pattern for long paid work (`lib/topicClaim.ts`), and every report naming its effects on other sections. §3c already carries the port-3999 rule. `CLAUDE.md` §3.11 holds all four as rules.
 Version 19: version 18 (4 Oct). §4: **`npm run db:reset` and `npm run db:restore` run only when the
 owner says so in the brief** — no longer after every migration (`DECISIONS.md` §161).
 Version 18: version 17 (22 Sep). Adds **§3c — two traps from Workspace Task 6**: `npm run db:migrate`
@@ -577,9 +578,13 @@ This is the same class as writing a summary from recollection rather than from t
 `npm run db:migrate:prod` and its typed `PRODUCTION` stay a human action, always. What Claude Code
 *may* do, and should, is two narrower things:
 
-- **Reset and restore STAGING under a pty.** Both commands ask for a typed confirmation and have no
-  bypass flag, by design — and a migration is not done until the chain builds from empty, so a rule
-  that is expensive to obey is a rule that gets skipped. `CLAUDE.md` §3.7.
+- **Reset and restore STAGING only when the owner says so in the brief.** *Changed 4 October 2026,
+  `DECISIONS.md` §161.* A migration is applied with
+  `CHECK_LIVE_BASE_URL=http://localhost:3999 npm run db:migrate`, and it stops there: a reset also wipes
+  staging's conversations, documents, fixtures and cost ledger, and whether to pay that is the owner's
+  call. When a brief does call for it, both commands run under a pty (each asks for a typed
+  confirmation, with no bypass flag, by design), and **the result is read from the database**
+  (`supabase_migrations.schema_migrations`), never from the exit code. `CLAUDE.md` §3.7.
 - **Read production, read-only, one query per stated need, with the SQL in the report.** A question
   about production sometimes has no answer in the repository. `CLAUDE.md` §3.7 has the four fences:
   `SELECT` only; one query per need said out loud; the exact SQL printed, not described; and the
