@@ -438,3 +438,131 @@ this run proves the reader fix as well as the migration.
 - **Account deletion** (`app/api/account/route.ts:382`): it deletes `topics` and then `fact_proposals` by company. The topic delete now empties links instead of deleting rows, and the next statement deletes them. The verify block's company delete shows nothing is left behind.
 - **`docs/SCHEMA.md`, `lib/database.types.ts`**: regenerated.
 - **Production**: not touched. 062 is pending there.
+
+---
+
+## Checkpoint 5 — "Make a checklist" from the box saves what it says it saved
+
+**The change** (`app/api/chat/route.ts`, the open checklist branch). After the existing parse, the
+route now writes `checklists` and then `checklist_items`, **as the caller under RLS**, in the shape
+`/api/checklists/from-topic` uses (`from-topic/route.ts:147–159`):
+- `title` is the model's title, or else the question;
+- `question` is the person's question (up to 500 characters);
+- `safety_alert` is copied when present;
+- items keep `name`, `description`, `why`, `source_url`, `source_title`, `category` and `sort_order`;
+- `origin` and `from_topic_id` stay null, because nothing came from a conversation.
+
+**The prompt, the model call and the parse are untouched.**
+
+**If the save fails, the person is not told it worked.**
+- If the `checklists` insert fails, the route returns 500 *"The checklist was written but could not be saved. Please try again."*
+- If the items fail, the empty checklist row is deleted and the same message is returned.
+
+The page already shows a 500's `error` as a failed line (page 337–339). The response gains
+`checklistId`.
+
+`checklists_created` now moves **only after a successful save**. It used to move for a checklist
+that did not exist.
+
+**`check:live`'s checklist step** (`scripts/check-live.js`, the checklist block) still checks the
+shape. It now also checks that:
+- a `checklistId` came back;
+- that id is in the result of **the Checklists tab's own query**, run as the user (`checklists` `id, title, created_at`, newest 60);
+- the stored `question` is the question asked;
+- the item rows equal the items returned.
+
+It then deletes its probe checklist, so runs do not pile up in Gamma's tab. Against the old code it
+would fail at "no checklistId came back".
+
+**Beyond the brief, and why.** The `history` block (`check-live.js` "3. HISTORY") is now behind
+`want('history')`, like every other `/api/chat` block. It was the one block `--only` did not skip. So
+`--only checklist` would have made two model calls where this checkpoint allows one. A full
+`check:live` run is unchanged.
+
+**The one allowed call**, run against the local `next dev` on staging:
+
+```
+$ node --env-file=.env.local scripts/check-live.js --only checklist
+  ✓ checklist           9 must_do, 5 good_to_have, shape intact
+  ✓ checklist/saved     row 1187d10d in the tab's list, question kept, 14 item rows
+  ✓ topic DELETE        removed the topic and its 2 turns
+  check:live: ok — 6 tenant table(s): 3 writable by a signed-in user, 3 read-only to them by design, all 6 refused to anon.
+```
+
+Ledger: 169 → **170**, one row: `2026-10-04T00:12:03 checklist claude-haiku-4-5 $0.0481`.
+
+**Not shown on screen.** Clicking the row in the Checklists tab and seeing the drawer open was not
+done by a person or a browser in this task. What was proved is that the row is in the result of the
+query the tab runs. The drawer opens by reading the same `checklists` row and its `checklist_items`
+as the user (page 614–620), which is what this step read back.
+
+**Gate:** `npm run check` exit 0; `569 tests … floor 559. OK`.
+
+**Touches other sections:**
+- **Dashboard** (`app/dashboard/page.tsx:87`, `:99–100`): "Checklists created" counts `checklists` rows without `research_answer`, so it now counts these. The usage counter `checklists_created` now matches real rows.
+- **Micro-steps** (page 614–639): opening one of these checklists buys one `substeps` call per item, as for any other checklist.
+- **Account export / deletion** (`app/api/account/*`): more checklist rows to carry. No code change.
+- **Gate path** (`chat` 735–793, `CHECKLIST_GATE` on): still saves nothing. It is off, and not in this brief.
+
+---
+
+## THE FINAL REPORT
+
+### Each checkpoint
+
+| # | Result | Commit |
+|---|---|---|
+| 1 | Production read. Nightly jobs **have never run** (0 `summarise`/`delete` rows in `job_runs`). Part 9 settled (i) and (v). First night would be 1 summary, nothing to delete, scan and audit queues empty | none (read-only) |
+| 2 | Turns kept 12 months after the last turn, computed in `lib/retention.ts`; cleared only with a summary covering the last turn, otherwise skipped; hand summaries no longer stop clearing; 30-day backstop removed | `6a77339` |
+| 3 | "For the cron release" written; no code | `e2cd8e4` |
+| 4 | Migration 062: a conversation's proposals outlive it with its title; `/api/to-confirm` labels them. Applied to **staging only**; proven through the routes | `055df59` |
+| 5 | The box's checklist is saved and appears in the tab's query; `check:live` asserts the rows | *(this commit — hash in the terminal report)* |
+
+### Part 9, settled
+
+- **(i)** The proposal behind "Not found" is document-sourced (`06a-forklift-log.pdf`). Its key, `powered_industrial_trucks_on_site`, **is not in `switches`**, so `/api/switches/answer:53` returns 404. Both of the owner's pending proposals are of that kind.
+- **(v)** The restaurant topic's first turn reads `'m opening a second restaurant…`, the same as the title. The "I" was lost **before the route** — in the box, the keyboard or a paste. Which one is not knowable from the data.
+
+### The migration — `supabase/migrations/062_a_fact_outlives_its_conversation.sql`
+
+Full SQL is in the file. In short:
+- `topic_title` column;
+- an insert trigger `fact_proposals_stamp_topic_title`;
+- `fact_proposals_topic_id_fkey` → `ON DELETE SET NULL`;
+- `fact_proposals_one_source` widened by one arm;
+- a verify block that attempts every write.
+
+The before and after check are in checkpoint 4 above.
+
+### What the owner must do at release, in order
+
+1. **Decide the from-zero reset.** `npm run db:reset` + `db:restore` on staging proves 000 → 062 builds from empty, but it wipes staging's test accounts. I did not run it. Either run it and re-seed the fixtures, or accept the incremental proof.
+2. **Production migration: `npm run db:migrate:prod`**, behind its typed confirmation. It applies **062** only; production is on 061.
+3. **The push.** It ships checkpoints 2, 4 and 5. Nothing new is needed in Vercel. The cron fix is not in this push; it is the deferred release written up in checkpoint 3.
+
+**The order matters:** the push's `/api/to-confirm` reads `topic_title`, and its `select('*')`
+tolerates the column's absence. But the 12-month rule and the checklist save do not depend on 062. So
+062 first is safe, and the push first is also safe. Migration first is the convention.
+
+### What I changed beyond the brief
+
+1. **`docs/TESTING.md` rows 473, 596, 616, 617** — manual expectations that stated the old rule. 617 is inverted: a 13-month topic with no summary must now be *skipped*.
+2. **`scripts/check-live.js`: the `history` block is behind `--only`** (checkpoint 5 says why).
+3. **⚠ An unauthorised spend of $0.2599 (10 Haiku calls)** in checkpoint 4. I ran `check:live` without checking that a server was on port 3000. I stopped it, and removed from staging the one document it left half-made (checkpoint 4 has the detail).
+4. `docs/WORKSPACE-MACHINERY.md` (Task 1's file) is committed in checkpoint 2's commit, with part 9 filled in. That includes a corrected statement: part 9 as first written named `documents.created_at`, which does not exist.
+5. **Not done:** no `DECISIONS.md` entry for the 12-month rule, the fact-survival rule, or the box checklist save. `CLAUDE.md` §2 expects decisions there; the brief did not ask for one. Owed.
+
+### Touches other sections, by file
+
+- `lib/retention.ts`, `app/api/jobs/delete/route.ts`, `app/api/jobs/summarise/route.ts`, `lib/conversationStatus.ts`, `lib/conversation.ts`, `app/api/topics/[id]/route.ts`, `app/api/topics/[id]/summarise/route.ts`, `app/compliance/page.tsx` — the workspace.
+- `app/api/to-confirm/route.ts` — **Company information / To confirm** (the label of a deleted conversation's proposal).
+- `supabase/migrations/062_…`, `lib/database.types.ts`, `docs/SCHEMA.md` — `fact_proposals`, which **Documents** also writes (proved unaffected).
+- `app/api/chat/route.ts` — **Dashboard**'s "Checklists created" now counts box checklists.
+- `scripts/check-live.js`, `docs/TESTING.md` — the test record.
+
+### Cost
+
+- **`npm run cost` at the start:** $3.31, 159 calls.
+- **At the end:** $3.62, 170 calls.
+- **This task: 11 calls, $0.3081.** That is $0.2599 unauthorised (checkpoint 4) plus $0.0481 authorised (checkpoint 5's one call).
+- Every row is `claude-haiku-4-5`, on staging. No production model call was made.

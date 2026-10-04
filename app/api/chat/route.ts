@@ -393,9 +393,50 @@ export async function POST(request: NextRequest) {
             { error: 'The checklist came back in a shape we could not read. Please try again.' },
             { status: 502 });
         }
+        // *** SAVED, BECAUSE THE PAGE SAYS "SAVED TO YOUR CHECKLISTS" — Workspace Task 2, checkpoint 5. ***
+        // Until now this branch wrote nothing: the Run 3 rebuild (a5587af) dropped the page's own
+        // insert, the page went on saying "saved", the counter went up, and the Checklists tab never
+        // gained the row (`docs/WORKSPACE-MACHINERY.md` N1). Written here, as the CALLER under RLS,
+        // in the same shape `/api/checklists/from-topic` writes (`checklists` then `checklist_items`).
+        // The question is the checklist's `question`; nothing came from a conversation, so `origin`
+        // and `from_topic_id` stay null. The prompt and the call above are unchanged.
+        const items = [
+          ...(data.must_do ?? []).map((i) => ({ ...i, category: 'must_do' as const })),
+          ...(data.good_to_have ?? []).map((i) => ({ ...i, category: 'good_to_have' as const })),
+        ].filter((i) => String(i?.name ?? '').trim());
+        const title = String(data.title ?? '').trim().slice(0, 160) || userQuestion.slice(0, 160);
+        const { data: saved, error: cErr } = await db.from('checklists').insert({
+          company_id: companyId,
+          title,
+          question: userQuestion.slice(0, 500),
+          safety_alert: data.safety_alert ?? null,
+        }).select('id').single();
+        if (cErr || !saved) {
+          console.error('checklist not saved:', cErr?.message);
+          return NextResponse.json(
+            { error: 'The checklist was written but could not be saved. Please try again.' }, { status: 500 });
+        }
+        if (items.length) {
+          const { error: iErr } = await db.from('checklist_items').insert(items.map((i, n) => ({
+            checklist_id: saved.id, company_id: companyId, category: i.category, sort_order: n,
+            name: String(i.name).trim().slice(0, 500),
+            description: String(i.description ?? '').trim() || null,
+            why: String(i.why ?? '').trim() || null,
+            source_url: String(i.source_url ?? '').trim() || null,
+            source_title: String(i.source_title ?? '').trim() || null,
+          })));
+          if (iErr) {
+            // An empty checklist claiming to be the answer is worse than none: take the row back.
+            console.error('checklist items not saved:', iErr.message);
+            await db.from('checklists').delete().eq('id', saved.id);
+            return NextResponse.json(
+              { error: 'The checklist was written but could not be saved. Please try again.' }, { status: 500 });
+          }
+        }
+        // The counter moves only for a checklist that now exists.
         try { await bumpCounter(supabaseAdmin, companyId, 'checklists_created'); }
         catch (e) { console.error('checklist counter not incremented:', e); }
-        return NextResponse.json({ outcome: 'answer', ...data, topicId: topicId || null });
+        return NextResponse.json({ outcome: 'answer', ...data, checklistId: saved.id, topicId: topicId || null });
       }
 
       // ---- RESEARCH: stream to the client, and write the exchange down ------------------
