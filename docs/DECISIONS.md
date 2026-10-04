@@ -10831,6 +10831,8 @@ Commits 358647d, 1e34fc2.
 
 **Correction, 3 October 2026 (the owner).** The line above saying *"Production runs Sonnet today"* is wrong. **Production runs `claude-opus-5-5` for every model setting**; Sonnet was an early trial. `docs/RELEASE.md` now records it, marked as the owner's statement, because Vercel hides the values.
 
+**Correction, 4 October 2026 (the owner).** The 3 October correction above was wrong for one variable: **production's `AI_MODEL_SUMMARY` was Sonnet, not Opus, until 4 October.** The owner has now set every model variable to `claude-opus-5-5` on Vercel Production, saved as visible (not sensitive), and redeployed. The nine: `AI_MODEL_PROSE`, `AI_MODEL_JUDGEMENT`, `AI_MODEL_SUBSTEPS`, `AI_MODEL_SUMMARY`, `AI_MODEL_DOCUMENT_SCAN`, `AI_MODEL_DOCUMENT_DRAFT`, `AI_MODEL_AUDIT`, `AI_MODEL_CRITIQUE` and `AI_MODEL` (`lib/ai.ts:102–132`). `docs/RELEASE.md` carries the table.
+
 **The release state, read after `2937b0b`.**
 - `npm run preflight` (read-only) reads 63 migration files on disk and 63 rows on production (`dsfwmafnphdlfogetsus`), with `062_a_fact_outlives_its_conversation.sql` among them: `PENDING COUNT: 0`. So 062 went to production with the Task 2 release.
 - Task 3 adds no migration.
@@ -10886,3 +10888,5 @@ Commits 358647d, 1e34fc2.
 - **The rule 8 condition,** added before Part B, was applied to one of two dependent items in the Part B run. The drawback claims item carries it; the excise item still reads as settled. It is recorded as open, to watch at the quality test.
 
 **Cost of the task:** $0.86 ($0.8599) in 6 summary calls on staging. That is A7 $0.0173; C1–C3 $0.4455; the fourth run $0.1995; the Part B proof $0.1976.
+
+**Correction, 4 October 2026 (the owner).** Production's `AI_MODEL_SUMMARY` was Sonnet, not Opus, until 4 October. So **the Task 5 paid check on production first ran on Sonnet, then, after the owner's change and redeploy, on Opus 5.5.** Every model variable on Vercel Production is now `claude-opus-5-5`, visible: `AI_MODEL_PROSE`, `AI_MODEL_JUDGEMENT`, `AI_MODEL_SUBSTEPS`, `AI_MODEL_SUMMARY`, `AI_MODEL_DOCUMENT_SCAN`, `AI_MODEL_DOCUMENT_DRAFT`, `AI_MODEL_AUDIT`, `AI_MODEL_CRITIQUE` and `AI_MODEL`. `docs/RELEASE.md` carries the table; §154 carries the same correction.

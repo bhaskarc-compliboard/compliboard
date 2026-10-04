@@ -72,26 +72,33 @@ Sign in with a test account and run the first three manual tests for the feature
 
 **This list is the authoritative record of what Vercel holds.** `CLAUDE.md` §3.4a points here and deliberately does not keep a second copy: on 26 September that section and this one disagreed about whether the `AI_MODEL_*` variables are set at all, which made the model that reads a customer's document unknowable from the repository. It was settled by reading the dashboard, §3.4a was the one that was wrong, and the rule now is **the dashboard wins and this list gets corrected.** `DECISIONS.md` §136.
 
-> ### THE MODELS IN PRODUCTION — PER THE OWNER, 3 OCTOBER 2026.
-> **Every `AI_MODEL_*` variable set on Vercel Production is `claude-opus-5-5`.** This is the owner's
-> statement, not a reading: Vercel hides these values once saved, so the repository cannot confirm
-> them. Sonnet was an early trial and is not what production runs. It corrects the older values below:
-> `AI_MODEL_JUDGEMENT` was recorded as `claude-opus-5`, and the four added on 23 September had no
-> recorded value.
+> ### THE MODELS IN PRODUCTION — CORRECTED 4 OCTOBER 2026 (THE OWNER).
 >
-> | Variable | Production value (per the owner, 3 October 2026) |
-> |---|---|
-> | `AI_MODEL_PROSE` | `claude-opus-5-5` |
-> | `AI_MODEL_JUDGEMENT` | `claude-opus-5-5` |
-> | `AI_MODEL_SUBSTEPS` | `claude-opus-5-5` |
-> | `AI_MODEL_SUMMARY` | `claude-opus-5-5` |
-> | `AI_MODEL_DOCUMENT_SCAN` | `claude-opus-5-5` |
-> | `AI_MODEL_AUDIT` | `claude-opus-5-5` |
+> **The 3 October statement below was wrong for one variable.** On 4 October the owner found that
+> production's `AI_MODEL_SUMMARY` was **Sonnet**, not Opus. He then set **every** model variable the
+> code reads to `claude-opus-5-5` on Vercel Production, saved each one as **visible** (not sensitive,
+> so it can be read back), and redeployed. So the Task 5 paid check on production (the summary
+> report) ran first on Sonnet, then, after the redeploy, on Opus 5.5.
 >
-> **Not covered by that statement:** the code also reads `AI_MODEL_CRITIQUE`, `AI_MODEL_DOCUMENT_DRAFT`
-> and `AI_MODEL` (`lib/ai.ts:102`, `:124`, `:132`). None is recorded here as set.
-> - Unset, `AI_MODEL_DOCUMENT_DRAFT` falls back to the prose tier (`:124`), so it runs `claude-opus-5-5`.
-> - Unset, `AI_MODEL_CRITIQUE` falls back to `claude-opus-5` (`:102`). The critic is switched off in production (`CHECKLIST_CRITIC`, `lib/pipelineConfig.ts`).
+> | Variable | Production value (owner, 4 October 2026, visible) | Read by |
+> |---|---|---|
+> | `AI_MODEL_PROSE` | `claude-opus-5-5` | `lib/ai.ts:106` |
+> | `AI_MODEL_JUDGEMENT` | `claude-opus-5-5` | `lib/ai.ts:104` |
+> | `AI_MODEL_SUBSTEPS` | `claude-opus-5-5` | `lib/ai.ts:112` |
+> | `AI_MODEL_SUMMARY` | `claude-opus-5-5` (was Sonnet until 4 October) | `lib/ai.ts:113` |
+> | `AI_MODEL_DOCUMENT_SCAN` | `claude-opus-5-5` | `lib/ai.ts:120` |
+> | `AI_MODEL_DOCUMENT_DRAFT` | `claude-opus-5-5` | `lib/ai.ts:124` |
+> | `AI_MODEL_AUDIT` | `claude-opus-5-5` | `lib/ai.ts:131` |
+> | `AI_MODEL_CRITIQUE` | `claude-opus-5-5` | `lib/ai.ts:102` |
+> | `AI_MODEL` (the fallback for all of them) | `claude-opus-5-5` | `lib/ai.ts:102–116`, `:132` |
+>
+> These are the nine model variables `lib/ai.ts` reads (`grep -o "AI_MODEL[A-Z_]*" lib/ai.ts`). Because
+> they are now visible, **this table can be checked against the dashboard, and the dashboard wins.**
+> Workspace Task 6 adds a tenth, `AI_MODEL_HOWTO`; it is listed with that release.
+>
+> *Kept as written, and wrong for `AI_MODEL_SUMMARY`:* "THE MODELS IN PRODUCTION — PER THE OWNER,
+> 3 OCTOBER 2026. Every `AI_MODEL_*` variable set on Vercel Production is `claude-opus-5-5`. This is
+> the owner's statement, not a reading: Vercel hides these values once saved."
 
 From June: `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `ANTHROPIC_API_KEY`, `RESEND_API_KEY`, `FEEDBACK_EMAIL`.
 
