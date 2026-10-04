@@ -23,15 +23,36 @@
  * candidate facts, and the facts go to `fact_proposals` (source 'conversation', this topic) exactly
  * as the nightly job's do. They are proposals, not facts (§108): they wait in Company information's
  * queue and never interrupt the chat (`DECISIONS.md` §154). A second summary proposes nothing that
- * is already waiting for this conversation (`proposalsToInsert`).
+ * is already waiting for this conversation (`proposalsToInsert`, and migration 065's unique index).
+ *
+ * ---------------------------------------------------------------------------
+ * *** ONE PRESS, ONE CALL, AND NOT TIED TO THE TAB — Workspace Stage 4. ***
+ *
+ * Part 1 measured two failures on staging: a second press (same tab or another) paid for a second
+ * summary that overwrote the first, and nothing was recorded while it ran. And `DECISIONS.md` §138
+ * records work lost on production when the person left before the request finished.
+ *
+ *   1. THE CLAIM (`lib/topicClaim.ts`). `topics.summary_started_at` is set by compare-and-set before
+ *      any model call. Held and younger than ten minutes → 409 "already being written", no call.
+ *   2. THE REPLY COMES AT ONCE — 202 `{ status: 'started' }` — and the work runs in `after()` from
+ *      `next/server`. Next 16: "`after` will run for the platform's default or configured max duration
+ *      of your route" (node_modules/next/dist/docs/01-app/03-api-reference/04-functions/after.md);
+ *      on Vercel it is built on `waitUntil`, which extends the invocation until the work settles, up
+ *      to `maxDuration`. Closing the tab no longer has a request to cancel.
+ *   3. THE RESULT IS SAVED EXACTLY AS BEFORE, by `summariseTopic`, now guarded: it writes only while
+ *      this run still holds its claim and the summary is still the one it read, and clears the claim
+ *      in the same update. Failure or the 9-minute timeout clears it too; a result arriving after the
+ *      timeout is discarded, not written. The page polls `topic_list_v.summary_in_progress`.
+ * ---------------------------------------------------------------------------
  */
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
 import { requireCompany, supabaseAdmin } from '@/lib/auth'
 import { loadTurns } from '@/lib/conversation'
 // THE SUMMARY IS ARCHIVED; THE TRANSCRIPT IS NOT. Each answer reaches the summariser with its
 // sources, now numbered once for the whole conversation (`numberedTranscript`), so a marker always
 // points at something (§127).
-import { summariseTopic, renderPlainText } from '@/lib/summaryReport'
+import { summariseTopic } from '@/lib/summaryReport'
+import { claimTopic, releaseTopic, withinClaimTime, CLAIM_WORDS } from '@/lib/topicClaim'
 
 export const maxDuration = 800
 
@@ -60,23 +81,33 @@ export async function POST(
       }, { status: 409 })
     }
 
-    // THE SUMMARY REPORT — Workspace Task 5. One call returns the report, the title and the facts;
-    // `lib/summaryReport.ts` numbers the sources by code, checks what comes back, and writes the
-    // report, its plain-text rendering, the title, the date and the source in one update.
-    // `db` is the caller (the topic update, under RLS); `supabaseAdmin` only proposes the facts, which
-    // `authenticated` may not insert (migration 034) — the named statement is in `summariseTopic`.
-    const result = await summariseTopic(db, supabaseAdmin, {
-      topicId: id, companyId, title: topic.title ?? null, turns, source: 'user',
-    })
-    if (!result.ok) {
-      // §5.1: the product's failure, said plainly; nothing half-written is shown or stored.
-      return NextResponse.json({ error: `${result.error} Nothing was changed. Please try again.` }, { status: 502 })
+    // ---- THE CLAIM, before any model call. Held → the person waits for the run already going.
+    const claim = await claimTopic(db, id, 'summary')
+    if (!claim.ok) {
+      return NextResponse.json({ status: 'writing', message: `${CLAIM_WORDS.summary} It is already being written.` },
+        { status: 409 })
     }
-    const summary = renderPlainText(result.report)
 
-    return NextResponse.json({ summary, summary_report: result.report, title: result.report.title, summary_source: 'user',
-      // What the check did to each item's citations: for the person reviewing the report, not shown on screen.
-      checks: result.checks, proposed: result.proposed })
+    // ---- THE WORK, AFTER THE REPLY. `db` is the caller (the topic update, under RLS); `supabaseAdmin`
+    // only proposes the facts, which `authenticated` may not insert (migration 034) — the named
+    // statement is in `summariseTopic`. The client is built per request and is only closed over here.
+    after(async () => {
+      try {
+        const result = await withinClaimTime(summariseTopic(db, supabaseAdmin, {
+          topicId: id, companyId, title: topic.title ?? null, turns, source: 'user',
+          guard: { claimedAt: claim.claimedAt, summarisedAt: claim.summarisedAt },
+        }), 'summary')
+        if (!result.ok) console.error(`summarise ${id}: ${result.error}`)
+      } catch (e) {
+        console.error(`summarise ${id} failed:`, e)
+      } finally {
+        // A success already cleared the claim in its own update; this clears it after a failure or
+        // the timeout, and only if it is still ours.
+        await releaseTopic(db, id, 'summary', claim.claimedAt)
+      }
+    })
+
+    return NextResponse.json({ status: 'started' }, { status: 202 })
   } catch (e) {
     console.error('POST /api/topics/[id]/summarise failed:', e)
     return NextResponse.json(

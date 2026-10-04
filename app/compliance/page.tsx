@@ -43,6 +43,7 @@ import {
   groupItems, madeInWorkspace, mustDoLabel, oneLineSource, thingsToDo, noSourceText, itemSources, isResearching, howToHeading, stepSourceNumbers,
 } from '@/lib/checklistView'
 import { OTHER_SOURCE_LINE, DROPPED_LINE, urlKey, sourceCount, type HowToResult } from '@/lib/howTo'
+import { CLAIM_WORDS, type ClaimKind } from '@/lib/topicClaim'
 
 type Tab = 'ask' | 'conversations' | 'checklists'
 
@@ -106,6 +107,8 @@ interface TopicRow {
   /** From `topic_list_v` (migration 063) — Workspace Task 5, board 5. */
   questionCount: number; documentCount: number; firstDocumentName: string | null
   hasReport: boolean; checklistTotal: number; checklistDone: number
+  /** A claim held and younger than ten minutes — migration 065, Workspace Stage 4. */
+  summaryInProgress: boolean; checklistInProgress: boolean
 }
 
 /** One `topic_list_v` row, as the database returns it. */
@@ -115,10 +118,12 @@ interface TopicListRow {
   delete_after: string | null; last_turn_at: string | null; created_at: string
   has_report: boolean; turn_count: number; question_count: number; document_count: number
   first_document_name: string | null; checklist_id: string | null; checklist_total: number; checklist_done: number
+  summary_in_progress: boolean; checklist_in_progress: boolean
 }
 
 const TOPIC_LIST_COLUMNS = 'id, title, summary, summarised_at, summary_source, delete_after, last_turn_at, created_at, '
-  + 'has_report, turn_count, question_count, document_count, first_document_name, checklist_id, checklist_total, checklist_done'
+  + 'has_report, turn_count, question_count, document_count, first_document_name, checklist_id, checklist_total, checklist_done, '
+  + 'summary_in_progress, checklist_in_progress'
 
 const toTopicRow = (r: TopicListRow): TopicRow => ({
   id: r.id, title: r.title, summary: r.summary, summarised_at: r.summarised_at, summary_source: r.summary_source,
@@ -127,6 +132,7 @@ const toTopicRow = (r: TopicListRow): TopicRow => ({
   questionCount: Number(r.question_count ?? 0), documentCount: Number(r.document_count ?? 0),
   firstDocumentName: r.first_document_name, hasReport: !!r.has_report,
   checklistTotal: Number(r.checklist_total ?? 0), checklistDone: Number(r.checklist_done ?? 0),
+  summaryInProgress: !!r.summary_in_progress, checklistInProgress: !!r.checklist_in_progress,
 })
 
 interface ChecklistRow {
@@ -335,6 +341,16 @@ export default function CompliancePage() {
   const [deleteFailed, setDeleteFailed] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
   const [working, setWorking] = useState<string | null>(null)
+  /**
+   * THIS TAB'S OWN PRESSES OF SUMMARISE AND TURN INTO A CHECKLIST — Workspace Stage 4. Keyed
+   * `${kind}:${topicId}`, holding what the conversation showed BEFORE the press (its `summarised_at`, or
+   * its newest checklist), so when the claim clears the page can tell a result that landed from a run
+   * that failed. Set the moment the button is pressed, so the button is disabled before any request
+   * leaves. Everyone else's runs — a reload, another tab — are read from `topic_list_v`'s two flags.
+   */
+  const [waits, setWaits] = useState<Record<string, { kind: ClaimKind; topicId: string; before: string | null }>>({})
+  const waitsRef = useRef(waits)
+  useEffect(() => { waitsRef.current = waits }, [waits])
 
   const fileInput = useRef<HTMLInputElement>(null)
 
@@ -720,38 +736,105 @@ export default function CompliancePage() {
   }
 
   // ------------------------------------------------------------------ convert / summarise
+  /**
+   * "TURN THIS INTO A CHECKLIST" AND "SUMMARISE THIS CONVERSATION" — ONE PRESS, ONE CALL (Workspace
+   * Stage 4). The route claims the conversation and answers at once (202); the work runs on the server
+   * whether or not this tab stays open. A 409 means a run is already going — this tab waits for it, it
+   * is not an error. The poll below fills in the result when the claim clears.
+   */
+  async function startClaimed(kind: ClaimKind, t: string, send: () => Promise<Response>, failed: string) {
+    const key = `${kind}:${t}`
+    if (waitsRef.current[key]) return
+    // What the conversation shows now, read fresh: the comparison when the claim clears is against this.
+    const { data: now } = await supabase.from('topic_list_v').select('summarised_at, checklist_id').eq('id', t).maybeSingle()
+    const before = ((kind === 'summary' ? now?.summarised_at : now?.checklist_id) ?? null) as string | null
+    const next = { ...waitsRef.current, [key]: { kind, topicId: t, before } }
+    waitsRef.current = next
+    setWaits(next)
+    let res: Response | null = null
+    try { res = await send() } catch { res = null }
+    const j = res ? await res.json().catch(() => null) : null
+    // 202 started; 409 WITH the claim's status is a run already going. Any other 409 is a refusal with
+    // its own sentence (a conversation with no messages), and is shown.
+    if (res && (res.status === 202 || (res.status === 409 && (j?.status === 'writing' || j?.status === 'building')))) {
+      await loadTopics(); return
+    }
+    setNotice(j?.error ?? failed)
+    dropWait(key)
+  }
+  function dropWait(key: string) {
+    const next = { ...waitsRef.current }
+    delete next[key]
+    waitsRef.current = next
+    setWaits(next)
+  }
+  const CHECKLIST_FAILED = 'That conversation could not be turned into a checklist. Please try again.'
+  const SUMMARY_FAILED = 'That conversation could not be summarised just now. Nothing was changed. Please try again.'
+
   async function convert(scope: 'discussed' | 'complete') {
     const t = scopeFor
     setScopeFor(null)
     if (!t) return
-    setWorking('Building the checklist…')
-    try {
-      const res = await fetch('/api/checklists/from-topic', {
-        method: 'POST',
-        headers: await authHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ topicId: t, scope }),
-      })
-      const j = await res.json().catch(() => null)
-      if (!res.ok) { setNotice(j?.error ?? 'That conversation could not be turned into a checklist. Please try again.'); return }
-      await loadChecklists()
-      await openChecklist(String(j.checklistId))
-    } finally { setWorking(null) }
+    await startClaimed('checklist', t, async () => fetch('/api/checklists/from-topic', {
+      method: 'POST',
+      headers: await authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ topicId: t, scope }),
+    }), CHECKLIST_FAILED)
   }
 
   async function summarise(t: string) {
     if (!t) { setNotice('There is no conversation to summarise yet. Ask a question first.'); return }
-    setWorking('Writing the summary…')
-    try {
-      const res = await fetch(`/api/topics/${t}/summarise`, {
-        method: 'POST', headers: await authHeaders({ 'Content-Type': 'application/json' }),
-      })
-      const j = await res.json().catch(() => null)
-      if (!res.ok) { setNotice(j?.error ?? 'That conversation could not be summarised just now. Please try again.'); return }
-      await loadTopics()
-      const { data } = await supabase.from('topic_list_v').select(TOPIC_LIST_COLUMNS).eq('id', t).maybeSingle()
-      if (data) setSummaryDrawer(toTopicRow(data as unknown as TopicListRow))
-    } finally { setWorking(null) }
+    await startClaimed('summary', t, async () => fetch(`/api/topics/${t}/summarise`, {
+      method: 'POST', headers: await authHeaders({ 'Content-Type': 'application/json' }),
+    }), SUMMARY_FAILED)
   }
+
+  /** Whether a run of this kind is going on this conversation — this tab's own, or anyone's. */
+  const inProgress = (t: TopicRow | string | null | undefined, kind: ClaimKind): boolean => {
+    if (!t) return false
+    const id = typeof t === 'string' ? t : t.id
+    if (waits[`${kind}:${id}`]) return true
+    const row = typeof t === 'string' ? topics.find((x) => x.id === t) : t
+    return !!row && (kind === 'summary' ? row.summaryInProgress : row.checklistInProgress)
+  }
+
+  /**
+   * THE POLL — every 5 seconds while any conversation on the page has a run going, as "How do I do
+   * this?" waits on its item. Reads only `topic_list_v` for those conversations; no call is made. When a
+   * claim clears: this tab's own summary opens in the drawer and its own checklist opens, as before
+   * Stage 4; a claim that cleared with nothing new is a run that failed, and is said so plainly.
+   */
+  const watching = [...new Set([
+    ...topics.filter((t) => t.summaryInProgress || t.checklistInProgress).map((t) => t.id),
+    ...Object.values(waits).map((w) => w.topicId),
+  ])].sort().join(',')
+  useEffect(() => {
+    if (!watching) return
+    const ids = watching.split(',')
+    const t = setInterval(async () => {
+      const { data, error } = await supabase.from('topic_list_v').select(TOPIC_LIST_COLUMNS).in('id', ids)
+      if (error || !data) return
+      const fresh = new Map(((data as unknown as TopicListRow[]).map(toTopicRow)).map((r) => [r.id, r]))
+      setTopics((rows) => rows.map((r) => fresh.get(r.id) ?? r))
+      setSummaryDrawer((d) => (d && fresh.has(d.id) ? fresh.get(d.id)! : d))
+      for (const [key, w] of Object.entries(waitsRef.current)) {
+        const row = fresh.get(w.topicId)
+        if (!row) continue
+        if (w.kind === 'summary' && !row.summaryInProgress) {
+          dropWait(key)
+          if (row.summarised_at && row.summarised_at !== w.before) setSummaryDrawer(row)
+          else setNotice(SUMMARY_FAILED)
+        }
+        if (w.kind === 'checklist' && !row.checklistInProgress) {
+          dropWait(key)
+          if (row.checklistId && row.checklistId !== w.before) { await loadChecklists(); await openChecklist(row.checklistId) }
+          else setNotice(CHECKLIST_FAILED)
+        }
+      }
+    }, 5000)
+    return () => clearInterval(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [watching, supabase])
 
   // ------------------------------------------------------------------ conversations
   async function openConversation(t: TopicRow) {
@@ -913,7 +996,9 @@ export default function CompliancePage() {
       const j = await res.json().catch(() => null)
       if (res.ok && j?.howto) {
         setDrawerItems((items) => items.map((i) => (i.id === item.id ? { ...i, howto: j.howto, howto_started_at: null } : i)))
-      } else if (res.status === 409) {
+      } else if (j?.status === 'researching') {
+        // 202 (this press started it; the work runs on the server after the reply — Stage 4) or 409
+        // (another click or tab holds it). Either way the page waits on the claim below.
         setDrawerItems((items) => items.map((i) => (i.id === item.id ? { ...i, howto_started_at: new Date().toISOString() } : i)))
       } else {
         setHowToError((e) => ({ ...e, [item.id]: j?.error ?? 'We could not look this up just now. Nothing was saved. Please try again.' }))
@@ -943,6 +1028,13 @@ export default function CompliancePage() {
         const f = fresh.get(i.id)
         return f ? { ...i, howto: f.howto, howto_started_at: f.howto_started_at } : i
       }))
+      // A claim that cleared with no result is a run that failed: said, not silently reset (Stage 4 —
+      // the research now runs after the reply, so this is where its failure reaches the page).
+      for (const f of fresh.values()) {
+        if (!f.howto && !f.howto_started_at) {
+          setHowToError((e) => ({ ...e, [f.id]: 'We could not look this up just now. Nothing was saved. Please try again.' }))
+        }
+      }
     }, 5000)
     return () => clearInterval(t)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1321,12 +1413,14 @@ export default function CompliancePage() {
                   <div className="no-print">
                     {hasAnswer && topicId && (
                       <div className="mt-[10px] flex flex-wrap items-center gap-5">
-                        <button onClick={() => setScopeFor(topicId)} disabled={busy}
+                        {/* Disabled the moment it is pressed, and while any run on this conversation is
+                            going, with the run's own words in place of the button's (Stage 4). */}
+                        <button onClick={() => setScopeFor(topicId)} disabled={busy || inProgress(topicId, 'checklist')}
                           className="text-[14px] font-medium text-[var(--green-ink)] hover:underline disabled:text-gray-300">
-                          Turn this into a checklist
+                          {inProgress(topicId, 'checklist') ? CLAIM_WORDS.checklist : 'Turn this into a checklist'}
                         </button>
-                        <button onClick={() => summarise(topicId)} disabled={busy} className={TEXT_ACTION}>
-                          Summarise this conversation
+                        <button onClick={() => summarise(topicId)} disabled={busy || inProgress(topicId, 'summary')} className={TEXT_ACTION}>
+                          {inProgress(topicId, 'summary') ? CLAIM_WORDS.summary : 'Summarise this conversation'}
                         </button>
                         {/* The shared print frame (board 10), the same path the drawers take — not a copy. */}
                         <button onClick={() => printWithFrame({ company: companyName ?? '', type: 'Conversation' })}
@@ -1463,8 +1557,10 @@ export default function CompliancePage() {
                             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="shrink-0" aria-hidden="true"><path d="M21.4 11.05 12.25 20.2a5.5 5.5 0 0 1-7.78-7.78l9.19-9.19a3.67 3.67 0 0 1 5.18 5.18l-9.2 9.2a1.83 1.83 0 0 1-2.59-2.6l8.49-8.48" /></svg>
                             <span className="truncate">{t.firstDocumentName}{t.documentCount > 1 ? ` +${t.documentCount - 1}` : ''}</span>
                           </span>)
-                        parts.push(summaryWords(t))
-                        if (t.checklistId) parts.push(`Checklist ${t.checklistDone} of ${t.checklistTotal} done`)
+                        // A RUN GOING SAYS SO, IN THE ROW'S OWN LINE — Workspace Stage 4.
+                        parts.push(inProgress(t, 'summary') ? CLAIM_WORDS.summary : summaryWords(t))
+                        if (inProgress(t, 'checklist')) parts.push(CLAIM_WORDS.checklist)
+                        else if (t.checklistId) parts.push(`Checklist ${t.checklistDone} of ${t.checklistTotal} done`)
                         return (
                           <div key={t.id} className="group -mx-3 flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 transition-colors hover:bg-white">
                             <button onClick={() => setSummaryDrawer(t)} className="min-w-0 flex-1 text-left">
@@ -1580,7 +1676,11 @@ export default function CompliancePage() {
           {/* A full-height column, so the facts line below can sit at the foot of the drawer,
               directly above its footer, however short the summary is (`mt-auto`). */}
           <div className="flex min-h-full flex-col">
-          {drawerReport ? (
+          {inProgress(summaryDrawer, 'summary') ? (
+            // A SUMMARY BEING WRITTEN — Workspace Stage 4. The line in place of the body; the poll
+            // replaces it with the report when the claim clears.
+            <p className="text-[12px] text-gray-500">{CLAIM_WORDS.summary}</p>
+          ) : drawerReport ? (
             // Keyed by the topic: a new drawer is a new mount, so every open starts folded (Stage 2).
             <ReportView key={summaryDrawer.id} report={drawerReport} factsLine={factsLine} />
           ) : summaryDrawer.summary ? (

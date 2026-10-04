@@ -415,6 +415,22 @@ if (!(await reachable())) {
 
   }
 
+  // WORKSPACE STAGE 4 — the conversation's claim flags and results, read as the user from topic_list_v.
+  async function claimState(topicId) {
+    const { data } = await asUser.from('topic_list_v')
+      .select('summarised_at, checklist_id, summary_in_progress, checklist_in_progress').eq('id', topicId).maybeSingle()
+    return data ?? null
+  }
+  async function waitForClaim(topicId, kind, limitMs = 600_000) {
+    const flag = kind === 'summary' ? 'summary_in_progress' : 'checklist_in_progress'
+    for (const until = Date.now() + limitMs; Date.now() < until;) {
+      await new Promise((r) => setTimeout(r, 3000))
+      const st = await claimState(topicId)
+      if (st && !st[flag]) return st
+    }
+    return null
+  }
+
   // CONVERSION: scope=discussed may cite ONLY what the conversation cited.
   if (want('convert') && convoTopic) {
     const norm = (u) => { try { const x = new URL(u); return (x.origin + x.pathname).replace(/\/+$/, '').toLowerCase() } catch { return String(u ?? '').toLowerCase() } }
@@ -422,12 +438,19 @@ if (!(await reachable())) {
     const citedSet = new Set((turnRows ?? []).flatMap((r) => (r.sources ?? []).map((s) => norm(s.url))))
 
     for (const scope of ['discussed', 'complete']) {
+      // WORKSPACE STAGE 4: the route claims the conversation, answers 202 at once and builds the
+      // checklist after the reply. So this waits for the claim to clear and reads the newest checklist.
+      const before = await claimState(convoTopic)
       const res = await fetch(`${BASE}/api/checklists/from-topic`, { method: 'POST', headers: auth,
         body: JSON.stringify({ topicId: convoTopic, scope }) })
       const j = await res.json().catch(() => null)
-      if (!res.ok) { console.log(`  ✗ convert ${scope.padEnd(10)} ${res.status} ${j?.error ?? ''}`); failures++; continue }
+      if (res.status !== 202) { console.log(`  ✗ convert ${scope.padEnd(10)} ${res.status} ${j?.error ?? ''} (expected 202 started)`); failures++; continue }
+      const after = await waitForClaim(convoTopic, 'checklist')
+      if (!after || !after.checklist_id || after.checklist_id === before?.checklist_id) {
+        console.log(`  ✗ convert ${scope.padEnd(10)} the claim cleared with no new checklist`); failures++; continue
+      }
       const { data: items } = await asUser
-        .from('checklist_items').select('origin, source_url').eq('checklist_id', j.checklistId)
+        .from('checklist_items').select('origin, source_url').eq('checklist_id', after.checklist_id)
       const outside = (items ?? []).filter((i) => i.source_url && !citedSet.has(norm(i.source_url)))
       const origins = (items ?? []).reduce((m, i) => ((m[i.origin ?? 'null'] = (m[i.origin ?? 'null'] || 0) + 1), m), {})
       if (scope === 'discussed') {
@@ -772,13 +795,17 @@ if (!(await reachable())) {
 
     // POST /api/topics/<id>/summarise — "Summarise this". It must mark the summary as the
     // user's, or tonight's job would replace a summary somebody deliberately asked for.
+    // Workspace Stage 4: 202 at once, the summary written after the reply; wait for the claim to clear.
+    const sBefore = await claimState(convoTopic)
     const sres = await fetch(`${BASE}/api/topics/${convoTopic}/summarise`, { method: 'POST', headers: auth })
     const sj = await sres.json().catch(() => null)
-    if (!sres.ok || !sj?.summary) { console.log(`  ✗ summarise           ${sres.status} ${sj?.error ?? ''}`); failures++ }
-    else {
-      const { data: t } = await asUser.from('topics').select('summary_source').eq('id', convoTopic).maybeSingle()
+    const sAfter = sres.status === 202 ? await waitForClaim(convoTopic, 'summary') : null
+    if (sres.status !== 202 || !sAfter?.summarised_at || sAfter.summarised_at === sBefore?.summarised_at) {
+      console.log(`  ✗ summarise           ${sres.status} ${sj?.error ?? ''} (no new summary after the claim cleared)`); failures++
+    } else {
+      const { data: t } = await asUser.from('topics').select('summary_source, summary').eq('id', convoTopic).maybeSingle()
       if (t?.summary_source !== 'user') { console.log(`  ✗ summarise           summary_source is ${t?.summary_source}, expected user`); failures++ }
-      else console.log(`  ✓ summarise           ${sj.summary.length} chars, summary_source=user`)
+      else console.log(`  ✓ summarise           ${String(t.summary ?? '').length} chars, summary_source=user`)
     }
   }
 

@@ -22,6 +22,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 // and keeps its own copy of the two display strings — pinned to these by tests/unit/summaryReport.test.ts.
 import { askAIJson } from './ai.ts'
 import { summaryReportPrompt, SUMMARY_PROMPT_ASKS_FOR_BASIS } from '../prompts/summary-report.ts'
+import { guardSummaryWrite, CLAIM_COLUMN } from './topicClaim.ts'
 
 export interface TurnLike {
   /** The turn's row id, when it has one; a fact's proposal points at the turn its quote came from. */
@@ -403,7 +404,15 @@ export async function summariseTopic(db: Db, admin: Db, args: {
   source: 'user' | 'nightly'; today?: string
   /** Columns only the nightly job sets beside the summary (`idle_at`, `extracted_at`). */
   extra?: Record<string, unknown>
-}): Promise<{ ok: true; report: SummaryReport; checks: ItemCheck[]; proposed: number } | { ok: false; error: string }> {
+  /**
+   * THE CONDITIONAL SAVE — Workspace Stage 4 (`lib/topicClaim.ts`). The claim this run holds and the
+   * `summarised_at` it read. The update matches only while both are unchanged, and clears the claim
+   * in the same statement; no match means another run's work landed or took over, so nothing is
+   * written, no fact is proposed, and `skipped` says why.
+   */
+  guard: { claimedAt: string; summarisedAt: string | null }
+}): Promise<{ ok: true; report: SummaryReport; checks: ItemCheck[]; proposed: number }
+  | { ok: false; error: string; skipped?: true }> {
   const today = args.today ?? new Date().toISOString().slice(0, 10)
   const { transcript } = numberedTranscript(args.turns)
   const raw = await askAIJson<unknown>(
@@ -416,15 +425,22 @@ export async function summariseTopic(db: Db, admin: Db, args: {
   )
   const checked = checkReport(raw, args.turns, today, { basisRequired: SUMMARY_PROMPT_ASKS_FOR_BASIS })
   if (!checked.ok) return checked
-  const { error } = await db.from('topics').update({
+  const { data: written, error } = await guardSummaryWrite(db.from('topics').update({
     summary_report: checked.report,
     summary: renderPlainText(checked.report),
     title: checked.report.title,
     summarised_at: new Date().toISOString(),
     summary_source: args.source,
+    // The claim ends with the write, in the same statement, so no reader ever sees the summary
+    // landed and the claim still held, or the claim gone and the summary not yet there.
+    [CLAIM_COLUMN.summary]: null,
     ...(args.extra ?? {}),
-  }).eq('id', args.topicId)
+  }).eq('id', args.topicId), args.guard).select('id')
   if (error) throw new Error(`writing the summary: ${error.message}`)
+  if (!written?.length) {
+    return { ok: false, skipped: true,
+      error: 'the conversation changed while this summary was written (another summary landed, or this run lost its claim); nothing was written' }
+  }
 
   // THE FACTS, PROPOSED — never written (§108). *** THE SERVICE ROLE, AS A NAMED STATEMENT
   // (CLAUDE.md §3.6). *** `authenticated` holds no INSERT on fact_proposals (migration 034), on purpose:
@@ -435,9 +451,14 @@ export async function summariseTopic(db: Db, admin: Db, args: {
   if (pErr) throw new Error(`reading pending proposals: ${pErr.message}`)
   const rows = proposalsToInsert(checked.report.facts, pending ?? [], args.turns,
     { topicId: args.topicId, companyId: args.companyId })
-  if (rows.length) {
-    const { error: iErr } = await admin.from('fact_proposals').insert(rows)
-    if (iErr) throw new Error(`writing proposals: ${iErr.message}`)
+  // ONE ROW AT A TIME, AND A DUPLICATE IS NOT AN ERROR. Migration 065's unique index is the guarantee
+  // the read above cannot give on its own (two writers can both read "none pending"); a row it refuses
+  // (23505) is a proposal already waiting, which is the outcome the read was trying to reach anyway.
+  let proposed = 0
+  for (const row of rows) {
+    const { error: iErr } = await admin.from('fact_proposals').insert(row)
+    if (iErr && iErr.code !== '23505') throw new Error(`writing proposals: ${iErr.message}`)
+    if (!iErr) proposed++
   }
-  return { ...checked, proposed: rows.length }
+  return { ...checked, proposed }
 }

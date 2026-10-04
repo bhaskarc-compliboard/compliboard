@@ -3333,6 +3333,7 @@ export type Database = {
       }
       topics: {
         Row: {
+          checklist_started_at: string | null
           closed_at: string | null
           company_id: string
           created_at: string
@@ -3347,10 +3348,12 @@ export type Database = {
           summary: string | null
           summary_report: Json | null
           summary_source: string | null
+          summary_started_at: string | null
           title: string
           updated_at: string
         }
         Insert: {
+          checklist_started_at?: string | null
           closed_at?: string | null
           company_id: string
           created_at?: string
@@ -3365,10 +3368,12 @@ export type Database = {
           summary?: string | null
           summary_report?: Json | null
           summary_source?: string | null
+          summary_started_at?: string | null
           title: string
           updated_at?: string
         }
         Update: {
+          checklist_started_at?: string | null
           closed_at?: string | null
           company_id?: string
           created_at?: string
@@ -3383,6 +3388,7 @@ export type Database = {
           summary?: string | null
           summary_report?: Json | null
           summary_source?: string | null
+          summary_started_at?: string | null
           title?: string
           updated_at?: string
         }
@@ -3656,6 +3662,7 @@ export type Database = {
         Row: {
           checklist_done: number | null
           checklist_id: string | null
+          checklist_in_progress: boolean | null
           checklist_total: number | null
           company_id: string | null
           created_at: string | null
@@ -3668,6 +3675,7 @@ export type Database = {
           question_count: number | null
           summarised_at: string | null
           summary: string | null
+          summary_in_progress: boolean | null
           summary_source: string | null
           title: string | null
           turn_count: number | null
