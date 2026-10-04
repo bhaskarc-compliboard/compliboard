@@ -30,11 +30,41 @@ import { EXAMPLE_QUESTIONS } from '@/config/examples'
 import { displaySource } from '@/lib/sourceTitle'
 import { readAnswerStream, ndjsonLines } from '@/lib/answerStream'
 import { DOCUMENTS_BUCKET } from '@/lib/storage'
+import { ACCEPTED_FILE_TYPES } from '@/lib/acceptedFiles'
+import DocumentReport from '@/components/DocumentReport'
 import {
   conversationStatus, progressLabel, progressPercent, friendlyDate,
 } from '@/lib/conversationStatus'
 
 type Tab = 'ask' | 'conversations' | 'checklists'
+
+/**
+ * THE STAGES OF A QUESTION SENT WITH A FILE — Workspace Task 4, board 3. Each is shown while it is
+ * TRUE, driven by the request it names, never by a timer:
+ *   save   the storage upload and POST /api/documents
+ *   read   POST /api/document-scan, awaited
+ *   check  POST /api/chat, until the first answer text arrives
+ *   write  while that text streams
+ */
+type Step = 'save' | 'read' | 'check' | 'write'
+
+/** A file the person has chosen and not yet sent — held in page memory only. */
+type Staged =
+  | { kind: 'new'; file: File; name: string }
+  /** Arriving from Documents' "Research this": already saved and read, so nothing to upload. */
+  | { kind: 'saved'; id: string; name: string }
+
+/** The file that went with a question, as its card shows it. */
+interface Attachment {
+  documentId: string | null
+  name: string
+  kind: string | null
+  folder: string | null
+  /** True once the scan has read it, or when it was read before (arriving, or a reopened turn). */
+  read: boolean
+  /** The turn names a document that has since been deleted from Documents (migration 039 keeps the name). */
+  deleted?: boolean
+}
 
 /** One exchange on screen. `text` grows as the stream arrives. */
 interface Exchange {
@@ -46,6 +76,12 @@ interface Exchange {
   phase: 'sending' | 'searching' | 'writing' | 'done' | 'stopped' | 'stopped_early' | 'failed'
   searches: number
   error?: string
+  /** The file sent with this question, and its card once read — Workspace Task 4. */
+  attachment?: Attachment
+  /** The stages still to show, and the one that is true now. Gone when the answer finishes. */
+  steps?: { list: Step[]; at: Step }
+  /** After Stop during the file's stages: what is true about the file, said instead of the usual line. */
+  stopNote?: string
   file?: {
     name: string; kind: string; classification: string | null; folder: string | null
     unreadable: boolean; failure?: string
@@ -135,14 +171,16 @@ export default function CompliancePage() {
   const [companyId, setCompanyId] = useState<string | null>(null)
   const [companyName, setCompanyName] = useState<string | null>(null)
   /**
-   * THE FILE JUST ATTACHED, WAITING FOR THE QUESTION THAT GOES WITH IT — §129.
+   * THE FILE CHOSEN AND NOT YET SENT — Workspace Task 4, board 2.
    *
-   * An attach almost always comes BEFORE the question about it, and until Fix Round 2 the file
-   * went to Documents and nowhere else: the next research call carried no trace of it and the
-   * model said no file had come through. Only the ID is held, not the `File` — the route loads
-   * the bytes from storage, so this still works after a reload and on a reopened conversation.
+   * Choosing a file only STAGES it, here, in page memory: nothing is uploaded, no `documents` row
+   * is written and nothing is read until the question is sent. It used to be uploaded and scanned
+   * the moment it was picked (`onFilePicked`, `docs/WORKSPACE-MACHINERY.md` 4b), so a file chosen
+   * by mistake was already in Documents, already paid for, and its facts already in the queue. One
+   * file at a time; choosing another replaces it. A staged file does not start the conversation, so
+   * the first visit keeps "Make a checklist" and "Research this" (machinery N4).
    */
-  const [pendingDoc, setPendingDoc] = useState<{ id: string; name: string } | null>(null)
+  const [staged, setStaged] = useState<Staged | null>(null)
 
   /**
    * ARRIVING FROM A GAP — Documents Run 5, and this is the whole change to this page.
@@ -151,10 +189,9 @@ export default function CompliancePage() {
    * question and the document attached, because retyping the gap and re-finding the file is the
    * work the link exists to save.
    *
-   * Two URL parameters, read once on load: `?ask=` fills the composer, `?document=` attaches by
-   * id through the SAME `pendingDoc` the paperclip sets, so the research call carries it by the
-   * path that already exists. Nothing else here changes — no new state, no new attach flow, no
-   * change to how a question is sent.
+   * Two URL parameters, read once on load: `?ask=` fills the composer, `?document=` stages the
+   * document by id as a chip (Task 4). It is already saved and read, so sending it shows only the
+   * last two stages; nothing is uploaded again.
    *
    * `window.location.search` rather than `useSearchParams()` deliberately: the hook would need
    * this page wrapped in a Suspense boundary it does not have, and restructuring the workspace's
@@ -172,7 +209,7 @@ export default function CompliancePage() {
         if (!res.ok) return
         const json = await res.json()
         const row = (json.documents ?? []).find((d: { document_id: string }) => d.document_id === documentId)
-        if (row) setPendingDoc({ id: documentId, name: row.file_name ?? row.title })
+        if (row) setStaged({ kind: 'saved', id: documentId, name: row.file_name ?? row.title })
       })()
     }
     // The parameters are consumed: a reload should not re-fill a composer somebody has cleared.
@@ -197,6 +234,14 @@ export default function CompliancePage() {
   const [summaryDrawer, setSummaryDrawer] = useState<TopicRow | null>(null)
   const [listDrawer, setListDrawer] = useState<{ row: ChecklistRow; items: ItemRow[] } | null>(null)
   const [scopeFor, setScopeFor] = useState<string | null>(null)
+  /**
+   * THE DOCUMENTS REPORT, OPENED FROM A FILE CARD — Workspace Task 4, board 4. The same component
+   * `/documents` opens (`app/documents/page.tsx`, the `<DocumentReport` mount), handed the same
+   * props; nothing inside it changed. It needs the company's folder list for its filing control,
+   * which this page does not otherwise hold, so it is read when the report opens.
+   */
+  const [reportDoc, setReportDoc] = useState<string | null>(null)
+  const [reportFolders, setReportFolders] = useState<Array<{ id: string; name: string }>>([])
   /**
    * WHAT IS BEING DELETED, IN THE PAGE'S OWN CONFIRMATION — Workspace Task 3, board 7. It was the
    * browser's `confirm()`, a pop-up that offered no way to keep a copy first; the owner rejected it.
@@ -332,18 +377,140 @@ export default function CompliancePage() {
   const patch = (id: string, p: Partial<Exchange>) =>
     setExchanges((prev) => prev.map((x) => (x.id === id ? { ...x, ...p } : x)))
 
+  /** Copy the document's current kind and folder onto the cards that show it — one read for all. */
+  async function cardInfo(ids: string[]): Promise<Record<string, { kind: string | null; folder: string | null; title: string | null }>> {
+    if (!ids.length) return {}
+    const { data } = await supabase.from('document_index_v')
+      .select('document_id, kind, folder_name, title').in('document_id', ids)
+    return Object.fromEntries(((data ?? []) as Array<{ document_id: string; kind: string | null; folder_name: string | null; title: string | null }>)
+      .map((r) => [r.document_id, { kind: r.kind, folder: r.folder_name, title: r.title }]))
+  }
+
+  /**
+   * STEP 1 — SAVE. Storage, then the `documents` row, exactly as the old attach did (it moved here
+   * from the picker). `from_topic_id` is the open conversation or null, as before; the chat route
+   * back-fills it when the turn is saved (`app/api/chat/route.ts`, the `attached` back-fill).
+   */
+  async function saveFile(file: File): Promise<{ id: string } | { failure: string }> {
+    if (!companyId) return { failure: 'We could not tell which company you are signed in to, so the file was not saved. Reload the page and try again.' }
+    const path = `${companyId}/compliance/${Date.now()}-${file.name.replace(/[^\w.\-]/g, '_')}`
+    const { error: upErr } = await supabase.storage.from(DOCUMENTS_BUCKET).upload(path, file)
+    if (upErr) return { failure: `We could not upload ${file.name} — the transfer did not complete on our side.` }
+    const res = await fetch('/api/documents', {
+      method: 'POST',
+      headers: await authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ name: file.name, file_url: path, file_type: file.type, file_size: file.size, from_topic_id: topicId || null }),
+    })
+    const j = await res.json().catch(() => null)
+    if (!res.ok || !j?.id) return { failure: `${file.name} reached us but could not be saved to your documents.` }
+    return { id: String(j.id) }
+  }
+
+  /**
+   * STEP 2 — READ. `/api/document-scan`, awaited. *** NO ABORT SIGNAL IS PASSED, ON PURPOSE. ***
+   * The route reads nothing of the request's signal (`app/api/document-scan/route.ts`) and neither
+   * does the scan (`lib/documentScan.ts`, the `askAIWithCitations` call), and §138 records what an
+   * abandoned scan request did on production: the reading was lost and the document could be left
+   * "Reading…". So Stop does not cut this request; the page stops WAITING for it, and says so.
+   */
+  async function readFile(documentId: string): Promise<{ ok: true } | { ok: false; reason: string }> {
+    try {
+      const res = await fetch('/api/document-scan', {
+        method: 'POST',
+        headers: await authHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ document_id: documentId }),
+      })
+      const scan = await res.json().catch(() => null)
+      if (res.ok && scan?.status !== 'could_not_read') return { ok: true }
+      const said = scan?.could_not_read
+      return {
+        ok: false,
+        reason: said?.reason
+          ? `It is saved to Documents, but ${said.reason.charAt(0).toLowerCase()}${said.reason.slice(1)}${said.way_forward ? ` ${said.way_forward}` : ''}`
+          : 'It is saved to Documents, but we could not read it well enough to rely on. A photo taken square-on in good light would do it, or the original PDF if you have one.',
+      }
+    } catch {
+      return { ok: false, reason: 'It is saved to Documents, but we could not read it just now. Try again in a moment.' }
+    }
+  }
+
   async function ask(question: string, mode: 'research' | 'checklist') {
     const q = question.trim()
     if (!q || busy) return
+    const file = staged
     setBox('')
     setNotice(null)
     const id = `x${Date.now()}`
-    setExchanges((prev) => [...prev, { id, question: q, text: '', sources: [], phase: 'sending', searches: 0 }])
+    // The stages this question will really go through. A file already in Documents skips the first
+    // two; the checklist path answers in one piece, so it has no "writing" stage.
+    const tail: Step[] = mode === 'research' ? ['check', 'write'] : ['check']
+    const list: Step[] = !file ? [] : file.kind === 'new' ? ['save', 'read', ...tail] : tail
+    setExchanges((prev) => [...prev, {
+      id, question: q, text: '', sources: [], phase: 'sending', searches: 0,
+      attachment: file ? { documentId: file.kind === 'saved' ? file.id : null, name: file.name, kind: null, folder: null, read: file.kind === 'saved' } : undefined,
+      steps: list.length ? { list, at: list[0] } : undefined,
+    }])
+    // The file now belongs to this question, whatever happens to it.
+    setStaged(null)
     setBusy(true)
     const controller = new AbortController()
     inFlight.current = controller
+    const at = (step: Step) => patch(id, { steps: { list, at: step } })
+    let documentId: string | null = file?.kind === 'saved' ? file.id : null
+    let read = file?.kind === 'saved'
 
     try {
+      if (file?.kind === 'new') {
+        // ---- 1. SAVE. Stop is honoured only once the save has finished: a half-made upload with
+        // no `documents` row would be a stored file nobody can see.
+        const saved = await saveFile(file.file)
+        if ('failure' in saved) {
+          patch(id, { phase: 'failed', steps: undefined, error: saved.failure })
+          // Nothing was asked. The question and the file go back, so trying again is one click.
+          setBox(q); setStaged(file)
+          return
+        }
+        documentId = saved.id
+        patch(id, { attachment: { documentId, name: file.name, kind: null, folder: null, read: false } })
+        if (controller.signal.aborted) {
+          patch(id, { phase: 'stopped', steps: undefined,
+            stopNote: 'Stopped. The file is saved in Documents but was not read. Your question was not sent.' })
+          return
+        }
+
+        // ---- 2. READ.
+        at('read')
+        const STOPPED = Symbol('stopped')
+        const whenStopped = new Promise<typeof STOPPED>((resolve) =>
+          controller.signal.addEventListener('abort', () => resolve(STOPPED), { once: true }))
+        const outcome = await Promise.race([readFile(documentId), whenStopped])
+        if (outcome === STOPPED) {
+          patch(id, { phase: 'stopped', steps: undefined,
+            stopNote: 'Stopped. Your question was not sent. The file is saved in Documents and is still being read there.' })
+          return
+        }
+        if (!outcome.ok) {
+          // *** IT STOPS BEFORE ASKING. *** A question about a file nobody could read would get an
+          // answer about nothing. The card says why, in the scan's own words; the question goes back
+          // in the box; the file is not staged again — a clearer copy is the way on.
+          setExchanges((prev) => prev.map((x) => (x.id === id ? {
+            id, question: '', text: '', sources: [], phase: 'done' as const, searches: 0,
+            file: { name: file.name, kind: (file.name.split('.').pop() ?? 'file').toUpperCase(),
+              classification: null, folder: null, unreadable: true, failure: outcome.reason },
+          } : x)))
+          setBox(q)
+          return
+        }
+        read = true
+      }
+
+      if (documentId) {
+        const info = (await cardInfo([documentId]))[documentId]
+        patch(id, { attachment: { documentId, name: file!.name, kind: info?.kind ?? null, folder: info?.folder ?? null, read } })
+      }
+
+      // ---- 3. CHECK, then 4. WRITE.
+      if (list.length) at('check')
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: await authHeaders({ 'Content-Type': 'application/json' }),
@@ -355,27 +522,22 @@ export default function CompliancePage() {
           // never retrieved — which is false, and the summariser then archives the claim (§127).
           history: exchanges.filter((x) => x.phase === 'done' && x.text && !x.file)
             .map((x) => ({ question: x.question, answer: x.text, sources: x.sources })),
-          // The attachment travels with the question it belongs to (§129). Sent once: the
-          // route persists the link on the turn, and later turns are served from that.
-          documentId: pendingDoc?.id ?? null,
+          // The attachment travels with the question it belongs to (§129), exactly as before: the
+          // route stores `document_id` and `document_name` on the turn (migration 039) and reads
+          // the file from storage itself.
+          documentId,
         }),
       })
-
-      // The route saves the user turn — with the document link on it — before it streams, so
-      // once the response is here the attachment is persisted and this can be cleared. Clearing
-      // it before the request would lose the link if the send failed; never clearing it would
-      // attach the same file to every later question.
-      if (res.ok) setPendingDoc(null)
 
       // The checklist path answers with one JSON body, not a stream.
       if (!(res.headers.get('content-type') ?? '').includes('x-ndjson')) {
         const json = await res.json().catch(() => null)
         if (!res.ok) {
-          patch(id, { phase: 'failed', error: json?.error ?? 'That request could not be completed.' })
+          patch(id, { phase: 'failed', steps: undefined, error: json?.error ?? 'That request could not be completed.' })
           return
         }
         if (json?.topicId) setTopicId(String(json.topicId))
-        patch(id, { phase: 'done', text: `**${json?.title ?? 'Checklist'}** — saved to your checklists.` })
+        patch(id, { phase: 'done', steps: undefined, text: `**${json?.title ?? 'Checklist'}** — saved to your checklists.` })
         await loadChecklists()
         return
       }
@@ -386,25 +548,26 @@ export default function CompliancePage() {
       // mid-sentence with no message at all (`DECISIONS.md` §127).
       const outcome = await readAnswerStream(
         ndjsonLines(res.body!.getReader()),
-        (p) => patch(id, { text: p.text, searches: p.searches, phase: p.phase }),
+        (p) => patch(id, { text: p.text, searches: p.searches, phase: p.phase,
+          ...(list.length && p.text ? { steps: { list, at: 'write' as Step } } : {}) }),
         () => controller.signal.aborted,
       )
       if (outcome.kind === 'done') {
-        patch(id, { text: outcome.text, sources: outcome.sources, phase: 'done' })
+        patch(id, { text: outcome.text, sources: outcome.sources, phase: 'done', steps: undefined })
         if (outcome.topicId) setTopicId(outcome.topicId)
       } else if (outcome.kind === 'stopped_by_user') {
-        patch(id, { text: outcome.text, phase: 'stopped' })
+        patch(id, { text: outcome.text, phase: 'stopped', steps: undefined })
       } else if (outcome.kind === 'stopped_early') {
-        patch(id, { text: outcome.text, phase: 'stopped_early' })
+        patch(id, { text: outcome.text, phase: 'stopped_early', steps: undefined })
       } else {
-        patch(id, { text: outcome.text, phase: 'failed', error: outcome.message })
+        patch(id, { text: outcome.text, phase: 'failed', steps: undefined, error: outcome.message })
       }
     } catch (err) {
       if ((err as { name?: string })?.name === 'AbortError') {
         // The person stopped it. Keep what arrived; say nothing that sounds like a fault.
-        setExchanges((prev) => prev.map((x) => (x.id === id ? { ...x, phase: 'stopped' } : x)))
+        setExchanges((prev) => prev.map((x) => (x.id === id ? { ...x, phase: 'stopped', steps: undefined } : x)))
       } else {
-        patch(id, { phase: 'failed', error: 'The answer could not be completed.' })
+        patch(id, { phase: 'failed', steps: undefined, error: 'The answer could not be completed.' })
       }
     } finally {
       inFlight.current = null
@@ -433,145 +596,15 @@ export default function CompliancePage() {
     setNotice(null)
   }
 
-  // ------------------------------------------------------------------ uploads
+  // ------------------------------------------------------------------ files
   /**
-   * A FILE ATTACHED IN THE CONVERSATION — Run 2 Task 5's client half, corrected in Fix Round 1.
-   *
-   * Storage → the existing `/api/documents` row → the reading. No parallel store.
-   *
-   * *** THE READING IS `/api/document-scan` NOW, NOT `/api/document-review` — Run 6. ***
-   * Two readings of one document have coexisted since Run 1 and this was the last place in the
-   * product still on the old one. It mattered here more than anywhere: a file attached in a
-   * conversation was classified by a path whose answer nothing else reads, so the Documents page
-   * showed it as "Queued" — never read — while this card claimed to have read it. Now the same
-   * scan runs whichever door the file comes in by, and the card is read back off
-   * `document_index_v`, which is the row the Documents page and the report drawer both show.
-   * One file, one reading, one set of words about it.
-   *
-   * It also sends JSON and a document id rather than the file a second time: the scan fetches
-   * the stored copy itself, so the upload is not paid for twice.
-   *
-   * *** A READING THAT FAILED IS NOT AN HTTP FAILURE. *** `/api/document-scan` answers 200 with
-   * `status: 'could_not_read'` and a reason written for a person, which is the whole point of
-   * that route (§5.1). So the branch below reads the STATUS, not `res.ok`, and shows the scan's
-   * own sentence instead of the generic one this page used to guess at.
-   *
-   * *** TWO THINGS HERE WERE WRONG IN RUN 3 AND ARE FIXED, BOTH MINE. ***
-   *   · The bucket was named `documents`; it is `company-documents`. `lib/storage.ts` now holds
-   *     the name once so a sixth spelling cannot happen.
-   *   · The old review route took **multipart/form-data with the file itself**, not JSON. It
-   *     answered 500 — `Content-Type was not one of "multipart/form-data"` — and the page read
-   *     that as "we could not read your file", which blamed the document for our own mistake.
-   *
-   * EVERY FAILURE APPEARS IN THE CONVERSATION, at the point of the attach, never as a banner at
-   * the top of the page: the person attached a file at a place in the conversation, and that is
-   * where the answer about it belongs.
+   * CHOOSING A FILE STAGES IT — Workspace Task 4, board 2. That is all: no upload, no row, no
+   * reading. `ask()` does those, in order and on screen, when the question is sent. The old
+   * `onFilePicked` uploaded and scanned at the moment of picking (`docs/WORKSPACE-MACHINERY.md` 4b).
    */
-  async function onFilePicked(file: File) {
-    const id = `f${Date.now()}`
-    const card = (patchCard: Partial<NonNullable<Exchange['file']>>, note?: string) =>
-      setExchanges((prev) => [...prev, {
-        id, question: `Attached ${file.name}`, text: note ?? '', sources: [], phase: 'done' as const, searches: 0,
-        file: {
-          name: file.name,
-          kind: (file.name.split('.').pop() ?? 'file').toUpperCase(),
-          classification: null, folder: null, unreadable: false, ...patchCard,
-        },
-      }])
-
-    if (!companyId) {
-      card({ unreadable: true, failure: 'We could not tell which company you are signed in to, so the file was not saved. Reload the page and try again.' })
-      return
-    }
-
-    setWorking(`Uploading ${file.name}…`)
-    try {
-      const path = `${companyId}/compliance/${Date.now()}-${file.name.replace(/[^\w.\-]/g, '_')}`
-      const { error: upErr } = await supabase.storage.from(DOCUMENTS_BUCKET).upload(path, file)
-      if (upErr) {
-        card({ unreadable: true, failure: `We could not upload ${file.name} — the transfer did not complete on our side. Try again, or add it from the Documents screen.` })
-        return
-      }
-
-      const docRes = await fetch('/api/documents', {
-        method: 'POST',
-        headers: await authHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({
-          name: file.name, file_url: path, file_type: file.type, file_size: file.size,
-          from_topic_id: topicId || null,
-        }),
-      })
-      if (!docRes.ok) {
-        card({ unreadable: true, failure: `${file.name} reached us but could not be saved to your documents. Try again, or add it from the Documents screen.` })
-        return
-      }
-
-      // `/api/documents` answers `{ success: true }` and no id, so the row is read back by its
-      // path — RLS-scoped, so this can only find the caller's own.
-      const { data: doc } = await supabase
-        .from('documents').select('id, folder_id').eq('file_url', path).maybeSingle()
-
-      if (!doc?.id) {
-        card({ unreadable: true, failure: `${file.name} is saved, but we could not find its record again to read it. Open it from the Documents screen and it will be read there.` })
-        return
-      }
-
-      setWorking(`Reading ${file.name}…`)
-      const scanRes = await fetch('/api/document-scan', {
-        method: 'POST',
-        headers: await authHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ document_id: String(doc.id) }),
-      })
-      const scan = await scanRes.json().catch(() => null)
-
-      // *** THE LINE THE REBUILT PAGE WAS MISSING (§129). *** Uploading the file and filing it
-      // is not attaching it to the conversation. Holding the id here is what makes the next
-      // research call carry the document — and it happens whether or not the reading worked,
-      // because a document nobody could read is still the document being asked about.
-      setPendingDoc({ id: String(doc.id), name: file.name })
-
-      if (!scanRes.ok || scan?.status === 'could_not_read') {
-        // §5.1 — the file IS saved, so say so; assert NOTHING about contents nobody read; and
-        // offer the way on. The scan writes that sentence itself, per document, and it is better
-        // than anything this page could guess: it names the actual obstacle.
-        const said = scan?.could_not_read
-        card({
-          unreadable: true,
-          failure: said?.reason
-            ? `It is saved to Documents, but ${said.reason.charAt(0).toLowerCase()}${said.reason.slice(1)}${said.way_forward ? ` ${said.way_forward}` : ''}`
-            : `It is saved to Documents, but we could not read it well enough to rely on. A photo taken square-on in good light would do it, or the original PDF if you have one.`,
-        })
-        return
-      }
-
-      // THE CARD SAYS WHAT THE LIST SAYS. Read back off `document_index_v` — the same row the
-      // Documents page groups by and the report drawer opens — rather than off the scan's
-      // response, so a correction made later changes both places and neither can drift. The
-      // view is `security_invoker`, so this reads only the caller's own documents.
-      const { data: indexed } = await supabase
-        .from('document_index_v')
-        .select('title, kind, agencies, display_status, summary, folder_name')
-        .eq('document_id', String(doc.id)).maybeSingle()
-
-      const agencies = Array.isArray(indexed?.agencies)
-        ? (indexed.agencies as unknown[]).filter((a): a is string => typeof a === 'string' && !!a.trim())
-        : []
-      card({
-        classification: indexed?.kind ? (FILE_KIND_LABEL[indexed.kind] ?? indexed.kind) : null,
-        title: indexed?.title ?? null,
-        agency: agencies.join(' · ') || null,
-        status: indexed?.display_status ? (FILE_STATUS_WORD[indexed.display_status] ?? null) : null,
-        summary: indexed?.summary ?? null,
-        // The folder is only named when the document actually has one. Naming a folder nothing
-        // put it in would be the product asserting a filing that did not happen.
-        folder: doc?.folder_id ? (indexed?.folder_name ?? null) : null,
-      })
-    } catch (e) {
-      console.error('upload failed:', e)
-      card({ unreadable: true, failure: `Something went wrong saving ${file.name} on our side. Try again, or add it from the Documents screen.` })
-    } finally {
-      setWorking(null)
-    }
+  function stageFile(file: File) {
+    setStaged({ kind: 'new', file, name: file.name })
+    composerRef.current?.focus()
   }
 
   // ------------------------------------------------------------------ convert / summarise
@@ -625,15 +658,27 @@ export default function CompliancePage() {
       const res = await fetch(`/api/topics/${t.id}`, { headers: await authHeaders() })
       const j = await res.json().catch(() => null)
       if (!res.ok) { setNotice(j?.error ?? 'That conversation could not be opened. Please try again.'); return }
-      const turns = (j.turns ?? []) as Array<{ role: string; text: string; sources: AnswerSource[] | null; stopped: boolean }>
+      const turns = (j.turns ?? []) as Array<{ role: string; text: string; sources: AnswerSource[] | null; stopped: boolean
+        document_id: string | null; document_name: string | null }>
+      // THE CONVERSATION'S FILES COME BACK WITH IT — Workspace Task 4 (machinery N5). The turn
+      // stores the document's id and a copy of its name (migration 039); the card's kind and folder
+      // are read for every document of the conversation in ONE query, not one per turn. A turn whose
+      // id is gone (deleting a document sets it null) but whose name is kept is a deleted file.
+      const info = await cardInfo([...new Set(turns.map((t) => t.document_id).filter((d): d is string => !!d))])
       const rebuilt: Exchange[] = []
       for (let i = 0; i < turns.length; i++) {
         if (turns[i].role !== 'user') continue
         const answer = turns[i + 1]?.role === 'assistant' ? turns[i + 1] : null
+        const docId = turns[i].document_id
+        const docName = turns[i].document_name
         rebuilt.push({
           id: `r${i}`, question: turns[i].text,
           text: answer?.text ?? '', sources: answer?.sources ?? [],
           phase: turns[i].stopped ? 'stopped' : 'done', searches: 0,
+          attachment: docName ? {
+            documentId: docId, name: docName, read: !!docId, deleted: !docId,
+            kind: docId ? info[docId]?.kind ?? null : null, folder: docId ? info[docId]?.folder ?? null : null,
+          } : undefined,
         })
       }
       setExchanges(rebuilt)
@@ -641,6 +686,26 @@ export default function CompliancePage() {
       setSummaryDrawer(null)
       setTab('ask')
     } finally { setWorking(null) }
+  }
+
+  useEffect(() => {
+    if (!reportDoc) return
+    let live = true
+    ;(async () => {
+      const res = await fetch('/api/documents/index', { headers: await authHeaders() })
+      const j = res.ok ? await res.json().catch(() => null) : null
+      if (live) setReportFolders((j?.folders ?? []) as Array<{ id: string; name: string }>)
+    })()
+    return () => { live = false }
+  }, [reportDoc])
+
+  /** "Move to…" inside the report — the same request `/documents`' `moveTo` makes. */
+  async function moveDocument(documentId: string, folderId: string | null) {
+    await fetch('/api/documents', {
+      method: 'PATCH',
+      headers: await authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ id: documentId, folder_id: folderId }),
+    })
   }
 
   /** Opens the confirmation. Nothing is deleted until "Delete for good". */
@@ -870,7 +935,8 @@ export default function CompliancePage() {
           already cleared the value after a pick, as Audits' does, so the same file can be chosen
           twice. */}
       <input ref={fileInput} type="file" className="hidden"
-        onChange={(e) => { const f = e.target.files?.[0]; if (f) onFilePicked(f); e.target.value = '' }} />
+        accept={ACCEPTED_FILE_TYPES}
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) stageFile(f); e.target.value = '' }} />
       <style jsx global>{`
         @media print {
           .no-print { display: none !important; }
@@ -967,12 +1033,30 @@ export default function CompliancePage() {
                     question you have ever asked is not a state. */}
                 {x.file ? <FileCard file={x.file} onRetry={() => fileInput.current?.click()} /> : (
                   <div className="mb-5 flex justify-end">
-                    <p className="max-w-[85%] rounded-2xl bg-gray-200 px-4 py-3 text-[16px] leading-relaxed text-gray-900">{x.question}</p>
+                    <div className="max-w-[85%] rounded-2xl bg-gray-200 px-4 py-3 text-[16px] leading-relaxed text-gray-900">
+                      {/* The file that went with the question, named in the question itself (Task 4). */}
+                      {x.attachment && (
+                        <p className="mb-1 flex items-center gap-1.5 text-[13px] text-gray-600">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" className="shrink-0" aria-hidden="true"><path d="M21.4 11.05 12.25 20.2a5.5 5.5 0 0 1-7.78-7.78l9.19-9.19a3.67 3.67 0 0 1 5.18 5.18l-9.2 9.2a1.83 1.83 0 0 1-2.59-2.6l8.49-8.48" /></svg>
+                          <span className="truncate">{x.attachment.name}</span>
+                        </p>
+                      )}
+                      <p>{x.question}</p>
+                    </div>
                   </div>
                 )}
 
-                {(x.phase === 'sending' || x.phase === 'searching' || (x.phase === 'writing' && !x.text)) && (
+                {/* A question sent with a file shows its real stages; one without shows Working. */}
+                {x.steps ? (
+                  <Stages steps={x.steps} name={x.attachment?.name ?? 'the file'} onStop={stop} />
+                ) : (x.phase === 'sending' || x.phase === 'searching' || (x.phase === 'writing' && !x.text)) && (
                   <Working phase={x.phase} searches={x.searches} onStop={stop} />
+                )}
+
+                {/* THE FILE CARD, ABOVE THE ANSWER — Workspace Task 4, board 4. Once the stages are
+                    over and the file was read, or on a reopened turn. */}
+                {!x.steps && x.attachment && (x.attachment.read || x.attachment.deleted) && (
+                  <AttachedCard a={x.attachment} onOpen={(docId) => setReportDoc(docId)} />
                 )}
 
                 {/* NO CARD. The thing you read was inside a bordered white rectangle on a grey
@@ -998,7 +1082,13 @@ export default function CompliancePage() {
                 )}
                 {x.phase === 'stopped' && (
                   <p className="mt-2 text-[14px] text-gray-500">
-                    Stopped. {x.text ? 'What arrived is above — ' : ''}Ask again, or change the question.
+                    {/* After Stop during the file's own stages, the line says what is true about the
+                        file (`ask()`, Task 4). After Stop while the answer was coming, the file was
+                        already saved and read, and that is said too. */}
+                    {x.stopNote ?? <>
+                      Stopped. {x.attachment?.read ? 'The file is saved in Documents and was read. ' : ''}
+                      {x.text ? 'What arrived is above — ' : ''}Ask again, or change the question.
+                    </>}
                   </p>
                 )}
                 {x.phase === 'failed' && (
@@ -1020,20 +1110,21 @@ export default function CompliancePage() {
             */}
             <div className={`no-print ${started ? 'mt-8' : ''}`}>
               <div>
-                {/* WHAT IS COMING WITH THE QUESTION, SAID ON SCREEN — Documents Run 5.
-                    `pendingDoc` was set by the paperclip and read only when sending, so arriving
-                    from "Research this" filled the composer and attached the document with no
-                    sign of it anywhere. An attachment nobody can see is one they cannot remove
-                    and will not trust. The paperclip's own flow already draws a card in the
-                    conversation; this is the line for a document attached before there is one. */}
-                {pendingDoc && (
-                  <p className="mb-1.5 text-[12px] text-gray-500">
-                    Asking about <span className="text-gray-700">{pendingDoc.name}</span>
-                    <button onClick={() => setPendingDoc(null)}
-                      className="ml-2 text-gray-400 underline hover:text-gray-700">remove</button>
-                  </p>
-                )}
                 <div className="relative rounded-xl border border-gray-200 bg-white focus-within:border-[var(--green)]">
+                  {/* THE STAGED FILE, AS A CHIP IN THE BOX — Workspace Task 4, board 2. It replaces
+                      the "Asking about ‹name› remove" line above the box (Documents Run 5): the file
+                      sits where the question is written, and × leaves nothing anywhere, because
+                      nothing has been saved yet. `px-5` puts it on the x typed text starts on. */}
+                  {staged && (
+                    <div className="px-5 pt-3.5">
+                      <span className="inline-flex max-w-full items-center gap-1.5 rounded bg-gray-100 px-2 py-1 text-[13px] text-gray-700">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" className="shrink-0" aria-hidden="true"><path d="M21.4 11.05 12.25 20.2a5.5 5.5 0 0 1-7.78-7.78l9.19-9.19a3.67 3.67 0 0 1 5.18 5.18l-9.2 9.2a1.83 1.83 0 0 1-2.59-2.6l8.49-8.48" /></svg>
+                        <span className="truncate">{staged.name}</span>
+                        <button onClick={() => setStaged(null)} disabled={busy} aria-label="Remove the file" title="Remove the file"
+                          className="ml-0.5 shrink-0 text-gray-400 hover:text-gray-800 disabled:text-gray-300">×</button>
+                      </span>
+                    </div>
+                  )}
                   <div className="flex items-end gap-2 p-3.5">
                     <textarea
                       ref={composerRef}
@@ -1076,7 +1167,7 @@ export default function CompliancePage() {
                     plus the textarea's `px-1.5 py-1.5` (6), so "e.g." starts on the pixel typed
                     text starts on. Measured with `npm run measure`, not assumed.
                   */}
-                  {!started && !box && (
+                  {!started && !box && !staged && (
                     <div className="pointer-events-none absolute inset-0 flex flex-col gap-3 p-5">
                       {EXAMPLE_QUESTIONS.map((e) => (
                         <p key={e.label} className="truncate text-[14px] text-gray-400">e.g. {e.question}</p>
@@ -1461,6 +1552,30 @@ export default function CompliancePage() {
         </Sheet>
       )}
 
+      {/* THE DOCUMENTS REPORT — Workspace Task 4. Scrim at z-[45], drawer at z-50, as on /documents.
+          `onPickFile` is the one prop with no twin here: on /documents it opens that page's
+          uploader, and "Add a newer version" files the upload as a version of this document. This
+          page has no version upload, so a version request goes to Documents to be done there;
+          "Upload a clearer copy" and "Add the log" stage a file in this box instead. */}
+      {reportDoc && (
+        <>
+          <div className="no-print fixed inset-0 z-[45] bg-gray-900/30" onClick={() => setReportDoc(null)} />
+          <DocumentReport
+            documentId={reportDoc}
+            companyName={companyName}
+            onClose={() => setReportDoc(null)}
+            onChanged={loadChecklists}
+            folders={reportFolders}
+            onMove={moveDocument}
+            onPickFile={(versionOf) => {
+              setReportDoc(null)
+              if (versionOf) window.location.href = '/documents'
+              else fileInput.current?.click()
+            }}
+          />
+        </>
+      )}
+
       {/* THE PAGE'S OWN DELETE CONFIRMATION — Workspace Task 3, board 7. It replaces `confirm()`.
           It says what goes and what stays, and offers the copy first: "Download the summary" /
           "Download the checklist" print the drawer still open beneath it, exactly as the drawer's
@@ -1522,6 +1637,78 @@ function Working({ phase, searches, onStop }: { phase: string; searches: number;
   )
 }
 
+/** The words for each stage, as board 3 has them. */
+const stageWords = (step: Step, name: string) =>
+  step === 'save' ? 'Saving the file'
+    : step === 'read' ? `Reading ${name}`
+    : step === 'check' ? 'Checking it against your question'
+    : 'Writing the answer'
+
+/**
+ * THE STAGES, EACH SHOWN WHILE IT IS TRUE — Workspace Task 4, board 3. Done: a green tick and grey
+ * text. Now: a small spinner and dark text. Still to come: an empty circle and light grey. The
+ * stage moves only when the request it names moves (`ask()`); nothing here runs on a timer.
+ */
+function Stages({ steps, name, onStop }: { steps: { list: Step[]; at: Step }; name: string; onStop: () => void }) {
+  const at = steps.list.indexOf(steps.at)
+  return (
+    <div className="no-print mb-4">
+      <ol className="space-y-1.5">
+        {steps.list.map((step, i) => {
+          const state = i < at ? 'done' : i === at ? 'now' : 'next'
+          return (
+            <li key={step} className="flex items-center gap-2.5 text-[13px]">
+              <span className="flex w-3.5 shrink-0 justify-center">
+                {state === 'done' ? <span className="text-[12px] leading-none text-[var(--green)]">✓</span>
+                  : state === 'now' ? <span className="h-3 w-3 animate-spin rounded-full border-2 border-gray-300 border-t-emerald-600" />
+                  : <span className="h-3 w-3 rounded-full border border-gray-300" />}
+              </span>
+              <span className={state === 'done' ? 'text-gray-500' : state === 'now' ? 'text-gray-900' : 'text-gray-400'}>
+                {stageWords(step, name)}
+              </span>
+            </li>
+          )
+        })}
+      </ol>
+      <button onClick={onStop} className="mt-2 text-[12.5px] text-gray-400 underline hover:text-gray-700">Stop</button>
+    </div>
+  )
+}
+
+/**
+ * THE FILE CARD — Workspace Task 4, board 4. Above the answer, between hairlines, no box: what was
+ * read, what it was read as, where it is filed, and the report one click away. A file deleted from
+ * Documents since keeps its name (migration 039 stores it on the turn) and loses the button.
+ */
+function AttachedCard({ a, onOpen }: { a: Attachment; onOpen: (documentId: string) => void }) {
+  const kind = a.kind ? (FILE_KIND_LABEL[a.kind] ?? a.kind) : null
+  return (
+    <div className="mb-4 flex items-center justify-between gap-4 border-y border-gray-200 py-3">
+      <div className="flex min-w-0 items-start gap-2">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" className="mt-[3px] shrink-0 text-gray-500" aria-hidden="true"><path d="M21.4 11.05 12.25 20.2a5.5 5.5 0 0 1-7.78-7.78l9.19-9.19a3.67 3.67 0 0 1 5.18 5.18l-9.2 9.2a1.83 1.83 0 0 1-2.59-2.6l8.49-8.48" /></svg>
+        <div className="min-w-0">
+          {a.deleted ? (
+            <p className="truncate text-[14px]">
+              <span className="font-medium text-gray-900">{a.name}</span>
+              <span className="text-gray-500"> · This file was deleted from Documents</span>
+            </p>
+          ) : (
+            <>
+              <p className="truncate text-[14px] font-medium text-gray-900">{a.name}</p>
+              <p className="mt-0.5 text-[12px] text-gray-500">
+                {['Read', kind, a.folder ? `Saved to Documents → ${a.folder}` : 'Saved to Documents'].filter(Boolean).join(' · ')}
+              </p>
+            </>
+          )}
+        </div>
+      </div>
+      {!a.deleted && a.documentId && (
+        <button onClick={() => onOpen(a.documentId!)} className={`shrink-0 ${OUTLINE}`}>Open the report</button>
+      )}
+    </div>
+  )
+}
+
 /**
  * THE WORDS THE DOCUMENTS PAGE USES, FOR THE CARD THAT NOW READS THE SAME ROW — Run 6.
  *
@@ -1537,11 +1724,6 @@ const FILE_KIND_LABEL: Record<string, string> = {
 }
 /** The four that ask something of somebody. The rest are information and stay grey. */
 const FILE_ATTENTION = new Set(['Needs work', 'Expiring', 'Expired', 'Could not read'])
-const FILE_STATUS_WORD: Record<string, string> = {
-  needs_work: 'Needs work', expiring: 'Expiring', expired: 'Expired',
-  could_not_read: 'Could not read', not_yet_read: 'Queued',
-  current: 'Current', recorded: 'Recorded', on_file: 'On file',
-}
 
 function FileCard({ file, onRetry }: { file: NonNullable<Exchange['file']>; onRetry: () => void }) {
   return (
