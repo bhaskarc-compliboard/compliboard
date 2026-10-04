@@ -157,6 +157,23 @@ untested — applies to the runner as much as to anything it runs.
 
 ---
 
+## Manual set — Workspace Stage 4 — 4 October 2026 (`docs/HANDOFF-WORKSPACE.md`, the Stage 4 note)
+
+**One press, one call, and work that survives leaving the page — commit `cfe1889`, migration 065.** `DECISIONS.md` §161.
+
+> ### MIGRATION 065 MUST BE ON PRODUCTION BEFORE THE PUSH (`npm run db:migrate:prod`).
+> The Conversations list reads `summary_in_progress` and `checklist_in_progress` from `topic_list_v`.
+> Pushed without the migration, that read fails and **the list shows no conversations**. Hard-reload
+> first (Cmd+Shift+R). S4-1 is free; S4-2 is the one paid production check; S4-3 is on staging.
+
+| # | Action | Steps | What must be true |
+|---|---|---|---|
+| **S4-1** | **Nothing is "being written" when nothing is** *(production, live, free)* | **Conversations** → read every row; open two drawers, one summarised and one not | Every row reads *Summary ready* or *Not summarised yet* as before; **no row says *Summary being written…* or *Checklist being built…***. The drawers read as before. *(A row saying it while nothing runs means a claim was left set; it clears itself after ten minutes.)* |
+| **S4-2** | **Summarise, then close the tab at once** *(production, PAID, owner only)* | Open a real conversation that is **not** summarised yet → **Summarise this conversation** → watch the button for a second → **close the tab immediately**. Wait one minute. Open the workspace again → **Conversations** | The moment it is pressed the button greys out and reads **Summary being written…**. After the minute the conversation's row reads **Summary ready** (it may carry a new title — the summary writes one), and its drawer shows the report. **This is the only proof that the work survives the tab on Vercel** (`after()`, `waitUntil`); staging proved it on a local server only. *(If you reopen within a few seconds instead, the row says* Summary being written… *and turns into* Summary ready *by itself, without a reload.)* **Estimated about $0.20** — one summary on `claude-opus-5-5`, production's summary model (`docs/RELEASE.md:86`); a long conversation costs more. Check it in the Vercel log: one `POST /api/topics/…/summarise 202` and, after it, one `cost: summarise` line |
+| **S4-3** | **The second press waits** *(staging, as `testgamma`, the ethanol fixture `14a052c6-05d8-4b20-b250-2f3bbffe9916`)* | Open the conversation in **two tabs**. Press **Summarise this conversation** in the first, then at once in the second | The first tab's button reads *Summary being written…*. The second tab shows **the same words, not an error**. Both tabs show the summary when it lands. `npm run cost`: **one** new `summarise` row. Then the same with **Turn this into a checklist → Just what we discussed**: one new `convert` row, **one** checklist in the Checklists tab, and both tabs open it |
+
+*(Before the commit, on staging as `testgamma` on Haiku, by script: the browser killed 3 s after pressing Summarise and the page reopened; one-tab and two-tab double presses of both actions, one ledger row and one result each; the nightly job by hand skipping a held claim; an 11-minute claim taken by the next press; one "How do I do this?" through the new 202. Screenshots `shots/s4p2-*`. **No person has run this set yet.**)*
+
 ## Manual set — Workspace Stage 2 — 4 October 2026 (`docs/HANDOFF-WORKSPACE.md`, the Stage 2 note)
 
 **The summary as an accordion, one-line source links, the header off paper — commit `04f81c6`; the print frame — commit `94f630b`.** `DECISIONS.md` §159, §160.

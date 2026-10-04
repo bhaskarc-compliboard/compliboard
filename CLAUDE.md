@@ -378,17 +378,28 @@ once.
 
 - All schema changes go through tracked migration files. Never ad hoc changes to the
   live database.
-- **After adding a migration, run `npm run db:reset`.** It wipes staging and replays the
-  whole chain from 000, which is the only thing that proves the chain can build a database
-  from nothing. Applying migrations incrementally proves only that they worked once, in one
-  order, from one starting state — the first from-zero run on 11 Sep found two collisions
-  that had been invisible for months. The reset refuses `--production` by flag and again by
-  ref; there is no combination of arguments that resets production.
-  **Claude Code may run `npm run db:reset` and `npm run db:restore` on staging under a pty**
-  (both ask for a typed confirmation and there is no bypass flag, by design), because a
-  migration is not done until the chain builds from empty and a rule that is expensive to obey
-  is a rule that gets skipped. **The production guard is never automated, by anyone** —
-  `npm run db:migrate:prod` and its typed confirmation stay a human action.
+- **⚡ `npm run db:reset` AND `npm run db:restore` RUN ONLY WHEN THE OWNER SAYS SO IN THE BRIEF.**
+  *Changed 4 October 2026 (`DECISIONS.md` §161).* A migration is applied with
+  `CHECK_LIVE_BASE_URL=http://localhost:3999 npm run db:migrate`, and that is where it stops.
+  The reset wipes staging and replays the whole chain from 000 — the only thing that proves the
+  chain can build a database from nothing (the first from-zero run on 11 Sep found two
+  collisions invisible for months) — **and it also wipes every conversation, document, fixture
+  and the `ai_calls` cost ledger on staging**, which `db:restore` does not put back. So whether
+  to pay that is the owner's decision, and the owner's decision is that the rebuild from empty
+  waits until just before the rev 1 launch.
+
+  **Why the rule changed.** It used to read *"After adding a migration, run `npm run db:reset`"*,
+  and on 4 October Claude Code obeyed it after migration 065: the restore wiped staging's
+  conversations, documents, fixtures and cost ledger, against the owner's decision above. **What
+  that run proved, so it is not paid for twice:** 66 migrations, `000` → `065`, rebuilt staging
+  from zero and every verify block passed — read back from `supabase_migrations.schema_migrations`,
+  not from the exit code.
+
+  When the brief does call for it, Claude Code runs it on staging under a pty (both ask for a
+  typed confirmation and there is no bypass flag, by design). The reset refuses `--production`
+  by flag and again by ref; there is no combination of arguments that resets production. **The
+  production guard is never automated, by anyone** — `npm run db:migrate:prod` and its typed
+  confirmation stay a human action.
 
   > ### AND A PTY THAT NEVER TYPED THE WORD LOOKS EXACTLY LIKE A RESET THAT RAN.
   >

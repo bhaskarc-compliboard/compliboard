@@ -1,7 +1,9 @@
 # How We Build CompliBoard
 
-**Version:** 18 · **Updated:** 4 October 2026
-**Supersedes:** version 17 (22 Sep). Adds **§3c — two traps from Workspace Task 6**: `npm run db:migrate`
+**Version:** 19 · **Updated:** 4 October 2026
+**Supersedes:** version 18 (4 Oct). §4: **`npm run db:reset` and `npm run db:restore` run only when the
+owner says so in the brief** — no longer after every migration (`DECISIONS.md` §161).
+Version 18: version 17 (22 Sep). Adds **§3c — two traps from Workspace Task 6**: `npm run db:migrate`
 chains into `check:live`, and `next dev` refuses a second server in the same folder.
 Version 17: version 16 (22 Sep). §4's restore table is corrected: `applies_expression` lands on
 **199** of the 200 live rows, not 205; the worksheet is named `REQUIREMENTS.xlsx`; **the switches
@@ -398,7 +400,17 @@ instead would restart the owner's running server, which reads the same config.
 
 **Production credentials do not live on the laptop.** Vercel holds what the deployed app needs. The migration script reaches production through `SUPABASE_PROD_*` variables; the loader needs two more that are **expected to be blank** and set only for the duration of a load, then cleared. The loader refuses without them and prints a reminder to clear them.
 
-**Migrations are forward-only and the chain is proven.** `npm run db:reset` rebuilds staging from nothing and runs `000 → latest`. **Run it after adding any migration.** Incremental application hides defects: two were found the first time the chain ran end to end, and neither was reachable any other way.
+**Migrations are forward-only and the chain is proven.** `npm run db:reset` rebuilds staging from nothing and runs `000 → latest`. Incremental application hides defects: two were found the first time the chain ran end to end, and neither was reachable any other way.
+
+> ### ⚡ BUT THE RESET AND THE RESTORE RUN ONLY WHEN THE OWNER SAYS SO IN THE BRIEF. — 4 October 2026
+>
+> This paragraph used to say *"Run it after adding any migration."* On 4 October that was obeyed after
+> migration 065, and `npm run db:restore` wiped staging's conversations, documents, fixtures and the
+> `ai_calls` ledger — against the owner's decision that the rebuild from empty waits until just before
+> the rev 1 launch. A migration is now applied with `CHECK_LIVE_BASE_URL=http://localhost:3999 npm run
+> db:migrate` and stops there. **What the 4 October run proved stands:** 66 migrations, `000` → `065`,
+> rebuilt staging from zero with every verify block passing, read back from
+> `supabase_migrations.schema_migrations`. `CLAUDE.md` §3.7, `DECISIONS.md` §161.
 
 > ### ⚠ THE CHAIN REBUILDS THE SCHEMA FROM ZERO AND NOTHING ELSE. — 21 September 2026
 >

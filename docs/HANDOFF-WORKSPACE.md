@@ -1,7 +1,24 @@
 # Handoff — the Compliance Workspace, element by element
 
-**Version:** 5 · **Written:** 3 October 2026, at the close of the Workspace layout pass (Tasks 1, 2,
+**Version:** 6 · **Written:** 3 October 2026, at the close of the Workspace layout pass (Tasks 1, 2,
 2b and 3). In the shape of `docs/HANDOFF-AUDITS.md` §5a.
+
+> **Workspace Stage 4 Part 2, 4 October 2026 (`cfe1889`, migration 065, `DECISIONS.md` §161): one press, one call, and
+> work that survives leaving the page.** To be released; `docs/TESTING.md`, "Workspace Stage 4".
+> - **Summarise this conversation** and **Turn this into a checklist** (both scopes) claim the conversation
+>   (`topics.summary_started_at` / `checklist_started_at`, `lib/topicClaim.ts`), answer **202** at once and
+>   do the work in `after()`. A second press, in this tab or another, gets **409** and waits; it pays nothing.
+> - **On the page** (`app/compliance/page.tsx`): the button disables and reads *Summary being written…* /
+>   *Checklist being built…* the moment it is pressed (`startClaimed`, `:745`); the Conversations row says
+>   the same in its grey line (`:1561`); the summary drawer shows *Summary being written…* in place of its
+>   body (`:1679`); the page re-reads `topic_list_v` every 5 seconds while any run is going (`:807`) and,
+>   when the claim clears, opens this tab's own summary or checklist as before. A claim that clears with
+>   nothing new shows the general failure sentence (the owner's rev 1 decision; the reason is in the log).
+> - **How do I do this?** also answers 202 and researches after the reply; the page waited on the claim
+>   already, and now says *"We could not look this up just now…"* when a claim clears with no steps.
+> - **Seen on staging as `testgamma` on Haiku** (`shots/s4p2-*`): the browser killed 3 s after Summarise,
+>   the page reopened showing *Summary being written…* and filling in the report without a reload; one
+>   ledger row and one result for every double press; the nightly job skipping a held claim.
 
 > **Workspace Stage 2, 4 October 2026 (`04f81c6`): the summary as an accordion, one-line source links, and
 > the site header off paper.** The summary drawer below, the checklist drawer's sources (§5) and the how-to
@@ -510,6 +527,9 @@ Before the footer change it started at 357 (scrollbar) or 365 (none) on every pa
 - The failed line can show a raw provider message (`lib/ai.ts:833–834` via `route.ts:382`), and
   several messages end with two instructions.
 - `conversation_reset` is sent by the route and read by no page.
+- From Stage 4 Part 2: **the paid production test S4-2** (Summarise, close the tab, reopen) — the only
+  proof the work survives the tab on Vercel; the failure **reason** is in the log, not on the page; a run
+  past 9 minutes is still billed (`HANDOFF-CODE.md` §7).
 - From Task 6: the consistency check (items depending on To confirm), the quote check for "How do I do
   this?", blocking copy sites from search, "Everything on this subject" re-adding discussed points,
   `check:live` probes for the new tables and route, and the print with how-to steps (`HANDOFF-CODE.md` §7).
