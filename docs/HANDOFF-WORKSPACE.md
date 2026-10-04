@@ -1,7 +1,11 @@
 # Handoff — the Compliance Workspace, element by element
 
-**Version:** 4 · **Written:** 3 October 2026, at the close of the Workspace layout pass (Tasks 1, 2,
+**Version:** 5 · **Written:** 3 October 2026, at the close of the Workspace layout pass (Tasks 1, 2,
 2b and 3). In the shape of `docs/HANDOFF-AUDITS.md` §5a.
+
+> **Version 5, 4 October 2026 — Workspace feature Task 6 (`eec4d22`): the checklist in three groups and
+> "How do I do this?".** §4 (the Checklists tab) and the checklist drawer in §5 are rewritten in place,
+> marked *Changed 4 October 2026, Workspace Task 6*, with their lines at `eec4d22`.
 
 > **Version 4, 4 October 2026 — Workspace feature Task 5 (`cfa3738`): the summary report and the
 > Conversations list.** The list's groups, rows and search, and the summary drawer's report, are
@@ -280,8 +284,13 @@ stored as *"check…"*.
 
 ## 4. The Checklists tab
 
-The same rows and day headings. The status line is *"n of m done"* — green only when every
-item is done — then *"n from the conversation · n newly checked"*. **No Delete on the row** *(Changed 3 October 2026, Workspace Task 3, `2937b0b`.)* — it
+*(Changed 4 October 2026, Workspace Task 6, `eec4d22`.)* **One read**: `checklist_list_v`, migration 064
+(`loadChecklists`, 429). It was 1 + N. **Measured** as Gamma (19 checklists): one
+`GET /rest/v1/checklist_list_v?select=id,title,created_at,total,done,must_total,must_done,from_conversation,added&order=created_at.desc&limit=60`,
+and no `checklist_items` read (`npm run measure -- … --log /rest/v1/checklist`).
+
+The same rows and day headings. The status line **counts Must do only**: *"n of m must-dos done"*
+(`mustDoLabel`, 1478) — green only when every must-do is done — then *"n from the conversation · n newly checked"*. **No Delete on the row** *(Changed 3 October 2026, Workspace Task 3, `2937b0b`.)* — it
 is in the checklist drawer. **Measured:** 0 Delete buttons on the rows. Empty:
 *"No checklists yet"* / *"Ask a question, then turn the answer into a checklist."* (1235). **Rows
 seen** in the checklist-drawer screenshot, under the scrim.
@@ -322,17 +331,40 @@ x=1178.
   - `Review →`, 14px `--green-ink`, goes to `/company-information`, the link behind the sidebar's badge (`components/AppLayout.tsx:41`).
   - **Measured** with one fixture proposal on Gamma, inserted on staging and then deleted: the line, then no line once the row was gone.
 
-**The checklist drawer** (1330–1407). Title: the checklist's. Sub: *"‹date› · n from the conversation
-· n newly checked"*. A progress bar (1342) and *"n of m done"*. Items as rows: the checkbox (1365),
-the name 16px (1371), the description 15px, origin and source 12px, the steps 14px in a numbered list
-with a left rule (1395); *"steps being written…"* (1392) on screen only. Footer: `Download`
-(`OUTLINE`), `Delete` (14px gray-400; it now opens the delete sheet, 1374, *(Changed 3 October 2026, Workspace Task 3, `2937b0b`.)*). **Measured** on `16b613cc` as Gamma: 545–1265 (720); one
-checkbox, at x=570; body sizes 16px ×1, 15px ×1, 14px ×6, 12px ×2; `Download` outlined at x=570,
-`Delete` at x=1200.
-
-That checklist's six steps were generated once, on 3 October, on `claude-haiku-4-5`, with the
-owner's approval: one `substeps` call, $0.01. Read back as Gamma: one item, six steps stored. A later
-open made no call (`BLOCKED (0)` with every paid route blocked, and the steps on screen).
+**The checklist drawer** (1571–1665). *(Changed 4 October 2026, Workspace Task 6, `eec4d22`; the canvas feature boards 8 and 9.)*
+- **Title** the checklist's; **sub** (`checklistSub`, 2041): *"‹date› · N items from the conversation"*, or
+  *"· n from the conversation · n newly checked"* when items were added, or *"· N items"*.
+- **Progress counts Must do only**: the bar and *"n of N must-dos done"* (1588).
+- **Three groups** (`groupItems`, `lib/checklistView.ts:56`; 1598), each headed 12px uppercase with its hint
+  on the right; an empty group is not shown:
+  - **Must do** — numbered, *"in the order to do them · N"*, **only for a checklist the workspace made**.
+    A Documents or Audits checklist reads *"required · N"*, unnumbered (`madeInWorkspace`,
+    `lib/checklistView.ts:42`: `checklists.document_id` set, or any item with `origin = 'document'`).
+  - **Worth doing** — *"advice, not a legal rule · N"*.
+  - **To confirm** — *"open questions · N"*.
+- **Each item**: the checkbox (1611), the name 16px, the description 15px, then 12px gray: *from this
+  conversation* / *newly checked*, and its sources as links. With none: *No source cited in the
+  conversation* (from a conversation), *No source found* (added, link failed the search check), *No source
+  given* (a box item). A Documents or Audits item shows its document or audit by name, unlinked. An
+  added source on a host that is not official carries the "This comes from ‹host›…" line.
+- **The tick checks its write** (`toggleItem`, 878). A refused or zero-row update takes the tick back and
+  the notice says *"‹item› could not be marked done. Nothing was changed. Please try again."* **Measured**
+  with writes blocked: the notice, and the count unchanged at 0 of 16.
+- **"How do I do this?"** (1650), under every Must do and To confirm item: 13px `var(--green-ink)`,
+  underlined. While researching (this tab's click, or `howto_started_at` in the database younger than
+  10 minutes): a spinner and *"Looking this up — checking sources…"* (1645); a tab that did not click
+  re-reads only those items every 5 seconds (932). After: `HowToSteps` (2058) — a grey left rule, *"How
+  to do it · checked against N sources on ‹date›"*, the numbered steps each with *[n] title* and
+  *· official source*, or the "This comes from ‹host›…" line; the note, if any; *"N steps could not be
+  checked against a source, so they are not shown."* if any were dropped. Shown again on every later open
+  with no call. A failed run shows the route's sentence under the item.
+- **Micro-steps are gone**: never generated, never shown; the drawer reads top-level items only (838).
+- Footer: `Download` (1577, prints all groups and any steps already researched; buttons and spinners are
+  `no-print`) and `Delete`, as before.
+- **Measured** as Gamma on the ethanol checklist and as Cascade on an Audits checklist:
+  `.next/shots/t6-drawer-must-do.png`, `t6-drawer-worth-doing.png`, `t6-drawer-to-confirm.png`,
+  `t6-researching.png`, `t6-item-with-steps.png`, `t6-checklists-tab.png`, `t6-drawer-audits.png`,
+  `t6-tick-failed.png` (not committed). **The printed page was not looked at.**
 
 ## 6. The scope sheet
 
@@ -426,6 +458,9 @@ Before the footer change it started at 357 (scrollbar) or 365 (none) on every pa
 - The failed line can show a raw provider message (`lib/ai.ts:833–834` via `route.ts:382`), and
   several messages end with two instructions.
 - `conversation_reset` is sent by the route and read by no page.
+- From Task 6: the consistency check (items depending on To confirm), the quote check for "How do I do
+  this?", blocking copy sites from search, "Everything on this subject" re-adding discussed points,
+  `check:live` probes for the new tables and route, and the print with how-to steps (`HANDOFF-CODE.md` §7).
 
 **Design** (also `DESIGN.md` §7):
 

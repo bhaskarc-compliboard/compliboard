@@ -157,6 +157,24 @@ untested — applies to the runner as much as to anything it runs.
 
 ---
 
+## Manual set — Workspace Task 6 — 4 October 2026 (`docs/HANDOFF-WORKSPACE.md` v5)
+
+**The checklist in three groups and "How do I do this?", commit `eec4d22`.** `DECISIONS.md` §157.
+
+> ### T6-1 AND T6-2 ARE THE OWNER'S FREE LIVE CHECKS AFTER THE PUSH. T6-3 IS THE ONE PAID CHECK.
+> **T6-1 and T6-2 press nothing that calls a model** — do not press *How do I do this?* until T6-3.
+> Hard-reload first (Cmd+Shift+R). Migration 064 must be on production first (`npm run db:migrate:prod`):
+> without it the Checklists tab reads a view that does not exist and shows nothing. `AI_MODEL_HOWTO` must
+> be set on Vercel before T6-3.
+
+| # | Action | Steps | What must be true |
+|---|---|---|---|
+| **T6-1** | **Open a checklist and see the groups and counts** *(live, free)* | **Checklists** tab → read the rows → open a checklist made from a conversation | Each row's line reads *n of N must-dos done* (`app/compliance/page.tsx:1478`). In the drawer: the bar and *n of N must-dos done* count Must do only; **MUST DO** with *in the order to do them · N* and numbered items; **WORTH DOING** with *advice, not a legal rule · N*; **TO CONFIRM** with *open questions · N* — an empty group is not shown, and a checklist made before Task 6 has no To confirm group. Each item shows its sources, or *No source cited in the conversation*. There are **no machine-written steps** under any item. Tick one item and untick it: the count moves and moves back. *If a checklist from Documents or Audits exists, its Must do reads* required · N *and is not numbered* |
+| **T6-2** | **Open an item that already has steps** *(live, free; only after T6-3 has run once)* | Close the drawer, reload the page, open the same checklist | Under the item: a grey left rule, *How to do it · checked against N sources on ‹date›*, the numbered steps, each with *[n] ‹title›* and *· official source*, or the line *This comes from ‹host›, not the agency itself. It looks correct, but check it before you rely on it.* No spinner: **nothing is looked up again** |
+| **T6-3** | **"How do I do this?" on one real item** *(production, PAID, owner only)* | In a checklist made from a conversation, under one **Must do** item → **How do I do this?** → wait. While it runs, open the same checklist in a second tab | At once: a spinner and *Looking this up — checking sources…*. **The second tab shows the same spinner** and no second lookup starts. Then 3 to 7 numbered steps, each with its source and label. Read each official step against its page. Any step whose page does not say it is a finding for the quality pass (the check proves the link came from the search, not that the page says the step). **Estimated $0.25–0.45 on Opus 5.5** at medium effort, up to 6 searches. That is an estimate from the staging runs of $0.2212 (3 searches) and $0.4486 (5 searches) |
+
+*(Before the commit, on staging: the conversion of the ethanol fixture and three "How do I do this?" runs on Opus 5.5 (`DECISIONS.md` §157); screenshots of every drawer state as `testgamma` and one Audits checklist as `testcascade`; the tab read once through `checklist_list_v`. **No person has run this set yet. The printed checklist was not looked at.**)*
+
 ## Manual set — Workspace Task 5 — 3 October 2026 (`docs/HANDOFF-WORKSPACE.md` v4)
 
 **The summary report and the Conversations list, commit `cfa3738`.** `DECISIONS.md` §156.
