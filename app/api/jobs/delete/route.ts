@@ -29,6 +29,14 @@ import { clearingCutoff, clearingDecision } from '@/lib/retention'
 
 export const maxDuration = 800
 
+/**
+ * VERCEL CRON CALLS WITH GET — `Authorization: Bearer <CRON_SECRET>` (`lib/cronSecret.ts`). The same
+ * job as POST, which stays for a person running it by hand with `x-cron-secret`. Workspace Stage 4 Part 3.
+ */
+export async function GET(request: NextRequest) {
+  return POST(request)
+}
+
 export async function POST(request: NextRequest) {
   const auth = requireCronSecret(request)
   if (!auth.ok) return auth.response
@@ -55,15 +63,15 @@ export async function POST(request: NextRequest) {
         if (decision === 'keep') continue
         if (decision === 'skip_no_summary') { skippedNoSummary.push(id); continue }
 
-        // Counted before deleting, so the log says what was removed rather than what is left.
+        // *** THE COUNT IS WHAT THIS RUN DELETED, READ BACK FROM THE DELETE ITSELF. *** It used to be
+        // counted first and deleted second, so two runs alive at once — Vercel "can also occasionally
+        // invoke the same scheduled run more than once" — would each count the same turns and each log
+        // the topic as cleared. Now the second run's delete returns no rows and it logs nothing.
         // A topic already cleared on an earlier night has none, and is not logged again.
-        const { count, error: cErr } = await supabaseAdmin
-          .from('turns').select('*', { count: 'exact', head: true }).eq('topic_id', id)
-        if (cErr) throw new Error(`counting turns: ${cErr.message}`)
-        if (!count) continue
-
-        const { error: dErr } = await supabaseAdmin.from('turns').delete().eq('topic_id', id)
+        const { data: gone, error: dErr } = await supabaseAdmin.from('turns').delete().eq('topic_id', id).select('id')
         if (dErr) throw new Error(`deleting turns: ${dErr.message}`)
+        const count = gone?.length ?? 0
+        if (!count) continue
 
         removed.push({ topic: id, turns: count })
         turnsDeleted += count

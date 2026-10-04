@@ -1,55 +1,46 @@
 /**
- * THE NIGHTLY JOBS' FRONT DOOR — `DECISIONS.md` §125, Run 2 Task 4.
+ * THE NIGHTLY JOBS' FRONT DOOR — `DECISIONS.md` §125, Run 2 Task 4; Workspace Stage 4 Part 3.
  *
  * The jobs run on Vercel Cron hitting a protected route; there is no worker. That means these
  * routes are on the public internet, and the only thing between an anonymous request and a
- * route that DELETES EVERY EXPIRED TRANSCRIPT is this header check.
+ * route that DELETES EVERY EXPIRED TRANSCRIPT is this check.
  *
- * ---------------------------------------------------------------------------
- * WHY A SHARED SECRET AND NOT A SESSION
+ * WHY A SHARED SECRET AND NOT A SESSION: there is no user. Cron is not signed in, has no company,
+ * and `requireCompany` has nothing to check. So: a secret in the environment, sent as a header.
  *
- * There is no user. Cron is not signed in, has no company, and `requireCompany` has nothing to
- * check. So: a secret in the environment, sent as a header, compared here.
+ * *** THE RULE IS `cronVerdict` (`lib/cronSecret.ts`), tested in `tests/unit/cronSecret.test.ts`. ***
+ * GET with `Authorization: Bearer <CRON_SECRET>` is Vercel Cron; POST with `x-cron-secret` is a
+ * person running a job by hand. Both compared with `timingSafeEqual`; an unset secret refuses both.
+ * Until Stage 4 Part 3 only the POST door existed, and every scheduled call was GET → 405.
  *
- * *** IT REFUSES WHEN THE SECRET IS UNSET. *** The tempting shape is
- * `if (secret && header !== secret) refuse` — which, on a deploy where `CRON_SECRET` was never
- * set, opens the route to everyone and looks exactly like a route that is working. An absent
- * secret is a misconfiguration, and the safe reading of a misconfiguration is "no".
- *
- * *** AND THE COMPARISON IS LENGTH-SAFE. *** A plain `!==` on strings returns as soon as two
- * characters differ, so the time it takes leaks how much of a guess was right. `timingSafeEqual`
- * needs equal-length buffers, so the lengths are compared first — and that comparison leaks only
- * the length, which is not the secret.
- * ---------------------------------------------------------------------------
+ * *** EVERY REFUSAL IS 404, AND STAYS 404. *** An unauthenticated caller must not be able to confirm
+ * that the route exists, and a refusal that answered 401 would confirm exactly that. Vercel's own
+ * example answers 401, but nothing reads the status but a person in the logs, and the log line below
+ * says which refusal it was. 404 is also what the routes have always answered, so the runbooks
+ * (`docs/TESTING.md`) and anything watching for it are unchanged.
  */
-import { timingSafeEqual } from 'node:crypto'
 import { NextRequest, NextResponse } from 'next/server'
+import { cronVerdict } from './cronSecret.ts'
 
 export type JobAuth =
   | { ok: true }
   | { ok: false; response: NextResponse }
 
-/** The header Vercel Cron is configured to send. */
-const HEADER = 'x-cron-secret'
+const NOT_FOUND = () => NextResponse.json({ error: 'Not found.' }, { status: 404 })
 
 export function requireCronSecret(request: NextRequest): JobAuth {
-  const expected = process.env.CRON_SECRET ?? ''
-  if (!expected) {
+  const verdict = cronVerdict(request.method, (n) => request.headers.get(n), process.env.CRON_SECRET)
+  if (verdict === 'unset') {
     // Loud in the log, opaque to the caller. The operator needs to know the route is
     // misconfigured; an anonymous caller must not learn why it refused.
     console.error('JOB REFUSED: CRON_SECRET is not set, so no request can be authorised. ' +
                   'The job did not run.')
-    return { ok: false, response: NextResponse.json({ error: 'Not found.' }, { status: 404 }) }
+    return { ok: false, response: NOT_FOUND() }
   }
-
-  const given = request.headers.get(HEADER) ?? ''
-  const a = Buffer.from(given)
-  const b = Buffer.from(expected)
-  const same = a.length === b.length && timingSafeEqual(a, b)
-  if (!same) {
-    console.warn('JOB REFUSED: bad or missing cron secret.')
-    // 404, not 401: an unauthenticated caller should not be able to confirm the route exists.
-    return { ok: false, response: NextResponse.json({ error: 'Not found.' }, { status: 404 }) }
+  if (verdict === 'refused') {
+    console.warn(`JOB REFUSED: ${request.method} with a bad or missing cron secret ` +
+                 '(GET needs "Authorization: Bearer <CRON_SECRET>"; POST needs "x-cron-secret").')
+    return { ok: false, response: NOT_FOUND() }
   }
   return { ok: true }
 }

@@ -11,9 +11,9 @@
  * job still owes the deleter is the SUMMARY: the deleter will not clear a topic whose summary is
  * missing or older than its last turn.
  *
- * *** IT IS NOT RUNNING ON PRODUCTION YET. *** Vercel's cron calls with GET and this route answers
- * POST only; every scheduled call has been refused (`DECISIONS.md` §154, "The cron fix is deferred…").
- * The trigger is Workspace Stage 4 Part 3. It runs by hand: POST with `x-cron-secret`.
+ * *** IT RUNS AT 03:00 UTC FROM THE CRON RELEASE (Workspace Stage 4 Part 3). *** Vercel's cron calls
+ * with GET and `Authorization: Bearer <CRON_SECRET>`; until that release the route answered POST only and
+ * every scheduled call was refused (`DECISIONS.md` §154). By hand: POST with `x-cron-secret`.
  *
  * ---------------------------------------------------------------------------
  * THE RULES THAT ARE EASY TO GET WRONG, STATED BEFORE THE CODE
@@ -53,6 +53,14 @@ import { claimTopic, releaseTopic, nightlyCandidates, type NightlyTopic } from '
 export const maxDuration = 800
 
 type Row = NightlyTopic & { company_id: string; title: string | null }
+
+/**
+ * VERCEL CRON CALLS WITH GET — `Authorization: Bearer <CRON_SECRET>` (`lib/cronSecret.ts`). The same
+ * job as POST, which stays for a person running it by hand with `x-cron-secret`. Workspace Stage 4 Part 3.
+ */
+export async function GET(request: NextRequest) {
+  return POST(request)
+}
 
 export async function POST(request: NextRequest) {
   const auth = requireCronSecret(request)

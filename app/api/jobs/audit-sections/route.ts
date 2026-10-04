@@ -1,6 +1,7 @@
 // THE AUDIT SWEEP — Audits Run 2b, item 7.
 //
-//   POST /api/jobs/audit-sections     (Vercel Cron, every five minutes, CRON_SECRET)
+//   GET  /api/jobs/audit-sections     (Vercel Cron, every five minutes, Authorization: Bearer CRON_SECRET)
+//   POST /api/jobs/audit-sections     (by hand, x-cron-secret) — `lib/cronSecret.ts`
 //
 // *** IT IS THE DOCUMENT SWEEP'S SHAPE, AND DELIBERATELY NOT A SECOND DESIGN. ***
 // `app/api/jobs/scan-documents/route.ts` already worked out the four rules — recover first, oldest
@@ -36,6 +37,14 @@ const BUDGET_MS = 640_000
 const RESERVE_MS = 130_000
 /** A claim older than this was abandoned by a run that died. Same 15 minutes as documents. */
 const STUCK_AFTER_MS = 900_000
+
+/**
+ * VERCEL CRON CALLS WITH GET — `Authorization: Bearer <CRON_SECRET>` (`lib/cronSecret.ts`). The same
+ * job as POST, which stays for a person running it by hand with `x-cron-secret`. Workspace Stage 4 Part 3.
+ */
+export async function GET(request: NextRequest) {
+  return POST(request)
+}
 
 export async function POST(request: NextRequest) {
   const auth = requireCronSecret(request)
@@ -143,9 +152,15 @@ export async function sweep() {
         // *** THE CLAIM IS RELEASED IN A FINALLY, ALWAYS. *** A section left claimed and queued is
         // invisible to the next sweep until the fifteen-minute recovery notices it, which is
         // fifteen minutes of a person watching a run that is not moving.
+        //
+        // *** AND ONLY THIS RUN'S OWN CLAIMS — Workspace Stage 4 Part 3. *** This used to clear every
+        // claimed, queued section of the company. A second sweep alive at the same time (a duplicate
+        // cron delivery, or the `after()` kick from a new audit) may have claimed that company's newer
+        // sections; clearing its claim let a third sweep take them too, and two sweeps would pay for
+        // the same section. The ids are the ones this run claimed, and nothing else.
         await supabaseAdmin.from('audit_sections')
           .update({ claimed_at: null })
-          .eq('company_id', companyId).eq('status', 'queued').not('claimed_at', 'is', null)
+          .in('id', queue.map((s) => s.id)).eq('status', 'queued').eq('claimed_at', nowIso)
       }
 
       for (const runId of touchedRuns) {

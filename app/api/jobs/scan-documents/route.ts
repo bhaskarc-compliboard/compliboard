@@ -104,6 +104,14 @@ interface QueuedDoc {
   uploaded_at: string
 }
 
+/**
+ * VERCEL CRON CALLS WITH GET — `Authorization: Bearer <CRON_SECRET>` (`lib/cronSecret.ts`). The same
+ * job as POST, which stays for a person running it by hand with `x-cron-secret`. Workspace Stage 4 Part 3.
+ */
+export async function GET(request: NextRequest) {
+  return POST(request)
+}
+
 export async function POST(request: NextRequest) {
   const auth = requireCronSecret(request)
   if (!auth.ok) return auth.response
