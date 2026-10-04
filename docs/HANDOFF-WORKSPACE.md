@@ -1,8 +1,12 @@
 # Handoff — the Compliance Workspace, element by element
 
-**Version:** 2 · **Written:** 3 October 2026, at the close of the Workspace layout pass (Tasks 1, 2,
+**Version:** 3 · **Written:** 3 October 2026, at the close of the Workspace layout pass (Tasks 1, 2,
 2b and 3). In the shape of `docs/HANDOFF-AUDITS.md` §5a.
 
+> **Version 3, 3 October 2026 — Workspace feature Task 4 (`76f8c42`): files.** Every element Task 4 changed
+> is rewritten in place and marked *Changed 3 October 2026, Workspace Task 4*, with its line at
+> `76f8c42`. Elements marked for Task 3 keep their `2937b0b` lines, which have moved again.
+>
 > **Version 2, 3 October 2026 — Workspace feature Task 3 (`2937b0b`).** Every element Task 3 changed
 > is rewritten in place and marked *Changed 3 October 2026*, with its line at `2937b0b`.
 >
@@ -54,10 +58,20 @@ amber-200 border, `text-sm`. *(Changed 3 October 2026, Workspace Task 3, `2937b0
 
 It used to stay across all three tabs until Dismiss (machinery (iii)). **From code.**
 
-**"Asking about"** (1027). *"Asking about ‹file name› remove"*, 12px gray-500, the name gray-700.
-Above the box, only when a document is attached before the question — arriving from "Research this"
-in a Documents report, or after a pick. **Seen in Task 1** (*"Asking about 01-eap-chemical.pdf
-remove"*), before this pass's other changes.
+**"Asking about" — removed; the staged-file chip replaces it.** *(Changed 3 October 2026, Workspace Task 4, `76f8c42`.)* The chip sits **inside the box,
+above the text** (1118). It is `rounded bg-gray-100`, 13px gray-700, with the paperclip, the file name and an `×` labelled *"Remove the file"*.
+- **Choosing a file only stages it** (`stageFile`, 605; state at 183): no upload, no `documents` row, no reading.
+- One file at a time; choosing another replaces it.
+- `×` clears it, and nothing is left anywhere.
+- The file input now takes `lib/acceptedFiles.ts`' types (938).
+- **Arriving from Documents' "Research this"** stages the already-saved document the same way (212).
+- While a file is staged, the examples overlay is hidden (1170).
+
+**Measured** as Gamma on the first visit:
+- the chip at x=347–510, y=238–266, inside a box that starts at y=223;
+- x=347 is where typed text starts;
+- `Make a checklist` and `Research this` are still shown (machinery N4);
+- after `×`, no request is made (`BLOCKED (0)`) and Gamma has 0 `documents` rows and 0 stored files.
 
 **The box** (1032). `relative rounded-xl border border-gray-200 bg-white`, border green on focus. The
 textarea is 16px, `min-h-[92px]`, grows with what is typed. **No placeholder on the first visit**
@@ -81,7 +95,8 @@ example was a button that sent its sentence straight to research.
 
 **The line under the box** (1098–1123). On the left, the attach control (1102–1106): the docked
 composer's paperclip path at 13px, gap-1.5, then *"Attach a file and ask any compliance question about
-it"*, 12px gray-500, underlined. **One click opens the file picker** — the page-level input (823).
+it"*, 12px gray-500, underlined. **One click opens the file picker** — the page-level input (823). *(Changed 3 October 2026, Workspace Task 4, `76f8c42`.)* The
+picked file is now **staged** as the chip in the box, not uploaded (attach line at 1232).
 On the right, `Make a checklist` (`SECONDARY_LARGE`, 1112) and `Research this` (`PRIMARY`, 1118), gap
 12px; with an empty box either puts the cursor in the box and sends nothing. **Measured:** attach line
 x=326, y=355 (10px under the box), pin 13px at x=326, gap 6px; `Make a checklist` 907–1047 outlined;
@@ -105,7 +120,33 @@ Reached on screen by opening an existing one (Conversations → a row → `Open 
 **Measured:** column and tab row as above; the docked composer 319–1171, with its placeholder
 *"Ask about a rule, or describe a job you need the steps for…"* (1040).
 
-**The question** (923). Right-aligned, `rounded-2xl bg-gray-200`, max 85% width, 16px.
+**The question** (1036). Right-aligned, `rounded-2xl bg-gray-200`, max 85% width, 16px. *(Changed 3 October 2026, Workspace Task 4, `76f8c42`.)* A question sent with a
+file names it first, on a 13px gray-600 line with the paperclip (1037).
+
+**The stages** (`Stages`, 1652; shown at 1050), for a question sent with a file. *(Changed 3 October 2026, Workspace Task 4, `76f8c42`.)* The words, while each request is running:
+1. *Saving the file* — upload, then `POST /api/documents`;
+2. *Reading ‹name›* — `POST /api/document-scan`, awaited;
+3. *Checking it against your question* — `POST /api/chat`, until the first text;
+4. *Writing the answer* — while the text streams.
+
+How they look:
+- done: a green tick and gray-500 text;
+- now: a spinner and gray-900 text;
+- to come: an empty circle and gray-400 text;
+- plus a `Stop` link.
+
+Which stages run:
+- A saved document (arriving from Documents) shows only 3 and 4.
+- The checklist path shows 1–3; it answers in one piece.
+- No page count is ever shown: the scan returns none.
+
+**If the file cannot be read**, nothing is asked (493): the unreadable card shows the scan's own reason,
+the question goes back in the box, and the staged file is cleared.
+
+**Measured** (one scan and one answer, Haiku, staging):
+- the four stages in order, with reading for about 48 s;
+- then the card and the answer;
+- the unreadable fixture stopped after reading, with its question back in the box and no chat call.
 
 **Working** (928; `Working`, 1440–1451). *"Working on it…"*, *"Checking a source…"*, *"Checking n
 sources…"*, *"Writing the answer…"*, and `Stop`. A box: gray-200 border, white. Label 13px, `Stop`
@@ -130,8 +171,14 @@ actions* below.
 finished, so what is above is incomplete. Nothing was saved for it."* and `Try again`. 14px
 amber-900 with an amber left rule. **From code.**
 
-**Stopped by the person** (968–972). *"Stopped. What arrived is above — Ask again, or change the
-question."* 14px gray-500. **From code.**
+**Stopped by the person** (1088). *"Stopped. What arrived is above — Ask again, or change the
+question."* 14px gray-500. *(Changed 3 October 2026, Workspace Task 4, `76f8c42`.)* With a file, the line says what is true at the stage where Stop was pressed (`ask()`, 437–600):
+
+| Stage | Line |
+|---|---|
+| Saving | *"Stopped. The file is saved in Documents but was not read. Your question was not sent."* The save is allowed to finish first. **Measured.** |
+| Reading | *"Stopped. Your question was not sent. The file is saved in Documents and is still being read there."* The scan request is not cancelled (486). **From code.** |
+| Checking / writing | *"Stopped. The file is saved in Documents and was read."* plus the usual words. **From code.** |
 
 **Failed** (973–977). *"‹error› You can ask again, or rephrase the question."* 14px amber-900, amber
 left rule. Every string that can reach `‹error›` is listed in `HANDOFF-CODE.md` §7. **From code.**
@@ -143,8 +190,8 @@ left rule. Every string that can reach `‹error›` is listed in `HANDOFF-CODE.
 
 The one-topic line under the box replaces it.
 
-**The docked composer** (1032–1060). The same box. The paperclip (1045, `aria-label="Attach a file"`)
-opens the picker in one click — **measured**, `Page.fileChooserOpened` fired 1. `Send` (1055), green;
+**The docked composer**. The same box. The paperclip (1140, `aria-label="Attach a file"`)
+opens the picker in one click — the file is now staged as the chip *(Changed 3 October 2026, Workspace Task 4, `76f8c42`.)*  — **measured**, `Page.fileChooserOpened` fired 1. `Send` (1055), green;
 `Stop` (1050) while busy, gray-900.
 
 **The conversation's actions, under the box** (1088–1118). *(Changed 3 October 2026, Workspace Task 3, `2937b0b`.)* Shown once the conversation has a finished
@@ -168,10 +215,22 @@ topic."*
 
 The first visit is unchanged: `Make a checklist` and `Research this` beside the box.
 
-**The file card** (`FileCard`, 1474). *"Read as: ‹kind› — ‹title›. Saved to Documents → ‹folder›."*,
-then agency and status, then the scan's summary; unreadable: the scan's own reason and `Upload a
-clearer copy`, which now opens the picker directly. A box (gray-200, or amber when unreadable).
-**From code.**
+**The file card** (`AttachedCard`, 1683; shown at 1059), above the answer. *(Changed 3 October 2026, Workspace Task 4, `76f8c42`.)*
+- Hairlines above and below, no box: the paperclip, the file name (14px, medium), one 12px gray-500 line *"Read · ‹kind› · Saved to Documents → ‹folder›"* (*"Saved to Documents"* when it is in no folder), and `Open the report` (`OUTLINE`) on the right.
+- **Reopening a conversation brings the cards back** (663; machinery N5). One `document_index_v` read covers all of its documents.
+- A document deleted since shows *"‹name› · This file was deleted from Documents"* and no button.
+- **Measured:** *"06a-forklift-log.pdf · Read · Record · Saved to Documents · Open the report"* after the answer, and again on reopening.
+
+**The unreadable card** (`FileCard`, 1728) is the old card's unreadable form, unchanged: the scan's reason and `Upload a clearer copy`, which stages a new file. *Its readable form is no longer reached (Task 4).*
+
+**The Documents report, from the card** (1560). *(Changed 3 October 2026, Workspace Task 4, `76f8c42`.)* `components/DocumentReport`, mounted with the props
+`/documents` gives it (`app/documents/page.tsx`, its `<DocumentReport` mount). The folder list is read
+when it opens (243); "Move to…" sends the same `PATCH /api/documents` (703). Nothing inside it changed.
+`onPickFile`:
+- "Add a newer version" goes to `/documents`; the version upload lives there.
+- "Upload a clearer copy" and "Add the log" stage a file in this box.
+
+**Measured:** the drawer opened on *"Powered Industrial Truck Pre-Shift Inspection Log — September 2026"*.
 
 ## 3. The Conversations tab
 

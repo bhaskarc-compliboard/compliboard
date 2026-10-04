@@ -5,8 +5,8 @@ figure below came from a command run today, and the command is shown.** Nothing 
 Where a figure is not measured, it says so.
 
 *(§1 and §2 corrected 3 October 2026, from commands run that day and the 1 October preflight; §7
-gained four rows the same day, and after Workspace Task 3 one open row (the cron jobs) and seven
-resolved ones. §1–§4 were rewritten on 28 September. §5–§9 keep their 23 September text except where a fact in
+gained four rows the same day, after Workspace Task 3 one open row (the cron jobs) and seven
+resolved ones, and after Task 4 two more resolved. §1–§4 were rewritten on 28 September. §5–§9 keep their 23 September text except where a fact in
 them was wrong; those carry dated notes. The structure is unchanged on purpose — this is the file
 the next chat trusts, and a reader who knows where §6 is should still find it there.)*
 
@@ -377,6 +377,8 @@ thing a bake-off needs is to move one model without moving three others.
 | ~~"Wrap up and start fresh" titles the next conversation "Carrying on…"~~ | `app/compliance/page.tsx` | **RESOLVED by removal, 3 October 2026, `2937b0b`.** Machinery N3. The nudge and its pre-fill are gone |
 | ~~Deleting a conversation deletes its facts, decided ones included~~ | `supabase/migrations/062_a_fact_outlives_its_conversation.sql`, `app/api/to-confirm/route.ts` | **RESOLVED 3 October 2026, `055df59`.** Machinery N7. Migration 062 is on staging and on production (`npm run preflight`, 3 October, after `2937b0b`: 63 and 63, `PENDING COUNT: 0`) |
 | ~~The checklist delete ignores its errors~~ | `app/compliance/page.tsx` `deleteChecklist` | **RESOLVED 3 October 2026, `2937b0b`** — the deletes only. Machinery N8: both deletes are checked, items first, and a failure keeps the confirmation open with a plain line. N8's other unchecked writes are not covered here: the checklist tick still ignores its error, and the proposal updates went with the card |
+| ~~Attaching a file first removes "Make a checklist"~~ | `app/compliance/page.tsx` | **RESOLVED 3 October 2026, `76f8c42`.** Machinery N4. A chosen file is only staged as a chip in the box; it no longer becomes an exchange, so the first visit keeps both buttons |
+| ~~Reopening a conversation hides its attachments~~ | `app/compliance/page.tsx` `openConversation` | **RESOLVED 3 October 2026, `76f8c42`.** Machinery N5. Each turn's file card comes back, from one `document_index_v` read for the whole conversation; a file deleted since keeps its name and says so |
 
 ## 8. The next steps — THIS FILE'S READING, not the two handoffs'
 

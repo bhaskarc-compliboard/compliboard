@@ -10835,3 +10835,26 @@ Commits 358647d, 1e34fc2.
 - `npm run preflight` (read-only) reads 63 migration files on disk and 63 rows on production (`dsfwmafnphdlfogetsus`), with `062_a_fact_outlives_its_conversation.sql` among them: `PENDING COUNT: 0`. So 062 went to production with the Task 2 release.
 - Task 3 adds no migration.
 - Its release is the push alone.
+
+## 155. WORKSPACE TASK 4 — FILES: STAGED, READ ON SEND, STAGES SHOWN — 3 October 2026
+
+§155 — The decisions of Workspace Task 4 (`76f8c42`), approved by the owner on localhost.
+- **One file per question.** A file chosen in the workspace is only staged, as a chip in the box. Choosing another replaces it. Nothing is saved, read or paid for until the question is sent.
+- **On send, the real stages, each shown while its request is running:**
+  - saving (`/api/documents`);
+  - reading (`/api/document-scan`, awaited);
+  - checking (`/api/chat` until the first text);
+  - writing.
+
+  No page count is shown, because the scan returns none. **An unreadable file stops before asking:** the question goes back in the box.
+- **"Make a checklist" with a file stays enabled.** The chat route loads the attached file for every mode (`app/api/chat/route.ts:204–206`). It builds the message from it (`:248–259`), and the checklist branch sends that message (`:358`, `:368`). So the checklist reads the file, and it runs the same stages, without "writing".
+- **What Stop does, and what the line says:**
+  - **During saving,** the save finishes and the page then stops. The file stays in Documents as `uploaded`, unread.
+  - **During reading,** the scan request is NOT cancelled: no code reads its stop signal, and §138 recorded an abandoned scan being lost on production. The page stops waiting and says the file *"is still being read there"*.
+  - **During checking or writing,** the answer is cancelled through the route's request signal (`:492`, `:376`), and the turn is marked stopped.
+- **The file card opens the Documents report itself** (`components/DocumentReport`, unchanged), mounted as `/documents` mounts it. "Add a newer version" goes to Documents, because this page has no version upload.
+- **Reopened conversations show their files again**, from one index read.
+
+**Open, for the owner:** a file stopped during saving is `uploaded`, which is the Documents sweep's queue. Once the cron runs, the sweep will read it, and charge for it. The line *"was not read"* is true when shown, not forever.
+
+**Cost of the task:** 2 document reads and 1 research answer on Haiku, on staging, $0.0730. Everything they created was removed from staging afterwards.

@@ -157,6 +157,38 @@ untested — applies to the runner as much as to anything it runs.
 
 ---
 
+## Manual set — Workspace Task 4 — 3 October 2026 (`docs/HANDOFF-WORKSPACE.md` v3)
+
+**Files, commit `76f8c42`:**
+- staged in the box;
+- read on send, with the real stages shown;
+- the file card, with the Documents report;
+- files shown again on reopening.
+
+> ### THE FIRST THREE ARE THE OWNER'S LIVE CHECKS AFTER THE PUSH.
+> **None of them sends a question, saves a file or calls a model.** Hard-reload first (Cmd+Shift+R).
+> T4-2 and T4-3 need a conversation that was asked **with a file**. Ask one after the push if none
+> exists; that costs one read and one answer, and is the only paid step.
+
+| # | Action | Steps | What must be true |
+|---|---|---|---|
+| **T4-1** | **Stage, then remove** *(live)* | First visit: click the attach line → choose any small file → then press **×** on it. **Do not send** | The file appears as a **chip inside the box, above the text**: paperclip, name, ×. **Make a checklist** and **Research this** are still there. After ×, the chip is gone. Open **Company Documents**: the file is **not** there. Nothing was uploaded |
+| **T4-2** | **Reopen a conversation that has a file** *(live)* | **Conversations** → its title → **Open the conversation** | Above that answer, between hairlines: the file name, *Read · ‹kind› · Saved to Documents* (→ folder, if filed), and **Open the report**. The question bubble names the file with a paperclip. A file since deleted from Documents reads *‹name› · This file was deleted from Documents*, with no button |
+| **T4-3** | **Open the report** *(live)* | On that card, **Open the report** → read it → close it with × or by clicking outside | The Documents report drawer opens over the workspace, **the same one Company Documents shows** for that file. Closing it leaves the conversation as it was. **Press nothing inside it** — several of its actions are paid (Read it again, Make a checklist, Draft this section) |
+| **T4-4** | **The stages** | Stage a PDF → type a question → **Research this** | In turn: ✓ *Saving the file*, a spinner on *Reading ‹name›*, then *Checking it against your question*, then *Writing the answer* while the text arrives. The list is then replaced by the card above the answer. No page count is shown |
+| **T4-5** | **An unreadable file** | Stage `tests/fixtures/unreadable-blurred-page.pdf` → type a question → send | It stops after *Reading*. The amber card gives the reason in the scan's words and offers **Upload a clearer copy**. **The question is back in the box**, the chip is gone, and no answer was asked for |
+| **T4-6** | **Stop while saving** | Stage a file, ask, and press **Stop** while *Saving the file* is the current step | *Stopped. The file is saved in Documents but was not read. Your question was not sent.* The file is in Documents, not read |
+| **T4-7** | **Arriving from Documents** | Documents → a report → **Research this** on a gap → **Research this** | The document is a chip in the box. On send, only *Checking…* and *Writing…* show |
+| **T4-8** | **Make a checklist with a file** | Stage a file → type a question → **Make a checklist** | The stages run (no *Writing* step), the card appears, and the checklist is saved. The checklist path reads the file (`app/api/chat/route.ts`, the `attached` blocks) |
+
+*(On 3 October, before the commit, a scratch copy of `npm run measure` ran these on staging as `testgamma`:*
+- *T4-1, T4-4, T4-5, T4-6, T4-2 and T4-3 as written, using `tests/golden/documents/fixtures/06a-forklift-log.pdf` and `tests/fixtures/unreadable-blurred-page.pdf`. That was 2 reads and 1 answer, on Haiku, $0.0730.*
+- *T4-7 was run with the chat call blocked: it showed the chip, and that only `/api/chat` was attempted.*
+- ***T4-8 was NOT run.***
+- *Stop while Reading was NOT run.*
+- *Everything the run created was removed from staging afterwards.*
+- ***No person has run this set yet.***)
+
 ## Manual set — Workspace Task 3 — 3 October 2026 (`docs/HANDOFF-WORKSPACE.md` v2)
 
 **The conversation screen, commit `2937b0b`:**
@@ -203,10 +235,10 @@ things sit and what they say, never how good an answer reads.**
 | # | Action | Steps | What must be true |
 |---|---|---|---|
 | **WL-1** | **The first visit** *(live)* | Open **Compliance Workspace**. Do **not** press **Research this** or **Make a checklist** with anything typed in the box | The title, then the tabs **Ask a question · Conversations · Checklists (n)** — the count inside the label, green underline on the active tab. The box has **no placeholder**: three grey lines, each starting **e.g.** — *We store acids and solvents at our plant…*, *We're opening a cannabis dispensary in Oregon…*, *Our hospice nurses drive to patients' homes…*. **Click one: nothing is typed and nothing is sent.** Type one letter: the three lines vanish. Delete it: they come back. Under the box, **one line**: a paperclip and *Attach a file and ask any compliance question about it* on the left; **Make a checklist** (outlined) and **Research this** (filled) on the right. Under that, one grey line: *n conversations · n checklists · last asked ‹date›* — no date when there are none |
-| **WL-2** | **One click opens the picker** *(live)* | Click the attach line under the box. When the file picker opens, press **Cancel** | The computer's file picker opens **at once — no "Attach a file" sheet first**. After Cancel, nothing appears on the page and nothing is uploaded |
+| **WL-2** | **One click opens the picker** *(live)* *(rewritten 3 Oct, Task 4)* | Click the attach line under the box. When the file picker opens, press **Cancel** | The computer's file picker opens **at once — no "Attach a file" sheet first**. After Cancel, nothing appears on the page and nothing is uploaded. (Choosing a file instead only stages it as a chip in the box; see T4-1) |
 | **WL-3** | **The shell lines up** *(live)* | Open **Compliance Workspace**, **Company Documents**, **Audits** and **Company information** in turn. On the workspace, open **Conversations**; if there is a conversation, click its title | On all four, **the footer's first line starts directly under the first letter of the page title**, and the workspace's column is as wide as Documents'. On Conversations, the grey retention line is the first thing under the tabs. A drawer opens from the right; its footer has **Open the conversation** outlined (while the messages are kept) and **Download** as plain text on the right |
-| **WL-4** | **The paperclip in a conversation** | Open an existing conversation (Conversations → a row → **Open the conversation**). Click the paperclip in the box, then **Cancel** | The picker opens at once. The docked box keeps its placeholder, *Ask about a rule, or describe a job you need the steps for…*; the examples, the attach line, the two buttons and the counts line are not shown |
-| **WL-5** | **Arriving from a gap** | Documents → a report with gaps → **Research this** on one | The workspace opens with the gap's title and fix in the box, *Asking about ‹file› remove* **above** it, and no grey *e.g.* lines. Nothing is sent until you press **Research this** |
+| **WL-4** | **The paperclip in a conversation** *(rewritten 3 Oct, Task 4)* | Open an existing conversation (Conversations → a row → **Open the conversation**). Click the paperclip in the box, then **Cancel** | The picker opens at once; choosing a file would stage it as a chip in the box, not upload it. The docked box keeps its placeholder, *Ask about a rule, or describe a job you need the steps for…*; the examples, the attach line, the two buttons and the counts line are not shown |
+| **WL-5** | **Arriving from a gap** *(rewritten 3 Oct, Task 4)* | Documents → a report with gaps → **Research this** on one | The workspace opens with the gap's title and fix in the box and the document as a **chip inside the box**, above the text (paperclip, name, ×), and no grey *e.g.* lines. Nothing is sent until you press **Research this**; then only *Checking it against your question* and *Writing the answer* show — the file is already saved and read |
 | **WL-6** | **The conversation's actions** *(rewritten 3 Oct, Task 3)* | Ask a question → **Research this**; wait for the answer | **Nothing under the answer.** Directly **under the box**: **Turn this into a checklist** in green text (no border), **Summarise this conversation** and **Download** in grey text, one row. Under that, one small grey line: *One topic per conversation. When you are done, summarise it. Start a new conversation for the next topic.* While an answer is being written, the three are greyed out |
 | **WL-7** | **The two rewritten sentences** *(rewritten 3 Oct, Task 3)* | (a) Ask four questions in one conversation. (b) Ask something long and kill the dev server while it writes | (a) **No nudge appears after the fourth answer** — it was removed; the one-topic line under the box says the same thing all the time. (b) The amber line reads *This answer stopped early. The answer stopped before it was finished, so what is above is incomplete. Nothing was saved for it.* with **Try again**. **Neither mentions a model, and neither says "me"** |
 | **WL-8** | **The checklist drawer** | Checklists → open one **whose steps are already written** (opening one without steps pays for them) | Every checkbox at the same x. **Download** outlined at the left of the footer, **Delete** as grey text at the right |
@@ -523,8 +555,8 @@ what makes the attachment link persist, and without it R2-1 fails at the last st
 
 | # | Action | Steps | What must be true |
 |---|---|---|---|
-| **R2-1** | **Attach a file, then ask about it** *(rewritten 3 Oct)* | Attach — the attach line under the box on a first visit (*Attach a file and ask any compliance question about it*), or the paperclip in the box once a conversation has started — **one click opens the file picker**, there is no sheet → `tests/fixtures/Harbor-Kitchen-Employee-Policy-2026.pdf` → then ask *"check this policy against Seattle's paid sick leave rules"* | The answer **is about the document**: it names the policy's own errors — the 30-day card window, cards "per establishment", the 180-day wait, the 24-hour carryover, find-your-own-cover, the tip credit, $20.76 — and works the tier from **both** locations (25 + 31). It must never say no file came through. **Then ask a second question about the file**: the answer must still know it, and must not retract what it said the first time |
-| **R2-2** | **The file card's wording** *(rewritten 3 Oct)* | Attach (one click, as in R2-1) anything the scan classifies with a vowel-initial type | The card reads **"Read as: Employee Handbook Addendum"** — no article. "Read as a Employee Handbook Addendum" is the bug |
+| **R2-1** | **Attach a file, then ask about it** *(rewritten 3 Oct, Task 4)* | Attach — the attach line under the box on a first visit (*Attach a file and ask any compliance question about it*), or the paperclip in the box once a conversation has started — **one click opens the file picker**, and the file is **staged as a chip** → `tests/fixtures/Harbor-Kitchen-Employee-Policy-2026.pdf` → then ask *"check this policy against Seattle's paid sick leave rules"* | The answer **is about the document**: it names the policy's own errors — the 30-day card window, cards "per establishment", the 180-day wait, the 24-hour carryover, find-your-own-cover, the tip credit, $20.76 — and works the tier from **both** locations (25 + 31). It must never say no file came through. **Then ask a second question about the file**: the answer must still know it, and must not retract what it said the first time |
+| **R2-2** | **The file card's wording** *(rewritten 3 Oct, Task 4)* | Attach and ask (as in R2-1) | Above the answer, between hairlines: the file name, then one grey line **"Read · ‹kind› · Saved to Documents → ‹folder›"** (or *Saved to Documents* with no folder), and **Open the report** on the right. The kind is one of the seven words the database accepts (*Policy*, *Record*…), so there is no article to get wrong |
 
 > ### THE SECOND HALF OF R2-1 IS THE PART THAT WAS GOT WRONG ONCE.
 >
@@ -547,7 +579,7 @@ wrong, which is the class `CLAUDE.md` §5 exists to keep out.
 
 | # | Action | Steps | What must be true |
 |---|---|---|---|
-| **F1** | **Attach a file, and see it classified** *(rewritten 3 Oct)* | Attach — the attach line under the box on a first visit (*Attach a file and ask any compliance question about it*), or the paperclip in the box once a conversation has started — **one click opens the file picker**, there is no sheet → choose a real PDF → send | A file card appears **in the conversation** naming what it was read as and **"Saved to Documents → …"**. Open Documents in another tab: **the file is there.** If the upload fails, the failure appears **in the conversation at the point of the attach** — never as a banner at the top of the page — and asserts **nothing** about the contents |
+| **F1** | **Attach a file, and see it classified** *(rewritten 3 Oct, Task 4)* | Attach (the attach line, or the paperclip) → choose a real PDF → it stages as a chip → type a question → send | The four stages show in turn — *Saving the file*, *Reading ‹name›*, *Checking it against your question*, *Writing the answer* — then the card above the answer says **"Read · ‹kind› · Saved to Documents"**. Open Documents in another tab: **the file is there.** If the save fails, the failure appears **in the conversation**, never as a banner, asserts **nothing** about the contents, and puts the question and the file back |
 | **F2** | **An answer that stops on its own** *(rewritten 3 Oct)* | Ask something long. While it is writing, kill the dev server (or pull the network) | The answer **stops with a visible line** — ***This answer stopped early.** The answer stopped before it was finished, so what is above is incomplete. Nothing was saved for it.* — offering **Try again**, and the composer returns to ready. What arrived stays on screen. **A half-answer must never be shown with its action buttons as though it were finished** — that was the 22 September defect, and nothing on screen said so |
 | **F3** | **A third turn standing by its sources** | Ask something that searches. Ask a follow-up. Then ask *"were the sources in your last answer real?"* | The answer **does not disown its own citations.** ⚠️ **This is the one that is not yet fixed** — see the note below; run it and read what comes back rather than assuming |
 | **F4** | **Print a drawer** *(rewritten 3 Oct)* | Open a checklist (or a conversation summary) in the drawer → **Download** — outlined in a checklist's footer, plain text in a summary's | The printed page contains **only that drawer's content**, with a header naming **the company, the title and the date**. The tabs, the other conversations and the composer are **not** on it. Citation markers print **inline** as `[n]`, not on their own lines. **"steps being written…" never appears** |
@@ -588,7 +620,7 @@ switch off.
 |---|---|---|---|
 | **1** | **Ask and get a sourced answer** *(rewritten 3 Oct)* | Open Compliance Workspace. The box shows three grey lines starting *e.g.* — guidance, not buttons. Type *"Do we need to file a Tier II report for our Oregon plant?"* (the grey lines go as you type) → **Research this**, the filled button at the right of the line under the box | Text appears **progressively**, not all at once. The answer has **no raw `\|` pipes and no stray `*`** — tables are tables, bold is bold. Each `[n]` opens a card with a title, a domain and a working link. The sources list under the answer shows a domain beside each title, and **no source reads as a bare domain or a broken PDF header** |
 | **2** | **Continue the conversation** *(rewritten 3 Oct)* | Ask a follow-up that only makes sense in context: *"does that change if we move up a generator category?"* | The answer carries the subject **without restating the first answer**. The composer is now docked at the bottom with its placeholder, a paperclip and a send arrow; **Make a checklist**, **Research this**, the attach line, the examples and the counts line are gone |
-| **3** | **Upload a file and ask about it** *(rewritten 3 Oct)* | Attach — the attach line under the box on a first visit (*Attach a file and ask any compliance question about it*), or the paperclip in the box once a conversation has started — **one click opens the file picker**, there is no sheet → choose a PDF → ask *"check this for errors"* | A file card appears saying what it was read as and **"Saved to Documents → …"**. Open the Documents screen in another tab: **the file is there.** If it could not be read, the card says so in our voice and offers a clearer copy — and asserts **nothing** about the contents |
+| **3** | **Upload a file and ask about it** *(rewritten 3 Oct, Task 4)* | Attach (the attach line, or the paperclip) → choose a PDF → it stages as a chip → ask *"check this for errors"* | The stages run, then the card above the answer: **"Read · ‹kind› · Saved to Documents"** and **Open the report**. Open the Documents screen in another tab: **the file is there.** If it could not be read, **the question is not sent**: the card says so in the scan's words and offers a clearer copy, and the question is back in the box |
 | **4** | **Convert to a checklist** *(rewritten 3 Oct, Task 3)* | Under the box → **Turn this into a checklist** (green text) → **Just what we discussed** | The scope sheet shows both options. The new checklist opens **in the drawer over the conversation**, not on a new screen. Every item is tagged **from this conversation**, and every source on it appeared in the conversation |
 | **5** | **Summarise** *(rewritten 3 Oct, Task 3)* | Under the box → **Summarise this conversation** | The summary drawer opens with a summary of what was asked and concluded. Go to **Conversations**: the row now reads **Summarised** |
 | **6** | **Tick items, and reload** | Open a checklist → tick three items → **reload the browser** → reopen it | The three are still ticked and the progress reads **"3 of N done"**. This is the one people assume works |
@@ -2019,9 +2051,9 @@ silently under somebody half way through copying it is the thing this prevents.
 ### 5. Research this
 
 **Research this** on a gap opens the Compliance Workspace with the composer already holding
-the gap's title and fix, and the document named **above** the box — *Asking about ‹file› remove*
-(seen in Workspace layout Task 1: *Asking about 01-eap-chemical.pdf remove*). The grey *e.g.* lines
-are not shown, because the box is not empty. *(Rewritten 3 Oct: this said "attached below it".)* Send it: the answer must show
+the gap's title and fix, and the document as a **chip inside the box** — paperclip, name, ×
+*(rewritten 3 Oct, Workspace Task 4: it was the line "Asking about ‹file› remove" above the box)*. The
+grey *e.g.* lines are not shown. Send it: only the last two stages show, and the answer must show
 the document was carried. Reload the workspace afterwards — the composer must **not**
 re-fill, because the parameters are consumed on arrival.
 
@@ -2118,18 +2150,19 @@ Check `document_scans.extracted_text` for both: text for the first, null for the
 ### 2. A file attached in the workspace scans through the new path
 
 Attach a document in the Compliance Workspace — the attach line under the box on a first visit, or
-the paperclip in a conversation; one click opens the picker. *(Rewritten 3 Oct.)* The card underneath it reads
-**Read as: &lt;kind&gt; — &lt;title&gt;**, then the agency and the status, then the scan's summary —
-all of it off `document_index_v`, the same row the Documents page shows.
+the paperclip in a conversation — and **send a question with it** *(rewritten 3 Oct, Workspace Task 4:
+picking a file only stages it; it is saved and read on send)*. The card above the answer reads
+**Read · &lt;kind&gt; · Saved to Documents → &lt;folder&gt;**, off `document_index_v`, the same row the
+Documents page shows, and **Open the report** opens that page's own report drawer.
 
 **Now open the Documents page without re-scanning anything.** The file is there, read, with the
 same kind, the same agency and the same status word. That is the test: until Run 6 the attach
 flow used a reading nothing else could see, so the conversation card said it had read the file
 while the Documents page showed it as Queued for ever.
 
-Attach something unreadable too — a photograph of a wall, or a `.zip` renamed to `.pdf`. The card
-says what we could not do and what would fix it, in the scan's own words, and the file is still
-saved and still attached to the conversation.
+Attach something unreadable too — a photograph of a wall, or `tests/fixtures/unreadable-blurred-page.pdf`
+— and send a question. The card says what we could not do and what would fix it, in the scan's own
+words; **the question is not sent and goes back in the box**; the file is saved in Documents.
 
 ### 3. A fact proposed by two documents is one question
 
