@@ -305,6 +305,22 @@ try {
     console.log(`    body text sizes: ${Object.entries(d.bodyTextSizes).map(([k, n]) => `${k}×${n}`).join(' ')}`)
   } else console.log('  drawer           none open')
 
+  // *** THE FONTS, AS DECLARED AND AS RENDERED — the self-hosting change. *** The computed
+  // font-family says what the CSS asks for; `CSS.getPlatformFontsForNode` says what Chrome actually
+  // drew the glyphs with, which is the only way to tell the real file from its size-adjusted fallback.
+  {
+    await evaluate(`document.fonts.ready.then(() => true)`)
+    await cdp(ws, 'DOM.enable'); await cdp(ws, 'CSS.enable')
+    const { root } = await cdp(ws, 'DOM.getDocument', { depth: -1 })
+    for (const [label, selector] of [['title', 'h1'], ['body text', '.print-page p']]) {
+      const { nodeId } = await cdp(ws, 'DOM.querySelector', { nodeId: root.nodeId, selector })
+      if (!nodeId) { console.log(`  font ${label.padEnd(11)} no ${selector}`); continue }
+      const declared = await evaluate(`getComputedStyle(document.querySelector(${JSON.stringify(selector)})).fontFamily`)
+      const { fonts } = await cdp(ws, 'CSS.getPlatformFontsForNode', { nodeId })
+      console.log(`  font ${label.padEnd(11)} ${declared}   rendered: ${fonts.map((f) => `${f.familyName} (${f.isCustomFont ? 'web font' : 'system'}, ${f.glyphCount} glyphs)`).join(' + ')}`)
+    }
+  }
+
   if (shot) {
     const s = await cdp(ws, 'Page.captureScreenshot', { format: 'png' })
     writeFileSync(shot, Buffer.from(s.data, 'base64'))

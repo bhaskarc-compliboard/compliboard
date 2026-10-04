@@ -9,7 +9,11 @@ can be loud.** Almost every rule below is a consequence of that.
 
 ## 1. Type
 
-Two families, loaded in `app/layout.tsx` via `next/font/google`:
+Two families, self-hosted in `app/fonts/` (with each family's OFL) and loaded in `app/layout.tsx`
+via `next/font/local` — never `next/font/google`, which fetches from Google at build time and broke
+two production builds on 3 October (vercel/next.js#99114); `tests/unit/fonts.test.ts` enforces it.
+The CSS family names are `plexSans` and `sourceSerif` (Turbopack names a local family after its
+call); the files, and so the glyphs, are the ones Google served:
 
 - **IBM Plex Sans** (`--font-plex` → `--font-sans`) — the interface.
   Drawn as documentation type, so it reads institutional rather than
