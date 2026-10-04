@@ -1,7 +1,8 @@
 # How We Build CompliBoard
 
-**Version:** 19 · **Updated:** 4 October 2026
-**Supersedes:** version 18 (4 Oct). §4: **`npm run db:reset` and `npm run db:restore` run only when the
+**Version:** 20 · **Updated:** 4 October 2026, at the close of the workspace work
+**Supersedes:** version 19 (4 Oct). Adds **§3d — three more working rules from the workspace**: screenshots in `shots/`, the claim + `after()` pattern for long paid work (`lib/topicClaim.ts`), and every report naming its effects on other sections. §3c already carries the port-3999 rule. `CLAUDE.md` §3.11 holds all four as rules.
+Version 19: version 18 (4 Oct). §4: **`npm run db:reset` and `npm run db:restore` run only when the
 owner says so in the brief** — no longer after every migration (`DECISIONS.md` §161).
 Version 18: version 17 (22 Sep). Adds **§3c — two traps from Workspace Task 6**: `npm run db:migrate`
 chains into `check:live`, and `next dev` refuses a second server in the same folder.
@@ -389,6 +390,27 @@ cd <scratch>/app3998 && AI_MODEL_HOWTO=… npx next dev -p 3998
 
 It cost nothing by itself; the cost was the time to find out. Changing `distDir` in `next.config.ts`
 instead would restart the owner's running server, which reads the same config.
+
+---
+
+## 3d. THREE MORE WORKING RULES FROM THE WORKSPACE — 4 October 2026
+
+**1. Screenshots go in `shots/`**, at the project root and git-ignored — `npm run measure -- … --shot
+shots/<task>-<what>.png`. A screenshot in `.next/shots/` is gone after the next `npm run check`, because
+`next build` empties `.next/`; Workspace Stage 2's were lost that way before the owner saw them.
+
+**2. Long paid work: claim, reply, finish after the reply.** `lib/topicClaim.ts` is the pattern. Before any
+model call, a compare-and-set claim in the database (`topics.summary_started_at`, the shape of
+`checklist_items.howto_started_at`); a held claim answers 409 and calls nothing; otherwise the route answers
+202 at once and does the work in `after()` from `next/server` — on Vercel `waitUntil`, up to `maxDuration` —
+saves only while it still holds its claim, and clears only its own claim. The page reads the claim from the
+database and shows the work in words (*Summary being written…*). Why it exists: work tied to a request was lost
+on production when the person left (`DECISIONS.md` §138), and a second press paid twice (§161). Its users:
+the summarise, from-topic and how-to routes, and the nightly summary job (§162).
+
+**3. Every report ends with its effects on other sections, by file** (`CLAUDE.md` §9.1). The drawer, the print
+frame, the app shell and the job routes are shared: one change there is a change in Documents, Audits and the
+workspace at once, and a report that names only its own section hides that.
 
 ---
 

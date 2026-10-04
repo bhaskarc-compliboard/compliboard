@@ -1,6 +1,6 @@
 # docs/
 
-**Version:** 11 · **Updated:** 28 September 2026
+**Version:** 12 · **Updated:** 4 October 2026, at the close of the workspace work — indexes `HANDOFF-WORKSPACE.md`, `HANDOFF-WORKSPACE-TO-HR.md` and `WORKSPACE-MACHINERY.md`; marks `WORKSPACE.md` as a design never built; corrects where `HANDOFF-DOCUMENTS.md` and `HANDOFF-LAYOUT.md` live.
 
 **This is the index of what is LIVE.** Eight files moved to **`archive/`** on 28 September; that
 folder's own README names what supersedes each, and it is the only place this index points at them.
@@ -35,6 +35,9 @@ folder's own README names what supersedes each, and it is the only place this in
 | **`HANDOFF-AUDITS.md`** | **The STATE of the Audits section after rev 1** — rewritten from a pre-build brief on 1 October 2026 (Run 6b). What Audits reads, its tables and routes, the sweep and the email, the four words and the design rules, the golden cases and the baseline, what is owed and what has not been judged. **§5 is still the design template every section follows and §6 the file structure**, and **§5a is the page and the drawer element by element** — the first thing any new section's chat reads |
 | **`HANDOFF-FOLDER-TEST.md`** | The brief for the next chat: the whole product judged on a folder of twenty to forty files the way a customer arrives, one of them a two-site company. One page. Points at `HANDOFF-CODE.md` §8a for the three load questions nobody has tested |
 | **`DESIGN.md`** | The layout template: widths, type, colour, the components |
+| **`HANDOFF-WORKSPACE.md`** | **The STATE of the Compliance Workspace**, element by element with file and line — live through Stage 4 (v7, 4 October 2026). The template for the next section |
+| **`HANDOFF-WORKSPACE-TO-HR.md`** | **The brief for the HR section's chat** (4 October 2026): what the workspace is, which pieces HR reuses, the rules every section follows, how the owner and Claude work. Checked against the repository the same day |
+| **`WORKSPACE-MACHINERY.md`** | The read-only map of how the workspace worked at `6a1382f`, the first commit of the 3–4 October rebuild, with file and line (not rewritten since; its top note lists what changed) — the shape a new section's first instruction copies |
 
 ### Specs for what is built
 
@@ -44,7 +47,7 @@ folder's own README names what supersedes each, and it is the only place this in
 | **`CRITIC-PASS.md`** | Stage 5 — the reviewer that reports and never regenerates |
 | **`RESEARCH-ANSWER.md`** | The shape of a research answer |
 | **`SWITCH-DETERMINATION.md`** | Phase 7.2 |
-| **`WORKSPACE.md`** | The Compliance Workspace: conversations, fact capture, topics, signup |
+| **`WORKSPACE.md`** | The Compliance Workspace: conversations, fact capture, topics, signup. **Describes a design that was never built** (the owner's map, 4 October 2026: retire or rewrite); what was built is `HANDOFF-WORKSPACE.md` |
 
 ### Specs for what is not built
 
@@ -270,8 +273,9 @@ that produced it.**
 ### `HANDOFF-LAYOUT.md` and `HANDOFF-DOCUMENTS.md`
 
 Two per-area handoffs, each the starting brief for its own chat: the layout pass on the
-Compliance Workspace, and the Documents module. Both written 23 September 2026 and both in this
-folder.
+Compliance Workspace, and the Documents module. Both written 23 September 2026, and **both moved to
+`archive/` on 28 September** — `docs/archive/HANDOFF-LAYOUT.md`, `docs/archive/HANDOFF-DOCUMENTS.md`.
+*(Corrected 4 October 2026: this said "both in this folder".)*
 
 `HANDOFF-LAYOUT.md` is the brief the layout pass was run from; `docs/DESIGN.md` is what came out
 of it. `HANDOFF-DOCUMENTS.md` §8 carries a parked list from the research section — prompt caching

@@ -6,8 +6,9 @@
 > replaced.** Those carry a 🕓 HISTORICAL banner naming what is current instead — added 28 September
 > 2026. A manual set is the record of what a person checked and when; a file that deletes the sets whose
 > screens changed is a file that cannot tell you whether anything was ever checked at all.
-**Version:** 25 · **Updated:** 3 October 2026
-**Supersedes:** version 24 (25 Sep). Adds the **Workspace layout set** (3 October) — the first three
+**Version:** 26 · **Updated:** 4 October 2026, at the close of the workspace work
+**Supersedes:** version 25 (3 Oct). Adds the sets of 4 October — Workspace Task 5, Task 6, Stage 2, Stage 4 and the cron release's live checks — with the owner's recorded results (Task 6's T6-1 and T6-3, Stage 4's S4-2, the cron release's CR-1).
+Version 25: version 24 (25 Sep). Adds the **Workspace layout set** (3 October) — the first three
 are the owner's live checks after the push, and none of them sends a question or uploads a file — and
 **rewrites in place** every earlier item the layout pass changed: the Layout pass set, R3, Fix Round 1,
 Fix Round 2, Documents Run 5 §5 and Run 6 §2, and the stale "Create tab" in case 001. A rewritten row
@@ -177,7 +178,9 @@ select job, started_at, finished_at, ok, counts, errors
 
 **A sweep with nothing to do writes NO `job_runs` row** (cron release follow-up, `DECISIONS.md` §163): `scan_documents` and `audit_sections` record a row only when they find work or hit an error. So on a quiet day the database shows nothing for them, and **CR-1 relies on Vercel's cron logs, as written** — the GET 200 every 5 minutes is the evidence they run. `summarise` and `delete` still write a row every night, which is what CR-2 reads.
 
-*(Before the commit, on staging through an isolated server on Haiku: every door on all four jobs, both refused with `CRON_SECRET` unset, two overlapping summarise runs and two overlapping delete runs, each with one result. **No person has run these checks yet.**)*
+*(Before the commit, on staging through an isolated server on Haiku: every door on all four jobs, both refused with `CRON_SECRET` unset, two overlapping summarise runs and two overlapping delete runs, each with one result.)*
+
+**Run by the owner on production, 4 October 2026 (the owner's map):** **CR-1 — passed**, the sweeps show GET 200 in Vercel. **CR-2 and CR-3 — due the morning of 5 October.**
 
 ## Manual set — Workspace Stage 4 — 4 October 2026 (`docs/HANDOFF-WORKSPACE.md`, the Stage 4 note)
 
@@ -194,7 +197,9 @@ select job, started_at, finished_at, ok, counts, errors
 | **S4-2** | **Summarise, then close the tab at once** *(production, PAID, owner only)* | Open a real conversation that is **not** summarised yet → **Summarise this conversation** → watch the button for a second → **close the tab immediately**. Wait one minute. Open the workspace again → **Conversations** | The moment it is pressed the button greys out and reads **Summary being written…**. After the minute the conversation's row reads **Summary ready** (it may carry a new title — the summary writes one), and its drawer shows the report. **This is the only proof that the work survives the tab on Vercel** (`after()`, `waitUntil`); staging proved it on a local server only. *(If you reopen within a few seconds instead, the row says* Summary being written… *and turns into* Summary ready *by itself, without a reload.)* **Estimated about $0.20** — one summary on `claude-opus-5-5`, production's summary model (`docs/RELEASE.md:86`); a long conversation costs more. Check it in the Vercel log: one `POST /api/topics/…/summarise 202` and, after it, one `cost: summarise` line |
 | **S4-3** | **The second press waits** *(staging, as `testgamma`, the ethanol fixture `14a052c6-05d8-4b20-b250-2f3bbffe9916`)* | Open the conversation in **two tabs**. Press **Summarise this conversation** in the first, then at once in the second | The first tab's button reads *Summary being written…*. The second tab shows **the same words, not an error**. Both tabs show the summary when it lands. `npm run cost`: **one** new `summarise` row. Then the same with **Turn this into a checklist → Just what we discussed**: one new `convert` row, **one** checklist in the Checklists tab, and both tabs open it |
 
-*(Before the commit, on staging as `testgamma` on Haiku, by script: the browser killed 3 s after pressing Summarise and the page reopened; one-tab and two-tab double presses of both actions, one ledger row and one result each; the nightly job by hand skipping a held claim; an 11-minute claim taken by the next press; one "How do I do this?" through the new 202. Screenshots `shots/s4p2-*`. **No person has run this set yet.**)*
+*(Before the commit, on staging as `testgamma` on Haiku, by script: the browser killed 3 s after pressing Summarise and the page reopened; one-tab and two-tab double presses of both actions, one ledger row and one result each; the nightly job by hand skipping a held claim; an 11-minute claim taken by the next press; one "How do I do this?" through the new 202. Screenshots `shots/s4p2-*`.)*
+
+**Run by the owner on production, 4 October 2026 (the owner's map):** **S4-2 — passed**, proven by closing the tab mid-summary. **S4-1 and S4-3 — no result recorded.**
 
 ## Manual set — Workspace Stage 2 — 4 October 2026 (`docs/HANDOFF-WORKSPACE.md`, the Stage 2 note)
 

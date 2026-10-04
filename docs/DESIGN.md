@@ -247,16 +247,56 @@ Measured with `--file-chooser`: `Page.fileChooserOpened` fired once for
 each. Under that, the counts line in Audits' own classes
 (`app/audits/page.tsx:576`, `:579`).
 
+**Patterns any section reuses — the workspace's, as they stand on 4 October 2026.** Copy these; do not
+draw a second version of any of them. Line numbers are `app/compliance/page.tsx` at `fd2ddfa`.
+
+- **The accordion summary** (`ReportView`, `:1982`; `DECISIONS.md` §159). A long report opens folded by its
+  natural groups — in the workspace, one row per authority with *N things to do* at the right and a chevron.
+  What a person must not miss is never folded (*Still to confirm*). *Open all* / *Close all* (`:2016`) sits
+  beside the count heading. Every open starts folded; nothing is remembered. **Print is always fully open**,
+  by print CSS, never by changing the screen.
+- **One-line source links** (`OneLineLink`, `:1935`; `lib/checklistView.ts:172` `oneLineSource`). A source
+  under an item is one line, *"[n] host · title"*, cut with *…*, the full title on hover; on paper, the full
+  title and the full address. A site's own suffix (" | Site", a prefix before " :: ") is dropped; a statute's
+  own " - " title stays.
+- **In-progress states** (`lib/topicClaim.ts:42` `CLAIM_WORDS`; `DECISIONS.md` §161). Work that runs after
+  the reply says so in words, never a spinner alone: *Summary being written…*, *Checklist being built…* — on
+  the pressed button (greyed, disabled), in the list row's grey 12px line, and in the drawer in place of its
+  body; *Looking this up — checking sources…* under a checklist item (`:1789`). The state comes from the
+  database, so a reload or a second tab shows the same words. When the work clears with nothing new, one plain
+  sentence says it could not be done and to try again.
+- **The delete sheet** (`:1860`–`:1882`; `DECISIONS.md` §154's Task 3). Delete is never on a row; it is in the
+  drawer, at the far right of the footer in grey, and opens the product's own sheet, never the browser's
+  `confirm()`. The sheet says what goes and that it cannot be undone, offers **the download first** (an outline
+  button), then **Delete for good** (the outline's box in red), then **Cancel**, which has the focus — so
+  Enter does not delete. A failure keeps the sheet open with one plain line.
+- **The staged file chip and its reading stages** (`DECISIONS.md` §155). Choosing a file only *stages* it, as a
+  chip in the box with a remove control (`:1346`); nothing is uploaded or read until the question is sent. On
+  send the real stages show, in order, as they happen (`stageWords`, `:2076`): *Saving the file*, *Reading
+  ‹name›*, *Checking it against your question*, *Writing the answer*. A file that cannot be read stops the
+  question, says why in the scan's own words, and puts the question back in the box.
+- **The shared print frame** — §5.
+
 ## 5. Print
 
-A printed page is evidence, so printing is a first-class output.
-`.no-print` hides controls. `body.printing-drawer` hides `.print-page`
-and promotes the drawer to the document. Drawers carry a print-only
-header with company, title and date — a printed compliance page with no
-company and no date is not evidence of anything.
+A printed page is evidence, so printing is a first-class output. `.no-print` hides controls.
 
-Taking the boxes off made print better on its own, which is usually what
-it means when a print bug disappears without anyone fixing print.
+**One print frame, one path** (`lib/printFrame.ts:70` `printWithFrame`; `DECISIONS.md` §160, 4 October 2026).
+Every drawer prints through `components/Drawer.tsx` `printDrawer()` and the conversation through the page's
+Download, and both go through `printWithFrame` — nothing prints by itself. On every page: **the company top
+left and the document type top right** (*Summary report*, *Checklist*, *Document report*, *Audit report*,
+*Conversation*) over a hairline; at the foot, a hairline, *Prepared with CompliBoard* and **Page n of N** (the
+browser's own count). Page 1 has the title in the serif and one grey line of **absolute dates** — never
+*Today* or *Yesterday*. The frame is drawn in CSS page margin boxes, so **the browser's own header and footer
+are off** even with "Headers and footers" ticked. Side margins 10mm. The site header never prints. Measured in
+Chrome 154 only.
+
+**A new section prints through this frame and never a copy of it.** The app-wide sweep — every `window.print`,
+`printDrawer` and print stylesheet onto the one frame — waits until every section has its new look
+(`docs/WORKSPACE-PLAN.md`, "When every section is done").
+
+Taking the boxes off made print better on its own, which is usually what it means when a print bug disappears
+without anyone fixing print.
 
 ## 6. Building the next section
 
@@ -292,9 +332,10 @@ it means when a print bug disappears without anyone fixing print.
     It starts from a fresh profile with the cache off, **fails every
     request to a paid route and every write**, and prints `BLOCKED` with
     the list — an empty list is the evidence a run cost nothing and
-    changed nothing. Screenshots go to `.next/shots/`, and **`npm run
-    check` wipes `.next/`** (`next build` clears it), so take them after a
-    check, not before. A selector scoped to a class alone will match
+    changed nothing. Screenshots: **`npm run
+    check` wipes `.next/`** (`next build` clears it). *(Changed 4 October
+    2026, the owner: **every task's screenshots go in `shots/` at the project
+    root**, git-ignored — `--shot shots/<task>-<what>.png` — never `.next/shots/`.)* A selector scoped to a class alone will match
     things you did not mean and report a page fault that isn't one.
 
 ## 7. Known open, not layout

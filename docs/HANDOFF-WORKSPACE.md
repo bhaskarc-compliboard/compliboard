@@ -1,10 +1,31 @@
 # Handoff — the Compliance Workspace, element by element
 
-**Version:** 6 · **Written:** 3 October 2026, at the close of the Workspace layout pass (Tasks 1, 2,
-2b and 3). In the shape of `docs/HANDOFF-AUDITS.md` §5a.
+**Version:** 7 · **Written:** 3 October 2026, at the close of the Workspace layout pass (Tasks 1, 2,
+2b and 3). In the shape of `docs/HANDOFF-AUDITS.md` §5a. **Updated:** 4 October 2026, at the close of the
+workspace work (housekeeping).
+
+> **Version 7, 4 October 2026 — THE FINAL STATE THROUGH STAGE 4, all live on production** (`origin/main` at
+> `fd2ddfa`; migrations to 065, `npm run preflight` PENDING COUNT 0). What a reader needs first; each line
+> points at the note below that has the detail.
+> - **The summary is an accordion** — each authority folded with *N things to do*, *Still to confirm*
+>   never folded, *Open all*, print always open (Stage 2, `04f81c6`, `DECISIONS.md` §159).
+> - **Sources are one line**, *[n] host · title*, under summary items, checklist items and how-to steps
+>   (`lib/checklistView.ts` `oneLineSource`; §159).
+> - **One print frame** (`lib/printFrame.ts`) for the four drawers and the printed conversation: company and
+>   document type on every page, absolute dates, *Prepared with CompliBoard*, *Page n of N*, the browser's
+>   own header and footer off (`94f630b`, §160). Tested in Chrome only.
+> - **Long work claims, replies and finishes after the reply** (Stage 4 Part 2, `cfe1889`, migration 065,
+>   §161): the button, the row and the summary drawer say *Summary being written…* / *Checklist being
+>   built…*; a second press waits; a closed tab cancels nothing. Proven on production by closing the tab
+>   mid-summary (the owner's map; `docs/TESTING.md` S4-2).
+> - **The nightly jobs run** (the cron release, `14eb03b`, §162; follow-ups `57c754c`, §163): the summary
+>   at 03:00 UTC for conversations quiet 24 hours, the deleter at 03:30 UTC (transcripts kept 12 months
+>   after the last message), the Documents and Audits sweeps every 5 minutes — which is what makes the
+>   drawer's *"The summary is written overnight"* (`app/compliance/page.tsx:1690`) true. An empty sweep
+>   writes no `job_runs` row.
 
 > **Workspace Stage 4 Part 2, 4 October 2026 (`cfe1889`, migration 065, `DECISIONS.md` §161): one press, one call, and
-> work that survives leaving the page.** To be released; `docs/TESTING.md`, "Workspace Stage 4".
+> work that survives leaving the page.** **Live 4 October**; `docs/TESTING.md`, "Workspace Stage 4".
 > - **Summarise this conversation** and **Turn this into a checklist** (both scopes) claim the conversation
 >   (`topics.summary_started_at` / `checklist_started_at`, `lib/topicClaim.ts`), answer **202** at once and
 >   do the work in `after()`. A second press, in this tab or another, gets **409** and waits; it pays nothing.

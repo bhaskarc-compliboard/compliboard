@@ -2,6 +2,9 @@
 
 # CompliBoard — Project Rules for Claude Code
 
+**Updated:** 4 October 2026 — §3.7's reset rule (the owner's say-so only) and §3.11's four standing rules.
+This file had no version line; changes before this one are dated where they were made.
+
 Read automatically at the start of every session. This is the standing brief — these
 rules should not need re-explaining in chat. **If anything here conflicts with an
 instruction given in a session, pause and flag the conflict rather than silently
@@ -497,6 +500,28 @@ The resolution engine is pure logic with safety properties (§3.2) and **must** 
 A wrong comparison direction there is silent and dangerous.
 
 ---
+
+### 3.11 Four standing rules from the workspace work — 4 October 2026
+
+- **Screenshots go in `shots/`** at the project root (git-ignored) — `npm run measure -- … --shot
+  shots/<task>-<what>.png`. Never `.next/shots/`: `npm run check` runs `next build`, which empties `.next/`,
+  and a task's screenshots were lost that way before the owner saw them.
+- **`check:live` runs only on port 3999 unless a brief says otherwise — including inside `npm run db:migrate`**,
+  which chains into it: `CHECK_LIVE_BASE_URL=http://localhost:3999 npm run db:migrate`. Nothing listens there,
+  so the table probes run and the paid steps cost nothing. Without it, `check:live` drives port 3000, where the
+  owner's dev server may be up; on 4 October that spent $0.2981 by accident (`HOW-WE-BUILD.md` §3c). A full
+  paid run goes against an isolated Haiku server on another port (§3c), only when a brief asks for one.
+- **Long paid work never runs inside the request: claim, reply, finish with `after()`.** The pattern is
+  `lib/topicClaim.ts` — a compare-and-set claim in the database before any model call (a held claim is a 409,
+  no call), a 202 at once, the work in `after()` from `next/server` (on Vercel, `waitUntil` up to
+  `maxDuration`), a save conditional on still holding the claim, and the claim cleared by the run that set it.
+  Copied by `app/api/topics/[id]/summarise/route.ts`, `app/api/checklists/from-topic/route.ts` and
+  `app/api/checklist-items/[id]/how-to/route.ts`. Why: work tied to a request was lost on production when the
+  person left (`DECISIONS.md` §138), and a second press paid twice (§161). A cron job claims its work items the
+  same way (§162).
+- **Every report names its effects on other sections, by file** — §9.1's last clause, restated here because
+  shared pieces (the drawer, the print frame, the app shell, `lib/summaryReport.ts`, the job routes) change
+  several sections at once.
 
 ## 4. The worker
 

@@ -2,6 +2,8 @@
 
 *Written 24 September 2026 from the two releases of 23 September (Runs 1–3 + Fix Round 1, then Fix Round 2). The owner runs every step below. Claude Code never runs anything against production.*
 
+*Updated 4 October 2026, at the close of the workspace work: `check:live` before a release runs on the dead port 3999; the retention gate states the 12-month rule; no Vercel variable changed with the Stage 4 or cron releases.*
+
 ---
 
 ## The one rule
@@ -20,7 +22,7 @@
 All three must be true:
 
 1. `npm run check` is green (Claude Code's report says so, with the test count).
-2. `npm run check:live` has run on staging with every pending migration applied (Claude Code's report says so). A migration that adds or alters a tenant table does not go to production without this.
+2. `npm run check:live` has run on staging with every pending migration applied (Claude Code's report says so). A migration that adds or alters a tenant table does not go to production without this. **The owner's free run is `CHECK_LIVE_BASE_URL=http://localhost:3999 npm run check:live`**: nothing listens on 3999, so the table probes run and nothing paid is called (`CLAUDE.md` §3.11). A full run that drives the routes is paid and goes against an isolated Haiku server, when a brief asks for it (`docs/HOW-WE-BUILD.md` §3c).
 3. The owner has done the manual tests in `docs/TESTING.md` for the feature being shipped, on the laptop against staging.
 
 ## The procedure
@@ -66,9 +68,11 @@ Sign in with a test account and run the first three manual tests for the feature
 ## Still owed before real customers (release gates)
 
 - Credential rotation (see `docs/HANDOFF-CODE.md` and `TODO.md`).
-- The privacy-policy line stating that conversation transcripts are cleared 7 days after summarising (gate four of the retention promise).
+- The privacy-policy line stating the retention promise (gate four): **full conversations are kept 12 months after the last message; summaries until the person deletes them** (Workspace Task 2, `lib/retention.ts`; `DECISIONS.md` §154). *(Corrected 4 October 2026: this line said transcripts are cleared 7 days after summarising — the rule before Task 2.)* The deleter that enforces it runs nightly from the cron release (`DECISIONS.md` §162).
 
 ## Variables currently set on Vercel Production (as of 4 Oct 2026, after the Workspace Task 6 release)
+
+*(4 October 2026, at the close of the workspace work: **unchanged** by the Stage 4 Part 2 release (migration 065) and the cron release — both needed no variable; the cron release uses the `CRON_SECRET` already set.)*
 
 **This list is the authoritative record of what Vercel holds.** `CLAUDE.md` §3.4a points here and deliberately does not keep a second copy: on 26 September that section and this one disagreed about whether the `AI_MODEL_*` variables are set at all, which made the model that reads a customer's document unknowable from the repository. It was settled by reading the dashboard, §3.4a was the one that was wrong, and the rule now is **the dashboard wins and this list gets corrected.** `DECISIONS.md` §136.
 

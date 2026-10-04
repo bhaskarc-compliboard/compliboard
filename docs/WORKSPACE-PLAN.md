@@ -1,110 +1,166 @@
 # The Compliance Workspace — what's left
 
-**Version:** 3 · **Updated:** 4 October 2026 — Stage 4's cron release built (Part 3). Version 2: Stage 4's first item built (Part 2) and the rebuild-from-empty rehearsal done. Version 1 was written after the Workspace Task 6 release.
+**Version:** 4 · **Updated:** 4 October 2026, at the close of the workspace work (housekeeping), to mirror
+the owner's map as it stood that evening. Version 3: Stage 4's cron release built. Version 2: Stage 4's first
+item built and the rebuild-from-empty rehearsal done. Version 1 was written after the Workspace Task 6 release.
 
-> **The owner's working copy is a Claude Doc, "Compliance Workspace — the map of what's left".
-> This file mirrors it**, so the next session can read the plan from the repository. When the two
-> disagree, the owner's doc wins and this file is corrected.
+> **The owner's working copy is a Claude Doc, "Compliance Workspace — the map of what's left"**
+> (https://claude.ai/artifact/W5BtmShWGoL5Z9uCLVHuwb). **This file mirrors it**, so the next session can read
+> the plan from the repository. When the two disagree, the owner's doc wins and this file is corrected.
 
-The plan has five stages, in this order. **The next session starts at Stage 3.** *(Stage 2 done 4 October 2026.)*
+Stages 1 to 3 run in order; Stage 4 runs alongside Stage 3; Stage 5 starts only after the workspace ships.
+**Stages 1 and 2 are done, and Stage 4's three main pieces are done. What is open:** Stage 3's three rev 1
+items, Stage 4's `check:live` split and the final rebuild, and everything from Stage 5 on.
 
 ---
 
 ## Stage 1 — The Task 6 release · DONE, 4 October 2026
 
-Migration 064 is on production, the code is pushed (`a701436`), and the new settings are on Vercel.
-The owner's live checks passed. `DECISIONS.md` §158.
+Migration 064 on production, the code pushed (`a701436`), `AI_MODEL_HOWTO` and the two search limits on
+Vercel, `AI_EFFORT` re-entered as visible `medium`. The owner's live checks: a checklist shows three groups
+and must-do counts; one paid "How do I do this?" on MNBP registration gave 7 official steps and printed
+correctly. `DECISIONS.md` §158.
 
 ## Stage 2 — The polish pass · DONE, 4 October 2026 (`04f81c6`, `94f630b`)
 
-Built as below, plus one fix the print check found: the site header no longer prints over a drawer
-(`components/AppLayout.tsx`). `DECISIONS.md` §159. **And the print frame** (board 10, `94f630b`,
-`DECISIONS.md` §160): the four drawers and the printed conversation carry the company, the document
-type, "Prepared with CompliBoard" and "Page n of N" on every page, with the browser's own header and
-footer off. **The app-wide print sweep waits** until every section has its new look. The owner's live checks: `docs/TESTING.md`,
-"Workspace Stage 2".
+Screen work only, no model or prompt change. `DECISIONS.md` §159, §160.
+- **The summary drawer as an accordion** (board 6b): each authority folded with "N things to do", Still to
+  confirm never folded, "Open all", print always fully open.
+- **One-line source links**: "[n] host · title", cut with "…", the full title on hover.
+- **A printed checklist with "How do I do this?" steps**, looked at on paper.
+- **The site header no longer prints** over a drawer.
+- **Our own print frame** (board 10): company and document type on every page, absolute dates, "Prepared
+  with CompliBoard" and "Page n of N" in the footer, the browser's own header and footer off.
+- **The conversation's Download** prints with the same frame, through one shared print function
+  (`lib/printFrame.ts`).
 
-1. **The summary drawer as an accordion.** The canvas "CompliBoard Compliance Workspace — the feature
-   boards", board 6b:
-   - each authority is folded, with "N things to do";
-   - "Still to confirm" is never folded;
-   - an "Open all" control;
-   - the print is always fully open.
-2. **One-line source links:** "[n] host · title", cut with "…", the full title on hover.
+## Stage 3 — The quality pass: research, sources and cost
 
-The print check is **DONE** (4 October): a checklist with "How do I do this?" steps printed correctly.
+**Decided 4 October, for rev 1** (the owner's map): this stage keeps only what protects customers from
+confident mistakes — **the consistency check (6), the quote check (7) and the held list below**, including
+the numbers check. **Items 2–5 and 9–11 move to rev 2**, with the requirements library. **The baseline (1)
+is built later, from real problems brought by potential customers in different industries**, not from cases
+we invent.
 
-## Stage 3 — The quality pass
+Each item is measured against the baseline, one at a time, on the same four measures: obligations missing
+from the final state; items stated more firmly than their evidence; the share of steps and claims taken from
+the agency's own pages; searches, tokens and cost per call.
 
-**How it is run.** Each change is measured against the baseline, one at a time. The fixed cases are
-the ethanol conversation plus two or three other industries. Each run is judged on:
-- missing final-state obligations;
-- items stated more firmly than their evidence;
-- the share of claims that come from the agency's own pages;
-- searches, tokens and cost per call.
+| # | Change | What it fixes | When |
+|---|---|---|---|
+| 1 | Baseline run of the fixed cases on Opus 5.5 everywhere | The yardstick | When real problems arrive |
+| 2 | Mothership first: the agency's own domains, then open search with copy sites blocked | Medium effort found more copies of the rule, not the rule | Rev 2 |
+| 3 | Read the item's already-cited page before searching | A page read is cheaper than a search | Rev 2 |
+| 4 | Check the search tool version; the newer one filters results first | Pages read, not searches, are the cost | Rev 2 |
+| 5 | Effort on research: low, medium, high, after item 2 | Effort changes how much is searched, not which source | Rev 2 |
+| **6** | **Consistency check**: one narrow pass asking which items depend on something still to confirm, for the summary and the checklist | Drawback and the tariff stated as settled | **Rev 1** |
+| **7** | **Quote check for "How do I do this?"**: each step's words must appear on its page | Today the link is proven, not the words | **Rev 1** |
+| 8 | Research answers cite at the source | 16 of 65 paragraphs in the ethanol chat carried a citation | Not assigned in the map |
+| 9 | A cheap model fetches and trims; Opus writes from the trimmed evidence | Opus reads a little instead of a lot | Rev 2 |
+| 10 | Tune the search limits (6 and 8 today) | A safety rail today, a measured setting after | Rev 2 |
+| 11 | "Everything on this subject" stops re-adding discussed points as new | Duplicates labelled "newly checked" | Rev 2 |
+| 12 | Coverage check, only if omissions reappear on Opus | Opus has covered every obligation so far | If needed |
 
-**The changes, in order:**
-1. A baseline run on Opus 5.5.
-2. Mothership-first search: the agency's own domains first, then an open search with copy sites blocked.
-3. Read the item's already-cited page before searching.
-4. Check the search tool version. Newer versions filter results before reading them.
-5. Effort, after change 2.
-6. A consistency check for items that depend on something under "To confirm".
-7. A quote check for "How do I do this?".
-8. Research answers that cite at the source.
-9. A cheap model fetches and trims; Opus writes.
-10. Tune the search limits.
-11. "Everything on this subject" re-adding discussed points.
-12. A coverage check — only if omissions come back.
-
-**Held for the final-model run.** The owner's decision (`DECISIONS.md` §158): small fixes found while
-testing wait until every feature runs on its final models and settings. Then each is tested again,
-and dropped if it is no longer needed.
-- Old checklists that claim an order.
-- Research that contradicts its own item (MNBP registration: 27 CFR 17.21).
-- Section-level citations.
+**Held for the final-model run (rev 1).** Small fixes found along the way, held until every feature runs on
+its final models and settings; each is tested then, and dropped if no longer needed (`DECISIONS.md` §158):
+- Old checklists claim an order they never had.
+- The research contradicts its own item (MNBP registration: 27 CFR 17.21 puts it with the first drawback claim).
+- Section-level citations (17.21, not all of Part 17).
 - A numbers check (the "$5,400 per 55-gallon drum" that should be about $1,426).
 - Steps that belong to other items.
-- The lead that Part 17's record rule implies imported spirits can be claimed.
+- A lead on drawback for imported spirits (Part 17's record rule).
 
 ## Stage 4 — Operations, alongside Stage 3
 
-- **Leaving the page while a summary is being written** — BUILT 4 October 2026 (Part 2, migration 065,
-  `DECISIONS.md` §161), to be released. Summarise and Turn into a checklist claim the conversation,
-  answer at once and work after the reply; a second press waits; the row and the drawer say "Summary
-  being written…" / "Checklist being built…". The paid production test in `docs/TESTING.md` proves it
-  on Vercel.
-- **The cron release for all four jobs — DONE 4 October 2026** (Part 3, `14eb03b`, `DECISIONS.md` §162), to be released. Each job answers Vercel Cron's GET; the audit sweep and the deleter are safe against a double delivery. Proven on production by `docs/TESTING.md`, "The cron release" (the sweeps' GET 200 within 5 minutes; the next morning's `summarise` and `delete` rows).
-  **Its two follow-ups are done** (`DECISIONS.md` §163): `check:live` counts every checklist group, and an empty sweep writes no `job_runs` row.
-- **Rebuild staging from empty — the REHEARSAL is DONE**, 4 October 2026, on staging, by the
-  `npm run db:restore` run after migration 065: 66 migrations, `000` → `065`, every verify block
-  passing (`DECISIONS.md` §161). It ran early, under the old rule, and wiped staging's conversations,
-  documents, fixtures and cost ledger. **The final rebuild still stands, just before the final
-  workspace release** — and only when the owner's brief says so (`CLAUDE.md` §3.7).
+- **Leaving the page, and pressing twice — DONE, live 4 October** (migration 065, `cfe1889`, `DECISIONS.md`
+  §161). Summaries, checklists and "How do I do this?" claim the conversation or item in the database, reply
+  at once and finish after the reply (`lib/topicClaim.ts`, `after()`); a closed tab cancels nothing and a
+  second press waits. The row and drawer say "Summary being written…" / "Checklist being built…". Proven on
+  production by closing the tab mid-summary (the owner's map).
+- **The cron release, all four jobs — DONE, live 4 October** (`14eb03b`, `DECISIONS.md` §162). Each job
+  answers Vercel's GET with `Authorization: Bearer <CRON_SECRET>`; manual POST runs keep working; safe against
+  a double delivery. The sweeps show GET 200 in Vercel (the owner's map). **Still to see:** the first
+  `summarise` and `delete` rows in production's `job_runs` the next morning, and CB-Test-3's old conversation
+  reading "Summary ready" (`docs/TESTING.md`, CR-2 and CR-3).
+- **The two follow-ups — DONE 4 October** (`57c754c`, `DECISIONS.md` §163): an empty sweep writes no
+  `job_runs` row; `check:live` counts all three checklist groups.
+- **Split `check:live` into machinery and quality — OPEN.** On Haiku it always ends FAILED, because some
+  checks judge answer quality Haiku cannot meet (the attachment's tier and errors, template findings, and a
+  prose reply to "Everything on this subject"). A gate that is always red gets ignored. Machinery checks must
+  pass on any model; quality checks are reported and judged only on Opus.
+- **Rebuild staging from empty — OPEN, just before the rev 1 launch.** **The rehearsal happened on 4 October**:
+  the restore during Part 2 rebuilt staging from zero (66 migrations, `000` → `065`, every verify passing,
+  `DECISIONS.md` §161). It also wiped staging's test data without asking, so `db:reset` and `db:restore` now
+  run only when the owner says so (`CLAUDE.md` §3.7).
 
-## Stage 5 — After the workspace ships
+## Stage 5 — After the workspace ships: the shared answer store and the mothership map
 
-- **The shared answer store.** Answers keyed by rule and state, never by company, each with
-  "checked on" and a refresh rule.
-- **The mothership map**: who publishes the binding text for each rule.
-- Both feed the requirements table.
+The biggest cost saving, and real design work, so it is its own project.
+- **Shared answers**, stored by rule and state, never by company, each with its "checked on" date.
+- **A refresh rule**: re-research after a set time (for example 90 days), or sooner when a cheap re-read shows
+  the source page changed.
+- **The mothership map**: every confirmed official page recorded against the kind of rule and the state.
+- **A cheaper model, where measurement allows**, once the source is pinpointed.
+- **The requirements table**: the map and the stored answers feed it.
+
+Open design questions (the owner's map): what the stored question looks like with no company details in it;
+who can see a shared answer; how refresh is triggered; how the map links to the requirements table.
+
+### Rev 2 of the app: one library, fed by research
+
+The owner's decision, 4 October: **the first release stays on open Claude research.** The requirements library
+is not used for answers or sources in rev 1. Stage 5 belongs to rev 2, built around what already exists:
+- **The requirements library is the mothership map.** `requirement_templates` (205 rows, 200 live), each with
+  its agency (`agencies`: 33, each with a `url` and a `review_interval`), jurisdiction, citation and citation
+  link, and the conditions that decide when it applies.
+- **Research looks in the library first.** A matching requirement's citation link and agency site are read
+  directly, with no discovery search.
+- **What research finds that the library lacks is recorded** in `library_candidates` — name, state, industry,
+  citation and agency guesses, `times_seen`. The most-asked become library entries, checked by a person.
+- **Research keeps the library fresh**: a confirmed agency page refreshes the requirement's citation, on the
+  agency's review interval.
+- **Then tailoring**, with company facts and the library together.
+
+## Counters on the dashboard, then the homepage
+
+The owner's request, 4 October: show how much the product has done — first to each customer on their dashboard,
+then publicly on the homepage once the numbers are large.
+- **What is counted:** conversations, counted as each answered question (four back-and-forths are four), and
+  checklists produced.
+- **What already exists:** the usage counters (migration 032) record events and never go down. The answer count
+  moves once per finished answer; a stopped one does not count. Since Workspace Task 2, the checklist count moves
+  only when a checklist is actually saved. **To check:** whether "How do I do this?", summaries and box
+  checklists are counted, and name each counter.
+- **The dashboard:** each customer sees their own totals; it reads an older checklist column today and moves onto
+  the counters.
+- **The homepage, later:** totals across all customers, only as sums, never anything about one company.
+
+## When every section is done
+
+Checks across the whole app, held until every section has its new look:
+- **Every print action uses the one print frame.** List every print action (`window.print`, `printDrawer`, any
+  print CSS), with file and line, and make each use the same shared print style (`lib/printFrame.ts`): our
+  header, footer and page numbers, the browser's own header off. One shared style, never a copy per page.
 
 ---
 
 ## The smaller open items
 
-They are in `docs/HANDOFF-CODE.md` §7, one row each, with where and why.
+They are in `docs/HANDOFF-CODE.md` §7, one row each, with where and why. None blocks the stages above; pick
+each up when a stage touches the same code.
 
 ## The standing rules
 
-- Draw before building.
-- Point at the line. A claim without a file and line is a hypothesis.
-- Haiku for machinery; Opus 5.5 for report quality.
-- Quality changes are shown first, and measured one at a time.
-- Web search, with the mothership rule: get the text from whoever publishes it.
+- Draw before building: boards on the canvas, the owner says "that one", then one instruction.
+- Point at the line. A claim without a file and line is a hypothesis, and is checked.
+- Haiku for machinery; Opus 5.5 for anything a customer relies on.
+- Quality changes are shown first, and measured against the baseline one at a time.
+- Research uses the web, mothership first; government and official pages are trusted; anything else gets its
+  exact link and "looks correct, check it".
 - Plain, short sentences for the customer. Never "AI". No cost on customer screens.
-- `npm run cost` before and after every task. $3 per task.
+- `npm run cost` before and after every task; a $3 cap per task unless the owner raises it.
 - `check:live` only on port 3999 — including inside `npm run db:migrate`
   (`CHECK_LIVE_BASE_URL=http://localhost:3999`; `HOW-WE-BUILD.md` §3c).
 - Start a fresh session when the context runs low.
-- The release routine: `docs/RELEASE.md`.
+- The release routine: free `check:live`, preflight, `db:migrate:prod` (typed PRODUCTION), push, Vercel green,
+  the free live checks, then the paid one (`docs/RELEASE.md`).
