@@ -136,10 +136,22 @@ const policies = q(`select tablename as tbl, policyname as name, cmd, roles::tex
        coalesce(qual,'') as using_expr, coalesce(with_check,'') as check_expr
   from pg_policies where schemaname='public' order by 1,3,2`)
 
-const grants = q(`select table_name as tbl, grantee, string_agg(privilege_type, ', ' order by privilege_type) as privs
-  from information_schema.role_table_grants
- where table_schema='public' and grantee in ('anon','authenticated','service_role')
- group by 1,2 order by 1,2`)
+// *** GRANTS ARE READ WITH has_table_privilege, NOT information_schema.role_table_grants. ***
+// HR Step 3b (`docs/HR-MACHINERY.md` B12). The CLI connects as `supabase_read_only_user`, and
+// `role_table_grants` shows only grants whose grantor or grantee is one of the caller's enabled roles —
+// so for that user it returned NO ROWS for the whole schema, and every table in SCHEMA.md read
+// "nothing" for all three roles in every version of the file. `has_table_privilege` answers for any
+// role, and it answers what the role HOLDS (default privileges and inherited grants included), which
+// is the question `CLAUDE.md` §3.6 says a grant list cannot answer. Proved before it was trusted:
+// on staging it shows `authenticated` SELECT, UPDATE on `audit_runs` (058's grant) and full DML on
+// `documents`, where the old query returned [].
+const grants = q(`select c.relname as tbl, r.rolname as grantee, string_agg(p.priv, ', ' order by p.priv) as privs
+  from pg_class c join pg_namespace n on n.oid = c.relnamespace
+  cross join (values ('anon'), ('authenticated'), ('service_role')) as r(rolname)
+  cross join (values ('DELETE'), ('INSERT'), ('REFERENCES'), ('SELECT'), ('TRIGGER'), ('TRUNCATE'), ('UPDATE')) as p(priv)
+ where n.nspname = 'public' and c.relkind in ('r', 'p', 'v', 'm')
+   and has_table_privilege(r.rolname, c.oid, p.priv)
+ group by 1, 2 order by 1, 2`)
 
 const indexes = q(`select tablename as tbl, indexname as name, indexdef as def
   from pg_indexes where schemaname='public' order by 1,2`)
