@@ -580,6 +580,7 @@ export type Database = {
           document_id: string | null
           due_date: string
           entity_id: string | null
+          handbook_id: string | null
           id: string
           is_recurring: boolean | null
           recurrence_period: string | null
@@ -596,6 +597,7 @@ export type Database = {
           document_id?: string | null
           due_date: string
           entity_id?: string | null
+          handbook_id?: string | null
           id?: string
           is_recurring?: boolean | null
           recurrence_period?: string | null
@@ -612,6 +614,7 @@ export type Database = {
           document_id?: string | null
           due_date?: string
           entity_id?: string | null
+          handbook_id?: string | null
           id?: string
           is_recurring?: boolean | null
           recurrence_period?: string | null
@@ -646,6 +649,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "entities"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_events_handbook_in_same_company"
+            columns: ["company_id", "handbook_id"]
+            isOneToOne: false
+            referencedRelation: "handbooks"
+            referencedColumns: ["company_id", "id"]
           },
         ]
       }
@@ -2422,6 +2432,422 @@ export type Database = {
           },
         ]
       }
+      handbook_check_sections: {
+        Row: {
+          check_id: string
+          claimed_at: string | null
+          company_id: string
+          created_at: string
+          finished_at: string | null
+          id: string
+          input_sha256: string | null
+          kind: string
+          section_id: string | null
+          status: string
+          word: string | null
+        }
+        Insert: {
+          check_id: string
+          claimed_at?: string | null
+          company_id: string
+          created_at?: string
+          finished_at?: string | null
+          id?: string
+          input_sha256?: string | null
+          kind: string
+          section_id?: string | null
+          status?: string
+          word?: string | null
+        }
+        Update: {
+          check_id?: string
+          claimed_at?: string | null
+          company_id?: string
+          created_at?: string
+          finished_at?: string | null
+          id?: string
+          input_sha256?: string | null
+          kind?: string
+          section_id?: string | null
+          status?: string
+          word?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "handbook_check_sections_check_in_same_company"
+            columns: ["company_id", "check_id"]
+            isOneToOne: false
+            referencedRelation: "handbook_checks"
+            referencedColumns: ["company_id", "id"]
+          },
+          {
+            foreignKeyName: "handbook_check_sections_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "handbook_check_sections_section_in_same_company"
+            columns: ["company_id", "section_id"]
+            isOneToOne: false
+            referencedRelation: "handbook_sections"
+            referencedColumns: ["company_id", "id"]
+          },
+        ]
+      }
+      handbook_checks: {
+        Row: {
+          company_id: string
+          created_at: string
+          done_count: number
+          finished_at: string | null
+          handbook_id: string
+          id: string
+          reason: string
+          requested_by: string | null
+          section_count: number
+          started_at: string | null
+          status: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          done_count?: number
+          finished_at?: string | null
+          handbook_id: string
+          id?: string
+          reason: string
+          requested_by?: string | null
+          section_count?: number
+          started_at?: string | null
+          status?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          done_count?: number
+          finished_at?: string | null
+          handbook_id?: string
+          id?: string
+          reason?: string
+          requested_by?: string | null
+          section_count?: number
+          started_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "handbook_checks_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "handbook_checks_handbook_in_same_company"
+            columns: ["company_id", "handbook_id"]
+            isOneToOne: false
+            referencedRelation: "handbooks"
+            referencedColumns: ["company_id", "id"]
+          },
+        ]
+      }
+      handbook_dates: {
+        Row: {
+          calendar_event_id: string | null
+          check_id: string | null
+          company_id: string
+          created_at: string
+          due_date: string | null
+          handbook_id: string
+          id: string
+          quote: string | null
+          quote_verified: boolean | null
+          recurs: boolean
+          source: string
+          source_url: string | null
+          title: string
+        }
+        Insert: {
+          calendar_event_id?: string | null
+          check_id?: string | null
+          company_id: string
+          created_at?: string
+          due_date?: string | null
+          handbook_id: string
+          id?: string
+          quote?: string | null
+          quote_verified?: boolean | null
+          recurs?: boolean
+          source: string
+          source_url?: string | null
+          title: string
+        }
+        Update: {
+          calendar_event_id?: string | null
+          check_id?: string | null
+          company_id?: string
+          created_at?: string
+          due_date?: string | null
+          handbook_id?: string
+          id?: string
+          quote?: string | null
+          quote_verified?: boolean | null
+          recurs?: boolean
+          source?: string
+          source_url?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "handbook_dates_calendar_event_id_fkey"
+            columns: ["calendar_event_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "handbook_dates_check_in_same_company"
+            columns: ["company_id", "check_id"]
+            isOneToOne: false
+            referencedRelation: "handbook_checks"
+            referencedColumns: ["company_id", "id"]
+          },
+          {
+            foreignKeyName: "handbook_dates_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "handbook_dates_handbook_in_same_company"
+            columns: ["company_id", "handbook_id"]
+            isOneToOne: false
+            referencedRelation: "handbooks"
+            referencedColumns: ["company_id", "id"]
+          },
+        ]
+      }
+      handbook_findings: {
+        Row: {
+          check_id: string
+          check_section_id: string
+          company_id: string
+          created_at: string
+          handbook_quote: string | null
+          id: string
+          kind: string
+          page: number | null
+          quote_verified: boolean | null
+          sources: Json
+          title: string
+          what_to_change: string | null
+          why: string | null
+        }
+        Insert: {
+          check_id: string
+          check_section_id: string
+          company_id: string
+          created_at?: string
+          handbook_quote?: string | null
+          id?: string
+          kind: string
+          page?: number | null
+          quote_verified?: boolean | null
+          sources?: Json
+          title: string
+          what_to_change?: string | null
+          why?: string | null
+        }
+        Update: {
+          check_id?: string
+          check_section_id?: string
+          company_id?: string
+          created_at?: string
+          handbook_quote?: string | null
+          id?: string
+          kind?: string
+          page?: number | null
+          quote_verified?: boolean | null
+          sources?: Json
+          title?: string
+          what_to_change?: string | null
+          why?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "handbook_findings_check_in_same_company"
+            columns: ["company_id", "check_id"]
+            isOneToOne: false
+            referencedRelation: "handbook_checks"
+            referencedColumns: ["company_id", "id"]
+          },
+          {
+            foreignKeyName: "handbook_findings_check_section_in_same_company"
+            columns: ["company_id", "check_section_id"]
+            isOneToOne: false
+            referencedRelation: "handbook_check_sections"
+            referencedColumns: ["company_id", "id"]
+          },
+          {
+            foreignKeyName: "handbook_findings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      handbook_sections: {
+        Row: {
+          company_id: string
+          created_at: string
+          handbook_id: string
+          id: string
+          page_from: number | null
+          page_to: number | null
+          position: number
+          text: string
+          text_sha256: string
+          title: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          handbook_id: string
+          id?: string
+          page_from?: number | null
+          page_to?: number | null
+          position: number
+          text: string
+          text_sha256: string
+          title?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          handbook_id?: string
+          id?: string
+          page_from?: number | null
+          page_to?: number | null
+          position?: number
+          text?: string
+          text_sha256?: string
+          title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "handbook_sections_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "handbook_sections_handbook_in_same_company"
+            columns: ["company_id", "handbook_id"]
+            isOneToOne: false
+            referencedRelation: "handbooks"
+            referencedColumns: ["company_id", "id"]
+          },
+        ]
+      }
+      handbooks: {
+        Row: {
+          checked_at: string | null
+          company_id: string
+          created_at: string
+          entity_id: string | null
+          extracted_text: string | null
+          file_name: string
+          file_path: string
+          id: string
+          is_current: boolean
+          mime_type: string | null
+          name: string
+          next_check_at: string | null
+          page_count: number | null
+          read_at: string | null
+          scope: string
+          size_bytes: number | null
+          status: string
+          status_reason: string | null
+          updated_at: string
+          uploaded_by: string | null
+          version_of: string | null
+        }
+        Insert: {
+          checked_at?: string | null
+          company_id: string
+          created_at?: string
+          entity_id?: string | null
+          extracted_text?: string | null
+          file_name: string
+          file_path: string
+          id?: string
+          is_current?: boolean
+          mime_type?: string | null
+          name: string
+          next_check_at?: string | null
+          page_count?: number | null
+          read_at?: string | null
+          scope?: string
+          size_bytes?: number | null
+          status?: string
+          status_reason?: string | null
+          updated_at?: string
+          uploaded_by?: string | null
+          version_of?: string | null
+        }
+        Update: {
+          checked_at?: string | null
+          company_id?: string
+          created_at?: string
+          entity_id?: string | null
+          extracted_text?: string | null
+          file_name?: string
+          file_path?: string
+          id?: string
+          is_current?: boolean
+          mime_type?: string | null
+          name?: string
+          next_check_at?: string | null
+          page_count?: number | null
+          read_at?: string | null
+          scope?: string
+          size_bytes?: number | null
+          status?: string
+          status_reason?: string | null
+          updated_at?: string
+          uploaded_by?: string | null
+          version_of?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "handbooks_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "handbooks_site_in_same_company"
+            columns: ["company_id", "entity_id"]
+            isOneToOne: false
+            referencedRelation: "entities"
+            referencedColumns: ["company_id", "id"]
+          },
+          {
+            foreignKeyName: "handbooks_version_of_in_same_company"
+            columns: ["company_id", "version_of"]
+            isOneToOne: false
+            referencedRelation: "handbooks"
+            referencedColumns: ["company_id", "id"]
+          },
+        ]
+      }
       hr_audits: {
         Row: {
           company_id: string
@@ -3343,6 +3769,7 @@ export type Database = {
           idle_at: string | null
           last_turn_at: string | null
           opened_at: string
+          section: string
           status: Database["public"]["Enums"]["topic_status"]
           summarised_at: string | null
           summary: string | null
@@ -3363,6 +3790,7 @@ export type Database = {
           idle_at?: string | null
           last_turn_at?: string | null
           opened_at?: string
+          section?: string
           status?: Database["public"]["Enums"]["topic_status"]
           summarised_at?: string | null
           summary?: string | null
@@ -3383,6 +3811,7 @@ export type Database = {
           idle_at?: string | null
           last_turn_at?: string | null
           opened_at?: string
+          section?: string
           status?: Database["public"]["Enums"]["topic_status"]
           summarised_at?: string | null
           summary?: string | null
@@ -3673,6 +4102,7 @@ export type Database = {
           id: string | null
           last_turn_at: string | null
           question_count: number | null
+          section: string | null
           summarised_at: string | null
           summary: string | null
           summary_in_progress: boolean | null

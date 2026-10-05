@@ -211,6 +211,97 @@ for (const c of CASES) {
 }
 
 // ---------------------------------------------------------------------------
+// HR'S TABLES — migration 066, HR Step 3b.
+//
+// Each probe says what the grant should allow AND what it should refuse, and a refusal must be the
+// permission error itself (42501): an error of any other kind — a missing column, a bad foreign key —
+// would look like a refusal and prove nothing. `handbooks` is written as the person (insert, update,
+// delete, like documents); the four check tables are read-only to them; `handbook_dates` copies
+// document_deadlines (read and update, nothing else). Every probe row is removed before moving on.
+// ---------------------------------------------------------------------------
+const HR_TABLES = ['handbooks', 'handbook_sections', 'handbook_checks', 'handbook_check_sections',
+  'handbook_findings', 'handbook_dates']
+{
+  const admin = createClient(url, process.env.SUPABASE_SERVICE_ROLE_KEY ?? '', { auth: { persistSession: false } })
+  const ok = (label, good, detail = '') => {
+    console.log(`  ${good ? '✓' : '✗'} ${label}${detail ? ` — ${detail}` : ''}`)
+    if (!good) failures++
+  }
+  const refused = (err) => !!err && err.code === '42501'
+  const ZERO = '00000000-0000-0000-0000-000000000000'
+  const probePath = `${companyId}/handbooks/check-live-probe-${Date.now()}.pdf`
+
+  // anon: no read, no write, on every one — and the refusal is the permission error.
+  for (const t of HR_TABLES) {
+    const { error: r } = await asAnon.from(t).select('id').limit(1)
+    const { error: w } = await asAnon.from(t).insert({ company_id: companyId })
+    ok(`${t.padEnd(26)} anon refused read and insert`, refused(r) && refused(w), `${r?.code ?? 'READ ALLOWED'} / ${w?.code ?? 'INSERT ALLOWED'}`)
+  }
+  // authenticated can read every one.
+  for (const t of HR_TABLES) {
+    const { error } = await asUser.from(t).select('id').limit(1)
+    ok(`${t.padEnd(26)} authenticated can read`, !error, error ? `${error.code} ${error.message}` : '')
+  }
+
+  // handbooks: insert, update, delete as the person — and not into another company.
+  const { data: hb, error: hbErr } = await asUser.from('handbooks')
+    .insert({ company_id: companyId, name: 'check:live probe', file_path: probePath, file_name: 'probe.pdf' })
+    .select('id, scope, status, is_current').maybeSingle()
+  ok(`${'handbooks'.padEnd(26)} authenticated can insert`, !hbErr && !!hb,
+    hbErr ? `${hbErr.code} ${hbErr.message}` : `scope ${hb?.scope}, status ${hb?.status}, current ${hb?.is_current}`)
+  const { error: otherCo } = await asUser.from('handbooks')
+    .insert({ company_id: ZERO, name: 'x', file_path: `${ZERO}/handbooks/x.pdf`, file_name: 'x.pdf' })
+  ok(`${'handbooks'.padEnd(26)} refused for another company`, refused(otherCo), otherCo?.code ?? 'ALLOWED')
+
+  if (hb) {
+    const { data: upd, error: updErr } = await asUser.from('handbooks').update({ name: 'check:live probe, renamed' })
+      .eq('id', hb.id).select('name').maybeSingle()
+    ok(`${'handbooks'.padEnd(26)} authenticated can update`, !updErr && upd?.name === 'check:live probe, renamed',
+      updErr ? `${updErr.code} ${updErr.message}` : '')
+
+    // handbook_dates: the server writes the row (service role, as a check would); the person may update
+    // it (Add to calendar marks it) and may not insert or delete one.
+    const { data: dt, error: dtErr } = await admin.from('handbook_dates')
+      .insert({ company_id: companyId, handbook_id: hb.id, title: 'check:live probe', source: 'handbook' })
+      .select('id').maybeSingle()
+    if (dtErr || !dt) ok(`${'handbook_dates'.padEnd(26)} probe row written by the server`, false, dtErr?.message ?? 'no row')
+    else {
+      const { data: du, error: duErr } = await asUser.from('handbook_dates').update({ title: 'check:live probe, updated' })
+        .eq('id', dt.id).select('title').maybeSingle()
+      ok(`${'handbook_dates'.padEnd(26)} authenticated can update`, !duErr && du?.title === 'check:live probe, updated',
+        duErr ? `${duErr.code} ${duErr.message}` : '')
+      const { error: dIns } = await asUser.from('handbook_dates')
+        .insert({ company_id: companyId, handbook_id: hb.id, title: 'x', source: 'handbook' })
+      ok(`${'handbook_dates'.padEnd(26)} authenticated refused INSERT`, refused(dIns), dIns?.code ?? 'ALLOWED')
+      const { error: dDel } = await asUser.from('handbook_dates').delete().eq('id', dt.id)
+      ok(`${'handbook_dates'.padEnd(26)} authenticated refused DELETE`, refused(dDel), dDel?.code ?? 'ALLOWED')
+    }
+
+    // The four check tables: no insert, no update, no delete for the person.
+    const rows = {
+      handbook_sections: { company_id: companyId, handbook_id: hb.id, position: 0, text: 'x', text_sha256: 'x' },
+      handbook_checks: { company_id: companyId, handbook_id: hb.id, reason: 'on_demand' },
+      handbook_check_sections: { company_id: companyId, check_id: ZERO, kind: 'not_covered' },
+      handbook_findings: { company_id: companyId, check_id: ZERO, check_section_id: ZERO, kind: 'change', title: 'x' },
+    }
+    for (const [t, row] of Object.entries(rows)) {
+      const { error: i } = await asUser.from(t).insert(row)
+      const { error: u } = await asUser.from(t).update({ company_id: companyId }).eq('id', ZERO)
+      const { error: d } = await asUser.from(t).delete().eq('id', ZERO)
+      ok(`${t.padEnd(26)} authenticated refused INSERT, UPDATE, DELETE`, refused(i) && refused(u) && refused(d),
+        `${i?.code ?? 'INSERT ALLOWED'} / ${u?.code ?? 'UPDATE ALLOWED'} / ${d?.code ?? 'DELETE ALLOWED'}`)
+    }
+
+    // Delete as the person; the date goes with it (cascade).
+    const { error: delErr } = await asUser.from('handbooks').delete().eq('id', hb.id)
+    ok(`${'handbooks'.padEnd(26)} authenticated can delete`, !delErr, delErr ? `${delErr.code} ${delErr.message}` : '')
+    const { count: left } = await admin.from('handbook_dates').select('id', { count: 'exact', head: true }).eq('handbook_id', hb.id)
+    ok(`${'handbook_dates'.padEnd(26)} gone with its handbook`, left === 0, `${left} left`)
+    if (delErr) await admin.from('handbooks').delete().eq('id', hb.id)
+  }
+}
+
+// ---------------------------------------------------------------------------
 // THE ROUTE, DRIVEN AS THE SIGNED-IN USER — R1 Task 7.
 //
 // The table probes above prove a grant and a policy. They do NOT prove the answer path works:
@@ -1258,4 +1349,5 @@ if (failures > 0) {
 const writable = CASES.filter((c) => !c.reads_only).length
 const readable = CASES.length - writable
 console.log(`  check:live: ok — ${CASES.length} tenant table(s): ${writable} writable by a signed-in `
-  + `user, ${readable} read-only to them by design, all ${CASES.length} refused to anon.\n`)
+  + `user, ${readable} read-only to them by design, all ${CASES.length} refused to anon; `
+  + `and HR's ${HR_TABLES.length} tables (066), each allowing and refusing exactly its grant.\n`)

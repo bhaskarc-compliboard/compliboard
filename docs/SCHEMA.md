@@ -3,8 +3,8 @@
 **GENERATED — do not edit.** `node --env-file=.env.local scripts/schema-doc.js`, and it runs
 inside `npm run db:migrate`, so it cannot be stale by more than one migration.
 
-**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-10-04 16:58 UTC
-**Migrations applied:** 66 — `000` to `065`
+**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-10-05 03:50 UTC
+**Migrations applied:** 67 — `000` to `066`
 
 *Every figure here was read from the catalog of that database. Nothing is copied from the
 migration files, which say what was intended rather than what is there — and the two have
@@ -29,28 +29,28 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 
 **Compliance Workspace (M1) — research, conversations, checklists**
 
-- `topics` — 0 rows · touched by route chat, route checklists/from-topic, route documents, route jobs/delete, route jobs/summarise, +8 more
-- `checklists` — 0 rows · touched by route account, route audit-checklist, route chat, route checklist-items/[id]/how-to, route checklists/from-topic, +8 more
-- `checklist_items` — 0 rows · touched by route account/export, route account, route audit-checklist, route chat, route checklist-items/[id]/how-to, +5 more
+- `topics` — 20 rows · touched by route chat, route checklists/from-topic, route documents, route jobs/delete, route jobs/summarise, +8 more
+- `checklists` — 5 rows · touched by route account, route audit-checklist, route chat, route checklist-items/[id]/how-to, route checklists/from-topic, +8 more
+- `checklist_items` — 24 rows · touched by route account/export, route account, route audit-checklist, route chat, route checklist-items/[id]/how-to, +5 more
 - `critic_reviews` — 0 rows · touched by lib criticRecord
 - `critic_findings` — 0 rows · touched by lib criticRecord
 
 **Requirements (the deterministic spine)**
 
-- `requirement_templates` — 0 rows · touched by route industries, route obligations, route switches/answer, route switches/ask, lib obligationWriter, +4 more
-- `switches` — 0 rows · touched by route chat, route company-information, route obligations, route switches/answer, route switches/ask, +7 more
-- `company_switches` — 0 rows · touched by route switches/answer, route switches/ask, route to-confirm, lib companyContext, lib obligationWriter, +3 more
-- `switch_determinations` — 0 rows · touched by route switches/answer, script audit-data-checks, script check-live
+- `requirement_templates` — 205 rows · touched by route industries, route obligations, route switches/answer, route switches/ask, lib obligationWriter, +4 more
+- `switches` — 95 rows · touched by route chat, route company-information, route obligations, route switches/answer, route switches/ask, +7 more
+- `company_switches` — 16 rows · touched by route switches/answer, route switches/ask, route to-confirm, lib companyContext, lib obligationWriter, +3 more
+- `switch_determinations` — 1 rows · touched by route switches/answer, script audit-data-checks, script check-live
 - `obligations` — 0 rows · touched by route account, route obligations, route switches/answer
 - `obligation_evidence` — 0 rows · touched by route account/export, route account
-- `agencies` — 0 rows · touched by route obligations, lib agencyScope, script load-agencies
-- `industry_coverage` — 0 rows · touched by script assign-agencies
+- `agencies` — 33 rows · touched by route obligations, lib agencyScope, script load-agencies
+- `industry_coverage` — 56 rows · touched by script assign-agencies
 - `library_candidates` — 0 rows · **no code reads or writes it**
 - `corrections` — 0 rows · **no code reads or writes it**
 
 **Documents and evidence**
 
-- `documents` — 0 rows · touched by route audit-runs/[id]/documents, route audit-runs, route calendar, route chat, route document-actions, +16 more
+- `documents` — 12 rows · touched by route audit-runs/[id]/documents, route audit-runs, route calendar, route chat, route document-actions, +16 more
 - `document_reviews` — 0 rows · touched by lib attachedDocument
 - `company_folders` — 0 rows · touched by route audits/index, route documents/index, route documents, route folders
 - `company_templates` — 0 rows · **no code reads or writes it**
@@ -69,14 +69,14 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 
 **Chemicals and substances**
 
-- `company_chemicals` — 0 rows · touched by script audit-data-checks, script check-live
+- `company_chemicals` — 1 rows · touched by script audit-data-checks, script check-live
 - `regulated_substances` — 0 rows · touched by script audit-data-checks
 
 **Tenancy and accounts**
 
-- `companies` — 0 rows · touched by route account/export, route account, route audit-runs, route company-information, route document-scan, +19 more
-- `profiles` — 0 rows · touched by route account/export, route account, route signup, screen audits, screen calendar, +9 more
-- `entities` — 0 rows · touched by route audit-runs, route audits/index, route company-information, route document-actions, route documents/index, +14 more
+- `companies` — 6 rows · touched by route account/export, route account, route audit-runs, route company-information, route document-scan, +19 more
+- `profiles` — 5 rows · touched by route account/export, route account, route signup, screen audits, screen calendar, +9 more
+- `entities` — 7 rows · touched by route audit-runs, route audits/index, route company-information, route document-actions, route documents/index, +14 more
 
 **Calendar**
 
@@ -86,7 +86,7 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 
 - `jobs` — 0 rows · **no code reads or writes it**
 
-**Not assigned to a module above:** `ai_calls`, `company_facts`, `company_labels`, `document_batches`, `document_conditions`, `document_corrections`, `document_deadlines`, `document_gaps`, `document_scans`, `fact_proposals`, `job_runs`, `turns`, `usage_counters`
+**Not assigned to a module above:** `ai_calls`, `company_facts`, `company_labels`, `document_batches`, `document_conditions`, `document_corrections`, `document_deadlines`, `document_gaps`, `document_scans`, `fact_proposals`, `handbook_check_sections`, `handbook_checks`, `handbook_dates`, `handbook_findings`, `handbook_sections`, `handbooks`, `job_runs`, `turns`, `usage_counters`
 
 ---
 
@@ -96,7 +96,7 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 
 Regulators. Reference data, not customer data: readable by any authenticated user, written only by the service role. Empty until Phase 2.1.
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 33 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route obligations`, `lib agencyScope`, `script load-agencies`
 
@@ -140,8 +140,8 @@ END)`
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — **nothing**
-- `service_role` — **nothing**
+- `authenticated` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -157,7 +157,7 @@ END)`
 
 One row per model call, written at the call. Prices are copied onto the row so a later change to config/pricing.ts cannot rewrite what a past call cost. cost_usd NULL = the model was not in the price table, which is not the same as free. DECISIONS.md §128 J.
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 42 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route document-draft`, `lib auditRun`, `lib auditTemplate`, `lib costLedger`, `lib documentScan`, `script check-live`, `script cost-report`, `script run-golden-audit`, `script run-golden-docs`, `script scan-document`
 
@@ -193,14 +193,14 @@ One row per model call, written at the call. Prices are copied onto the row so a
 - `ai_calls_input_tokens_check` — `CHECK ((input_tokens >= 0))`
 - `ai_calls_output_tokens_check` — `CHECK ((output_tokens >= 0))`
 - `ai_calls_searches_check` — `CHECK ((searches >= 0))`
-- `ai_calls_task_check` — `CHECK ((task = ANY (ARRAY['research'::text, 'checklist'::text, 'substeps'::text, 'convert'::text, 'summarise'::text, 'gate'::text, 'critique'::text, 'audit'::text, 'document_review'::text, 'document_scan'::text, 'document_draft'::text, 'howto'::text, 'other'::text])))`
+- `ai_calls_task_check` — `CHECK ((task = ANY (ARRAY['research'::text, 'checklist'::text, 'substeps'::text, 'convert'::text, 'summarise'::text, 'gate'::text, 'critique'::text, 'audit'::text, 'document_review'::text, 'document_scan'::text, 'document_draft'::text, 'howto'::text, 'other'::text, 'hr'::text, 'hr_check'::text])))`
 - `ai_calls_wall_ms_check` — `CHECK ((wall_ms >= 0))`
 
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — **nothing**
-- `service_role` — **nothing**
+- `authenticated` — SELECT
+- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -255,12 +255,12 @@ Every row of an audit answer — finding, date, contradiction, expected — with
 **Points at:**
 
 - `closed_by_run_id` → `audit_runs` — ON DELETE SET NULL
-- `company_id` → `companies` — ON DELETE CASCADE
 - `company_id` → `document_scans` — ON DELETE SET NULL
-- `company_id` → `audit_runs` — ON DELETE CASCADE
+- `company_id` → `documents` — ON DELETE SET NULL
 - `company_id` → `audit_sections` — ON DELETE CASCADE
 - `company_id` → `documents` — ON DELETE SET NULL
-- `company_id` → `documents` — ON DELETE SET NULL
+- `company_id` → `audit_runs` — ON DELETE CASCADE
+- `company_id` → `companies` — ON DELETE CASCADE
 - `document_b_id` → `documents` — ON DELETE SET NULL
 - `document_id` → `documents` — ON DELETE SET NULL
 - `run_id` → `audit_runs` — ON DELETE CASCADE
@@ -287,8 +287,8 @@ Every row of an audit answer — finding, date, contradiction, expected — with
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — **nothing**
-- `service_role` — **nothing**
+- `authenticated` — SELECT, UPDATE
+- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -362,8 +362,8 @@ One audit of one company at one moment. Sections are to a run what files are to 
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — **nothing**
-- `service_role` — **nothing**
+- `authenticated` — SELECT, UPDATE
+- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -427,8 +427,8 @@ One agency (or one template), one model call. claimed_at is the sweep's compare-
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — **nothing**
-- `service_role` — **nothing**
+- `authenticated` — SELECT
+- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -474,8 +474,8 @@ One row per audit run. A frozen snapshot of results as checked that day — reus
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — **nothing**
-- `service_role` — **nothing**
+- `authenticated` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -510,23 +510,27 @@ One row per audit run. A frozen snapshot of results as checked that day — reus
 | `created_at` | timestamp with time zone | yes | `timezone('utc'::text, now())` |
 | `entity_id` | uuid | yes | — |
 | `document_id` | uuid | yes | — |
+| `handbook_id` | uuid | yes | — |
 
 **Points at:**
 
+- `company_id` → `handbooks` — ON DELETE SET NULL
 - `company_id` → `companies` — ON DELETE CASCADE
 - `document_id` → `documents` — ON DELETE SET NULL
 - `entity_id` → `entities` — ON DELETE SET NULL
+- `handbook_id` → `handbooks` — ON DELETE SET NULL
 - `user_id` → `auth.users` — ON DELETE CASCADE
 
 **Pointed at by:**
 
 - `document_deadlines.calendar_event_id` — ON DELETE SET NULL
+- `handbook_dates.calendar_event_id` — ON DELETE SET NULL
 
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — **nothing**
-- `service_role` — **nothing**
+- `authenticated` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -537,11 +541,11 @@ One row per audit run. A frozen snapshot of results as checked that day — reus
 | `calendar_events_select` | SELECT | authenticated | `(company_id = auth_company_id())` | — |
 | `calendar_events_update` | UPDATE | authenticated | `(company_id = auth_company_id())` | `(company_id = auth_company_id())` |
 
-**Indexes:** `calendar_events_pkey`, `idx_calendar_events_entity`
+**Indexes:** `calendar_events_pkey`, `idx_calendar_events_company_handbook`, `idx_calendar_events_entity`
 
 ### `checklist_items`
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 24 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route account/export`, `route account`, `route audit-checklist`, `route chat`, `route checklist-items/[id]/how-to`, `route checklists/from-topic`, `route document-checklist`, `route substeps`, `screen compliance`, `script check-live`
 
@@ -592,8 +596,8 @@ One row per audit run. A frozen snapshot of results as checked that day — reus
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — **nothing**
-- `service_role` — **nothing**
+- `authenticated` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -608,7 +612,7 @@ One row per audit run. A frozen snapshot of results as checked that day — reus
 
 ### `checklists`
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 5 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route account`, `route audit-checklist`, `route chat`, `route checklist-items/[id]/how-to`, `route checklists/from-topic`, `route document-checklist`, `route documents/report`, `route link-research`, `route substeps`, `screen compliance`, `screen dashboard`, `lib documentScan`, `script check-live`
 
@@ -645,8 +649,8 @@ One row per audit run. A frozen snapshot of results as checked that day — reus
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — **nothing**
-- `service_role` — **nothing**
+- `authenticated` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -661,7 +665,7 @@ One row per audit run. A frozen snapshot of results as checked that day — reus
 
 ### `companies`
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 6 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route account/export`, `route account`, `route audit-runs`, `route company-information`, `route document-scan`, `route jobs/scan-documents`, `route obligations`, `route signup`, `screen audits`, `screen compliance`, `screen dashboard`, `screen documents`, `screen hr`, `lib agencyScope`, `lib companyContext`, `lib obligationWriter`, `script check-prompt-determinism`, `script resolve-dryrun`, `script run-golden-audit`, `script run-golden-docs`, `script run-golden`, `script scan-document`, `script seed-multisite-fixture`, `script seed-staging-testdata`
 
@@ -711,6 +715,12 @@ One row per audit run. A frozen snapshot of results as checked that day — reus
 - `documents.company_id` — ON DELETE CASCADE
 - `entities.company_id` — ON DELETE CASCADE
 - `fact_proposals.company_id` — ON DELETE CASCADE
+- `handbook_check_sections.company_id` — ON DELETE CASCADE
+- `handbook_checks.company_id` — ON DELETE CASCADE
+- `handbook_dates.company_id` — ON DELETE CASCADE
+- `handbook_findings.company_id` — ON DELETE CASCADE
+- `handbook_sections.company_id` — ON DELETE CASCADE
+- `handbooks.company_id` — ON DELETE CASCADE
 - `hr_audits.company_id` — ON DELETE NO ACTION
 - `jobs.company_id` — ON DELETE CASCADE
 - `obligation_evidence.company_id` — ON DELETE CASCADE
@@ -724,8 +734,8 @@ One row per audit run. A frozen snapshot of results as checked that day — reus
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — **nothing**
-- `service_role` — **nothing**
+- `authenticated` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -742,7 +752,7 @@ One row per audit run. A frozen snapshot of results as checked that day — reus
 
 What one SITE holds, by CAS where identified. Tenant data. Replaces four boolean switches that were stand-ins for a per-substance calculation: a site with 9,000 lb each of five chemicals is below every threshold and reports nothing, which is correct and is not expressible as a boolean. Does NOT replace the exposure_* switches, which are airborne concentration rather than quantity held. Migration 013.
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 1 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `script audit-data-checks`, `script check-live`
 
@@ -779,8 +789,8 @@ What one SITE holds, by CAS where identified. Tenant data. Replaces four boolean
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — **nothing**
-- `service_role` — **nothing**
+- `authenticated` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -799,7 +809,7 @@ What one SITE holds, by CAS where identified. Tenant data. Replaces four boolean
 
 What a company has confirmed about itself that is NOT one of the 95 switches. Nothing computes from it — company_switches is what the obligation engine reads. This is kept so the next scan can be shown it and so a person is not asked the same thing twice.
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 1 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route company-information`, `route to-confirm`, `lib companyContext`, `script run-golden-audit`
 
@@ -833,8 +843,8 @@ What a company has confirmed about itself that is NOT one of the 95 switches. No
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — **nothing**
-- `service_role` — **nothing**
+- `authenticated` — SELECT
+- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -873,8 +883,8 @@ What a company has confirmed about itself that is NOT one of the 95 switches. No
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — **nothing**
-- `service_role` — **nothing**
+- `authenticated` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -889,7 +899,7 @@ What a company has confirmed about itself that is NOT one of the 95 switches. No
 
 ### `company_labels`
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 11 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route audits/index`, `route company-labels`, `route documents/report`, `lib audit`, `lib companyContext`, `lib companyLabels`, `lib documentScan`, `script check-live`, `script run-golden-audit`, `script run-golden-docs`
 
@@ -912,8 +922,8 @@ What a company has confirmed about itself that is NOT one of the 95 switches. No
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — **nothing**
-- `service_role` — **nothing**
+- `authenticated` — SELECT
+- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -925,7 +935,7 @@ What a company has confirmed about itself that is NOT one of the 95 switches. No
 
 ### `company_switches`
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 16 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route switches/answer`, `route switches/ask`, `route to-confirm`, `lib companyContext`, `lib obligationWriter`, `script resolve-dryrun`, `script run-golden`, `script seed-multisite-fixture`
 
@@ -966,8 +976,8 @@ What a company has confirmed about itself that is NOT one of the 95 switches. No
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — **nothing**
-- `service_role` — **nothing**
+- `authenticated` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -1012,8 +1022,8 @@ Private, per-company parsed templates (a specific buyers own form). Never shared
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — **nothing**
-- `service_role` — **nothing**
+- `authenticated` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -1055,8 +1065,8 @@ User-reported fixes to any requirement or obligation. The learning loop.
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — **nothing**
-- `service_role` — **nothing**
+- `authenticated` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -1105,7 +1115,7 @@ What the critic found, never shown to a customer (DECISIONS.md §97). `quote` is
 
 - `anon` — **nothing**
 - `authenticated` — **nothing**
-- `service_role` — **nothing**
+- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS is enabled and there are NO policies** — so no role without a bypass can see a row.
 
@@ -1141,7 +1151,7 @@ One row per criticise() call, INCLUDING reviews that found nothing — that is t
 
 - `anon` — **nothing**
 - `authenticated` — **nothing**
-- `service_role` — **nothing**
+- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS is enabled and there are NO policies** — so no role without a bypass can see a row.
 
@@ -1186,8 +1196,8 @@ One upload, however many files were in it. Exists so a folder drop can be answer
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — **nothing**
-- `service_role` — **nothing**
+- `authenticated` — SELECT, UPDATE
+- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -1200,7 +1210,7 @@ One upload, however many files were in it. Exists so a folder drop can be answer
 
 ### `document_conditions`
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 18 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route documents/report`, `lib audit`, `lib documentScan`, `script run-golden-audit`
 
@@ -1225,8 +1235,8 @@ One upload, however many files were in it. Exists so a folder drop can be answer
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — **nothing**
-- `service_role` — **nothing**
+- `authenticated` — SELECT
+- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -1269,8 +1279,8 @@ One row per correction a person makes to what a document IS. Newest per field wi
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — **nothing**
-- `service_role` — **nothing**
+- `authenticated` — SELECT
+- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -1282,7 +1292,7 @@ One row per correction a person makes to what a document IS. Newest per field wi
 
 ### `document_deadlines`
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 35 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route audits/index`, `route document-actions`, `route documents/report`, `lib audit`, `lib documentScan`
 
@@ -1309,8 +1319,8 @@ One row per correction a person makes to what a document IS. Newest per field wi
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — **nothing**
-- `service_role` — **nothing**
+- `authenticated` — SELECT, UPDATE
+- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -1323,7 +1333,7 @@ One row per correction a person makes to what a document IS. Newest per field wi
 
 ### `document_gaps`
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 25 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route document-actions`, `route document-checklist`, `route document-draft`, `route documents/report`, `lib audit`, `lib companyContext`, `lib documentScan`, `script run-golden-audit`
 
@@ -1374,8 +1384,8 @@ One row per correction a person makes to what a document IS. Newest per field wi
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — **nothing**
-- `service_role` — **nothing**
+- `authenticated` — SELECT, UPDATE
+- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -1428,8 +1438,8 @@ One row per correction a person makes to what a document IS. Newest per field wi
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — **nothing**
-- `service_role` — **nothing**
+- `authenticated` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -1444,7 +1454,7 @@ One row per correction a person makes to what a document IS. Newest per field wi
 
 ### `document_scans`
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 13 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route audits/index`, `route documents/index`, `route documents/report`, `lib attachedDocument`, `lib audit`, `lib auditRun`, `lib companyLabels`, `lib documentScan`, `script check-live`, `script run-golden-audit`
 
@@ -1511,8 +1521,8 @@ One row per correction a person makes to what a document IS. Newest per field wi
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — **nothing**
-- `service_role` — **nothing**
+- `authenticated` — SELECT
+- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -1524,7 +1534,7 @@ One row per correction a person makes to what a document IS. Newest per field wi
 
 ### `documents`
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 12 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route audit-runs/[id]/documents`, `route audit-runs`, `route calendar`, `route chat`, `route document-actions`, `route document-draft`, `route document-rescan`, `route document-scan`, `route documents`, `route folders`, `route hr`, `route hr-audits`, `route jobs/scan-documents`, `lib attachedDocument`, `lib documentBatch`, `lib documentScan`, `lib storage`, `script check-live`, `script run-golden-audit`, `script run-golden-docs`, `script scan-document`
 
@@ -1594,8 +1604,8 @@ One row per correction a person makes to what a document IS. Newest per field wi
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — **nothing**
-- `service_role` — **nothing**
+- `authenticated` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -1610,7 +1620,7 @@ One row per correction a person makes to what a document IS. Newest per field wi
 
 ### `entities`
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 7 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route audit-runs`, `route audits/index`, `route company-information`, `route document-actions`, `route documents/index`, `route documents/report`, `route switches/answer`, `route switches/ask`, `route to-confirm`, `lib agencyScope`, `lib companyContext`, `lib obligationWriter`, `script check-live`, `script resolve-dryrun`, `script run-golden-audit`, `script run-golden-docs`, `script run-golden`, `script seed-multisite-fixture`, `script seed-staging-testdata`
 
@@ -1652,6 +1662,8 @@ One row per correction a person makes to what a document IS. Newest per field wi
 - `entities.parent_entity_id` — ON DELETE SET NULL
 - `fact_proposals.company_id` — ON DELETE SET NULL
 - `fact_proposals.entity_id` — ON DELETE SET NULL
+- `handbooks.company_id` — ON DELETE SET NULL
+- `handbooks.entity_id` — ON DELETE SET NULL
 - `obligation_evidence.entity_id` — ON DELETE CASCADE
 - `obligations.entity_id` — ON DELETE CASCADE
 - `switch_determinations.entity_id` — ON DELETE CASCADE
@@ -1659,8 +1671,8 @@ One row per correction a person makes to what a document IS. Newest per field wi
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — **nothing**
-- `service_role` — **nothing**
+- `authenticated` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -1679,7 +1691,7 @@ One row per correction a person makes to what a document IS. Newest per field wi
 
 Candidate company facts read out of a conversation overnight. PROPOSED, never written to company_switches — DECISIONS.md §108. The quote is copied because the turn it came from is cleared after 7 days.
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 63 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route company-information`, `route document-actions`, `route documents/report`, `route to-confirm`, `screen compliance`, `lib audit`, `lib companyContext`, `lib documentScan`, `lib summaryReport`, `script run-golden-audit`
 
@@ -1729,8 +1741,8 @@ Candidate company facts read out of a conversation overnight. PROPOSED, never wr
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — **nothing**
-- `service_role` — **nothing**
+- `authenticated` — SELECT, UPDATE
+- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -1742,6 +1754,372 @@ Candidate company facts read out of a conversation overnight. PROPOSED, never wr
 **Triggers:** `set_updated_at_fact_proposals` (BEFORE → `set_updated_at`), `stamp_topic_title_fact_proposals` (BEFORE → `fact_proposals_stamp_topic_title`)
 
 **Indexes:** `fact_proposals_pkey`, `idx_fact_proposals_company_status`, `idx_fact_proposals_company_topic_key_value_pending`, `idx_fact_proposals_topic`
+
+### `handbook_check_sections`
+
+The unit the handbook sweep claims: one per section per check, plus one not_covered pass. claimed_at is the compare-and-set.
+
+**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+
+**Read or written by: NOTHING in app/, lib/ or scripts/.**
+
+| Column | Type | Null | Default |
+|---|---|---|---|
+| `id` | uuid | no | `gen_random_uuid()` |
+| `check_id` | uuid | no | — |
+| `company_id` | uuid | no | — |
+| `kind` | text | no | — |
+| `section_id` | uuid | yes | — |
+| `status` | text | no | `'queued'::text` |
+| `claimed_at` | timestamp with time zone | yes | — |
+| `input_sha256` | text | yes | — |
+| `word` | text | yes | — |
+| `created_at` | timestamp with time zone | no | `now()` |
+| `finished_at` | timestamp with time zone | yes | — |
+
+**Points at:**
+
+- `check_id` → `handbook_checks` — ON DELETE CASCADE
+- `company_id` → `companies` — ON DELETE CASCADE
+- `company_id` → `handbook_checks` — ON DELETE CASCADE
+- `company_id` → `handbook_sections` — ON DELETE CASCADE
+- `section_id` → `handbook_sections` — ON DELETE CASCADE
+
+**Pointed at by:**
+
+- `handbook_findings.check_section_id` — ON DELETE CASCADE
+- `handbook_findings.company_id` — ON DELETE CASCADE
+
+**Constraints:**
+
+- `handbook_check_sections_kind_check` — `CHECK ((kind = ANY (ARRAY['section'::text, 'not_covered'::text])))`
+- `handbook_check_sections_kind_has_its_section` — `CHECK ((((kind = 'section'::text) AND (section_id IS NOT NULL)) OR ((kind = 'not_covered'::text) AND (section_id IS NULL))))`
+- `handbook_check_sections_status_check` — `CHECK ((status = ANY (ARRAY['queued'::text, 'checking'::text, 'done'::text, 'failed'::text])))`
+- `handbook_check_sections_word_check` — `CHECK ((word = ANY (ARRAY['needs_change'::text, 'no_gap'::text, 'to_confirm'::text, 'company_choice'::text])))`
+
+**Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
+
+- `anon` — **nothing**
+- `authenticated` — SELECT
+- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+
+**RLS policies:**
+
+| Policy | For | Roles | USING | WITH CHECK |
+|---|---|---|---|---|
+| `handbook_check_sections_delete` | DELETE | authenticated | `(company_id = auth_company_id())` | — |
+| `handbook_check_sections_insert` | INSERT | authenticated | — | `(company_id = auth_company_id())` |
+| `handbook_check_sections_select` | SELECT | authenticated | `(company_id = auth_company_id())` | — |
+| `handbook_check_sections_update` | UPDATE | authenticated | `(company_id = auth_company_id())` | `(company_id = auth_company_id())` |
+
+**Indexes:** `handbook_check_sections_company_id_id_key`, `handbook_check_sections_pkey`, `idx_handbook_check_sections_company_check`, `idx_handbook_check_sections_queued`
+
+### `handbook_checks`
+
+One check of one handbook version (decision 2).
+
+**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+
+**Read or written by: NOTHING in app/, lib/ or scripts/.**
+
+| Column | Type | Null | Default |
+|---|---|---|---|
+| `id` | uuid | no | `gen_random_uuid()` |
+| `handbook_id` | uuid | no | — |
+| `company_id` | uuid | no | — |
+| `reason` | text | no | — |
+| `status` | text | no | `'queued'::text` |
+| `section_count` | integer | no | `0` |
+| `done_count` | integer | no | `0` |
+| `requested_by` | uuid | yes | — |
+| `created_at` | timestamp with time zone | no | `now()` |
+| `started_at` | timestamp with time zone | yes | — |
+| `finished_at` | timestamp with time zone | yes | — |
+
+**Points at:**
+
+- `company_id` → `handbooks` — ON DELETE CASCADE
+- `company_id` → `companies` — ON DELETE CASCADE
+- `handbook_id` → `handbooks` — ON DELETE CASCADE
+- `requested_by` → `auth.users` — ON DELETE SET NULL
+
+**Pointed at by:**
+
+- `handbook_check_sections.check_id` — ON DELETE CASCADE
+- `handbook_check_sections.company_id` — ON DELETE CASCADE
+- `handbook_dates.check_id` — ON DELETE SET NULL
+- `handbook_dates.company_id` — ON DELETE SET NULL
+- `handbook_findings.check_id` — ON DELETE CASCADE
+- `handbook_findings.company_id` — ON DELETE CASCADE
+
+**Constraints:**
+
+- `handbook_checks_done_count_check` — `CHECK ((done_count >= 0))`
+- `handbook_checks_reason_check` — `CHECK ((reason = ANY (ARRAY['new_version'::text, 'scheduled'::text, 'on_demand'::text])))`
+- `handbook_checks_section_count_check` — `CHECK ((section_count >= 0))`
+- `handbook_checks_status_check` — `CHECK ((status = ANY (ARRAY['queued'::text, 'checking'::text, 'done'::text, 'failed'::text])))`
+
+**Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
+
+- `anon` — **nothing**
+- `authenticated` — SELECT
+- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+
+**RLS policies:**
+
+| Policy | For | Roles | USING | WITH CHECK |
+|---|---|---|---|---|
+| `handbook_checks_delete` | DELETE | authenticated | `(company_id = auth_company_id())` | — |
+| `handbook_checks_insert` | INSERT | authenticated | — | `(company_id = auth_company_id())` |
+| `handbook_checks_select` | SELECT | authenticated | `(company_id = auth_company_id())` | — |
+| `handbook_checks_update` | UPDATE | authenticated | `(company_id = auth_company_id())` | `(company_id = auth_company_id())` |
+
+**Indexes:** `handbook_checks_company_id_id_key`, `handbook_checks_pkey`, `idx_handbook_checks_company_handbook`, `idx_handbook_checks_open`
+
+### `handbook_dates`
+
+Company-level dates a handbook sets; sent to the one calendar only when a person presses Add to calendar (decision 29).
+
+**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+
+**Read or written by: NOTHING in app/, lib/ or scripts/.**
+
+| Column | Type | Null | Default |
+|---|---|---|---|
+| `id` | uuid | no | `gen_random_uuid()` |
+| `handbook_id` | uuid | no | — |
+| `company_id` | uuid | no | — |
+| `check_id` | uuid | yes | — |
+| `title` | text | no | — |
+| `due_date` | date | yes | — |
+| `recurs` | boolean | no | `false` |
+| `quote` | text | yes | — |
+| `quote_verified` | boolean | yes | — |
+| `source` | text | no | — |
+| `source_url` | text | yes | — |
+| `calendar_event_id` | uuid | yes | — |
+| `created_at` | timestamp with time zone | no | `now()` |
+
+**Points at:**
+
+- `calendar_event_id` → `calendar_events` — ON DELETE SET NULL
+- `check_id` → `handbook_checks` — ON DELETE SET NULL
+- `company_id` → `companies` — ON DELETE CASCADE
+- `company_id` → `handbook_checks` — ON DELETE SET NULL
+- `company_id` → `handbooks` — ON DELETE CASCADE
+- `handbook_id` → `handbooks` — ON DELETE CASCADE
+
+**Constraints:**
+
+- `handbook_dates_source_check` — `CHECK ((source = ANY (ARRAY['handbook'::text, 'rule'::text])))`
+
+**Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
+
+- `anon` — **nothing**
+- `authenticated` — SELECT, UPDATE
+- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+
+**RLS policies:**
+
+| Policy | For | Roles | USING | WITH CHECK |
+|---|---|---|---|---|
+| `handbook_dates_select_own` | SELECT | authenticated | `(company_id = auth_company_id())` | — |
+| `handbook_dates_update_own` | UPDATE | authenticated | `(company_id = auth_company_id())` | `(company_id = auth_company_id())` |
+
+**Indexes:** `handbook_dates_pkey`, `idx_handbook_dates_company_handbook`
+
+### `handbook_findings`
+
+Every finding of a handbook check, as a row.
+
+**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+
+**Read or written by: NOTHING in app/, lib/ or scripts/.**
+
+| Column | Type | Null | Default |
+|---|---|---|---|
+| `id` | uuid | no | `gen_random_uuid()` |
+| `check_id` | uuid | no | — |
+| `check_section_id` | uuid | no | — |
+| `company_id` | uuid | no | — |
+| `kind` | text | no | — |
+| `title` | text | no | — |
+| `why` | text | yes | — |
+| `what_to_change` | text | yes | — |
+| `handbook_quote` | text | yes | — |
+| `quote_verified` | boolean | yes | — |
+| `page` | integer | yes | — |
+| `sources` | jsonb | no | `'[]'::jsonb` |
+| `created_at` | timestamp with time zone | no | `now()` |
+
+**Points at:**
+
+- `check_id` → `handbook_checks` — ON DELETE CASCADE
+- `check_section_id` → `handbook_check_sections` — ON DELETE CASCADE
+- `company_id` → `handbook_checks` — ON DELETE CASCADE
+- `company_id` → `handbook_check_sections` — ON DELETE CASCADE
+- `company_id` → `companies` — ON DELETE CASCADE
+
+**Constraints:**
+
+- `handbook_findings_kind_check` — `CHECK ((kind = ANY (ARRAY['change'::text, 'not_covered'::text, 'to_confirm'::text])))`
+- `handbook_findings_page_check` — `CHECK ((page >= 1))`
+- `handbook_findings_sources_check` — `CHECK ((jsonb_typeof(sources) = 'array'::text))`
+
+**Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
+
+- `anon` — **nothing**
+- `authenticated` — SELECT
+- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+
+**RLS policies:**
+
+| Policy | For | Roles | USING | WITH CHECK |
+|---|---|---|---|---|
+| `handbook_findings_delete` | DELETE | authenticated | `(company_id = auth_company_id())` | — |
+| `handbook_findings_insert` | INSERT | authenticated | — | `(company_id = auth_company_id())` |
+| `handbook_findings_select` | SELECT | authenticated | `(company_id = auth_company_id())` | — |
+| `handbook_findings_update` | UPDATE | authenticated | `(company_id = auth_company_id())` | `(company_id = auth_company_id())` |
+
+**Indexes:** `handbook_findings_pkey`, `idx_handbook_findings_company_check`
+
+### `handbook_sections`
+
+A handbook split into sections, each with its text and fingerprint. Written by the server.
+
+**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+
+**Read or written by: NOTHING in app/, lib/ or scripts/.**
+
+| Column | Type | Null | Default |
+|---|---|---|---|
+| `id` | uuid | no | `gen_random_uuid()` |
+| `handbook_id` | uuid | no | — |
+| `company_id` | uuid | no | — |
+| `position` | integer | no | — |
+| `title` | text | yes | — |
+| `page_from` | integer | yes | — |
+| `page_to` | integer | yes | — |
+| `text` | text | no | — |
+| `text_sha256` | text | no | — |
+| `created_at` | timestamp with time zone | no | `now()` |
+
+**Points at:**
+
+- `company_id` → `handbooks` — ON DELETE CASCADE
+- `company_id` → `companies` — ON DELETE CASCADE
+- `handbook_id` → `handbooks` — ON DELETE CASCADE
+
+**Pointed at by:**
+
+- `handbook_check_sections.company_id` — ON DELETE CASCADE
+- `handbook_check_sections.section_id` — ON DELETE CASCADE
+
+**Constraints:**
+
+- `handbook_sections_page_from_check` — `CHECK ((page_from >= 1))`
+- `handbook_sections_page_to_check` — `CHECK ((page_to >= 1))`
+- `handbook_sections_pages_in_order` — `CHECK (((page_from IS NULL) OR (page_to IS NULL) OR (page_to >= page_from)))`
+- `handbook_sections_position_check` — `CHECK (("position" >= 0))`
+
+**Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
+
+- `anon` — **nothing**
+- `authenticated` — SELECT
+- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+
+**RLS policies:**
+
+| Policy | For | Roles | USING | WITH CHECK |
+|---|---|---|---|---|
+| `handbook_sections_delete` | DELETE | authenticated | `(company_id = auth_company_id())` | — |
+| `handbook_sections_insert` | INSERT | authenticated | — | `(company_id = auth_company_id())` |
+| `handbook_sections_select` | SELECT | authenticated | `(company_id = auth_company_id())` | — |
+| `handbook_sections_update` | UPDATE | authenticated | `(company_id = auth_company_id())` | `(company_id = auth_company_id())` |
+
+**Indexes:** `handbook_sections_company_id_id_key`, `handbook_sections_handbook_id_position_key`, `handbook_sections_pkey`, `idx_handbook_sections_company_handbook`
+
+### `handbooks`
+
+HR's own record of a handbook (HR-PLAN decision 18). Never a documents row.
+
+**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+
+**Read or written by: NOTHING in app/, lib/ or scripts/.**
+
+| Column | Type | Null | Default |
+|---|---|---|---|
+| `id` | uuid | no | `gen_random_uuid()` |
+| `company_id` | uuid | no | — |
+| `name` | text | no | — |
+| `file_path` | text | no | — |
+| `file_name` | text | no | — |
+| `mime_type` | text | yes | — |
+| `size_bytes` | bigint | yes | — |
+| `page_count` | integer | yes | — |
+| `scope` | text | no | `'company'::text` |
+| `entity_id` | uuid | yes | — |
+| `version_of` | uuid | yes | — |
+| `is_current` | boolean | no | `true` |
+| `status` | text | no | `'uploaded'::text` |
+| `status_reason` | text | yes | — |
+| `extracted_text` | text | yes | — |
+| `read_at` | timestamp with time zone | yes | — |
+| `checked_at` | timestamp with time zone | yes | — |
+| `next_check_at` | timestamp with time zone | yes | — |
+| `uploaded_by` | uuid | yes | — |
+| `created_at` | timestamp with time zone | no | `now()` |
+| `updated_at` | timestamp with time zone | no | `now()` |
+
+**Points at:**
+
+- `company_id` → `entities` — ON DELETE SET NULL
+- `company_id` → `handbooks` — ON DELETE SET NULL
+- `company_id` → `companies` — ON DELETE CASCADE
+- `entity_id` → `entities` — ON DELETE SET NULL
+- `uploaded_by` → `auth.users` — ON DELETE SET NULL
+- `version_of` → `handbooks` — ON DELETE SET NULL
+
+**Pointed at by:**
+
+- `calendar_events.company_id` — ON DELETE SET NULL
+- `calendar_events.handbook_id` — ON DELETE SET NULL
+- `handbook_checks.company_id` — ON DELETE CASCADE
+- `handbook_checks.handbook_id` — ON DELETE CASCADE
+- `handbook_dates.company_id` — ON DELETE CASCADE
+- `handbook_dates.handbook_id` — ON DELETE CASCADE
+- `handbook_sections.company_id` — ON DELETE CASCADE
+- `handbook_sections.handbook_id` — ON DELETE CASCADE
+- `handbooks.company_id` — ON DELETE SET NULL
+- `handbooks.version_of` — ON DELETE SET NULL
+
+**Constraints:**
+
+- `handbooks_company_scope_has_no_site` — `CHECK (((scope <> 'company'::text) OR (entity_id IS NULL)))`
+- `handbooks_could_not_read_says_why` — `CHECK (((status <> 'could_not_read'::text) OR (status_reason IS NOT NULL)))`
+- `handbooks_page_count_check` — `CHECK ((page_count >= 0))`
+- `handbooks_scope_check` — `CHECK ((scope = ANY (ARRAY['company'::text, 'site'::text])))`
+- `handbooks_size_bytes_check` — `CHECK ((size_bytes >= 0))`
+- `handbooks_status_check` — `CHECK ((status = ANY (ARRAY['uploaded'::text, 'reading'::text, 'read'::text, 'could_not_read'::text])))`
+
+**Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
+
+- `anon` — **nothing**
+- `authenticated` — DELETE, INSERT, SELECT, UPDATE
+- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+
+**RLS policies:**
+
+| Policy | For | Roles | USING | WITH CHECK |
+|---|---|---|---|---|
+| `handbooks_delete` | DELETE | authenticated | `(company_id = auth_company_id())` | — |
+| `handbooks_insert` | INSERT | authenticated | — | `(company_id = auth_company_id())` |
+| `handbooks_select` | SELECT | authenticated | `(company_id = auth_company_id())` | — |
+| `handbooks_update` | UPDATE | authenticated | `(company_id = auth_company_id())` | `(company_id = auth_company_id())` |
+
+**Triggers:** `set_updated_at` (BEFORE → `set_updated_at`)
+
+**Indexes:** `handbooks_company_id_id_key`, `handbooks_file_path_key`, `handbooks_pkey`, `idx_handbooks_company_created`, `idx_handbooks_company_current`, `idx_handbooks_next_check_at`
 
 ### `hr_audits`
 
@@ -1770,8 +2148,8 @@ Saved HR handbook audit results, one row per audit run.
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — **nothing**
-- `service_role` — **nothing**
+- `authenticated` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -1788,7 +2166,7 @@ Saved HR handbook audit results, one row per audit run.
 
 industry x jurisdiction x agency -> how far we have got. Reads the same way to the pipeline and to the user: the coverage strip is this table rendered. Empty until the agencies table is populated (Phase 2.1), because every row names an agency.
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 56 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `script assign-agencies`
 
@@ -1818,8 +2196,8 @@ industry x jurisdiction x agency -> how far we have got. Reads the same way to t
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — **nothing**
-- `service_role` — **nothing**
+- `authenticated` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -1835,9 +2213,9 @@ industry x jurisdiction x agency -> how far we have got. Reads the same way to t
 
 One row per nightly run. Answers release gate 2 — did it run, and what did it remove (DECISIONS.md §116, §125). Operational, not tenant data: closed to authenticated.
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 18 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route account`, `lib jobAuth`
+**Read or written by:** `route account`, `lib jobAuth`, `lib jobRun`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -1851,13 +2229,13 @@ One row per nightly run. Answers release gate 2 — did it run, and what did it 
 
 **Constraints:**
 
-- `job_runs_job_check` — `CHECK ((job = ANY (ARRAY['summarise'::text, 'delete'::text, 'account_delete'::text, 'scan_documents'::text, 'audit_sections'::text])))`
+- `job_runs_job_check` — `CHECK ((job = ANY (ARRAY['summarise'::text, 'delete'::text, 'account_delete'::text, 'scan_documents'::text, 'audit_sections'::text, 'handbook_checks'::text])))`
 
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
 - `authenticated` — **nothing**
-- `service_role` — **nothing**
+- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS is enabled and there are NO policies** — so no role without a bypass can see a row.
 
@@ -1903,8 +2281,8 @@ One row per nightly run. Answers release gate 2 — did it run, and what did it 
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — **nothing**
-- `service_role` — **nothing**
+- `authenticated` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -1948,7 +2326,7 @@ One row per nightly run. Answers release gate 2 — did it run, and what did it 
 
 - `anon` — **nothing**
 - `authenticated` — **nothing**
-- `service_role` — **nothing**
+- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS is enabled and there are NO policies** — so no role without a bypass can see a row.
 
@@ -2006,8 +2384,8 @@ One row per nightly run. Answers release gate 2 — did it run, and what did it 
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — **nothing**
-- `service_role` — **nothing**
+- `authenticated` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -2064,8 +2442,8 @@ The resolved list: which library rows apply to this company. Produced by CODE, n
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — **nothing**
-- `service_role` — **nothing**
+- `authenticated` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -2081,7 +2459,7 @@ The resolved list: which library rows apply to this company. Produced by CODE, n
 
 ### `profiles`
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 5 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route account/export`, `route account`, `route signup`, `screen audits`, `screen calendar`, `screen compliance`, `screen dashboard`, `screen documents`, `screen hr`, `lib auth`, `script check-live`, `script run-golden-audit`, `script scan-document`, `script seed-staging-testdata`
 
@@ -2100,8 +2478,8 @@ The resolved list: which library rows apply to this company. Produced by CODE, n
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — **nothing**
-- `service_role` — **nothing**
+- `authenticated` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -2156,8 +2534,8 @@ The federal lists, keyed by CAS. Reference data: identical for every customer, s
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — **nothing**
-- `service_role` — **nothing**
+- `authenticated` — REFERENCES, SELECT, TRIGGER, TRUNCATE
+- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -2173,7 +2551,7 @@ The federal lists, keyed by CAS. Reference data: identical for every customer, s
 
 THE LIBRARY. What the law requires, by industry and jurisdiction. Reference data: global, readable by any authenticated user, written only by the service role. Rows are VERSIONED, never edited in place — a change is a new row with version + 1 and the old row gets effective_to. CLAUDE.md §3.2.
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 205 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route industries`, `route obligations`, `route switches/answer`, `route switches/ask`, `lib obligationWriter`, `script assign-agencies`, `script load-expressions`, `script load-requirements`, `script resolve-dryrun`
 
@@ -2246,8 +2624,8 @@ THE LIBRARY. What the law requires, by industry and jurisdiction. Reference data
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — **nothing**
-- `service_role` — **nothing**
+- `authenticated` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -2283,8 +2661,8 @@ Reusable, shared parsed checklist per named standard. Built once, reused by ever
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — **nothing**
-- `service_role` — **nothing**
+- `authenticated` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -2304,7 +2682,7 @@ document-versus-document disagreement is recorded WITHOUT reusing user_locked, w
 PERSON decided and must keep meaning only that. DECISIONS.md §24.1, §47;
 docs/SWITCH-DETERMINATION.md §7.
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 1 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route switches/answer`, `script audit-data-checks`, `script check-live`
 
@@ -2349,8 +2727,8 @@ docs/SWITCH-DETERMINATION.md §7.
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — **nothing**
-- `service_role` — **nothing**
+- `authenticated` — INSERT, SELECT
+- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -2365,7 +2743,7 @@ docs/SWITCH-DETERMINATION.md §7.
 
 The ~59 facts about a company that determine which requirements apply. Reference data: global, readable by any authenticated user, written only by the service role. CHEMICAL-OR-WA.md §2.2 and §2.4.
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 95 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route chat`, `route company-information`, `route obligations`, `route switches/answer`, `route switches/ask`, `route to-confirm`, `lib determinationGate`, `lib obligationWriter`, `script load-switches`, `script resolve-dryrun`, `script run-golden`, `script seed-multisite-fixture`
 
@@ -2410,8 +2788,8 @@ The ~59 facts about a company that determine which requirements apply. Reference
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — **nothing**
-- `service_role` — **nothing**
+- `authenticated` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -2427,7 +2805,7 @@ The ~59 facts about a company that determine which requirements apply. Reference
 
 One exploration. The transcript is disposable (WORKSPACE.md §6.4); the summary is what survives. Holds NO facts — a hypothetical is never stored (DECISIONS.md §78) and a real fact goes to company_switches. Migration 028.
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 20 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route chat`, `route checklists/from-topic`, `route documents`, `route jobs/delete`, `route jobs/summarise`, `route to-confirm`, `route topics/[id]`, `route topics/[id]/summarise`, `screen compliance`, `lib conversation`, `lib summaryReport`, `lib topicClaim`, `script check-live`
 
@@ -2451,6 +2829,7 @@ One exploration. The transcript is disposable (WORKSPACE.md §6.4); the summary 
 | `summary_report` | jsonb | yes | — |
 | `summary_started_at` | timestamp with time zone | yes | — |
 | `checklist_started_at` | timestamp with time zone | yes | — |
+| `section` | text | no | `'workspace'::text` |
 
 **Points at:**
 
@@ -2466,6 +2845,7 @@ One exploration. The transcript is disposable (WORKSPACE.md §6.4); the summary 
 **Constraints:**
 
 - `topics_closed_has_a_time` — `CHECK ((((status = 'closed'::topic_status) AND (closed_at IS NOT NULL)) OR ((status = 'open'::topic_status) AND (closed_at IS NULL))))`
+- `topics_section_is_known` — `CHECK ((section = ANY (ARRAY['workspace'::text, 'hr'::text])))`
 - `topics_summary_report_is_an_object` — `CHECK (((summary_report IS NULL) OR (jsonb_typeof(summary_report) = 'object'::text)))`
 - `topics_summary_source_is_known` — `CHECK (((summary_source IS NULL) OR (summary_source = ANY (ARRAY['user'::text, 'nightly'::text]))))`
 - `topics_title_is_not_blank` — `CHECK ((length(btrim(title)) > 0))`
@@ -2473,8 +2853,8 @@ One exploration. The transcript is disposable (WORKSPACE.md §6.4); the summary 
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — **nothing**
-- `service_role` — **nothing**
+- `authenticated` — INSERT, SELECT, UPDATE
+- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -2486,13 +2866,13 @@ One exploration. The transcript is disposable (WORKSPACE.md §6.4); the summary 
 
 **Triggers:** `set_updated_at` (BEFORE → `set_updated_at`)
 
-**Indexes:** `idx_topics_company_status`, `idx_topics_delete_after`, `idx_topics_last_turn`, `topics_pkey`
+**Indexes:** `idx_topics_company_section_last_turn`, `idx_topics_company_status`, `idx_topics_delete_after`, `idx_topics_last_turn`, `topics_pkey`
 
 ### `turns`
 
 One message in a conversation. Cleared 7 days after the topic is summarised (DECISIONS.md §125, superseding §110's 15 days); the topic row and its summary survive.
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 66 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route jobs/delete`, `route jobs/summarise`, `route topics/[id]`, `lib attachedDocument`, `lib conversation`, `script check-live`
 
@@ -2527,8 +2907,8 @@ One message in a conversation. Cleared 7 days after the topic is summarised (DEC
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — **nothing**
-- `service_role` — **nothing**
+- `authenticated` — INSERT, SELECT
+- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -2543,7 +2923,7 @@ One message in a conversation. Cleared 7 days after the topic is summarised (DEC
 
 Events, not inventory. Never decremented, never derived from row counts — transcripts are cleared after 7 days and checklists can be deleted, and neither rewrites what happened. DECISIONS.md §125.
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `company_id`
+**Rows:** 1 · **RLS:** enabled · **Primary key:** `company_id`
 
 **Read or written by:** `lib conversation`, `script check-live`
 
@@ -2567,8 +2947,8 @@ Events, not inventory. Never decremented, never derived from row counts — tran
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — **nothing**
-- `service_role` — **nothing**
+- `authenticated` — SELECT
+- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -2698,6 +3078,7 @@ filtered HERE so no consumer can forget it (CLAUDE.md §3.2). A corrected link
 | `entities` | `set_updated_at` | BEFORE | `set_updated_at` |
 | `fact_proposals` | `set_updated_at_fact_proposals` | BEFORE | `set_updated_at` |
 | `fact_proposals` | `stamp_topic_title_fact_proposals` | BEFORE | `fact_proposals_stamp_topic_title` |
+| `handbooks` | `set_updated_at` | BEFORE | `set_updated_at` |
 | `industry_coverage` | `set_updated_at` | BEFORE | `set_updated_at` |
 | `jobs` | `set_updated_at` | BEFORE | `set_updated_at` |
 | `library_candidates` | `set_updated_at` | BEFORE | `set_updated_at` |
@@ -2778,4 +3159,5 @@ filtered HERE so no consumer can forget it (CLAUDE.md §3.2). A corrected link
 063
 064
 065
+066
 ```

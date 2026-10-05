@@ -206,6 +206,17 @@ const COMPANY_SCOPED_TABLES = [
   'audits',
   'company_templates',
   'hr_audits',          // NO ACTION — blocks the company delete if left
+  // ---- HR'S TABLES, migration 066 (HR Step 3b, `docs/HR-PLAN.md` decision 24) ----
+  // All six cascade from `companies`; named here because they are the customer's own handbooks and
+  // what was found in them, and this list is where a reviewer sees what a deletion destroys.
+  // Children first. The stored files go with the storage walk below: HR keeps them at
+  // <company>/handbooks/<file>, two levels, which `listCompanyObjects` already covers.
+  'handbook_findings',
+  'handbook_check_sections',
+  'handbook_checks',
+  'handbook_dates',
+  'handbook_sections',
+  'handbooks',
   'calendar_events',
   'documents',
   'company_folders',

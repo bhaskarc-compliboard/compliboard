@@ -75,6 +75,12 @@ export async function GET(request: NextRequest) {
       entities,
       corrections,
       companyTemplates,
+      handbooks,
+      handbookSections,
+      handbookChecks,
+      handbookCheckSections,
+      handbookFindings,
+      handbookDates,
     ] = await Promise.all([
       byCompany('documents'),
       byCompany('company_folders'),
@@ -87,6 +93,14 @@ export async function GET(request: NextRequest) {
       byCompany('entities'),
       byCompany('corrections'),
       byCompany('company_templates'),
+      // HR's tables, migration 066 (HR Step 3b, decision 24): the handbooks' records, their sections'
+      // text, every check, finding and date. The files themselves are not embedded, as for documents.
+      byCompany('handbooks'),
+      byCompany('handbook_sections'),
+      byCompany('handbook_checks'),
+      byCompany('handbook_check_sections'),
+      byCompany('handbook_findings'),
+      byCompany('handbook_dates'),
     ])
 
     // Profiles: this company's people only. Names and ids, nothing from auth —
@@ -180,6 +194,12 @@ export async function GET(request: NextRequest) {
       entities,
       corrections,
       company_templates: companyTemplates,
+      handbooks,
+      handbook_sections: handbookSections,
+      handbook_checks: handbookChecks,
+      handbook_check_sections: handbookCheckSections,
+      handbook_findings: handbookFindings,
+      handbook_dates: handbookDates,
 
       export_summary: {
         requested_by_user_id: userId,
@@ -199,6 +219,12 @@ export async function GET(request: NextRequest) {
           entities: entities.length,
           corrections: corrections.length,
           company_templates: companyTemplates.length,
+          handbooks: handbooks.length,
+          handbook_sections: handbookSections.length,
+          handbook_checks: handbookChecks.length,
+          handbook_check_sections: handbookCheckSections.length,
+          handbook_findings: handbookFindings.length,
+          handbook_dates: handbookDates.length,
         },
       },
     }
