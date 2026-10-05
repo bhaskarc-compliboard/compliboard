@@ -98,6 +98,8 @@ Sign in with a test account and run the first three manual tests for the feature
 > | `AI_EFFORT_HOWTO` | **unset** — so "How do I do this?" falls back to `AI_EFFORT`, i.e. medium | `lib/ai.ts:815` |
 > | `AI_SEARCH_MAX_HOWTO` | `6` — added 4 October with the Task 6 release | `lib/ai.ts:240` `searchLimit` |
 > | `AI_SEARCH_MAX_COMPLETE` | `8` — added 4 October with the Task 6 release | `lib/ai.ts:240` `searchLimit` |
+> | `AI_MODEL_HR` | **to add at HR's release: `claude-opus-5-5`, visible.** Not set now; unset it falls back to `AI_MODEL_PROSE` (HR Step 3b, `DECISIONS.md` §164) | `lib/ai.ts:144` |
+> | `AI_MODEL_HR_CHECK` | **to add at HR's release: `claude-opus-5-5`, visible.** Not set now; unset it falls back to `AI_MODEL_PROSE` | `lib/ai.ts:145` |
 >
 > **The 4 October correction it replaces:** the 3 October statement *"Every `AI_MODEL_*` variable set
 > on Vercel Production is `claude-opus-5-5`"* was wrong for `AI_MODEL_SUMMARY`, which was Sonnet until

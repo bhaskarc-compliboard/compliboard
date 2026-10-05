@@ -6,7 +6,7 @@
 > replaced.** Those carry a 🕓 HISTORICAL banner naming what is current instead — added 28 September
 > 2026. A manual set is the record of what a person checked and when; a file that deletes the sets whose
 > screens changed is a file that cannot tell you whether anything was ever checked at all.
-**Version:** 27 · **Updated:** 4 October 2026, HR Step 3a — the manual set "the workspace looks the same". Version 26: at the close of the workspace work
+**Version:** 28 · **Updated:** 4 October 2026, HR Step 3b — the check:live probes for HR's tables. Version 27: HR Step 3a — the manual set "the workspace looks the same". Version 26: at the close of the workspace work
 **Supersedes:** version 25 (3 Oct). Adds the sets of 4 October — Workspace Task 5, Task 6, Stage 2, Stage 4 and the cron release's live checks — with the owner's recorded results (Task 6's T6-1 and T6-3, Stage 4's S4-2, the cron release's CR-1).
 Version 25: version 24 (25 Sep). Adds the **Workspace layout set** (3 October) — the first three
 are the owner's live checks after the push, and none of them sends a question or uploads a file — and
@@ -174,6 +174,21 @@ folded panel shows open with its print-only link text: a stale server, not the c
 
 *(Before the commit, by script: 9 screen views and 5 prints identical element by element on two fresh servers;
 screenshots and PDFs pixel-identical. `shots/s3a-before-*`, `shots/s3a-after-*`, `shots/s3a-compare-*`.)*
+
+## check:live probes — HR's tables, migration 066 — 4 October 2026 (HR Step 3b, `DECISIONS.md` §164)
+
+Free; run with `CHECK_LIVE_BASE_URL=http://localhost:3999 npm run check:live`. As `testgamma`. Every refusal
+must be **42501**: any other error code would only look like a refusal.
+
+| Table | Must be allowed | Must be refused (42501) |
+|---|---|---|
+| all six | authenticated reads its own | anon read and insert |
+| `handbooks` | insert (defaults: scope company, status uploaded, current), update, delete | insert for another company (RLS) |
+| `handbook_sections`, `handbook_checks`, `handbook_check_sections`, `handbook_findings` | read | insert, update, delete |
+| `handbook_dates` | read, update (a row written by the server) | insert, delete |
+
+Also checked: the date is gone when its handbook is deleted (cascade). First full run, 4 October: all 24 HR
+probe lines ✓; the 15 older table probes ✓; paid flows skipped (nothing on 3999).
 
 ## Live checks — The cron release — 4 October 2026 (commit `14eb03b`, `DECISIONS.md` §162)
 

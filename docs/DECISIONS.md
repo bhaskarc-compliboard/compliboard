@@ -11085,3 +11085,49 @@ After migration 065 was applied, Claude Code ran `npm run db:restore` under `CLA
 one Opus run per paid path, to catch machinery that only fails on the real model (refused schemas, longer
 outputs, slower calls). Then comes the quality pass. `docs/HR-PLAN.md` decision 17 and steps 6, 7, 8 and 12 match.
 **The copy rule** joins `docs/HR-PLAN.md` §2.5: before removing a copy, find what it guards.
+
+### Step 3b — HR's foundations in the database (`095c984`, `7b7c860`, `c7121a0`)
+
+- **The schema document reads grants it can see** (`095c984`). `scripts/schema-doc.js` now asks
+  `has_table_privilege`; the old `role_table_grants` query returned nothing to the CLI's
+  `supabase_read_only_user` (`docs/HR-MACHINERY.md` B12). Proved before being trusted: `audit_runs` shows
+  authenticated `SELECT, UPDATE` (058) and `documents` full DML.
+- **Migration 066, `066_hr_handbooks_and_their_check.sql`, on STAGING only** (`7b7c860`), applied with
+  `CHECK_LIVE_BASE_URL=http://localhost:3999 npm run db:migrate`. It adds:
+  - `handbooks`, `handbook_sections`, `handbook_checks`, `handbook_check_sections`, `handbook_findings`,
+    `handbook_dates`;
+  - `topics.section`, defaulting to `workspace`, with `topic_list_v` exposing it;
+  - `calendar_events.handbook_id`;
+  - `hr` and `hr_check` in `ai_calls_task_check`, and `handbook_checks` in `job_runs_job_check`.
+- **The tenancy pattern.** Every pointer is composite on (company_id, id). A pointer that must outlive its
+  target uses `ON DELETE SET NULL (<column>)` (Postgres 17.6), so a handbook whose site is deleted stays
+  scope `site` with no site, never company-wide.
+- **What 066's verify block proves** (it raises unless every one holds):
+  - all six tables exist with RLS on;
+  - anon holds nothing, and authenticated holds exactly the stated grants (7 privileges read back per table);
+  - 22 policies;
+  - every CHECK refuses a wrong value, including scope `company` with a site;
+  - every cross-tenant pointer is refused;
+  - a deleted site leaves scope `site`, and the cascades and the SET NULLs behave as designed;
+  - a topic inserted without a section reads `workspace`, every existing row is `workspace`, and
+    `topic_list_v` exposes it with `security_invoker`;
+  - `calendar_events.handbook_id` is SET NULL;
+  - the task and job CHECKs take the new names, take every old one, and refuse a made-up one.
+
+  Read back from the catalog after the push: 066 in `schema_migrations`; the probe companies gone.
+- **check:live** gained 24 probe lines for the six tables: anon refused, and the person allowed and refused
+  exactly the grant, with 42501 on every refusal. All pass.
+- **The code on top** (`c7121a0`):
+  - ledger tasks `hr` and `hr_check`;
+  - tiers `hr` (`AI_MODEL_HR`) and `hr_check` (`AI_MODEL_HR_CHECK`), falling back to prose like `howto`;
+  - `handbook_checks` in the job unions;
+  - `handbookPath()` → `<company>/handbooks/<file>`, two levels, which account delete's existing walk removes;
+  - the workspace Conversations list filtered to `section = 'workspace'`. Same 20 rows for testgamma, and
+    `npm run measure` byte-identical.
+- **One sequencing change from the brief.** Account delete and export name the six tables in `7b7c860`,
+  not `c7121a0`, because `check-schema-contracts` refuses a build whose company tables account delete
+  does not name.
+- **Seen along the way, not changed:** `authenticated` holds `TRUNCATE, REFERENCES, TRIGGER` on
+  `documents` and `calendar_events` (the default privileges, §3.6). They are now visible in `docs/SCHEMA.md`
+  for the first time.
+- Tests went from 724 to 729. **$0.**

@@ -161,7 +161,9 @@ without the owner knowing, or the two sections will edit the same lines at once.
    - The workspace imports them. **No visible change:** `npm run measure` before and after proves the screen
      is the same.
    - The workspace's own logic stays in its page.
-2. **A section column on `topics` (HR decision 5).**
+2. **A section column on `topics` (HR decision 5).** **DONE 4 October, on staging** (HR Step 3b: migration 066,
+   `7b7c860`; the list filter `c7121a0` — testgamma's 20 rows unchanged, `npm run measure` byte-identical).
+   Reaches production with HR's release.
    - `'workspace'` or `'hr'`, default `'workspace'`, so every existing insert keeps working.
    - `topic_list_v` exposes it, and the workspace's Conversations list filters to `'workspace'`.
    - The usage counter stays one count per company.

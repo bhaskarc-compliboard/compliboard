@@ -1,6 +1,6 @@
 # The HR section — the plan
 
-**Version:** 2 · **Updated:** 4 October 2026, HR Step 3a: step 3a done; decision 17 amended (every build stop on Haiku,
+**Version:** 3 · **Updated:** 4 October 2026, HR Step 3b: step 3b done (staging only). Version 2: HR Step 3a: step 3a done; decision 17 amended (every build stop on Haiku,
 all Opus work in the testing step); the copy rule added to §2.5. Version 1: HR Step 2.
 
 **The decision record** is `DECISIONS.md` §164. **The map** (how HR and everything it touches worked on 4
@@ -215,7 +215,10 @@ replaced text is kept and struck through, so the record shows what changed.
      (`279c946`)**: 9 screen views and 5 prints identical on two fresh servers, pixel-identical screenshots
      and PDFs; `DECISIONS.md` §164.
    - (b) Migrations for decisions 2, 5, 9, 18 and 24, and the nullable `calendar_events.handbook_id`
-     (decision 29); the `schema-doc.js` grants fix (decisions 16, 27).
+     (decision 29); the `schema-doc.js` grants fix (decisions 16, 27). **DONE 4 October, on staging**
+     (`095c984`, `7b7c860`, `c7121a0`): migration 066 and its verify block, 24 new check:live probe lines,
+     the ledger tasks and tiers, `handbookPath()`, account delete and export, the workspace list filter;
+     `DECISIONS.md` §164. Nothing on production.
    - STOP for review.
 4. **The page:** `/hr` as the workspace page, built from the shared pieces. STOP: the owner looks.
 5. **The Handbooks tab:** upload with the site sheet, rows, versions, could-not-read, delete. HR's own
