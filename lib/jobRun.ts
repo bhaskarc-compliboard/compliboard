@@ -22,7 +22,9 @@
  */
 type Db = { from: (t: string) => any }   // eslint-disable-line @typescript-eslint/no-explicit-any
 
-export type SweepJob = 'scan_documents' | 'audit_sections'
+// 'handbook_checks' is HR's queue (HR Step 3b; migration 066 adds it to job_runs_job_check). No route
+// yet — that is HR step 10.
+export type SweepJob = 'scan_documents' | 'audit_sections' | 'handbook_checks'
 
 /** What `finish` does: close the opened row, write a whole one, or write nothing. */
 export type RecordDecision = 'update' | 'insert' | 'none'

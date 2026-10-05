@@ -24,7 +24,7 @@ export type AIContent = string | any[]
  */
 import { recordAICall, describeCost, type LedgerTask } from './costLedger.ts'
 
-export type AITask = 'judgement' | 'critique' | 'prose' | 'default' | 'substeps' | 'summary' | 'document_scan' | 'document_draft' | 'audit' | 'howto'
+export type AITask = 'judgement' | 'critique' | 'prose' | 'default' | 'substeps' | 'summary' | 'document_scan' | 'document_draft' | 'audit' | 'howto' | 'hr' | 'hr_check'
 
 /**
  * What a caller passes so its call lands in the cost ledger (`DECISIONS.md` §128 J).
@@ -136,6 +136,13 @@ const TASK_MODELS: Record<AITask, () => string> = {
   // search returned. It is research, so unset it falls back to the research tier (`prose`, the tier
   // `/api/chat` research answers run on) — exactly as `document_scan` falls back to judgement.
   howto: () => process.env.AI_MODEL_HOWTO || TASK_MODELS.prose(),
+  // *** THE HR SECTION'S TWO CALLS, EACH WITH ITS OWN NAME — HR Step 3b, decision 9. ***
+  // An answer from the company's handbooks (`hr`) and the section-by-section handbook check
+  // (`hr_check`). Both read a document AND check the rule at the agency with web search, so unset they
+  // fall back to the research tier exactly as `howto` does — the pattern copied, not a new one. Named so
+  // each can be moved on its own; production sets both to claude-opus-5-5 at HR's release (RELEASE.md).
+  hr: () => process.env.AI_MODEL_HR || TASK_MODELS.prose(),
+  hr_check: () => process.env.AI_MODEL_HR_CHECK || TASK_MODELS.prose(),
   default:   () => process.env.AI_MODEL           || 'claude-sonnet-4-5',
 }
 

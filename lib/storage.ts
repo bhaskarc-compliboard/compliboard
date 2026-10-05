@@ -20,3 +20,24 @@
  * failure arrives at runtime as four words with no file attached.
  */
 export const DOCUMENTS_BUCKET = 'company-documents'
+
+/**
+ * WHERE HR KEEPS A HANDBOOK'S FILE — HR Step 3b (`docs/HR-PLAN.md` decisions 18 and 24).
+ *
+ * In the same bucket, inside the company's own folder, so the storage policies from migration 002
+ * (first folder = the caller's company) cover it unchanged. The prefix is `handbooks` — NOT old HR's
+ * `hr-handbooks`, whose two production files stay ordinary Documents rows (decision 25).
+ *
+ * *** EXACTLY TWO LEVELS: <company>/handbooks/<file>. *** Account delete removes a company's files by
+ * listing `<company>/` and then each folder ONE level down (`app/api/account/route.ts`,
+ * `listCompanyObjects`). A file one level deeper would survive a deletion the customer asked for. So
+ * the file name may not carry a slash of its own: any `/` or `\` becomes `_`. `tests/unit/storage.test.ts`
+ * holds the depth.
+ */
+export const HANDBOOKS_PREFIX = 'handbooks'
+
+export function handbookPath(companyId: string, fileName: string, now: number = Date.now()): string {
+  if (!companyId || /[/\\]/.test(companyId)) throw new Error('handbookPath: a company id with no slash is required')
+  const safe = fileName.replace(/[/\\]/g, '_').replace(/^\.+/, '_').trim() || 'handbook'
+  return `${companyId}/${HANDBOOKS_PREFIX}/${now}-${safe}`
+}

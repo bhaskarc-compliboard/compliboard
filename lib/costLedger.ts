@@ -22,6 +22,7 @@ import { MODEL_PRICES, PRICE_PER_SEARCH, type ModelPrice } from '../config/prici
 export type LedgerTask =
   | 'research' | 'checklist' | 'substeps' | 'convert' | 'summarise'
   | 'gate' | 'critique' | 'audit' | 'document_review' | 'document_scan' | 'document_draft' | 'howto' | 'other'
+  | 'hr' | 'hr_check'
 
 export const LEDGER_TASKS: readonly LedgerTask[] = [
   'research', 'checklist', 'substeps', 'convert', 'summarise',
@@ -33,6 +34,10 @@ export const LEDGER_TASKS: readonly LedgerTask[] = [
   // migration 064 adds it to `ai_calls_task_check`).
   'howto',
   'other',
+  // THE HR SECTION (HR Step 3b, `docs/HR-PLAN.md` decision 9; migration 066 adds both to
+  // `ai_calls_task_check`): an answer from the handbooks, and the handbook check.
+  'hr',
+  'hr_check',
 ] as const
 
 export interface CallUsage {

@@ -415,6 +415,9 @@ export default function CompliancePage() {
     const { data } = await supabase
       .from('topic_list_v')
       .select(TOPIC_LIST_COLUMNS)
+      // THE WORKSPACE'S OWN CONVERSATIONS ONLY — HR Step 3b (decision 5, migration 066). HR's live in the
+      // same table with section 'hr' and are listed by HR; every row before 066 reads 'workspace'.
+      .eq('section', 'workspace')
       .order('last_turn_at', { ascending: false, nullsFirst: false })
       .order('created_at', { ascending: false })
       .limit(LIST_CAP)
