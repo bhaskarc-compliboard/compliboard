@@ -18,11 +18,15 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 // *** SERVER-SIDE ONLY, BECAUSE OF THIS IMPORT. *** The model client must never reach a browser bundle,
-// so the workspace page imports nothing from this file but TYPES (`import type`, erased at build),
-// and keeps its own copy of the two display strings — pinned to these by tests/unit/summaryReport.test.ts.
+// so no client file imports anything from this file but TYPES (`import type`, erased at build); the
+// display words a client needs are in `./summaryWords.ts` (tests/unit/clientImports.test.ts holds both).
 import { askAIJson } from './ai.ts'
 import { summaryReportPrompt, SUMMARY_PROMPT_ASKS_FOR_BASIS } from '../prompts/summary-report.ts'
 import { guardSummaryWrite, CLAIM_COLUMN } from './topicClaim.ts'
+// The three display words live in a browser-safe file the summary drawer can import (HR Step 3a);
+// re-exported here so every existing caller is unchanged.
+import { NO_SOURCE, longDate, AS_OF_LINE } from './summaryWords.ts'
+export { NO_SOURCE, longDate, AS_OF_LINE }
 
 export interface TurnLike {
   /** The turn's row id, when it has one; a fact's proposal points at the turn its quote came from. */
@@ -61,7 +65,6 @@ export interface SummaryReport {
 }
 
 export const TITLE_MAX = 70
-export const NO_SOURCE = 'No source cited in the conversation'
 
 /** One URL, one source: the fragment and a trailing slash do not make a different page. */
 export function sourceKey(url: string): string {
@@ -322,16 +325,6 @@ export function checkReport(raw: unknown, turns: TurnLike[], asOf: string,
     },
   }
 }
-
-/** "1 October 2026" — the as-of date, written out. */
-export function longDate(iso: string): string {
-  const d = new Date(`${iso.slice(0, 10)}T00:00:00Z`)
-  return Number.isNaN(d.getTime()) ? iso
-    : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
-}
-
-export const AS_OF_LINE = (asOf: string) =>
-  `What applies to you as of ${longDate(asOf)}, from this conversation. Rules and tariffs change. Check before you act.`
 
 const cites = (it: ReportItem) => (it.sources.length
   ? ` (${it.sources.length === 1 ? 'source' : 'sources'} ${it.sources.join(', ')})` : ` (${NO_SOURCE.toLowerCase()})`)

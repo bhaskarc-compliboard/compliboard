@@ -77,6 +77,27 @@ body {
  * screen that has a drawer. The compliance page keeps its own identical block; the rules are
  * idempotent and removing them is a change to a file this run does not own.
  * ------------------------------------------------------------------------- */
+/* ---------------------------------------------------------------------------
+ * THE WORKSPACE'S OWN PRINT RULES — moved here unchanged from the `<style jsx global>` block in
+ * `app/compliance/page.tsx`, HR Step 3a (`docs/HR-PLAN.md` decision 1), so the shared pieces
+ * (`components/OneLineLink.tsx`, `components/ReportView.tsx`) carry their rules wherever they are used.
+ * That block's other rules (`.no-print` and the three `printing-drawer` ones) were already here,
+ * identical, and are not repeated. No other page used these four class names when they moved.
+ *
+ * WORKSPACE STAGE 2 — PRINT IS ALWAYS OPEN, AND LINKS ARE READABLE ON PAPER. A folded accordion
+ * panel is hidden on screen only; on paper every panel is open, whatever was folded, and the screen
+ * is not touched (no state change). A one-line link prints its full title and its full address
+ * instead of the cut-down line.
+ * ------------------------------------------------------------------------- */
+.print-only { display: none; }
+.fold-closed { display: none; }
+@media print {
+  .sources-print a::after { content: " — " attr(href); font-size: 10px; color: #444; word-break: break-all; }
+  .fold-closed { display: block !important; }
+  .screen-only { display: none !important; }
+  .print-only { display: inline !important; }
+}
+
 @media print {
   .no-print { display: none !important; }
 

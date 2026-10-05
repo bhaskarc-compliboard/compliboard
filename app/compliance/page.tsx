@@ -20,7 +20,7 @@
  *     only COUNTS a conversation's pending proposals, in the summary drawer, and links there.
  * ---------------------------------------------------------------------------
  */
-import React, { useState, useEffect, useLayoutEffect, useRef, useCallback, useId } from 'react'
+import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react'
 import { createClient, authHeaders } from '@/lib/supabase'
 import AppLayout from '@/components/AppLayout'
 // Lifted to components/Drawer.tsx in Documents Run 4 so the Documents report uses the same one.
@@ -28,34 +28,34 @@ import { Drawer, printDrawer, printDate } from '@/components/Drawer'
 import { printWithFrame } from '@/lib/printFrame'
 import { AnswerBody, SourceList, type AnswerSource } from '@/components/AnswerBody'
 import { EXAMPLE_QUESTIONS } from '@/config/examples'
-import { displaySource } from '@/lib/sourceTitle'
 import { readAnswerStream, ndjsonLines } from '@/lib/answerStream'
 import { DOCUMENTS_BUCKET } from '@/lib/storage'
 import { ACCEPTED_FILE_TYPES } from '@/lib/acceptedFiles'
 // TYPES ONLY. `lib/summaryReport.ts` imports the model client and must not reach the browser; a type
-// import is erased at build. The two strings it displays are copied below and pinned by a unit test.
-import type { SummaryReport, ReportItem } from '@/lib/summaryReport'
+// import is erased at build. Its display words are in `lib/summaryWords.ts` (tests/unit/clientImports.test.ts).
+import type { SummaryReport } from '@/lib/summaryReport'
 import DocumentReport from '@/components/DocumentReport'
 import {
   conversationStatus, progressPercent, friendlyDate,
 } from '@/lib/conversationStatus'
 import {
-  groupItems, madeInWorkspace, mustDoLabel, oneLineSource, thingsToDo, noSourceText, itemSources, isResearching, howToHeading, stepSourceNumbers,
+  groupItems, madeInWorkspace, mustDoLabel, noSourceText, itemSources, isResearching, howToHeading, stepSourceNumbers,
 } from '@/lib/checklistView'
 import { OTHER_SOURCE_LINE, DROPPED_LINE, urlKey, sourceCount, type HowToResult } from '@/lib/howTo'
 import { CLAIM_WORDS, type ClaimKind } from '@/lib/topicClaim'
+import { PRIMARY, SECONDARY_LARGE, OUTLINE, TEXT_ACTION } from '@/components/buttonStyles'
+// THE WORKSPACE'S DISPLAY PIECES, shared with HR so the two cannot drift (HR Step 3a, `docs/HR-PLAN.md` decision 1).
+import { Working } from '@/components/Working'
+import { OneLineLink } from '@/components/OneLineLink'
+import { Stages, type Step } from '@/components/Stages'
+import { Sheet } from '@/components/Sheet'
+import { Empty } from '@/components/Empty'
+import { Tabs } from '@/components/Tabs'
+import { ReportView, WEB_SOURCE } from '@/components/ReportView'
 
 type Tab = 'ask' | 'conversations' | 'checklists'
 
-/**
- * THE STAGES OF A QUESTION SENT WITH A FILE — Workspace Task 4, board 3. Each is shown while it is
- * TRUE, driven by the request it names, never by a timer:
- *   save   the storage upload and POST /api/documents
- *   read   POST /api/document-scan, awaited
- *   check  POST /api/chat, until the first answer text arrives
- *   write  while that text streams
- */
-type Step = 'save' | 'read' | 'check' | 'write'
+/* THE STAGES (the `Step` type, their words and the list) live in `components/Stages.tsx` (HR Step 3a). */
 
 /** A file the person has chosen and not yet sent — held in page memory only. */
 type Staged =
@@ -174,24 +174,7 @@ const countOf = (n: number) => (n >= LIST_CAP ? `${LIST_CAP}+` : String(n))
 const countWord = (n: number, word: string) =>
   `${countOf(n)} ${word}${n === 1 ? '' : 's'}`
 
-/*
- * THE BUTTONS, COPIED FROM AUDITS CHARACTER FOR CHARACTER — Workspace layout, Task 2.
- * The owner's decision: where `DESIGN.md` and Audits disagree, Audits wins, so these are its strings
- * rather than a fourth reading of §4. Copied, not imported, because Audits keeps them page-local too.
- */
-/** `app/audits/page.tsx:155–157`, ACTION_PRIMARY. */
-const PRIMARY =
-  'cursor-pointer rounded-md bg-[var(--green)] px-4 py-2 text-[14px] font-medium text-white ' +
-  'hover:bg-[var(--green-ink)] disabled:cursor-not-allowed disabled:opacity-50'
-/** PRIMARY's box, outlined. Used ONLY beside PRIMARY on the first visit, so the pair is one size. */
-const SECONDARY_LARGE =
-  'cursor-pointer rounded-md border border-[var(--green)] px-4 py-2 text-[14px] font-medium text-[var(--green)] ' +
-  'hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-50'
-/** `components/AuditReport.tsx:651`, the footer's "Audit again". */
-const OUTLINE =
-  'rounded-md border border-[var(--green)] px-3 py-1.5 text-[14px] font-medium text-[var(--green)] hover:bg-green-50 disabled:opacity-50'
-/** `components/AuditReport.tsx:655`, the footer's text actions. */
-const TEXT_ACTION = 'text-[14px] text-gray-600 hover:text-gray-900 hover:underline disabled:text-gray-300'
+/* THE BUTTONS live in `components/buttonStyles.ts` (HR Step 3a), shared with HR. */
 
 /**
  * A CONVERSATION'S TITLE, AS SHOWN — Workspace Task 3. Titles are stored as typed (the first
@@ -1129,41 +1112,8 @@ export default function CompliancePage() {
       <input ref={fileInput} type="file" className="hidden"
         accept={ACCEPTED_FILE_TYPES}
         onChange={(e) => { const f = e.target.files?.[0]; if (f) stageFile(f); e.target.value = '' }} />
-      <style jsx global>{`
-        .print-only { display: none; }
-        .fold-closed { display: none; }
-        @media print {
-          .no-print { display: none !important; }
-          .sources-print a::after { content: " — " attr(href); font-size: 10px; color: #444; word-break: break-all; }
-
-          /* WORKSPACE STAGE 2 — PRINT IS ALWAYS OPEN, AND LINKS ARE READABLE ON PAPER.
-           * A folded accordion panel is hidden on screen only; on paper every panel is open,
-           * whatever was folded, and the screen is not touched (no state change). A one-line
-           * link prints its full title and its full address instead of the cut-down line. */
-          .fold-closed { display: block !important; }
-          .screen-only { display: none !important; }
-          .print-only { display: inline !important; }
-
-          /* ----------------------------------------------------------------------------
-           * DOWNLOAD FROM A DRAWER PRINTS THE DRAWER, AND NOTHING ELSE — Fix Round 1 (E).
-           *
-           * A drawer is \`position: fixed\` in a 560px column over the page. Printing it gave
-           * a clipped strip of the drawer AND the whole page behind it — the tab bar, the
-           * other conversations, the composer. \`printDrawer()\` stamps this class on <body>
-           * for the duration of the print dialog: the page is hidden, and the drawer stops
-           * being a panel and becomes the document.
-           * -------------------------------------------------------------------------- */
-          body.printing-drawer .print-page { display: none !important; }
-          body.printing-drawer .print-drawer {
-            position: static !important; max-width: none !important; width: 100% !important;
-            border: 0 !important; box-shadow: none !important; display: block !important;
-          }
-          /* The body scrolls on screen; on paper it must run to as many pages as it needs. */
-          body.printing-drawer .print-drawer .drawer-body {
-            overflow: visible !important; padding: 0 !important; flex: none !important;
-          }
-        }
-      `}</style>
+      {/* THE PAGE'S PRINT CSS now lives in `app/globals.css` (HR Step 3a): `.print-only`, `.fold-closed`,
+          `.screen-only` and `.sources-print`, beside the `.no-print` and drawer rules it already held. */}
 
       {/*
         900, THE SAME COLUMN AS DOCUMENTS, AUDITS AND COMPANY INFORMATION — Workspace layout, Task 2.
@@ -1197,24 +1147,19 @@ export default function CompliancePage() {
         {/* THE TABS ARE AUDITS' TABS — `app/audits/page.tsx:488–501`, classes copied. The count sits
             inside the label as Audits writes it, "Checklists (3)", and is absent at none. Tab state
             stays in React state here: nothing links to a tab of this page. */}
-        <div className="no-print mb-5 mt-5 flex items-center justify-between gap-6 border-b border-gray-200">
-          <div className="flex items-center gap-6">
-            {([['ask', 'Ask a question'], ['conversations', 'Conversations'], ['checklists', 'Checklists']] as const)
-              .map(([k, label]) => (
-                <button key={k} onClick={() => switchTab(k)}
-                  className={`-mb-px border-b-2 pb-3 text-[14px] font-medium transition-colors ${
-                    tab === k ? 'border-[var(--green)] text-[var(--green-ink)]'
-                              : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
-                  {label}{k === 'checklists' && checklists.length > 0 ? ` (${countOf(checklists.length)})` : ''}
-                </button>
-              ))}
-          </div>
-          <button onClick={() => newConversation()}
-            className="-mb-px flex shrink-0 items-center gap-1.5 pb-3 text-[14px] text-gray-500 hover:text-gray-900">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
-            <span className="hidden sm:inline">New conversation</span>
-          </button>
-        </div>
+        <Tabs active={tab} onSelect={switchTab}
+          tabs={[
+            { key: 'ask', label: 'Ask a question' },
+            { key: 'conversations', label: 'Conversations' },
+            { key: 'checklists', label: `Checklists${checklists.length > 0 ? ` (${countOf(checklists.length)})` : ''}` },
+          ]}
+          right={
+            <button onClick={() => newConversation()}
+              className="-mb-px flex shrink-0 items-center gap-1.5 pb-3 text-[14px] text-gray-500 hover:text-gray-900">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
+              <span className="hidden sm:inline">New conversation</span>
+            </button>
+          } />
 
         {notice && (
           <div className="no-print mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
@@ -1682,7 +1627,7 @@ export default function CompliancePage() {
             <p className="text-[12px] text-gray-500">{CLAIM_WORDS.summary}</p>
           ) : drawerReport ? (
             // Keyed by the topic: a new drawer is a new mount, so every open starts folded (Stage 2).
-            <ReportView key={summaryDrawer.id} report={drawerReport} factsLine={factsLine} />
+            <ReportView key={summaryDrawer.id} report={drawerReport} factsLine={factsLine} sourceShape={WEB_SOURCE} />
           ) : summaryDrawer.summary ? (
             <AnswerBody text={summaryDrawer.summary} sources={[]} />
           ) : (
@@ -1889,226 +1834,13 @@ export default function CompliancePage() {
   )
 }
 
-/* ------------------------------------------------------------------ pieces */
+/* ------------------------------------------------------------------ pieces
+ * Working, OneLineLink, FoldRow, the stages, Sheet and Empty live in components/ (HR Step 3a). */
 
-/**
- * THE WORKING STATE, DRIVEN BY REAL EVENTS.
- *
- * The prototype animated four fixed steps on a 520 ms timer. That is a fiction — it is not
- * reporting progress, it is filling silence (`CLAUDE.md` §5.1). These words come from the
- * stream: `searching` events are counted as they arrive, and `writing` means text has started.
- */
-function Working({ phase, searches, onStop }: { phase: string; searches: number; onStop: () => void }) {
-  const label = phase === 'searching'
-    ? (searches <= 1 ? 'Checking a source…' : `Checking ${searches} sources…`)
-    : phase === 'writing' ? 'Writing the answer…' : 'Working on it…'
-  return (
-    <div className="no-print flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3">
-      <span className="h-3 w-3 shrink-0 animate-spin rounded-full border-2 border-gray-300 border-t-emerald-600" />
-      <span className="text-[13px] text-gray-600">{label}</span>
-      <button onClick={onStop} className="ml-auto text-[12.5px] text-gray-400 underline hover:text-gray-700">Stop</button>
-    </div>
-  )
-}
 
-/** Copies of `lib/summaryReport.ts`' `NO_SOURCE` and `AS_OF_LINE` — that file is server-only (see the
- *  import above). `tests/unit/summaryReport.test.ts` fails if these two drift from the originals. */
-const NO_SOURCE = 'No source cited in the conversation'
-const AS_OF_LINE = (asOf: string) => {
-  const d = new Date(`${asOf.slice(0, 10)}T00:00:00Z`)
-  const when = Number.isNaN(d.getTime()) ? asOf
-    : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
-  return `What applies to you as of ${when}, from this conversation. Rules and tariffs change. Check before you act.`
-}
 
-/**
- * THE SUMMARY REPORT IN THE DRAWER — Workspace Task 5, board 6. In this order: the as-of line, your
- * situation, what applies grouped by authority, still to confirm, asked and not answered, the facts
- * line, and the sources as one numbered list. An item's sources are "[n] title" links to the list's
- * own entries; an item with none says so in grey. Download prints all of it (`printDrawer`).
- */
-/**
- * ONE SOURCE ON ONE LINE — Workspace Stage 2. On screen: "[n] host · title", cut with "…" by CSS, the
- * full title on hover (`oneLineSource`, `lib/checklistView.ts`). On paper: the full title and the full
- * address, because a link on paper is only useful if its address can be read.
- */
-function OneLineLink({ n, title, url, after }: { n?: number; title: string; url: string; after?: React.ReactNode }) {
-  const one = oneLineSource(title, url)
-  const num = n === undefined ? '' : `[${n}] `
-  return (
-    <span className="flex min-w-0 items-baseline text-[12.5px]">
-      <a href={url} target="_blank" rel="noopener noreferrer" title={one.full}
-         className="min-w-0 text-emerald-800 underline underline-offset-2">
-        <span className="screen-only block truncate">{num}{one.host} · {one.title}</span>
-        <span className="print-only break-all">{num}{one.full} — {url}</span>
-      </a>
-      {after && <span className="shrink-0 whitespace-pre text-gray-500">{after}</span>}
-    </span>
-  )
-}
 
-/**
- * ONE FOLDING ROW OF THE SUMMARY — a real button: Enter and Space work, `aria-expanded` says its state,
- * `aria-controls` names the panel. A chevron (screen only), the label, and the count at the right.
- */
-function FoldRow({ label, right, expanded, controls, onClick }: {
-  label: string; right: string; expanded: boolean; controls: string; onClick: () => void }) {
-  return (
-    <button type="button" onClick={onClick} aria-expanded={expanded} aria-controls={controls}
-      className="flex w-full items-center gap-2 py-2.5 text-left hover:bg-gray-50">
-      <svg aria-hidden width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-        strokeLinecap="round" strokeLinejoin="round" className={`no-print shrink-0 text-gray-400 transition-transform ${expanded ? 'rotate-90' : ''}`}>
-        <path d="m9 6 6 6-6 6" />
-      </svg>
-      <span className="min-w-0 flex-1 text-[14px] font-semibold text-gray-900">{label}</span>
-      <span className="shrink-0 text-[12px] text-gray-500">{right}</span>
-    </button>
-  )
-}
 
-/**
- * THE SUMMARY AS AN ACCORDION — Workspace Stage 2, the canvas feature boards, board 6b, with the
- * owner's one change: Still to confirm comes AFTER the agencies. The order is the one Task 5 built.
- *   · Open on first view: the as-of line, Your situation, Still to confirm (NEVER folded), Asked and
- *     not answered, the facts line.
- *   · Folded on first view: each authority under What applies (one row: chevron, the authority,
- *     "N things to do"), and Sources (one row: "Sources" and the count).
- *   · "Open all" / "Close all" beside "What applies · N things to do".
- *   · Rows are real buttons with aria-expanded and aria-controls. Nothing is remembered: the drawer
- *     mounts this with the topic as its key, so every open starts folded.
- *   · PRINT IS ALWAYS OPEN: a folded panel carries `fold-closed`, hidden on screen and shown by the
- *     page's print CSS. The screen state is not changed to print.
- */
-function ReportView({ report, factsLine }: { report: SummaryReport; factsLine: React.ReactNode }) {
-  const byN = new Map(report.sources.map((src) => [src.n, src]))
-  const heading = 'mb-2 text-[11px] font-semibold uppercase tracking-wide text-gray-400'
-  const uid = useId()
-  const [open, setOpen] = useState<Set<number>>(() => new Set())
-  const [sourcesOpen, setSourcesOpen] = useState(false)
-  const total = report.applies.reduce((n, g) => n + g.items.length, 0)
-  const allOpen = report.applies.length > 0 && open.size === report.applies.length
-  const toggle = (gi: number) => setOpen((o) => { const n = new Set(o); if (n.has(gi)) n.delete(gi); else n.add(gi); return n })
-  const item = (it: ReportItem, key: string) => (
-    <li key={key} className="py-2.5">
-      <p className="text-[15px] font-medium text-gray-900">{it.name}</p>
-      <p className="mt-0.5 text-[14px] leading-relaxed text-gray-600">{it.what_to_do}</p>
-      <div className="mt-1 space-y-0.5">
-        {it.sources.length ? it.sources.map((n) => {
-          const src = byN.get(n)
-          return src ? <OneLineLink key={n} n={n} title={src.title} url={src.url} /> : null
-        }) : <p className="text-[12.5px] text-gray-400">{NO_SOURCE}</p>}
-      </div>
-    </li>
-  )
-  return (
-    <div className="space-y-6">
-      <p className="text-[13px] text-gray-500">{AS_OF_LINE(report.as_of)}</p>
-      <section>
-        <h4 className={heading}>Your situation</h4>
-        <p className="text-[15px] leading-relaxed text-gray-800">{report.situation}</p>
-      </section>
-      {report.applies.length > 0 && (
-        <section>
-          <div className="mb-2 flex items-baseline justify-between gap-4">
-            <h4 className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">What applies · {thingsToDo(total)}</h4>
-            <button type="button" className="no-print text-[12px] text-[var(--green-ink)] hover:underline"
-              onClick={() => setOpen(allOpen ? new Set() : new Set(report.applies.map((_, gi) => gi)))}>
-              {allOpen ? 'Close all' : 'Open all'}
-            </button>
-          </div>
-          <div className="divide-y divide-gray-200 border-y border-gray-200">
-            {report.applies.map((g, gi) => {
-              const id = `${uid}-a${gi}`
-              return (
-                <div key={g.authority + gi}>
-                  <FoldRow label={g.authority} right={thingsToDo(g.items.length)} expanded={open.has(gi)} controls={id} onClick={() => toggle(gi)} />
-                  <ul id={id} className={`divide-y divide-gray-100 pb-2 pl-[22px] ${open.has(gi) ? '' : 'fold-closed'}`}>
-                    {g.items.map((it, i) => item(it, `${gi}-${i}`))}
-                  </ul>
-                </div>
-              )
-            })}
-          </div>
-        </section>
-      )}
-      {report.to_confirm.length > 0 && (
-        <section>
-          <h4 className={heading}>Still to confirm</h4>
-          <ul className="divide-y divide-gray-100">{report.to_confirm.map((it, i) => item(it, `c-${i}`))}</ul>
-        </section>
-      )}
-      {report.unanswered.length > 0 && (
-        <section>
-          <h4 className={heading}>Asked and not answered</h4>
-          <ul className="list-disc space-y-1 pl-5 text-[14px] text-gray-700">
-            {report.unanswered.map((q, i) => <li key={i}>{q}</li>)}
-          </ul>
-        </section>
-      )}
-      {factsLine}
-      {report.sources.length > 0 && (
-        <section className="border-y border-gray-200">
-          <FoldRow label="Sources" right={String(report.sources.length)} expanded={sourcesOpen}
-            controls={`${uid}-src`} onClick={() => setSourcesOpen((v) => !v)} />
-          {/* The full titles, as before: the list is where a source is read in full. */}
-          <ol id={`${uid}-src`} className={`space-y-1.5 pb-3 ${sourcesOpen ? '' : 'fold-closed'}`}>
-            {report.sources.map((src) => {
-              const shown = displaySource(src.title, src.url)
-              return (
-                <li key={src.n} className="flex gap-2 text-[13px] leading-snug">
-                  <span className="shrink-0 text-gray-400">{src.n}.</span>
-                  <span>
-                    <a href={src.url} target="_blank" rel="noopener noreferrer"
-                       className="text-emerald-800 underline underline-offset-2">{shown.title}</a>
-                    {' '}<span className="text-gray-400">{shown.host}</span>
-                  </span>
-                </li>
-              )
-            })}
-          </ol>
-        </section>
-      )}
-    </div>
-  )
-}
-
-/** The words for each stage, as board 3 has them. */
-const stageWords = (step: Step, name: string) =>
-  step === 'save' ? 'Saving the file'
-    : step === 'read' ? `Reading ${name}`
-    : step === 'check' ? 'Checking it against your question'
-    : 'Writing the answer'
-
-/**
- * THE STAGES, EACH SHOWN WHILE IT IS TRUE — Workspace Task 4, board 3. Done: a green tick and grey
- * text. Now: a small spinner and dark text. Still to come: an empty circle and light grey. The
- * stage moves only when the request it names moves (`ask()`); nothing here runs on a timer.
- */
-function Stages({ steps, name, onStop }: { steps: { list: Step[]; at: Step }; name: string; onStop: () => void }) {
-  const at = steps.list.indexOf(steps.at)
-  return (
-    <div className="no-print mb-4">
-      <ol className="space-y-1.5">
-        {steps.list.map((step, i) => {
-          const state = i < at ? 'done' : i === at ? 'now' : 'next'
-          return (
-            <li key={step} className="flex items-center gap-2.5 text-[13px]">
-              <span className="flex w-3.5 shrink-0 justify-center">
-                {state === 'done' ? <span className="text-[12px] leading-none text-[var(--green)]">✓</span>
-                  : state === 'now' ? <span className="h-3 w-3 animate-spin rounded-full border-2 border-gray-300 border-t-emerald-600" />
-                  : <span className="h-3 w-3 rounded-full border border-gray-300" />}
-              </span>
-              <span className={state === 'done' ? 'text-gray-500' : state === 'now' ? 'text-gray-900' : 'text-gray-400'}>
-                {stageWords(step, name)}
-              </span>
-            </li>
-          )
-        })}
-      </ol>
-      <button onClick={onStop} className="mt-2 text-[12.5px] text-gray-400 underline hover:text-gray-700">Stop</button>
-    </div>
-  )
-}
 
 /**
  * THE FILE CARD — Workspace Task 4, board 4. Above the answer, between hairlines, no box: what was
@@ -2218,34 +1950,7 @@ function FileCard({ file, onRetry }: { file: NonNullable<Exchange['file']>; onRe
 
 
 
-function Sheet({ title, lede, children, onClose }: {
-  title: string; lede?: string; children: React.ReactNode; onClose: () => void
-}) {
-  // Escape closes a sheet, as a click outside it already does (Workspace Task 3).
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [onClose])
-  return (
-    <div className="no-print fixed inset-0 z-50 flex items-end justify-center bg-gray-900/40 p-4 sm:items-center" onClick={onClose}>
-      <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
-        <h3 className="text-[16px] font-medium text-gray-900">{title}</h3>
-        {lede && <p className="mb-3 mt-1 text-[13px] leading-relaxed text-gray-600">{lede}</p>}
-        {children}
-      </div>
-    </div>
-  )
-}
 
-function Empty({ title, note }: { title: string; note: string }) {
-  return (
-    <div className="rounded-xl border border-gray-200 bg-white px-5 py-12 text-center">
-      <b className="block text-[15px] font-medium text-gray-900">{title}</b>
-      <span className="mt-1 block text-[13px] text-gray-500">{note}</span>
-    </div>
-  )
-}
 
 /** The drawer's second line: the date, then where the items came from, in words. */
 function checklistSub(r: ChecklistRow): string {

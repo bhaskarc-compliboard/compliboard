@@ -1,6 +1,6 @@
 /**
  * HOW A CHECKLIST IS SHOWN — Workspace Task 6, boards 8 and 9. Pure, and safe for the browser: it
- * imports only `lib/sourceTitle.ts`, which imports nothing. The page (`app/compliance/page.tsx`) and the "How do I do this?" route share it;
+ * imports only `lib/sourceTitle.ts` and `lib/summaryWords.ts`, which import nothing. The page (`app/compliance/page.tsx`) and the "How do I do this?" route share it;
  * `tests/unit/checklistView.test.ts` holds it.
  *
  * THREE GROUPS, in this order: Must do (numbered, legal obligations in the order to do them), Worth
@@ -8,6 +8,7 @@
  * Checklists from Documents and Audits use the first two categories only and open in the same drawer.
  */
 import { displaySource } from './sourceTitle.ts'
+import { NO_SOURCE } from './summaryWords.ts'
 
 export interface ViewGroup {
   key: string
@@ -75,8 +76,9 @@ export function mustDoLabel(total: number, done: number): string {
   return `${done} of ${total} must-do${total === 1 ? '' : 's'} done`
 }
 
-/** A copy of `lib/summaryReport.ts` NO_SOURCE (that file is server-only); pinned by the test. */
-export const NO_SOURCE = 'No source cited in the conversation'
+/** `lib/summaryWords.ts` NO_SOURCE — the one copy, browser-safe; re-exported so the how-to route and
+ *  `lib/checklistConvert.ts` are unchanged (HR Step 3a). */
+export { NO_SOURCE }
 /** An item "Everything on this subject" added whose link failed the search check (`checkAddedLinks`). */
 export const NO_SOURCE_FOUND = 'No source found'
 /** An item with no source and no conversation behind it: the box checklist's own items. */

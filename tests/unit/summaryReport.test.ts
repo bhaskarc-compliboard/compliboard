@@ -8,6 +8,7 @@ import {
   gatherSources, numberedTranscript, checkReport, cleanSourceNumbers, trimTitle, renderPlainText,
   normaliseForMatch, proposalsToInsert, AS_OF_LINE, NO_SOURCE, TITLE_MAX,
 } from '../../lib/summaryReport.ts'
+import { NO_SOURCE as WORDS_NO_SOURCE, AS_OF_LINE as WORDS_AS_OF_LINE } from '../../lib/summaryWords.ts'
 
 /*
  * Conversation-wide numbering of these turns: 1 TTB, 2 CBP, 3 FDA (CBP's second URL is the same page).
@@ -212,19 +213,24 @@ describe('the facts become proposals once, never twice', () => {
   })
 })
 
-describe("the page's copies of the two display strings", () => {
-  // The page cannot import them (this lib is server-only), so it copies them; this fails if they drift.
-  const page = readFileSync('app/compliance/page.tsx', 'utf8')
-  test('NO_SOURCE is the same words', () => {
-    assert.ok(page.includes(`const NO_SOURCE = '${NO_SOURCE}'`))
+describe('the display words have one home, and the drawer reads them there (HR Step 3a)', () => {
+  // Until HR Step 3a the page kept copies of these two strings, pinned here, because this lib is
+  // server-only. They now live in `lib/summaryWords.ts`, which imports nothing; this lib re-exports
+  // them, so its callers are unchanged. The "nothing server-only reaches a client file" guarantee
+  // these tests used to give for the page alone is now `tests/unit/clientImports.test.ts`, for every
+  // client file.
+  test('NO_SOURCE is the same words, and the same export, from both files', () => {
+    assert.equal(NO_SOURCE, 'No source cited in the conversation')
+    assert.equal(NO_SOURCE, WORDS_NO_SOURCE)
   })
   test('the as-of line is the same sentence', () => {
-    const lib = AS_OF_LINE('2026-10-04')
-    const tail = lib.slice(lib.indexOf(', from this conversation.'))
-    assert.ok(page.includes(`What applies to you as of \${when}${tail}`), tail)
+    assert.equal(AS_OF_LINE('2026-10-04'),
+      'What applies to you as of 4 October 2026, from this conversation. Rules and tariffs change. Check before you act.')
+    assert.equal(AS_OF_LINE, WORDS_AS_OF_LINE)
   })
-  test('the page imports nothing from the lib at run time', () => {
-    assert.ok(!/^import \{[^}]*\} from '@\/lib\/summaryReport'/m.test(page))
-    assert.ok(/^import type \{[^}]*\} from '@\/lib\/summaryReport'/m.test(page))
+  test('the summary drawer takes its words from lib/summaryWords.ts, never this lib', () => {
+    const view = readFileSync('components/ReportView.tsx', 'utf8')
+    assert.match(view, /^import \{ NO_SOURCE, AS_OF_LINE \} from '@\/lib\/summaryWords'/m)
+    assert.ok(!/^import \{[^}]*\} from '@\/lib\/summaryReport'/m.test(view), 'only `import type` from lib/summaryReport')
   })
 })

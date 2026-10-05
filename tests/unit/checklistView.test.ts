@@ -139,9 +139,13 @@ describe('one-line source links — Workspace Stage 2, on the ethanol fixture\'s
   })
 })
 
-describe('the summary as an accordion — the page holds the rules (Stage 2)', () => {
+describe('the summary as an accordion — the rules, wherever they live (Stage 2; shared by HR Step 3a)', () => {
+  // HR Step 3a moved the report, the fold row and the print CSS out of the page into shared files. The
+  // assertions are the same ones; only where they look has changed.
   const page = readFileSync('app/compliance/page.tsx', 'utf8')
-  const report = page.slice(page.indexOf('function ReportView('), page.indexOf('/** The words for each stage'))
+  const view = readFileSync('components/ReportView.tsx', 'utf8')
+  const report = view.slice(view.indexOf('export function ReportView<'))
+  const css = readFileSync('app/globals.css', 'utf8')
   test('each authority and Sources fold; Still to confirm has no fold', () => {
     assert.match(report, /aria-expanded=\{expanded\}|<FoldRow label=\{g\.authority\}/)
     const confirm = report.slice(report.indexOf('Still to confirm'), report.indexOf('Asked and not answered'))
@@ -154,14 +158,14 @@ describe('the summary as an accordion — the page holds the rules (Stage 2)', (
     for (let i = 1; i < order.length; i++) assert.ok(at(order[i - 1]) < at(order[i]), `${order[i - 1]} before ${order[i]}`)
   })
   test('rows are real buttons with aria-expanded and aria-controls', () => {
-    const row = page.slice(page.indexOf('function FoldRow('), page.indexOf('/**\n * THE SUMMARY AS AN ACCORDION'))
+    const row = readFileSync('components/FoldRow.tsx', 'utf8')
     assert.match(row, /<button type="button" onClick=\{onClick\} aria-expanded=\{expanded\} aria-controls=\{controls\}/)
   })
   test('print opens every fold and prints full links, by CSS — not by changing state', () => {
-    assert.match(page, /\.fold-closed \{ display: none; \}/)
-    assert.match(page, /@media print \{[\s\S]*\.fold-closed \{ display: block !important; \}/)
-    assert.match(page, /\.screen-only \{ display: none !important; \}/)
-    assert.match(page, /\.print-only \{ display: inline !important; \}/)
+    assert.match(css, /\.fold-closed \{ display: none; \}/)
+    assert.match(css, /@media print \{[\s\S]*\.fold-closed \{ display: block !important; \}/)
+    assert.match(css, /\.screen-only \{ display: none !important; \}/)
+    assert.match(css, /\.print-only \{ display: inline !important; \}/)
   })
   test('every drawer opens folded: the report is keyed by its topic', () => {
     assert.match(page, /<ReportView key=\{summaryDrawer\.id\}/)
