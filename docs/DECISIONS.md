@@ -11055,3 +11055,33 @@ After migration 065 was applied, Claude Code ran `npm run db:restore` under `CLA
 **Corrected in the same commit:** `docs/HOW-WE-BUILD.md` §5 still let Claude Code reset and restore staging. It now matches `CLAUDE.md` §3.7 and §161 (only on the owner's say-so). `docs/VISION-DOCUMENTS.md`'s matching line is marked as superseded.
 
 **Cost of Steps 1 and 2: $0.** No model call; `npm run cost` read 42 calls, $0.72, before and after both steps.
+
+### Step 3a — the workspace's display pieces, shared (`279c946`)
+
+- **Decision 1, built.** These moved out of `app/compliance/page.tsx`, unchanged:
+  - `components/buttonStyles.ts` (the four button strings);
+  - `Working`, `OneLineLink`, `FoldRow`, `Stages` with `stageWords.ts`, `Sheet`, `Empty`, `Tabs`;
+  - `components/ReportView.tsx`, with the source shape as a parameter (`WEB_SOURCE` draws a web page as before);
+  - the page's four print-only rules, into `app/globals.css`.
+- **`NO_SOURCE`, `longDate` and `AS_OF_LINE` moved to the browser-safe `lib/summaryWords.ts`** (owner's choice A).
+  `lib/summaryReport.ts` re-exports them, so the summarise route and the nightly job are unchanged.
+- **The copies were deliberate.** The page's copies of the two strings guarded the browser bundle from the model
+  SDK (`tests/unit/summaryReport.test.ts`). The guard is now `tests/unit/clientImports.test.ts`: no component or
+  `'use client'` file reaches `lib/ai.ts`, `lib/summaryReport.ts`, `lib/auth.ts` or the SDK, through any local
+  import. It was shown to fail on a real file.
+- **Measured** on two fresh isolated servers (`eb0633d` against the change):
+  - 9 screen views and 5 prints are identical element by element;
+  - PDF page counts 2/2/1/1/12, unchanged;
+  - `npm run measure` printouts are byte-identical;
+  - screenshots and PDFs are pixel-identical. The one exception was a 6 px scroll offset in one capture, caused
+    by the page's smooth scroll (`app/compliance/page.tsx:485`); it did not recur in 6 repeats.
+- **The owner's dev server served a stale `globals.css` throughout** (`HOW-WE-BUILD.md` §3c's route was used
+  instead). A dev server must be restarted to show the moved print rules.
+- Tests went from 716 to 724. **$0.**
+
+### Amendment to decision 17 (owner, 4 October 2026)
+
+**Every build stop runs on Haiku, with no Opus runs.** All Opus work moves to the testing step, which begins with
+one Opus run per paid path, to catch machinery that only fails on the real model (refused schemas, longer
+outputs, slower calls). Then comes the quality pass. `docs/HR-PLAN.md` decision 17 and steps 6, 7, 8 and 12 match.
+**The copy rule** joins `docs/HR-PLAN.md` §2.5: before removing a copy, find what it guards.

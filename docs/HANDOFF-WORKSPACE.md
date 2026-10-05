@@ -1,8 +1,27 @@
 # Handoff — the Compliance Workspace, element by element
 
-**Version:** 7 · **Written:** 3 October 2026, at the close of the Workspace layout pass (Tasks 1, 2,
+**Version:** 8 (HR Step 3a: where the shared display pieces now live) · **Written:** 3 October 2026, at the close of the Workspace layout pass (Tasks 1, 2,
 2b and 3). In the shape of `docs/HANDOFF-AUDITS.md` §5a. **Updated:** 4 October 2026, at the close of the
 workspace work (housekeeping).
+
+> **HR Step 3a, 4 October 2026 (`279c946`): the workspace's display pieces now live in shared files**, so HR shows
+> the very same ones (`docs/HR-PLAN.md` decision 1). Nothing on screen or on paper changed, measured. Line numbers
+> below that point into `app/compliance/page.tsx` for these pieces are now these files:
+> | Piece | Where it lives now |
+> |---|---|
+> | `PRIMARY`, `SECONDARY_LARGE`, `OUTLINE`, `TEXT_ACTION` | `components/buttonStyles.ts` |
+> | The working line (`Working`) | `components/Working.tsx` |
+> | A one-line source (`OneLineLink`) | `components/OneLineLink.tsx` |
+> | A folding row (`FoldRow`) | `components/FoldRow.tsx` |
+> | The stages (`Stages`; `Step` and `stageWords`) | `components/Stages.tsx`; `components/stageWords.ts` |
+> | The sheet and the empty state | `components/Sheet.tsx`, `components/Empty.tsx` |
+> | The tab row | `components/Tabs.tsx` (the page passes the labels and "New conversation") |
+> | The summary report (`ReportView`) | `components/ReportView.tsx`, drawn with `WEB_SOURCE` |
+> | `.print-only`, `.fold-closed`, `.screen-only`, `.sources-print` | `app/globals.css` |
+> | `NO_SOURCE`, `AS_OF_LINE`, `longDate` | `lib/summaryWords.ts` (re-exported by `lib/summaryReport.ts` and `lib/checklistView.ts`) |
+>
+> Still in the page: the composer, the file cards (`AttachedCard`, `FileCard`), `HowToSteps`, the drawers' contents
+> and all the logic.
 
 > **Version 7, 4 October 2026 — THE FINAL STATE THROUGH STAGE 4, all live on production** (`origin/main` at
 > `fd2ddfa`; migrations to 065, `npm run preflight` PENDING COUNT 0). What a reader needs first; each line

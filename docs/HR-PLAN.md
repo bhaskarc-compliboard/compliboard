@@ -1,6 +1,7 @@
 # The HR section — the plan
 
-**Version:** 1 · **Updated:** 4 October 2026, HR Step 2.
+**Version:** 2 · **Updated:** 4 October 2026, HR Step 3a: step 3a done; decision 17 amended (every build stop on Haiku,
+all Opus work in the testing step); the copy rule added to §2.5. Version 1: HR Step 2.
 
 **The decision record** is `DECISIONS.md` §164. **The map** (how HR and everything it touches worked on 4
 October, with file and line) is `docs/HR-MACHINERY.md`. When this file and the repository disagree, the
@@ -95,7 +96,7 @@ replaced text is kept and struck through, so the record shows what changed.
     - confirmed facts.
 
     Where employees work is recorded nowhere (map B8), so answers ask it under "Still to confirm". This is a
-    quality change: it is shown to the owner with a real Opus run.
+    quality change: it is shown to the owner with a real Opus run — **in the testing step** (decision 17 as amended).
 11. **The HR summary has its own writer.** It reuses the matching helpers. A source may be a handbook
     passage (handbook, section, page, quote) or a web page. Items are grouped by authority, as in the
     workspace's summary. (Map B7.)
@@ -124,10 +125,14 @@ replaced text is kept and struck through, so the record shows what changed.
       `supabase_read_only_user` can see (map B12).
 
     Everything else goes to `HANDOFF-CODE.md` §7.
-17. **Build first, then test.**
+17. **Build first, then test.** *(Amended by the owner, 4 October 2026, after step 3a; `DECISIONS.md` §164.)*
     - There is no separate measurement step and no prompts-first step.
-    - Each build task that adds a prompt ends its stop with one real Opus run, estimated first, with a $3
-      cap per task unless the owner raises it.
+    - **Every build stop runs on Haiku, with no Opus runs.** ~~Each build task that adds a prompt ends its stop
+      with one real Opus run.~~
+    - **All Opus work moves to the testing step (step 12).** It begins with **one Opus run per paid path**, to
+      catch machinery that only fails on the real model — refused schemas, longer outputs, slower calls —
+      and then the quality pass. Each Opus run is estimated first, with a $3 cap per task unless the owner
+      raises it.
     - The quality judgement is the testing step at the end.
 18. **Handbooks are HR's own.**
     - HR has its own handbook table: company, site, name, file path, version, status, page count, and the
@@ -206,7 +211,9 @@ replaced text is kept and struck through, so the record shows what changed.
 1. **The read-only map** — DONE 4 October (`docs/HR-MACHINERY.md`).
 2. **The decisions and the plan, on paper** — this commit.
 3. **Foundations.**
-   - (a) Lift the shared pieces (decision 1). The workspace must look the same, measured.
+   - (a) Lift the shared pieces (decision 1). The workspace must look the same, measured. **DONE 4 October
+     (`279c946`)**: 9 screen views and 5 prints identical on two fresh servers, pixel-identical screenshots
+     and PDFs; `DECISIONS.md` §164.
    - (b) Migrations for decisions 2, 5, 9, 18 and 24, and the nullable `calendar_events.handbook_id`
      (decision 29); the `schema-doc.js` grants fix (decisions 16, 27).
    - STOP for review.
@@ -214,22 +221,23 @@ replaced text is kept and struck through, so the record shows what changed.
 5. **The Handbooks tab:** upload with the site sheet, rows, versions, could-not-read, delete. HR's own
    reader, with the size and page check (decisions 18, 28). STOP.
 6. **The answer:** the loader, web search, the quote and link checks, sources, the day-1 line, drafting on
-   request, refusals, the ledger. One Opus run at the stop. STOP.
+   request, refusals, the ledger. On Haiku (decision 17). STOP.
 7. **Conversations and the HR summary** (claim + `after()`; facts from the person's own words, decision 19).
-   One Opus run. STOP.
+   On Haiku (decision 17). STOP.
 8. **The handbook check:**
    - the split, the per-section check, the not-covered pass, still to confirm;
    - the report drawer, Check now, progress, the read-again date;
    - **the handbook's company-level dates and "Add to calendar"** (decision 29).
 
-   Opus runs on a fixture and on a real handbook. STOP. *(The brief's "the same findings in the Documents
+   On Haiku, on a fixture (decision 17); the Opus runs on a fixture and a real handbook move to step 12. STOP. *(The brief's "the same findings in the Documents
    report" is dropped: a handbook is not in Documents, decision 18.)*
 9. **Answers use the stored check.** STOP.
 10. **Same-night operations** (decisions 13 and 14; the handbook queue). STOP.
 11. **Polish:** retire old HR (decision 15); **the Dates tab** (decision 30); the print frame on HR's
     drawers. STOP: the owner looks.
-12. **Testing:** the quality pass on the final models, with real handbooks and real problems; the held fixes;
-    the manual tests in `docs/TESTING.md`.
+12. **Testing:** first **one Opus run per paid path** (answer, summary, handbook check), to catch machinery that
+    only fails on the real model; then the quality pass on the final models, with real handbooks and real
+    problems, including decision 10's run; the held fixes; the manual tests in `docs/TESTING.md`.
 13. **Release** (the `docs/RELEASE.md` routine).
 14. **The next morning's `job_runs` check, and the close-out** (`HANDOFF-HR.md`, `STATUS.md`,
     `HANDOFF-CODE.md` §7).
@@ -242,9 +250,13 @@ The rules live in these documents. They are not copied here:
 - `docs/HANDOFF-WORKSPACE-TO-HR.md` §6–§8;
 - `docs/RELEASE.md`.
 
-**And one rule of this section's own (owner, 4 October 2026):** every HR task from here on begins with an
+**And two rules of this section's own (owner, 4 October 2026):** every HR task from here on begins with an
 impact check for the work it is about to do, in the shape of §2.6. **A task whose effect on another section
 is not in this plan stops before writing code.**
+
+**A copy in the code may be deliberate. Before removing one, find the comment or test that explains it; if it
+guards something, stop and report.** *(Added after step 3a, where the page's copies of two summary words
+turned out to guard the browser bundle from the model SDK: `tests/unit/summaryReport.test.ts` said so.)*
 
 ## 2.6 Effects on other sections, decision by decision
 

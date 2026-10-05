@@ -171,7 +171,7 @@ hover as `--green-wash`; the strings below are what ships.
    `cursor-pointer rounded-md border border-[var(--green)] px-4 py-2
    text-[14px] font-medium text-[var(--green)] hover:bg-green-50
    disabled:cursor-not-allowed disabled:opacity-50`.
-   `SECONDARY_LARGE`, `app/compliance/page.tsx:102`. Used only beside a
+   `SECONDARY_LARGE`, `components/buttonStyles.ts`. Used only beside a
    primary, so the two are one size.
 3. *Outline* — `rounded-md border border-[var(--green)] px-3 py-1.5
    text-[14px] font-medium text-[var(--green)] hover:bg-green-50
@@ -182,12 +182,17 @@ hover as `--green-wash`; the strings below are what ships.
    hover:underline disabled:text-gray-300`. Source:
    `components/AuditReport.tsx:655`. No border, no background.
 
-**Copied page-locally, in three pages today:** `ACTION_PRIMARY` in
+**THE ONE FILE: `components/buttonStyles.ts`** *(HR Step 3a, 4 October 2026)* —
+`PRIMARY`, `SECONDARY_LARGE`, `OUTLINE` and `TEXT_ACTION`, the four strings
+above, character for character. The workspace imports them from there, and so
+will HR. **New code imports this file; it never copies a string.**
+
+**Still copied page-locally, for the app-wide sweep:** `ACTION_PRIMARY` in
 `app/audits/page.tsx:155` and `app/company-information/page.tsx:137`;
-`PRIMARY`, `SECONDARY_LARGE`, `OUTLINE` and `TEXT_ACTION` in
-`app/compliance/page.tsx:98–109`. Audits and Company information also
-carry `ACTION_GREEN` (`:151`, `:132`), a 13px underlined green text action
-this list does not name. One file for all of them is owed (§7).
+the outline and text action inline in `components/AuditReport.tsx:656`,
+`:660`, `:665` and `components/DocumentReport.tsx:435` (`:400` is a near-copy).
+Audits and Company information also carry `ACTION_GREEN` (`:151`, `:132`), a
+13px underlined green text action this list does not name.
 
 Three bordered buttons in a row is three boxes. One outline and two text
 actions says the same thing and shouts less.
