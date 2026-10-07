@@ -11292,3 +11292,78 @@ had every column). One line each:
 - Tests went from 749 to 766. **$0.**
 - **Edge case, proved before release (7 October):** three versions, middle one deleted. The owner's hypothesis did not hold: the delete already re-pointed v3 at v1 before the row went, so v1 stayed listed. The delete is now one function (`lib/handbookDelete.ts`, stand-in tests: middle, oldest, current, storage refused, another company's id). The list now also shows any older row no chain reaches, in its own site group as "Older version · <file>", with no replaced date because none is known. Tests 766 → 773. **$0.**
 - **The owner's choice on the older version's date (7 October):** every older row, including one no chain reaches, reads "Older version · <file name> · added <date>", and its drawer reads "Older version · <site> · <file name> · added <date>", both from the row's own `created_at`. Why: a "replaced" date was taken from whichever version now follows it, so after a middle version is deleted it could show a wrong date. "Added" is always true. `replacedAt` is removed. No migration.
+
+## 168. HR STEP 5b — HR READS EACH HANDBOOK, AND THE HAIKU GUARD — 7 October 2026
+
+§168 — HR Step 5b (`bee8f30`), on `/hr/new` behind `HR_PREVIEW`. HR's first model calls. No migration.
+
+- **The Haiku guard: `npm run haiku -- <command>`.**
+  - It sets `AI_MODEL` and every `AI_MODEL_*` that `lib/ai.ts` reads to the code's Haiku id. The id is copied
+    from `scripts/bakeoff-audit-report.js`, and the variable list is read out of `lib/ai.ts`.
+  - It then runs `scripts/haiku-check.mjs`, which asks `lib/ai.ts` what each of its 12 task tiers resolves to.
+  - If any tier is not Haiku, it exits 1 and the command never starts. Proved both ways, and held by two
+    unit tests.
+  - Every model-capable command of Claude Code's goes through it: the isolated server, `check:live`, and
+    scripts.
+- **The owner's `.env.local` is still on Haiku until he switches it.** Read on 7 October: prose, judgement,
+  substeps, summary, hr and hr_check are set to `claude-haiku-4-5`, and critique and default are unset. That is
+  not the all-Opus setup §166 describes. The guard makes Claude Code's runs Haiku either way; nothing of
+  Claude Code's edits that file.
+- **When a handbook is read:**
+  - right after its row is saved, including a newer version;
+  - and on "Read it again".
+  - `lib/handbookStart.ts` claims the row, then reads in `after()`, so the reading survives the tab closing.
+    Proved: the tab closed 3 s after saving a 120-page handbook, and it was read 18 s later.
+  - **The claim uses migration 066's `status` and `updated_at`; no new column.**
+    - It is taken only from 'uploaded', 'could_not_read', or a 'reading' older than 10 minutes.
+    - The final save holds only while the claim's `updated_at` is unchanged.
+    - A run that lost its claim takes its own sections back out.
+    - Proved against staging as the person: a second claim is refused, so is one at 9 minutes, and one at
+      11 minutes takes over.
+- **What reading does** (`lib/handbookRead.ts`, `lib/handbookSections.ts`):
+  - **The text.** It goes through the parsers `lib/documentContent.ts` uses, and that file is unchanged.
+    That file throws a PDF's pages away, so HR calls the same parser with the same `fileType` hint and
+    keeps each page's text. The stored text is identical, because the parser joins pages with one newline
+    (`PdfParser.js:820`).
+  - **A scan.** Fewer than 20 letters a page is a scan, and it stops before any model call.
+  - **Word** is cut at its own headings, in code, with no model call. It has no pages: its drawer reads
+    "Read <date>. <n> sections." and its sections show none (owner, accepted).
+  - **A PDF** gets ONE outline call per part of its TEXT (task and ledger 'hr_check',
+    `prompts/hr-outline.ts`). Parts are up to 120,000 characters and never split a page; the 120-page
+    synthetic handbook took 6 parts. The model names each section and copies its first words; code finds
+    them in order and cuts there. An anchor not found is dropped and counted.
+  - **THE COVERAGE PROOF.** The sections, joined, must be the whole text: no gap and no overlap. A failure
+    is 'could_not_read' with the our-fault words. It was proved again from the database on every file
+    read: the stored sections joined equal the stored text, and every `text_sha256` matches.
+  - **Sections are written with the server key, scoped to the session's company.** Migration 066 lets people
+    read them and never write them, as Audits does with `audit_sections`.
+- **The owner's answers (7 October):**
+  1. A Word handbook shows no pages (above).
+  2. "page 1" for a one-page section, and the handbook's name for a single untitled section.
+  3. **"Read it again"** is a footer text action for 'could_not_read' or 'uploaded' only, through the same
+     claim (`app/api/handbooks/read`). The our-fault reason is now "Something went wrong at our end while
+     reading it. Press Read it again." Proved on staging:
+     - a "Waiting to be read" row from before 5b was read by the button;
+     - a forced failure (the stored file moved aside on staging) showed the new words, then was read on
+       "Read it again" once the file was back.
+  4. **The upload-time size and page check (decision 12) is deferred to step 6**, when answers send the
+     handbook to the model. Splitting a long PDF into parts for its outline is built.
+  5. **From now on, the impact check (HR-PLAN §2.5) is done and reported BEFORE any code is written.** In 5b
+     it was listed at the end, against the plan. Step 5b's second half (the owner's answers) was the first
+     to do it first.
+- **Proved on staging,** on an isolated server started through the guard. Files used: the Harbor PDF; a Word
+  handbook; a 120-page PDF; a scan; a `.txt`; a newer version. Results:
+  - Harbor PDF: 2 pages, 4 sections.
+  - Word handbook: 6 sections.
+  - 120-page PDF: 39 sections, 0 dropped.
+  - The scan and the `.txt` each show the owner's reason.
+  - **Every call was task `hr_check` on `claude-haiku-4-5`.** Spent **$0.19**, ledger $0.72 → $0.90.
+- **For the testing step (Opus), as found on Haiku.** The 120-page outline missed section 7.3, which stays in
+  7.2, and listed 4 of 12 chapter titles as tiny sections of their own. Nothing was lost; coverage held.
+- **Open, not built:**
+  - "1 sections" reads as written, because the owner's template is "<n> sections".
+  - An older version's line and drawer never show its reason ("Older version · … · added <date>"; "This
+    handbook has not been read yet.").
+  - "That reading could not be started. Nothing was changed. Please try again." is NOT the owner's words:
+    written for a "Read it again" the server refused, for his review.
+- Tests went from 773 to 800.

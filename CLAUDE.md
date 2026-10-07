@@ -2,7 +2,8 @@
 
 # CompliBoard — Project Rules for Claude Code
 
-**Updated:** 7 October 2026 — §3.4a: the laptop runs Opus, Claude Code runs Haiku by command environment (§166).
+**Updated:** 7 October 2026 — §3.4a: the guard, `npm run haiku -- <command>` (§168); the owner's `.env.local` is still on Haiku.
+7 October 2026 — §3.4a: the laptop runs Opus, Claude Code runs Haiku by command environment (§166).
 7 October 2026 — §3.6: the default privileges now grant `anon` and `authenticated` nothing (migration 068); revoke-then-grant stands; read grants with `has_table_privilege`.
 4 October 2026 — §3.7's reset rule (the owner's say-so only) and §3.11's four standing rules.
 This file had no version line; changes before this one are dated where they were made.
@@ -223,8 +224,17 @@ when the question is **"is this answer any good"**, and not before.
 > **Claude Code builds and tests machinery on Haiku by setting every model variable in the command's own
 > environment** for any run that can call a model — `npm run check:live` against a server, a script, and
 > the isolated server copy (`HOW-WE-BUILD.md` §3c) — **never by editing `.env.local`.** A run that calls a
-> model without that override would run on Opus and spend real money. HR Step 5 adds the guard that
-> enforces this, before its first model call.
+> model without that override would run on Opus and spend real money.
+>
+> **THE GUARD (HR Step 5b, `DECISIONS.md` §168): `npm run haiku -- <command>`.** It sets every model variable
+> `lib/ai.ts` reads to the code's Haiku id, asks `lib/ai.ts` what each task tier resolves to
+> (`npm run haiku:check` prints the table), and refuses (exit 1, the command never starts) if any is not Haiku.
+> **Every model-capable command of Claude Code's goes through it** — the isolated server
+> (`env HR_PREVIEW=1 node scripts/haiku.mjs npx next dev -p 3998` in the copy), `check:live`, any script.
+>
+> **As read on 7 October, the owner's `.env.local` is still on Haiku until he switches it** (prose, judgement,
+> substeps, summary, hr and hr_check on `claude-haiku-4-5`; critique and default unset). The guard makes Claude
+> Code's runs Haiku either way.
 
 > ### ⚠ CORRECTED 26 SEPTEMBER 2026: THESE VARIABLES *ARE* SET ON VERCEL PRODUCTION.
 >

@@ -6,7 +6,7 @@
 > replaced.** Those carry a 🕓 HISTORICAL banner naming what is current instead — added 28 September
 > 2026. A manual set is the record of what a person checked and when; a file that deletes the sets whose
 > screens changed is a file that cannot tell you whether anything was ever checked at all.
-**Version:** 30 · **Updated:** 7 October 2026, HR Step 5a — adding and keeping handbooks. Version 29: 7 October 2026, HR Step 4 — the manual set for the HR page shell. Version 28: 4 October 2026, HR Step 3b — the check:live probes for HR's tables. Version 27: HR Step 3a — the manual set "the workspace looks the same". Version 26: at the close of the workspace work
+**Version:** 31 · **Updated:** 7 October 2026, HR Step 5b — reading a handbook. Version 30: 7 October 2026, HR Step 5a — adding and keeping handbooks. Version 29: 7 October 2026, HR Step 4 — the manual set for the HR page shell. Version 28: 4 October 2026, HR Step 3b — the check:live probes for HR's tables. Version 27: HR Step 3a — the manual set "the workspace looks the same". Version 26: at the close of the workspace work
 **Supersedes:** version 25 (3 Oct). Adds the sets of 4 October — Workspace Task 5, Task 6, Stage 2, Stage 4 and the cron release's live checks — with the owner's recorded results (Task 6's T6-1 and T6-3, Stage 4's S4-2, the cron release's CR-1).
 Version 25: version 24 (25 Sep). Adds the **Workspace layout set** (3 October) — the first three
 are the owner's live checks after the push, and none of them sends a question or uploads a file — and
@@ -157,6 +157,26 @@ untested — applies to the runner as much as to anything it runs.
 106.** The floor is committed so the question does not have to be re-asked.
 
 ---
+
+## Manual set — HR Step 5b, reading a handbook — 7 October 2026 (`bee8f30`, `DECISIONS.md` §168)
+
+**Each PDF reading costs a little (one Haiku outline call per part; a 120-page handbook was $0.18).** Needs
+`HR_PREVIEW=1`. Use SYNTHETIC handbooks only (for example `tests/fixtures/Harbor-Kitchen-Employee-Policy-2026.pdf`).
+Before a run that can call a model, the model settings decide the price: Claude Code runs through `npm run haiku`.
+
+| # | Action | Steps | What must be true |
+|---|---|---|---|
+| **5b-1** | **A PDF is read** | Handbooks → **Add a handbook** → the Harbor PDF | The row says "Reading…" at once, then "Read · 4 sections" by itself, with no reload |
+| **5b-2** | **Its drawer** | Click the row | "Read Today. 2 pages, 4 sections.", then each section's title and its pages ("page 1", "pages 1–2") |
+| **5b-3** | **A Word handbook** | Add a .docx with headings | "Read · <n> sections"; the drawer says "Read Today. <n> sections." with no pages, one line per heading |
+| **5b-4** | **A scan** | Add a PDF that is only pictures of pages | "Could not read — This looks like a scan, and we can't read its text. Please upload the original PDF or the Word file." |
+| **5b-5** | **A kind we cannot read** | Add a .txt or an image | "Could not read — We can't read this kind of file yet. Please upload a PDF or a Word file." |
+| **5b-6** | **Close the tab while it reads** | Add a long PDF, close the tab at once, reopen after a minute | It is read; nothing was lost by leaving |
+| **5b-7** | **Read it again** | Open a handbook that says "Could not read" or "Waiting to be read" | The footer has **Read it again**; pressing it shows "Reading…", then the result. A read handbook has no such button |
+| **5b-8** | **A newer version** | Add a newer version of a read handbook | The newer one is read too; the older one keeps its own sections |
+
+*(Before the commit, by script on staging: the coverage proof from the database on every file read; the claim
+refusing a second reading and taking a stuck one after 10 minutes; every model call `hr_check` on Haiku.)*
 
 ## Manual set — HR Step 5a, adding and keeping handbooks — 7 October 2026 (`86cc896`, `DECISIONS.md` §167)
 
