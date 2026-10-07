@@ -302,6 +302,40 @@ const HR_TABLES = ['handbooks', 'handbook_sections', 'handbook_checks', 'handboo
 }
 
 // ---------------------------------------------------------------------------
+// HR'S STORAGE PATH — HR Step 5a. A handbook's file lives at <company>/handbooks/<file>
+// (`lib/storage.ts` handbookPath), under migration 002's storage policies: a signed-in person may write
+// in their own company's folder and nowhere else, and anon may write nowhere. Free: no route, no model.
+// The probe file is removed again as the person.
+// ---------------------------------------------------------------------------
+{
+  const BUCKET = 'company-documents'
+  const ok = (label, good, detail = '') => {
+    console.log(`  ${good ? '✓' : '✗'} ${label}${detail ? ` — ${detail}` : ''}`)
+    if (!good) failures++
+  }
+  const refusedByPolicy = (err) => !!err && /row-level security|unauthorized|not allowed|403/i.test(`${err.message} ${err.statusCode ?? ''}`)
+  const stamp = Date.now()
+  const own = `${companyId}/handbooks/check-live-probe-${stamp}.txt`
+  const other = `00000000-0000-0000-0000-000000000000/handbooks/check-live-probe-${stamp}.txt`
+  const body = () => new Blob(['check:live probe'], { type: 'text/plain' })
+
+  const { error: ownErr } = await asUser.storage.from(BUCKET).upload(own, body(), { contentType: 'text/plain' })
+  ok(`${'storage handbooks/'.padEnd(26)} authenticated can upload to its own <company>/handbooks/`, !ownErr, ownErr ? ownErr.message : own.split('/').slice(1).join('/'))
+  const { error: otherErr } = await asUser.storage.from(BUCKET).upload(other, body(), { contentType: 'text/plain' })
+  ok(`${'storage handbooks/'.padEnd(26)} refused under another company's folder`, refusedByPolicy(otherErr), otherErr ? otherErr.message : 'ALLOWED')
+  const { error: anonErr } = await asAnon.storage.from(BUCKET).upload(own.replace('.txt', '-anon.txt'), body(), { contentType: 'text/plain' })
+  ok(`${'storage handbooks/'.padEnd(26)} anon refused`, refusedByPolicy(anonErr), anonErr ? anonErr.message : 'ALLOWED')
+  if (!ownErr) {
+    const { error: rmErr } = await asUser.storage.from(BUCKET).remove([own])
+    ok(`${'storage handbooks/'.padEnd(26)} the probe file removed as the person`, !rmErr, rmErr ? rmErr.message : '')
+  }
+  if (!otherErr) {   // only if the refusal failed — tidy what should never have been written
+    const admin = createClient(url, process.env.SUPABASE_SERVICE_ROLE_KEY ?? '', { auth: { persistSession: false } })
+    await admin.storage.from(BUCKET).remove([other])
+  }
+}
+
+// ---------------------------------------------------------------------------
 // THE ROUTE, DRIVEN AS THE SIGNED-IN USER — R1 Task 7.
 //
 // The table probes above prove a grant and a policy. They do NOT prove the answer path works:
