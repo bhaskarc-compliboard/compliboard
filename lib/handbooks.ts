@@ -56,18 +56,36 @@ export function replacedAt(older: HandbookRow, all: HandbookRow[]): string | nul
   return all.find((h) => h.version_of === older.id)?.created_at ?? null
 }
 
-/** Current handbooks grouped as the tab shows them: "Every site" first, then each site by name, then
- *  "Site removed" (scope 'site' whose site was deleted). Empty groups are left out. */
-export function groupBySite(current: HandbookRow[], sites: Array<{ id: string; name: string }>):
+/** Which group a row belongs in: "every", a site id, or "removed" (scope 'site' whose site is gone). */
+function groupKey(h: HandbookRow, sites: Array<{ id: string }>): string {
+  if (h.scope === 'company') return 'every'
+  return h.entity_id && sites.some((s) => s.id === h.entity_id) ? h.entity_id : 'removed'
+}
+
+/**
+ * THE HANDBOOKS LIST, AS THE TAB SHOWS IT — every row, nothing silently dropped (owner, 7 October 2026).
+ *   · Groups: "Every site" first, then each site by name, then "Site removed". Empty groups are left out.
+ *   · In a group: each current handbook, then its older versions (newest older first).
+ *   · THEN ANY OLDER ROW NO CHAIN REACHES — not current, and no current version's chain leads to it — so a
+ *     person can still see it and delete it. However it happened, it is never hidden.
+ */
+export function handbookList(all: HandbookRow[], sites: Array<{ id: string; name: string }>):
     Array<{ key: string; label: string; removed: boolean; rows: HandbookRow[] }> {
-  const groups: Array<{ key: string; label: string; removed: boolean; rows: HandbookRow[] }> = []
-  const every = current.filter((h) => h.scope === 'company')
-  if (every.length) groups.push({ key: 'every', label: 'Every site', removed: false, rows: every })
-  for (const s of [...sites].sort((a, b) => a.name.localeCompare(b.name))) {
-    const rows = current.filter((h) => h.scope === 'site' && h.entity_id === s.id)
-    if (rows.length) groups.push({ key: s.id, label: s.name, removed: false, rows })
-  }
-  const removed = current.filter((h) => h.scope === 'site' && (!h.entity_id || !sites.some((s) => s.id === h.entity_id)))
-  if (removed.length) groups.push({ key: 'removed', label: 'Site removed', removed: true, rows: removed })
-  return groups
+  const current = all.filter((h) => h.is_current)
+  const reached = new Set<string>()
+  for (const c of current) { reached.add(c.id); for (const o of olderVersions(c, all)) reached.add(o.id) }
+  const loose = all.filter((h) => !reached.has(h.id))
+    .sort((a, b) => b.created_at.localeCompare(a.created_at))
+  const order = [
+    { key: 'every', label: 'Every site', removed: false },
+    ...[...sites].sort((a, b) => a.name.localeCompare(b.name)).map((s) => ({ key: s.id, label: s.name, removed: false })),
+    { key: 'removed', label: 'Site removed', removed: true },
+  ]
+  return order.map((g) => ({
+    ...g,
+    rows: [
+      ...current.filter((h) => groupKey(h, sites) === g.key).flatMap((h) => [h, ...olderVersions(h, all)]),
+      ...loose.filter((h) => groupKey(h, sites) === g.key),
+    ],
+  })).filter((g) => g.rows.length > 0)
 }

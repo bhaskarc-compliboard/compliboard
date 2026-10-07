@@ -11290,3 +11290,4 @@ had every column). One line each:
   - choosing where a handbook applies after its site was deleted (11);
   - a file whose row never saved because the tab closed (`HANDOFF-CODE.md` §7, open).
 - Tests went from 749 to 766. **$0.**
+- **Edge case, proved before release (7 October):** three versions, middle one deleted. The owner's hypothesis did not hold: the delete already re-pointed v3 at v1 before the row went, so v1 stayed listed. The delete is now one function (`lib/handbookDelete.ts`, stand-in tests: middle, oldest, current, storage refused, another company's id). The list now also shows any older row no chain reaches, in its own site group as "Older version · <file>", with no replaced date because none is known. Tests 766 → 773. **$0.**

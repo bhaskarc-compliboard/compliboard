@@ -33,7 +33,7 @@ import { DOCUMENTS_BUCKET, handbookPath } from '@/lib/storage'
 import { LIST_CAP, countOf, countWord, fmtDate } from '@/lib/listWords'
 import { friendlyDate } from '@/lib/conversationStatus'
 import { readTopicList, type TopicRow } from '@/lib/topicList'
-import { statusWords, olderVersions, replacedAt, groupBySite, type HandbookRow } from '@/lib/handbooks'
+import { statusWords, replacedAt, handbookList, type HandbookRow } from '@/lib/handbooks'
 
 type Tab = 'ask' | 'conversations' | 'handbooks' | 'dates'
 
@@ -351,12 +351,12 @@ export default function HrWorkspace() {
               </div>
             ) : (
               <div className="mt-4">
-                {groupBySite(current, sites).map((g, gi) => (
+                {handbookList(allHandbooks, sites).map((g, gi) => (
                   <div key={g.key} className={gi === 0 ? '' : 'mt-6'}>
                     {/* A heading that carries a NAME takes the darker grey (`DESIGN.md` §4); the workspace list's heading otherwise. */}
                     <p className="mb-1 text-[12px] font-medium uppercase tracking-wide text-gray-700">{g.label}</p>
                     <div className="divide-y divide-gray-100 border-y border-gray-100">
-                      {g.rows.flatMap((h) => [h, ...olderVersions(h, allHandbooks)]).map((h) => {
+                      {g.rows.map((h) => {
                         const older = !h.is_current
                         const couldNot = h.status === 'could_not_read'
                         return (
@@ -369,8 +369,8 @@ export default function HrWorkspace() {
                                   <span>Older version</span>
                                   <span aria-hidden="true">·</span>
                                   <span className="truncate">{h.file_name}</span>
-                                  <span aria-hidden="true">·</span>
-                                  <span>replaced {friendlyDate(replacedAt(h, allHandbooks))}</span>
+                                  {/* An older row no chain reaches has no newer version to date it by: no date is invented. */}
+                                  {replacedAt(h, allHandbooks) && <><span aria-hidden="true">·</span><span>replaced {friendlyDate(replacedAt(h, allHandbooks))}</span></>}
                                 </p>
                               ) : (
                                 <p className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-1 text-[12px] text-gray-500">
@@ -420,7 +420,7 @@ export default function HrWorkspace() {
         <Drawer title={drawer.name}
           sub={drawer.is_current
             ? `${siteLabel(drawer)} · ${drawer.file_name} · added ${friendlyDate(drawer.created_at)}`
-            : `Older version · ${siteLabel(drawer)} · ${drawer.file_name} · replaced ${friendlyDate(replacedAt(drawer, allHandbooks))}`}
+            : `Older version · ${siteLabel(drawer)} · ${drawer.file_name}${replacedAt(drawer, allHandbooks) ? ` · replaced ${friendlyDate(replacedAt(drawer, allHandbooks))}` : ''}`}
           company={companyName}
           onClose={() => setDrawer(null)}
           footer={

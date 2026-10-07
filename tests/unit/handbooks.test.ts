@@ -4,7 +4,7 @@
 import test, { describe } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { nameFromFile, isOwnHandbookPath, statusWords, olderVersions, replacedAt, groupBySite, type HandbookRow } from '../../lib/handbooks.ts'
+import { nameFromFile, isOwnHandbookPath, statusWords, olderVersions, replacedAt, handbookList, type HandbookRow } from '../../lib/handbooks.ts'
 
 const CO = '97fef4fd-081a-4a60-bb84-aea1c017af87'
 const row = (id: string, o: Partial<HandbookRow> = {}): HandbookRow => ({
@@ -48,10 +48,26 @@ describe('the row\'s words', () => {
   })
   test('grouped Every site, then each site by name, then Site removed', () => {
     const sites = [{ id: 'p', name: 'Portland' }, { id: 'h', name: 'Hillsboro' }]
-    const g = groupBySite([row('x', { scope: 'site', entity_id: 'p' }), row('y'), row('z', { scope: 'site', entity_id: null }),
+    const g = handbookList([row('x', { scope: 'site', entity_id: 'p' }), row('y'), row('z', { scope: 'site', entity_id: null }),
       row('w', { scope: 'site', entity_id: 'h' })], sites)
     assert.deepEqual(g.map((x) => [x.label, x.rows.map((r) => r.id), x.removed]),
       [['Every site', ['y'], false], ['Hillsboro', ['w'], false], ['Portland', ['x'], false], ['Site removed', ['z'], true]])
+  })
+  test('each current handbook is followed by its older versions, newest older first', () => {
+    const v1 = row('v1', { is_current: false, created_at: '2026-10-01' }), v2 = row('v2', { version_of: 'v1', is_current: false, created_at: '2026-10-02' })
+    const v3 = row('v3', { version_of: 'v2', created_at: '2026-10-03' })
+    assert.deepEqual(handbookList([v1, v2, v3], [])[0].rows.map((r) => r.id), ['v3', 'v2', 'v1'])
+  })
+  test('AN OLDER ROW NO CHAIN REACHES IS NEVER HIDDEN: it is listed in its own site group, after the chains', () => {
+    const sites = [{ id: 'p', name: 'Portland' }]
+    const v3 = row('v3', { created_at: '2026-10-03' })                                       // its chain was broken
+    const lost = row('lost', { is_current: false, created_at: '2026-10-01' })                // nothing points to it
+    const lostSite = row('lostP', { is_current: false, scope: 'site', entity_id: 'p', created_at: '2026-10-01' })
+    const g = handbookList([v3, lost, lostSite], sites)
+    assert.deepEqual(g.map((x) => [x.label, x.rows.map((r) => r.id)]), [['Every site', ['v3', 'lost']], ['Portland', ['lostP']]])
+    assert.equal(replacedAt(lost, [v3, lost, lostSite]), null, 'no newer version names it, so no replaced date is invented')
+    const total = g.reduce((n, x) => n + x.rows.length, 0)
+    assert.equal(total, 3, 'every row appears exactly once')
   })
 })
 

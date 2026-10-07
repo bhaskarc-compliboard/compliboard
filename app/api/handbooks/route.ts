@@ -19,6 +19,7 @@ import { requireCompany } from '@/lib/auth'
 import { hrPreviewOn } from '@/lib/hrPreview'
 import { DOCUMENTS_BUCKET } from '@/lib/storage'
 import { saveHandbookRow } from '@/lib/handbookSave'
+import { deleteHandbookVersion } from '@/lib/handbookDelete'
 
 const notFound = () => NextResponse.json({ error: 'Not found' }, { status: 404 })
 
@@ -57,28 +58,9 @@ export async function DELETE(request: NextRequest) {
 
     const id = new URL(request.url).searchParams.get('id')
     if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
-
-    const { data: row } = await db.from('handbooks')
-      .select('id, company_id, file_path, version_of, is_current').eq('id', id).maybeSingle()
-    if (!row || row.company_id !== companyId) return NextResponse.json({ error: 'Handbook not found' }, { status: 404 })
-
-    // The file first, as Documents does: if storage refuses, nothing in the database has changed.
-    const { error: removeError } = await db.storage.from(DOCUMENTS_BUCKET).remove([row.file_path])
-    if (removeError) throw removeError
-
-    // Keep the version chain whole: whatever named this one as its older version now names the one before.
-    const { error: relinkErr } = await db.from('handbooks').update({ version_of: row.version_of }).eq('version_of', id)
-    if (relinkErr) throw relinkErr
-
-    const { error: delErr } = await db.from('handbooks').delete().eq('id', id).eq('company_id', companyId)
-    if (delErr) throw delErr
-
-    // The current one went: the version it replaced is current again.
-    if (row.is_current && row.version_of) {
-      const { error: curErr } = await db.from('handbooks').update({ is_current: true }).eq('id', row.version_of)
-      if (curErr) throw curErr
-    }
-    return NextResponse.json({ deleted: true })
+    // The order of the four writes, and why the chain is relinked first, is in `lib/handbookDelete.ts`.
+    const result = await deleteHandbookVersion(db, DOCUMENTS_BUCKET, companyId, id)
+    return NextResponse.json(result.json, { status: result.status })
   } catch (error) {
     console.error('handbooks DELETE failed:', error)
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Failed to delete handbook' }, { status: 500 })
