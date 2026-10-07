@@ -33,7 +33,7 @@ import { DOCUMENTS_BUCKET, handbookPath } from '@/lib/storage'
 import { LIST_CAP, countOf, countWord, fmtDate } from '@/lib/listWords'
 import { friendlyDate } from '@/lib/conversationStatus'
 import { readTopicList, type TopicRow } from '@/lib/topicList'
-import { statusWords, handbookList, sectionCount, pagesWords, type HandbookRow } from '@/lib/handbooks'
+import { statusWords, handbookList, sectionCount, pagesWords, counted, type HandbookRow } from '@/lib/handbooks'
 
 type Tab = 'ask' | 'conversations' | 'handbooks' | 'dates'
 
@@ -48,7 +48,7 @@ const SAVE_FAILED = 'We could not save this file. Nothing was added. Please try 
 const OLDER_NOT_REPLACED = 'The newer version was saved, but we could not mark the older one as replaced. Both are shown for now.'
 /** The workspace's own sentence for a failed delete (`app/compliance/page.tsx`, the delete sheet). */
 const DELETE_FAILED = 'That could not be deleted. Nothing was changed. Please try again.'
-/** NOT the owner's words: written for a "Read it again" the server never started (for his review). */
+/** For a "Read it again" the server never started — Claude Code's sentence, accepted by the owner as written (7 October). */
 const READ_FAILED = 'That reading could not be started. Nothing was changed. Please try again.'
 
 /** The paperclip the workspace's attach line draws, at 13px in the line's own colour. */
@@ -486,6 +486,11 @@ export default function HrWorkspace() {
           {(() => {
             const h = allHandbooks.find((x) => x.id === drawer.id) ?? drawer
             const rows = drawerSections?.id === h.id ? drawerSections.rows : null
+            // EVERY VERSION TELLS THE TRUTH ABOUT ITSELF (owner, 7 October): the body follows this row's own
+            // status, older or current — could not read says why, in the row's words and amber.
+            if (h.status === 'could_not_read') {
+              return <p className="text-[14px] leading-relaxed text-[var(--amber)]">{statusWords(h.status, h.status_reason)}</p>
+            }
             if (h.status !== 'read' || !rows) {
               return <p className="text-[14px] leading-relaxed text-gray-600">This handbook has not been read yet.</p>
             }
@@ -493,7 +498,7 @@ export default function HrWorkspace() {
             return (
               <>
                 <p className="text-[14px] leading-relaxed text-gray-600">
-                  {`Read ${friendlyDate(h.read_at ?? null)}. ${h.page_count != null ? `${h.page_count} pages, ` : ''}${n} sections.`}
+                  {`Read ${friendlyDate(h.read_at ?? null)}. ${h.page_count != null ? `${counted(h.page_count, 'page')}, ` : ''}${counted(n, 'section')}.`}
                 </p>
                 <ul className="mt-4 space-y-1.5 text-[14px] text-gray-700">
                   {rows.map((r) => {

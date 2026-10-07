@@ -20,6 +20,12 @@ export function isOwnHandbookPath(path: string, companyId: string): boolean {
 export type HandbookStatus = 'uploaded' | 'reading' | 'read' | 'could_not_read'
 
 /** The row's status in the owner's words (HR Step 5a). 5b only sets the status; the words are here. */
+/**
+ * "1 section", "2 sections"; "1 page", "2 pages" — `lib/listWords.ts` countWord's plural rule. Not countWord
+ * itself: it caps at LIST_CAP (60) for lists, and a 120-page handbook must not read "60+ pages".
+ */
+export const counted = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`
+
 /** Why a handbook could not be read — the owner's words (HR Step 5b), shown after "Could not read — ". */
 export const READ_REASONS = {
   scan: "This looks like a scan, and we can't read its text. Please upload the original PDF or the Word file.",
@@ -31,7 +37,7 @@ export const READ_REASONS = {
 export function statusWords(status: string, reason: string | null, sectionCount?: number | null): string {
   if (status === 'uploaded') return 'Waiting to be read'
   if (status === 'reading') return 'Reading…'
-  if (status === 'read') return sectionCount == null ? 'Read' : `Read · ${sectionCount} sections`
+  if (status === 'read') return sectionCount == null ? 'Read' : `Read · ${counted(sectionCount, 'section')}`
   if (status === 'could_not_read') return `Could not read — ${reason ?? ''}`.trim()
   return status
 }

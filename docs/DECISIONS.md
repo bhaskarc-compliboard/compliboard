@@ -11367,3 +11367,12 @@ had every column). One line each:
   - "That reading could not be started. Nothing was changed. Please try again." is NOT the owner's words:
     written for a "Read it again" the server refused, for his review.
 - Tests went from 773 to 800.
+- **Follow-up (owner, 7 October):**
+  - **Counts read as plain English:** "1 section", "2 sections"; "1 page", "2 pages". This uses `countWord`'s
+    plural rule (`lib/handbooks.ts` `counted`), not `countWord` itself, because that caps at 60 for lists and
+    a 120-page handbook must not read "60+ pages".
+  - **Every version's drawer follows its own status.** Read shows its pages and sections; could not read shows
+    its reason; waiting shows "not read yet". It already did this for "read" on older versions. What changed is
+    that a "could not read" drawer, current or older, showed "This handbook has not been read yet." and now
+    shows its reason.
+  - The owner accepts "That reading could not be started. Nothing was changed. Please try again." as written.

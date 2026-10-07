@@ -137,3 +137,20 @@ describe('"Read it again" (owner, 7 October)', async () => {
     assert.match(page, /\(st === 'could_not_read' \|\| st === 'uploaded'\) && \(\s*<button onClick=\{\(\) => readAgain\(drawer\)\}[^>]*>Read it again<\/button>/)
   })
 })
+
+describe('counts in plain English, and every drawer follows its own status (owner, 7 October)', async () => {
+  const { counted } = await import('../../lib/handbooks.ts')
+  const { readFileSync } = await import('node:fs')
+  test('1 section, 2 sections; 1 page, 120 pages — never "60+"', () => {
+    assert.equal(counted(1, 'section'), '1 section'); assert.equal(counted(2, 'section'), '2 sections')
+    assert.equal(counted(1, 'page'), '1 page'); assert.equal(counted(120, 'page'), '120 pages')
+    assert.equal(statusWords('read', null, 1), 'Read · 1 section')
+  })
+  test('the drawer body reads the row\'s own status, not whether it is current', () => {
+    const page = readFileSync('app/hr/new/HrWorkspace.tsx', 'utf8')
+    const body = page.slice(page.indexOf('EVERY VERSION TELLS THE TRUTH'), page.indexOf('</Drawer>'))
+    assert.match(body, /h\.status === 'could_not_read'[\s\S]*statusWords\(h\.status, h\.status_reason\)/)
+    assert.ok(!body.includes('is_current'), 'the body never branches on current vs older')
+    assert.ok(!/\$\{n\} sections|pages, `/.test(body.replace(/counted\([^)]*\)/g, '')), 'no hand-made plural left')
+  })
+})
