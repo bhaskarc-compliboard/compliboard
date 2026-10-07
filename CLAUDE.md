@@ -2,7 +2,8 @@
 
 # CompliBoard — Project Rules for Claude Code
 
-**Updated:** 7 October 2026 — §3.6: the default privileges now grant `anon` and `authenticated` nothing (migration 068); revoke-then-grant stands; read grants with `has_table_privilege`.
+**Updated:** 7 October 2026 — §3.4a: the laptop runs Opus, Claude Code runs Haiku by command environment (§166).
+7 October 2026 — §3.6: the default privileges now grant `anon` and `authenticated` nothing (migration 068); revoke-then-grant stands; read grants with `has_table_privilege`.
 4 October 2026 — §3.7's reset rule (the owner's say-so only) and §3.11's four standing rules.
 This file had no version line; changes before this one are dated where they were made.
 
@@ -215,6 +216,15 @@ when the question is **"is this answer any good"**, and not before.
 
 `.env.local` therefore points `AI_MODEL_PROSE`, `AI_MODEL_JUDGEMENT`, `AI_MODEL_SUBSTEPS` and
 `AI_MODEL_SUMMARY` at `claude-haiku-4-5`.
+
+> ### ⚡ CHANGED 7 OCTOBER 2026 (the owner; `DECISIONS.md` §166): THE LAPTOP RUNS OPUS, CLAUDE CODE RUNS HAIKU.
+> The owner's laptop (`.env.local`) runs **every model setting on `claude-opus-5-5`**, so his own tests show
+> real quality. The paragraph above describes `.env.local` as it was and no longer holds.
+> **Claude Code builds and tests machinery on Haiku by setting every model variable in the command's own
+> environment** for any run that can call a model — `npm run check:live` against a server, a script, and
+> the isolated server copy (`HOW-WE-BUILD.md` §3c) — **never by editing `.env.local`.** A run that calls a
+> model without that override would run on Opus and spend real money. HR Step 5 adds the guard that
+> enforces this, before its first model call.
 
 > ### ⚠ CORRECTED 26 SEPTEMBER 2026: THESE VARIABLES *ARE* SET ON VERCEL PRODUCTION.
 >

@@ -6,7 +6,7 @@
 > replaced.** Those carry a 🕓 HISTORICAL banner naming what is current instead — added 28 September
 > 2026. A manual set is the record of what a person checked and when; a file that deletes the sets whose
 > screens changed is a file that cannot tell you whether anything was ever checked at all.
-**Version:** 28 · **Updated:** 4 October 2026, HR Step 3b — the check:live probes for HR's tables. Version 27: HR Step 3a — the manual set "the workspace looks the same". Version 26: at the close of the workspace work
+**Version:** 29 · **Updated:** 7 October 2026, HR Step 4 — the manual set for the HR page shell. Version 28: 4 October 2026, HR Step 3b — the check:live probes for HR's tables. Version 27: HR Step 3a — the manual set "the workspace looks the same". Version 26: at the close of the workspace work
 **Supersedes:** version 25 (3 Oct). Adds the sets of 4 October — Workspace Task 5, Task 6, Stage 2, Stage 4 and the cron release's live checks — with the owner's recorded results (Task 6's T6-1 and T6-3, Stage 4's S4-2, the cron release's CR-1).
 Version 25: version 24 (25 Sep). Adds the **Workspace layout set** (3 October) — the first three
 are the owner's live checks after the push, and none of them sends a question or uploads a file — and
@@ -157,6 +157,24 @@ untested — applies to the runner as much as to anything it runs.
 106.** The floor is committed so the question does not have to be re-asked.
 
 ---
+
+## Manual set — HR Step 4, the HR page shell — 7 October 2026 (`94eb4ac`, `DECISIONS.md` §166)
+
+**Free: no model call, nothing sent.** Needs `HR_PREVIEW=1` in `.env.local` and a dev server restarted after
+adding it. As a signed-in user. `/hr/new` is reached by typing the address; nothing links to it.
+
+| # | Action | Steps | What must be true |
+|---|---|---|---|
+| **4-1** | **The switch** | Open `/hr/new` with `HR_PREVIEW=1`; then remove the line, restart, and open it again | With it: the HR Workspace page. Without it: the 404 page. Old `/hr` and the sidebar are unchanged either way |
+| **4-2** | **It looks like the workspace** | Open `/hr/new` and `/compliance` side by side | The same column, title style, tab row, box and line under the box. HR's title "HR Workspace", its line, four tabs, three HR examples in grey, one green "Research this" and no "Make a checklist" (`shots/s4-ask.png` beside `shots/s4-compliance-first-visit.png`) |
+| **4-3** | **The counts line** | Read the line under the box | "0 handbooks · 0 conversations" for a company with none; "last asked …" appears only once HR has a conversation |
+| **4-4** | **Nothing is sent** | Type a question and press Enter; press **Research this**; press **Attach a file and ask about it against your handbooks**; on Handbooks press **Add a handbook** | Nothing happens: no answer, no file picker, no "working" line. (In the browser's network panel, no request) |
+| **4-5** | **The empty tabs** | Click Conversations, Handbooks, Dates | Each shows its own empty state in the owner's words; Handbooks has its 90-day line with "Add a handbook" at the right |
+| **4-6** | **New conversation** | Type something, then press **+ New conversation** | Back on Ask a question with an empty box and the examples showing |
+| **4-7** | **The workspace is unchanged** | Open `/compliance`: Conversations, a summary drawer, a checklist | Exactly as before (Step 4a moved its list into shared files; measured identical) |
+
+*(Before the commit, by script on an isolated server with `HR_PREVIEW=1` in its own environment: every shared piece
+measured identical against `/compliance`; no request after any of the three clicks; 404 without the variable.)*
 
 ## Manual set — HR Step 3a, the workspace looks the same — 4 October 2026 (`279c946`, `DECISIONS.md` §164)
 

@@ -11176,5 +11176,57 @@ privileges on public (`authenticated=arwdDxtm`) and old `grant all` lines. One l
 - **Effects.** Nothing visible in any section. `check:live`'s 39 probes still read and write as a person,
   and the verify blocks prove no read or write right moved. `CLAUDE.md` §3.6's revoke-then-grant rule
   stands, with a note that the defaults now grant nothing.
-- **Staging only** (`6b104ff`); production with the next release, 066 already there (the owner ran
-  `db:migrate:prod` on 6 October). **$0.**
+- **Staging only** (`6b104ff`); production with the next release, 066 already there: applied to production
+  just before commit `882ebfb` was pushed; that push's date in git and its Vercel deployment are the record.
+  *(Corrected in §166: this line first gave "6 October", a date that came from the planning chat, not from
+  evidence.)* **$0.**
+
+## 166. HR STEP 4 — THE LIST SHARED, THE HR PAGE SHELL BEHIND A PREVIEW SWITCH, AND THE OWNER'S MODEL RULE — 7 October 2026
+
+§166 — HR Step 4, in two parts.
+
+**4a, the conversation list shared, no visible change** (`fd8cedc`). Step 4's impact check found that HR's
+list and counts line needed workspace helpers Step 3a had not lifted, so the owner chose one more lift
+(option A) over copies.
+- **What moved,** out of `app/compliance/page.tsx`, unchanged:
+  - `lib/listWords.ts`: `LIST_CAP`, `countOf`, `countWord`, `displayTitle`, `startOfDay`, `daysAgo`,
+    `listGroup`, `listWhen`, `summaryWords`, `fmtDate`, `groupByDay`. It imports nothing.
+  - `lib/topicList.ts`: the row types and columns, and `readTopicList(db, section)`. The section filter is
+    the parameter.
+  - `components/ConversationList.tsx`: the day-grouped list and its row.
+- **The copy rule (HR-PLAN §2.5)** found nothing guarded.
+- **Proved as in 3a,** on two fresh isolated servers:
+  - 10 screen views and 4 prints identical element by element;
+  - drawer heights, class strings and full text the same;
+  - 0 changed pixels on every screenshot and PDF page;
+  - `npm run measure` byte-identical, after one first-run scroll offset that 6 repeats did not reproduce.
+
+**4b, the HR page shell** (`94eb4ac`). `/hr/new`, behind `HR_PREVIEW`:
+- **The switch** is decision 32 in `docs/HR-PLAN.md`. It is a server page that does `await connection()`,
+  then returns `notFound()` unless `HR_PREVIEW=1`. The check lives in `lib/hrPreview.ts`.
+- **What it shows:** the title, the line, four tabs, the workspace's box with HR's three examples, the
+  attach line and one primary "Research this", the counts line, and each tab's empty state, all in the
+  owner's words.
+- **What it reads:** current handbooks, HR's conversations, and `'hr'` calendar dates.
+- **It sends nothing:** no request on any click, recorded.
+- **Measured against `/compliance`:** every shared piece is identical. The only differences are the attach
+  label's width and a 1–2px shift, because the bordered "Make a checklist" button HR does not have is 2px
+  taller.
+- **`/compliance`** is byte-identical before and after.
+- **The switch, both ways:** 404 without `HR_PREVIEW`, 200 with it. The build marks the route `ƒ`.
+- **Accepted until step 11:** the sidebar highlights nothing on `/hr/new` (`components/AppLayout.tsx:178`
+  matches exact paths).
+- Tests went from 731 to 749. **$0.**
+
+**The owner's model rule** (owner, 7 October 2026; `CLAUDE.md` §3.4a):
+- The owner's laptop (`.env.local`) runs every model setting on `claude-opus-5-5`, so his own tests show
+  real quality.
+- Claude Code builds and tests machinery on Haiku by setting every model variable in the command's own
+  environment for any run that can call a model, the isolated server included. It never edits `.env.local`.
+- Step 5 adds the guard that enforces this, before its first model call.
+- (Step 4's read on this laptop, before this rule was applied: every setting Haiku except `critique` →
+  `claude-opus-5` and `default` → `claude-sonnet-4-5`, both built-in defaults.)
+
+**A correction to §165.** It said migration 066 reached production "on 6 October". That date came from the
+planning chat, not from evidence. §165 now says it was applied just before `882ebfb` was pushed, and that
+the push's date in git and its Vercel deployment are the record.

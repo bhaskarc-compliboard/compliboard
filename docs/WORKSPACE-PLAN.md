@@ -1,6 +1,6 @@
 # The Compliance Workspace — what's left
 
-**Version:** 5 · **Updated:** 4 October 2026, HR Step 2: adds "Coming from the HR section". Version 4: at the close of the workspace work (housekeeping), to mirror
+**Version:** 6 · **Updated:** 7 October 2026, HR Step 4a: item 6, the list moved to shared files. Version 5: 4 October 2026, HR Step 2: adds "Coming from the HR section". Version 4: at the close of the workspace work (housekeeping), to mirror
 the owner's map as it stood that evening. Version 3: Stage 4's cron release built. Version 2: Stage 4's first
 item built and the rebuild-from-empty rehearsal done. Version 1 was written after the Workspace Task 6 release.
 
@@ -184,6 +184,16 @@ without the owner knowing, or the two sections will edit the same lines at once.
      `app/api/chat/route.ts:510`).
 
    These are the workspace's to fix, not HR's: HR uses its own loader (HR decision 3).
+6. **The conversation list's helpers, its reading and its row moved into shared files** in HR Step 4a
+   (`fd8cedc`, `DECISIONS.md` §166), out of `app/compliance/page.tsx`, with **no visible change, measured**
+   (element dumps, full text, pixels and `npm run measure` identical on fresh servers):
+   - `lib/listWords.ts`: `LIST_CAP`, `countOf`, `countWord`, `displayTitle`, `startOfDay`, `daysAgo`,
+     `listGroup`, `listWhen`, `summaryWords`, `fmtDate`, `groupByDay`;
+   - `lib/topicList.ts`: `TopicRow`, `TopicListRow`, `TOPIC_LIST_COLUMNS`, `toTopicRow`, and
+     `readTopicList(db, section)`, which the workspace calls with `'workspace'`;
+   - `components/ConversationList.tsx`: the day-grouped list and its row.
+
+   HR uses the same files. A change to any of them changes both sections' lists.
 
 ---
 

@@ -1,6 +1,6 @@
 # The HR section — the plan
 
-**Version:** 4 · **Updated:** 7 October 2026: §2.1, the page title is HR Workspace. Version 3: HR Step 3b, step 3b done (staging only). Version 2: HR Step 3a: step 3a done; decision 17 amended (every build stop on Haiku,
+**Version:** 5 · **Updated:** 7 October 2026: step 4 done; decision 32 (the page at /hr/new behind HR_PREVIEW). Version 4: 7 October 2026: §2.1, the page title is HR Workspace. Version 3: HR Step 3b, step 3b done (staging only). Version 2: HR Step 3a: step 3a done; decision 17 amended (every build stop on Haiku,
 all Opus work in the testing step); the copy rule added to §2.5. Version 1: HR Step 2.
 
 **The decision record** is `DECISIONS.md` §164. **The map** (how HR and everything it touches worked on 4
@@ -207,6 +207,15 @@ replaced text is kept and struck through, so the record shows what changed.
       licence numbers.
     - Job-duty dates (CDL renewals, drug and alcohol tests, forklift certification) go to the main calendar
       as compliance items. The rest go to HR's view.
+32. **The new HR page lives at `/hr/new`, behind a preview switch, until the release** (owner, 7 October 2026).
+    - A server page renders it only when `process.env.HR_PREVIEW === '1'`; otherwise `notFound()`. The variable
+      is read per request (`await connection()`), and it is NOT a `NEXT_PUBLIC_` one. The page body is a
+      client component the server page renders. The check is `lib/hrPreview.ts`.
+    - `HR_PREVIEW` is set ONLY in the owner's `.env.local` and NEVER on Vercel, so on production `/hr/new`
+      does not exist.
+    - Every new HR API route added from now until the release does the same check and returns 404 without it.
+    - The sidebar still points to old `/hr`, and nothing links to `/hr/new`.
+    - In step 11 the page moves to `/hr`, old HR is deleted, and the switch is removed.
 
 ## 2.4 The steps
 
@@ -222,7 +231,9 @@ replaced text is kept and struck through, so the record shows what changed.
      the ledger tasks and tiers, `handbookPath()`, account delete and export, the workspace list filter;
      `DECISIONS.md` §164. Nothing on production.
    - STOP for review.
-4. **The page:** `/hr` as the workspace page, built from the shared pieces. STOP: the owner looks.
+4. **The page:** `/hr` as the workspace page, built from the shared pieces. STOP: the owner looks. **DONE 7 October**
+   at `/hr/new` behind `HR_PREVIEW` (decision 32): 4a shared the list's words, reading and row with no visible change
+   (`fd8cedc`); 4b built the shell (`94eb4ac`); `DECISIONS.md` §166.
 5. **The Handbooks tab:** upload with the site sheet, rows, versions, could-not-read, delete. HR's own
    reader, with the size and page check (decisions 18, 28). STOP.
 6. **The answer:** the loader, web search, the quote and link checks, sources, the day-1 line, drafting on
