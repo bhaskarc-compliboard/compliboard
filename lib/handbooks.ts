@@ -51,11 +51,6 @@ export function olderVersions(current: HandbookRow, all: HandbookRow[]): Handboo
   return out
 }
 
-/** When an older version was replaced: the moment the version that names it was saved. Null if none does. */
-export function replacedAt(older: HandbookRow, all: HandbookRow[]): string | null {
-  return all.find((h) => h.version_of === older.id)?.created_at ?? null
-}
-
 /** Which group a row belongs in: "every", a site id, or "removed" (scope 'site' whose site is gone). */
 function groupKey(h: HandbookRow, sites: Array<{ id: string }>): string {
   if (h.scope === 'company') return 'every'

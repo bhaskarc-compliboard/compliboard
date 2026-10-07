@@ -33,7 +33,7 @@ import { DOCUMENTS_BUCKET, handbookPath } from '@/lib/storage'
 import { LIST_CAP, countOf, countWord, fmtDate } from '@/lib/listWords'
 import { friendlyDate } from '@/lib/conversationStatus'
 import { readTopicList, type TopicRow } from '@/lib/topicList'
-import { statusWords, replacedAt, handbookList, type HandbookRow } from '@/lib/handbooks'
+import { statusWords, handbookList, type HandbookRow } from '@/lib/handbooks'
 
 type Tab = 'ask' | 'conversations' | 'handbooks' | 'dates'
 
@@ -369,8 +369,9 @@ export default function HrWorkspace() {
                                   <span>Older version</span>
                                   <span aria-hidden="true">·</span>
                                   <span className="truncate">{h.file_name}</span>
-                                  {/* An older row no chain reaches has no newer version to date it by: no date is invented. */}
-                                  {replacedAt(h, allHandbooks) && <><span aria-hidden="true">·</span><span>replaced {friendlyDate(replacedAt(h, allHandbooks))}</span></>}
+                                  {/* When IT was added, never a "replaced" date (owner, 7 October): always true, even after a middle version is deleted. */}
+                                  <span aria-hidden="true">·</span>
+                                  <span>added {friendlyDate(h.created_at)}</span>
                                 </p>
                               ) : (
                                 <p className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-1 text-[12px] text-gray-500">
@@ -420,7 +421,7 @@ export default function HrWorkspace() {
         <Drawer title={drawer.name}
           sub={drawer.is_current
             ? `${siteLabel(drawer)} · ${drawer.file_name} · added ${friendlyDate(drawer.created_at)}`
-            : `Older version · ${siteLabel(drawer)} · ${drawer.file_name}${replacedAt(drawer, allHandbooks) ? ` · replaced ${friendlyDate(replacedAt(drawer, allHandbooks))}` : ''}`}
+            : `Older version · ${siteLabel(drawer)} · ${drawer.file_name} · added ${friendlyDate(drawer.created_at)}`}
           company={companyName}
           onClose={() => setDrawer(null)}
           footer={

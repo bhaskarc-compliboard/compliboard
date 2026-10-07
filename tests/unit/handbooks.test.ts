@@ -4,7 +4,7 @@
 import test, { describe } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { nameFromFile, isOwnHandbookPath, statusWords, olderVersions, replacedAt, handbookList, type HandbookRow } from '../../lib/handbooks.ts'
+import { nameFromFile, isOwnHandbookPath, statusWords, olderVersions, handbookList, type HandbookRow } from '../../lib/handbooks.ts'
 
 const CO = '97fef4fd-081a-4a60-bb84-aea1c017af87'
 const row = (id: string, o: Partial<HandbookRow> = {}): HandbookRow => ({
@@ -34,12 +34,10 @@ describe('the row\'s words', () => {
     assert.equal(statusWords('read', null), 'Read')
     assert.equal(statusWords('could_not_read', 'The file is password-protected.'), 'Could not read — The file is password-protected.')
   })
-  test('every older version is listed under its current one, newest older first, with the date it was replaced', () => {
+  test('every older version is listed under its current one, newest older first, ', () => {
     const a = row('a', { is_current: false, created_at: '2026-10-01' }), b = row('b', { version_of: 'a', is_current: false, created_at: '2026-10-03' })
     const c = row('c', { version_of: 'b', created_at: '2026-10-05' })
     assert.deepEqual(olderVersions(c, [a, b, c]).map((h) => h.id), ['b', 'a'])
-    assert.equal(replacedAt(b, [a, b, c]), '2026-10-05')
-    assert.equal(replacedAt(a, [a, b, c]), '2026-10-03')
     assert.deepEqual(olderVersions(row('solo'), [row('solo')]), [])
   })
   test('if the older one could not be marked replaced, both are current and neither is listed as the other\'s older version', () => {
@@ -65,7 +63,6 @@ describe('the row\'s words', () => {
     const lostSite = row('lostP', { is_current: false, scope: 'site', entity_id: 'p', created_at: '2026-10-01' })
     const g = handbookList([v3, lost, lostSite], sites)
     assert.deepEqual(g.map((x) => [x.label, x.rows.map((r) => r.id)]), [['Every site', ['v3', 'lost']], ['Portland', ['lostP']]])
-    assert.equal(replacedAt(lost, [v3, lost, lostSite]), null, 'no newer version names it, so no replaced date is invented')
     const total = g.reduce((n, x) => n + x.rows.length, 0)
     assert.equal(total, 3, 'every row appears exactly once')
   })
