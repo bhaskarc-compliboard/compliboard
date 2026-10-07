@@ -12,7 +12,9 @@
 // *** BEHIND THE PREVIEW SWITCH. *** Every handler answers 404 unless HR_PREVIEW=1 (decision 32), before it
 // reads the session, so on production — where the variable is never set — this route does not exist.
 //
-// Nothing here reads the file. Every handbook is saved at status 'uploaded'; reading it is step 5b.
+// READING (step 5b): right after a row is saved, the handbook is claimed ('reading') and read in `after()`,
+// so the reading survives the tab closing — `lib/handbookStart.ts` starts it, `lib/handbookRead.ts` has the
+// claim, the order and the one write. "Read it again" is `app/api/handbooks/read`.
 import { NextRequest, NextResponse } from 'next/server'
 import { connection } from 'next/server'
 import { requireCompany } from '@/lib/auth'
@@ -20,8 +22,12 @@ import { hrPreviewOn } from '@/lib/hrPreview'
 import { DOCUMENTS_BUCKET } from '@/lib/storage'
 import { saveHandbookRow } from '@/lib/handbookSave'
 import { deleteHandbookVersion } from '@/lib/handbookDelete'
+import { startReading } from '@/lib/handbookStart'
 
 const notFound = () => NextResponse.json({ error: 'Not found' }, { status: 404 })
+
+// The reading runs after the reply, up to this long (Vercel `waitUntil`); copied from the summarise route.
+export const maxDuration = 800
 
 // POST — save the row for a file already stored at handbookPath().
 //   { file_path, file_name, mime_type, size_bytes, scope, entity_id }        a new handbook
@@ -37,6 +43,10 @@ export async function POST(request: NextRequest) {
     // The two writes, and why their order matters, are in `lib/handbookSave.ts`.
     const result = await saveHandbookRow(db, companyId, userId, await request.json())
     if (result.json.older_not_replaced) console.error('handbooks: newer version saved, older still current:', result.json.id)
+    if (result.status === 200 && typeof result.json.id === 'string') {
+      // Claimed BEFORE the reply, so the row already says "Reading…" when the page reloads its list.
+      await startReading(db, companyId, result.json.id)
+    }
     return NextResponse.json(result.json, { status: result.status })
   } catch (error) {
     console.error('handbooks POST failed:', error)

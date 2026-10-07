@@ -33,14 +33,14 @@ import { DOCUMENTS_BUCKET, handbookPath } from '@/lib/storage'
 import { LIST_CAP, countOf, countWord, fmtDate } from '@/lib/listWords'
 import { friendlyDate } from '@/lib/conversationStatus'
 import { readTopicList, type TopicRow } from '@/lib/topicList'
-import { statusWords, handbookList, type HandbookRow } from '@/lib/handbooks'
+import { statusWords, handbookList, sectionCount, pagesWords, type HandbookRow } from '@/lib/handbooks'
 
 type Tab = 'ask' | 'conversations' | 'handbooks' | 'dates'
 
 interface DateRow { id: string; title: string; due_date: string }
 interface Site { id: string; name: string }
 
-const HANDBOOK_COLUMNS = 'id, name, file_name, file_path, scope, entity_id, status, status_reason, version_of, is_current, created_at'
+const HANDBOOK_COLUMNS = 'id, name, file_name, file_path, scope, entity_id, status, status_reason, version_of, is_current, created_at, page_count, read_at, handbook_sections(count)'
 
 /** The owner's words (HR Step 5a). */
 const SAVE_FAILED = 'We could not save this file. Nothing was added. Please try again.'
@@ -48,6 +48,8 @@ const SAVE_FAILED = 'We could not save this file. Nothing was added. Please try 
 const OLDER_NOT_REPLACED = 'The newer version was saved, but we could not mark the older one as replaced. Both are shown for now.'
 /** The workspace's own sentence for a failed delete (`app/compliance/page.tsx`, the delete sheet). */
 const DELETE_FAILED = 'That could not be deleted. Nothing was changed. Please try again.'
+/** NOT the owner's words: written for a "Read it again" the server never started (for his review). */
+const READ_FAILED = 'That reading could not be started. Nothing was changed. Please try again.'
 
 /** The paperclip the workspace's attach line draws, at 13px in the line's own colour. */
 const Pin = () => (
@@ -98,12 +100,51 @@ export default function HrWorkspace() {
     el.style.height = `${el.scrollHeight}px`
   }, [box])
 
+  // ---- "Read it again" (owner, 7 October): only for 'could_not_read' or 'uploaded' ----
+  const [startingRead, setStartingRead] = useState(false)
+  const readAgain = async (h: HandbookRow) => {
+    setNotice(null); setStartingRead(true)
+    try {
+      const res = await fetch('/api/handbooks/read', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
+        body: JSON.stringify({ id: h.id }),
+      })
+      // 409: a reading already holds it, or it is read — the reloaded list says which.
+      if (!res.ok && res.status !== 409) setNotice(READ_FAILED)
+    } catch { setNotice(READ_FAILED) }
+    await loadHandbooks()
+    setStartingRead(false)
+  }
+
   // ---- reading, as the caller (RLS scopes every read to the company) ----
   const loadHandbooks = useCallback(async () => {
     const { data } = await supabase.from('handbooks').select(HANDBOOK_COLUMNS)
       .order('created_at', { ascending: false }).limit(LIST_CAP * 4)
     setAllHandbooks((data ?? []) as HandbookRow[])
   }, [supabase])
+
+  // While any handbook is being read, look again every few seconds, so "Reading…" turns into its result.
+  const anyReading = allHandbooks.some((h) => h.status === 'reading')
+  useEffect(() => {
+    if (!anyReading) return
+    const t = setInterval(() => { void loadHandbooks() }, 3000)
+    return () => clearInterval(t)
+  }, [anyReading, loadHandbooks])
+
+  // A read handbook's drawer lists its sections (the check report replaces this in step 8).
+  type SectionLine = { position: number; title: string | null; page_from: number | null; page_to: number | null }
+  const [drawerSections, setDrawerSections] = useState<{ id: string; rows: SectionLine[] } | null>(null)
+  const drawerReadId = drawer && allHandbooks.find((h) => h.id === drawer.id)?.status === 'read' ? drawer.id : null
+  useEffect(() => {
+    if (!drawerReadId) return
+    let live = true
+    ;(async () => {
+      const { data } = await supabase.from('handbook_sections').select('position, title, page_from, page_to')
+        .eq('handbook_id', drawerReadId).order('position')
+      if (live) setDrawerSections({ id: drawerReadId, rows: (data ?? []) as SectionLine[] })
+    })()
+    return () => { live = false }
+  }, [drawerReadId, supabase])
 
   useEffect(() => {
     let live = true
@@ -378,7 +419,7 @@ export default function HrWorkspace() {
                                   <span className="truncate">{h.file_name}</span>
                                   <span aria-hidden="true">·</span>
                                   {/* Amber only on "Could not read": the one state that asks something of somebody. */}
-                                  <span className={couldNot ? 'text-[var(--amber)]' : undefined}>{statusWords(h.status, h.status_reason)}</span>
+                                  <span className={couldNot ? 'text-[var(--amber)]' : undefined}>{statusWords(h.status, h.status_reason, sectionCount(h))}</span>
                                   {/* A site that was deleted: the handbook keeps scope 'site' and says so (choosing arrives in polish, step 11). */}
                                   {g.removed && <><span aria-hidden="true">·</span><span>choose where it applies</span></>}
                                 </p>
@@ -431,12 +472,38 @@ export default function HrWorkspace() {
               {drawer.is_current && (
                 <button onClick={() => pickFile(drawer.id)} disabled={saving} className={TEXT_ACTION}>Add a newer version</button>
               )}
+              {(() => {
+                const st = allHandbooks.find((x) => x.id === drawer.id)?.status ?? drawer.status
+                return (st === 'could_not_read' || st === 'uploaded') && (
+                  <button onClick={() => readAgain(drawer)} disabled={startingRead} className={TEXT_ACTION}>Read it again</button>
+                )
+              })()}
               <button onClick={() => { setDeleteFailed(false); setDeleting(true) }}
                 className="ml-auto text-[14px] text-gray-400 hover:text-red-600">Delete</button>
             </>
           }>
-          {/* The check report fills this in step 8. */}
-          <p className="text-[14px] leading-relaxed text-gray-600">This handbook has not been read yet.</p>
+          {/* The check report replaces this in step 8. */}
+          {(() => {
+            const h = allHandbooks.find((x) => x.id === drawer.id) ?? drawer
+            const rows = drawerSections?.id === h.id ? drawerSections.rows : null
+            if (h.status !== 'read' || !rows) {
+              return <p className="text-[14px] leading-relaxed text-gray-600">This handbook has not been read yet.</p>
+            }
+            const n = rows.length
+            return (
+              <>
+                <p className="text-[14px] leading-relaxed text-gray-600">
+                  {`Read ${friendlyDate(h.read_at ?? null)}. ${h.page_count != null ? `${h.page_count} pages, ` : ''}${n} sections.`}
+                </p>
+                <ul className="mt-4 space-y-1.5 text-[14px] text-gray-700">
+                  {rows.map((r) => {
+                    const pages = pagesWords(r.page_from, r.page_to)
+                    return <li key={r.position}>{r.title ?? h.name}{pages && <span className="text-gray-500"> · {pages}</span>}</li>
+                  })}
+                </ul>
+              </>
+            )
+          })()}
         </Drawer>
       )}
 

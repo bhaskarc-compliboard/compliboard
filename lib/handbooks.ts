@@ -20,10 +20,18 @@ export function isOwnHandbookPath(path: string, companyId: string): boolean {
 export type HandbookStatus = 'uploaded' | 'reading' | 'read' | 'could_not_read'
 
 /** The row's status in the owner's words (HR Step 5a). 5b only sets the status; the words are here. */
-export function statusWords(status: string, reason: string | null): string {
+/** Why a handbook could not be read — the owner's words (HR Step 5b), shown after "Could not read — ". */
+export const READ_REASONS = {
+  scan: "This looks like a scan, and we can't read its text. Please upload the original PDF or the Word file.",
+  kind: "We can't read this kind of file yet. Please upload a PDF or a Word file.",
+  noPages: 'This file has no pages we can read.',
+  ours: 'Something went wrong at our end while reading it. Press Read it again.',
+} as const
+
+export function statusWords(status: string, reason: string | null, sectionCount?: number | null): string {
   if (status === 'uploaded') return 'Waiting to be read'
   if (status === 'reading') return 'Reading…'
-  if (status === 'read') return 'Read'
+  if (status === 'read') return sectionCount == null ? 'Read' : `Read · ${sectionCount} sections`
   if (status === 'could_not_read') return `Could not read — ${reason ?? ''}`.trim()
   return status
 }
@@ -33,6 +41,17 @@ export interface HandbookRow {
   scope: 'company' | 'site'; entity_id: string | null
   status: string; status_reason: string | null
   version_of: string | null; is_current: boolean; created_at: string
+  /** Step 5b: set when read. `handbook_sections` is PostgREST's embedded count. */
+  page_count?: number | null; read_at?: string | null; handbook_sections?: Array<{ count: number }>
+}
+
+/** How many sections a read handbook has, from the list's embedded count. */
+export const sectionCount = (h: HandbookRow): number | null => h.handbook_sections?.[0]?.count ?? null
+
+/** A section's pages in the drawer: "pages 6–7", or "page 6" for one page; nothing for a Word file. */
+export function pagesWords(from: number | null, to: number | null): string | null {
+  if (from == null) return null
+  return to == null || to === from ? `page ${from}` : `pages ${from}–${to}`
 }
 
 /** The older versions of a current handbook, newest older first: down its `version_of` chain, never a
