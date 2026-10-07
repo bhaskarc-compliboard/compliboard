@@ -11376,3 +11376,94 @@ had every column). One line each:
     that a "could not read" drawer, current or older, showed "This handbook has not been read yet." and now
     shows its reason.
   - The owner accepts "That reading could not be started. Nothing was changed. Please try again." as written.
+
+## 169. HR STEP 6a — THE FIRST REAL HR ANSWER: CHECKED QUOTES, CHECKED LINKS, FOLLOW-UPS — 7 October 2026
+
+§169 — HR Step 6a (`0e082f4`), on `/hr/new` behind `HR_PREVIEW`: `POST /api/hr/answer`, tier and ledger `'hr'`.
+No migration.
+
+- **What the answer reads** (`lib/hrAnswer.ts`):
+  - the company's current handbooks that have text;
+  - read handbooks as their sections, `<section id="H12" handbook="…" applies="Every site | <site>" title="…" pages="…">`;
+  - handbooks still being read as one block per page;
+  - the company context: company, declared, confirmed (decision 10).
+- **The budget.** `HR_HANDBOOK_BUDGET_TOKENS`, default 50,000, estimated at 0.273 tokens a character (measured
+  from the step-5b ledger). A handbook over the budget is left out, named in the line "<handbook> is too long
+  to read whole yet. Reading its right sections comes in the next step." That is temporary, until 6c.
+- **Refusals, with no model call:**
+  - "Add a handbook first. Answers come from your handbooks."
+  - "Your handbooks are still being read. Ask again in a minute."
+  - "None of your handbooks could be read, so there is nothing to answer from. The Handbooks tab shows why."
+- **Text first.** The reader saves a handbook's text before finding its sections; the row stays `reading`.
+  - A PDF's stored text joins its pages with a form feed (`lib/handbookSections.ts` `PAGE_BREAK`), so a
+    quote's page is known from the text alone.
+  - No column was needed: a column of page positions would need a migration to say what the separator
+    already says.
+  - Handbooks read before 6a keep newlines; their sections carry the pages.
+- **The prompt** is the Step 6 design's draft, unchanged (`prompts/hr-answer.ts`).
+- **The stages come from real events:**
+  - "Reading <handbooks> (<n> pages)" (the route's `reading` event);
+  - "Checking the rule at the agency — <n> sources" (its `searching` events);
+  - "Writing the answer".
+- **At done, on the server, every quote is judged by where its words are found** (the owner, 7 October):
+  - every `[H…: "…"]` marker, and every plain passage in quotation marks of six or more words, uses the shared
+    rule (`lib/documentScan.ts` `normaliseForQuote`, now exported; `verifyQuote` uses it unchanged).
+  - **In a handbook block:** a handbook card, "<handbook> — <section>, page <n> · your handbook". The quote is
+    shown inline, “…”[n]. On staging the model writes the marker where the quote belongs, so the number alone
+    read as a bare "[1]".
+  - **In the passage behind one of this answer's own web citations:** kept as that page's words, tied to its
+    citation.
+  - **In neither:** "(quote removed)", and counted.
+  - Where a citation sits in the sentence decides nothing. "Your handbook says '…', but the law says ….[2]"
+    must not let a false handbook quote through.
+- **Web citations:**
+  - Each is checked against the pages this answer's search returned (`findReturned`), and labelled official
+    or other (`OTHER_SOURCE_LINE`).
+  - **Web and handbook sources are numbered together,** by first appearance.
+- **The lines appended to the stored answer** (option C). The owner's words:
+  - "<n> quote(s) could not be found in your handbook, so … not shown as … source(s)." This counts failed
+    markers, plus plain quotes when there was no web passage to check against.
+  - "1 quote could not be checked against its source, so it is not shown." This counts plain quotes found in
+    neither.
+  - "1 web source could not be checked, so it is not shown."
+  - The over-budget line.
+  - The day-1 line: "Your handbook's full check has not run yet. This answer reads the handbook and the rule
+    just now."
+- **Follow-ups** carry each handbook source with its quote (`appendHandbookSources`). Topics are section `'hr'`.
+- **Shared and additive; the workspace is proven unchanged.** Evidence: an element dump, 0 of 1,152,000
+  pixels, `npm run measure` byte-identical, and its finished message and stored source keys pinned and read
+  from a fresh answer.
+  - `lib/ai.ts`: `citedPassages`, and a `cited` field on the open stream's finished event, which HR reads
+    alone.
+  - `components/AnswerBody.tsx`: the handbook card and the other-source line.
+  - `components/Stages.tsx` and `stageWords.ts`: HR's steps.
+  - `lib/conversation.ts`: a wider type.
+  - The nightly summary selects workspace topics only (decision 14, until step 7).
+- **KNOWN LIMIT: a cited passage is up to about 150 characters.** That is Anthropic's documentation, not
+  checked in this repository. A longer quote of law is not found in it and is removed: the safe direction,
+  accepted by the owner.
+- **THE OWNER'S OPUS RUN, A DELIBERATE EXCEPTION TO DECISION 17** (all Opus work belongs to the testing step).
+  - On 7 October he ran six answers on his laptop: the same three questions twice, two in one conversation and
+    one in another, as testgamma on staging.
+  - Model `claude-opus-5-5`, effort `low`, at most 2 searches each. Total **$0.98**.
+  - **What it showed:**
+    - Every handbook card's quote re-checks as found in the stored handbook text, and none was dropped.
+    - The answers noticed the synthetic handbooks are other companies' ("this policy probably isn't the right
+      one for your company").
+    - They said what they could not confirm, and labelled non-agency pages.
+    - They offered new wording only on request.
+  - **Not production's settings.** The laptop runs `AI_EFFORT=low` and `DEV_MAX_SEARCHES=2`. Production runs
+    `medium` and no search cap (`docs/RELEASE.md`), and HR's route passes no search limit, like the workspace's
+    research answer. Production answers will be longer, search more and cost more.
+  - **Not re-checkable after the fact:**
+    - web links against the pages the search returned (`searched` is not stored);
+    - the cited passages;
+    - which handbooks were given;
+    - whether a card came from a marker or a plain quote.
+- **FOLLOW-UPS FOR 6b (owner):**
+  1. **A small check record stored with each answer:** the handbooks it was given, the pages its search
+     returned, how many cited passages it had, and for each handbook card whether it came from a marker or a
+     plain quote. An answer can then be audited after the fact.
+  2. **An HR search-limit setting, `AI_SEARCH_MAX_HR`,** unset meaning no limit, so the testing step can
+     measure whether to set one.
+- **Spent, all Haiku: $0.62** (ledger $0.90 → $1.52). Tests went from 802 to 832.

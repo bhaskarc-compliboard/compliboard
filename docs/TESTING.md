@@ -6,7 +6,7 @@
 > replaced.** Those carry a 🕓 HISTORICAL banner naming what is current instead — added 28 September
 > 2026. A manual set is the record of what a person checked and when; a file that deletes the sets whose
 > screens changed is a file that cannot tell you whether anything was ever checked at all.
-**Version:** 31 · **Updated:** 7 October 2026, HR Step 5b — reading a handbook. Version 30: 7 October 2026, HR Step 5a — adding and keeping handbooks. Version 29: 7 October 2026, HR Step 4 — the manual set for the HR page shell. Version 28: 4 October 2026, HR Step 3b — the check:live probes for HR's tables. Version 27: HR Step 3a — the manual set "the workspace looks the same". Version 26: at the close of the workspace work
+**Version:** 32 · **Updated:** 7 October 2026, HR Step 6a — the first answer. Version 31: 7 October 2026, HR Step 5b — reading a handbook. Version 30: 7 October 2026, HR Step 5a — adding and keeping handbooks. Version 29: 7 October 2026, HR Step 4 — the manual set for the HR page shell. Version 28: 4 October 2026, HR Step 3b — the check:live probes for HR's tables. Version 27: HR Step 3a — the manual set "the workspace looks the same". Version 26: at the close of the workspace work
 **Supersedes:** version 25 (3 Oct). Adds the sets of 4 October — Workspace Task 5, Task 6, Stage 2, Stage 4 and the cron release's live checks — with the owner's recorded results (Task 6's T6-1 and T6-3, Stage 4's S4-2, the cron release's CR-1).
 Version 25: version 24 (25 Sep). Adds the **Workspace layout set** (3 October) — the first three
 are the owner's live checks after the push, and none of them sends a question or uploads a file — and
@@ -157,6 +157,26 @@ untested — applies to the runner as much as to anything it runs.
 106.** The floor is committed so the question does not have to be re-asked.
 
 ---
+
+## Manual set — HR Step 6a, the first answer — 7 October 2026 (`0e082f4`, `DECISIONS.md` §169)
+
+**Each answer is a paid call** (Haiku about $0.03–0.11 by handbook size; Opus at production's settings
+more). Needs `HR_PREVIEW=1`. SYNTHETIC handbooks only. Claude Code runs through `npm run haiku`.
+
+| # | Action | Steps | What must be true |
+|---|---|---|---|
+| **6a-1** | **An answer** | Ask tab → a question about a handbook → **Research this** | The stages: "Reading <handbooks> (<n> pages)", then "Checking the rule at the agency — <n> sources" (only if it searched), then "Writing the answer". No `[H…` text ever shows while it writes |
+| **6a-2** | **Handbook cards** | Open a marker in the answer | "<handbook> — <section>, page <n> · your handbook", with the quote. The same words appear in the answer in quotation marks. Open the handbook: the words are there |
+| **6a-3** | **Web cards** | Open a web marker | The page's title, its site and a link; a non-agency page also says "This comes from <site>, not the agency itself…" |
+| **6a-4** | **The lines at the end** | Read the grey lines after the answer | The day-1 line while no check has run; a too-long handbook named; any dropped quote or web source counted, never shown |
+| **6a-5** | **A follow-up** | Ask a second question in the box under the answer | It knows what the first answer quoted; the same handbook passage keeps its card |
+| **6a-6** | **Refusals** | As a company with no handbook / only unread ones / only unreadable ones | "Add a handbook first…" / "…still being read…" / "None of your handbooks could be read…". The cost ledger does not move |
+| **6a-7** | **Text first** | Add a PDF, ask within a few seconds | It answers from the text; a card names "<handbook> — page <n>" |
+| **6a-8** | **Domain check (the edge case)** | Ask about a rule where the handbook quotes the law | A quote of the handbook is the handbook's words; a quote of the law is the agency's, cited. Neither is ever presented as the other |
+
+*(Before the commit, by script on staging: the three refusals with no ledger row; a forced bad marked quote
+and a forced false plain quote removed and counted; a plain true quote made a card; the workspace's screen,
+finished message and stored sources unchanged; 404 without `HR_PREVIEW`.)*
 
 ## Manual set — HR Step 5b, reading a handbook — 7 October 2026 (`bee8f30`, `DECISIONS.md` §168)
 
