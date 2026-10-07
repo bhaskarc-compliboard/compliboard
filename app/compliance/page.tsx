@@ -51,6 +51,10 @@ import { Stages, type Step } from '@/components/Stages'
 import { Sheet } from '@/components/Sheet'
 import { Empty } from '@/components/Empty'
 import { Tabs } from '@/components/Tabs'
+// THE CONVERSATIONS LIST'S WORDS, READING AND ROW — shared with HR since Step 4a (decision 1).
+import { LIST_CAP, countOf, countWord, displayTitle, fmtDate, groupByDay } from '@/lib/listWords'
+import { TOPIC_LIST_COLUMNS, toTopicRow, readTopicList, type TopicRow, type TopicListRow } from '@/lib/topicList'
+import { ConversationList } from '@/components/ConversationList'
 import { ReportView, WEB_SOURCE } from '@/components/ReportView'
 
 type Tab = 'ask' | 'conversations' | 'checklists'
@@ -99,41 +103,6 @@ interface Exchange {
   }
 }
 
-interface TopicRow {
-  id: string; title: string | null; summary: string | null
-  summarised_at: string | null; summary_source: string | null
-  delete_after: string | null; last_turn_at: string | null; created_at: string
-  turnCount: number; checklistId: string | null
-  /** From `topic_list_v` (migration 063) — Workspace Task 5, board 5. */
-  questionCount: number; documentCount: number; firstDocumentName: string | null
-  hasReport: boolean; checklistTotal: number; checklistDone: number
-  /** A claim held and younger than ten minutes — migration 065, Workspace Stage 4. */
-  summaryInProgress: boolean; checklistInProgress: boolean
-}
-
-/** One `topic_list_v` row, as the database returns it. */
-interface TopicListRow {
-  id: string; title: string | null; summary: string | null
-  summarised_at: string | null; summary_source: string | null
-  delete_after: string | null; last_turn_at: string | null; created_at: string
-  has_report: boolean; turn_count: number; question_count: number; document_count: number
-  first_document_name: string | null; checklist_id: string | null; checklist_total: number; checklist_done: number
-  summary_in_progress: boolean; checklist_in_progress: boolean
-}
-
-const TOPIC_LIST_COLUMNS = 'id, title, summary, summarised_at, summary_source, delete_after, last_turn_at, created_at, '
-  + 'has_report, turn_count, question_count, document_count, first_document_name, checklist_id, checklist_total, checklist_done, '
-  + 'summary_in_progress, checklist_in_progress'
-
-const toTopicRow = (r: TopicListRow): TopicRow => ({
-  id: r.id, title: r.title, summary: r.summary, summarised_at: r.summarised_at, summary_source: r.summary_source,
-  delete_after: r.delete_after, last_turn_at: r.last_turn_at, created_at: r.created_at,
-  turnCount: Number(r.turn_count ?? 0), checklistId: r.checklist_id,
-  questionCount: Number(r.question_count ?? 0), documentCount: Number(r.document_count ?? 0),
-  firstDocumentName: r.first_document_name, hasReport: !!r.has_report,
-  checklistTotal: Number(r.checklist_total ?? 0), checklistDone: Number(r.checklist_done ?? 0),
-  summaryInProgress: !!r.summary_in_progress, checklistInProgress: !!r.checklist_in_progress,
-})
 
 interface ChecklistRow {
   id: string; title: string | null; created_at: string
@@ -161,71 +130,11 @@ interface ItemRow {
 const ITEM_COLUMNS = 'id, name, description, why, source_url, source_title, origin, completed, category, sort_order, '
   + 'parent_item_index, sources, howto, howto_started_at'
 
-/**
- * HOW MANY CONVERSATIONS AND CHECKLISTS ONE LOAD READS — Task 2b. It was the literal 60 in two
- * places. One name, used by both reads and by the counts line, which says "60+" when a list holds
- * exactly this many: a full read means there may be more, and a bare "60" would be a count we do
- * not have.
- */
-const LIST_CAP = 60
-/** "47", or "60+" for a read that came back full. The one rule, for the counts line and the tab. */
-const countOf = (n: number) => (n >= LIST_CAP ? `${LIST_CAP}+` : String(n))
-/** "1 conversation", "47 conversations", "60+ conversations". */
-const countWord = (n: number, word: string) =>
-  `${countOf(n)} ${word}${n === 1 ? '' : 's'}`
 
 /* THE BUTTONS live in `components/buttonStyles.ts` (HR Step 3a), shared with HR. */
 
-/**
- * A CONVERSATION'S TITLE, AS SHOWN — Workspace Task 3. Titles are stored as typed (the first
- * question, verbatim — `lib/conversation.ts` `titleFromQuestion`), so many start lowercase. This
- * upper-cases the FIRST character only when it is a lowercase letter and leaves every other
- * character exactly as it is. Display only: the stored title and every other section (To-confirm
- * shows the same titles) are untouched. A title starting with a quote, a digit or anything else
- * that is not a lowercase letter — "'m opening…" — is left alone; null stays null so each caller's
- * fallback still applies.
- */
-const displayTitle = (title: string | null): string | null =>
-  title && /^\p{Ll}/u.test(title) ? title.charAt(0).toUpperCase() + title.slice(1) : title
 
-/**
- * THE CONVERSATIONS LIST'S DATES — Workspace Task 5, board 5. A row says WHEN in the shortest way that
- * is still exact for its age, and rows are grouped Today, This week, then by month.
- * "This week" is the six days before today; older is a month heading.
- */
-const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
-const daysAgo = (iso: string, now: Date) => Math.round((startOfDay(now) - startOfDay(new Date(iso))) / 86_400_000)
 
-/** "Today", "This week", or "September 2026". */
-function listGroup(iso: string, now: Date = new Date()): string {
-  const days = daysAgo(iso, now)
-  if (days <= 0) return 'Today'
-  if (days <= 6) return 'This week'
-  return new Date(iso).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
-}
-
-/** "3:42 pm" today; "Wed 30 Sep" this week; "18 Sep 2025" before that. */
-function listWhen(iso: string, now: Date = new Date()): string {
-  const d = new Date(iso)
-  const days = daysAgo(iso, now)
-  if (days <= 0) return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).toLowerCase()
-  if (days <= 6) return d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }).replace(',', '')
-  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
-}
-
-/** What the conversation's summary is, in the words the row uses. */
-function summaryWords(t: { summarised_at: string | null; turnCount: number }): string {
-  if (!t.summarised_at) return 'Not summarised yet'
-  return t.turnCount > 0 ? 'Summary ready' : 'Summary only — the full conversation was cleared'
-}
-
-/** How Audits writes a date — `app/audits/page.tsx:189–194`, copied: "30 September 2026". */
-const fmtDate = (iso: string | null | undefined) => {
-  if (!iso) return ''
-  const d = new Date(String(iso).length === 10 ? `${iso}T00:00:00` : String(iso))
-  return Number.isNaN(d.getTime()) ? ''
-    : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
-}
 
 export default function CompliancePage() {
   const supabase = createClient()
@@ -412,16 +321,10 @@ export default function CompliancePage() {
    * Newest activity first; a topic with no turns falls back to when it was opened.
    */
   const loadTopics = useCallback(async () => {
-    const { data } = await supabase
-      .from('topic_list_v')
-      .select(TOPIC_LIST_COLUMNS)
-      // THE WORKSPACE'S OWN CONVERSATIONS ONLY — HR Step 3b (decision 5, migration 066). HR's live in the
-      // same table with section 'hr' and are listed by HR; every row before 066 reads 'workspace'.
-      .eq('section', 'workspace')
-      .order('last_turn_at', { ascending: false, nullsFirst: false })
-      .order('created_at', { ascending: false })
-      .limit(LIST_CAP)
-    setTopics(((data ?? []) as unknown as TopicListRow[]).map(toTopicRow))
+    // THE WORKSPACE'S OWN CONVERSATIONS ONLY — HR Step 3b (decision 5, migration 066). HR's live in the
+    // same table with section 'hr' and are listed by HR; every row before 066 reads 'workspace'. The read
+    // is shared with HR since Step 4a (`lib/topicList.ts`), the section its one parameter.
+    setTopics(await readTopicList(supabase, 'workspace'))
   }, [supabase])
 
   /**
@@ -1056,24 +959,6 @@ export default function CompliancePage() {
     else setDeleteFailed(true)
   }
 
-  /**
-   * GROUP BY THE DAY, RATHER THAN PRINTING IT ON EVERY ROW.
-   *
-   * Both lists repeated "Yesterday" down the whole column — a line per row saying the same
-   * thing, which is a date you cannot scan and a line you cannot use. The rows keep the order
-   * they arrived in; this only buckets consecutive rows that share the label `friendlyDate`
-   * already produces, so a list that is not sorted by date still renders truthfully.
-   */
-  function groupByDay<T>(rows: T[], dateOf: (row: T) => string): Array<{ day: string; rows: T[] }> {
-    const out: Array<{ day: string; rows: T[] }> = []
-    for (const row of rows) {
-      const day = dateOf(row)
-      const last = out[out.length - 1]
-      if (last && last.day === day) last.rows.push(row)
-      else out.push({ day, rows: [row] })
-    }
-    return out
-  }
 
   // ------------------------------------------------------------------ render
   // THE FACTS LINE — Task 3, unchanged in its words; Task 5 lets the report place it (board 6).
@@ -1470,64 +1355,7 @@ export default function CompliancePage() {
               <div className="mt-4"><Empty title="No conversations yet" note="Ask a question and it will appear here." /></div>
             ) : (
               <div className="mt-4">
-                {groupByDay(shownTopics, (t) => listGroup(t.last_turn_at ?? t.created_at)).map((g, gi) => (
-                  <div key={g.day + gi} className={gi === 0 ? '' : 'mt-6'}>
-                    <p className="mb-1 text-[12px] font-medium uppercase tracking-wide text-gray-400">{g.day}</p>
-                    <div className="divide-y divide-gray-100 border-y border-gray-100">
-                      {/*
-                        A LIST IS SCANNED; THE DRAWER IS WORKED FROM. The title is 13px and
-                        regular — it separates from the 12px gray-500 meta line by colour and
-                        size alone, which is how Finder, Drive and Dropbox set a filename, and
-                        it keeps these lists dense as they grow. The checklist drawer's item
-                        name stays 16px on purpose: that is reading text, and the two are
-                        allowed to differ.
-
-                        THE ROW HAS TO LOOK CLICKABLE. Grey text on a grey page with no response
-                        to the pointer gave no sign that a row opened anything. `-mx-3` with a
-                        matching `px-3` lets the hover fill sit slightly proud of the text
-                        WITHOUT moving the text, so titles stay aligned with the page column.
-                        The title turns green because the title is the thing you are aiming at.
-                        The Checklists row below is the same pattern.
-
-                        NO DELETE ON THE ROW — Workspace Task 3, board 7. Deleting is done from the
-                        drawer, where the thing is open in front of you and its confirmation can
-                        offer a download first. A Delete beside every row was one stray click from
-                        the browser's pop-up and no copy.
-                      */}
-                      {g.rows.map((t) => {
-                        // ONE GREY LINE, ITS PARTS SEPARATED BY " · " — Workspace Task 5, board 5.
-                        const parts: React.ReactNode[] = [
-                          listWhen(t.last_turn_at ?? t.created_at),
-                          `${t.questionCount} question${t.questionCount === 1 ? '' : 's'}`,
-                        ]
-                        if (t.firstDocumentName) parts.push(
-                          <span key="file" className="inline-flex min-w-0 items-center gap-1">
-                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="shrink-0" aria-hidden="true"><path d="M21.4 11.05 12.25 20.2a5.5 5.5 0 0 1-7.78-7.78l9.19-9.19a3.67 3.67 0 0 1 5.18 5.18l-9.2 9.2a1.83 1.83 0 0 1-2.59-2.6l8.49-8.48" /></svg>
-                            <span className="truncate">{t.firstDocumentName}{t.documentCount > 1 ? ` +${t.documentCount - 1}` : ''}</span>
-                          </span>)
-                        // A RUN GOING SAYS SO, IN THE ROW'S OWN LINE — Workspace Stage 4.
-                        parts.push(inProgress(t, 'summary') ? CLAIM_WORDS.summary : summaryWords(t))
-                        if (inProgress(t, 'checklist')) parts.push(CLAIM_WORDS.checklist)
-                        else if (t.checklistId) parts.push(`Checklist ${t.checklistDone} of ${t.checklistTotal} done`)
-                        return (
-                          <div key={t.id} className="group -mx-3 flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 transition-colors hover:bg-white">
-                            <button onClick={() => setSummaryDrawer(t)} className="min-w-0 flex-1 text-left">
-                              <p className="truncate text-[13px] text-gray-900 group-hover:text-[var(--green)]">{displayTitle(t.title) ?? 'Untitled conversation'}</p>
-                              {/* NO COLOUR HERE. Amber is reserved for a real attention state and
-                                  "not summarised yet" is the normal condition of anything asked
-                                  today; green for a routine fact is the same mistake the other way. */}
-                              <p className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-1 text-[12px] text-gray-500">
-                                {parts.map((part, i) => (
-                                  <React.Fragment key={i}>{i > 0 && <span aria-hidden="true">·</span>}{part}</React.Fragment>
-                                ))}
-                              </p>
-                            </button>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                ))}
+                <ConversationList topics={shownTopics} running={inProgress} onOpen={setSummaryDrawer} />
               </div>
             )}
           </div>
