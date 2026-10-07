@@ -1,6 +1,6 @@
 # The HR section — the plan
 
-**Version:** 3 · **Updated:** 4 October 2026, HR Step 3b: step 3b done (staging only). Version 2: HR Step 3a: step 3a done; decision 17 amended (every build stop on Haiku,
+**Version:** 4 · **Updated:** 7 October 2026: §2.1, the page title is HR Workspace. Version 3: HR Step 3b, step 3b done (staging only). Version 2: HR Step 3a: step 3a done; decision 17 amended (every build stop on Haiku,
 all Opus work in the testing step); the copy rule added to §2.5. Version 1: HR Step 2.
 
 **The decision record** is `DECISIONS.md` §164. **The map** (how HR and everything it touches worked on 4
@@ -14,6 +14,8 @@ repository wins and this file is corrected.
 - **HR is the Compliance Workspace with the company's handbooks as the evidence.** Layout, buttons and
   placement are exactly the workspace's: one coherent app.
 - **Tabs:** Ask a question · Conversations · Handbooks · Dates.
+- **The page title is HR Workspace**, matching the sidebar and the Compliance Workspace's own title. *(Owner,
+  7 October 2026. No code change now; step 4 builds it.)*
 - **Handbooks:** a company adds one or more handbooks. Each covers every site, or one site, for example a
   Washington addendum for the Vancouver site. **Handbooks live in HR only. They are not shown in Company
   Documents, and HR reads and checks them itself.**

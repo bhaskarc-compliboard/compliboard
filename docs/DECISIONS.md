@@ -11131,3 +11131,50 @@ outputs, slower calls). Then comes the quality pass. `docs/HR-PLAN.md` decision 
   `documents` and `calendar_events` (the default privileges, §3.6). They are now visible in `docs/SCHEMA.md`
   for the first time.
 - Tests went from 724 to 729. **$0.**
+
+## 165. HARDENING: NO TRUNCATE, TRIGGER, REFERENCES OR MAINTAIN FOR PEOPLE, AND DEFAULTS THAT GRANT THEM NOTHING — 7 October 2026
+
+§165 — Found by HR Step 3b-1: once `scripts/schema-doc.js` could read grants, `docs/SCHEMA.md` showed
+`authenticated` holding TRUNCATE, TRIGGER and REFERENCES on 25 relations in public. TRUNCATE ignores
+row-level security: a role holding it can empty every company's rows at once. The relations included
+`documents`, `calendar_events`, `companies` and `profiles`. The rights came from `postgres`'s default
+privileges on public (`authenticated=arwdDxtm`) and old `grant all` lines. One line each:
+
+- **Hardening, not an incident.** Read on staging before any change:
+  - the data API has no TRUNCATE verb;
+  - of 8 functions in public, the one that runs dynamic SQL (`increment_usage_counter`) is service_role
+    only (`035:59–62`), and none mentions TRUNCATE;
+  - nothing in the repo uses the three as those roles;
+  - REFERENCES is checked against the role creating a foreign key, never the person inserting a row;
+  - `anon` held nothing at all on any public relation.
+- **067** (`067_no_truncate_trigger_or_references_for_people.sql`): revokes the three from `anon` and
+  `authenticated` on every table, partitioned table, view and materialized view in public. It also removes
+  them from `postgres`'s defaults. Migrations run as `postgres`: it owns every public table, and the verify
+  block refuses any other role. `postgres` is not a member of `supabase_admin` and may not change its
+  defaults; that was not worked around.
+- **068** (`068_no_maintain_and_defaults_that_grant_nothing.sql`):
+  - **MAINTAIN** — Postgres 17, LOCK TABLE among it. `authenticated` held it on the same 25 relations, and
+    the schema doc, the step-0 read and the guard were all blind to it (they asked about seven rights). It
+    is now revoked; `schema-doc.js` asks about eight; the guard covers it.
+  - **Defaults that grant nothing.** `postgres`'s defaults on public tables now read
+    `{postgres=arwdDxtm, service_role=arwdDxtm}`, so a new table gives a person nothing until its migration
+    grants it. Sequences (`rwU`) and functions (`X`) were recorded and left; functions became the open row
+    in `HANDOFF-CODE.md` §7.
+- **What both verify blocks prove** (they raise unless every one holds):
+  - a snapshot of every right of `anon`, `authenticated` and `service_role` on every relation, taken at
+    the top, matches at the end except for the revoked rights;
+  - the snapshot first saw the right being removed;
+  - a probe table gets none of them, while still receiving `service_role`'s defaults.
+
+  Read back after each push: the probe tables are gone, and the counts of the revoked rights are 0.
+- **For the record.** Of 51 relations where `authenticated` holds a read or write right, every right has an
+  explicit GRANT except INSERT, UPDATE and DELETE on the view `obligation_evidence_state` (020:119 grants
+  SELECT). That view is not insertable or updatable, so the three are inert; it keeps them.
+- **The lasting guard.** `tests/unit/schemaGrants.test.ts` fails if `docs/SCHEMA.md` shows any of the four
+  for `anon` or `authenticated`, and refuses to pass unless it can see `service_role`'s TRUNCATE and
+  MAINTAIN. It was shown red on hand-edited copies: TRUNCATE on `documents`, MAINTAIN on `calendar_events`.
+- **Effects.** Nothing visible in any section. `check:live`'s 39 probes still read and write as a person,
+  and the verify blocks prove no read or write right moved. `CLAUDE.md` §3.6's revoke-then-grant rule
+  stands, with a note that the defaults now grant nothing.
+- **Staging only** (`6b104ff`); production with the next release, 066 already there (the owner ran
+  `db:migrate:prod` on 6 October). **$0.**

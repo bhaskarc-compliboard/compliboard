@@ -2,7 +2,8 @@
 
 # CompliBoard — Project Rules for Claude Code
 
-**Updated:** 4 October 2026 — §3.7's reset rule (the owner's say-so only) and §3.11's four standing rules.
+**Updated:** 7 October 2026 — §3.6: the default privileges now grant `anon` and `authenticated` nothing (migration 068); revoke-then-grant stands; read grants with `has_table_privilege`.
+4 October 2026 — §3.7's reset rule (the owner's say-so only) and §3.11's four standing rules.
 This file had no version line; changes before this one are dated where they were made.
 
 Read automatically at the start of every session. This is the standing brief — these
@@ -338,6 +339,15 @@ once.
   > deliberately keeps append-only or non-deletable — `switch_determinations`, `topics`,
   > `obligations` — depends on that distinction.
 
+  > ### SINCE MIGRATION 068 (7 October 2026), `postgres`'s DEFAULTS GRANT `anon` AND `authenticated` NOTHING.
+  > `pg_default_acl` for `postgres` on public tables now reads `{postgres=arwdDxtm, service_role=arwdDxtm}`:
+  > a table a migration creates gives a person no right at all until the migration grants one (067 and 068
+  > also took TRUNCATE, TRIGGER, REFERENCES and MAINTAIN off every existing table; `DECISIONS.md` §165).
+  > **The rule below still stands, unchanged:** `supabase_admin`'s defaults on public still grant both roles
+  > everything for objects IT creates, `postgres` cannot change those, and a REVOKE that turns out to be
+  > redundant costs nothing. Write REVOKE-then-GRANT every time. `tests/unit/schemaGrants.test.ts` fails if
+  > `docs/SCHEMA.md` ever shows TRUNCATE, TRIGGER, REFERENCES or MAINTAIN for either role.
+
   **So the shape for a new table is REVOKE, then GRANT, for both roles:**
   ```sql
   revoke all on table public.<t> from anon;
@@ -350,6 +360,10 @@ once.
    where table_schema='public' and table_name='<t>';
   -- anon: zero rows. authenticated: exactly what the migration named, and nothing else.
   ```
+  *(7 October 2026: that view is blind from the Supabase CLI — it connects as `supabase_read_only_user`
+  and sees no rows at all, `docs/HR-MACHINERY.md` B12. Read with `has_table_privilege('<role>',
+  'public.<t>', '<RIGHT>')` instead, for all eight rights including MAINTAIN, as migrations 066–068's
+  verify blocks do.)*
   **Found twice, both times by a migration's own verify block refusing it** — 11 Sep for
   `anon` (migration 008) and 15 Sep for `authenticated` (migration 028, which granted three
   privileges and was refused for holding a fourth it never granted). `DECISIONS.md` §81.
