@@ -84,8 +84,14 @@ async function pdfPages(buffer: Buffer): Promise<string[]> {
   return ((ast?.content ?? []) as PdfPage[]).filter((n) => n.type === 'page').map((n) => n.text ?? '')
 }
 
+/**
+ * TEXT FIRST (HR Step 6a): called the moment the text is drawn and is not a scan, BEFORE any section is
+ * found, so an answer can use the handbook while its sections are still being found.
+ */
+export type OnText = (text: string, pageCount: number | null) => Promise<void>
+
 export async function readContent(buffer: ArrayBuffer, fileName: string, mimeType: string | null, outline: Outline,
-  parsePdf: (b: Buffer) => Promise<string[]> = pdfPages): Promise<ReadOutcome> {
+  parsePdf: (b: Buffer) => Promise<string[]> = pdfPages, onText?: OnText): Promise<ReadOutcome> {
   const ext = extensionOf(fileName)
   // .doc is the old binary Word format, which the Word reader cannot open.
   if (ext === 'doc') return { ok: false, reason: READ_REASONS.kind, log: '.doc' }
@@ -97,6 +103,7 @@ export async function readContent(buffer: ArrayBuffer, fileName: string, mimeTyp
   if (parsed.kind === 'word') {
     const html = parsed.text
     if (!html.replace(/<[^>]*>/g, '').trim()) return { ok: false, reason: READ_REASONS.noPages, log: 'word: no text' }
+    await onText?.(html, null)
     const sections = wordSections(html).map((s) => ({ ...s, page_from: null, page_to: null }))
     return { ok: true, text: html, pageCount: null, sections, dropped: 0, parts: 0 }
   }
@@ -105,6 +112,7 @@ export async function readContent(buffer: ArrayBuffer, fileName: string, mimeTyp
   if (!pages.length) return { ok: false, reason: READ_REASONS.noPages, log: 'pdf: 0 pages' }
   const text = joinPages(pages)
   if (looksLikeScan(text, pages.length)) return { ok: false, reason: READ_REASONS.scan, log: `pdf: ${pages.length} pages, ${text.trim().length} characters` }
+  await onText?.(text, pages.length)
 
   const parts = outlineParts(pages)
   const anchors: Anchor[] = []
@@ -133,8 +141,13 @@ export interface ReadDeps {
   parsePdf?: (b: Buffer) => Promise<string[]>
 }
 
-export async function readHandbook(deps: ReadDeps, companyId: string, id: string, claimedAt: string): Promise<string> {
+/** The claim was taken over while this run read: stop before spending anything more. */
+class ClaimLost extends Error {}
+
+export async function readHandbook(deps: ReadDeps, companyId: string, id: string, claimedAtStart: string): Promise<string> {
   const { db, admin } = deps
+  // The claim is the row's updated_at, and saving the text moves it (the trigger): the save returns the new one.
+  let claimedAt = claimedAtStart
   const giveUp = async (reason: string, log: string) => {
     console.error(`handbooks: could not read ${id}: ${log}`)
     await db.from('handbooks').update({ status: 'could_not_read', status_reason: reason })
@@ -148,7 +161,15 @@ export async function readHandbook(deps: ReadDeps, companyId: string, id: string
     const { data: blob, error: dlErr } = await db.storage.from(deps.bucket).download(row.file_path)
     if (dlErr || !blob) return giveUp(READ_REASONS.ours, `download: ${dlErr?.message ?? 'no file'}`)
 
-    const out = await readContent(await blob.arrayBuffer(), row.file_name, row.mime_type, deps.outline, deps.parsePdf)
+    // TEXT FIRST: saved while the row stays 'reading', so an answer may use it before the sections exist.
+    const saveText: OnText = async (text, pageCount) => {
+      const { data, error } = await db.from('handbooks').update({ extracted_text: text, page_count: pageCount })
+        .eq('id', id).eq('status', 'reading').eq('updated_at', claimedAt).select('updated_at')
+      if (error) throw new Error(`saving the text: ${error.message}`)
+      if (!data?.length) throw new ClaimLost()
+      claimedAt = (data[0] as { updated_at: string }).updated_at
+    }
+    const out = await readContent(await blob.arrayBuffer(), row.file_name, row.mime_type, deps.outline, deps.parsePdf, saveText)
     if (!out.ok) return giveUp(out.reason, out.log)
 
     const problem = proveCoverage(out.text, out.sections)
@@ -174,6 +195,7 @@ export async function readHandbook(deps: ReadDeps, companyId: string, id: string
     }
     return `read: ${out.pageCount ?? '—'} pages, ${out.sections.length} sections, ${out.dropped} anchor(s) dropped, ${out.parts} part(s)`
   } catch (e) {
+    if (e instanceof ClaimLost) return 'claim lost'
     return giveUp(READ_REASONS.ours, e instanceof Error ? e.message : String(e))
   }
 }

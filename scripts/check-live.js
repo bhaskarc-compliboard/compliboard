@@ -382,6 +382,18 @@ if (!(await reachable())) {
   console.log(`\n  /api/chat — driven as ${FIXTURE.email} at ${BASE}\n`)
   const auth = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
 
+  // 0. THE HR ANSWER ROUTE (HR Step 6a): free probes that never reach a model. Without HR_PREVIEW on the
+  // server it does not exist (404, before the session is read); with it, a request with no session is
+  // refused and a request with no question is a 400. Neither asks anything, so nothing is spent.
+  if (want('hr_answer')) {
+    const anon = await fetch(`${BASE}/api/hr/answer`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
+    const empty = await fetch(`${BASE}/api/hr/answer`, { method: 'POST', headers: auth, body: JSON.stringify({ question: '' }) })
+    const preview = anon.status !== 404
+    const ok = preview ? (anon.status === 401 && empty.status === 400) : empty.status === 404
+    console.log(`  ${ok ? '✓' : '✗'} hr answer           ${preview ? `preview on: no session ${anon.status}, no question ${empty.status}` : `preview off: 404 to everyone (${anon.status}, ${empty.status})`}`)
+    if (!ok) failures++
+  }
+
   // 1. RESEARCH streams, and the stream carries sources.
   if (want('research')) {
   const t0 = Date.now()

@@ -186,6 +186,13 @@ const date = (v: unknown): string | null => {
  * paraphrased and judge it. Returns null when there is no text to check against, which is not
  * the same as false.
  */
+/**
+ * THE QUOTE RULE'S NORMALISATION, exported so HR checks handbook quotes by the SAME rule (HR-PLAN decisions 4
+ * and 20; the owner chose one shared rule, 7 October 2026). Tags out, lower case, letters and digits only.
+ * `verifyQuote` below uses it unchanged.
+ */
+export const normaliseForQuote = (s: string) => s.replace(/<[^>]*>/g, ' ').toLowerCase().replace(/[^a-z0-9]+/g, '')
+
 export function verifyQuote(quote: string | null, extractedText: string): boolean | null {
   if (!quote) return null
   if (!extractedText) return null
@@ -195,7 +202,7 @@ export function verifyQuote(quote: string | null, extractedText: string): boolea
   // left the tag letters behind and turned a real quote into `ashiftppwriteit`, which matched
   // nothing. Measured on the .docx fixture: a quote that IS in the file was reported unverified
   // until this line existed.
-  const norm = (s: string) => s.replace(/<[^>]*>/g, ' ').toLowerCase().replace(/[^a-z0-9]+/g, '')
+  const norm = normaliseForQuote
   const q = norm(quote)
   if (q.length < 8) return null
   return norm(extractedText).includes(q)

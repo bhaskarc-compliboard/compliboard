@@ -22,7 +22,7 @@ describe('reading', () => {
     }, pdfOf(pages))
     assert.ok(r.ok)
     if (!r.ok) return
-    assert.equal(seen.length, 1); assert.equal(seen[0], pages.join('\n'), 'the model is sent the text, not the file')
+    assert.equal(seen.length, 1); assert.equal(seen[0], pages.join('\f'), 'the model is sent the text (pages joined by a form feed), not the file')
     assert.equal(r.pageCount, 2)
     assert.deepEqual(r.sections.map((s) => [s.title, s.page_from, s.page_to]), [['1 Welcome', 1, 1], ['2 Pay', 2, 2]])
   })
@@ -75,7 +75,7 @@ describe('THE HAIKU GUARD', () => {
 
 describe('the one write', () => {
   /** Stand-ins for the person's client and the server key, recording every write. */
-  function fakes(opts: { claimHeld: boolean }) {
+  function fakes(opts: { claimHeld: boolean; textClaimHeld?: boolean }) {
     const log: string[] = []
     const chain = (result: unknown) => {
       const q: Record<string, unknown> = {}
@@ -87,7 +87,14 @@ describe('the one write', () => {
     const db = {
       from: () => ({
         select: () => chain({ data: { file_path: 'co/handbooks/h.pdf', file_name: 'h.pdf', mime_type: 'application/pdf' } }),
-        update: (patch: Record<string, unknown>) => { log.push(`db.update status=${patch.status}`); return chain({ data: opts.claimHeld ? [{ id: 'h1' }] : [], error: null }) },
+        update: (patch: Record<string, unknown>) => {
+          if ('extracted_text' in patch && !('status' in patch)) {
+            log.push(`db.update text (${String(patch.extracted_text).length} chars, ${patch.page_count} pages)`)
+            return chain({ data: opts.textClaimHeld === false ? [] : [{ updated_at: 'T2' }], error: null })
+          }
+          log.push(`db.update status=${patch.status}`)
+          return chain({ data: opts.claimHeld ? [{ id: 'h1' }] : [], error: null })
+        },
       }),
       storage: { from: () => ({ download: async () => ({ data: new Blob([new Uint8Array(8)]), error: null }) }) },
     }
@@ -107,7 +114,7 @@ describe('the one write', () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const out = await readHandbook({ db: f.db as any, admin: f.admin as any, bucket: 'b', outline, parsePdf: pages }, 'co', 'h1', 'T')
     assert.match(out, /^read: 2 pages, 2 sections/)
-    assert.deepEqual(f.log, ['admin.delete sections', 'admin.insert 2 sections', 'db.update status=read'])
+    assert.deepEqual(f.log, ['db.update text (107 chars, 2 pages)', 'admin.delete sections', 'admin.insert 2 sections', 'db.update status=read'])
   })
   test('A RUN THAT LOST ITS CLAIM saves nothing, and takes its own sections back out', async () => {
     const { readHandbook } = await import('../../lib/handbookRead.ts')
@@ -115,7 +122,18 @@ describe('the one write', () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const out = await readHandbook({ db: f.db as any, admin: f.admin as any, bucket: 'b', outline, parsePdf: pages }, 'co', 'h1', 'T')
     assert.equal(out, 'claim lost')
-    assert.deepEqual(f.log, ['admin.delete sections', 'admin.insert 2 sections', 'db.update status=read', 'admin.delete sections'])
+    assert.deepEqual(f.log, ['db.update text (107 chars, 2 pages)', 'admin.delete sections', 'admin.insert 2 sections', 'db.update status=read', 'admin.delete sections'])
+  })
+  test('TEXT FIRST: the text is saved before the outline call; a claim lost there stops before any model call', async () => {
+    const { readHandbook } = await import('../../lib/handbookRead.ts')
+    const order: string[] = []
+    const f = fakes({ claimHeld: true, textClaimHeld: false })
+    const spy = async () => { order.push('outline'); return outline() }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const out = await readHandbook({ db: f.db as any, admin: f.admin as any, bucket: 'b', outline: spy, parsePdf: pages }, 'co', 'h1', 'T')
+    assert.equal(out, 'claim lost')
+    assert.deepEqual(order, [], 'no outline call')
+    assert.deepEqual(f.log, ['db.update text (107 chars, 2 pages)'])
   })
 })
 

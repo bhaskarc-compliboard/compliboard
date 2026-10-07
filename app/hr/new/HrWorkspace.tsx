@@ -34,8 +34,19 @@ import { LIST_CAP, countOf, countWord, fmtDate } from '@/lib/listWords'
 import { friendlyDate } from '@/lib/conversationStatus'
 import { readTopicList, type TopicRow } from '@/lib/topicList'
 import { statusWords, handbookList, sectionCount, pagesWords, counted, type HandbookRow } from '@/lib/handbooks'
+import { AnswerBody, SourceList, type AnswerSource } from '@/components/AnswerBody'
+import { Stages, type Step } from '@/components/Stages'
+import { readAnswerStream, ndjsonLines } from '@/lib/answerStream'
+import { readingWords, splitAppended, hideHandbookMarkers, HR_COMPOSER_HINT } from '@/lib/hrAnswerWords'
 
 type Tab = 'ask' | 'conversations' | 'handbooks' | 'dates'
+
+/** One question and its answer on the Ask tab (the workspace's Exchange, HR's fields). */
+interface HrExchange {
+  id: string; question: string; text: string; sources: AnswerSource[]
+  phase: 'sending' | 'searching' | 'writing' | 'done' | 'stopped' | 'stopped_early' | 'failed' | 'refused'
+  searches: number; reading: string; steps?: { list: Step[]; at: Step }; error?: string; refusal?: string
+}
 
 interface DateRow { id: string; title: string; due_date: string }
 interface Site { id: string; name: string }
@@ -174,9 +185,78 @@ export default function HrWorkspace() {
     return () => { live = false }
   }, [supabase, loadHandbooks])
 
-  /** "Research this" and Enter: nothing is sent in this step. An empty box puts the cursor in it, as the workspace does. */
-  const research = () => { composerRef.current?.focus() }
-  const newConversation = () => { setTab('ask'); setBox('') }
+  // ---- ASKING (Step 6a): POST /api/hr/answer, streamed, in the workspace's shape ----
+  const [exchanges, setExchanges] = useState<HrExchange[]>([])
+  const [askBusy, setAskBusy] = useState(false)
+  const [topicId, setTopicId] = useState<string | null>(null)
+  const inFlight = useRef<AbortController | null>(null)
+  const askSeq = useRef(0)
+  const bottomRef = useRef<HTMLDivElement>(null)
+  const started = exchanges.length > 0
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [exchanges.length])
+  const patch = (id: string, p: Partial<HrExchange>) => setExchanges((prev) => prev.map((x) => (x.id === id ? { ...x, ...p } : x)))
+
+  async function ask(question: string) {
+    const q = question.trim()
+    if (!q) { composerRef.current?.focus(); return }
+    if (askBusy) return
+    setBox(''); setNotice(null)
+    const id = `x${++askSeq.current}`
+    // The stages, each shown while it is TRUE: reading (the server's 'reading' event), checking (its
+    // 'searching' events, counted), writing (the first text). No search, no checking stage.
+    const steps = (at: Step, searched: boolean): HrExchange['steps'] =>
+      ({ list: searched || at === 'hr_check' ? ['hr_read', 'hr_check', 'write'] : at === 'write' ? ['hr_read', 'write'] : ['hr_read', 'hr_check', 'write'], at })
+    setExchanges((prev) => [...prev, { id, question: q, text: '', sources: [], phase: 'sending', searches: 0, reading: '' }])
+    setAskBusy(true)
+    const controller = new AbortController()
+    inFlight.current = controller
+    try {
+      const res = await fetch('/api/hr/answer', {
+        method: 'POST', headers: await authHeaders({ 'Content-Type': 'application/json' }), signal: controller.signal,
+        body: JSON.stringify({ question: q, topicId,
+          history: exchanges.filter((x) => x.phase === 'done' && x.text).map((x) => ({ question: x.question, answer: x.text, sources: x.sources })) }),
+      })
+      if (!(res.headers.get('content-type') ?? '').includes('x-ndjson')) {
+        const json = await res.json().catch(() => null)
+        if (json?.outcome === 'refused') { patch(id, { phase: 'refused', refusal: String(json.message ?? '') }); return }
+        patch(id, { phase: 'failed', error: json?.error ?? 'That request could not be completed.' })
+        return
+      }
+      // The 'reading' event is HR's own: read here, then every line goes on to the workspace's reader.
+      let searched = false
+      async function* tap(lines: AsyncIterable<string>) {
+        for await (const line of lines) {
+          try {
+            const ev = JSON.parse(line)
+            if (ev?.type === 'reading') patch(id, { reading: readingWords(ev.handbooks ?? []), steps: steps('hr_read', false) })
+            if (ev?.type === 'searching') searched = true
+          } catch { /* a half line: the reader skips it too */ }
+          yield line
+        }
+      }
+      const outcome = await readAnswerStream(tap(ndjsonLines(res.body!.getReader())),
+        (p) => patch(id, { text: hideHandbookMarkers(p.text), searches: p.searches, phase: p.phase,
+          steps: steps(p.phase === 'searching' ? 'hr_check' : p.text ? 'write' : 'hr_read', searched) }),
+        () => controller.signal.aborted)
+      if (outcome.kind === 'done') {
+        patch(id, { text: outcome.text, sources: outcome.sources as AnswerSource[], phase: 'done', steps: undefined })
+        if (outcome.topicId) setTopicId(outcome.topicId)
+      } else if (outcome.kind === 'stopped_by_user') patch(id, { text: hideHandbookMarkers(outcome.text), phase: 'stopped', steps: undefined })
+      else if (outcome.kind === 'stopped_early') patch(id, { text: hideHandbookMarkers(outcome.text), phase: 'stopped_early', steps: undefined })
+      else patch(id, { text: hideHandbookMarkers(outcome.text), phase: 'failed', steps: undefined, error: outcome.message })
+    } catch (err) {
+      if ((err as { name?: string })?.name === 'AbortError') patch(id, { phase: 'stopped', steps: undefined })
+      else patch(id, { phase: 'failed', steps: undefined, error: 'The answer could not be completed.' })
+    } finally {
+      inFlight.current = null
+      setAskBusy(false)
+      setTopics(await readTopicList(supabase, 'hr'))
+    }
+  }
+  const stop = () => { inFlight.current?.abort(); inFlight.current = null }
+  /** "Research this" and Enter. An empty box puts the cursor in it, as the workspace does. */
+  const research = () => { void ask(box) }
+  const newConversation = () => { setTab('ask'); setBox(''); if (!askBusy) { setExchanges([]); setTopicId(null) } }
 
   // ---- adding a handbook ----
   const pickFile = (olderId: string | null) => {
@@ -306,7 +386,87 @@ export default function HrWorkspace() {
 
         {/* ================= ASK (the first visit; answers arrive in step 6) ================= */}
         {tab === 'ask' && (
-          <div className="">
+          <div className={started ? 'pt-1' : ''}>
+            {exchanges.map((x) => {
+              const { body, lines } = splitAppended(x.text)
+              return (
+                <div key={x.id} className="mb-8">
+                  <div className="mb-5 flex justify-end">
+                    <div className="max-w-[85%] rounded-2xl bg-gray-200 px-4 py-3 text-[16px] leading-relaxed text-gray-900">
+                      <p>{x.question}</p>
+                    </div>
+                  </div>
+                  {x.steps && x.phase !== 'done' && (
+                    <Stages steps={x.steps} name={x.reading} count={x.searches} onStop={stop} />
+                  )}
+                  {x.text && (
+                    <>
+                      <AnswerBody text={body} sources={x.sources} />
+                      {/* The lines the server added (dropped quotes or links, the day-1 line): grey, after the answer. */}
+                      {x.phase === 'done' && lines.map((l) => <p key={l} className="mt-2 text-[13px] text-gray-500">{l}</p>)}
+                      <div className="sources-print"><SourceList sources={x.sources} /></div>
+                    </>
+                  )}
+                  {x.phase === 'refused' && <p className="text-[14px] text-gray-600">{x.refusal}</p>}
+                  {x.phase === 'stopped_early' && (
+                    <div className="mt-2 border-l-2 border-amber-400 pl-3 text-[14px] text-amber-900">
+                      <b className="font-semibold">This answer stopped early.</b>{' '}
+                      The answer stopped before it was finished, so what is above is incomplete. Nothing
+                      was saved for it.
+                      <button onClick={() => ask(x.question)}
+                        className="ml-2 font-medium underline hover:no-underline">Try again</button>
+                    </div>
+                  )}
+                  {x.phase === 'stopped' && (
+                    <p className="mt-2 text-[14px] text-gray-500">
+                      Stopped. {x.text ? 'What arrived is above — ' : ''}Ask again, or change the question.
+                    </p>
+                  )}
+                  {x.phase === 'failed' && (
+                    <div className="mt-2 border-l-2 border-amber-400 pl-3 text-[14px] text-amber-900">
+                      {x.error} You can ask again, or rephrase the question.
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+            <div ref={bottomRef} />
+
+            {/* THE DOCKED COMPOSER, the workspace's markup, once a question has been asked. No attach and no
+                action row yet (step 7). */}
+            {started && (
+              <div className="no-print mt-8">
+                <div className="relative rounded-xl border border-gray-200 bg-white focus-within:border-[var(--green)]">
+                  <div className="flex items-end gap-2 p-3.5">
+                    <textarea
+                      ref={composerRef}
+                      value={box}
+                      onChange={(e) => setBox(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void ask(box) } }}
+                      rows={1}
+                      placeholder={HR_COMPOSER_HINT}
+                      className="max-h-36 min-h-[92px] flex-1 resize-none border-0 bg-transparent px-1.5 py-1.5 text-[16px] text-gray-900 outline-none placeholder:text-[16px] placeholder:text-gray-400"
+                    />
+                    {askBusy ? (
+                      <button onClick={stop} title="Stop" aria-label="Stop"
+                        className="rounded-lg bg-gray-900 p-2 text-white hover:bg-gray-700">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2.5" /></svg>
+                      </button>
+                    ) : (
+                      <button onClick={() => ask(box)} title="Send" aria-label="Send" disabled={!box.trim()}
+                        className="rounded-lg bg-[var(--green)] p-2 text-white hover:bg-[var(--green-ink)] disabled:opacity-40">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <p className="mt-2 text-[12px] text-gray-500">
+                  One topic per conversation. When you are done, summarise it. Start a new conversation for the next topic.
+                </p>
+              </div>
+            )}
+
+            {!started && (
             <div className="no-print ">
               <div>
                 <div className="relative rounded-xl border border-gray-200 bg-white focus-within:border-[var(--green)]">
@@ -352,6 +512,7 @@ export default function HrWorkspace() {
                 </div>
               </div>
             </div>
+            )}
           </div>
         )}
 

@@ -75,11 +75,14 @@ export async function POST(request: NextRequest) {
     // Every topic that has been spoken in. Two queries (never summarised, summarised) as before; the
     // choice between them is one pure function, so the rules above are tested rather than described.
     const cols = 'id, company_id, title, summarised_at, summary_source, last_turn_at'
+    // WORKSPACE CONVERSATIONS ONLY (HR-PLAN decision 14, HR Step 6a). An HR conversation's handbook sources
+    // have no URL, and this writer keeps only sources with one (`lib/summaryReport.ts` gatherSources), so it
+    // would drop them silently. HR conversations wait for HR's own writer (step 7).
     const { data: never, error: e1 } = await supabaseAdmin
-      .from('topics').select(cols).is('summarised_at', null).not('last_turn_at', 'is', null)
+      .from('topics').select(cols).eq('section', 'workspace').is('summarised_at', null).not('last_turn_at', 'is', null)
     if (e1) throw new Error(`could not list unsummarised topics: ${e1.message}`)
     const { data: already, error: e2 } = await supabaseAdmin
-      .from('topics').select(cols).not('summarised_at', 'is', null).not('last_turn_at', 'is', null)
+      .from('topics').select(cols).eq('section', 'workspace').not('summarised_at', 'is', null).not('last_turn_at', 'is', null)
     if (e2) throw new Error(`could not list summarised topics: ${e2.message}`)
 
     const { candidates, userCurrent } = nightlyCandidates(

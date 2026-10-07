@@ -96,7 +96,9 @@ export async function saveUserTurn(
 /** The answer, saved when the stream ends, with the sources it cited. */
 export async function saveAssistantTurn(
   db: Db,
-  args: { topicId: string; companyId: string; text: string; sources: Source[]; position: number },
+  // Widened for HR (Step 6a): a handbook source carries its quote and has no URL. Type-only; what the
+  // workspace passes and stores is unchanged.
+  args: { topicId: string; companyId: string; text: string; sources: Array<Source | (Omit<Source, 'url'> & { url: string } & Record<string, unknown>)>; position: number },
 ): Promise<void> {
   const { error } = await db.from('turns').insert({
     topic_id: args.topicId, company_id: args.companyId,

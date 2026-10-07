@@ -23,8 +23,15 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { displaySource } from '@/lib/sourceTitle'
 import { markCitations, citationNumber } from '@/lib/citations'
+import { OTHER_SOURCE_LINE, hostOf } from '@/lib/howTo'
 
-export interface AnswerSource { n: number; title: string; url: string }
+/**
+ * `kind`, `label` and `quote` are HR's (Step 6a), and ADDITIVE: a workspace source carries none of them, so
+ * every branch below that reads them is skipped and the workspace's markup is unchanged.
+ *   kind 'handbook'  a passage of the company's own handbook: no link; the card shows the checked quote.
+ *   label 'other'    a web page that is not the agency's own: the card says so (`OTHER_SOURCE_LINE`).
+ */
+export interface AnswerSource { n: number; title: string; url: string; kind?: 'web' | 'handbook'; label?: string; quote?: string }
 
 /**
  * The markdown components, so prose reads like prose and a table reads like a table.
@@ -79,13 +86,22 @@ function CiteMarker({ n, source }: { n: number; source?: AnswerSource }) {
       >{n}</button>
       {/* On paper the marker is a plain number: the printed sources list carries the URL. */}
       <span className="hidden print:inline align-super text-[10px]">[{n}]</span>
-      {open && shown && (
+      {open && source?.kind === 'handbook' && (
+        <span className="absolute left-0 top-full z-30 mt-1 block w-72 rounded-lg border border-gray-200 bg-white p-3 text-left shadow-lg">
+          <span className="block text-[10px] font-semibold uppercase tracking-wide text-gray-400">Source {n}</span>
+          <span className="mt-1 block text-[13px] font-medium leading-snug text-gray-900">{source.title}</span>
+          <span className="mt-0.5 block text-[11px] text-gray-500">{source.label}</span>
+          {source.quote && <span className="mt-2 block text-[12px] italic leading-snug text-gray-700">“{source.quote}”</span>}
+        </span>
+      )}
+      {open && shown && source?.kind !== 'handbook' && (
         <span className="absolute left-0 top-full z-30 mt-1 block w-72 rounded-lg border border-gray-200 bg-white p-3 text-left shadow-lg">
           <span className="block text-[10px] font-semibold uppercase tracking-wide text-gray-400">Source {n}</span>
           <span className="mt-1 block text-[13px] font-medium leading-snug text-gray-900">{shown.title}</span>
           <span className="mt-0.5 block text-[11px] text-gray-500">{shown.host}</span>
           <a href={source!.url} target="_blank" rel="noopener noreferrer"
              className="mt-2 inline-block text-[12px] font-medium text-emerald-700 underline">Open source</a>
+          {source?.label === 'other' && <span className="mt-1.5 block text-[11px] leading-snug text-gray-500">{OTHER_SOURCE_LINE(hostOf(source.url))}</span>}
         </span>
       )}
       {open && !shown && (
@@ -153,11 +169,20 @@ export function SourceList({ sources }: { sources: AnswerSource[] }) {
           return (
             <li key={s.n} className={`${hidden ? 'hidden print:flex' : 'flex'} gap-2 text-[13px] leading-snug`}>
               <span className="shrink-0 text-gray-400">{s.n}.</span>
-              <span>
-                <a href={s.url} target="_blank" rel="noopener noreferrer"
-                   className="text-emerald-800 underline underline-offset-2">{shown.title}</a>
-                {' '}<span className="text-gray-400">{shown.host}</span>
-              </span>
+              {s.kind === 'handbook' ? (
+                <span>
+                  <span className="text-gray-900">{s.title}</span>
+                  {' '}<span className="text-gray-400">· {s.label}</span>
+                  {s.quote && <span className="mt-0.5 block italic text-gray-600">“{s.quote}”</span>}
+                </span>
+              ) : (
+                <span>
+                  <a href={s.url} target="_blank" rel="noopener noreferrer"
+                     className="text-emerald-800 underline underline-offset-2">{shown.title}</a>
+                  {' '}<span className="text-gray-400">{shown.host}</span>
+                  {s.label === 'other' && <span className="mt-0.5 block text-[12px] text-gray-500">{OTHER_SOURCE_LINE(hostOf(s.url))}</span>}
+                </span>
+              )}
             </li>
           )
         })}

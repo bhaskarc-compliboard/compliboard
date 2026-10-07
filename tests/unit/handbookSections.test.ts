@@ -5,7 +5,7 @@ import test, { describe } from 'node:test'
 import assert from 'node:assert/strict'
 import {
   cutAtAnchors, findAnchor, proveCoverage, sectionsFromCuts, wordSections, pageStarts, joinPages, sectionPages,
-  looksLikeScan, outlineParts,
+  looksLikeScan, outlineParts, PAGE_BREAK, splitPages,
 } from '../../lib/handbookSections.ts'
 
 const TEXT = 'Contents\n1 Welcome page 2\n1 Welcome to the\ncompany, we are glad you are here today.\n2 Hours and pay Employees are paid every second Friday by deposit.\n3 Sick time Employees accrue one hour for every thirty worked.'
@@ -100,7 +100,7 @@ describe('pages', () => {
     assert.equal(parts[0].from, 1); assert.equal(parts[parts.length - 1].to, 120)
     for (let i = 1; i < parts.length; i++) assert.equal(parts[i].from, parts[i - 1].to + 1)
     assert.ok(parts.every((p) => p.text.length <= 30_000))
-    assert.equal(parts.map((p) => p.text).join('\n'), joinPages(many))
+    assert.equal(parts.map((p) => p.text).join(PAGE_BREAK), joinPages(many))
   })
 })
 

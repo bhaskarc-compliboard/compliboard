@@ -113,16 +113,29 @@ export function wordSections(html: string): Section[] {
 // ---------------------------------------------------------------------------------------------------------
 
 /**
- * Where each page starts in the whole text. The PDF parser builds its text as every page's text joined by
- * one newline (`node_modules/officeparser/dist/parsers/PdfParser.js:820`), and `joinPages` does the same.
+ * THE PAGE BREAK IN A PDF'S STORED TEXT — HR Step 6a. The pages are joined by one form feed, so the stored
+ * text alone says where every page starts: an answer can name a quote's page before the sections exist.
+ * (Handbooks read before 6a were joined by a newline, as the PDF parser joins them,
+ * `node_modules/officeparser/dist/parsers/PdfParser.js:820`; their sections carry the pages.) A form feed
+ * inside a page's own text is turned into a newline first, so the separator means only one thing. The quote
+ * check compares letters and digits only (`normaliseForQuote`), so the separator never affects a match.
  */
+export const PAGE_BREAK = '\f'
+const cleanPage = (p: string) => p.replace(/\f/g, '\n')
+
+/** Where each page starts in the whole text: one character of separator between pages. */
 export function pageStarts(pages: string[]): number[] {
   const out: number[] = []
   let at = 0
-  for (const p of pages) { out.push(at); at += p.length + 1 }
+  for (const p of pages) { out.push(at); at += cleanPage(p).length + 1 }
   return out
 }
-export const joinPages = (pages: string[]) => pages.join('\n')
+export const joinPages = (pages: string[]) => pages.map(cleanPage).join(PAGE_BREAK)
+
+/** A stored PDF text's pages, if it was stored with page breaks (6a on); null for older text. */
+export function splitPages(text: string): string[] | null {
+  return text.includes(PAGE_BREAK) ? text.split(PAGE_BREAK) : null
+}
 
 /** The page (1-based) holding offset `i`. */
 export function pageAt(starts: number[], i: number): number {

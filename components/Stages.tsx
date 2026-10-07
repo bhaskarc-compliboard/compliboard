@@ -12,7 +12,9 @@ export type { Step }
  * text. Now: a small spinner and dark text. Still to come: an empty circle and light grey. The
  * stage moves only when the request it names moves (`ask()`); nothing here runs on a timer.
  */
-export function Stages({ steps, name, onStop }: { steps: { list: Step[]; at: Step }; name: string; onStop: () => void }) {
+export function Stages({ steps, name, onStop, count }: { steps: { list: Step[]; at: Step }; name: string; onStop: () => void
+  /** HR Step 6a, additive: the sources checked so far, for the 'hr_check' step. The workspace never passes it. */
+  count?: number }) {
   const at = steps.list.indexOf(steps.at)
   return (
     <div className="no-print mb-4">
@@ -27,7 +29,7 @@ export function Stages({ steps, name, onStop }: { steps: { list: Step[]; at: Ste
                   : <span className="h-3 w-3 rounded-full border border-gray-300" />}
               </span>
               <span className={state === 'done' ? 'text-gray-500' : state === 'now' ? 'text-gray-900' : 'text-gray-400'}>
-                {stageWords(step, name)}
+                {stageWords(step, name, count)}
               </span>
             </li>
           )

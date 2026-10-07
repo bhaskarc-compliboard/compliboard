@@ -647,7 +647,10 @@ export type OpenStreamEvent =
       inputTokens: number | null; searches: number
       // Every page the web search RETURNED in this call, cited or not (`searchResults`). A caller
       // that must prove a link came from this call's search reads this; nothing else needs it.
-      searched: SearchResult[] }
+      searched: SearchResult[]
+      // Each citation's link and the passage it rests on (`citedPassages`). HR Step 6a: a quote in the
+      // answer is the web page's words only if it is in one of these. Read by app/api/hr/answer alone.
+      cited: CitedPassage[] }
   | { type: 'error'; message: string }
 
 /**
@@ -740,6 +743,29 @@ export function searchResults(content: Array<Record<string, unknown>>): SearchRe
     for (const r of block.content as Array<{ type?: string; url?: string; title?: string }>) {
       if (r?.type !== 'web_search_result' || !r.url) continue
       if (!out.some((o) => o.url === r.url)) out.push({ url: r.url, title: String(r.title ?? '').trim() || r.url })
+    }
+  }
+  return out
+}
+
+/** One citation's link and the passage of that page it rests on. */
+export interface CitedPassage { url: string; citedText: string }
+
+/**
+ * EACH CITATION'S PASSAGE — HR Step 6a. The API gives every web citation a `cited_text`, the words of the page
+ * it rests on (`@anthropic-ai/sdk` messages.d.ts, `CitationsWebSearchResultLocation.cited_text`).
+ * `reassemble` keeps only the link and title, and must go on doing so: its sources are what the workspace
+ * receives and stores. So the passages come out here, beside it, from the same blocks the answer is built
+ * from (narration removed). Deduplicated by link and passage, in the order cited. Anthropic documents a
+ * passage as up to about 150 characters, so a longer quote will not be found in one (a known limit).
+ */
+export function citedPassages(content: Array<Record<string, unknown>>): CitedPassage[] {
+  const out: CitedPassage[] = []
+  for (const block of content) {
+    if (block.type !== 'text') continue
+    for (const c of (block.citations ?? []) as Array<{ type?: string; url?: string; cited_text?: string }>) {
+      if (c?.type !== 'web_search_result_location' || !c.url || !c.cited_text) continue
+      if (!out.some((o) => o.url === c.url && o.citedText === c.cited_text)) out.push({ url: c.url, citedText: c.cited_text })
     }
   }
   return out
@@ -979,5 +1005,6 @@ export async function* askAIOpenStream(
     inputTokens: (final as any).usage?.input_tokens ?? null,
     searches,
     searched: searchResults(final.content as unknown as Array<Record<string, unknown>>),
+    cited: citedPassages(stripNarration(final.content as unknown as Array<Record<string, unknown>>)),
   }
 }
