@@ -39,3 +39,23 @@ export const EXAMPLE_QUESTIONS: ExampleQuestion[] = [
     question: "Our hospice nurses drive to patients' homes. How do we pay for mileage?",
   },
 ]
+
+/**
+ * HR'S EXAMPLES — the same shape and the same rules as the workspace's above (HR Step 4, the owner's
+ * words). Shown in the HR page's empty box, each prefixed "e.g." by the page; not clickable, not a
+ * prompt. `EXAMPLE_QUESTIONS` above is the workspace's and is unchanged.
+ */
+export const HR_EXAMPLE_QUESTIONS: ExampleQuestion[] = [
+  {
+    label: 'Sick time for a grandparent',
+    question: 'An employee wants sick time to care for her grandmother. Do we allow it?',
+  },
+  {
+    label: 'The last paycheck after quitting',
+    question: 'What does our handbook say about the last paycheck when someone quits?',
+  },
+  {
+    label: 'Overtime against state rules',
+    question: "Does our overtime policy match our state's rules?",
+  },
+]
