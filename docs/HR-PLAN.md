@@ -1,6 +1,6 @@
 # The HR section — the plan
 
-**Version:** 5 · **Updated:** 7 October 2026: step 4 done; decision 32 (the page at /hr/new behind HR_PREVIEW). Version 4: 7 October 2026: §2.1, the page title is HR Workspace. Version 3: HR Step 3b, step 3b done (staging only). Version 2: HR Step 3a: step 3a done; decision 17 amended (every build stop on Haiku,
+**Version:** 6 · **Updated:** 7 October 2026: step 5a done (§167). Version 5: step 4 done; decision 32 (the page at /hr/new behind HR_PREVIEW). Version 4: 7 October 2026: §2.1, the page title is HR Workspace. Version 3: HR Step 3b, step 3b done (staging only). Version 2: HR Step 3a: step 3a done; decision 17 amended (every build stop on Haiku,
 all Opus work in the testing step); the copy rule added to §2.5. Version 1: HR Step 2.
 
 **The decision record** is `DECISIONS.md` §164. **The map** (how HR and everything it touches worked on 4
@@ -235,7 +235,9 @@ replaced text is kept and struck through, so the record shows what changed.
    at `/hr/new` behind `HR_PREVIEW` (decision 32): 4a shared the list's words, reading and row with no visible change
    (`fd8cedc`); 4b built the shell (`94eb4ac`); `DECISIONS.md` §166.
 5. **The Handbooks tab:** upload with the site sheet, rows, versions, could-not-read, delete. HR's own
-   reader, with the size and page check (decisions 18, 28). STOP.
+   reader, with the size and page check (decisions 18, 28). STOP. **5a DONE 7 October** (`86cc896`,
+   `DECISIONS.md` §167): adding with the site sheet, every version shown, the drawer, deleting. **5b** (the reader,
+   the size and page check, the status words in use) is next.
 6. **The answer:** the loader, web search, the quote and link checks, sources, the day-1 line, drafting on
    request, refusals, the ledger. On Haiku (decision 17). STOP.
 7. **Conversations and the HR summary** (claim + `after()`; facts from the person's own words, decision 19).

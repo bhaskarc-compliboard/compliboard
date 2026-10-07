@@ -11230,3 +11230,63 @@ list and counts line needed workspace helpers Step 3a had not lifted, so the own
 **A correction to §165.** It said migration 066 reached production "on 6 October". That date came from the
 planning chat, not from evidence. §165 now says it was applied just before `882ebfb` was pushed, and that
 the push's date in git and its Vercel deployment are the record.
+
+## 167. HR STEP 5a — ADDING AND KEEPING HANDBOOKS — 7 October 2026
+
+§167 — HR Step 5a (`86cc896`), on `/hr/new` behind `HR_PREVIEW`, with no model call and no migration (066 already
+had every column). One line each:
+
+- **Adding.**
+  - "Add a handbook" opens the file picker (`ACCEPTED_FILE_TYPES`).
+  - With two or more sites, the workspace's choice sheet asks which site the handbook covers BEFORE anything is
+    uploaded. The choices are "Every site" or one site; "Not now" leaves nothing.
+  - The file goes to `<company>/handbooks/<file>` (`handbookPath`, two levels).
+  - `POST /api/handbooks` then saves the row as the caller. The path is checked to be this company's handbooks
+    folder, and the uploader is taken from the session. Status `uploaded`.
+  - If the row write fails, the stored file is removed and the person is told.
+- **The owner's answers (7 October):**
+  1. When the older version cannot be marked replaced, the page says: "The newer version was saved, but we could
+     not mark the older one as replaced. Both are shown for now." There is no "try again", because trying again
+     would add a third version.
+  2. A newer version KEEPS the handbook's name, and its scope and site, all read from the older row. Only its
+     file changes.
+  3. EVERY version is shown.
+     - Each older version is its own row directly under its current one, newest older first, reading
+       "Older version · <file name> · replaced <date>". The current row no longer counts versions.
+     - An older version's drawer reads "Older version · <site> · <file> · replaced <date>", with only "Open the
+       handbook" and "Delete".
+     - The tab count and the counts line still count current handbooks only. Answers and checks use the
+       current version only (decision 8).
+- **The two writes.** The newer row is saved first; only then is the older one marked replaced
+  (`lib/handbookSave.ts`). That second write happens on the server, so its failure is proved by
+  `tests/unit/handbookSave.test.ts` with a stand-in client: the newer row is kept and the reply says
+  `older_not_replaced`. In the browser, the reply was rewritten on its way back to show the page's words.
+- **Deleting.**
+  - The file goes first, then the row; its checks, findings and dates cascade, and calendar events stay,
+    unlinked.
+  - The version chain is relinked.
+  - Deleting the current version makes the newest older one current.
+  - Deleting an older version leaves the current one untouched, proved on a full-row snapshot: name, scope,
+    status, file path, stored file and `is_current` unchanged. Only its pointer to the deleted version
+    (`version_of`) clears, and `updated_at` moves with it.
+- **Proved on staging,** on an isolated Haiku server:
+  - testgamma (one site): a PDF and a `.docx`, each at exactly `<company>/handbooks/<file>`;
+  - Test Alpha Chemical (two sites): each choice saved the right scope and site, and "Not now" made no request
+    and left nothing;
+  - versions, both deletes, and a forced failure of the row write that left no stored file behind;
+  - `check:live`: 4 new storage probes. A person can write in its own `<company>/handbooks/`, is refused in
+    another company's, and anon is refused;
+  - without `HR_PREVIEW`, `/api/handbooks` answers 404.
+- **Measured** against the workspace's list, scope sheet and summary drawer. Every size, font and colour is the
+  same. Every difference has a cause:
+  - a 15px scrollbar on the longer `/compliance` page;
+  - the darker heading that carries a site's name (`DESIGN.md` §4);
+  - the 1px divider under all but a group's last row;
+  - the drawer footer's text action where the workspace has an outlined button (the brief);
+  - content and word lengths.
+- **Not done here:**
+  - reading the file and its size and page check (5b);
+  - the check, "Check now" and "Download the check" (8);
+  - choosing where a handbook applies after its site was deleted (11);
+  - a file whose row never saved because the tab closed (`HANDOFF-CODE.md` §7, open).
+- Tests went from 749 to 766. **$0.**

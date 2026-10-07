@@ -6,7 +6,7 @@
 > replaced.** Those carry a 🕓 HISTORICAL banner naming what is current instead — added 28 September
 > 2026. A manual set is the record of what a person checked and when; a file that deletes the sets whose
 > screens changed is a file that cannot tell you whether anything was ever checked at all.
-**Version:** 29 · **Updated:** 7 October 2026, HR Step 4 — the manual set for the HR page shell. Version 28: 4 October 2026, HR Step 3b — the check:live probes for HR's tables. Version 27: HR Step 3a — the manual set "the workspace looks the same". Version 26: at the close of the workspace work
+**Version:** 30 · **Updated:** 7 October 2026, HR Step 5a — adding and keeping handbooks. Version 29: 7 October 2026, HR Step 4 — the manual set for the HR page shell. Version 28: 4 October 2026, HR Step 3b — the check:live probes for HR's tables. Version 27: HR Step 3a — the manual set "the workspace looks the same". Version 26: at the close of the workspace work
 **Supersedes:** version 25 (3 Oct). Adds the sets of 4 October — Workspace Task 5, Task 6, Stage 2, Stage 4 and the cron release's live checks — with the owner's recorded results (Task 6's T6-1 and T6-3, Stage 4's S4-2, the cron release's CR-1).
 Version 25: version 24 (25 Sep). Adds the **Workspace layout set** (3 October) — the first three
 are the owner's live checks after the push, and none of them sends a question or uploads a file — and
@@ -157,6 +157,27 @@ untested — applies to the runner as much as to anything it runs.
 106.** The floor is committed so the question does not have to be re-asked.
 
 ---
+
+## Manual set — HR Step 5a, adding and keeping handbooks — 7 October 2026 (`86cc896`, `DECISIONS.md` §167)
+
+**Free: no model call.** Needs `HR_PREVIEW=1` and a restarted dev server. Use a SYNTHETIC handbook (for example
+`tests/fixtures/Harbor-Kitchen-Employee-Policy-2026.pdf`). No customer file. As a company with one site, then
+as Test Alpha Chemical (two sites).
+
+| # | Action | Steps | What must be true |
+|---|---|---|---|
+| **5a-1** | **Add, one site** | Handbooks → **Add a handbook** → pick the file | No sheet. A row under EVERY SITE: the name (the file name without its extension), then "<file> · Waiting to be read". The tab reads "Handbooks (1)" and the Ask tab's line "1 handbook · …" |
+| **5a-2** | **The site sheet** | As Test Alpha: **Add a handbook** → pick the file | "Which site does this handbook cover?" opens before anything uploads, with your file's name in its first line. "Every site", one choice per site, "Not now". **Not now** adds nothing. Choose a site: the row sits under that site's darker heading |
+| **5a-3** | **Open it** | Click the row → **Open the handbook** | The drawer: the name; "<site> · <file> · added Today"; "This handbook has not been read yet." The file opens in a new tab |
+| **5a-4** | **A newer version** | In the drawer → **Add a newer version** → pick another file | No sheet. The handbook keeps its NAME; its line shows the new file. Directly under it: "Older version · <old file> · replaced Today". The tab count does not change |
+| **5a-5** | **The older version** | Click the older row | Sub line "Older version · <site> · <file> · replaced Today"; only "Open the handbook" and "Delete" |
+| **5a-6** | **Delete an older version** | In its drawer → **Delete** → **Delete for good** | The sheet: "Delete this handbook?", "This deletes the handbook and its check for good. You cannot undo it.", "Conversations that used it stay." Only that row goes; the current one is unchanged |
+| **5a-7** | **Delete the current version** | Add a newer version again, then delete the current one | The older one is current again, in its place |
+| **5a-8** | **Cancel** | Open the delete sheet → **Cancel**, or Escape | Nothing is deleted |
+
+*(Before the commit, by script on staging: each file stored at exactly `<company>/handbooks/<file>`; each choice's
+scope and site read back; "Not now" made no request; a forced failure of the row write left no stored file; the
+second write's failure proved in `tests/unit/handbookSave.test.ts`; 404 without `HR_PREVIEW`.)*
 
 ## Manual set — HR Step 4, the HR page shell — 7 October 2026 (`94eb4ac`, `DECISIONS.md` §166)
 
