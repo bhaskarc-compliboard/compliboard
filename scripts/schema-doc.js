@@ -145,10 +145,12 @@ const policies = q(`select tablename as tbl, policyname as name, cmd, roles::tex
 // is the question `CLAUDE.md` §3.6 says a grant list cannot answer. Proved before it was trusted:
 // on staging it shows `authenticated` SELECT, UPDATE on `audit_runs` (058's grant) and full DML on
 // `documents`, where the old query returned [].
+// EIGHT rights, not seven: MAINTAIN (Postgres 17, the 'm' in an ACL) was missing until migration 068, so
+// SCHEMA.md could not show it — and could not show that authenticated held it on 25 tables.
 const grants = q(`select c.relname as tbl, r.rolname as grantee, string_agg(p.priv, ', ' order by p.priv) as privs
   from pg_class c join pg_namespace n on n.oid = c.relnamespace
   cross join (values ('anon'), ('authenticated'), ('service_role')) as r(rolname)
-  cross join (values ('DELETE'), ('INSERT'), ('REFERENCES'), ('SELECT'), ('TRIGGER'), ('TRUNCATE'), ('UPDATE')) as p(priv)
+  cross join (values ('DELETE'), ('INSERT'), ('MAINTAIN'), ('REFERENCES'), ('SELECT'), ('TRIGGER'), ('TRUNCATE'), ('UPDATE')) as p(priv)
  where n.nspname = 'public' and c.relkind in ('r', 'p', 'v', 'm')
    and has_table_privilege(r.rolname, c.oid, p.priv)
  group by 1, 2 order by 1, 2`)

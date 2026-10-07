@@ -3,8 +3,8 @@
 **GENERATED — do not edit.** `node --env-file=.env.local scripts/schema-doc.js`, and it runs
 inside `npm run db:migrate`, so it cannot be stale by more than one migration.
 
-**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-10-05 03:50 UTC
-**Migrations applied:** 67 — `000` to `066`
+**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-10-07 16:02 UTC
+**Migrations applied:** 69 — `000` to `068`
 
 *Every figure here was read from the catalog of that database. Nothing is copied from the
 migration files, which say what was intended rather than what is there — and the two have
@@ -140,8 +140,8 @@ END)`
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
-- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `authenticated` — DELETE, INSERT, SELECT, UPDATE
+- `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -200,7 +200,7 @@ One row per model call, written at the call. Prices are copied onto the row so a
 
 - `anon` — **nothing**
 - `authenticated` — SELECT
-- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -288,7 +288,7 @@ Every row of an audit answer — finding, date, contradiction, expected — with
 
 - `anon` — **nothing**
 - `authenticated` — SELECT, UPDATE
-- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -363,7 +363,7 @@ One audit of one company at one moment. Sections are to a run what files are to 
 
 - `anon` — **nothing**
 - `authenticated` — SELECT, UPDATE
-- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -428,7 +428,7 @@ One agency (or one template), one model call. claimed_at is the sweep's compare-
 
 - `anon` — **nothing**
 - `authenticated` — SELECT
-- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -474,8 +474,8 @@ One row per audit run. A frozen snapshot of results as checked that day — reus
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
-- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `authenticated` — DELETE, INSERT, SELECT, UPDATE
+- `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -529,8 +529,8 @@ One row per audit run. A frozen snapshot of results as checked that day — reus
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
-- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `authenticated` — DELETE, INSERT, SELECT, UPDATE
+- `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -596,8 +596,8 @@ One row per audit run. A frozen snapshot of results as checked that day — reus
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
-- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `authenticated` — DELETE, INSERT, SELECT, UPDATE
+- `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -649,8 +649,8 @@ One row per audit run. A frozen snapshot of results as checked that day — reus
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
-- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `authenticated` — DELETE, INSERT, SELECT, UPDATE
+- `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -734,8 +734,8 @@ One row per audit run. A frozen snapshot of results as checked that day — reus
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
-- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `authenticated` — DELETE, INSERT, SELECT, UPDATE
+- `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -789,8 +789,8 @@ What one SITE holds, by CAS where identified. Tenant data. Replaces four boolean
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
-- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `authenticated` — DELETE, INSERT, SELECT, UPDATE
+- `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -844,7 +844,7 @@ What a company has confirmed about itself that is NOT one of the 95 switches. No
 
 - `anon` — **nothing**
 - `authenticated` — SELECT
-- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -883,8 +883,8 @@ What a company has confirmed about itself that is NOT one of the 95 switches. No
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
-- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `authenticated` — DELETE, INSERT, SELECT, UPDATE
+- `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -923,7 +923,7 @@ What a company has confirmed about itself that is NOT one of the 95 switches. No
 
 - `anon` — **nothing**
 - `authenticated` — SELECT
-- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -976,8 +976,8 @@ What a company has confirmed about itself that is NOT one of the 95 switches. No
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
-- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `authenticated` — DELETE, INSERT, SELECT, UPDATE
+- `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -1022,8 +1022,8 @@ Private, per-company parsed templates (a specific buyers own form). Never shared
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
-- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `authenticated` — DELETE, INSERT, SELECT, UPDATE
+- `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -1065,8 +1065,8 @@ User-reported fixes to any requirement or obligation. The learning loop.
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
-- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `authenticated` — DELETE, INSERT, SELECT, UPDATE
+- `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -1115,7 +1115,7 @@ What the critic found, never shown to a customer (DECISIONS.md §97). `quote` is
 
 - `anon` — **nothing**
 - `authenticated` — **nothing**
-- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS is enabled and there are NO policies** — so no role without a bypass can see a row.
 
@@ -1151,7 +1151,7 @@ One row per criticise() call, INCLUDING reviews that found nothing — that is t
 
 - `anon` — **nothing**
 - `authenticated` — **nothing**
-- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS is enabled and there are NO policies** — so no role without a bypass can see a row.
 
@@ -1197,7 +1197,7 @@ One upload, however many files were in it. Exists so a folder drop can be answer
 
 - `anon` — **nothing**
 - `authenticated` — SELECT, UPDATE
-- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -1236,7 +1236,7 @@ One upload, however many files were in it. Exists so a folder drop can be answer
 
 - `anon` — **nothing**
 - `authenticated` — SELECT
-- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -1280,7 +1280,7 @@ One row per correction a person makes to what a document IS. Newest per field wi
 
 - `anon` — **nothing**
 - `authenticated` — SELECT
-- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -1320,7 +1320,7 @@ One row per correction a person makes to what a document IS. Newest per field wi
 
 - `anon` — **nothing**
 - `authenticated` — SELECT, UPDATE
-- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -1385,7 +1385,7 @@ One row per correction a person makes to what a document IS. Newest per field wi
 
 - `anon` — **nothing**
 - `authenticated` — SELECT, UPDATE
-- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -1438,8 +1438,8 @@ One row per correction a person makes to what a document IS. Newest per field wi
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
-- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `authenticated` — DELETE, INSERT, SELECT, UPDATE
+- `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -1522,7 +1522,7 @@ One row per correction a person makes to what a document IS. Newest per field wi
 
 - `anon` — **nothing**
 - `authenticated` — SELECT
-- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -1604,8 +1604,8 @@ One row per correction a person makes to what a document IS. Newest per field wi
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
-- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `authenticated` — DELETE, INSERT, SELECT, UPDATE
+- `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -1671,8 +1671,8 @@ One row per correction a person makes to what a document IS. Newest per field wi
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
-- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `authenticated` — DELETE, INSERT, SELECT, UPDATE
+- `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -1742,7 +1742,7 @@ Candidate company facts read out of a conversation overnight. PROPOSED, never wr
 
 - `anon` — **nothing**
 - `authenticated` — SELECT, UPDATE
-- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -1801,7 +1801,7 @@ The unit the handbook sweep claims: one per section per check, plus one not_cove
 
 - `anon` — **nothing**
 - `authenticated` — SELECT
-- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -1863,7 +1863,7 @@ One check of one handbook version (decision 2).
 
 - `anon` — **nothing**
 - `authenticated` — SELECT
-- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -1880,9 +1880,9 @@ One check of one handbook version (decision 2).
 
 Company-level dates a handbook sets; sent to the one calendar only when a person presses Add to calendar (decision 29).
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 1 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by: NOTHING in app/, lib/ or scripts/.**
+**Read or written by:** `script check-live`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -1917,7 +1917,7 @@ Company-level dates a handbook sets; sent to the one calendar only when a person
 
 - `anon` — **nothing**
 - `authenticated` — SELECT, UPDATE
-- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -1970,7 +1970,7 @@ Every finding of a handbook check, as a row.
 
 - `anon` — **nothing**
 - `authenticated` — SELECT
-- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -2026,7 +2026,7 @@ A handbook split into sections, each with its text and fingerprint. Written by t
 
 - `anon` — **nothing**
 - `authenticated` — SELECT
-- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -2045,7 +2045,7 @@ HR's own record of a handbook (HR-PLAN decision 18). Never a documents row.
 
 **Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by: NOTHING in app/, lib/ or scripts/.**
+**Read or written by:** `script check-live`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -2106,7 +2106,7 @@ HR's own record of a handbook (HR-PLAN decision 18). Never a documents row.
 
 - `anon` — **nothing**
 - `authenticated` — DELETE, INSERT, SELECT, UPDATE
-- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -2148,8 +2148,8 @@ Saved HR handbook audit results, one row per audit run.
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
-- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `authenticated` — DELETE, INSERT, SELECT, UPDATE
+- `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -2196,8 +2196,8 @@ industry x jurisdiction x agency -> how far we have got. Reads the same way to t
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
-- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `authenticated` — DELETE, INSERT, SELECT, UPDATE
+- `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -2235,7 +2235,7 @@ One row per nightly run. Answers release gate 2 — did it run, and what did it 
 
 - `anon` — **nothing**
 - `authenticated` — **nothing**
-- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS is enabled and there are NO policies** — so no role without a bypass can see a row.
 
@@ -2281,8 +2281,8 @@ One row per nightly run. Answers release gate 2 — did it run, and what did it 
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
-- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `authenticated` — DELETE, INSERT, SELECT, UPDATE
+- `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -2326,7 +2326,7 @@ One row per nightly run. Answers release gate 2 — did it run, and what did it 
 
 - `anon` — **nothing**
 - `authenticated` — **nothing**
-- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS is enabled and there are NO policies** — so no role without a bypass can see a row.
 
@@ -2384,8 +2384,8 @@ One row per nightly run. Answers release gate 2 — did it run, and what did it 
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
-- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `authenticated` — DELETE, INSERT, SELECT, UPDATE
+- `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -2442,8 +2442,8 @@ The resolved list: which library rows apply to this company. Produced by CODE, n
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
-- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `authenticated` — DELETE, INSERT, SELECT, UPDATE
+- `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -2478,8 +2478,8 @@ The resolved list: which library rows apply to this company. Produced by CODE, n
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
-- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `authenticated` — DELETE, INSERT, SELECT, UPDATE
+- `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -2534,8 +2534,8 @@ The federal lists, keyed by CAS. Reference data: identical for every customer, s
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — REFERENCES, SELECT, TRIGGER, TRUNCATE
-- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `authenticated` — SELECT
+- `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -2624,8 +2624,8 @@ THE LIBRARY. What the law requires, by industry and jurisdiction. Reference data
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
-- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `authenticated` — DELETE, INSERT, SELECT, UPDATE
+- `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -2661,8 +2661,8 @@ Reusable, shared parsed checklist per named standard. Built once, reused by ever
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
-- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `authenticated` — DELETE, INSERT, SELECT, UPDATE
+- `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -2728,7 +2728,7 @@ docs/SWITCH-DETERMINATION.md §7.
 
 - `anon` — **nothing**
 - `authenticated` — INSERT, SELECT
-- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -2788,8 +2788,8 @@ The ~59 facts about a company that determine which requirements apply. Reference
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
 - `anon` — **nothing**
-- `authenticated` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
-- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `authenticated` — DELETE, INSERT, SELECT, UPDATE
+- `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -2854,7 +2854,7 @@ One exploration. The transcript is disposable (WORKSPACE.md §6.4); the summary 
 
 - `anon` — **nothing**
 - `authenticated` — INSERT, SELECT, UPDATE
-- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -2908,7 +2908,7 @@ One message in a conversation. Cleared 7 days after the topic is summarised (DEC
 
 - `anon` — **nothing**
 - `authenticated` — INSERT, SELECT
-- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -2948,7 +2948,7 @@ Events, not inventory. Never decremented, never derived from row counts — tran
 
 - `anon` — **nothing**
 - `authenticated` — SELECT
-- `service_role` — DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+- `service_role` — DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
 
 **RLS policies:**
 
@@ -3160,4 +3160,6 @@ filtered HERE so no consumer can forget it (CLAUDE.md §3.2). A corrected link
 064
 065
 066
+067
+068
 ```
