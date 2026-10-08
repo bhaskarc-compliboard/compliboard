@@ -2,6 +2,8 @@
 
 *Written 24 September 2026 from the two releases of 23 September (Runs 1–3 + Fix Round 1, then Fix Round 2). The owner runs every step below. Claude Code never runs anything against production.*
 
+*Updated 8 October 2026, §183: the cron table, the morning-after paragraph and the free checks describe HR live.*
+
 *Updated 8 October 2026: `AI_MODEL_HR` and `AI_MODEL_HR_CHECK` = `claude-opus-5-5`, added by the owner at HR's release (§181).*
 
 *Updated 8 October 2026: production's address recorded (`https://compliboard.vercel.app`) with the free checks after a push.*
@@ -21,9 +23,10 @@
 - **PRODUCTION IS `https://compliboard.vercel.app`** (the owner, 8 October 2026). `compliboard.com` is the marketing site
   (Framer, a separate site), and **`app.compliboard.com` does not exist** (NXDOMAIN, 8 October): an earlier session
   used it, and the check it was meant for could not run. Do not guess an address; this line is the record.
-  - **The free checks after a push** (no login, nothing written; run on 8 October after `483c29a`): `GET /hr/new` →
-    404 while HR is off; `GET /hr` → 200; `PATCH /api/handbooks` with no login → 404 means the push is live, 405 means
-    the previous deploy is still serving.
+  - **The free checks after a push** (no login, nothing written), since HR went live (8 October, `804d85e`):
+    `GET /hr` → 200 with the new HR page; `GET /hr/new`, `/api/hr` and `/api/hr-audits` → 404 (gone);
+    `POST /api/hr/answer` with no login → 401. *(Before the go-live the line read "`GET /hr/new` → 404 while HR is
+    off", with `PATCH /api/handbooks` 404/405 telling which deploy served; with the switch gone it answers 401.)*
   - **A 200 page contains "This page could not be found" twice.** That is Next's built-in not-found template, and
     `/compliance` has it too. A real 404 page has it six times.
 - There is **no staging deployment**. "Staging" means the owner's laptop (`npm run dev`) pointed at the staging database. The only deployed app is production.
@@ -43,19 +46,20 @@ All three must be true:
 
 | Path | Schedule (UTC) | What it does |
 |---|---|---|
-| `/api/jobs/summarise` | `0 10 * * *` — 10:00 | Nightly summaries of conversations quiet 6 hours or more: the workspace's, and HR's while `HR_PREVIEW` is on |
+| `/api/jobs/summarise` | `0 10 * * *` — 10:00 | Nightly summaries of conversations quiet 6 hours or more: the workspace's and HR's (HR's since the go-live, 8 October) |
 | `/api/jobs/delete` | `30 10 * * *` — 10:30 | Clears transcripts 12 months after the last message |
 | `/api/jobs/scan-documents` | `*/5 * * * *` | Documents sweep |
 | `/api/jobs/audit-sections` | `*/5 * * * *` | Audits sweep |
-| `/api/jobs/handbook-queue` | `0 10 * * *` — 10:00 | HR's night queue: queues the handbook checks that are due. **404 until HR is released** |
-| `/api/jobs/handbook-checks` | `*/5 * * * *` | HR's handbook sweep. **404 until HR is released** |
+| `/api/jobs/handbook-queue` | `0 10 * * *` — 10:00 | HR's night queue: queues the handbook checks that are due (live since 8 October; a 404 without the cron secret) |
+| `/api/jobs/handbook-checks` | `*/5 * * * *` | HR's handbook sweep (live since 8 October; a 404 without the cron secret) |
 
 The summary job and the deleter ran at 03:00 and 03:30 UTC until 8 October.
 
-**The morning after this deploy:** check `job_runs` for both nightly jobs — a `summarise` row started after 10:00 UTC
-and a `delete` row after 10:30 UTC, each with `finished_at` set. Neither HR job writes a row on production while HR is
-off (both answer 404). On staging, the night queue and the sweep both write under the job name `handbook_checks`;
-each row's counts show which job wrote it (`job: 'queue'` for the night queue).
+**The morning after a deploy:** check `job_runs` — a `summarise` row started after 10:00 UTC (HR conversations
+included since HR went live), a `delete` row after 10:30 UTC, and `handbook_checks` rows from the night queue and the
+sweep, each with `finished_at` set. The queue and the sweep both write under the job name `handbook_checks`; each
+row's counts show which job wrote it (`job: 'queue'` for the night queue). The two read-only queries are in
+`docs/HANDOFF-FROM-HR.md` §7 item 3.
 
 ## The procedure
 

@@ -1,6 +1,6 @@
 # Test at the finish line
 
-**Version:** 1 · **Updated:** 8 October 2026, the HR section's part written by the HR chat.
+**Version:** 2 · **Updated:** 8 October 2026, §183: HR H's paid check done; two things added to judge in HR E. Version 1: 8 October 2026, the HR section's part written by the HR chat.
 **Other sections:** add your own part below, in the same shape (A to J). Do not edit another section's part.
 
 ---
@@ -151,7 +151,10 @@ company they are checked for.
 - **two states:** the right rule for each site;
 - **handbook quotes:** each quoted passage from the handbook gets its card. Count how often the grey
   "(not a quote from your handbook)" lands on proposed wording or a quote of the law (§175);
-- **no internal labels** ("H12") anywhere.
+- **no internal labels** ("H12") anywhere;
+- **no offer of anything HR does not have** (the paid check offered a checklist; §183 adds HR's closing-offer
+  sentence, measured here);
+- **the answer stays on the person's question** (the paid check drifted into the company's general priorities).
 
 **The handbook check:**
 - planted gaps found, missed, and false gaps;
@@ -210,8 +213,7 @@ Items 1 to 6 are done:
 - **The free live checks on `https://compliboard.vercel.app`:** `/hr` 200, serving the new page (its heading, lede
   and tabs in the HTML); `/hr/new`, `/api/hr` and `/api/hr-audits` 404; `POST /api/hr/answer` with no login 401.
 
-**Still the owner's:** the one paid check, one HR question on production as CB-Test-3, with a small synthetic
-handbook (`tests/fixtures/Harbor-Kitchen-Employee-Policy-2026.pdf`, 2 pages).
+**The paid check: DONE** (`DECISIONS.md` §183): the owner's paid check, 8 October, as CB-Test-3 with `tests/fixtures/Harbor-Kitchen-Employee-Policy-2026.pdf` and the question "What does this handbook say about food worker cards, and does it match Washington's rule?": the whole chain worked on production. Its 5 sources are all web pages, all official (WAC 246-217, doh.wa.gov, WAC 246-217-015, clallamcountywa.gov, kingcounty.gov), with no handbook card (the answer did not quote the handbook). Its ledger row: `hr`, `claude-opus-5-5`, effort medium, 2 searches, 25,061 tokens in and 2,236 out, $0.164964, 26 seconds. Two findings: it offered a checklist HR does not have, and drifted from the question; the first is answered by §183's closing-offer sentence.
 
 1. **Vercel:** add `AI_MODEL_HR` and `AI_MODEL_HR_CHECK` = `claude-opus-5-5`, visible.
 2. **The page moves** from `/hr/new` to `/hr`. Change `HR_PAGE_PATH` (`lib/handbookCheckNotify.ts`) once; the

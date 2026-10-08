@@ -12209,3 +12209,76 @@ switch to Handbooks.
   Tests went from 939 to 947.
 - **Seen, not changed here:** that Haiku answer printed internal section labels "(H5, H8, H10)". The finish line
   already judges "no internal labels anywhere" (`docs/TEST-AT-FINISH-LINE.md` HR E).
+
+## 183. HR CLOSE-OUT: THE PAID CHECK, THE WAIT FOR A HANDBOOK STILL BEING READ, THE CLOSING OFFER — 8 October 2026
+
+§183 — code `34969a4`; this docs commit. No migration.
+
+- **THE OWNER'S PAID CHECK, RECORDED.** 8 October, CB-Test-3, `tests/fixtures/Harbor-Kitchen-Employee-Policy-2026.pdf`,
+  "What does this handbook say about food worker cards, and does it match Washington's rule?". Two read-only production
+  queries, through the Supabase CLI's own connection (`--linked`), not the service role:
+  - **Query 1, the answer and its sources:**
+    `select t.created_at, t.company_id, c.name as company, tp.title, t.sources from public.turns t join public.topics tp on tp.id = t.topic_id join public.companies c on c.id = t.company_id where tp.section = 'hr' and t.role = 'assistant' and t.created_at >= '2026-10-08' and t.created_at < '2026-10-09' order by t.created_at`.
+    One row, 22:40:23 UTC. **Five sources, all web, all official:** WAC 246-217 (app.leg.wa.gov), doh.wa.gov's
+    Food Worker Card page, WAC 246-217-015 (lawfilesext.leg.wa.gov), clallamcountywa.gov, kingcounty.gov. **No
+    handbook card,** so no quoted words: the answer described the handbook rather than quoting it (switch 3's gap).
+  - **Query 2, its ledger row:**
+    `select created_at, task, model, effort, searches, input_tokens, output_tokens, cost_usd, wall_ms from public.ai_calls where company_id = '739a428f-1a0a-4531-8204-92ce75e4f878' and created_at >= '2026-10-08' and created_at < '2026-10-09' order by created_at`.
+    The answer: `hr`, `claude-opus-5-5`, **effort medium**, 2 searches, 25,061 in and 2,236 out, $0.164964, 26 s. The
+    reading's outline call was `hr_check`, Opus, $0.013804.
+- **THE WAIT** (the owner): an answer never goes ahead without a handbook still being read, and never says there is no
+  handbook.
+  - **Before:**
+    - with the only handbook's text not saved, the refusal "Your handbooks are still being read. Ask again in a
+      minute.";
+    - with others ready, the new one was left out with only a line in the prompt, so the person was not told;
+    - a reading that failed was noticed only inside 6c's wait.
+  - **Now:** a current handbook whose text is not saved yet ('uploaded' or 'reading') is "unread"
+    (`lib/hrAnswer.ts`). The answer route waits for it in 6c's loop: inside the request, every 2 seconds, one 3-minute
+    limit for both waits.
+    - **The stage line:** "Reading <handbook> first. Your answer starts as soon as it's read." With several:
+      "Reading your handbooks first. Your answer starts as soon as they're read."
+    - **The reading fails:** if it was the only handbook, 6c's "We couldn't read your handbook: …"; with others, the
+      answer goes ahead with a grey closing line, "<handbook> could not be read, so this answer does not use it.
+      The Handbooks tab shows why."
+    - **Over 3 minutes:** 6c's words.
+    - **The rest:** the refusal is gone, the check record keeps the seconds waited, and the handbook check is
+      unchanged. `textWaitStep()` is one pure step, so the 3-minute limit is tested with a stand-in clock.
+  - **A handbook with no reading running** (left 'uploaded' if the server stopped between saving the row and
+    claiming it; or a dead reading, claimable after 10 minutes) gets one through the claim.
+  - **Found on staging, and fixed:** `startReading()` hands the reading to `after()`, which runs only once the
+    response has finished (Next's `after.md`). Here the response is the stream waiting for that reading, so it read
+    only after the wait gave up. `startReadingNow()` (`lib/handbookStart.ts`) takes the same claim and starts the
+    reading at once; `after()` only keeps it alive if the person leaves.
+- **THE CLOSING OFFER** (a quality change, the owner's yes). The production answer offered "a compliance checklist",
+  which HR does not have. That was the workspace's `RESEARCH_SPECIALIST_BLOCK` ending "End with one specific offer of
+  what you could do next" (`prompts/checklist.ts:281–285`).
+  - **The fix:** one sentence after `HR_GIVEN_SENTENCE`, in `prompts/hr-answer.ts` only: "Stay with the handbooks and
+    the employment rules they touch. If you end with an offer, offer only what you can do here: explain a rule,
+    compare a handbook section with it, or write suggested wording for the handbook."
+  - `prompts/checklist.ts` is unchanged. The handbook check uses the same prompt. Quality is judged at the finish line
+    (`docs/TEST-AT-FINISH-LINE.md` HR E, two new items).
+- **11b stays as built:** the words "Add a handbook" under the box, not a paperclip icon.
+- **PROVED ON STAGING** (Haiku guard, isolated server):
+  - **Case a** (Test Beta, only the 120-page PDF, asked the moment it was added): no refusal; it waited 21 s and
+    answered.
+  - **The stage line** (that handbook set back to 'uploaded' with no text, as test data): the route started the
+    reading itself. It showed "Reading Synthetic-Handbook-120-pages first. …" at 1.8 s, then 6c's "0 of 6 parts" to
+    "5 of 6", then the answer at 27 s.
+  - **Case b** (Test Alpha, Harbor added from the Ask tab, asked at once): the check record lists the new Harbor.
+  - **Case d, a stored file moved aside:** alone, 6c's words; beside others, the answer with the grey line.
+  - **The closing offer:** a Haiku answer ended "Would you like me to write suggested handbook language …".
+  - **Clean-up:** everything the run added was deleted through the real routes.
+  - **Spent:** $0.63. Tests went from 947 to 960.
+- **THE HANDOFF** (`docs/HANDOFF-FROM-HR.md`, v2) was checked fact by fact. Six corrections:
+  - the source of the offer line;
+  - the scan rule (20 letters a page **on average**);
+  - the test-file count;
+  - the two synthetic handbooks are on staging, not fixtures;
+  - the impact-check lesson's order;
+  - the H-id row.
+- **The H-id row:** v1's hypothesis, that the replacement misses a bracketed list, is **wrong**. `replaceBlockIds`
+  replaces "(H5, H8, H10)", and the saved 11b answers hold no bare id. The ids showed in a **mid-stream** screenshot,
+  where the page hides only `[H…]` markers (`HANDOFF-CODE.md` §7, OPEN, not fixed).
+- **Housekeeping:** `.git/stale-maintenance-lock-from-claude` deleted. HANDOFF-CODE §1 and §2 were refreshed from
+  `git log` and `npm run preflight` (73 migrations on both sides, 0 pending).

@@ -32,6 +32,21 @@ and §12, then `docs/SCHEMA.md` for the database. This file is state, not method
 
 ## 1. Git
 
+> ### UPDATED 8 OCTOBER 2026, AT HR'S CLOSE-OUT (§183).
+> ```
+> $ git fetch; git log --oneline -6                    # 8 October 2026
+> 34969a4 HR §183: the answer waits for a handbook still being read; HR's closing offer
+> e237751 Docs: DECISIONS §182 (HR step 11b, "Add a handbook" on the Ask tab), TESTING row A-1
+> 4aac9c3 HR Step 11b: "Add a handbook" on the Ask tab — one add, called from both tabs
+> c081bdf Docs: the new HR is live — TEST-AT-FINISH-LINE H done (the release and the free live checks), STATUS HR row live
+> 073e900 Docs: DECISIONS §181 (HR go-live), HR-PLAN step 13 built, RELEASE the two HR model settings, …
+> 804d85e HR Step 13: the go-live — the new HR page at /hr, old HR retired, the preview switch removed
+> $ git log origin/main..HEAD
+> 34969a4, e237751, 4aac9c3 (and §183's docs commit on top): held for one release with the owner's go
+> ```
+> **Production runs `c081bdf`** (HR live since 21:08 UTC, 8 October). 11b and §183 wait for the owner's go. The blocks
+> below are kept as they were.
+
 > ### UPDATED 4 OCTOBER 2026, AT THE CLOSE OF THE WORKSPACE WORK (housekeeping).
 > ```
 > $ git fetch; git log --oneline -8                    # 4 October 2026
@@ -92,7 +107,14 @@ of it, and is **not pushed**: `git log origin/main..HEAD` lists it. A push to `m
 (`RELEASE.md`), so that list is the next release's contents. What Vercel last built was not read here
 — the dashboard is the owner's.
 
-## 2. Migration state — 066 FILES (000 … 065), ALL 66 APPLIED ON PRODUCTION, NONE PENDING.
+## 2. Migration state — 73 FILES (000 … 072), ALL 73 APPLIED ON PRODUCTION, NONE PENDING.
+
+> ### UPDATED 8 OCTOBER 2026, AT HR'S CLOSE-OUT (§183).
+> `npm run preflight` (read-only; one query, `select version || '_' || name as f from
+> supabase_migrations.schema_migrations order by 1`, through the Supabase CLI's own connection): **INPUT 1, 73 files
+> on disk; INPUT 2, 73 rows on production (`dsfwmafnphdlfogetsus`), `072_handbook_check_answers.sql` the last;
+> DERIVED, nothing either way; `PENDING COUNT: 0`.** 066–072 are HR's (and 067–068 harden every table). §183 has no
+> migration.
 
 > ### UPDATED 4 OCTOBER 2026, AT THE CLOSE OF THE WORKSPACE WORK (housekeeping).
 > `npm run preflight` (read-only; the Supabase CLI's own connection): **INPUT 1, 66 files on disk; INPUT 2, 66
@@ -483,11 +505,12 @@ thing a bake-off needs is to move one model without moving three others.
 | **Dashboard: "Questions answered" counts checklists, not answers.** | `app/dashboard/page.tsx:87`, `:99` | Added 4 October 2026 (HR Step 1, `docs/HR-MACHINERY.md`; `docs/HR-PLAN.md` decision 26). It counts `checklists` rows with a `research_answer`; the dashboard does not read `usage_counters`. Not HR's to fix |
 | ~~`anon` and `authenticated` hold TRUNCATE, TRIGGER, REFERENCES and MAINTAIN; `postgres`'s defaults grant them everything~~ | `supabase/migrations/067_no_truncate_trigger_or_references_for_people.sql`, `068_no_maintain_and_defaults_that_grant_nothing.sql` | **RESOLVED 7 October 2026, `6b104ff`, on staging; production with the next release (`DECISIONS.md` §165).** Seen first in `docs/SCHEMA.md` once it could read grants (HR Step 3b-1): `authenticated` held all four on 25 relations, `documents` and `calendar_events` among them. TRUNCATE ignores row-level security. Hardening, not an incident: the data API has no TRUNCATE and the one dynamic-SQL function is service_role only. 067 and 068 revoke all four and set `postgres`'s defaults on public tables to grant `anon` and `authenticated` nothing; every other right on every relation is proved unchanged against a snapshot. `tests/unit/schemaGrants.test.ts` holds it |
 | **Function defaults: anon and authenticated may EXECUTE any new function in public by default.** | `pg_default_acl` (`postgres` and `supabase_admin`, functions in public: `anon=X, authenticated=X`) | Added 7 October 2026 (`DECISIONS.md` §165). Today only `increment_usage_counter` matters and it is service_role only (`035_increment_usage_counter.sql:59–62`). **Sweep:** list every function `anon` or `authenticated` can execute, flag any SECURITY DEFINER one, and decide on defaults. Read on staging, 7 October: 8 functions in public; `auth_company_id()` is the one SECURITY DEFINER, executable by both roles (by design — every policy calls it) |
-| **HR: a handbook file can be left in storage with no row if the tab closes between the upload and the row save.** | `app/hr/new/HrWorkspace.tsx` `save`; `app/api/handbooks/route.ts` POST | Added 7 October 2026 (HR Step 5a, `DECISIONS.md` §167). The page stores the file first, then saves the row, and removes the file again if the row fails, but only while the tab is open. A tab closed in between leaves the file at `<company>/handbooks/<file>` with no row. It is invisible: nothing lists storage, and no screen shows it. Account delete still removes it, because its storage walk covers `<company>/handbooks/`. **A cleanup sweep (files under `handbooks/` with no row, older than a day) is a later decision.** OPEN |
+| **HR: a handbook file can be left in storage with no row if the tab closes between the upload and the row save.** | `app/hr/HrWorkspace.tsx` `save`; `app/api/handbooks/route.ts` POST | Added 7 October 2026 (HR Step 5a, `DECISIONS.md` §167). The page stores the file first, then saves the row, and removes the file again if the row fails, but only while the tab is open. A tab closed in between leaves the file at `<company>/handbooks/<file>` with no row. It is invisible: nothing lists storage, and no screen shows it. Account delete still removes it, because its storage walk covers `<company>/handbooks/`. **A cleanup sweep (files under `handbooks/` with no row, older than a day) is a later decision.** OPEN |
 | **A summary's as-of date is the server's UTC date; the print header shows the local date.** | `lib/summaryReport.ts` summariseTopic (`today`, UTC); `components/Drawer.tsx` print dates (local) | Added 7 October 2026 (HR Step 7, `DECISIONS.md` §172). After 5 pm Pacific the two differ by a day: an HR summary on staging read "as of 8 October 2026" with "Summarised 7 October 2026" on paper. The workspace behaves the same. Not fixed. OPEN |
 | **Audits re-queues a crashed section with no attempt limit.** | `app/api/jobs/audit-sections/route.ts:82` (stuck sections back to queued); 058 has no attempts column | Added 7 October 2026 (HR Step 8 part 1, `DECISIONS.md` §174). A section whose run crashes every time is put back every 15 minutes and paid for each time, forever. HR's copy (`lib/handbookCheck.ts` recoverStuck, migration 071's `attempts`) puts a crashed piece back once, then fails it with its reason. Not fixed in Audits. OPEN |
 | **A heading can sit alone at the foot of a printed page in the shared summary report (workspace and HR).** | `components/ReportView.tsx` (e.g. "Still to confirm", :146) | Added 8 October 2026 (HR Step 11a's print check, `shots/s11a-print-a-conversation-summary.pdf`): the heading ends page 1 and its item starts page 2. Nothing is cut off. Not fixed: it is its own small change later, with the workspace re-proved, because the report is shared |
 | **OPEN: a stopped or cut-off answer writes no ledger row, though Anthropic bills its tokens.** | `lib/ai.ts` (the ledger row is written only when a call completes); HR's answer route, Stop and a dropped connection | Added 8 October 2026. Seen in HR's Opus machinery run: Stop at 9 s (`AI: upstream aborted after 8957ms`) and two cut-off attempts left no `ai_calls` row, so `npm run cost` under-counts. The workspace's research answer streams the same way and is likely the same; unchecked |
+| **OPEN: an HR answer shows bare section ids ("H5, H8, H10") while it streams.** | `app/hr/HrWorkspace.tsx:352` (`hideHandbookMarkers` hides only `[H…]` markers while streaming); `lib/hrAnswer.ts:532` `replaceBlockIds` runs when the answer finishes | Added 8 October 2026 (§183). Seen in 11b's mid-stream screenshot; the saved answers hold no bare id. A stopped answer keeps its streamed text, so it may keep them too (unchecked) |
 
 ## 8. The next steps — THIS FILE'S READING, not the two handoffs'
 
