@@ -977,11 +977,17 @@ export default function HrWorkspace() {
               return <p className="text-[14px] leading-relaxed text-gray-600">This handbook has not been read yet.</p>
             }
             const { open, last } = drawerCheck
+            // THE DRAWER'S ONE DELIBERATE DEPENDENCE ON WHETHER A VERSION IS CURRENT (owner, 8 October and Step 9): an older
+            // version is never checked, so in every case it says so — in place of the read-again note and of "Not checked
+            // yet". Everything else in this body follows the version's own status.
+            const older = !h.is_current
             return (
               <div className="space-y-6">
                 {checkNotice && <p className="text-[13px] text-[var(--amber)]">{checkNotice}</p>}
                 {open && <p className="text-[13px] text-gray-500">{checkingSections(open.done, open.total)}</p>}
-                {!open && !last && <p className="text-[14px] leading-relaxed text-gray-600">{NOT_CHECKED_YET}</p>}
+                {!open && !last && (older
+                  ? <p className="text-[13px] text-gray-500">{OLDER_VERSION_NOTE}</p>
+                  : <p className="text-[14px] leading-relaxed text-gray-600">{NOT_CHECKED_YET}</p>)}
                 {last && (
                   <>
                     {open && last.finishedAt && (
@@ -989,9 +995,7 @@ export default function HrWorkspace() {
                     )}
                     {last.status === 'failed'
                       ? <p className="text-[14px] leading-relaxed text-[var(--amber)]">{CHECK_FAILED}</p>
-                      // THE ONE DELIBERATE CURRENCY BRANCH (owner, 8 October): an older version is never read again, so its
-                      // drawer says so in place of the read-again note. Everything else follows the version's own status.
-                      : !h.is_current ? <p className="text-[13px] text-gray-500">{OLDER_VERSION_NOTE}</p>
+                      : older ? <p className="text-[13px] text-gray-500">{OLDER_VERSION_NOTE}</p>
                       : h.next_check_at && <p className="text-[13px] text-gray-500">{readAgainNote(longDate(h.next_check_at))}</p>}
                     {last.parts.map((p, i) => p.kind === 'answer' ? (
                       // EACH PART IS DRAWN EXACTLY AS AN HR ANSWER (owner, Baseline Step 1).

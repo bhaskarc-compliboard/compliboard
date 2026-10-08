@@ -146,8 +146,8 @@ export const PART_NOT_CHECKED = "We could not check this part. That's on our sid
 /** Proposed (Step 8 part 2): the whole check failed, in the drawer; and the earlier check's heading while one runs. */
 export const CHECK_FAILED = "We could not finish checking this handbook. That's on our side, not yours. Press Check now to try again."
 export const earlierCheckHeading = (date: string) => `Your last check · ${date}`
-/** On an OLDER version's drawer, in place of the read-again note (owner, 8 October): only the current one is checked again. */
-export const OLDER_VERSION_NOTE = 'This is an older version. Only the current version is checked again.'
+/** On an OLDER version's drawer, in EVERY case — in place of the read-again note and of "Not checked yet" (owner, Step 9). */
+export const OLDER_VERSION_NOTE = 'This is an older version. Only the current version is checked.'
 /** A check stored before 8 October: its sections' words, as they were shown (owner, Step 8). */
 export const LEGACY_WORD: Record<string, string> = {
   needs_change: 'Needs a change', no_gap: 'No gap found', to_confirm: 'To confirm', company_choice: 'Company choice',

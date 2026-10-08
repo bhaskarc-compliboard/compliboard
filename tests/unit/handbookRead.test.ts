@@ -189,10 +189,13 @@ describe('counts in plain English, and every drawer follows its own status (owne
     const body = page.slice(at, page.indexOf('</Drawer>', at))
     assert.ok(at > 0 && body.length > 200, 'the slice holds the handbook drawer body')
     assert.match(body, /h\.status === 'could_not_read'[\s\S]*statusWords\(h\.status, h\.status_reason\)/)
-    // THE ONE DELIBERATE EXCEPTION (owner, 8 October): an older version's drawer says it is not checked again, in place
-    // of the read-again note. Everything else in the body follows the version's own status.
-    assert.equal(body.match(/is_current/g)?.length, 1, 'the body branches on current vs older in exactly one place')
-    assert.match(body, /: !h\.is_current \? <p className="text-\[13px\] text-gray-500">\{OLDER_VERSION_NOTE\}<\/p>/)
+    // THE DRAWER'S ONE DELIBERATE DEPENDENCE ON WHETHER A VERSION IS CURRENT (owner, 8 October and Step 9): `older`,
+    // read once, and used only to say "This is an older version. Only the current version is checked." — in place of the
+    // read-again note and of "Not checked yet". Everything else in the body follows the version's own status.
+    assert.equal(body.match(/is_current/g)?.length, 1, 'whether a version is current is read in exactly one place')
+    assert.match(body, /const older = !h\.is_current/)
+    assert.equal(body.match(/const older\b|\(older\b|: older \?/g)?.length, 3, 'declared once, used twice: both for OLDER_VERSION_NOTE')
+    assert.equal(body.match(/OLDER_VERSION_NOTE/g)?.length, 2)
     assert.ok(!/\$\{n\} sections|pages, `/.test(body.replace(/counted\([^)]*\)/g, '')), 'no hand-made plural left')
   })
 })

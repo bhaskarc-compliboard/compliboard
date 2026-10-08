@@ -560,3 +560,92 @@ export function checkRecord(args: {
     marked: { not_found_quotes: args.done.notFoundQuotes, unchecked_quotes: args.done.uncheckedQuotes },
   }
 }
+
+// ---------------------------------------------------------------------------------------------------------
+// STEP 9 — ANSWERS USE THE STORED CHECK, AS A SWITCH, OFF BY DEFAULT (the owner; HR-PLAN step 9, §175)
+// ---------------------------------------------------------------------------------------------------------
+
+/**
+ * HR_ANSWER_USES_CHECK, READ AS THE WORKSPACE READS ITS SWITCHES (`lib/pipelineConfig.ts` readSwitch): on only for
+ * the exact word `true`, any case, trimmed; unset or anything else is off. Read at the decision point, never cached.
+ * Kept here rather than in PIPELINE_SWITCHES so no shared file changes; the rule is the same one line.
+ * OFF MEANS THE CODE PATH IS NOT ENTERED: the route does not read a check, and the answer is byte for byte today's.
+ */
+export function answerUsesCheck(): boolean {
+  return String(process.env.HR_ANSWER_USES_CHECK ?? '').trim().toLowerCase() === 'true'
+}
+
+/** One handbook's latest finished check, as stored: its answers (the parts that succeeded, in order) and their sources. */
+export interface StoredCheck {
+  handbookId: string; handbookName: string; checkId: string; finishedAt: string
+  parts: Array<{ text: string; sources: Array<{ n: number; title: string; url: string; label?: string; kind?: string }> }>
+}
+
+/** For each handbook the answer is given: its latest check with status 'done', if it has stored answers. */
+export async function storedChecks(db: Db, used: HandbookUsed[]): Promise<StoredCheck[]> {
+  const out: StoredCheck[] = []
+  for (const u of used) {
+    const { data: check } = await db.from('handbook_checks').select('id, finished_at')
+      .eq('handbook_id', u.id).eq('status', 'done').order('finished_at', { ascending: false }).limit(1).maybeSingle()
+    if (!check) continue
+    const [{ data: rows }, { data: secs }] = await Promise.all([
+      db.from('handbook_check_sections').select('section_id, answer_text, answer_sources').eq('check_id', check.id).not('answer_text', 'is', null),
+      db.from('handbook_sections').select('id, position').eq('handbook_id', u.id),
+    ])
+    const pos = new Map(((secs ?? []) as Array<{ id: string; position: number }>).map((s) => [s.id, s.position]))
+    const parts = ((rows ?? []) as Array<{ section_id: string; answer_text: string; answer_sources: StoredCheck['parts'][number]['sources'] | null }>)
+      .sort((a, b) => (pos.get(a.section_id) ?? 1e9) - (pos.get(b.section_id) ?? 1e9))
+      .map((r) => ({ text: r.answer_text, sources: r.answer_sources ?? [] }))
+    if (parts.length) out.push({ handbookId: u.id, handbookName: u.name, checkId: check.id, finishedAt: check.finished_at, parts })
+  }
+  return out
+}
+
+/** "1 October 2026", as the page and the email write a date. */
+const dayOf = (iso: string) => {
+  const d = new Date(`${iso.slice(0, 10)}T00:00:00Z`)
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
+}
+
+/**
+ * ONE PLAINLY LABELLED BLOCK PER HANDBOOK (the owner): "The last check of <handbook>, on <date>:", then each stored
+ * answer's text and its numbered sources (title, link, label). Nothing else is added to the message.
+ */
+export function checkBlock(c: StoredCheck): string {
+  const parts = c.parts.map((p) => {
+    const lines = p.sources.map((s) => s.kind === 'handbook' || !s.url
+      ? `[${s.n}] ${s.title} (your handbook)`
+      : `[${s.n}] ${s.title} — ${s.url} (${s.label ?? 'other'})`)
+    return lines.length ? `${p.text}\n\nSources:\n${lines.join('\n')}` : p.text
+  })
+  return `The last check of ${c.handbookName}, on ${dayOf(c.finishedAt)}:\n\n${parts.join('\n\n')}`
+}
+
+/**
+ * THE CHECK'S TEXT COUNTS TOWARD THE HANDBOOK BUDGET (the owner). Blocks go in, in the handbooks' order, while what the
+ * answer already sends plus the block fits; a block that would not fit is left out and noted.
+ */
+export function fitChecks(checks: StoredCheck[], sentChars: number, budget = budgetTokens()):
+    { used: StoredCheck[]; leftOut: StoredCheck[]; blocks: string } {
+  let spent = Math.ceil(sentChars * TOKENS_PER_CHAR)
+  const used: StoredCheck[] = []; const leftOut: StoredCheck[] = []; const blocks: string[] = []
+  for (const c of checks) {
+    const b = checkBlock(c)
+    const cost = Math.ceil(b.length * TOKENS_PER_CHAR)
+    if (spent + cost > budget) { leftOut.push(c); continue }
+    spent += cost; used.push(c); blocks.push(b)
+  }
+  return { used, leftOut, blocks: blocks.join('\n\n') }
+}
+
+/** A web link stored with a check counts as checked (it was checked against that check's search when it ran). */
+export function checkSearched(checks: StoredCheck[]): Array<{ url: string; title: string; label: string }> {
+  return checks.flatMap((c) => c.parts.flatMap((p) => p.sources.filter((s) => s.url && s.kind !== 'handbook')
+    .map((s) => ({ url: s.url, title: s.title, label: s.label ?? labelFor(s.url) }))))
+}
+
+/** The closing line (the owner's words from the plan); with several handbooks, each named with its date. */
+export function usesCheckLine(checks: StoredCheck[]): string {
+  if (checks.length === 1) return `This answer uses your handbook check of ${dayOf(checks[0].finishedAt)}.`
+  return `This answer uses your handbook checks: ${checks.map((c) => `${c.handbookName}, ${dayOf(c.finishedAt)}`).join('; ')}.`
+}

@@ -14,9 +14,9 @@ import { askAIOpenStream, askAIJson, searchLimit, type OpenMessage, type Source 
 import { buildCompanyContext } from '@/lib/companyContext'
 import { nextPosition, saveUserTurn, saveAssistantTurn, markTurnStopped, loadTurns, setTitleIfFirst,
          titleFromQuestion, bumpCounter } from '@/lib/conversation'
-import { loadHandbooksForAnswer, handbookContext, finishAnswer, appendHandbookSources, noCheckYet, checkRecord, budgetTokens,
+import { loadHandbooksForAnswer, answerUsesCheck, storedChecks, fitChecks, checkSearched, usesCheckLine, handbookContext, finishAnswer, appendHandbookSources, noCheckYet, checkRecord, budgetTokens,
          tableOfContents, safetyNet, chooseSections, addSelected, type HrSource, type Selection } from '@/lib/hrAnswer'
-import { quotesDroppedLine, linksDroppedLine, DAY1_LINE, longLine, longNetOnlyLine, longNothingLine,
+import { quotesDroppedLine, notCheckedLine, linksDroppedLine, DAY1_LINE, longLine, longNetOnlyLine, longNothingLine,
          waitingWords, waitFailedWords, waitTooLongWords, WAIT_LIMIT_MS } from '@/lib/hrAnswerWords'
 import { READ_REASONS } from '@/lib/handbooks'
 import { hrAnswerPrompt, hrAnswerMessage } from '@/prompts/hr-answer'
@@ -160,7 +160,12 @@ export async function POST(request: NextRequest) {
             // ONE line for every long handbook that matched nothing (owner, 6c).
             ...(nothing.length ? [longNothingLine(nothing)] : []),
           ]
-          messages.push({ role: 'user', content: hrAnswerMessage(companyBlock, handbookContext(lv), question) })
+          // STEP 9, A SWITCH, OFF BY DEFAULT (HR_ANSWER_USES_CHECK): off, nothing below is entered and the message is
+          // exactly today's. On, each handbook's latest finished check goes after the handbooks, within the budget.
+          const useCheck = answerUsesCheck()
+          const sentHandbooks = handbookContext(lv)
+          const fitted = useCheck ? fitChecks(await storedChecks(db, lv.used), sentHandbooks.length) : null
+          messages.push({ role: 'user', content: hrAnswerMessage(companyBlock, sentHandbooks, question, fitted?.blocks || undefined) })
           // AI_SEARCH_MAX_HR (Step 6b): unset means no limit, as before; set, it is the search's max_uses.
           const maxSearches = searchLimit('AI_SEARCH_MAX_HR', null) ?? undefined
           for await (const ev of askAIOpenStream(hrAnswerPrompt(), messages,
@@ -176,12 +181,27 @@ export async function POST(request: NextRequest) {
                 raw = raw.replace(/\[H\d+:\s*["“]([^"”\]]*)["”]\]/, '"$1"')
                 raw += `\n\nThe handbook also says "every employee receives unlimited paid vacation days each and every year".`
               }
-              const done = finishAnswer(raw, ev.answer.sources, ev.searched, lv.blocks, lv.used, ev.cited)
+              // On: a link stored with a used check counts as checked, and keeps the label it was stored with.
+              const fromCheck = fitted ? checkSearched(fitted.used) : []
+              const done = finishAnswer(raw, ev.answer.sources, fromCheck.length ? [...ev.searched, ...fromCheck] : ev.searched, lv.blocks, lv.used, ev.cited)
+              for (const s of done.sources) {
+                if (s.kind !== 'web' || ev.searched.some((r) => r.url === s.url)) continue
+                const stored = fromCheck.find((r) => r.url === s.url)
+                if (stored) s.label = stored.label as 'official' | 'other'
+              }
               const lines = [
                 done.droppedQuotes ? quotesDroppedLine(done.droppedQuotes) : '',
                 done.droppedLinks ? linksDroppedLine(done.droppedLinks) : '',
                 ...longLines,
-                (await noCheckYet(db, usedIds)) ? DAY1_LINE : '',
+                // On: "This answer uses your handbook check of <date>." for the checks used, and every handbook with NO
+                // finished check NAMED in its own line, each name once (owner, 8 October). A handbook whose check exists but
+                // was left out for the budget is not "not checked": it gets no line here, and the record notes it.
+                // Off: exactly as before — the day-1 line, unnamed.
+                ...(fitted
+                  ? [fitted.used.length ? usesCheckLine(fitted.used) : '',
+                     ((names) => names.length ? notCheckedLine(names) : '')([...new Set(lv.used
+                       .filter((u) => ![...fitted.used, ...fitted.leftOut].some((c) => c.handbookId === u.id)).map((u) => u.name))])]
+                  : [(await noCheckYet(db, usedIds)) ? DAY1_LINE : '']),
               ].filter(Boolean)
               const text = [done.text.trim(), ...lines].join('\n\n')
               completed = true
@@ -189,8 +209,15 @@ export async function POST(request: NextRequest) {
               console.log(`hr answer: ${done.sources.length} source(s), ${done.droppedQuotes} marker quote(s) dropped, ${done.notFoundQuotes} marked not found, ${done.uncheckedQuotes} marked unchecked, ${done.droppedLinks} link(s) dropped, ${ev.cited.length} cited passage(s)`)
               if (topicId) {
                 await saveAssistantTurn(db, { topicId, companyId, text, sources: done.sources as HrSource[], position: answerPosition,
-                  checkRecord: checkRecord({ used: lv.used, selections, budgetTokens: budgetTokens(),
-                    searched: ev.searched, citedPassages: ev.cited.length, done, waitedSeconds }) })
+                  checkRecord: {
+                    ...checkRecord({ used: lv.used, selections, budgetTokens: budgetTokens(),
+                      searched: ev.searched, citedPassages: ev.cited.length, done, waitedSeconds }),
+                    // Only when the switch is on: which check(s) the answer was given, and which were left out.
+                    ...(fitted ? {
+                      checks_used: fitted.used.map((c) => ({ handbook_id: c.handbookId, check_id: c.checkId, finished_at: c.finishedAt })),
+                      checks_left_out: fitted.leftOut.map((c) => ({ handbook_id: c.handbookId, check_id: c.checkId, finished_at: c.finishedAt, reason: 'budget' })),
+                    } : {}),
+                  } })
               }
               // Decision 9: an HR answer counts as an answered question.
               try { await bumpCounter(supabaseAdmin, companyId, 'questions_answered') }

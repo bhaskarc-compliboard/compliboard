@@ -23,6 +23,9 @@ export function hrAnswerPrompt(): string {
 }
 
 /** The user message: the company, the handbooks, the question — in that order. */
-export function hrAnswerMessage(companyContext: string, handbooks: string, question: string): string {
-  return `About the company:\n${companyContext}\n\nThe company's handbooks (current versions):\n${handbooks}\n\nQuestion: ${question}`
+export function hrAnswerMessage(companyContext: string, handbooks: string, question: string, checks?: string): string {
+  // Step 9 (a switch, off by default): the stored checks go after the handbooks and before the question. Without
+  // them the message is exactly what it always was.
+  return `About the company:\n${companyContext}\n\nThe company's handbooks (current versions):\n${handbooks}`
+    + (checks ? `\n\n${checks}` : '') + `\n\nQuestion: ${question}`
 }

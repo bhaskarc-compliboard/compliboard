@@ -134,6 +134,9 @@ Added 23 Sep: `CRON_SECRET`, `AI_MODEL_PROSE`, `AI_MODEL_JUDGEMENT`, `AI_MODEL_S
 > the workspace's open research prompt and adds HR's one sentence; DECISIONS §175). Changing one changes both
 > sections.
 
+**`HR_ANSWER_USES_CHECK` — not set; the testing step decides** (HR Step 9, DECISIONS §177). A switch, off by default: on
+only for the exact word `true`. Off, an HR answer is the baseline's; on, it is given each handbook's latest finished check.
+
 **Added 4 Oct, with the Workspace Task 6 release (owner), all visible:** `AI_MODEL_HOWTO = claude-opus-5-5`, `AI_SEARCH_MAX_HOWTO = 6`, `AI_SEARCH_MAX_COMPLETE = 8`. `AI_EFFORT_HOWTO` is deliberately **not** set, so it falls back to `AI_EFFORT`. Migration 064 was applied first (`npm run preflight` afterwards: 65 on disk, 65 on production, `PENDING COUNT: 0`).
 
 **Added 26 Sep, with Documents rev 1 — values given, because these four decide what a customer's document costs and who reads it:**

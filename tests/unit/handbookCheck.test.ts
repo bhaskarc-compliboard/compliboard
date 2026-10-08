@@ -211,7 +211,10 @@ describe('the owner\'s 8 October answers: an older version, and a check where ev
     const parts = checkParts([{ ...r('1', 's0', 'done'), word: 'no_gap' }, r('2', 's1', 'failed')], pos, () => 't', () => [])
     assert.deepEqual(parts.map((p) => p.kind), ['legacy', 'legacy'])
   })
-  test('an older version: "This is an older version. Only the current version is checked again."', () => {
-    assert.equal(OLDER_VERSION_NOTE, 'This is an older version. Only the current version is checked again.')
+  test('an older version, every case (owner, Step 9): "This is an older version. Only the current version is checked."', () => {
+    assert.equal(OLDER_VERSION_NOTE, 'This is an older version. Only the current version is checked.')
+    const page = readFileSync('app/hr/new/HrWorkspace.tsx', 'utf8')
+    assert.match(page, /\{!open && !last && \(older\s*\? <p className="text-\[13px\] text-gray-500">\{OLDER_VERSION_NOTE\}<\/p>\s*: <p className="text-\[14px\] leading-relaxed text-gray-600">\{NOT_CHECKED_YET\}<\/p>\)\}/)
+    assert.match(page, /: older \? <p className="text-\[13px\] text-gray-500">\{OLDER_VERSION_NOTE\}<\/p>\s*: h\.next_check_at && /)
   })
 })

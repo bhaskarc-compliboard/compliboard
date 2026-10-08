@@ -45,6 +45,14 @@ export const DAY1_LINE = "Your handbook's full check has not run yet. This answe
  * Only an answer that uses the marker form can produce it; since the baseline (8 October) the prompt no longer
  * asks for that form, so new answers use the two "marked" lines below instead.
  */
+/**
+ * STEP 9, SWITCH ON ONLY (owner, 8 October): a handbook with no finished check is NAMED, so it can sit beside "This
+ * answer uses your handbook check…" without contradicting it. With the switch off, DAY1_LINE is unchanged.
+ */
+export const notCheckedLine = (names: string[]) => names.length === 1
+  ? `${names[0]} has not been checked yet. This answer reads it and the rule just now.`
+  : `${joinAnd(names)} have not been checked yet. This answer reads them and the rule just now.`
+
 export const quotesDroppedLine = (n: number) => n === 1
   ? '1 quote could not be found in your handbook, so it is not shown as a source.'
   : `${n} quotes could not be found in your handbook, so they are not shown as sources.`
@@ -112,6 +120,10 @@ export function isAppendedLine(line: string): boolean {
     || /^\d+ quotes? could not be found in your handbook, so (it is|they are) not shown as (a )?sources?\.$/.test(l)
     || /^\d+ web sources? could not be checked, so (it is|they are) not shown\.$/.test(l)
     || /^\d+ quotes? could not be checked against (its|their) sources?, so (it is|they are) not shown\.$/.test(l)
+    // Step 9 (a switch): the answer used the stored check(s); a handbook with none, named.
+    || /^.+ (has|have) not been checked yet\. This answer reads (it|them) and the rule just now\.$/.test(l)
+    || /^This answer uses your handbook check of \d{1,2} [A-Z][a-z]+ \d{4}\.$/.test(l)
+    || /^This answer uses your handbook checks: .+\.$/.test(l)
     // Lines no longer written (the owner, 8 October: the mark says it where it stands); still drawn grey where stored.
     || /^\d+ quotes? (was|were) not found in your handbook, so (it is|they are) marked and (has no card|have no cards)\.$/.test(l)
     || /^\d+ quotes? could not be checked against (its|their) sources?, so (it is|they are) marked and (has no card|have no cards)\.$/.test(l)
