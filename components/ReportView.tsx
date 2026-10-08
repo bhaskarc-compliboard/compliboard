@@ -71,8 +71,21 @@ export const WEB_SOURCE: SourceShape<ReportSource> = {
   },
 }
 
-export function ReportView<S extends { n: number }>({ report, factsLine, sourceShape }: {
-  report: ReportLike<S>; factsLine: React.ReactNode; sourceShape: SourceShape<S> }) {
+/**
+ * HR Step 7, ADDITIVE: the three phrases that differ in HR's summary. Not passed (the workspace), each is the
+ * workspace's own, so its drawer is unchanged.
+ */
+export interface ReportWords {
+  /** Over the authorities: "What applies · 3 things to do" (workspace) / "What to change · 3 things" (HR). */
+  heading?: (total: number) => string
+  /** Each authority's count: "3 things to do" / "3 things to change". */
+  perGroup?: (n: number) => string
+  /** The as-of line. */
+  asOf?: (asOf: string) => string
+}
+
+export function ReportView<S extends { n: number }>({ report, factsLine, sourceShape, words }: {
+  report: ReportLike<S>; factsLine: React.ReactNode; sourceShape: SourceShape<S>; words?: ReportWords }) {
   const byN = new Map(report.sources.map((src) => [src.n, src]))
   const heading = 'mb-2 text-[11px] font-semibold uppercase tracking-wide text-gray-400'
   const uid = useId()
@@ -95,7 +108,7 @@ export function ReportView<S extends { n: number }>({ report, factsLine, sourceS
   )
   return (
     <div className="space-y-6">
-      <p className="text-[13px] text-gray-500">{AS_OF_LINE(report.as_of)}</p>
+      <p className="text-[13px] text-gray-500">{(words?.asOf ?? AS_OF_LINE)(report.as_of)}</p>
       <section>
         <h4 className={heading}>Your situation</h4>
         <p className="text-[15px] leading-relaxed text-gray-800">{report.situation}</p>
@@ -103,7 +116,7 @@ export function ReportView<S extends { n: number }>({ report, factsLine, sourceS
       {report.applies.length > 0 && (
         <section>
           <div className="mb-2 flex items-baseline justify-between gap-4">
-            <h4 className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">What applies · {thingsToDo(total)}</h4>
+            <h4 className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">{words?.heading ? words.heading(total) : <>What applies · {thingsToDo(total)}</>}</h4>
             <button type="button" className="no-print text-[12px] text-[var(--green-ink)] hover:underline"
               onClick={() => setOpen(allOpen ? new Set() : new Set(report.applies.map((_, gi) => gi)))}>
               {allOpen ? 'Close all' : 'Open all'}
@@ -114,7 +127,7 @@ export function ReportView<S extends { n: number }>({ report, factsLine, sourceS
               const id = `${uid}-a${gi}`
               return (
                 <div key={g.authority + gi}>
-                  <FoldRow label={g.authority} right={thingsToDo(g.items.length)} expanded={open.has(gi)} controls={id} onClick={() => toggle(gi)} />
+                  <FoldRow label={g.authority} right={(words?.perGroup ?? thingsToDo)(g.items.length)} expanded={open.has(gi)} controls={id} onClick={() => toggle(gi)} />
                   <ul id={id} className={`divide-y divide-gray-100 pb-2 pl-[22px] ${open.has(gi) ? '' : 'fold-closed'}`}>
                     {g.items.map((it, i) => item(it, `${gi}-${i}`))}
                   </ul>

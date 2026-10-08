@@ -35,11 +35,41 @@ import { friendlyDate, conversationStatus } from '@/lib/conversationStatus'
 import { readTopicList, type TopicRow } from '@/lib/topicList'
 import { statusWords, handbookList, sectionCount, pagesWords, counted, type HandbookRow } from '@/lib/handbooks'
 import { AnswerBody, SourceList, type AnswerSource } from '@/components/AnswerBody'
+import { ReportView, WEB_SOURCE, type SourceShape, type ReportLike } from '@/components/ReportView'
+import { HR_AS_OF_LINE, whatToChangeHeading, thingsToChange } from '@/lib/summaryWords'
+import { CLAIM_WORDS } from '@/lib/topicClaim'
+import { printWithFrame } from '@/lib/printFrame'
+import type { HrReportSource } from '@/lib/hrSummary'
+import type { SummaryReport } from '@/lib/summaryReport'
 import { Stages, type Step } from '@/components/Stages'
 import { readAnswerStream, ndjsonLines } from '@/lib/answerStream'
 import { readingWords, splitAppended, splitSuggested, hideHandbookMarkers, HR_COMPOSER_HINT, NOT_ANSWERED, ASK_IT_AGAIN, ASKED_AGAIN_BELOW, NOT_SUMMARISED_HR, DELETE_CONVERSATION } from '@/lib/hrAnswerWords'
 
 type Tab = 'ask' | 'conversations' | 'handbooks' | 'dates'
+
+/**
+ * HR'S SOURCE SHAPE for the summary drawer (Step 7): a handbook passage is "<handbook> — <section>, page <p> · your
+ * handbook" with no link, and in Sources the same line with its quote under it, as the answer's cards show it.
+ * On paper the line prints whole. A web page is drawn exactly as the workspace draws it (`WEB_SOURCE`).
+ */
+const HR_SOURCE: SourceShape<HrReportSource> = {
+  link: (src) => src.kind !== 'handbook' ? WEB_SOURCE.link(src) : (
+    <span key={src.n} className="flex min-w-0 items-baseline text-[12.5px] text-gray-600">
+      <span className="screen-only block truncate">[{src.n}] {src.title} · your handbook</span>
+      <span className="print-only">[{src.n}] {src.title} · your handbook</span>
+    </span>
+  ),
+  entry: (src) => src.kind !== 'handbook' ? WEB_SOURCE.entry(src) : (
+    <span>
+      <span className="text-gray-900">{src.title}</span>{' '}<span className="text-gray-400">· your handbook</span>
+      {src.quote && <span className="mt-0.5 block italic text-gray-600">“{src.quote}”</span>}
+    </span>
+  ),
+}
+/** HR's words in the drawer (the owner, Step 7). */
+const HR_REPORT_WORDS = { heading: whatToChangeHeading, perGroup: thingsToChange, asOf: HR_AS_OF_LINE }
+/** The workspace's own sentence, copied (`app/compliance/page.tsx`). */
+const SUMMARY_FAILED = 'That conversation could not be summarised just now. Nothing was changed. Please try again.'
 
 /** One question and its answer on the Ask tab (the workspace's Exchange, HR's fields). */
 interface HrExchange {
@@ -305,6 +335,60 @@ export default function HrWorkspace() {
     setTopics(await readTopicList(supabase, 'hr'))
   }
   const cancelConvDelete = () => { if (convDeleteBusy) return; setConvDeleting(false); setConvDeleteFailed(false) }
+
+  // ---- THE SUMMARY (Step 7): the workspace's press-and-wait, through HR's route ----
+  // One wait per conversation: this tab's own press. The list's `summaryInProgress` covers anyone's run.
+  const [summaryWait, setSummaryWait] = useState<{ topicId: string; before: string | null } | null>(null)
+  const summaryRunning = (id: string | null) => !!id && (summaryWait?.topicId === id || !!topics.find((t) => t.id === id)?.summaryInProgress)
+  async function summarise(id: string) {
+    if (summaryRunning(id)) return
+    setNotice(null)
+    const before = topics.find((t) => t.id === id)?.summarised_at ?? null
+    setSummaryWait({ topicId: id, before })
+    let res: Response | null = null
+    try { res = await fetch(`/api/hr/topics/${id}/summarise`, { method: 'POST', headers: await authHeaders({ 'Content-Type': 'application/json' }) }) } catch { res = null }
+    const j = res ? await res.json().catch(() => null) : null
+    if (res && (res.status === 202 || (res.status === 409 && j?.status === 'writing'))) { setTopics(await readTopicList(supabase, 'hr')); return }
+    setNotice(j?.error ?? SUMMARY_FAILED)
+    setSummaryWait(null)
+  }
+  // THE POLL — every 5 seconds while a summary is being written here or anywhere; when this tab's own claim
+  // clears, its summary opens in the drawer, or the failure is said plainly (the workspace's behaviour).
+  const summaryWatching = !!summaryWait || topics.some((t) => t.summaryInProgress)
+  useEffect(() => {
+    if (!summaryWatching) return
+    const t = setInterval(async () => {
+      const rows = await readTopicList(supabase, 'hr')
+      setTopics(rows)
+      setConvDrawer((d) => (d ? rows.find((r) => r.id === d.id) ?? d : d))
+      setSummaryWait((w) => {
+        if (!w) return w
+        const row = rows.find((r) => r.id === w.topicId)
+        if (!row || row.summaryInProgress) return w
+        if (row.summarised_at && row.summarised_at !== w.before) setConvDrawer(row)
+        else setNotice(SUMMARY_FAILED)
+        return null
+      })
+    }, 5000)
+    return () => clearInterval(t)
+  }, [summaryWatching, supabase])
+
+  // The drawer's report and the facts line's count, read as the caller (RLS), for the open conversation.
+  const [convReport, setConvReport] = useState<{ id: string; report: SummaryReport | null; facts: number } | null>(null)
+  const convDrawerId = convDrawer?.id ?? null
+  const convDrawerSummarisedAt = convDrawer?.summarised_at ?? null
+  useEffect(() => {
+    if (!convDrawerId) return
+    let live = true
+    ;(async () => {
+      const [{ data }, { count }] = await Promise.all([
+        supabase.from('topics').select('summary_report').eq('id', convDrawerId).maybeSingle(),
+        supabase.from('fact_proposals').select('id', { count: 'exact', head: true }).eq('topic_id', convDrawerId).eq('status', 'proposed'),
+      ])
+      if (live) setConvReport({ id: convDrawerId, report: ((data as { summary_report?: SummaryReport | null } | null)?.summary_report) ?? null, facts: count ?? 0 })
+    })()
+    return () => { live = false }
+  }, [convDrawerId, convDrawerSummarisedAt, supabase])
   /** "Research this" and Enter. An empty box puts the cursor in it, as the workspace does. */
   const research = () => { void ask(box) }
   const newConversation = () => { setTab('ask'); setBox(''); if (!askBusy) { setExchanges([]); setTopicId(null) } }
@@ -531,6 +615,20 @@ export default function HrWorkspace() {
                     )}
                   </div>
                 </div>
+                {/* THE ACTION ROW (canvas board 10): "Summarise this conversation" green and first, then Download.
+                    Disabled while a request is in flight, with the run's own words in place of the button's. */}
+                {topicId && exchanges.some((x) => x.phase === 'done') && (
+                  <div className="mt-[10px] flex flex-wrap items-center gap-5">
+                    <button onClick={() => summarise(topicId)} disabled={askBusy || summaryRunning(topicId)}
+                      className="text-[14px] font-medium text-[var(--green-ink)] hover:underline disabled:text-gray-300">
+                      {summaryRunning(topicId) ? CLAIM_WORDS.summary : 'Summarise this conversation'}
+                    </button>
+                    <button onClick={() => printWithFrame({ company: companyName ?? '', type: 'Conversation' })}
+                      disabled={askBusy} className={TEXT_ACTION}>
+                      Download
+                    </button>
+                  </div>
+                )}
                 <p className="mt-2 text-[12px] text-gray-500">
                   One topic per conversation. When you are done, summarise it. Start a new conversation for the next topic.
                 </p>
@@ -713,11 +811,27 @@ export default function HrWorkspace() {
             </>
           }>
           <div className="flex min-h-full flex-col">
-            {convDrawer.summary ? (
-              <AnswerBody text={convDrawer.summary} sources={[]} />
-            ) : (
-              <p className="text-[14px] leading-relaxed text-gray-600">{NOT_SUMMARISED_HR}</p>
-            )}
+            {(() => {
+              const rep = convReport?.id === convDrawer.id ? convReport : null
+              // THE FACTS LINE — the workspace's words and markup (`app/compliance/page.tsx`).
+              const factsLine = rep?.facts ? (
+                <div className="no-print flex items-center justify-between gap-4 border-y border-gray-200 py-3">
+                  <p className="text-[14px] text-gray-600">
+                    {rep.facts === 1 ? '1 fact from this conversation is waiting in Company information'
+                      : `${rep.facts} facts from this conversation are waiting in Company information`}
+                  </p>
+                  <a href="/company-information" className="shrink-0 text-[14px] text-[var(--green-ink)] hover:underline">Review →</a>
+                </div>
+              ) : null
+              if (summaryRunning(convDrawer.id)) return <p className="text-[12px] text-gray-500">{CLAIM_WORDS.summary}</p>
+              if (rep?.report) {
+                return <ReportView key={convDrawer.id} report={rep.report as unknown as ReportLike<HrReportSource>}
+                  factsLine={factsLine} sourceShape={HR_SOURCE} words={HR_REPORT_WORDS} />
+              }
+              return convDrawer.summary
+                ? <AnswerBody text={convDrawer.summary} sources={[]} />
+                : <p className="text-[14px] leading-relaxed text-gray-600">{NOT_SUMMARISED_HR}</p>
+            })()}
           </div>
         </Drawer>
       )}

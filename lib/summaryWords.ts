@@ -25,3 +25,15 @@ export function longDate(iso: string): string {
 
 export const AS_OF_LINE = (asOf: string) =>
   `What applies to you as of ${longDate(asOf)}, from this conversation. Rules and tariffs change. Check before you act.`
+
+// ---- HR Step 7 — HR's summary words, beside the workspace's (the owner's, from the Step 7 design) ----
+
+/** HR's as-of line. The workspace's mentions tariffs; HR's is about the handbooks. */
+export const HR_AS_OF_LINE = (asOf: string) =>
+  `What to change in your handbooks as of ${longDate(asOf)}, from this conversation. Rules change. Check before you act.`
+
+/** "1 thing to change", "3 things to change" — per authority (canvas board 10). */
+export const thingsToChange = (n: number) => `${n} thing${n === 1 ? '' : 's'} to change`
+
+/** "What to change · 3 things" — the heading over the authorities. */
+export const whatToChangeHeading = (n: number) => `What to change · ${n} thing${n === 1 ? '' : 's'}`

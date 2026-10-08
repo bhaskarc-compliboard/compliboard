@@ -392,6 +392,13 @@ if (!(await reachable())) {
     const ok = preview ? (anon.status === 401 && empty.status === 400) : empty.status === 404
     console.log(`  ${ok ? '✓' : '✗'} hr answer           ${preview ? `preview on: no session ${anon.status}, no question ${empty.status}` : `preview off: 404 to everyone (${anon.status}, ${empty.status})`}`)
     if (!ok) failures++
+    // HR's summary route (Step 7): no session refused; a topic that is not this company's HR conversation, a 404.
+    // Free: neither reaches a model.
+    const nobody = await fetch(`${BASE}/api/hr/topics/00000000-0000-0000-0000-000000000000/summarise`, { method: 'POST' })
+    const missing = await fetch(`${BASE}/api/hr/topics/00000000-0000-0000-0000-000000000000/summarise`, { method: 'POST', headers: auth })
+    const sok = preview ? (nobody.status === 401 && missing.status === 404) : (nobody.status === 404 && missing.status === 404)
+    console.log(`  ${sok ? '✓' : '✗'} hr summary          ${preview ? `preview on: no session ${nobody.status}, unknown topic ${missing.status}` : `preview off: 404 (${nobody.status}, ${missing.status})`}`)
+    if (!sok) failures++
   }
 
   // 1. RESEARCH streams, and the stream carries sources.

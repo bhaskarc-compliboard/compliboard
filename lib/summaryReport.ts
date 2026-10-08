@@ -25,8 +25,12 @@ import { summaryReportPrompt, SUMMARY_PROMPT_ASKS_FOR_BASIS } from '../prompts/s
 import { guardSummaryWrite, CLAIM_COLUMN } from './topicClaim.ts'
 // The three display words live in a browser-safe file the summary drawer can import (HR Step 3a);
 // re-exported here so every existing caller is unchanged.
-import { NO_SOURCE, longDate, AS_OF_LINE } from './summaryWords.ts'
+import { NO_SOURCE, longDate, AS_OF_LINE, HR_AS_OF_LINE } from './summaryWords.ts'
 export { NO_SOURCE, longDate, AS_OF_LINE }
+// HR Step 7: the HR summary's pieces (its source key and list line, its turns without the grey lines, its
+// prompt). Used only when `summariseTopic` is called with kind 'hr'; the workspace path never reaches them.
+import { HR_SOURCES, hrTurns } from './hrSummary.ts'
+import { hrSummaryPrompt } from '../prompts/hr-summary.ts'
 
 export interface TurnLike {
   /** The turn's row id, when it has one; a fact's proposal points at the turn its quote came from. */
@@ -66,6 +70,20 @@ export interface SummaryReport {
 
 export const TITLE_MAX = 70
 
+/**
+ * HOW SOURCES ARE KEYED AND LISTED — HR Step 7, ADDITIVE AND OFF BY DEFAULT. With no options every function
+ * below runs exactly as before: a source with no URL is dropped, a source is the triple {n, title, url}, and
+ * the model's list line is "n. title — url". `lib/checklistConvert.ts` calls them with no options.
+ *   keyWithoutUrl  the key for a source that has no URL (HR: a handbook passage); null still drops it
+ *   keepFields     keep the stored source's other fields (HR: kind, quote, handbook, section, pages)
+ *   lineOf         the model's list line for one source
+ */
+export interface SourceOptions {
+  keyWithoutUrl?: (s: Record<string, unknown>) => string | null
+  keepFields?: boolean
+  lineOf?: (s: ReportSource & Record<string, unknown>) => string
+}
+
 /** One URL, one source: the fragment and a trailing slash do not make a different page. */
 export function sourceKey(url: string): string {
   return url.trim().replace(/#.*$/, '').replace(/\/+$/, '')
@@ -75,20 +93,22 @@ export function sourceKey(url: string): string {
  * Every source of every turn, deduplicated by URL and numbered 1..N in order of first appearance,
  * plus, for each turn, how its own numbers map onto the global ones.
  */
-export function gatherSources(turns: TurnLike[]): { sources: ReportSource[]; perTurn: Array<Map<number, number>> } {
+export function gatherSources(turns: TurnLike[], opts?: SourceOptions): { sources: ReportSource[]; perTurn: Array<Map<number, number>> } {
   const sources: ReportSource[] = []
   const byKey = new Map<string, number>()
   const perTurn = turns.map((t) => {
     const map = new Map<number, number>()
     ;(t.sources ?? []).forEach((s, i) => {
       const url = String(s?.url ?? '').trim()
-      if (!url) return
-      const key = sourceKey(url)
+      const key = url ? sourceKey(url) : (opts?.keyWithoutUrl?.(s as unknown as Record<string, unknown>) ?? null)
+      if (!key) return
       let n = byKey.get(key)
       if (!n) {
         n = sources.length + 1
         byKey.set(key, n)
-        sources.push({ n, title: String(s?.title ?? '').trim() || url, url })
+        sources.push(opts?.keepFields
+          ? { ...(s as unknown as Record<string, unknown>), n, title: String(s?.title ?? '').trim() || url, url } as ReportSource
+          : { n, title: String(s?.title ?? '').trim() || url, url })
       }
       map.set(typeof s?.n === 'number' ? s.n : i + 1, n)
     })
@@ -102,8 +122,8 @@ export function gatherSources(turns: TurnLike[]): { sources: ReportSource[]; per
  * one numbered list. A marker with nothing behind it in its own turn is left as it was and is NOT
  * in the list, so the model cannot cite it and the check would drop it.
  */
-export function numberedTranscript(turns: TurnLike[]): { transcript: string; sources: ReportSource[] } {
-  const { sources, perTurn } = gatherSources(turns)
+export function numberedTranscript(turns: TurnLike[], opts?: SourceOptions): { transcript: string; sources: ReportSource[] } {
+  const { sources, perTurn } = gatherSources(turns, opts)
   const parts = turns.map((t, i) => {
     const who = t.role === 'user' ? 'USER' : 'ANSWER'
     const text = t.role === 'user' ? t.text
@@ -114,7 +134,7 @@ export function numberedTranscript(turns: TurnLike[]): { transcript: string; sou
     return `${who}${t.stopped ? ' (stopped)' : ''}${t.document_name ? ` [attached the file: ${t.document_name}]` : ''}: ${text}`
   })
   const list = sources.length
-    ? `SOURCES USED IN THIS CONVERSATION (cite only these numbers):\n${sources.map((s) => `${s.n}. ${s.title} — ${s.url}`).join('\n')}`
+    ? `SOURCES USED IN THIS CONVERSATION (cite only these numbers):\n${sources.map((s) => (opts?.lineOf ? opts.lineOf(s as ReportSource & Record<string, unknown>) : `${s.n}. ${s.title} — ${s.url}`)).join('\n')}`
     : 'SOURCES USED IN THIS CONVERSATION: none.'
   return { transcript: `${parts.join('\n\n')}\n\n${list}`, sources }
 }
@@ -237,7 +257,7 @@ export function trimTitle(title: string, max = TITLE_MAX): string {
  *   · The title is trimmed; `as_of` is the date the code passes.
  */
 export function checkReport(raw: unknown, turns: TurnLike[], asOf: string,
-  opts: { basisRequired: boolean } = { basisRequired: false }): CheckResult {
+  opts: { basisRequired: boolean; sources?: SourceOptions } = { basisRequired: false }): CheckResult {
   const refuse = (why: string): CheckResult => ({ ok: false, error: `The summary came back in a shape we could not use (${why}).` })
   if (!isObj(raw)) return refuse('not an object')
   const title = str(raw.title)
@@ -248,7 +268,7 @@ export function checkReport(raw: unknown, turns: TurnLike[], asOf: string,
   for (const k of ['to_confirm', 'unanswered', 'facts'] as const) {
     if (raw[k] !== undefined && !Array.isArray(raw[k])) return refuse(`${k} is not a list`)
   }
-  const { sources: all, perTurn } = gatherSources(turns)
+  const { sources: all, perTurn } = gatherSources(turns, opts.sources)
   const count = all.length
   const checks: ItemCheck[] = []
   const settle = (where: string, c: DraftItem): DraftItem => {
@@ -334,10 +354,17 @@ const cites = (it: ReportItem) => (it.sources.length
  * written as "(source 1)" or "(sources 1, 3)", not "[1]": the drawer renders a summary's text through `AnswerBody`,
  * which turns "[1]" into a citation marker, and a text summary carries no source list for it.
  */
-export function renderPlainText(r: SummaryReport): string {
-  const out: string[] = [r.title, '', AS_OF_LINE(r.as_of), '', 'Your situation', r.situation]
+/** HR Step 7, additive: the plain text's words and source line. With none, the workspace's, exactly as before. */
+export interface PlainTextWords {
+  asOf?: (asOf: string) => string
+  applies?: string
+  sourceLine?: (s: ReportSource & Record<string, unknown>) => string
+}
+
+export function renderPlainText(r: SummaryReport, words?: PlainTextWords): string {
+  const out: string[] = [r.title, '', (words?.asOf ?? AS_OF_LINE)(r.as_of), '', 'Your situation', r.situation]
   if (r.applies.length) {
-    out.push('', 'What applies')
+    out.push('', words?.applies ?? 'What applies')
     for (const g of r.applies) {
       out.push('', g.authority)
       for (const it of g.items) out.push(`- ${it.name}: ${it.what_to_do}${cites(it)}`)
@@ -353,7 +380,7 @@ export function renderPlainText(r: SummaryReport): string {
   }
   if (r.sources.length) {
     out.push('', 'Sources')
-    for (const s of r.sources) out.push(`${s.n}. ${s.title} — ${s.url}`)
+    for (const s of r.sources) out.push(words?.sourceLine ? words.sourceLine(s as ReportSource & Record<string, unknown>) : `${s.n}. ${s.title} — ${s.url}`)
   }
   return out.join('\n')
 }
@@ -395,6 +422,12 @@ type Db = SupabaseClient<any, any, any>   // eslint-disable-line @typescript-esl
 export async function summariseTopic(db: Db, admin: Db, args: {
   topicId: string; companyId: string; title: string | null; turns: TurnLike[]
   source: 'user' | 'nightly'; today?: string
+  /**
+   * HR Step 7, additive. 'hr': HR's prompt, the turns without their appended grey lines, handbook passages
+   * kept as sources (`lib/hrSummary.ts`), and HR's words in the plain text. Absent or 'workspace': exactly
+   * as before.
+   */
+  kind?: 'workspace' | 'hr'
   /** Columns only the nightly job sets beside the summary (`idle_at`, `extracted_at`). */
   extra?: Record<string, unknown>
   /**
@@ -407,20 +440,23 @@ export async function summariseTopic(db: Db, admin: Db, args: {
 }): Promise<{ ok: true; report: SummaryReport; checks: ItemCheck[]; proposed: number }
   | { ok: false; error: string; skipped?: true }> {
   const today = args.today ?? new Date().toISOString().slice(0, 10)
-  const { transcript } = numberedTranscript(args.turns)
+  const hr = args.kind === 'hr'
+  const turns = hr ? hrTurns(args.turns) : args.turns
+  const { transcript } = numberedTranscript(turns, hr ? HR_SOURCES : undefined)
   const raw = await askAIJson<unknown>(
-    summaryReportPrompt(today),
+    hr ? hrSummaryPrompt(today) : summaryReportPrompt(today),
     `Conversation title: ${args.title ?? '(none)'}\n\n${transcript}`,
     // 12,000, not 4,000 — the owner's decision of 4 October 2026 (CLAUDE.md §3.1). With a "basis" on
     // every item the report is long, and at 4,000 an Opus run paid for a truncated first attempt
     // before `lib/ai.ts` retried it larger (run C2, Workspace Task 5).
     { maxTokens: 12000, task: 'summary', ledger: { companyId: args.companyId, task: 'summarise' } },
   )
-  const checked = checkReport(raw, args.turns, today, { basisRequired: SUMMARY_PROMPT_ASKS_FOR_BASIS })
+  const checked = checkReport(raw, turns, today, { basisRequired: SUMMARY_PROMPT_ASKS_FOR_BASIS, ...(hr ? { sources: HR_SOURCES } : {}) })
   if (!checked.ok) return checked
   const { data: written, error } = await guardSummaryWrite(db.from('topics').update({
     summary_report: checked.report,
-    summary: renderPlainText(checked.report),
+    summary: hr ? renderPlainText(checked.report, { asOf: HR_AS_OF_LINE, applies: 'What to change', sourceLine: HR_SOURCES.lineOf })
+      : renderPlainText(checked.report),
     title: checked.report.title,
     summarised_at: new Date().toISOString(),
     summary_source: args.source,
@@ -442,7 +478,7 @@ export async function summariseTopic(db: Db, admin: Db, args: {
   const { data: pending, error: pErr } = await admin.from('fact_proposals')
     .select('switch_key, proposed_value').eq('topic_id', args.topicId).eq('status', 'proposed')
   if (pErr) throw new Error(`reading pending proposals: ${pErr.message}`)
-  const rows = proposalsToInsert(checked.report.facts, pending ?? [], args.turns,
+  const rows = proposalsToInsert(checked.report.facts, pending ?? [], turns,
     { topicId: args.topicId, companyId: args.companyId })
   // ONE ROW AT A TIME, AND A DUPLICATE IS NOT AN ERROR. Migration 065's unique index is the guarantee
   // the read above cannot give on its own (two writers can both read "none pending"); a row it refuses
