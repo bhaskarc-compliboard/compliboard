@@ -24,3 +24,21 @@ export async function startReading(db: Db, companyId: string, id: string): Promi
   })
   return true
 }
+
+/**
+ * THE SAME CLAIM, BUT THE READING STARTS NOW (§183): for the answer's wait. `after()` runs its work only once the
+ * response has finished (Next's own docs, `after.md`), and the answer's response is the stream that is waiting for
+ * this very reading — so startReading() from inside it would read only after the wait gave up (found on staging,
+ * 8 October). Here the reading starts at once, and the running promise is handed to after(), so it is not cut off
+ * when the person presses Stop or closes the tab (on Vercel, waitUntil). True if this call took the claim.
+ */
+export async function startReadingNow(db: Db, companyId: string, id: string): Promise<boolean> {
+  const claimedAt = await claimReading(db, id)
+  if (!claimedAt) return false
+  const running = readHandbook({ db, admin: supabaseAdmin, bucket: DOCUMENTS_BUCKET, outline: modelOutline(companyId) },
+    companyId, id, claimedAt)
+    .then((outcome) => console.log(`handbooks: reading ${id}: ${outcome}`))
+    .catch((e) => console.error(`handbooks: reading ${id} failed:`, e))
+  after(() => running)
+  return true
+}

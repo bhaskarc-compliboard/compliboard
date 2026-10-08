@@ -10,10 +10,11 @@ import { askAIOpenStream, askAIJson, searchLimit, type OpenMessage, type Source 
 import { buildCompanyContext } from '@/lib/companyContext'
 import { nextPosition, saveUserTurn, saveAssistantTurn, markTurnStopped, loadTurns, setTitleIfFirst,
          titleFromQuestion, bumpCounter } from '@/lib/conversation'
-import { loadHandbooksForAnswer, answerUsesCheck, storedChecks, fitChecks, checkSearched, usesCheckLine, handbookContext, finishAnswer, appendHandbookSources, noCheckYet, checkRecord, budgetTokens,
+import { loadHandbooksForAnswer, textWaitStep, answerUsesCheck, storedChecks, fitChecks, checkSearched, usesCheckLine, handbookContext, finishAnswer, appendHandbookSources, noCheckYet, checkRecord, budgetTokens,
          tableOfContents, safetyNet, chooseSections, addSelected, type HrSource, type Selection } from '@/lib/hrAnswer'
 import { quotesDroppedLine, notCheckedLine, linksDroppedLine, DAY1_LINE, longLine, longNetOnlyLine, longNothingLine,
-         waitingWords, waitFailedWords, waitTooLongWords, WAIT_LIMIT_MS } from '@/lib/hrAnswerWords'
+         waitingWords, waitFailedWords, waitTooLongWords, WAIT_LIMIT_MS, notReadLine } from '@/lib/hrAnswerWords'
+import { startReadingNow } from '@/lib/handbookStart'
 import { READ_REASONS } from '@/lib/handbooks'
 import { hrAnswerPrompt, hrAnswerMessage } from '@/prompts/hr-answer'
 import { HR_SELECT_PROMPT, hrSelectMessage } from '@/prompts/hr-select'
@@ -102,11 +103,38 @@ export async function POST(request: NextRequest) {
         /** Ends the request without an answer: the words go to the page, and the turn is marked not answered. */
         const notAnswered = (words: string) => { console.log(`hr answer: not answered — ${words}`); send({ type: 'not_answered', message: words }) }
         try {
-          // ---- THE HONEST WAIT (Step 6c): a handbook too long to send whole whose sections are not found yet ----
+          // ---- THE WAIT, inside the request, every 2 seconds, one 3-minute limit for both kinds ----
+          //  · §183 (the owner): a handbook whose TEXT is not saved yet. An answer never goes ahead without it and never
+          //    says there is no handbook. One with no reading running gets one, through startReading's claim.
+          //  · Step 6c, the honest wait: a handbook too long to send whole whose sections are not found yet.
           let loaded: Awaited<ReturnType<typeof loadHandbooksForAnswer>> = first
           const waitStart = Date.now()
-          while (loaded.ok && loaded.waiting.length) {
+          const readingStarted = new Set<string>()
+          const notRead: Array<{ id: string; name: string; reason: string }> = []
+          while (loaded.ok && ((loaded.unread?.length ?? 0) > 0 || loaded.waiting.length)) {
             if (request.signal.aborted) throw Object.assign(new Error('aborted'), { name: 'AbortError' })
+            const unread = loaded.unread ?? []
+            if (unread.length) {
+              for (const u of unread) {
+                if (readingStarted.has(u.id)) continue
+                readingStarted.add(u.id)
+                try { if (await startReadingNow(db, companyId, u.id)) console.log(`hr answer: started the reading of ${u.id}, which had none running`) }
+                catch (e) { console.error('hr answer: could not start a reading (the wait carries on):', e) }
+              }
+              const ids = unread.map((u) => u.id)
+              const [{ data: rows }, { data: texts }] = await Promise.all([
+                db.from('handbooks').select('id, name, status, status_reason').in('id', ids),
+                db.from('handbooks').select('id').in('id', ids).not('extracted_text', 'is', null),
+              ])
+              const step = textWaitStep((rows ?? []) as Array<{ id: string; name: string; status: string; status_reason: string | null }>,
+                new Set(((texts ?? []) as Array<{ id: string }>).map((r) => r.id)), waitStart, Date.now(), READ_REASONS.ours)
+              for (const f of step.failed) if (!notRead.some((x) => x.id === f.id)) notRead.push(f)
+              if (step.next === 'reload') { loaded = await loadHandbooksForAnswer(db, companyId); continue }   // text saved: carry on
+              send({ type: 'waiting', words: step.words })
+              if (step.next === 'too_long') { notAnswered(waitTooLongWords); return }
+              await new Promise((r) => setTimeout(r, 2000))
+              continue
+            }
             const { data: rows } = await db.from('handbooks')
               .select('id, status, status_reason, page_count, outline_parts_done, outline_parts_total')
               .in('id', loaded.waiting.map((w) => w.id))
@@ -120,7 +148,8 @@ export async function POST(request: NextRequest) {
             if (Date.now() - waitStart > WAIT_LIMIT_MS) { notAnswered(waitTooLongWords); return }
             await new Promise((r) => setTimeout(r, 2000))
           }
-          if (!loaded.ok) { notAnswered(loaded.refusal); return }
+          // The only handbook's reading failed during the wait: 6c's words, with its reason.
+          if (!loaded.ok) { notAnswered(notRead.length ? waitFailedWords(notRead[0].reason) : loaded.refusal); return }
           const ready = loaded
           const waitedSeconds = Math.round((Date.now() - waitStart) / 1000)
 
@@ -188,6 +217,8 @@ export async function POST(request: NextRequest) {
                 done.droppedQuotes ? quotesDroppedLine(done.droppedQuotes) : '',
                 done.droppedLinks ? linksDroppedLine(done.droppedLinks) : '',
                 ...longLines,
+                // A handbook whose reading failed while this answer waited, with others to answer from (§183).
+                ...notRead.map((f) => notReadLine(f.name)),
                 // On: "This answer uses your handbook check of <date>." for the checks used, and every handbook with NO
                 // finished check NAMED in its own line, each name once (owner, 8 October). A handbook whose check exists but
                 // was left out for the budget is not "not checked": it gets no line here, and the record notes it.

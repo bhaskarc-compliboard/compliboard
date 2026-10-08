@@ -208,13 +208,24 @@ describe('the loader', () => {
     } }
   }
   const row = (id: string, o: Record<string, unknown>) => ({ id, name: id, scope: 'company', entity_id: null, status: 'read', status_reason: null, extracted_text: 'x', page_count: 1, created_at: id, ...o })
-  test('the three refusals, before any model call', async () => {
+  test('the two refusals, before any model call; a handbook still being read is never a refusal (§183)', async () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const run = (rows: Array<Record<string, unknown>>) => loadHandbooksForAnswer(fake(rows) as any, 'co')
     assert.deepEqual(await run([]), { ok: false, refusal: HR_REFUSALS.none })
-    assert.deepEqual(await run([row('a', { status: 'uploaded', extracted_text: null }), row('b', { status: 'could_not_read', status_reason: 'scan', extracted_text: null })]),
-      { ok: false, refusal: HR_REFUSALS.reading })
     assert.deepEqual(await run([row('a', { status: 'could_not_read', status_reason: 'scan', extracted_text: null })]), { ok: false, refusal: HR_REFUSALS.unreadable })
+    assert.ok(!('reading' in HR_REFUSALS), '"Your handbooks are still being read. Ask again in a minute." is gone')
+  })
+  test('THE WAIT (§183): a handbook with no text saved yet is "unread" — the route waits for it, alone or beside others', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const run = (rows: Array<Record<string, unknown>>) => loadHandbooksForAnswer(fake(rows) as any, 'co')
+    const alone = await run([row('a', { status: 'uploaded', extracted_text: null }), row('b', { status: 'could_not_read', status_reason: 'scan', extracted_text: null })])
+    assert.ok(alone.ok); if (!alone.ok) return
+    assert.deepEqual(alone.unread, [{ id: 'a', name: 'a', status: 'uploaded' }])
+    assert.deepEqual(alone.blocks, [])
+    const beside = await run([row('ready', {}), row('new', { status: 'reading', extracted_text: null })])
+    assert.ok(beside.ok); if (!beside.ok) return
+    assert.deepEqual(beside.unread, [{ id: 'new', name: 'new', status: 'reading' }])
+    assert.deepEqual(beside.used.map((u) => u.id), ['ready'])
   })
   test('TEXT FIRST: a handbook still being read, with its text saved, is given page by page', async () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

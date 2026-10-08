@@ -15,7 +15,7 @@ import type { Source, CitedPassage } from './ai.ts'
 import { normaliseForQuote } from './documentScan.ts'
 import { findReturned, labelFor } from './howTo.ts'
 import { splitPages, plainText, PAGE_BREAK } from './handbookSections.ts'
-import { HR_REFUSALS, NOT_IN_HANDBOOK, draftParagraphs } from './hrAnswerWords.ts'
+import { HR_REFUSALS, NOT_IN_HANDBOOK, draftParagraphs, readingFirstWords, WAIT_LIMIT_MS } from './hrAnswerWords.ts'
 
 type Db = SupabaseClient<any, any, any>   // eslint-disable-line @typescript-eslint/no-explicit-any
 
@@ -89,9 +89,13 @@ export interface LongHandbook {
 }
 /** A handbook too long to send whole whose sections are NOT found yet: the answer waits for it (Step 6c). */
 export interface WaitingHandbook { id: string; name: string; pages: number | null }
+/** A current handbook whose TEXT is not saved yet ('uploaded' or 'reading'): the answer waits for it too (§183). */
+export interface UnreadHandbook { id: string; name: string; status: string }
 
 export type Loaded =
   | { ok: true; blocks: Block[]; used: HandbookUsed[]; notUsed: string[]; long: LongHandbook[]; waiting: WaitingHandbook[]
+      /** Text not saved yet: the route waits for these before the answer is built (§183, the owner). */
+      unread?: UnreadHandbook[]
       /** Tokens the whole handbooks took, and the budget: what is left is for the selected sections. */
       spent: number; budget: number }
   | { ok: false; refusal: string }
@@ -126,9 +130,13 @@ export async function loadHandbooksForAnswer(db: Db, companyId: string, budget =
   const notUsed = current.filter((h) => !withText.includes(h)).map((h) =>
     h.status === 'could_not_read' ? `"${h.name}" (could not be read: ${h.status_reason ?? 'no reason recorded'})`
       : `"${h.name}" (still being read)`)
+  // NEVER WITHOUT A HANDBOOK STILL BEING READ (§183, the owner): one whose text is not saved yet is not left out
+  // quietly — the route waits for it. With none ready, the answer waits rather than refusing.
+  const unread: UnreadHandbook[] = current.filter((h) => !withText.includes(h) && (h.status === 'uploaded' || h.status === 'reading'))
+    .map((h) => ({ id: h.id, name: h.name, status: h.status }))
   if (!withText.length) {
-    const waiting = current.some((h) => h.status === 'uploaded' || h.status === 'reading')
-    return { ok: false, refusal: waiting ? HR_REFUSALS.reading : HR_REFUSALS.unreadable }
+    if (unread.length) return { ok: true, blocks: [], used: [], notUsed, long: [], waiting: [], unread, spent: 0, budget }
+    return { ok: false, refusal: HR_REFUSALS.unreadable }
   }
 
   const blocks: Block[] = []
@@ -171,7 +179,22 @@ export async function loadHandbooksForAnswer(db: Db, companyId: string, budget =
       as: h.status === 'read' ? 'sections' : mine.length > 1 || mine[0]?.pageFrom != null ? 'pages' : 'whole',
       versionOf: h.version_of, addedAt: h.created_at })
   }
-  return { ok: true, blocks, used, notUsed, long, waiting, spent, budget }
+  return { ok: true, blocks, used, notUsed, long, waiting, unread, spent, budget }
+}
+
+/**
+ * ONE STEP OF THE WAIT FOR TEXT (§183), pure, so the 3-minute limit is tested with a stand-in clock. Given the
+ * unread handbooks' rows now and which of them have text saved: the ones that failed (named, with their reason),
+ * and what to do — 'reload' when every one has text or has failed, else 'wait' with the owner's stage words, or
+ * 'too_long' once the wait has passed the limit (6c's words follow in the route).
+ */
+export function textWaitStep(rows: Array<{ id: string; name: string; status: string; status_reason: string | null }>,
+  hasText: Set<string>, waitStart: number, now: number, ourReason: string, limit = WAIT_LIMIT_MS):
+  { failed: Array<{ id: string; name: string; reason: string }>; next: 'reload' } | { failed: Array<{ id: string; name: string; reason: string }>; next: 'wait' | 'too_long'; words: string } {
+  const failed = rows.filter((r) => r.status === 'could_not_read').map((r) => ({ id: r.id, name: r.name, reason: r.status_reason ?? ourReason }))
+  const pending = rows.filter((r) => r.status !== 'could_not_read' && !hasText.has(r.id))
+  if (!pending.length) return { failed, next: 'reload' }
+  return { failed, next: now - waitStart > limit ? 'too_long' : 'wait', words: readingFirstWords(pending.map((r) => r.name)) }
 }
 
 // ---------------------------------------------------------------------------------------------------------

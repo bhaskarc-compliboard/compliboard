@@ -5,7 +5,6 @@
 
 export const HR_REFUSALS = {
   none: 'Add a handbook first. Answers come from your handbooks.',
-  reading: 'Your handbooks are still being read. Ask again in a minute.',
   unreadable: 'None of your handbooks could be read, so there is nothing to answer from. The Handbooks tab shows why.',
 } as const
 
@@ -30,6 +29,12 @@ export const longNothingLine = (names: string[]) => names.length === 1
 export const waitingWords = (pages: number | null, done: number | null, total: number | null) =>
   `Your handbook is ${pages ?? 'very'}${pages ? ' pages' : ''} long. We're finding its sections so we can read the right ones`
   + (total ? ` — ${done ?? 0} of ${total} parts done` : '') + `. Your answer starts as soon as that's finished.`
+/** WAITING FOR A HANDBOOK'S TEXT (§183, the owner's words): the answer starts as soon as it is read. */
+export const readingFirstWords = (names: string[]) => names.length === 1
+  ? `Reading ${names[0]} first. Your answer starts as soon as it's read.`
+  : "Reading your handbooks first. Your answer starts as soon as they're read."
+/** A handbook whose reading failed during that wait, with others to answer from (§183, the owner's words): drawn grey. */
+export const notReadLine = (name: string) => `${name} could not be read, so this answer does not use it. The Handbooks tab shows why.`
 /** Reading failed during the wait (the owner's words); the reason is the handbook's own. */
 export const waitFailedWords = (reason: string) =>
   `We couldn't read your handbook: ${reason.trim().replace(/\.$/, '')}. Your question was not answered yet.`
@@ -113,6 +118,7 @@ export const readingWords = (books: Array<{ name: string; pages: number | null }
 export function isAppendedLine(line: string): boolean {
   const l = line.trim()
   return l === DAY1_LINE
+    || /^.+ could not be read, so this answer does not use it\. The Handbooks tab shows why\.$/.test(l)
     // 6a's temporary over-budget line: no longer written, still drawn grey when an older answer is reopened.
     || /^.+ is too long to read whole yet\. Reading its right sections comes in the next step\.$/.test(l)
     || /^.+ is long, so this answer read the sections that matched your question: .+\.$/.test(l)
