@@ -35,7 +35,7 @@ import { friendlyDate, conversationStatus } from '@/lib/conversationStatus'
 import { readTopicList, type TopicRow } from '@/lib/topicList'
 import {
   statusWords, handbookList, sectionCount, type HandbookRow, checkLine, HANDBOOKS_TAB_LINE, uploadLede, NOT_CHECKED_YET,
-  checkingSections, readAgainNote, PART_NOT_CHECKED, CHECK_FAILED, earlierCheckHeading, LEGACY_WORD,
+  checkingSections, readAgainNote, PART_NOT_CHECKED, CHECK_FAILED, earlierCheckHeading, LEGACY_WORD, OLDER_VERSION_NOTE,
 } from '@/lib/handbooks'
 import { loadRowChecks, loadCheckView, type RowCheckState, type CheckView } from '@/lib/handbookCheckView'
 import { AnswerBody, SourceList, type AnswerSource } from '@/components/AnswerBody'
@@ -189,10 +189,18 @@ export default function HrWorkspace() {
   }
 
   // ---- reading, as the caller (RLS scopes every read to the company) ----
+  // THE EMAIL'S LINK (`lib/handbookCheckNotify.ts` handbookLink): ?handbook=<id> opens that handbook's drawer, once.
+  const openFromLink = useRef<string | null>(typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('handbook'))
   const loadHandbooks = useCallback(async () => {
     const { data } = await supabase.from('handbooks').select(HANDBOOK_COLUMNS)
       .order('created_at', { ascending: false }).limit(LIST_CAP * 4)
-    setAllHandbooks((data ?? []) as HandbookRow[])
+    const rows = (data ?? []) as HandbookRow[]
+    setAllHandbooks(rows)
+    if (openFromLink.current) {
+      const h = rows.find((x) => x.id === openFromLink.current)
+      openFromLink.current = null
+      if (h) { setTab('handbooks'); setDrawer(h) }
+    }
   }, [supabase])
 
   // While any handbook is being read, look again every few seconds, so "Reading…" turns into its result.
@@ -981,6 +989,9 @@ export default function HrWorkspace() {
                     )}
                     {last.status === 'failed'
                       ? <p className="text-[14px] leading-relaxed text-[var(--amber)]">{CHECK_FAILED}</p>
+                      // THE ONE DELIBERATE CURRENCY BRANCH (owner, 8 October): an older version is never read again, so its
+                      // drawer says so in place of the read-again note. Everything else follows the version's own status.
+                      : !h.is_current ? <p className="text-[13px] text-gray-500">{OLDER_VERSION_NOTE}</p>
                       : h.next_check_at && <p className="text-[13px] text-gray-500">{readAgainNote(longDate(h.next_check_at))}</p>}
                     {last.parts.map((p, i) => p.kind === 'answer' ? (
                       // EACH PART IS DRAWN EXACTLY AS AN HR ANSWER (owner, Baseline Step 1).

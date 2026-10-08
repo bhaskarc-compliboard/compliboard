@@ -31,6 +31,7 @@ import { buildCompanyContext } from './companyContext.ts'
 import { finishAnswer, handbookContext, checkRecord, budgetTokens, TOKENS_PER_CHAR, type Block, type HandbookUsed } from './hrAnswer.ts'
 import { quotesDroppedLine, linksDroppedLine } from './hrAnswerWords.ts'
 import { lazyJobRun } from './jobRun.ts'
+import { notifyCheck } from './handbookCheckNotify.ts'
 import { hrAnswerPrompt, hrAnswerMessage } from '../prompts/hr-answer.ts'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -401,6 +402,8 @@ export async function runPiece(admin: Db, rowIds: string[], opts: { ask?: Ask } 
 export interface SweepCounts {
   companies: number; pieces: number; rows_done: number; retried: number; failed: number; cancelled: number; gone: number
   recovered: { putBack: number; failed: number; released: number }; checks_finished: number
+  /** Emails sent for checks someone pressed, and what went out — Audits' `sent` list, for Resend's id weeks later. */
+  notified: number; sent: Array<{ check: string; to: string; id: string | null; error?: string }>
   stopped_for_time: boolean; wall_ms: number
 }
 
@@ -419,7 +422,7 @@ export async function sweepChecks(admin: Db, opts: { ask?: Ask; maxPieces?: numb
   const run = lazyJobRun(admin, 'handbook_checks')
   const errors: Array<{ piece: string; error: string }> = []
   const c: SweepCounts = { companies: 0, pieces: 0, rows_done: 0, retried: 0, failed: 0, cancelled: 0, gone: 0,
-    recovered: { putBack: 0, failed: 0, released: 0 }, checks_finished: 0, stopped_for_time: false, wall_ms: 0 }
+    recovered: { putBack: 0, failed: 0, released: 0 }, checks_finished: 0, notified: 0, sent: [], stopped_for_time: false, wall_ms: 0 }
   const visited = new Set<string>()
   try {
     c.recovered = await recoverStuck(admin, clock())
@@ -490,7 +493,18 @@ export async function sweepChecks(admin: Db, opts: { ask?: Ask; maxPieces?: numb
             errors.push({ piece: ids.join(','), error: e instanceof Error ? e.message : String(e) })
           }
           const fin = await finishCheckIfDone(admin, piece[0].checkId)
-          if (fin.finished) c.checks_finished++
+          if (fin.finished) {
+            c.checks_finished++
+            // THE EMAIL, where Audits' sweep sends its own: right after the finish, and only here. Only a check someone
+            // pressed is emailed (`lib/handbookCheckNotify.ts`); a failure to send is recorded, never fatal.
+            try {
+              const r = await notifyCheck(admin as Parameters<typeof notifyCheck>[0], piece[0].checkId)
+              if (r.notified) c.notified++
+              if (r.id || (r.error && r.to)) c.sent.push({ check: piece[0].checkId, to: r.to ?? '', id: r.id ?? null, ...(r.error ? { error: r.error } : {}) })
+            } catch (e) {
+              errors.push({ piece: `notify:${piece[0].checkId}`, error: e instanceof Error ? e.message : String(e) })
+            }
+          }
         }
       } finally {
         // ONLY this run's own unstarted claims, as the audit sweep (Workspace Stage 4 Part 3).

@@ -189,7 +189,10 @@ describe('counts in plain English, and every drawer follows its own status (owne
     const body = page.slice(at, page.indexOf('</Drawer>', at))
     assert.ok(at > 0 && body.length > 200, 'the slice holds the handbook drawer body')
     assert.match(body, /h\.status === 'could_not_read'[\s\S]*statusWords\(h\.status, h\.status_reason\)/)
-    assert.ok(!body.includes('is_current'), 'the body never branches on current vs older')
+    // THE ONE DELIBERATE EXCEPTION (owner, 8 October): an older version's drawer says it is not checked again, in place
+    // of the read-again note. Everything else in the body follows the version's own status.
+    assert.equal(body.match(/is_current/g)?.length, 1, 'the body branches on current vs older in exactly one place')
+    assert.match(body, /: !h\.is_current \? <p className="text-\[13px\] text-gray-500">\{OLDER_VERSION_NOTE\}<\/p>/)
     assert.ok(!/\$\{n\} sections|pages, `/.test(body.replace(/counted\([^)]*\)/g, '')), 'no hand-made plural left')
   })
 })

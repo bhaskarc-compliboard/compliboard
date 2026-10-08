@@ -29,7 +29,9 @@ export interface RowIn { id: string; section_id: string | null; kind: string; st
 export function checkParts(rows: RowIn[], position: (sectionId: string | null) => number,
   title: (sectionId: string | null) => string, findingsOf: (rowId: string) => Array<{ title: string; why: string | null; what_to_change: string | null }>): CheckPart[] {
   const ordered = rows.filter((r) => r.kind === 'section' && r.status !== 'cancelled').sort((a, b) => position(a.section_id) - position(b.section_id))
-  if (!ordered.some((r) => r.answer_text)) {
+  // A check from before the baseline has words on its rows and no answers. A baseline check whose every part failed
+  // has neither: it is NOT drawn section by section (owner, 8 October) — its failed parts fold into one, below.
+  if (!ordered.some((r) => r.answer_text) && ordered.some((r) => r.word != null)) {
     return ordered.map((r) => ({ kind: 'legacy' as const, title: title(r.section_id), word: r.word, failed: r.status === 'failed', findings: findingsOf(r.id) }))
   }
   const parts: CheckPart[] = []
@@ -42,6 +44,9 @@ export function checkParts(rows: RowIn[], position: (sectionId: string | null) =
   }
   return parts
 }
+
+/** A check that failed shows only the failed-check line (owner, 8 October): no parts under it. */
+export const partsToShow = (status: 'done' | 'failed', parts: CheckPart[]): CheckPart[] => (status === 'failed' ? [] : parts)
 
 export const partsNotChecked = (parts: CheckPart[]) => parts.filter((p) => p.kind === 'failed' || (p.kind === 'legacy' && p.failed)).length
 
@@ -110,5 +115,6 @@ export async function loadCheckView(db: Db, handbookId: string): Promise<CheckVi
     (id) => sec.get(id ?? '')?.title ?? 'Untitled section',
     (rowId) => ((finds ?? []) as Array<{ check_section_id: string; title: string; why: string | null; what_to_change: string | null }>)
       .filter((f) => f.check_section_id === rowId).map((f) => ({ title: f.title, why: f.why, what_to_change: f.what_to_change })))
-  return { open: openOut, last: { status: last.status === 'failed' ? 'failed' : 'done', finishedAt: last.finished_at, parts } }
+  const status = last.status === 'failed' ? 'failed' as const : 'done' as const
+  return { open: openOut, last: { status, finishedAt: last.finished_at, parts: partsToShow(status, parts) } }
 }

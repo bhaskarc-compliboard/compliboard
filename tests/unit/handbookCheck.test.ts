@@ -10,8 +10,8 @@ import {
   MAX_ATTEMPTS, NEXT_CHECK_DAYS, ALREADY_CHECKING, REASONS, type PackRow,
 } from '../../lib/handbookCheck.ts'
 import { TOKENS_PER_CHAR, OPUS_HANDBOOK_BUDGET_TOKENS, budgetTokens } from '../../lib/hrAnswer.ts'
-import { checkParts, partsNotChecked, type RowIn } from '../../lib/handbookCheckView.ts'
-import { checkLine, readAgainNote, PART_NOT_CHECKED, HANDBOOKS_TAB_LINE, uploadLede } from '../../lib/handbooks.ts'
+import { checkParts, partsNotChecked, partsToShow, type RowIn } from '../../lib/handbookCheckView.ts'
+import { checkLine, readAgainNote, PART_NOT_CHECKED, HANDBOOKS_TAB_LINE, uploadLede, OLDER_VERSION_NOTE } from '../../lib/handbooks.ts'
 import { markNotFound, NOT_IN_HANDBOOK, NOT_IN_HANDBOOK_HREF } from '../../lib/hrAnswerWords.ts'
 
 const row = (id: string, position: number, chars: number, checkId = 'c1'): PackRow => ({ id, checkId, kind: 'section', position, chars })
@@ -195,5 +195,23 @@ describe('THE CHECK ON SCREEN: its parts, the row, the words', () => {
     assert.match(page, /<HrAnswerView \{\.\.\.\(\(\) => \{ const a = splitAppended\(p\.text\)/)
     const order = ['>Check now<', '>Open the handbook<', '>Add a newer version<', '>Download<', '>Delete<'].map((x) => page.lastIndexOf(x))
     assert.deepEqual([...order].sort((a, b) => a - b), order)
+  })
+})
+
+describe('the owner\'s 8 October answers: an older version, and a check where every part failed', () => {
+  const r = (id: string, sec: string, status: string): RowIn => ({ id, section_id: sec, kind: 'section', status, word: null, answer_text: null, answer_sources: null })
+  const pos = (id: string | null) => Number(String(id).slice(1))
+  test('EVERY PART FAILED: one failed part, never each section drawn "Not checked"; and the drawer shows no part at all', () => {
+    const parts = checkParts([r('1', 's0', 'failed'), r('2', 's1', 'failed'), r('3', 's2', 'failed')], pos, () => 'x', () => [])
+    assert.deepEqual(parts, [{ kind: 'failed' }])
+    assert.deepEqual(partsToShow('failed', parts), [], 'only the failed-check line')
+    assert.deepEqual(partsToShow('done', parts), parts)
+  })
+  test('a check from before the baseline (words on its rows) is still drawn as it was stored', () => {
+    const parts = checkParts([{ ...r('1', 's0', 'done'), word: 'no_gap' }, r('2', 's1', 'failed')], pos, () => 't', () => [])
+    assert.deepEqual(parts.map((p) => p.kind), ['legacy', 'legacy'])
+  })
+  test('an older version: "This is an older version. Only the current version is checked again."', () => {
+    assert.equal(OLDER_VERSION_NOTE, 'This is an older version. Only the current version is checked again.')
   })
 })
