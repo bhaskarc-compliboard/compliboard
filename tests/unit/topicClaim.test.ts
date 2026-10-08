@@ -141,8 +141,8 @@ describe('the nightly job\'s choice', () => {
   ]
   const { candidates, userCurrent } = nightlyCandidates(rows, NOW)
 
-  test('both lists wait for 24 hours of quiet', () => {
-    assert.equal(IDLE_HOURS, 24)
+  test('both lists wait for the quiet rule: 6 hours since HR Step 10 (decision 13; was 24)', () => {
+    assert.equal(IDLE_HOURS, 6)
     assert.deepEqual(candidates.map((c) => c.id), ['never-quiet', 'spoken-quiet', 'user-new-turns'])
   })
   test('skipped_user_summary counts a person\'s summary with nothing said since — and only that', () => {
@@ -154,5 +154,40 @@ describe('the nightly job\'s choice', () => {
     assert.match(src, /skipped_user_summary: skippedUserSummary/)
     assert.match(src, /reason: 'a summary is being written for it right now \(claim held\)'/)
     assert.match(src, /guard: \{ claimedAt, summarisedAt: topic\.summarised_at \}/)
+  })
+})
+
+describe('THE QUIET RULE AT ITS EDGES (HR Step 10, decision 13; decision 23)', () => {
+  const NOW = Date.parse('2026-10-09T10:00:00Z')
+  const at = (ms: number) => new Date(NOW - ms).toISOString()
+  const topic = (id: string, last: number, summarised: number | null = null) =>
+    ({ id, last_turn_at: at(last), summarised_at: summarised == null ? null : at(summarised), summary_source: summarised == null ? null : 'nightly' })
+  test('5 hours 59 minutes quiet: not yet. Exactly 6 hours: yes', () => {
+    const r = nightlyCandidates([topic('a', 5 * 3600_000 + 59 * 60_000), topic('b', 6 * 3600_000)], NOW)
+    assert.deepEqual(r.candidates.map((c) => c.id), ['b'])
+  })
+  test('DECISION 23: a conversation picked up again after its summary is summarised again that night, once quiet for 6 hours', () => {
+    const r = nightlyCandidates([topic('resumed', 7 * 3600_000, 30 * 3600_000), topic('resumed-recent', 2 * 3600_000, 30 * 3600_000)], NOW)
+    assert.deepEqual(r.candidates.map((c) => c.id), ['resumed'])
+  })
+})
+
+describe('THE CRON SCHEDULE (HR Step 10): every entry pinned', () => {
+  test('vercel.json holds exactly these six', () => {
+    const crons = JSON.parse(readFileSync('vercel.json', 'utf8')).crons
+    assert.deepEqual(crons, [
+      { path: '/api/jobs/summarise', schedule: '0 10 * * *' },
+      { path: '/api/jobs/delete', schedule: '30 10 * * *' },
+      { path: '/api/jobs/scan-documents', schedule: '*/5 * * * *' },
+      { path: '/api/jobs/audit-sections', schedule: '*/5 * * * *' },
+      { path: '/api/jobs/handbook-queue', schedule: '0 10 * * *' },
+      { path: '/api/jobs/handbook-checks', schedule: '*/5 * * * *' },
+    ])
+  })
+  test('both HR jobs: the preview switch first (404 while HR is off), then the cron secret', () => {
+    for (const f of ['app/api/jobs/handbook-queue/route.ts', 'app/api/jobs/handbook-checks/route.ts']) {
+      const src = readFileSync(f, 'utf8')
+      assert.ok(src.indexOf('hrPreviewOn()') > 0 && src.indexOf('hrPreviewOn()') < src.indexOf('requireCronSecret(request)'), f)
+    }
   })
 })

@@ -1,7 +1,7 @@
 /**
  * THE NIGHTLY SUMMARISER — `DECISIONS.md` §108, §125. Run 2 Task 4; Workspace Stage 4.
  *
- * For every conversation that has been quiet for 24 hours and either was never summarised or was
+ * For every conversation that has been quiet for 6 hours (IDLE_HOURS) and either was never summarised or was
  * spoken to after its summary: write the summary report and read candidate company facts out of it
  * as PROPOSALS — through `summariseTopic` (`lib/summaryReport.ts`), the writer the person's own
  * "Summarise this conversation" uses (Workspace Task 5).
@@ -11,14 +11,14 @@
  * job still owes the deleter is the SUMMARY: the deleter will not clear a topic whose summary is
  * missing or older than its last turn.
  *
- * *** IT RUNS AT 03:00 UTC FROM THE CRON RELEASE (Workspace Stage 4 Part 3). *** Vercel's cron calls
+ * *** IT RUNS AT 10:00 UTC (HR Step 10, decision 13; 03:00 UTC from the cron release until then). *** Vercel's cron calls
  * with GET and `Authorization: Bearer <CRON_SECRET>`; until that release the route answered POST only and
  * every scheduled call was refused (`DECISIONS.md` §154). By hand: POST with `x-cron-secret`.
  *
  * ---------------------------------------------------------------------------
  * THE RULES THAT ARE EASY TO GET WRONG, STATED BEFORE THE CODE
  *
- * 1. **BOTH LISTS WAIT FOR 24 HOURS OF QUIET.** The second list (summarised, then spoken to) had no
+ * 1. **BOTH LISTS WAIT FOR THE QUIET RULE (6 hours since HR Step 10).** The second list (summarised, then spoken to) had no
  *    quiet rule, so a conversation spoken to five minutes ago was summarised mid-conversation.
  *    The choice is `nightlyCandidates` (`lib/topicClaim.ts`), tested in `tests/unit/topicClaim.test.ts`.
  *
@@ -49,10 +49,11 @@ import { supabaseAdmin } from '@/lib/auth'
 // "Summarise this conversation" uses; each answer reaches it with its sources numbered once (§127).
 import { summariseTopic } from '@/lib/summaryReport'
 import { claimTopic, releaseTopic, nightlyCandidates, type NightlyTopic } from '@/lib/topicClaim'
+import { hrPreviewOn } from '@/lib/hrPreview'
 
 export const maxDuration = 800
 
-type Row = NightlyTopic & { company_id: string; title: string | null }
+type Row = NightlyTopic & { company_id: string; title: string | null; section: string }
 
 /**
  * VERCEL CRON CALLS WITH GET — `Authorization: Bearer <CRON_SECRET>` (`lib/cronSecret.ts`). The same
@@ -74,15 +75,16 @@ export async function POST(request: NextRequest) {
   try {
     // Every topic that has been spoken in. Two queries (never summarised, summarised) as before; the
     // choice between them is one pure function, so the rules above are tested rather than described.
-    const cols = 'id, company_id, title, summarised_at, summary_source, last_turn_at'
-    // WORKSPACE CONVERSATIONS ONLY (HR-PLAN decision 14, HR Step 6a). An HR conversation's handbook sources
-    // have no URL, and this writer keeps only sources with one (`lib/summaryReport.ts` gatherSources), so it
-    // would drop them silently. HR conversations wait for HR's own writer (step 7).
+    const cols = 'id, company_id, title, summarised_at, summary_source, last_turn_at, section'
+    // HR CONVERSATIONS TOO, SINCE HR STEP 10 (decision 14): the one writer with kind = the topic's section (§172), so
+    // an HR conversation's handbook sources are kept. Only while HR_PREVIEW is on — HR is behind the switch until its
+    // release, and production has no HR conversations. With it off this reads exactly the workspace's list, as before.
+    const sections = hrPreviewOn() ? ['workspace', 'hr'] : ['workspace']
     const { data: never, error: e1 } = await supabaseAdmin
-      .from('topics').select(cols).eq('section', 'workspace').is('summarised_at', null).not('last_turn_at', 'is', null)
+      .from('topics').select(cols).in('section', sections).is('summarised_at', null).not('last_turn_at', 'is', null)
     if (e1) throw new Error(`could not list unsummarised topics: ${e1.message}`)
     const { data: already, error: e2 } = await supabaseAdmin
-      .from('topics').select(cols).eq('section', 'workspace').not('summarised_at', 'is', null).not('last_turn_at', 'is', null)
+      .from('topics').select(cols).in('section', sections).not('summarised_at', 'is', null).not('last_turn_at', 'is', null)
     if (e2) throw new Error(`could not list summarised topics: ${e2.message}`)
 
     const { candidates, userCurrent } = nightlyCandidates(
@@ -124,6 +126,8 @@ export async function POST(request: NextRequest) {
           topicId: topic.id, companyId: topic.company_id, title: topic.title ?? null, turns, source: 'nightly',
           extra: { idle_at: topic.last_turn_at, extracted_at: new Date().toISOString() },
           guard: { claimedAt, summarisedAt: topic.summarised_at },   // RULE 4
+          // HR's writer for an HR conversation (§172); a workspace conversation's call is exactly as before.
+          ...(topic.section === 'hr' ? { kind: 'hr' as const } : {}),
         })
         if (!result.ok && result.skipped) { skipped.push({ topic: topic.id, reason: result.error }); continue }
         if (!result.ok) throw new Error(result.error)

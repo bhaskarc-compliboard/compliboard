@@ -124,8 +124,13 @@ export function withinClaimTime<T>(work: Promise<T>, kind: ClaimKind, ms = CLAIM
 // THE NIGHTLY JOB'S CHOICE — `app/api/jobs/summarise/route.ts`, here so it can be tested.
 // ---------------------------------------------------------------------------
 
-/** A conversation is idle once nothing has been said for a day. */
-export const IDLE_HOURS = 24
+/**
+ * A conversation is idle once nothing has been said for SIX HOURS (HR-PLAN decision 13, HR Step 10: was 24). The job
+ * runs at 10:00 UTC, so a conversation that ends in the afternoon or evening, Pacific time, is summarised that night.
+ * This reverses part of DECISIONS.md §161 ("both candidate lists wait for 24 hours of quiet"); the quiet rule itself
+ * — both lists wait — is unchanged.
+ */
+export const IDLE_HOURS = 6
 
 export interface NightlyTopic {
   id: string; summarised_at: string | null; summary_source: string | null; last_turn_at: string | null
@@ -133,10 +138,10 @@ export interface NightlyTopic {
 
 /**
  * WHICH CONVERSATIONS TONIGHT'S RUN SUMMARISES, AND WHICH IT LEAVES BECAUSE A PERSON'S SUMMARY IS
- * CURRENT. Both rules apply the 24-hour quiet rule — the second list used to have none, so a
+ * CURRENT. Both rules apply the quiet rule (IDLE_HOURS) — the second list used to have none, so a
  * conversation spoken to five minutes ago was summarised in the middle of being had.
  *
- *   candidate:   quiet for 24 hours, AND (never summarised OR spoken to since its summary)
+ *   candidate:   quiet for IDLE_HOURS or more, AND (never summarised OR spoken to since its summary)
  *   userCurrent: summarised by the person, and nothing said since — left alone, and COUNTED, so
  *                `skipped_user_summary` counts what it says (it could never be anything but 0).
  */
@@ -153,7 +158,7 @@ export function nightlyCandidates<T extends NightlyTopic>(rows: T[], now: number
       if (t.summary_source === 'user') userCurrent.push(t)
       continue
     }
-    if (last < idleBefore) candidates.push(t)
+    if (last <= idleBefore) candidates.push(t)
   }
   return { candidates, userCurrent }
 }

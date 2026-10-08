@@ -85,9 +85,11 @@ export const ASK_IT_AGAIN = 'Ask it again'
 /** The same question was asked again later in this conversation (owner, 6b answers): no button then. */
 export const ASKED_AGAIN_BELOW = 'Not answered. Asked again below.'
 
-/** HR's conversation drawer, not summarised (owner, 6b answers). No "overnight" until step 7 makes it true;
- *  step 7 restores the workspace's sentence. */
-export const NOT_SUMMARISED_HR = "This one hasn't been summarised yet. The full conversation is here."
+/**
+ * HR's conversation drawer, not summarised: THE WORKSPACE'S OWN SENTENCE (`app/compliance/page.tsx`), true since HR
+ * Step 10 summarises HR conversations overnight (owner). A test holds the two equal.
+ */
+export const NOT_SUMMARISED_HR = "This one hasn't been summarised yet. The summary is written overnight, and the full conversation is here until then."
 
 /** Deleting a conversation (canvas board 11, the Step 6b brief). */
 export const DELETE_CONVERSATION = {

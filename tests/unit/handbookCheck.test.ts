@@ -6,7 +6,7 @@ import test, { describe } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import {
-  packPieces, failRows, recoverStuck, finishCheckIfDone, pieceChars, CHECK_QUESTION,
+  packPieces, failRows, recoverStuck, finishCheckIfDone, pieceChars, CHECK_QUESTION, dueReason,
   MAX_ATTEMPTS, NEXT_CHECK_DAYS, ALREADY_CHECKING, REASONS, type PackRow,
 } from '../../lib/handbookCheck.ts'
 import { TOKENS_PER_CHAR, OPUS_HANDBOOK_BUDGET_TOKENS, budgetTokens } from '../../lib/hrAnswer.ts'
@@ -103,9 +103,8 @@ describe('the routes and the migration', () => {
     assert.equal(ALREADY_CHECKING, 'This handbook is already being checked.')
     assert.ok(check.indexOf('after(async') < check.indexOf('{ status: 202 }'))
   })
-  test('the sweep: the preview switch first, then the cron secret; no vercel.json entry yet (step 10)', () => {
+  test('the sweep: the preview switch first, then the cron secret (scheduled since step 10; 404 while HR is off)', () => {
     assert.ok(sweep.indexOf('hrPreviewOn()') < sweep.indexOf('requireCronSecret(request)'))
-    assert.ok(!readFileSync('vercel.json', 'utf8').includes('handbook-checks'))
   })
   test('migration 071 proves its rules on probe rows of its own, and removes them', () => {
     const m = readFileSync('supabase/migrations/071_handbook_check_runs.sql', 'utf8')
@@ -174,10 +173,11 @@ describe('THE CHECK ON SCREEN: its parts, the row, the words', () => {
   test('the owner\'s words: the read-again note, a failed part, the two lines that were untrue', () => {
     assert.equal(readAgainNote('6 January 2027'), 'We will read this handbook again on 6 January 2027. Changed it before then? Add the new version, or press Check now.')
     assert.equal(PART_NOT_CHECKED, "We could not check this part. That's on our side, not yours. Press Check now to try again.")
-    assert.equal(HANDBOOKS_TAB_LINE, 'Press Check now on a handbook to check it against the rules that apply to you.')
-    assert.equal(uploadLede('Handbook.pdf'), 'Handbook.pdf. We read it in about a minute. It stays here in HR.')
+    // The owner's words, restored by step 10's nightly check (they were replaced while untrue, §175).
+    assert.equal(HANDBOOKS_TAB_LINE, 'Each handbook is checked the night it arrives, then every 90 days. Changed one? Add the new version.')
+    assert.equal(uploadLede('Handbook.pdf'), 'Handbook.pdf. We read it in about a minute and check it tonight. It stays here in HR.')
     const page = readFileSync('app/hr/new/HrWorkspace.tsx', 'utf8')
-    assert.ok(!page.includes('checked the night it arrives') && !page.includes('check it tonight'))
+    assert.match(page, /\{HANDBOOKS_TAB_LINE\}/); assert.match(page, /lede=\{uploadLede\(pendingFile\.name\)\}/)
   })
   test('THE GREY MARK: the words stay, the mark becomes a grey note the shared renderer draws (and nothing else)', () => {
     assert.equal(NOT_IN_HANDBOOK, '(not a quote from your handbook)')
@@ -216,5 +216,23 @@ describe('the owner\'s 8 October answers: an older version, and a check where ev
     const page = readFileSync('app/hr/new/HrWorkspace.tsx', 'utf8')
     assert.match(page, /\{!open && !last && \(older\s*\? <p className="text-\[13px\] text-gray-500">\{OLDER_VERSION_NOTE\}<\/p>\s*: <p className="text-\[14px\] leading-relaxed text-gray-600">\{NOT_CHECKED_YET\}<\/p>\)\}/)
     assert.match(page, /: older \? <p className="text-\[13px\] text-gray-500">\{OLDER_VERSION_NOTE\}<\/p>\s*: h\.next_check_at && /)
+  })
+})
+
+describe('THE NIGHT QUEUE\'S RULE (HR Step 10, decision 13)', () => {
+  const NOW = Date.parse('2026-10-09T10:00:00Z')
+  test('never checked: new_handbook, or new_version for a newer version; checked: scheduled once next_check_at has passed', () => {
+    assert.equal(dueReason({ version_of: null, next_check_at: null }, false, NOW), 'new_handbook')
+    assert.equal(dueReason({ version_of: 'old', next_check_at: null }, false, NOW), 'new_version')
+    assert.equal(dueReason({ version_of: null, next_check_at: '2026-10-09T09:59:59Z' }, true, NOW), 'scheduled')
+    assert.equal(dueReason({ version_of: null, next_check_at: '2026-10-09T10:00:00Z' }, true, NOW), 'scheduled', 'due at the very moment')
+    assert.equal(dueReason({ version_of: null, next_check_at: '2027-01-06T10:00:00Z' }, true, NOW), null)
+  })
+  test('the queue creates checks nobody pressed (no email), and the route only queues, then starts the sweep', () => {
+    const lib = readFileSync('lib/handbookCheck.ts', 'utf8'), route = readFileSync('app/api/jobs/handbook-queue/route.ts', 'utf8')
+    assert.match(lib, /createCheck\(admin, \{ companyId: b\.company_id, handbookId: b\.id, reason, requestedBy: null \}\)/)
+    assert.match(lib, /else if \(made\.reason === 'already'\) out\.skippedOpen\.push\(b\.id\)/)
+    assert.match(route, /startJobRun\(supabaseAdmin, 'handbook_checks'\)/)
+    assert.ok(route.indexOf('queueDueChecks(supabaseAdmin)') < route.indexOf('after(async'))
   })
 })

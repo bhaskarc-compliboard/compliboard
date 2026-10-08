@@ -86,8 +86,10 @@ describe('the HR page\'s conversations', () => {
   test('the owner\'s 6b answers: asked again below; the drawer\'s sentence; the handbook drawer\'s scrim; Stop logged as the person\'s', () => {
     assert.equal(ASKED_AGAIN_BELOW, 'Not answered. Asked again below.')
     assert.match(page, /exchanges\.slice\(xi \+ 1\)\.some\(\(y\) => y\.question\.trim\(\) === x\.question\.trim\(\)\)/)
-    assert.equal(NOT_SUMMARISED_HR, "This one hasn't been summarised yet. The full conversation is here.")
-    assert.ok(!page.includes('The summary is written overnight'), 'no "overnight" on the HR page until step 7')
+    // Since step 10 summarises HR conversations overnight: the workspace's own sentence, word for word (owner).
+    assert.equal(NOT_SUMMARISED_HR, "This one hasn't been summarised yet. The summary is written overnight, and the full conversation is here until then.")
+    const ws = readFileSync('app/compliance/page.tsx', 'utf8').replace(/&apos;/g, "'").replace(/\s+/g, ' ')
+    assert.ok(ws.includes(NOT_SUMMARISED_HR), 'the same words as the workspace\'s drawer')
     assert.match(page, /\{drawer && \(\s*<div className="no-print fixed inset-0 z-\[45\] bg-gray-900\/30" onClick=\{\(\) => setDrawer\(null\)\} \/>/)
     const route = readFileSync('app/api/hr/answer/route.ts', 'utf8')
     assert.match(route, /if \(request\.signal\.aborted\) \{ console\.log\('hr answer: stopped by the person'\); continue \}/)

@@ -408,6 +408,11 @@ if (!(await reachable())) {
       : (ckAnon.status === 404 && ckMissing.status === 404 && swNoSecret.status === 404)
     console.log(`  ${cok ? '✓' : '✗'} hr handbook check   ${preview ? `preview on: no session ${ckAnon.status}, unknown handbook ${ckMissing.status}, sweep without secret ${swNoSecret.status}` : `preview off: 404 (${ckAnon.status}, ${ckMissing.status}, ${swNoSecret.status})`}`)
     if (!cok) failures++
+    // The handbook night queue (Step 10): without the cron secret a 404, preview on or off. Free: it queues nothing.
+    const qNoSecret = await fetch(`${BASE}/api/jobs/handbook-queue`, { method: 'POST' })
+    const qok = qNoSecret.status === 404
+    console.log(`  ${qok ? '✓' : '✗'} hr handbook queue   without the cron secret ${qNoSecret.status}`)
+    if (!qok) failures++
   }
 
   // 1. RESEARCH streams, and the stream carries sources.

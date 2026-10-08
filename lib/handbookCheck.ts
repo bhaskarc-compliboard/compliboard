@@ -519,3 +519,48 @@ export async function sweepChecks(admin: Db, opts: { ask?: Ask; maxPieces?: numb
   await run.finish(c as unknown as Record<string, unknown>, errors)
   return { ...c, run: run.id, errors }
 }
+
+// ---------------------------------------------------------------------------------------------------------
+// THE NIGHT QUEUE — HR Step 10 (decision 13). It only queues: the sweep does the checking.
+// ---------------------------------------------------------------------------------------------------------
+
+export type QueueReason = 'new_handbook' | 'new_version' | 'scheduled'
+
+/**
+ * Why a current, read handbook is due tonight, or null. Pure, so the rule is tested at its edges:
+ *   never checked, and not a newer version  → 'new_handbook'
+ *   never checked, and a newer version      → 'new_version'
+ *   checked, and next_check_at has passed   → 'scheduled'
+ * "Checked" means a check that finished DONE; one that failed has not checked it, so it is tried again.
+ */
+export function dueReason(h: { version_of: string | null; next_check_at: string | null }, everDone: boolean, now: number): QueueReason | null {
+  if (!everDone) return h.version_of ? 'new_version' : 'new_handbook'
+  return h.next_check_at && Date.parse(h.next_check_at) <= now ? 'scheduled' : null
+}
+
+/**
+ * EVERY CURRENT, READ HANDBOOK THAT IS DUE, ACROSS COMPANIES (the server's client: this job has no user session).
+ * Each gets a check with requested_by EMPTY, so no email is sent (`lib/handbookCheckNotify.ts`). A handbook already
+ * being checked is skipped by the database's one-open-check rule (071), read here as createCheck's 'already'.
+ */
+export async function queueDueChecks(admin: Db, now = Date.now()): Promise<{
+  queued: Array<{ handbook: string; reason: QueueReason; check: string }>; skippedOpen: string[]; notDue: number
+}> {
+  const { data: books, error } = await admin.from('handbooks')
+    .select('id, company_id, version_of, next_check_at').eq('is_current', true).eq('status', 'read')
+  if (error) throw new Error(`queueDueChecks: ${error.message}`)
+  const list = (books ?? []) as Array<{ id: string; company_id: string; version_of: string | null; next_check_at: string | null }>
+  const { data: done } = list.length
+    ? await admin.from('handbook_checks').select('handbook_id').in('handbook_id', list.map((b) => b.id)).eq('status', 'done')
+    : { data: [] }
+  const checked = new Set(((done ?? []) as Array<{ handbook_id: string }>).map((d) => d.handbook_id))
+  const out = { queued: [] as Array<{ handbook: string; reason: QueueReason; check: string }>, skippedOpen: [] as string[], notDue: 0 }
+  for (const b of list) {
+    const reason = dueReason(b, checked.has(b.id), now)
+    if (!reason) { out.notDue++; continue }
+    const made = await createCheck(admin, { companyId: b.company_id, handbookId: b.id, reason, requestedBy: null })
+    if (made.ok) out.queued.push({ handbook: b.id, reason, check: made.checkId })
+    else if (made.reason === 'already') out.skippedOpen.push(b.id)
+  }
+  return out
+}

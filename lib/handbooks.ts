@@ -116,9 +116,9 @@ export function handbookList(all: HandbookRow[], sites: Array<{ id: string; name
 // THE CHECK'S WORDS — HR Baseline Step 1 (8 October 2026). Marked (owner) where they are the owner's.
 // ---------------------------------------------------------------------------------------------------------
 
-/** The Handbooks tab's line and the upload sheet's lede, true until step 10's nightly check (owner). */
-export const HANDBOOKS_TAB_LINE = 'Press Check now on a handbook to check it against the rules that apply to you.'
-export const uploadLede = (file: string) => `${file}. We read it in about a minute. It stays here in HR.`
+/** The Handbooks tab's line and the upload sheet's lede: the owner's words, restored by HR Step 10's nightly check. */
+export const HANDBOOKS_TAB_LINE = 'Each handbook is checked the night it arrives, then every 90 days. Changed one? Add the new version.'
+export const uploadLede = (file: string) => `${file}. We read it in about a minute and check it tonight. It stays here in HR.`
 
 /** The row's line after the file name, each part with whether it is amber (owner). */
 export type LinePart = { text: string; amber?: boolean }
