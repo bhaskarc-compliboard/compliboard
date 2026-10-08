@@ -16,7 +16,7 @@ import { nextPosition, saveUserTurn, saveAssistantTurn, markTurnStopped, loadTur
          titleFromQuestion, bumpCounter } from '@/lib/conversation'
 import { loadHandbooksForAnswer, handbookContext, finishAnswer, appendHandbookSources, noCheckYet, checkRecord, budgetTokens,
          tableOfContents, safetyNet, chooseSections, addSelected, type HrSource, type Selection } from '@/lib/hrAnswer'
-import { quotesDroppedLine, uncheckedQuotesLine, linksDroppedLine, DAY1_LINE, longLine, longNetOnlyLine, longNothingLine,
+import { quotesDroppedLine, linksDroppedLine, DAY1_LINE, longLine, longNetOnlyLine, longNothingLine,
          waitingWords, waitFailedWords, waitTooLongWords, WAIT_LIMIT_MS } from '@/lib/hrAnswerWords'
 import { READ_REASONS } from '@/lib/handbooks'
 import { HR_ANSWER_PROMPT, hrAnswerMessage } from '@/prompts/hr-answer'
@@ -179,7 +179,6 @@ export async function POST(request: NextRequest) {
               const done = finishAnswer(raw, ev.answer.sources, ev.searched, lv.blocks, lv.used, ev.cited)
               const lines = [
                 done.droppedQuotes ? quotesDroppedLine(done.droppedQuotes) : '',
-                done.uncheckedQuotes ? uncheckedQuotesLine(done.uncheckedQuotes) : '',
                 done.droppedLinks ? linksDroppedLine(done.droppedLinks) : '',
                 ...longLines,
                 (await noCheckYet(db, usedIds)) ? DAY1_LINE : '',
@@ -187,7 +186,7 @@ export async function POST(request: NextRequest) {
               const text = [done.text.trim(), ...lines].join('\n\n')
               completed = true
               send({ type: 'done', research: text, sources: done.sources, topicId })
-              console.log(`hr answer: ${done.sources.length} source(s), ${done.droppedQuotes} quote(s) dropped, ${done.uncheckedQuotes} unchecked, ${done.droppedLinks} link(s) dropped, ${ev.cited.length} cited passage(s)`)
+              console.log(`hr answer: ${done.sources.length} source(s), ${done.droppedQuotes} marker quote(s) dropped, ${done.notFoundQuotes} marked not found, ${done.uncheckedQuotes} marked unchecked, ${done.droppedLinks} link(s) dropped, ${ev.cited.length} cited passage(s)`)
               if (topicId) {
                 await saveAssistantTurn(db, { topicId, companyId, text, sources: done.sources as HrSource[], position: answerPosition,
                   checkRecord: checkRecord({ used: lv.used, selections, budgetTokens: budgetTokens(),

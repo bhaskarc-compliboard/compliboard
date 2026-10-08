@@ -1,40 +1,47 @@
 /**
- * THE HANDBOOK CHECK — HR Step 8, part 1 (HR-PLAN decision 2; the owner's answers to the Step 8 design).
+ * THE HANDBOOK CHECK — HR Step 8 (HR-PLAN decision 2), and since 8 October 2026 THE BASELINE (the owner: rev 1 is
+ * Opus 5.5 at full power, unrestricted; improvements later as switches, off by default, each measured).
  *
- * Each current handbook is checked section by section against the rules for its sites, and the result is rows in
- * 066's tables (with 071's columns). It COPIES Audits' patterns — a claim per unit, a five-minute sweep, a
- * compare-and-set finish — and none of Audits' files: `app/api/jobs/audit-sections/route.ts` and
- * `lib/auditRun.ts` are read and copied here, never edited (decision 2, map B4).
+ * Each current handbook is checked against the rules for its sites, and the result is rows in 066's tables (with
+ * 071's and 072's columns). The ENGINE copies Audits' patterns — a claim per unit, a five-minute sweep, a
+ * compare-and-set finish — and none of Audits' files (decision 2, map B4). It is unchanged by the baseline:
  *
- *   createCheck        a check row and one queued row per section, plus one "not covered" row. One open check
- *                      per handbook is the DATABASE's rule (071's idx_handbook_checks_one_open).
- *   packPieces         neighbouring sections of one check, up to PIECE_CHARS, become one call (the owner); the
- *                      "not covered" row is always a call of its own.
- *   runPiece           one model call, then code checks every quote (`checkQuote`, decision 20), every link
- *                      (`findReturned`, labelled by `labelFor`) and decides the final word itself.
+ *   createCheck        a check row and one queued row per section. One open check per handbook is the
+ *                      DATABASE's rule (071's idx_handbook_checks_one_open).
+ *   packPieces         the whole handbook in one piece when it fits (the answer's size rule, `lib/hrAnswer.ts`
+ *                      budgetTokens); otherwise consecutive sections up to that size.
+ *   runPiece           *** THE SAME CALL AS AN HR ANSWER *** — the pure prompt, the company context, the piece's
+ *                      sections, web search with no limit, one fixed question — then `finishAnswer` exactly as an
+ *                      answer uses it, and the answer, its sources and its check record stored (072).
  *   failRows           a failed piece is put back ONCE, then failed with its reason (the owner).
  *   recoverStuck       a crashed claim is put back once, then failed (071's `attempts`).
- *   finishCheckIfDone  done_count as rows land; done, or failed when every row failed; checked_at and
+ *   finishCheckIfDone  done_count as rows land; done, or failed when every section failed; checked_at and
  *                      next_check_at (+90 days) only on done.
  *   sweepChecks        the sweep: recover, then one company at a time, its pieces in order, within the time budget.
+ *
+ * WHAT LEFT THE RUN ON 8 OCTOBER, kept on the local branch `parked/hr-check-structured` for a later switch: the
+ * structured check prompt and its schema, the separate "not covered" call, and the per-section word rules.
+ * Checks stored before then keep their words and findings, readable as before.
  *
  * No Next.js here, so a script and the tests can drive it; the routes are thin wrappers.
  */
 import { createHash } from 'node:crypto'
-import { askAIWithSearchResults, extractJsonText, modelForTask, type SearchResult } from './ai.ts'
-import { buildCompanyContext, siteWhere } from './companyContext.ts'
-import { checkQuote, type Block, type HandbookUsed } from './hrAnswer.ts'
-import { findReturned, labelFor, stripMarkers } from './howTo.ts'
+import { askAIOpenStream, modelForTask, type OpenMessage, type OpenStreamEvent } from './ai.ts'
+import { buildCompanyContext } from './companyContext.ts'
+import { finishAnswer, handbookContext, checkRecord, budgetTokens, TOKENS_PER_CHAR, type Block, type HandbookUsed } from './hrAnswer.ts'
+import { quotesDroppedLine, linksDroppedLine } from './hrAnswerWords.ts'
 import { lazyJobRun } from './jobRun.ts'
-import { PAGE_BREAK } from './handbookSections.ts'
-import { hrCheckPrompt, hrCheckMessage } from '../prompts/hr-check.ts'
-import { hrNotCoveredPrompt, hrNotCoveredMessage } from '../prompts/hr-not-covered.ts'
+import { HR_ANSWER_PROMPT, hrAnswerMessage } from '../prompts/hr-answer.ts'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = { from: (t: string) => any }
 
-/** Neighbouring sections up to this many characters go in one call (the owner, Step 8). */
-export const PIECE_CHARS = 40_000
+/** THE SIZE RULE (owner, Baseline Step 1): a piece holds what an HR answer would send whole — the same budget. */
+export const pieceChars = () => Math.floor(budgetTokens() / TOKENS_PER_CHAR)
+
+/** The one question every piece is asked (the owner, Baseline Step 1). */
+export const CHECK_QUESTION = "Check this handbook against the rules that apply to us. What needs to change, what's missing, and what's unclear?"
+
 /** A piece is started at most twice: once, and one retry (the owner). */
 export const MAX_ATTEMPTS = 2
 /** The time budget and the stuck limit are the audit sweep's, unchanged (`app/api/jobs/audit-sections/route.ts`). */
@@ -58,36 +65,6 @@ export const REASONS = {
   leftOut: 'The answer left out this section.',
 } as const
 
-export type Word = 'needs_change' | 'no_gap' | 'to_confirm' | 'company_choice'
-const WORDS: readonly Word[] = ['needs_change', 'no_gap', 'to_confirm', 'company_choice']
-
-export interface CheckSource { url: string; title: string; official: boolean }
-export interface ShapedFinding {
-  kind: 'change' | 'to_confirm' | 'not_covered'
-  title: string
-  why: string | null
-  what_to_change: string | null
-  handbook_quote: string | null
-  quote_verified: boolean | null
-  page: number | null
-  sources: CheckSource[]
-  /** Set when code moved it: what the model said, and why it is not that. Logged and reported, never shown. */
-  moved?: string
-}
-export interface ShapedDate { title: string; due_date: string | null; recurs: boolean; quote: string; page: number | null }
-export interface ShapedSection {
-  id: string                // "S3"
-  modelWord: string | null
-  word: Word
-  findings: ShapedFinding[]
-  dates: ShapedDate[]
-  droppedDates: number
-  droppedLinks: number
-  failedQuotes: number
-}
-
-const isObj = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v)
-const str = (v: unknown): string => (typeof v === 'string' ? v.trim() : '')
 const sha = (s: string) => createHash('sha256').update(s, 'utf8').digest('hex')
 
 // ---------------------------------------------------------------------------------------------------------
@@ -97,12 +74,12 @@ const sha = (s: string) => createHash('sha256').update(s, 'utf8').digest('hex')
 export interface PackRow { id: string; checkId: string; kind: 'section' | 'not_covered'; position: number; chars: number }
 
 /**
- * NEIGHBOURS, UP TO A SIZE. Rows of one check, in position order, go together while the total stays within `cap`
+ * NEIGHBOURS, UP TO A SIZE — THE WHOLE HANDBOOK WHEN IT FITS. Rows of one check, in position order, go together while the total stays within `cap`
  * and the positions are consecutive (a section retried alone is not glued to a stranger). A section longer than
  * the cap is a piece of its own. The "not covered" row is always alone, after the check's sections. Checks keep
  * the order they are given in.
  */
-export function packPieces(rows: PackRow[], cap = PIECE_CHARS): PackRow[][] {
+export function packPieces(rows: PackRow[], cap = pieceChars()): PackRow[][] {
   const pieces: PackRow[][] = []
   const checks = [...new Set(rows.map((r) => r.checkId))]
   for (const checkId of checks) {
@@ -119,109 +96,6 @@ export function packPieces(rows: PackRow[], cap = PIECE_CHARS): PackRow[][] {
     for (const r of mine.filter((x) => x.kind === 'not_covered')) pieces.push([r])
   }
   return pieces
-}
-
-// ---------------------------------------------------------------------------------------------------------
-// WHAT CODE DOES WITH A PIECE'S ANSWER
-// ---------------------------------------------------------------------------------------------------------
-
-/** The link: kept only when THIS call's search returned it, labelled official or other (`lib/howTo.ts`). */
-function checkedLink(url: string, searched: SearchResult[]): CheckSource | null {
-  const hit = url ? findReturned(url, searched) : undefined
-  return hit ? { url: hit.url, title: hit.title || hit.url, official: labelFor(hit.url) === 'official' } : null
-}
-
-/**
- * THE FINAL WORD IS CODE'S (the owner). "needs_change" only with at least one change that has a checked link; a
- * change without one becomes a question, and a section the model called needs_change with none left becomes
- * to_confirm — never no_gap, because unknown never resolves to clear (§3.2). A section with open questions is
- * to_confirm whatever the model called it. An unknown word is to_confirm.
- */
-export function decideWord(modelWord: string | null, findings: ShapedFinding[]): { word: Word; findings: ShapedFinding[] } {
-  const out = findings.map((f) => (f.kind === 'change' && f.sources.length === 0
-    ? { ...f, kind: 'to_confirm' as const, moved: 'change → to_confirm: no checked link' }
-    : f))
-  if (out.some((f) => f.kind === 'change')) return { word: 'needs_change', findings: out }
-  if (out.length) return { word: 'to_confirm', findings: out }
-  if (modelWord === 'no_gap' || modelWord === 'company_choice') return { word: modelWord, findings: out }
-  return { word: 'to_confirm', findings: out }
-}
-
-/**
- * One piece's answer, checked. `blocks` are the piece's sections (ids "S<n>"); a quote is found only in them
- * (`checkQuote`, decision 20: six words or more, letters and digits only). A failed quote is stored flagged and
- * never shown (decision 4). A date is kept only when its quote checks (the owner).
- */
-export function shapePiece(raw: unknown, blocks: Block[], used: HandbookUsed[], searched: SearchResult[]):
-  { ok: true; sections: ShapedSection[]; missing: string[] } | { ok: false; error: string } {
-  if (!isObj(raw) || !Array.isArray(raw.sections)) return { ok: false, error: 'the answer has no "sections" list' }
-  const byId = new Map<string, Record<string, unknown>>()
-  for (const s of raw.sections as unknown[]) if (isObj(s) && str(s.id)) byId.set(str(s.id).toUpperCase(), s)
-  const sections: ShapedSection[] = []
-  const missing: string[] = []
-  for (const b of blocks) {
-    const s = byId.get(b.id.toUpperCase())
-    if (!s) { missing.push(b.id); continue }
-    let droppedLinks = 0, failedQuotes = 0, droppedDates = 0
-    const findings: ShapedFinding[] = []
-    for (const f of (Array.isArray(s.findings) ? s.findings : []) as unknown[]) {
-      if (!isObj(f) || !str(f.title)) continue
-      const quote = str(f.quote)
-      const hit = quote ? checkQuote(quote, b.id, [b], used) : null
-      if (quote && !hit) failedQuotes++
-      const link = checkedLink(str(f.url), searched)
-      if (str(f.url) && !link) droppedLinks++
-      findings.push({
-        kind: str(f.kind) === 'change' ? 'change' : 'to_confirm',
-        title: str(f.title), why: str(f.why) || null, what_to_change: str(f.what_to_change) || null,
-        handbook_quote: quote || null, quote_verified: quote ? !!hit : null, page: hit?.page ?? null,
-        sources: link ? [link] : [],
-      })
-    }
-    const dates: ShapedDate[] = []
-    for (const d of (Array.isArray(s.dates) ? s.dates : []) as unknown[]) {
-      if (!isObj(d) || !str(d.title)) continue
-      const quote = str(d.quote)
-      const hit = quote ? checkQuote(quote, b.id, [b], used) : null
-      if (!hit) { droppedDates++; continue }
-      const date = /^\d{4}-\d{2}-\d{2}$/.test(str(d.date)) && !Number.isNaN(Date.parse(str(d.date))) ? str(d.date) : null
-      dates.push({ title: str(d.title), due_date: date, recurs: d.repeats === true, quote, page: hit.page })
-    }
-    const modelWord = str(s.word) || null
-    const decided = decideWord(WORDS.includes(modelWord as Word) ? modelWord : null, findings)
-    sections.push({ id: b.id, modelWord, word: decided.word, findings: decided.findings, dates, droppedDates, droppedLinks, failedQuotes })
-  }
-  return { ok: true, sections, missing }
-}
-
-/**
- * THE "NOT COVERED" ANSWER, CHECKED. An item counts as not covered only with an OFFICIAL link this call's search
- * returned; anything else goes to "Still to confirm", with why (the owner). Questions keep a link only when
- * the search returned it.
- */
-export function shapeNotCovered(raw: unknown, searched: SearchResult[]):
-  { ok: true; findings: ShapedFinding[] } | { ok: false; error: string } {
-  if (!isObj(raw) || (!Array.isArray(raw.not_covered) && !Array.isArray(raw.to_confirm))) {
-    return { ok: false, error: 'the answer has neither a "not_covered" nor a "to_confirm" list' }
-  }
-  const findings: ShapedFinding[] = []
-  for (const n of (Array.isArray(raw.not_covered) ? raw.not_covered : []) as unknown[]) {
-    if (!isObj(n) || !str(n.title)) continue
-    const link = checkedLink(str(n.url), searched)
-    const base = { title: str(n.title), why: str(n.why) || null, what_to_change: str(n.what_to_add) || null,
-      handbook_quote: null, quote_verified: null, page: null, sources: link ? [link] : [] }
-    if (link?.official) findings.push({ kind: 'not_covered', ...base })
-    else findings.push({ kind: 'to_confirm', ...base,
-      moved: `not_covered → to_confirm: ${!str(n.url) ? 'no link given' : link ? 'its link is not an official page' : "its link did not come from this call's search"}` })
-  }
-  for (const q of (Array.isArray(raw.to_confirm) ? raw.to_confirm : []) as unknown[]) {
-    if (!isObj(q) || !str(q.title)) continue
-    const link = checkedLink(str(q.url), searched)
-    findings.push({ kind: 'to_confirm', title: str(q.title), why: str(q.why) || null,
-      what_to_change: str(q.what_would_settle_it) || null, handbook_quote: null, quote_verified: null, page: null,
-      sources: link ? [link] : [] })
-  }
-  return { ok: true, findings }
 }
 
 // ---------------------------------------------------------------------------------------------------------
@@ -261,10 +135,9 @@ export async function createCheck(admin: Db, args: {
     if (cErr.code === '23505') return { ok: false, reason: 'already' }
     throw new Error(`createCheck: ${cErr.message}`)
   }
-  const rows = [
-    ...secs.map((s: { id: string }) => ({ check_id: check.id, company_id: args.companyId, kind: 'section', section_id: s.id })),
-    { check_id: check.id, company_id: args.companyId, kind: 'not_covered', section_id: null },
-  ]
+  // One row per section. Since the baseline there is no separate "not covered" row: the one question asks what is
+  // missing too.
+  const rows = secs.map((s: { id: string }) => ({ check_id: check.id, company_id: args.companyId, kind: 'section', section_id: s.id }))
   const { error: rErr } = await admin.from('handbook_check_sections').insert(rows)
   if (rErr) {
     // A check with no rows would hold the handbook's one open slot forever: take it back out.
@@ -366,14 +239,16 @@ export async function finishCheckIfDone(admin: Db, checkId: string): Promise<{ f
 // RUN ONE PIECE
 // ---------------------------------------------------------------------------------------------------------
 
-export type Ask = typeof askAIWithSearchResults
+export type Ask = typeof askAIOpenStream
 
 export interface PieceResult {
   status: 'done' | 'failed' | 'retry' | 'skipped' | 'cancelled' | 'gone'
   rows: number
-  findings?: number
-  dates?: number
-  moved?: string[]
+  /** The answer's handbook cards and web sources; the quotes it marked "not found"; whether it was the whole handbook. */
+  cards?: number
+  web?: number
+  marked?: number
+  whole?: boolean
   aiCallId?: string | null
   reason?: string
 }
@@ -382,30 +257,20 @@ interface SectionRow { id: string; position: number; title: string | null; page_
 
 const pagesOf = (a: number | null, b: number | null) => (a == null ? '' : a === b || b == null ? ` (page ${a})` : ` (pages ${a}–${b})`)
 
-/** What a handbook covers, in words for the model: every site, or one site, each with where it is. */
-async function coversWords(admin: Db, companyId: string, hb: { scope: string; entity_id: string | null }): Promise<string> {
-  const { data: sites } = await admin.from('entities').select('id, name, address, city, county, state').eq('company_id', companyId)
-  const line = (s: { name: string; address: string | null; city: string | null; county: string | null; state: string | null }) =>
-    `${s.name}${siteWhere(s) ? ` (${siteWhere(s)})` : ''}`
-  const all = (sites ?? []) as Array<{ id: string; name: string; address: string | null; city: string | null; county: string | null; state: string | null }>
-  if (hb.scope === 'site') {
-    const one = all.find((s) => s.id === hb.entity_id)
-    return one ? `one site: ${line(one)}` : 'one site that is no longer on file'
-  }
-  return all.length ? `every site: ${all.map(line).join('; ')}` : 'every site'
-}
-
 /**
- * ONE PIECE: re-read before the call (a deleted handbook stops here, a replaced one cancels its check), mark the
- * rows started, one model call with web search, then code checks the answer and writes the rows. `ask` is the
- * real call unless a script passes another (the forced-failure proof).
+ * ONE PIECE — THE SAME CALL AS AN HR ANSWER (owner, Baseline Step 1). Re-read before the call (a deleted handbook
+ * stops here, a replaced one cancels its check), mark the rows started, then the answer route's own call:
+ * HR_ANSWER_PROMPT, `hrAnswerMessage` with the company context and the piece's sections in `handbookContext`'s form,
+ * web search with no limit, task and ledger 'hr_check'. At done, `finishAnswer` exactly as the answer route uses it,
+ * with the same closing lines; the answer, its sources and its check record are stored on the piece's first row.
+ * `ask` is the real call unless a script passes another (the forced-failure proof).
  */
-export async function runPiece(admin: Db, rowIds: string[], opts: { ask?: Ask; today?: string } = {}): Promise<PieceResult> {
-  const ask = opts.ask ?? askAIWithSearchResults
+export async function runPiece(admin: Db, rowIds: string[], opts: { ask?: Ask } = {}): Promise<PieceResult> {
+  const ask = opts.ask ?? askAIOpenStream
   const { data: rowsRaw } = await admin.from('handbook_check_sections')
     .select('id, check_id, company_id, kind, section_id, status, attempts').in('id', rowIds)
   const rows = ((rowsRaw ?? []) as Array<{ id: string; check_id: string; company_id: string; kind: string; section_id: string | null; status: string; attempts: number }>)
-    .filter((r) => r.status === 'queued')
+    .filter((r) => r.status === 'queued' && r.kind === 'section')
   if (!rows.length) return { status: rowsRaw?.length ? 'skipped' : 'gone', rows: 0 }
   const checkId = rows[0].check_id
   const companyId = rows[0].company_id
@@ -414,7 +279,7 @@ export async function runPiece(admin: Db, rowIds: string[], opts: { ask?: Ask; t
     const { data: check } = await admin.from('handbook_checks').select('id, handbook_id, status').eq('id', checkId).maybeSingle()
     if (!check) return { gone: true as const }
     const { data: hb } = await admin.from('handbooks')
-      .select('id, name, scope, entity_id, is_current, mime_type').eq('id', check.handbook_id).maybeSingle()
+      .select('id, name, scope, entity_id, is_current, page_count, extracted_text, version_of, created_at').eq('id', check.handbook_id).maybeSingle()
     if (!hb) return { gone: true as const }
     return { gone: false as const, check, hb }
   }
@@ -424,45 +289,31 @@ export async function runPiece(admin: Db, rowIds: string[], opts: { ask?: Ask; t
   if (!before.hb.is_current) { await cancelCheck(admin, checkId, REASONS.replaced); return { status: 'cancelled', rows: rows.length } }
   const hb = before.hb
 
-  // ---- the input ----
-  const today = opts.today ?? new Date().toISOString().slice(0, 10)
+  // ---- the input: the answer route's, with this piece's sections ----
   const company = (await buildCompanyContext(admin, companyId, { parts: ['company', 'declared', 'confirmed'] })).block
-  const isNotCovered = rows[0].kind === 'not_covered'
-  let system: string, message: string
-  let blocks: Block[] = []
-  let used: HandbookUsed[] = []
-  const tocOf = (secs: SectionRow[]) => secs.map((s) => `[S${s.position + 1}] ${s.title || '(untitled)'}${pagesOf(s.page_from, s.page_to)}`).join('\n')
-  if (isNotCovered) {
-    // Every current, read handbook covering the same sites: the company-wide ones, and for a site handbook its site's.
-    const { data: books } = await admin.from('handbooks').select('id, name, scope, entity_id')
-      .eq('company_id', companyId).eq('is_current', true).eq('status', 'read').order('created_at')
-    const same = ((books ?? []) as Array<{ id: string; name: string; scope: string; entity_id: string | null }>)
-      .filter((b) => hb.scope !== 'site' || b.scope === 'company' || b.entity_id === hb.entity_id)
-    const parts: string[] = []
-    for (const b of same) {
-      const { data: secs } = await admin.from('handbook_sections').select('id, position, title, page_from, page_to, text')
-        .eq('handbook_id', b.id).order('position')
-      parts.push(`Handbook "${b.name}" (covering ${await coversWords(admin, companyId, b)}):\n${tocOf((secs ?? []) as SectionRow[])}`)
-    }
-    system = hrNotCoveredPrompt(today)
-    message = hrNotCoveredMessage({ company, handbooks: parts.join('\n\n') })
-  } else {
-    const { data: secsRaw } = await admin.from('handbook_sections').select('id, position, title, page_from, page_to, text')
-      .eq('handbook_id', hb.id).order('position')
-    const secs = (secsRaw ?? []) as SectionRow[]
-    const mine = secs.filter((s) => rows.some((r) => r.section_id === s.id))
-    const applies = await coversWords(admin, companyId, hb)
-    const isWord = /wordprocessingml|msword/.test(hb.mime_type ?? '')
-    blocks = mine.map((s) => ({ id: `S${s.position + 1}`, handbookId: hb.id, handbookName: hb.name, applies, sectionId: s.id,
-      title: s.title ?? '', pageFrom: s.page_from, pageTo: s.page_to, stored: s.text }))
-    // `text` is empty on purpose: a quote is found only in this piece's sections, never anywhere in the handbook.
-    used = [{ id: hb.id, name: hb.name, pages: null, text: '', isWord }]
-    system = hrCheckPrompt(today)
-    message = hrCheckMessage({
-      company, handbook: hb.name, covers: applies, contents: tocOf(secs),
-      sections: mine.map((s) => `[S${s.position + 1}] ${s.title || '(untitled)'}${pagesOf(s.page_from, s.page_to)}\n${s.text.split(PAGE_BREAK).join('\n')}`).join('\n\n'),
-    })
+  const { data: secsRaw } = await admin.from('handbook_sections').select('id, position, title, page_from, page_to, text')
+    .eq('handbook_id', hb.id).order('position')
+  const secs = (secsRaw ?? []) as SectionRow[]
+  const mine = secs.filter((s) => rows.some((r) => r.section_id === s.id))
+  const whole = mine.length === secs.length
+  let applies = 'Every site'
+  if (hb.scope === 'site') {
+    const { data: site } = hb.entity_id ? await admin.from('entities').select('name').eq('id', hb.entity_id).maybeSingle() : { data: null }
+    applies = site?.name ?? 'a site that was removed'
   }
+  // As the answer loader marks them (`lib/hrAnswer.ts` loadHandbooksForAnswer): a Word file has no page count.
+  const isWord = hb.page_count == null
+  const blocks: Block[] = mine.map((s) => ({ id: `H${s.position + 1}`, handbookId: hb.id, handbookName: hb.name, applies,
+    sectionId: s.id, title: s.title ?? `Section ${s.position + 1}`, pageFrom: s.page_from, pageTo: s.page_to, stored: s.text }))
+  const used: HandbookUsed[] = [{ id: hb.id, name: hb.name, pages: hb.page_count, text: hb.extracted_text ?? '', isWord,
+    as: whole ? 'sections' : 'selected sections', versionOf: hb.version_of, addedAt: hb.created_at }]
+  let handbooks = handbookContext({ ok: true, blocks, used, notUsed: [], long: [], waiting: [], spent: 0, budget: budgetTokens() })
+  if (!whole) {
+    // A PART of a handbook too long for one call: the whole table of contents goes with it (the owner).
+    handbooks += `\n\nThis is one part of "${hb.name}"; only the sections above are included. The handbook's full table of contents:\n`
+      + secs.map((s) => `- ${s.title ?? `Section ${s.position + 1}`}${pagesOf(s.page_from, s.page_to)}`).join('\n')
+  }
+  const messages: OpenMessage[] = [{ role: 'user', content: hrAnswerMessage(company, handbooks, CHECK_QUESTION) }]
 
   // ---- started: attempts counted, the claim refreshed so the stuck limit measures this piece ----
   const startedAt = new Date().toISOString()
@@ -484,17 +335,24 @@ export async function runPiece(admin: Db, rowIds: string[], opts: { ask?: Ask; t
   }
 
   const model = modelForTask('hr_check')
-  let text = ''
-  let searched: SearchResult[] = []
-  try {
-    const res = await ask(system, message, { maxTokens: PIECE_MAX_TOKENS, task: 'hr_check', enableWebSearch: true, ledger: { companyId, task: 'hr_check' } })
-    text = res.answer.text ?? ''
-    searched = res.searched
-  } catch (e) {
-    const reason = `The call failed: ${e instanceof Error ? e.message : String(e)}`
-    const f = await failRows(admin, rows, reason)
-    return { status: f.failed ? 'failed' : 'retry', rows: rows.length, reason }
+  const receipt = { model, prompt_sha256: sha(HR_ANSWER_PROMPT), input_sha256: sha(String(messages[0].content)) }
+  const fail = async (why: string) => {
+    console.error(`handbook check ${checkId}: ${why}`)
+    const f = await failRows(admin, rows, why)
+    return { status: f.failed ? 'failed' as const : 'retry' as const, rows: rows.length, reason: why }
   }
+
+  // THE ANSWER ROUTE'S CALL: no search limit (AI_SEARCH_MAX_HR is the answer route's; the check has none).
+  let ev: Extract<OpenStreamEvent, { type: 'done' }> | null = null
+  try {
+    for await (const e of ask(HR_ANSWER_PROMPT, messages, { task: 'hr_check', maxTokens: PIECE_MAX_TOKENS, ledger: { companyId, task: 'hr_check' } })) {
+      if (e.type === 'done') ev = e
+      else if (e.type === 'error') throw new Error(e.message)
+    }
+  } catch (e) {
+    return fail(`The call failed: ${e instanceof Error ? e.message : String(e)}`)
+  }
+  if (!ev || !ev.answer.text.trim()) return fail('The answer came back empty')
 
   // The ledger row, found by time and polled, as `lib/auditRun.ts` does: recordAICall is not awaited.
   let aiCallId: string | null = null
@@ -504,79 +362,35 @@ export async function runPiece(admin: Db, rowIds: string[], opts: { ask?: Ask; t
       .gte('created_at', startedAt).order('created_at', { ascending: false }).limit(1).maybeSingle()
     aiCallId = call?.id ?? null
   }
-  const receipt = { model, prompt_sha256: sha(system), input_sha256: sha(message), ai_call_id: aiCallId }
 
-  let parsed: unknown = null
-  try { parsed = JSON.parse(extractJsonText(stripMarkers(text))) } catch { parsed = null }
-  const bad = async (why: string) => {
-    const reason = `${why}. The answer began: ${text.slice(0, 1500)}`
-    // Logged on every failure, not only the last: a row put back for a retry may not carry a reason (071), and a
-    // bad answer must be diagnosable from what it said (CLAUDE.md §5).
-    console.error(`handbook check ${checkId}: ${why}; the answer began: ${text.slice(0, 3000)}`)
-    await admin.from('handbook_check_sections').update(receipt).in('id', rows.map((r) => r.id))
-    const f = await failRows(admin, rows, reason)
-    return { status: f.failed ? 'failed' as const : 'retry' as const, rows: rows.length, aiCallId, reason: why }
-  }
-  if (parsed === null) return bad('The answer did not parse')
+  // ---- AT DONE: exactly as the answer route ----
+  const fin = finishAnswer(ev.answer.text, ev.answer.sources, ev.searched, blocks, used, ev.cited ?? [])
+  const lines = [
+    fin.droppedQuotes ? quotesDroppedLine(fin.droppedQuotes) : '',
+    fin.droppedLinks ? linksDroppedLine(fin.droppedLinks) : '',
+  ].filter(Boolean)
+  const text = [fin.text.trim(), ...lines].join('\n\n')
+  const record = checkRecord({ used, selections: [], budgetTokens: budgetTokens(), searched: ev.searched, citedPassages: (ev.cited ?? []).length, done: fin })
 
-  const finishedAt = () => new Date().toISOString()
   try {
-    if (isNotCovered) {
-      const shaped = shapeNotCovered(parsed, searched)
-      if (!shaped.ok) return bad(shaped.error)
-      const row = rows[0]
-      if (shaped.findings.length) {
-        const { error } = await admin.from('handbook_findings').insert(shaped.findings.map((f) => ({
-          check_id: checkId, check_section_id: row.id, company_id: companyId, kind: f.kind, title: f.title, why: f.why,
-          what_to_change: f.what_to_change, handbook_quote: null, quote_verified: null, page: null, sources: f.sources,
-        })))
-        if (error) throw new Error(error.message)
-      }
-      await admin.from('handbook_check_sections').update({ ...receipt, status: 'done', claimed_at: null, finished_at: finishedAt() }).eq('id', row.id)
-      for (const f of shaped.findings) if (f.moved) console.log(`handbook check ${checkId} not covered "${f.title}": ${f.moved}`)
-      return { status: 'done', rows: 1, findings: shaped.findings.length, dates: 0, aiCallId,
-        moved: shaped.findings.filter((f) => f.moved).map((f) => `"${f.title}": ${f.moved}`) }
+    // The answer on the piece's first row; the piece's other rows are done with it and carry none.
+    const lead = [...rows].sort((a, b) => (secs.find((x) => x.id === a.section_id)?.position ?? 0) - (secs.find((x) => x.id === b.section_id)?.position ?? 0))[0]
+    const finishedAt = new Date().toISOString()
+    const { error } = await admin.from('handbook_check_sections').update({ ...receipt, ai_call_id: aiCallId, status: 'done', claimed_at: null,
+      finished_at: finishedAt, answer_text: text, answer_sources: fin.sources, check_record: record }).eq('id', lead.id).eq('status', 'checking')
+    if (error) throw new Error(error.message)
+    const others = rows.filter((r) => r.id !== lead.id).map((r) => r.id)
+    if (others.length) {
+      const { error: oErr } = await admin.from('handbook_check_sections').update({ ...receipt, ai_call_id: aiCallId, status: 'done',
+        claimed_at: null, finished_at: finishedAt }).in('id', others).eq('status', 'checking')
+      if (oErr) throw new Error(oErr.message)
     }
-
-    const shaped = shapePiece(parsed, blocks, used, searched)
-    if (!shaped.ok) return bad(shaped.error)
-    const rowOf = (id: string) => rows.find((r) => blocks.find((b) => b.id === id)?.sectionId === r.section_id)!
-    let findings = 0, dates = 0
-    const moved: string[] = []
-    for (const s of shaped.sections) {
-      const row = rowOf(s.id)
-      if (s.findings.length) {
-        const { error } = await admin.from('handbook_findings').insert(s.findings.map((f) => ({
-          check_id: checkId, check_section_id: row.id, company_id: companyId, kind: f.kind, title: f.title, why: f.why,
-          what_to_change: f.what_to_change, handbook_quote: f.handbook_quote, quote_verified: f.quote_verified, page: f.page,
-          sources: f.sources,
-        })))
-        if (error) throw new Error(error.message)
-      }
-      if (s.dates.length) {
-        const { error } = await admin.from('handbook_dates').insert(s.dates.map((d) => ({
-          handbook_id: hb.id, company_id: companyId, check_id: checkId, title: d.title, due_date: d.due_date, recurs: d.recurs,
-          quote: d.quote, quote_verified: true, source: 'handbook', source_url: null,
-        })))
-        if (error) throw new Error(error.message)
-      }
-      await admin.from('handbook_check_sections').update({ ...receipt, status: 'done', word: s.word, claimed_at: null, finished_at: finishedAt() }).eq('id', row.id)
-      findings += s.findings.length; dates += s.dates.length
-      if (s.modelWord !== s.word) moved.push(`${s.id}: the model said ${s.modelWord ?? '(nothing)'}, code says ${s.word}`)
-      for (const f of s.findings) if (f.moved) moved.push(`${s.id} "${f.title}": ${f.moved}`)
-    }
-    // A section the answer left out is a failure of that row alone: retried once, then failed.
-    const left = shaped.missing.map(rowOf)
-    if (left.length) {
-      await admin.from('handbook_check_sections').update(receipt).in('id', left.map((r) => r.id))
-      await failRows(admin, left, REASONS.leftOut)
-    }
-    if (moved.length) console.log(`handbook check ${checkId}: ${moved.join(' · ')}`)
-    return { status: 'done', rows: rows.length, findings, dates, aiCallId, moved }
   } catch (e) {
-    // A write refused (a handbook deleted during the call cascades its rows away): the rows that are left fail.
-    return bad(`The answer could not be saved: ${e instanceof Error ? e.message : String(e)}`)
+    return fail(`The answer could not be saved: ${e instanceof Error ? e.message : String(e)}`)
   }
+  const cards = fin.sources.filter((x) => x.kind === 'handbook').length
+  return { status: 'done', rows: rows.length, cards, web: fin.sources.length - cards, marked: fin.notFoundQuotes + fin.uncheckedQuotes,
+    whole, aiCallId }
 }
 
 // ---------------------------------------------------------------------------------------------------------
@@ -668,8 +482,8 @@ export async function sweepChecks(admin: Db, opts: { ask?: Ask; maxPieces?: numb
             else if (r.status === 'cancelled') c.cancelled += r.rows
             else if (r.status === 'gone') c.gone++
             if (r.reason && r.status === 'retry') errors.push({ piece: ids.join(','), error: `will retry: ${r.reason}` })
-            console.log(`handbook sweep: piece of ${ids.length} row(s) [${piece.map((p) => p.kind === 'section' ? `S${p.position + 1}` : 'not covered').join(' ')}] → ${r.status}`
-              + `${r.findings != null ? `, ${r.findings} finding(s), ${r.dates} date(s)` : ''}${r.reason ? ` (${r.reason})` : ''}`)
+            console.log(`handbook sweep: piece of ${ids.length} row(s) [${piece.map((p) => `S${p.position + 1}`).join(' ')}]${r.whole ? ' — the whole handbook' : ''} → ${r.status}`
+              + `${r.cards != null ? `, ${r.cards} handbook card(s), ${r.web} web source(s), ${r.marked} quote(s) marked` : ''}${r.reason ? ` (${r.reason})` : ''}`)
           } catch (e) {
             c.failed += piece.length
             errors.push({ piece: ids.join(','), error: e instanceof Error ? e.message : String(e) })

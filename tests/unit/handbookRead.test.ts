@@ -71,6 +71,18 @@ describe('THE HAIKU GUARD', () => {
     assert.equal(r.status, 0, r.stderr)
     assert.match(r.stdout, /tiers on claude-haiku-4-5[\s\S]*RAN/)
   })
+  test('THE HANDBOOK SIZE ON HAIKU (owner, 8 October): set to 120,000 for the command, unless the command already sets it', () => {
+    const size = (extra: Record<string, string>) => {
+      const env: Record<string, string | undefined> = { ...process.env, ...extra }
+      if (!('HR_HANDBOOK_BUDGET_TOKENS' in extra)) delete env.HR_HANDBOOK_BUDGET_TOKENS
+      const r = spawnSync(process.execPath, ['scripts/haiku.mjs', process.execPath, '-e', 'console.log("SIZE=" + process.env.HR_HANDBOOK_BUDGET_TOKENS)'],
+        { env: env as NodeJS.ProcessEnv, encoding: 'utf8' })
+      assert.equal(r.status, 0, r.stderr)
+      return r.stdout.match(/^SIZE=(\d+)$/m)?.[1]
+    }
+    assert.equal(size({}), '120000')
+    assert.equal(size({ HR_HANDBOOK_BUDGET_TOKENS: '40000' }), '40000', 'a command that sets its own keeps it')
+  })
 })
 
 describe('the one write', () => {

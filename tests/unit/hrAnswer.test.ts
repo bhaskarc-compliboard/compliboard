@@ -11,7 +11,7 @@ import {
   type Block, type HandbookUsed,
 } from '../../lib/hrAnswer.ts'
 import {
-  HR_REFUSALS, longLine, DAY1_LINE, QUOTE_REMOVED, HR_COMPOSER_HINT, uncheckedQuotesLine, quotesDroppedLine, linksDroppedLine, readingWords, splitAppended,
+  HR_REFUSALS, longLine, DAY1_LINE, NOT_IN_HANDBOOK, HR_COMPOSER_HINT, quotesDroppedLine, linksDroppedLine, readingWords, splitAppended,
   hideHandbookMarkers, isAppendedLine,
 } from '../../lib/hrAnswerWords.ts'
 import { stageWords } from '../../components/stageWords.ts'
@@ -102,29 +102,36 @@ describe('PLAIN QUOTES ARE CHECKED TOO (owner, 6a answers)', () => {
     const r = finishAnswer('Per ORS 653.606[1], "an employer shall provide paid sick time to every employee" in Oregon.', law, lawSearched, blocks, [hb], lawPassage)
     assert.equal(r.text, 'Per ORS 653.606[1], "an employer shall provide paid sick time to every employee"[1] in Oregon.')
   })
-  test('THE HANDBOOK-AND-LAW SENTENCE: a false handbook quote next to a real law citation is REMOVED', () => {
+  test('THE HANDBOOK-AND-LAW SENTENCE: a false handbook quote next to a real law citation is KEPT, MARKED, and gets no card (baseline)', () => {
     const t = 'Your handbook says "every employee receives unlimited paid vacation days each year", but the law says an employer shall provide paid sick time.[1]'
     const r = finishAnswer(t, law, lawSearched, blocks, [hb], lawPassage)
-    assert.equal(r.text, `Your handbook says ${QUOTE_REMOVED}, but the law says an employer shall provide paid sick time.[1]`)
+    assert.equal(r.text, `Your handbook says "every employee receives unlimited paid vacation days each year" ${NOT_IN_HANDBOOK}, but the law says an employer shall provide paid sick time.[1]`)
     assert.equal(r.uncheckedQuotes, 1); assert.equal(r.droppedQuotes, 0)
     assert.deepEqual(r.sources.map((x) => x.kind), ['web'])
   })
   test('a quote found nowhere, with no web passage to check it against, failed only the handbook check: the handbook line', () => {
     const r = finishAnswer('It says "every employee receives unlimited paid vacation days each year".', [], [], blocks, [hb], [])
-    assert.equal(r.droppedQuotes, 1); assert.equal(r.uncheckedQuotes, 0)
+    assert.equal(r.notFoundQuotes, 1); assert.equal(r.droppedQuotes, 0); assert.equal(r.uncheckedQuotes, 0)
   })
-  test('NEITHER: never shown as the handbook\'s words — replaced so the sentence reads, and counted', () => {
+  test('NEITHER: CLAUDE\'S WORDS STAY EXACTLY AS WRITTEN, followed by the grey mark, with no card, and counted (baseline)', () => {
     const r = finishAnswer('The handbook also says "every employee receives unlimited paid vacation days each year". Next.', [], [], blocks, [hb])
-    assert.equal(r.text, `The handbook also says ${QUOTE_REMOVED}. Next.`)
-    assert.equal(r.droppedQuotes, 1); assert.equal(r.sources.length, 0)
-    assert.equal(uncheckedQuotesLine(1), '1 quote could not be checked against its source, so it is not shown.')
-    assert.equal(uncheckedQuotesLine(2), '2 quotes could not be checked against their sources, so they are not shown.')
+    assert.equal(r.text, `The handbook also says "every employee receives unlimited paid vacation days each year" ${NOT_IN_HANDBOOK}. Next.`)
+    assert.equal(r.notFoundQuotes, 1); assert.equal(r.droppedQuotes, 0); assert.equal(r.sources.length, 0)
+    assert.equal(NOT_IN_HANDBOOK, '(not a quote from your handbook)', 'the owner\'s words, 8 October')
+    // NO closing count line for marked quotes (owner, 8 October): neither the route nor the check writes one...
+    for (const f of ['app/api/hr/answer/route.ts', 'lib/handbookCheck.ts']) {
+      const src = readFileSync(f, 'utf8')
+      assert.ok(!/notFoundQuotes \?|uncheckedQuotes \?/.test(src), `${f} writes no marked-quote line`)
+    }
+    // ...and every line written before is still drawn grey where it is stored.
+    for (const l of ['1 quote could not be checked against its source, so it is not shown.', '2 quotes could not be checked against their sources, so they are not shown.',
+      '1 quote was not found in your handbook, so it is marked and has no card.', '3 quotes could not be checked against their sources, so they are marked and have no cards.']) assert.ok(isAppendedLine(l), l)
   })
   test('under six words is a phrase, not a quotation: left alone; a quote inside a [H…] marker is not checked twice', () => {
     assert.deepEqual(checkPlainQuotes('It says "paid sick time" here.', blocks, [hb]), { text: 'It says "paid sick time" here.', handbookFailed: 0, unchecked: 0 })
     const r = finishAnswer('It says [H2: "must post the notice in the break room"] and "every employee receives unlimited paid vacation days".', [], [], blocks, [hb])
-    assert.equal(r.text, `It says “must post the notice in the break room”[1] and ${QUOTE_REMOVED}.`)
-    assert.equal(r.droppedQuotes, 1)
+    assert.equal(r.text, `It says “must post the notice in the break room”[1] and "every employee receives unlimited paid vacation days" ${NOT_IN_HANDBOOK}.`)
+    assert.equal(r.notFoundQuotes, 1); assert.equal(r.droppedQuotes, 0)
   })
   test('a marked quote and a plain one count in the same line, and a plain true quote across a page break still gets its page', () => {
     const r = finishAnswer('[H1: "nothing like this is in the handbook at all"] and "for every thirty hours worked. Managers must post".', [], [], blocks, [hb])

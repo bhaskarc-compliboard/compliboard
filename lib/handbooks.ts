@@ -49,6 +49,8 @@ export interface HandbookRow {
   version_of: string | null; is_current: boolean; created_at: string
   /** Step 5b: set when read. `handbook_sections` is PostgREST's embedded count. */
   page_count?: number | null; read_at?: string | null; handbook_sections?: Array<{ count: number }>
+  /** Set when a check finishes done (migration 066); the row and the drawer print them. */
+  checked_at?: string | null; next_check_at?: string | null
 }
 
 /** How many sections a read handbook has, from the list's embedded count. */
@@ -108,4 +110,43 @@ export function handbookList(all: HandbookRow[], sites: Array<{ id: string; name
       ...loose.filter((h) => groupKey(h, sites) === g.key),
     ],
   })).filter((g) => g.rows.length > 0)
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// THE CHECK'S WORDS — HR Baseline Step 1 (8 October 2026). Marked (owner) where they are the owner's.
+// ---------------------------------------------------------------------------------------------------------
+
+/** The Handbooks tab's line and the upload sheet's lede, true until step 10's nightly check (owner). */
+export const HANDBOOKS_TAB_LINE = 'Press Check now on a handbook to check it against the rules that apply to you.'
+export const uploadLede = (file: string) => `${file}. We read it in about a minute. It stays here in HR.`
+
+/** The row's line after the file name, each part with whether it is amber (owner). */
+export type LinePart = { text: string; amber?: boolean }
+export function checkLine(c: {
+  open: { done: number; total: number } | null
+  last: { status: 'done' | 'failed'; notChecked: number } | null
+  checkedAt: string | null; nextCheckAt: string | null
+}, date: (iso: string) => string): LinePart[] {
+  if (c.open) return [{ text: `Checking ${c.open.done} of ${c.open.total}…` }]
+  if (!c.last) return [{ text: 'Not checked yet' }]
+  // The words accepted for a check that could not finish (every part failed): amber, and what to do.
+  if (c.last.status === 'failed') return [{ text: 'The check could not finish — press Check now to try again', amber: true }]
+  const parts: LinePart[] = [{ text: c.checkedAt ? `Checked ${date(c.checkedAt)}` : 'Checked' }]
+  if (c.nextCheckAt) parts.push({ text: `read again ${date(c.nextCheckAt)}` })
+  if (c.last.notChecked > 0) parts.push({ text: `${c.last.notChecked} part${c.last.notChecked === 1 ? '' : 's'} not checked`, amber: true })
+  return parts
+}
+
+/** The drawer (owner, unless marked). */
+export const NOT_CHECKED_YET = 'Not checked yet.'
+export const checkingSections = (done: number, total: number) => `Checking ${done} of ${total} sections…`
+export const readAgainNote = (date: string) =>
+  `We will read this handbook again on ${date}. Changed it before then? Add the new version, or press Check now.`
+export const PART_NOT_CHECKED = "We could not check this part. That's on our side, not yours. Press Check now to try again."
+/** Proposed (Step 8 part 2): the whole check failed, in the drawer; and the earlier check's heading while one runs. */
+export const CHECK_FAILED = "We could not finish checking this handbook. That's on our side, not yours. Press Check now to try again."
+export const earlierCheckHeading = (date: string) => `Your last check · ${date}`
+/** A check stored before 8 October: its sections' words, as they were shown (owner, Step 8). */
+export const LEGACY_WORD: Record<string, string> = {
+  needs_change: 'Needs a change', no_gap: 'No gap found', to_confirm: 'To confirm', company_choice: 'Company choice',
 }

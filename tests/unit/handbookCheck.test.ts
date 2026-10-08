@@ -6,106 +6,36 @@ import test, { describe } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import {
-  packPieces, decideWord, shapePiece, shapeNotCovered, failRows, recoverStuck, finishCheckIfDone,
-  PIECE_CHARS, MAX_ATTEMPTS, NEXT_CHECK_DAYS, ALREADY_CHECKING, REASONS, type PackRow, type ShapedFinding,
+  packPieces, failRows, recoverStuck, finishCheckIfDone, pieceChars, CHECK_QUESTION,
+  MAX_ATTEMPTS, NEXT_CHECK_DAYS, ALREADY_CHECKING, REASONS, type PackRow,
 } from '../../lib/handbookCheck.ts'
-import type { Block, HandbookUsed } from '../../lib/hrAnswer.ts'
+import { TOKENS_PER_CHAR, OPUS_HANDBOOK_BUDGET_TOKENS, budgetTokens } from '../../lib/hrAnswer.ts'
+import { checkParts, partsNotChecked, type RowIn } from '../../lib/handbookCheckView.ts'
+import { checkLine, readAgainNote, PART_NOT_CHECKED, HANDBOOKS_TAB_LINE, uploadLede } from '../../lib/handbooks.ts'
+import { markNotFound, NOT_IN_HANDBOOK, NOT_IN_HANDBOOK_HREF } from '../../lib/hrAnswerWords.ts'
 
 const row = (id: string, position: number, chars: number, checkId = 'c1'): PackRow => ({ id, checkId, kind: 'section', position, chars })
 
-describe('packing: neighbours up to 40,000 characters, "not covered" alone', () => {
-  test('neighbours go together while they fit; a long section is alone; not covered is last and alone', () => {
-    const p = packPieces([row('a', 0, 10_000), row('b', 1, 20_000), row('c', 2, 15_000), row('d', 3, 50_000), row('e', 4, 100),
-      { id: 'n', checkId: 'c1', kind: 'not_covered', position: Number.MAX_SAFE_INTEGER, chars: 0 }])
-    assert.deepEqual(p.map((x) => x.map((r) => r.id)), [['a', 'b'], ['c'], ['d'], ['e'], ['n']])
-    assert.equal(PIECE_CHARS, 40_000)
+describe('THE SIZE RULE (owner, Baseline Step 1): the whole handbook when it fits, otherwise consecutive sections', () => {
+  test('the default budget is Opus 5.5\'s one-call room for handbooks, at the documented 0.4 tokens a character', () => {
+    const old = process.env.HR_HANDBOOK_BUDGET_TOKENS; delete process.env.HR_HANDBOOK_BUDGET_TOKENS
+    try {
+      assert.equal(OPUS_HANDBOOK_BUDGET_TOKENS, 650_000); assert.equal(TOKENS_PER_CHAR, 0.4)
+      assert.equal(budgetTokens(), 650_000)
+      assert.equal(pieceChars(), 1_625_000, 'about 1.6 million characters of handbook in one call')
+    } finally { if (old !== undefined) process.env.HR_HANDBOOK_BUDGET_TOKENS = old }
+  })
+  test('the staging handbooks are each ONE piece by default (Cascade, 628,255 characters, is the largest)', () => {
+    const cascade = Array.from({ length: 39 }, (_, i) => row(`s${i}`, i, Math.round(628_255 / 39)))
+    assert.equal(packPieces(cascade, 1_625_000).length, 1)
+  })
+  test('above the size: consecutive sections up to it; a section longer than the size is alone', () => {
+    const p = packPieces([row('a', 0, 10_000), row('b', 1, 20_000), row('c', 2, 15_000), row('d', 3, 50_000), row('e', 4, 100)], 40_000)
+    assert.deepEqual(p.map((x) => x.map((r) => r.id)), [['a', 'b'], ['c'], ['d'], ['e']])
   })
   test('only neighbours: a gap in positions starts a new piece; two checks never share one', () => {
     const p = packPieces([row('a', 0, 10), row('c', 2, 10), row('x', 0, 10, 'c2')])
     assert.deepEqual(p.map((x) => x.map((r) => r.id)), [['a'], ['c'], ['x']])
-  })
-})
-
-const f = (over: Partial<ShapedFinding>): ShapedFinding => ({ kind: 'change', title: 't', why: null, what_to_change: null,
-  handbook_quote: null, quote_verified: null, page: null, sources: [], ...over })
-const official = { url: 'https://www.oregon.gov/boli/sick', title: 'BOLI', official: true }
-
-describe('THE FINAL WORD IS CODE\'S (the owner)', () => {
-  test('needs_change only with a change that has a checked link', () => {
-    assert.equal(decideWord('needs_change', [f({ sources: [official] })]).word, 'needs_change')
-    assert.equal(decideWord('no_gap', [f({ sources: [official] })]).word, 'needs_change')
-  })
-  test('a change with no checked link becomes a question, and the section to_confirm — NEVER no_gap', () => {
-    const d = decideWord('needs_change', [f({})])
-    assert.equal(d.word, 'to_confirm')
-    assert.equal(d.findings[0].kind, 'to_confirm')
-    assert.match(d.findings[0].moved ?? '', /no checked link/)
-    assert.equal(decideWord('needs_change', []).word, 'to_confirm')
-  })
-  test('open questions make it to_confirm; no_gap and company_choice stand only with nothing found; unknown is to_confirm', () => {
-    assert.equal(decideWord('no_gap', [f({ kind: 'to_confirm' })]).word, 'to_confirm')
-    assert.equal(decideWord('no_gap', []).word, 'no_gap')
-    assert.equal(decideWord('company_choice', []).word, 'company_choice')
-    assert.equal(decideWord(null, []).word, 'to_confirm')
-  })
-})
-
-const TEXT = 'Employees accrue one hour of sick time for every 40 hours worked.\fThe company reviews this handbook every January.'
-const block: Block = { id: 'S3', handbookId: 'h1', handbookName: 'Riverside', applies: 'every site', sectionId: 's3', title: 'Sick time', pageFrom: 4, pageTo: 5, stored: TEXT }
-const used: HandbookUsed[] = [{ id: 'h1', name: 'Riverside', pages: null, text: '', isWord: false }]
-const searched = [{ url: 'https://www.oregon.gov/boli/workers/pages/sick-time.aspx', title: 'Oregon Sick Time' }, { url: 'https://example-law-blog.com/sick', title: 'A blog' }]
-
-describe('a piece\'s answer, checked', () => {
-  const answer = { sections: [{ id: 'S3', word: 'needs_change', findings: [
-    { kind: 'change', title: 'Accrual rate', quote: 'accrue one hour of sick time for every 40 hours', url: 'https://oregon.gov/boli/workers/pages/sick-time.aspx/', why: 'w', what_to_change: 'x' },
-    { kind: 'change', title: 'Invented link', quote: 'Employees accrue one hour of sick time', url: 'https://www.oregon.gov/not-searched', why: 'w', what_to_change: 'x' },
-    { kind: 'to_confirm', title: 'Made-up quote', quote: 'employees may carry over unlimited hours each year', url: '' },
-  ], dates: [
-    { title: 'Annual review', quote: 'The company reviews this handbook every January', date: '', repeats: true },
-    { title: 'Invented date', quote: 'the handbook is reviewed on the first of June', date: '2027-06-01', repeats: false },
-  ] }] }
-  const r = shapePiece(answer, [block], used, searched)
-  test('the quote is found in the section, with its page across the page break; a made-up quote is flagged', () => {
-    assert.ok(r.ok); if (!r.ok) return
-    const s = r.sections[0]
-    assert.equal(s.findings[0].quote_verified, true); assert.equal(s.findings[0].page, 4)
-    assert.equal(s.findings[2].quote_verified, false); assert.equal(s.failedQuotes, 1)
-  })
-  test('a link counts only when THIS call\'s search returned it, labelled official or other', () => {
-    assert.ok(r.ok); if (!r.ok) return
-    const s = r.sections[0]
-    assert.deepEqual(s.findings[0].sources, [{ url: searched[0].url, title: 'Oregon Sick Time', official: true }])
-    assert.deepEqual(s.findings[1].sources, []); assert.equal(s.droppedLinks, 1)
-    assert.equal(s.findings[1].kind, 'to_confirm', 'the change with no checked link became a question')
-    assert.equal(s.word, 'needs_change', 'one change kept its link')
-  })
-  test('a date is kept only when its quote checks', () => {
-    assert.ok(r.ok); if (!r.ok) return
-    assert.deepEqual(r.sections[0].dates, [{ title: 'Annual review', due_date: null, recurs: true, quote: 'The company reviews this handbook every January', page: 5 }])
-    assert.equal(r.sections[0].droppedDates, 1)
-  })
-  test('a section the answer left out is reported missing; a shapeless answer is refused', () => {
-    const two = shapePiece({ sections: [] }, [block], used, searched)
-    assert.ok(two.ok); if (two.ok) assert.deepEqual(two.missing, ['S3'])
-    assert.equal(shapePiece({ nope: 1 }, [block], used, searched).ok, false)
-  })
-})
-
-describe('"not covered": only with an official link this call\'s search returned', () => {
-  test('official and returned counts; other, invented or missing links go to "Still to confirm", with why', () => {
-    const r = shapeNotCovered({ not_covered: [
-      { title: 'Sick time policy', url: 'https://www.oregon.gov/boli/workers/pages/sick-time.aspx', why: 'w', what_to_add: 'a' },
-      { title: 'Blog says', url: 'https://example-law-blog.com/sick', why: 'w', what_to_add: 'a' },
-      { title: 'Invented', url: 'https://www.oregon.gov/never', why: 'w', what_to_add: 'a' },
-      { title: 'No link', url: '', why: 'w', what_to_add: 'a' },
-    ], to_confirm: [{ title: 'Headcount', url: '', why: 'w', what_would_settle_it: 's' }] }, searched)
-    assert.ok(r.ok); if (!r.ok) return
-    assert.deepEqual(r.findings.map((x) => [x.title, x.kind]), [['Sick time policy', 'not_covered'], ['Blog says', 'to_confirm'],
-      ['Invented', 'to_confirm'], ['No link', 'to_confirm'], ['Headcount', 'to_confirm']])
-    assert.match(r.findings[1].moved!, /not an official page/)
-    assert.match(r.findings[2].moved!, /did not come from this call's search/)
-    assert.match(r.findings[3].moved!, /no link given/)
-    assert.equal(r.findings[0].what_to_change, 'a'); assert.equal(r.findings[4].what_to_change, 's')
   })
 })
 
@@ -141,7 +71,7 @@ describe('a failed piece is retried once, then failed with its reason (the owner
     assert.equal(updates[1].values.status, 'failed'); assert.equal(updates[1].values.failed_reason, REASONS.crashedTwice)
     assert.ok(updates[0].filters.includes('lt:claimed_at,2026-10-08T11:45:00.000Z'))
   })
-  test('EVERY SECTION FAILED: failed, no checked_at or next_check_at — even when the "not covered" pass worked (the owner)', async () => {
+  test('EVERY SECTION FAILED: failed, no checked_at or next_check_at — even when a "not covered" row (before the baseline) worked', async () => {
     const d = fakeDb([{ kind: 'section', status: 'failed' }, { kind: 'section', status: 'failed' }, { kind: 'not_covered', status: 'done' }])
     const r = await finishCheckIfDone(d.db, 'c1')
     assert.equal(r.status, 'failed')
@@ -160,24 +90,6 @@ describe('a failed piece is retried once, then failed with its reason (the owner
   test('still running: done_count only, no finish', async () => {
     const r = await finishCheckIfDone(fakeDb([{ kind: 'section', status: 'done' }, { kind: 'section', status: 'checking' }]).db, 'c1')
     assert.deepEqual(r, { finished: false, done: 1, total: 2 })
-  })
-})
-
-describe('the prompts as the owner accepted them', () => {
-  test('hr-check: the design\'s draft verbatim, with its JSON shape and the date', async () => {
-    const { hrCheckPrompt } = await import('../../prompts/hr-check.ts')
-    const p = hrCheckPrompt('2026-10-08')
-    assert.ok(p.startsWith("You are an HR compliance specialist checking part of a small or mid-size US business's employee handbook against the rules that apply to it."))
-    assert.ok(p.includes('- company_choice: it sets a policy that no rule requires or forbids.'))
-    assert.ok(p.endsWith('"dates":[{"title":"","quote":"","date":"YYYY-MM-DD or empty","repeats":true}]}]}\nToday is 2026-10-08.'))
-  })
-  test('hr-not-covered: written policies only — no "notices", no posters', async () => {
-    const { hrNotCoveredPrompt } = await import('../../prompts/hr-not-covered.ts')
-    const p = hrNotCoveredPrompt('2026-10-08')
-    assert.ok(p.includes('Find the written policies that the rules for this company require, and that none of its handbooks has a section for.'))
-    assert.ok(p.includes('for the policies they say an employer like this must have in writing.'))
-    assert.ok(p.includes('Leave out safety programs that the rules require as their own written programs, such as hazard communication, process safety management or emergency action plans; they are not handbook policies.'))
-    assert.ok(!/notice|poster/i.test(p))
   })
 })
 
@@ -204,5 +116,83 @@ describe('the routes and the migration', () => {
   })
   test('Audits\' files are not touched by this step: the sweep is a copy', () => {
     assert.ok(!readFileSync('lib/handbookCheck.ts', 'utf8').includes("from './auditRun"))
+  })
+})
+
+describe('A PIECE IS AN HR ANSWER (owner, Baseline Step 1)', () => {
+  const engine = readFileSync('lib/handbookCheck.ts', 'utf8')
+  test('the one question, word for word', () => {
+    assert.equal(CHECK_QUESTION, "Check this handbook against the rules that apply to us. What needs to change, what's missing, and what's unclear?")
+  })
+  test('the answer route\'s own call: HR_ANSWER_PROMPT, hrAnswerMessage with the company and the sections, no search limit, task hr_check', () => {
+    assert.match(engine, /hrAnswerMessage\(company, handbooks, CHECK_QUESTION\)/)
+    assert.match(engine, /ask\(HR_ANSWER_PROMPT, messages, \{ task: 'hr_check', maxTokens: PIECE_MAX_TOKENS, ledger: \{ companyId, task: 'hr_check' \} \}\)/)
+    assert.ok(!/maxSearches|outputSchema|hr-check\.ts|hr-not-covered\.ts|not_covered', section_id: null/.test(engine), 'no limit, no schema, no structured prompt, no separate "not covered" row')
+  })
+  test('at done, finishAnswer exactly as the answer route uses it, and the answer, its sources and its record stored (072)', () => {
+    assert.match(engine, /finishAnswer\(ev\.answer\.text, ev\.answer\.sources, ev\.searched, blocks, used, ev\.cited \?\? \[\]\)/)
+    assert.match(engine, /answer_text: text, answer_sources: fin\.sources, check_record: record/)
+  })
+  test('migration 072 proves its rules on probe rows of its own, and removes them', () => {
+    const m = readFileSync('supabase/migrations/072_handbook_check_answers.sql', 'utf8')
+    assert.match(m, /insert into public\.companies \(name, industry, state\) values \('Migration 072 probe'/)
+    assert.match(m, /check \(answer_text is null or length\(btrim\(answer_text\)\) > 0\)/)
+    assert.match(m, /delete from public\.companies where id = co;/)
+  })
+})
+
+describe('THE CHECK ON SCREEN: its parts, the row, the words', () => {
+  const r = (id: string, sec: string, status: string, answer: string | null = null): RowIn =>
+    ({ id, section_id: sec, kind: 'section', status, word: null, answer_text: answer, answer_sources: answer ? [] : null })
+  const pos = (id: string | null) => Number(String(id).slice(1))
+  test('an answer starts a part; its piece\'s other rows join it; a run of failed rows is ONE part not checked', () => {
+    const parts = checkParts([r('1', 's0', 'done', 'A.'), r('2', 's1', 'done'), r('3', 's2', 'failed'), r('4', 's3', 'failed'), r('5', 's4', 'done', 'B.'), r('6', 's5', 'cancelled')], pos, () => '', () => [])
+    assert.deepEqual(parts.map((p) => p.kind === 'answer' ? p.text : p.kind), ['A.', 'failed', 'B.'])
+    assert.equal(partsNotChecked(parts), 1)
+  })
+  test('a check stored before the baseline (no answers) is shown as it was stored, section by section', () => {
+    const old = [{ ...r('1', 's0', 'done'), word: 'needs_change' }, r('2', 's1', 'failed')]
+    const parts = checkParts(old, pos, (id) => `title ${id}`, (rid) => rid === '1' ? [{ title: 'F', why: null, what_to_change: 'X' }] : [])
+    assert.deepEqual(parts, [
+      { kind: 'legacy', title: 'title s0', word: 'needs_change', failed: false, findings: [{ title: 'F', why: null, what_to_change: 'X' }] },
+      { kind: 'legacy', title: 'title s1', word: null, failed: true, findings: [] }])
+    assert.equal(partsNotChecked(parts), 1)
+  })
+  test('the row (owner): not checked; checking; checked · read again; parts not checked in amber; a failed check', () => {
+    const day = (iso: string) => iso.slice(0, 10)
+    const words = (c: Parameters<typeof checkLine>[0]) => checkLine(c, day).map((p) => (p.amber ? `[${p.text}]` : p.text)).join(' · ')
+    const base = { open: null, last: null, checkedAt: null, nextCheckAt: null }
+    const done = { ...base, checkedAt: '2026-10-08T05:00:00Z', nextCheckAt: '2027-01-06T05:00:00Z' }
+    assert.equal(words(base), 'Not checked yet')
+    assert.equal(words({ ...base, open: { done: 3, total: 10 } }), 'Checking 3 of 10…')
+    assert.equal(words({ ...done, last: { status: 'done', notChecked: 0 } }), 'Checked 2026-10-08 · read again 2027-01-06')
+    assert.equal(words({ ...done, last: { status: 'done', notChecked: 1 } }), 'Checked 2026-10-08 · read again 2027-01-06 · [1 part not checked]')
+    assert.equal(words({ ...done, last: { status: 'done', notChecked: 2 } }), 'Checked 2026-10-08 · read again 2027-01-06 · [2 parts not checked]')
+    assert.equal(words({ ...base, last: { status: 'failed', notChecked: 1 } }), '[The check could not finish — press Check now to try again]')
+  })
+  test('the owner\'s words: the read-again note, a failed part, the two lines that were untrue', () => {
+    assert.equal(readAgainNote('6 January 2027'), 'We will read this handbook again on 6 January 2027. Changed it before then? Add the new version, or press Check now.')
+    assert.equal(PART_NOT_CHECKED, "We could not check this part. That's on our side, not yours. Press Check now to try again.")
+    assert.equal(HANDBOOKS_TAB_LINE, 'Press Check now on a handbook to check it against the rules that apply to you.')
+    assert.equal(uploadLede('Handbook.pdf'), 'Handbook.pdf. We read it in about a minute. It stays here in HR.')
+    const page = readFileSync('app/hr/new/HrWorkspace.tsx', 'utf8')
+    assert.ok(!page.includes('checked the night it arrives') && !page.includes('check it tonight'))
+  })
+  test('THE GREY MARK: the words stay, the mark becomes a grey note the shared renderer draws (and nothing else)', () => {
+    assert.equal(NOT_IN_HANDBOOK, '(not a quote from your handbook)')
+    assert.equal(markNotFound(`It says "a b c d e f" ${NOT_IN_HANDBOOK}.`), `It says "a b c d e f" [${NOT_IN_HANDBOOK}](#grey-note).`)
+    // an answer stored with the first wording (staging, before the owner's answer) still draws its mark grey
+    assert.equal(markNotFound('It says "a b c d e f" (not found in your handbook).'), 'It says "a b c d e f" [(not found in your handbook)](#grey-note).')
+    const body = readFileSync('components/AnswerBody.tsx', 'utf8')
+    assert.match(body, /export const GREY_NOTE_HREF = '#grey-note'/)
+    assert.equal(NOT_IN_HANDBOOK_HREF, '#grey-note')
+    assert.match(body, /if \(p\.href === GREY_NOTE_HREF\) return <span className="font-sans text-\[13px\] text-gray-400">\{p\.children\}<\/span>/)
+  })
+  test('the drawer draws each part with the Ask tab\'s own component; footer order Check now, Open, Add a newer version, Download, Delete', () => {
+    const page = readFileSync('app/hr/new/HrWorkspace.tsx', 'utf8')
+    assert.match(page, /<HrAnswerView body=\{body\} lines=\{x\.phase === 'done' \? lines : \[\]\} sources=\{x\.sources\} \/>/)
+    assert.match(page, /<HrAnswerView \{\.\.\.\(\(\) => \{ const a = splitAppended\(p\.text\)/)
+    const order = ['>Check now<', '>Open the handbook<', '>Add a newer version<', '>Download<', '>Delete<'].map((x) => page.lastIndexOf(x))
+    assert.deepEqual([...order].sort((a, b) => a - b), order)
   })
 })

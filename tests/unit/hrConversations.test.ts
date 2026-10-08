@@ -59,6 +59,7 @@ describe('the check record (migration 069)', () => {
       waited_seconds: 12, budget_tokens: 50000, searched: [{ url: 'u', title: 't' }], cited_passages: 2,
       handbook_cards: [{ n: 1, from: 'marker' }],
       dropped: { handbook_quotes: 0, unchecked_quotes: 0, web_links: 0 },
+      marked: { not_found_quotes: 0, unchecked_quotes: 0 },
     })
   })
   test('the migration verifies the column and who may use it, by reading', () => {

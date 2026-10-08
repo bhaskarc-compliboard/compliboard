@@ -33,17 +33,21 @@ import { DOCUMENTS_BUCKET, handbookPath } from '@/lib/storage'
 import { LIST_CAP, countOf, countWord, fmtDate, displayTitle } from '@/lib/listWords'
 import { friendlyDate, conversationStatus } from '@/lib/conversationStatus'
 import { readTopicList, type TopicRow } from '@/lib/topicList'
-import { statusWords, handbookList, sectionCount, pagesWords, counted, type HandbookRow } from '@/lib/handbooks'
+import {
+  statusWords, handbookList, sectionCount, type HandbookRow, checkLine, HANDBOOKS_TAB_LINE, uploadLede, NOT_CHECKED_YET,
+  checkingSections, readAgainNote, PART_NOT_CHECKED, CHECK_FAILED, earlierCheckHeading, LEGACY_WORD,
+} from '@/lib/handbooks'
+import { loadRowChecks, loadCheckView, type RowCheckState, type CheckView } from '@/lib/handbookCheckView'
 import { AnswerBody, SourceList, type AnswerSource } from '@/components/AnswerBody'
 import { ReportView, WEB_SOURCE, type SourceShape, type ReportLike } from '@/components/ReportView'
-import { HR_AS_OF_LINE, whatToChangeHeading, thingsToChange } from '@/lib/summaryWords'
+import { HR_AS_OF_LINE, whatToChangeHeading, thingsToChange, longDate } from '@/lib/summaryWords'
 import { CLAIM_WORDS } from '@/lib/topicClaim'
 import { printWithFrame } from '@/lib/printFrame'
 import type { HrReportSource } from '@/lib/hrSummary'
 import type { SummaryReport } from '@/lib/summaryReport'
 import { Stages, type Step } from '@/components/Stages'
 import { readAnswerStream, ndjsonLines } from '@/lib/answerStream'
-import { readingWords, splitAppended, splitSuggested, hideHandbookMarkers, HR_COMPOSER_HINT, NOT_ANSWERED, ASK_IT_AGAIN, ASKED_AGAIN_BELOW, NOT_SUMMARISED_HR, DELETE_CONVERSATION } from '@/lib/hrAnswerWords'
+import { markNotFound, readingWords, splitAppended, splitSuggested, hideHandbookMarkers, HR_COMPOSER_HINT, NOT_ANSWERED, ASK_IT_AGAIN, ASKED_AGAIN_BELOW, NOT_SUMMARISED_HR, DELETE_CONVERSATION } from '@/lib/hrAnswerWords'
 
 type Tab = 'ask' | 'conversations' | 'handbooks' | 'dates'
 
@@ -85,7 +89,7 @@ interface HrExchange {
 interface DateRow { id: string; title: string; due_date: string }
 interface Site { id: string; name: string }
 
-const HANDBOOK_COLUMNS = 'id, name, file_name, file_path, scope, entity_id, status, status_reason, version_of, is_current, created_at, page_count, read_at, handbook_sections(count)'
+const HANDBOOK_COLUMNS = 'id, name, file_name, file_path, scope, entity_id, status, status_reason, version_of, is_current, created_at, page_count, read_at, checked_at, next_check_at, handbook_sections(count)'
 
 /** The owner's words (HR Step 5a). */
 const SAVE_FAILED = 'We could not save this file. Nothing was added. Please try again.'
@@ -109,6 +113,29 @@ function AttachControl({ label, onClick, disabled }: { label: string; onClick?: 
       <Pin />
       <span className="underline">{label}</span>
     </button>
+  )
+}
+
+/**
+ * ONE HR ANSWER, DRAWN — the Ask tab's own markup, lifted so a handbook check's parts are drawn exactly as answers
+ * (owner, Baseline Step 1). The answer's words are never changed: a quote the code could not find keeps its words and
+ * gets the small grey mark (`markNotFound`, drawn by `components/AnswerBody.tsx`'s grey note).
+ */
+function HrAnswerView({ body, lines, sources }: { body: string; lines: string[]; sources: AnswerSource[] }) {
+  return (
+    <>
+      {/* Suggested wording (owner, 6c) is drawn as a draft — Documents' draft look (components/DocumentReport.tsx) —
+          never as a source, and it has no number. Kept for answers stored with the label; no new answer is asked for it. */}
+      {splitSuggested(body).map((seg, si) => seg.draft ? (
+        <div key={si} className="my-3 rounded-lg bg-gray-50 p-3">
+          <p className="text-[12px] text-gray-500">Suggested wording</p>
+          <div className="mt-2"><AnswerBody text={markNotFound(seg.text)} sources={sources} /></div>
+        </div>
+      ) : <AnswerBody key={si} text={markNotFound(seg.text)} sources={sources} />)}
+      {/* The lines the server added (quotes marked, links not shown, the day-1 line): grey, after the answer. */}
+      {lines.map((l) => <p key={l} className="mt-2 text-[13px] text-gray-500">{l}</p>)}
+      <div className="sources-print"><SourceList sources={sources} /></div>
+    </>
   )
 }
 
@@ -176,20 +203,61 @@ export default function HrWorkspace() {
     return () => clearInterval(t)
   }, [anyReading, loadHandbooks])
 
-  // A read handbook's drawer lists its sections (the check report replaces this in step 8).
-  type SectionLine = { position: number; title: string | null; page_from: number | null; page_to: number | null }
-  const [drawerSections, setDrawerSections] = useState<{ id: string; rows: SectionLine[] } | null>(null)
+  // ---- THE CHECK (Baseline Step 1): each read handbook's check on its row, and its answers in its drawer ----
+  // Read as the person (066: SELECT on the check tables). While a check is open, looked at again every 5 s, as the
+  // summary is.
+  const [rowChecks, setRowChecks] = useState<Record<string, RowCheckState>>({})
+  const readIds = allHandbooks.filter((h) => h.status === 'read').map((h) => h.id).join(',')
+  const loadChecks = useCallback(async () => {
+    setRowChecks(await loadRowChecks(supabase, readIds ? readIds.split(',') : []))
+  }, [supabase, readIds])
+  useEffect(() => {
+    let live = true
+    ;(async () => {
+      const r = await loadRowChecks(supabase, readIds ? readIds.split(',') : [])
+      if (live) setRowChecks(r)
+    })()
+    return () => { live = false }
+  }, [supabase, readIds])
+  const [drawerCheck, setDrawerCheck] = useState<({ id: string } & CheckView) | null>(null)
   const drawerReadId = drawer && allHandbooks.find((h) => h.id === drawer.id)?.status === 'read' ? drawer.id : null
+  const loadDrawerCheck = useCallback(async (id: string) => {
+    setDrawerCheck({ id, ...(await loadCheckView(supabase, id)) })
+  }, [supabase])
   useEffect(() => {
     if (!drawerReadId) return
     let live = true
     ;(async () => {
-      const { data } = await supabase.from('handbook_sections').select('position, title, page_from, page_to')
-        .eq('handbook_id', drawerReadId).order('position')
-      if (live) setDrawerSections({ id: drawerReadId, rows: (data ?? []) as SectionLine[] })
+      const r = await loadCheckView(supabase, drawerReadId)
+      if (live) setDrawerCheck({ id: drawerReadId, ...r })
     })()
     return () => { live = false }
   }, [drawerReadId, supabase])
+  const [checkPressed, setCheckPressed] = useState(false)
+  const anyChecking = checkPressed || Object.values(rowChecks).some((c) => c.open)
+  useEffect(() => {
+    if (!anyChecking) return
+    const t = setInterval(() => {
+      void loadHandbooks(); void loadChecks()
+      if (drawerReadId) void loadDrawerCheck(drawerReadId)
+      setCheckPressed(false)
+    }, 5000)
+    return () => clearInterval(t)
+  }, [anyChecking, loadHandbooks, loadChecks, drawerReadId, loadDrawerCheck])
+  const [checkNotice, setCheckNotice] = useState<string | null>(null)
+  const [startingCheck, setStartingCheck] = useState(false)
+  const checkNow = async (h: HandbookRow) => {
+    setStartingCheck(true); setCheckNotice(null)
+    try {
+      const res = await fetch(`/api/hr/handbooks/${h.id}/check`, { method: 'POST', headers: await authHeaders() })
+      const j = await res.json().catch(() => null)
+      if (res.status !== 202) setCheckNotice(j?.error ?? 'We could not start the check just now. That is our side, not yours. Please try again.')
+      setCheckPressed(true)
+      await Promise.all([loadChecks(), loadDrawerCheck(h.id)])
+    } finally {
+      setStartingCheck(false)
+    }
+  }
 
   useEffect(() => {
     let live = true
@@ -539,17 +607,7 @@ export default function HrWorkspace() {
                   )}
                   {x.text && (
                     <>
-                      {/* Suggested wording (owner, 6c) is drawn as a draft — Documents' draft look
-                          (components/DocumentReport.tsx) — never as a source, and it has no number. */}
-                      {splitSuggested(body).map((seg, si) => seg.draft ? (
-                        <div key={si} className="my-3 rounded-lg bg-gray-50 p-3">
-                          <p className="text-[12px] text-gray-500">Suggested wording</p>
-                          <div className="mt-2"><AnswerBody text={seg.text} sources={x.sources} /></div>
-                        </div>
-                      ) : <AnswerBody key={si} text={seg.text} sources={x.sources} />)}
-                      {/* The lines the server added (dropped quotes or links, the day-1 line): grey, after the answer. */}
-                      {x.phase === 'done' && lines.map((l) => <p key={l} className="mt-2 text-[13px] text-gray-500">{l}</p>)}
-                      <div className="sources-print"><SourceList sources={x.sources} /></div>
+                      <HrAnswerView body={body} lines={x.phase === 'done' ? lines : []} sources={x.sources} />
                     </>
                   )}
                   {x.phase === 'refused' && <p className="text-[14px] text-gray-600">{x.refusal}</p>}
@@ -710,7 +768,7 @@ export default function HrWorkspace() {
           <div className="pt-1">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 pb-3 sm:flex-nowrap">
               <p className="min-w-0 flex-1 text-[13px] text-gray-500">
-                Each handbook is checked the night it arrives, then every 90 days. Changed one? Add the new version.
+                {HANDBOOKS_TAB_LINE}
               </p>
               <p className="shrink-0 text-[12px] text-gray-500">
                 <AttachControl label="Add a handbook" onClick={() => pickFile(null)} disabled={saving} />
@@ -748,8 +806,19 @@ export default function HrWorkspace() {
                                 <p className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-1 text-[12px] text-gray-500">
                                   <span className="truncate">{h.file_name}</span>
                                   <span aria-hidden="true">·</span>
-                                  {/* Amber only on "Could not read": the one state that asks something of somebody. */}
-                                  <span className={couldNot ? 'text-[var(--amber)]' : undefined}>{statusWords(h.status, h.status_reason, sectionCount(h))}</span>
+                                  {h.status === 'read' ? (
+                                    // THE CHECK ON THE ROW (owner, Baseline Step 1): amber only where something needs the person.
+                                    checkLine({ ...(rowChecks[h.id] ?? { open: null, last: null }), checkedAt: h.checked_at ?? null, nextCheckAt: h.next_check_at ?? null }, (iso) => friendlyDate(iso))
+                                      .map((p, i) => (
+                                        <span key={i} className="contents">
+                                          {i > 0 && <span aria-hidden="true">·</span>}
+                                          <span className={p.amber ? 'text-[var(--amber)]' : undefined}>{p.text}</span>
+                                        </span>
+                                      ))
+                                  ) : (
+                                    /* Amber only on "Could not read": the one state that asks something of somebody. */
+                                    <span className={couldNot ? 'text-[var(--amber)]' : undefined}>{statusWords(h.status, h.status_reason, sectionCount(h))}</span>
+                                  )}
                                   {/* A site that was deleted: the handbook keeps scope 'site' and says so (choosing arrives in polish, step 11). */}
                                   {g.removed && <><span aria-hidden="true">·</span><span>choose where it applies</span></>}
                                 </p>
@@ -860,13 +929,19 @@ export default function HrWorkspace() {
       )}
       {drawer && (
         <Drawer title={drawer.name}
-          sub={drawer.is_current
-            ? `${siteLabel(drawer)} · ${drawer.file_name} · added ${friendlyDate(drawer.created_at)}`
-            : `Older version · ${siteLabel(drawer)} · ${drawer.file_name} · added ${friendlyDate(drawer.created_at)}`}
+          sub={(() => {
+            const h = allHandbooks.find((x) => x.id === drawer.id) ?? drawer
+            const when = h.checked_at ? `checked ${friendlyDate(h.checked_at)}` : `added ${friendlyDate(h.created_at)}`
+            return `${h.is_current ? '' : 'Older version · '}${siteLabel(h)} · ${h.file_name} · ${when}`
+          })()}
           company={companyName}
-          onClose={() => setDrawer(null)}
+          onClose={() => { setDrawer(null); setCheckNotice(null) }}
           footer={
             <>
+              {/* The workspace's order: the outline action first (Check now, current and read only). */}
+              {drawer.is_current && drawerReadId === drawer.id && (
+                <button onClick={() => checkNow(drawer)} disabled={startingCheck || !!drawerCheck?.open} className={OUTLINE}>Check now</button>
+              )}
               <button onClick={() => openHandbook(drawer)} className={TEXT_ACTION}>Open the handbook</button>
               {/* A newer version is added to the CURRENT one only (owner, 7 October). */}
               {drawer.is_current && (
@@ -878,35 +953,60 @@ export default function HrWorkspace() {
                   <button onClick={() => readAgain(drawer)} disabled={startingRead} className={TEXT_ACTION}>Read it again</button>
                 )
               })()}
+              <button onClick={printDrawer} className={`ml-auto ${TEXT_ACTION}`}>Download</button>
               <button onClick={() => { setDeleteFailed(false); setDeleting(true) }}
-                className="ml-auto text-[14px] text-gray-400 hover:text-red-600">Delete</button>
+                className="text-[14px] text-gray-400 hover:text-red-600">Delete</button>
             </>
           }>
-          {/* The check report replaces this in step 8. */}
           {(() => {
             const h = allHandbooks.find((x) => x.id === drawer.id) ?? drawer
-            const rows = drawerSections?.id === h.id ? drawerSections.rows : null
             // EVERY VERSION TELLS THE TRUTH ABOUT ITSELF (owner, 7 October): the body follows this row's own
             // status, older or current — could not read says why, in the row's words and amber.
             if (h.status === 'could_not_read') {
               return <p className="text-[14px] leading-relaxed text-[var(--amber)]">{statusWords(h.status, h.status_reason)}</p>
             }
-            if (h.status !== 'read' || !rows) {
+            if (h.status !== 'read' || drawerCheck?.id !== h.id) {
               return <p className="text-[14px] leading-relaxed text-gray-600">This handbook has not been read yet.</p>
             }
-            const n = rows.length
+            const { open, last } = drawerCheck
             return (
-              <>
-                <p className="text-[14px] leading-relaxed text-gray-600">
-                  {`Read ${friendlyDate(h.read_at ?? null)}. ${h.page_count != null ? `${counted(h.page_count, 'page')}, ` : ''}${counted(n, 'section')}.`}
-                </p>
-                <ul className="mt-4 space-y-1.5 text-[14px] text-gray-700">
-                  {rows.map((r) => {
-                    const pages = pagesWords(r.page_from, r.page_to)
-                    return <li key={r.position}>{r.title ?? h.name}{pages && <span className="text-gray-500"> · {pages}</span>}</li>
-                  })}
-                </ul>
-              </>
+              <div className="space-y-6">
+                {checkNotice && <p className="text-[13px] text-[var(--amber)]">{checkNotice}</p>}
+                {open && <p className="text-[13px] text-gray-500">{checkingSections(open.done, open.total)}</p>}
+                {!open && !last && <p className="text-[14px] leading-relaxed text-gray-600">{NOT_CHECKED_YET}</p>}
+                {last && (
+                  <>
+                    {open && last.finishedAt && (
+                      <h4 className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">{earlierCheckHeading(longDate(last.finishedAt))}</h4>
+                    )}
+                    {last.status === 'failed'
+                      ? <p className="text-[14px] leading-relaxed text-[var(--amber)]">{CHECK_FAILED}</p>
+                      : h.next_check_at && <p className="text-[13px] text-gray-500">{readAgainNote(longDate(h.next_check_at))}</p>}
+                    {last.parts.map((p, i) => p.kind === 'answer' ? (
+                      // EACH PART IS DRAWN EXACTLY AS AN HR ANSWER (owner, Baseline Step 1).
+                      <div key={i} className={i > 0 ? 'border-t border-gray-200 pt-6' : ''}>
+                        <HrAnswerView {...(() => { const a = splitAppended(p.text); return { body: a.body, lines: a.lines } })()} sources={p.sources as AnswerSource[]} />
+                      </div>
+                    ) : p.kind === 'failed' ? (
+                      <p key={i} className="text-[14px] leading-relaxed text-[var(--amber)]">{PART_NOT_CHECKED}</p>
+                    ) : (
+                      // A check stored before 8 October: shown as it was stored.
+                      <div key={i}>
+                        <p className="text-[14px] font-semibold text-gray-900">{p.title}
+                          <span className={`ml-2 text-[12px] font-normal ${p.failed || p.word === 'needs_change' ? 'text-[var(--amber)]' : 'text-gray-500'}`}>
+                            {p.failed ? 'Not checked' : LEGACY_WORD[p.word ?? ''] ?? ''}</span></p>
+                        {p.findings.map((f, fi) => (
+                          <div key={fi} className="mt-2">
+                            <p className="text-[14px] text-gray-900">{f.title}</p>
+                            {f.why && <p className="text-[13px] leading-relaxed text-gray-600">{f.why}</p>}
+                            {f.what_to_change && <p className="text-[13px] leading-relaxed text-gray-600">{f.what_to_change}</p>}
+                          </div>
+                        ))}
+                      </div>
+                    ))}
+                  </>
+                )}
+              </div>
             )
           })()}
         </Drawer>
@@ -915,7 +1015,7 @@ export default function HrWorkspace() {
       {/* ================= WHICH SITE (the workspace's choice sheet) ================= */}
       {pendingFile && (
         <Sheet onClose={() => setPendingFile(null)} title="Which site does this handbook cover?"
-          lede={`${pendingFile.name}. We read it in about a minute and check it tonight. It stays here in HR.`}>
+          lede={uploadLede(pendingFile.name)}>
           <button onClick={() => { const f = pendingFile; setPendingFile(null); save(f, 'company', null) }}
             className="w-full rounded-lg border border-gray-200 p-3 text-left hover:border-emerald-400 hover:bg-emerald-50/40">
             <b className="block text-[14px] font-medium text-gray-900">Every site</b>

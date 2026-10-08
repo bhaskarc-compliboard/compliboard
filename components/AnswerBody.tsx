@@ -113,6 +113,13 @@ function CiteMarker({ n, source }: { n: number; source?: AnswerSource }) {
   )
 }
 
+/**
+ * A GREY NOTE INSIDE AN ANSWER — HR Baseline Step 1, ADDITIVE. A markdown link to exactly this address is drawn as
+ * small grey text, not as a link: HR marks a quoted passage it could not find in the handbook this way
+ * (`lib/hrAnswerWords.ts` markNotFound). No other caller writes this address, so every other answer draws as before.
+ */
+export const GREY_NOTE_HREF = '#grey-note'
+
 export function AnswerBody({ text, sources }: { text: string; sources: AnswerSource[] }) {
   const byN = new Map(sources.map((s) => [s.n, s]))
 
@@ -121,6 +128,7 @@ export function AnswerBody({ text, sources }: { text: string; sources: AnswerSou
   const components = {
     ...MD,
     a: (p: MdProps<React.AnchorHTMLAttributes<HTMLAnchorElement>>) => {
+      if (p.href === GREY_NOTE_HREF) return <span className="font-sans text-[13px] text-gray-400">{p.children}</span>
       const n = citationNumber(p.href)
       if (n !== null) return <CiteMarker n={n} source={byN.get(n)} />
       return (

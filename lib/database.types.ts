@@ -2435,8 +2435,11 @@ export type Database = {
       handbook_check_sections: {
         Row: {
           ai_call_id: string | null
+          answer_sources: Json | null
+          answer_text: string | null
           attempts: number
           check_id: string
+          check_record: Json | null
           claimed_at: string | null
           company_id: string
           created_at: string
@@ -2454,8 +2457,11 @@ export type Database = {
         }
         Insert: {
           ai_call_id?: string | null
+          answer_sources?: Json | null
+          answer_text?: string | null
           attempts?: number
           check_id: string
+          check_record?: Json | null
           claimed_at?: string | null
           company_id: string
           created_at?: string
@@ -2473,8 +2479,11 @@ export type Database = {
         }
         Update: {
           ai_call_id?: string | null
+          answer_sources?: Json | null
+          answer_text?: string | null
           attempts?: number
           check_id?: string
+          check_record?: Json | null
           claimed_at?: string | null
           company_id?: string
           created_at?: string

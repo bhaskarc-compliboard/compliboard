@@ -15,16 +15,46 @@ import type { Source, CitedPassage } from './ai.ts'
 import { normaliseForQuote } from './documentScan.ts'
 import { findReturned, labelFor } from './howTo.ts'
 import { splitPages, plainText, PAGE_BREAK } from './handbookSections.ts'
-import { HR_REFUSALS, QUOTE_REMOVED, draftParagraphs } from './hrAnswerWords.ts'
+import { HR_REFUSALS, NOT_IN_HANDBOOK, draftParagraphs } from './hrAnswerWords.ts'
 
 type Db = SupabaseClient<any, any, any>   // eslint-disable-line @typescript-eslint/no-explicit-any
 
-/** Measured from the 7 real `hr_check` calls (Step 6 design, point 6): tokens ≈ 0.273 × characters. */
-export const TOKENS_PER_CHAR = 0.273
+/**
+ * TOKENS PER CHARACTER, FOR THE PRODUCTION MODEL (HR Baseline Step 1, 8 October 2026).
+ * Anthropic's models overview: on the current tokenizer (introduced with Claude Opus 4.7, used by claude-opus-5-5)
+ * "1M tokens is roughly … 2.5M Unicode characters" — 0.4 tokens a character; the pricing page: the newer tokenizer
+ * "produces approximately 30% more tokens for the same text". The old figure, 0.273, was measured on Haiku 4.5's
+ * older tokenizer (Step 6 design, point 6) and would under-count Opus by about a third. On Haiku 0.4 over-counts,
+ * which only errs toward sending less.
+ * https://platform.claude.com/docs/en/about-claude/models/overview · https://platform.claude.com/docs/en/about-claude/pricing
+ */
+export const TOKENS_PER_CHAR = 0.4
 export const QUOTE_MIN_WORDS = 6
+
+/**
+ * WHOLE HANDBOOKS WHEN THEY FIT (the owner, Baseline Step 1). The default is what fits in ONE call on
+ * claude-opus-5-5 with room left for everything else in that call:
+ *
+ *   context window, claude-opus-5-5 (models overview: "Context window 1M tokens";
+ *     pricing: the full 1M "at standard pricing")                                   1,000,000
+ *   − the answer: 16,000 (the routes' maxTokens), twice, for one doubling retry      −   32,000
+ *   − the instructions, the web-search tool's own prompt (286 tokens), the company
+ *     context and the question                                                       −   10,000
+ *   − the conversation so far (an answer's earlier turns, sources appended)          −   50,000
+ *   − the search rounds: 10 searches × 25,000 tokens each. Production's ledger on
+ *     8 October: Opus research calls averaged 2.6 searches, at most 4, at 12,500–
+ *     24,000 input tokens a search; there is no search limit, so 10 is room, not a cap −  250,000
+ *                                                                                    ───────────
+ *   left for the handbooks                                                             658,000 → 650,000
+ *
+ * At TOKENS_PER_CHAR 0.4 that is about 1.6 million characters of handbook text. Selection (6c) runs only for a
+ * handbook above it. HR_HANDBOOK_BUDGET_TOKENS still overrides it, for testing — and MUST be set lower for a run on
+ * Haiku 4.5, whose context window is 200K tokens (its overview page), when a handbook is large.
+ */
+export const OPUS_HANDBOOK_BUDGET_TOKENS = 650_000
 export function budgetTokens(): number {
   const n = Number(process.env.HR_HANDBOOK_BUDGET_TOKENS)
-  return Number.isFinite(n) && n > 0 ? n : 50_000
+  return Number.isFinite(n) && n > 0 ? n : OPUS_HANDBOOK_BUDGET_TOKENS
 }
 
 // ---------------------------------------------------------------------------------------------------------
@@ -377,7 +407,8 @@ const PLAIN_QUOTE = /["“]([^"”\n]{1,800}?)["”]/g
  *     shows it inline and gives it a card, exactly as a marked quote;
  *   · in the passage behind one of this answer's own web citations (`cited`, `lib/ai.ts` citedPassages) → the
  *     web page's words: kept, and tied to that citation (its [n] put straight after it if it is not already);
- *   · in neither → never shown as anybody's words: replaced by QUOTE_REMOVED and counted.
+ *   · in neither → KEPT exactly as written, followed by NOT_IN_HANDBOOK, with no card, and counted (the owner,
+ *     Baseline Step 1: the evidence checks never change Claude's words). Until 8 October it was removed.
  * Where the citation sits in the sentence decides nothing: "Your handbook says '…', but the law says ….[2]"
  * must not let a false handbook quote through. Shorter passages are left alone (a phrase is not a quotation).
  *
@@ -409,7 +440,7 @@ export function checkPlainQuotes(text: string, blocks: Block[], used: HandbookUs
     }
     if (passages.length) unchecked++
     else handbookFailed++
-    return QUOTE_REMOVED
+    return `${whole} ${NOT_IN_HANDBOOK}`
   })
   // Restored twice: a marker can sit inside a restored paragraph's placeholder text only once, so two passes suffice.
   const back = (t: string) => t.replace(/\u0000(\d+)\u0000/g, (_, i) => kept[Number(i)])
@@ -419,6 +450,8 @@ export function checkPlainQuotes(text: string, blocks: Block[], used: HandbookUs
 export function finishAnswer(text: string, cited: Source[], searched: Array<{ url: string; title: string }>,
   blocks: Block[], used: HandbookUsed[], passages: CitedPassage[] = []):
     { text: string; sources: HrSource[]; droppedQuotes: number; droppedLinks: number; uncheckedQuotes: number
+      /** Plain quotes found in no handbook (no cited passage to check against): kept and marked. */
+      notFoundQuotes: number
       /** Each handbook card's number and whether it came from a [H…] marker or a plain quote (Step 6b). */
       origins: Array<{ n: number; from: 'marker' | 'plain' }> } {
   const plain = checkPlainQuotes(text, blocks, used, cited, passages)
@@ -463,7 +496,9 @@ export function finishAnswer(text: string, cited: Source[], searched: Array<{ ur
     // Only a quote the code found in the handbook is ever shown; a failed one is removed above.
     return `${lead}“${quote!.trim()}”[${n}]`
   })
-  return { text: replaceBlockIds(out, blocks), sources, droppedQuotes: droppedQuotes + plain.handbookFailed, droppedLinks, uncheckedQuotes: plain.unchecked, origins }
+  // droppedQuotes counts only [H…] markers whose quote was not found (removed); plain quotes are kept and marked.
+  return { text: replaceBlockIds(out, blocks), sources, droppedQuotes, droppedLinks, uncheckedQuotes: plain.unchecked,
+    notFoundQuotes: plain.handbookFailed, origins }
 }
 
 /**
@@ -521,5 +556,7 @@ export function checkRecord(args: {
     cited_passages: args.citedPassages,
     handbook_cards: args.done.origins,
     dropped: { handbook_quotes: args.done.droppedQuotes, unchecked_quotes: args.done.uncheckedQuotes, web_links: args.done.droppedLinks },
+    // Since the baseline (8 October): plain quotes kept and marked "(not found in your handbook)".
+    marked: { not_found_quotes: args.done.notFoundQuotes, unchecked_quotes: args.done.uncheckedQuotes },
   }
 }

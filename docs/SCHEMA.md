@@ -3,8 +3,8 @@
 **GENERATED — do not edit.** `node --env-file=.env.local scripts/schema-doc.js`, and it runs
 inside `npm run db:migrate`, so it cannot be stale by more than one migration.
 
-**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-10-08 04:14 UTC
-**Migrations applied:** 72 — `000` to `071`
+**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-10-08 16:47 UTC
+**Migrations applied:** 73 — `000` to `072`
 
 *Every figure here was read from the catalog of that database. Nothing is copied from the
 migration files, which say what was intended rather than what is there — and the two have
@@ -76,11 +76,11 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 
 - `companies` — 6 rows · touched by route account/export, route account, route audit-runs, route company-information, route document-scan, +19 more
 - `profiles` — 5 rows · touched by route account/export, route account, route signup, screen audits, screen calendar, +9 more
-- `entities` — 7 rows · touched by route audit-runs, route audits/index, route company-information, route document-actions, route documents/index, +17 more
+- `entities` — 7 rows · touched by route audit-runs, route audits/index, route company-information, route document-actions, route documents/index, +18 more
 
 **Calendar**
 
-- `calendar_events` — 0 rows · touched by route calendar, route document-actions, screen hr
+- `calendar_events` — 2 rows · touched by route calendar, route document-actions, screen hr
 
 **Worker queue**
 
@@ -157,9 +157,9 @@ END)`
 
 One row per model call, written at the call. Prices are copied onto the row so a later change to config/pricing.ts cannot rewrite what a past call cost. cost_usd NULL = the model was not in the price table, which is not the same as free. DECISIONS.md §128 J.
 
-**Rows:** 120 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 154 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route document-draft`, `lib auditRun`, `lib auditTemplate`, `lib costLedger`, `lib documentScan`, `script check-live`, `script cost-report`, `script run-golden-audit`, `script run-golden-docs`, `script scan-document`
+**Read or written by:** `route document-draft`, `lib auditRun`, `lib auditTemplate`, `lib costLedger`, `lib documentScan`, `lib handbookCheck`, `script check-live`, `script cost-report`, `script run-golden-audit`, `script run-golden-docs`, `script scan-document`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -491,7 +491,7 @@ One row per audit run. A frozen snapshot of results as checked that day — reus
 
 ### `calendar_events`
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 2 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route calendar`, `route document-actions`, `screen hr`
 
@@ -1623,7 +1623,7 @@ One row per correction a person makes to what a document IS. Newest per field wi
 
 **Rows:** 7 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route audit-runs`, `route audits/index`, `route company-information`, `route document-actions`, `route documents/index`, `route documents/report`, `route switches/answer`, `route switches/ask`, `route to-confirm`, `screen hr`, `lib agencyScope`, `lib companyContext`, `lib handbookSave`, `lib hrAnswer`, `lib obligationWriter`, `script check-live`, `script resolve-dryrun`, `script run-golden-audit`, `script run-golden-docs`, `script run-golden`, `script seed-multisite-fixture`, `script seed-staging-testdata`
+**Read or written by:** `route audit-runs`, `route audits/index`, `route company-information`, `route document-actions`, `route documents/index`, `route documents/report`, `route switches/answer`, `route switches/ask`, `route to-confirm`, `screen hr`, `lib agencyScope`, `lib companyContext`, `lib handbookCheck`, `lib handbookSave`, `lib hrAnswer`, `lib obligationWriter`, `script check-live`, `script resolve-dryrun`, `script run-golden-audit`, `script run-golden-docs`, `script run-golden`, `script seed-multisite-fixture`, `script seed-staging-testdata`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -1760,9 +1760,9 @@ Candidate company facts read out of a conversation overnight. PROPOSED, never wr
 
 The unit the handbook sweep claims: one per section per check, plus one not_covered pass. claimed_at is the compare-and-set.
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 58 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by: NOTHING in app/, lib/ or scripts/.**
+**Read or written by:** `lib handbookCheck`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -1783,6 +1783,9 @@ The unit the handbook sweep claims: one per section per check, plus one not_cove
 | `model` | text | yes | — |
 | `prompt_sha256` | text | yes | — |
 | `ai_call_id` | uuid | yes | — |
+| `answer_text` | text | yes | — |
+| `answer_sources` | jsonb | yes | — |
+| `check_record` | jsonb | yes | — |
 
 **Points at:**
 
@@ -1800,10 +1803,12 @@ The unit the handbook sweep claims: one per section per check, plus one not_cove
 
 **Constraints:**
 
+- `handbook_check_sections_answer_not_empty` — `CHECK (((answer_text IS NULL) OR (length(btrim(answer_text)) > 0)))`
 - `handbook_check_sections_attempts_not_negative` — `CHECK ((attempts >= 0))`
 - `handbook_check_sections_failed_says_why` — `CHECK ((((status = ANY (ARRAY['failed'::text, 'cancelled'::text])) AND (failed_reason IS NOT NULL)) OR ((status <> ALL (ARRAY['failed'::text, 'cancelled'::text])) AND (failed_reason IS NULL))))`
 - `handbook_check_sections_kind_check` — `CHECK ((kind = ANY (ARRAY['section'::text, 'not_covered'::text])))`
 - `handbook_check_sections_kind_has_its_section` — `CHECK ((((kind = 'section'::text) AND (section_id IS NOT NULL)) OR ((kind = 'not_covered'::text) AND (section_id IS NULL))))`
+- `handbook_check_sections_sources_are_a_list` — `CHECK (((answer_sources IS NULL) OR (jsonb_typeof(answer_sources) = 'array'::text)))`
 - `handbook_check_sections_status_check` — `CHECK ((status = ANY (ARRAY['queued'::text, 'checking'::text, 'done'::text, 'failed'::text, 'cancelled'::text])))`
 - `handbook_check_sections_word_check` — `CHECK ((word = ANY (ARRAY['needs_change'::text, 'no_gap'::text, 'to_confirm'::text, 'company_choice'::text])))`
 
@@ -1828,9 +1833,9 @@ The unit the handbook sweep claims: one per section per check, plus one not_cove
 
 One check of one handbook version (decision 2).
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 8 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `lib hrAnswer`
+**Read or written by:** `lib handbookCheck`, `lib hrAnswer`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -1892,9 +1897,9 @@ One check of one handbook version (decision 2).
 
 Company-level dates a handbook sets; sent to the one calendar only when a person presses Add to calendar (decision 29).
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 10 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `script check-live`
+**Read or written by:** `lib handbookCheck`, `script check-live`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -1944,9 +1949,9 @@ Company-level dates a handbook sets; sent to the one calendar only when a person
 
 Every finding of a handbook check, as a row.
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 103 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by: NOTHING in app/, lib/ or scripts/.**
+**Read or written by:** `lib handbookCheck`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -1999,9 +2004,9 @@ Every finding of a handbook check, as a row.
 
 A handbook split into sections, each with its text and fingerprint. Written by the server.
 
-**Rows:** 68 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 74 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `screen hr`, `lib handbookRead`, `lib hrAnswer`
+**Read or written by:** `screen hr`, `lib handbookCheck`, `lib handbookRead`, `lib hrAnswer`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -2055,9 +2060,9 @@ A handbook split into sections, each with its text and fingerprint. Written by t
 
 HR's own record of a handbook (HR-PLAN decision 18). Never a documents row.
 
-**Rows:** 13 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 14 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route handbooks/read`, `route hr/answer`, `screen hr`, `lib handbookDelete`, `lib handbookRead`, `lib handbookSave`, `lib hrAnswer`, `script check-live`
+**Read or written by:** `route handbooks/read`, `route hr/answer`, `route hr/handbooks/[id]/check`, `screen hr`, `lib handbookCheck`, `lib handbookDelete`, `lib handbookRead`, `lib handbookSave`, `lib hrAnswer`, `script check-live`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -2228,7 +2233,7 @@ industry x jurisdiction x agency -> how far we have got. Reads the same way to t
 
 One row per nightly run. Answers release gate 2 — did it run, and what did it remove (DECISIONS.md §116, §125). Operational, not tenant data: closed to authenticated.
 
-**Rows:** 18 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 30 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route account`, `lib jobAuth`, `lib jobRun`
 
@@ -3181,4 +3186,5 @@ filtered HERE so no consumer can forget it (CLAUDE.md §3.2). A corrected link
 069
 070
 071
+072
 ```

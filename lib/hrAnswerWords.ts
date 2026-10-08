@@ -40,7 +40,11 @@ export const WAIT_LIMIT_MS = 3 * 60_000
 /** While no check has finished for any handbook the answer used (the day-1 line, HR-PLAN "Day 1"). */
 export const DAY1_LINE = "Your handbook's full check has not run yet. This answer reads the handbook and the rule just now."
 
-/** The DROPPED_LINE pattern (`lib/howTo.ts`), for a handbook quote the code could not find. */
+/**
+ * A [H…]-MARKED quote the code could not find (the DROPPED_LINE pattern, `lib/howTo.ts`): the marker is removed.
+ * Only an answer that uses the marker form can produce it; since the baseline (8 October) the prompt no longer
+ * asks for that form, so new answers use the two "marked" lines below instead.
+ */
 export const quotesDroppedLine = (n: number) => n === 1
   ? '1 quote could not be found in your handbook, so it is not shown as a source.'
   : `${n} quotes could not be found in your handbook, so they are not shown as sources.`
@@ -50,13 +54,22 @@ export const linksDroppedLine = (n: number) => n === 1
   ? '1 web source could not be checked, so it is not shown.'
   : `${n} web sources could not be checked, so they are not shown.`
 
-/** A plain quote found in no handbook AND in no passage behind this answer's citations (owner, 6a answers). */
-export const uncheckedQuotesLine = (n: number) => n === 1
-  ? '1 quote could not be checked against its source, so it is not shown.'
-  : `${n} quotes could not be checked against their sources, so they are not shown.`
+/**
+ * THE MARK (owner, Baseline Step 1): a quoted passage of six words or more found neither in the handbook nor in a
+ * cited passage is NOT removed — Claude's words stay exactly as written — and is followed by this, drawn small
+ * and grey, with no card. The owner's words (8 October): true in every case — proposed wording, a quote of the law,
+ * a made-up handbook quote. There is no closing count line for marked quotes: the mark says it where it stands.
+ */
+export const NOT_IN_HANDBOOK = '(not a quote from your handbook)'
+/** The mark's first wording, on answers stored on staging between the baseline's proofs and the owner's answer. */
+const NOT_IN_HANDBOOK_OLD = '(not found in your handbook)'
+/** The address the page gives the mark, so the shared answer renderer draws it grey: `components/AnswerBody.tsx`
+ *  GREY_NOTE_HREF, the same string (a test holds them equal; this file stays free of components). */
+export const NOT_IN_HANDBOOK_HREF = '#grey-note'
 
-/** What a quoted passage found nowhere becomes, so the sentence still reads (owner: accepted). */
-export const QUOTE_REMOVED = '(quote removed)'
+/** For drawing: the mark (either wording) becomes a link to NOT_IN_HANDBOOK_HREF, which the answer renderer draws grey. */
+export const markNotFound = (text: string) => [NOT_IN_HANDBOOK, NOT_IN_HANDBOOK_OLD]
+  .reduce((t, m) => t.split(` ${m}`).join(` [${m}](${NOT_IN_HANDBOOK_HREF})`), text)
 
 /** A question whose answer never finished, on a reopened conversation (Step 6b brief). */
 export const NOT_ANSWERED = 'Not answered.'
@@ -99,6 +112,9 @@ export function isAppendedLine(line: string): boolean {
     || /^\d+ quotes? could not be found in your handbook, so (it is|they are) not shown as (a )?sources?\.$/.test(l)
     || /^\d+ web sources? could not be checked, so (it is|they are) not shown\.$/.test(l)
     || /^\d+ quotes? could not be checked against (its|their) sources?, so (it is|they are) not shown\.$/.test(l)
+    // Lines no longer written (the owner, 8 October: the mark says it where it stands); still drawn grey where stored.
+    || /^\d+ quotes? (was|were) not found in your handbook, so (it is|they are) marked and (has no card|have no cards)\.$/.test(l)
+    || /^\d+ quotes? could not be checked against (its|their) sources?, so (it is|they are) marked and (has no card|have no cards)\.$/.test(l)
 }
 
 /** The answer's own text, and the appended lines after it, for drawing. */

@@ -5,7 +5,7 @@
 import test, { describe } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { tableOfContents, safetyNet, chooseSections, distinctiveWords, firstWords, type LongHandbook } from '../../lib/hrAnswer.ts'
+import { tableOfContents, safetyNet, chooseSections, distinctiveWords, firstWords, TOKENS_PER_CHAR, type LongHandbook } from '../../lib/hrAnswer.ts'
 import { longLine, longNetOnlyLine, longNothingLine, waitingWords, waitFailedWords, waitTooLongWords, WAIT_LIMIT_MS, isAppendedLine } from '../../lib/hrAnswerWords.ts'
 import { READ_REASONS } from '../../lib/handbooks.ts'
 import { HR_SELECT_PROMPT, hrSelectMessage } from '../../prompts/hr-select.ts'
@@ -60,7 +60,9 @@ describe('choosing what is sent', () => {
     assert.equal(s.callOk, true)
   })
   test('THE BUDGET: what does not fit is left out and named, model picks first', () => {
-    const [s] = chooseSections([big], ids, ['S2'], ['S3'], 300)
+    // Room for "4. Time off" (1,040 characters) and not for "9. Other things to know" after it — stated from the
+    // ratio, so the test holds whatever TOKENS_PER_CHAR is (0.4 since the baseline, 8 October).
+    const [s] = chooseSections([big], ids, ['S2'], ['S3'], Math.ceil(1040 * TOKENS_PER_CHAR) + 10)
     assert.deepEqual(s.chosen.map((c) => c.title), ['4. Time off'])
     assert.deepEqual(s.leftForBudget, ['9. Other things to know'])
   })
@@ -111,25 +113,25 @@ describe('the route', () => {
 
 describe('suggested wording and internal ids (owner, 6c answers)', async () => {
   const { finishAnswer, replaceBlockIds } = await import('../../lib/hrAnswer.ts')
-  const { splitSuggested, QUOTE_REMOVED } = await import('../../lib/hrAnswerWords.ts')
+  const { splitSuggested, NOT_IN_HANDBOOK } = await import('../../lib/hrAnswerWords.ts')
   const P = 'Employees accrue one hour of paid sick time for every thirty hours worked.'
   const blocks = [
     { id: 'H1', handbookId: 'h', handbookName: 'Harbor', applies: 'Every site', sectionId: 's', title: '3. Sick time', pageFrom: 1, pageTo: 1, stored: P },
     { id: 'H2', handbookId: 'h', handbookName: 'Harbor', applies: 'Every site', sectionId: null, title: 'page 14', pageFrom: 14, pageTo: 14, stored: 'Other text here.' },
   ]
   const used = [{ id: 'h', name: 'Harbor', pages: 14, text: P, isWord: false }]
-  test('A SUGGESTED-WORDING PARAGRAPH SURVIVES; a false handbook quote elsewhere in the same answer is still removed', () => {
+  test('A SUGGESTED-WORDING PARAGRAPH SURVIVES; a false handbook quote elsewhere in the same answer is kept and marked', () => {
     const text = 'Your handbook says "every employee receives unlimited paid vacation days each year".\n\n'
       + 'Suggested wording: "Employees accrue one hour of paid sick time for every thirty hours worked, from their first day of work."'
     const r = finishAnswer(text, [], [], blocks, used, [])
-    assert.equal(r.text, `Your handbook says ${QUOTE_REMOVED}.\n\nSuggested wording: "Employees accrue one hour of paid sick time for every thirty hours worked, from their first day of work."`)
-    assert.equal(r.droppedQuotes, 1); assert.equal(r.sources.length, 0, 'the draft never gets a card')
+    assert.equal(r.text, `Your handbook says "every employee receives unlimited paid vacation days each year" ${NOT_IN_HANDBOOK}.\n\nSuggested wording: "Employees accrue one hour of paid sick time for every thirty hours worked, from their first day of work."`)
+    assert.equal(r.notFoundQuotes, 1); assert.equal(r.sources.length, 0, 'the draft never gets a card')
   })
   test('THE LABEL ON ITS OWN, THE WORDING AFTER IT (staging 6c): every paragraph to the next heading is draft, unchecked', () => {
     const text = 'Gap.\n\n---\n\nSuggested wording:\n\n**3. Leave**\n\nStaff get "every employee receives unlimited paid vacation days each year" now.\n\n## Next\n\nIt says "every employee receives unlimited paid vacation days each year".'
     const r = finishAnswer(text, [], [], blocks, used, [])
     assert.ok(r.text.includes('Staff get "every employee receives unlimited paid vacation days each year" now.'), 'inside the draft: kept')
-    assert.ok(r.text.endsWith(`It says ${QUOTE_REMOVED}.`), 'after the heading: the strict rule again')
+    assert.ok(r.text.endsWith(`It says "every employee receives unlimited paid vacation days each year" ${NOT_IN_HANDBOOK}.`), 'after the heading: the strict rule again')
     assert.deepEqual(splitSuggested('Gap.\n\nSuggested wording:\n\n**3. Leave**\n\nStaff get two weeks.\n\n## Next\n\nMore.').map((x) => [x.draft, x.text]),
       [[false, 'Gap.'], [true, '**3. Leave**\n\nStaff get two weeks.'], [false, '## Next\n\nMore.']])
   })
@@ -149,8 +151,10 @@ describe('suggested wording and internal ids (owner, 6c answers)', async () => {
     assert.equal(replaceBlockIds('Looking at section H1, and at H2, but not H9.', blocks), 'Looking at section 3. Sick time, and at page 14, but not H9.')
     assert.equal(replaceBlockIds('See section H2.', blocks), 'See page 14.')
   })
-  test('the prompt carries the owner\'s one sentence', async () => {
+  test('THE PURE BASELINE (owner, 8 October): the workspace\'s role sentence, then what HR is given — nothing else', async () => {
     const { HR_ANSWER_PROMPT } = await import('../../prompts/hr-answer.ts')
-    assert.match(HR_ANSWER_PROMPT, /When you propose new wording, put it in a paragraph of its own that begins "Suggested wording:"\./)
+    const { OPEN_ROLE } = await import('../../prompts/checklist.ts')
+    assert.equal(HR_ANSWER_PROMPT, `${OPEN_ROLE}\n\nYou are given the company's handbooks, section by section, and what is known about the company.`)
+    assert.ok(!/Suggested wording|\[H12|only when the person asks/.test(HR_ANSWER_PROMPT))
   })
 })
