@@ -25,7 +25,7 @@ import { summaryReportPrompt, SUMMARY_PROMPT_ASKS_FOR_BASIS } from '../prompts/s
 import { guardSummaryWrite, CLAIM_COLUMN } from './topicClaim.ts'
 // The three display words live in a browser-safe file the summary drawer can import (HR Step 3a);
 // re-exported here so every existing caller is unchanged.
-import { NO_SOURCE, longDate, AS_OF_LINE, HR_AS_OF_LINE } from './summaryWords.ts'
+import { NO_SOURCE, longDate, AS_OF_LINE, HR_AS_OF_LINE, NO_SITUATION } from './summaryWords.ts'
 export { NO_SOURCE, longDate, AS_OF_LINE }
 // HR Step 7: the HR summary's pieces (its source key and list line, its turns without the grey lines, its
 // prompt). Used only when `summariseTopic` is called with kind 'hr'; the workspace path never reaches them.
@@ -362,7 +362,7 @@ export interface PlainTextWords {
 }
 
 export function renderPlainText(r: SummaryReport, words?: PlainTextWords): string {
-  const out: string[] = [r.title, '', (words?.asOf ?? AS_OF_LINE)(r.as_of), '', 'Your situation', r.situation]
+  const out: string[] = [r.title, '', (words?.asOf ?? AS_OF_LINE)(r.as_of), '', 'Your situation', r.situation.trim() || NO_SITUATION]
   if (r.applies.length) {
     out.push('', words?.applies ?? 'What applies')
     for (const g of r.applies) {

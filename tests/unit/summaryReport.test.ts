@@ -230,7 +230,7 @@ describe('the display words have one home, and the drawer reads them there (HR S
   })
   test('the summary drawer takes its words from lib/summaryWords.ts, never this lib', () => {
     const view = readFileSync('components/ReportView.tsx', 'utf8')
-    assert.match(view, /^import \{ NO_SOURCE, AS_OF_LINE \} from '@\/lib\/summaryWords'/m)
+    assert.match(view, /^import \{ NO_SOURCE, NO_SITUATION, AS_OF_LINE \} from '@\/lib\/summaryWords'/m)
     assert.ok(!/^import \{[^}]*\} from '@\/lib\/summaryReport'/m.test(view), 'only `import type` from lib/summaryReport')
   })
 })

@@ -32,7 +32,7 @@
 import type React from 'react'
 import { useId, useState } from 'react'
 import type { ReportItem, ReportSource } from '@/lib/summaryReport'
-import { NO_SOURCE, AS_OF_LINE } from '@/lib/summaryWords'
+import { NO_SOURCE, NO_SITUATION, AS_OF_LINE } from '@/lib/summaryWords'
 import { thingsToDo } from '@/lib/checklistView'
 import { displaySource } from '@/lib/sourceTitle'
 import { FoldRow } from '@/components/FoldRow'
@@ -111,7 +111,11 @@ export function ReportView<S extends { n: number }>({ report, factsLine, sourceS
       <p className="text-[13px] text-gray-500">{(words?.asOf ?? AS_OF_LINE)(report.as_of)}</p>
       <section>
         <h4 className={heading}>Your situation</h4>
-        <p className="text-[15px] leading-relaxed text-gray-800">{report.situation}</p>
+        {/* An empty situation (the person said nothing about their business): the fixed sentence, in the
+            workspace's grey note style (the "messages cleared" note in app/compliance/page.tsx). */}
+        {report.situation.trim()
+          ? <p className="text-[15px] leading-relaxed text-gray-800">{report.situation}</p>
+          : <p className="rounded-lg bg-gray-50 px-3 py-2 text-[12.5px] text-gray-500">{NO_SITUATION}</p>}
       </section>
       {report.applies.length > 0 && (
         <section>

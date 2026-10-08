@@ -16,6 +16,10 @@
 
 export const NO_SOURCE = 'No source cited in the conversation'
 
+/** Under "Your situation" when the person said nothing about their business (the owner, 7 October): a polite
+ *  fixed sentence, never the model saying what the person did not share. */
+export const NO_SITUATION = 'No details about your business came up in this conversation.'
+
 /** "1 October 2026" — the as-of date, written out. */
 export function longDate(iso: string): string {
   const d = new Date(`${iso.slice(0, 10)}T00:00:00Z`)

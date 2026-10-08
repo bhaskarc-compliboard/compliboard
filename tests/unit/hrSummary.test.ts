@@ -109,3 +109,22 @@ describe('the route and the page', () => {
     assert.match(page, /fetch\(`\/api\/hr\/topics\/\$\{id\}\/summarise`/)
   })
 })
+
+describe('an empty situation (the owner, 7 October): polite, the same in both prompts, drawn as a fixed sentence', async () => {
+  const { summaryReportPrompt } = await import('../../prompts/summary-report.ts')
+  const { hrSummaryPrompt } = await import('../../prompts/hr-summary.ts')
+  const { NO_SITUATION } = await import('../../lib/summaryWords.ts')
+  const SENT = ' If the person stated nothing about their business, "situation" is an empty string; put missing details that would change the answer under to_confirm, as plain questions that say why they matter.'
+  test('the same sentence, next to the situation rule, in both prompts', () => {
+    assert.ok(summaryReportPrompt('x').includes('Not what the answer concluded.' + SENT))
+    assert.ok(hrSummaryPrompt('x').includes('Not what the answer concluded.' + SENT))
+  })
+  test('an empty situation is accepted, and the plain text and the drawer say the fixed sentence', () => {
+    const r = checkReport({ title: 't', situation: '', applies: [] }, [{ role: 'user', text: 'q' }], '2026-10-08')
+    assert.ok(r.ok); if (!r.ok) return
+    assert.equal(r.report.situation, '')
+    assert.ok(renderPlainText(r.report).includes('Your situation\n' + NO_SITUATION))
+    assert.equal(NO_SITUATION, 'No details about your business came up in this conversation.')
+    assert.match(readFileSync('components/ReportView.tsx', 'utf8'), /\{report\.situation\.trim\(\)\s*\? <p className="text-\[15px\] leading-relaxed text-gray-800">\{report\.situation\}<\/p>\s*: <p className="rounded-lg bg-gray-50 px-3 py-2 text-\[12\.5px\] text-gray-500">\{NO_SITUATION\}<\/p>\}/)
+  })
+})

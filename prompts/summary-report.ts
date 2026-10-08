@@ -68,7 +68,7 @@ The rules.
 
 6. Put the groups in "applies" in the order the person would act on them. Put the items inside each group in the same order.
 
-7. "situation" holds only facts the person stated about their business. No sentence about what they want to know. Not what the answer concluded.
+7. "situation" holds only facts the person stated about their business. No sentence about what they want to know. Not what the answer concluded. If the person stated nothing about their business, "situation" is an empty string; put missing details that would change the answer under to_confirm, as plain questions that say why they matter.
 
 8. If the conversation said a point was unverified, or should be confirmed, keep that in what_to_do, or put the point under to_confirm. Never state it more firmly than the conversation did. If an item depends on something listed under to_confirm, say so in that item, in plain words (for example: "You may recover most of it through drawback, once TTB confirms drawback applies to imported alcohol."). Never state such an item as settled.
 
