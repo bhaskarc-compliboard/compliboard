@@ -3,8 +3,8 @@
 **GENERATED — do not edit.** `node --env-file=.env.local scripts/schema-doc.js`, and it runs
 inside `npm run db:migrate`, so it cannot be stale by more than one migration.
 
-**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-10-08 00:38 UTC
-**Migrations applied:** 71 — `000` to `070`
+**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-10-08 04:14 UTC
+**Migrations applied:** 72 — `000` to `071`
 
 *Every figure here was read from the catalog of that database. Nothing is copied from the
 migration files, which say what was intended rather than what is there — and the two have
@@ -29,7 +29,7 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 
 **Compliance Workspace (M1) — research, conversations, checklists**
 
-- `topics` — 40 rows · touched by route chat, route checklists/from-topic, route documents, route hr/answer, route jobs/delete, +9 more
+- `topics` — 50 rows · touched by route chat, route checklists/from-topic, route documents, route hr/answer, route hr/topics/[id]/summarise, +11 more
 - `checklists` — 5 rows · touched by route account, route audit-checklist, route chat, route checklist-items/[id]/how-to, route checklists/from-topic, +8 more
 - `checklist_items` — 24 rows · touched by route account/export, route account, route audit-checklist, route chat, route checklist-items/[id]/how-to, +5 more
 - `critic_reviews` — 0 rows · touched by lib criticRecord
@@ -40,7 +40,7 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 - `requirement_templates` — 205 rows · touched by route industries, route obligations, route switches/answer, route switches/ask, lib obligationWriter, +4 more
 - `switches` — 95 rows · touched by route chat, route company-information, route obligations, route switches/answer, route switches/ask, +7 more
 - `company_switches` — 16 rows · touched by route switches/answer, route switches/ask, route to-confirm, lib companyContext, lib obligationWriter, +3 more
-- `switch_determinations` — 0 rows · touched by route switches/answer, script audit-data-checks, script check-live
+- `switch_determinations` — 1 rows · touched by route switches/answer, script audit-data-checks, script check-live
 - `obligations` — 0 rows · touched by route account, route obligations, route switches/answer
 - `obligation_evidence` — 0 rows · touched by route account/export, route account
 - `agencies` — 33 rows · touched by route obligations, lib agencyScope, script load-agencies
@@ -157,7 +157,7 @@ END)`
 
 One row per model call, written at the call. Prices are copied onto the row so a later change to config/pricing.ts cannot rewrite what a past call cost. cost_usd NULL = the model was not in the price table, which is not the same as free. DECISIONS.md §128 J.
 
-**Rows:** 80 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 120 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route document-draft`, `lib auditRun`, `lib auditTemplate`, `lib costLedger`, `lib documentScan`, `script check-live`, `script cost-report`, `script run-golden-audit`, `script run-golden-docs`, `script scan-document`
 
@@ -187,6 +187,7 @@ One row per model call, written at the call. Prices are copied onto the row so a
 - `audit_sections.ai_call_id` — ON DELETE SET NULL
 - `document_gaps.draft_ai_call_id` — ON DELETE SET NULL
 - `document_scans.ai_call_id` — ON DELETE SET NULL
+- `handbook_check_sections.ai_call_id` — ON DELETE SET NULL
 
 **Constraints:**
 
@@ -1691,9 +1692,9 @@ One row per correction a person makes to what a document IS. Newest per field wi
 
 Candidate company facts read out of a conversation overnight. PROPOSED, never written to company_switches — DECISIONS.md §108. The quote is copied because the turn it came from is cleared after 7 days.
 
-**Rows:** 63 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 68 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route company-information`, `route document-actions`, `route documents/report`, `route to-confirm`, `screen compliance`, `lib audit`, `lib companyContext`, `lib documentScan`, `lib summaryReport`, `script run-golden-audit`
+**Read or written by:** `route company-information`, `route document-actions`, `route documents/report`, `route to-confirm`, `screen compliance`, `screen hr`, `lib audit`, `lib companyContext`, `lib documentScan`, `lib summaryReport`, `script run-golden-audit`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -1776,9 +1777,16 @@ The unit the handbook sweep claims: one per section per check, plus one not_cove
 | `word` | text | yes | — |
 | `created_at` | timestamp with time zone | no | `now()` |
 | `finished_at` | timestamp with time zone | yes | — |
+| `failed_reason` | text | yes | — |
+| `attempts` | integer | no | `0` |
+| `started_at` | timestamp with time zone | yes | — |
+| `model` | text | yes | — |
+| `prompt_sha256` | text | yes | — |
+| `ai_call_id` | uuid | yes | — |
 
 **Points at:**
 
+- `ai_call_id` → `ai_calls` — ON DELETE SET NULL
 - `check_id` → `handbook_checks` — ON DELETE CASCADE
 - `company_id` → `companies` — ON DELETE CASCADE
 - `company_id` → `handbook_checks` — ON DELETE CASCADE
@@ -1792,9 +1800,11 @@ The unit the handbook sweep claims: one per section per check, plus one not_cove
 
 **Constraints:**
 
+- `handbook_check_sections_attempts_not_negative` — `CHECK ((attempts >= 0))`
+- `handbook_check_sections_failed_says_why` — `CHECK ((((status = ANY (ARRAY['failed'::text, 'cancelled'::text])) AND (failed_reason IS NOT NULL)) OR ((status <> ALL (ARRAY['failed'::text, 'cancelled'::text])) AND (failed_reason IS NULL))))`
 - `handbook_check_sections_kind_check` — `CHECK ((kind = ANY (ARRAY['section'::text, 'not_covered'::text])))`
 - `handbook_check_sections_kind_has_its_section` — `CHECK ((((kind = 'section'::text) AND (section_id IS NOT NULL)) OR ((kind = 'not_covered'::text) AND (section_id IS NULL))))`
-- `handbook_check_sections_status_check` — `CHECK ((status = ANY (ARRAY['queued'::text, 'checking'::text, 'done'::text, 'failed'::text])))`
+- `handbook_check_sections_status_check` — `CHECK ((status = ANY (ARRAY['queued'::text, 'checking'::text, 'done'::text, 'failed'::text, 'cancelled'::text])))`
 - `handbook_check_sections_word_check` — `CHECK ((word = ANY (ARRAY['needs_change'::text, 'no_gap'::text, 'to_confirm'::text, 'company_choice'::text])))`
 
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
@@ -1835,11 +1845,13 @@ One check of one handbook version (decision 2).
 | `created_at` | timestamp with time zone | no | `now()` |
 | `started_at` | timestamp with time zone | yes | — |
 | `finished_at` | timestamp with time zone | yes | — |
+| `notified_at` | timestamp with time zone | yes | — |
+| `context_sha256` | text | yes | — |
 
 **Points at:**
 
-- `company_id` → `handbooks` — ON DELETE CASCADE
 - `company_id` → `companies` — ON DELETE CASCADE
+- `company_id` → `handbooks` — ON DELETE CASCADE
 - `handbook_id` → `handbooks` — ON DELETE CASCADE
 - `requested_by` → `auth.users` — ON DELETE SET NULL
 
@@ -1855,9 +1867,9 @@ One check of one handbook version (decision 2).
 **Constraints:**
 
 - `handbook_checks_done_count_check` — `CHECK ((done_count >= 0))`
-- `handbook_checks_reason_check` — `CHECK ((reason = ANY (ARRAY['new_version'::text, 'scheduled'::text, 'on_demand'::text])))`
+- `handbook_checks_reason_check` — `CHECK ((reason = ANY (ARRAY['new_handbook'::text, 'new_version'::text, 'scheduled'::text, 'on_demand'::text])))`
 - `handbook_checks_section_count_check` — `CHECK ((section_count >= 0))`
-- `handbook_checks_status_check` — `CHECK ((status = ANY (ARRAY['queued'::text, 'checking'::text, 'done'::text, 'failed'::text])))`
+- `handbook_checks_status_check` — `CHECK ((status = ANY (ARRAY['queued'::text, 'checking'::text, 'done'::text, 'failed'::text, 'cancelled'::text])))`
 
 **Grants** *(read from the catalog — a grant list says what was added, not what a role holds):*
 
@@ -1874,7 +1886,7 @@ One check of one handbook version (decision 2).
 | `handbook_checks_select` | SELECT | authenticated | `(company_id = auth_company_id())` | — |
 | `handbook_checks_update` | UPDATE | authenticated | `(company_id = auth_company_id())` | `(company_id = auth_company_id())` |
 
-**Indexes:** `handbook_checks_company_id_id_key`, `handbook_checks_pkey`, `idx_handbook_checks_company_handbook`, `idx_handbook_checks_open`
+**Indexes:** `handbook_checks_company_id_id_key`, `handbook_checks_pkey`, `idx_handbook_checks_company_handbook`, `idx_handbook_checks_one_open`, `idx_handbook_checks_open`
 
 ### `handbook_dates`
 
@@ -1904,9 +1916,9 @@ Company-level dates a handbook sets; sent to the one calendar only when a person
 
 - `calendar_event_id` → `calendar_events` — ON DELETE SET NULL
 - `check_id` → `handbook_checks` — ON DELETE SET NULL
+- `company_id` → `handbooks` — ON DELETE CASCADE
 - `company_id` → `companies` — ON DELETE CASCADE
 - `company_id` → `handbook_checks` — ON DELETE SET NULL
-- `company_id` → `handbooks` — ON DELETE CASCADE
 - `handbook_id` → `handbooks` — ON DELETE CASCADE
 
 **Constraints:**
@@ -1956,9 +1968,9 @@ Every finding of a handbook check, as a row.
 
 - `check_id` → `handbook_checks` — ON DELETE CASCADE
 - `check_section_id` → `handbook_check_sections` — ON DELETE CASCADE
+- `company_id` → `companies` — ON DELETE CASCADE
 - `company_id` → `handbook_checks` — ON DELETE CASCADE
 - `company_id` → `handbook_check_sections` — ON DELETE CASCADE
-- `company_id` → `companies` — ON DELETE CASCADE
 
 **Constraints:**
 
@@ -1987,7 +1999,7 @@ Every finding of a handbook check, as a row.
 
 A handbook split into sections, each with its text and fingerprint. Written by the server.
 
-**Rows:** 58 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 68 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `screen hr`, `lib handbookRead`, `lib hrAnswer`
 
@@ -2043,9 +2055,9 @@ A handbook split into sections, each with its text and fingerprint. Written by t
 
 HR's own record of a handbook (HR-PLAN decision 18). Never a documents row.
 
-**Rows:** 12 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 13 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route handbooks/read`, `screen hr`, `lib handbookDelete`, `lib handbookRead`, `lib handbookSave`, `lib hrAnswer`, `script check-live`
+**Read or written by:** `route handbooks/read`, `route hr/answer`, `screen hr`, `lib handbookDelete`, `lib handbookRead`, `lib handbookSave`, `lib hrAnswer`, `script check-live`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -2075,9 +2087,9 @@ HR's own record of a handbook (HR-PLAN decision 18). Never a documents row.
 
 **Points at:**
 
-- `company_id` → `entities` — ON DELETE SET NULL
-- `company_id` → `handbooks` — ON DELETE SET NULL
 - `company_id` → `companies` — ON DELETE CASCADE
+- `company_id` → `handbooks` — ON DELETE SET NULL
+- `company_id` → `entities` — ON DELETE SET NULL
 - `entity_id` → `entities` — ON DELETE SET NULL
 - `uploaded_by` → `auth.users` — ON DELETE SET NULL
 - `version_of` → `handbooks` — ON DELETE SET NULL
@@ -2685,7 +2697,7 @@ document-versus-document disagreement is recorded WITHOUT reusing user_locked, w
 PERSON decided and must keep meaning only that. DECISIONS.md §24.1, §47;
 docs/SWITCH-DETERMINATION.md §7.
 
-**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 1 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route switches/answer`, `script audit-data-checks`, `script check-live`
 
@@ -2808,9 +2820,9 @@ The ~59 facts about a company that determine which requirements apply. Reference
 
 One exploration. The transcript is disposable (WORKSPACE.md §6.4); the summary is what survives. Holds NO facts — a hypothetical is never stored (DECISIONS.md §78) and a real fact goes to company_switches. Migration 028.
 
-**Rows:** 40 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 50 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route chat`, `route checklists/from-topic`, `route documents`, `route hr/answer`, `route jobs/delete`, `route jobs/summarise`, `route to-confirm`, `route topics/[id]`, `route topics/[id]/summarise`, `screen compliance`, `lib conversation`, `lib summaryReport`, `lib topicClaim`, `script check-live`
+**Read or written by:** `route chat`, `route checklists/from-topic`, `route documents`, `route hr/answer`, `route hr/topics/[id]/summarise`, `route jobs/delete`, `route jobs/summarise`, `route to-confirm`, `route topics/[id]`, `route topics/[id]/summarise`, `screen compliance`, `screen hr`, `lib conversation`, `lib summaryReport`, `lib topicClaim`, `script check-live`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -2875,7 +2887,7 @@ One exploration. The transcript is disposable (WORKSPACE.md §6.4); the summary 
 
 One message in a conversation. Cleared 7 days after the topic is summarised (DECISIONS.md §125, superseding §110's 15 days); the topic row and its summary survive.
 
-**Rows:** 115 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 137 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route jobs/delete`, `route jobs/summarise`, `route topics/[id]`, `lib attachedDocument`, `lib conversation`, `script check-live`
 
@@ -3168,4 +3180,5 @@ filtered HERE so no consumer can forget it (CLAUDE.md §3.2). A corrected link
 068
 069
 070
+071
 ```

@@ -399,6 +399,15 @@ if (!(await reachable())) {
     const sok = preview ? (nobody.status === 401 && missing.status === 404) : (nobody.status === 404 && missing.status === 404)
     console.log(`  ${sok ? '✓' : '✗'} hr summary          ${preview ? `preview on: no session ${nobody.status}, unknown topic ${missing.status}` : `preview off: 404 (${nobody.status}, ${missing.status})`}`)
     if (!sok) failures++
+    // HR's Check now and the handbook sweep (Step 8): no session refused, an unknown handbook a 404; the sweep
+    // without the cron secret a 404. Free: none of them reaches a model or writes a row.
+    const ckAnon = await fetch(`${BASE}/api/hr/handbooks/00000000-0000-0000-0000-000000000000/check`, { method: 'POST' })
+    const ckMissing = await fetch(`${BASE}/api/hr/handbooks/00000000-0000-0000-0000-000000000000/check`, { method: 'POST', headers: auth })
+    const swNoSecret = await fetch(`${BASE}/api/jobs/handbook-checks`, { method: 'POST' })
+    const cok = preview ? (ckAnon.status === 401 && ckMissing.status === 404 && swNoSecret.status === 404)
+      : (ckAnon.status === 404 && ckMissing.status === 404 && swNoSecret.status === 404)
+    console.log(`  ${cok ? '✓' : '✗'} hr handbook check   ${preview ? `preview on: no session ${ckAnon.status}, unknown handbook ${ckMissing.status}, sweep without secret ${swNoSecret.status}` : `preview off: 404 (${ckAnon.status}, ${ckMissing.status}, ${swNoSecret.status})`}`)
+    if (!cok) failures++
   }
 
   // 1. RESEARCH streams, and the stream carries sources.

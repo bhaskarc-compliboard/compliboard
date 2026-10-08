@@ -2434,45 +2434,70 @@ export type Database = {
       }
       handbook_check_sections: {
         Row: {
+          ai_call_id: string | null
+          attempts: number
           check_id: string
           claimed_at: string | null
           company_id: string
           created_at: string
+          failed_reason: string | null
           finished_at: string | null
           id: string
           input_sha256: string | null
           kind: string
+          model: string | null
+          prompt_sha256: string | null
           section_id: string | null
+          started_at: string | null
           status: string
           word: string | null
         }
         Insert: {
+          ai_call_id?: string | null
+          attempts?: number
           check_id: string
           claimed_at?: string | null
           company_id: string
           created_at?: string
+          failed_reason?: string | null
           finished_at?: string | null
           id?: string
           input_sha256?: string | null
           kind: string
+          model?: string | null
+          prompt_sha256?: string | null
           section_id?: string | null
+          started_at?: string | null
           status?: string
           word?: string | null
         }
         Update: {
+          ai_call_id?: string | null
+          attempts?: number
           check_id?: string
           claimed_at?: string | null
           company_id?: string
           created_at?: string
+          failed_reason?: string | null
           finished_at?: string | null
           id?: string
           input_sha256?: string | null
           kind?: string
+          model?: string | null
+          prompt_sha256?: string | null
           section_id?: string | null
+          started_at?: string | null
           status?: string
           word?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "handbook_check_sections_ai_call_id_fkey"
+            columns: ["ai_call_id"]
+            isOneToOne: false
+            referencedRelation: "ai_calls"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "handbook_check_sections_check_in_same_company"
             columns: ["company_id", "check_id"]
@@ -2499,11 +2524,13 @@ export type Database = {
       handbook_checks: {
         Row: {
           company_id: string
+          context_sha256: string | null
           created_at: string
           done_count: number
           finished_at: string | null
           handbook_id: string
           id: string
+          notified_at: string | null
           reason: string
           requested_by: string | null
           section_count: number
@@ -2512,11 +2539,13 @@ export type Database = {
         }
         Insert: {
           company_id: string
+          context_sha256?: string | null
           created_at?: string
           done_count?: number
           finished_at?: string | null
           handbook_id: string
           id?: string
+          notified_at?: string | null
           reason: string
           requested_by?: string | null
           section_count?: number
@@ -2525,11 +2554,13 @@ export type Database = {
         }
         Update: {
           company_id?: string
+          context_sha256?: string | null
           created_at?: string
           done_count?: number
           finished_at?: string | null
           handbook_id?: string
           id?: string
+          notified_at?: string | null
           reason?: string
           requested_by?: string | null
           section_count?: number
