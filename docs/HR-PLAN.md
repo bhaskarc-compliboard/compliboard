@@ -1,6 +1,6 @@
 # The HR section — the plan
 
-**Version:** 13 · **Updated:** 8 October 2026: the baseline (§175) — steps 8–14 rewritten, the switches in order. Version 12: 7 October 2026: step 8 part 1 done (§174). Version 11: step 7 done (§172). Version 10: step 6c done and step 6 complete (§171); migration 069 on production, 070 on staging. Version 9: step 6b done (§170); migration 069 on staging. Version 8: step 6a done (§169). Version 7: step 5b done (§168); the impact check comes before any code. Version 6: step 5a done (§167). Version 5: step 4 done; decision 32 (the page at /hr/new behind HR_PREVIEW). Version 4: 7 October 2026: §2.1, the page title is HR Workspace. Version 3: HR Step 3b, step 3b done (staging only). Version 2: HR Step 3a: step 3a done; decision 17 amended (every build stop on Haiku,
+**Version:** 14 · **Updated:** 8 October 2026: step 8 done (§176). Version 13: 8 October 2026: the baseline (§175) — steps 8–14 rewritten, the switches in order. Version 12: 7 October 2026: step 8 part 1 done (§174). Version 11: step 7 done (§172). Version 10: step 6c done and step 6 complete (§171); migration 069 on production, 070 on staging. Version 9: step 6b done (§170); migration 069 on staging. Version 8: step 6a done (§169). Version 7: step 5b done (§168); the impact check comes before any code. Version 6: step 5a done (§167). Version 5: step 4 done; decision 32 (the page at /hr/new behind HR_PREVIEW). Version 4: 7 October 2026: §2.1, the page title is HR Workspace. Version 3: HR Step 3b, step 3b done (staging only). Version 2: HR Step 3a: step 3a done; decision 17 amended (every build stop on Haiku,
 all Opus work in the testing step); the copy rule added to §2.5. Version 1: HR Step 2.
 
 **The decision record** is `DECISIONS.md` §164. **The map** (how HR and everything it touches worked on 4
@@ -266,7 +266,9 @@ replaced text is kept and struck through, so the record shows what changed.
      stores its answer, sources and check record), the whole handbook when it fits; the row and the drawer draw each
      part as an HR answer. The structured check (Step 8 part 2) is parked on the local branch
      `parked/hr-check-structured`.
-   - **Still to build:** the email when a check someone pressed finishes (Audits' pattern, `notified_at` from 071).
+   - **STEP 8 DONE 8 October** (`b789dbe`, §176): the email when a check someone pressed finishes (Audits' pattern,
+     `notified_at` from 071), the link that opens the handbook's drawer, an older version's drawer, and a check where
+     every part failed shown as one line.
    - **Moved with the structured check, for the owner to confirm:** the handbook's company-level dates and "Add to
      calendar" (decision 29) were read from the structured answer; an open answer has no dates to list. They return
      with that switch (below), or by a decision of the owner's before then. STOP.

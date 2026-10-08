@@ -11929,3 +11929,48 @@ No migration.
   - **The switch off:** with `HR_PREVIEW=0`, every HR route is a 404.
 
   **Spent: $1.17,** all Haiku (ledger $5.45 → $6.62). Tests went from 900 to 901.
+
+## 176. HR STEP 8 FINISHED: THE EMAIL, AN OLDER VERSION, A FAILED CHECK — 8 October 2026
+
+§176 — HR Step 8 finished (`b789dbe`). No model call; no migration.
+
+- **THE EMAIL, COPIED FROM AUDITS'** (`lib/handbookCheckNotify.ts`; `lib/auditNotify.ts` only read).
+  - **Copied as it is:** plain text; the `NEXT_PUBLIC_APP_URL` refusal; the `NOTIFY_TEST_TO` override, which says at
+    the top where it would have gone; `notified_at` (migration 071) stamped only after a successful send, so the worst
+    case is a duplicate, never silence.
+  - **Who gets it:** sent only for a check someone pressed (`requested_by`), once, to that person's login. A check
+    nobody pressed (the nightly one, step 10) sends nothing.
+  - **Where it is sent from:** one place, the sweep, right after `finishCheckIfDone` reports a finish, where Audits'
+    sweep calls `notifyRun`. `finishCheckIfDone`'s compare-and-set means only one caller ever reaches it.
+  - **No sign-off line:** Audits' email has none; it ends with its link, and so does this one.
+  - **The owner's words, accepted as printed:**
+    - "Your handbook check is done: <name>";
+    - "<name> was checked against the rules that apply to you on <date>.";
+    - "<n> part(s) could not be checked. Press Check now to try again.";
+    - "Read the check: <link>";
+    - "Your handbook check could not finish: <name>";
+    - "We could not finish checking <name>. That's on our side, not yours. Press Check now to try again: <link>".
+  - **The link** opens HR with that handbook's drawer open (`?handbook=<id>`). It is built from ONE constant,
+    `HR_PAGE_PATH`, which step 11 changes once when the page moves to /hr.
+  - **Known, as in Audits:** a refused send (no address, no key, a provider error) leaves `notified_at` empty, and
+    nothing tries again, because a check finishes only once.
+- **AN OLDER VERSION'S DRAWER** (owner, 8 October): "This is an older version. Only the current version is checked
+  again." in place of the read-again note, which was untrue on an older version.
+  - It is the one deliberate branch on current against older in the drawer's body. The rule that the drawer follows
+    the version's own status stands, and the test that guards it now names this line as the exception.
+  - An older version that was never checked still says "Not checked yet.", the version's own status.
+- **A CHECK WHERE EVERY PART FAILED** shows only the failed-check line, not each section as "Not checked"
+  (`lib/handbookCheckView.ts`). A check from before the baseline, with words on its rows, is still drawn as it was
+  stored.
+- **A CANCELLED CHECK ON SCREEN:** when a newer version arrives, the old version's check is cancelled at the next
+  sweep, with no call and no email. The old row reads "Older version · …"; the new version reads "Not checked yet".
+  Neither ever says "Checking…".
+- **Proved on staging with no model call** (a stand-in answer, labelled test data, through the real sweep):
+  - the done email sent once for real to `NOTIFY_TEST_TO` (Resend id `01a11ca6-359c-7418-a25b-654b5083382b`);
+  - a second sweep, a second finish and a second send all refused ("already notified");
+  - done with a failed part, and failed: printed by the dry run, not sent;
+  - nobody pressed: nothing sent;
+  - `HR_PREVIEW=0`: the sweep is a 404 and nothing runs or sends;
+  - the link opens the right drawer.
+
+  Tests went from 902 to 912.
