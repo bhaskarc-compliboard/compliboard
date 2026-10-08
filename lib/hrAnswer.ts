@@ -644,8 +644,12 @@ export function checkSearched(checks: StoredCheck[]): Array<{ url: string; title
     .map((s) => ({ url: s.url, title: s.title, label: s.label ?? labelFor(s.url) }))))
 }
 
-/** The closing line (the owner's words from the plan); with several handbooks, each named with its date. */
+/**
+ * The closing line (the owner's words from the plan); with several handbooks, each named with its date — and each
+ * name ONCE (owner, after the Opus run: two handbooks can share a name), as the "not checked" line does.
+ */
 export function usesCheckLine(checks: StoredCheck[]): string {
-  if (checks.length === 1) return `This answer uses your handbook check of ${dayOf(checks[0].finishedAt)}.`
-  return `This answer uses your handbook checks: ${checks.map((c) => `${c.handbookName}, ${dayOf(c.finishedAt)}`).join('; ')}.`
+  const once = checks.filter((c, i) => checks.findIndex((x) => x.handbookName === c.handbookName) === i)
+  if (once.length === 1) return `This answer uses your handbook check of ${dayOf(once[0].finishedAt)}.`
+  return `This answer uses your handbook checks: ${once.map((c) => `${c.handbookName}, ${dayOf(c.finishedAt)}`).join('; ')}.`
 }

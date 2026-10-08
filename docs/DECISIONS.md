@@ -12022,3 +12022,15 @@ No migration.
 - **For the testing step:** checks go in in handbook order, not by relevance. In one run the question's own handbook
   was the one left out for the budget, while another handbook's check went in.
 - **Spent: $1.37,** all Haiku (ledger $6.85 → $8.22): three fresh checks, six answers. Tests went from 912 to 921.
+
+- **THE STEP 9 SIDE-BY-SIDE ON OPUS 5.5** (8 October, recorded at the owner's word). Production settings: Opus 5.5,
+  effort medium, no search limit, the three research switches on. Test Alpha (small handbooks), two questions, three
+  runs each, the switch off and on.
+  - **Q1 (sick time):** the switch cut one search and 28% of the cost in every run, with more official sources.
+  - **Q2 (minimum wage, tips, posters):** the cost was the same, one outlier run aside. But the on-answer gave an Oregon
+    minimum wage with no source.
+  - **The switch stays OFF.** The testing step decides with the yardstick, watching specifically whether an answer
+    using the check still cites every figure.
+  - **Spent:** $3.98 (ledger $8.22 → $12.20). Every answer is kept on staging (12 conversations).
+  - **Fixed after the run:** the closing line now names each handbook once (two of Test Alpha's handbooks share a
+    name), as the "not checked" line does.

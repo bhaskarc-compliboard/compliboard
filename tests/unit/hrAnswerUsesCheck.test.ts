@@ -86,3 +86,12 @@ describe('the day-1 line (owner, 8 October): named when the switch is on, unchan
     assert.match(readFileSync('app/api/hr/answer/route.ts', 'utf8'), /: \[\(await noCheckYet\(db, usedIds\)\) \? DAY1_LINE : ''\]\),/)
   })
 })
+
+describe('the closing line names each handbook once (owner, after the Opus run)', () => {
+  test('two handbooks sharing a name are named once; a single name left is the one-check line', () => {
+    const h1 = check('Harbor', '2026-10-08T05:00:00Z', 't'), h2 = { ...check('Harbor', '2026-10-08T06:00:00Z', 't'), handbookId: 'other' }
+    const w = check('Washington-Addendum', '2026-10-08T05:00:00Z', 't')
+    assert.equal(usesCheckLine([h1, w, h2]), 'This answer uses your handbook checks: Harbor, 8 October 2026; Washington-Addendum, 8 October 2026.')
+    assert.equal(usesCheckLine([h1, h2]), 'This answer uses your handbook check of 8 October 2026.')
+  })
+})
