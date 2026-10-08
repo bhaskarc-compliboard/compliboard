@@ -68,7 +68,22 @@ Always on an **isolated server copy** (port 3998). `.env.local` is never changed
 **Cost:** `npm run cost` before and after each part. The owner sets the budget before anything runs. At 8 October
 prices: about $5 for C; about $20 for D and E, priced again from the real handbook's size first.
 
-### C. The machinery on Opus (one run per paid path) — NOW, before the go-live
+### C. The machinery on Opus (one run per paid path) — DONE 8 October 2026, before the go-live
+
+**Run on staging, block B's settings proved held** (every task `claude-opus-5-5`; answers and checks at effort medium;
+the check's prompt fingerprint matched the dry run; no search limit). **Nothing broke.** Ledger: $4.62, Opus only.
+- **Worked:** a conversation with a follow-up, Stop (V-1), reopen with "Not answered." and Ask it again (V-3); the
+  summary button, a fact proposed from "We have 12 employees in Oregon", Review → (V-4), Download the summary and
+  Cancel (V-5); Check now with its progress line and the email; text first (a question while the 30-page PDF was
+  read); the long-handbook path with a 30,000-token budget (the honest wait "0 of 2 parts done", the section choice,
+  a check in two pieces with one part forced to fail from a script); a reading that fails part-way
+  (`HR_TEST_OUTLINE_FAIL`); the 120-page PDF read in 6 parts (48 sections). A Word handbook is read in code, with no
+  model call, so it has no Opus path.
+- **Left for the finish line: V-2** (Try again after "This answer stopped early."). It needs a connection that drops
+  mid-answer (`lib/answerStream.ts`). On the development server, stopping the server reloads the page and losing
+  the browser's network did not cut the stream; no code was changed to force it.
+- **Found:** a stopped or cut-off answer writes no ledger row though Anthropic bills its tokens (`HANDOFF-CODE.md` §7).
+- **As first written, the list of paths:**
 
 Not the yardstick: it only proves nothing breaks on the real model. The code does not change after the go-live, so
 it is not run twice.
@@ -185,7 +200,10 @@ In `docs/HR-PLAN.md`'s order. Each is off by default.
 - **Cheaper splitting or section choice for very large handbooks**, if E's 120-page check shows the cost needs it;
 - **Sonnet 5.5 against Opus 5.5**, per task, by measurement.
 
-### H. The go-live (HR-PLAN step 13) — NOW, after C (the owner, 8 October)
+### H. The go-live (HR-PLAN step 13) — BUILT 8 October 2026 (`804d85e`, `DECISIONS.md` §181)
+
+Items 1 to 5 below are done: the owner added the two Vercel settings; the page is at `/hr`; old HR is retired; the
+switch is gone; the crons were already in place. Item 6 is the release itself.
 
 1. **Vercel:** add `AI_MODEL_HR` and `AI_MODEL_HR_CHECK` = `claude-opus-5-5`, visible.
 2. **The page moves** from `/hr/new` to `/hr`. Change `HR_PAGE_PATH` (`lib/handbookCheckNotify.ts`) once; the

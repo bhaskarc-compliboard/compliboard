@@ -12142,3 +12142,34 @@ No migration.
    - This reverses §179's "the go-live moves into the release step, after testing" for the testing half:
      `docs/HR-PLAN.md` steps 12 to 14 now say which part is now and which waits.
    - **What would reverse it:** the Opus machinery run breaking a path that the go-live cannot ship with.
+
+## 181. HR STEP 13: THE GO-LIVE — 8 October 2026
+
+§181 — HR Step 13 (`804d85e`). `docs/TEST-AT-FINISH-LINE.md` HR H. No migration.
+
+- **THE PAGE MOVES TO `/hr`** for everyone. `/hr/new` is gone, with no redirect: nothing on production ever linked
+  to it. `HR_PAGE_PATH` is `/hr`, so the email's `?handbook=<id>` link opens `/hr` with that drawer.
+- **OLD HR IS RETIRED** (decision 15). Deleted: its page body, `app/api/hr/route.ts`, `app/api/hr-audits/route.ts`
+  and `prompts/hr.ts`.
+  - **Kept:** the `hr_audits` table, in account delete and export; `components/AIDisclaimer.tsx` (`/requirements`
+    uses it); the two old handbooks in Company Documents (decision 25).
+  - The comments that named the deleted files say they were deleted at the go-live.
+- **THE PREVIEW SWITCH IS REMOVED** (`lib/hrPreview.ts`, decision 32, and every route's check).
+  - The summary job picks workspace and HR conversations always; a workspace conversation's call is unchanged.
+  - The switch's tests now pin the live behaviour (`tests/unit/hrGoLive.test.ts`). check:live's HR probes expect
+    the real answers, and that `/hr/new`, `/api/hr` and `/api/hr-audits` are 404.
+- **ONE FIX:** the drawer's "Checking 0 of 1 sections…" now reads "Checking 0 of 1 section…" (`counted()`). The row
+  has no noun, so it needed none.
+- **VERCEL:** the owner added `AI_MODEL_HR` and `AI_MODEL_HR_CHECK` = `claude-opus-5-5`, visible, at this release
+  (`docs/RELEASE.md`).
+- **PROVED ON STAGING** (Haiku guard, `HR_PREVIEW=0`):
+  - **Routes:** every HR route answers as the person.
+  - **The email:** its link opens `/hr` with the drawer.
+  - **The summary job:** it reads both sections (dry run).
+  - **The workspace:** measured unchanged against `20e4104` (34, 176 and 195 elements, 0 different).
+  - **One Haiku answer at `/hr`:** it came back without cards. Haiku did no search and quoted no handbook words.
+    Opus drew the card for the same handbook earlier the same day.
+
+  Tests went from 936 to 939.
+- **The Opus machinery run before it (HR C):** nothing broke, $4.62. V-2 is left for the finish line.
+  - **Found:** a stopped or cut-off answer writes no ledger row (`HANDOFF-CODE.md` §7, OPEN).

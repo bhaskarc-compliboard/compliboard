@@ -2,6 +2,8 @@
 
 *Written 24 September 2026 from the two releases of 23 September (Runs 1–3 + Fix Round 1, then Fix Round 2). The owner runs every step below. Claude Code never runs anything against production.*
 
+*Updated 8 October 2026: `AI_MODEL_HR` and `AI_MODEL_HR_CHECK` = `claude-opus-5-5`, added by the owner at HR's release (§181).*
+
 *Updated 8 October 2026: production's address recorded (`https://compliboard.vercel.app`) with the free checks after a push.*
 
 *Updated 8 October 2026: the three research switches confirmed `true` on production, re-entered as visible by the owner; HR reads the same three (below).*
@@ -129,8 +131,8 @@ Sign in with a test account and run the first three manual tests for the feature
 > | `AI_SEARCH_MAX_HOWTO` | `6` — added 4 October with the Task 6 release | `lib/ai.ts:240` `searchLimit` |
 > | `AI_SEARCH_MAX_COMPLETE` | `8` — added 4 October with the Task 6 release | `lib/ai.ts:240` `searchLimit` |
 > | `AI_SEARCH_MAX_HR` | **not set; the testing step decides.** Unset means no limit for an HR answer's searches, as for the workspace's research answer (HR Step 6b, `DECISIONS.md` §169) | `lib/ai.ts` `searchLimit` |
-> | `AI_MODEL_HR` | **to add at HR's release: `claude-opus-5-5`, visible.** Not set now; unset it falls back to `AI_MODEL_PROSE` (HR Step 3b, `DECISIONS.md` §164) | `lib/ai.ts:144` |
-> | `AI_MODEL_HR_CHECK` | **to add at HR's release: `claude-opus-5-5`, visible.** Not set now; unset it falls back to `AI_MODEL_PROSE` | `lib/ai.ts:145` |
+> | `AI_MODEL_HR` | `claude-opus-5-5`, visible — **added by the owner on 8 October 2026 at HR's release** (HR Step 13, `DECISIONS.md` §181). Unset it would fall back to `AI_MODEL_PROSE` | `lib/ai.ts:144` |
+> | `AI_MODEL_HR_CHECK` | `claude-opus-5-5`, visible — **added by the owner on 8 October 2026 at HR's release** (the handbook check and the reading's outline calls). Unset it would fall back to `AI_MODEL_PROSE` | `lib/ai.ts:145` |
 >
 > **The 4 October correction it replaces:** the 3 October statement *"Every `AI_MODEL_*` variable set
 > on Vercel Production is `claude-opus-5-5`"* was wrong for `AI_MODEL_SUMMARY`, which was Sonnet until
