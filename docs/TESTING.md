@@ -6,7 +6,7 @@
 > replaced.** Those carry a 🕓 HISTORICAL banner naming what is current instead — added 28 September
 > 2026. A manual set is the record of what a person checked and when; a file that deletes the sets whose
 > screens changed is a file that cannot tell you whether anything was ever checked at all.
-**Version:** 32 · **Updated:** 7 October 2026, HR Step 6a — the first answer. Version 31: 7 October 2026, HR Step 5b — reading a handbook. Version 30: 7 October 2026, HR Step 5a — adding and keeping handbooks. Version 29: 7 October 2026, HR Step 4 — the manual set for the HR page shell. Version 28: 4 October 2026, HR Step 3b — the check:live probes for HR's tables. Version 27: HR Step 3a — the manual set "the workspace looks the same". Version 26: at the close of the workspace work
+**Version:** 33 · **Updated:** 7 October 2026, HR Step 6b — conversations. Version 32: 7 October 2026, HR Step 6a — the first answer. Version 31: 7 October 2026, HR Step 5b — reading a handbook. Version 30: 7 October 2026, HR Step 5a — adding and keeping handbooks. Version 29: 7 October 2026, HR Step 4 — the manual set for the HR page shell. Version 28: 4 October 2026, HR Step 3b — the check:live probes for HR's tables. Version 27: HR Step 3a — the manual set "the workspace looks the same". Version 26: at the close of the workspace work
 **Supersedes:** version 25 (3 Oct). Adds the sets of 4 October — Workspace Task 5, Task 6, Stage 2, Stage 4 and the cron release's live checks — with the owner's recorded results (Task 6's T6-1 and T6-3, Stage 4's S4-2, the cron release's CR-1).
 Version 25: version 24 (25 Sep). Adds the **Workspace layout set** (3 October) — the first three
 are the owner's live checks after the push, and none of them sends a question or uploads a file — and
@@ -157,6 +157,24 @@ untested — applies to the runner as much as to anything it runs.
 106.** The floor is committed so the question does not have to be re-asked.
 
 ---
+
+## Manual set — HR Step 6b, conversations — 7 October 2026 (`d0e2a0c`, `DECISIONS.md` §170)
+
+**Opening, reading and deleting are free; asking again is a paid answer.** Needs `HR_PREVIEW=1`.
+
+| # | Action | Steps | What must be true |
+|---|---|---|---|
+| **6b-1** | **The drawer** | Conversations → a row | The workspace's drawer: the title, "<when> · Not summarised yet", "This one hasn't been summarised yet. The full conversation is here." Footer: Open the conversation · Download · Delete (grey, right). A grey backdrop behind it |
+| **6b-2** | **Reopen** | Open the conversation | Every question and answer as it was: the same text, the same handbook cards with their quotes, the same web cards, the same grey lines |
+| **6b-3** | **Carry on** | Ask a follow-up in the box | It stays in the same conversation, and it knows what the earlier answer quoted |
+| **6b-4** | **Not answered** | Ask, press Stop, then reopen | "Not answered." with **Ask it again**; pressing it answers below. Reopen again: the first one now reads "Not answered. Asked again below." with no button |
+| **6b-5** | **Delete** | Drawer → Delete | "Delete this conversation?", "This deletes the conversation and its summary for good. You cannot undo it.", "Download the summary first if you may need it. Your handbooks and their checks stay." No "Download the summary" while there is no summary. **Delete for good**: it leaves the list; the handbooks are all still there |
+| **6b-6** | **Cancel** | Open the delete sheet → Cancel, or Escape | Nothing is deleted |
+| **6b-7** | **The handbook drawer** | Handbooks → a row | The same grey backdrop behind it |
+
+*(Before the commit, by script on staging: the live and reopened answer identical; the check record stored on
+every new HR answer and on no workspace turn; `AI_SEARCH_MAX_HR=1` gives `web_search.max_uses=1`; the
+workspace's three screens identical; migration 069's checks read back from the database.)*
 
 ## Manual set — HR Step 6a, the first answer — 7 October 2026 (`0e082f4`, `DECISIONS.md` §169)
 

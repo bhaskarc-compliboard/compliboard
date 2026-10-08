@@ -1,6 +1,6 @@
 # The HR section — the plan
 
-**Version:** 8 · **Updated:** 7 October 2026: step 6a done (§169). Version 7: step 5b done (§168); the impact check comes before any code. Version 6: step 5a done (§167). Version 5: step 4 done; decision 32 (the page at /hr/new behind HR_PREVIEW). Version 4: 7 October 2026: §2.1, the page title is HR Workspace. Version 3: HR Step 3b, step 3b done (staging only). Version 2: HR Step 3a: step 3a done; decision 17 amended (every build stop on Haiku,
+**Version:** 9 · **Updated:** 7 October 2026: step 6b done (§170); migration 069 on staging. Version 8: step 6a done (§169). Version 7: step 5b done (§168); the impact check comes before any code. Version 6: step 5a done (§167). Version 5: step 4 done; decision 32 (the page at /hr/new behind HR_PREVIEW). Version 4: 7 October 2026: §2.1, the page title is HR Workspace. Version 3: HR Step 3b, step 3b done (staging only). Version 2: HR Step 3a: step 3a done; decision 17 amended (every build stop on Haiku,
 all Opus work in the testing step); the copy rule added to §2.5. Version 1: HR Step 2.
 
 **The decision record** is `DECISIONS.md` §164. **The map** (how HR and everything it touches worked on 4
@@ -243,7 +243,9 @@ replaced text is kept and struck through, so the record shows what changed.
 6. **The answer:** the loader, web search, the quote and link checks, sources, the day-1 line, drafting on
    request, refusals, the ledger. On Haiku (decision 17). STOP. **6a DONE 7 October** (`0e082f4`,
    `DECISIONS.md` §169): the first real answer, checked quotes and links, follow-ups, text first. **6b next**:
-   reopening and the list, plus §169's two follow-ups (the check record; `AI_SEARCH_MAX_HR`). **6c**: a long
+   reopening and the list, plus §169's two follow-ups (the check record; `AI_SEARCH_MAX_HR`). **6b DONE 7 October**
+   (`d0e2a0c`, §170): reopen, list, drawer, delete, "Not answered", the check record (migration 069, staging
+   only), `AI_SEARCH_MAX_HR`. **6c next**: a long
    handbook's right sections (the outline-selection call, replacing the temporary over-budget line).
 7. **Conversations and the HR summary** (claim + `after()`; facts from the person's own words, decision 19).
    On Haiku (decision 17). STOP.

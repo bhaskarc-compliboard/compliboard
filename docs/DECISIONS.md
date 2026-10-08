@@ -11467,3 +11467,62 @@ No migration.
   2. **An HR search-limit setting, `AI_SEARCH_MAX_HR`,** unset meaning no limit, so the testing step can
      measure whether to set one.
 - **Spent, all Haiku: $0.62** (ledger $0.90 → $1.52). Tests went from 802 to 832.
+
+## 170. HR STEP 6b — HR CONVERSATIONS, THE CHECK RECORD, AND THE HR SEARCH LIMIT — 7 October 2026
+
+§170 — HR Step 6b (`d0e2a0c`), on `/hr/new` behind `HR_PREVIEW`. Migration 069, applied to staging only.
+
+- **The list and the drawer.** A row on the Conversations tab opens the workspace's summary drawer, in its
+  markup.
+  - **Footer:** "Open the conversation" (outline), "Download", and "Delete" in grey at the far right.
+  - **The not-summarised sentence is HR's own** (owner): "This one hasn't been summarised yet. The full
+    conversation is here." The workspace's sentence says "written overnight", which is not true for HR until
+    step 7, because the nightly job skips HR since 6a. Step 7 restores it.
+- **Reopening.** The turns load through `/api/topics/[id]`, unchanged: it works as the person, with no section
+  filter.
+  - Each answer is redrawn with its handbook and web cards and its grey lines.
+  - Proved identical to the live answer: every element, and all 5,137 characters of visible text.
+  - The docked composer continues the same topic. Its history carries every handbook source with its quote.
+- **"Not answered."** Decided from the stored turns alone: a question with no answer after it.
+  - It shows "Ask it again", which asks as a new turn in the same topic.
+  - If the same question was asked again later in that conversation, it shows "Not answered. Asked again
+    below." and no button (owner).
+- **Deleting** uses canvas board 11's sheet:
+  - "Delete this conversation?"
+  - "This deletes the conversation and its summary for good. You cannot undo it."
+  - "Download the summary first if you may need it. Your handbooks and their checks stay."
+
+  "Download the summary" shows only when a summary exists. The delete is `/api/topics/[id]` DELETE, unchanged.
+  Proved: the topic and its turns go; the handbooks keep their rows, fingerprint and 58 sections.
+- **HR's handbook drawer gets the workspace's scrim** (owner).
+- **A Stop is logged as "hr answer: stopped by the person"**, not as a stream error. A real error still logs as
+  one.
+- **THE CHECK RECORD** (§169 follow-up 1). Migration 069 adds `turns.check_record`, `jsonb`, nullable, written
+  only by `app/api/hr/answer` (`lib/hrAnswer.ts` `checkRecord`).
+  - **It holds:**
+    - the handbooks given: id, name, `version_of`, when added, given as sections, pages or whole;
+    - the pages the search returned;
+    - the number of cited passages;
+    - each handbook card's origin: a `[H…]` marker, or a plain quote found in a handbook;
+    - the drops;
+    - what was over budget, and the budget.
+  - **Verified by reading the database:**
+    - recorded as applied;
+    - `jsonb`, nullable;
+    - `authenticated` has SELECT and INSERT and no UPDATE, as for the rest of the row (031);
+    - `anon` has nothing;
+    - every existing turn is NULL.
+  - **Not shown on the page in this step.**
+  - **Workspace turns stay NULL:** `saveAssistantTurn`'s insert is unchanged without a record, and `loadTurns`
+    does not read the column.
+  - **Account export still leaves out turns entirely** (HANDOFF-CODE §7, open).
+  - **Production gets it** when migration 069 is applied there at HR's release (the owner's typed step).
+- **`AI_SEARCH_MAX_HR`** (§169 follow-up 2). Added to `lib/ai.ts` `searchLimit` as an additive overload: unset
+  means no limit. Proved: set to 1, the log reads `web_search.max_uses=1` and 1 search ran; unset, no limit and
+  4 searches. Recorded in `.env.example` and `docs/RELEASE.md` as "not set; the testing step decides".
+- **The workspace is unchanged.** Its Conversations tab, a summary drawer and a reopened conversation are
+  identical before and after: elements, 0 pixels, `npm run measure` byte-identical.
+- **Noticed on Haiku, for the testing step:** a follow-up said "I made an error in my previous response" and
+  withdrew a correct analysis, because the synthetic handbooks belong to other businesses. It shows the
+  history arrived; whether that judgement is right is a quality question.
+- **Spent, all Haiku: $0.28** (ledger $2.50 → $2.78). Tests went from 832 to 843.
