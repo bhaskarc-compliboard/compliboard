@@ -1,6 +1,6 @@
 # The HR section — the plan
 
-**Version:** 16 · **Updated:** 8 October 2026: step 10 done (§178). Version 15: 8 October 2026: step 9 built as a switch, off (§177). Version 14: 8 October 2026: step 8 done (§176). Version 13: 8 October 2026: the baseline (§175) — steps 8–14 rewritten, the switches in order. Version 12: 7 October 2026: step 8 part 1 done (§174). Version 11: step 7 done (§172). Version 10: step 6c done and step 6 complete (§171); migration 069 on production, 070 on staging. Version 9: step 6b done (§170); migration 069 on staging. Version 8: step 6a done (§169). Version 7: step 5b done (§168); the impact check comes before any code. Version 6: step 5a done (§167). Version 5: step 4 done; decision 32 (the page at /hr/new behind HR_PREVIEW). Version 4: 7 October 2026: §2.1, the page title is HR Workspace. Version 3: HR Step 3b, step 3b done (staging only). Version 2: HR Step 3a: step 3a done; decision 17 amended (every build stop on Haiku,
+**Version:** 17 · **Updated:** 8 October 2026: step 11a done, the go-live moved into step 13 (§179). Version 16: 8 October 2026: step 10 done (§178). Version 15: 8 October 2026: step 9 built as a switch, off (§177). Version 14: 8 October 2026: step 8 done (§176). Version 13: 8 October 2026: the baseline (§175) — steps 8–14 rewritten, the switches in order. Version 12: 7 October 2026: step 8 part 1 done (§174). Version 11: step 7 done (§172). Version 10: step 6c done and step 6 complete (§171); migration 069 on production, 070 on staging. Version 9: step 6b done (§170); migration 069 on staging. Version 8: step 6a done (§169). Version 7: step 5b done (§168); the impact check comes before any code. Version 6: step 5a done (§167). Version 5: step 4 done; decision 32 (the page at /hr/new behind HR_PREVIEW). Version 4: 7 October 2026: §2.1, the page title is HR Workspace. Version 3: HR Step 3b, step 3b done (staging only). Version 2: HR Step 3a: step 3a done; decision 17 amended (every build stop on Haiku,
 all Opus work in the testing step); the copy rule added to §2.5. Version 1: HR Step 2.
 
 **The decision record** is `DECISIONS.md` §164. **The map** (how HR and everything it touches worked on 4
@@ -282,6 +282,11 @@ replaced text is kept and struck through, so the record shows what changed.
     owner's words restored.
 11. **Polish:** retire old HR (decision 15); **the Dates tab** (decision 30); the print frame on HR's drawers. STOP:
     the owner looks.
+    **11a DONE 8 October** (`0f79785`, §179), behind the preview switch: the Dates tab hidden, the Ask tab's paperclip
+    removed, "Choose where it applies" (current version only), every control clicked, three prints checked.
+    **THE GO-LIVE MOVED (owner, 8 October): it is no longer in step 11. It is part of step 13, the release, after
+    step 12's testing:** the page moves to `/hr`, old HR is retired (decision 15), `HR_PREVIEW` is removed, and
+    `AI_MODEL_HR` and `AI_MODEL_HR_CHECK` are set in Vercel.
 12. **Testing, with the yardstick.** First **one Opus run per paid path** (answer, summary, handbook check), to catch
     machinery that only fails on the real model. Then **the yardstick**: a baseline run of fixed HR cases — real
     handbooks that belong to the companies they are checked for, and real problems — on Opus 5.5 everywhere,
@@ -294,7 +299,8 @@ replaced text is kept and struck through, so the record shows what changed.
     **Also judge (§175):** how often the grey mark lands on proposed wording or a quote of the law, and whether a
     handbook check on Opus answers the fixed question section by section without being told to.
 13. **Release** (the `docs/RELEASE.md` routine). The three research switches are confirmed `true` on production
-    (8 October), and HR reads the same three (§175).
+    (8 October), and HR reads the same three (§175). **The go-live, moved here from step 11 (§179):** the page to
+    `/hr`, old HR retired, `HR_PREVIEW` removed, `AI_MODEL_HR` and `AI_MODEL_HR_CHECK` set in Vercel.
 14. **The next morning's `job_runs` check, and the close-out** (`HANDOFF-HR.md`, `STATUS.md`, `HANDOFF-CODE.md` §7).
 
 ### THE SWITCHES, IN ORDER (after the release; each off by default, each measured against the yardstick)

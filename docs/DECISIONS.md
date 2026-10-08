@@ -12083,3 +12083,42 @@ No migration.
     finished all six checks in 123 seconds, with no email.
 
   **Spent: $0.96.** Tests went from 922 to 928.
+
+## 179. HR STEP 11a: POLISH BEHIND THE PREVIEW SWITCH — 8 October 2026
+
+§179 — HR Step 11a (`0f79785`). No migration, no model call. **The owner's decisions:**
+
+- **THE DATES TAB IS HIDDEN.** The tabs are "Ask a question" · "Conversations" · "Handbooks". Its dates came from the
+  structured check, parked on `parked/hr-check-structured`; the tab returns with that switch. Its code stays in the
+  page, but nothing shows it or loads its data.
+- **THE ASK TAB'S PAPERCLIP IS REMOVED.** "Attach a file and ask about it against your handbooks" went with its no-op
+  handler; the attach control now always takes an action. Attaching a file to a question comes back later as its own
+  feature. "Add a handbook" stays.
+- **"CHOOSE WHERE IT APPLIES"**, for a handbook whose site was removed (scope 'site', no site; 066's
+  `on delete set null`):
+  - the drawer's action opens the same site sheet as adding a handbook;
+  - saving (`PATCH /api/handbooks`, `lib/handbookSave.ts` `setHandbookSite`) sets scope and site on the handbook AND
+    every older version below it, as the person, behind `HR_PREVIEW`, so the versions stay together.
+- **THE CURRENT VERSION ONLY** (the owner's fix). The walk goes down the chain, so starting from an older version
+  would leave the newer ones on no site.
+  - An older version's drawer never offers the action.
+  - The route refuses an older version's id with a 400.
+- **The owner's yes to three sentences:**
+  - the lede: "<handbook name>. Its site was removed. Which site does it cover now?";
+  - the refusal: "Only the current version of a handbook can be given a site. Open the current version and choose
+    there.";
+  - the save-failed line: "We could not save where it applies just now. Please try again."
+- **THE GO-LIVE MOVES INTO THE RELEASE STEP, after testing:** the page to `/hr`, old HR retired, `HR_PREVIEW` removed,
+  `AI_MODEL_HR` and `AI_MODEL_HR_CHECK` in Vercel (`docs/HR-PLAN.md` steps 11 and 13).
+- **Proved on staging:**
+  - **The site sheet:** with a site made for the test and then deleted, a current version and an older one. The older
+    version's drawer has no action, and its id is refused. From the current version, "Not now" sends nothing and
+    "Every site" moves both. The test data was deleted.
+  - **The controls:** every control on the page was clicked from a fresh load. Each did something real except a tab
+    clicked while already open and "New conversation" on an empty Ask tab. Five could not be reached by clicking;
+    TESTING V-1 to V-5 cover them during step 12.
+  - **Printing:** three prints were checked and nothing was broken. One layout point is in the shared summary report,
+    not fixed: `HANDOFF-CODE.md` §7.
+  - **With HR off:** every HR route is 404.
+
+  Tests went from 928 to 936.
