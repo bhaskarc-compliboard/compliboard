@@ -6,7 +6,7 @@
 > replaced.** Those carry a 🕓 HISTORICAL banner naming what is current instead — added 28 September
 > 2026. A manual set is the record of what a person checked and when; a file that deletes the sets whose
 > screens changed is a file that cannot tell you whether anything was ever checked at all.
-**Version:** 39 · **Updated:** 8 October 2026, HR Step 8 finished (§176): rows E-1 to E-7. Version 38: 8 October 2026, the HR baseline (§175): rows B-1 to B-7. Version 37: 7 October 2026, HR Step 8 part 1 (§174): rows 8-1 to 8-8. Version 36: 7 October 2026, the politeness fix (§173): rows 7-8 and 7-9. Version 35: 7 October 2026, HR Step 7 — the HR summary. Version 34: 7 October 2026, HR Step 6c — long handbooks. Version 33: 7 October 2026, HR Step 6b — conversations. Version 32: 7 October 2026, HR Step 6a — the first answer. Version 31: 7 October 2026, HR Step 5b — reading a handbook. Version 30: 7 October 2026, HR Step 5a — adding and keeping handbooks. Version 29: 7 October 2026, HR Step 4 — the manual set for the HR page shell. Version 28: 4 October 2026, HR Step 3b — the check:live probes for HR's tables. Version 27: HR Step 3a — the manual set "the workspace looks the same". Version 26: at the close of the workspace work
+**Version:** 40 · **Updated:** 8 October 2026, HR Step 9 (§177): rows S-1 to S-6. Version 39: 8 October 2026, HR Step 8 finished (§176): rows E-1 to E-7. Version 38: 8 October 2026, the HR baseline (§175): rows B-1 to B-7. Version 37: 7 October 2026, HR Step 8 part 1 (§174): rows 8-1 to 8-8. Version 36: 7 October 2026, the politeness fix (§173): rows 7-8 and 7-9. Version 35: 7 October 2026, HR Step 7 — the HR summary. Version 34: 7 October 2026, HR Step 6c — long handbooks. Version 33: 7 October 2026, HR Step 6b — conversations. Version 32: 7 October 2026, HR Step 6a — the first answer. Version 31: 7 October 2026, HR Step 5b — reading a handbook. Version 30: 7 October 2026, HR Step 5a — adding and keeping handbooks. Version 29: 7 October 2026, HR Step 4 — the manual set for the HR page shell. Version 28: 4 October 2026, HR Step 3b — the check:live probes for HR's tables. Version 27: HR Step 3a — the manual set "the workspace looks the same". Version 26: at the close of the workspace work
 **Supersedes:** version 25 (3 Oct). Adds the sets of 4 October — Workspace Task 5, Task 6, Stage 2, Stage 4 and the cron release's live checks — with the owner's recorded results (Task 6's T6-1 and T6-3, Stage 4's S4-2, the cron release's CR-1).
 Version 25: version 24 (25 Sep). Adds the **Workspace layout set** (3 October) — the first three
 are the owner's live checks after the push, and none of them sends a question or uploads a file — and
@@ -157,6 +157,19 @@ untested — applies to the runner as much as to anything it runs.
 106.** The floor is committed so the question does not have to be re-asked.
 
 ---
+
+## Manual set — HR Step 9, answers use the stored check (a switch, off) — 8 October 2026 (`d2c4df5`, `DECISIONS.md` §177)
+
+**Needs `HR_ANSWER_USES_CHECK=true` in the server's environment for S-2 to S-5; S-1 runs with it unset.**
+
+| # | Action | Steps | What must be true |
+|---|---|---|---|
+| **S-1** | **Off is the baseline** | The switch unset; ask about a checked handbook | No "This answer uses your handbook check" line; the answer's record has no `checks_used` |
+| **S-2** | **On** | The switch on; ask about a checked handbook | "This answer uses your handbook check of <date>."; the record's `checks_used` names that check |
+| **S-3** | **Several handbooks** | On; several checked handbooks fit | "This answer uses your handbook checks: <name>, <date>; …" |
+| **S-4** | **Not checked (the edge case)** | On; a handbook with no finished check is used | "<name> has not been checked yet. This answer reads it and the rule just now." — each name once; never a handbook that was checked |
+| **S-5** | **Over the budget** | On; checks that do not fit | Left out, with no "not checked" line for them; the record's `checks_left_out` says "budget" |
+| **S-6** | **An older version** | Open any older version | "This is an older version. Only the current version is checked." — never "Not checked yet" or a read-again date |
 
 ## Manual set — HR Step 8 finished: the email — 8 October 2026 (`b789dbe`, `DECISIONS.md` §176)
 

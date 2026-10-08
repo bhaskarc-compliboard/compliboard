@@ -11974,3 +11974,51 @@ No migration.
   - the link opens the right drawer.
 
   Tests went from 902 to 912.
+
+## 177. HR STEP 9: ANSWERS USE THE STORED CHECK — A SWITCH, OFF BY DEFAULT — 8 October 2026
+
+§177 — HR Step 9 (`d2c4df5`). No migration.
+
+- **THE SWITCH:** `HR_ANSWER_USES_CHECK`. It is read as the workspace reads its switches (`lib/pipelineConfig.ts`): on
+  only for the exact word `true`, any case, trimmed; unset or anything else is off.
+  - **Kept out of `lib/pipelineConfig.ts`** (the owner), so no shared file changed; the rule is the same one line.
+  - **Not set on production:** "not set; the testing step decides" (`docs/RELEASE.md`, `.env.example`).
+- **OFF IS THE BASELINE, BYTE FOR BYTE.** The code path is not entered; no check is read.
+  - **Proved on staging's real handbooks:** the message built by the committed code and by the new code with the
+    switch off is identical, 226,075 characters, sha256 `faf7d4d9…`. The long handbook's section choice, itself a
+    model call, was left out on both sides.
+  - **Unit tests** hold the message, the day-1 line and the record unchanged.
+- **ON, AND NOTHING INVENTED:**
+  - **What goes in:** for each handbook the answer is given, its latest check with status done and that check's stored
+    answers, in order, after the handbooks and before the question. Each is one block, "The last check of <handbook>,
+    on <date>:", followed by the answer and its numbered sources under "Sources:".
+  - **Unchanged:** the handbooks are sent as before, and nothing else in the message or the prompt changes.
+  - **The budget:** the check's text counts toward the handbook budget. A block that does not fit is left out, and the
+    record notes it (`checks_left_out`, reason "budget").
+  - **Links:** a link stored with a used check counts as checked, and keeps the label it was stored with.
+  - **The record (069)** notes `checks_used`, by check id and date.
+- **THE CLOSING LINES, SWITCH ON** (the owner's words):
+  - "This answer uses your handbook check of <date>."; with several handbooks, "This answer uses your handbook checks:
+    <name>, <date>; <name>, <date>."
+  - Every handbook with NO finished check is named, once each: "<name> has not been checked yet. This answer reads it
+    and the rule just now." or "<A> and <B> have not been checked yet. This answer reads them and the rule just now."
+  - A handbook whose check exists but was left out for the budget gets no such line: it HAS been checked, and the
+    first run named it "not checked", which was untrue and was caught on the screenshot.
+  - **Switch off:** today's day-1 line, unchanged.
+- **AN OLDER VERSION, EVERY CASE** (the owner): "This is an older version. Only the current version is checked." in
+  place of both the read-again note and "Not checked yet". It is the drawer's one deliberate dependence on whether a
+  version is current, named in the test that guards the rule.
+- **THE SIDE-BY-SIDE, RECORDED HONESTLY** (Haiku, staging, fresh real checks; the same two questions about Riverside):
+
+  | | Searches | Input tokens | Output tokens | Cost (with section choice) |
+  |---|---|---|---|---|
+  | Q1, rest breaks, off | 1 | 170,626 | 467 | $0.1866 |
+  | Q1, rest breaks, on | 1 | 173,397 | 826 | $0.1908 |
+  | Q2, sick time, off | 1 | 162,657 | 534 | $0.1786 |
+  | Q2, sick time, on | 1 | 168,016 | 733 | $0.1849 |
+
+  **On Haiku (one search either way) the switch saved nothing and cost about 2–3% more.** Whether it cuts searches is
+  for Opus in the testing step, where production averages 2.6 searches an answer. No verdict on quality here.
+- **For the testing step:** checks go in in handbook order, not by relevance. In one run the question's own handbook
+  was the one left out for the budget, while another handbook's check went in.
+- **Spent: $1.37,** all Haiku (ledger $6.85 → $8.22): three fresh checks, six answers. Tests went from 912 to 921.

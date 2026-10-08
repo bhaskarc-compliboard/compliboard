@@ -1,6 +1,6 @@
 # The HR section — the plan
 
-**Version:** 14 · **Updated:** 8 October 2026: step 8 done (§176). Version 13: 8 October 2026: the baseline (§175) — steps 8–14 rewritten, the switches in order. Version 12: 7 October 2026: step 8 part 1 done (§174). Version 11: step 7 done (§172). Version 10: step 6c done and step 6 complete (§171); migration 069 on production, 070 on staging. Version 9: step 6b done (§170); migration 069 on staging. Version 8: step 6a done (§169). Version 7: step 5b done (§168); the impact check comes before any code. Version 6: step 5a done (§167). Version 5: step 4 done; decision 32 (the page at /hr/new behind HR_PREVIEW). Version 4: 7 October 2026: §2.1, the page title is HR Workspace. Version 3: HR Step 3b, step 3b done (staging only). Version 2: HR Step 3a: step 3a done; decision 17 amended (every build stop on Haiku,
+**Version:** 15 · **Updated:** 8 October 2026: step 9 built as a switch, off (§177). Version 14: 8 October 2026: step 8 done (§176). Version 13: 8 October 2026: the baseline (§175) — steps 8–14 rewritten, the switches in order. Version 12: 7 October 2026: step 8 part 1 done (§174). Version 11: step 7 done (§172). Version 10: step 6c done and step 6 complete (§171); migration 069 on production, 070 on staging. Version 9: step 6b done (§170); migration 069 on staging. Version 8: step 6a done (§169). Version 7: step 5b done (§168); the impact check comes before any code. Version 6: step 5a done (§167). Version 5: step 4 done; decision 32 (the page at /hr/new behind HR_PREVIEW). Version 4: 7 October 2026: §2.1, the page title is HR Workspace. Version 3: HR Step 3b, step 3b done (staging only). Version 2: HR Step 3a: step 3a done; decision 17 amended (every build stop on Haiku,
 all Opus work in the testing step); the copy rule added to §2.5. Version 1: HR Step 2.
 
 **The decision record** is `DECISIONS.md` §164. **The map** (how HR and everything it touches worked on 4
@@ -273,7 +273,8 @@ replaced text is kept and struck through, so the record shows what changed.
      calendar" (decision 29) were read from the structured answer; an open answer has no dates to list. They return
      with that switch (below), or by a decision of the owner's before then. STOP.
 9. **Answers use the stored check** — built as **a switch, off by default**, judged in the
-   testing step against the yardstick. STOP.
+   testing step against the yardstick. STOP. **BUILT 8 October** (`d2c4df5`, §177): `HR_ANSWER_USES_CHECK`, off; not set
+   on production.
 10. **Same-night operations** (decisions 13 and 14; the handbook queue, the `vercel.json` entries). When the nightly
     check runs, the Handbooks tab's line and the upload sheet's lede return to the owner's words (§175). STOP.
 11. **Polish:** retire old HR (decision 15); **the Dates tab** (decision 30); the print frame on HR's drawers. STOP:
@@ -296,7 +297,9 @@ replaced text is kept and struck through, so the record shows what changed.
 ### THE SWITCHES, IN ORDER (after the release; each off by default, each measured against the yardstick)
 
 1. **Prompt caching** for the handbooks in the answer and the check — cost only; may go on once proven (§175).
-2. **Answers use the stored check** (step 9).
+2. **Answers use the stored check** (step 9) — **built, off** (`HR_ANSWER_USES_CHECK`, §177). The testing step
+   measures it on Opus: whether it cuts searches (production averages 2.6 an answer), and the order its checks go in
+   (today, handbook order, so the question's own handbook can be the one left out for the budget).
 3. ~~The workspace's three research blocks for HR~~ — **not a switch any more: in the baseline since 8 October**
    (§175). The owner confirmed all three `true` on production, and HR's prompt is built by the workspace's own
    function, so it carries them as the workspace does.
