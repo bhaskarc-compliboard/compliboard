@@ -2,6 +2,8 @@
 
 *Written 24 September 2026 from the two releases of 23 September (Runs 1–3 + Fix Round 1, then Fix Round 2). The owner runs every step below. Claude Code never runs anything against production.*
 
+*Updated 8 October 2026: production's address recorded (`https://compliboard.vercel.app`) with the free checks after a push.*
+
 *Updated 8 October 2026: the three research switches confirmed `true` on production, re-entered as visible by the owner; HR reads the same three (below).*
 
 *Updated 4 October 2026, at the close of the workspace work: `check:live` before a release runs on the dead port 3999; the retention gate states the 12-month rule; no Vercel variable changed with the Stage 4 or cron releases.*
@@ -14,6 +16,14 @@
 
 ## The facts that shape the procedure
 
+- **PRODUCTION IS `https://compliboard.vercel.app`** (the owner, 8 October 2026). `compliboard.com` is the marketing site
+  (Framer, a separate site), and **`app.compliboard.com` does not exist** (NXDOMAIN, 8 October): an earlier session
+  used it, and the check it was meant for could not run. Do not guess an address; this line is the record.
+  - **The free checks after a push** (no login, nothing written; run on 8 October after `483c29a`): `GET /hr/new` →
+    404 while HR is off; `GET /hr` → 200; `PATCH /api/handbooks` with no login → 404 means the push is live, 405 means
+    the previous deploy is still serving.
+  - **A 200 page contains "This page could not be found" twice.** That is Next's built-in not-found template, and
+    `/compliance` has it too. A real 404 page has it six times.
 - There is **no staging deployment**. "Staging" means the owner's laptop (`npm run dev`) pointed at the staging database. The only deployed app is production.
 - **A `git push` to `main` deploys production.** Vercel builds on every push and reads its Environment Variables at build time. There is no separate "redeploy" step after a push. Changing a variable on its own also triggers a redeploy.
 - The owner's laptop reads `.env.local`; production reads Vercel. They are separate. A model or switch changed in one is not changed in the other.
