@@ -20,7 +20,7 @@ import { connection } from 'next/server'
 import { requireCompany } from '@/lib/auth'
 import { hrPreviewOn } from '@/lib/hrPreview'
 import { DOCUMENTS_BUCKET } from '@/lib/storage'
-import { saveHandbookRow } from '@/lib/handbookSave'
+import { saveHandbookRow, setHandbookSite } from '@/lib/handbookSave'
 import { deleteHandbookVersion } from '@/lib/handbookDelete'
 import { startReading } from '@/lib/handbookStart'
 
@@ -51,6 +51,23 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('handbooks POST failed:', error)
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Failed to save handbook' }, { status: 500 })
+  }
+}
+
+// PATCH { id, scope, entity_id } — "Choose where it applies" (HR Step 11a): a handbook whose site was deleted is
+// given a site again, or every site; its older versions with it, so the versions stay together (`lib/handbookSave.ts`).
+export async function PATCH(request: NextRequest) {
+  await connection()
+  if (!hrPreviewOn()) return notFound()
+  try {
+    const authed = await requireCompany(request)
+    if (!authed.ok) return authed.response
+    const { companyId, db } = authed.auth
+    const result = await setHandbookSite(db, companyId, await request.json())
+    return NextResponse.json(result.json, { status: result.status })
+  } catch (error) {
+    console.error('handbooks PATCH failed:', error)
+    return NextResponse.json({ error: 'We could not save where it applies just now. Please try again.' }, { status: 500 })
   }
 }
 

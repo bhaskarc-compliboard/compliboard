@@ -62,3 +62,40 @@ export async function saveHandbookRow(db: Db, companyId: string, userId: string,
   }
   return { status: 200, json: { id: inserted.id } }
 }
+
+/**
+ * "CHOOSE WHERE IT APPLIES" — HR Step 11a. A handbook whose site was deleted keeps scope 'site' with no site (066), so
+ * it never silently becomes company-wide; this is where the person says where it applies now. Sets scope and site on
+ * the handbook AND every older version below it (the version_of chain), so the versions stay together. As the person
+ * (RLS: their own rows); a site must be this company's (a 404 otherwise, as for a handbook of another company).
+ */
+/** The refusal for an older version (proposed words, for the owner's yes). */
+export const ONLY_CURRENT_MOVES = 'Only the current version of a handbook can be given a site. Open the current version and choose there.'
+
+export async function setHandbookSite(db: Db, companyId: string, body: { id?: string; scope?: string; entity_id?: string | null }): Promise<SaveResult> {
+  const { id } = body
+  if (!id) return { status: 400, json: { error: 'Missing id' } }
+  const scope: 'company' | 'site' = body.scope === 'site' ? 'site' : 'company'
+  const entityId = scope === 'site' ? (body.entity_id ?? null) : null
+  if (scope === 'site') {
+    if (!entityId) return { status: 400, json: { error: 'A site handbook needs its site.' } }
+    const { data: site } = await db.from('entities').select('id').eq('id', entityId).eq('company_id', companyId).maybeSingle()
+    if (!site) return { status: 404, json: { error: 'Site not found' } }
+  }
+  const { data: start } = await db.from('handbooks').select('id, version_of, is_current').eq('id', id).eq('company_id', companyId).maybeSingle()
+  if (!start) return { status: 404, json: { error: 'That handbook was not found.' } }
+  // Only from the CURRENT version (owner, Step 11a): the walk goes DOWN the chain, so starting from an older version
+  // would leave the newer ones on no site and split the versions.
+  if (!start.is_current) return { status: 400, json: { error: ONLY_CURRENT_MOVES } }
+  // The handbook, then each older version it names, down the chain (a guard against a loop in bad data).
+  const ids: string[] = [start.id]
+  let next: string | null = start.version_of
+  while (next && !ids.includes(next) && ids.length < 100) {
+    const { data: older } = await db.from('handbooks').select('id, version_of').eq('id', next).eq('company_id', companyId).maybeSingle()
+    if (!older) break
+    ids.push(older.id); next = older.version_of
+  }
+  const { data: updated, error } = await db.from('handbooks').update({ scope, entity_id: entityId }).in('id', ids).select('id')
+  if (error) throw error
+  return { status: 200, json: { updated: (updated ?? []).length, ids } }
+}

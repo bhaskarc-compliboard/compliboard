@@ -116,6 +116,10 @@ export function handbookList(all: HandbookRow[], sites: Array<{ id: string; name
 // THE CHECK'S WORDS — HR Baseline Step 1 (8 October 2026). Marked (owner) where they are the owner's.
 // ---------------------------------------------------------------------------------------------------------
 
+/** "Choose where it applies" (HR Step 11a): the site sheet's lede for a handbook whose site was removed (proposed). */
+export const siteRemovedLede = (name: string) => `${name}. Its site was removed. Which site does it cover now?`
+export const CHOOSE_WHERE = 'Choose where it applies'
+
 /** The Handbooks tab's line and the upload sheet's lede: the owner's words, restored by HR Step 10's nightly check. */
 export const HANDBOOKS_TAB_LINE = 'Each handbook is checked the night it arrives, then every 90 days. Changed one? Add the new version.'
 export const uploadLede = (file: string) => `${file}. We read it in about a minute and check it tonight. It stays here in HR.`

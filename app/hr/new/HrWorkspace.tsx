@@ -36,6 +36,7 @@ import { readTopicList, type TopicRow } from '@/lib/topicList'
 import {
   statusWords, handbookList, sectionCount, type HandbookRow, checkLine, HANDBOOKS_TAB_LINE, uploadLede, NOT_CHECKED_YET,
   checkingSections, readAgainNote, PART_NOT_CHECKED, CHECK_FAILED, earlierCheckHeading, LEGACY_WORD, OLDER_VERSION_NOTE,
+  siteRemovedLede, CHOOSE_WHERE,
 } from '@/lib/handbooks'
 import { loadRowChecks, loadCheckView, type RowCheckState, type CheckView } from '@/lib/handbookCheckView'
 import { AnswerBody, SourceList, type AnswerSource } from '@/components/AnswerBody'
@@ -106,9 +107,9 @@ const Pin = () => (
 )
 
 /** The workspace's attach control: a quiet 12px grey underlined line with the pin. */
-function AttachControl({ label, onClick, disabled }: { label: string; onClick?: () => void; disabled?: boolean }) {
+function AttachControl({ label, onClick, disabled }: { label: string; onClick: () => void; disabled?: boolean }) {
   return (
-    <button type="button" onClick={onClick ?? (() => { /* the Ask tab's attach arrives with the answer, step 6 */ })} disabled={disabled}
+    <button type="button" onClick={onClick} disabled={disabled}
       className="inline-flex cursor-pointer items-center gap-1.5 text-left hover:text-gray-800 disabled:cursor-not-allowed disabled:text-gray-300">
       <Pin />
       <span className="underline">{label}</span>
@@ -150,7 +151,8 @@ export default function HrWorkspace() {
   const [topics, setTopics] = useState<TopicRow[]>([])
   const [allHandbooks, setAllHandbooks] = useState<HandbookRow[]>([])
   const [sites, setSites] = useState<Site[]>([])
-  const [dates, setDates] = useState<DateRow[]>([])
+  // The Dates tab's rows: kept for the structured check's switch to bring back; nothing loads them today.
+  const [dates] = useState<DateRow[]>([])
   // Adding: the file waiting for its site choice, and the handbook a newer version replaces.
   const [pendingFile, setPendingFile] = useState<File | null>(null)
   const versionOf = useRef<string | null>(null)
@@ -275,12 +277,11 @@ export default function HrWorkspace() {
         ? await supabase.from('profiles').select('company_id').eq('id', user.id).maybeSingle()
         : { data: null }
       const co = (profile?.company_id as string | undefined) ?? null
-      const [t, d, s, c] = await Promise.all([
+      // THE DATES TAB IS HIDDEN (owner, Step 11a): its dates came from the structured check, parked on
+      // `parked/hr-check-structured`, and it returns with that switch. Its data is not loaded.
+      const [t, s, c] = await Promise.all([
         // HR's conversations only — topics.section 'hr' (migration 066), the workspace's own read.
         readTopicList(supabase, 'hr'),
-        // HR's dates in the ONE calendar (decisions 29, 30): category 'hr'.
-        supabase.from('calendar_events').select('id, title, due_date').eq('category', 'hr')
-          .order('due_date', { ascending: true }).limit(LIST_CAP),
         supabase.from('entities').select('id, name').order('name'),
         co ? supabase.from('companies').select('name').eq('id', co).maybeSingle() : Promise.resolve({ data: null }),
       ])
@@ -288,7 +289,6 @@ export default function HrWorkspace() {
       setCompanyId(co)
       setCompanyName((c.data as { name?: string } | null)?.name ?? null)
       setTopics(t)
-      setDates((d.data ?? []) as DateRow[])
       setSites((s.data ?? []) as Site[])
       await loadHandbooks()
     })()
@@ -523,6 +523,18 @@ export default function HrWorkspace() {
   // ---- the drawer ----
   const siteLabel = (h: HandbookRow) => h.scope === 'company' ? 'Every site'
     : (sites.find((s) => s.id === h.entity_id)?.name ?? 'Site removed')
+  // "Choose where it applies" (Step 11a): a handbook whose site was removed (scope 'site', no site on file).
+  const siteRemoved = (h: HandbookRow) => h.scope === 'site' && !sites.some((s) => s.id === h.entity_id)
+  const [rehome, setRehome] = useState<HandbookRow | null>(null)
+  const [rehomeFailed, setRehomeFailed] = useState(false)
+  const chooseSite = async (h: HandbookRow, scope: 'company' | 'site', entityId: string | null) => {
+    setRehomeFailed(false)
+    const res = await fetch('/api/handbooks', { method: 'PATCH', headers: { ...(await authHeaders()), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: h.id, scope, entity_id: entityId }) }).catch(() => null)
+    if (!res?.ok) { setRehomeFailed(true); return }
+    setRehome(null)
+    await loadHandbooks()
+  }
 
   /** A signed address for the stored file, opened in a new tab. The tab is opened first, so no browser
    *  calls it a pop-up; the address arrives a moment later. */
@@ -577,7 +589,6 @@ export default function HrWorkspace() {
             { key: 'ask', label: 'Ask a question' },
             { key: 'conversations', label: 'Conversations' },
             { key: 'handbooks', label: `Handbooks${current.length > 0 ? ` (${countOf(current.length)})` : ''}` },
-            { key: 'dates', label: `Dates${dates.length > 0 ? ` (${countOf(dates.length)})` : ''}` },
           ]}
           right={
             <button onClick={newConversation}
@@ -725,11 +736,9 @@ export default function HrWorkspace() {
                   )}
                 </div>
 
-                {/* One line under the box, the workspace's: the attach control left, ONE action right. No checklist in HR. */}
-                <div className="mt-[10px] flex items-start justify-between gap-4">
-                  <p className="min-w-0 text-[12px] text-gray-500">
-                    <AttachControl label="Attach a file and ask about it against your handbooks" />
-                  </p>
+                {/* One line under the box: ONE action, at the right. No checklist in HR. The attach line is gone
+                    (owner, Step 11a): attaching a file to a question comes back later as its own feature. */}
+                <div className="mt-[10px] flex items-start justify-end gap-4">
                   <div className="flex shrink-0 items-center gap-3">
                     <button onClick={research} className={PRIMARY}>
                       Research this
@@ -955,6 +964,11 @@ export default function HrWorkspace() {
               {drawer.is_current && (
                 <button onClick={() => pickFile(drawer.id)} disabled={saving} className={TEXT_ACTION}>Add a newer version</button>
               )}
+              {/* The current version only (owner, Step 11a): its older versions move with it; an older version's drawer
+                  never offers it, and the route refuses one. */}
+              {(allHandbooks.find((x) => x.id === drawer.id) ?? drawer).is_current && siteRemoved(allHandbooks.find((x) => x.id === drawer.id) ?? drawer) && (
+                <button onClick={() => { setRehomeFailed(false); setRehome(allHandbooks.find((x) => x.id === drawer.id) ?? drawer) }} className={TEXT_ACTION}>{CHOOSE_WHERE}</button>
+              )}
               {(() => {
                 const st = allHandbooks.find((x) => x.id === drawer.id)?.status ?? drawer.status
                 return (st === 'could_not_read' || st === 'uploaded') && (
@@ -1025,6 +1039,26 @@ export default function HrWorkspace() {
             )
           })()}
         </Drawer>
+      )}
+
+      {/* ================= CHOOSE WHERE IT APPLIES (Step 11a): the same site sheet, for a handbook whose site was removed ================= */}
+      {rehome && (
+        <Sheet onClose={() => setRehome(null)} title="Which site does this handbook cover?" lede={siteRemovedLede(rehome.name)}>
+          <button onClick={() => chooseSite(rehome, 'company', null)}
+            className="w-full rounded-lg border border-gray-200 p-3 text-left hover:border-emerald-400 hover:bg-emerald-50/40">
+            <b className="block text-[14px] font-medium text-gray-900">Every site</b>
+            <span className="mt-0.5 block text-[13px] text-gray-600">A company-wide handbook. It applies at every site.</span>
+          </button>
+          {[...sites].sort((a, b) => a.name.localeCompare(b.name)).map((s) => (
+            <button key={s.id} onClick={() => chooseSite(rehome, 'site', s.id)}
+              className="mt-2 w-full rounded-lg border border-gray-200 p-3 text-left hover:border-emerald-400 hover:bg-emerald-50/40">
+              <b className="block text-[14px] font-medium text-gray-900">{s.name}</b>
+              <span className="mt-0.5 block text-[13px] text-gray-600">Only this site.</span>
+            </button>
+          ))}
+          {rehomeFailed && <p className="mt-3 text-[13px] text-[var(--amber)]">We could not save where it applies just now. Please try again.</p>}
+          <button onClick={() => setRehome(null)} className="mt-3 w-full py-2 text-[13px] text-gray-500 hover:text-gray-800">Not now</button>
+        </Sheet>
       )}
 
       {/* ================= WHICH SITE (the workspace's choice sheet) ================= */}
