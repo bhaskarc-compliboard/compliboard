@@ -12173,3 +12173,39 @@ No migration.
   Tests went from 936 to 939.
 - **The Opus machinery run before it (HR C):** nothing broke, $4.62. V-2 is left for the finish line.
   - **Found:** a stopped or cut-off answer writes no ledger row (`HANDOFF-CODE.md` §7, OPEN).
+
+## 182. HR STEP 11b: "ADD A HANDBOOK" ON THE ASK TAB — 8 October 2026
+
+§182 — HR Step 11b (`4aac9c3`). The owner (8 October): on the Ask tab there was no way to add a handbook; he had to
+switch to Handbooks.
+
+- **WHERE:** the workspace's attach slot, worded "Add a handbook".
+  - On the first-visit box: below the box, on the left of the row that holds "Research this".
+  - Inside a conversation: on the left of the action row, present before any answer.
+
+  The workspace puts its own attach as an icon inside the docked box. HR shows the words instead, because the brief
+  asked for them; the owner may reverse that.
+- **NOT "ATTACH A FILE":** the file is kept in Handbooks, checked the night it arrives and used by every later answer.
+  It is not attached to the one question.
+- **ONE ADD.** `addHandbook()` is called from both tabs and runs the Handbooks tab's own picker, accepted types, site
+  sheet (two or more sites), save and reading. There is no new route, no new save path and no change to the reading.
+  `AttachControl` is HR's own (`app/hr/HrWorkspace.tsx`), not shared with the workspace, so the workspace is untouched.
+- **ON THE ASK TAB:**
+  - **The person stays there:** the box keeps what they typed, and the count line updates.
+  - **The line under the row:** it shows the new handbook's name and its row's own state words. One `stateWords()`
+    is now used by the row and the line, so they cannot drift. The line follows the row as it is read (the page
+    already reloads rows every 3 seconds while one is being read) and goes on the next send.
+  - **A failed add** (wrong type, too large, upload or save failed) shows the Handbooks tab's own sentence under the
+    row instead of in the banner: "We could not save this file. Nothing was added. Please try again."
+  - **Asking at once:** text first already applies, so the person can ask straight away. In a conversation, the next
+    answer reads the handbooks again, so it uses the new one.
+- **PROVED ON STAGING** (Haiku guard, Test Alpha, `tests/fixtures/Harbor-Kitchen-Employee-Policy-2026.pdf`):
+  - **First box:** added with Hillsboro chosen. The line showed "Reading…", the typed question stayed, and the count
+    went to 4. Asked while reading, the answer read the new handbook among four.
+  - **Docked box:** added with "Every site" chosen. The next answer read five handbooks, the new one among them.
+  - **A forced failure:** the sentence showed under the row, the text stayed, and nothing was added.
+  - **Clean-up:** both handbooks were deleted through the real route. Spent: $0.04.
+
+  Tests went from 939 to 947.
+- **Seen, not changed here:** that Haiku answer printed internal section labels "(H5, H8, H10)". The finish line
+  already judges "no internal labels anywhere" (`docs/TEST-AT-FINISH-LINE.md` HR E).
