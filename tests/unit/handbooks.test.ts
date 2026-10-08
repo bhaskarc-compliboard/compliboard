@@ -70,12 +70,12 @@ describe('the row\'s words', () => {
 
 describe('the route', () => {
   const src = readFileSync('app/api/handbooks/route.ts', 'utf8')
-  for (const verb of ['POST', 'DELETE']) {
-    test(`${verb} answers 404 without HR_PREVIEW, before it reads the session`, () => {
+  for (const verb of ['POST', 'PATCH', 'DELETE']) {
+    test(`${verb} reads the person's session first, with no preview switch (live since the go-live)`, () => {
       const body = src.slice(src.indexOf(`export async function ${verb}(`))
-      const gate = body.indexOf('if (!hrPreviewOn()) return notFound()')
-      assert.ok(gate > 0 && gate < body.indexOf('requireCompany(request)'), 'the preview check comes first')
-      assert.ok(body.indexOf('await connection()') < gate, 'read per request')
+      const fn = body.slice(0, body.indexOf('\nexport async function', 1) > 0 ? body.indexOf('\nexport async function', 1) : undefined)
+      assert.ok(!/hrPreview|HR_PREVIEW/.test(fn))
+      assert.ok(fn.indexOf('requireCompany(request)') > 0 && fn.indexOf('requireCompany(request)') < fn.indexOf('authed.auth'))
     })
   }
   test('the save is lib/handbookSave.ts (held by its own test)', () => {

@@ -7,7 +7,7 @@
  * `Error: Bucket not found`, and the cause was a fifth spelling of the name:
  *
  *     app/api/documents/route.ts:15   const BUCKET = 'company-documents'
- *     app/api/hr/route.ts:27          const BUCKET = 'company-documents'
+ *     app/api/hr/route.ts:27          const BUCKET = 'company-documents'   (old HR; deleted at the HR go-live)
  *     app/documents/page.tsx:256      storage.from('company-documents')
  *     app/compliance/page.tsx:262     storage.from('documents')        <- wrong, and mine
  *

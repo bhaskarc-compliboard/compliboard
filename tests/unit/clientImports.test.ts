@@ -94,8 +94,8 @@ describe('nothing server-only reaches a client file', () => {
 
   test('(b) the scan sees the client files it must: the page, the shared pieces, every component', () => {
     const rel = clientFiles.map((f) => relative(ROOT, f))
-    for (const must of ['app/compliance/page.tsx', 'components/ReportView.tsx', 'components/Drawer.tsx', 'app/hr/page.tsx',
-                        'app/hr/new/HrWorkspace.tsx', 'components/ConversationList.tsx']) {
+    for (const must of ['app/compliance/page.tsx', 'components/ReportView.tsx', 'components/Drawer.tsx',
+                        'app/hr/HrWorkspace.tsx', 'components/ConversationList.tsx']) {
       assert.ok(rel.includes(must), `the scan must reach ${must}, or it proves nothing`)
     }
     assert.ok(rel.length >= 20, `only ${rel.length} client files found`)

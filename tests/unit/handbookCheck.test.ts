@@ -176,7 +176,7 @@ describe('THE CHECK ON SCREEN: its parts, the row, the words', () => {
     // The owner's words, restored by step 10's nightly check (they were replaced while untrue, §175).
     assert.equal(HANDBOOKS_TAB_LINE, 'Each handbook is checked the night it arrives, then every 90 days. Changed one? Add the new version.')
     assert.equal(uploadLede('Handbook.pdf'), 'Handbook.pdf. We read it in about a minute and check it tonight. It stays here in HR.')
-    const page = readFileSync('app/hr/new/HrWorkspace.tsx', 'utf8')
+    const page = readFileSync('app/hr/HrWorkspace.tsx', 'utf8')
     assert.match(page, /\{HANDBOOKS_TAB_LINE\}/); assert.match(page, /lede=\{uploadLede\(pendingFile\.name\)\}/)
   })
   test('THE GREY MARK: the words stay, the mark becomes a grey note the shared renderer draws (and nothing else)', () => {
@@ -190,7 +190,7 @@ describe('THE CHECK ON SCREEN: its parts, the row, the words', () => {
     assert.match(body, /if \(p\.href === GREY_NOTE_HREF\) return <span className="font-sans text-\[13px\] text-gray-400">\{p\.children\}<\/span>/)
   })
   test('the drawer draws each part with the Ask tab\'s own component; footer order Check now, Open, Add a newer version, Download, Delete', () => {
-    const page = readFileSync('app/hr/new/HrWorkspace.tsx', 'utf8')
+    const page = readFileSync('app/hr/HrWorkspace.tsx', 'utf8')
     assert.match(page, /<HrAnswerView body=\{body\} lines=\{x\.phase === 'done' \? lines : \[\]\} sources=\{x\.sources\} \/>/)
     assert.match(page, /<HrAnswerView \{\.\.\.\(\(\) => \{ const a = splitAppended\(p\.text\)/)
     const order = ['>Check now<', '>Open the handbook<', '>Add a newer version<', '>Download<', '>Delete<'].map((x) => page.lastIndexOf(x))
@@ -213,7 +213,7 @@ describe('the owner\'s 8 October answers: an older version, and a check where ev
   })
   test('an older version, every case (owner, Step 9): "This is an older version. Only the current version is checked."', () => {
     assert.equal(OLDER_VERSION_NOTE, 'This is an older version. Only the current version is checked.')
-    const page = readFileSync('app/hr/new/HrWorkspace.tsx', 'utf8')
+    const page = readFileSync('app/hr/HrWorkspace.tsx', 'utf8')
     assert.match(page, /\{!open && !last && \(older\s*\? <p className="text-\[13px\] text-gray-500">\{OLDER_VERSION_NOTE\}<\/p>\s*: <p className="text-\[14px\] leading-relaxed text-gray-600">\{NOT_CHECKED_YET\}<\/p>\)\}/)
     assert.match(page, /: older \? <p className="text-\[13px\] text-gray-500">\{OLDER_VERSION_NOTE\}<\/p>\s*: h\.next_check_at && /)
   })

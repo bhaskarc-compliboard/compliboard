@@ -92,7 +92,7 @@ describe('the words (the owner\'s, Step 7)', () => {
 
 describe('the route and the page', () => {
   const route = readFileSync('app/api/hr/topics/[id]/summarise/route.ts', 'utf8')
-  const page = readFileSync('app/hr/new/HrWorkspace.tsx', 'utf8')
+  const page = readFileSync('app/hr/HrWorkspace.tsx', 'utf8')
   test('behind the preview switch before the session; HR conversations only; claim, 202, after(), release in finally; kind hr', () => {
     assert.ok(route.indexOf('hrPreviewOn()') < route.indexOf('requireCompany(request)'))
     assert.match(route, /if \(!topic \|\| topic\.section !== 'hr'\) return NextResponse\.json\(\{ error: NOT_FOUND \}, \{ status: 404 \}\)/)

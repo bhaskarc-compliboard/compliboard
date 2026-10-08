@@ -21,10 +21,10 @@ import { checkParts, partsNotChecked, type RowIn } from './handbookCheckView.ts'
 type Db = { from: (t: string) => any; auth?: { admin?: { getUserById: (id: string) => Promise<any> } } }
 
 /**
- * WHERE THE HR PAGE LIVES — ONE CONSTANT. Step 11 moves the page from /hr/new to /hr and changes this line once.
- * `?handbook=<id>` opens that handbook's drawer (`app/hr/new/HrWorkspace.tsx`).
+ * WHERE THE HR PAGE LIVES — ONE CONSTANT. /hr since the go-live (HR Step 13); it was /hr/new behind the preview
+ * switch. `?handbook=<id>` opens that handbook's drawer (`app/hr/HrWorkspace.tsx`).
  */
-export const HR_PAGE_PATH = '/hr/new'
+export const HR_PAGE_PATH = '/hr'
 export const handbookLink = (appUrl: string, handbookId: string) => `${appUrl}${HR_PAGE_PATH}?handbook=${encodeURIComponent(handbookId)}`
 
 /** The words (proposed in the brief; the owner says yes or changes them). */

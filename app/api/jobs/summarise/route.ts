@@ -49,7 +49,6 @@ import { supabaseAdmin } from '@/lib/auth'
 // "Summarise this conversation" uses; each answer reaches it with its sources numbered once (§127).
 import { summariseTopic } from '@/lib/summaryReport'
 import { claimTopic, releaseTopic, nightlyCandidates, type NightlyTopic } from '@/lib/topicClaim'
-import { hrPreviewOn } from '@/lib/hrPreview'
 
 export const maxDuration = 800
 
@@ -77,9 +76,9 @@ export async function POST(request: NextRequest) {
     // choice between them is one pure function, so the rules above are tested rather than described.
     const cols = 'id, company_id, title, summarised_at, summary_source, last_turn_at, section'
     // HR CONVERSATIONS TOO, SINCE HR STEP 10 (decision 14): the one writer with kind = the topic's section (§172), so
-    // an HR conversation's handbook sources are kept. Only while HR_PREVIEW is on — HR is behind the switch until its
-    // release, and production has no HR conversations. With it off this reads exactly the workspace's list, as before.
-    const sections = hrPreviewOn() ? ['workspace', 'hr'] : ['workspace']
+    // an HR conversation's handbook sources are kept. Always since the HR go-live (HR Step 13); a workspace
+    // conversation's call is unchanged (no kind), as before.
+    const sections = ['workspace', 'hr']
     const { data: never, error: e1 } = await supabaseAdmin
       .from('topics').select(cols).in('section', sections).is('summarised_at', null).not('last_turn_at', 'is', null)
     if (e1) throw new Error(`could not list unsummarised topics: ${e1.message}`)

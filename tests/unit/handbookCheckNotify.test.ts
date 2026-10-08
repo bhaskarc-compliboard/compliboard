@@ -40,7 +40,7 @@ describe('the email (words proposed in the brief)', () => {
       const r = await notifyCheck(fakeDb(done, [row('r1', 's1', 'done', 'A.')]).db, 'c1', { dryRun: true })
       assert.equal(r.subject, 'Your handbook check is done: Harbor Handbook')
       assert.equal(r.to, 'person@example.com')
-      assert.equal(r.text, 'Harbor Handbook was checked against the rules that apply to you on 8 October 2026.\n\nRead the check: https://app.compliboard.com/hr/new?handbook=h1')
+      assert.equal(r.text, 'Harbor Handbook was checked against the rules that apply to you on 8 October 2026.\n\nRead the check: https://app.compliboard.com/hr?handbook=h1')
     }))
   test('done with a failed part: the count line, from the stored rows as the page counts them',
     env({ NEXT_PUBLIC_APP_URL: 'https://app.compliboard.com', NOTIFY_TEST_TO: undefined }, async () => {
@@ -53,7 +53,7 @@ describe('the email (words proposed in the brief)', () => {
       const r = await notifyCheck(fakeDb({ ...done, status: 'failed' }).db, 'c1', { dryRun: true })
       assert.equal(r.subject, 'Your handbook check could not finish: Harbor Handbook')
       assert.equal(r.to, 'test@compliboard.com')
-      assert.equal(r.text, "[staging: this would have gone to person@example.com]\n\nWe could not finish checking Harbor Handbook. That's on our side, not yours. Press Check now to try again: https://app.compliboard.com/hr/new?handbook=h1")
+      assert.equal(r.text, "[staging: this would have gone to person@example.com]\n\nWe could not finish checking Harbor Handbook. That's on our side, not yours. Press Check now to try again: https://app.compliboard.com/hr?handbook=h1")
     }))
 })
 
@@ -78,10 +78,10 @@ describe('who, when, and once', () => {
 })
 
 describe('the link', () => {
-  test('built from ONE constant (step 11 moves the page once); the page opens that handbook\'s drawer', () => {
-    assert.equal(HR_PAGE_PATH, '/hr/new')
-    assert.equal(handbookLink('https://x', 'h 1'), 'https://x/hr/new?handbook=h%201')
-    const page = readFileSync('app/hr/new/HrWorkspace.tsx', 'utf8')
+  test('built from ONE constant (/hr since the go-live); the page opens that handbook\'s drawer', () => {
+    assert.equal(HR_PAGE_PATH, '/hr')
+    assert.equal(handbookLink('https://x', 'h 1'), 'https://x/hr?handbook=h%201')
+    const page = readFileSync('app/hr/HrWorkspace.tsx', 'utf8')
     assert.match(page, /new URLSearchParams\(window\.location\.search\)\.get\('handbook'\)/)
     assert.match(page, /if \(h\) \{ setTab\('handbooks'\); setDrawer\(h\) \}/)
   })

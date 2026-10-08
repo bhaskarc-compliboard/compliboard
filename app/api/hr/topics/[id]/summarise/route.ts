@@ -7,12 +7,10 @@
 // turns without their grey lines, handbook passages kept as sources, HR's words in the plain text. Ledger
 // 'summarise', as the workspace's.
 //
-// *** BEHIND THE PREVIEW SWITCH, and HR's conversations only. *** 404 unless HR_PREVIEW=1 (decision 32),
-// before the session is read; a conversation that is not section 'hr' is a 404 too, as one of another company
+// *** HR's conversations only. *** A conversation that is not section 'hr' is a 404, as one of another company
 // is, so ids cannot be probed and the workspace's summaries are never written by HR's writer.
 import { NextRequest, NextResponse, after, connection } from 'next/server'
 import { requireCompany, supabaseAdmin } from '@/lib/auth'
-import { hrPreviewOn } from '@/lib/hrPreview'
 import { loadTurns } from '@/lib/conversation'
 import { summariseTopic } from '@/lib/summaryReport'
 import { claimTopic, releaseTopic, withinClaimTime, CLAIM_WORDS } from '@/lib/topicClaim'
@@ -23,7 +21,6 @@ const NOT_FOUND = 'That conversation was not found.'
 
 export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   await connection()
-  if (!hrPreviewOn()) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   const authed = await requireCompany(request)
   if (!authed.ok) return authed.response
   const { db, companyId } = authed.auth

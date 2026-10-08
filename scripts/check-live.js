@@ -382,37 +382,39 @@ if (!(await reachable())) {
   console.log(`\n  /api/chat — driven as ${FIXTURE.email} at ${BASE}\n`)
   const auth = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
 
-  // 0. THE HR ANSWER ROUTE (HR Step 6a): free probes that never reach a model. Without HR_PREVIEW on the
-  // server it does not exist (404, before the session is read); with it, a request with no session is
-  // refused and a request with no question is a 400. Neither asks anything, so nothing is spent.
+  // 0. HR'S ROUTES, LIVE SINCE THE GO-LIVE (HR Step 13): no preview switch, so every probe expects the real answer.
+  // Free: none of them reaches a model or writes a row. No session is refused (401); a request with no question
+  // is a 400; an id that is not this company's is a 404; the two HR jobs without the cron secret are a 404.
+  // The page is /hr; /hr/new and old HR's two routes are gone (404).
   if (want('hr_answer')) {
     const anon = await fetch(`${BASE}/api/hr/answer`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
     const empty = await fetch(`${BASE}/api/hr/answer`, { method: 'POST', headers: auth, body: JSON.stringify({ question: '' }) })
-    const preview = anon.status !== 404
-    const ok = preview ? (anon.status === 401 && empty.status === 400) : empty.status === 404
-    console.log(`  ${ok ? '✓' : '✗'} hr answer           ${preview ? `preview on: no session ${anon.status}, no question ${empty.status}` : `preview off: 404 to everyone (${anon.status}, ${empty.status})`}`)
+    const ok = anon.status === 401 && empty.status === 400
+    console.log(`  ${ok ? '✓' : '✗'} hr answer           no session ${anon.status}, no question ${empty.status}`)
     if (!ok) failures++
-    // HR's summary route (Step 7): no session refused; a topic that is not this company's HR conversation, a 404.
-    // Free: neither reaches a model.
     const nobody = await fetch(`${BASE}/api/hr/topics/00000000-0000-0000-0000-000000000000/summarise`, { method: 'POST' })
     const missing = await fetch(`${BASE}/api/hr/topics/00000000-0000-0000-0000-000000000000/summarise`, { method: 'POST', headers: auth })
-    const sok = preview ? (nobody.status === 401 && missing.status === 404) : (nobody.status === 404 && missing.status === 404)
-    console.log(`  ${sok ? '✓' : '✗'} hr summary          ${preview ? `preview on: no session ${nobody.status}, unknown topic ${missing.status}` : `preview off: 404 (${nobody.status}, ${missing.status})`}`)
+    const sok = nobody.status === 401 && missing.status === 404
+    console.log(`  ${sok ? '✓' : '✗'} hr summary          no session ${nobody.status}, unknown topic ${missing.status}`)
     if (!sok) failures++
-    // HR's Check now and the handbook sweep (Step 8): no session refused, an unknown handbook a 404; the sweep
-    // without the cron secret a 404. Free: none of them reaches a model or writes a row.
     const ckAnon = await fetch(`${BASE}/api/hr/handbooks/00000000-0000-0000-0000-000000000000/check`, { method: 'POST' })
     const ckMissing = await fetch(`${BASE}/api/hr/handbooks/00000000-0000-0000-0000-000000000000/check`, { method: 'POST', headers: auth })
     const swNoSecret = await fetch(`${BASE}/api/jobs/handbook-checks`, { method: 'POST' })
-    const cok = preview ? (ckAnon.status === 401 && ckMissing.status === 404 && swNoSecret.status === 404)
-      : (ckAnon.status === 404 && ckMissing.status === 404 && swNoSecret.status === 404)
-    console.log(`  ${cok ? '✓' : '✗'} hr handbook check   ${preview ? `preview on: no session ${ckAnon.status}, unknown handbook ${ckMissing.status}, sweep without secret ${swNoSecret.status}` : `preview off: 404 (${ckAnon.status}, ${ckMissing.status}, ${swNoSecret.status})`}`)
-    if (!cok) failures++
-    // The handbook night queue (Step 10): without the cron secret a 404, preview on or off. Free: it queues nothing.
     const qNoSecret = await fetch(`${BASE}/api/jobs/handbook-queue`, { method: 'POST' })
-    const qok = qNoSecret.status === 404
-    console.log(`  ${qok ? '✓' : '✗'} hr handbook queue   without the cron secret ${qNoSecret.status}`)
-    if (!qok) failures++
+    const cok = ckAnon.status === 401 && ckMissing.status === 404 && swNoSecret.status === 404 && qNoSecret.status === 404
+    console.log(`  ${cok ? '✓' : '✗'} hr handbook check   no session ${ckAnon.status}, unknown handbook ${ckMissing.status}, sweep without secret ${swNoSecret.status}, queue without secret ${qNoSecret.status}`)
+    if (!cok) failures++
+    const hbAnon = await fetch(`${BASE}/api/handbooks?id=00000000-0000-0000-0000-000000000000`, { method: 'DELETE' })
+    const hbMissing = await fetch(`${BASE}/api/handbooks?id=00000000-0000-0000-0000-000000000000`, { method: 'DELETE', headers: auth })
+    const hok = hbAnon.status === 401 && hbMissing.status === 404
+    console.log(`  ${hok ? '✓' : '✗'} hr handbooks        no session ${hbAnon.status}, unknown handbook ${hbMissing.status}`)
+    if (!hok) failures++
+    const page = await fetch(`${BASE}/hr`, { redirect: 'manual' })
+    const gone = await Promise.all([fetch(`${BASE}/hr/new`, { redirect: 'manual' }), fetch(`${BASE}/api/hr`, { method: 'POST', headers: auth, body: '{}' }),
+      fetch(`${BASE}/api/hr-audits`, { headers: auth })])
+    const pok = page.status === 200 && gone.every((r) => r.status === 404)
+    console.log(`  ${pok ? '✓' : '✗'} hr page             /hr ${page.status}; gone: /hr/new ${gone[0].status}, /api/hr ${gone[1].status}, /api/hr-audits ${gone[2].status}`)
+    if (!pok) failures++
   }
 
   // 1. RESEARCH streams, and the stream carries sources.

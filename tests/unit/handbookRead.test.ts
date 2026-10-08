@@ -158,7 +158,7 @@ describe('the one write', () => {
 describe('"Read it again" (owner, 7 October)', async () => {
   const { readFileSync } = await import('node:fs')
   const route = readFileSync('app/api/handbooks/read/route.ts', 'utf8')
-  const page = readFileSync('app/hr/new/HrWorkspace.tsx', 'utf8')
+  const page = readFileSync('app/hr/HrWorkspace.tsx', 'utf8')
   test('the our-fault words point at the button', () => {
     assert.equal(READ_REASONS.ours, 'Something went wrong at our end while reading it. Press Read it again.')
   })
@@ -183,7 +183,7 @@ describe('counts in plain English, and every drawer follows its own status (owne
     assert.equal(statusWords('read', null, 1), 'Read · 1 section')
   })
   test('the drawer body reads the row\'s own status, not whether it is current', () => {
-    const page = readFileSync('app/hr/new/HrWorkspace.tsx', 'utf8')
+    const page = readFileSync('app/hr/HrWorkspace.tsx', 'utf8')
     const at = page.indexOf('EVERY VERSION TELLS THE TRUTH')
     // The handbook drawer's own closing tag: the conversation drawer (Step 6b) closes earlier in the file.
     const body = page.slice(at, page.indexOf('</Drawer>', at))

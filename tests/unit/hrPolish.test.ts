@@ -8,7 +8,7 @@ import { readFileSync } from 'node:fs'
 import { setHandbookSite, ONLY_CURRENT_MOVES } from '../../lib/handbookSave.ts'
 import { siteRemovedLede, CHOOSE_WHERE } from '../../lib/handbooks.ts'
 
-const page = readFileSync('app/hr/new/HrWorkspace.tsx', 'utf8')
+const page = readFileSync('app/hr/HrWorkspace.tsx', 'utf8')
 
 describe('the tabs and the Ask tab (owner, Step 11a)', () => {
   test('three tabs: Ask a question, Conversations, Handbooks — no Dates tab, and its data is not loaded', () => {
@@ -72,10 +72,10 @@ describe('"Choose where it applies" (Step 11a)', () => {
     // the one place the action is drawn
     assert.equal(page.split('{CHOOSE_WHERE}').length - 1, 1)
   })
-  test('the route: behind the preview switch, as the person; the page shows the action only for a removed site', () => {
+  test('the route: as the person (no preview switch since the go-live); the page shows the action only for a removed site', () => {
     const route = readFileSync('app/api/handbooks/route.ts', 'utf8')
     const patch = route.slice(route.indexOf('export async function PATCH'), route.indexOf('export async function DELETE'))
-    assert.ok(patch.indexOf('hrPreviewOn()') < patch.indexOf('requireCompany(request)'))
+    assert.ok(!/hrPreview/.test(patch) && patch.indexOf('requireCompany(request)') > 0)
     assert.match(patch, /setHandbookSite\(db, companyId, await request\.json\(\)\)/)
     assert.match(page, /const siteRemoved = \(h: HandbookRow\) => h\.scope === 'site' && !sites\.some\(\(s\) => s\.id === h\.entity_id\)/)
   })

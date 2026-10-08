@@ -98,7 +98,7 @@ function topicTitle(subject: string | null, question: string, fileName: string |
  * THE FUNCTION TIMEOUT, DECLARED RATHER THAN INHERITED.
  *
  * This route carried NO `maxDuration` until 22 September, while `substeps`, `audits`,
- * `document-review` and `hr-audits` all set 800. Next's own documentation
+ * `document-review` and `hr-audits` (old HR, deleted at the HR go-live) all set 800. Next's own documentation
  * (`route-segment-config/maxDuration.md`) says only that *"deployment platforms can use
  * maxDuration from the Next.js build output to add specific execution limits"* — **it names no
  * default**, so the effective limit for this route was whatever the platform applied and was

@@ -4,12 +4,8 @@
 // (decision 10), web search for the rule at the agency, streamed as the workspace streams
 // (`app/api/chat/route.ts`, the open research path), saved as a topic with section 'hr'. AT DONE, ON THE
 // SERVER, every handbook quote and every web link is checked in code before anything is shown or stored.
-//
-// *** BEHIND THE PREVIEW SWITCH. *** 404 unless HR_PREVIEW=1 (decision 32), before the session is read.
-// The old app/api/hr/route.ts is left alone until the polish step.
 import { NextRequest, NextResponse, connection } from 'next/server'
 import { requireCompany, supabaseAdmin } from '@/lib/auth'
-import { hrPreviewOn } from '@/lib/hrPreview'
 import { askAIOpenStream, askAIJson, searchLimit, type OpenMessage, type Source } from '@/lib/ai'
 import { buildCompanyContext } from '@/lib/companyContext'
 import { nextPosition, saveUserTurn, saveAssistantTurn, markTurnStopped, loadTurns, setTitleIfFirst,
@@ -29,7 +25,6 @@ const FAILED_LINE = 'The answer stopped part-way through. Please try again.'
 
 export async function POST(request: NextRequest) {
   await connection()
-  if (!hrPreviewOn()) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   try {
     const authed = await requireCompany(request)
     if (!authed.ok) return authed.response

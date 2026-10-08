@@ -260,9 +260,10 @@ describe('the route and the shared changes', () => {
     assert.match(route, /process\.env\.NODE_ENV !== 'production' && process\.env\.HR_TEST_BAD_QUOTE === '1'/)
     assert.match(route, /process\.env\.NODE_ENV !== 'production' && process\.env\.HR_TEST_PLAIN_QUOTES === '1'/)
   })
-  test('the nightly summary: workspace topics, and HR topics while HR_PREVIEW is on, in both queries; HR\'s writer for HR (step 10)', () => {
+  test('the nightly summary: workspace and HR topics always (since the go-live), in both queries; HR\'s writer for HR (step 10)', () => {
     const job = readFileSync('app/api/jobs/summarise/route.ts', 'utf8')
-    assert.match(job, /const sections = hrPreviewOn\(\) \? \['workspace', 'hr'\] : \['workspace'\]/)
+    assert.match(job, /const sections = \['workspace', 'hr'\]/)
+    assert.ok(!/hrPreview/.test(job))
     assert.equal((job.match(/\.from\('topics'\)\.select\(cols\)\.in\('section', sections\)/g) ?? []).length, 2)
     // A workspace conversation's call passes no kind, exactly as before step 10; an HR one passes kind 'hr'.
     assert.match(job, /\.\.\.\(topic\.section === 'hr' \? \{ kind: 'hr' as const \} : \{\}\)/)

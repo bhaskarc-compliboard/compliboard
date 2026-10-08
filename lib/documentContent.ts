@@ -28,8 +28,8 @@ import { ACCEPTED_FILE_TYPES_PROSE } from './acceptedFiles.ts'
  *     const content = [...result.blocks, { type: 'text', text: myInstruction }]
  *
  * A FORMAT WE CANNOT READ RETURNS A DESCRIBED FAILURE, NEVER AN EMPTY RESULT. Following
- * app/api/hr/route.ts, whose comments record why: a .docx used to be base64'd and labelled
- * image/jpeg, which produced confident nonsense rather than an error. A document that
+ * old HR's app/api/hr/route.ts (deleted at the HR go-live, 8 October 2026), whose comments
+ * recorded why: a .docx used to be base64'd and labelled image/jpeg, which produced confident nonsense rather than an error. A document that
  * cannot be read must say so, by name, with what to do about it.
  */
 

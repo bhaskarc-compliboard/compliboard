@@ -9,22 +9,16 @@
 // applies to the row AND the storage object, the company and the uploader taken from the session — never
 // from the body — and a 404, not a 403, for any id that is not this company's.
 //
-// *** BEHIND THE PREVIEW SWITCH. *** Every handler answers 404 unless HR_PREVIEW=1 (decision 32), before it
-// reads the session, so on production — where the variable is never set — this route does not exist.
-//
 // READING (step 5b): right after a row is saved, the handbook is claimed ('reading') and read in `after()`,
 // so the reading survives the tab closing — `lib/handbookStart.ts` starts it, `lib/handbookRead.ts` has the
 // claim, the order and the one write. "Read it again" is `app/api/handbooks/read`.
 import { NextRequest, NextResponse } from 'next/server'
 import { connection } from 'next/server'
 import { requireCompany } from '@/lib/auth'
-import { hrPreviewOn } from '@/lib/hrPreview'
 import { DOCUMENTS_BUCKET } from '@/lib/storage'
 import { saveHandbookRow, setHandbookSite } from '@/lib/handbookSave'
 import { deleteHandbookVersion } from '@/lib/handbookDelete'
 import { startReading } from '@/lib/handbookStart'
-
-const notFound = () => NextResponse.json({ error: 'Not found' }, { status: 404 })
 
 // The reading runs after the reply, up to this long (Vercel `waitUntil`); copied from the summarise route.
 export const maxDuration = 800
@@ -34,7 +28,6 @@ export const maxDuration = 800
 //   { file_path, file_name, mime_type, size_bytes, version_of }              a newer version of one (keeps its name, scope and site)
 export async function POST(request: NextRequest) {
   await connection()
-  if (!hrPreviewOn()) return notFound()
   try {
     const authed = await requireCompany(request)
     if (!authed.ok) return authed.response
@@ -58,7 +51,6 @@ export async function POST(request: NextRequest) {
 // given a site again, or every site; its older versions with it, so the versions stay together (`lib/handbookSave.ts`).
 export async function PATCH(request: NextRequest) {
   await connection()
-  if (!hrPreviewOn()) return notFound()
   try {
     const authed = await requireCompany(request)
     if (!authed.ok) return authed.response
@@ -77,7 +69,6 @@ export async function PATCH(request: NextRequest) {
 // replaced becomes current again, and a newer version that named this one now names the one before it.
 export async function DELETE(request: NextRequest) {
   await connection()
-  if (!hrPreviewOn()) return notFound()
   try {
     const authed = await requireCompany(request)
     if (!authed.ok) return authed.response

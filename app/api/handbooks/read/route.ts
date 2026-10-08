@@ -2,11 +2,10 @@
 // 'could_not_read' or 'uploaded', through the same claim as a save (`lib/handbookStart.ts`). Never for one
 // that is 'read' (nothing to do) or 'reading' (one at a time; a reading stuck past ten minutes may be taken).
 //
-// The pattern is app/api/handbooks/route.ts: the preview switch first, requireCompany(), the caller's own
+// The pattern is app/api/handbooks/route.ts: requireCompany(), the caller's own
 // client, and 404 — not 403 — for an id that is not this company's.
 import { NextRequest, NextResponse, connection } from 'next/server'
 import { requireCompany } from '@/lib/auth'
-import { hrPreviewOn } from '@/lib/hrPreview'
 import { startReading } from '@/lib/handbookStart'
 
 // The reading runs after the reply, up to this long (Vercel `waitUntil`); copied from the summarise route.
@@ -14,7 +13,6 @@ export const maxDuration = 800
 
 export async function POST(request: NextRequest) {
   await connection()
-  if (!hrPreviewOn()) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   try {
     const authed = await requireCompany(request)
     if (!authed.ok) return authed.response

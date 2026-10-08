@@ -184,10 +184,12 @@ describe('THE CRON SCHEDULE (HR Step 10): every entry pinned', () => {
       { path: '/api/jobs/handbook-checks', schedule: '*/5 * * * *' },
     ])
   })
-  test('both HR jobs: the preview switch first (404 while HR is off), then the cron secret', () => {
+  test('both HR jobs: the cron secret first (a 404 without it), no preview switch since the go-live', () => {
     for (const f of ['app/api/jobs/handbook-queue/route.ts', 'app/api/jobs/handbook-checks/route.ts']) {
       const src = readFileSync(f, 'utf8')
-      assert.ok(src.indexOf('hrPreviewOn()') > 0 && src.indexOf('hrPreviewOn()') < src.indexOf('requireCronSecret(request)'), f)
+      assert.ok(!/hrPreview|HR_PREVIEW/.test(src), f)
+      const post = src.slice(src.indexOf('export async function POST'))
+      assert.ok(post.indexOf('requireCronSecret(request)') > 0 && post.indexOf('requireCronSecret(request)') < post.indexOf('supabaseAdmin'), f)
     }
   })
 })

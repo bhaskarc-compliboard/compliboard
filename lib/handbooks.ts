@@ -143,7 +143,7 @@ export function checkLine(c: {
 
 /** The drawer (owner, unless marked). */
 export const NOT_CHECKED_YET = 'Not checked yet.'
-export const checkingSections = (done: number, total: number) => `Checking ${done} of ${total} sections…`
+export const checkingSections = (done: number, total: number) => `Checking ${done} of ${counted(total, 'section')}…`
 export const readAgainNote = (date: string) =>
   `We will read this handbook again on ${date}. Changed it before then? Add the new version, or press Check now.`
 export const PART_NOT_CHECKED = "We could not check this part. That's on our side, not yours. Press Check now to try again."

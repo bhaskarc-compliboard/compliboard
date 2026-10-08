@@ -102,7 +102,7 @@ describe('the route', () => {
     assert.match(route, /if \(Date\.now\(\) - waitStart > WAIT_LIMIT_MS\) \{ notAnswered\(waitTooLongWords\); return \}/)
   })
   test('the 6a over-budget line is written nowhere any more', () => {
-    for (const f of ['app/api/hr/answer/route.ts', 'lib/hrAnswer.ts', 'app/hr/new/HrWorkspace.tsx']) {
+    for (const f of ['app/api/hr/answer/route.ts', 'lib/hrAnswer.ts', 'app/hr/HrWorkspace.tsx']) {
       assert.ok(!readFileSync(f, 'utf8').includes('overBudgetLine'), f)
     }
   })

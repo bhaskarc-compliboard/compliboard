@@ -3,7 +3,7 @@
 // One press, one check: the check and its rows are written, 202 at once, and `after()` starts the sweep so the
 // first pieces begin without waiting for a cron. The rest is the sweep's (`lib/handbookCheck.ts` sweepChecks).
 //
-// *** BEHIND THE PREVIEW SWITCH (decision 32), then the person's session. *** The handbook is read AS THE PERSON,
+// *** The person's session first. *** The handbook is read AS THE PERSON,
 // so another company's id is a 404 like an unknown one. The check is written with the service-role client — a
 // NAMED STATEMENT (CLAUDE.md §3.6): 066 grants a person SELECT only on the check tables, because the server
 // writes them, as `app/api/audit-runs/route.ts` writes audit runs.
@@ -12,7 +12,6 @@
 // tabs could both pass: createCheck reads the unique violation and this route answers 409 with the owner's words.
 import { NextRequest, NextResponse, after, connection } from 'next/server'
 import { requireCompany, supabaseAdmin } from '@/lib/auth'
-import { hrPreviewOn } from '@/lib/hrPreview'
 import { createCheck, sweepChecks, ALREADY_CHECKING, NOT_READ_YET, ONLY_NEWEST } from '@/lib/handbookCheck'
 
 export const maxDuration = 800
@@ -21,7 +20,6 @@ const NOT_FOUND = 'That handbook was not found.'
 
 export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   await connection()
-  if (!hrPreviewOn()) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   const authed = await requireCompany(request)
   if (!authed.ok) return authed.response
   const { db, companyId, userId } = authed.auth

@@ -6,13 +6,11 @@
 // is a newer version not yet checked, or whose next_check_at has passed gets a check with no requester (so no email).
 // Then `after()` starts the sweep, which does the checking; the five-minute sweep carries on from there.
 //
-// *** BEHIND THE PREVIEW SWITCH FIRST *** (decision 32), like the sweep: without HR_PREVIEW it is a 404 and writes
-// nothing, so on production it does nothing until HR is released. Recorded in job_runs as 'handbook_checks' (the
+// The cron secret first, like the sweep (a 404 without it, writing nothing). Recorded in job_runs as 'handbook_checks' (the
 // name migration 066 gave HR's queue; the sweep writes under it too, and the counts say which job wrote a row).
 import { NextResponse, after, type NextRequest } from 'next/server'
 import { supabaseAdmin } from '@/lib/auth'
 import { requireCronSecret, startJobRun } from '@/lib/jobAuth'
-import { hrPreviewOn } from '@/lib/hrPreview'
 import { queueDueChecks, sweepChecks } from '@/lib/handbookCheck'
 
 export const maxDuration = 800
@@ -22,7 +20,6 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  if (!hrPreviewOn()) return NextResponse.json({ error: 'Not found.' }, { status: 404 })
   const auth = requireCronSecret(request)
   if (!auth.ok) return auth.response
   // The nightly jobs' record: a row opened before the work (`lib/jobAuth.ts` startJobRun), so a crash is visible.

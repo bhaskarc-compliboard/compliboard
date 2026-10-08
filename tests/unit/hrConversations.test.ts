@@ -72,7 +72,7 @@ describe('the check record (migration 069)', () => {
 })
 
 describe('the HR page\'s conversations', () => {
-  const page = readFileSync('app/hr/new/HrWorkspace.tsx', 'utf8')
+  const page = readFileSync('app/hr/HrWorkspace.tsx', 'utf8')
   test('a row opens the workspace\'s drawer; the drawer opens the topic through the unchanged route', () => {
     assert.match(page, /<ConversationList topics=\{topics\} running=\{\(\) => false\} onOpen=\{setConvDrawer\} \/>/)
     assert.match(page, /fetch\(`\/api\/topics\/\$\{t\.id\}`, \{ headers: await authHeaders\(\) \}\)/)
