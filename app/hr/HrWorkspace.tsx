@@ -310,7 +310,7 @@ export default function HrWorkspace() {
     const q = question.trim()
     if (!q) { composerRef.current?.focus(); return }
     if (askBusy) return
-    setBox(''); setNotice(null)
+    setBox(''); setNotice(null); setAskAdded(null); setAskAddNotice(null)
     const id = `x${++askSeq.current}`
     // The stages, each shown while it is TRUE: reading (the server's 'reading' event), checking (its
     // 'searching' events, counted), writing (the first text). No search, no checking stage.
@@ -476,16 +476,30 @@ export default function HrWorkspace() {
     fileInput.current?.click()
   }
 
+  // "ADD A HANDBOOK" FROM EITHER TAB (Step 11b): ONE function. The Ask tab's button runs exactly the Handbooks tab's
+  // add — the same picker, the same site sheet, the same save and reading. Only where it was pressed differs: from
+  // the Ask tab the person stays there, the box keeps what they typed, the new handbook's line shows under the row,
+  // and a failed add shows the same sentence under the row instead of in the banner.
+  const addFrom = useRef<'ask' | 'handbooks'>('handbooks')
+  const [askAdded, setAskAdded] = useState<string | null>(null)
+  const [askAddNotice, setAskAddNotice] = useState<string | null>(null)
+  const addHandbook = (from: 'ask' | 'handbooks') => {
+    addFrom.current = from
+    setAskAddNotice(null)
+    pickFile(null)
+  }
+  const addFailed = (words: string) => { if (addFrom.current === 'ask' && !versionOf.current) setAskAddNotice(words); else setNotice(words) }
+
   /** Store the file at <company>/handbooks/<file>, then save its row. A row that fails takes its file back out. */
   const save = async (file: File, scope: 'company' | 'site', entityId: string | null) => {
-    if (!companyId) { setNotice(SAVE_FAILED); return }
+    if (!companyId) { addFailed(SAVE_FAILED); return }
     setSaving(true)
     setNotice(null)
     const path = handbookPath(companyId, file.name)
     const olderId = versionOf.current
     try {
       const { error: upErr } = await supabase.storage.from(DOCUMENTS_BUCKET).upload(path, file)
-      if (upErr) { setNotice(SAVE_FAILED); return }
+      if (upErr) { addFailed(SAVE_FAILED); return }
       let res: Response | null = null
       try {
         res = await fetch('/api/handbooks', {
@@ -499,15 +513,17 @@ export default function HrWorkspace() {
       if (!res || !res.ok) {
         // The row was not saved: the stored file must not be left behind.
         await supabase.storage.from(DOCUMENTS_BUCKET).remove([path])
-        setNotice(SAVE_FAILED)
+        addFailed(SAVE_FAILED)
         return
       }
       const json = await res.json().catch(() => ({}))
       if (json?.older_not_replaced) setNotice(OLDER_NOT_REPLACED)
+      if (!olderId && addFrom.current === 'ask' && typeof json?.id === 'string') setAskAdded(json.id)
       await loadHandbooks()
       if (olderId) setDrawer(null)
     } finally {
       versionOf.current = null
+      addFrom.current = 'handbooks'
       setSaving(false)
     }
   }
@@ -519,6 +535,40 @@ export default function HrWorkspace() {
     if (sites.length >= 2) { setPendingFile(file); return }
     save(file, 'company', null)
   }
+
+  // THE ROW'S STATE WORDS (the Handbooks row and, Step 11b, the Ask tab's line for a handbook just added): one place.
+  const stateWords = (h: HandbookRow) => {
+    const couldNot = h.status === 'could_not_read'
+    return (<>
+      {h.status === 'read' ? (
+        // THE CHECK ON THE ROW (owner, Baseline Step 1): amber only where something needs the person.
+        checkLine({ ...(rowChecks[h.id] ?? { open: null, last: null }), checkedAt: h.checked_at ?? null, nextCheckAt: h.next_check_at ?? null }, (iso) => friendlyDate(iso))
+          .map((p, i) => (
+            <span key={i} className="contents">
+              {i > 0 && <span aria-hidden="true">·</span>}
+              <span className={p.amber ? 'text-[var(--amber)]' : undefined}>{p.text}</span>
+            </span>
+          ))
+      ) : (
+        /* Amber only on "Could not read": the one state that asks something of somebody. */
+        <span className={couldNot ? 'text-[var(--amber)]' : undefined}>{statusWords(h.status, h.status_reason, sectionCount(h))}</span>
+      )}
+    </>)
+  }
+
+  // THE ASK TAB'S LINE (Step 11b): the new handbook's name and its row's own state words, following the row as it is
+  // read; gone on the next send. A failed add: the Handbooks tab's sentence, here instead of the banner.
+  const askAddedRow = askAdded ? allHandbooks.find((x) => x.id === askAdded) ?? null : null
+  const askAddLines = (<>
+    {askAddedRow && (
+      <p className="mt-2 flex min-w-0 flex-wrap items-center gap-x-1 text-[12px] text-gray-500">
+        <span className="truncate text-gray-700">{askAddedRow.name}</span>
+        <span aria-hidden="true">·</span>
+        {stateWords(askAddedRow)}
+      </p>
+    )}
+    {askAddNotice && <p className="mt-2 text-[12px] text-[var(--amber)]">{askAddNotice}</p>}
+  </>)
 
   // ---- the drawer ----
   const siteLabel = (h: HandbookRow) => h.scope === 'company' ? 'Every site'
@@ -664,8 +714,8 @@ export default function HrWorkspace() {
             })}
             <div ref={bottomRef} />
 
-            {/* THE DOCKED COMPOSER, the workspace's markup, once a question has been asked. No attach and no
-                action row yet (step 7). */}
+            {/* THE DOCKED COMPOSER, the workspace's markup, once a question has been asked. Under it: "Add a handbook"
+                (Step 11b), then the action row (step 7). */}
             {started && (
               <div className="no-print mt-8">
                 <div className="relative rounded-xl border border-gray-200 bg-white focus-within:border-[var(--green)]">
@@ -694,8 +744,13 @@ export default function HrWorkspace() {
                 </div>
                 {/* THE ACTION ROW (canvas board 10): "Summarise this conversation" green and first, then Download.
                     Disabled while a request is in flight, with the run's own words in place of the button's. */}
-                {topicId && exchanges.some((x) => x.phase === 'done') && (
-                  <div className="mt-[10px] flex flex-wrap items-center gap-5">
+                {/* "Add a handbook" on the left of the action row (Step 11b), in the conversation too: the next answer
+                    reads the handbooks again, so it uses the new one. */}
+                <div className="mt-[10px] flex flex-wrap items-center gap-5">
+                  <p className="min-w-0 text-[12px] text-gray-500">
+                    <AttachControl label="Add a handbook" onClick={() => addHandbook('ask')} disabled={saving} />
+                  </p>
+                  {topicId && exchanges.some((x) => x.phase === 'done') && (<>
                     <button onClick={() => summarise(topicId)} disabled={askBusy || summaryRunning(topicId)}
                       className="text-[14px] font-medium text-[var(--green-ink)] hover:underline disabled:text-gray-300">
                       {summaryRunning(topicId) ? CLAIM_WORDS.summary : 'Summarise this conversation'}
@@ -704,8 +759,9 @@ export default function HrWorkspace() {
                       disabled={askBusy} className={TEXT_ACTION}>
                       Download
                     </button>
-                  </div>
-                )}
+                  </>)}
+                </div>
+                {askAddLines}
                 <p className="mt-2 text-[12px] text-gray-500">
                   One topic per conversation. When you are done, summarise it. Start a new conversation for the next topic.
                 </p>
@@ -736,15 +792,19 @@ export default function HrWorkspace() {
                   )}
                 </div>
 
-                {/* One line under the box: ONE action, at the right. No checklist in HR. The attach line is gone
-                    (owner, Step 11a): attaching a file to a question comes back later as its own feature. */}
-                <div className="mt-[10px] flex items-start justify-end gap-4">
+                {/* One line under the box, the workspace's: "Add a handbook" left, in the workspace's attach slot (Step 11b;
+                    the file is kept in Handbooks, not attached to one question), ONE action right. No checklist in HR. */}
+                <div className="mt-[10px] flex items-start justify-between gap-4">
+                  <p className="min-w-0 text-[12px] text-gray-500">
+                    <AttachControl label="Add a handbook" onClick={() => addHandbook('ask')} disabled={saving} />
+                  </p>
                   <div className="flex shrink-0 items-center gap-3">
                     <button onClick={research} className={PRIMARY}>
                       Research this
                     </button>
                   </div>
                 </div>
+                {askAddLines}
 
                 {/* The counts line, the workspace's style and its rules for zero. */}
                 <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 pb-3">
@@ -788,7 +848,7 @@ export default function HrWorkspace() {
                 {HANDBOOKS_TAB_LINE}
               </p>
               <p className="shrink-0 text-[12px] text-gray-500">
-                <AttachControl label="Add a handbook" onClick={() => pickFile(null)} disabled={saving} />
+                <AttachControl label="Add a handbook" onClick={() => addHandbook('handbooks')} disabled={saving} />
               </p>
             </div>
             {current.length === 0 ? (
@@ -804,7 +864,6 @@ export default function HrWorkspace() {
                     <div className="divide-y divide-gray-100 border-y border-gray-100">
                       {g.rows.map((h) => {
                         const older = !h.is_current
-                        const couldNot = h.status === 'could_not_read'
                         return (
                           <div key={h.id} className="group -mx-3 flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 transition-colors hover:bg-white">
                             <button onClick={() => { setNotice(null); setDrawer(h) }} className="min-w-0 flex-1 text-left">
@@ -823,19 +882,7 @@ export default function HrWorkspace() {
                                 <p className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-1 text-[12px] text-gray-500">
                                   <span className="truncate">{h.file_name}</span>
                                   <span aria-hidden="true">·</span>
-                                  {h.status === 'read' ? (
-                                    // THE CHECK ON THE ROW (owner, Baseline Step 1): amber only where something needs the person.
-                                    checkLine({ ...(rowChecks[h.id] ?? { open: null, last: null }), checkedAt: h.checked_at ?? null, nextCheckAt: h.next_check_at ?? null }, (iso) => friendlyDate(iso))
-                                      .map((p, i) => (
-                                        <span key={i} className="contents">
-                                          {i > 0 && <span aria-hidden="true">·</span>}
-                                          <span className={p.amber ? 'text-[var(--amber)]' : undefined}>{p.text}</span>
-                                        </span>
-                                      ))
-                                  ) : (
-                                    /* Amber only on "Could not read": the one state that asks something of somebody. */
-                                    <span className={couldNot ? 'text-[var(--amber)]' : undefined}>{statusWords(h.status, h.status_reason, sectionCount(h))}</span>
-                                  )}
+                                  {stateWords(h)}
                                   {/* A site that was deleted: the handbook keeps scope 'site' and says so (choosing arrives in polish, step 11). */}
                                   {g.removed && <><span aria-hidden="true">·</span><span>choose where it applies</span></>}
                                 </p>

@@ -18,7 +18,7 @@ describe('the tabs and the Ask tab (owner, Step 11a)', () => {
   })
   test('the paperclip is gone from the Ask tab; "Add a handbook" stays, and the attach control always has a handler', () => {
     assert.ok(!page.includes('Attach a file and ask about it'))
-    assert.match(page, /<AttachControl label="Add a handbook" onClick=\{\(\) => pickFile\(null\)\}/)
+    assert.match(page, /<AttachControl label="Add a handbook" onClick=\{\(\) => addHandbook\('handbooks'\)\}/)
     assert.match(page, /function AttachControl\(\{ label, onClick, disabled \}: \{ label: string; onClick: \(\) => void; disabled\?: boolean \}\)/)
   })
 })
