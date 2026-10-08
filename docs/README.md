@@ -1,6 +1,6 @@
 # docs/
 
-**Version:** 13 · **Updated:** 4 October 2026, HR Step 2 — indexes `HR-PLAN.md` and `HR-MACHINERY.md`. Version 12: at the close of the workspace work — indexes `HANDOFF-WORKSPACE.md`, `HANDOFF-WORKSPACE-TO-HR.md` and `WORKSPACE-MACHINERY.md`; marks `WORKSPACE.md` as a design never built; corrects where `HANDOFF-DOCUMENTS.md` and `HANDOFF-LAYOUT.md` live.
+**Version:** 14 · **Updated:** 8 October 2026 — indexes `TEST-AT-FINISH-LINE.md`. Version 13: 4 October 2026, HR Step 2 — indexes `HR-PLAN.md` and `HR-MACHINERY.md`. Version 12: at the close of the workspace work — indexes `HANDOFF-WORKSPACE.md`, `HANDOFF-WORKSPACE-TO-HR.md` and `WORKSPACE-MACHINERY.md`; marks `WORKSPACE.md` as a design never built; corrects where `HANDOFF-DOCUMENTS.md` and `HANDOFF-LAYOUT.md` live.
 
 **This is the index of what is LIVE.** Eight files moved to **`archive/`** on 28 September; that
 folder's own README names what supersedes each, and it is the only place this index points at them.
@@ -24,6 +24,7 @@ folder's own README names what supersedes each, and it is the only place this in
 | | |
 |---|---|
 | **`DECISIONS.md`** | Every decision and why, plus what would reverse it. **Append-only** — nothing above the last entry ever changes |
+| **`TEST-AT-FINISH-LINE.md`** | **What each section leaves for the finish line** — the yardstick runs once, when every section is built (owner, 8 October 2026). One part per section, in the same shape (A to J): settings, the Opus machinery run, the yardstick's set-up and what to judge, the manual sets, the switches, the go-live, the morning after, open items and the shared files. HR's part is written |
 | **`RELEASE.md`** | How a change reaches production, and **the authoritative list of what Vercel Production holds** |
 | **`releases/`** | One dated note per production push, with its smoke-test outcomes |
 

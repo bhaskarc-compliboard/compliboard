@@ -12122,3 +12122,23 @@ No migration.
   - **With HR off:** every HR route is 404.
 
   Tests went from 928 to 936.
+
+## 180. THE FINISH LINE, AND HR GOES LIVE NOW — 8 October 2026
+
+§180 — two decisions of the owner's, 8 October 2026. The file is `docs/TEST-AT-FINISH-LINE.md`.
+
+1. **THE YARDSTICK TESTS RUN ONCE, AT THE END, when every section is built.** A change to any section before then
+   could make an earlier test stale, so testing earlier would mean testing twice.
+   - Until then each section proves its machinery as now: unit tests, `check:live` on port 3999, staging proofs.
+   - **Each section records what it leaves for then in `docs/TEST-AT-FINISH-LINE.md`**, in the same shape (A to J):
+     settings, the Opus machinery run, the yardstick's set-up and what to judge, the manual sets, the switches, the
+     go-live, the morning after, open items and shared files. HR's part is written.
+   - **A section that changes a shared file before then re-runs the free checks of every section that uses it.**
+     Each section lists its shared files under its J.
+2. **HR GOES LIVE NOW, after one Opus machinery run,** because the old HR on production checks no quote or link.
+   - **The order:** the Opus machinery run (HR C), then the go-live (HR H: `AI_MODEL_HR` and `AI_MODEL_HR_CHECK` in
+     Vercel, the page to `/hr`, old HR retired, `HR_PREVIEW` removed), then the morning after (HR I).
+   - **Held for the finish line:** HR's yardstick, its manual sets and its switches.
+   - This reverses §179's "the go-live moves into the release step, after testing" for the testing half:
+     `docs/HR-PLAN.md` steps 12 to 14 now say which part is now and which waits.
+   - **What would reverse it:** the Opus machinery run breaking a path that the go-live cannot ship with.
