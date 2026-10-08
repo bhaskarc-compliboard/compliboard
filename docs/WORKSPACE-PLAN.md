@@ -1,6 +1,6 @@
 # The Compliance Workspace — what's left
 
-**Version:** 6 · **Updated:** 7 October 2026, HR Step 4a: item 6, the list moved to shared files. Version 5: 4 October 2026, HR Step 2: adds "Coming from the HR section". Version 4: at the close of the workspace work (housekeeping), to mirror
+**Version:** 7 · **Updated:** 7 October 2026, item 7: the politeness fix to the summary prompt (§173). Version 6: 7 October 2026, HR Step 4a: item 6, the list moved to shared files. Version 5: 4 October 2026, HR Step 2: adds "Coming from the HR section". Version 4: at the close of the workspace work (housekeeping), to mirror
 the owner's map as it stood that evening. Version 3: Stage 4's cron release built. Version 2: Stage 4's first
 item built and the rebuild-from-empty rehearsal done. Version 1 was written after the Workspace Task 6 release.
 
@@ -194,6 +194,17 @@ without the owner knowing, or the two sections will edit the same lines at once.
    - `components/ConversationList.tsx`: the day-grouped list and its row.
 
    HR uses the same files. A change to any of them changes both sections' lists.
+7. **A politeness fix to the WORKSPACE's summary prompt** (the owner, 7 October 2026; `DECISIONS.md` §173).
+   Production showed a workspace summary whose situation read "You did not share any facts about your business.
+   You did not give your headcount or say whether you have a location in Portland."
+   - **The prompt:** one sentence was added to `prompts/summary-report.ts`, at the end of rule 7: when the person
+     stated nothing about their business, "situation" is an empty string, and missing details that would change
+     the answer go under to_confirm as plain questions. HR's prompt carries the same sentence.
+   - **The drawer:** `components/ReportView.tsx` (shared) shows the fixed sentence "No details about your
+     business came up in this conversation." in the grey note style when the situation is empty;
+     `renderPlainText` writes it too.
+   - **Every workspace summary written from now on** (the button and the nightly job) uses the new prompt.
+   - **A quality change,** to be judged on Opus in the testing step.
 
 ---
 

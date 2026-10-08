@@ -11709,3 +11709,38 @@ No migration.
 - **The nightly HR summary is step 10** (decision 14). With one writer, it is
   `summariseTopic(…, { kind: topic.section })`.
 - **Spent, all Haiku: $0.16** (ledger $3.49 → $3.65). Tests went from 863 to 875.
+
+## 173. A POLITENESS FIX FOR BOTH SUMMARIES — 7 October 2026
+
+§173 — the owner, 7 October.
+
+- **Why.** Production showed a workspace summary whose "situation" read "You did not share any facts about your
+  business. You did not give your headcount or say whether you have a location in Portland." That is impolite,
+  and the product's rule is that everything it writes is polite (CLAUDE.md §5.1).
+- **A QUALITY CHANGE TO BOTH PROMPTS,** to be judged on Opus in the testing step. One sentence, the same in both,
+  added at the end of the situation rule:
+  - in `prompts/summary-report.ts`, at the end of its rule 7;
+  - in `prompts/hr-summary.ts`, in the paragraph copied from that rule. The copy stays identical, and
+    `tests/unit/hrSummary.test.ts` pins it.
+
+  The sentence: " If the person stated nothing about their business, "situation" is an empty string; put missing
+  details that would change the answer under to_confirm, as plain questions that say why they matter."
+
+  Nothing else in either prompt changed.
+- **The drawer.** When the situation is empty, "Your situation" shows a fixed sentence: "No details about your
+  business came up in this conversation."
+  - `lib/summaryWords.ts` `NO_SITUATION`.
+  - It is drawn in the workspace's grey note style, in `components/ReportView.tsx` (shared).
+  - The same in print, and in `renderPlainText`.
+  - `checkReport` already accepted an empty string, since it refuses only a missing one.
+- **Proved on staging** (Haiku, through the guard):
+  - **A workspace conversation and an HR conversation** in which the person said nothing about their business:
+    - each stored situation is empty;
+    - each drawer and plain text shows the fixed sentence;
+    - the HR summary's one "to confirm" item ("whether you employ minors") came as an instruction ("Confirm
+      whether…"), not quite the plain question asked for. That is a quality note for the testing step.
+  - **A conversation WITH facts** ("We have 42 employees in Oregon") still got its situation paragraph.
+  - **The workspace's drawer with a situation is unchanged:** elements, 0 pixels, `npm run measure`
+    byte-identical, print text identical.
+- **Effect on the workspace:** every workspace summary written from now on uses the new prompt, by the button and
+  by the nightly job. `docs/WORKSPACE-PLAN.md` "Coming from the HR section" item 7 tells the workspace chat.

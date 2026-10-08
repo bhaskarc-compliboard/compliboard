@@ -6,7 +6,7 @@
 > replaced.** Those carry a 🕓 HISTORICAL banner naming what is current instead — added 28 September
 > 2026. A manual set is the record of what a person checked and when; a file that deletes the sets whose
 > screens changed is a file that cannot tell you whether anything was ever checked at all.
-**Version:** 35 · **Updated:** 7 October 2026, HR Step 7 — the HR summary. Version 34: 7 October 2026, HR Step 6c — long handbooks. Version 33: 7 October 2026, HR Step 6b — conversations. Version 32: 7 October 2026, HR Step 6a — the first answer. Version 31: 7 October 2026, HR Step 5b — reading a handbook. Version 30: 7 October 2026, HR Step 5a — adding and keeping handbooks. Version 29: 7 October 2026, HR Step 4 — the manual set for the HR page shell. Version 28: 4 October 2026, HR Step 3b — the check:live probes for HR's tables. Version 27: HR Step 3a — the manual set "the workspace looks the same". Version 26: at the close of the workspace work
+**Version:** 36 · **Updated:** 7 October 2026, the politeness fix (§173): rows 7-8 and 7-9. Version 35: 7 October 2026, HR Step 7 — the HR summary. Version 34: 7 October 2026, HR Step 6c — long handbooks. Version 33: 7 October 2026, HR Step 6b — conversations. Version 32: 7 October 2026, HR Step 6a — the first answer. Version 31: 7 October 2026, HR Step 5b — reading a handbook. Version 30: 7 October 2026, HR Step 5a — adding and keeping handbooks. Version 29: 7 October 2026, HR Step 4 — the manual set for the HR page shell. Version 28: 4 October 2026, HR Step 3b — the check:live probes for HR's tables. Version 27: HR Step 3a — the manual set "the workspace looks the same". Version 26: at the close of the workspace work
 **Supersedes:** version 25 (3 Oct). Adds the sets of 4 October — Workspace Task 5, Task 6, Stage 2, Stage 4 and the cron release's live checks — with the owner's recorded results (Task 6's T6-1 and T6-3, Stage 4's S4-2, the cron release's CR-1).
 Version 25: version 24 (25 Sep). Adds the **Workspace layout set** (3 October) — the first three
 are the owner's live checks after the push, and none of them sends a question or uploads a file — and
@@ -171,6 +171,8 @@ untested — applies to the runner as much as to anything it runs.
 | **7-5** | **Close the tab** | Press Summarise, close the tab at once, reopen later | The summary is there |
 | **7-6** | **A fact (the edge case)** | Say "We have 42 employees in Oregon" in a question, then summarise | Company information's queue shows "employee count: 42" with this conversation's title. Nothing from the question's subject ("Riverside Bakery") is proposed |
 | **7-7** | **Download** | Drawer → Download | The printed summary carries HR's words and every source |
+| **7-8** | **Nothing about the business (HR)** | Ask a question that says nothing about your business, then summarise | "Your situation" shows, in a grey note, "No details about your business came up in this conversation." — never a sentence about what you did not share. Missing details appear under Still to confirm as questions |
+| **7-9** | **Nothing about the business (WORKSPACE)** | The same in the Compliance Workspace | The same grey note in the workspace's drawer, and on paper. A conversation where you did state facts still shows your situation as before |
 
 *(Before the commit, by script on staging: the workspace's summary outputs byte-identical on 15 real conversations;
 the workspace's drawer and print identical; the HR route refusing a workspace conversation and answering 404
