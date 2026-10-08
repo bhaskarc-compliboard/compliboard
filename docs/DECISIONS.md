@@ -11636,3 +11636,76 @@ No migration.
   - **Not proven:** the block on an actually empty `handbooks` table. Staging has rows. The new block does not read
     existing rows for its test, so emptiness no longer changes what it proves. The apply-time NULL check passed
     when 070 was applied to staging, and is unchanged.
+
+## 172. HR STEP 7 — HR'S SUMMARY — 7 October 2026
+
+§172 — HR Step 7 (`b7d298f`), on `/hr/new` behind `HR_PREVIEW`. No migration.
+
+- **ONE WRITER, WITH AN HR OPTION** (the owner). `lib/summaryReport.ts` `summariseTopic` takes `kind: 'hr'`:
+  - HR's prompt;
+  - the answers without their appended grey lines (`splitAppended`);
+  - handbook passages kept as sources: keyed by handbook and normalised quote, so the same passage twice is one
+    source, and listed for the model with their exact words (`lib/hrSummary.ts`);
+  - HR's words in the plain text.
+
+  **Everything new is additive and off by default.**
+  - **Proved:** the committed code and the new code ran on the same real inputs, 15 staging workspace
+    conversations with sources. 120 outputs compared (`gatherSources`, `numberedTranscript`, `checkReport` with
+    and without the basis rule, `renderPlainText`, the checklist conversion): **0 differ**.
+  - **The comparison can see a difference:** HR's options on an HR conversation gave 3 sources against 2.
+  - **The workspace's 40 summary and checklist tests** are untouched and pass.
+  - **`lib/checklistConvert.ts`** is unchanged.
+- **HR's route:** `app/api/hr/topics/[id]/summarise`.
+  - It is behind `HR_PREVIEW`, before the session is read.
+  - A conversation that is not section `'hr'` is a 404, and no claim is set.
+  - It takes the claim, replies 202, writes in `after()`, and releases the claim in a `finally`.
+  - Ledger `'summarise'`.
+- **The page:**
+  - "Summarise this conversation" (green, first) and "Download" under the conversation;
+  - the workspace's "Summary being written…" polling;
+  - the conversation drawer through `ReportView`, with HR's source shape and words.
+    - **A handbook source:** "<handbook> — <section>, page <p> · your handbook", no link; in Sources, its quote
+      under it.
+    - **Web sources:** as the workspace draws them.
+  - The facts line and `printDrawer` are the workspace's.
+- **The owner's words:**
+  - the as-of line: "What to change in your handbooks as of <date>, from this conversation. Rules change. Check
+    before you act.";
+  - the heading: "What to change · <n> things";
+  - per authority: "<n> things to change";
+  - the plain-text heading: "What to change".
+
+  `lib/summaryWords.ts` and `components/ReportView.tsx` take them as options. The workspace's drawer and its
+  print were measured identical: elements, 0 pixels, `npm run measure` byte-identical, PDF text identical.
+- **No re-check of a quote against the current handbook** (the owner). The basis copied from the answer
+  paragraph that holds the checked quote is enough.
+- **THE PROMPT** (`prompts/hr-summary.ts`) is the Step 7 design's draft, plus two passages COPIED WORD FOR WORD
+  from `prompts/summary-report.ts`: the workspace's rule on how "situation" is written (its rule 7, without the
+  number), and its facts paragraph.
+  - **Why:** on staging, HR's draft let a situation open with "You asked whether…", and proposed facts from the
+    question's own words ("business_name: Riverside Bakery", "jurisdiction: Oregon", "employee_type: hourly
+    employees").
+  - **After the copy,** the re-run gave a situation of facts only, and the facts "state: Oregon" and
+    "headcount: 42", quoted from the person's own sentence.
+  - **The three junk proposals** were removed from testgamma's queue on staging, as test data.
+  - **A quality change, judged on Opus in the testing step.**
+- **HANDBOOK PASSAGES WERE NOT CITED** in 4 of 4 Haiku summaries. The route's log of each item's kept and dropped
+  source numbers showed nothing dropped: the model cited only web pages, though each passage was in its numbered
+  list.
+  - **No change now** (the owner).
+  - **The testing step judges on Opus** whether HR summaries cite handbook passages.
+  - **If they do not, the ready fallback** is code that attaches a checked handbook quote found in the same
+    paragraph as an item's basis. The owner decides then.
+  - So the handbook source's drawing, on screen and on paper, is proven by unit tests only so far.
+- **Proved on staging** (Haiku, through the guard):
+  - **A double press, in two tabs:** 202 and 409, one ledger call.
+  - **A tab closed 1.5 s after pressing:** the summary was still written.
+  - **"We have 42 employees in Oregon":** reached Company information's queue as "employee count: 42",
+    labelled with the conversation's title.
+  - **The route refuses a workspace conversation,** and is 404 without `HR_PREVIEW`.
+  - **The transcript sent has no grey lines.**
+- **The basis check is the workspace's, unchanged.** A basis that merges two cited sentences is not found, and
+  that item shows "No source cited in the conversation".
+- **The nightly HR summary is step 10** (decision 14). With one writer, it is
+  `summariseTopic(…, { kind: topic.section })`.
+- **Spent, all Haiku: $0.16** (ledger $3.49 → $3.65). Tests went from 863 to 875.

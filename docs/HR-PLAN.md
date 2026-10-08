@@ -1,6 +1,6 @@
 # The HR section — the plan
 
-**Version:** 10 · **Updated:** 7 October 2026: step 6c done and step 6 complete (§171); migration 069 on production, 070 on staging. Version 9: step 6b done (§170); migration 069 on staging. Version 8: step 6a done (§169). Version 7: step 5b done (§168); the impact check comes before any code. Version 6: step 5a done (§167). Version 5: step 4 done; decision 32 (the page at /hr/new behind HR_PREVIEW). Version 4: 7 October 2026: §2.1, the page title is HR Workspace. Version 3: HR Step 3b, step 3b done (staging only). Version 2: HR Step 3a: step 3a done; decision 17 amended (every build stop on Haiku,
+**Version:** 11 · **Updated:** 7 October 2026: step 7 done (§172). Version 10: step 6c done and step 6 complete (§171); migration 069 on production, 070 on staging. Version 9: step 6b done (§170); migration 069 on staging. Version 8: step 6a done (§169). Version 7: step 5b done (§168); the impact check comes before any code. Version 6: step 5a done (§167). Version 5: step 4 done; decision 32 (the page at /hr/new behind HR_PREVIEW). Version 4: 7 October 2026: §2.1, the page title is HR Workspace. Version 3: HR Step 3b, step 3b done (staging only). Version 2: HR Step 3a: step 3a done; decision 17 amended (every build stop on Haiku,
 all Opus work in the testing step); the copy rule added to §2.5. Version 1: HR Step 2.
 
 **The decision record** is `DECISIONS.md` §164. **The map** (how HR and everything it touches worked on 4
@@ -250,7 +250,8 @@ replaced text is kept and struck through, so the record shows what changed.
    **STEP 6 COMPLETE.** (6c was: a long
    handbook's right sections (the outline-selection call, replacing the temporary over-budget line).)
 7. **Conversations and the HR summary** (claim + `after()`; facts from the person's own words, decision 19).
-   On Haiku (decision 17). STOP.
+   On Haiku (decision 17). STOP. **DONE 7 October** (`b7d298f`, `DECISIONS.md` §172): one writer with an HR
+   option, HR's route behind `HR_PREVIEW`, the drawer with HR's words and source shape, facts to the one queue.
 8. **The handbook check:**
    - the split, the per-section check, the not-covered pass, still to confirm;
    - the report drawer, Check now, progress, the read-again date;
@@ -265,6 +266,9 @@ replaced text is kept and struck through, so the record shows what changed.
 12. **Testing:** first **one Opus run per paid path** (answer, summary, handbook check), to catch machinery that
     only fails on the real model; then the quality pass on the final models, with real handbooks and real
     problems, including decision 10's run; the held fixes; the manual tests in `docs/TESTING.md`.
+    **Also judge (§172):** whether HR summaries cite handbook passages on Opus. If not, the ready fallback is
+    code that attaches a checked handbook quote found in the same paragraph as an item's basis; the owner
+    decides then.
 13. **Release** (the `docs/RELEASE.md` routine).
 14. **The next morning's `job_runs` check, and the close-out** (`HANDOFF-HR.md`, `STATUS.md`,
     `HANDOFF-CODE.md` §7).

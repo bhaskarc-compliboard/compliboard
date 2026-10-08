@@ -6,7 +6,7 @@
 > replaced.** Those carry a 🕓 HISTORICAL banner naming what is current instead — added 28 September
 > 2026. A manual set is the record of what a person checked and when; a file that deletes the sets whose
 > screens changed is a file that cannot tell you whether anything was ever checked at all.
-**Version:** 34 · **Updated:** 7 October 2026, HR Step 6c — long handbooks. Version 33: 7 October 2026, HR Step 6b — conversations. Version 32: 7 October 2026, HR Step 6a — the first answer. Version 31: 7 October 2026, HR Step 5b — reading a handbook. Version 30: 7 October 2026, HR Step 5a — adding and keeping handbooks. Version 29: 7 October 2026, HR Step 4 — the manual set for the HR page shell. Version 28: 4 October 2026, HR Step 3b — the check:live probes for HR's tables. Version 27: HR Step 3a — the manual set "the workspace looks the same". Version 26: at the close of the workspace work
+**Version:** 35 · **Updated:** 7 October 2026, HR Step 7 — the HR summary. Version 34: 7 October 2026, HR Step 6c — long handbooks. Version 33: 7 October 2026, HR Step 6b — conversations. Version 32: 7 October 2026, HR Step 6a — the first answer. Version 31: 7 October 2026, HR Step 5b — reading a handbook. Version 30: 7 October 2026, HR Step 5a — adding and keeping handbooks. Version 29: 7 October 2026, HR Step 4 — the manual set for the HR page shell. Version 28: 4 October 2026, HR Step 3b — the check:live probes for HR's tables. Version 27: HR Step 3a — the manual set "the workspace looks the same". Version 26: at the close of the workspace work
 **Supersedes:** version 25 (3 Oct). Adds the sets of 4 October — Workspace Task 5, Task 6, Stage 2, Stage 4 and the cron release's live checks — with the owner's recorded results (Task 6's T6-1 and T6-3, Stage 4's S4-2, the cron release's CR-1).
 Version 25: version 24 (25 Sep). Adds the **Workspace layout set** (3 October) — the first three
 are the owner's live checks after the push, and none of them sends a question or uploads a file — and
@@ -157,6 +157,24 @@ untested — applies to the runner as much as to anything it runs.
 106.** The floor is committed so the question does not have to be re-asked.
 
 ---
+
+## Manual set — HR Step 7, the HR summary — 7 October 2026 (`b7d298f`, `DECISIONS.md` §172)
+
+**Each summary is one paid call** (Haiku about $0.004–0.01). Needs `HR_PREVIEW=1`.
+
+| # | Action | Steps | What must be true |
+|---|---|---|---|
+| **7-1** | **Summarise** | Under an HR conversation → **Summarise this conversation** | The button reads "Summary being written…"; then the drawer opens on its own with the report |
+| **7-2** | **The report's words** | Read the drawer | "What to change in your handbooks as of <date>, from this conversation. Rules change. Check before you act."; "Your situation" holds only what you said about your business; "What to change · <n> things"; each authority "<n> things to change"; "Still to confirm" open |
+| **7-3** | **Sources** | Open an authority, then Sources | A web page as the workspace shows it. A handbook passage (if cited) reads "<handbook> — <section>, page <p> · your handbook" with no link, and its quote under it in Sources |
+| **7-4** | **Press twice** | Press Summarise in two tabs at once | One summary is written; the other tab shows it is already being written |
+| **7-5** | **Close the tab** | Press Summarise, close the tab at once, reopen later | The summary is there |
+| **7-6** | **A fact (the edge case)** | Say "We have 42 employees in Oregon" in a question, then summarise | Company information's queue shows "employee count: 42" with this conversation's title. Nothing from the question's subject ("Riverside Bakery") is proposed |
+| **7-7** | **Download** | Drawer → Download | The printed summary carries HR's words and every source |
+
+*(Before the commit, by script on staging: the workspace's summary outputs byte-identical on 15 real conversations;
+the workspace's drawer and print identical; the HR route refusing a workspace conversation and answering 404
+without `HR_PREVIEW`; the transcript sent with no grey lines.)*
 
 ## Manual set — HR Step 6c, long handbooks — 7 October 2026 (`7f0d22a`, `DECISIONS.md` §171)
 
