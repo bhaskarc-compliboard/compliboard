@@ -11819,3 +11819,101 @@ No migration.
 - **NOT BUILT YET (step 8's later parts):** the row and the report drawer, the dates and "Add to calendar", the email.
 - **AUDITS' CRASH RECOVERY HAS NO LIMIT:** recorded as an OPEN row in `docs/HANDOFF-CODE.md` §7. HR's copy stops after
   one retry.
+
+## 175. THE HR BASELINE: REV 1 IS OPUS 5.5 AT FULL POWER, UNRESTRICTED — 8 October 2026
+
+§175 — the owner, 8 October 2026 (HR Baseline Step 1, `e28a213`; migration 072 on staging).
+
+- **THE OWNER'S DECISION.**
+  - Rev 1 is **Opus 5.5 at full power, unrestricted**.
+  - Improvements come later as **switches, off by default, each measured** against the yardstick (HR-PLAN step 12).
+  - A switch that only lowers cost, such as prompt caching, may go on once proven. A switch that changes quality
+    stays off until measured.
+  - HR copies the workspace and invents nothing new.
+- **PARKED, NOT DELETED.** Step 8 part 2 (the structured check on screen) is committed on the local branch
+  `parked/hr-check-structured` (`391fd05`, never pushed), as a later switch's starting point. It holds:
+  - the enforced output format (13 of 13 Haiku pieces parsed, but the answers came back shorter);
+  - the per-section words, "not covered" and "still to confirm";
+  - the dates and "Add to calendar".
+- **THE ANSWER'S PROMPT, BACK TO PURE.** `prompts/hr-answer.ts` is the workspace's open role sentence (`OPEN_ROLE`,
+  imported, so the two cannot drift) plus one sentence: "You are given the company's handbooks, section by section,
+  and what is known about the company." Removed:
+  - the quote-marker form ([H12: "…"]);
+  - "write new handbook wording only when asked";
+  - the "Suggested wording:" sentence.
+
+  The marker parsing and the draft box stay, for answers already stored.
+- **THE EVIDENCE CHECKS NEVER CHANGE CLAUDE'S WORDS.**
+  - **Quotes and links:** quotes are still checked by their words, and a passage found in the handbook gets its card.
+    Links are still checked against what the search returned, and labelled official or other.
+  - **A quote found nowhere:** a quoted passage of six words or more, found neither in the handbook nor in a cited
+    passage, is **kept as written**. It is followed by a small grey **"(not a quote from your handbook)"** (the
+    owner's words: true for proposed wording, a quote of the law, or a made-up handbook quote), and gets no card.
+  - **No closing count line for marked quotes** (the owner); lines stored before are still drawn grey.
+  - `QUOTE_REMOVED` is gone.
+  - **The shared change:** `components/AnswerBody.tsx` draws a link to `#grey-note` as a grey note. It is additive,
+    and the workspace's reopened answer was measured identical: elements, 0 pixels, `npm run measure`.
+  - **Found on staging:**
+    - without the "Suggested wording:" label, proposed text in quotation marks is marked like a quote;
+    - handbook words written without quotation marks get no card.
+
+    The second is a switch, by the owner's answer.
+- **WHOLE HANDBOOKS WHEN THEY FIT.** `HR_HANDBOOK_BUDGET_TOKENS` defaults to 650,000.
+  - **Opus 5.5's window:** 1,000,000 tokens (Anthropic's models overview; the pricing page bills the full 1M at the
+    standard price).
+  - **The room kept back** comes to 342,000 tokens: the answer twice, for one retry (32,000); the instructions, the
+    tool prompt, the company and the question (10,000); the conversation (50,000); and 10 searches × 25,000
+    (250,000). One read-only production query on 8 October measured Opus research calls at 2.6 searches on average,
+    at most 4, at 12,500–24,000 tokens each.
+  - **The token estimate:** `TOKENS_PER_CHAR` moved from 0.273 (measured on Haiku's older tokenizer) to 0.4, the
+    current tokenizer's documented figure ("1M tokens is roughly … 2.5M Unicode characters"). So about 1.6 million
+    characters are sent whole. Selection (6c) runs only above that.
+  - **On Haiku 4.5** (a 200K window), `npm run haiku` sets the size to 120,000 unless the command sets its own. The
+    arithmetic is in `scripts/haiku.mjs`.
+  - **Cost on Opus:** a Cascade-sized question sends about 250,000 tokens, about $1 of input, until caching is
+    switched on.
+- **THE CHECK IS AN OPEN HR ANSWER.**
+  - **What is unchanged:** the engine (Part 1, §174).
+  - **Each piece is the answer route's own call:**
+    - the pure prompt;
+    - `hrAnswerMessage` with the company context and the piece's sections;
+    - web search with no limit;
+    - task and ledger `'hr_check'`;
+    - one fixed question: "Check this handbook against the rules that apply to us. What needs to change, what's
+      missing, and what's unclear?"
+  - **A piece** is the whole handbook when it fits; otherwise consecutive sections up to that size, each with the
+    whole table of contents.
+  - **At done:** `finishAnswer`. Migration 072 stores the answer, its sources and its check record on the piece's
+    first row, and its verify block proves its rules on probe rows of its own.
+  - **Left out of the run:** the structured prompt, its schema, the separate "not covered" call and the word rules.
+    Checks stored before stay readable.
+- **THE SCREENS.**
+  - **The row:**
+    - "Not checked yet";
+    - "Checking <done> of <total>…";
+    - "Checked <date> · read again <date>";
+    - "· <n> part(s) not checked", in amber;
+    - a failed check in the accepted words.
+  - **The drawer:**
+    - the read-again note;
+    - each part drawn exactly as an HR answer;
+    - a failed part: "We could not check this part. That's on our side, not yours. Press Check now to try again.";
+    - while a check runs, the progress, and the last check below it.
+  - **Two lines that were untrue until step 10:**
+    - the Handbooks tab now says "Press Check now on a handbook to check it against the rules that apply to you.";
+    - the upload sheet now says "<file>. We read it in about a minute. It stays here in HR."
+- **THE WORKSPACE'S THREE RESEARCH SWITCHES** (`RESEARCH_PROVENANCE`, `RESEARCH_PREFER_GOV`, `RESEARCH_SPECIALIST`)
+  are each off unless set to the exact word `true`. Their production values were never recorded, and are now marked
+  "TO BE CONFIRMED" in `docs/RELEASE.md`. HR's prompt is not changed until the owner reads them.
+- **HR-PLAN steps 8–14 are rewritten,** with the switches in order (HR-PLAN v13).
+- **Proved on staging (Haiku, through the guard):**
+  - **Answers:** five on the pure prompt. One 70-page handbook was sent whole. The new mark appeared on proposed
+    wording, with no count line.
+  - **Checks:**
+    - three checks in one piece each;
+    - a check in three parts with one part failed (retried once, then failed), the check done with "1 part not
+      checked";
+    - the screens, and Download to PDF.
+  - **The switch off:** with `HR_PREVIEW=0`, every HR route is a 404.
+
+  **Spent: $1.17,** all Haiku (ledger $5.45 → $6.62). Tests went from 900 to 901.

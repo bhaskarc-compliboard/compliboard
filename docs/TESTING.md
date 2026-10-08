@@ -6,7 +6,7 @@
 > replaced.** Those carry a 🕓 HISTORICAL banner naming what is current instead — added 28 September
 > 2026. A manual set is the record of what a person checked and when; a file that deletes the sets whose
 > screens changed is a file that cannot tell you whether anything was ever checked at all.
-**Version:** 37 · **Updated:** 7 October 2026, HR Step 8 part 1 (§174): rows 8-1 to 8-8. Version 36: 7 October 2026, the politeness fix (§173): rows 7-8 and 7-9. Version 35: 7 October 2026, HR Step 7 — the HR summary. Version 34: 7 October 2026, HR Step 6c — long handbooks. Version 33: 7 October 2026, HR Step 6b — conversations. Version 32: 7 October 2026, HR Step 6a — the first answer. Version 31: 7 October 2026, HR Step 5b — reading a handbook. Version 30: 7 October 2026, HR Step 5a — adding and keeping handbooks. Version 29: 7 October 2026, HR Step 4 — the manual set for the HR page shell. Version 28: 4 October 2026, HR Step 3b — the check:live probes for HR's tables. Version 27: HR Step 3a — the manual set "the workspace looks the same". Version 26: at the close of the workspace work
+**Version:** 38 · **Updated:** 8 October 2026, the HR baseline (§175): rows B-1 to B-7. Version 37: 7 October 2026, HR Step 8 part 1 (§174): rows 8-1 to 8-8. Version 36: 7 October 2026, the politeness fix (§173): rows 7-8 and 7-9. Version 35: 7 October 2026, HR Step 7 — the HR summary. Version 34: 7 October 2026, HR Step 6c — long handbooks. Version 33: 7 October 2026, HR Step 6b — conversations. Version 32: 7 October 2026, HR Step 6a — the first answer. Version 31: 7 October 2026, HR Step 5b — reading a handbook. Version 30: 7 October 2026, HR Step 5a — adding and keeping handbooks. Version 29: 7 October 2026, HR Step 4 — the manual set for the HR page shell. Version 28: 4 October 2026, HR Step 3b — the check:live probes for HR's tables. Version 27: HR Step 3a — the manual set "the workspace looks the same". Version 26: at the close of the workspace work
 **Supersedes:** version 25 (3 Oct). Adds the sets of 4 October — Workspace Task 5, Task 6, Stage 2, Stage 4 and the cron release's live checks — with the owner's recorded results (Task 6's T6-1 and T6-3, Stage 4's S4-2, the cron release's CR-1).
 Version 25: version 24 (25 Sep). Adds the **Workspace layout set** (3 October) — the first three
 are the owner's live checks after the push, and none of them sends a question or uploads a file — and
@@ -157,6 +157,21 @@ untested — applies to the runner as much as to anything it runs.
 106.** The floor is committed so the question does not have to be re-asked.
 
 ---
+
+## Manual set — the HR baseline — 8 October 2026 (`e28a213`, `DECISIONS.md` §175)
+
+**On Opus 5.5 at full power these are the yardstick's first cases (HR-PLAN step 12).** On Haiku, through `npm run haiku`
+(it sets the handbook size for Haiku's 200K window). Needs `HR_PREVIEW=1`.
+
+| # | Action | Steps | What must be true |
+|---|---|---|---|
+| **B-1** | **A plain question** | Ask about one rule in a handbook | The answer is the open prompt's: Claude's own words. A quoted passage from the handbook gets its card |
+| **B-2** | **Proposed wording (the edge case)** | Ask for the exact new sentence to use | The proposed sentence keeps its words, followed by a small grey "(not a quote from your handbook)"; no card, and no count line under the answer |
+| **B-3** | **A long handbook, whole** | Ask about the 70-page handbook | It is sent whole: the answer's check record says "as sections", and no "is long" line appears for it |
+| **B-4** | **Check now** | Drawer → Check now | "Checking <done> of <total>…" on the row and in the drawer; then "Checked <date> · read again <date>"; the drawer shows the read-again note and the answer, drawn as an HR answer with its sources |
+| **B-5** | **A check in parts** | Set a small size (`HR_HANDBOOK_BUDGET_TOKENS`) and check a long handbook | Consecutive sections in each part; a part that fails twice shows "We could not check this part…", and the row says "1 part not checked" in amber |
+| **B-6** | **The two lines** | The Handbooks tab; add a handbook | "Press Check now on a handbook to check it…"; "<file>. We read it in about a minute. It stays here in HR." — never "tonight" |
+| **B-7** | **The workspace** | Reopen a workspace conversation | Its answers draw exactly as before |
 
 ## Manual set — HR Step 8 part 1, the handbook check engine — 7 October 2026 (`65ca4b9`, `DECISIONS.md` §174)
 

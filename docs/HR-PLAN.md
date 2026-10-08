@@ -1,6 +1,6 @@
 # The HR section — the plan
 
-**Version:** 12 · **Updated:** 7 October 2026: step 8 part 1 done (§174). Version 11: step 7 done (§172). Version 10: step 6c done and step 6 complete (§171); migration 069 on production, 070 on staging. Version 9: step 6b done (§170); migration 069 on staging. Version 8: step 6a done (§169). Version 7: step 5b done (§168); the impact check comes before any code. Version 6: step 5a done (§167). Version 5: step 4 done; decision 32 (the page at /hr/new behind HR_PREVIEW). Version 4: 7 October 2026: §2.1, the page title is HR Workspace. Version 3: HR Step 3b, step 3b done (staging only). Version 2: HR Step 3a: step 3a done; decision 17 amended (every build stop on Haiku,
+**Version:** 13 · **Updated:** 8 October 2026: the baseline (§175) — steps 8–14 rewritten, the switches in order. Version 12: 7 October 2026: step 8 part 1 done (§174). Version 11: step 7 done (§172). Version 10: step 6c done and step 6 complete (§171); migration 069 on production, 070 on staging. Version 9: step 6b done (§170); migration 069 on staging. Version 8: step 6a done (§169). Version 7: step 5b done (§168); the impact check comes before any code. Version 6: step 5a done (§167). Version 5: step 4 done; decision 32 (the page at /hr/new behind HR_PREVIEW). Version 4: 7 October 2026: §2.1, the page title is HR Workspace. Version 3: HR Step 3b, step 3b done (staging only). Version 2: HR Step 3a: step 3a done; decision 17 amended (every build stop on Haiku,
 all Opus work in the testing step); the copy rule added to §2.5. Version 1: HR Step 2.
 
 **The decision record** is `DECISIONS.md` §164. **The map** (how HR and everything it touches worked on 4
@@ -252,35 +252,59 @@ replaced text is kept and struck through, so the record shows what changed.
 7. **Conversations and the HR summary** (claim + `after()`; facts from the person's own words, decision 19).
    On Haiku (decision 17). STOP. **DONE 7 October** (`b7d298f`, `DECISIONS.md` §172): one writer with an HR
    option, HR's route behind `HR_PREVIEW`, the drawer with HR's words and source shape, facts to the one queue.
-8. **The handbook check:**
-   - the split, the per-section check, the not-covered pass, still to confirm;
-   - the report drawer, Check now, progress, the read-again date;
-   - **the handbook's company-level dates and "Add to calendar"** (decision 29).
+> ### THE BASELINE (the owner, 8 October 2026; `DECISIONS.md` §175). STEPS 8–14 REWRITTEN.
+> Rev 1 is **Opus 5.5 at full power, unrestricted**. HR copies the workspace and invents nothing new: the answer's
+> prompt is the workspace's open role sentence plus what HR is given; a handbook check is an open HR answer to one
+> fixed question; whole handbooks are sent when they fit. Improvements come later as **switches, off by default,
+> each measured against the yardstick** (step 12). A switch that only lowers cost (caching) may go on once proven;
+> a switch that changes quality stays off until measured.
 
-   On Haiku, on a fixture (decision 17); the Opus runs on a fixture and a real handbook move to step 12. STOP. *(The brief's "the same findings in the Documents
-   report" is dropped: a handbook is not in Documents, decision 18.)*
+8. **The handbook check.**
+   - **Part 1 DONE 7 October** (`65ca4b9`, §174): the engine — Check now, the sweep, claims, one open check per
+     handbook, retry once, cancel on a newer version, stop on delete, progress, finish, next_check_at +90 days.
+   - **The baseline DONE 8 October** (`e28a213`, §175): each piece is the same call as an HR answer (migration 072
+     stores its answer, sources and check record), the whole handbook when it fits; the row and the drawer draw each
+     part as an HR answer. The structured check (Step 8 part 2) is parked on the local branch
+     `parked/hr-check-structured`.
+   - **Still to build:** the email when a check someone pressed finishes (Audits' pattern, `notified_at` from 071).
+   - **Moved with the structured check, for the owner to confirm:** the handbook's company-level dates and "Add to
+     calendar" (decision 29) were read from the structured answer; an open answer has no dates to list. They return
+     with that switch (below), or by a decision of the owner's before then. STOP.
+9. **Answers use the stored check** — built as **a switch, off by default**, judged in the
+   testing step against the yardstick. STOP.
+10. **Same-night operations** (decisions 13 and 14; the handbook queue, the `vercel.json` entries). When the nightly
+    check runs, the Handbooks tab's line and the upload sheet's lede return to the owner's words (§175). STOP.
+11. **Polish:** retire old HR (decision 15); **the Dates tab** (decision 30); the print frame on HR's drawers. STOP:
+    the owner looks.
+12. **Testing, with the yardstick.** First **one Opus run per paid path** (answer, summary, handbook check), to catch
+    machinery that only fails on the real model. Then **the yardstick**: a baseline run of fixed HR cases — real
+    handbooks that belong to the companies they are checked for, and real problems — on Opus 5.5 everywhere,
+    recorded; it is what every switch is measured against, one at a time, on the same measures (the workspace's,
+    `docs/WORKSPACE-PLAN.md`: what is missed, what is stated more firmly than its evidence, the share of claims from
+    the agency's own pages, and searches, tokens and cost per call). Then decision 10's run, the held fixes, and the
+    manual tests in `docs/TESTING.md`.
+    **Also judge (§172):** whether HR summaries cite handbook passages on Opus. If not, the ready fallback is code
+    that attaches a checked handbook quote found in the same paragraph as an item's basis; the owner decides then.
+    **Also judge (§175):** how often the grey mark lands on proposed wording or a quote of the law, and whether a
+    handbook check on Opus answers the fixed question section by section without being told to.
+13. **Release** (the `docs/RELEASE.md` routine). Before it: the three research switches' production values
+    confirmed (`docs/RELEASE.md`, "TO BE CONFIRMED").
+14. **The next morning's `job_runs` check, and the close-out** (`HANDOFF-HR.md`, `STATUS.md`, `HANDOFF-CODE.md` §7).
 
-   **Part 1 DONE 7 October** (`65ca4b9`, `DECISIONS.md` §174): the engine and the "not covered" pass, migration
-   071, Check now and the sweep route, behind `HR_PREVIEW`. **Still to build in step 8:** the row and the report
-   drawer, the dates and "Add to calendar", the email.
-9. **Answers use the stored check.** STOP.
-10. **Same-night operations** (decisions 13 and 14; the handbook queue). STOP.
-11. **Polish:** retire old HR (decision 15); **the Dates tab** (decision 30); the print frame on HR's
-    drawers. STOP: the owner looks.
-12. **Testing:** first **one Opus run per paid path** (answer, summary, handbook check), to catch machinery that
-    only fails on the real model; then the quality pass on the final models, with real handbooks and real
-    problems, including decision 10's run; the held fixes; the manual tests in `docs/TESTING.md`.
-    **Also judge (§172):** whether HR summaries cite handbook passages on Opus. If not, the ready fallback is
-    code that attaches a checked handbook quote found in the same paragraph as an item's basis; the owner
-    decides then.
-    **Also judge (§174), for the handbook check:** whether its links come from its own search (on Haiku most
-    did not, so most "not covered" items became questions); whether a piece answers in JSON (2 of 15 Haiku
-    answers came back as prose); whether the "not covered" pass now leaves out safety programs (a sentence added
-    after Haiku listed OSHA programs); and whether 40,000-character pieces are checked as well as single sections,
-    with the search limit decided then (none in production; `DEV_MAX_SEARCHES` 2 locally).
-13. **Release** (the `docs/RELEASE.md` routine).
-14. **The next morning's `job_runs` check, and the close-out** (`HANDOFF-HR.md`, `STATUS.md`,
-    `HANDOFF-CODE.md` §7).
+### THE SWITCHES, IN ORDER (after the release; each off by default, each measured against the yardstick)
+
+1. **Prompt caching** for the handbooks in the answer and the check — cost only; may go on once proven (§175).
+2. **Answers use the stored check** (step 9).
+3. **The workspace's three research blocks for HR** (`RESEARCH_PROVENANCE`, `RESEARCH_PREFER_GOV`,
+   `RESEARCH_SPECIALIST`), once the owner has read their production values (§175). HR's prompt is not changed
+   until he answers.
+4. **Cards for handbook words written without quotation marks** — code spots long passages that match the
+   handbook word for word (the owner, 8 October).
+5. **The structured check** — the local branch `parked/hr-check-structured`: per-section words, "not covered",
+   still to confirm, the dates and "Add to calendar", the enforced output format.
+6. **Suggested wording as a draft** — the label asked for again, so proposed text is drawn as a draft and never
+   marked as a quote (§175 found the mark on proposed wording).
+7. **The quote-marker form** ([H12: "…"]) asked for again.
 
 ## 2.5 Standing rules
 
