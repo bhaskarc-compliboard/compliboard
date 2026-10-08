@@ -124,9 +124,10 @@ describe('A PIECE IS AN HR ANSWER (owner, Baseline Step 1)', () => {
   test('the one question, word for word', () => {
     assert.equal(CHECK_QUESTION, "Check this handbook against the rules that apply to us. What needs to change, what's missing, and what's unclear?")
   })
-  test('the answer route\'s own call: HR_ANSWER_PROMPT, hrAnswerMessage with the company and the sections, no search limit, task hr_check', () => {
+  test('the answer route\'s own call: hrAnswerPrompt(), hrAnswerMessage with the company and the sections, no search limit, task hr_check', () => {
     assert.match(engine, /hrAnswerMessage\(company, handbooks, CHECK_QUESTION\)/)
-    assert.match(engine, /ask\(HR_ANSWER_PROMPT, messages, \{ task: 'hr_check', maxTokens: PIECE_MAX_TOKENS, ledger: \{ companyId, task: 'hr_check' \} \}\)/)
+    assert.match(engine, /const system = hrAnswerPrompt\(\)/)
+    assert.match(engine, /ask\(system, messages, \{ task: 'hr_check', maxTokens: PIECE_MAX_TOKENS, ledger: \{ companyId, task: 'hr_check' \} \}\)/)
     assert.ok(!/maxSearches|outputSchema|hr-check\.ts|hr-not-covered\.ts|not_covered', section_id: null/.test(engine), 'no limit, no schema, no structured prompt, no separate "not covered" row')
   })
   test('at done, finishAnswer exactly as the answer route uses it, and the answer, its sources and its record stored (072)', () => {

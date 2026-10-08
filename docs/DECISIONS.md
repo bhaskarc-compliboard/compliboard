@@ -11903,8 +11903,20 @@ No migration.
     - the Handbooks tab now says "Press Check now on a handbook to check it against the rules that apply to you.";
     - the upload sheet now says "<file>. We read it in about a minute. It stays here in HR."
 - **THE WORKSPACE'S THREE RESEARCH SWITCHES** (`RESEARCH_PROVENANCE`, `RESEARCH_PREFER_GOV`, `RESEARCH_SPECIALIST`)
-  are each off unless set to the exact word `true`. Their production values were never recorded, and are now marked
-  "TO BE CONFIRMED" in `docs/RELEASE.md`. HR's prompt is not changed until the owner reads them.
+  are each off unless set to the exact word `true`. Their production values were never recorded, and were marked
+  "TO BE CONFIRMED" in `docs/RELEASE.md`.
+  - **Answered the same day (the owner):** all three are `true` on production, re-entered as visible (they had been
+    saved as secret on 23 September). `docs/RELEASE.md` records it.
+  - **HR now copies the workspace as it runs** ("the switches are what keep answers on agency pages").
+    `prompts/hr-answer.ts` `hrAnswerPrompt()` is built by the workspace's own `buildSystemPrompt('research', null,
+    { open: true })`, imported, so the same settings add the same paragraphs in the same order, followed by HR's one
+    sentence. The answer route and the handbook check both use it.
+  - **A unit test** holds HR's prompt byte for byte equal to the workspace's plus HR's sentence, in all eight on/off
+    combinations.
+  - **On Haiku, with all three `true` in the server's environment:** a handbook check stored the prompt fingerprint
+    `a121fbaf…5490c5`, the same as the dry run's.
+  - **A note for the testing step:** the HR answer cited one page, labelled "other". Its one search returned no
+    official page, and the answer did not say so as the prefer-official paragraph asks.
 - **HR-PLAN steps 8–14 are rewritten,** with the switches in order (HR-PLAN v13).
 - **Proved on staging (Haiku, through the guard):**
   - **Answers:** five on the pure prompt. One 70-page handbook was sent whole. The new mark appeared on proposed

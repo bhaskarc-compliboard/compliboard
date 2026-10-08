@@ -287,17 +287,17 @@ replaced text is kept and struck through, so the record shows what changed.
     that attaches a checked handbook quote found in the same paragraph as an item's basis; the owner decides then.
     **Also judge (§175):** how often the grey mark lands on proposed wording or a quote of the law, and whether a
     handbook check on Opus answers the fixed question section by section without being told to.
-13. **Release** (the `docs/RELEASE.md` routine). Before it: the three research switches' production values
-    confirmed (`docs/RELEASE.md`, "TO BE CONFIRMED").
+13. **Release** (the `docs/RELEASE.md` routine). The three research switches are confirmed `true` on production
+    (8 October), and HR reads the same three (§175).
 14. **The next morning's `job_runs` check, and the close-out** (`HANDOFF-HR.md`, `STATUS.md`, `HANDOFF-CODE.md` §7).
 
 ### THE SWITCHES, IN ORDER (after the release; each off by default, each measured against the yardstick)
 
 1. **Prompt caching** for the handbooks in the answer and the check — cost only; may go on once proven (§175).
 2. **Answers use the stored check** (step 9).
-3. **The workspace's three research blocks for HR** (`RESEARCH_PROVENANCE`, `RESEARCH_PREFER_GOV`,
-   `RESEARCH_SPECIALIST`), once the owner has read their production values (§175). HR's prompt is not changed
-   until he answers.
+3. ~~The workspace's three research blocks for HR~~ — **not a switch any more: in the baseline since 8 October**
+   (§175). The owner confirmed all three `true` on production, and HR's prompt is built by the workspace's own
+   function, so it carries them as the workspace does.
 4. **Cards for handbook words written without quotation marks** — code spots long passages that match the
    handbook word for word (the owner, 8 October).
 5. **The structured check** — the local branch `parked/hr-check-structured`: per-section words, "not covered",

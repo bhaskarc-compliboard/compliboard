@@ -31,7 +31,7 @@ import { buildCompanyContext } from './companyContext.ts'
 import { finishAnswer, handbookContext, checkRecord, budgetTokens, TOKENS_PER_CHAR, type Block, type HandbookUsed } from './hrAnswer.ts'
 import { quotesDroppedLine, linksDroppedLine } from './hrAnswerWords.ts'
 import { lazyJobRun } from './jobRun.ts'
-import { HR_ANSWER_PROMPT, hrAnswerMessage } from '../prompts/hr-answer.ts'
+import { hrAnswerPrompt, hrAnswerMessage } from '../prompts/hr-answer.ts'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = { from: (t: string) => any }
@@ -260,7 +260,7 @@ const pagesOf = (a: number | null, b: number | null) => (a == null ? '' : a === 
 /**
  * ONE PIECE — THE SAME CALL AS AN HR ANSWER (owner, Baseline Step 1). Re-read before the call (a deleted handbook
  * stops here, a replaced one cancels its check), mark the rows started, then the answer route's own call:
- * HR_ANSWER_PROMPT, `hrAnswerMessage` with the company context and the piece's sections in `handbookContext`'s form,
+ * hrAnswerPrompt() (the workspace's open research prompt as it runs, plus HR's sentence), `hrAnswerMessage` with the company context and the piece's sections in `handbookContext`'s form,
  * web search with no limit, task and ledger 'hr_check'. At done, `finishAnswer` exactly as the answer route uses it,
  * with the same closing lines; the answer, its sources and its check record are stored on the piece's first row.
  * `ask` is the real call unless a script passes another (the forced-failure proof).
@@ -335,7 +335,8 @@ export async function runPiece(admin: Db, rowIds: string[], opts: { ask?: Ask } 
   }
 
   const model = modelForTask('hr_check')
-  const receipt = { model, prompt_sha256: sha(HR_ANSWER_PROMPT), input_sha256: sha(String(messages[0].content)) }
+  const system = hrAnswerPrompt()
+  const receipt = { model, prompt_sha256: sha(system), input_sha256: sha(String(messages[0].content)) }
   const fail = async (why: string) => {
     console.error(`handbook check ${checkId}: ${why}`)
     const f = await failRows(admin, rows, why)
@@ -345,7 +346,7 @@ export async function runPiece(admin: Db, rowIds: string[], opts: { ask?: Ask } 
   // THE ANSWER ROUTE'S CALL: no search limit (AI_SEARCH_MAX_HR is the answer route's; the check has none).
   let ev: Extract<OpenStreamEvent, { type: 'done' }> | null = null
   try {
-    for await (const e of ask(HR_ANSWER_PROMPT, messages, { task: 'hr_check', maxTokens: PIECE_MAX_TOKENS, ledger: { companyId, task: 'hr_check' } })) {
+    for await (const e of ask(system, messages, { task: 'hr_check', maxTokens: PIECE_MAX_TOKENS, ledger: { companyId, task: 'hr_check' } })) {
       if (e.type === 'done') ev = e
       else if (e.type === 'error') throw new Error(e.message)
     }

@@ -151,10 +151,30 @@ describe('suggested wording and internal ids (owner, 6c answers)', async () => {
     assert.equal(replaceBlockIds('Looking at section H1, and at H2, but not H9.', blocks), 'Looking at section 3. Sick time, and at page 14, but not H9.')
     assert.equal(replaceBlockIds('See section H2.', blocks), 'See page 14.')
   })
-  test('THE PURE BASELINE (owner, 8 October): the workspace\'s role sentence, then what HR is given — nothing else', async () => {
-    const { HR_ANSWER_PROMPT } = await import('../../prompts/hr-answer.ts')
-    const { OPEN_ROLE } = await import('../../prompts/checklist.ts')
-    assert.equal(HR_ANSWER_PROMPT, `${OPEN_ROLE}\n\nYou are given the company's handbooks, section by section, and what is known about the company.`)
-    assert.ok(!/Suggested wording|\[H12|only when the person asks/.test(HR_ANSWER_PROMPT))
+  test('THE WORKSPACE\'S OPEN RESEARCH PROMPT AS IT RUNS, PLUS HR\'S SENTENCE — byte for byte, every switch on and off (owner, 8 October)', async () => {
+    const { hrAnswerPrompt, HR_GIVEN_SENTENCE } = await import('../../prompts/hr-answer.ts')
+    const { buildSystemPrompt, OPEN_ROLE, PROVENANCE_SENTENCE, PREFER_GOV_SOURCES, RESEARCH_SPECIALIST_BLOCK } = await import('../../prompts/checklist.ts')
+    const names = ['RESEARCH_PROVENANCE', 'RESEARCH_PREFER_GOV', 'RESEARCH_SPECIALIST'] as const
+    const saved = Object.fromEntries(names.map((n) => [n, process.env[n]]))
+    try {
+      for (let mask = 0; mask < 8; mask++) {
+        names.forEach((n, i) => { if (mask & (1 << i)) process.env[n] = 'true'; else delete process.env[n] })
+        const ws = buildSystemPrompt('research', null, { open: true })
+        assert.equal(hrAnswerPrompt(), `${ws}\n\n${HR_GIVEN_SENTENCE}`, `switches ${mask.toString(2)}`)
+        // ...and the paragraphs are the workspace's, in the workspace's order
+        const want = [OPEN_ROLE, mask & 1 ? PROVENANCE_SENTENCE : null, mask & 2 ? PREFER_GOV_SOURCES : null, mask & 4 ? RESEARCH_SPECIALIST_BLOCK : null, HR_GIVEN_SENTENCE].filter(Boolean).join('\n\n')
+        assert.equal(hrAnswerPrompt(), want, `order, switches ${mask.toString(2)}`)
+      }
+      // every switch off: the role sentence and HR's sentence, nothing else (the baseline of §175)
+      names.forEach((n) => delete process.env[n])
+      assert.equal(hrAnswerPrompt(), `${OPEN_ROLE}\n\n${HR_GIVEN_SENTENCE}`)
+      assert.ok(!/Suggested wording|\[H12|only when the person asks/.test(hrAnswerPrompt()))
+    } finally {
+      for (const n of names) { if (saved[n] === undefined) delete process.env[n]; else process.env[n] = saved[n] }
+    }
+  })
+  test('the answer route and the check both build it per call, never a copy', () => {
+    assert.match(readFileSync('app/api/hr/answer/route.ts', 'utf8'), /askAIOpenStream\(hrAnswerPrompt\(\), messages,/)
+    assert.ok(!/OPEN_ROLE|PREFER_GOV_SOURCES/.test(readFileSync('prompts/hr-answer.ts', 'utf8').split('export function hrAnswerPrompt')[1]))
   })
 })

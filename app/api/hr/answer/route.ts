@@ -19,7 +19,7 @@ import { loadHandbooksForAnswer, handbookContext, finishAnswer, appendHandbookSo
 import { quotesDroppedLine, linksDroppedLine, DAY1_LINE, longLine, longNetOnlyLine, longNothingLine,
          waitingWords, waitFailedWords, waitTooLongWords, WAIT_LIMIT_MS } from '@/lib/hrAnswerWords'
 import { READ_REASONS } from '@/lib/handbooks'
-import { HR_ANSWER_PROMPT, hrAnswerMessage } from '@/prompts/hr-answer'
+import { hrAnswerPrompt, hrAnswerMessage } from '@/prompts/hr-answer'
 import { HR_SELECT_PROMPT, hrSelectMessage } from '@/prompts/hr-select'
 
 export const maxDuration = 800
@@ -163,7 +163,7 @@ export async function POST(request: NextRequest) {
           messages.push({ role: 'user', content: hrAnswerMessage(companyBlock, handbookContext(lv), question) })
           // AI_SEARCH_MAX_HR (Step 6b): unset means no limit, as before; set, it is the search's max_uses.
           const maxSearches = searchLimit('AI_SEARCH_MAX_HR', null) ?? undefined
-          for await (const ev of askAIOpenStream(HR_ANSWER_PROMPT, messages,
+          for await (const ev of askAIOpenStream(hrAnswerPrompt(), messages,
                        { task: 'hr', maxTokens: 16000, signal: request.signal, ledger: { companyId, task: 'hr' }, maxSearches })) {
             if (ev.type === 'done') {
               let raw = ev.answer.text

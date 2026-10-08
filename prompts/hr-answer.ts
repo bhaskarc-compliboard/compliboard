@@ -1,21 +1,26 @@
 /**
- * THE HR ANSWER — THE PURE BASELINE (the owner, 8 October 2026; HR Baseline Step 1).
+ * THE HR ANSWER — THE WORKSPACE'S OPEN RESEARCH PROMPT, AS IT RUNS (the owner, 8 October 2026; DECISIONS §175).
  *
- * Rev 1 is Opus 5.5 at full power, unrestricted; improvements come later as switches, off by default, each
- * measured. So this prompt is the workspace's open research prompt (`prompts/checklist.ts` OPEN_ROLE, imported, not
- * copied, so the two cannot drift) plus the one sentence that says what an HR answer is given. Nothing else:
- * the quote-marker form ([H12: "…"]), "write new wording only when asked" and "Suggested wording:" are gone — the
- * Step 6a/6c prompt is in git history for the switch that may bring any of it back.
+ * Rev 1 is Opus 5.5 at full power, unrestricted, and HR copies the workspace as it runs on production: so the
+ * prompt is BUILT BY THE WORKSPACE'S OWN FUNCTION — `prompts/checklist.ts` buildSystemPrompt('research', null,
+ * { open: true }), the one /api/chat's open path uses — and the same three settings (RESEARCH_PROVENANCE,
+ * RESEARCH_PREFER_GOV, RESEARCH_SPECIALIST, `lib/pipelineConfig.ts`) add the same paragraphs, in the same order.
+ * After them, HR's one sentence on what it is given. Imported, never copied, so the two cannot drift. A function,
+ * because the switches are read when the prompt is built, exactly as the workspace reads them.
  *
- * The route sends the company context, the handbooks (`lib/hrAnswer.ts` handbookContext) and the question in the
- * user message (`hrAnswerMessage`, unchanged). *** ANCHORED (§3.3): the handbooks are the artifact. *** The code
- * still checks every quote and every link (`finishAnswer`), and never changes the model's words.
+ * Used by the answer route and the handbook check (`lib/handbookCheck.ts`). The route sends the company context,
+ * the handbooks (`lib/hrAnswer.ts` handbookContext) and the question in the user message (`hrAnswerMessage`).
+ * *** ANCHORED (§3.3): the handbooks are the artifact. *** The code still checks every quote and every link
+ * (`finishAnswer`), and never changes the model's words.
  */
-import { OPEN_ROLE } from './checklist.ts'
+import { buildSystemPrompt } from './checklist.ts'
 
-export const HR_ANSWER_PROMPT = `${OPEN_ROLE}
+/** HR's one sentence, after the workspace's prompt. */
+export const HR_GIVEN_SENTENCE = "You are given the company's handbooks, section by section, and what is known about the company."
 
-You are given the company's handbooks, section by section, and what is known about the company.`
+export function hrAnswerPrompt(): string {
+  return `${buildSystemPrompt('research', null, { open: true })}\n\n${HR_GIVEN_SENTENCE}`
+}
 
 /** The user message: the company, the handbooks, the question — in that order. */
 export function hrAnswerMessage(companyContext: string, handbooks: string, question: string): string {

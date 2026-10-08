@@ -2,7 +2,7 @@
 
 *Written 24 September 2026 from the two releases of 23 September (Runs 1–3 + Fix Round 1, then Fix Round 2). The owner runs every step below. Claude Code never runs anything against production.*
 
-*Updated 8 October 2026: the three research switches' production values are to be confirmed (below, "TO BE CONFIRMED").*
+*Updated 8 October 2026: the three research switches confirmed `true` on production, re-entered as visible by the owner; HR reads the same three (below).*
 
 *Updated 4 October 2026, at the close of the workspace work: `check:live` before a release runs on the dead port 3999; the retention gate states the 12-month rule; no Vercel variable changed with the Stage 4 or cron releases.*
 
@@ -113,23 +113,26 @@ From June: `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_P
 
 Added 23 Sep: `CRON_SECRET`, `AI_MODEL_PROSE`, `AI_MODEL_JUDGEMENT`, `AI_MODEL_SUBSTEPS`, `AI_MODEL_SUMMARY`, `AI_EFFORT`, `RESEARCH_PREFER_GOV`, `RESEARCH_SPECIALIST`, `RESEARCH_PROVENANCE`. *(Corrected 4 October 2026: `AI_EFFORT` was saved hidden on 23 September and its value was never recorded. On 4 October the owner re-entered it as visible `medium`; see the table above. Results on production before 4 October ran at an effort nobody can now name.)*
 
-> ### TO BE CONFIRMED (8 October 2026): THE WORKSPACE'S THREE RESEARCH SWITCHES' VALUES ON PRODUCTION.
-> They were added on 23 September and their values were never recorded here. Each is ON only for the exact word
-> `true` (any case, trimmed); unset or anything else is OFF (`lib/pipelineConfig.ts` pipelineSwitch). Each adds one
-> block to the workspace's open research prompt after its role sentence (`prompts/checklist.ts` buildSystemPrompt):
-> - `RESEARCH_PROVENANCE` (default off) — "Numbered sources in earlier answers in this conversation came from web
->   searches run at the time; treat them as real."
-> - `RESEARCH_PREFER_GOV` (default off) — "When you cite sources, prefer official ones: the regulation itself, or
->   the government agency or regulator that enforces it. Use another source only when no official one covers the
->   point, and say so." (It governs the workspace's checklist too.)
-> - `RESEARCH_SPECIALIST` (default off) — "Answer what was asked, then say what they didn't ask but need to know.
->   Where the answer depends on a fact you don't have, say which fact and what each answer would mean, rather than
->   assuming. Write for a busy owner: plain sentences, the most important thing first, and only as long as it needs
->   to be. End with one specific offer of what you could do next."
+> ### THE WORKSPACE'S THREE RESEARCH SWITCHES ON PRODUCTION — CONFIRMED 8 OCTOBER 2026: ALL THREE `true`.
+> Added on 23 September as SECRET variables, so their values could not be read back and were never recorded here.
+> On 8 October the owner re-entered all three as **visible**, as he did for `AI_EFFORT` on 4 October:
+> **`RESEARCH_PROVENANCE = true`, `RESEARCH_PREFER_GOV = true`, `RESEARCH_SPECIALIST = true`.**
+> Each is ON only for the exact word `true` (any case, trimmed); unset or anything else is OFF
+> (`lib/pipelineConfig.ts` pipelineSwitch). Each adds one block to the workspace's open research prompt after its
+> role sentence, in this order (`prompts/checklist.ts` buildSystemPrompt):
+> - `RESEARCH_PROVENANCE` — "Numbered sources in earlier answers in this conversation came from web searches run at
+>   the time; treat them as real."
+> - `RESEARCH_PREFER_GOV` — "When you cite sources, prefer official ones: the regulation itself, or the government
+>   agency or regulator that enforces it. Use another source only when no official one covers the point, and say
+>   so." (It governs the workspace's checklist too.)
+> - `RESEARCH_SPECIALIST` — "Answer what was asked, then say what they didn't ask but need to know. Where the answer
+>   depends on a fact you don't have, say which fact and what each answer would mean, rather than assuming. Write
+>   for a busy owner: plain sentences, the most important thing first, and only as long as it needs to be. End with
+>   one specific offer of what you could do next."
 >
-> **The owner reads the three values in the Vercel dashboard and they are written here.** HR's answer prompt is the
-> workspace's role sentence alone until then (`prompts/hr-answer.ts`; DECISIONS §175): whether HR carries the same
-> blocks waits on his answer.
+> **HR's answers and handbook checks read the same three settings** (`prompts/hr-answer.ts` hrAnswerPrompt builds
+> the workspace's open research prompt and adds HR's one sentence; DECISIONS §175). Changing one changes both
+> sections.
 
 **Added 4 Oct, with the Workspace Task 6 release (owner), all visible:** `AI_MODEL_HOWTO = claude-opus-5-5`, `AI_SEARCH_MAX_HOWTO = 6`, `AI_SEARCH_MAX_COMPLETE = 8`. `AI_EFFORT_HOWTO` is deliberately **not** set, so it falls back to `AI_EFFORT`. Migration 064 was applied first (`npm run preflight` afterwards: 65 on disk, 65 on production, `PENDING COUNT: 0`).
 
