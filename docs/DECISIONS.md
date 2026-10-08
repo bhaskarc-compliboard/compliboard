@@ -11608,3 +11608,31 @@ No migration.
 - **Not judged here:** whether the model's picks are the best ones. That is the testing step's Opus run.
 - **Spent, all Haiku: $0.71** (ledger $2.78 → $3.49). Tests went from 843 to 863.
 - **STEP 6 IS COMPLETE** (6a, 6b, 6c).
+- **MIGRATION 070'S VERIFY BLOCK, REWRITTEN AFTER IT RAN ON STAGING** (7 October, before production).
+  - **What the first block did.** It tested the progress rule on whatever handbook row existed: `perform 1 from
+    public.handbooks limit 1; if found then update … set outline_parts_total = 2, outline_parts_done = 3 …`. On an
+    EMPTY table, `found` is false, so the test was skipped silently and the notice still said "3 of 2 refused".
+  - **Why it mattered.** Production's `handbooks` is empty until HR is released, so there the block would have
+    proven nothing and said otherwise.
+  - **Staging was fine.** Staging ran the first block with rows present, so the rule was really tested there; it
+    was also refused from outside (`23514`, §171 above).
+  - **The new block** makes its own probe company and handbook, as 066's block did:
+    - 2 of 2 must save and read back, so the test can see a presence;
+    - 3 of 2 and -1 must be refused;
+    - the probe is removed, and the block checks nothing of it remains.
+
+    The "every existing row NULL" check now runs first, before the probe writes progress onto its own row.
+  - **Not changed:** the columns and the constraint.
+  - **Proved on staging WITHOUT re-applying 070** (staging's history already records it, so `db push` would not run
+    it again).
+    - **How it ran:** the new block, with only the apply-time "every existing row NULL" check left out (staging's
+      rows now carry progress), run as a stand-alone `DO` block. It runs through the session pooler as `postgres`,
+      the connection `npm run db:migrate` uses, and ends in a deliberate error, so everything it did rolls back.
+    - **Result:** "STAND-ALONE CHECK PASSED (rolled back on purpose): 2 of 2 saved on the probe, 3 of 2 refused, -1
+      refused, probe … removed."
+    - **The same block can fail.** With the violation swapped for a valid 1 of 2, it raised "MIGRATION 070 FAILED:
+      3 of 2 parts done was accepted."
+    - **Nothing left behind:** 0 probe companies and 0 probe handbooks on staging afterwards.
+  - **Not proven:** the block on an actually empty `handbooks` table. Staging has rows. The new block does not read
+    existing rows for its test, so emptiness no longer changes what it proves. The apply-time NULL check passed
+    when 070 was applied to staging, and is unchanged.

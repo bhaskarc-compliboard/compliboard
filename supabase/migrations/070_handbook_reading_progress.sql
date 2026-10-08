@@ -14,7 +14,8 @@
 -- claim and cleared when a new reading is claimed: `outline_parts_total` (how many parts the PDF's text is
 -- outlined in) and `outline_parts_done`. NULL means no outline is under way (a Word file, or nothing read yet).
 -- A person already may update their own handbook rows (066); table grants cover new columns, and the verify
--- block reads that back. The CHECK is tested by violating it.
+-- block reads that back. The CHECK is tested by violating it, on a probe row the block makes and removes itself
+-- (rewritten after staging ran the first version, which skipped the test on an empty table: DECISIONS.md §171).
 -- ===========================================================================
 
 begin;
@@ -33,7 +34,7 @@ alter table public.handbooks add constraint handbooks_outline_progress_in_range 
 -- VERIFY. Raises unless every line holds; read back, never taken from the statements above.
 -- ===========================================================================
 do $$
-declare n int; c text;
+declare n int; c text; co uuid; hb uuid; refused boolean;
 begin
   select count(*) into n from information_schema.columns
    where table_schema = 'public' and table_name = 'handbooks'
@@ -57,23 +58,55 @@ begin
     raise exception 'MIGRATION 070 FAILED: the privilege check sees nothing on handbooks.status either.';
   end if;
 
-  -- THE CHECK, BY VIOLATING IT: more parts done than there are must be refused.
-  begin
-    perform 1 from public.handbooks limit 1;
-    if found then
-      update public.handbooks set outline_parts_total = 2, outline_parts_done = 3
-       where id = (select id from public.handbooks limit 1);
-      raise exception 'MIGRATION 070 FAILED: 3 of 2 parts done was accepted.';
-    end if;
-  exception when check_violation then null;
-  end;
-
+  -- EVERY EXISTING ROW IS NULL — checked first, before the probe below writes progress onto its own row.
   select count(*) into n from public.handbooks where outline_parts_total is not null or outline_parts_done is not null;
   if n <> 0 then
     raise exception 'MIGRATION 070 FAILED: % handbook(s) already carry progress.', n;
   end if;
 
-  raise notice 'MIGRATION 070 VERIFIED: handbooks.outline_parts_total and outline_parts_done, nullable integers; authenticated read and update as the rest of the row, anon nothing; 3 of 2 refused; every existing row NULL.';
+  -- THE CHECK, BY VIOLATING IT, ON A PROBE ROW OF ITS OWN. *** Rewritten 7 October 2026, after 070 was applied to
+  -- staging (DECISIONS.md §171). *** The first version tested the rule on whatever row the table held and SKIPPED
+  -- the test when it held none — and production's handbooks table is empty until HR is released, so there the
+  -- block would have passed without testing anything, then printed "3 of 2 refused". A probe company and handbook,
+  -- as migration 066's block made them, prove it on any database; they are removed before the block ends.
+  insert into public.companies (name, industry, state) values ('Migration 070 probe', 'chemical manufacturing', 'OR')
+    returning id into co;
+  insert into public.handbooks (company_id, name, file_path, file_name)
+    values (co, 'Migration 070 probe', co || '/handbooks/probe-070.pdf', 'probe-070.pdf') returning id into hb;
+
+  -- the rule can see a presence: 2 of 2, a real state, is accepted and reads back
+  update public.handbooks set outline_parts_total = 2, outline_parts_done = 2 where id = hb;
+  select count(*) into n from public.handbooks where id = hb and outline_parts_total = 2 and outline_parts_done = 2;
+  if n <> 1 then
+    raise exception 'MIGRATION 070 FAILED: 2 of 2 parts done did not save on the probe, so the refusals below would prove nothing.';
+  end if;
+
+  refused := false;
+  begin
+    update public.handbooks set outline_parts_total = 2, outline_parts_done = 3 where id = hb;
+  exception when check_violation then refused := true;
+  end;
+  if not refused then
+    raise exception 'MIGRATION 070 FAILED: 3 of 2 parts done was accepted.';
+  end if;
+
+  refused := false;
+  begin
+    update public.handbooks set outline_parts_total = -1, outline_parts_done = null where id = hb;
+  exception when check_violation then refused := true;
+  end;
+  if not refused then
+    raise exception 'MIGRATION 070 FAILED: a negative number of parts was accepted.';
+  end if;
+
+  -- the probe goes (its handbook with its company, ON DELETE CASCADE), and nothing of it remains
+  delete from public.companies where id = co;
+  select count(*) into n from public.handbooks where id = hb;
+  if n <> 0 then
+    raise exception 'MIGRATION 070 FAILED: the probe handbook was not removed.';
+  end if;
+
+  raise notice 'MIGRATION 070 VERIFIED: handbooks.outline_parts_total and outline_parts_done, nullable integers; authenticated read and update as the rest of the row, anon nothing; every existing row NULL; on a probe row of its own, 2 of 2 saved, 3 of 2 and -1 refused; the probe removed.';
 end $$;
 
 commit;
