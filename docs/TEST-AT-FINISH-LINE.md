@@ -200,10 +200,18 @@ In `docs/HR-PLAN.md`'s order. Each is off by default.
 - **Cheaper splitting or section choice for very large handbooks**, if E's 120-page check shows the cost needs it;
 - **Sonnet 5.5 against Opus 5.5**, per task, by measurement.
 
-### H. The go-live (HR-PLAN step 13) — BUILT 8 October 2026 (`804d85e`, `DECISIONS.md` §181)
+### H. The go-live (HR-PLAN step 13) — DONE 8 October 2026 (`804d85e`, released with `073e900`, `DECISIONS.md` §181)
 
-Items 1 to 5 below are done: the owner added the two Vercel settings; the page is at `/hr`; old HR is retired; the
-switch is gone; the crons were already in place. Item 6 is the release itself.
+Items 1 to 6 are done:
+- the owner added the two Vercel settings; the page is at `/hr`; old HR is retired; the switch is gone; the crons
+  were already in place;
+- **the release:** `check:live` on 3999 (43 ✓, 0 ✗); `npm run preflight` with 0 pending; pushed. The deploy was live
+  at 21:08 UTC (`PATCH /api/handbooks` with no login: 404 before, 401 after).
+- **The free live checks on `https://compliboard.vercel.app`:** `/hr` 200, serving the new page (its heading, lede
+  and tabs in the HTML); `/hr/new`, `/api/hr` and `/api/hr-audits` 404; `POST /api/hr/answer` with no login 401.
+
+**Still the owner's:** the one paid check, one HR question on production as CB-Test-3, with a small synthetic
+handbook (`tests/fixtures/Harbor-Kitchen-Employee-Policy-2026.pdf`, 2 pages).
 
 1. **Vercel:** add `AI_MODEL_HR` and `AI_MODEL_HR_CHECK` = `claude-opus-5-5`, visible.
 2. **The page moves** from `/hr/new` to `/hr`. Change `HR_PAGE_PATH` (`lib/handbookCheckNotify.ts`) once; the
