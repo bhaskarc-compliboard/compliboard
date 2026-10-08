@@ -11744,3 +11744,78 @@ No migration.
     byte-identical, print text identical.
 - **Effect on the workspace:** every workspace summary written from now on uses the new prompt, by the button and
   by the nightly job. `docs/WORKSPACE-PLAN.md` "Coming from the HR section" item 7 tells the workspace chat.
+
+## 174. HR STEP 8, PART 1 — THE HANDBOOK CHECK ENGINE AND THE "NOT COVERED" PASS — 7 October 2026
+
+§174 — HR Step 8 part 1 (`65ca4b9`), behind `HR_PREVIEW`. Migration 071, applied to staging only.
+
+- **WHAT IT DOES.** "Check now" writes a check: one row per handbook section, plus one "not covered" row. It answers
+  202 and starts the sweep with `after()`. The sweep (`lib/handbookCheck.ts` sweepChecks) copies Audits' patterns,
+  and no Audits file was edited:
+  - recover stuck claims first;
+  - the oldest open check decides which company is next;
+  - that company's queued rows are claimed in one statement;
+  - its pieces run within the 510-second budget;
+  - only its own unstarted claims are released, in a `finally`.
+
+  **One difference, on purpose:** each company is visited once per sweep, so a piece put back is retried by the
+  NEXT sweep.
+- **THE OWNER'S ANSWERS TO THE STEP 8 DESIGN:**
+  - **Packing:** neighbouring sections up to 40,000 characters, with the whole table of contents in every call.
+    No search limit now.
+  - **The final word is code's.** "needs_change" only with a change that has a checked link (`findReturned`,
+    labelled by `labelFor`). Otherwise "to_confirm", never "no_gap" (§3.2). A section with open questions is
+    "to_confirm".
+  - **Quotes and dates:** quotes are checked by `checkQuote` against the piece's own sections; a failed quote is
+    stored flagged and never shown. A date is kept only when its quote checks.
+  - **A failed piece** (model error or bad output) is retried once, then failed with its reason. **A crashed
+    claim** is put back once, then failed.
+  - **A check where EVERY SECTION failed is 'failed'**, with no checked_at and no next_check_at, even when the
+    "not covered" pass worked (answered after proof d showed such a check counted as done). When only some sections
+    failed, the check is done, and part 2's row says "<n> section(s) not checked".
+  - **A newer version** cancels the old version's queued pieces at the next sweep, with a status 'cancelled'
+    added by 071 (accepted). **A deleted handbook** stops the check before any further call.
+  - **"Not covered":** written policies only. An item counts only with an OFFICIAL link this call's search
+    returned; otherwise it is "Still to confirm". The call is given the tables of contents of every current
+    handbook covering the same sites.
+  - **One sentence added after the Haiku runs, a quality change for the testing step:** "Leave out safety programs
+    that the rules require as their own written programs, such as hazard communication, process safety
+    management or emergency action plans; they are not handbook policies."
+  - **`vercel.json`:** no entry until step 10. Long checks are tested by calling the sweep by hand.
+  - **The words, accepted:**
+    - "This handbook is already being checked."
+    - "This handbook hasn't been read yet, so it can't be checked."
+    - "Only the newest version of a handbook can be checked."
+    - "We could not start the check just now. That is our side, not yours. Please try again."
+- **MIGRATION 071 (G1–G7, accepted):**
+  - **On the check's rows:** `failed_reason`, required exactly for failed or cancelled; `attempts`; `started_at`,
+    `model`, `prompt_sha256`, `ai_call_id` (rows checked in one call share it).
+  - **On checks:** `notified_at` and `context_sha256`.
+  - **Values:** reason 'new_handbook', and status 'cancelled'.
+  - **One open check per handbook,** as a unique index.
+
+  Its verify block proves every rule on probe rows of its own and removes them. It was re-run on staging through
+  the migration script's connection and ended in a deliberate error, so nothing was kept.
+- **PROVED ON STAGING, HAIKU, $1.03 IN ALL:**
+  - **Riverside:** 6 sections in one call, $0.1676 with the "not covered" retry.
+  - **Northside, 70 pages:** 10 single-section pieces and the "not covered" call; `done_count` 0 → 10;
+    next_check_at +90 days; $0.6123.
+  - **Two presses** while a check was open: both 409, and one open check.
+  - **A forced failure:** retried once, then failed. Proof d's check was re-run under the new rule with no model
+    call: failed, and Harbor not marked checked.
+  - **A crashed claim:** put back once, then failed.
+  - **Code overruling the model:** seven times, naturally.
+  - **A newer version, and a delete, mid-check:** 0 further calls on the ledger.
+  - **The record:** 10 `job_runs` rows.
+  - **`HR_PREVIEW=0`:** 404 everywhere. The owner's `.env.local` sets `HR_PREVIEW=1`, so a test of the switch must
+    set `HR_PREVIEW=0`; unsetting it lets the file switch the preview on. Found when an "off" test started a real
+    check ($0.0991).
+- **OPUS NOTES FOR THE TESTING STEP** (HR-PLAN step 12):
+  - Haiku's links mostly did not come from its own search, so most "not covered" items became questions.
+  - 2 of 15 Haiku answers came back as prose instead of JSON: Northside's near-empty S2, and a "not covered" pass
+    (S2's retry did the same).
+  - Haiku listed OSHA programs (HazCom, PSM) as handbook gaps; hence the sentence above.
+  - Searches are limited to 2 per call locally (`DEV_MAX_SEARCHES`); production has no limit.
+- **NOT BUILT YET (step 8's later parts):** the row and the report drawer, the dates and "Add to calendar", the email.
+- **AUDITS' CRASH RECOVERY HAS NO LIMIT:** recorded as an OPEN row in `docs/HANDOFF-CODE.md` §7. HR's copy stops after
+  one retry.

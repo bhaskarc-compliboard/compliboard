@@ -1,6 +1,6 @@
 # The HR section — the plan
 
-**Version:** 11 · **Updated:** 7 October 2026: step 7 done (§172). Version 10: step 6c done and step 6 complete (§171); migration 069 on production, 070 on staging. Version 9: step 6b done (§170); migration 069 on staging. Version 8: step 6a done (§169). Version 7: step 5b done (§168); the impact check comes before any code. Version 6: step 5a done (§167). Version 5: step 4 done; decision 32 (the page at /hr/new behind HR_PREVIEW). Version 4: 7 October 2026: §2.1, the page title is HR Workspace. Version 3: HR Step 3b, step 3b done (staging only). Version 2: HR Step 3a: step 3a done; decision 17 amended (every build stop on Haiku,
+**Version:** 12 · **Updated:** 7 October 2026: step 8 part 1 done (§174). Version 11: step 7 done (§172). Version 10: step 6c done and step 6 complete (§171); migration 069 on production, 070 on staging. Version 9: step 6b done (§170); migration 069 on staging. Version 8: step 6a done (§169). Version 7: step 5b done (§168); the impact check comes before any code. Version 6: step 5a done (§167). Version 5: step 4 done; decision 32 (the page at /hr/new behind HR_PREVIEW). Version 4: 7 October 2026: §2.1, the page title is HR Workspace. Version 3: HR Step 3b, step 3b done (staging only). Version 2: HR Step 3a: step 3a done; decision 17 amended (every build stop on Haiku,
 all Opus work in the testing step); the copy rule added to §2.5. Version 1: HR Step 2.
 
 **The decision record** is `DECISIONS.md` §164. **The map** (how HR and everything it touches worked on 4
@@ -259,6 +259,10 @@ replaced text is kept and struck through, so the record shows what changed.
 
    On Haiku, on a fixture (decision 17); the Opus runs on a fixture and a real handbook move to step 12. STOP. *(The brief's "the same findings in the Documents
    report" is dropped: a handbook is not in Documents, decision 18.)*
+
+   **Part 1 DONE 7 October** (`65ca4b9`, `DECISIONS.md` §174): the engine and the "not covered" pass, migration
+   071, Check now and the sweep route, behind `HR_PREVIEW`. **Still to build in step 8:** the row and the report
+   drawer, the dates and "Add to calendar", the email.
 9. **Answers use the stored check.** STOP.
 10. **Same-night operations** (decisions 13 and 14; the handbook queue). STOP.
 11. **Polish:** retire old HR (decision 15); **the Dates tab** (decision 30); the print frame on HR's
@@ -269,6 +273,11 @@ replaced text is kept and struck through, so the record shows what changed.
     **Also judge (§172):** whether HR summaries cite handbook passages on Opus. If not, the ready fallback is
     code that attaches a checked handbook quote found in the same paragraph as an item's basis; the owner
     decides then.
+    **Also judge (§174), for the handbook check:** whether its links come from its own search (on Haiku most
+    did not, so most "not covered" items became questions); whether a piece answers in JSON (2 of 15 Haiku
+    answers came back as prose); whether the "not covered" pass now leaves out safety programs (a sentence added
+    after Haiku listed OSHA programs); and whether 40,000-character pieces are checked as well as single sections,
+    with the search limit decided then (none in production; `DEV_MAX_SEARCHES` 2 locally).
 13. **Release** (the `docs/RELEASE.md` routine).
 14. **The next morning's `job_runs` check, and the close-out** (`HANDOFF-HR.md`, `STATUS.md`,
     `HANDOFF-CODE.md` §7).
