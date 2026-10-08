@@ -41,6 +41,10 @@ export type Outline = (text: string, part: { index: number; count: number; pageF
  */
 export function modelOutline(companyId: string): Outline {
   return async (text, part) => {
+    // TEST PATH ONLY (never on production): the second part fails, so a reading fails mid-way (Step 6c proof).
+    if (process.env.NODE_ENV !== 'production' && process.env.HR_TEST_OUTLINE_FAIL === '1' && part.index === 2) {
+      throw new Error('test path: the outline of part 2 failed')
+    }
     const reply = await askAIJson<{ sections?: unknown }>(hrOutlinePrompt(part), text,
       { task: 'hr_check', ledger: { companyId, task: 'hr_check' }, maxTokens: 8000 })
     const list = Array.isArray(reply?.sections) ? reply.sections : []
@@ -60,7 +64,7 @@ export function readClaimFilter(now: number): string {
 /** Returns the claim (the row's new updated_at), or null if a reading already holds it. */
 export async function claimReading(db: Db, id: string, now = Date.now()): Promise<string | null> {
   const { data, error } = await db.from('handbooks')
-    .update({ status: 'reading', status_reason: null })
+    .update({ status: 'reading', status_reason: null, outline_parts_total: null, outline_parts_done: null })
     .eq('id', id).or(readClaimFilter(now))
     .select('updated_at')
   if (error) throw new Error(`claiming the reading: ${error.message}`)
@@ -89,9 +93,11 @@ async function pdfPages(buffer: Buffer): Promise<string[]> {
  * found, so an answer can use the handbook while its sections are still being found.
  */
 export type OnText = (text: string, pageCount: number | null) => Promise<void>
+/** HOW FAR THE OUTLINE HAS GOT (Step 6c, migration 070): before the first part, and after each one. */
+export type OnProgress = (done: number, total: number) => Promise<void>
 
 export async function readContent(buffer: ArrayBuffer, fileName: string, mimeType: string | null, outline: Outline,
-  parsePdf: (b: Buffer) => Promise<string[]> = pdfPages, onText?: OnText): Promise<ReadOutcome> {
+  parsePdf: (b: Buffer) => Promise<string[]> = pdfPages, onText?: OnText, onProgress?: OnProgress): Promise<ReadOutcome> {
   const ext = extensionOf(fileName)
   // .doc is the old binary Word format, which the Word reader cannot open.
   if (ext === 'doc') return { ok: false, reason: READ_REASONS.kind, log: '.doc' }
@@ -116,8 +122,10 @@ export async function readContent(buffer: ArrayBuffer, fileName: string, mimeTyp
 
   const parts = outlineParts(pages)
   const anchors: Anchor[] = []
+  await onProgress?.(0, parts.length)
   for (let i = 0; i < parts.length; i++) {
     anchors.push(...await outline(parts[i].text, { index: i + 1, count: parts.length, pageFrom: parts[i].from, pageTo: parts[i].to }))
+    await onProgress?.(i + 1, parts.length)
   }
   const { sections, dropped } = cutAtAnchors(text, anchors)
   const starts = pageStarts(pages)
@@ -169,7 +177,15 @@ export async function readHandbook(deps: ReadDeps, companyId: string, id: string
       if (!data?.length) throw new ClaimLost()
       claimedAt = (data[0] as { updated_at: string }).updated_at
     }
-    const out = await readContent(await blob.arrayBuffer(), row.file_name, row.mime_type, deps.outline, deps.parsePdf, saveText)
+    // PROGRESS (Step 6c): written under the claim, like the text; each write moves the claim on.
+    const saveProgress: OnProgress = async (done, total) => {
+      const { data, error } = await db.from('handbooks').update({ outline_parts_done: done, outline_parts_total: total })
+        .eq('id', id).eq('status', 'reading').eq('updated_at', claimedAt).select('updated_at')
+      if (error) throw new Error(`saving the progress: ${error.message}`)
+      if (!data?.length) throw new ClaimLost()
+      claimedAt = (data[0] as { updated_at: string }).updated_at
+    }
+    const out = await readContent(await blob.arrayBuffer(), row.file_name, row.mime_type, deps.outline, deps.parsePdf, saveText, saveProgress)
     if (!out.ok) return giveUp(out.reason, out.log)
 
     const problem = proveCoverage(out.text, out.sections)

@@ -37,7 +37,7 @@ import { statusWords, handbookList, sectionCount, pagesWords, counted, type Hand
 import { AnswerBody, SourceList, type AnswerSource } from '@/components/AnswerBody'
 import { Stages, type Step } from '@/components/Stages'
 import { readAnswerStream, ndjsonLines } from '@/lib/answerStream'
-import { readingWords, splitAppended, hideHandbookMarkers, HR_COMPOSER_HINT, NOT_ANSWERED, ASK_IT_AGAIN, ASKED_AGAIN_BELOW, NOT_SUMMARISED_HR, DELETE_CONVERSATION } from '@/lib/hrAnswerWords'
+import { readingWords, splitAppended, splitSuggested, hideHandbookMarkers, HR_COMPOSER_HINT, NOT_ANSWERED, ASK_IT_AGAIN, ASKED_AGAIN_BELOW, NOT_SUMMARISED_HR, DELETE_CONVERSATION } from '@/lib/hrAnswerWords'
 
 type Tab = 'ask' | 'conversations' | 'handbooks' | 'dates'
 
@@ -48,6 +48,8 @@ interface HrExchange {
     /** Reopened (Step 6b): a stored question with no stored answer after it. */
     | 'not_answered'
   searches: number; reading: string; steps?: { list: Step[]; at: Step }; error?: string; refusal?: string
+  /** Step 6c: the request ended without an answer (a reading failed, or the wait ran too long): its words. */
+  notAnsweredWords?: string
 }
 
 interface DateRow { id: string; title: string; due_date: string }
@@ -226,11 +228,15 @@ export default function HrWorkspace() {
       }
       // The 'reading' event is HR's own: read here, then every line goes on to the workspace's reader.
       let searched = false
+      let waitEnded: string | null = null
       async function* tap(lines: AsyncIterable<string>) {
         for await (const line of lines) {
           try {
             const ev = JSON.parse(line)
             if (ev?.type === 'reading') patch(id, { reading: readingWords(ev.handbooks ?? []), steps: steps('hr_read', false) })
+            // THE HONEST WAIT (Step 6c): the real progress, shown as the first stage until the reading is done.
+            if (ev?.type === 'waiting') patch(id, { reading: String(ev.words ?? ''), steps: steps('hr_read', false) })
+            if (ev?.type === 'not_answered') waitEnded = String(ev.message ?? '')
             if (ev?.type === 'searching') searched = true
           } catch { /* a half line: the reader skips it too */ }
           yield line
@@ -240,7 +246,10 @@ export default function HrWorkspace() {
         (p) => patch(id, { text: hideHandbookMarkers(p.text), searches: p.searches, phase: p.phase,
           steps: steps(p.phase === 'searching' ? 'hr_check' : p.text ? 'write' : 'hr_read', searched) }),
         () => controller.signal.aborted)
-      if (outcome.kind === 'done') {
+      if (waitEnded !== null) {
+        // The server ended without an answer and said why: the words, and the turn is "Not answered".
+        patch(id, { phase: 'not_answered', steps: undefined, notAnsweredWords: waitEnded })
+      } else if (outcome.kind === 'done') {
         patch(id, { text: outcome.text, sources: outcome.sources as AnswerSource[], phase: 'done', steps: undefined })
         if (outcome.topicId) setTopicId(outcome.topicId)
       } else if (outcome.kind === 'stopped_by_user') patch(id, { text: hideHandbookMarkers(outcome.text), phase: 'stopped', steps: undefined })
@@ -446,7 +455,14 @@ export default function HrWorkspace() {
                   )}
                   {x.text && (
                     <>
-                      <AnswerBody text={body} sources={x.sources} />
+                      {/* Suggested wording (owner, 6c) is drawn as a draft — Documents' draft look
+                          (components/DocumentReport.tsx) — never as a source, and it has no number. */}
+                      {splitSuggested(body).map((seg, si) => seg.draft ? (
+                        <div key={si} className="my-3 rounded-lg bg-gray-50 p-3">
+                          <p className="text-[12px] text-gray-500">Suggested wording</p>
+                          <div className="mt-2"><AnswerBody text={seg.text} sources={x.sources} /></div>
+                        </div>
+                      ) : <AnswerBody key={si} text={seg.text} sources={x.sources} />)}
                       {/* The lines the server added (dropped quotes or links, the day-1 line): grey, after the answer. */}
                       {x.phase === 'done' && lines.map((l) => <p key={l} className="mt-2 text-[13px] text-gray-500">{l}</p>)}
                       <div className="sources-print"><SourceList sources={x.sources} /></div>
@@ -467,7 +483,7 @@ export default function HrWorkspace() {
                   )}
                   {x.phase === 'not_answered' && !askedAgain && (
                     <p className="mt-2 text-[14px] text-gray-500">
-                      {NOT_ANSWERED}
+                      {x.notAnsweredWords ?? NOT_ANSWERED}
                       <button onClick={() => ask(x.question)} disabled={askBusy}
                         className="ml-2 font-medium underline hover:no-underline disabled:text-gray-300">{ASK_IT_AGAIN}</button>
                     </p>

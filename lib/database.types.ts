@@ -2768,6 +2768,8 @@ export type Database = {
           mime_type: string | null
           name: string
           next_check_at: string | null
+          outline_parts_done: number | null
+          outline_parts_total: number | null
           page_count: number | null
           read_at: string | null
           scope: string
@@ -2791,6 +2793,8 @@ export type Database = {
           mime_type?: string | null
           name: string
           next_check_at?: string | null
+          outline_parts_done?: number | null
+          outline_parts_total?: number | null
           page_count?: number | null
           read_at?: string | null
           scope?: string
@@ -2814,6 +2818,8 @@ export type Database = {
           mime_type?: string | null
           name?: string
           next_check_at?: string | null
+          outline_parts_done?: number | null
+          outline_parts_total?: number | null
           page_count?: number | null
           read_at?: string | null
           scope?: string

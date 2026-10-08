@@ -48,13 +48,15 @@ describe('the check record (migration 069)', () => {
     assert.deepEqual(p.origins, [{ n: 1, from: 'plain' }])
     assert.equal(p.text, 'It says “Employees accrue one hour of paid sick time for every”[1].')
   })
-  test('what it holds: handbooks given (id, name, version, how), searched pages, cited passages, card origins, drops, over budget', () => {
+  test('what it holds: handbooks given (id, name, version, how), the selection (6c), the wait, searched pages, cited passages, card origins, drops', () => {
     const done = finishAnswer('It says [H1: "Employees accrue one hour of paid sick time"].', [], [], blocks, [hb], [])
-    const rec = checkRecord({ used: [hb], overBudget: ['Big'], budgetTokens: 50000, searched: [{ url: 'u', title: 't' }], citedPassages: 2, done })
+    const selections = [{ handbookId: 'big', name: 'Big', callOk: true, chosen: [{ sectionId: 's9', title: '9. Other', by: 'net' as const }], leftForBudget: [] }]
+    const rec = checkRecord({ used: [hb], selections, budgetTokens: 50000, searched: [{ url: 'u', title: 't' }], citedPassages: 2, done, waitedSeconds: 12 })
     assert.deepEqual(rec, {
-      version: 1,
+      version: 2,
       handbooks: [{ id: 'h1', name: 'Harbor Policy', version_of: 'h0', added_at: '2026-10-07', given_as: 'sections', pages: 1 }],
-      over_budget: ['Big'], budget_tokens: 50000, searched: [{ url: 'u', title: 't' }], cited_passages: 2,
+      selection: [{ handbook_id: 'big', name: 'Big', call_ok: true, chosen: [{ section_id: 's9', title: '9. Other', by: 'net' }], left_for_budget: [] }],
+      waited_seconds: 12, budget_tokens: 50000, searched: [{ url: 'u', title: 't' }], cited_passages: 2,
       handbook_cards: [{ n: 1, from: 'marker' }],
       dropped: { handbook_quotes: 0, unchecked_quotes: 0, web_links: 0 },
     })

@@ -3,8 +3,8 @@
 **GENERATED — do not edit.** `node --env-file=.env.local scripts/schema-doc.js`, and it runs
 inside `npm run db:migrate`, so it cannot be stale by more than one migration.
 
-**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-10-08 00:11 UTC
-**Migrations applied:** 70 — `000` to `069`
+**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-10-08 00:38 UTC
+**Migrations applied:** 71 — `000` to `070`
 
 *Every figure here was read from the catalog of that database. Nothing is copied from the
 migration files, which say what was intended rather than what is there — and the two have
@@ -29,7 +29,7 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 
 **Compliance Workspace (M1) — research, conversations, checklists**
 
-- `topics` — 37 rows · touched by route chat, route checklists/from-topic, route documents, route hr/answer, route jobs/delete, +9 more
+- `topics` — 40 rows · touched by route chat, route checklists/from-topic, route documents, route hr/answer, route jobs/delete, +9 more
 - `checklists` — 5 rows · touched by route account, route audit-checklist, route chat, route checklist-items/[id]/how-to, route checklists/from-topic, +8 more
 - `checklist_items` — 24 rows · touched by route account/export, route account, route audit-checklist, route chat, route checklist-items/[id]/how-to, +5 more
 - `critic_reviews` — 0 rows · touched by lib criticRecord
@@ -157,7 +157,7 @@ END)`
 
 One row per model call, written at the call. Prices are copied onto the row so a later change to config/pricing.ts cannot rewrite what a past call cost. cost_usd NULL = the model was not in the price table, which is not the same as free. DECISIONS.md §128 J.
 
-**Rows:** 75 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 80 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route document-draft`, `lib auditRun`, `lib auditTemplate`, `lib costLedger`, `lib documentScan`, `script check-live`, `script cost-report`, `script run-golden-audit`, `script run-golden-docs`, `script scan-document`
 
@@ -1880,7 +1880,7 @@ One check of one handbook version (decision 2).
 
 Company-level dates a handbook sets; sent to the one calendar only when a person presses Add to calendar (decision 29).
 
-**Rows:** 1 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 0 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `script check-live`
 
@@ -2070,6 +2070,8 @@ HR's own record of a handbook (HR-PLAN decision 18). Never a documents row.
 | `uploaded_by` | uuid | yes | — |
 | `created_at` | timestamp with time zone | no | `now()` |
 | `updated_at` | timestamp with time zone | no | `now()` |
+| `outline_parts_total` | integer | yes | — |
+| `outline_parts_done` | integer | yes | — |
 
 **Points at:**
 
@@ -2097,6 +2099,7 @@ HR's own record of a handbook (HR-PLAN decision 18). Never a documents row.
 
 - `handbooks_company_scope_has_no_site` — `CHECK (((scope <> 'company'::text) OR (entity_id IS NULL)))`
 - `handbooks_could_not_read_says_why` — `CHECK (((status <> 'could_not_read'::text) OR (status_reason IS NOT NULL)))`
+- `handbooks_outline_progress_in_range` — `CHECK (((COALESCE(outline_parts_total, 0) >= 0) AND (COALESCE(outline_parts_done, 0) >= 0) AND ((outline_parts_done IS NULL) OR (outline_parts_total IS NULL) OR (outline_parts_done <= outline_parts_total))))`
 - `handbooks_page_count_check` — `CHECK ((page_count >= 0))`
 - `handbooks_scope_check` — `CHECK ((scope = ANY (ARRAY['company'::text, 'site'::text])))`
 - `handbooks_size_bytes_check` — `CHECK ((size_bytes >= 0))`
@@ -2805,7 +2808,7 @@ The ~59 facts about a company that determine which requirements apply. Reference
 
 One exploration. The transcript is disposable (WORKSPACE.md §6.4); the summary is what survives. Holds NO facts — a hypothetical is never stored (DECISIONS.md §78) and a real fact goes to company_switches. Migration 028.
 
-**Rows:** 37 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 40 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route chat`, `route checklists/from-topic`, `route documents`, `route hr/answer`, `route jobs/delete`, `route jobs/summarise`, `route to-confirm`, `route topics/[id]`, `route topics/[id]/summarise`, `screen compliance`, `lib conversation`, `lib summaryReport`, `lib topicClaim`, `script check-live`
 
@@ -2872,7 +2875,7 @@ One exploration. The transcript is disposable (WORKSPACE.md §6.4); the summary 
 
 One message in a conversation. Cleared 7 days after the topic is summarised (DECISIONS.md §125, superseding §110's 15 days); the topic row and its summary survive.
 
-**Rows:** 106 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 115 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route jobs/delete`, `route jobs/summarise`, `route topics/[id]`, `lib attachedDocument`, `lib conversation`, `script check-live`
 
@@ -3164,4 +3167,5 @@ filtered HERE so no consumer can forget it (CLAUDE.md §3.2). A corrected link
 067
 068
 069
+070
 ```

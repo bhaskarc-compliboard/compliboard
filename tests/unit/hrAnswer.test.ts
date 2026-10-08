@@ -11,7 +11,7 @@ import {
   type Block, type HandbookUsed,
 } from '../../lib/hrAnswer.ts'
 import {
-  HR_REFUSALS, overBudgetLine, DAY1_LINE, QUOTE_REMOVED, HR_COMPOSER_HINT, uncheckedQuotesLine, quotesDroppedLine, linksDroppedLine, readingWords, splitAppended,
+  HR_REFUSALS, longLine, DAY1_LINE, QUOTE_REMOVED, HR_COMPOSER_HINT, uncheckedQuotesLine, quotesDroppedLine, linksDroppedLine, readingWords, splitAppended,
   hideHandbookMarkers, isAppendedLine,
 } from '../../lib/hrAnswerWords.ts'
 import { stageWords } from '../../components/stageWords.ts'
@@ -160,9 +160,10 @@ describe('the words', () => {
     assert.equal(quotesDroppedLine(3), '3 quotes could not be found in your handbook, so they are not shown as sources.')
     assert.equal(linksDroppedLine(1), '1 web source could not be checked, so it is not shown.')
     assert.equal(linksDroppedLine(2), '2 web sources could not be checked, so they are not shown.')
-    assert.equal(overBudgetLine('Cascade Handbook'), 'Cascade Handbook is too long to read whole yet. Reading its right sections comes in the next step.')
+    assert.equal(longLine('Cascade Handbook', ['4.1 Time off', '9. Other things'], false), 'Cascade Handbook is long, so this answer read the sections that matched your question: 4.1 Time off and 9. Other things.')
+    assert.ok(isAppendedLine('Cascade Handbook is too long to read whole yet. Reading its right sections comes in the next step.'), '6a\'s old line still draws grey on a reopened answer')
     assert.equal(HR_COMPOSER_HINT, 'Ask about your handbook, or a situation at work…')
-    for (const l of [quotesDroppedLine(1), quotesDroppedLine(2), linksDroppedLine(1), linksDroppedLine(4), overBudgetLine('Big'), DAY1_LINE]) assert.ok(isAppendedLine(l), l)
+    for (const l of [quotesDroppedLine(1), quotesDroppedLine(2), linksDroppedLine(1), linksDroppedLine(4), longLine('Big', ['a'], true), DAY1_LINE]) assert.ok(isAppendedLine(l), l)
     assert.ok(!isAppendedLine('An ordinary paragraph of the answer.'))
   })
   test('the appended lines are split off the stored answer for drawing; the answer itself is untouched', () => {
@@ -224,14 +225,18 @@ describe('the loader', () => {
     assert.match(ctx, /<section id="H1" handbook="Main" applies="Portland" title="1\. Pay" pages="1">\nPay is weekly\.\n<\/section>/)
     assert.match(ctx, /Not included, so not read for this answer: "Old" \(could not be read: a scan\)\./)
   })
-  test('THE BUDGET: a handbook that would pass it is left out and named; one that fits still goes', async () => {
-    const rows = [row('big', { name: 'Big', status: 'reading', extracted_text: 'y'.repeat(4000), page_count: null }), row('small', { name: 'Small', status: 'reading', extracted_text: 'z'.repeat(100), page_count: null })]
+  test('THE BUDGET (6c): one that fits goes whole; one that does not is LONG if read, WAITING if its sections are not found', async () => {
+    const rows = [row('big', { name: 'Big', status: 'reading', extracted_text: 'y'.repeat(4000), page_count: 9 }),
+      row('bigread', { name: 'BigRead', status: 'read', extracted_text: 'w'.repeat(4000), page_count: 9 }),
+      row('small', { name: 'Small', status: 'reading', extracted_text: 'z'.repeat(100), page_count: null })]
+    const secs = { bigread: [{ id: 's1', title: '1. One', page_from: 1, page_to: 1, text: 'w'.repeat(2000) }, { id: 's2', title: '2. Two', page_from: 2, page_to: 9, text: 'w'.repeat(2000) }] }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const r = await loadHandbooksForAnswer(fake(rows) as any, 'co', 500)
+    const r = await loadHandbooksForAnswer(fake(rows, secs) as any, 'co', 500)
     assert.ok(r.ok); if (!r.ok) return
-    assert.deepEqual(r.overBudget, ['Big']); assert.deepEqual(r.used.map((u) => u.name), ['Small'])
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    assert.deepEqual(await loadHandbooksForAnswer(fake([rows[0]]) as any, 'co', 500), { ok: false, refusal: overBudgetLine('Big'), overBudget: ['Big'] })
+    assert.deepEqual(r.used.map((u) => u.name), ['Small'])
+    assert.deepEqual(r.long.map((h) => [h.name, h.sections.length]), [['BigRead', 2]])
+    assert.deepEqual(r.waiting.map((h) => h.name), ['Big'])
+    assert.equal(r.budget, 500); assert.ok(r.spent > 0 && r.spent < 500)
   })
 })
 
@@ -241,7 +246,7 @@ describe('the route and the shared changes', () => {
     assert.ok(route.indexOf('hrPreviewOn()') < route.indexOf('requireCompany(request)'))
     assert.match(route, /insert\(\{ company_id: companyId, title: titleFromQuestion\(question\), section: 'hr' \}\)/)
     assert.match(route, /task: 'hr', maxTokens: 16000, signal: request\.signal, ledger: \{ companyId, task: 'hr' \}/)
-    assert.match(route, /if \(!loaded\.ok\) return NextResponse\.json\(\{ outcome: 'refused', message: loaded\.refusal \}\)/)
+    assert.match(route, /if \(!first\.ok\) return NextResponse\.json\(\{ outcome: 'refused', message: first\.refusal \}\)/)
     assert.ok(route.indexOf("outcome: 'refused'") < route.indexOf('askAIOpenStream('), 'a refusal returns before any model call')
   })
   test('the two test paths (a bad marked quote; plain quotes) can never run on production', () => {

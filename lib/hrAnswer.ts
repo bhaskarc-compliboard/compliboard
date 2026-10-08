@@ -15,7 +15,7 @@ import type { Source, CitedPassage } from './ai.ts'
 import { normaliseForQuote } from './documentScan.ts'
 import { findReturned, labelFor } from './howTo.ts'
 import { splitPages, plainText, PAGE_BREAK } from './handbookSections.ts'
-import { HR_REFUSALS, overBudgetLine, QUOTE_REMOVED } from './hrAnswerWords.ts'
+import { HR_REFUSALS, QUOTE_REMOVED, draftParagraphs } from './hrAnswerWords.ts'
 
 type Db = SupabaseClient<any, any, any>   // eslint-disable-line @typescript-eslint/no-explicit-any
 
@@ -48,18 +48,37 @@ export interface Block {
 export interface HandbookUsed {
   id: string; name: string; pages: number | null; text: string; isWord: boolean
   /** For the check record (Step 6b): how it was given, which version it is, when it was added. */
-  as?: 'sections' | 'pages' | 'whole'; versionOf?: string | null; addedAt?: string
+  as?: 'sections' | 'pages' | 'whole' | 'selected sections'; versionOf?: string | null; addedAt?: string
 }
 
+/** A handbook too long to send whole whose sections are found: it goes through selection (Step 6c). */
+export interface LongHandbook {
+  id: string; name: string; pages: number | null; text: string; isWord: boolean; applies: string
+  versionOf: string | null; addedAt: string
+  sections: Array<{ id: string; title: string; page_from: number | null; page_to: number | null; text: string }>
+}
+/** A handbook too long to send whole whose sections are NOT found yet: the answer waits for it (Step 6c). */
+export interface WaitingHandbook { id: string; name: string; pages: number | null }
+
 export type Loaded =
-  | { ok: true; blocks: Block[]; used: HandbookUsed[]; notUsed: string[]; overBudget: string[] }
-  | { ok: false; refusal: string; overBudget?: string[] }
+  | { ok: true; blocks: Block[]; used: HandbookUsed[]; notUsed: string[]; long: LongHandbook[]; waiting: WaitingHandbook[]
+      /** Tokens the whole handbooks took, and the budget: what is left is for the selected sections. */
+      spent: number; budget: number }
+  | { ok: false; refusal: string }
 
 interface HandbookRowForAnswer {
   id: string; name: string; scope: string; entity_id: string | null; status: string; status_reason: string | null
   extracted_text: string | null; page_count: number | null; created_at: string; version_of: string | null
 }
 
+type SectionRow = { id: string; title: string | null; page_from: number | null; page_to: number | null; text: string }
+
+/**
+ * THE HANDBOOKS FOR ONE ANSWER (6a; Step 6c splits them three ways):
+ *   · WHOLE — every handbook that fits the budget, in the order they were added, exactly as in 6a;
+ *   · LONG — one that does not fit and whose sections are found: the right sections are chosen (selection);
+ *   · WAITING — one that does not fit and whose sections are not found yet: the answer waits for them.
+ */
 export async function loadHandbooksForAnswer(db: Db, companyId: string, budget = budgetTokens()): Promise<Loaded> {
   const { data: rows, error } = await db.from('handbooks')
     .select('id, name, scope, entity_id, status, status_reason, extracted_text, page_count, created_at, version_of')
@@ -84,16 +103,19 @@ export async function loadHandbooksForAnswer(db: Db, companyId: string, budget =
 
   const blocks: Block[] = []
   const used: HandbookUsed[] = []
-  const overBudget: string[] = []
+  const long: LongHandbook[] = []
+  const waiting: WaitingHandbook[] = []
   let spent = 0
   for (const h of withText) {
     const text = h.extracted_text as string
     const isWord = h.page_count == null
     const mine: Omit<Block, 'id'>[] = []
+    let secs: SectionRow[] = []
     if (h.status === 'read') {
-      const { data: secs } = await db.from('handbook_sections').select('id, position, title, page_from, page_to, text')
+      const { data } = await db.from('handbook_sections').select('id, position, title, page_from, page_to, text')
         .eq('handbook_id', h.id).order('position')
-      for (const s of (secs ?? []) as Array<{ id: string; title: string | null; page_from: number | null; page_to: number | null; text: string }>) {
+      secs = (data ?? []) as SectionRow[]
+      for (const s of secs) {
         mine.push({ handbookId: h.id, handbookName: h.name, applies: applies(h), sectionId: s.id, title: s.title ?? h.name,
           pageFrom: s.page_from, pageTo: s.page_to, stored: s.text })
       }
@@ -106,16 +128,140 @@ export async function loadHandbooksForAnswer(db: Db, companyId: string, budget =
         pageFrom: null, pageTo: null, stored: text })
     }
     const cost = Math.ceil(mine.reduce((n, b) => n + sendable(b.stored, isWord).length, 0) * TOKENS_PER_CHAR)
-    if (spent + cost > budget) { overBudget.push(h.name); continue }
+    if (spent + cost > budget) {
+      if (h.status === 'read') long.push({ id: h.id, name: h.name, pages: h.page_count, text, isWord, applies: applies(h),
+        versionOf: h.version_of, addedAt: h.created_at,
+        sections: secs.map((x) => ({ id: x.id, title: x.title ?? h.name, page_from: x.page_from, page_to: x.page_to, text: x.text })) })
+      else waiting.push({ id: h.id, name: h.name, pages: h.page_count })
+      continue
+    }
     spent += cost
     for (const b of mine) blocks.push({ ...b, id: `H${blocks.length + 1}` })
     used.push({ id: h.id, name: h.name, pages: h.page_count, text, isWord,
       as: h.status === 'read' ? 'sections' : mine.length > 1 || mine[0]?.pageFrom != null ? 'pages' : 'whole',
       versionOf: h.version_of, addedAt: h.created_at })
   }
-  // Every handbook with text is over the budget: nothing to send, and the temporary line says why.
-  if (!blocks.length) return { ok: false, refusal: overBudget.map(overBudgetLine).join(' '), overBudget }
-  return { ok: true, blocks, used, notUsed, overBudget }
+  return { ok: true, blocks, used, notUsed, long, waiting, spent, budget }
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// SELECTION — a long handbook's right sections (Step 6c). The model names them from a table of contents;
+// code checks every id, adds a safety net, and sends what fits, in the handbook's own order.
+// ---------------------------------------------------------------------------------------------------------
+
+/** About the first 30 words of a section's text, for the table of contents. */
+export function firstWords(text: string, n = 30): string {
+  const words = plainText(text).split(/\s+/).filter(Boolean)
+  return words.slice(0, n).join(' ') + (words.length > n ? ' …' : '')
+}
+
+/** The table of contents the selection call is given: S-ids unique across every long handbook. */
+export function tableOfContents(longs: LongHandbook[]): { text: string; ids: Map<string, { h: number; s: number }> } {
+  const ids = new Map<string, { h: number; s: number }>()
+  const parts: string[] = []
+  longs.forEach((h, hi) => {
+    parts.push(`Handbook "${h.name}" (${h.pages ? `${h.pages} pages, ` : ''}applies to ${h.applies}):`)
+    h.sections.forEach((s, si) => {
+      const id = `S${ids.size + 1}`
+      ids.set(id, { h: hi, s: si })
+      const pages = s.page_from == null ? '' : s.page_to != null && s.page_to !== s.page_from ? ` (pages ${s.page_from}-${s.page_to})` : ` (page ${s.page_from})`
+      parts.push(`${id} | ${s.title}${pages} | ${firstWords(s.text)}`)
+    })
+  })
+  return { text: parts.join('\n'), ids }
+}
+
+/** Words too common in an HR question to pick a section by. */
+const NET_STOPWORDS = new Set(('about above after again against also been before being below between both could does doing during each '
+  + 'enough every from further have having here into just like more most much must need only other over same should since some such '
+  + 'than that their them then there these they this those through under until very what when where which while will with would your '
+  + 'ours yours handbook handbooks policy policies employee employees employer employers company companies staff worker workers work '
+  + 'rule rules law laws legal state oregon washington seattle portland city federal right correct give gives given section sections '
+  + 'many days hours week weeks year years time does question answer please tell know want make sure').split(' '))
+
+/** The question's distinctive words: 4+ letters, not common, a trailing plural "s" taken off. */
+export function distinctiveWords(question: string): string[] {
+  const out = new Set<string>()
+  for (const raw of question.toLowerCase().match(/[a-z][a-z'-]{3,}/g) ?? []) {
+    const w = raw.replace(/'s$/, '')
+    if (NET_STOPWORDS.has(w)) continue
+    out.add(w.length > 4 && w.endsWith('s') && !w.endsWith('ss') ? w.slice(0, -1) : w)
+  }
+  return [...out]
+}
+
+/** A word in more than this share of a handbook's sections cannot pick one out (staging, 6c: "cascade", "part"). */
+export const NET_MAX_SHARE = 0.2
+/** The net adds at most this many sections. */
+export const NET_MAX_SECTIONS = 6
+
+/**
+ * THE SAFETY NET: sections whose text holds one of the question's distinctive words — words found in few
+ * sections, so they pick some out — most such words first, at most NET_MAX_SECTIONS. Measured on staging: a
+ * word in every section ("cascade", the company's name) put every section in the net and spent the budget.
+ */
+export function safetyNet(question: string, longs: LongHandbook[], ids: Map<string, { h: number; s: number }>): string[] {
+  const candidates = distinctiveWords(question)
+  if (!candidates.length) return []
+  const texts = new Map([...ids].map(([id, at]) => [id,
+    plainText(longs[at.h].sections[at.s].text).toLowerCase() + ' ' + longs[at.h].sections[at.s].title.toLowerCase()]))
+  const words = candidates.filter((w) => [...texts.values()].filter((t) => t.includes(w)).length <= Math.max(1, Math.floor(ids.size * NET_MAX_SHARE)))
+  const scored: Array<{ id: string; n: number }> = []
+  for (const [id, text] of texts) {
+    const n = words.filter((w) => text.includes(w)).length
+    if (n) scored.push({ id, n })
+  }
+  return scored.sort((a, b) => b.n - a.n || Number(a.id.slice(1)) - Number(b.id.slice(1))).slice(0, NET_MAX_SECTIONS).map((x) => x.id)
+}
+
+export interface Selection {
+  handbookId: string; name: string; callOk: boolean
+  chosen: Array<{ sectionId: string; title: string; by: 'model' | 'net' }>
+  /** Named by the model or the net but left out because the budget was spent. */
+  leftForBudget: string[]
+}
+
+/**
+ * CHOOSE WHAT IS SENT: the model's valid picks first, then the safety net's, until the budget is spent; each
+ * handbook's chosen sections in its own order. An id the model named that does not exist is ignored.
+ */
+export function chooseSections(longs: LongHandbook[], ids: Map<string, { h: number; s: number }>, modelPicks: string[] | null,
+  netPicks: string[], tokensLeft: number): Selection[] {
+  const by = new Map<string, 'model' | 'net'>()
+  for (const id of modelPicks ?? []) if (ids.has(id) && !by.has(id)) by.set(id, 'model')
+  for (const id of netPicks) if (!by.has(id)) by.set(id, 'net')
+  let left = tokensLeft
+  const keep = new Set<string>()
+  const leftOut: string[] = []
+  for (const [id] of by) {
+    const at = ids.get(id)!
+    const s = longs[at.h].sections[at.s]
+    const cost = Math.ceil(sendable(s.text, longs[at.h].isWord).length * TOKENS_PER_CHAR)
+    if (cost <= left) { keep.add(id); left -= cost } else leftOut.push(id)
+  }
+  return longs.map((h, hi) => {
+    const mine = [...ids].filter(([, at]) => at.h === hi).map(([id, at]) => ({ id, at }))
+    return {
+      handbookId: h.id, name: h.name, callOk: modelPicks !== null,
+      chosen: mine.filter((x) => keep.has(x.id)).map((x) => ({ sectionId: h.sections[x.at.s].id, title: h.sections[x.at.s].title, by: by.get(x.id)! })),
+      leftForBudget: mine.filter((x) => leftOut.includes(x.id)).map((x) => h.sections[x.at.s].title),
+    }
+  })
+}
+
+/** Add the chosen sections to what the answer is given, as ordinary section blocks. */
+export function addSelected(loaded: Extract<Loaded, { ok: true }>, selections: Selection[]): void {
+  for (const sel of selections) {
+    const h = loaded.long.find((x) => x.id === sel.handbookId)!
+    if (!sel.chosen.length) continue
+    for (const c of sel.chosen) {
+      const s = h.sections.find((x) => x.id === c.sectionId)!
+      loaded.blocks.push({ id: `H${loaded.blocks.length + 1}`, handbookId: h.id, handbookName: h.name, applies: h.applies,
+        sectionId: s.id, title: s.title, pageFrom: s.page_from, pageTo: s.page_to, stored: s.text })
+    }
+    loaded.used.push({ id: h.id, name: h.name, pages: h.pages, text: h.text, isWord: h.isWord, as: 'selected sections',
+      versionOf: h.versionOf, addedAt: h.addedAt })
+  }
 }
 
 /** What the model is sent of a block: a Word file's HTML as plain text, a page break as a newline. */
@@ -131,7 +277,11 @@ export function handbookContext(loaded: Extract<Loaded, { ok: true }>): string {
   })
   const notes = [
     loaded.notUsed.length ? `Not included, so not read for this answer: ${loaded.notUsed.join('; ')}.` : '',
-    loaded.overBudget.length ? `Not included because it is too long to send whole: ${loaded.overBudget.map((n) => `"${n}"`).join(', ')}.` : '',
+    ...loaded.long.map((h) => {
+      const sent = loaded.blocks.filter((b) => b.handbookId === h.id).length
+      return sent ? `"${h.name}" is too long to send whole: only the sections above that were chosen for this question are included.`
+        : `"${h.name}" is too long to send whole, and none of its sections was chosen for this question, so it is not included.`
+    }),
   ].filter(Boolean)
   return [...out, ...notes].join('\n\n')
 }
@@ -213,8 +363,11 @@ export function handbookCardTitle(hit: QuoteHit): { title: string; section_title
 
 // [H12: "…"] is the model's marker; [HP12: "…"] is a plain quote this code found in a handbook (Step 6b keeps
 // which, for the check record). Both are numbered and shown the same way.
-const MARKER = /\[(\d{1,2})\]|\s?\[H(P?)(\d+)(?::\s*["“]([^"”\]]*)["”])?\]/g
-const HMARKER = /\[HP?\d+(?::\s*["“][^"”\]]*["”])?\]/g
+// A marker may carry the model's own words after the quote, before its "]" ("[H21: "…" ... (repeated 92 times)]",
+// staging 6c): they are dropped, and the quote is checked as usual. Before this, such a marker was not recognised
+// and its "[H21:" stayed in the stored text.
+const MARKER = /\[(\d{1,2})\]|\s?\[H(P?)(\d+)(?::\s*["“]([^"”\]]*)["”][^\]\n]*)?\]/g
+const HMARKER = /\[HP?\d+(?::\s*["“][^"”\]]*["”][^\]\n]*)?\]/g
 /** A passage in quotation marks, straight or curly, on one line. */
 const PLAIN_QUOTE = /["“]([^"”\n]{1,800}?)["”]/g
 /**
@@ -234,7 +387,12 @@ const PLAIN_QUOTE = /["“]([^"”\n]{1,800}?)["”]/g
 export function checkPlainQuotes(text: string, blocks: Block[], used: HandbookUsed[], cited: Source[] = [], passages: CitedPassage[] = []):
     { text: string; handbookFailed: number; unchecked: number } {
   const kept: string[] = []
-  const masked = text.replace(HMARKER, (m) => { kept.push(m); return `\u0000${kept.length - 1}\u0000` })
+  // A SUGGESTED-WORDING PARAGRAPH (owner, 6c) is a draft: its quoted passages are not checked, and it never
+  // gets a card. Masked like a marker, then put back as it was. Every other quoted passage keeps the strict rule.
+  const paras = text.split('\n\n')
+  const marks = draftParagraphs(paras)
+  const drafts = paras.map((p, i) => (marks[i] ? (kept.push(p), `\u0000${kept.length - 1}\u0000`) : p)).join('\n\n')
+  const masked = drafts.replace(HMARKER, (m) => { kept.push(m); return `\u0000${kept.length - 1}\u0000` })
   let handbookFailed = 0
   let unchecked = 0
   const nOf = (url: string) => cited.find((s) => s.url === url)?.n
@@ -253,7 +411,9 @@ export function checkPlainQuotes(text: string, blocks: Block[], used: HandbookUs
     else handbookFailed++
     return QUOTE_REMOVED
   })
-  return { text: out.replace(/\u0000(\d+)\u0000/g, (_, i) => kept[Number(i)]), handbookFailed, unchecked }
+  // Restored twice: a marker can sit inside a restored paragraph's placeholder text only once, so two passes suffice.
+  const back = (t: string) => t.replace(/\u0000(\d+)\u0000/g, (_, i) => kept[Number(i)])
+  return { text: back(back(out)), handbookFailed, unchecked }
 }
 
 export function finishAnswer(text: string, cited: Source[], searched: Array<{ url: string; title: string }>,
@@ -284,7 +444,9 @@ export function finishAnswer(text: string, cited: Source[], searched: Array<{ ur
       return n == null ? '' : `[${n}]`
     }
     const hit = quote ? checkQuote(quote, `H${hId}`, blocks, used) : null
-    if (!hit) { droppedQuotes++; return '' }
+    // The whitespace the marker pattern took in front of it: a space goes with a dropped marker, a line break stays.
+    const lead = /^\s/.test(whole) ? whole[0] : ''
+    if (!hit) { droppedQuotes++; return lead === ' ' ? '' : lead }
     const key = `${hit.handbook.id}|${normaliseForQuote(quote!)}`
     let n = quoteNew.get(key)
     if (!n) {
@@ -299,9 +461,22 @@ export function finishAnswer(text: string, cited: Source[], searched: Array<{ ur
     // A CHECKED QUOTE IS SHOWN WHERE THE MODEL PUT IT, then its number (staging, 7 October: the model writes the
     // marker in the quote's place — "What your handbook says: [H3: "…"]" — so the number alone read as "[1]").
     // Only a quote the code found in the handbook is ever shown; a failed one is removed above.
-    return `${whole.startsWith(' ') ? ' ' : ''}“${quote!.trim()}”[${n}]`
+    return `${lead}“${quote!.trim()}”[${n}]`
   })
-  return { text: out, sources, droppedQuotes: droppedQuotes + plain.handbookFailed, droppedLinks, uncheckedQuotes: plain.unchecked, origins }
+  return { text: replaceBlockIds(out, blocks), sources, droppedQuotes: droppedQuotes + plain.handbookFailed, droppedLinks, uncheckedQuotes: plain.unchecked, origins }
+}
+
+/**
+ * INTERNAL IDS NEVER REACH THE PERSON (owner, 6c). After the markers are numbered, any "H12" left in the text is
+ * replaced by that block's title ("7.2 Sick leave", or "page 14" for a page block). One the answer was not given
+ * is left as written (there is nothing true to put in its place).
+ */
+export function replaceBlockIds(text: string, blocks: Block[]): string {
+  const byId = new Map(blocks.map((b) => [b.id, b.title]))
+  return text.replace(/\b(section |sections )?(H\d+)\b/g, (whole, word: string | undefined, id: string) => {
+    const title = byId.get(id)
+    return title ? `${word && !/^page /.test(title) ? word : ''}${title}` : whole
+  })
 }
 
 /**
@@ -331,14 +506,16 @@ export async function noCheckYet(db: Db, handbookIds: string[]): Promise<boolean
 // answer's turn, so the answer can be audited after the fact. The page does not show it in this step.
 // ---------------------------------------------------------------------------------------------------------
 export function checkRecord(args: {
-  used: HandbookUsed[]; overBudget: string[]; budgetTokens: number
+  used: HandbookUsed[]; selections: Selection[]; budgetTokens: number
   searched: Array<{ url: string; title: string }>; citedPassages: number
-  done: ReturnType<typeof finishAnswer>
+  done: ReturnType<typeof finishAnswer>; waitedSeconds?: number
 }): Record<string, unknown> {
   return {
-    version: 1,
+    version: 2,
     handbooks: args.used.map((u) => ({ id: u.id, name: u.name, version_of: u.versionOf ?? null, added_at: u.addedAt ?? null, given_as: u.as ?? null, pages: u.pages })),
-    over_budget: args.overBudget,
+    selection: args.selections.map((x) => ({ handbook_id: x.handbookId, name: x.name, call_ok: x.callOk,
+      chosen: x.chosen.map((c) => ({ section_id: c.sectionId, title: c.title, by: c.by })), left_for_budget: x.leftForBudget })),
+    waited_seconds: args.waitedSeconds ?? 0,
     budget_tokens: args.budgetTokens,
     searched: args.searched.map((r) => ({ url: r.url, title: r.title })),
     cited_passages: args.citedPassages,

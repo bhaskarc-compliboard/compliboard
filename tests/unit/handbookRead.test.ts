@@ -92,6 +92,10 @@ describe('the one write', () => {
             log.push(`db.update text (${String(patch.extracted_text).length} chars, ${patch.page_count} pages)`)
             return chain({ data: opts.textClaimHeld === false ? [] : [{ updated_at: 'T2' }], error: null })
           }
+          if ('outline_parts_done' in patch && !('status' in patch)) {
+            log.push(`db.update progress ${patch.outline_parts_done}/${patch.outline_parts_total}`)
+            return chain({ data: [{ updated_at: 'T3' }], error: null })
+          }
           log.push(`db.update status=${patch.status}`)
           return chain({ data: opts.claimHeld ? [{ id: 'h1' }] : [], error: null })
         },
@@ -114,7 +118,8 @@ describe('the one write', () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const out = await readHandbook({ db: f.db as any, admin: f.admin as any, bucket: 'b', outline, parsePdf: pages }, 'co', 'h1', 'T')
     assert.match(out, /^read: 2 pages, 2 sections/)
-    assert.deepEqual(f.log, ['db.update text (107 chars, 2 pages)', 'admin.delete sections', 'admin.insert 2 sections', 'db.update status=read'])
+    assert.deepEqual(f.log, ['db.update text (107 chars, 2 pages)', 'db.update progress 0/1', 'db.update progress 1/1',
+      'admin.delete sections', 'admin.insert 2 sections', 'db.update status=read'])
   })
   test('A RUN THAT LOST ITS CLAIM saves nothing, and takes its own sections back out', async () => {
     const { readHandbook } = await import('../../lib/handbookRead.ts')
@@ -122,7 +127,8 @@ describe('the one write', () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const out = await readHandbook({ db: f.db as any, admin: f.admin as any, bucket: 'b', outline, parsePdf: pages }, 'co', 'h1', 'T')
     assert.equal(out, 'claim lost')
-    assert.deepEqual(f.log, ['db.update text (107 chars, 2 pages)', 'admin.delete sections', 'admin.insert 2 sections', 'db.update status=read', 'admin.delete sections'])
+    assert.deepEqual(f.log, ['db.update text (107 chars, 2 pages)', 'db.update progress 0/1', 'db.update progress 1/1',
+      'admin.delete sections', 'admin.insert 2 sections', 'db.update status=read', 'admin.delete sections'])
   })
   test('TEXT FIRST: the text is saved before the outline call; a claim lost there stops before any model call', async () => {
     const { readHandbook } = await import('../../lib/handbookRead.ts')
