@@ -6,7 +6,7 @@
 > replaced.** Those carry a 🕓 HISTORICAL banner naming what is current instead — added 28 September
 > 2026. A manual set is the record of what a person checked and when; a file that deletes the sets whose
 > screens changed is a file that cannot tell you whether anything was ever checked at all.
-**Version:** 40 · **Updated:** 8 October 2026, HR Step 9 (§177): rows S-1 to S-6. Version 39: 8 October 2026, HR Step 8 finished (§176): rows E-1 to E-7. Version 38: 8 October 2026, the HR baseline (§175): rows B-1 to B-7. Version 37: 7 October 2026, HR Step 8 part 1 (§174): rows 8-1 to 8-8. Version 36: 7 October 2026, the politeness fix (§173): rows 7-8 and 7-9. Version 35: 7 October 2026, HR Step 7 — the HR summary. Version 34: 7 October 2026, HR Step 6c — long handbooks. Version 33: 7 October 2026, HR Step 6b — conversations. Version 32: 7 October 2026, HR Step 6a — the first answer. Version 31: 7 October 2026, HR Step 5b — reading a handbook. Version 30: 7 October 2026, HR Step 5a — adding and keeping handbooks. Version 29: 7 October 2026, HR Step 4 — the manual set for the HR page shell. Version 28: 4 October 2026, HR Step 3b — the check:live probes for HR's tables. Version 27: HR Step 3a — the manual set "the workspace looks the same". Version 26: at the close of the workspace work
+**Version:** 41 · **Updated:** 8 October 2026, HR Step 10 (§178): rows N-1 to N-7. Version 40: 8 October 2026, HR Step 9 (§177): rows S-1 to S-6. Version 39: 8 October 2026, HR Step 8 finished (§176): rows E-1 to E-7. Version 38: 8 October 2026, the HR baseline (§175): rows B-1 to B-7. Version 37: 7 October 2026, HR Step 8 part 1 (§174): rows 8-1 to 8-8. Version 36: 7 October 2026, the politeness fix (§173): rows 7-8 and 7-9. Version 35: 7 October 2026, HR Step 7 — the HR summary. Version 34: 7 October 2026, HR Step 6c — long handbooks. Version 33: 7 October 2026, HR Step 6b — conversations. Version 32: 7 October 2026, HR Step 6a — the first answer. Version 31: 7 October 2026, HR Step 5b — reading a handbook. Version 30: 7 October 2026, HR Step 5a — adding and keeping handbooks. Version 29: 7 October 2026, HR Step 4 — the manual set for the HR page shell. Version 28: 4 October 2026, HR Step 3b — the check:live probes for HR's tables. Version 27: HR Step 3a — the manual set "the workspace looks the same". Version 26: at the close of the workspace work
 **Supersedes:** version 25 (3 Oct). Adds the sets of 4 October — Workspace Task 5, Task 6, Stage 2, Stage 4 and the cron release's live checks — with the owner's recorded results (Task 6's T6-1 and T6-3, Stage 4's S4-2, the cron release's CR-1).
 Version 25: version 24 (25 Sep). Adds the **Workspace layout set** (3 October) — the first three
 are the owner's live checks after the push, and none of them sends a question or uploads a file — and
@@ -157,6 +157,20 @@ untested — applies to the runner as much as to anything it runs.
 106.** The floor is committed so the question does not have to be re-asked.
 
 ---
+
+## Manual set — HR Step 10, the night work — 8 October 2026 (`c6e9ae2`, `DECISIONS.md` §178)
+
+**The jobs are called by hand on staging with the cron secret (POST, `x-cron-secret`). Needs `HR_PREVIEW=1` for N-2 to N-5.**
+
+| # | Action | Steps | What must be true |
+|---|---|---|---|
+| **N-1** | **Workspace summaries** | A workspace conversation quiet for 6 hours or more; call `/api/jobs/summarise` | It is summarised by the workspace's writer ("What applies to you as of …"); one quiet for less than 6 hours is left alone |
+| **N-2** | **HR summaries** | The same for an HR conversation | Summarised by HR's writer ("What to change in your handbooks as of …"); the drawer then shows the summary |
+| **N-3** | **The night queue** | A new handbook, a newer version, one past its read-again date; call `/api/jobs/handbook-queue` | Each gets a check with the right reason; the sweep finishes them; no email arrives |
+| **N-4** | **Already being checked (the edge case)** | Press Check now, then call the queue at once | That handbook is skipped; there is still one open check |
+| **N-5** | **The words** | The Handbooks tab; add a handbook (a company with two sites); an HR conversation not yet summarised | The owner's tab line; "…We read it in about a minute and check it tonight. It stays here in HR."; "This one hasn't been summarised yet. The summary is written overnight, and the full conversation is here until then." |
+| **N-6** | **HR off** | `HR_PREVIEW=0` | The queue and the sweep are 404; the summary job still summarises workspace conversations |
+| **N-7** | **The morning after a deploy** | `job_runs` on production | A `summarise` row after 10:00 UTC and a `delete` row after 10:30 UTC, each finished |
 
 ## Manual set — HR Step 9, answers use the stored check (a switch, off) — 8 October 2026 (`d2c4df5`, `DECISIONS.md` §177)
 

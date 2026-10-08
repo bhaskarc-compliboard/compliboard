@@ -12034,3 +12034,52 @@ No migration.
   - **Spent:** $3.98 (ledger $8.22 → $12.20). Every answer is kept on staging (12 conversations).
   - **Fixed after the run:** the closing line now names each handbook once (two of Test Alpha's handbooks share a
     name), as the "not checked" line does.
+
+## 178. HR STEP 10: THE NIGHT WORK — 8 October 2026
+
+§178 — HR Step 10 (`c6e9ae2`). Decisions 13, 14 and 23. No migration.
+
+- **THE TIMING** (decision 13):
+  - the summary job at **10:00 UTC** and the deleter at **10:30 UTC** (were 03:00 and 03:30);
+  - the quiet rule **6 hours or more** (`lib/topicClaim.ts` `IDLE_HOURS = 6`; was 24).
+
+  This reverses part of §161 ("both candidate lists wait for 24 hours of quiet"); that both lists wait is unchanged.
+  - **The boundary:** the old comparison needed strictly more than its hours. Now a conversation quiet for exactly 6
+    hours counts.
+  - **Unit tests:** 5 hours 59 minutes is not yet, and exactly 6 hours is. A conversation picked up again after its
+    summary is summarised again once quiet (decision 23).
+- **HR SUMMARIES AT NIGHT** (decision 14). The summary job also picks HR conversations, only while `HR_PREVIEW` is on,
+  and calls the one writer (§172) with kind `'hr'` for them.
+  - A workspace conversation's call passes no kind, exactly as before.
+  - With the switch off, the job reads exactly the workspace's list.
+- **THE HANDBOOK NIGHT QUEUE** (`app/api/jobs/handbook-queue`, 10:00 UTC). The preview switch is checked first (404
+  while HR is off), then the cron secret.
+  - **What it queues:** every current, read handbook that has never been checked (`new_handbook`), is a newer version
+    never checked (`new_version`), or is past its `next_check_at` (`scheduled`). "Checked" means a check that finished
+    done, so a handbook whose checks all failed is tried again.
+  - **The rest:** the checks have no requester, so no email (§176). A handbook already being checked is skipped by the
+    database's one-open-check rule (071). Then `after()` starts the sweep.
+  - **The record:** under the shared `job_runs` name **`handbook_checks`** (the owner; no migration). The sweep writes
+    under it too, and **each row's counts show which job wrote it** (`job: 'queue'` for the night queue).
+- **`vercel.json`:** the handbook queue at 10:00 UTC and the handbook sweep every 5 minutes. Both answer 404 while HR is
+  off, so on production they do nothing until HR is released. A unit test pins every schedule.
+- **THE OWNER'S WORDS, RESTORED** (true again now the nightly check exists):
+  - "Each handbook is checked the night it arrives, then every 90 days. Changed one? Add the new version.";
+  - "<file>. We read it in about a minute and check it tonight. It stays here in HR.";
+  - HR's not-summarised sentence is the workspace's own: "This one hasn't been summarised yet. The summary is written
+    overnight, and the full conversation is here until then." A test holds the two equal.
+- **WHAT A WORKSPACE USER NOTICES:**
+  - summaries are written at 10:00 UTC (3 am Pacific in summer, 2 am in winter), not 03:00 UTC (8 pm Pacific the
+    evening before);
+  - a conversation quiet for 6 hours is summarised that night;
+  - old transcripts are cleared at 10:30 UTC.
+
+  No words change on the workspace's screens. `docs/WORKSPACE-PLAN.md` "Coming from the HR section" items 3 and 4 tell
+  the workspace chat.
+- **Proved on staging (Haiku):**
+  - **Switch off:** both HR jobs are 404, and the summary job summarised 13 conversations, all workspace.
+  - **Switch on:** 22 HR conversations, each by HR's writer, and none of the 24 quiet for under 6 hours.
+  - **The queue:** it queued five handbooks with the right reasons and skipped one already being checked. Its sweep
+    finished all six checks in 123 seconds, with no email.
+
+  **Spent: $0.96.** Tests went from 922 to 928.

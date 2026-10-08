@@ -1,6 +1,6 @@
 # The Compliance Workspace — what's left
 
-**Version:** 7 · **Updated:** 7 October 2026, item 7: the politeness fix to the summary prompt (§173). Version 6: 7 October 2026, HR Step 4a: item 6, the list moved to shared files. Version 5: 4 October 2026, HR Step 2: adds "Coming from the HR section". Version 4: at the close of the workspace work (housekeeping), to mirror
+**Version:** 8 · **Updated:** 8 October 2026, items 3 and 4 done by HR Step 10 (the timing; the writer by section). Version 7: **Updated:** 7 October 2026, item 7: the politeness fix to the summary prompt (§173). Version 6: 7 October 2026, HR Step 4a: item 6, the list moved to shared files. Version 5: 4 October 2026, HR Step 2: adds "Coming from the HR section". Version 4: at the close of the workspace work (housekeeping), to mirror
 the owner's map as it stood that evening. Version 3: Stage 4's cron release built. Version 2: Stage 4's first
 item built and the rebuild-from-empty rehearsal done. Version 1 was written after the Workspace Task 6 release.
 
@@ -167,7 +167,11 @@ without the owner knowing, or the two sections will edit the same lines at once.
    - `'workspace'` or `'hr'`, default `'workspace'`, so every existing insert keeps working.
    - `topic_list_v` exposes it, and the workspace's Conversations list filters to `'workspace'`.
    - The usage counter stays one count per company.
-3. **Same-night timing (HR decision 13).**
+3. **Same-night timing (HR decision 13).** **DONE 8 October 2026 by the HR chat** (HR Step 10, `c6e9ae2`,
+   `DECISIONS.md` §178). **For the workspace chat:** workspace summaries now run at **10:00 UTC**, for every
+   conversation quiet for **6 hours or more** (`IDLE_HOURS = 6`; "6 hours or more" — a conversation quiet for exactly
+   6 hours counts, where the old rule needed strictly more than its hours). The deleter runs at 10:30 UTC. A workspace
+   conversation's summary call is unchanged; only the timing moved.
    - The summary job moves to 10:00 UTC and the deleter to 10:30 UTC (`vercel.json`).
    - The quiet rule goes from 24 hours to 6 (`lib/topicClaim.ts` `IDLE_HOURS`, and its test).
    - A workspace conversation that ends at 5 pm is summarised that night. One picked up again the next day is
@@ -175,7 +179,8 @@ without the owner knowing, or the two sections will edit the same lines at once.
    - This reverses part of `DECISIONS.md` §161. No screen words change: "The summary is written overnight"
      stays true, since 10:00 UTC is 3 am in Oregon in summer and 2 am in winter.
 4. **The nightly summary job chooses the writer by section (HR decision 14).** A workspace conversation gets
-   the same writer as today.
+   the same writer as today. **DONE 8 October 2026** (HR Step 10): HR conversations go to the one writer with kind
+   'hr', only while `HR_PREVIEW` is on; a workspace conversation's call passes no kind, exactly as before.
 5. **Three workspace rows added to `docs/HANDOFF-CODE.md` §7** by HR Step 1 (`docs/HR-MACHINERY.md` B2, B3):
    - a failed attachment is answered around when other files loaded (`app/api/chat/route.ts:270–275`, `:472`);
    - carried files past three, and carried files that fail to load, drop silently, and only the model is told

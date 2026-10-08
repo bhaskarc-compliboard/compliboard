@@ -27,6 +27,24 @@ All three must be true:
 2. `npm run check:live` has run on staging with every pending migration applied (Claude Code's report says so). A migration that adds or alters a tenant table does not go to production without this. **The owner's free run is `CHECK_LIVE_BASE_URL=http://localhost:3999 npm run check:live`**: nothing listens on 3999, so the table probes run and nothing paid is called (`CLAUDE.md` §3.11). A full run that drives the routes is paid and goes against an isolated Haiku server, when a brief asks for it (`docs/HOW-WE-BUILD.md` §3c).
 3. The owner has done the manual tests in `docs/TESTING.md` for the feature being shipped, on the laptop against staging.
 
+## The cron entries (`vercel.json`) — as of 8 October 2026 (HR Step 10, `DECISIONS.md` §178)
+
+| Path | Schedule (UTC) | What it does |
+|---|---|---|
+| `/api/jobs/summarise` | `0 10 * * *` — 10:00 | Nightly summaries of conversations quiet 6 hours or more: the workspace's, and HR's while `HR_PREVIEW` is on |
+| `/api/jobs/delete` | `30 10 * * *` — 10:30 | Clears transcripts 12 months after the last message |
+| `/api/jobs/scan-documents` | `*/5 * * * *` | Documents sweep |
+| `/api/jobs/audit-sections` | `*/5 * * * *` | Audits sweep |
+| `/api/jobs/handbook-queue` | `0 10 * * *` — 10:00 | HR's night queue: queues the handbook checks that are due. **404 until HR is released** |
+| `/api/jobs/handbook-checks` | `*/5 * * * *` | HR's handbook sweep. **404 until HR is released** |
+
+The summary job and the deleter ran at 03:00 and 03:30 UTC until 8 October.
+
+**The morning after this deploy:** check `job_runs` for both nightly jobs — a `summarise` row started after 10:00 UTC
+and a `delete` row after 10:30 UTC, each with `finished_at` set. Neither HR job writes a row on production while HR is
+off (both answer 404). On staging, the night queue and the sweep both write under the job name `handbook_checks`;
+each row's counts show which job wrote it (`job: 'queue'` for the night queue).
+
 ## The procedure
 
 All commands in Terminal 3, from `~/Desktop/Compliboard`.
