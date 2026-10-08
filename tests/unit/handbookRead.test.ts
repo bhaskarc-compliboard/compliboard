@@ -166,7 +166,10 @@ describe('counts in plain English, and every drawer follows its own status (owne
   })
   test('the drawer body reads the row\'s own status, not whether it is current', () => {
     const page = readFileSync('app/hr/new/HrWorkspace.tsx', 'utf8')
-    const body = page.slice(page.indexOf('EVERY VERSION TELLS THE TRUTH'), page.indexOf('</Drawer>'))
+    const at = page.indexOf('EVERY VERSION TELLS THE TRUTH')
+    // The handbook drawer's own closing tag: the conversation drawer (Step 6b) closes earlier in the file.
+    const body = page.slice(at, page.indexOf('</Drawer>', at))
+    assert.ok(at > 0 && body.length > 200, 'the slice holds the handbook drawer body')
     assert.match(body, /h\.status === 'could_not_read'[\s\S]*statusWords\(h\.status, h\.status_reason\)/)
     assert.ok(!body.includes('is_current'), 'the body never branches on current vs older')
     assert.ok(!/\$\{n\} sections|pages, `/.test(body.replace(/counted\([^)]*\)/g, '')), 'no hand-made plural left')

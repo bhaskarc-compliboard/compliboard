@@ -98,12 +98,15 @@ export async function saveAssistantTurn(
   db: Db,
   // Widened for HR (Step 6a): a handbook source carries its quote and has no URL. Type-only; what the
   // workspace passes and stores is unchanged.
-  args: { topicId: string; companyId: string; text: string; sources: Array<Source | (Omit<Source, 'url'> & { url: string } & Record<string, unknown>)>; position: number },
+  args: { topicId: string; companyId: string; text: string; sources: Array<Source | (Omit<Source, 'url'> & { url: string } & Record<string, unknown>)>; position: number
+          /** HR Step 6b (migration 069): an HR answer's check record. Absent for the workspace, whose insert is unchanged. */
+          checkRecord?: Record<string, unknown> },
 ): Promise<void> {
   const { error } = await db.from('turns').insert({
     topic_id: args.topicId, company_id: args.companyId,
     position: args.position, role: 'assistant', text: args.text,
     sources: args.sources.length ? args.sources : null,
+    ...(args.checkRecord ? { check_record: args.checkRecord } : {}),
   })
   if (error) throw new Error(`saveAssistantTurn: ${error.message}`)
   await touchTopic(db, args.topicId)

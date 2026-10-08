@@ -45,7 +45,11 @@ export interface Block {
   stored: string
 }
 
-export interface HandbookUsed { id: string; name: string; pages: number | null; text: string; isWord: boolean }
+export interface HandbookUsed {
+  id: string; name: string; pages: number | null; text: string; isWord: boolean
+  /** For the check record (Step 6b): how it was given, which version it is, when it was added. */
+  as?: 'sections' | 'pages' | 'whole'; versionOf?: string | null; addedAt?: string
+}
 
 export type Loaded =
   | { ok: true; blocks: Block[]; used: HandbookUsed[]; notUsed: string[]; overBudget: string[] }
@@ -53,12 +57,12 @@ export type Loaded =
 
 interface HandbookRowForAnswer {
   id: string; name: string; scope: string; entity_id: string | null; status: string; status_reason: string | null
-  extracted_text: string | null; page_count: number | null; created_at: string
+  extracted_text: string | null; page_count: number | null; created_at: string; version_of: string | null
 }
 
 export async function loadHandbooksForAnswer(db: Db, companyId: string, budget = budgetTokens()): Promise<Loaded> {
   const { data: rows, error } = await db.from('handbooks')
-    .select('id, name, scope, entity_id, status, status_reason, extracted_text, page_count, created_at')
+    .select('id, name, scope, entity_id, status, status_reason, extracted_text, page_count, created_at, version_of')
     .eq('company_id', companyId).eq('is_current', true).order('created_at')
   if (error) throw new Error(`loading handbooks: ${error.message}`)
   const current = (rows ?? []) as HandbookRowForAnswer[]
@@ -105,7 +109,9 @@ export async function loadHandbooksForAnswer(db: Db, companyId: string, budget =
     if (spent + cost > budget) { overBudget.push(h.name); continue }
     spent += cost
     for (const b of mine) blocks.push({ ...b, id: `H${blocks.length + 1}` })
-    used.push({ id: h.id, name: h.name, pages: h.page_count, text, isWord })
+    used.push({ id: h.id, name: h.name, pages: h.page_count, text, isWord,
+      as: h.status === 'read' ? 'sections' : mine.length > 1 || mine[0]?.pageFrom != null ? 'pages' : 'whole',
+      versionOf: h.version_of, addedAt: h.created_at })
   }
   // Every handbook with text is over the budget: nothing to send, and the temporary line says why.
   if (!blocks.length) return { ok: false, refusal: overBudget.map(overBudgetLine).join(' '), overBudget }
@@ -205,8 +211,10 @@ export function handbookCardTitle(hit: QuoteHit): { title: string; section_title
   return { title: tail ? `${hit.handbook.name} — ${tail}` : hit.handbook.name, section_title: section, page_from: pf, page_to: pt }
 }
 
-const MARKER = /\[(\d{1,2})\]|\s?\[H(\d+)(?::\s*["“]([^"”\]]*)["”])?\]/g
-const HMARKER = /\[H\d+(?::\s*["“][^"”\]]*["”])?\]/g
+// [H12: "…"] is the model's marker; [HP12: "…"] is a plain quote this code found in a handbook (Step 6b keeps
+// which, for the check record). Both are numbered and shown the same way.
+const MARKER = /\[(\d{1,2})\]|\s?\[H(P?)(\d+)(?::\s*["“]([^"”\]]*)["”])?\]/g
+const HMARKER = /\[HP?\d+(?::\s*["“][^"”\]]*["”])?\]/g
 /** A passage in quotation marks, straight or curly, on one line. */
 const PLAIN_QUOTE = /["“]([^"”\n]{1,800}?)["”]/g
 /**
@@ -233,7 +241,7 @@ export function checkPlainQuotes(text: string, blocks: Block[], used: HandbookUs
   const out = masked.replace(PLAIN_QUOTE, (whole: string, inner: string, at: number, all: string) => {
     if (inner.trim().split(/\s+/).filter(Boolean).length < 6) return whole
     const hit = checkQuote(inner, '', blocks, used)
-    if (hit) return `[${hit.block?.id ?? 'H0'}: "${inner.trim()}"]`
+    if (hit) return `[HP${(hit.block?.id ?? 'H0').slice(1)}: "${inner.trim()}"]`
     const q = normaliseForQuote(inner)
     const web = passages.find((p) => normaliseForQuote(p.citedText).includes(q))
     const n = web ? nOf(web.url) : undefined
@@ -250,7 +258,9 @@ export function checkPlainQuotes(text: string, blocks: Block[], used: HandbookUs
 
 export function finishAnswer(text: string, cited: Source[], searched: Array<{ url: string; title: string }>,
   blocks: Block[], used: HandbookUsed[], passages: CitedPassage[] = []):
-    { text: string; sources: HrSource[]; droppedQuotes: number; droppedLinks: number; uncheckedQuotes: number } {
+    { text: string; sources: HrSource[]; droppedQuotes: number; droppedLinks: number; uncheckedQuotes: number
+      /** Each handbook card's number and whether it came from a [H…] marker or a plain quote (Step 6b). */
+      origins: Array<{ n: number; from: 'marker' | 'plain' }> } {
   const plain = checkPlainQuotes(text, blocks, used, cited, passages)
   text = plain.text
   const sources: HrSource[] = []
@@ -260,7 +270,8 @@ export function finishAnswer(text: string, cited: Source[], searched: Array<{ ur
   let droppedLinks = 0
   const byOld = new Map(cited.map((s) => [s.n, s]))
 
-  const out = text.replace(MARKER, (whole, webN: string | undefined, hId: string | undefined, quote: string | undefined) => {
+  const origins: Array<{ n: number; from: 'marker' | 'plain' }> = []
+  const out = text.replace(MARKER, (whole, webN: string | undefined, plainFlag: string | undefined, hId: string | undefined, quote: string | undefined) => {
     if (webN) {
       const old = Number(webN)
       if (!webNew.has(old)) {
@@ -279,6 +290,7 @@ export function finishAnswer(text: string, cited: Source[], searched: Array<{ ur
     if (!n) {
       n = sources.length + 1
       quoteNew.set(key, n)
+      origins.push({ n, from: plainFlag ? 'plain' : 'marker' })
       const t = handbookCardTitle(hit)
       sources.push({ n, kind: 'handbook', title: t.title, url: '', label: 'your handbook', handbook_id: hit.handbook.id,
         section_id: hit.block?.sectionId ?? null, handbook_name: hit.handbook.name, section_title: t.section_title,
@@ -289,7 +301,7 @@ export function finishAnswer(text: string, cited: Source[], searched: Array<{ ur
     // Only a quote the code found in the handbook is ever shown; a failed one is removed above.
     return `${whole.startsWith(' ') ? ' ' : ''}“${quote!.trim()}”[${n}]`
   })
-  return { text: out, sources, droppedQuotes: droppedQuotes + plain.handbookFailed, droppedLinks, uncheckedQuotes: plain.unchecked }
+  return { text: out, sources, droppedQuotes: droppedQuotes + plain.handbookFailed, droppedLinks, uncheckedQuotes: plain.unchecked, origins }
 }
 
 /**
@@ -312,4 +324,25 @@ export async function noCheckYet(db: Db, handbookIds: string[]): Promise<boolean
   const { data, error } = await db.from('handbook_checks').select('id').in('handbook_id', handbookIds).eq('status', 'done').limit(1)
   if (error) throw new Error(`reading handbook checks: ${error.message}`)
   return !data?.length
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// THE CHECK RECORD — HR Step 6b (migration 069; DECISIONS.md §169 follow-up 1). Stored with each new HR
+// answer's turn, so the answer can be audited after the fact. The page does not show it in this step.
+// ---------------------------------------------------------------------------------------------------------
+export function checkRecord(args: {
+  used: HandbookUsed[]; overBudget: string[]; budgetTokens: number
+  searched: Array<{ url: string; title: string }>; citedPassages: number
+  done: ReturnType<typeof finishAnswer>
+}): Record<string, unknown> {
+  return {
+    version: 1,
+    handbooks: args.used.map((u) => ({ id: u.id, name: u.name, version_of: u.versionOf ?? null, added_at: u.addedAt ?? null, given_as: u.as ?? null, pages: u.pages })),
+    over_budget: args.overBudget,
+    budget_tokens: args.budgetTokens,
+    searched: args.searched.map((r) => ({ url: r.url, title: r.title })),
+    cited_passages: args.citedPassages,
+    handbook_cards: args.done.origins,
+    dropped: { handbook_quotes: args.done.droppedQuotes, unchecked_quotes: args.done.uncheckedQuotes, web_links: args.done.droppedLinks },
+  }
 }

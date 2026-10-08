@@ -24,20 +24,20 @@ import AppLayout from '@/components/AppLayout'
 import { Tabs } from '@/components/Tabs'
 import { Empty } from '@/components/Empty'
 import { Sheet } from '@/components/Sheet'
-import { Drawer } from '@/components/Drawer'
+import { Drawer, printDrawer, printDate } from '@/components/Drawer'
 import { ConversationList } from '@/components/ConversationList'
-import { PRIMARY, TEXT_ACTION } from '@/components/buttonStyles'
+import { PRIMARY, TEXT_ACTION, OUTLINE } from '@/components/buttonStyles'
 import { HR_EXAMPLE_QUESTIONS } from '@/config/examples'
 import { ACCEPTED_FILE_TYPES } from '@/lib/acceptedFiles'
 import { DOCUMENTS_BUCKET, handbookPath } from '@/lib/storage'
-import { LIST_CAP, countOf, countWord, fmtDate } from '@/lib/listWords'
-import { friendlyDate } from '@/lib/conversationStatus'
+import { LIST_CAP, countOf, countWord, fmtDate, displayTitle } from '@/lib/listWords'
+import { friendlyDate, conversationStatus } from '@/lib/conversationStatus'
 import { readTopicList, type TopicRow } from '@/lib/topicList'
 import { statusWords, handbookList, sectionCount, pagesWords, counted, type HandbookRow } from '@/lib/handbooks'
 import { AnswerBody, SourceList, type AnswerSource } from '@/components/AnswerBody'
 import { Stages, type Step } from '@/components/Stages'
 import { readAnswerStream, ndjsonLines } from '@/lib/answerStream'
-import { readingWords, splitAppended, hideHandbookMarkers, HR_COMPOSER_HINT } from '@/lib/hrAnswerWords'
+import { readingWords, splitAppended, hideHandbookMarkers, HR_COMPOSER_HINT, NOT_ANSWERED, ASK_IT_AGAIN, ASKED_AGAIN_BELOW, NOT_SUMMARISED_HR, DELETE_CONVERSATION } from '@/lib/hrAnswerWords'
 
 type Tab = 'ask' | 'conversations' | 'handbooks' | 'dates'
 
@@ -45,6 +45,8 @@ type Tab = 'ask' | 'conversations' | 'handbooks' | 'dates'
 interface HrExchange {
   id: string; question: string; text: string; sources: AnswerSource[]
   phase: 'sending' | 'searching' | 'writing' | 'done' | 'stopped' | 'stopped_early' | 'failed' | 'refused'
+    /** Reopened (Step 6b): a stored question with no stored answer after it. */
+    | 'not_answered'
   searches: number; reading: string; steps?: { list: Step[]; at: Step }; error?: string; refusal?: string
 }
 
@@ -254,6 +256,46 @@ export default function HrWorkspace() {
     }
   }
   const stop = () => { inFlight.current?.abort(); inFlight.current = null }
+
+  // ---- CONVERSATIONS (Step 6b): the workspace's summary drawer, reopening and deleting ----
+  const [convDrawer, setConvDrawer] = useState<TopicRow | null>(null)
+  const [convDeleting, setConvDeleting] = useState(false)
+  const [convDeleteBusy, setConvDeleteBusy] = useState(false)
+  const [convDeleteFailed, setConvDeleteFailed] = useState(false)
+
+  /** Loads the topic's stored turns onto the Ask tab, the workspace's way (`/api/topics/[id]`, unchanged). */
+  async function openConversation(t: TopicRow) {
+    setNotice(null)
+    const res = await fetch(`/api/topics/${t.id}`, { headers: await authHeaders() })
+    const j = await res.json().catch(() => null)
+    if (!res.ok) { setNotice(j?.error ?? 'That conversation could not be opened. Please try again.'); return }
+    const turns = (j.turns ?? []) as Array<{ role: string; text: string; sources: AnswerSource[] | null }>
+    const rebuilt: HrExchange[] = []
+    for (let i = 0; i < turns.length; i++) {
+      if (turns[i].role !== 'user') continue
+      // NOT ANSWERED, from the stored turns alone: a question with no answer after it.
+      const answer = turns[i + 1]?.role === 'assistant' ? turns[i + 1] : null
+      rebuilt.push({ id: `r${i}`, question: turns[i].text, text: answer?.text ?? '', sources: answer?.sources ?? [],
+        phase: answer ? 'done' : 'not_answered', searches: 0, reading: '' })
+    }
+    setExchanges(rebuilt)
+    setTopicId(t.id)
+    setConvDrawer(null)
+    setTab('ask')
+  }
+
+  async function confirmConvDelete() {
+    if (!convDrawer) return
+    setConvDeleteBusy(true); setConvDeleteFailed(false)
+    let ok = false
+    try { ok = (await fetch(`/api/topics/${convDrawer.id}`, { method: 'DELETE', headers: await authHeaders() })).ok } catch { ok = false }
+    setConvDeleteBusy(false)
+    if (!ok) { setConvDeleteFailed(true); return }
+    if (topicId === convDrawer.id) { setExchanges([]); setTopicId(null) }
+    setConvDeleting(false); setConvDrawer(null)
+    setTopics(await readTopicList(supabase, 'hr'))
+  }
+  const cancelConvDelete = () => { if (convDeleteBusy) return; setConvDeleting(false); setConvDeleteFailed(false) }
   /** "Research this" and Enter. An empty box puts the cursor in it, as the workspace does. */
   const research = () => { void ask(box) }
   const newConversation = () => { setTab('ask'); setBox(''); if (!askBusy) { setExchanges([]); setTopicId(null) } }
@@ -387,8 +429,11 @@ export default function HrWorkspace() {
         {/* ================= ASK (the first visit; answers arrive in step 6) ================= */}
         {tab === 'ask' && (
           <div className={started ? 'pt-1' : ''}>
-            {exchanges.map((x) => {
+            {exchanges.map((x, xi) => {
               const { body, lines } = splitAppended(x.text)
+              // Asked again later in this conversation, word for word: the line says so and offers nothing.
+              const askedAgain = x.phase === 'not_answered'
+                && exchanges.slice(xi + 1).some((y) => y.question.trim() === x.question.trim())
               return (
                 <div key={x.id} className="mb-8">
                   <div className="mb-5 flex justify-end">
@@ -416,6 +461,16 @@ export default function HrWorkspace() {
                       <button onClick={() => ask(x.question)}
                         className="ml-2 font-medium underline hover:no-underline">Try again</button>
                     </div>
+                  )}
+                  {x.phase === 'not_answered' && askedAgain && (
+                    <p className="mt-2 text-[14px] text-gray-500">{ASKED_AGAIN_BELOW}</p>
+                  )}
+                  {x.phase === 'not_answered' && !askedAgain && (
+                    <p className="mt-2 text-[14px] text-gray-500">
+                      {NOT_ANSWERED}
+                      <button onClick={() => ask(x.question)} disabled={askBusy}
+                        className="ml-2 font-medium underline hover:no-underline disabled:text-gray-300">{ASK_IT_AGAIN}</button>
+                    </p>
                   )}
                   {x.phase === 'stopped' && (
                     <p className="mt-2 text-[14px] text-gray-500">
@@ -529,8 +584,8 @@ export default function HrWorkspace() {
               <div className="mt-4"><Empty title="No conversations yet" note="Ask a question and it will appear here." /></div>
             ) : (
               <div className="mt-4">
-                {/* Opening a conversation arrives in step 7; a row does nothing yet. */}
-                <ConversationList topics={topics} running={() => false} onOpen={() => {}} />
+                {/* A row opens the workspace's summary drawer (Step 6b). No summary is written for HR until step 7. */}
+                <ConversationList topics={topics} running={() => false} onOpen={setConvDrawer} />
               </div>
             )}
           </div>
@@ -618,7 +673,61 @@ export default function HrWorkspace() {
         )}
       </div>
 
+      {/* ================= THE CONVERSATION DRAWER — the workspace's summary drawer, its markup and words ================= */}
+      {convDrawer && (
+        <div className="no-print fixed inset-0 z-[45] bg-gray-900/30" onClick={() => setConvDrawer(null)} />
+      )}
+      {convDrawer && (
+        <Drawer title={displayTitle(convDrawer.title) ?? 'Conversation'}
+          sub={`${friendlyDate(convDrawer.last_turn_at ?? convDrawer.created_at)} · ${conversationStatus(convDrawer, convDrawer.turnCount > 0).label}`}
+          company={companyName}
+          printType="Summary report"
+          printDates={convDrawer.summarised_at
+            ? `Summarised ${printDate(convDrawer.summarised_at)}`
+            : `Last message ${printDate(convDrawer.last_turn_at ?? convDrawer.created_at)}`}
+          onClose={() => setConvDrawer(null)}
+          footer={
+            <>
+              {convDrawer.turnCount > 0 && (
+                <button onClick={() => openConversation(convDrawer)} className={OUTLINE}>Open the conversation</button>
+              )}
+              <button onClick={printDrawer} className={`ml-auto ${TEXT_ACTION}`}>Download</button>
+              <button onClick={() => { setConvDeleteFailed(false); setConvDeleting(true) }}
+                className="ml-3 text-[14px] text-gray-400 hover:text-red-600">Delete</button>
+            </>
+          }>
+          <div className="flex min-h-full flex-col">
+            {convDrawer.summary ? (
+              <AnswerBody text={convDrawer.summary} sources={[]} />
+            ) : (
+              <p className="text-[14px] leading-relaxed text-gray-600">{NOT_SUMMARISED_HR}</p>
+            )}
+          </div>
+        </Drawer>
+      )}
+
+      {/* ================= DELETING A CONVERSATION (canvas board 11, the workspace's delete sheet) ================= */}
+      {convDeleting && convDrawer && (
+        <Sheet onClose={cancelConvDelete} title={DELETE_CONVERSATION.title} lede={DELETE_CONVERSATION.lede}>
+          <p className="text-[13px] leading-relaxed text-gray-600">{DELETE_CONVERSATION.note}</p>
+          {convDeleteFailed && <p className="mt-3 text-[13px] text-amber-900">{DELETE_FAILED}</p>}
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            {/* "Download the summary" only when there is one to download (step 7 writes them). */}
+            {convDrawer.summary && <button onClick={printDrawer} className={OUTLINE}>Download the summary</button>}
+            <button onClick={confirmConvDelete} disabled={convDeleteBusy}
+              className="rounded-md border border-[#B42318] px-3 py-1.5 text-[14px] font-medium text-[#B42318] hover:bg-red-50 disabled:opacity-50">
+              Delete for good
+            </button>
+            <button onClick={cancelConvDelete} autoFocus className={`ml-auto ${TEXT_ACTION}`}>Cancel</button>
+          </div>
+        </Sheet>
+      )}
+
       {/* ================= THE HANDBOOK DRAWER (the shared 720 drawer) ================= */}
+      {/* The workspace's scrim behind it, as the conversation drawer has (owner, 6b answers). */}
+      {drawer && (
+        <div className="no-print fixed inset-0 z-[45] bg-gray-900/30" onClick={() => setDrawer(null)} />
+      )}
       {drawer && (
         <Drawer title={drawer.name}
           sub={drawer.is_current

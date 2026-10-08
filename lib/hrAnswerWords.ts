@@ -33,6 +33,23 @@ export const uncheckedQuotesLine = (n: number) => n === 1
 /** What a quoted passage found nowhere becomes, so the sentence still reads (owner: accepted). */
 export const QUOTE_REMOVED = '(quote removed)'
 
+/** A question whose answer never finished, on a reopened conversation (Step 6b brief). */
+export const NOT_ANSWERED = 'Not answered.'
+export const ASK_IT_AGAIN = 'Ask it again'
+/** The same question was asked again later in this conversation (owner, 6b answers): no button then. */
+export const ASKED_AGAIN_BELOW = 'Not answered. Asked again below.'
+
+/** HR's conversation drawer, not summarised (owner, 6b answers). No "overnight" until step 7 makes it true;
+ *  step 7 restores the workspace's sentence. */
+export const NOT_SUMMARISED_HR = "This one hasn't been summarised yet. The full conversation is here."
+
+/** Deleting a conversation (canvas board 11, the Step 6b brief). */
+export const DELETE_CONVERSATION = {
+  title: 'Delete this conversation?',
+  lede: 'This deletes the conversation and its summary for good. You cannot undo it.',
+  note: 'Download the summary first if you may need it. Your handbooks and their checks stay.',
+} as const
+
 /** The composer's hint once a question has been asked (owner: the canvas's words). */
 export const HR_COMPOSER_HINT = 'Ask about your handbook, or a situation at work…'
 

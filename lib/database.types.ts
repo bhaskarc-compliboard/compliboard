@@ -3833,6 +3833,7 @@ export type Database = {
       }
       turns: {
         Row: {
+          check_record: Json | null
           company_id: string
           created_at: string
           document_id: string | null
@@ -3846,6 +3847,7 @@ export type Database = {
           topic_id: string
         }
         Insert: {
+          check_record?: Json | null
           company_id: string
           created_at?: string
           document_id?: string | null
@@ -3859,6 +3861,7 @@ export type Database = {
           topic_id: string
         }
         Update: {
+          check_record?: Json | null
           company_id?: string
           created_at?: string
           document_id?: string | null

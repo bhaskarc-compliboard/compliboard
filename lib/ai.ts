@@ -241,10 +241,14 @@ export function scanStructuredOutput(): boolean {
  *
  *   AI_SEARCH_MAX_HOWTO     "How do I do this?"           default 6
  *   AI_SEARCH_MAX_COMPLETE  "Everything on this subject"  default 8
+ *   AI_SEARCH_MAX_HR        an HR answer                  default NONE (HR Step 6b): unset means no limit,
+ *                           as today; the testing step measures whether to set one (DECISIONS.md §169)
  *
  * A value that is not a whole number above zero is a loud warning and then the default.
  */
-export function searchLimit(name: 'AI_SEARCH_MAX_HOWTO' | 'AI_SEARCH_MAX_COMPLETE', fallback: number): number {
+export function searchLimit(name: 'AI_SEARCH_MAX_HOWTO' | 'AI_SEARCH_MAX_COMPLETE', fallback: number): number
+export function searchLimit(name: 'AI_SEARCH_MAX_HR', fallback: null): number | null
+export function searchLimit(name: 'AI_SEARCH_MAX_HOWTO' | 'AI_SEARCH_MAX_COMPLETE' | 'AI_SEARCH_MAX_HR', fallback: number | null): number | null {
   const raw = String(process.env[name] ?? '').trim()
   if (!raw) return fallback
   const n = Number(raw)

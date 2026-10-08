@@ -10,11 +10,11 @@
 import { NextRequest, NextResponse, connection } from 'next/server'
 import { requireCompany, supabaseAdmin } from '@/lib/auth'
 import { hrPreviewOn } from '@/lib/hrPreview'
-import { askAIOpenStream, type OpenMessage, type Source } from '@/lib/ai'
+import { askAIOpenStream, searchLimit, type OpenMessage, type Source } from '@/lib/ai'
 import { buildCompanyContext } from '@/lib/companyContext'
 import { nextPosition, saveUserTurn, saveAssistantTurn, markTurnStopped, loadTurns, setTitleIfFirst,
          titleFromQuestion, bumpCounter } from '@/lib/conversation'
-import { loadHandbooksForAnswer, handbookContext, finishAnswer, appendHandbookSources, noCheckYet,
+import { loadHandbooksForAnswer, handbookContext, finishAnswer, appendHandbookSources, noCheckYet, checkRecord, budgetTokens,
          type HrSource } from '@/lib/hrAnswer'
 import { quotesDroppedLine, uncheckedQuotesLine, linksDroppedLine, overBudgetLine, DAY1_LINE } from '@/lib/hrAnswerWords'
 import { HR_ANSWER_PROMPT, hrAnswerMessage } from '@/prompts/hr-answer'
@@ -107,8 +107,10 @@ export async function POST(request: NextRequest) {
         try {
           // THE FIRST STAGE IS TRUE: these handbooks were loaded and are what the model is given.
           send({ type: 'reading', handbooks: loaded.used.map((u) => ({ name: u.name, pages: u.pages })) })
+          // AI_SEARCH_MAX_HR (Step 6b): unset means no limit, as before; set, it is the search's max_uses.
+          const maxSearches = searchLimit('AI_SEARCH_MAX_HR', null) ?? undefined
           for await (const ev of askAIOpenStream(HR_ANSWER_PROMPT, messages,
-                       { task: 'hr', maxTokens: 16000, signal: request.signal, ledger: { companyId, task: 'hr' } })) {
+                       { task: 'hr', maxTokens: 16000, signal: request.signal, ledger: { companyId, task: 'hr' }, maxSearches })) {
             if (ev.type === 'done') {
               let raw = ev.answer.text
               // TEST PATH ONLY (never on production): one quote that is in no handbook, to prove it is dropped.
@@ -133,12 +135,16 @@ export async function POST(request: NextRequest) {
               send({ type: 'done', research: text, sources: done.sources, topicId })
               console.log(`hr answer: ${done.sources.length} source(s), ${done.droppedQuotes} quote(s) dropped, ${done.uncheckedQuotes} unchecked, ${done.droppedLinks} link(s) dropped, ${ev.cited.length} cited passage(s)`)
               if (topicId) {
-                await saveAssistantTurn(db, { topicId, companyId, text, sources: done.sources as HrSource[], position: answerPosition })
+                await saveAssistantTurn(db, { topicId, companyId, text, sources: done.sources as HrSource[], position: answerPosition,
+                  checkRecord: checkRecord({ used: loaded.used, overBudget: loaded.overBudget, budgetTokens: budgetTokens(),
+                    searched: ev.searched, citedPassages: ev.cited.length, done }) })
               }
               // Decision 9: an HR answer counts as an answered question.
               try { await bumpCounter(supabaseAdmin, companyId, 'questions_answered') }
               catch (e) { console.error('hr answer: counter not incremented:', e) }
             } else if (ev.type === 'error') {
+              // A Stop is the person's, not a failure (owner, 6b answers); a real error is logged as one.
+              if (request.signal.aborted) { console.log('hr answer: stopped by the person'); continue }
               // Never the provider's own words: the workspace's line, the details in the log.
               console.error('hr answer: stream error:', ev.message)
               send({ type: 'error', message: FAILED_LINE })
@@ -149,6 +155,7 @@ export async function POST(request: NextRequest) {
         } catch (err) {
           const aborted = request.signal.aborted || (err as { name?: string })?.name === 'AbortError'
           if (!aborted) { console.error('hr answer: stream failed:', err); send({ type: 'error', message: FAILED_LINE }) }
+          else console.log('hr answer: stopped by the person')
         } finally {
           if (!completed && userTurnId) {
             try { await markTurnStopped(supabaseAdmin, userTurnId) } catch (e) { console.error('hr answer: could not mark the turn stopped:', e) }
