@@ -11516,7 +11516,8 @@ No migration.
   - **Workspace turns stay NULL:** `saveAssistantTurn`'s insert is unchanged without a record, and `loadTurns`
     does not read the column.
   - **Account export still leaves out turns entirely** (HANDOFF-CODE §7, open).
-  - **Production gets it** when migration 069 is applied there at HR's release (the owner's typed step).
+  - **Production gets it** when migration 069 is applied there at HR's release (the owner's typed step). *(Corrected in
+    §171: 069 is already on production, applied with the 6b release on 7 October; `npm run preflight` read it back.)*
 - **`AI_SEARCH_MAX_HR`** (§169 follow-up 2). Added to `lib/ai.ts` `searchLimit` as an additive overload: unset
   means no limit. Proved: set to 1, the log reads `web_search.max_uses=1` and 1 search ran; unset, no limit and
   4 searches. Recorded in `.env.example` and `docs/RELEASE.md` as "not set; the testing step decides".
@@ -11526,3 +11527,84 @@ No migration.
   withdrew a correct analysis, because the synthetic handbooks belong to other businesses. It shows the
   history arrived; whether that judgement is right is a quality question.
 - **Spent, all Haiku: $0.28** (ledger $2.50 → $2.78). Tests went from 832 to 843.
+
+## 171. HR STEP 6c — A LONG HANDBOOK: THE RIGHT SECTIONS, AND THE HONEST WAIT. STEP 6 COMPLETE — 7 October 2026
+
+§171 — HR Step 6c (`7f0d22a`), on `/hr/new` behind `HR_PREVIEW`. Migration 070, applied to staging only.
+
+- **A CORRECTION FIRST.** §170 and the 6b report said migration 069 would reach production at HR's release. It is
+  **already on production**, applied with the 6b release on 7 October.
+  - **Read back by `npm run preflight`,** read-only, one query, through the Supabase CLI's own database connection
+    (not the service key) on ref `dsfwmafnphdlfogetsus`:
+    `select version || '_' || name as f from supabase_migrations.schema_migrations order by 1`.
+  - **Result:** 70 rows, through `069_hr_answer_check_record.sql`, against 71 files. **Only 070 is pending.**
+- **The budget still decides** (`HR_HANDBOOK_BUDGET_TOKENS`, 50,000). Handbooks that fit are sent whole, as in
+  6a. One that does not:
+  - **Its sections are found → selection.**
+    - **One call** for every long handbook, on tier and ledger `'hr'` (`prompts/hr-select.ts`). It is given:
+      - the question, and the conversation's earlier questions;
+      - each long handbook's table of contents: id, title, pages and about 30 first words.
+    - **It names every section** that could bear on the answer.
+    - **Code then:**
+      - checks every id;
+      - adds THE SAFETY NET: sections holding the question's distinctive words. A word found in more than a fifth
+        of the sections is not distinctive; measured on staging, "cascade" was in every section and first put the
+        whole handbook in the net. At most 6 sections are added.
+      - sends the model's picks first and the net's after, until the budget is spent, each handbook's sections in
+        its own order.
+  - **Its sections are NOT found yet → THE HONEST WAIT** (see below).
+- **The lines** (the owner's words, or proposed and accepted):
+  - "<handbook> is long, so this answer read the sections that matched your question: <titles>." It reads
+    "This handbook is long, …" when it is the only one.
+  - If the call fails or names nothing usable: "… is long, and choosing its sections did not work this time, so
+    this answer read the sections that contain your question's words: …"
+  - ONE line for every long handbook that matched nothing: "<A> and <B> are long, and none of their sections
+    matched your question, so this answer did not read them." With one handbook: "<A> is long, and none of its
+    sections could be matched to your question, so this answer did not read it."
+  - **6a's temporary over-budget line is no longer written.** It is still drawn grey when an older answer is
+    reopened.
+- **THE HONEST WAIT.** A handbook over the budget whose sections are not found yet is waited for inside the
+  request, polling every 2 seconds.
+  - **Progress:** migration 070 adds `handbooks.outline_parts_total` and `outline_parts_done`, nullable, written by
+    the reader under the reading's claim and cleared when a reading is claimed.
+  - **Shown on the stage line** (the owner's words): "Your handbook is <n> pages long. We're finding its sections
+    so we can read the right ones — <done> of <total> parts done. Your answer starts as soon as that's finished."
+  - **When the sections are found,** it carries on with no click.
+  - **A reading that fails during the wait:** "We couldn't read your handbook: <reason>. Your question was not
+    answered yet."
+  - **A tab closed during the wait:** logged as "stopped by the person".
+  - **Over 3 minutes:** "Your handbook is taking longer to read than usual. Your question was not answered yet.
+    Ask it again in a few minutes; the reading carries on."
+  - **Each of the last three** leaves the question "Not answered" on reopening.
+  - **Verified from the database:** the columns are nullable; people may update them as the rest of the row; anon
+    has nothing. 3 of 2 is refused (`23514`, by violating it).
+- **SUGGESTED WORDING — A QUALITY CHANGE, to be judged on Opus in the testing step.**
+  - The owner's one sentence was added to `prompts/hr-answer.ts`: "When you propose new wording, put it in a
+    paragraph of its own that begins "Suggested wording:"."
+  - **In code:** that paragraph and those after it, up to the next heading or rule, are a draft. Their quoted
+    passages are not checked, they get no card, and they are drawn in Documents' draft look (a grey box, a small
+    "Suggested wording" label; `components/DocumentReport.tsx`).
+  - Every other quoted passage keeps the strict rule.
+  - **Measured on staging:** the model wrote the label as a paragraph of its own and the wording after it. Hence
+    "up to the next heading".
+  - **The trade-off:** an ordinary paragraph after the wording with no heading between is drawn as draft too.
+- **INTERNAL IDS NEVER REACH THE PERSON.** Any "H12" left in the text becomes that block's title ("7.2 Sick leave",
+  or "page 14").
+  - Checked against the six stored 6c answers, with their blocks rebuilt from their own check records: each reads
+    right.
+  - **That check found a marker with words after its quote:** `[H21: "…" ... (repeated 92 times)]`. It was not
+    recognised, so "[H21:" stayed in the stored text. It is now recognised: its words are dropped and its quote
+    checked.
+- **The check record (version 2)** gains the selection: each chosen section, by model or net, and what was left
+  for budget. It also gains the seconds waited.
+- **Proved on staging** (Haiku, through the guard):
+  - **The 120-page handbook:** the model named the right section, and the net added nothing.
+  - **A follow-up selected again** from the conversation.
+  - **THE HARD CASE:** a synthetic 70-page handbook with a bereavement rule on page 59 inside "9. Other things to
+    know". It was caught by both the model and the net. The card names "page 59".
+  - **The wait:** progress 0/6 → 6/6 read from the database every 1.5 s, two screenshots, and the answer arriving
+    with no click.
+  - **A forced reading failure, and a tab closed mid-wait:** both reopen as "Not answered".
+- **Not judged here:** whether the model's picks are the best ones. That is the testing step's Opus run.
+- **Spent, all Haiku: $0.71** (ledger $2.78 → $3.49). Tests went from 843 to 863.
+- **STEP 6 IS COMPLETE** (6a, 6b, 6c).
