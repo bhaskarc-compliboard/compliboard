@@ -1644,6 +1644,13 @@ export type Database = {
             columns: ["scan_id"]
             isOneToOne: false
             referencedRelation: "document_index_v"
+            referencedColumns: ["readable_scan_id"]
+          },
+          {
+            foreignKeyName: "document_conditions_scan_id_fkey"
+            columns: ["scan_id"]
+            isOneToOne: false
+            referencedRelation: "document_index_v"
             referencedColumns: ["scan_id"]
           },
           {
@@ -1787,6 +1794,13 @@ export type Database = {
             columns: ["scan_id"]
             isOneToOne: false
             referencedRelation: "document_index_v"
+            referencedColumns: ["readable_scan_id"]
+          },
+          {
+            foreignKeyName: "document_deadlines_scan_id_fkey"
+            columns: ["scan_id"]
+            isOneToOne: false
+            referencedRelation: "document_index_v"
             referencedColumns: ["scan_id"]
           },
           {
@@ -1902,6 +1916,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "ai_calls"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_gaps_scan_id_fkey"
+            columns: ["scan_id"]
+            isOneToOne: false
+            referencedRelation: "document_index_v"
+            referencedColumns: ["readable_scan_id"]
           },
           {
             foreignKeyName: "document_gaps_scan_id_fkey"
@@ -4173,6 +4194,13 @@ export type Database = {
             columns: ["scan_id"]
             isOneToOne: false
             referencedRelation: "document_index_v"
+            referencedColumns: ["readable_scan_id"]
+          },
+          {
+            foreignKeyName: "document_deadlines_scan_id_fkey"
+            columns: ["scan_id"]
+            isOneToOne: false
+            referencedRelation: "document_index_v"
             referencedColumns: ["scan_id"]
           },
           {
@@ -4206,10 +4234,12 @@ export type Database = {
           file_name: string | null
           folder_id: string | null
           folder_name: string | null
+          identity_from_an_earlier_reading: boolean | null
           issuer: string | null
           kind: string | null
           latest_confirmed_at: string | null
           open_gap_count: number | null
+          readable_scan_id: string | null
           scan_id: string | null
           scan_status: string | null
           scanned_at: string | null

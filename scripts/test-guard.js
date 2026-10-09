@@ -74,8 +74,10 @@ import { readdirSync, readFileSync } from 'node:fs'
 // the same view, and the grey line about an earlier reading is drawn only when the route sets it)
 // -> 1035 at A4 (an AUDIT date re-points at the newer run's finding: the key is the DOCUMENT, so a
 // re-run got "already" and the row kept the first run's finding id — found by A4's own screenshot,
-// which showed "Add to calendar" on a date that was already there).
-const FLOOR = 1035
+// which showed "Add to calendar" on a date that was already there) -> 1038 at A3d (the three on
+// migration 076's screens: the Documents row and the report drawer each say which reading their
+// title, agency and dates came from, and the audit's agency filter is the column 076 keeps alive).
+const FLOOR = 1038
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

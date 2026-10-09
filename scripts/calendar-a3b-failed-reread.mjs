@@ -185,6 +185,85 @@ if (p2.idx.significant_date === null && p2.idx.kind === null) {
 }
 console.log(`  ${'='.repeat(78)}`)
 
+// ===========================================================================
+// A3d — WHAT ELSE A FAILED READING TAKES WITH IT.
+//
+// `document_index_v` takes the document's identity from the CURRENT scan (075:155,
+// `left join document_scans s ... and s.is_current`): title, kind, agencies, subjects, issuer and
+// summary all come from `s`. A failed reading has none of them. So the question is what a person,
+// and an AUDIT, then see.
+//
+//   lib/audit.ts:135-153   reads document_index_v's `agencies` and keeps a document only when
+//                          `list.includes(agencyLabel)`. An empty list means the document is not in
+//                          that agency's evidence at all - it is listed at the end as a title.
+//   app/api/audits/index/route.ts:65, :69   the same filter, and documents with no agencies are
+//                          counted as "unplaced".
+// ===========================================================================
+console.log(`\n  ${'='.repeat(78)}`)
+console.log(`  A3d - WHAT ELSE A FAILED READING TAKES WITH IT`)
+
+const { data: doc3 } = await db.from('documents').insert({
+  company_id: co.id, name: 'acdp-permit-2.pdf', file_url: `${co.id}/acdp2.pdf`, file_type: 'application/pdf',
+}).select('id').single()
+const deqReading = {
+  ...stored.scan,
+  identity: {
+    ...stored.scan.identity,
+    kind: 'permit',
+    title: 'Standard Air Contaminant Discharge Permit No. 26-2841-ST-01',
+    agencies: ['Oregon DEQ'],
+    subjects: ['Air quality'],
+    doc_date: '2021-07-18', doc_date_kind: 'issued',
+  },
+  status: 'current',
+  deadlines: [{ title: 'Permit expires', due_on: '2026-11-15', recurs: false,
+                source_line: 'This permit expires 15 November 2026.' }],
+  extracted_text: 'This permit expires 15 November 2026.',
+}
+await saveScan(db, deqReading, { documentId: doc3.id, companyId: co.id, linkLedger: false })
+
+const identity = async (when) => {
+  const { data } = await db.from('document_index_v')
+    .select('title, kind, agencies, subjects, significant_date, display_status, summary')
+    .eq('document_id', doc3.id).maybeSingle()
+  const ag = Array.isArray(data.agencies) ? data.agencies : []
+  console.log(`     ${when.padEnd(24)} kind=${String(data.kind ?? 'NULL').padEnd(8)}`
+    + `agencies=${JSON.stringify(ag).padEnd(14)}significant=${String(data.significant_date ?? 'NULL').padEnd(12)}`
+    + `status=${data.display_status}`)
+  console.log(`     ${' '.repeat(24)} title="${String(data.title).slice(0, 62)}"`)
+  return { ...data, ag }
+}
+console.log(`\n  a DEQ air permit, read well, then read again by a service that refused:`)
+const d1 = await identity('after a GOOD reading')
+await saveScan(db, failedScan('refused', 'try again'), { documentId: doc3.id, companyId: co.id, linkLedger: false })
+const d2 = await identity('after a FAILED re-read')
+
+console.log('')
+if (d2.kind === null && d1.kind === 'permit') fail('(a) the document lost its KIND, so it is no longer a permit')
+else pass('(a) the document keeps its kind through a failed reading')
+if (!d2.ag.includes('Oregon DEQ') && d1.ag.includes('Oregon DEQ')) {
+  fail('(b) the document lost its AGENCIES - it is no longer in Oregon DEQ\'s audit')
+} else pass('(b) the document keeps its agencies through a failed reading')
+if (d2.significant_date === null && d1.significant_date !== null) {
+  fail('(a) the document lost its significant date (the expiry beside "Could not read")')
+} else pass('(a) the document keeps its significant date')
+if (String(d2.title) !== String(d1.title)) {
+  fail(`(a) the title fell back to the file name: "${String(d2.title).slice(0, 40)}"`)
+} else pass('(a) the document keeps its title')
+
+// AND WHAT AN AUDIT WOULD SEE, by the exact filter lib/audit.ts uses.
+const { data: idxAll } = await db.from('document_index_v')
+  .select('document_id, title, agencies').eq('company_id', co.id)
+const carries = (row, label) => Array.isArray(row.agencies) && row.agencies.includes(label)
+const inDeq = (idxAll ?? []).filter((r) => carries(r, 'Oregon DEQ'))
+const unplaced = (idxAll ?? []).filter((r) => !Array.isArray(r.agencies) || r.agencies.length === 0)
+console.log(`\n  by lib/audit.ts:148-153's own filter, an "Oregon DEQ" audit would read ${inDeq.length} document(s);`)
+console.log(`  ${unplaced.length} of this company's documents are UNPLACED (no agency at all).`)
+if (!inDeq.some((r) => r.document_id === doc3.id)) {
+  fail('the permit is NOT in its own agency\'s audit after a failed re-read')
+} else pass('the permit is still in Oregon DEQ\'s audit after a failed re-read')
+console.log(`  ${'='.repeat(78)}`)
+
 await db.from('calendar_events').delete().eq('company_id', co.id)
 await db.from('companies').delete().eq('id', co.id)
 console.log(`\n  cleaned up.`)

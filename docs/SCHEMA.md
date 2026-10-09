@@ -3,8 +3,8 @@
 **GENERATED — do not edit.** `node --env-file=.env.local scripts/schema-doc.js`, and it runs
 inside `npm run db:migrate`, so it cannot be stale by more than one migration.
 
-**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-10-09 20:17 UTC
-**Migrations applied:** 76 — `000` to `075`
+**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-10-09 22:18 UTC
+**Migrations applied:** 77 — `000` to `076`
 
 *Every figure here was read from the catalog of that database. Nothing is copied from the
 migration files, which say what was intended rather than what is there — and the two have
@@ -80,7 +80,7 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 
 **Calendar**
 
-- `calendar_events` — 3 rows · touched by route calendar, route documents/report, lib calendarDates, script check-live
+- `calendar_events` — 3 rows · touched by route audit-runs/[id], route calendar, route documents/report, lib calendarDates, script check-live
 
 **Worker queue**
 
@@ -495,7 +495,7 @@ One row per audit run. A frozen snapshot of results as checked that day — reus
 
 **Rows:** 3 · **RLS:** enabled · **Primary key:** `id`
 
-**Read or written by:** `route calendar`, `route documents/report`, `lib calendarDates`, `script check-live`
+**Read or written by:** `route audit-runs/[id]`, `route calendar`, `route documents/report`, `lib calendarDates`, `script check-live`
 
 | Column | Type | Null | Default |
 |---|---|---|---|
@@ -3122,7 +3122,7 @@ Calendar decision 4 (DECISIONS §185), repaired by migration 075. The dates a co
 
 ### `document_index_v`
 
-One row per document with the columns the Documents page groups and sorts by. A correction the person made outranks the scan, field by field, newest first. The document's STATE comes from the current scan, failed or not (044). significant_date and its kind are COMPUTED from the kind and the latest reading that COULD READ the document (migration 075) — never stored, never from a replaced reading, and never erased by a reading that failed. security_invoker: only rows the caller could select.
+One row per document. WHAT THE DOCUMENT IS — title, kind, agencies, subjects, issuer, summary, date and significant date — comes from the latest reading that COULD READ it (migration 076). WHAT STATE IT IS IN — display_status, scan_status, could_not_read_reason — comes from the current reading, failed or not (044, a conclusion beats an absence). A correction the person made outranks both, field by field, newest first. `scan_id` is the CURRENT scan, because the drawer watches it to know a re-read has landed; `readable_scan_id` is where the identity came from, and `identity_from_an_earlier_reading` says when those differ. security_invoker: only rows the caller could select.
 
 ### `obligation_evidence_state`
 
@@ -3235,4 +3235,5 @@ filtered HERE so no consumer can forget it (CLAUDE.md §3.2). A corrected link
 073
 074
 075
+076
 ```

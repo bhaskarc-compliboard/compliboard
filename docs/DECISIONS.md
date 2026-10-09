@@ -12379,3 +12379,73 @@ it, where it can be given in bulk.
 **The condition under which it would be reversed back.** If a customer's calendar fills with dates they did not want
 — measured as a To confirm tab they do not empty, or rejections outnumbering confirmations — the auto-add goes and
 the say-so returns to the front. The states and the key stay either way.
+
+### 185a. A READING THAT COULD NOT READ A DOCUMENT OWNS ITS STATUS AND NOTHING ELSE — 9 October 2026
+
+*The owner's decision during Calendar Job A, after two hypotheses from the chat were proved on staging.
+Migrations 073 (the rule for a date's key), 075 (dates) and 076 (identity). It is an addition to §185
+rather than a change to any of its 22 decisions.*
+
+**The owner's words:** *a rate limit must never make a permit vanish from its agency's audit.*
+
+**What was true before, proved before a line was changed**
+(`scripts/calendar-a3b-failed-reread.mjs`, free — a stored real-model reading replayed, then a
+`failedScan`):
+
+```
+a DEQ air permit, read well, then read again by a service that refused:
+   after a GOOD reading    kind=permit  agencies=["Oregon DEQ"]  significant=2026-11-15  status=expiring
+                           title="Standard Air Contaminant Discharge Permit No. 26-2841-ST-01"
+   after a FAILED re-read  kind=NULL    agencies=[]              significant=NULL        status=could_not_read
+                           title="acdp-permit-2.pdf"
+
+by lib/audit.ts:148-153's own filter, an "Oregon DEQ" audit would read 0 document(s);
+3 of this company's documents are UNPLACED (no agency at all).
+```
+
+And on the calendar side, before the guard in `lib/documentScan.ts`:
+
+```
+reading 2: a FAILED reading — status "could_not_read", 0 deadlines
+BEFORE the failed reading: 4 dates, 4 on the month
+AFTER  the failed reading: 4 dates, 1 on the month, 3 withdrawn
+```
+
+**So one bad minute at the reading service** — a rate limit, a dropped connection — withdrew a
+company's dates from the calendar and the monthly email, erased a permit's expiry, replaced its title
+with its file name, and **took it out of its own agency's audit**, where the next audit would report
+"nothing on file" about an obligation whose permit is in the filing cabinet. Every one of those is the
+failure `HOW-WE-BUILD.md` §3 names: it looks exactly like it worked.
+
+**The rule, now in three places**
+- **A failed reading owns the document's STATUS.** `display_status` says "Could not read",
+  `scan_status` and `could_not_read_reason` are its own, and migration 044's "a conclusion beats an
+  absence" still holds. The page must not go on showing the previous reading as if nothing happened.
+- **It owns nothing else.** What the document IS — title, kind, agencies, subjects, issuer, summary,
+  date, expiry — and what dates it sets both come from **the latest reading that could read it**.
+- **And the screens say so**, in one grey line each: *"From the last reading that could read this
+  document, on <date>."* on the Documents row, and *"These dates are from the last reading that could
+  read this document, on <date>."* in the report drawer. A title, an agency and an expiry shown beside
+  "Could not read" with no word about where they came from is a claim with its basis hidden (§5.1,
+  and §6's rule that a verified row and a generated row must not look the same).
+
+**Why this is the same rule as §3.2's first line.** Withdrawal, and an empty agency list, both mean
+"the current reading no longer says this". A reading that read nothing says nothing. **Absence of
+evidence is not evidence of absence** — the rule `unknown` never resolving to `does_not_apply` is
+built on, turning up in a place nobody had looked.
+
+**What it does NOT change, deliberately.** `document_index_v.scan_id` stays the CURRENT scan's,
+because `components/DocumentReport.tsx:275`, `:286` and `:431` detect that a re-read has landed by
+watching it change — pointing it at the readable reading would leave the drawer spinning for ever on a
+re-read that failed. The readable reading is a new column, `readable_scan_id`, with
+`identity_from_an_earlier_reading` beside it.
+
+**One thing left open, and it is Documents' to decide** (`HANDOFF-CODE.md` §7): the report splits gaps
+into "now" and "from earlier readings" on `scan_id`, so after a failed reading a document's findings
+all move to "earlier". That is arguably the same defect one step on. It was not fixed inside the
+Calendar's job because it changes what Documents shows about FINDINGS, not about dates or agencies.
+
+**The condition under which this would be reversed:** none foreseen. If a customer's document is
+genuinely replaced by one we cannot read — a corrupt re-upload — the identity shown is the old file's,
+which is the lesser harm against a permit vanishing from an audit; and the grey line says which reading
+it came from.

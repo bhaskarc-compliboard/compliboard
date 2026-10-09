@@ -63,6 +63,8 @@ interface IndexRow {
   significant_date: string | null
   significant_date_kind: string | null
   scanned_at: string | null
+  /** True when the latest reading could not read this document, so what it says is an earlier one's. */
+  identity_from_an_earlier_reading?: boolean
   uploaded_at: string
   scan_status: string | null
   document_status: string
@@ -614,6 +616,20 @@ function DocumentsPageContent() {
                 {r.could_not_read_reason || 'We could not read this clearly enough to rely on.'}{' '}
                 <button onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click() }}
                   className="text-gray-600 underline hover:text-gray-900">Upload a clearer copy</button>
+              </p>
+            )}
+            {/*
+              *** WHERE THE TITLE, THE AGENCY AND THE DATE ON THIS ROW CAME FROM (migration 076). ***
+              A reading that could not read the document owns its STATUS and nothing else, so what the
+              document IS comes from the last reading that could. Without this line the row would show
+              a permit's title, its agency and its expiry beside "Could not read", and a person would
+              reasonably take all of it as just read. Saying where it came from is the same rule as the
+              report drawer's (§5.1, §6: a verified row and a generated row must not look the same).
+            */}
+            {r.identity_from_an_earlier_reading && (
+              <p className="mt-1 text-[12px] text-gray-500">
+                From the last reading that could read this document
+                {r.scanned_at ? `, on ${fmtShort(r.scanned_at)}` : ''}.
               </p>
             )}
           </div>

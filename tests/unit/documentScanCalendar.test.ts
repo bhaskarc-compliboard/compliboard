@@ -235,6 +235,32 @@ describe('the view behind the dates: "current" means the latest READABLE reading
   })
 })
 
+describe('what a document IS survives a failed reading (migration 076)', () => {
+  // The SQL is proved by 076's own verify block against the real database, including the audit's own
+  // agency filter. These hold what the SCREENS must then do with the answer.
+  test('the Documents row says where its title and agency came from', async () => {
+    const page = await import('node:fs').then((fs) => fs.readFileSync('app/documents/page.tsx', 'utf8'))
+    assert.match(page, /identity_from_an_earlier_reading && \(/)
+    assert.match(page, /From the last reading that could read this document/)
+    // ...and only then: an ordinary row says nothing, or the line would be noise on every document.
+    assert.ok(!/From the last reading that could read this document[\s\S]{0,80}\}\s*\)\s*\}\s*$/m.test(page))
+  })
+
+  test('the report drawer says the same thing about its dates', async () => {
+    const drawer = await import('node:fs').then((fs) => fs.readFileSync('components/DocumentReport.tsx', 'utf8'))
+    assert.match(drawer, /These dates are from the last reading that could read this document, on/)
+  })
+
+  test('the audit\'s agency filter is the column 076 keeps alive', async () => {
+    // `lib/audit.ts` keeps a document for an agency only when `agencies` contains its label, so an
+    // empty list takes the document out of its own audit. This pins the filter the migration's verify
+    // block asserts against, so a change to either is visible.
+    const audit = await import('node:fs').then((fs) => fs.readFileSync('lib/audit.ts', 'utf8'))
+    assert.match(audit, /from\('document_index_v'\)/)
+    assert.match(audit, /list\.includes\(agencyLabel\)/)
+  })
+})
+
 describe('the calendar step never fails the reading', () => {
   test('a broken view is logged and counted, and the reading stands', async () => {
     const f = fakeDb()
