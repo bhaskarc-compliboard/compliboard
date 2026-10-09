@@ -12315,3 +12315,67 @@ switch to Handbooks.
       The reading's outline: `hr_check`, Opus, effort null, $0.016584, 6 s.
 - **A NEW OPEN DEFECT, seen by the owner:** a page left open across a night check shows the old row and the drawer's
   old top line until it is reloaded (`HANDOFF-CODE.md` §7). Not fixed.
+
+## 185. THE CALENDAR PLAN — 9 October 2026
+
+§185 — docs only. The plan is `docs/CALENDAR-PLAN.md` version 2 (md5 `516adb98cc220ffe46ecd56de7c495d6` as committed);
+the map it rests on is `docs/CALENDAR-MACHINERY.md` (`44d2b11`), whose B-items are cited as B1 … B18. The boards,
+approved by the owner on 9 October, are at https://claude.ai/artifact/7fKRsu68HtAFbGHWUtnkkh. **The owner's decisions,
+one line each.** The plan carries the reasoning; this is the record of what was decided.
+
+1. **One calendar, a company asset.** HR decision 29's first half restated; already true (`app/api/calendar/route.ts:74–88`).
+2. **Every date says where it came from, with a link back.** A `source` column (`document`, `conversation`, `audit`, `hand`, `handbook`), the existing `document_id` and `handbook_id`, and new `topic_id` and audit-finding links, each a composite FK on `(company_id, <id>)` with `ON DELETE SET NULL (<column>)`. `category` stays for the old rows and is not written again (B9).
+3. **Document dates go on the calendar by themselves, marked not confirmed. THIS REVERSES A STANDING RULE — see below.**
+4. **Only the current reading of the current version counts.** One view, "the current dates": the current reading of a document that no *confirmed* newer version supersedes. An unconfirmed proposed version hides nothing. Documents' report and `document_index_v` move onto it, which fixes B3. A date that stops being current is `withdrawn`, never deleted; a confirmed date stays.
+5. **A document date's source line is checked against the document** with the same `verifyQuote` gaps and facts already get (B16), and the answer is stored on the deadline row. Not found, no line, or no day → the To confirm tab only, never the month or the email.
+6. **Five states** — `not_confirmed`, `confirmed`, `done`, `rejected`, `withdrawn` — and the words on screen: Not confirmed, Passed, Done. "Not right" keeps the date as `rejected` with one line of reason, so the next reading does not add it again. Delete is for hand-added dates only, through the delete sheet, never `confirm()`.
+7. **One date, once.** Every write goes through one shared function that compare-and-sets on a date key, never check-then-insert (B7, B8). The key was settled in step 3a against staging rows and is recorded there.
+8. **One shared "add to calendar" function** in `lib/`, with a route around it. Every section calls it; `app/api/document-actions/route.ts:127–152` and the page's own inserts move onto it.
+9. **Repeats carry how often** — monthly, quarterly or yearly. A document date's repeat is set by a person, because the scan says only "repeats, yes or no" (`lib/documentScan.ts:101`); **the "annually" rule goes** (`actions:144`, B4). Ticking a confirmed repeating date done makes the next one and keeps the done one. Teaching the scan to say how often is a switch for the finish line.
+10. **A To confirm tab**, grouped by document with "Confirm all n", on Company information's queue pattern (`app/company-information/page.tsx:252–273`, `:511–514`).
+11. **A monthly email on the 1st**, by a new cron job, to every login at the company (B11: there is no company contact and no roles): what is due, what has passed and is not done, then one line and one link for what is waiting to be confirmed. One link per section, not one per date. Nothing due, passed or waiting means no email. Audits' pattern (`lib/auditNotify.ts`).
+12. **Removing a login keeps its dates.** `calendar_events.user_id` becomes `ON DELETE SET NULL` (B10).
+13. **Workspace and HR summaries list the dates they found**, each checked in code by the checks that already exist, each with "Add to calendar". **A quality change** in both summary prompts (§3.1), done in one place because one writer serves both.
+14. **A date carries its site** when its source has one (`entity_id`, written by nothing today, B13). The site filter shows only for a company with more than one site.
+15. **Dates are days, not times.** One helper reads `YYYY-MM-DD` as a calendar day, never UTC midnight (B2). "Today" is Pacific in rev 1.
+16. **The layout copies HR and the Workspace exactly** — the shell, the 900 column, the tabs, the 720 drawer, the button words, the print frame. No boxes, no emoji, no panels.
+17. **"Import from file" is retired**: the page's import, `app/api/extract-dates/route.ts` and `prompts/extract-dates.ts` go (B6). Documents is the one door for files.
+18. **The dashboard's calendar part** uses the date helper and leaves out done dates (B2, B5).
+19. **The old rows** become hand-added, confirmed dates. Production holds 47, all from the old importer, all test data — the owner's own read-only query on 9 October: 24 repeating, 23 not, none done, none linked. This is the answer to B18.
+20. **Not in rev 1:** dates from the requirement library's cadence (`TODO.md` M5 — rev 2, with the library); per-employee dates (HR decision 31); a reminder before each expiry; an .ics feed; the dashboard and sidebar showing the To confirm count.
+21. **Promises that are not true today get true words** (B15): the calendar page's tip and empty state, the landing page, My Account.
+22. **The sending address is a launch gate for every email, not only this one.** All four emails send from `onboarding@resend.dev`, Resend's test sender. The owner verifies the company domain in Resend and adds its DNS records; the code then changes the sender in one place.
+
+### Decision 3 reverses a standing rule, and this is the reversal stated plainly
+
+**What stood before.**
+- `docs/VISION-DOCUMENTS.md`, "Deadlines, checklists and drafts": **"Deadlines go to the calendar on the person's
+  say-so."** A date showed with "Add to calendar" and nothing was written until it was pressed.
+- `docs/HR-PLAN.md` decision 29: **"Nothing goes to the calendar unless the person presses the button."**
+
+**What stands now.** A date a reading finds in a **document** is written to the calendar as soon as the reading is
+saved, marked `not_confirmed`. **For document dates only.**
+
+**What is NOT reversed.**
+- **Conversation dates** (Workspace and HR summaries) are still added only when a person presses. In a conversation a
+  date is often an example or a general rule — "within 30 days of hire" — and not this company's deadline (decision 13).
+- **HR's handbook dates** (`handbook_dates`) are still added only when a person presses; they are parked with the
+  structured check and return with it. HR decision 29's rule therefore still governs HR exactly as written.
+- **Audit dates and hand-added dates** are a person's act by definition and are `confirmed` from the start.
+
+**Why the owner reversed it.** A folder upload or a connected drive brings dozens of dates at once. Asking for each
+one before anything is recorded means they sit in a queue nobody opens, and a real expiry never reaches the calendar
+or the monthly email. That is the false negative this product's rules call the dangerous one: a hidden real
+requirement is far worse than an extra one. The say-so is not abandoned — it **moves** from before the write to after
+it, where it can be given in bulk.
+
+**What makes the reversal safe**, and the reversal is not accepted without all four:
+- the date is **`not_confirmed`**, shown grey and labelled, never counted as a settled obligation (decision 6);
+- its source line is **checked against the document** first, and a date whose line cannot be found never reaches the
+  month or the email (decision 5);
+- only the **current reading of the current version** can put a date there, and a stale one is withdrawn (decision 4);
+- **one key, one date**, so a re-read or a second press cannot duplicate it (decision 7).
+
+**The condition under which it would be reversed back.** If a customer's calendar fills with dates they did not want
+— measured as a To confirm tab they do not empty, or rejections outnumbering confirmations — the auto-add goes and
+the say-so returns to the front. The states and the key stay either way.

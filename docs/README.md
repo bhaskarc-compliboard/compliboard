@@ -1,6 +1,6 @@
 # docs/
 
-**Version:** 15 · **Updated:** 8 October 2026 — indexes `HANDOFF-FROM-HR.md`. Version 14: 8 October 2026 — indexes `TEST-AT-FINISH-LINE.md`. Version 13: 4 October 2026, HR Step 2 — indexes `HR-PLAN.md` and `HR-MACHINERY.md`. Version 12: at the close of the workspace work — indexes `HANDOFF-WORKSPACE.md`, `HANDOFF-WORKSPACE-TO-HR.md` and `WORKSPACE-MACHINERY.md`; marks `WORKSPACE.md` as a design never built; corrects where `HANDOFF-DOCUMENTS.md` and `HANDOFF-LAYOUT.md` live.
+**Version:** 16 · **Updated:** 9 October 2026 — indexes `CALENDAR-PLAN.md` and `CALENDAR-MACHINERY.md`. Version 15: 8 October 2026 — indexes `HANDOFF-FROM-HR.md`. Version 14: 8 October 2026 — indexes `TEST-AT-FINISH-LINE.md`. Version 13: 4 October 2026, HR Step 2 — indexes `HR-PLAN.md` and `HR-MACHINERY.md`. Version 12: at the close of the workspace work — indexes `HANDOFF-WORKSPACE.md`, `HANDOFF-WORKSPACE-TO-HR.md` and `WORKSPACE-MACHINERY.md`; marks `WORKSPACE.md` as a design never built; corrects where `HANDOFF-DOCUMENTS.md` and `HANDOFF-LAYOUT.md` live.
 
 **This is the index of what is LIVE.** Eight files moved to **`archive/`** on 28 September; that
 folder's own README names what supersedes each, and it is the only place this index points at them.
@@ -42,6 +42,8 @@ folder's own README names what supersedes each, and it is the only place this in
 | **`WORKSPACE-MACHINERY.md`** | The read-only map of how the workspace worked at `6a1382f`, the first commit of the 3–4 October rebuild, with file and line (not rewritten since; its top note lists what changed) — the shape a new section's first instruction copies |
 | **`HR-PLAN.md`** | **The HR section's plan** (4 October 2026): the owner's vision, the 31 decisions, the steps, and every decision's effect on other sections. `DECISIONS.md` §164 records it |
 | **`HR-MACHINERY.md`** | The read-only map of how HR, and everything HR will touch, worked on 4 October 2026, with file and line — the input to `HR-PLAN.md` |
+| **`CALENDAR-PLAN.md`** | **The Calendar section's plan** (9 October 2026): the owner's vision, the boards, the 22 decisions, the ten steps, and every decision's effect on other sections. `DECISIONS.md` §185 records it, including decision 3's reversal of the say-so rule for document dates |
+| **`CALENDAR-MACHINERY.md`** | The read-only map of the calendar and everything that writes a date into it, on 9 October 2026, with file and line, and four bugs proved — the input to `CALENDAR-PLAN.md`. Its numbered B-items are cited across both files |
 
 ### Specs for what is built
 

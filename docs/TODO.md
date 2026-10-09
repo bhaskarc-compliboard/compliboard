@@ -2816,6 +2816,32 @@ rebuild (Phase 1) for the versioning columns.
   upload surface. ~~`app/upload/page.tsx:89` calls `getPublicUrl` on a private bucket — already broken,~~
   already listed in §0.7. Fix it there, not here.
 
+- ⬜ **THE FILE-TYPES RUN — its own run, not part of any module.** ⏱ estimate after the first scoping read.
+  *Added 9 October 2026, by the Calendar plan (`DECISIONS.md` §185, `docs/CALENDAR-PLAN.md` "What this section
+  depends on").* The design is `docs/VISION-DOCUMENTS.md`, **"File types: what reads, what the picker promises,
+  what is missing"**, which holds the rule, the eleven types that read today, the seam to close and the table of
+  what should be accepted and how.
+
+  **The rule it enforces:** every type the picker offers is one the product reads, or the picker does not offer it.
+  A picker is a screen, so §5.1's honesty rules apply to it.
+
+  **What it covers:** `.doc` and `.ppt`, which the pickers accept and the parsers refuse; HEIC, TIFF and BMP, which
+  `image/*` admits and the API refuses — an iPhone photo and a scanner's output; `.eml` and `.msg`, because permits
+  and notices arrive as email and the attachment is the document; `.zip` for "here is our compliance folder". Every
+  supported type gets a fixture in the golden set, so a parser change cannot quietly break one.
+
+  **Two things wait on it, and say so honestly until then:**
+  - **The audit binder** — a zip or an email of evidence cannot be opened, so its documents never enter the filing
+    cabinet and no audit can read them.
+  - **The calendar's dates from phone photos** (`docs/CALENDAR-PLAN.md`) — a photographed permit cannot be read, so
+    its expiry cannot reach the calendar or the monthly email. The reading says "could not read" rather than
+    claiming the document holds no dates (`CLAUDE.md` §5.1, `DECISIONS.md` §27). **Not a blocker for the Calendar
+    section; a named gap in it.**
+
+  **Not the same item as the picker-width row above.** That one is about pickers that are narrower than the routes
+  behind them; this one is about pickers that are *wider* than what the product can read, which is the direction
+  that produces a false promise.
+
 ---
 ### M5 — Calendar
 

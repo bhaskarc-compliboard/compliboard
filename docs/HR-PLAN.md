@@ -189,6 +189,7 @@ replaced text is kept and struck through, so the record shows what changed.
       - It inserts a `calendar_events` row with category `'hr'`, the handbook's site as `entity_id`, and a
         link back to the handbook. It then marks the date as in the calendar.
       - Nothing goes to the calendar unless the person presses the button.
+        - *9 October 2026 (`DECISIONS.md` §185, decision 3): still true of HR. The calendar's plan reverses this for **document** dates only — a reading's dates land not-confirmed — and leaves handbook dates, and every date from a conversation, exactly as written here.*
     - **The link:**
       - The link is a new nullable `calendar_events.handbook_id`, `ON DELETE SET NULL` (the `document_id`
         pattern, `040_document_scan.sql:195`).
