@@ -289,6 +289,28 @@ describe('every reader of a document\'s CONTENT takes the readable reading (§18
     assert.match(await read('lib/documentScan.ts'), /readableScanIds\(db, company\.id\)/)
   })
 
+  test('*** THE ONE THAT DELETES: a label is alive when the READABLE reading carries it ***', async () => {
+    // `pruneOrphanLabels` removes a label no reading carries, and pruning runs when a document is
+    // deleted. Under the old rule a failed re-read emptied a permit's `agencies`, so the next delete
+    // took "Oregon DEQ" with it and the agency dropped out of "audit everything" — a company losing
+    // its own vocabulary because a reading service refused for a minute. Proved on staging in
+    // `scripts/calendar-a3b-failed-reread.mjs`: removed 0, and the label is still there.
+    const labels = await read('lib/companyLabels.ts')
+    assert.match(labels, /readableScanIds\(admin, companyId\)/)
+    assert.ok(!/\.eq\('is_current', true\)/.test(labels),
+      'pruneOrphanLabels must not decide an orphan from the CURRENT reading')
+  })
+
+  test('the audit\'s "found wrong with it: nothing" is a STATEMENT, so it must be the readable reading\'s', async () => {
+    // `lib/audit.ts:358-360` prints either the findings or the flat sentence "WHAT THE READING FOUND
+    // WRONG WITH IT: nothing". In a prompt that is not an absence, it is a claim — and under the old
+    // rule it was made about a document whose reading we never got (§3.3: the model reasoning against
+    // an artifact that is not there).
+    const audit = await read('lib/audit.ts')
+    assert.match(audit, /WHAT THE READING FOUND WRONG WITH IT: nothing/)
+    assert.match(audit, /readableScans\(db, companyId/)
+  })
+
   test('*** THE WATCHER KEEPS THE CURRENT SCAN *** — or the drawer spins for ever', async () => {
     // `components/DocumentReport.tsx` knows a re-read has landed when `scan_id` CHANGES, and a
     // re-read that failed has landed just as much as one that worked. This is the one place the swap

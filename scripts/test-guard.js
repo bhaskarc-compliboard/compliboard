@@ -79,8 +79,10 @@ import { readdirSync, readFileSync } from 'node:fs'
 // title, agency and dates came from, and the audit's agency filter is the column 076 keeps alive)
 // -> 1044 at A3e (the sweep, pinned by file: every reader of a document's CONTENT takes the readable
 // reading, the ONE watcher keeps the current scan or the drawer spins for ever, HR's handbooks are a
-// different table and were not touched, and the helper refuses to read an error as "never read").
-const FLOOR = 1044
+// different table and were not touched, and the helper refuses to read an error as "never read")
+// -> 1046 at A3e's addition (the label prune, which DELETES, and the audit's "found wrong with it:
+// nothing", which is a statement in a prompt rather than an absence).
+const FLOOR = 1046
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

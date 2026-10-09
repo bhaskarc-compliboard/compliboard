@@ -341,6 +341,75 @@ if (!dates[0] || String(dates[0].scanned_at).slice(0, 10) !== String(good.scanne
   fail(`the drawer's date is ${dates[0] ? String(dates[0].scanned_at).slice(0, 10) : 'missing'}`)
 } else pass("the drawer's line carries the same date")
 
+// ---- THE BLOCK THE MODEL IS HANDED, BEFORE THE FIX AND AFTER (the chat, A3e item 1) ----
+//
+// `lib/audit.ts:358–360` prints, per document, either the findings the reading made or the flat
+// sentence `WHAT THE READING FOUND WRONG WITH IT: nothing`. That sentence is not an absence in the
+// prompt — it is a STATEMENT, and under the old rule it was made about a document whose reading we
+// never got. Both rules are computed here from the database, so the two can be read side by side
+// without reverting the code.
+const renderFor = (docTitle, gapCount, conds, dates) => {
+  const out = []
+  out.push(`   --- ${docTitle.slice(0, 58)}`)
+  out.push(gapCount
+    ? `      WHAT THE READING FOUND WRONG WITH IT (${gapCount}) — these are already findings; …`
+    : '      WHAT THE READING FOUND WRONG WITH IT: nothing')
+  out.push(`      CONDITIONS IT PUTS ON THE COMPANY: ${conds}`)
+  out.push(`      DATES IT SETS: ${dates}`)
+  return out
+}
+{
+  const { data: idx } = await db.from('document_index_v')
+    .select('title, scan_id, readable_scan_id').eq('document_id', doc3.id).maybeSingle()
+  const countsFor = async (scanId) => {
+    if (!scanId) return { g: 0, c: 0, d: 0 }
+    const [g, c, dd] = await Promise.all([
+      db.from('document_gaps').select('id', { count: 'exact', head: true }).eq('scan_id', scanId).eq('status', 'open'),
+      db.from('document_conditions').select('id', { count: 'exact', head: true }).eq('scan_id', scanId),
+      db.from('document_deadlines').select('id', { count: 'exact', head: true }).eq('scan_id', scanId),
+    ])
+    return { g: g.count ?? 0, c: c.count ?? 0, d: dd.count ?? 0 }
+  }
+  const before = await countsFor(idx.scan_id)            // the OLD rule: the current scan
+  const after = await countsFor(idx.readable_scan_id)    // the rule now: the readable reading
+  console.log(`\n  BEFORE (scan_id, the failed reading) — what lib/audit.ts would have printed:`)
+  for (const l of renderFor(idx.title, before.g, before.c, before.d)) console.log(`  ${l}`)
+  console.log(`\n  AFTER (readable_scan_id) — what it prints now:`)
+  for (const l of renderFor(idx.title, after.g, after.c, after.d)) console.log(`  ${l}`)
+  if (before.g !== 0 || before.c !== 0 || before.d !== 0) {
+    fail('the old rule did not produce the empty block, so this comparison proves nothing')
+  } else pass('the OLD rule stated "WHAT THE READING FOUND WRONG WITH IT: nothing" about an unread permit')
+  if (after.c === 0 && after.d === 0 && after.g === 0) {
+    fail('the permit still says nothing after the fix')
+  } else pass(`the rule now carries its ${after.g} finding(s), ${after.c} condition(s) and ${after.d} date(s)`)
+}
+
+// ---- A LABEL IS ALIVE WHEN THE LATEST READABLE READING CARRIES IT (the chat, A3e item 2) ----
+//
+// `lib/companyLabels.ts` prunes a label no reading carries, and it DELETES. Under the old rule a
+// failed re-read emptied the permit's `agencies`, so the next time any document was deleted — which
+// is when pruning runs — "Oregon DEQ" went with it, and the agency dropped out of "audit everything".
+{
+  const { pruneOrphanLabels } = await import('../lib/companyLabels.ts')
+  await db.from('company_labels')
+    .upsert([{ company_id: co.id, kind: 'agency', label: 'Oregon DEQ' }],
+            { onConflict: 'company_id,kind,label', ignoreDuplicates: true })
+  // Another document, deleted — the event that triggers pruning in the product.
+  const { data: spare } = await db.from('documents').insert({
+    company_id: co.id, name: 'spare.pdf', file_url: `${co.id}/spare.pdf`, file_type: 'application/pdf',
+  }).select('id').single()
+  await db.from('documents').delete().eq('id', spare.id)
+  const pruned = await pruneOrphanLabels(db, co.id)
+  const { data: labelsNow } = await db.from('company_labels')
+    .select('kind, label').eq('company_id', co.id).order('label')
+  console.log(`\n  pruneOrphanLabels after a failed re-read and a document delete: `
+    + `removed ${pruned.removed}${pruned.error ? ` (error: ${pruned.error})` : ''}`)
+  console.log(`  labels left: ${labelsNow.map((l) => `${l.kind}:${l.label}`).join(', ') || '(none)'}`)
+  if (!labelsNow.some((l) => l.label === 'Oregon DEQ')) {
+    fail('"Oregon DEQ" was pruned because the permit\'s latest reading failed')
+  } else pass('"Oregon DEQ" survives a failed re-read plus a document delete — the label is not an orphan')
+}
+
 // ---- THE REPORT'S GAPS, after a failed reading (the owner's yes, A3e item 2) ----
 // The report split "now" from "from earlier readings" on the CURRENT scan, so a failed reading moved
 // every finding to "earlier" and the drawer showed a document with no current findings at all.
