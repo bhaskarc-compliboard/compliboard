@@ -78,6 +78,27 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ id: str
 
     const estimate = runRow.status === 'done' ? null : (await estimateRun(db, companyId, 1)).line
 
+    // *** WHICH OF THESE DATES ARE ALREADY ON THE CALENDAR — Calendar decision 7. ***
+    //
+    // Without this the drawer could only know what THIS browser had pressed, so a person who added a
+    // date and came back tomorrow would be offered "Add to calendar" on a date that is already there.
+    // Pressing again is harmless — the key refuses it — but the LABEL would be wrong, and a screen
+    // that says the opposite of what is true is the thing §6 is about.
+    //
+    // Keyed by finding id, and the state travels with it, because the words differ: a date a person
+    // confirmed reads "On your calendar", and one they refused reads so rather than inviting them to
+    // add it again (decision 6).
+    const dateIds = rows.filter((f) => f.kind === 'date').map((f) => f.id as string)
+    const onCalendar: Record<string, { id: string; state: string }> = {}
+    if (dateIds.length) {
+      const { data: evs } = await db.from('calendar_events')
+        .select('id, audit_finding_id, state')
+        .eq('company_id', companyId).in('audit_finding_id', dateIds)
+      for (const e of evs ?? []) {
+        onCalendar[e.audit_finding_id as string] = { id: e.id as string, state: e.state as string }
+      }
+    }
+
     return NextResponse.json({
       // No `cost_usd`: §147 takes it off every customer screen.
       run: { ...runRow, estimate },
@@ -89,6 +110,8 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ id: str
         ...f,
         document: f.document_id ? doc.get(f.document_id as string) ?? null : null,
         document_b: f.document_b_id ? doc.get(f.document_b_id as string) ?? null : null,
+        // Null on every finding that is not a date, and on a date nobody has added.
+        on_calendar: onCalendar[f.id as string] ?? null,
       })),
     })
   } catch (error) {

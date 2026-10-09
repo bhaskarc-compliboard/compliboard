@@ -283,6 +283,13 @@ export async function addDate(db: Db, args: AddDateArgs): Promise<AddResult> {
     description: args.line ? String(args.line).slice(0, 2000) : null,
     line_verified: args.lineVerified ?? null,
     document_deadline_id: args.documentDeadlineId ?? date.document_deadline_id,
+    // *** AND THE AUDIT FINDING, FOR THE SAME REASON. ***
+    // An audit date keys on the DOCUMENT, not on the finding (`refFor`), so that running the same
+    // audit again does not make a second date. The consequence, found by A4's own screenshot: the
+    // calendar row went on pointing at the FIRST run's finding, so the second run's report could not
+    // say "On your calendar" and offered to add a date that was already there. Same rule as the
+    // deadline link above — the latest run that found this date is the one to link back to.
+    audit_finding_id: args.auditFindingId ?? date.audit_finding_id,
     entity_id: args.entityId ?? date.entity_id,
   }
   if (date.state === 'withdrawn') patch.state = args.state

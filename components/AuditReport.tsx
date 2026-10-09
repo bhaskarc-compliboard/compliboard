@@ -58,6 +58,8 @@ interface Finding {
   document_id: string | null; document: DocRef | null
   document_b_id: string | null; document_b: DocRef | null
   locator: string | null; quote: string | null; quote_verified: boolean | null
+  /** Set when this date is already on the calendar (Calendar decision 7), with its state. */
+  on_calendar?: { id: string; state: string } | null
   what_to_do: string | null; due_on: string | null; recurs: boolean | null; passed: boolean | null
   value_a: string | null; value_b: string | null
   status: string; same_as: string | null; dismissed_reason: string | null; handle_error: boolean
@@ -350,6 +352,22 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
   const [earlierTemplate, setEarlierTemplate] = useState<Array<{
     run: Run; changed: Array<{ ref: string; was: string | null; now: string | null }> }>>([])
   const [open, setOpen] = useState<Record<string, boolean>>({})
+  /**
+   * *** "ADD TO CALENDAR" ADDS IN PLACE NOW — Calendar decisions 7 and 8 (`DECISIONS.md` §185). ***
+   *
+   * It used to be `<a href="/calendar?add=…&on=…">`: a NAVIGATION carrying the title and the day and
+   * nothing else (`docs/CALENDAR-MACHINERY.md` B7). Three things were wrong with it, and a person
+   * could see none of them:
+   *   · the saved date had no document and no finding, though the finding knows both;
+   *   · pressing it twice made two rows, because each press was a fresh Save on another page;
+   *   · the finding could never say "On your calendar", because nothing recorded that it had been.
+   *
+   * Keyed by finding id: absent until something is pressed, then the date's own id with the route's
+   * `already` reason, or the word 'failed'. `siblings` holds the owner's answer of 9 October — other
+   * dates from the same document on the same day are SHOWN, never used to suppress the write.
+   */
+  const [added, setAdded] = useState<Record<string, { id: string; already?: string } | 'failed'>>({})
+  const [siblings, setSiblings] = useState<Record<string, Array<{ id: string; title: string; state: string }>>>({})
   /**
    * WHICH WORD IS BEING SHOWN, AND WHICH FINDINGS ARE EXPANDED — Audits Run 7b, item 4.
    *
@@ -855,6 +873,47 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
     )
   }
 
+  /**
+   * One press: through the calendar's own route, with the finding AND the finding's document, so the
+   * date can be traced back to the reading that found it.
+   *
+   * The state is NOT sent — the route sets it from the source, and an audit date is `confirmed`
+   * because a person pressed (decision 3). A second press is not an error: the key refuses it and the
+   * route answers `already`, which is what the line below then says.
+   */
+  const addToCalendar = async (f: Finding) => {
+    setBusy(true)
+    try {
+      const res = await fetch('/api/calendar/dates', {
+        method: 'POST',
+        headers: await authHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({
+          source: 'audit',
+          title: f.title,
+          day: f.due_on,
+          line: f.quote ?? f.what_to_do ?? null,
+          audit_finding_id: f.id,
+          document_id: f.document_id,
+          repeats: f.recurs === true,
+        }),
+      })
+      const j = await res.json().catch(() => null)
+      if (!res.ok || !j?.date) {
+        setAdded((a) => ({ ...a, [f.id]: 'failed' }))
+        setNotice(j?.error ?? 'We could not add that to your calendar just now. That is our side, not yours.')
+        return
+      }
+      setAdded((a) => ({ ...a, [f.id]: { id: j.date.id, already: j.already } }))
+      if (j.siblings?.length) setSiblings((x) => ({ ...x, [f.id]: j.siblings }))
+      setNotice(null)
+    } catch {
+      setAdded((a) => ({ ...a, [f.id]: 'failed' }))
+      setNotice('We could not add that to your calendar just now. That is our side, not yours.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   return (
     <Drawer title={everything ? `Audit of everything · ${run.section_count} sections` : `${agency} audit`}
       sub={sub} onClose={onClose} footer={footer}
@@ -1047,12 +1106,53 @@ export default function AuditReport({ runId, focusWord, onClose, onChanged, onOp
                   {f.passed ? <span className="text-[var(--amber)]">{meta.length ? ' · ' : ''}passed</span> : ''}
                   {meta.slice(1).map((x) => ` · ${x}`).join('')}
                 </p>
+                {/*
+                  *** THE OWNER'S ANSWER OF 9 OCTOBER: NO SOFT MATCH. ***
+                  Audits and Documents have no shared line to key on — `lib/audit.ts:176` does not read
+                  `source_line`, and a finding's quote is the model's own words — so a match on
+                  (document, day) would say "already on your calendar" about a DIFFERENT obligation.
+                  Staging holds the proof: a fire-extinguisher certificate with a 6-year internal
+                  maintenance AND a monthly visual inspection, both on 2026-10-31. So the other date is
+                  SHOWN, with its own state, and the person decides. The write has already happened.
+                */}
+                {siblings[f.id]?.map((sib) => (
+                  <p key={sib.id} className="mt-0.5 text-[12px] text-gray-500">
+                    A date from this document on this day is already on your calendar: “{sib.title}”
+                    {sib.state === 'not_confirmed' ? ' — not confirmed' : ''}.
+                  </p>
+                ))}
+                {added[f.id] && added[f.id] !== 'failed'
+                  && (added[f.id] as { already?: string }).already === 'rejected_before' && (
+                  <p className="mt-0.5 text-[12px] text-gray-500">
+                    You marked this date as not right before, so it has not been added again.
+                  </p>
+                )}
               </div>
               {!undated && (
-                <a href={`/calendar?add=${encodeURIComponent(f.title)}&on=${f.due_on ?? ''}`}
-                  className="no-print shrink-0 text-[13px] text-[var(--green)] underline hover:text-[var(--green-ink)]">
-                  Add to calendar
-                </a>
+                <div className="no-print shrink-0 text-right">
+                  {/*
+                    WHAT IS ALREADY TRUE COMES FROM THE SERVER (`on_calendar`); what this browser just
+                    did comes from `added`. Both are needed: without the first the label is wrong the
+                    next time the drawer is opened, and without the second it is wrong until it is.
+                  */}
+                  {added[f.id] === 'failed' ? (
+                    <button disabled={busy} onClick={() => addToCalendar(f)}
+                      className="text-[13px] text-[var(--green)] underline hover:text-[var(--green-ink)] disabled:text-gray-300">
+                      Try again
+                    </button>
+                  ) : added[f.id] || f.on_calendar ? (
+                    <span className="text-[13px] text-gray-400">
+                      {(f.on_calendar?.state ?? '') === 'rejected' ? 'You said this is not right'
+                        : (f.on_calendar?.state ?? '') === 'not_confirmed' ? 'On your calendar · not confirmed'
+                        : 'On your calendar'}
+                    </span>
+                  ) : (
+                    <button disabled={busy} onClick={() => addToCalendar(f)}
+                      className="text-[13px] text-[var(--green)] underline hover:text-[var(--green-ink)] disabled:text-gray-300">
+                      Add to calendar
+                    </button>
+                  )}
+                </div>
               )}
             </div>
             )

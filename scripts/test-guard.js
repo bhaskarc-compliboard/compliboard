@@ -71,8 +71,11 @@ import { readdirSync, readFileSync } from 'node:fs'
 // on the calendar step itself: a reading that COULD NOT READ the document must never withdraw a date,
 // and a reading that read it and found none still must) -> 1034 at A3c (the three on migration 075's
 // code path: the report reads the current-dates view and never document_deadlines, the writer reads
-// the same view, and the grey line about an earlier reading is drawn only when the route sets it).
-const FLOOR = 1034
+// the same view, and the grey line about an earlier reading is drawn only when the route sets it)
+// -> 1035 at A4 (an AUDIT date re-points at the newer run's finding: the key is the DOCUMENT, so a
+// re-run got "already" and the row kept the first run's finding id — found by A4's own screenshot,
+// which showed "Add to calendar" on a date that was already there).
+const FLOOR = 1035
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

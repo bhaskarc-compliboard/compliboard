@@ -258,6 +258,24 @@ describe('addDate — compare-and-set, not check-then-insert (B8)', () => {
     assert.equal(calendar[0].line_verified, false)
   })
 
+  test('an AUDIT date re-points at the newer run\'s finding — found by A4\'s screenshot', async () => {
+    // An audit date keys on the DOCUMENT so a re-run does not make a second date. Without this, the
+    // row kept the FIRST run's finding id, the second run's report could not say "On your calendar",
+    // and it offered to add a date that was already there.
+    const { db, calendar } = fakeDb()
+    const auditDate = (findingId: string) => ({
+      companyId: CO, source: 'audit' as const, title: 'Annual report to DEQ',
+      day: '2027-02-15', line: 'The annual report is due by 15 February each year.',
+      documentId: DOC, auditFindingId: findingId, state: 'confirmed' as const,
+    })
+    await addDate(db, auditDate('finding-run-1'))
+    const rerun = await addDate(db, auditDate('finding-run-2'))
+    assert.equal(rerun.created, false)
+    assert.equal(why(rerun), 'already')
+    assert.equal(calendar.length, 1)
+    assert.equal(calendar[0].audit_finding_id, 'finding-run-2')
+  })
+
   test('...and the PERSON\'s decision survives the re-point', async () => {
     const { db, calendar } = fakeDb()
     await addDate(db, docDate({ documentDeadlineId: 'dl-1', repeats: true }))
