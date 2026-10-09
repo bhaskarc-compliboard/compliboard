@@ -1,6 +1,6 @@
 # Test at the finish line
 
-**Version:** 2 · **Updated:** 8 October 2026, §183: HR H's paid check done; two things added to judge in HR E. Version 1: 8 October 2026, the HR section's part written by the HR chat.
+**Version:** 3 · **Updated:** 9 October 2026: HR I done (the morning after); HR B notes summaries' effort. Version 2: 8 October 2026, §183: HR H's paid check done; two things added to judge in HR E. Version 1: 8 October 2026, the HR section's part written by the HR chat.
 **Other sections:** add your own part below, in the same shape (A to J). Do not edit another section's part.
 
 ---
@@ -59,6 +59,9 @@ Always on an **isolated server copy** (port 3998). `.env.local` is never changed
 | `HR_HANDBOOK_BUDGET_TOKENS` | unset (the Opus default, 650,000) | Set small only to force the long-handbook path once (C) |
 | `HR_PREVIEW` | `1` in the server's own environment | HR's routes are 404 without it |
 | `NOTIFY_TEST_TO` | the test inbox | So the check's email goes to the test inbox |
+
+**Summaries send no effort setting** (effort null in the ledger), so the model's default applies, as on production.
+The yardstick runs them the same way. Not HR's to change: the summary writer is shared with the workspace.
 
 **Prove the settings held, as on 8 October:**
 - the cost ledger shows `claude-opus-5-5` at effort medium;
@@ -229,10 +232,30 @@ Items 1 to 6 are done:
 6. **The release routine** (`docs/RELEASE.md`), then the free live checks on `https://compliboard.vercel.app`: `/hr`
    opens the new page; the retired routes are gone. Then one paid check: one HR question on production, as CB-Test-3.
 
-### I. The morning after (HR-PLAN step 14) — the morning after the go-live
+### I. The morning after (HR-PLAN step 14) — DONE 9 October 2026
 
 - `job_runs`: the summary row after 10:00 UTC, now including HR conversations; the `handbook_checks` rows for the
   queue and the sweep; the delete row after 10:30 UTC.
+- **The result, 9 October:**
+  Five read-only queries on production (the Supabase CLI's own connection; SQL in `docs/HANDOFF-FROM-HR.md` §7 item 3
+  and below). **All four job rows `ok: true`, `errors: []`, `finished_at` set:**
+  - `summarise` 10:00:21 → 10:00:50 UTC: considered 1, summarised 1, skipped_user_summary 4, proposals 0;
+  - `handbook_checks` (the night queue) 10:00:49 → 10:00:50: `job: 'queue'`, queued 1 (Harbor, `new_handbook`),
+    not_due 0, skipped_open none;
+  - `handbook_checks` (the sweep) 10:00:50 → 10:01:31: pieces 1, rows_done 4, checks_finished 1, failed 0, retried 0,
+    notified 0, sent none, wall 40.9 s;
+  - `delete` 10:30:04 → 10:30:04: topics_cleared 0, turns_deleted 0.
+  - **Harbor's check:** `new_handbook`, done, 4 of 4, nightly, `notified_at` null (no email); `checked_at` 10:01:30,
+    `next_check_at` 7 January 2027.
+  - **The night's summary was a workspace conversation** ("Final paycheck deadlines when an employee quits (Oregon)",
+    `ac6f3cb1`, 10:00:50): `select id, section, title, summarised_at, summary_source from public.topics where
+    summary_source = 'nightly' and summarised_at >= '2026-10-09 09:55+00' and summarised_at < '2026-10-09 10:05+00'`.
+    CB-Test-3's HR conversation was summarised by the person's own press at 22:41:48 UTC on 8 October
+    (`summary_source 'user'`), and the night left it alone, as its rule says. **The nightly HR summary is proven on
+    staging (§178), not yet on production; it will be the first time an HR conversation is left unsummarised.** That
+    is not a failure.
+  - **The night's cost: $0.316124**, both on `claude-opus-5-5`: the summary $0.082548 (effort null, see B), the check
+    $0.233576 (effort medium, 3 searches).
 - Write `HANDOFF-HR.md`; update `STATUS.md`'s HR row; close what is fixed in `HANDOFF-CODE.md` §7.
 
 ### J. Open items, and the shared files HR depends on

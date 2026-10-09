@@ -1,6 +1,6 @@
 # Handoff — from the HR section
 
-**Version:** 2 · **Updated:** 8 October 2026, late evening: checked fact by fact against the repository at `34969a4` by
+**Version:** 3 · **Updated:** 9 October 2026: §7 item 3, the morning after, done with its facts. **Version 2:** 8 October 2026, late evening: checked fact by fact against the repository at `34969a4` by
 Claude Code; six facts corrected (each says so); the production paid check recorded (§2); §183's two changes (the
 wait, the closing offer) added. **Version 1:** 8 October 2026, evening (Pacific), by the HR chat at the close of HR's build.
 **Supersedes:** nothing. This is the close-out file that `docs/HR-PLAN.md` step 14 calls `HANDOFF-HR.md`; the
@@ -333,7 +333,7 @@ the free checks (`npm run check`, `check:live` on 3999) of every section that us
    owner's: the one paid check" is now done), `STATUS.md`'s HR row ("still to come"), and the closing-offer finding
    in the finish line's E. Include the follow-up report's facts if it came back (the five sources by kind, the
    ledger row's model and effort).
-3. **The morning after** (HR-PLAN step 14), any time after 3:30 am Pacific on 9 October. Claude Code, read-only,
+3. **The morning after** (HR-PLAN step 14) — **DONE 9 October 2026; the facts are below the queries.** Any time after 3:30 am Pacific on 9 October. Claude Code, read-only,
    one stated need each, SQL printed (`CLAUDE.md` §3.7):
    ```sql
    select job, started_at, finished_at, ok, counts, errors
@@ -355,6 +355,26 @@ the free checks (`npm run check`, `check:live` on 3999) of every section that us
    after 10:30 UTC; `handbook_checks` rows from the queue (`counts.job = 'queue'`) and the sweep; the Harbor
    handbook's check `new_handbook`, done, `next_check_at` 90 days on, no email. All `finished_at` set. Estimated
    cost of the night: about $0.20 for the check and about $0.20 for the summary, on Opus.
+   **The result (9 October), read-only, the Supabase CLI's own connection:**
+   Five read-only queries on production (the Supabase CLI's own connection; SQL in `docs/HANDOFF-FROM-HR.md` §7 item 3
+   and below). **All four job rows `ok: true`, `errors: []`, `finished_at` set:**
+   - `summarise` 10:00:21 → 10:00:50 UTC: considered 1, summarised 1, skipped_user_summary 4, proposals 0;
+   - `handbook_checks` (the night queue) 10:00:49 → 10:00:50: `job: 'queue'`, queued 1 (Harbor, `new_handbook`),
+     not_due 0, skipped_open none;
+   - `handbook_checks` (the sweep) 10:00:50 → 10:01:31: pieces 1, rows_done 4, checks_finished 1, failed 0, retried 0,
+     notified 0, sent none, wall 40.9 s;
+   - `delete` 10:30:04 → 10:30:04: topics_cleared 0, turns_deleted 0.
+   - **Harbor's check:** `new_handbook`, done, 4 of 4, nightly, `notified_at` null (no email); `checked_at` 10:01:30,
+     `next_check_at` 7 January 2027.
+   - **The night's summary was a workspace conversation** ("Final paycheck deadlines when an employee quits (Oregon)",
+     `ac6f3cb1`, 10:00:50): `select id, section, title, summarised_at, summary_source from public.topics where
+     summary_source = 'nightly' and summarised_at >= '2026-10-09 09:55+00' and summarised_at < '2026-10-09 10:05+00'`.
+     CB-Test-3's HR conversation was summarised by the person's own press at 22:41:48 UTC on 8 October
+     (`summary_source 'user'`), and the night left it alone, as its rule says. **The nightly HR summary is proven on
+     staging (§178), not yet on production; it will be the first time an HR conversation is left unsummarised.** That
+     is not a failure.
+   - **The night's cost: $0.316124**, both on `claude-opus-5-5`: the summary $0.082548 (effort null, see B), the check
+     $0.233576 (effort medium, 3 searches).
 4. **The close-out docs** (step 14). This file is the handoff. *Done by §183's docs commit, except the morning
    after's own record.* Then:
    - `docs/HR-PLAN.md` step 14: point to this file instead of `HANDOFF-HR.md`; mark 11b done.
