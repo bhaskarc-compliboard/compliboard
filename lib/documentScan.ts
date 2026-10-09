@@ -27,6 +27,10 @@ import { askAIWithCitations, extractJsonText, modelForTask, scanStructuredOutput
 import { parseDocumentToBlocks } from './documentContent.ts'
 import { buildCompanyContext } from './companyContext.ts'
 import { scanPrompt, SCAN_JSON_SCHEMA, type ScanPromptContext } from '../prompts/document-scan.ts'
+// The ONE writer for every date (Calendar decision 8). The scan does not insert into
+// `calendar_events` itself: the key, the state and the provenance are decided in one place.
+import { addDate, withdrawStale } from './calendarDates.ts'
+import { normaliseForQuote } from './normaliseQuote.ts'
 
 /** A Supabase client, loosely typed: these scripts run outside Next's generated-types world. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -191,7 +195,10 @@ const date = (v: unknown): string | null => {
  * and 20; the owner chose one shared rule, 7 October 2026). Tags out, lower case, letters and digits only.
  * `verifyQuote` below uses it unchanged.
  */
-export const normaliseForQuote = (s: string) => s.replace(/<[^>]*>/g, ' ').toLowerCase().replace(/[^a-z0-9]+/g, '')
+// MOVED TO `lib/normaliseQuote.ts` and re-exported here, so every existing caller (HR's answer and
+// summary, the tests) is unchanged. It had to move: this file now imports the calendar's writer, which
+// needs the same rule for a date's key, and a rule defined here would make the two modules a cycle.
+export { normaliseForQuote } from './normaliseQuote.ts'
 
 export function verifyQuote(quote: string | null, extractedText: string): boolean | null {
   if (!quote) return null
@@ -703,6 +710,20 @@ export async function runDocumentScan(input: RunScanInput): Promise<DocumentScan
  * silently). A deadline becomes a calendar event only when a person says so. And the old review
  * table is not this scan's business.
  */
+/**
+ * What the calendar step did, returned so a caller can say it rather than assume it. `error` is set
+ * only when the step failed as a whole — the reading is saved either way.
+ */
+export interface CalendarStep {
+  added: number
+  already: number
+  rejected_before: number
+  withdrawn: number
+  /** A date the calendar could not take: a one-off with no day, or a refusal from `addDate`. */
+  failed: number
+  error: string | null
+}
+
 export async function saveScan(
   db: Db, scan: DocumentScan,
   args: { documentId: string; companyId: string; entityId?: string | null
@@ -716,7 +737,7 @@ export async function saveScan(
            * which is the truth: no call was made for it.
            */
           linkLedger?: boolean },
-): Promise<{ scanId: string | null; aiCallId: string | null }> {
+): Promise<{ scanId: string | null; aiCallId: string | null; calendar: CalendarStep }> {
   const { documentId, companyId, entityId } = args
   const linkLedger = args.linkLedger !== false
 
@@ -891,9 +912,25 @@ export async function saveScan(
     if (e) throw new Error(`document_conditions: ${e.message}`)
   }
   if (scan.deadlines.length) {
+    // *** THE LINE A DATE RESTS ON IS CHECKED NOW — Calendar decision 5 (`DECISIONS.md` §185, B16). ***
+    //
+    // A gap's quote and a fact's quote have gone through `verifyQuote` since Run 1 (`:335`, `:351`);
+    // a deadline's `source_line` was stored exactly as the model returned it. So the one sentence a
+    // DATE rests on was the one sentence nobody checked — and a date is the thing that will end up on
+    // a person's calendar and in a monthly email.
+    //
+    // THREE-VALUED, with the same meaning it has everywhere else in this file: true found, false not
+    // found, and **null when there was no text to check against**. Null is not "not found", and the
+    // difference decides what a person is told: a date whose line we could not find waits in the To
+    // confirm tab with "We could not find this line in the document"; a date we had no text for is not
+    // accused of anything (`CLAUDE.md` §5.1).
+    //
+    // It changes nothing the model sees or writes — it is a check AFTER the reading — so it is not a
+    // §3.1 quality change. The golden set's stored answers are untouched by it.
     const { error: e } = await db.from('document_deadlines').insert(scan.deadlines.map((d) => ({
       scan_id: scanId, document_id: documentId, company_id: companyId,
       title: d.title, due_on: d.due_on, source_line: d.source_line, recurs: d.recurs,
+      quote_verified: verifyQuote(d.source_line, scan.extracted_text),
     })))
     if (e) throw new Error(`document_deadlines: ${e.message}`)
   }
@@ -978,5 +1015,80 @@ export async function saveScan(
     .update({ status: scan.status === 'could_not_read' ? 'could_not_read' : 'read' })
     .eq('id', documentId)
 
-  return { scanId, aiCallId }
+  // *** AND THE DATES GO ON THE CALENDAR — Calendar decisions 3 and 4 (`DECISIONS.md` §185). ***
+  //
+  // This is the reversal: a date a reading finds now reaches the calendar BY ITSELF, marked
+  // not-confirmed, instead of waiting for somebody to press a button per date. The rule it replaces
+  // is `docs/VISION-DOCUMENTS.md`'s "deadlines go to the calendar on the person's say-so", for
+  // document dates only; the owner's reasoning and the four guardrails are in §185.
+  //
+  // *** IT IS HERE, IN `saveScan`, AND THAT IS WHY IT COVERS BOTH PATHS. *** A reading is saved from
+  // exactly two places — the live route (`app/api/document-scan/route.ts:111`) and the background
+  // sweep (`app/api/jobs/scan-documents/route.ts:236`) — and both call this function. Putting the
+  // step in either route would have left the other one silently not reaching the calendar, which is
+  // the shape of defect this whole job exists to clear up.
+  //
+  // *** IT READS THE VIEW, NOT ITS OWN `scan.deadlines`. *** `document_dates_current_v` (migration
+  // 073) is the one definition of "the dates this company actually has": the current reading of a
+  // document no CONFIRMED newer version supersedes. Reading it here means a document that has been
+  // superseded while this reading was in flight adds nothing — the view returns no rows — and
+  // `withdrawStale` then takes its old dates off. One definition, used by the writer as well as by
+  // every reader.
+  //
+  // *** A FAILURE HERE MUST NEVER FAIL THE READING. *** The reading is the valuable thing and it is
+  // already written. A calendar step that threw would roll a good reading back to "reading" status
+  // and leave the person with nothing, to save them from a missing date. So it is caught, counted and
+  // logged, and the counts are returned so a caller can say what happened.
+  const calendar: CalendarStep = { added: 0, already: 0, rejected_before: 0, withdrawn: 0, failed: 0, error: null }
+  try {
+    const { data: current, error: viewErr } = await db.from('document_dates_current_v')
+      .select('deadline_id, title, due_on, source_line, recurs, quote_verified, entity_id')
+      .eq('company_id', companyId).eq('document_id', documentId)
+    // An error is NOT an empty list (`CLAUDE.md` §9a). Treating a failed read as "no current dates"
+    // would add nothing and then withdraw everything.
+    if (viewErr) throw new Error(`the current dates could not be read: ${viewErr.message}`)
+
+    for (const d of (current ?? []) as Array<{
+      deadline_id: string; title: string; due_on: string | null; source_line: string | null
+      recurs: boolean; quote_verified: boolean | null; entity_id: string | null
+    }>) {
+      // A one-off with no day is refused by the table and by `addDate` — it is a date nobody could
+      // place or act on. The reading keeps it; the calendar does not take it.
+      if (!d.due_on && !d.recurs) { calendar.failed++; continue }
+      const r = await addDate(db, {
+        companyId, userId: null,
+        source: 'document',
+        title: d.title,
+        day: d.due_on,
+        line: d.source_line,
+        lineVerified: d.quote_verified,
+        // Decision 3: it arrives waiting for a person, never as a settled obligation.
+        state: 'not_confirmed',
+        repeats: !!d.recurs,
+        // NEVER 'yearly' (B4). The scan says only whether a date repeats, so "how often" is null and
+        // the person is asked when they confirm.
+        every: null,
+        entityId: d.entity_id ?? entityId ?? null,
+        documentId,
+        documentDeadlineId: d.deadline_id,
+      })
+      if (r.created) calendar.added++
+      else if (r.reason === 'already') calendar.already++
+      else if (r.reason === 'rejected_before') calendar.rejected_before++
+      else calendar.failed++
+    }
+
+    // Decision 4: the not-confirmed dates of readings this one replaced come off the calendar,
+    // marked `withdrawn` and never deleted. A CONFIRMED date is left exactly where it is — a person
+    // said it was right, and a newer reading not mentioning it is not evidence it went away. That is
+    // the same rule Run 7 applied to gaps nobody re-raised.
+    const { withdrawn } = await withdrawStale(db, { companyId, documentId })
+    calendar.withdrawn = withdrawn
+  } catch (e) {
+    calendar.error = e instanceof Error ? e.message : String(e)
+    console.error(`document scan: the calendar step failed for document ${documentId} — the reading is `
+      + `saved and its dates are not on the calendar: ${calendar.error}`)
+  }
+
+  return { scanId, aiCallId, calendar }
 }

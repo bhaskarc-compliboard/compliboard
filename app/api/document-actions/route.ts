@@ -23,6 +23,9 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { requireCompany, supabaseAdmin } from '@/lib/auth'
+// The one writer for every date (Calendar decision 8, `DECISIONS.md` §185). This route no longer
+// inserts into `calendar_events` itself.
+import { addDate, confirmDate, withdrawStale } from '@/lib/calendarDates'
 
 const CORRECTABLE = ['kind', 'agencies', 'subjects', 'site', 'doc_date', 'title'] as const
 const SCAN_KINDS = ['permit', 'certificate', 'program', 'policy', 'record', 'supplier_document', 'other']
@@ -125,30 +128,65 @@ export async function POST(request: NextRequest) {
       // "Add to calendar" on a deadline.
       // -----------------------------------------------------------------------
       case 'deadline_to_calendar': {
+        // *** IT GOES THROUGH THE ONE WRITER NOW — Calendar decision 8 (`DECISIONS.md` §185). ***
+        //
+        // What this branch used to do, and why each part had to go:
+        //   · it read `calendar_event_id` and THEN inserted, so two presses that crossed both passed
+        //     the check and made two rows (B8). `addDate` is a compare-and-set on the date key, so the
+        //     database refuses the second one;
+        //   · it wrote `recurrence_period: 'annually'` for every repeating deadline, whatever the
+        //     document said, while staging's only repeats are monthly (B4). "How often" is now null
+        //     until a person says, and the To confirm tab asks them;
+        //   · it carried no `document_deadline_id`, so a stale reading's dates could not be found and
+        //     withdrawn (decision 4).
+        //
+        // *** AND THE BUTTON MEANS SOMETHING DIFFERENT NOW. *** Since decision 3 a reading's dates are
+        // already on the calendar, not-confirmed. So pressing this is a person CONFIRMING a date, not
+        // creating one — and that is what it does: add if it is somehow absent, confirm either way.
         const { deadline_id: deadlineId } = body
         if (!deadlineId) return NextResponse.json({ error: 'Missing deadline_id.' }, { status: 400 })
         const { data: dl } = await db.from('document_deadlines')
-          .select('id, document_id, title, due_on, source_line, recurs, calendar_event_id')
+          .select('id, document_id, title, due_on, source_line, recurs, quote_verified, calendar_event_id')
           .eq('id', deadlineId).maybeSingle()
         if (!dl || dl.document_id !== documentId) {
           return NextResponse.json({ error: 'Deadline not found' }, { status: 404 })
         }
-        if (dl.calendar_event_id) return NextResponse.json({ ok: true, already: true })
         if (!dl.due_on) {
-          return NextResponse.json({ error: 'That deadline has no date to add.' }, { status: 400 })
+          // A repeat with no day: the person picks the day in the To confirm tab, because a calendar
+          // row with no date is false precision (Audits draws the same line, `AuditReport.tsx:1029`).
+          return NextResponse.json({ error: 'That date has no day yet. Pick one first.' }, { status: 400 })
         }
-        const { data: event, error: evErr } = await db.from('calendar_events').insert({
-          company_id: companyId, user_id: userId,
-          title: dl.title, description: dl.source_line ?? null,
-          due_date: dl.due_on, category: 'document',
-          is_recurring: !!dl.recurs, recurrence_period: dl.recurs ? 'annually' : null,
-          document_id: documentId,
-        }).select('id').single()
-        if (evErr) throw evErr
+
+        const added = await addDate(db, {
+          companyId, userId,
+          source: 'document',
+          title: dl.title,
+          day: dl.due_on,
+          line: dl.source_line,
+          lineVerified: dl.quote_verified,
+          // A person pressed, so it is confirmed from this moment — decision 3's "audit dates and dates
+          // added by hand are confirmed from the start", which this press now is.
+          state: 'confirmed',
+          repeats: !!dl.recurs,
+          every: null,
+          documentId,
+          documentDeadlineId: dl.id,
+        })
+        if (!added.created && added.reason === 'refused') {
+          return NextResponse.json({ error: added.error }, { status: 400 })
+        }
+        // Already there (the reading put it there) — so this press is the confirmation.
+        if (!added.created) {
+          const r = await confirmDate(db, { companyId, id: added.date.id })
+          if (!r.ok) return NextResponse.json({ error: r.error }, { status: r.status })
+          return NextResponse.json({ ok: true, confirmed: true, calendar_event_id: r.date.id })
+        }
+        // The deadline row keeps its own pointer, as it always did, so the report can show
+        // "On your calendar" without a second query.
         const { error } = await supabaseAdmin.from('document_deadlines')
-          .update({ calendar_event_id: event.id }).eq('id', deadlineId)
+          .update({ calendar_event_id: added.date.id }).eq('id', deadlineId)
         if (error) throw error
-        return NextResponse.json({ ok: true, calendar_event_id: event.id })
+        return NextResponse.json({ ok: true, calendar_event_id: added.date.id })
       }
 
       // -----------------------------------------------------------------------
@@ -178,6 +216,27 @@ export async function POST(request: NextRequest) {
           : { version_of: null, version_confirmed: false }
         const { error } = await db.from('documents').update(patch).eq('id', documentId)
         if (error) throw error
+
+        // *** CONFIRMING A NEWER VERSION TAKES THE OLDER ONE'S DATES OFF THE CALENDAR ***
+        // — Calendar decision 4. `document_dates_current_v` stops returning the older document's
+        // deadlines the moment `version_confirmed` is true, so its not-confirmed dates are now stale
+        // and would otherwise sit on the month for ever, showing a renewal date from a permit this
+        // company has replaced.
+        //
+        // A CONFIRMED date on the old version is left alone: a person said it was right, and a new
+        // version arriving is not evidence that the obligation went away.
+        //
+        // The old document's id is `doc.version_of`, read in the ownership check at the top of this
+        // route. A failure here does not undo the person's answer — they said "same document" and that
+        // is recorded; the sweep's next reading withdraws the dates anyway.
+        if (verdict === 'same' && doc.version_of) {
+          try {
+            const { withdrawn } = await withdrawStale(db, { companyId, documentId: doc.version_of })
+            if (withdrawn) console.log(`version confirmed: ${withdrawn} date(s) of the older version withdrawn`)
+          } catch (e) {
+            console.error('version confirmed, but the older version\'s dates could not be withdrawn:', e)
+          }
+        }
         return NextResponse.json({ ok: true })
       }
 

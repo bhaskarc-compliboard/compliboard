@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
 
     // Ordered, every one of them. An unordered list re-shuffles when an unrelated row is
     // updated, and a report a person is reading must not rearrange itself.
-    const [scan, gaps, conditions, deadlines, facts, corrections, versions, sites, labels, lists] = await Promise.all([
+    const [scan, gaps, conditions, deadlines, facts, corrections, versions, sites, labels, lists, dates] = await Promise.all([
       scanId ? db.from('document_scans').select('*').eq('id', scanId).maybeSingle() : { data: null },
       // EVERY gap row for this document, not only the current scan's. A gap from an earlier
       // reading that still carries somebody's checklist has to stay reachable — the route sorts
@@ -40,7 +40,19 @@ export async function GET(request: NextRequest) {
       db.from('document_gaps').select('*').eq('document_id', documentId)
         .order('scan_id').order('ordinal'),
       db.from('document_conditions').select('*').eq('document_id', documentId).order('ordinal'),
-      db.from('document_deadlines').select('*').eq('document_id', documentId).order('due_on', { nullsFirst: false }).order('title'),
+      // *** THE CURRENT READING'S DATES ONLY — Calendar decision 4 (`DECISIONS.md` §185, B3). ***
+      // This read had no scan filter, so a document read twice listed BOTH readings' dates: staging's
+      // `13-company-self-check.docx` showed one source line under two titles, which reads as two
+      // obligations where there is one. `document_dates_current_v` (migration 073) is the one
+      // definition — the current reading of a document no CONFIRMED newer version supersedes — and the
+      // calendar's writer reads the same view, so the report and the calendar cannot disagree about
+      // what this document's dates are.
+      //
+      // An earlier reading's dates are not shown "from earlier readings" the way gaps are (`:80–83`):
+      // a gap may carry somebody's checklist or draft and has to stay reachable, while a date a person
+      // acted on became a `calendar_events` row that survives on its own.
+      db.from('document_dates_current_v').select('*').eq('document_id', documentId)
+        .order('due_on', { nullsFirst: false }).order('title'),
       db.from('fact_proposals').select('*').eq('document_id', documentId).order('created_at').order('id'),
       db.from('document_corrections').select('*').eq('document_id', documentId)
         .order('created_at', { ascending: false }).order('id', { ascending: false }),
@@ -57,6 +69,16 @@ export async function GET(request: NextRequest) {
         .select('id, title, created_at, document_gap_id, checklist_items(id, completed, parent_item_index)')
         .eq('company_id', companyId).eq('document_id', documentId)
         .order('created_at', { ascending: false }),
+      // *** WHAT THE CALENDAR SAYS ABOUT EACH DATE — Calendar decisions 3 and 6. ***
+      // Since a reading's dates go on the calendar by themselves, the report's job on a date is to
+      // say where it stands: on the calendar and not yet confirmed, confirmed, needing a day, or
+      // refused with the reason the person gave. That state lives on `calendar_events`, matched by
+      // `document_deadline_id` — not by `document_deadlines.calendar_event_id`, which is only set
+      // when somebody pressed the button and so is null for every date the reading added.
+      db.from('calendar_events')
+        .select('id, document_deadline_id, state, rejected_reason, due_date, repeats_every, counts_as_due')
+        .eq('company_id', companyId).eq('document_id', documentId)
+        .not('document_deadline_id', 'is', null),
     ])
 
     const all = versions.data ?? []
@@ -88,7 +110,27 @@ export async function GET(request: NextRequest) {
       gaps: current,
       earlierGaps: earlier,
       conditions: conditions.data ?? [],
-      deadlines: deadlines.data ?? [],
+      // The view names its key `deadline_id`; the report has always called it `id` and the drawer's
+      // button sends it back as `deadline_id`. Mapped here rather than renamed in the component, so
+      // the one place that knows about the view is the route that reads it.
+      deadlines: ((deadlines.data ?? []) as Array<Record<string, unknown>>).map((d) => {
+        const ev = ((dates.data ?? []) as Array<Record<string, unknown>>)
+          .find((e) => e.document_deadline_id === d.deadline_id)
+        return {
+          id: d.deadline_id, title: d.title, due_on: d.due_on, source_line: d.source_line,
+          recurs: d.recurs,
+          // Whether the line was found in the document (decision 5). Null means there was no text to
+          // check against — not "not found" — and the drawer says neither in that case.
+          quote_verified: d.quote_verified,
+          // The old pointer, still written when somebody presses the button, so nothing that read it
+          // before changes.
+          calendar_event_id: (d.calendar_event_id as string | null) ?? (ev?.id as string | null) ?? null,
+          // What the calendar says about it, for the row's words.
+          calendar_state: (ev?.state as string | null) ?? null,
+          calendar_reason: (ev?.rejected_reason as string | null) ?? null,
+          repeats_every: (ev?.repeats_every as string | null) ?? null,
+        }
+      }),
       facts: facts.data ?? [],
       corrections: corrections.data ?? [],
       versions: chain,

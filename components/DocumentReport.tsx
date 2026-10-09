@@ -56,6 +56,12 @@ interface Condition { id: string; title: string; condition_ref: string | null; e
 interface Deadline {
   id: string; title: string; due_on: string | null; source_line: string | null
   recurs: boolean; calendar_event_id: string | null
+  /** Whether the line was found in the document (Calendar decision 5). Null = no text to check. */
+  quote_verified: boolean | null
+  /** What the calendar says about this date: its state, and the reason if a person refused it. */
+  calendar_state: 'not_confirmed' | 'confirmed' | 'done' | 'rejected' | 'withdrawn' | null
+  calendar_reason: string | null
+  repeats_every: 'monthly' | 'quarterly' | 'yearly' | null
 }
 interface Fact {
   id: string; switch_key: string; proposed_value: string; quote: string | null
@@ -822,14 +828,50 @@ export default function DocumentReport({
                     {past && <span className="text-[var(--amber)]"> · Passed</span>}
                   </p>
                   {d.source_line && <p className="mt-0.5 text-[12px] text-gray-500">{d.source_line}</p>}
-                  {d.calendar_event_id
-                    ? <p className="mt-0.5 text-[12px] text-gray-400">In your calendar</p>
-                    : d.due_on && (
+                  {/*
+                    *** WHERE THIS DATE STANDS — Calendar decisions 3, 5, 6 (board 9). ***
+                    A reading's dates are on the calendar already, so this row no longer offers to put
+                    one there: it says where it stands and offers the one thing left to do.
+                      · not confirmed              "On your calendar · not confirmed" + Confirm
+                      · no day yet                 "Needs a day" — the To confirm tab asks for it, because
+                                                   a calendar row with no day is false precision
+                      · its line was not found     said plainly, and the date is NOT on the month until
+                                                   somebody confirms it (§5.1: never a claim about a
+                                                   document we could not match)
+                      · confirmed or done          "On your calendar"
+                      · refused                    "Not right: <the person's own reason>"
+                    A date with no calendar row at all (an older reading's, or one the step could not
+                    take) keeps the old button, so nothing is unreachable.
+                  */}
+                  {!d.due_on ? (
+                    <p className="mt-0.5 text-[12px] text-gray-500">Needs a day</p>
+                  ) : d.calendar_state === 'rejected' ? (
+                    <p className="mt-0.5 text-[12px] text-gray-500">
+                      Not right{d.calendar_reason ? `: ${d.calendar_reason}` : ''}
+                    </p>
+                  ) : d.calendar_state === 'not_confirmed' ? (
+                    <div className="mt-0.5 flex items-center gap-2">
+                      <p className="text-[12px] text-gray-500">On your calendar · not confirmed</p>
                       <button disabled={busy} onClick={() => act({ action: 'deadline_to_calendar', deadline_id: d.id })}
-                        className="mt-0.5 text-[12px] text-gray-600 underline hover:text-gray-900 disabled:text-gray-300">
-                        Add to calendar
+                        className="text-[12px] text-gray-600 underline hover:text-gray-900 disabled:text-gray-300">
+                        Confirm
                       </button>
-                    )}
+                    </div>
+                  ) : d.calendar_state === 'confirmed' || d.calendar_state === 'done' ? (
+                    <p className="mt-0.5 text-[12px] text-gray-400">On your calendar</p>
+                  ) : d.calendar_event_id ? (
+                    <p className="mt-0.5 text-[12px] text-gray-400">On your calendar</p>
+                  ) : (
+                    <button disabled={busy} onClick={() => act({ action: 'deadline_to_calendar', deadline_id: d.id })}
+                      className="mt-0.5 text-[12px] text-gray-600 underline hover:text-gray-900 disabled:text-gray-300">
+                      Add to calendar
+                    </button>
+                  )}
+                  {d.quote_verified === false && (
+                    <p className="mt-0.5 text-[12px] text-[var(--amber)]">
+                      We could not find this line in the document.
+                    </p>
+                  )}
                 </li>
               )
             })}

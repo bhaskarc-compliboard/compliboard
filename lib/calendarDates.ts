@@ -34,7 +34,7 @@
  * **This file is that owner**, in `requiredLink`, and `tests/unit/calendarDates.test.ts` holds it. The
  * database keeps the half that is true for ever: `date_key like source || ':%'`.
  */
-import { normaliseForQuote } from './documentScan.ts'
+import { normaliseForQuote } from './normaliseQuote.ts'
 import { nextOccurrence, today, type HowOften } from './calendarDate.ts'
 
 export type DateSource = 'document' | 'conversation' | 'audit' | 'hand' | 'handbook'
@@ -84,7 +84,7 @@ const UNIQUE_VIOLATION = '23505'
 /**
  * The line a key is built from, normalised.
  *
- * *** IT IS `normaliseForQuote`, THE RULE THAT ALREADY EXISTS *** (`lib/documentScan.ts:194`): tags
+ * *** IT IS `normaliseForQuote`, THE RULE THAT ALREADY EXISTS *** (`lib/normaliseQuote.ts`): tags
  * out, lower case, letters and digits only. HR's handbook quotes use it and so does the scan's own
  * quote check, by the owner's decision of 7 October that there is ONE normalisation rule. A second
  * rule here would mean a date's identity and its quote check disagreed about what the same sentence is.
@@ -254,9 +254,41 @@ export async function addDate(db: Db, args: AddDateArgs): Promise<AddResult> {
     return { created: false, reason: 'refused', error: 'that date already exists and is not readable here' }
   }
   const date = existing as CalendarDate
-  return date.state === 'rejected'
-    ? { created: false, reason: 'rejected_before', date }
-    : { created: false, reason: 'already', date }
+
+  // A PERSON'S "NO" STANDS. Nothing is refreshed and nothing is revived: the whole point of
+  // `rejected` is that a later reading raising the same date again changes nothing (decision 6).
+  if (date.state === 'rejected') return { created: false, reason: 'rejected_before', date }
+
+  // *** THE SAME DATE, SEEN AGAIN BY A NEWER READING, IS RE-POINTED AT IT. ***
+  //
+  // Found by A3's replay, and it was a real defect rather than a test artifact. A re-read writes NEW
+  // `document_deadlines` rows, so the calendar row's `document_deadline_id` still pointed at the
+  // REPLACED reading's row — and `withdrawStale`, which asks "is this date's deadline still in the
+  // current reading", then withdrew a date the new reading had just confirmed it still holds. The
+  // replay printed it: a deadline the model merely RENAMED (its line byte-identical, so the key
+  // matched and this branch ran) came out `withdrawn`, and the month lost a real obligation.
+  //
+  // WHO OWNS WHAT, and this is the rule the patch encodes:
+  //   · THE READING owns the wording and the provenance — the title, the line, whether that line was
+  //     found, and which deadline row it came from. The newest reading is our best reading of the same
+  //     obligation, and the report shows its words, so the calendar must not keep older ones.
+  //   · THE PERSON owns the decision — `state`, `repeats_every`, `rejected_reason`. None is touched
+  //     here. Confirming a date, and saying how often it repeats, survives every later reading.
+  //
+  // AND A WITHDRAWN DATE COMES BACK. If an earlier reading dropped a deadline and a later one says it
+  // again, the date returns to waiting for a person instead of staying invisible — otherwise a
+  // document read three times could lose a real expiry for good, with nothing on any screen saying so.
+  const patch: Record<string, unknown> = {
+    title: args.title.trim().slice(0, 500),
+    description: args.line ? String(args.line).slice(0, 2000) : null,
+    line_verified: args.lineVerified ?? null,
+    document_deadline_id: args.documentDeadlineId ?? date.document_deadline_id,
+    entity_id: args.entityId ?? date.entity_id,
+  }
+  if (date.state === 'withdrawn') patch.state = args.state
+  const { data: freshened } = await db.from('calendar_events')
+    .update(patch).eq('id', date.id).eq('company_id', args.companyId).select(DATE_COLUMNS).single()
+  return { created: false, reason: 'already', date: (freshened as CalendarDate) ?? date }
 }
 
 /**

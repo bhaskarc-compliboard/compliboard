@@ -102,6 +102,9 @@ function fakeDb(seed: Row[] = [], opts: { viewRows?: Row[]; viewError?: string }
   }
 }
 
+/** The reason off a not-created result, without widening the union at every call site. */
+const why = (r: Awaited<ReturnType<typeof addDate>>) => (r.created ? null : r.reason)
+
 const docDate = (over: Row = {}) => ({
   companyId: CO, source: 'document' as const, title: 'Permit expires', day: '2027-01-01',
   line: 'This permit expires 1 January 2027.', documentId: DOC, state: 'not_confirmed' as const, ...over,
@@ -213,13 +216,14 @@ describe('addDate — compare-and-set, not check-then-insert (B8)', () => {
     assert.equal(calendar[0].document_id, DOC)
   })
 
-  test('THE SECOND ADD IS "already", and writes nothing', async () => {
+  test('THE SECOND ADD MAKES NO SECOND ROW', async () => {
+    // It is not a no-op: the row is re-pointed at the newer reading (the test below this block).
+    // What it must never do is make a second date.
     const { db, calendar } = fakeDb()
     await addDate(db, docDate())
     const r = await addDate(db, docDate({ title: 'Expiry of permit' }))   // the re-read's new title
     assert.equal(r.created, false)
     assert.equal(r.reason, 'already')
-    assert.equal((r as { date: { title: string } }).date.title, 'Permit expires')  // the one that is there
     assert.equal(calendar.length, 1)
   })
 
@@ -233,6 +237,58 @@ describe('addDate — compare-and-set, not check-then-insert (B8)', () => {
     assert.equal(again.reason, 'rejected_before')
     assert.equal((again as { date: { rejected_reason: string } }).date.rejected_reason, 'That is the old permit.')
     assert.equal(calendar.length, 1)
+  })
+
+  test('*** "already" RE-POINTS THE ROW AT THE NEW READING — the defect A3\'s replay found ***', async () => {
+    // A re-read writes NEW document_deadlines rows. Before this, the calendar row kept the REPLACED
+    // reading's `document_deadline_id`, so `withdrawStale` withdrew a date the new reading had just
+    // said it still holds. The replay printed it: a deadline the model merely RENAMED came out
+    // `withdrawn` and the month lost a real obligation.
+    const { db, calendar } = fakeDb()
+    await addDate(db, docDate({ documentDeadlineId: 'dl-reading-1', lineVerified: true }))
+    const again = await addDate(db, docDate({
+      documentDeadlineId: 'dl-reading-2', title: 'Expiry of permit', lineVerified: false,
+    }))
+    assert.equal(again.created, false)
+    assert.equal(again.reason, 'already')
+    assert.equal(calendar.length, 1)
+    // the reading owns the wording and the provenance
+    assert.equal(calendar[0].document_deadline_id, 'dl-reading-2')
+    assert.equal(calendar[0].title, 'Expiry of permit')
+    assert.equal(calendar[0].line_verified, false)
+  })
+
+  test('...and the PERSON\'s decision survives the re-point', async () => {
+    const { db, calendar } = fakeDb()
+    await addDate(db, docDate({ documentDeadlineId: 'dl-1', repeats: true }))
+    await confirmDate(db, { companyId: CO, id: String(calendar[0].id), every: 'monthly' })
+    await addDate(db, docDate({ documentDeadlineId: 'dl-2', title: 'renamed' }))
+    assert.equal(calendar[0].state, 'confirmed')          // not pushed back into the queue
+    assert.equal(calendar[0].repeats_every, 'monthly')    // and the "how often" they gave it stands
+    assert.equal(calendar[0].document_deadline_id, 'dl-2')
+  })
+
+  test('a WITHDRAWN date comes back when a later reading says it again', async () => {
+    // Otherwise a document read three times could lose a real expiry for good, with nothing on any
+    // screen saying so.
+    const { db, calendar } = fakeDb()
+    await addDate(db, docDate({ documentDeadlineId: 'dl-1' }))
+    calendar[0].state = 'withdrawn'
+    const back = await addDate(db, docDate({ documentDeadlineId: 'dl-3' }))
+    assert.equal(why(back), 'already')
+    assert.equal(calendar[0].state, 'not_confirmed')
+    assert.equal(calendar.length, 1)
+  })
+
+  test('a REJECTED date is never refreshed and never revived', async () => {
+    const { db, calendar } = fakeDb()
+    await addDate(db, docDate({ documentDeadlineId: 'dl-1' }))
+    await rejectDate(db, { companyId: CO, id: String(calendar[0].id), reason: 'the old permit' })
+    const again = await addDate(db, docDate({ documentDeadlineId: 'dl-2', title: 'renamed' }))
+    assert.equal(why(again), 'rejected_before')
+    assert.equal(calendar[0].state, 'rejected')
+    assert.equal(calendar[0].title, 'Permit expires')               // untouched
+    assert.equal(calendar[0].document_deadline_id, 'dl-1')          // untouched
   })
 
   test('a repeat is never defaulted to yearly (B4)', async () => {
