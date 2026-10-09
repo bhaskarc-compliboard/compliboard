@@ -12449,3 +12449,29 @@ Calendar's job because it changes what Documents shows about FINDINGS, not about
 genuinely replaced by one we cannot read — a corrupt re-upload — the identity shown is the old file's,
 which is the lesser harm against a permit vanishing from an audit; and the grey line says which reading
 it came from.
+
+### 185b. THE MONTHLY EMAIL'S LAUNCH GATE, BESIDE DECISION 22 — 9 October 2026
+
+*The owner's decision during A5.*
+
+**Board 12's last line — "You can turn it off in My Account" — is NOT in the email**, because there is
+no such switch. My Account's own section is next after the Calendar, and an email that tells somebody
+to turn it off somewhere they cannot is worse than one that says nothing (§5.1).
+
+**The line and the switch go in together.** A unit test asserts the words are absent, so the line
+cannot arrive before the switch by accident.
+
+**And this email reaches no real customer before BOTH gates are open:**
+1. **The sender** (decision 22): the domain verified in Resend with its DNS records, and `EMAIL_FROM`
+   set. Until then every email sends from `onboarding@resend.dev`, Resend's test address, which is why
+   the audit email landed in junk. `lib/emailSender.ts` is the one place that changes, and
+   `canReachCustomers()` is false while it is still the test sender.
+2. **The switch** (this decision): a person can turn the monthly email off from My Account, and the
+   email says so.
+
+**Why both, and not just the first.** A monthly email is the only one this product sends that nobody
+asked for — the audit, handbook-check and batch emails all follow something a person pressed. An
+unasked-for monthly email with no way to stop it is the definition of the thing people mark as spam,
+and a sender that gets marked as spam takes the other three emails down with it.
+
+`docs/HANDOFF-CODE.md` §7 carries a row so My Account's chat finds this.

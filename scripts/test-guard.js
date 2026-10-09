@@ -81,8 +81,11 @@ import { readdirSync, readFileSync } from 'node:fs'
 // reading, the ONE watcher keeps the current scan or the drawer spins for ever, HR's handbooks are a
 // different table and were not touched, and the helper refuses to read an error as "never read")
 // -> 1046 at A3e's addition (the label prune, which DELETES, and the audit's "found wrong with it:
-// nothing", which is a statement in a prompt rather than an absence).
-const FLOOR = 1046
+// nothing", which is a statement in a prompt rather than an absence) -> 1066 at A5 (the monthly
+// email: board 12's words and order, the opt-out line held back until My Account has the switch,
+// one sender for all four emails, and R2/R3 — a read that fails sends NOTHING, never an email
+// saying "nothing is due this month").
+const FLOOR = 1066
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

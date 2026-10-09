@@ -13,6 +13,7 @@
  * function called twice.
  */
 import { Resend } from 'resend'
+import { emailFrom } from './emailSender.ts'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = { from: (t: string) => any }
@@ -212,7 +213,7 @@ export async function notifyBatch(args: {
   try {
     const resend = new Resend(key)
     const res = await resend.emails.send({
-      from: 'CompliBoard <onboarding@resend.dev>',
+      from: emailFrom(),
       to,
       subject,
       text,

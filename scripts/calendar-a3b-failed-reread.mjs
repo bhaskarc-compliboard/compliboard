@@ -44,6 +44,19 @@ const { data: doc } = await db.from('documents').insert({
   file_url: `${co.id}/f.pdf`, file_type: 'application/pdf',
 }).select('id').single()
 
+/**
+ * The throwaway company goes WHATEVER HAPPENS. Two were left on staging by runs of this script that
+ * threw before the cleanup at the bottom — one on a seeded gap with a null `basis`, one on a file an
+ * edit had scrambled — and they then turned up as companies in A5's first dry run of the monthly
+ * email. A7 part 2 compares row counts per company, so a leftover is not harmless.
+ */
+async function cleanUp() {
+  await db.from('calendar_events').delete().eq('company_id', co.id)
+  await db.from('companies').delete().eq('id', co.id)
+}
+process.on('uncaughtException', async (e) => { console.error(e); await cleanUp(); process.exit(1) })
+process.on('unhandledRejection', async (e) => { console.error(e); await cleanUp(); process.exit(1) })
+
 const show = async (when) => {
   const { data } = await db.from('calendar_events')
     .select('title, due_date, state, counts_as_due').eq('company_id', co.id).order('due_date')
@@ -429,6 +442,5 @@ if (allGaps.length && nowGaps.length === 0) {
 } else pass(`the findings show as the last readable reading's, with their line (${nowGaps.length} of ${allGaps.length})`)
 console.log(`  ${'='.repeat(78)}`)
 
-await db.from('calendar_events').delete().eq('company_id', co.id)
-await db.from('companies').delete().eq('id', co.id)
+await cleanUp()
 console.log(`\n  cleaned up.`)

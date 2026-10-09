@@ -13,6 +13,7 @@
 // really addressed, and `notified_at` set only on a send that actually succeeded.
 
 import { Resend } from 'resend'
+import { emailFrom } from './emailSender.ts'
 
 import { runSummaryLine, type RunSummary } from './auditRun.ts'
 
@@ -183,7 +184,7 @@ export async function notifyRun(
   try {
     const resend = new Resend(key)
     const res = await resend.emails.send({
-      from: 'CompliBoard <onboarding@resend.dev>',
+      from: emailFrom(),
       to, subject, text,
     })
     if (res.error) return { notified: false, error: res.error.message, to, subject, text }

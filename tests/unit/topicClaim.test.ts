@@ -173,7 +173,14 @@ describe('THE QUIET RULE AT ITS EDGES (HR Step 10, decision 13; decision 23)', (
 })
 
 describe('THE CRON SCHEDULE (HR Step 10): every entry pinned', () => {
-  test('vercel.json holds exactly these six', () => {
+  test('vercel.json holds exactly these seven', () => {
+    // *** SIX UNTIL 9 OCTOBER 2026; SEVEN SINCE (Calendar A5, decision 11). ***
+    // This list is deliberately exhaustive, so a job cannot be added to production without somebody
+    // writing it down here — which is this test doing its job: adding the monthly email turned it
+    // red, and raising it is the deliberate act the pin exists to force.
+    //
+    // `0 15 1 * *` is the 1st of each month at 15:00 UTC — 8am Pacific in summer, 7am in winter.
+    // Vercel Cron is UTC only, so one of the two is accepted; the owner chose the morning.
     const crons = JSON.parse(readFileSync('vercel.json', 'utf8')).crons
     assert.deepEqual(crons, [
       { path: '/api/jobs/summarise', schedule: '0 10 * * *' },
@@ -182,7 +189,19 @@ describe('THE CRON SCHEDULE (HR Step 10): every entry pinned', () => {
       { path: '/api/jobs/audit-sections', schedule: '*/5 * * * *' },
       { path: '/api/jobs/handbook-queue', schedule: '0 10 * * *' },
       { path: '/api/jobs/handbook-checks', schedule: '*/5 * * * *' },
+      { path: '/api/jobs/calendar-month', schedule: '0 15 1 * *' },
     ])
+  })
+
+  test('the calendar job: the cron secret first, and a 404 without it', () => {
+    // The same shape the two HR jobs are held to below: the guard before the service-role client, so
+    // an anonymous caller never reaches a read, and every refusal is a 404 rather than a 401.
+    const src = readFileSync('app/api/jobs/calendar-month/route.ts', 'utf8')
+    for (const m of ['export async function GET', 'export async function POST']) {
+      const fn = src.slice(src.indexOf(m))
+      assert.ok(fn.indexOf('requireCronSecret(request)') > 0, m)
+      assert.ok(fn.indexOf('requireCronSecret(request)') < fn.indexOf('run('), m)
+    }
   })
   test('both HR jobs: the cron secret first (a 404 without it), no preview switch since the go-live', () => {
     for (const f of ['app/api/jobs/handbook-queue/route.ts', 'app/api/jobs/handbook-checks/route.ts']) {

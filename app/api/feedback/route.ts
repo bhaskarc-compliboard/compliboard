@@ -1,4 +1,5 @@
 import { Resend } from 'resend';
+import { emailFrom } from '@/lib/emailSender'
 import { NextRequest, NextResponse } from 'next/server';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -8,7 +9,7 @@ export async function POST(request: NextRequest) {
     const { message, company } = await request.json();
 
     await resend.emails.send({
-      from: 'CompliBoard <onboarding@resend.dev>',
+      from: emailFrom(),
       to: process.env.FEEDBACK_EMAIL!,
       subject: `CompliBoard Feedback${company ? ` from ${company}` : ''}`,
       html: `

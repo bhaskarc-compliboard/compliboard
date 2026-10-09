@@ -14,6 +14,7 @@
 //
 // *** THIS FILE MUST NOT IMPORT `lib/auth.ts` *** (notifyRun's note): plain Node must be able to load it for the dry run.
 import { Resend } from 'resend'
+import { emailFrom } from './emailSender.ts'
 import { longDate } from './summaryWords.ts'
 import { checkParts, partsNotChecked, type RowIn } from './handbookCheckView.ts'
 
@@ -100,7 +101,7 @@ export async function notifyCheck(db: Db, checkId: string, opts: { dryRun?: bool
   }
   try {
     const resend = new Resend(key)
-    const res = await resend.emails.send({ from: 'CompliBoard <onboarding@resend.dev>', to, subject, text })
+    const res = await resend.emails.send({ from: emailFrom(), to, subject, text })
     if (res.error) return { notified: false, error: res.error.message, to, subject, text }
     // Only now. A stamp before the send is a failure nobody can see.
     await db.from('handbook_checks').update({ notified_at: new Date().toISOString() }).eq('id', checkId).is('notified_at', null)

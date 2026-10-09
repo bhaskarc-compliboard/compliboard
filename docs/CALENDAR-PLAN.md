@@ -1,6 +1,8 @@
 # The Calendar section — the plan
 
-**Version:** 3 · **Updated:** 9 October 2026: the owner's answers to step 3a (decisions 2 and 7); the jobs (§2.4);
+**Version:** 4 · **Updated:** 9 October 2026: **Job E, the fix list** (§2.4, `docs/FIX-LIST-FAILURES.md`) — the
+owner asked for a full read of the code for failures that look like facts, listed now and fixed at the end so the
+calendar work is not diverted. Version 3: 9 October 2026: the owner's answers to step 3a (decisions 2 and 7); the jobs (§2.4);
 **the cross-section gate as a standing rule** (§2.5). Version 2: 9 October 2026: the boards approved by the owner (§2.2); decision 11, one link per
 section in the email; decision 16, the details the boards added; step 2 done. Version 1: 9 October 2026, by the
 Calendar chat, from the owner's answers in that chat.
@@ -295,6 +297,14 @@ running report file and the stop rules of `CLAUDE.md` §9a, and each ending with
   screenshots beside each board: **the owner looks.**
 - **Job C — dates in the Workspace and HR summaries:** step 7, after the owner says yes to the prompt paragraph.
 - **Job D — release and close-out:** step 10.
+- **Job E — the fix list** (`docs/FIX-LIST-FAILURES.md`, the owner, 9 October 2026: *"do a full read on all codes and
+  find out similar flaws. make a list and at the end of this session, fix all, so that we don't get diverted"*). 55
+  entries (some group several places) across every section where a failure — a rate limit, a timeout, a failed database read — is shown, told to
+  the model, emailed or acted on as a real "nothing", plus 9 found on the way. Runs after Job C; the chat recommends
+  **before Job D**, so one release and one finish-line run cover every section it touches. Its first step (E0)
+  confirms each line on the live tree and stops for the owner's five answers (that file, §5). Until then, Jobs A–C
+  take nothing from the list except: the dashboard items B1, B2 and B3 go into **Job B**, because Job B rebuilds
+  that code and must not ship them again.
 
 ### The switches, for the finish line (each off by default)
 
