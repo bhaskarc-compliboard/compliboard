@@ -87,6 +87,9 @@ function Calendar() {
     setShowAddForm(true)
   }, [params])
   const [saveError, setSaveError] = useState('')
+  /** The tick's own message. `saveError` is drawn INSIDE the Add form, so a failure with the form
+   *  closed would be silent — and §5.1's first rule is that nothing fails silently. */
+  const [tickError, setTickError] = useState('')
   const [importFile, setImportFile] = useState<File | null>(null)
   const [importing, setImporting] = useState(false)
   const [showImport, setShowImport] = useState(false)
@@ -228,14 +231,35 @@ function Calendar() {
     }
   }
 
+  /**
+   * *** THE TICK NEVER SAVED — `docs/CALENDAR-MACHINERY.md` B1, proved on 9 October. ***
+   *
+   * This was the last fetch in the app sending no Authorization header. `/api/calendar` gained
+   * `requireCompany` on 9 September (`b992996`) and has answered **401 Unauthorized** to every tick
+   * since; `git log -L231,239` shows these lines were never touched after they were written, so the
+   * tick has not saved for a month. Nothing showed, because the row is updated in the browser first
+   * (below) and the response was never read — so it went green, and came back undone on reload.
+   *
+   * Two changes, and the second is the one that makes it stay fixed:
+   *   1. the token, through `authHeaders()`, as every other call on this page already does;
+   *   2. the answer is READ. A failure puts the tick back and says so, rather than leaving the screen
+   *      claiming something the database never heard about (`CLAUDE.md` §5.1).
+   */
   async function toggleComplete(event: CalendarEvent) {
     const newCompleted = !event.completed
     setEvents(prev => prev.map(e => e.id === event.id ? { ...e, completed: newCompleted } : e))
-    await fetch('/api/calendar', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: event.id, completed: newCompleted }),
-    })
+    try {
+      const res = await fetch('/api/calendar', {
+        method: 'PATCH',
+        headers: await authHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ id: event.id, completed: newCompleted }),
+      })
+      if (!res.ok) throw new Error(String(res.status))
+      setTickError('')
+    } catch {
+      setEvents(prev => prev.map(e => e.id === event.id ? { ...e, completed: event.completed } : e))
+      setTickError('We could not save that just now. That is our side, not yours. Please try again.')
+    }
   }
 
   async function deleteEvent(id: string) {
@@ -310,6 +334,13 @@ function Calendar() {
             List
           </button>
         </div>
+
+        {tickError && (
+          <div className="mb-4 flex items-start justify-between gap-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
+            <p className="text-sm text-red-700">{tickError}</p>
+            <button onClick={() => setTickError('')} className="text-sm text-red-500 hover:text-red-700">Close</button>
+          </div>
+        )}
 
         {(overdueEvents.length > 0 || upcomingEvents.length > 0) && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">

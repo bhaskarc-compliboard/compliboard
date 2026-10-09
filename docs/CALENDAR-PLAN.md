@@ -1,6 +1,7 @@
 # The Calendar section — the plan
 
-**Version:** 2 · **Updated:** 9 October 2026: the boards approved by the owner (§2.2); decision 11, one link per
+**Version:** 3 · **Updated:** 9 October 2026: the owner's answers to step 3a (decisions 2 and 7); the jobs (§2.4);
+**the cross-section gate as a standing rule** (§2.5). Version 2: 9 October 2026: the boards approved by the owner (§2.2); decision 11, one link per
 section in the email; decision 16, the details the boards added; step 2 done. Version 1: 9 October 2026, by the
 Calendar chat, from the owner's answers in that chat.
 **Supersedes:** nothing. `docs/TODO.md` M5 (2820–2846) is the old design: dates from the requirement library's cadence.
@@ -54,6 +55,14 @@ product (`docs/HANDOFF-FROM-HR.md` §11).
    - Links: `document_id` (exists, `040:195`), `handbook_id` (exists, `066:300–313`), and new nullable columns for a
      conversation (`topic_id`) and an audit finding. Each one is a composite foreign key on `(company_id, <id>)`
      with `ON DELETE SET NULL (<column>)`, as 066 does, so a date cannot point at another company's row.
+   - **The source's own link must be set; a date may carry others too** (owner, 9 October, after step 3a): an audit
+     date carries its finding AND the finding's document, so its drawer opens the document and the same-day check
+     works from both sides. A document date carries its document and the deadline row it came from
+     (`document_deadline_id`, step 3a's proposal 3, accepted).
+   - Migration 073 also makes `company_id` NOT NULL (a composite key is not checked when any part is null) and adds a
+     unique `(company_id, id)` to `topics`, `audit_findings` and `document_deadlines`, which a composite key needs
+     (step 3a's proposals 1 and 2, accepted; one migration, and the Workspace, Audits and Documents re-run their
+     checks).
    - `category` stays for the old rows and is no longer written or shown (B9).
    - The drawer shows the source and opens it: the document's report, the conversation's summary, the audit's
      report, or HR's handbook (`/hr?handbook=<id>`).
@@ -111,10 +120,20 @@ product (`docs/HANDOFF-FROM-HR.md` §11).
    - Every write goes through **one shared function** (decision 8), which checks for an existing date with the same
      key before it writes, as a compare-and-set, not check-then-insert. The parked HR route already has the pattern
      (`parked/hr-check-structured:app/api/hr/handbook-dates/[id]/calendar/route.ts:49–57`).
-   - **The exact key is settled in step 3 against staging rows**, and written here then. The starting point: the
-     source's link, the day, and the source line. Titles are not a key: one re-read gave one line two titles (C3).
-   - When Audits offers a date that Documents already put on the calendar, the finding shows "On your calendar", with
-     Confirm when it is not confirmed yet.
+   - **The key, settled in step 3a against staging rows** (`DECISIONS.md` §185 and step 3a's report): a stored
+     `date_key`, unique per company, built only by the shared function:
+     `document:<document>:<day or no-day>:<the normalised source line>`, `audit:<finding>:…`,
+     `conversation:<topic>:…`, `handbook:<handbook>:…`, and `hand:<the date's own id>`.
+   - **Why the line is in it:** on staging, 3 of 36 current dates share a document and a day with another, and every
+     one of the three is a different obligation (a fire-extinguisher certificate sets a 6-year maintenance and a
+     monthly inspection on the same day). Document and day alone would merge them and lose one. The normalised line
+     survived a re-read that renamed the date completely, so titles are not a key and the line is.
+   - **Audits and Documents are NOT matched automatically** (owner, 9 October). An audit finding has no source line
+     (`lib/audit.ts:176` does not read it), and a loose "same document, same day" match would tell a person a
+     different obligation is already on the calendar, which hides a real date. Instead the finding shows **"A date
+     from this document on this day is already on your calendar"**, with that date's title and state, and the person
+     decides. Board 11 is drawn so.
+   - Hand-added dates are never matched against each other: a person pressing Add is the authority.
 
 8. **One shared "add to calendar" function**, in `lib/`, with a route around it. Every section calls it: Documents
    (after a reading, and the report's button), Audits, the summaries, and "Add a date". It sets the source, the link,
@@ -266,6 +285,17 @@ product (`docs/HANDOFF-FROM-HR.md` §11).
 
 The owner may release after any STOP. Each release follows `docs/RELEASE.md`.
 
+### The jobs (owner, 9 October 2026: bigger jobs for work the owner need not watch)
+
+The steps above are the order of work. Claude Code runs them as four long jobs, each with a commit per checkpoint, a
+running report file and the stop rules of `CLAUDE.md` §9a, and each ending with the cross-section gate (§2.5):
+
+- **Job A — everything underneath the page:** steps 3b, 4, 6 and 8. Stops at its end.
+- **Job B — the page:** step 5, with the dashboard's calendar part and the promise words (step 9). Ends with
+  screenshots beside each board: **the owner looks.**
+- **Job C — dates in the Workspace and HR summaries:** step 7, after the owner says yes to the prompt paragraph.
+- **Job D — release and close-out:** step 10.
+
 ### The switches, for the finish line (each off by default)
 
 1. **The scan says how often a date repeats** (decision 9). A Documents prompt change.
@@ -290,6 +320,27 @@ The rules live in `CLAUDE.md` (all of it, especially §3.1, §3.7, §3.11 and §
 - **`npm run cost` before and after every task.** $3 per task unless the owner raises it.
 - **The chat writes the docs it owns straight into `docs/`** (the owner's laptop, the `docs` folder only) and checks
   each write by checksum on the laptop. Claude Code writes all code, runs every migration and makes every commit.
+  `docs/CALENDAR-PLAN.md` is the chat's file: Claude Code reports what the repository contradicts and does not edit
+  it.
+- **⚡ THE CROSS-SECTION GATE — A STANDING REQUIREMENT FOR EVERY CHANGE, IN EVERY SECTION** (the owner, 9 October
+  2026: "every change must check if other sections are getting impacted. I burnt once before"). It goes into
+  `CLAUDE.md` as a rule for every chat, not only this one. Every job ends with it, and part 1 runs after every
+  checkpoint:
+  1. `npm run check` after every checkpoint; the test floor only goes up.
+  2. **Row counts per section, before and after**, as the signed-in caller and as the service role, for the
+     fixture companies, over every table the sections read. A difference the job's own writes do not explain is a
+     stop (`HOW-WE-BUILD.md` §3: a read that is too narrow returns fewer rows with a 200).
+  3. **The shared-file lists** (`docs/TEST-AT-FINISH-LINE.md` J parts, `docs/HANDOFF-FROM-HR.md` §6): every file the
+     job changed that another section lists, and that section's free checks re-run.
+  4. **Every page still loads and shows its rows**, with no model call and no write (`npm run measure`, its BLOCKED
+     list printed): /compliance, /hr, /documents, /audits, /company-information, /dashboard, /calendar, /account.
+     Screenshots in `shots/`.
+  5. **The nightly jobs**, run by hand on an isolated server: each writes its `job_runs` row as before.
+  6. **The emails**: each sends from the address it used before, unless the change was meant to move it.
+  7. `CHECK_LIVE_BASE_URL=http://localhost:3999 npm run check:live`: every section's probes green.
+  8. **The golden sets are not re-run** (paid): the report says which would move, and why.
+
+  The report carries one table: section · what was checked · before · after · pass, or why not.
 
 ## 2.6 Effects on other sections, decision by decision
 

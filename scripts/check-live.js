@@ -302,6 +302,140 @@ const HR_TABLES = ['handbooks', 'handbook_sections', 'handbook_checks', 'handboo
 }
 
 // ---------------------------------------------------------------------------
+// THE CALENDAR — Job A, migration 073 (`docs/CALENDAR-PLAN.md` decisions 2, 4, 6, 7; DECISIONS §185).
+//
+// `docs/CALENDAR-MACHINERY.md` B17: nothing in this file touched `calendar_events` or `/api/calendar`
+// at all, which is why the done tick's 401 (B1) had no instrument for a month. These probes are that
+// instrument. Free: no route of the paid kind, no model.
+//
+// WHAT IS PROVED, and each is a grant or a constraint a customer's tenancy rests on:
+//   · anon holds nothing on `calendar_events` and nothing on the current-dates view;
+//   · authenticated can read, insert, update and delete its OWN company's dates and no others;
+//   · the date key refuses the same date twice, and allows another company's;
+//   · a date may not point at another company's document, site, conversation or finding;
+//   · `counts_as_due` keeps a dateless date and an unfound line off the month, and a confirmation
+//     puts the unfound one back on;
+//   · the route answers 401 with no token.
+// Every probe row is removed before moving on.
+// ---------------------------------------------------------------------------
+{
+  const admin = createClient(url, process.env.SUPABASE_SERVICE_ROLE_KEY ?? '', { auth: { persistSession: false } })
+  const ok = (label, good, detail = '') => {
+    console.log(`  ${good ? '✓' : '✗'} ${label}${detail ? ` — ${detail}` : ''}`)
+    if (!good) failures++
+  }
+  const refused = (err) => !!err && err.code === '42501'
+  const ZERO = '00000000-0000-0000-0000-000000000000'
+  const L = (s) => s.padEnd(26)
+  const stamp = Date.now()
+  const made = []
+  /** Every probe row carries this, so the cleanup can find them even if an assertion throws. */
+  const probeKey = (suffix) => `hand:check-live-${stamp}-${suffix}`
+
+  // anon: nothing, on the table and on the view. A refusal must be 42501 and not some other error,
+  // or a missing column would read as a closed door.
+  // *** THE COLUMN NAME IS PART OF THE PROBE. *** The first version asked both for `id`, and the view
+  // has no `id` — it has `deadline_id`. PostgREST answered 42703 (undefined column) and the probe
+  // reported a FAILURE, correctly: an error of another kind looks exactly like a refusal and proves
+  // nothing (`CLAUDE.md` §9a; this file's own note above). So each one names a column it really has.
+  for (const [t, col] of [['calendar_events', 'id'], ['document_dates_current_v', 'deadline_id']]) {
+    const { error: r } = await asAnon.from(t).select(col).limit(1)
+    ok(`${L(t)} anon refused read`, refused(r), r?.code ?? 'READ ALLOWED')
+  }
+  {
+    const { error: w } = await asAnon.from('calendar_events')
+      .insert({ company_id: companyId, title: 'anon', due_date: '2027-01-01', source: 'hand', state: 'confirmed', date_key: probeKey('anon') })
+    ok(`${L('calendar_events')} anon refused insert`, refused(w), w?.code ?? 'INSERT ALLOWED')
+  }
+
+  // authenticated: reads the table and the view.
+  for (const [t, col] of [['calendar_events', 'id'], ['document_dates_current_v', 'deadline_id']]) {
+    const { error } = await asUser.from(t).select(col).limit(1)
+    ok(`${L(t)} authenticated can read`, !error, error ? `${error.code} ${error.message}` : '')
+  }
+
+  // ...and writes its own company's date, as the person.
+  const mine = {
+    company_id: companyId, title: 'check:live probe', due_date: '2027-01-01',
+    source: 'hand', state: 'confirmed', date_key: probeKey('a'),
+  }
+  const { data: ev, error: evErr } = await asUser.from('calendar_events')
+    .insert(mine).select('id, state, counts_as_due').maybeSingle()
+  ok(`${L('calendar_events')} authenticated can insert`, !evErr && !!ev,
+    evErr ? `${evErr.code} ${evErr.message}` : `state ${ev?.state}, counts_as_due ${ev?.counts_as_due}`)
+  if (ev) made.push(ev.id)
+
+  // ...and not into another company's. RLS refuses the WITH CHECK, which is 42501.
+  {
+    const { error } = await asUser.from('calendar_events')
+      .insert({ ...mine, company_id: ZERO, date_key: probeKey('other-co') })
+    ok(`${L('calendar_events')} refused for another company`, refused(error), error?.code ?? 'ALLOWED')
+  }
+
+  // THE KEY (decision 7, B7, B8): the same date twice is 23505, and another company's is allowed.
+  {
+    const { error } = await asUser.from('calendar_events').insert({ ...mine, title: 'the same date again' })
+    ok(`${L('calendar_events')} the key refused the same date twice`, error?.code === '23505', error?.code ?? 'ALLOWED')
+  }
+
+  // A DATE MAY NOT POINT AT ANOTHER COMPANY'S ROW (migration 073's composite keys). A composite
+  // foreign key refuses with 23503, which is a different code from the grant refusals above and must
+  // not be confused with them.
+  for (const [col, label] of [['document_id', 'document'], ['entity_id', 'site'],
+                              ['topic_id', 'conversation'], ['audit_finding_id', 'finding']]) {
+    const row = { ...mine, date_key: probeKey(`x-${col}`), [col]: ZERO }
+    // The source has to match the link for the key's own CHECK, so the key is renamed with it.
+    if (col === 'document_id') { row.source = 'document'; row.date_key = `document:check-live-${stamp}-x` }
+    if (col === 'topic_id') { row.source = 'conversation'; row.date_key = `conversation:check-live-${stamp}-x` }
+    if (col === 'audit_finding_id') { row.source = 'audit'; row.date_key = `audit:check-live-${stamp}-x` }
+    const { error } = await asUser.from('calendar_events').insert(row)
+    ok(`${L('calendar_events')} refused another company's ${label}`, error?.code === '23503', error?.code ?? 'ALLOWED')
+  }
+
+  // `counts_as_due` — decision 5's guardrail, read back from the database rather than recomputed here.
+  {
+    const dateless = { ...mine, date_key: probeKey('no-day'), due_date: null, is_recurring: true, state: 'not_confirmed' }
+    const { data: d1, error: e1 } = await asUser.from('calendar_events').insert(dateless).select('id, counts_as_due').maybeSingle()
+    if (d1) made.push(d1.id)
+    ok(`${L('counts_as_due')} a date with no day is not due`, !e1 && d1?.counts_as_due === false,
+      e1 ? `${e1.code} ${e1.message}` : `counts_as_due ${d1?.counts_as_due}`)
+
+    const unfound = { ...mine, date_key: probeKey('unfound'), state: 'not_confirmed', line_verified: false }
+    const { data: d2, error: e2 } = await asUser.from('calendar_events').insert(unfound).select('id, counts_as_due').maybeSingle()
+    if (d2) made.push(d2.id)
+    ok(`${L('counts_as_due')} an unfound line is not due`, !e2 && d2?.counts_as_due === false,
+      e2 ? `${e2.code} ${e2.message}` : `counts_as_due ${d2?.counts_as_due}`)
+    if (d2) {
+      const { data: d3 } = await asUser.from('calendar_events').update({ state: 'confirmed' })
+        .eq('id', d2.id).select('counts_as_due').maybeSingle()
+      ok(`${L('counts_as_due')} confirming it puts it back on`, d3?.counts_as_due === true, `counts_as_due ${d3?.counts_as_due}`)
+    }
+
+    const oneOff = { ...mine, date_key: probeKey('dateless-oneoff'), due_date: null, is_recurring: false }
+    const { error: e4 } = await asUser.from('calendar_events').insert(oneOff)
+    ok(`${L('calendar_events')} a one-off with no day is refused`, e4?.code === '23514', e4?.code ?? 'ALLOWED')
+  }
+
+  // A rejected date must say why (decision 6).
+  if (ev) {
+    const { error } = await asUser.from('calendar_events').update({ state: 'rejected' }).eq('id', ev.id)
+    ok(`${L('calendar_events')} a rejection with no reason is refused`, error?.code === '23514', error?.code ?? 'ALLOWED')
+  }
+
+  // The person may delete their own date (a hand-added one; the page offers it).
+  for (const id of made) {
+    const { error } = await asUser.from('calendar_events').delete().eq('id', id)
+    if (error) ok(`${L('calendar_events')} authenticated can delete`, false, `${error.code} ${error.message}`)
+  }
+  ok(`${L('calendar_events')} authenticated can delete`, true, `${made.length} probe row(s) removed`)
+  // Belt and braces: anything this block left behind goes, as the server.
+  const { count: left } = await admin.from('calendar_events')
+    .select('id', { count: 'exact', head: true }).like('date_key', `%check-live-${stamp}%`)
+  if (left) await admin.from('calendar_events').delete().like('date_key', `%check-live-${stamp}%`)
+  ok(`${L('calendar_events')} no probe row left behind`, !left, `${left ?? 0} found`)
+}
+
+// ---------------------------------------------------------------------------
 // HR'S STORAGE PATH — HR Step 5a. A handbook's file lives at <company>/handbooks/<file>
 // (`lib/storage.ts` handbookPath), under migration 002's storage policies: a signed-in person may write
 // in their own company's folder and nowhere else, and anon may write nowhere. Free: no route, no model.
@@ -386,6 +520,59 @@ if (!(await reachable())) {
   // Free: none of them reaches a model or writes a row. No session is refused (401); a request with no question
   // is a 400; an id that is not this company's is a 404; the two HR jobs without the cron secret are a 404.
   // The page is /hr; /hr/new and old HR's two routes are gone (404).
+  // 0a. THE CALENDAR'S ROUTE — Job A (`docs/CALENDAR-PLAN.md` decision 8). Free: no model, and the one
+  // write it makes is removed again. Every method refuses a request with no session (401) — which is
+  // the check the done tick's own bug (B1) went a month without.
+  if (want('calendar')) {
+    const noTok = await Promise.all([
+      fetch(`${BASE}/api/calendar/dates`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }),
+      fetch(`${BASE}/api/calendar/dates`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: '{}' }),
+      fetch(`${BASE}/api/calendar/dates?view=board`),
+      // The old route, which the page still uses until Job B — the tick's own door.
+      fetch(`${BASE}/api/calendar`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: '{}' }),
+    ])
+    const aok = noTok.every((r) => r.status === 401)
+    console.log(`  ${aok ? '✓' : '✗'} calendar no session  POST ${noTok[0].status}, PATCH ${noTok[1].status}, GET ${noTok[2].status}, old PATCH ${noTok[3].status}`)
+    if (!aok) failures++
+
+    const emptyBody = await fetch(`${BASE}/api/calendar/dates`, { method: 'POST', headers: auth, body: '{}' })
+    const badDay = await fetch(`${BASE}/api/calendar/dates`, { method: 'POST', headers: auth,
+      body: JSON.stringify({ source: 'hand', title: 'x', day: '01/11/2026' }) })
+    const badSource = await fetch(`${BASE}/api/calendar/dates`, { method: 'POST', headers: auth,
+      body: JSON.stringify({ source: 'scan', title: 'x', day: '2027-01-01' }) })
+    const unknownDoc = await fetch(`${BASE}/api/calendar/dates`, { method: 'POST', headers: auth,
+      body: JSON.stringify({ source: 'document', title: 'x', day: '2027-01-01', document_id: '00000000-0000-0000-0000-000000000000' }) })
+    const bok = emptyBody.status === 400 && badDay.status === 400 && badSource.status === 400 && unknownDoc.status === 404
+    console.log(`  ${bok ? '✓' : '✗'} calendar refusals    no title ${emptyBody.status}, bad day ${badDay.status}, bad source ${badSource.status}, unknown document ${unknownDoc.status}`)
+    if (!bok) failures++
+
+    // One real date, added and ticked and removed, so the route is proved to WRITE and not only to
+    // refuse — a guard suite that only ever sees refusals cannot tell a working door from a shut one.
+    const key = `check-live route ${Date.now()}`
+    const add = await fetch(`${BASE}/api/calendar/dates`, { method: 'POST', headers: auth,
+      body: JSON.stringify({ source: 'hand', title: key, day: '2027-01-01' }) })
+    const addJson = await add.json().catch(() => ({}))
+    const again = await fetch(`${BASE}/api/calendar/dates`, { method: 'POST', headers: auth,
+      body: JSON.stringify({ source: 'hand', title: key, day: '2027-01-01' }) })
+    const list = await fetch(`${BASE}/api/calendar/dates?view=to_confirm`, { headers: auth })
+    const listJson = await list.json().catch(() => ({}))
+    const wok = add.status === 200 && addJson.created === true && again.status === 200
+      && list.status === 200 && Array.isArray(listJson.dates)
+    console.log(`  ${wok ? '✓' : '✗'} calendar write       add ${add.status} created ${addJson.created}, second add ${again.status}, list ${list.status} (${listJson.dates?.length ?? '?'} to confirm)`)
+    if (!wok) failures++
+    if (addJson.date?.id) {
+      const done = await fetch(`${BASE}/api/calendar/dates`, { method: 'PATCH', headers: auth,
+        body: JSON.stringify({ id: addJson.date.id, action: 'done' }) })
+      const noReason = await fetch(`${BASE}/api/calendar/dates`, { method: 'PATCH', headers: auth,
+        body: JSON.stringify({ id: addJson.date.id, action: 'reject' }) })
+      const dok = done.status === 200 && noReason.status === 400
+      console.log(`  ${dok ? '✓' : '✗'} calendar actions     done ${done.status}, reject with no reason ${noReason.status}`)
+      if (!dok) failures++
+      const admin2 = createClient(url, process.env.SUPABASE_SERVICE_ROLE_KEY ?? '', { auth: { persistSession: false } })
+      await admin2.from('calendar_events').delete().eq('title', key)
+    }
+  }
+
   if (want('hr_answer')) {
     const anon = await fetch(`${BASE}/api/hr/answer`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
     const empty = await fetch(`${BASE}/api/hr/answer`, { method: 'POST', headers: auth, body: JSON.stringify({ question: '' }) })
