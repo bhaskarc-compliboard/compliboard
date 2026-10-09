@@ -84,8 +84,10 @@ import { readdirSync, readFileSync } from 'node:fs'
 // nothing", which is a statement in a prompt rather than an absence) -> 1066 at A5 (the monthly
 // email: board 12's words and order, the opt-out line held back until My Account has the switch,
 // one sender for all four emails, and R2/R3 — a read that fails sends NOTHING, never an email
-// saying "nothing is due this month").
-const FLOOR = 1066
+// saying "nothing is due this month") -> 1071 at A5b (board 12's words as the owner approved them,
+// and the rule that NOTHING says "overdue" or "not done" about a date — all we know is the day has
+// gone by, because people record what they did in their own calendar and not in ours, §185c).
+const FLOOR = 1071
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

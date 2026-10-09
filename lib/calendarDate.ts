@@ -170,8 +170,21 @@ export function formatMonth(year: number, month: number): string {
   return new Date(year, month - 1, 1, 12).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
 }
 
+/** `5 November` — a day without its year, for a list already headed by the month. */
+export function formatDayShort(iso: string | null | undefined): string {
+  const at = parseDay(iso)
+  return at ? at.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' }) : ''
+}
+
 /**
- * How a date reads next to its day: `Due today`, `Due in 3 days`, `2 days overdue`, `Tomorrow`.
+ * How a date reads next to its day: `Due today`, `Due in 3 days`, `Passed 2 days ago`.
+ *
+ * *** WE NEVER SAY "OVERDUE" OR "NOT DONE" ABOUT A DATE — the owner, 9 October 2026 ***
+ * (`DECISIONS.md` §185). This returned `2 days overdue` until A5b. People often do the work and
+ * record it in their own calendar rather than ours, so **all we actually know is that the day has
+ * gone by.** "Overdue" is a claim about whether they did it, made from the absence of a tick — which
+ * is `CLAUDE.md` §3.2's first rule in the place a customer reads every month.
+ *
  * Plain words, no colour, no emoji — the caller decides what is amber (`docs/DESIGN.md`).
  */
 export function dueWords(iso: string | null | undefined, asOf: string = today()): string {
@@ -181,6 +194,6 @@ export function dueWords(iso: string | null | undefined, asOf: string = today())
   if (n === 0) return 'Due today'
   if (n === 1) return 'Due tomorrow'
   if (n > 1) return `Due in ${n} days`
-  if (n === -1) return '1 day overdue'
-  return `${Math.abs(n)} days overdue`
+  if (n === -1) return 'Passed yesterday'
+  return `Passed ${Math.abs(n)} days ago`
 }

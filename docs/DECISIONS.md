@@ -12450,6 +12450,42 @@ genuinely replaced by one we cannot read — a corrupt re-upload — the identit
 which is the lesser harm against a permit vanishing from an audit; and the grey line says which reading
 it came from.
 
+### 185c. WE NEVER SAY "OVERDUE" OR "NOT DONE" ABOUT A DATE — 9 October 2026
+
+*The owner's rule, given during A5b. It applies to every screen and every email, now and in Job B.*
+
+**What we actually know about a date whose day has gone by is that the day has gone by.** Nothing
+more. People do the work and record it in their own calendar, in a binder, on a whiteboard — not
+necessarily in ours. So a tick that is absent from CompliBoard is not evidence the work was not done,
+and **"overdue" and "not done" are claims about the customer, made from the absence of a tick.**
+
+It is `CLAUDE.md` §3.2's first rule — absence of evidence never resolves to a verdict — in the place
+a customer reads every month, and it is §6's omniscient status tracker wearing one word.
+
+**What it changes, in words.**
+
+| Where | Was | Is |
+|---|---|---|
+| The monthly email's heading | "Passed and not done (N):" | **"Dates that have passed (N):"** |
+| …and under it | — | *"A gentle reminder in case any of these still need attention. If they're already taken care of, you can tick them off on your CompliBoard calendar and we won't list them again."* |
+| `lib/calendarDate.ts` `dueWords` | "2 days overdue" | **"Passed 2 days ago"** |
+| The calendar page's panel | "⚠️ Overdue · N deadlines past due" | **"Passed · N dates whose day has gone by"** |
+| The landing page | "Overdue and upcoming deadline alerts" | **"A monthly email of what is due and what has passed"** |
+| The printed month (board 13) | "Passed, not done" | **"Dates that have passed"** |
+
+**The tone is deliberate, not decoration.** The reminder line assumes the work may well be done and
+offers the tick as a way to stop being reminded — rather than implying a failure and asking them to
+account for it. A compliance product that nags about things its customer has already done is one they
+stop opening, and the monthly email is the only one they did not ask for (§185b).
+
+**Pinned by a test**, over the subject and the whole body, so the words cannot come back: a unit test
+asserts `overdue`, `not done` and `past due` appear nowhere in either. `docs/HANDOFF-CODE.md` §7
+carries it for Job B, which rebuilds the page and the printed month.
+
+**The condition under which it would be reversed:** if the product ever genuinely knows the work was
+not done — an agency confirming a missed filing, say — it may say so about *that*, citing it. It may
+never infer it from its own empty checkbox.
+
 ### 185b. THE MONTHLY EMAIL'S LAUNCH GATE, BESIDE DECISION 22 — 9 October 2026
 
 *The owner's decision during A5.*

@@ -33,14 +33,22 @@
  */
 import { Resend } from 'resend'
 import { emailFrom } from './emailSender.ts'
-import { formatDay, formatMonth, monthRange, today } from './calendarDate.ts'
+import { formatDayShort, formatMonth, monthRange, today } from './calendarDate.ts'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = { from: (t: string) => any; auth?: { admin?: Record<string, any> } }
 
+export interface MonthlyDate {
+  title: string
+  due_date: string
+  state: string
+  /** The plant this date belongs to, when it has one (decision 14). Null means company-wide. */
+  site: string | null
+}
+
 export interface MonthlyDates {
-  due: Array<{ title: string; due_date: string; state: string }>
-  passed: Array<{ title: string; due_date: string }>
+  due: MonthlyDate[]
+  passed: MonthlyDate[]
   waiting: number
 }
 
@@ -70,8 +78,10 @@ export async function monthlyDates(
   const { first, last } = monthRange(y, m)
 
   // DUE THIS MONTH — on the board, in this month, not finished.
+  // `entities(name)` is the site (decision 14), joined rather than looked up per row: a loop of
+  // queries inside an email is a loop whose order decides the email.
   const due = await db.from('calendar_events')
-    .select('title, due_date, state')
+    .select('title, due_date, state, entities(name)')
     .eq('company_id', companyId).eq('counts_as_due', true)
     .gte('due_date', first).lte('due_date', last)
     .neq('state', 'done')
@@ -81,7 +91,7 @@ export async function monthlyDates(
   // PASSED AND NOT DONE — before today, whatever month it was in. A deadline that slipped last month
   // is the thing a person most needs to see, so it is not scoped to this month.
   const passed = await db.from('calendar_events')
-    .select('title, due_date')
+    .select('title, due_date, state, entities(name)')
     .eq('company_id', companyId).eq('counts_as_due', true)
     .lt('due_date', asOf)
     .neq('state', 'done')
@@ -94,11 +104,19 @@ export async function monthlyDates(
     .eq('company_id', companyId).eq('state', 'not_confirmed')
   if (waiting.error) throw new Error(`the dates waiting to be confirmed could not be counted: ${waiting.error.message}`)
 
+  const withSite = (rows: unknown): MonthlyDate[] =>
+    (rows as Array<Record<string, unknown>>).map((r) => ({
+      title: r.title as string,
+      due_date: r.due_date as string,
+      state: r.state as string,
+      site: ((r.entities as { name?: string } | null)?.name) ?? null,
+    }))
+
   return {
-    due: (due.data as MonthlyDates['due']),
-    // A date that is both passed and in this month would otherwise appear twice; passed wins,
-    // because "it has already slipped" is the more useful of the two sentences.
-    passed: (passed.data as MonthlyDates['passed']),
+    due: withSite(due.data),
+    // A date that is both passed and in this month would otherwise appear twice; the passed list
+    // wins, because the day having gone by is the more useful of the two sentences.
+    passed: withSite(passed.data),
     waiting: waiting.count ?? 0,
   }
 }
@@ -126,7 +144,19 @@ export async function companyLogins(db: Db, companyId: string): Promise<string[]
   return out
 }
 
-/** Board 12's words, in its order. Exported so a test and the report can read it without sending. */
+/**
+ * BOARD 12's WORDS, IN ITS ORDER — the board the owner approved, with exactly two departures, both
+ * his and both recorded:
+ *
+ *   · **"You can turn it off in My Account" is absent** until that switch exists (`DECISIONS.md`
+ *     §185b). The sentence above it — why you are getting this at all — stays.
+ *   · **Nothing says "overdue" or "not done"** (§185, A5b). The board's heading was "Passed, not
+ *     done"; it is now "Dates that have passed", with a line that assumes the work may well be done.
+ *     People record what they did in their own calendar, not ours, so the only thing we actually
+ *     know is that the day has gone by.
+ *
+ * Exported so a test and the report can read the whole text without sending anything.
+ */
 export function renderMonthlyEmail(args: {
   companyName: string
   asOf: string
@@ -136,52 +166,75 @@ export function renderMonthlyEmail(args: {
   override?: string
 }): { subject: string; text: string } {
   const [y, m] = args.asOf.split('-').map(Number)
-  const month = formatMonth(y, m)
+  const month = formatMonth(y, m)                   // "October 2026"
+  const monthOnly = month.split(' ')[0]             // "October"
   const { due, passed, waiting } = args.dates
 
-  // THE SUBJECT COUNTS WHAT NEEDS A PERSON. Audits' rule (§147's neighbour), for the same reason: a
-  // subject that counts everything is alarming and wrong.
-  const needs = due.length + passed.length
-  const subject = needs
-    ? `Your compliance dates for ${month}: ${needs} to look at`
-    : `Your compliance dates for ${month}`
+  // THE SUBJECT COUNTS THE THREE GROUPS, AND DROPS ANY THAT IS ZERO. A subject that says "0 passed"
+  // is noise, and one that counts everything is alarming (Audits' rule, §147's neighbour).
+  const parts = [
+    due.length ? `${due.length} due` : null,
+    passed.length ? `${passed.length} passed` : null,
+    waiting ? `${waiting} to confirm` : null,
+  ].filter(Boolean)
+  const subject = `Your ${monthOnly} dates: ${parts.join(', ')}`
+
+  /** `5 November · Monthly EHS self-check · Portland plant`, and `· not confirmed` when it is. */
+  const line = (d: MonthlyDate) => '  ' + [
+    formatDayShort(d.due_date),
+    d.title,
+    d.site,
+    d.state === 'not_confirmed' ? 'not confirmed' : null,
+  ].filter(Boolean).join(' · ')
 
   const lines: string[] = []
   if (args.override && args.realTo?.length && !args.realTo.includes(args.override)) {
     lines.push(`[staging: this would have gone to ${args.realTo.join(', ') || '(nobody)'}]`, '')
   }
 
-  lines.push(`${args.companyName} — ${month}`, '')
+  lines.push(`${args.companyName}, here is what is due in ${month}.`, '')
 
   if (due.length) {
     lines.push(`Due this month (${due.length}):`)
-    for (const d of due) {
-      lines.push(`  ${formatDay(d.due_date)} — ${d.title}`
-        + (d.state === 'not_confirmed' ? '  (not confirmed)' : ''))
-    }
+    for (const d of due) lines.push(line(d))
     lines.push('')
   } else {
-    // R3: this is said only when the read SUCCEEDED and returned nothing. A read that failed never
-    // reaches here — `monthlyDates` throws and the caller sends no email at all.
-    lines.push('Nothing is due this month.', '')
+    // R3: said only when the read SUCCEEDED and returned nothing. A read that failed never reaches
+    // here — `monthlyDates` throws and the caller sends no email at all.
+    lines.push(`Nothing is due in ${monthOnly}.`, '')
   }
 
   if (passed.length) {
-    lines.push(`Passed and not done (${passed.length}):`)
-    for (const d of passed) lines.push(`  ${formatDay(d.due_date)} — ${d.title}`)
+    // *** THE OWNER'S RULE (§185, A5b): NOT "passed and not done". ***
+    lines.push(`Dates that have passed (${passed.length}):`)
+    for (const d of passed) lines.push(line(d))
     lines.push('')
+    lines.push('A gentle reminder in case any of these still need attention. If they\'re already')
+    lines.push('taken care of, you can tick them off on your CompliBoard calendar and we won\'t')
+    lines.push('list them again.', '')
   }
 
   if (waiting) {
-    lines.push(`Found in your documents, not yet confirmed: ${waiting}.`, '')
+    lines.push(`Found in your documents, not yet confirmed: ${waiting}.`)
+    lines.push('They are on your calendar, marked not confirmed. Check each one against its line')
+    lines.push('in the document.')
+    // ONE LINK PER SECTION (board 12), not one per date. `?tab=confirm` is the name the board uses
+    // and the name Job B must build the tab under — pinned by a test and written into
+    // `docs/HANDOFF-CODE.md` §7, because a link to a tab that is spelled differently is a dead link
+    // in an email nobody can fix after it is sent.
+    lines.push(`${args.appUrl}/calendar?tab=confirm`, '')
   }
 
-  // ONE LINK PER SECTION (board 12), not one per date.
-  if (waiting) lines.push(`Confirm them: ${args.appUrl}/calendar?tab=to-confirm`)
-  lines.push(`Your calendar: ${args.appUrl}/calendar`)
+  lines.push(`Your calendar: ${args.appUrl}/calendar`, '')
 
-  // NO PRICE, EVER (§147). NO "compliant" (§6). And no "turn it off in My Account" until that switch
-  // exists — see this file's header.
+  lines.push('Dates are read from your documents and from what you add. They are not legal advice.')
+  lines.push('When in doubt, check with the agency.', '')
+
+  // WHY YOU ARE GETTING THIS. The board's next sentence, "You can turn it off in My Account", waits
+  // for that switch (§185b) — and a test asserts it is absent, so it cannot arrive early.
+  lines.push(`You get this email on the 1st of each month because you have a login at ${args.companyName}.`)
+
+  // NO PRICE, EVER (§147). NEVER "compliant" (§6).
   return { subject, text: lines.join('\n') }
 }
 

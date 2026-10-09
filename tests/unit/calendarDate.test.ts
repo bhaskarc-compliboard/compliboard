@@ -118,7 +118,7 @@ describe('THE MAP\'S 2b CASES — a date due today, and the 1st of next month', 
   test('yesterday is past; tomorrow is not', () => {
     assert.equal(isPast('2026-10-08', MORNING), true)
     assert.equal(isPast('2026-10-10', MORNING), false)
-    assert.equal(dueWords('2026-10-08', MORNING), '1 day overdue')
+    assert.equal(dueWords('2026-10-08', MORNING), 'Passed yesterday')
     assert.equal(dueWords('2026-10-10', MORNING), 'Due tomorrow')
   })
 
@@ -206,9 +206,16 @@ describe('the words a person reads', () => {
   test('dueWords never shows a number nobody can read', () => {
     assert.equal(dueWords(null), 'No day yet')
     assert.equal(dueWords('2026-10-12', '2026-10-09'), 'Due in 3 days')
-    assert.equal(dueWords('2026-10-07', '2026-10-09'), '2 days overdue')
+    assert.equal(dueWords('2026-10-07', '2026-10-09'), 'Passed 2 days ago')
     // No "in -22 days", which is what the dashboard printed for a passed date
     // (`docs/CALENDAR-MACHINERY.md` 2b, dashboard:116–119).
     assert.ok(!dueWords('2026-09-17', '2026-10-09').includes('-'))
+    // *** AND NEVER "OVERDUE" — the owner's rule, `DECISIONS.md` §185c. ***
+    // All we know is the day has gone by: a tick missing from CompliBoard is not evidence the work
+    // was not done, because people record what they did in their own calendar.
+    for (const d of ['2026-10-08', '2026-09-17', '2026-01-01']) {
+      assert.ok(!/overdue|not done/i.test(dueWords(d, '2026-10-09')), d)
+    }
+    assert.equal(dueWords('2026-09-17', '2026-10-09'), 'Passed 22 days ago')
   })
 })

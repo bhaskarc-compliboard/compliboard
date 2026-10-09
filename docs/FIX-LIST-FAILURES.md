@@ -1,6 +1,7 @@
 # Failures that look like facts — the fix list
 
-**Version:** 2 · **Updated:** 9 October 2026: L1, WA1 and AR1 FIXED by Job A's A3e (`621490d`), confirmed on the live
+**Version:** 3 · **Updated:** 9 October 2026: D4 and D13 partly fixed by A3e (`c02f4f2`), from its sweep table.
+Version 2: 9 October 2026: L1, WA1 and AR1 FIXED by Job A's A3e (`621490d`), confirmed on the live
 tree; A-prompt narrowed. Version 1: 9 October 2026, by the Calendar chat, at the owner's request: *"do a full read on all
 codes and find out similar flaws. make a list and at the end of this session, fix all, so that we don't get diverted
 from the original work."*
@@ -73,8 +74,10 @@ not a month.
    the reason and "Upload a clearer copy"; it hides the earlier reading's open gaps, checklists, dates and facts.
    `app/api/documents/index/route.ts:69–73` reads `expected_missing` from the current scan too. "Upload a clearer
    copy" is the wrong advice for a rate limit. **Fix:** the drawer shows the last readable reading under the grey
-   line (§185a), with "Read it again" as the way forward when the failure was not the file. *(A3e may already cover
-   part — E0 says.)*
+   line (§185a), with "Read it again" as the way forward when the failure was not the file. **PARTLY FIXED in A3e**
+   (`c02f4f2`): the report's gaps split (`app/api/documents/report/route.ts:31`) and the index's `expected_missing`
+   (`app/api/documents/index/route.ts:73`) now take the readable reading. **Still open:** the drawer's own
+   `could_not_read` view (`components/DocumentReport.tsx:500`) and its "Upload a clearer copy" advice — E0 checks.
 5. **WA1 · sev 3 · ✓ · Workspace.** `lib/attachedDocument.ts:146–148`: an attached document's "read as" and summary
    come from the current scan and go blank after a failed re-read. **Fix:** the readable reading. **FIXED in A3e**: `lib/attachedDocument.ts:152`, named as a
    Workspace change.
@@ -218,7 +221,9 @@ not a month.
     read while 2–N are queued, so the model lists documents the company **does** hold as "What we'd expect and don't
     see" (`app/documents/page.tsx:901`); and `expected_missing` is frozen at scan time, never re-checked. **Fix:**
     list every document (unread ones by file name, marked "not read yet"), say "and N more", and filter the
-    expected list against what is held when the page shows it. **Quality change: the prompt goes to the owner.**
+    expected list against what is held when the page shows it. **PARTLY FIXED in A3e** (`lib/documentScan.ts:453`):
+    a document whose re-read failed is listed from its readable reading. **Still open:** queued documents, the cut
+    at 40, the frozen expected list. **Quality change: the prompt goes to the owner.**
 41. **A9 · sev 2 · ✓ · Audits.** `lib/auditNotify.ts:96–103`: the subject ignores failed sections — an audit whose
     every section hit a rate limit is emailed as "Your Oregon DEQ audit: nothing needs you". After Retry, the
     corrected result is never emailed (`:66`, `notified_at` already set). **Fix:** branch the subject on what

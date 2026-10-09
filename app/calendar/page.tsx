@@ -346,8 +346,10 @@ function Calendar() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
             {overdueEvents.length > 0 && (
               <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3">
-                <p className="text-xs font-semibold text-red-700 mb-1">⚠️ Overdue</p>
-                <p className="text-sm text-red-600">{overdueEvents.length} deadline{overdueEvents.length !== 1 ? 's' : ''} past due</p>
+                {/* "Overdue" says they did not do it; all we know is the day has gone by — the
+                    owner's rule, `DECISIONS.md` §185. Job B rebuilds this panel; the WORDS change now. */}
+                <p className="text-xs font-semibold text-red-700 mb-1">Passed</p>
+                <p className="text-sm text-red-600">{overdueEvents.length} date{overdueEvents.length !== 1 ? 's' : ''} whose day has gone by</p>
               </div>
             )}
             {upcomingEvents.length > 0 && (
@@ -556,7 +558,7 @@ function Calendar() {
                         <div className="flex items-center gap-3 mt-0.5 flex-wrap">
                           {e.category && <span className="text-xs text-gray-400">{e.category}</span>}
                           <span className={`text-xs font-medium ${isOverdue ? 'text-red-600' : isDueSoon ? 'text-amber-600' : 'text-gray-400'}`}>
-                            {isOverdue ? `${Math.abs(diff)} days overdue` : e.completed ? 'Done' : diff === 0 ? 'Due today' : `Due in ${diff} days`}
+                            {isOverdue ? (diff === -1 ? 'Passed yesterday' : `Passed ${Math.abs(diff)} days ago`) : e.completed ? 'Done' : diff === 0 ? 'Due today' : `Due in ${diff} days`}
                           </span>
                           {e.is_recurring && <span className="text-xs text-green-600">🔄 {e.recurrence_period}</span>}
                         </div>
