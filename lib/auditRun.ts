@@ -18,6 +18,7 @@
 // them because "a number is never shown without what it is made of" (that file, `BatchSummary`).
 
 import { createHash } from 'node:crypto'
+import { readableScanIds } from './readableScan.ts'
 
 import { askAIWithCitations, extractJsonText, modelForTask } from './ai.ts'
 import { buildAuditInput, auditAgenciesFor, type AuditInput } from './audit.ts'
@@ -1017,9 +1018,17 @@ export async function finishRunIfDone(db: Db, runId: string):
   const readIds = await sectionDocumentIds(db, runId)
   let readingsAsOf: string | null = null
   if (readIds.length) {
-    const { data: newest } = await db.from('document_scans')
-      .select('scanned_at').in('document_id', readIds).eq('is_current', true)
-      .order('scanned_at', { ascending: false }).limit(1).maybeSingle()
+    // THE READING THAT COULD READ IT (§185a, A3e). `is_current` would date this audit to a reading
+    // that read nothing — "your documents as they stood on <today>" when today's attempt failed is a
+    // sentence that is simply untrue, and it is printed at the top of the report and in the email.
+    const { data: runCo } = await db.from('audit_runs').select('company_id').eq('id', runId).maybeSingle()
+    const readableIds = runCo?.company_id
+      ? await readableScanIds(db, runCo.company_id as string, readIds) : []
+    const { data: newest } = readableIds.length
+      ? await db.from('document_scans')
+          .select('scanned_at').in('id', readableIds)
+          .order('scanned_at', { ascending: false }).limit(1).maybeSingle()
+      : { data: null }
     readingsAsOf = newest?.scanned_at ?? null
   }
 

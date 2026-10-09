@@ -28,6 +28,7 @@
  * type stripping. `scripts/run-golden-audit.js` is that script.
  */
 import { createHash } from 'node:crypto'
+import { readableScans } from './readableScan.ts'
 import { buildCompanyContext, siteWhere, type CompanyContextParts } from './companyContext.ts'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -154,7 +155,26 @@ export async function buildAuditInput(
   const mine = all.filter(carries)
   const others = all.filter((r) => !carries(r))
 
-  const scanIds = mine.map((r) => r.scan_id as string).filter(Boolean).sort()
+  // *** THE READING THAT COULD READ IT, NOT THE CURRENT ONE — `DECISIONS.md` §185a (A3e). ***
+  //
+  // This was `mine.map((r) => r.scan_id)`, the CURRENT scan. Migration 076 put a document whose
+  // latest reading failed back into its agency's audit — it keeps its agencies now — and this line
+  // then handed the model the document's TITLE AND NOTHING ELSE, because the failed scan has no
+  // gaps, no conditions and no dates. Proved on staging before the change
+  // (`scripts/calendar-a3b-failed-reread.mjs`):
+  //
+  //     the audit's input names 1 document(s) for Oregon DEQ
+  //     the permit: conditions=0 dates=0 gaps=0 summary=yes
+  //     what the model would be handed about it:
+  //        --- D1 — Standard Air Contaminant Discharge Permit No. 26-2841-ST-01
+  //
+  // "Nothing on file" had become "the permit is on file and says nothing about this", which is the
+  // more convincing wrong answer of the two and exactly the failure §3.3 is about: the model
+  // reasoning against an artifact that is not there.
+  const readable = await readableScans(db, companyId, mine.map((r) => r.document_id as string))
+  const scanIds = [...new Set(mine
+    .map((r) => readable.get(r.document_id as string)?.scanId)
+    .filter((x): x is string => !!x))].sort()
   const docIds = mine.map((r) => r.document_id as string).sort()
 
   // Four reads for the whole set rather than four per document: a loop of queries is a loop whose
@@ -231,7 +251,8 @@ export async function buildAuditInput(
       doc_date_kind: (r.doc_date_kind as string) ?? null,
       significant_date: (r.significant_date as string) ?? null,
       significant_date_kind: (r.significant_date_kind as string) ?? null,
-      scan_id: (r.scan_id as string) ?? null,
+      // The reading these words came from, so a finding made from them points at the right one.
+      scan_id: readable.get(r.document_id as string)?.scanId ?? null,
       site: (r.site_name as string) ?? null,
       summary: (r.summary as string) ?? null,
       open_gaps: ((gapsBy.get(id) ?? []) as unknown as Array<Record<string, unknown>>).map((g) => ({

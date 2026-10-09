@@ -32,6 +32,8 @@
  * and only the server writes one. That rule is right and is not being changed. It means this prune
  * is a server action, so every caller passes a service-role client and says why.
  */
+import { readableScanIds } from './readableScan.ts'
+
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = { from: (t: string) => any }
@@ -54,8 +56,15 @@ export interface PruneResult {
  */
 export async function pruneOrphanLabels(admin: Db, companyId: string): Promise<PruneResult> {
   try {
-    const { data: scans, error: sErr } = await admin.from('document_scans')
-      .select('agencies, subjects').eq('company_id', companyId).eq('is_current', true)
+    // *** THE READING THAT COULD READ IT (§185a, A3e), AND HERE IT DELETES THINGS. ***
+    // `is_current` would be a failed reading, whose `agencies` and `subjects` are empty — so a
+    // reading service that refused for a minute would make every label that document carried look
+    // like an orphan, and this function would PRUNE them. A label is the company's own vocabulary
+    // and the Audits page groups by it.
+    const readableIds = await readableScanIds(admin, companyId)
+    const { data: scans, error: sErr } = readableIds.length
+      ? await admin.from('document_scans').select('agencies, subjects').in('id', readableIds)
+      : { data: [], error: null }
     if (sErr) return { removed: 0, labels: [], error: `reading the scans: ${sErr.message}` }
 
     const alive = new Set<string>()

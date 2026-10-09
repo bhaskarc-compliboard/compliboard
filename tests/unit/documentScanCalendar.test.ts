@@ -261,6 +261,60 @@ describe('what a document IS survives a failed reading (migration 076)', () => {
   })
 })
 
+describe('every reader of a document\'s CONTENT takes the readable reading (§185a, A3e)', () => {
+  // The sweep's result, pinned by file. Migration 076 put a document whose latest reading failed back
+  // into its agency's audit — and the audit then handed the model its TITLE AND NOTHING ELSE, because
+  // the content was still read by the CURRENT scan. "Nothing on file" had become "the permit is on
+  // file and says nothing about this", which is the more convincing wrong answer.
+  const read = async (f: string) =>
+    (await import('node:fs')).readFileSync(f, 'utf8')
+
+  test('the audit reads gaps, conditions and dates by the readable scan', async () => {
+    const audit = await read('lib/audit.ts')
+    assert.match(audit, /readableScans\(db, companyId/)
+    assert.ok(!/mine\.map\(\(r\) => r\.scan_id as string\)/.test(audit),
+      'lib/audit.ts must not take its scan ids from the CURRENT scan')
+  })
+
+  test('the Audits page, the Documents report and the Documents index all swapped', async () => {
+    assert.match(await read('app/api/audits/index/route.ts'), /readableScanIds\(db, companyId/)
+    assert.match(await read('app/api/documents/report/route.ts'), /row\.readable_scan_id as string \| null/)
+    assert.match(await read('app/api/documents/index/route.ts'), /readableScanIds\(db, companyId\)/)
+  })
+
+  test('the shared libraries swapped: the run\'s date, an attachment, the labels, the scan\'s context', async () => {
+    assert.match(await read('lib/auditRun.ts'), /readableScanIds\(db, runCo\.company_id/)
+    assert.match(await read('lib/attachedDocument.ts'), /readableScanForDocument\(db, t\.document_id\)/)
+    assert.match(await read('lib/companyLabels.ts'), /readableScanIds\(admin, companyId\)/)
+    assert.match(await read('lib/documentScan.ts'), /readableScanIds\(db, company\.id\)/)
+  })
+
+  test('*** THE WATCHER KEEPS THE CURRENT SCAN *** — or the drawer spins for ever', async () => {
+    // `components/DocumentReport.tsx` knows a re-read has landed when `scan_id` CHANGES, and a
+    // re-read that failed has landed just as much as one that worked. This is the one place the swap
+    // must NOT be made, so it is asserted rather than left to be noticed.
+    const drawer = await read('components/DocumentReport.tsx')
+    assert.match(drawer, /r\?\.row\.scan_id \?\? null\) === rereadFrom/)
+    assert.ok(!/readable_scan_id.*rereadFrom/.test(drawer))
+  })
+
+  test('HR\'s and the handbooks\' is_current is a DIFFERENT table, and is not touched', async () => {
+    // `handbooks.is_current` is HR's own version chain, nothing to do with a document's readings.
+    // Named here so the next sweep does not "fix" it.
+    const hr = await read('lib/hrAnswer.ts')
+    assert.match(hr, /from\('handbooks'\)[\s\S]{0,200}is_current/)
+    assert.ok(!/readableScan/.test(hr), 'HR\'s answer must not have been changed by this sweep')
+  })
+
+  test('the helper refuses to read an error as "never read"', async () => {
+    const { readableScans } = await import('../../lib/readableScan.ts')
+    const broken = { from: () => ({ select: () => ({ eq: () => ({
+      then: (r: (v: unknown) => unknown) => r({ data: null, error: { message: 'permission denied' } }),
+    }) }) }) } as never
+    await assert.rejects(() => readableScans(broken, 'co-1'), /could not be read/)
+  })
+})
+
 describe('the calendar step never fails the reading', () => {
   test('a broken view is logged and counted, and the reading stands', async () => {
     const f = fakeDb()

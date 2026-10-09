@@ -57,6 +57,7 @@
  * section exists to end.
  */
 import { DOCUMENTS_BUCKET } from './storage.ts'
+import { readableScanForDocument } from './readableScan.ts'
 import { parseDocumentToBlocks } from './documentContent.ts'
 
 /** The Supabase client shape this module needs — the CALLER'S, so RLS applies (§3.6). */
@@ -143,9 +144,15 @@ export async function describeAttachments(db: Db, topicId: string): Promise<stri
       // a change to what feeds the prompt (§3.1) made by accident and in the wrong direction, so
       // the same two facts are read from the new reading instead — the kind it was read as and
       // the summary — and the review row still answers for documents attached before this run.
-      const { data: scan } = await db.from('document_scans')
-        .select('kind, title, summary')
-        .eq('document_id', t.document_id).eq('is_current', true).maybeSingle()
+      // THE READING THAT COULD READ IT (§185a, A3e). `is_current` would be a failed reading, whose
+      // kind, title and summary are null — so an attachment a person had already discussed would go
+      // back to the bare sentence this block exists to avoid, on a day the reading service refused.
+      // This is the ONE swap in a file both the Workspace and HR use; nothing else about either
+      // changes.
+      const readableId = (await readableScanForDocument(db, t.document_id))?.scanId ?? null
+      const { data: scan } = readableId
+        ? await db.from('document_scans').select('kind, title, summary').eq('id', readableId).maybeSingle()
+        : { data: null }
       let readAs = scan?.title ?? scan?.kind ?? null
       let summary = scan?.summary ?? null
       if (!readAs && !summary) {

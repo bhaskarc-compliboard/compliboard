@@ -30,6 +30,7 @@ import { scanPrompt, SCAN_JSON_SCHEMA, type ScanPromptContext } from '../prompts
 // The ONE writer for every date (Calendar decision 8). The scan does not insert into
 // `calendar_events` itself: the key, the state and the provenance are decided in one place.
 import { addDate, withdrawStale } from './calendarDates.ts'
+import { readableScanIds } from './readableScan.ts'
 import { normaliseForQuote } from './normaliseQuote.ts'
 
 /** A Supabase client, loosely typed: these scripts run outside Next's generated-types world. */
@@ -449,9 +450,14 @@ export async function buildScanContext(
   // document's own findings, by id, for the same_as_gap_id handoff).
   const ctx = await buildCompanyContext(db, company.id, { documentId, parts: SCAN_CONTEXT_PARTS })
 
-  const { data: existing } = await db.from('document_scans')
-    .select('title, kind, document_id').eq('company_id', company.id).eq('is_current', true)
-    .order('title').limit(40)
+  // THE READING THAT COULD READ IT (§185a, A3e). `is_current` would list a document whose latest
+  // reading failed with a null title and a null kind, so the version question ("is this a newer
+  // version of one of these?") would be asked against a list with a blank line in it.
+  const readableIds = await readableScanIds(db, company.id)
+  const { data: existing } = readableIds.length
+    ? await db.from('document_scans')
+        .select('title, kind, document_id').in('id', readableIds).order('title').limit(40)
+    : { data: [] }
   // THE GAPS THAT ARE STILL OPEN ON THIS DOCUMENT, WITH THEIR IDS — Run 6.
   //
   // Shown to the scan so a new reading can say which old finding each of its gaps IS, rather

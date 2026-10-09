@@ -15,6 +15,7 @@
 // policies are the boundary (§3.6) and this is the second lock, not the first.
 
 import { NextRequest, NextResponse } from 'next/server'
+import { readableScanIds } from '@/lib/readableScan'
 import { requireCompany } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
@@ -66,12 +67,16 @@ export async function GET(request: NextRequest) {
     // person may have corrected them; `document_index_v` above is the row that knows. So this
     // returns the entries by document id and the page groups them under whatever agency the
     // index row says — otherwise the line would appear under the agency somebody corrected away.
-    const { data: expected } = await db
-      .from('document_scans')
-      .select('document_id, expected_missing')
-      .eq('company_id', companyId)
-      .eq('is_current', true)
-      .order('document_id')
+    // THE READING THAT COULD READ IT (§185a, A3e): `is_current` would be a failed reading, whose
+    // `expected_missing` is empty, so a document would silently stop saying what it expected to see.
+    const readableIds = await readableScanIds(db, companyId)
+    const { data: expected } = readableIds.length
+      ? await db
+          .from('document_scans')
+          .select('document_id, expected_missing')
+          .in('id', readableIds)
+          .order('document_id')
+      : { data: [] }
 
     // THE BANNER, AND WHETHER ANYTHING IS STILL IN FLIGHT — Documents Run 7.
     //

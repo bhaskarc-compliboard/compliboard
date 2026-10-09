@@ -11,6 +11,7 @@
 // The `.eq`s are there as well, because a policy and a filter agreeing costs nothing.
 
 import { NextResponse, type NextRequest } from 'next/server'
+import { readableScanIds } from '@/lib/readableScan'
 
 import { requireCompany } from '@/lib/auth'
 import { estimateRun } from '@/lib/auditEstimate'
@@ -69,7 +70,9 @@ export async function GET(request: NextRequest) {
     const unplaced = read.filter((d) => !Array.isArray(d.agencies) || (d.agencies as string[]).length === 0)
 
     // ---- deadlines worth a line: passed, or inside the window; plus recurring with no date ----
-    const scanIds = read.map((d) => d.scan_id).filter(Boolean) as string[]
+    // THE READING THAT COULD READ IT (§185a, A3e). This was `d.scan_id`, the current scan, so a
+    // document whose latest reading failed showed on the Audits page with no dates at all.
+    const scanIds = await readableScanIds(db, companyId, read.map((d) => d.document_id as string))
     let deadlines: Array<Record<string, unknown>> = []
     if (scanIds.length) {
       const { data, error } = await db.from('document_deadlines')

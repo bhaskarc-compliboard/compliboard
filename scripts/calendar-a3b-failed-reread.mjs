@@ -25,6 +25,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { readFileSync, readdirSync } from 'node:fs'
 import { saveScan, failedScan } from '../lib/documentScan.ts'
+import { buildAuditInput, renderAuditInput } from '../lib/audit.ts'
 import { confirmDate } from '../lib/calendarDates.ts'
 
 const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY,
@@ -218,9 +219,18 @@ const deqReading = {
   status: 'current',
   deadlines: [{ title: 'Permit expires', due_on: '2026-11-15', recurs: false,
                 source_line: 'This permit expires 15 November 2026.' }],
+  gaps: [{ title: 'No record of the annual emissions report', description: 'The permit requires one.',
+           fix: 'File the 2026 report.', citation: 'OAR 340-216-0066', citation_url: null,
+           locator: 'Condition 4.2', draftable: false, quote: null, quote_verified: null,
+           basis: 'read', same_as_gap_id: null }],
   extracted_text: 'This permit expires 15 November 2026.',
 }
 await saveScan(db, deqReading, { documentId: doc3.id, companyId: co.id, linkLedger: false })
+// A WEEK EARLIER, so the grey line's date can be seen to be the readable reading's and not the failed
+// one's. Two dates that are the same prove nothing about which one a line is showing.
+await db.from('document_scans')
+  .update({ scanned_at: new Date(Date.now() - 7 * 86400000).toISOString() })
+  .eq('document_id', doc3.id)
 
 const identity = async (when) => {
   const { data } = await db.from('document_index_v')
@@ -262,6 +272,92 @@ console.log(`  ${unplaced.length} of this company's documents are UNPLACED (no a
 if (!inDeq.some((r) => r.document_id === doc3.id)) {
   fail('the permit is NOT in its own agency\'s audit after a failed re-read')
 } else pass('the permit is still in Oregon DEQ\'s audit after a failed re-read')
+
+// ===========================================================================
+// A3e — 076 PUT THE PERMIT BACK IN THE AUDIT. DOES THE AUDIT READ ITS WORDS?
+//
+// `lib/audit.ts:157` takes `scanIds` from `document_index_v.scan_id` — the CURRENT scan — and then
+// reads the document's gaps (:167), conditions (:172), deadlines (:177) and expected_missing (:180)
+// `.in('scan_id', scanIds)`. After a failed re-read that scan is the failed one and holds nothing.
+//
+// If so, 076 turned "nothing on file" into something worse: the permit is LISTED and says nothing,
+// which reads as a permit that is silent on the obligation rather than one we could not read.
+// ===========================================================================
+console.log(`\n  ${'='.repeat(78)}`)
+console.log(`  A3e - WHAT THE AUDIT WOULD BE HANDED FOR THAT PERMIT`)
+
+const built = await buildAuditInput(db, co.id, 'Oregon DEQ')
+const rendered = renderAuditInput(built.input)
+const mine = built.input.documents ?? []
+const permit = mine.find((m) => String(m.title).includes('26-2841'))
+console.log(`\n  the audit's input names ${mine.length} document(s) for Oregon DEQ`)
+if (permit) {
+  console.log(`  the permit: conditions=${permit.conditions?.length ?? 0} dates=${permit.deadlines?.length ?? 0}`
+    + ` gaps=${permit.open_gaps?.length ?? 0} summary=${permit.summary ? 'yes' : 'NO'}`)
+} else {
+  console.log(`  the permit is not among them`)
+}
+// The block as the model would see it, for that document only.
+const block = rendered.split('\n').filter((l) => /26-2841|expires|condition|gap/i.test(l)).slice(0, 10)
+console.log(`\n  what the model would be handed about it:`)
+for (const l of block) console.log(`     ${l.slice(0, 96)}`)
+if (!block.length) console.log(`     (nothing: the document is named and no line of its content follows)`)
+
+console.log('')
+if (!permit) fail('the permit is not in the Oregon DEQ audit at all')
+else if ((permit.deadlines?.length ?? 0) === 0 && (permit.conditions?.length ?? 0) === 0
+         && (permit.open_gaps?.length ?? 0) === 0) {
+  fail('the audit reads NOTHING of the permit: it is listed, and says nothing about its own expiry')
+} else pass(`the audit reads the permit's words: ${permit.deadlines?.length ?? 0} date(s), `
+  + `${permit.conditions?.length ?? 0} condition(s), ${permit.open_gaps?.length ?? 0} gap(s)`)
+
+// ---- THE GREY LINE'S DATE (A3e item 3) ----
+// The good reading was put a week before the failed one, so the two dates differ and the line can be
+// seen to carry the right one.
+const { data: idxRow } = await db.from('document_index_v')
+  .select('scanned_at, identity_from_an_earlier_reading, readable_scan_id, scan_id')
+  .eq('document_id', doc3.id).maybeSingle()
+const { data: scanDates } = await db.from('document_scans')
+  .select('id, status, scanned_at, is_current').eq('document_id', doc3.id).order('scanned_at')
+console.log(`\n  the two readings:`)
+for (const sc of scanDates) {
+  console.log(`     ${String(sc.status).padEnd(16)}${String(sc.scanned_at).slice(0, 10)}  current=${sc.is_current}`)
+}
+const good = scanDates.find((x) => x.status !== 'could_not_read')
+const bad = scanDates.find((x) => x.status === 'could_not_read')
+console.log(`  the row's "read on" date: ${String(idxRow.scanned_at).slice(0, 10)}`)
+console.log(`  Documents row:  "From the last reading that could read this document, on `
+  + `${new Date(idxRow.scanned_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}."`)
+const { data: dates } = await db.from('document_dates_current_v')
+  .select('scanned_at, from_an_earlier_reading').eq('document_id', doc3.id).limit(1)
+console.log(`  Report drawer:  "These dates are from the last reading that could read this document, on `
+  + `${dates[0] ? new Date(dates[0].scanned_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '?'}."`)
+
+if (String(idxRow.scanned_at).slice(0, 10) !== String(good.scanned_at).slice(0, 10)) {
+  fail(`the row's date is ${String(idxRow.scanned_at).slice(0, 10)}, not the readable reading's ${String(good.scanned_at).slice(0, 10)}`)
+} else pass(`the Documents row's line carries the GOOD reading's date, not the failed one's `
+  + `(${String(good.scanned_at).slice(0, 10)} vs ${String(bad.scanned_at).slice(0, 10)})`)
+if (!dates[0] || String(dates[0].scanned_at).slice(0, 10) !== String(good.scanned_at).slice(0, 10)) {
+  fail(`the drawer's date is ${dates[0] ? String(dates[0].scanned_at).slice(0, 10) : 'missing'}`)
+} else pass("the drawer's line carries the same date")
+
+// ---- THE REPORT'S GAPS, after a failed reading (the owner's yes, A3e item 2) ----
+// The report split "now" from "from earlier readings" on the CURRENT scan, so a failed reading moved
+// every finding to "earlier" and the drawer showed a document with no current findings at all.
+const { data: idxForGaps } = await db.from('document_index_v')
+  .select('scan_id, readable_scan_id').eq('document_id', doc3.id).maybeSingle()
+const { data: allGaps } = await db.from('document_gaps')
+  .select('id, title, citation, scan_id, status').eq('document_id', doc3.id)
+const splitOn = idxForGaps.readable_scan_id ?? idxForGaps.scan_id
+const nowGaps = (allGaps ?? []).filter((g) => g.scan_id === splitOn)
+console.log(`\n  the report splits gaps on ${splitOn === idxForGaps.readable_scan_id ? 'readable_scan_id' : 'scan_id'}:`)
+console.log(`     ${allGaps.length} gap(s) on this document; ${nowGaps.length} shown as current`)
+for (const g of nowGaps.slice(0, 3)) {
+  console.log(`     - ${String(g.title).slice(0, 52)}${g.citation ? `  [${String(g.citation).slice(0, 26)}]` : ''}`)
+}
+if (allGaps.length && nowGaps.length === 0) {
+  fail('every finding moved to "from earlier readings" after a failed reading')
+} else pass(`the findings show as the last readable reading's, with their line (${nowGaps.length} of ${allGaps.length})`)
 console.log(`  ${'='.repeat(78)}`)
 
 await db.from('calendar_events').delete().eq('company_id', co.id)

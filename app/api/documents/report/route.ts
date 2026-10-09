@@ -28,7 +28,13 @@ export async function GET(request: NextRequest) {
       .from('document_index_v').select('*').eq('document_id', documentId).maybeSingle()
     if (!row) return NextResponse.json({ error: 'Document not found' }, { status: 404 })
 
-    const scanId = row.scan_id as string | null
+    // *** THE GAPS SPLIT USES THE READING THAT COULD READ IT (§185a, A3e; the owner's yes). ***
+    // It was `row.scan_id`, the CURRENT scan — so after a reading that failed, every finding moved
+    // to "From earlier readings" and the report showed a document with no current findings at all.
+    // Under the grey line this drawer already draws, they are the last readable reading's findings
+    // and are shown as such. `row.scan_id` is still what the drawer watches to know a re-read has
+    // landed (`components/DocumentReport.tsx:285`), which is why the view keeps both columns.
+    const scanId = (row.readable_scan_id as string | null) ?? (row.scan_id as string | null)
 
     // Ordered, every one of them. An unordered list re-shuffles when an unrelated row is
     // updated, and a report a person is reading must not rearrange itself.

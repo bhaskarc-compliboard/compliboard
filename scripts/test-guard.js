@@ -76,8 +76,11 @@ import { readdirSync, readFileSync } from 'node:fs'
 // re-run got "already" and the row kept the first run's finding id — found by A4's own screenshot,
 // which showed "Add to calendar" on a date that was already there) -> 1038 at A3d (the three on
 // migration 076's screens: the Documents row and the report drawer each say which reading their
-// title, agency and dates came from, and the audit's agency filter is the column 076 keeps alive).
-const FLOOR = 1038
+// title, agency and dates came from, and the audit's agency filter is the column 076 keeps alive)
+// -> 1044 at A3e (the sweep, pinned by file: every reader of a document's CONTENT takes the readable
+// reading, the ONE watcher keeps the current scan or the drawer spins for ever, HR's handbooks are a
+// different table and were not touched, and the helper refuses to read an error as "never read").
+const FLOOR = 1044
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))
