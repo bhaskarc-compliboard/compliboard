@@ -1,6 +1,6 @@
 # Handoff — from the HR section
 
-**Version:** 4 · **Updated:** 9 October 2026: §2 the release and the second paid check; §7 item 1 done; §8 a new row (§184). Version 3: 9 October 2026: §7 item 3, the morning after, done with its facts. **Version 2:** 8 October 2026, late evening: checked fact by fact against the repository at `34969a4` by
+**Version:** 5 · **Updated:** 9 October 2026: §7 item 5, the canvas, done (version 15). Version 4: 9 October 2026: §2 the release and the second paid check; §7 item 1 done; §8 a new row (§184). Version 3: 9 October 2026: §7 item 3, the morning after, done with its facts. **Version 2:** 8 October 2026, late evening: checked fact by fact against the repository at `34969a4` by
 Claude Code; six facts corrected (each says so); the production paid check recorded (§2); §183's two changes (the
 wait, the closing offer) added. **Version 1:** 8 October 2026, evening (Pacific), by the HR chat at the close of HR's build.
 **Supersedes:** nothing. This is the close-out file that `docs/HR-PLAN.md` step 14 calls `HANDOFF-HR.md`; the
@@ -323,7 +323,7 @@ the free checks (`npm run check`, `check:live` on 3999) of every section that us
 ## 7. What is left, in order
 
 1. ~~**Release 11b, and decide the closing offer.**~~ *DONE: Option A, built in §183; released with 11b on
-   9 October (`cd6a55d`, §184).* **Still open after it:** the canvas (item 5, the HR chat), the two proposed
+   9 October (`cd6a55d`, §184).* **Still open after it:** ~~the canvas (item 5)~~ done 9 October; the two proposed
    switches (item 6, the owner), and the owner's housekeeping (item 7).
    - 11b (`4aac9c3`, `e237751`) is committed and not pushed.
    - The decision: HR answers inherit "End with one specific offer of what you could do next", and on production
@@ -391,7 +391,9 @@ the free checks (`npm run check`, `check:live` on 3999) of every section that us
      "while HR is off"; the free checks line says "`GET /hr/new` → 404 while HR is off".
    - `docs/HANDOFF-CODE.md`: §7's orphan-file row still names `app/hr/new/HrWorkspace.tsx` (now
      `app/hr/HrWorkspace.tsx`); §1 and §2 still describe 4 October (git at `fd2ddfa`, migrations to 065).
-5. **The canvas.** Bring it in line with the build:
+5. ~~**The canvas.**~~ *Done 9 October: version 15. Board 4 marked parked; new board 4b shows the rev 1 check drawer;
+   boards 3, 5, 7 and 8 brought in line with the build ('Add a handbook', the closing offer as a sentence, board 8's
+   stored-check line marked as the switch).* As it was listed — bring it in line with the build:
    - board 4 (the structured check) shows what is parked;
    - board 7 has a "Draft new wording for 7.2" button that was never built;
    - board 8 shows an answer using the stored check, a switch that is off;
