@@ -129,8 +129,17 @@ export async function GET(request: NextRequest) {
           calendar_state: (ev?.state as string | null) ?? null,
           calendar_reason: (ev?.rejected_reason as string | null) ?? null,
           repeats_every: (ev?.repeats_every as string | null) ?? null,
+          // *** TRUE WHEN THIS DOCUMENT'S LATEST READING COULD NOT READ IT (migration 075). ***
+          // The dates then come from the last reading that could, and the drawer says so in one grey
+          // line. Showing dates beside "Could not read" and saying nothing about where they came from
+          // would be a claim with its basis hidden (§5.1, §6).
+          from_an_earlier_reading: d.from_an_earlier_reading === true,
         }
       }),
+      // The date of the reading those dates came from, for the drawer's one line. Null when they are
+      // the current reading's, which is every ordinary case.
+      dates_from_reading_at: ((deadlines.data ?? []) as Array<Record<string, unknown>>)
+        .find((d) => d.from_an_earlier_reading === true)?.scanned_at ?? null,
       facts: facts.data ?? [],
       corrections: corrections.data ?? [],
       versions: chain,

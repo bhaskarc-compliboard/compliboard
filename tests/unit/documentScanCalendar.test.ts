@@ -201,6 +201,40 @@ describe('a reading that COULD NOT READ the document never withdraws a date', ()
   })
 })
 
+describe('the view behind the dates: "current" means the latest READABLE reading (migration 075)', () => {
+  // The SQL is proved by 075's own verify block, against the real database. These hold the two things
+  // the code on top of it must do with the answer, which a migration cannot assert.
+  test('the report shows the grey line only when the dates are an earlier reading\'s', async () => {
+    const route = await import('node:fs').then((fs) =>
+      fs.readFileSync('app/api/documents/report/route.ts', 'utf8'))
+    // The flag is read from the view and passed through; it is never computed in the route, or the
+    // route and the view could disagree about which reading a date came from.
+    assert.match(route, /from_an_earlier_reading: d\.from_an_earlier_reading === true/)
+    assert.match(route, /dates_from_reading_at: [\s\S]*from_an_earlier_reading === true\)\?\.scanned_at \?\? null/)
+
+    const drawer = await import('node:fs').then((fs) =>
+      fs.readFileSync('components/DocumentReport.tsx', 'utf8'))
+    assert.match(drawer, /These dates are from the last reading that could read this document, on/)
+    // ...drawn only when the route set it, so an ordinary document says nothing.
+    assert.match(drawer, /\{r\.dates_from_reading_at && \(/)
+  })
+
+  test('the report reads the view, not document_deadlines', async () => {
+    // The whole point of one definition: if the report went back to reading the table directly it
+    // would show a replaced reading's dates again (B3), and nothing would fail.
+    const route = await import('node:fs').then((fs) =>
+      fs.readFileSync('app/api/documents/report/route.ts', 'utf8'))
+    assert.match(route, /from\('document_dates_current_v'\)/)
+    assert.ok(!/from\('document_deadlines'\)/.test(route),
+      'the report must read the current-dates view, never document_deadlines directly')
+  })
+
+  test('saveScan reads the same view, so the writer and the readers agree', async () => {
+    const lib = await import('node:fs').then((fs) => fs.readFileSync('lib/documentScan.ts', 'utf8'))
+    assert.match(lib, /from\('document_dates_current_v'\)/)
+  })
+})
+
 describe('the calendar step never fails the reading', () => {
   test('a broken view is logged and counted, and the reading stands', async () => {
     const f = fakeDb()

@@ -4131,6 +4131,7 @@ export type Database = {
           document_id: string | null
           due_on: string | null
           entity_id: string | null
+          from_an_earlier_reading: boolean | null
           quote_verified: boolean | null
           recurs: boolean | null
           scan_id: string | null

@@ -69,8 +69,10 @@ import { readdirSync, readFileSync } from 'node:fs'
 // (the four that pin the defect A3's replay found: a re-read's "already" must RE-POINT the calendar
 // row at the new reading, or withdrawStale takes a live date off the month) -> 1031 at A3b (the seven
 // on the calendar step itself: a reading that COULD NOT READ the document must never withdraw a date,
-// and a reading that read it and found none still must).
-const FLOOR = 1031
+// and a reading that read it and found none still must) -> 1034 at A3c (the three on migration 075's
+// code path: the report reads the current-dates view and never document_deadlines, the writer reads
+// the same view, and the grey line about an earlier reading is drawn only when the route sets it).
+const FLOOR = 1034
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

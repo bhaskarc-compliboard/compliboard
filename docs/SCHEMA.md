@@ -3,8 +3,8 @@
 **GENERATED — do not edit.** `node --env-file=.env.local scripts/schema-doc.js`, and it runs
 inside `npm run db:migrate`, so it cannot be stale by more than one migration.
 
-**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-10-09 19:25 UTC
-**Migrations applied:** 75 — `000` to `074`
+**Read from:** staging (`amzsavsrabrlcprltpom`) · **on** 2026-10-09 20:17 UTC
+**Migrations applied:** 76 — `000` to `075`
 
 *Every figure here was read from the catalog of that database. Nothing is copied from the
 migration files, which say what was intended rather than what is there — and the two have
@@ -80,7 +80,7 @@ or tenancy. **Tenancy is `company_id` on every data table and RLS on all of them
 
 **Calendar**
 
-- `calendar_events` — 1 rows · touched by route calendar, route documents/report, lib calendarDates, script check-live
+- `calendar_events` — 3 rows · touched by route calendar, route documents/report, lib calendarDates, script check-live
 
 **Worker queue**
 
@@ -157,7 +157,7 @@ END)`
 
 One row per model call, written at the call. Prices are copied onto the row so a later change to config/pricing.ts cannot rewrite what a past call cost. cost_usd NULL = the model was not in the price table, which is not the same as free. DECISIONS.md §128 J.
 
-**Rows:** 314 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 315 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route document-draft`, `lib auditRun`, `lib auditTemplate`, `lib costLedger`, `lib documentScan`, `lib handbookCheck`, `script check-live`, `script cost-report`, `script run-golden-audit`, `script run-golden-docs`, `script scan-document`
 
@@ -493,7 +493,7 @@ One row per audit run. A frozen snapshot of results as checked that day — reus
 
 ### `calendar_events`
 
-**Rows:** 1 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 3 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route calendar`, `route documents/report`, `lib calendarDates`, `script check-live`
 
@@ -1242,7 +1242,7 @@ One upload, however many files were in it. Exists so a folder drop can be answer
 
 ### `document_conditions`
 
-**Rows:** 18 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 20 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route documents/report`, `lib audit`, `lib documentScan`, `script run-golden-audit`
 
@@ -1324,7 +1324,7 @@ One row per correction a person makes to what a document IS. Newest per field wi
 
 ### `document_deadlines`
 
-**Rows:** 35 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 40 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route audits/index`, `route document-actions`, `lib audit`, `lib documentScan`
 
@@ -1492,7 +1492,7 @@ One row per correction a person makes to what a document IS. Newest per field wi
 
 ### `document_scans`
 
-**Rows:** 13 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 14 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route audits/index`, `route documents/index`, `route documents/report`, `lib attachedDocument`, `lib audit`, `lib auditRun`, `lib companyLabels`, `lib documentScan`, `script check-live`, `script run-golden-audit`
 
@@ -1731,7 +1731,7 @@ One row per correction a person makes to what a document IS. Newest per field wi
 
 Candidate company facts read out of a conversation overnight. PROPOSED, never written to company_switches — DECISIONS.md §108. The quote is copied because the turn it came from is cleared after 7 days.
 
-**Rows:** 78 · **RLS:** enabled · **Primary key:** `id`
+**Rows:** 81 · **RLS:** enabled · **Primary key:** `id`
 
 **Read or written by:** `route company-information`, `route document-actions`, `route documents/report`, `route to-confirm`, `screen compliance`, `screen hr`, `lib audit`, `lib companyContext`, `lib documentScan`, `lib summaryReport`, `script run-golden-audit`
 
@@ -3118,11 +3118,11 @@ Does this SITE hold ANY ONE substance at or above ITS OWN threshold on the named
 
 ### `document_dates_current_v`
 
-Calendar decision 4 (DECISIONS §185). The dates a company actually has: the CURRENT reading (document_scans.is_current) of a document that no CONFIRMED newer version supersedes. An unconfirmed proposed version hides nothing — hiding a real date on a guess is the dangerous direction. The calendar reads only this; Documents' report and document_index_v move onto it in step 4. security_invoker: only rows the caller could select.
+Calendar decision 4 (DECISIONS §185), repaired by migration 075. The dates a company actually has: the latest reading that COULD READ the document — not merely the latest reading — for a document no CONFIRMED newer version supersedes. A reading that could not read the document still owns the document's STATUS (044) and says nothing about its dates, so a refusal by the reading service cannot erase a permit's expiry. `from_an_earlier_reading` is true when that is what happened, and the report says so in words. security_invoker: only rows the caller could select.
 
 ### `document_index_v`
 
-One row per document with the columns the Documents page groups and sorts by. A correction the person made outranks the scan, field by field, newest first. significant_date and its kind are COMPUTED HERE from the kind and THE CURRENT READING'S deadlines (migration 074, Calendar decision 4) — never stored, and never from a reading that has been replaced. security_invoker: only rows the caller could select.
+One row per document with the columns the Documents page groups and sorts by. A correction the person made outranks the scan, field by field, newest first. The document's STATE comes from the current scan, failed or not (044). significant_date and its kind are COMPUTED from the kind and the latest reading that COULD READ the document (migration 075) — never stored, never from a replaced reading, and never erased by a reading that failed. security_invoker: only rows the caller could select.
 
 ### `obligation_evidence_state`
 
@@ -3234,4 +3234,5 @@ filtered HERE so no consumer can forget it (CLAUDE.md §3.2). A corrected link
 072
 073
 074
+075
 ```

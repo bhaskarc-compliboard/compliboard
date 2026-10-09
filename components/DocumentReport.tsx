@@ -56,6 +56,8 @@ interface Condition { id: string; title: string; condition_ref: string | null; e
 interface Deadline {
   id: string; title: string; due_on: string | null; source_line: string | null
   recurs: boolean; calendar_event_id: string | null
+  /** True when the latest reading could not read the document, so these dates are an earlier one's. */
+  from_an_earlier_reading?: boolean
   /** Whether the line was found in the document (Calendar decision 5). Null = no text to check. */
   quote_verified: boolean | null
   /** What the calendar says about this date: its state, and the reason if a person refused it. */
@@ -79,6 +81,8 @@ interface Scan {
 }
 interface Report {
   row: Row; scan: Scan | null; gaps: Gap[]; conditions: Condition[]; deadlines: Deadline[]
+  /** Set when the dates come from an earlier reading than the current one (migration 075). */
+  dates_from_reading_at?: string | null
   earlierGaps: Gap[]
   facts: Fact[]; corrections: Array<{ field: string; new_value: unknown; reason: string | null }>
   versions: Version[]; sites: Array<{ id: string; name: string }>
@@ -816,6 +820,20 @@ export default function DocumentReport({
       {/* 6 ── the dates this document sets */}
       {r.deadlines.length > 0 && (
         <Section title="Dates this document sets">
+          {/*
+            *** WHERE THESE DATES CAME FROM, WHEN IT IS NOT THE LATEST READING (migration 075). ***
+            A reading that could not read the document says nothing about its dates, so the last
+            reading that COULD read it still supplies them. Without this line the drawer would show
+            dates beside "Could not read" and leave a person to guess whether they were just read —
+            which is a claim shown without its basis (§5.1, and §6's rule that a verified row and a
+            generated row must not look the same).
+          */}
+          {r.dates_from_reading_at && (
+            <p className="mb-3 text-[12px] text-gray-500">
+              These dates are from the last reading that could read this document, on{' '}
+              {fmt(String(r.dates_from_reading_at).slice(0, 10))}.
+            </p>
+          )}
           <ul className="space-y-3">
             {r.deadlines.map((d) => {
               const past = !d.recurs && isPast(d.due_on)
