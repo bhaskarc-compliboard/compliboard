@@ -1,6 +1,6 @@
 # Handoff — from the HR section
 
-**Version:** 3 · **Updated:** 9 October 2026: §7 item 3, the morning after, done with its facts. **Version 2:** 8 October 2026, late evening: checked fact by fact against the repository at `34969a4` by
+**Version:** 4 · **Updated:** 9 October 2026: §2 the release and the second paid check; §7 item 1 done; §8 a new row (§184). Version 3: 9 October 2026: §7 item 3, the morning after, done with its facts. **Version 2:** 8 October 2026, late evening: checked fact by fact against the repository at `34969a4` by
 Claude Code; six facts corrected (each says so); the production paid check recorded (§2); §183's two changes (the
 wait, the closing offer) added. **Version 1:** 8 October 2026, evening (Pacific), by the HR chat at the close of HR's build.
 **Supersedes:** nothing. This is the close-out file that `docs/HR-PLAN.md` step 14 calls `HANDOFF-HR.md`; the
@@ -87,9 +87,14 @@ match the build, see §7 item 5.
       not ask about. Likely the same inherited paragraph.
   - **The read-only follow-up came back** (the five sources and the ledger row above; §183).
 
-**Built, committed, NOT pushed:**
-- `4aac9c3` HR Step 11b, "Add a handbook" on the Ask tab, and `e237751` its docs (DECISIONS §182, TESTING A-1).
-- Held back on purpose, so it can go out in one release with the decision in §7 item 1.
+**Released 9 October (§184):** 11b (`4aac9c3`, §182) and §183 (`34969a4`), pushed as `cd6a55d`, live from
+15:58:58 UTC, told apart by "Add a handbook" in `/hr`'s HTML (0 matches, then 1).
+
+**The owner's second paid check passed** (§184), as CB-Test-3: Harbor deleted, added again from the Ask tab, "Do our
+servers need a food worker card before their first shift?" asked at once. The answer used Harbor (given as pages,
+text first; it waited 0 s, as its text was already saved), stayed on the handbook, and closed with "If you'd like, I
+can write replacement wording for Section 1…", an offer HR can keep. The day-1 line showed. 4 official web sources,
+no handbook card (switch 3's gap). The answer: `hr`, `claude-opus-5-5`, effort medium, 2 searches, $0.167272.
 
 **Tests:** 960 at `34969a4` (`npm run check`; the floor is committed in `scripts/test-guard.js`).
 
@@ -317,8 +322,9 @@ the free checks (`npm run check`, `check:live` on 3999) of every section that us
 
 ## 7. What is left, in order
 
-1. **Release 11b, and decide the closing offer.** *Decided: Option A, the owner's yes; built in §183 (`34969a4`),
-   with the wait for a handbook still being read. The release (11b and §183 together) waits for the owner's go.*
+1. ~~**Release 11b, and decide the closing offer.**~~ *DONE: Option A, built in §183; released with 11b on
+   9 October (`cd6a55d`, §184).* **Still open after it:** the canvas (item 5, the HR chat), the two proposed
+   switches (item 6, the owner), and the owner's housekeeping (item 7).
    - 11b (`4aac9c3`, `e237751`) is committed and not pushed.
    - The decision: HR answers inherit "End with one specific offer of what you could do next", and on production
      that became "start a compliance checklist", which HR does not have. **Option A:** one sentence in HR's own
@@ -406,6 +412,7 @@ the free checks (`npm run check`, `check:live` on 3999) of every section that us
 | --- | --- | --- |
 | HR answers can offer a checklist HR does not have | `RESEARCH_SPECIALIST` via `prompts/checklist.ts`; HR's prompt | Found on production 8 October. §7 item 1 |
 | Handbook words written without quotation marks get no card | `lib/hrAnswer.ts` | Known; switch 3 (§9). Seen again on production |
+| A page left open across a night check shows the old row ("Not checked yet") and the drawer's old top line ("added <date>") until reloaded, while the drawer's body shows the new check | `app/hr/HrWorkspace.tsx`: the rows and `loadRowChecks` are loaded once, and again only while a reading or a check is open; the drawer loads the check fresh each time | Seen by the owner, 9 October. OPEN, `HANDOFF-CODE.md` §7. Cheap fix for later: reload the rows when the drawer finds a newer check, or when the person comes back to the tab |
 | Internal section labels "(H5, H8, H10)" seen in a Haiku answer **while it streamed** | `app/hr/HrWorkspace.tsx:352` (`hideHandbookMarkers` while streaming); the replacement is `lib/hrAnswer.ts:532` `replaceBlockIds`, run when the answer finishes (`:523`) | **Checked (§183), v1's hypothesis is wrong:** `replaceBlockIds` does replace a bracketed list ("(H5, H8, H10)" becomes three titles), and the saved 11b answers hold no bare id. The screenshot was taken mid-stream, where only `[H…]` markers are hidden, so bare ids show until the answer finishes. OPEN, not fixed |
 | A stopped or cut-off answer writes no ledger row, though it is billed | `lib/ai.ts` | OPEN, `HANDOFF-CODE.md` §7. The workspace is likely the same |
 | A handbook file can be left in storage with no row if the tab closes mid-add | `app/hr/HrWorkspace.tsx`, `app/api/handbooks/route.ts` | OPEN, §7. Invisible; account delete still removes it |

@@ -12282,3 +12282,36 @@ switch to Handbooks.
   where the page hides only `[H…]` markers (`HANDOFF-CODE.md` §7, OPEN, not fixed).
 - **Housekeeping:** `.git/stale-maintenance-lock-from-claude` deleted. HANDOFF-CODE §1 and §2 were refreshed from
   `git log` and `npm run preflight` (73 migrations on both sides, 0 pending).
+
+## 184. HR: THE RELEASE OF 11b AND §183, AND THE OWNER'S SECOND PAID CHECK — 9 October 2026
+
+§184 — docs only.
+
+- **THE RELEASE.** `cd6a55d` was pushed at 15:58:10 UTC on 9 October, carrying 11b (§182), §183 and their docs.
+  - **Before the push:** check:live on 3999 (43 ✓, 0 ✗); `npm run preflight`, 73 and 73, 0 pending.
+  - **Live from 15:58:58 UTC.** The builds were told apart by "Add a handbook" in `/hr`'s HTML, which 11b put under
+    the Ask tab's first box: 0 matches before the push, 1 after. The page's lede matched once both times, so the
+    search could see the page.
+  - **The free live checks:** `/hr` 200; `POST /api/hr/answer` with no login 401.
+- **THE OWNER'S SECOND PAID CHECK** (CB-Test-3: Harbor deleted, added again from the Ask tab, "Do our servers need a
+  food worker card before their first shift?" asked at once).
+  - **What it did:**
+    - the answer used Harbor and stayed on the handbook;
+    - it closed with "If you'd like, I can write replacement wording for Section 1…", an offer HR can keep (§183's
+      sentence at work);
+    - the day-1 line showed;
+    - 4 official web sources, and no handbook card (switch 3's gap).
+  - **Read-only on production** (the Supabase CLI's own connection):
+    - **Query 1:**
+      `select t.created_at, tp.title, t.check_record, t.sources from public.turns t join public.topics tp on tp.id = t.topic_id where t.company_id = '739a428f-1a0a-4531-8204-92ce75e4f878' and tp.section = 'hr' and t.role = 'assistant' and t.created_at >= '2026-10-09 15:55+00' and t.created_at < '2026-10-09 17:00+00' order by t.created_at`.
+      One answer, 16:01:53 UTC. **Handbooks given:** Harbor alone (added 16:01:26), **as pages**: text first, its
+      text saved and its sections not yet found. **`waited_seconds` 0:** the text was saved before the question
+      arrived, so the new wait had nothing to wait for. Budget 650,000; no selection; no handbook cards; nothing
+      dropped or marked; 7 cited passages; 17 pages searched. **Sources:** WAC 246-217-015 (app.leg.wa.gov),
+      doh.wa.gov, clallamcountywa.gov, WAC 246-217-035 (lawfilesext.leg.wa.gov), all web, all official.
+    - **Query 2:**
+      `select created_at, task, model, effort, searches, input_tokens, output_tokens, cost_usd, wall_ms from public.ai_calls where company_id = '739a428f-1a0a-4531-8204-92ce75e4f878' and created_at >= '2026-10-09 15:55+00' and created_at < '2026-10-09 17:00+00' order by created_at`.
+      The answer: `hr`, `claude-opus-5-5`, effort medium, 2 searches, 24,983 in and 2,367 out, **$0.167272**, 25 s.
+      The reading's outline: `hr_check`, Opus, effort null, $0.016584, 6 s.
+- **A NEW OPEN DEFECT, seen by the owner:** a page left open across a night check shows the old row and the drawer's
+  old top line until it is reloaded (`HANDOFF-CODE.md` §7). Not fixed.

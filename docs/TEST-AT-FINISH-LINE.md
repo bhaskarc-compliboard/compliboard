@@ -1,6 +1,6 @@
 # Test at the finish line
 
-**Version:** 3 · **Updated:** 9 October 2026: HR I done (the morning after); HR B notes summaries' effort. Version 2: 8 October 2026, §183: HR H's paid check done; two things added to judge in HR E. Version 1: 8 October 2026, the HR section's part written by the HR chat.
+**Version:** 4 · **Updated:** 9 October 2026: HR H, the second paid check (§184). Version 3: 9 October 2026: HR I done (the morning after); HR B notes summaries' effort. Version 2: 8 October 2026, §183: HR H's paid check done; two things added to judge in HR E. Version 1: 8 October 2026, the HR section's part written by the HR chat.
 **Other sections:** add your own part below, in the same shape (A to J). Do not edit another section's part.
 
 ---
@@ -215,6 +215,8 @@ Items 1 to 6 are done:
   at 21:08 UTC (`PATCH /api/handbooks` with no login: 404 before, 401 after).
 - **The free live checks on `https://compliboard.vercel.app`:** `/hr` 200, serving the new page (its heading, lede
   and tabs in the HTML); `/hr/new`, `/api/hr` and `/api/hr-audits` 404; `POST /api/hr/answer` with no login 401.
+
+**A second paid check, after the 11b and §183 release: DONE** (`DECISIONS.md` §184): the owner's second paid check, 9 October, after the 11b and §183 release, as CB-Test-3: Harbor deleted, added again from the Ask tab, and "Do our servers need a food worker card before their first shift?" asked at once. The answer (16:01:53 UTC) used Harbor, given as pages (text first: its text was saved, its sections not yet found; `waited_seconds` 0); it stayed on the handbook and closed with "If you'd like, I can write replacement wording for Section 1…", an offer HR can keep; the day-1 line showed; 4 sources, all official web pages (WAC 246-217-015, doh.wa.gov, clallamcountywa.gov, WAC 246-217-035); no handbook card (switch 3's gap); 7 cited passages, 17 pages searched, nothing dropped or marked. Ledger: the answer `hr`, `claude-opus-5-5`, effort medium, 2 searches, 24,983 in and 2,367 out, $0.167272, 25 s; the reading's outline `hr_check`, Opus, $0.016584.
 
 **The paid check: DONE** (`DECISIONS.md` §183): the owner's paid check, 8 October, as CB-Test-3 with `tests/fixtures/Harbor-Kitchen-Employee-Policy-2026.pdf` and the question "What does this handbook say about food worker cards, and does it match Washington's rule?": the whole chain worked on production. Its 5 sources are all web pages, all official (WAC 246-217, doh.wa.gov, WAC 246-217-015, clallamcountywa.gov, kingcounty.gov), with no handbook card (the answer did not quote the handbook). Its ledger row: `hr`, `claude-opus-5-5`, effort medium, 2 searches, 25,061 tokens in and 2,236 out, $0.164964, 26 seconds. Two findings: it offered a checklist HR does not have, and drifted from the question; the first is answered by §183's closing-offer sentence.
 
