@@ -571,54 +571,84 @@ export type Database = {
       }
       calendar_events: {
         Row: {
+          audit_finding_id: string | null
           category: string | null
-          company_id: string | null
+          company_id: string
           completed: boolean | null
           completed_at: string | null
+          counts_as_due: boolean | null
           created_at: string | null
+          date_key: string
           description: string | null
+          document_deadline_id: string | null
           document_id: string | null
-          due_date: string
+          due_date: string | null
           entity_id: string | null
           handbook_id: string | null
           id: string
           is_recurring: boolean | null
+          line_verified: boolean | null
           recurrence_period: string | null
+          rejected_reason: string | null
+          repeats_every: string | null
+          source: string
+          state: string
           title: string
+          topic_id: string | null
           user_id: string | null
         }
         Insert: {
+          audit_finding_id?: string | null
           category?: string | null
-          company_id?: string | null
+          company_id: string
           completed?: boolean | null
           completed_at?: string | null
+          counts_as_due?: boolean | null
           created_at?: string | null
+          date_key: string
           description?: string | null
+          document_deadline_id?: string | null
           document_id?: string | null
-          due_date: string
+          due_date?: string | null
           entity_id?: string | null
           handbook_id?: string | null
           id?: string
           is_recurring?: boolean | null
+          line_verified?: boolean | null
           recurrence_period?: string | null
+          rejected_reason?: string | null
+          repeats_every?: string | null
+          source?: string
+          state?: string
           title: string
+          topic_id?: string | null
           user_id?: string | null
         }
         Update: {
+          audit_finding_id?: string | null
           category?: string | null
-          company_id?: string | null
+          company_id?: string
           completed?: boolean | null
           completed_at?: string | null
+          counts_as_due?: boolean | null
           created_at?: string | null
+          date_key?: string
           description?: string | null
+          document_deadline_id?: string | null
           document_id?: string | null
-          due_date?: string
+          due_date?: string | null
           entity_id?: string | null
           handbook_id?: string | null
           id?: string
           is_recurring?: boolean | null
+          line_verified?: boolean | null
           recurrence_period?: string | null
+          rejected_reason?: string | null
+          repeats_every?: string | null
+          source?: string
+          state?: string
           title?: string
+          topic_id?: string | null
           user_id?: string | null
         }
         Relationships: [
@@ -630,31 +660,66 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "calendar_events_document_id_fkey"
-            columns: ["document_id"]
+            foreignKeyName: "calendar_events_deadline_in_same_company"
+            columns: ["company_id", "document_deadline_id"]
+            isOneToOne: false
+            referencedRelation: "document_dates_current_v"
+            referencedColumns: ["company_id", "deadline_id"]
+          },
+          {
+            foreignKeyName: "calendar_events_deadline_in_same_company"
+            columns: ["company_id", "document_deadline_id"]
+            isOneToOne: false
+            referencedRelation: "document_deadlines"
+            referencedColumns: ["company_id", "id"]
+          },
+          {
+            foreignKeyName: "calendar_events_document_in_same_company"
+            columns: ["company_id", "document_id"]
             isOneToOne: false
             referencedRelation: "document_index_v"
-            referencedColumns: ["document_id"]
+            referencedColumns: ["company_id", "document_id"]
           },
           {
-            foreignKeyName: "calendar_events_document_id_fkey"
-            columns: ["document_id"]
+            foreignKeyName: "calendar_events_document_in_same_company"
+            columns: ["company_id", "document_id"]
             isOneToOne: false
             referencedRelation: "documents"
-            referencedColumns: ["id"]
+            referencedColumns: ["company_id", "id"]
           },
           {
-            foreignKeyName: "calendar_events_entity_id_fkey"
-            columns: ["entity_id"]
+            foreignKeyName: "calendar_events_finding_in_same_company"
+            columns: ["company_id", "audit_finding_id"]
             isOneToOne: false
-            referencedRelation: "entities"
-            referencedColumns: ["id"]
+            referencedRelation: "audit_findings"
+            referencedColumns: ["company_id", "id"]
           },
           {
             foreignKeyName: "calendar_events_handbook_in_same_company"
             columns: ["company_id", "handbook_id"]
             isOneToOne: false
             referencedRelation: "handbooks"
+            referencedColumns: ["company_id", "id"]
+          },
+          {
+            foreignKeyName: "calendar_events_site_in_same_company"
+            columns: ["company_id", "entity_id"]
+            isOneToOne: false
+            referencedRelation: "entities"
+            referencedColumns: ["company_id", "id"]
+          },
+          {
+            foreignKeyName: "calendar_events_topic_in_same_company"
+            columns: ["company_id", "topic_id"]
+            isOneToOne: false
+            referencedRelation: "topic_list_v"
+            referencedColumns: ["company_id", "id"]
+          },
+          {
+            foreignKeyName: "calendar_events_topic_in_same_company"
+            columns: ["company_id", "topic_id"]
+            isOneToOne: false
+            referencedRelation: "topics"
             referencedColumns: ["company_id", "id"]
           },
         ]
@@ -1656,6 +1721,7 @@ export type Database = {
           document_id: string
           due_on: string | null
           id: string
+          quote_verified: boolean | null
           recurs: boolean
           scan_id: string
           source_line: string | null
@@ -1668,6 +1734,7 @@ export type Database = {
           document_id: string
           due_on?: string | null
           id?: string
+          quote_verified?: boolean | null
           recurs?: boolean
           scan_id: string
           source_line?: string | null
@@ -1680,6 +1747,7 @@ export type Database = {
           document_id?: string
           due_on?: string | null
           id?: string
+          quote_verified?: boolean | null
           recurs?: boolean
           scan_id?: string
           source_line?: string | null
@@ -4050,6 +4118,74 @@ export type Database = {
             columns: ["from_topic_id"]
             isOneToOne: false
             referencedRelation: "topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_dates_current_v: {
+        Row: {
+          calendar_event_id: string | null
+          company_id: string | null
+          created_at: string | null
+          deadline_id: string | null
+          document_id: string | null
+          due_on: string | null
+          entity_id: string | null
+          quote_verified: boolean | null
+          recurs: boolean | null
+          scan_id: string | null
+          scanned_at: string | null
+          source_line: string | null
+          title: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_deadlines_calendar_event_id_fkey"
+            columns: ["calendar_event_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_deadlines_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_deadlines_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "document_index_v"
+            referencedColumns: ["document_id"]
+          },
+          {
+            foreignKeyName: "document_deadlines_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_deadlines_scan_id_fkey"
+            columns: ["scan_id"]
+            isOneToOne: false
+            referencedRelation: "document_index_v"
+            referencedColumns: ["scan_id"]
+          },
+          {
+            foreignKeyName: "document_deadlines_scan_id_fkey"
+            columns: ["scan_id"]
+            isOneToOne: false
+            referencedRelation: "document_scans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_scans_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entities"
             referencedColumns: ["id"]
           },
         ]
