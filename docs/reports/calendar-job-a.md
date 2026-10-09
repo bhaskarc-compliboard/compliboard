@@ -241,3 +241,155 @@ whoever reads SCHEMA.md and believes it; not fixed in this job.
 `SCHEMA.md` also prints `calendar_events — 2 rows` where the table holds 1. That figure is
 `pg_stat_user_tables.n_live_tup`, which is approximate and still counted the verify block's rolled-back
 probes.
+
+---
+
+## A2 — the shared pieces, the date helper, the done tick
+
+**Commit `cdf6c09`.** `npm run check`: **1020 of 1020**, floor 559 (was 960; +60 from the two new
+suites). Cost after: **$18.82** — see the slip recorded below.
+
+### ⚠ A SPEND SLIP, $0.36, MINE AND AVOIDABLE
+
+Running the route probes against the isolated server, I wrote
+`CHECK_LIVE_ONLY=calendar npm run check:live`. **`--only` is an argv flag, not an environment
+variable** (`scripts/check-live.js:495–497`), so the variable did nothing and **the full paid answer
+path ran**: 16 calls, **$0.36** (ledger 298 → 314 calls, $18.46 → $18.82). It was on Haiku, because the
+server was started through `npm run haiku -- …`, so the bill is Haiku's and not Opus's.
+
+The correct form, verified immediately afterwards and used from here on:
+
+```
+CHECK_LIVE_BASE_URL=http://localhost:3998 npm run check:live -- --only calendar
+```
+
+That run printed `--only calendar: the other /api/chat blocks are SKIPPED` and moved the ledger not at
+all. **$0.36 of the $3 budget is spent, and none of it bought anything this job needed.**
+
+### `lib/calendarDate.ts` — decision 15, B2
+
+One place reads a `YYYY-MM-DD` string, and it reads it as a **calendar day at local noon**. Noon, not
+midnight, because noon is the only hour no daylight-saving shift can move across a date boundary.
+`today()` is Pacific (decision 15). Two things worth naming:
+
+- **`nextOccurrence` clamps; it never overflows.** `setMonth` turns 31 January + 1 month into 3 March,
+  which invents a date the rule never set *and moves the deadline later than it was due*. So the 31st
+  becomes the last day of the target month: 31 Jan + monthly → **28 Feb**, 29 Feb + yearly → **28 Feb**
+  the next year, 31 Mar + quarterly → **30 Jun**. Earlier is the safe direction for a deadline.
+- **A day that does not exist is refused, not rolled forward.** `new Date(2026, 1, 30)` silently becomes
+  2 March; `parseDay('2026-02-30')` returns null. A date nobody could write down must not quietly
+  become a different date we then act on.
+
+**`tests/unit/calendarDate.test.ts` — 24 tests.** Every case the map's 2b printed is an assertion, and
+the suite pins `TZ=America/Los_Angeles` itself rather than trusting the runner's. It also pins **the
+defect**, so nobody "fixes" the helper back:
+
+```js
+assert.equal(new Date('2026-11-01').getDate(), 31)   // the old expression, in Oregon
+assert.equal(parseDay('2026-11-01')!.getDate(), 1)   // the helper
+```
+
+and the four things a person saw: a date due today is not past and is inside the next 30 days; the 1st
+belongs to **next** month; on the evening of 31 October, 1 November is "Due tomorrow"; and `dueWords`
+never prints `in -22 days`, which is what the dashboard showed for a passed date.
+
+### `lib/calendarDates.ts` — decisions 7, 8, 9
+
+**`addDate` is a compare-and-set.** It inserts and reads Postgres's `23505` as "already there" — never
+check-then-insert, which is the shape of B8 (Documents' button checks `calendar_event_id` and then
+inserts, so two crossing presses both pass). Four outcomes, and three of them are normal:
+`created`, `already`, **`rejected_before`** (decision 6: a person said no to this exact date, so a later
+reading must not raise it again), and `refused` for a caller's own mistake.
+
+**The key, and the two staging rows that chose it.** `source:ref:day:normalisedLine`, with `hand` keyed
+on its own id because a person pressing Save is the authority on whether it is a second date. The line
+is normalised by `normaliseForQuote` — the rule that **already exists** (`lib/documentScan.ts:194`),
+which HR's quotes and the scan's own quote check use, by the owner's decision of 7 October that there
+is one normalisation rule. Two tests name the rows that settled it:
+
+- *the re-read case*: `13-company-self-check.docx` renamed a deadline completely while its normalised
+  line was byte-identical — so a title-based key would have made a second date;
+- *the fire-extinguisher case*: `11-fire-extinguisher-certificate.pdf` has a 6-year internal maintenance
+  **and** a monthly visual inspection both on 2026-10-31 — so a (document, day) key would have merged
+  two real obligations and lost one.
+
+**`markDone` makes the next occurrence and keeps the done one** — one row per occurrence, because "we
+did this in January and again in February" is the history the product exists to keep. A repeat with no
+"how often" makes nothing **and says why**, rather than guessing yearly (B4).
+
+**`withdrawStale` throws rather than withdrawing everything** when the current-dates view cannot be
+read. That is the map's own lesson turned on this code: an unreadable view returns no rows, every date
+then looks stale, and a silent "0 current dates" would have withdrawn the company's whole calendar.
+There is a test for exactly that.
+
+**`siblingsOnDay` is shown and never acted on** — the owner's answer of 9 October. It is not used to
+suppress a write, and a test asserts both dates still exist afterwards, because the fire-extinguisher
+row proves a suppressing match would tell a person "already on your calendar" about a different
+obligation.
+
+**`tests/unit/calendarDates.test.ts` — 36 tests**, over a stand-in client that enforces the one thing
+this code leans on: `unique (company_id, date_key)`, returning `23505`. It also computes
+`counts_as_due` the way migration 073's generated column does. *Three true tests failed first* because
+the stand-in computed that column at read time instead of storing it, so `.eq('counts_as_due', true)`
+had nothing to filter on — a stand-in has to be faithful about the thing under test.
+
+### `app/api/calendar/dates` — decision 8
+
+POST add, PATCH confirm / reject / done, GET for the three tabs, every method through
+`requireCompany`. Two rules worth stating:
+
+- **The state is not taken from the body.** It follows from the source: a document's dates arrive
+  `not_confirmed`, and a date a person pressed for — audit, summary, by hand — arrives `confirmed`,
+  because pressing it *is* the confirmation. A client that could name the state could confirm its own
+  dates.
+- **Every id in the body is read through the caller's own client first** (§3.6), so another company's
+  document, deadline, conversation, finding, handbook or site is simply absent and answers **404, not
+  403**.
+
+### The done tick — B1, fixed
+
+`app/calendar/page.tsx`: the token is sent, **and the answer is read**. A failure puts the tick back and
+says so. It needed its own notice: `saveError` is rendered *inside* the Add form, so with the form
+closed the message would have been swallowed — which is the same class of fault as the original bug.
+
+### `check:live` gains the calendar — B17
+
+The file touched neither `calendar_events` nor `/api/calendar` before, which is why the tick's 401 went
+a month without an instrument. On 3999 (free, table probes only):
+
+```
+✓ calendar_events            anon refused read — 42501
+✓ document_dates_current_v   anon refused read — 42501
+✓ calendar_events            anon refused insert — 42501
+✓ calendar_events            authenticated can read
+✓ document_dates_current_v   authenticated can read
+✓ calendar_events            authenticated can insert — state confirmed, counts_as_due true
+✓ calendar_events            refused for another company — 42501
+✓ calendar_events            the key refused the same date twice — 23505
+✓ calendar_events            refused another company's document — 23503
+✓ calendar_events            refused another company's site — 23503
+✓ calendar_events            refused another company's conversation — 23503
+✓ calendar_events            refused another company's finding — 23503
+✓ counts_as_due              a date with no day is not due — counts_as_due false
+✓ counts_as_due              an unfound line is not due — counts_as_due false
+✓ counts_as_due              confirming it puts it back on — counts_as_due true
+✓ calendar_events            a one-off with no day is refused — 23514
+✓ calendar_events            a rejection with no reason is refused — 23514
+✓ calendar_events            authenticated can delete — 3 probe row(s) removed
+✓ calendar_events            no probe row left behind — 0 found
+```
+
+And the route, against the isolated Haiku server on 3998:
+
+```
+✓ calendar no session  POST 401, PATCH 401, GET 401, old PATCH 401
+✓ calendar refusals    no title 400, bad day 400, bad source 400, unknown document 404
+✓ calendar write       add 200 created true, second add 200, list 200 (0 to confirm)
+✓ calendar actions     done 200, reject with no reason 400
+```
+
+**One probe reported a failure and was right to.** The view probe first asked for `id`, which
+`document_dates_current_v` does not have — it has `deadline_id`. PostgREST answered **42703, undefined
+column**, not 42501, and the probe failed. An error of another kind looks exactly like a refusal and
+proves nothing, so each probe now names a column it really has. That is the rule catching my own code,
+in the file written to catch it elsewhere.
