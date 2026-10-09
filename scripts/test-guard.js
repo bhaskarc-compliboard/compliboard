@@ -67,8 +67,10 @@ import { readdirSync, readFileSync } from 'node:fs'
 // a floor of 559 under 1024 tests cannot see 450 of them vanish, which is the one thing this number
 // exists to notice. 559 -> 1020 at A2 (the day helper's 24 and the date writer's 36) -> 1024 at A3
 // (the four that pin the defect A3's replay found: a re-read's "already" must RE-POINT the calendar
-// row at the new reading, or withdrawStale takes a live date off the month).
-const FLOOR = 1024
+// row at the new reading, or withdrawStale takes a live date off the month) -> 1031 at A3b (the seven
+// on the calendar step itself: a reading that COULD NOT READ the document must never withdraw a date,
+// and a reading that read it and found none still must).
+const FLOOR = 1031
 
 const files = readdirSync('tests/unit').filter((f) => f.endsWith('.test.ts'))
 const only = files.filter((f) => /\b(test|describe|it)\.only\b/.test(readFileSync(`tests/unit/${f}`, 'utf8')))

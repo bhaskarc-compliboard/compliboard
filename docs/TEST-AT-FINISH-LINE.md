@@ -1,6 +1,6 @@
 # Test at the finish line
 
-**Version:** 4 · **Updated:** 9 October 2026: HR H, the second paid check (§184). Version 3: 9 October 2026: HR I done (the morning after); HR B notes summaries' effort. Version 2: 8 October 2026, §183: HR H's paid check done; two things added to judge in HR E. Version 1: 8 October 2026, the HR section's part written by the HR chat.
+**Version:** 5 · **Updated:** 9 October 2026: the Calendar's part added (A to J), during Job A — its H is the one thing Job A could not test, a real re-read on Opus. Version 4: 9 October 2026: HR H, the second paid check (§184). Version 3: 9 October 2026: HR I done (the morning after); HR B notes summaries' effort. Version 2: 8 October 2026, §183: HR H's paid check done; two things added to judge in HR E. Version 1: 8 October 2026, the HR section's part written by the HR chat.
 **Other sections:** add your own part below, in the same shape (A to J). Do not edit another section's part.
 
 ---
@@ -286,6 +286,127 @@ the first two after HR's yardstick makes it stale:
 - `vercel.json` (the cron entries).
 
 **So at the finish line, HR's yardstick runs after the workspace's last prompt change.**
+
+---
+
+## Calendar
+
+*Started 9 October 2026 by the Calendar chat, during Job A. The plan is `docs/CALENDAR-PLAN.md`; the decisions are
+`DECISIONS.md` §185; the map's findings are cited as B1 … B18 from `docs/CALENDAR-MACHINERY.md`.*
+
+### A. Where the Calendar stands (9 October 2026)
+
+- **Job A built everything underneath the page.** Migrations **073** and **074** are on **staging only** — not on
+  production. The page itself is still the old one (`app/calendar/page.tsx`) until Job B.
+- **Built and proved on Haiku:** the date key and the one writer (`lib/calendarDates.ts`), the day helper
+  (`lib/calendarDate.ts`), the route `app/api/calendar/dates`, the reading's dates reaching the calendar by
+  themselves, the current-dates view under Documents' report and index, and Audits' button (A4).
+- **Four defects of the old calendar are closed:** the done tick never saved (B1), the day was off in Oregon (B2),
+  nothing made the next occurrence of a repeat (B4), and Audits' dates lost their source (B7).
+- **Not built:** the page's three tabs and drawer (Job B), dates in Workspace and HR summaries (step 7, a quality
+  change), and everything in decision 20.
+
+### B. Settings for every Opus run
+
+- `AI_MODEL_DOCUMENT_SCAN=claude-opus-5-5`, which is what production reads a customer's document with
+  (`docs/RELEASE.md` carries the values). Every other tier at production settings.
+- `DEV_MAX_SEARCHES` **unset**, so a reading gets its real breadth.
+- **The calendar itself calls no model.** Only two paths reach one: the document reading that produces the dates,
+  and step 7's summary. Everything else in this section is deterministic and is proved for free.
+
+### C. The machinery on Opus (one run per paid path)
+
+- ⬜ **One document reading on Opus, through `POST /api/document-scan`**, on a fixture with dated deadlines, to
+  prove the reading's dates reach the calendar with the real model's wording. Job A proved the wiring on Haiku
+  ($0.040617, 2 dates, no duplicates).
+- ⬜ **Step 7's summary on Opus**, once that step exists.
+
+### D. The yardstick: setting it up
+
+- ⬜ The fixtures with dated deadlines, read on Opus at production settings, and the resulting
+  `calendar_events` rows written down as the baseline: title, day, repeats, `line_verified`, `date_key`.
+- ⬜ A written key per fixture: which dates a person who knows the subject would expect, and which of the model's
+  dates are not obligations at all.
+
+### E. The yardstick: what to judge
+
+- ⬜ **Are the dates real obligations?** A date printed on a form is not a deadline that binds this company
+  (`TODO.md` M5's own distinction). The reading is anchored to the document, which is the mode the model is
+  reliable in (§3.3) — this judges whether "anchored" is enough.
+- ⬜ **Is each source line the line the date actually came from?** `line_verified` says the line is IN the
+  document; it cannot say it is the RIGHT line. Only a person reading both can.
+- ⬜ **Does the day match the document?** A transposed or mis-parsed day is well-formed and wrong, which is the
+  CAS-check-digit lesson (§3 "validate the structure … a value that is well-formed and wrong").
+- ⬜ **Are the repeats right?** The scan says only "repeats, yes or no". Judge how often a person would say, which
+  is also switch 1's measurement.
+
+### F. The manual sets in `docs/TESTING.md` (the owner, on Opus)
+
+- ⬜ Two per feature, the perfect case and the edge case, written at A6 and run here.
+
+### G. The switches, each measured against the baseline (after it)
+
+1. ⬜ **The scan says how often a date repeats** (decision 9). A Documents prompt change, so it is a §3.1 quality
+   change and the baseline must exist first.
+2. ⬜ **Undated repeats placed from their line** ("by the 5th" → the 5th of each month), in code, once switch 1 is in.
+
+### H. *** THE ONE THING JOB A COULD NOT TEST: A REAL RE-READ ON OPUS ***
+
+⬜ **Read one fixture with dated deadlines TWICE on Opus, and check the natural wording drift against the date
+key.**
+
+**Why it is owed, stated plainly.** The date key is `source:ref:day:normalisedLine`, and the whole argument for it
+is that **a model renames a deadline between readings but quotes the same line**. That is a claim about how the real
+model behaves, and Job A could not test it: **no fixture under `tests/golden/documents/runs/real-model/` holds two
+stored readings** — each folder has one file. So A3's replay applied the drift **by hand**, using the shape staging
+had actually recorded (`docs/CALENDAR-MACHINERY.md` C3: `13-company-self-check.docx`, renamed completely, line
+byte-identical) plus the two other ways a reading can differ.
+
+**That is evidence about the mechanism, not about the model.** What is unproven is the frequency and the shape of
+real drift on Opus: if Opus rewords source lines as freely as it renames titles, the key makes a second date every
+re-read and the To confirm tab fills with duplicates of obligations the person has already answered.
+
+**What the run is:** one fixture, read twice on Opus at production settings, with the two readings' `deadlines`
+arrays printed side by side and the key computed for each. **What it would show if the key is wrong:** a line
+reworded with no change of meaning. **What to do then:** the fallback is in the plan's own reasoning — match on the
+day plus a looser line comparison, and show the person both rather than merge them silently (decision 7's
+no-soft-match rule still holds).
+
+### I. The morning after
+
+- ⬜ The monthly email's first real run: a `job_runs` row for `calendar_month` on the 1st, with `ok` true and its
+  counts. It is the only new cron entry (`0 15 1 * *`).
+- ⬜ A re-read of a document whose dates a person had confirmed, a week later, to confirm nothing was withdrawn.
+
+### J. Open items, and the shared files the Calendar depends on
+
+**Open items that touch testing:**
+- **Audits still reads every version's dates** (`lib/audit.ts:175–177`, `app/api/audits/index/route.ts:72–78`, B3).
+  Job A moved Documents' report and `document_index_v` onto the current-dates view and left Audits as it was; it is
+  recorded in `docs/HANDOFF-CODE.md` §7 for Audits to pick up.
+- **`scripts/schema-doc.js` files a composite foreign key under its first column**, so `docs/SCHEMA.md` prints
+  `calendar_events.company_id — ON DELETE SET NULL` where the real constraint is CASCADE. Pre-existing since 066;
+  `HANDOFF-CODE.md` §7.
+- **Nothing reads `document_dates_current_v` from Audits yet**, so an audit can still cite a replaced reading's date.
+
+**Shared files the Calendar changes.** A change to any of these re-runs the free checks of every section that uses
+them — and these are the ones Job A itself changed, so those re-runs are in Job A's own report:
+- `lib/documentScan.ts` — `saveScan` (the quote check on deadlines, and the calendar step). **On HR's list too**
+  (HR J names `normaliseForQuote`), so HR's free checks re-run.
+- `lib/normaliseQuote.ts` — **new**: `normaliseForQuote` moved here out of `lib/documentScan.ts`, which now imports
+  the calendar's writer and would otherwise be a cycle. `documentScan.ts` re-exports it, so HR's imports are
+  unchanged.
+- `document_index_v` — recreated by 074 (Documents' page, report and the Audits index all read it).
+- `app/api/documents/report/route.ts`, `components/DocumentReport.tsx` — Documents.
+- `app/api/document-actions/route.ts` — Documents (the `deadline_to_calendar` and `version` branches).
+- `components/AuditReport.tsx` — Audits (A4).
+- `lib/jobAuth.ts` (`JobName`), `vercel.json` — the nightly jobs.
+- `scripts/check-live.js`, `scripts/test-guard.js` — every section's gate.
+- **Step 7 will add:** `lib/summaryReport.ts`, `prompts/summary-report.ts`, `prompts/hr-summary.ts`,
+  `components/ReportView.tsx`, and `tests/unit/hrSummary.test.ts`'s pin. **Workspace and HR both.**
+
+**So at the finish line, the Calendar's yardstick runs after Documents' last prompt change**, because the dates it
+judges are produced by Documents' reading.
 
 ---
 

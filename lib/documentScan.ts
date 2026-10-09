@@ -722,6 +722,12 @@ export interface CalendarStep {
   /** A date the calendar could not take: a one-off with no day, or a refusal from `addDate`. */
   failed: number
   error: string | null
+  /**
+   * Set when the calendar step did NOTHING ON PURPOSE, with the reason. Today there is one such
+   * reason: the reading could not read the document, so it has no opinion about its dates and must
+   * not withdraw any. Distinct from `error`, which is a step that tried and broke.
+   */
+  skipped: string | null
 }
 
 export async function saveScan(
@@ -1039,8 +1045,41 @@ export async function saveScan(
   // already written. A calendar step that threw would roll a good reading back to "reading" status
   // and leave the person with nothing, to save them from a missing date. So it is caught, counted and
   // logged, and the counts are returned so a caller can say what happened.
-  const calendar: CalendarStep = { added: 0, already: 0, rejected_before: 0, withdrawn: 0, failed: 0, error: null }
+  const calendar: CalendarStep = { added: 0, already: 0, rejected_before: 0, withdrawn: 0, failed: 0, error: null,
+                                   skipped: null }
   try {
+    // *** A READING THAT COULD NOT READ THE DOCUMENT HAS NO OPINION ABOUT ITS DATES. ***
+    //
+    // Found by the chat's hypothesis and settled on staging before this guard existed
+    // (`scripts/calendar-a3b-failed-reread.mjs`): a failed reading WITHDREW 3 of a document's 4 real
+    // dates, leaving only the one a person had confirmed.
+    //
+    //     reading 2: a FAILED reading — status "could_not_read", 0 deadlines
+    //     reading 2's calendar step: {"added":0,"withdrawn":3,...}
+    //     BEFORE the failed reading: 4 dates, 4 on the month
+    //     AFTER  the failed reading: 4 dates, 1 on the month, 3 withdrawn
+    //
+    // THE CAUSE, in three lines of this file and one of the view's: `:765` clears `is_current` for
+    // every scan and `:799` sets it on the new row unconditionally, failed readings included — so a
+    // `could_not_read` scan becomes the current reading, `document_dates_current_v` (which joins
+    // `and s.is_current`) then returns NO dates for the document, and `withdrawStale` reads that as
+    // "the current reading no longer says any of them".
+    //
+    // WHY THIS IS THE FIX AND NOT A CHANGE TO `is_current`. A failed reading IS the current reading —
+    // `display_status` depends on it (044: "a conclusion beats an absence"), and the page must say
+    // "Could not read" rather than go on showing the old reading as if nothing had happened. What is
+    // wrong is treating its silence as a statement. Withdrawal means "the current reading no longer
+    // says this date"; a reading that read nothing says nothing, and
+    // **ABSENCE OF EVIDENCE IS NOT EVIDENCE OF ABSENCE** — `CLAUDE.md` §3.2's first rule, in a new
+    // place. A rate limit at the reading service must not take a permit's expiry off a customer's
+    // calendar and out of their monthly email.
+    //
+    // A reading that SUCCEEDED and found no deadlines is a different thing entirely: that is a real
+    // opinion — "this document sets no dates" — and its dates are withdrawn, which A3's replay proves.
+    if (scan.status === 'could_not_read') {
+      calendar.skipped = 'the document could not be read, so this reading says nothing about its dates'
+      return { scanId, aiCallId, calendar }
+    }
     const { data: current, error: viewErr } = await db.from('document_dates_current_v')
       .select('deadline_id, title, due_on, source_line, recurs, quote_verified, entity_id')
       .eq('company_id', companyId).eq('document_id', documentId)
