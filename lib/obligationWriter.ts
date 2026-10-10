@@ -25,6 +25,7 @@ import { resolve, coerceFact, isEstablished, type ResolvedObligation,
          type Site, type Company, type Requirement, type SwitchValueType } from './resolve.ts'
 import type { Facts, InventoryClause, Truth } from './appliesExpression.ts'
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { mustRow, mustRows, mustCount } from './mustRead.ts'
 
 /**
  * *** WHEN SYNCHRONOUS STOPS BEING THE RIGHT ANSWER. ***
@@ -93,9 +94,9 @@ export function splitFacts(
  * the difference is an obligation silently staying open forever.
  */
 export async function writeObligations(db: SupabaseClient, companyId: string): Promise<WriteResult> {
-  const [{ data: company }, { data: sites }, { data: reqRows }, { data: switches }, { data: cs }] =
+  const [companyRes, sitesRes, reqRes, switchesRes, csRes] =
     await Promise.all([
-      db.from('companies').select('id,name,state,county,city,industry').eq('id', companyId).single(),
+      db.from('companies').select('id,name,state,county,city,industry').eq('id', companyId).maybeSingle(),
       db.from('entities').select('id,name,state,county,city,fire_authority,is_primary')
         .eq('company_id', companyId).eq('entity_type', 'site'),
       // One line, not a concatenation: Supabase infers the row type FROM THE STRING LITERAL,
@@ -107,14 +108,51 @@ export async function writeObligations(db: SupabaseClient, companyId: string): P
       db.from('company_switches').select('switch_id,scope,entity_id,value,state').eq('company_id', companyId),
     ])
 
+  // *** FIVE READS, AND A FAILURE IN ANY OF THEM USED TO CLOSE ROWS. *** Fix list W1, root R2,
+  // Job E. Only `data` was destructured here, so every error was discarded and each failure had
+  // its own way of being destructive, because the whole set goes to
+  // `close_and_replace_obligations` and that function's contract is "this is everything":
+  //
+  //   requirement_templates failed → an EMPTY set → **every open obligation closed**,
+  //     `obligations_computed_at` stamped, and /requirements saying "we found none that apply to
+  //     you. That is a result, not a gap." — a sentence about a question nobody answered.
+  //   company_switches failed  → every established fact gone → every decided row closed and
+  //     reopened as `unknown`, so a company that had told us 95 facts is asked all of them again.
+  //   switches failed          → no value types → `splitFacts` ignores every fact → the same.
+  //   entities failed          → no sites → every site-scoped obligation leaves the set.
+  //
+  // And it runs on **every** answer to a company question (`/api/switches/answer`), so a database
+  // hiccup during an ordinary afternoon of answering questions was enough.
+  //
+  // `maybeSingle` rather than `single`, deliberately: it keeps "this company does not exist" (a
+  // real answer, below) apart from "we could not ask" (a `ReadFailed`, thrown here). `single`
+  // reports both as an error, and the two want different sentences.
+  const company = mustRow('your company', companyRes)
+  const sites = mustRows('your sites', sitesRes)
+  const reqRows = mustRows('the requirement library', reqRes)
+  const switchRows = mustRows('the list of facts we track', switchesRes)
+  const cs = mustRows('the facts you have told us', csRes)
+
   if (!company) throw new Error('Company not found')
 
-  const siteList: Site[] = (sites ?? []).map((s) => ({
+  // *** AND AN EMPTY LIBRARY IS NOT "NOTHING APPLIES TO YOU". ***
+  // `requirement_templates` is shared reference data — 188 live rows, the same for every company
+  // in the vertical. Zero rows means the library is not there, not that this company is exempt
+  // from everything. Checked separately from the error above because a read can succeed and still
+  // come back empty: a filter that stops matching, a seed that did not run, a view replaced.
+  if (reqRows.length === 0) {
+    throw new Error(
+      'We could not work out your requirements: the requirement library came back empty, ' +
+      'which is never a real answer. Nothing has been changed.',
+    )
+  }
+
+  const siteList: Site[] = sites.map((s) => ({
     id: s.id, name: s.name, isPrimary: s.is_primary,
     state: s.state, county: s.county, city: s.city, fireAuthority: s.fire_authority,
   }))
-  const valueTypeOf = Object.fromEntries((switches ?? []).map((s) => [s.id, s.value_type as SwitchValueType]))
-  const { companyFacts, siteFacts } = splitFacts(cs ?? [], valueTypeOf, siteList.map((s) => s.id))
+  const valueTypeOf = Object.fromEntries(switchRows.map((s) => [s.id, s.value_type as SwitchValueType]))
+  const { companyFacts, siteFacts } = splitFacts(cs, valueTypeOf, siteList.map((s) => s.id))
 
   // substance_inventory() per (site, list). Cached because 15 conditions share six lists, and
   // with regulated_substances empty every answer is `unknown` anyway (TODO 6.4b).
@@ -136,7 +174,7 @@ export async function writeObligations(db: SupabaseClient, companyId: string): P
   const result = resolve({
     company: company as Company,
     sites: siteList,
-    requirements: (reqRows ?? []).map((r): Requirement => ({
+    requirements: reqRows.map((r): Requirement => ({
       id: r.id, name: r.requirement_name, layer: r.jurisdiction_layer,
       state: r.jurisdiction_state, county: r.jurisdiction_county, city: r.jurisdiction_city,
       entityType: r.entity_type, industries: r.industries ?? [], appliesExpression: r.applies_expression,
@@ -144,6 +182,29 @@ export async function writeObligations(db: SupabaseClient, companyId: string): P
     companyFacts, siteFacts,
     inventory: (siteId, list) => invCache.get(`${siteId}|${list}`) ?? 'unknown',
   })
+
+  // *** THE LAST GUARD: AN EMPTY SET NEVER CLOSES OPEN ROWS. ***
+  // The checks above catch a read that reported its failure. This one catches a read that did
+  // not — a changed filter, a column that now holds something else, a resolve that returns
+  // nothing for a reason nobody has thought of yet. `close_and_replace_obligations` is told
+  // "this is the complete set", so handing it nothing closes everything, and the damage is
+  // identical however the emptiness arose. A company with open requirements is therefore never
+  // reconciled against nothing: we stop, keep the rows, and say so.
+  //
+  // It is not "refuse every empty set": a company whose obligations have genuinely never
+  // computed to anything has no open rows to lose, so the write proceeds and the timestamp is
+  // stamped. That is the state migration 022 exists to record.
+  if (result.obligations.length === 0) {
+    const open = mustCount('your current requirements', await db
+      .from('obligations').select('*', { count: 'exact', head: true })
+      .eq('company_id', companyId).is('applicable_to', null))
+    if (open > 0) {
+      throw new Error(
+        `We could not work out your requirements: the result came back with none at all, while ${open} ` +
+        'of yours are open. Closing them on that would be wrong, so nothing has been changed.',
+      )
+    }
+  }
 
   const { data: persisted, error } = await db.rpc('close_and_replace_obligations', {
     p_company_id: companyId,
@@ -161,7 +222,12 @@ export async function writeObligations(db: SupabaseClient, companyId: string): P
   const computedAt = new Date().toISOString()
   // *** THE TIMESTAMP IS THE POINT OF LAZY. *** Without it, "never computed" and "computed and
   // nothing applies" are the same zero, and M6 cannot tell a customer which is true (§5.1).
-  await db.from('companies').update({ obligations_computed_at: computedAt }).eq('id', companyId)
+  // The error is checked (W1): the rows are already reconciled at this point, so a stamp that
+  // silently failed leaves the company looking "never computed" and every later request
+  // recomputing it — the lazy path's one job, undone without a word.
+  const { error: stampErr } = await db.from('companies')
+    .update({ obligations_computed_at: computedAt }).eq('id', companyId)
+  if (stampErr) throw new Error(`Could not record when your requirements were worked out: ${stampErr.message}`)
 
   return { obligations: result.obligations, persisted: persisted ?? {}, computedAt }
 }

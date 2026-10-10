@@ -107,12 +107,21 @@ not a month.
    sub-folders" counts never read `error`, so a failed count is 0 and a full folder is deleted — sub-folders and
    `folder_audits` cascade, documents become unfiled. No screen calls it today; the API does. **Fix:** check both
    errors, refuse on failure.
-10. **W1 · sev 1 · ✓ · Workspace (requirements).** `lib/obligationWriter.ts:96–110`: five reads, only `company`
+10. **W1 · sev 1 · ✓ FIXED (Job E1, "Job E: W1 — a database hiccup closed every open obligation") · Workspace (requirements).** `lib/obligationWriter.ts:96–110`: five reads, only `company`
     checked. A failed `requirement_templates` read sends an empty set to `close_and_replace_obligations` (migration
     023), which **closes every open obligation**, stamps `obligations_computed_at`, and /requirements says "found
     none that apply to you. That is a result, not a gap." A failed `company_switches` read closes every decided row
     and reopens it as unknown. Runs on **every** answer to a company question. Rows are closed, not deleted; the next
     good run reopens them. **Fix:** check all five; refuse an empty set while open rows exist.
+   **Closed:** all five go through `mustRow`/`mustRows`; the `companies` read moved to
+   `.maybeSingle()` so "this company does not exist" stays apart from "we could not ask"; an
+   **empty library** throws (188 shared rows cannot mean "nothing applies to you"); and an empty
+   result is refused while open rows exist, with the count in the sentence — which catches an
+   emptiness that arose for a reason nobody has thought of yet. `obligations_computed_at`'s own
+   error is checked too. **Proof:** `tests/unit/obligationWriterReads.test.ts` runs the real
+   `writeObligations` against a fake database and logs every RPC attempted; **8 of its 11 tests
+   fail on the shipped code**, the first with `Missing expected rejection` — the old code did not
+   throw, it called `close_and_replace_obligations(0 obligations)`.
 11. **M2 · sev 1 · ✓ · My Account (ours).** `app/api/account/route.ts:356–360` (profiles read unchecked → no login
     deleted, the company row still is), `:137` (a failed storage list = "no files"; files stay in the bucket; more
     than 1000 in a folder are missed), `:424–426` (`deleteUser` errors ignored). The response says `success: true`.
