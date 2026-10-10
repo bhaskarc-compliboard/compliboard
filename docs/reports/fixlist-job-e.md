@@ -156,3 +156,100 @@ requirements. On the new code all 11 pass.
 The first test in the group is the good run, deliberately: §9a — a check that reports an absence
 must be shown seeing a presence first. One applying library row in, one obligation out, the RPC
 called with 1, the timestamp stamped.
+
+### D1 · sev 1 · Documents — a failed re-read emptied a document's open questions
+
+Now `lib/documentScan.ts:989–993` for the withdrawal (the fix list's `:931–934`), and the file still
+had **one** early exit for `could_not_read` — the calendar step's, added in Calendar A3. Confirmed by
+reading `saveScan` end to end: there was no other.
+
+**What it did.** "Read it again" on a document, the reading service refuses, and the one statement
+
+```ts
+db.from('fact_proposals').update({ status: 'withdrawn' })
+  .eq('document_id', documentId).eq('status', 'proposed')
+```
+
+ran anyway. A failed reading proposes no facts, so the document's open questions left Company
+information and the sidebar badge and **nothing took their place**. Same rule as the calendar step's,
+in a second place: a reading that could not read the document has no opinion about what it says.
+
+**And a second fault the list names in one clause** — *"It also runs before the insert"*. The comment
+that was there argued for that, and its reason was sound: the new reading's own rows must not be
+caught by the withdrawal. But if the insert then failed, the earlier questions were already gone and
+the new ones never arrived.
+
+**The fix.**
+
+1. On `could_not_read`, withdraw nothing, and **say so**: a new `FactsStep` returned beside
+   `CalendarStep`, with `skipped` carrying the reason. Same shape and the same argument — a step that
+   quietly did nothing is indistinguishable from a step that never ran, and both look like success.
+2. The rows to withdraw are **chosen by id before** the insert and **withdrawn after** it. The new
+   reading's rows cannot be in a list made before they existed, so the old comment's concern is still
+   met, and a failed insert now leaves the earlier questions standing.
+3. The read that chooses them goes through `tryRows`. A failure withdraws nothing and records it on
+   the step rather than throwing — because `saveScan`'s caller writes a `could_not_read` scan over a
+   reading whose save threw (`app/api/document-scan/route.ts:147`), so throwing here would turn a
+   perfectly good reading into a failed one to punish a hiccup in a bookkeeping query. Leaving both
+   sets pending is visible and recoverable: `lib/confirmationQueue.ts` lifts the pair out for a
+   person.
+
+**The proof: `scripts/fixlist-d1-proposals.mjs`** — free, no model called (a stored real-model
+reading of the chemical Emergency Action Plan replayed through `saveScan` with `linkLedger: false`,
+and `failedScan`, which by construction calls nothing), in a throwaway company deleted on exit and on
+a crash. It takes `--old`, which asserts nothing, so **the same script runs against the shipped
+code** and makes the failure happen.
+
+Against the shipped code (`git stash push lib/documentScan.ts`):
+
+```
+PART A — one document, read well, then read again by a service that refused
+   after a GOOD reading                6 row(s): proposed=6
+   after the FAILED reading            6 row(s): withdrawn=6
+ ✗ a failed reading withdrew 6 of 6 open question(s) — Company information and the sidebar badge go empty
+ ✗ 6 proposal(s) are marked withdrawn by a reading that read nothing
+
+PART B — a GOOD re-read whose fact insert fails
+   after a GOOD reading                6 row(s): proposed=6
+ · the second reading's save threw: fact_proposals: the write was refused (made to fail on purpose)
+   after the refused insert            6 row(s): withdrawn=6
+ ✗ the document is left with 0 open question(s) instead of 6
+```
+
+On the fix:
+
+```
+PART A
+ · reading 2 … step says {"proposed":0,"withdrawn":0,"skipped":"the document could not be
+   read, so this reading replaces none of its earlier questions","error":null}
+   after the FAILED reading            6 row(s): proposed=6
+ ✓ a failed re-read leaves all 6 open question(s) where they were
+ ✓ nothing is marked withdrawn by a reading that read nothing
+ ✓ the step says why it did nothing
+
+PART B
+   after the refused insert            6 row(s): proposed=6
+ ✓ the earlier 6 open question(s) stand: nothing was withdrawn for rows that never got written
+
+PART C — an ordinary GOOD re-read, which must still replace the earlier questions
+ · the second GOOD reading's step: {"proposed":6,"withdrawn":6,"skipped":null,"error":null}
+   after a GOOD re-read               12 row(s): withdrawn=6 proposed=6
+ ✓ a good re-read leaves its own 6 question(s) open and no others
+ ✓ the earlier reading's 6 question(s) are withdrawn, not deleted — the drawer still shows them
+ ✓ every open question is the new reading's own wording
+```
+
+**Part C is there on purpose.** §9a — a check that reports an absence must be shown seeing a
+presence. The withdrawal exists because one Emergency Action Plan read twice proposed *"Yes, kept in
+the front office"* and *"Yes — an AED kept in the front office"* for one key, and the confirmation
+queue then asked a person to arbitrate between two paraphrases of one sentence. A fix that stopped
+withdrawing anything would bring that back, and would have passed parts A and B.
+
+**Also shown in the script, verbatim:** the one shipped statement, run on a document of its own, so
+the comparison does not rest on remembering what the old code did — 6 open questions → 0.
+
+**Effects on other sections, by file.** `saveScan`'s return gained `facts`; both callers
+(`app/api/document-scan/route.ts`, `app/api/jobs/scan-documents/route.ts`) destructure `{ scanId }`
+only, so nothing else changes. Company information (`app/api/company-information/route.ts`) and the
+sidebar badge (`components/AppLayout.tsx:77`) read `fact_proposals` and now keep their rows through a
+failed re-read; neither file changed. No migration.

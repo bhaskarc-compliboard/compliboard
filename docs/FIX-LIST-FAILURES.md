@@ -53,11 +53,22 @@ not a month.
 
 ### R1 — a failed reading becomes the current one
 
-1. **D1 · sev 1 · ✓ · Documents.** `lib/documentScan.ts:931–934` withdraws every pending fact proposal of the
+1. **D1 · sev 1 · ✓ FIXED (Job E1, "Job E: D1 — a failed re-read emptied a document's open questions") · Documents.** `lib/documentScan.ts:931–934` withdraws every pending fact proposal of the
    document on **every** save, a failed one included (`saveScan` has no early exit for `could_not_read`; the only
    branch is `:978`). A rate-limited "Read it again" empties that document's questions from Company information and
    the sidebar badge, and replaces them with nothing. It also runs before the insert (`:940`). **Fix:** withdraw only
    after a readable reading's facts are in; never on `could_not_read`.
+   **Closed:** a `could_not_read` reading now withdraws nothing and says why, on a new `facts` step
+   returned beside `calendar` (`FactsStep`); and the rows a good re-read replaces are **chosen by
+   id before** the insert and **withdrawn after** it, so a failed insert leaves the earlier
+   questions standing. The read that chooses them goes through `tryRows`; a failure there withdraws
+   nothing and records it on the step rather than throwing, because `saveScan`'s caller writes a
+   `could_not_read` scan over a reading whose save threw. **Proof:**
+   `scripts/fixlist-d1-proposals.mjs`, free, on staging, run twice. On the shipped code: the failed
+   reading withdrew **6 of 6**, and the refused insert left **0 of 6**. On the fix: 6 of 6 stand in
+   both cases, and part C shows an ordinary good re-read still withdrawing all 6 — a fix that
+   stopped withdrawing anything would bring back the two-paraphrases arbitration the withdrawal was
+   introduced for.
 2. **L1 · sev 1 · ✓ · Documents → Audits.** `lib/companyLabels.ts:57–58` (`pruneOrphanLabels`, called after a
    document delete at `app/api/documents/route.ts:302`) decides a label is dead from `is_current` scans. After a
    failed re-read, deleting any other document deletes the agency label if that permit was its only carrier, and

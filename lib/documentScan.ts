@@ -32,6 +32,7 @@ import { scanPrompt, SCAN_JSON_SCHEMA, type ScanPromptContext } from '../prompts
 import { addDate, withdrawStale } from './calendarDates.ts'
 import { readableScanIds } from './readableScan.ts'
 import { normaliseForQuote } from './normaliseQuote.ts'
+import { tryRows } from './mustRead.ts'
 
 /** A Supabase client, loosely typed: these scripts run outside Next's generated-types world. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -736,6 +737,22 @@ export interface CalendarStep {
   skipped: string | null
 }
 
+/**
+ * What the fact-proposal step did — fix list **D1**, Job E. The same shape as `CalendarStep` and
+ * for the same reason: a step that quietly did nothing is indistinguishable from a step that never
+ * ran, and both look exactly like success.
+ */
+export interface FactsStep {
+  /** New proposals this reading made. */
+  proposed: number
+  /** Earlier pending proposals this reading replaced. */
+  withdrawn: number
+  /** Set when nothing was withdrawn ON PURPOSE, with the reason. */
+  skipped: string | null
+  /** Set when the step could not find out what to withdraw, so it withdrew nothing. */
+  error: string | null
+}
+
 export async function saveScan(
   db: Db, scan: DocumentScan,
   args: { documentId: string; companyId: string; entityId?: string | null
@@ -749,7 +766,7 @@ export async function saveScan(
            * which is the truth: no call was made for it.
            */
           linkLedger?: boolean },
-): Promise<{ scanId: string | null; aiCallId: string | null; calendar: CalendarStep }> {
+): Promise<{ scanId: string | null; aiCallId: string | null; calendar: CalendarStep; facts: FactsStep }> {
   const { documentId, companyId, entityId } = args
   const linkLedger = args.linkLedger !== false
 
@@ -976,12 +993,45 @@ export async function saveScan(
   // A CONFIRMED OR REJECTED PROPOSAL IS UNTOUCHED (`.eq('status', 'proposed')`). A person's decision
   // outranks a re-read, and the accepted row is the history a corrected fact points back to (§056).
   //
-  // It runs BEFORE the insert, so the new reading's own rows are never caught by it.
-  {
-    const { error: wErr } = await db.from('fact_proposals')
-      .update({ status: 'withdrawn' })
-      .eq('document_id', documentId).eq('status', 'proposed')
-    if (wErr) throw new Error(`fact_proposals withdraw: ${wErr.message}`)
+  // *** CHANGED IN JOB E — fix list D1, severity 1, root R1. ***
+  //
+  // Two things were wrong with where and when this ran, and both of them emptied a document's open
+  // questions and put nothing in their place.
+  //
+  //   1. IT RAN ON A FAILED READING. `saveScan` has no early exit for `could_not_read` — the only
+  //      branch was the calendar step's, added in Calendar A3. So "Read it again" on a document
+  //      that then hit a rate limit withdrew every pending proposal of its earlier, good readings:
+  //      the questions disappeared from Company information and from the sidebar badge, and were
+  //      replaced by nothing, because a failed reading proposes no facts. Same rule as the calendar
+  //      step's, in a second place: **a reading that could not read the document has no opinion
+  //      about what it says**, so it replaces nothing. `CLAUDE.md` §3.2 — absence of evidence is
+  //      not evidence of absence.
+  //   2. IT RAN BEFORE THE INSERT. The comment that used to be here argued for that, and its
+  //      reason was sound — the new reading's own rows must not be caught by the withdrawal. But
+  //      if the insert then failed, the earlier questions were already gone and the new ones never
+  //      arrived. So the rows to withdraw are now **chosen** before the insert, by id, and
+  //      **withdrawn** after it: the new reading's rows cannot be in a list made before they
+  //      existed, and a failed insert leaves the earlier questions standing.
+  //
+  // And the read that chooses them is checked. A failure there withdraws NOTHING and says so on
+  // the step, rather than throwing: `saveScan`'s caller writes a `could_not_read` scan over a
+  // reading whose save threw (`app/api/document-scan/route.ts:147`), so throwing here would turn a
+  // perfectly good reading into a failed one to punish a hiccup in a bookkeeping query. Leaving
+  // both sets pending is the visible, recoverable direction — `lib/confirmationQueue.ts` lifts the
+  // pair out for a person, which is the behaviour this withdrawal was introduced to avoid, not a
+  // loss of anything.
+  const facts: FactsStep = { proposed: 0, withdrawn: 0, skipped: null, error: null }
+  let replacing: string[] = []
+  if (scan.status === 'could_not_read') {
+    facts.skipped = 'the document could not be read, so this reading replaces none of its earlier questions'
+  } else {
+    const pending = tryRows<{ id: string }>("this document's open questions",
+      await db.from('fact_proposals').select('id').eq('document_id', documentId).eq('status', 'proposed'))
+    if (pending.ok) replacing = pending.rows.map((r) => r.id)
+    else {
+      facts.error = pending.error.message
+      console.error(`document scan: nothing withdrawn — ${pending.error.message}`)
+    }
   }
 
   // PROPOSED, NEVER WRITTEN (§108).
@@ -1011,7 +1061,18 @@ export async function saveScan(
       entity_id: entityId ?? null,
     })))
     if (e) throw new Error(`fact_proposals: ${e.message}`)
+    facts.proposed = scan.facts.length
   }
+
+  // ...AND ONLY NOW ARE THE ONES THIS READING REPLACES WITHDRAWN (D1, point 2 above). By id, so
+  // the rows just inserted cannot be caught: they did not exist when the list was made.
+  if (replacing.length) {
+    const { error: wErr } = await db.from('fact_proposals')
+      .update({ status: 'withdrawn' }).in('id', replacing)
+    if (wErr) throw new Error(`fact_proposals withdraw: ${wErr.message}`)
+    facts.withdrawn = replacing.length
+  }
+
   // Any label this document needed that the company did not already have.
   const labels = [
     ...scan.identity.agencies.map((l) => ({ kind: 'agency', label: l })),
@@ -1084,7 +1145,7 @@ export async function saveScan(
     // opinion — "this document sets no dates" — and its dates are withdrawn, which A3's replay proves.
     if (scan.status === 'could_not_read') {
       calendar.skipped = 'the document could not be read, so this reading says nothing about its dates'
-      return { scanId, aiCallId, calendar }
+      return { scanId, aiCallId, calendar, facts }
     }
     const { data: current, error: viewErr } = await db.from('document_dates_current_v')
       .select('deadline_id, title, due_on, source_line, recurs, quote_verified, entity_id')
@@ -1135,5 +1196,5 @@ export async function saveScan(
       + `saved and its dates are not on the calendar: ${calendar.error}`)
   }
 
-  return { scanId, aiCallId, calendar }
+  return { scanId, aiCallId, calendar, facts }
 }
